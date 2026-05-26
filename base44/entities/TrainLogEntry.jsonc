@@ -1,0 +1,26 @@
+{
+  "name": "TrainLogEntry",
+  "type": "object",
+  "properties": {
+    "line": {
+      "type": "string",
+      "description": "The formatted log line text"
+    },
+    "operation": {
+      "type": "string",
+      "enum": [
+        "inserted",
+        "removed"
+      ],
+      "description": "Type of operation"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes"
+    }
+  },
+  "required": [
+    "line",
+    "operation"
+  ]
+}

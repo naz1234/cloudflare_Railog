@@ -1,0 +1,45 @@
+{
+  "name": "PSTTrainPrep",
+  "type": "object",
+  "properties": {
+    "recordKey": {
+      "type": "string",
+      "description": "Singleton key, default value: main",
+      "default": "main"
+    },
+    "pstState": {
+      "type": "object",
+      "description": "PST button state for each cell",
+      "additionalProperties": true
+    },
+    "prepState": {
+      "type": "object",
+      "description": "Train Prep button state for each cell",
+      "additionalProperties": true
+    },
+    "logLines": {
+      "type": "array",
+      "description": "PST / Train Prep log output lines",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "taNameState": {
+      "type": "object",
+      "description": "TA name input for each cell",
+      "additionalProperties": true
+    },
+    "completedByWest": {
+      "type": "string",
+      "description": "West Depot completed-by name for Excel export"
+    },
+    "completedByEast": {
+      "type": "string",
+      "description": "East Depot completed-by name for Excel export"
+    }
+  },
+  "required": [
+    "recordKey"
+  ]
+}

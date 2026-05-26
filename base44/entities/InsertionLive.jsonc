@@ -1,0 +1,24 @@
+{
+  "name": "InsertionLive",
+  "type": "object",
+  "properties": {
+    "stateKey": {
+      "type": "string"
+    },
+    "insertionLog": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "tidInputs": {
+      "type": "object"
+    },
+    "updatedAt": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "stateKey"
+  ]
+}

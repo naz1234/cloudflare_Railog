@@ -1,0 +1,26 @@
+{
+  "name": "MaintenanceRequest",
+  "type": "object",
+  "properties": {
+    "trainId": {
+      "type": "string",
+      "description": "Train ID number"
+    },
+    "requestType": {
+      "type": "string",
+      "description": "Type of maintenance request: PM, WASH, CM, HVAC, Deep Cleaning, G To C, UNFIT, Other"
+    },
+    "customType": {
+      "type": "string",
+      "description": "Custom type text when requestType is Other"
+    },
+    "remark": {
+      "type": "string",
+      "description": "Optional remark"
+    }
+  },
+  "required": [
+    "trainId",
+    "requestType"
+  ]
+}
