@@ -96,6 +96,15 @@ function buildEntityClient(entityName) {
   };
 }
 
+export async function initCloudflareSchema() {
+  try {
+    return await apiRequest('/api/health');
+  } catch (error) {
+    console.warn('Cloudflare D1 schema init failed:', error);
+    return { ok: false, error: error?.message || 'D1 schema init failed' };
+  }
+}
+
 const entities = ENTITY_NAMES.reduce((acc, entityName) => {
   acc[entityName] = buildEntityClient(entityName);
   return acc;
