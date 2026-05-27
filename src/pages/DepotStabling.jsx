@@ -3917,6 +3917,14 @@ function TrainMovementContent() {
           inputMode="numeric"
           maxLength={5}
           value={tp1Form[field]}
+          onKeyDown={(e) => {
+            const value = String(tp1Form[field] || "");
+            const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+            if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+              e.preventDefault();
+              updateTp1MovementForm(field, value.slice(0, -2));
+            }
+          }}
           onChange={(e) => updateTp1MovementForm(field, cleanTp1MovementTimeInput(e.target.value))}
           onBlur={(e) => updateTp1MovementForm(field, normalizeMovementCustomTimeInput(e.target.value))}
           placeholder="00:00"
