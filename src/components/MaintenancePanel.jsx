@@ -34,9 +34,45 @@ function normalizeTrainId(value) {
   return cleaned;
 }
 
-function getRequestPillStyle(typeKey) {
-  const color = REQUEST_COLORS[typeKey] || REQUEST_COLORS.Other;
-  const accent = color.bg || "#f59e0b";
+const CUSTOM_REQUEST_PALETTE = [
+  "#22c55e", // green
+  "#38bdf8", // sky
+  "#a78bfa", // violet
+  "#f472b6", // pink
+  "#fbbf24", // amber
+  "#2dd4bf", // teal
+  "#fb7185", // rose
+  "#c084fc", // purple
+  "#60a5fa", // blue
+  "#f97316", // orange
+  "#34d399", // emerald
+  "#e879f9", // fuchsia
+];
+
+function getCustomRequestColor(label = "") {
+  const key = label
+    .toString()
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(" ");
+
+  if (!key) return REQUEST_COLORS.Other.bg;
+
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) {
+    hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  }
+
+  return CUSTOM_REQUEST_PALETTE[hash % CUSTOM_REQUEST_PALETTE.length];
+}
+
+function getRequestPillStyle(typeKey, displayLabel = "") {
+  const color = REQUEST_COLORS[typeKey];
+  const accent = color?.bg || getCustomRequestColor(displayLabel || typeKey);
 
   return {
     backgroundColor: "#091828",
@@ -374,8 +410,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               <tr><td colSpan={4} className="text-center text-[#3a5a7a] py-4 text-xs italic">No requests yet</td></tr>
             )}
             {sortedRequests.map((req) => {
-              const typeKey = req.requestType === "Other" ? "Other" : req.requestType;
-              const requestPillStyle = getRequestPillStyle(typeKey);
+              const displayLabel = displayType(req);
+              const typeKey = req.requestType === "Other" ? displayLabel : req.requestType;
+              const requestPillStyle = getRequestPillStyle(typeKey, displayLabel);
               const notePillStyle = req.remark ? requestPillStyle : getNeutralPillStyle();
               return (
                 <tr key={req.id || req._tempId} className="border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors">

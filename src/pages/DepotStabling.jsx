@@ -1195,6 +1195,54 @@ function getDuplicates(westData, eastData) {
   return new Set(Object.keys(counts).filter((k) => counts[k] > 1));
 }
 
+const CUSTOM_REQUEST_PALETTE = [
+  "#22c55e",
+  "#38bdf8",
+  "#a78bfa",
+  "#f472b6",
+  "#fbbf24",
+  "#2dd4bf",
+  "#fb7185",
+  "#c084fc",
+  "#60a5fa",
+  "#f97316",
+  "#34d399",
+  "#e879f9",
+];
+
+function getCustomRequestColor(label = "") {
+  const key = label
+    .toString()
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(" ");
+
+  if (!key) return MAINT_STYLES.Other.badgeBorder;
+
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) {
+    hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  }
+
+  return CUSTOM_REQUEST_PALETTE[hash % CUSTOM_REQUEST_PALETTE.length];
+}
+
+function getCustomRequestStyle(label = "") {
+  const accent = getCustomRequestColor(label);
+
+  return {
+    cellBg: "#f8fafc",
+    trainColor: accent,
+    badgeBg: accent,
+    badgeBorder: accent,
+    badgeColor: "#000000",
+  };
+}
+
 function buildMaintenanceMap(requests) {
   const map = {};
 
@@ -1202,19 +1250,18 @@ function buildMaintenanceMap(requests) {
     const key = normalizeTrainId(req.trainId);
     if (!key) return;
 
-    const typeKey = req.requestType === "Other" ? "Other" : req.requestType;
-
     const displayType =
       req.requestType === "Other"
         ? req.customType || "Other"
         : req.requestType;
+    const typeKey = req.requestType === "Other" ? displayType : req.requestType;
 
     // Keep the request note/remark so main stabling can show Excel wash dates.
     // Example: requestType = "WASH", remark = "wash 20 May" → badge shows "wash 20 May".
     const remark = (req.remark || req.note || "").toString().trim();
     const badgeText = remark || displayType;
 
-    const styles = MAINT_STYLES[typeKey] || MAINT_STYLES.Other;
+    const styles = MAINT_STYLES[typeKey] || getCustomRequestStyle(displayType);
 
     if (!map[key]) {
       map[key] = [];
