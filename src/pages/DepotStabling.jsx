@@ -3515,7 +3515,7 @@ function TrainMovementContent() {
       <button
         type="button"
         onClick={() => updateMovementForm(operation, "depot", depot)}
-        className="flex items-center justify-between rounded-lg border px-3 py-2 text-left transition-all"
+        className="flex h-8 items-center justify-between rounded-lg border px-2 py-1 text-left transition-all"
         style={{
           background: active ? `linear-gradient(135deg, ${accent}38, #081e32 82%)` : "#061827",
           borderColor: active ? accent : "#1e4060",
@@ -3523,13 +3523,13 @@ function TrainMovementContent() {
           color: active ? "#ffffff" : "#9bb3ca",
         }}
       >
-        <span className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full" style={{ backgroundColor: `${accent}2e`, color: accent }}>
+        <span className="flex items-center gap-1.5">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full" style={{ backgroundColor: `${accent}2e`, color: accent }}>
             <MovementIcon type="train" color={accent} />
           </span>
-          <span className="text-[12px] font-medium">{label}</span>
+          <span className="text-[10px] font-medium">{label}</span>
         </span>
-        <span className="h-3.5 w-3.5 rounded-full border" style={{ borderColor: active ? accent : "#2b4f6b", backgroundColor: active ? accent : "transparent" }} />
+        <span className="h-3 w-3 rounded-full border" style={{ borderColor: active ? accent : "#2b4f6b", backgroundColor: active ? accent : "transparent" }} />
       </button>
     );
   };
@@ -3543,44 +3543,44 @@ function TrainMovementContent() {
 
     return (
       <div>
-        <span className="mb-1.5 block text-[12px] font-medium uppercase tracking-[0.22em] text-[#58a6ff]">Timing</span>
-        <div className="flex h-11 w-full items-center overflow-hidden rounded-xl border border-[#1e4060] bg-[#061827] shadow-[0_0_18px_rgba(79,142,247,0.12),inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-[#4f8ef7]">
-          <div className="flex h-full w-11 shrink-0 items-center justify-center text-white">
+        <span className="mb-1 block text-[10px] font-medium uppercase tracking-[0.20em] text-[#58a6ff]">Timing</span>
+        <div className="flex h-8 w-full items-center overflow-hidden rounded-lg border border-[#1e4060] bg-[#061827] shadow-[0_0_14px_rgba(79,142,247,0.10),inset_0_1px_0_rgba(255,255,255,0.04)] focus-within:border-[#4f8ef7]">
+          <div className="flex h-full w-8 shrink-0 items-center justify-center text-white">
             <MovementIcon type="clock" color="#dbeafe" />
           </div>
 
           <button
             type="button"
             onClick={() => setMovementTimingMode(operation, "now")}
-            className={`flex h-full shrink-0 items-center justify-center px-3 text-[12px] font-medium transition-all ${isNow ? activeStyle : inactiveStyle}`}
+            className={`flex h-full shrink-0 items-center justify-center px-2 text-[10px] font-medium transition-all ${isNow ? activeStyle : inactiveStyle}`}
           >
             Now
           </button>
 
-          <div className="h-7 w-px shrink-0 bg-[#244b6b]" />
+          <div className="h-5 w-px shrink-0 bg-[#244b6b]" />
 
           <button
             type="button"
             onClick={() => setMovementTimingMode(operation, "custom")}
-            className={`flex h-full shrink-0 items-center justify-center px-3 text-[12px] font-medium transition-all ${!isNow ? activeStyle : inactiveStyle}`}
+            className={`flex h-full shrink-0 items-center justify-center px-2 text-[10px] font-medium transition-all ${!isNow ? activeStyle : inactiveStyle}`}
           >
             Custom
           </button>
 
-          <div className="h-7 w-px shrink-0 bg-[#244b6b]" />
+          <div className="h-5 w-px shrink-0 bg-[#244b6b]" />
 
           {isNow ? (
             <button
               type="button"
               onClick={() => setMovementTimingMode(operation, "custom")}
-              className="flex h-full min-w-0 flex-1 items-center justify-between gap-2 px-3 text-left text-[12px] font-medium text-white transition-all hover:bg-[#0a2238]"
+              className="flex h-full min-w-0 flex-1 items-center justify-between gap-1.5 px-2 text-left text-[10px] font-medium text-white transition-all hover:bg-[#0a2238]"
               title="Click to enter custom timing"
             >
               <span className="min-w-0 truncate">{currentDisplay}</span>
               <MovementIcon type="chevron" color="#b8cff0" />
             </button>
           ) : (
-            <div className="flex h-full min-w-0 flex-1 items-center gap-1 px-3">
+            <div className="flex h-full min-w-0 flex-1 items-center gap-1 px-2">
               <input
                 type="text"
                 inputMode="numeric"
@@ -3589,9 +3589,9 @@ function TrainMovementContent() {
                 onChange={(e) => updateMovementForm(operation, "customTime", cleanMovementCustomTimeInput(e.target.value))}
                 onBlur={(e) => updateMovementForm(operation, "customTime", normalizeMovementCustomTimeInput(e.target.value))}
                 placeholder="00:00"
-                className="h-full min-w-[48px] flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
+                className="h-full min-w-[42px] flex-1 bg-transparent text-[10px] font-medium text-white outline-none placeholder:text-[#31516b]"
               />
-              <span className="shrink-0 text-[12px] font-medium text-[#c8d8ea]">hrs</span>
+              <span className="shrink-0 text-[10px] font-medium text-[#c8d8ea]">hrs</span>
               <MovementIcon type="chevron" color="#b8cff0" />
             </div>
           )}
@@ -3606,9 +3606,9 @@ function TrainMovementContent() {
     const selectedRoads = getMovementRoads(current.depot);
     const isInsertion = operation === "insertion";
     const isSwapping = operation === "swapping";
-    const labelClass = "mb-1.5 block text-[12px] font-medium uppercase tracking-[0.12em] text-[#58a6ff]";
-    const inputClass = "h-9 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
-    const glowInputBoxClass = "flex h-9 items-center gap-2 rounded-lg border border-[#2f7bc4] bg-[#061827] px-3 shadow-[0_0_14px_rgba(79,142,247,0.30),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_20px_rgba(79,142,247,0.48),inset_0_1px_0_rgba(255,255,255,0.08)]";
+    const labelClass = "mb-1 block text-[10px] font-medium uppercase tracking-[0.12em] text-[#58a6ff]";
+    const inputClass = "h-8 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
+    const glowInputBoxClass = "flex h-8 items-center gap-1.5 rounded-lg border border-[#2f7bc4] bg-[#061827] px-2 shadow-[0_0_12px_rgba(79,142,247,0.25),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_16px_rgba(79,142,247,0.42),inset_0_1px_0_rgba(255,255,255,0.08)]";
 
     return (
       <section
@@ -3616,25 +3616,25 @@ function TrainMovementContent() {
         style={{ borderColor: `${meta.accent}42`, background: "linear-gradient(180deg,#061827 0%,#041727 100%)" }}
       >
         <div className="p-3 sm:p-4">
-          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-12 lg:items-end">
-            <label className="col-span-1 lg:col-span-2">
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-12 lg:items-end">
+            <label className="col-span-1 lg:col-span-2 xl:max-w-[105px]">
               <span className={labelClass}>Train ID</span>
               <div className={glowInputBoxClass}>
-                <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
+                <span className="text-[11px] font-medium text-[#4f8ef7]">T</span>
                 <input
                   value={current.trainId}
                   onChange={(e) => updateMovementForm(operation, "trainId", e.target.value.replace(/\D/g, ""))}
                   placeholder="e.g. 25"
-                  className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
+                  className="h-full min-w-0 flex-1 bg-transparent text-[11px] font-medium text-white outline-none placeholder:text-[#31516b]"
                 />
               </div>
             </label>
 
-            <div className="col-span-1 lg:col-span-4">
+            <div className="col-span-1 lg:col-span-3 xl:max-w-[230px]">
               {renderTimingPicker(operation)}
             </div>
 
-            <div className="col-span-2 lg:col-span-6">
+            <div className="col-span-2 lg:col-span-4 xl:max-w-[300px]">
               <span className={labelClass}>Depot</span>
               <div className="grid grid-cols-2 gap-1.5">
                 {renderDepotButton({ operation, depot: "west", label: "West Depot", accent: "#8b5cf6" })}
@@ -3643,7 +3643,7 @@ function TrainMovementContent() {
             </div>
 
             {isInsertion && (
-              <div className="col-span-2 lg:col-span-6">
+              <div className="col-span-2 lg:col-span-4 xl:max-w-[300px]">
                 <span className={labelClass}>Stabling road</span>
                 <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
                   {selectedRoads.map((road) => {
@@ -3664,7 +3664,7 @@ function TrainMovementContent() {
             )}
 
             {!isSwapping && (
-              <label className="col-span-1 lg:col-span-2">
+              <label className="col-span-1 lg:col-span-2 xl:max-w-[105px]">
                 <span className={labelClass}>TID <span className="text-[#4a6b85]">(optional)</span></span>
                 <input
                   value={current.tid}
@@ -3689,12 +3689,12 @@ function TrainMovementContent() {
                 <label className="col-span-1 lg:col-span-3">
                   <span className={labelClass}>Replaced by train</span>
                   <div className={glowInputBoxClass}>
-                    <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
+                    <span className="text-[11px] font-medium text-[#4f8ef7]">T</span>
                     <input
                       value={current.replacedBy}
                       onChange={(e) => updateMovementForm(operation, "replacedBy", e.target.value.replace(/\D/g, ""))}
                       placeholder="e.g. 30"
-                      className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
+                      className="h-full min-w-0 flex-1 bg-transparent text-[11px] font-medium text-white outline-none placeholder:text-[#31516b]"
                     />
                   </div>
                 </label>
@@ -3853,9 +3853,9 @@ function TrainMovementContent() {
     const movementType = getTp1MovementType();
     const isAutomatic = movementType === "automatic";
     const accent = isAutomatic ? "#22c55e" : "#f59e0b";
-    const labelClass = "mb-1.5 block text-[12px] font-medium uppercase tracking-[0.12em] text-[#58a6ff]";
-    const inputClass = "h-9 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
-    const glowInputBoxClass = "flex h-9 items-center gap-2 rounded-lg border border-[#2f7bc4] bg-[#061827] px-3 shadow-[0_0_14px_rgba(79,142,247,0.30),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_20px_rgba(79,142,247,0.48),inset_0_1px_0_rgba(255,255,255,0.08)]";
+    const labelClass = "mb-1 block text-[10px] font-medium uppercase tracking-[0.12em] text-[#58a6ff]";
+    const inputClass = "h-8 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
+    const glowInputBoxClass = "flex h-8 items-center gap-1.5 rounded-lg border border-[#2f7bc4] bg-[#061827] px-2 shadow-[0_0_12px_rgba(79,142,247,0.25),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_16px_rgba(79,142,247,0.42),inset_0_1px_0_rgba(255,255,255,0.08)]";
 
     const renderTypeButton = (type, title, subtitle, color) => {
       const active = movementType === type;
@@ -3913,12 +3913,12 @@ function TrainMovementContent() {
             <label className="col-span-1">
               <span className={labelClass}>Train Set</span>
               <div className={glowInputBoxClass}>
-                <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
+                <span className="text-[11px] font-medium text-[#4f8ef7]">T</span>
                 <input
                   value={tp1Form.trainSet}
                   onChange={(e) => updateTp1MovementForm("trainSet", e.target.value.replace(/\D/g, ""))}
                   placeholder="19"
-                  className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
+                  className="h-full min-w-0 flex-1 bg-transparent text-[11px] font-medium text-white outline-none placeholder:text-[#31516b]"
                 />
               </div>
             </label>
