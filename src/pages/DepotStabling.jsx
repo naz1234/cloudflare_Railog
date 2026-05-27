@@ -5604,7 +5604,7 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "washing" && (
-          <div className="space-y-5">
+          <div className="grid w-full gap-5 xl:w-1/2">
             <TrainWashing />
             <TrainWashingDocxExport />
           </div>
