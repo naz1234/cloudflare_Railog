@@ -3662,7 +3662,7 @@ function TrainMovementContent() {
   };
 
   return (
-    <div className="grid gap-3">
+    <div className="grid w-full gap-3 xl:w-1/2">
       <section className="rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_14px_30px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.05)]">
         <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[#1a3a56] px-4 py-3" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
           <div className="flex items-center gap-2">
