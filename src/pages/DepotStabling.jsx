@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect, useRef, useCallback, useMemo } from "react";  
+import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";  
 import * as XLSX from "xlsx";
 import { Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -2996,6 +2996,22 @@ function TrainMovementContent() {
   const [copyFeedback, setCopyFeedback] = useState({});
   const copyFeedbackTimerRef = useRef({});
   const [forms, setForms] = useState(() => createDefaultMovementForms());
+  const movementScrollRestoreRef = useRef(null);
+
+  const captureMovementScrollPosition = () => {
+    if (typeof window === "undefined") return;
+    movementScrollRestoreRef.current = { x: window.scrollX, y: window.scrollY };
+  };
+
+  useLayoutEffect(() => {
+    const position = movementScrollRestoreRef.current;
+    if (!position || typeof window === "undefined") return;
+
+    movementScrollRestoreRef.current = null;
+    requestAnimationFrame(() => {
+      window.scrollTo(position.x, position.y);
+    });
+  }, [forms, entries]);
 
   useEffect(() => { saveTrainMovementLog(entries); }, [entries]);
 
@@ -3027,6 +3043,7 @@ function TrainMovementContent() {
   }, [forms.insertion?.depot, forms.insertion?.road]);
 
   const updateMovementForm = (operation, field, value) => {
+    captureMovementScrollPosition();
     setForms((prev) => ({
       ...prev,
       [operation]: {
@@ -3144,6 +3161,7 @@ function TrainMovementContent() {
   };
 
   const addMovementLog = (operation) => {
+    captureMovementScrollPosition();
     const current = getMovementForm(operation);
     const built = buildMovementLine(operation);
     if (!built) return;
@@ -3178,12 +3196,14 @@ function TrainMovementContent() {
   };
 
   const removeMovementLog = (id) => {
+    captureMovementScrollPosition();
     setEntries((prev) => prev.filter((entry) => entry.id !== id));
   };
 
   const clearDepotLogs = (depot) => {
     const label = getMovementDepotLabel(depot);
     if (!window.confirm(`Clear all Train Movement logs for ${label}?`)) return;
+    captureMovementScrollPosition();
     setEntries((prev) => prev.filter((entry) => entry.depot !== depot));
   };
 
@@ -3191,6 +3211,7 @@ function TrainMovementContent() {
     const label = getMovementDepotLabel(depot);
     const operationLabel = OPERATION_META[operation]?.title || "Movement";
     if (!window.confirm(`Clear ${operationLabel} logs for ${label}?`)) return;
+    captureMovementScrollPosition();
     setEntries((prev) => prev.filter((entry) => !(entry.depot === depot && entry.operation === operation)));
   };
 
@@ -3297,7 +3318,7 @@ function TrainMovementContent() {
     </svg>
   );
 
-  const DepotButton = ({ operation, depot, label, accent }) => {
+  const renderDepotButton = ({ operation, depot, label, accent }) => {
     const current = getMovementForm(operation);
     const active = current.depot === depot;
     return (
@@ -3323,7 +3344,7 @@ function TrainMovementContent() {
     );
   };
 
-  const TimingPicker = ({ operation }) => {
+  const renderTimingPicker = (operation) => {
     const current = getMovementForm(operation);
     return (
       <div>
@@ -3367,7 +3388,7 @@ function TrainMovementContent() {
     );
   };
 
-  const MovementFormCard = ({ operation }) => {
+  const renderMovementFormCard = (operation) => {
     const meta = OPERATION_META[operation];
     const current = getMovementForm(operation);
     const selectedRoads = getMovementRoads(current.depot);
@@ -3397,14 +3418,14 @@ function TrainMovementContent() {
             </label>
 
             <div className="col-span-1 lg:col-span-4">
-              <TimingPicker operation={operation} />
+              {renderTimingPicker(operation)}
             </div>
 
             <div className="col-span-2 lg:col-span-6">
               <span className={labelClass}>Depot</span>
               <div className="grid grid-cols-2 gap-1.5">
-                <DepotButton operation={operation} depot="west" label="West Depot" accent="#8b5cf6" />
-                <DepotButton operation={operation} depot="east" label="East Depot" accent="#06d4e8" />
+                {renderDepotButton({ operation, depot: "west", label: "West Depot", accent: "#8b5cf6" })}
+                {renderDepotButton({ operation, depot: "east", label: "East Depot", accent: "#06d4e8" })}
               </div>
             </div>
 
@@ -3499,7 +3520,7 @@ function TrainMovementContent() {
   };
 
 
-  const TrainMovementOperationLogTable = ({ depot, operation, accent, logs }) => {
+  const renderTrainMovementOperationLogTable = ({ depot, operation, accent, logs }) => {
     const meta = OPERATION_META[operation];
     const depotLabel = getMovementDepotLabel(depot);
     return (
@@ -3566,7 +3587,7 @@ function TrainMovementContent() {
     );
   };
 
-  const TrainMovementOperationWindow = ({ operation }) => {
+  const renderTrainMovementOperationWindow = (operation) => {
     const meta = OPERATION_META[operation];
     const westLogs = entries.filter((entry) => entry.depot === "west" && entry.operation === operation);
     const eastLogs = entries.filter((entry) => entry.depot === "east" && entry.operation === operation);
@@ -3574,6 +3595,7 @@ function TrainMovementContent() {
 
     return (
       <section
+        key={operation}
         className="overflow-hidden rounded-xl border shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]"
         style={{
           borderColor: `${meta.accent}55`,
@@ -3603,11 +3625,11 @@ function TrainMovementContent() {
         </div>
 
         <div className="grid gap-3 p-4">
-          <MovementFormCard operation={operation} />
+          {renderMovementFormCard(operation)}
 
           <div className="grid content-start gap-3">
-            <TrainMovementOperationLogTable depot="west" operation={operation} accent="#8b5cf6" logs={westLogs} />
-            <TrainMovementOperationLogTable depot="east" operation={operation} accent="#06d4e8" logs={eastLogs} />
+            {renderTrainMovementOperationLogTable({ depot: "west", operation, accent: "#8b5cf6", logs: westLogs })}
+            {renderTrainMovementOperationLogTable({ depot: "east", operation, accent: "#06d4e8", logs: eastLogs })}
           </div>
         </div>
       </section>
@@ -3653,9 +3675,9 @@ function TrainMovementContent() {
         </div>
 
         <div className="grid gap-3 p-4">
-          <TrainMovementOperationLogTable depot={depot} operation="insertion" accent={accent} logs={insertionLogs} />
-          <TrainMovementOperationLogTable depot={depot} operation="removal" accent={accent} logs={removalLogs} />
-          <TrainMovementOperationLogTable depot={depot} operation="swapping" accent={accent} logs={swapLogs} />
+          {renderTrainMovementOperationLogTable({ depot, operation: "insertion", accent, logs: insertionLogs })}
+          {renderTrainMovementOperationLogTable({ depot, operation: "removal", accent, logs: removalLogs })}
+          {renderTrainMovementOperationLogTable({ depot, operation: "swapping", accent, logs: swapLogs })}
         </div>
       </section>
     );
@@ -3686,9 +3708,7 @@ function TrainMovementContent() {
         </div>
 
         <div className="grid gap-4 p-4">
-          {MOVEMENT_OPERATIONS.map((operation) => (
-            <TrainMovementOperationWindow key={operation} operation={operation} />
-          ))}
+          {MOVEMENT_OPERATIONS.map((operation) => renderTrainMovementOperationWindow(operation))}
         </div>
       </section>
     </div>
