@@ -1422,7 +1422,7 @@ function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, lab
     <section className="bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
           </div>
           <h2 className="text-base leading-none font-black text-white tracking-widest uppercase whitespace-nowrap">{title}</h2>
@@ -1941,7 +1941,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
   };
   return (
     <section className="bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4">
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-2 mb-2">
         <h2 className="text-sm leading-none font-black text-white tracking-widest uppercase">{title}</h2>
         <button
           onClick={handleDownloadPng}
@@ -4521,7 +4521,7 @@ function PSTTabContent
               }}
               title="Download RL3 Passenger Service Test Excel"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
@@ -7603,17 +7603,17 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
   };
 
   return (
-    <div className="rounded-xl border border-[#1a3a56] bg-[#061827] overflow-hidden">
+    <div className="rounded-lg border border-[#1a3a56] bg-[#061827] overflow-hidden">
       <div
-        className="flex items-center justify-between gap-3 px-4 py-2"
+        className="flex items-center justify-between gap-2 px-3 py-1.5"
         style={{ background: "linear-gradient(90deg,#0d4d75 0%,#0b5f88 55%,#0d4d75 100%)" }}
       >
         <div className="flex items-center gap-2 min-w-0">
           <span
-            className="w-2 h-2 rounded-full flex-shrink-0"
+            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
             style={{ backgroundColor: log.dotColor, boxShadow: `0 0 10px ${log.dotColor}` }}
           />
-          <div className="text-[11px] font-black text-white uppercase tracking-widest truncate">
+          <div className="text-[10px] font-black text-white uppercase tracking-widest truncate">
             {log.title}
           </div>
         </div>
@@ -7622,7 +7622,7 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
           <button
             onClick={handleDownloadPdf}
             disabled={pdfReady || (!(combinedLogs?.westLog?.entries?.length || combinedLogs?.eastLog?.entries?.length) && !hasEntries)}
-            className="inline-flex h-6 items-center gap-1.5 rounded-lg border px-3 text-[10px] font-normal transition-all hover:-translate-y-0.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="inline-flex h-5 items-center gap-1 rounded-md border px-2 text-[9px] font-normal transition-all hover:-translate-y-0.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             style={{
               background: pdfReady ? "rgba(34,197,94,0.18)" : "rgba(6,212,232,0.12)",
               borderColor: pdfReady ? "rgba(34,197,94,0.45)" : "rgba(34,211,238,0.45)",
@@ -7631,14 +7631,14 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
             }}
             title="Download one-page PDF: West Depot left, East Depot right"
           >
-            <FileText size={11} />
+            <FileText size={10} />
             {pdfReady ? "Done" : "Download PDF"}
           </button>
 
           <button
             onClick={handleCopy}
             disabled={!hasEntries}
-            className="h-6 px-3 rounded-lg border text-[10px] font-normal transition-all disabled:opacity-45 disabled:cursor-not-allowed"
+            className="h-5 px-2 rounded-md border text-[9px] font-normal transition-all disabled:opacity-45 disabled:cursor-not-allowed"
             style={{
               background: copied ? "rgba(34,197,94,0.18)" : "rgba(255,255,255,0.08)",
               borderColor: copied ? "rgba(34,197,94,0.45)" : "rgba(126,184,224,0.28)",
@@ -7650,18 +7650,18 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
         </div>
       </div>
 
-      <div className="min-h-[105px] rounded-b-xl border-t border-[#1a3a56] bg-[#061321] px-4 py-3">
+      <div className="min-h-[76px] rounded-b-lg border-t border-[#1a3a56] bg-[#061321] px-3 py-2">
         {hasEntries ? (
-          <pre className="whitespace-pre-wrap break-words text-[12px] leading-6 font-normal text-[#d8e7f7]">
+          <pre className="whitespace-pre-wrap break-words text-[10px] leading-[1.35] font-normal text-[#d8e7f7]">
             {log.text}
           </pre>
         ) : (
-          <div className="min-h-[78px] flex flex-col items-center justify-center gap-2 text-[#315d82]">
+          <div className="min-h-[56px] flex flex-col items-center justify-center gap-1.5 text-[#315d82]">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
             </svg>
-            <div className="text-[12px] font-normal">{log.noEntryText}</div>
+            <div className="text-[10px] font-normal">{log.noEntryText}</div>
           </div>
         )}
       </div>
@@ -7675,22 +7675,22 @@ function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {} }) {
 
   return (
     <section
-      className="w-full rounded-2xl border border-[#2b4f6b] bg-[#0b1f33] shadow-md px-5 py-4"
+      className="w-full rounded-xl border border-[#2b4f6b] bg-[#0b1f33] shadow-md px-3 py-3"
       style={{
         background: "linear-gradient(135deg,rgba(12,46,74,0.58) 0%,rgba(7,24,40,0.98) 100%)",
         boxShadow: "0 16px 32px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.04)",
       }}
     >
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
             <line x1="8" y1="13" x2="16" y2="13" />
             <line x1="8" y1="17" x2="14" y2="17" />
           </svg>
         </div>
-        <h2 className="text-base leading-none font-black text-white tracking-widest uppercase">
+        <h2 className="text-sm leading-none font-black text-white tracking-widest uppercase">
           Removal Log Output
         </h2>
         <div className="text-[10px] font-normal text-[#58a6ff]">
@@ -7698,7 +7698,7 @@ function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {} }) {
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         <RemovalDepotLogCard log={westLog} combinedLogs={{ westLog, eastLog }} />
         <RemovalDepotLogCard log={eastLog} combinedLogs={{ westLog, eastLog }} />
       </div>
@@ -8918,8 +8918,8 @@ function StablingSection({
 
 function SectionTitle({ title, small = false, action = null }) {
   return (
-    <div className="flex items-center gap-3 mb-4">
-      <div className="w-10 h-10 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
+    <div className="flex items-center gap-2 mb-2">
+      <div className="w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
         <svg
           width="19"
           height="19"
