@@ -2980,6 +2980,19 @@ function cleanMovementCustomTimeInput(value) {
   return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
 
+function cleanTp1MovementTimeInput(value) {
+  const raw = String(value || "").replace(/[^\d:]/g, "").slice(0, 5);
+  if (raw.includes(":")) {
+    const [hour = "", minute = ""] = raw.split(":");
+    return `${hour.slice(0, 2)}:${minute.slice(0, 2)}`;
+  }
+
+  const digits = raw.replace(/\D/g, "").slice(0, 4);
+  if (digits.length <= 1) return digits;
+  if (digits.length === 2) return `${digits}:`;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
 function normalizeMovementCustomTimeInput(value) {
   const digits = String(value || "").replace(/\D/g, "").slice(0, 4);
   if (!digits) return "";
@@ -3904,7 +3917,7 @@ function TrainMovementContent() {
           inputMode="numeric"
           maxLength={5}
           value={tp1Form[field]}
-          onChange={(e) => updateTp1MovementForm(field, cleanMovementCustomTimeInput(e.target.value))}
+          onChange={(e) => updateTp1MovementForm(field, cleanTp1MovementTimeInput(e.target.value))}
           onBlur={(e) => updateTp1MovementForm(field, normalizeMovementCustomTimeInput(e.target.value))}
           placeholder="00:00"
           disabled={disabled}
