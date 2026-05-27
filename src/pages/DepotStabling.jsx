@@ -3856,6 +3856,24 @@ function TrainMovementContent() {
     const labelClass = "mb-1 block text-[10px] font-medium uppercase tracking-[0.12em] text-[#58a6ff]";
     const inputClass = "h-8 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
     const glowInputBoxClass = "flex h-8 items-center gap-1.5 rounded-lg border border-[#2f7bc4] bg-[#061827] px-2 shadow-[0_0_12px_rgba(79,142,247,0.25),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_16px_rgba(79,142,247,0.42),inset_0_1px_0_rgba(255,255,255,0.08)]";
+    const timeInputBoxClass = "flex h-8 w-full items-center gap-1.5 rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-all focus-within:border-[#4f8ef7]";
+
+    const renderTp1TimeInput = (field, disabled = false) => (
+      <div className={`${timeInputBoxClass} ${disabled ? "cursor-not-allowed opacity-35" : ""}`}>
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={5}
+          value={tp1Form[field]}
+          onChange={(e) => updateTp1MovementForm(field, cleanMovementCustomTimeInput(e.target.value))}
+          onBlur={(e) => updateTp1MovementForm(field, normalizeMovementCustomTimeInput(e.target.value))}
+          placeholder="00:00"
+          disabled={disabled}
+          className="h-full min-w-0 flex-1 bg-transparent text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] disabled:cursor-not-allowed"
+        />
+        <span className="shrink-0 text-[10px] font-medium text-[#8ea8c0]">hrs</span>
+      </div>
+    );
 
     const renderTypeButton = (type, title, subtitle, color) => {
       const active = movementType === type;
@@ -3937,12 +3955,7 @@ function TrainMovementContent() {
 
             <label className="col-span-1">
               <span className={labelClass}>TR at TP1</span>
-              <input
-                type="time"
-                value={tp1Form.trAtTp1}
-                onChange={(e) => updateTp1MovementForm("trAtTp1", e.target.value)}
-                className={inputClass}
-              />
+              {renderTp1TimeInput("trAtTp1")}
             </label>
 
             <label className="col-span-1">
@@ -3957,23 +3970,12 @@ function TrainMovementContent() {
 
             <label className="col-span-1">
               <span className={labelClass}>Shunter Auth</span>
-              <input
-                type="time"
-                value={tp1Form.shunterAuth}
-                onChange={(e) => updateTp1MovementForm("shunterAuth", e.target.value)}
-                className={inputClass}
-              />
+              {renderTp1TimeInput("shunterAuth")}
             </label>
 
             <label className="col-span-1">
               <span className={labelClass}>TR Localized</span>
-              <input
-                type="time"
-                value={tp1Form.trLocalized}
-                onChange={(e) => updateTp1MovementForm("trLocalized", e.target.value)}
-                disabled={!isAutomatic}
-                className={`${inputClass} ${!isAutomatic ? "cursor-not-allowed opacity-35" : ""}`}
-              />
+              {renderTp1TimeInput("trLocalized", !isAutomatic)}
             </label>
 
             <label className="col-span-1">
@@ -3988,34 +3990,17 @@ function TrainMovementContent() {
 
             <label className="col-span-1">
               <span className={labelClass}>Next Wash Time <span className="normal-case tracking-normal text-[#6f8fa8]">Optional</span></span>
-              <input
-                type="time"
-                value={tp1Form.nextWashTime}
-                onChange={(e) => updateTp1MovementForm("nextWashTime", e.target.value)}
-                className={inputClass}
-              />
+              {renderTp1TimeInput("nextWashTime")}
             </label>
 
             <label className="col-span-1">
               <span className={labelClass}>From TP1</span>
-              <input
-                type="time"
-                value={tp1Form.fromTp1}
-                onChange={(e) => updateTp1MovementForm("fromTp1", e.target.value)}
-                disabled={isAutomatic}
-                className={`${inputClass} ${isAutomatic ? "cursor-not-allowed opacity-35" : ""}`}
-              />
+              {renderTp1TimeInput("fromTp1", isAutomatic)}
             </label>
 
             <label className="col-span-1">
               <span className={labelClass}>to Manual</span>
-              <input
-                type="time"
-                value={tp1Form.toManual}
-                onChange={(e) => updateTp1MovementForm("toManual", e.target.value)}
-                disabled={isAutomatic}
-                className={`${inputClass} ${isAutomatic ? "cursor-not-allowed opacity-35" : ""}`}
-              />
+              {renderTp1TimeInput("toManual", isAutomatic)}
             </label>
           </div>
 
