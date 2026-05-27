@@ -3707,7 +3707,7 @@ function TrainMovementContent() {
                 value={current.notes}
                 onChange={(e) => updateMovementForm(operation, "notes", e.target.value)}
                 placeholder="Any additional remarks..."
-                className="h-8 min-h-0 w-full resize-none rounded-lg border border-[#1e4060] bg-[#061827] px-2 py-1.5 text-[11px] font-medium leading-tight text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
+                className="mt-1 h-8 min-h-0 w-full resize-none rounded-lg border border-[#1e4060] bg-[#061827] px-2 py-1.5 text-[11px] font-medium leading-tight text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
               />
             </label>
 
