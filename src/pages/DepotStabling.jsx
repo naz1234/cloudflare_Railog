@@ -2918,6 +2918,38 @@ function formatTp1DateForLog(dateText) {
   return `${String(parsed.getDate()).padStart(2, "0")}/${String(parsed.getMonth() + 1).padStart(2, "0")}/${parsed.getFullYear()}`;
 }
 
+function formatTp1NextWashForLog(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+
+  const normalized = raw.replace("T", " ").replace(/\s+/g, " ").trim();
+  const dayFirstMatch = normalized.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})\s+(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (dayFirstMatch) {
+    const [, day, month, year, hour, minute] = dayFirstMatch;
+    return {
+      dateText: `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`,
+      timeText: `${String(hour).padStart(2, "0")}:${minute}`,
+    };
+  }
+
+  const isoDateTimeMatch = normalized.match(/^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (isoDateTimeMatch) {
+    const [, year, month, day, hour, minute] = isoDateTimeMatch;
+    return {
+      dateText: `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`,
+      timeText: `${String(hour).padStart(2, "0")}:${minute}`,
+    };
+  }
+
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  return {
+    dateText: `${String(parsed.getDate()).padStart(2, "0")}/${String(parsed.getMonth() + 1).padStart(2, "0")}/${parsed.getFullYear()}`,
+    timeText: `${String(parsed.getHours()).padStart(2, "0")}:${String(parsed.getMinutes()).padStart(2, "0")}`,
+  };
+}
+
 function getMovementDepotLabel(depot) {
   return depot === "east" ? "East Depot" : "West Depot";
 }
@@ -2998,6 +3030,7 @@ function TrainMovementContent() {
     shunterName: "",
     shunterAuth: "",
     trLocalized: "",
+    nextWashText: "",
     nextWashDate: "",
     nextWashTime: "",
     fromTp1: "",
@@ -3319,10 +3352,15 @@ function TrainMovementContent() {
   };
 
   const getTp1NextWashSuffix = (form = tp1Form) => {
-    if (!form.nextWashDate || !form.nextWashTime) return "";
-    const dateText = formatTp1DateForLog(form.nextWashDate);
-    const timeText = form.nextWashTime;
-    return ` ── Next wash: ${dateText} at ${timeText}.`;
+    const nextWashRaw = String(
+      form.nextWashText || (form.nextWashDate && form.nextWashTime ? `${form.nextWashDate} ${form.nextWashTime}` : "")
+    ).trim();
+    if (!nextWashRaw) return "";
+
+    const nextWash = formatTp1NextWashForLog(nextWashRaw);
+    if (!nextWash) return ` ── Next wash: ${nextWashRaw}.`;
+
+    return ` ── Next wash: ${nextWash.dateText} at ${nextWash.timeText}.`;
   };
 
   const getTp1MovementType = (form = tp1Form) => {
@@ -3390,6 +3428,7 @@ function TrainMovementContent() {
       trAtTp1: "",
       shunterAuth: "",
       trLocalized: "",
+      nextWashText: "",
       nextWashDate: "",
       nextWashTime: "",
       fromTp1: "",
@@ -3980,19 +4019,16 @@ function TrainMovementContent() {
               </label>
             )}
 
-            <label className="col-span-1">
-              <span className={labelClass}>Next Wash Date <span className="normal-case tracking-normal text-[#6f8fa8]">Optional</span></span>
+            <label className="col-span-2">
+              <span className={labelClass}>Next Wash <span className="normal-case tracking-normal text-[#6f8fa8]">Optional</span></span>
               <input
-                type="date"
-                value={tp1Form.nextWashDate}
-                onChange={(e) => updateTp1MovementForm("nextWashDate", e.target.value)}
+                type="text"
+                maxLength={19}
+                value={tp1Form.nextWashText || ""}
+                onChange={(e) => updateTp1MovementForm("nextWashText", e.target.value)}
+                placeholder="28-05-2026 12:23:00"
                 className={inputClass}
               />
-            </label>
-
-            <label className="col-span-1">
-              <span className={labelClass}>Next Wash Time <span className="normal-case tracking-normal text-[#6f8fa8]">Optional</span></span>
-              {renderTp1TimeInput("nextWashTime")}
             </label>
 
             {!isAutomatic && (
