@@ -1,0 +1,10 @@
+{
+  "name": "L3 Depot Controller Template",
+  "short_name": "L3 Depot",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#071828",
+  "theme_color": "#071828",
+  "description": "L3 Depot Controller Template"
+}
