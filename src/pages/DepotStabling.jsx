@@ -1338,6 +1338,37 @@ function getRequestPillStyle(item) {
   };
 }
 
+function getTrainRemRequestRemarkStyle(requestItem = null, label = "") {
+  const requestLabel = (
+    label ||
+    requestItem?.badgeText ||
+    requestItem?.remark ||
+    requestItem?.displayType ||
+    requestItem?.typeKey ||
+    ""
+  ).toString().trim();
+
+  const matchedKnownStyle = MAINT_STYLES[requestLabel] || null;
+  const fallbackCustomStyle = requestLabel ? getCustomRequestStyle(requestLabel) : null;
+  const accent =
+    requestItem?.badgeBorder ||
+    requestItem?.badgeBg ||
+    requestItem?.trainColor ||
+    matchedKnownStyle?.badgeBorder ||
+    matchedKnownStyle?.badgeBg ||
+    getRemovalRemarkFillColor(requestLabel, requestItem) ||
+    fallbackCustomStyle?.badgeBorder ||
+    fallbackCustomStyle?.badgeBg ||
+    "#fbbf24";
+
+  return {
+    backgroundColor: hexToRgba(accent, 0.13),
+    borderColor: hexToRgba(accent, 0.82),
+    color: accent,
+    boxShadow: `0 0 0 1px ${hexToRgba(accent, 0.16)}, 0 0 10px ${hexToRgba(accent, 0.18)}, inset 0 1px 0 rgba(255,255,255,0.05)`,
+  };
+}
+
 // ── PST / Train Prep Components ──────────────────────────────────────────────
 
 const PSTBadge = ({ text, bg, border }) => (
@@ -2737,7 +2768,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
             </thead>
             <tbody>
               {rows.map((row, index) => {
+                const trainRemRequestKey = normalizeTrainId(row.trainId);
+                const trainRemRequestItems = trainRemRequestKey ? maintenanceMap?.[trainRemRequestKey] || [] : [];
                 const requestRemark = getRequestRemarkForTrain(row.trainId);
+                const requestRemarkStyle = requestRemark
+                  ? getTrainRemRequestRemarkStyle(trainRemRequestItems[0], requestRemark)
+                  : undefined;
                 const remarkValue = requestRemark || row.remark;
                 const hasTrainId = (row.trainId || "").toString().trim() !== "";
                 const duplicateKey = getTrainRemDuplicateKey(row.trainId);
@@ -2821,9 +2857,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
                       readOnly={Boolean(requestRemark)}
                       title={requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
                       placeholder="Remark"
+                      style={requestRemarkStyle}
                       className={`w-full h-5 rounded-md border px-1.5 text-[11px] font-semibold outline-none placeholder:text-[#2b4f6b] ${
                         requestRemark
-                          ? "border-amber-500/70 bg-amber-950/30 text-amber-200 cursor-default"
+                          ? "cursor-default"
                           : "border-[#1e4060] bg-[#091828] text-[#c8d8ea] focus:border-[#4f8ef7]"
                       }`}
                     />
