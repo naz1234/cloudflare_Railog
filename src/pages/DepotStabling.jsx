@@ -3351,6 +3351,19 @@ function TrainMovementContent() {
     setEntries((prev) => prev.filter((entry) => !(entry.depot === depot && entry.operation === operation)));
   };
 
+  const copyTextToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+  };
+
   const copyDepotLogs = async (depot, operation = null) => {
     const feedbackKey = `${depot}-${operation || "all"}`;
     const lines = entries
@@ -3362,18 +3375,14 @@ function TrainMovementContent() {
       return;
     }
 
-    try {
-      await navigator.clipboard.writeText(lines.join("\n"));
-    } catch {
-      const textarea = document.createElement("textarea");
-      textarea.value = lines.join("\n");
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
-    }
-
+    await copyTextToClipboard(lines.join("\n"));
     showCopyFeedback(feedbackKey, "copied");
+  };
+
+  const copySingleMovementLog = async (entry) => {
+    if (!entry?.text) return;
+    await copyTextToClipboard(entry.text);
+    showCopyFeedback(`movement-entry-${entry.id}`, "copied");
   };
 
   const getTp1NextWashSuffix = (form = tp1Form) => {
@@ -3824,14 +3833,6 @@ function TrainMovementContent() {
           <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={() => copyDepotLogs(depot, operation)}
-              className="flex min-w-[72px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
-              style={{ borderColor: `${meta.accent}55`, color: meta.accent, backgroundColor: `${meta.accent}14` }}
-            >
-              <MovementIcon type="copy" />{getCopyButtonLabel(depot, operation, "Copy")}
-            </button>
-            <button
-              type="button"
               onClick={() => clearDepotOperationLogs(depot, operation)}
               className="flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
               style={{ borderColor: `${meta.accent}55`, color: meta.accent, backgroundColor: `${meta.accent}14` }}
@@ -3855,6 +3856,20 @@ function TrainMovementContent() {
                 <p className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.25] tracking-[-0.01em] text-[#f4f8ff]">
                   {renderMovementLogLine(entry)}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => copySingleMovementLog(entry)}
+                  title="Copy this log"
+                  aria-label="Copy this log"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-transparent opacity-80 transition-all hover:scale-[1.04] group-hover:opacity-100"
+                  style={{ color: meta.accent }}
+                >
+                  {copyFeedback[`movement-entry-${entry.id}`] === "copied" ? (
+                    <span className="text-[11px] font-black leading-none">✓</span>
+                  ) : (
+                    <MovementIcon type="copy" color="currentColor" />
+                  )}
+                </button>
                 <button
                   type="button"
                   onClick={() => removeMovementLog(entry.id)}
