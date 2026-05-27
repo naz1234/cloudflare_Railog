@@ -3094,6 +3094,19 @@ function TrainMovementContent() {
 
   const MOVEMENT_OPERATIONS = ["swapping", "insertion", "removal"];
 
+  const SHUNTER_NAME_OPTIONS = [
+    "PAUL",
+    "FAZREEN",
+    "ARSHAD",
+    "BBOSA",
+    "AKMAL",
+    "KRISNA",
+    "GERALD",
+    "LEO",
+    "FARAS",
+    "MIRAN",
+  ];
+
   const [entries, setEntries] = useState(() => loadTrainMovementLog());
   const [tp1Entries, setTp1Entries] = useState(() => loadTp1MovementLog());
   const [clockText, setClockText] = useState(() => formatTime(new Date()));
@@ -4055,12 +4068,16 @@ function TrainMovementContent() {
 
             <label className="col-span-1">
               <span className={labelClass}>Shunter Name</span>
-              <input
+              <select
                 value={tp1Form.shunterName}
-                onChange={(e) => updateTp1MovementForm("shunterName", e.target.value.toUpperCase())}
-                placeholder="ALVIN"
+                onChange={(e) => updateTp1MovementForm("shunterName", e.target.value)}
                 className={inputClass}
-              />
+              >
+                <option value="">Select Shunter</option>
+                {SHUNTER_NAME_OPTIONS.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
             </label>
 
             <label className="col-span-1">
