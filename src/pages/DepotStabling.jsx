@@ -3373,6 +3373,8 @@ function TrainMovementContent() {
     const selectedRoads = getMovementRoads(current.depot);
     const isInsertion = operation === "insertion";
     const isSwapping = operation === "swapping";
+    const labelClass = "mb-1.5 block text-[8px] font-black uppercase tracking-[0.18em] text-[#58a6ff]";
+    const inputClass = "h-9 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-bold text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
 
     return (
       <section
@@ -3389,118 +3391,123 @@ function TrainMovementContent() {
           </div>
         </div>
 
-        <div className="space-y-3 p-4">
-          <label className="block">
-            <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Train ID</span>
-            <div className="flex h-9 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 focus-within:border-[#4f8ef7]">
-              <span className="text-[#4f8ef7]">T</span>
-              <input
-                value={current.trainId}
-                onChange={(e) => updateMovementForm(operation, "trainId", e.target.value.replace(/\D/g, ""))}
-                placeholder="e.g. 25"
-                className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-bold text-white outline-none placeholder:text-[#31516b]"
-              />
+        <div className="p-3 sm:p-4">
+          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-12 lg:items-end">
+            <label className="col-span-1 lg:col-span-2">
+              <span className={labelClass}>Train ID</span>
+              <div className="flex h-9 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 focus-within:border-[#4f8ef7]">
+                <span className="text-[#4f8ef7]">T</span>
+                <input
+                  value={current.trainId}
+                  onChange={(e) => updateMovementForm(operation, "trainId", e.target.value.replace(/\D/g, ""))}
+                  placeholder="e.g. 25"
+                  className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-bold text-white outline-none placeholder:text-[#31516b]"
+                />
+              </div>
+            </label>
+
+            <div className="col-span-1 lg:col-span-4">
+              <TimingPicker operation={operation} />
             </div>
-          </label>
 
-          <TimingPicker operation={operation} />
-
-          <div>
-            <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Depot</span>
-            <div className="grid gap-1.5">
-              <DepotButton operation={operation} depot="west" label="West Depot" accent="#8b5cf6" />
-              <DepotButton operation={operation} depot="east" label="East Depot" accent="#06d4e8" />
-            </div>
-          </div>
-
-          {isInsertion && (
-            <div>
-              <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Stabling road</span>
+            <div className="col-span-2 lg:col-span-6">
+              <span className={labelClass}>Depot</span>
               <div className="grid grid-cols-2 gap-1.5">
-                {selectedRoads.map((road) => {
-                  const active = current.road === road;
-                  return (
-                    <button
-                      key={road}
-                      type="button"
-                      onClick={() => updateMovementForm(operation, "road", road)}
-                      className={`rounded-lg border px-2 py-1.5 text-[11px] font-black transition-all ${active ? "border-blue-400 bg-blue-600/30 text-white" : "border-[#1e4060] bg-[#061827] text-[#7eb8e0] hover:border-[#4f8ef7] hover:text-white"}`}
-                    >
-                      {road}
-                    </button>
-                  );
-                })}
+                <DepotButton operation={operation} depot="west" label="West Depot" accent="#8b5cf6" />
+                <DepotButton operation={operation} depot="east" label="East Depot" accent="#06d4e8" />
               </div>
             </div>
-          )}
 
-          {!isSwapping && (
-            <label className="block">
-              <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">TID <span className="text-[#4a6b85]">(optional)</span></span>
-              <input
-                value={current.tid}
-                onChange={(e) => updateMovementForm(operation, "tid", e.target.value.replace(/\D/g, ""))}
-                placeholder="e.g. 101"
-                className="h-9 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-bold text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
-              />
-            </label>
-          )}
+            {isInsertion && (
+              <div className="col-span-2 lg:col-span-6">
+                <span className={labelClass}>Stabling road</span>
+                <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+                  {selectedRoads.map((road) => {
+                    const active = current.road === road;
+                    return (
+                      <button
+                        key={road}
+                        type="button"
+                        onClick={() => updateMovementForm(operation, "road", road)}
+                        className={`rounded-lg border px-2 py-1.5 text-[11px] font-black transition-all ${active ? "border-blue-400 bg-blue-600/30 text-white" : "border-[#1e4060] bg-[#061827] text-[#7eb8e0] hover:border-[#4f8ef7] hover:text-white"}`}
+                      >
+                        {road}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-          {isSwapping && (
-            <div className="grid gap-3">
-              <label className="block">
-                <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Reason swap</span>
+            {!isSwapping && (
+              <label className="col-span-1 lg:col-span-2">
+                <span className={labelClass}>TID <span className="text-[#4a6b85]">(optional)</span></span>
                 <input
-                  value={current.swapReason}
-                  onChange={(e) => updateMovementForm(operation, "swapReason", e.target.value)}
-                  placeholder="e.g. RST PM"
-                  className="h-9 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-bold text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
+                  value={current.tid}
+                  onChange={(e) => updateMovementForm(operation, "tid", e.target.value.replace(/\D/g, ""))}
+                  placeholder="e.g. 101"
+                  className={inputClass}
                 />
               </label>
-              <label className="block">
-                <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Replaced by train</span>
-                <div className="flex h-9 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 focus-within:border-[#4f8ef7]">
-                  <span className="text-[#4f8ef7]">T</span>
+            )}
+
+            {isSwapping && (
+              <>
+                <label className="col-span-1 lg:col-span-4">
+                  <span className={labelClass}>Reason swap</span>
                   <input
-                    value={current.replacedBy}
-                    onChange={(e) => updateMovementForm(operation, "replacedBy", e.target.value.replace(/\D/g, ""))}
-                    placeholder="e.g. 30"
-                    className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-bold text-white outline-none placeholder:text-[#31516b]"
+                    value={current.swapReason}
+                    onChange={(e) => updateMovementForm(operation, "swapReason", e.target.value)}
+                    placeholder="e.g. RST PM"
+                    className={inputClass}
                   />
-                </div>
-              </label>
+                </label>
+                <label className="col-span-1 lg:col-span-3">
+                  <span className={labelClass}>Replaced by train</span>
+                  <div className="flex h-9 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 focus-within:border-[#4f8ef7]">
+                    <span className="text-[#4f8ef7]">T</span>
+                    <input
+                      value={current.replacedBy}
+                      onChange={(e) => updateMovementForm(operation, "replacedBy", e.target.value.replace(/\D/g, ""))}
+                      placeholder="e.g. 30"
+                      className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-bold text-white outline-none placeholder:text-[#31516b]"
+                    />
+                  </div>
+                </label>
+              </>
+            )}
+
+            <label className="col-span-2 lg:col-span-5">
+              <span className={labelClass}>Notes <span className="text-[#4a6b85]">(optional)</span></span>
+              <textarea
+                value={current.notes}
+                onChange={(e) => updateMovementForm(operation, "notes", e.target.value)}
+                placeholder="Any additional remarks..."
+                className="min-h-[42px] w-full resize-none rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2 text-[12px] font-semibold text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
+              />
+            </label>
+
+            <div className="col-span-2 self-stretch rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2 lg:col-span-7">
+              <p className="mb-1 text-[8px] font-black uppercase tracking-[0.18em] text-[#4a8ab5]">Preview</p>
+              <p className="font-mono text-[10.5px] font-semibold leading-snug text-[#c8d8ea] sm:text-[11px]">
+                {buildMovementPreview(operation)}
+              </p>
             </div>
-          )}
 
-          <label className="block">
-            <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Notes <span className="text-[#4a6b85]">(optional)</span></span>
-            <textarea
-              value={current.notes}
-              onChange={(e) => updateMovementForm(operation, "notes", e.target.value)}
-              placeholder="Any additional remarks..."
-              className="min-h-[54px] w-full resize-none rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2 text-[12px] font-semibold text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
-            />
-          </label>
-
-          <div className="rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2">
-            <p className="mb-1 text-[8px] font-black uppercase tracking-[0.18em] text-[#4a8ab5]">Preview</p>
-            <p className="font-mono text-[11px] font-semibold leading-snug text-[#c8d8ea]">
-              {buildMovementPreview(operation)}
-            </p>
+            <button
+              type="button"
+              onClick={() => addMovementLog(operation)}
+              className="col-span-2 flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[12px] font-black text-white shadow-[0_0_16px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01] lg:col-span-12"
+              style={{ borderColor: `${meta.accent}9a`, backgroundColor: `${meta.accent}33` }}
+            >
+              <span className="text-base leading-none">+</span> {meta.buttonLabel}
+            </button>
           </div>
-
-          <button
-            type="button"
-            onClick={() => addMovementLog(operation)}
-            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[12px] font-black text-white shadow-[0_0_16px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01]"
-            style={{ borderColor: `${meta.accent}9a`, backgroundColor: `${meta.accent}33` }}
-          >
-            <span className="text-base leading-none">+</span> {meta.buttonLabel}
-          </button>
         </div>
       </section>
     );
   };
+
 
   const TrainMovementOperationLogTable = ({ depot, operation, accent, logs }) => {
     const meta = OPERATION_META[operation];
