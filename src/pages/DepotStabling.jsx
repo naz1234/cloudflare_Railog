@@ -3630,7 +3630,7 @@ function TrainMovementContent() {
               </div>
             </label>
 
-            <div className="col-span-1 lg:col-span-3 xl:max-w-[230px]">
+            <div className="col-span-2 min-w-[250px] lg:col-span-4 xl:max-w-[300px]">
               {renderTimingPicker(operation)}
             </div>
 
