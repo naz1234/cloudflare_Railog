@@ -2930,22 +2930,72 @@ function normalizeMovementCustomTimeInput(value) {
 }
 
 function TrainMovementContent() {
+  const createDefaultMovementForms = () => ({
+    insertion: {
+      trainId: "",
+      timingMode: "now",
+      customTime: "",
+      depot: "west",
+      road: "WD-ST14",
+      tid: "",
+      notes: "",
+    },
+    removal: {
+      trainId: "",
+      timingMode: "now",
+      customTime: "",
+      depot: "west",
+      tid: "",
+      notes: "",
+    },
+    swapping: {
+      trainId: "",
+      timingMode: "now",
+      customTime: "",
+      depot: "west",
+      swapReason: "RST PM",
+      replacedBy: "",
+      notes: "",
+    },
+  });
+
+  const OPERATION_META = {
+    insertion: {
+      title: "Insertion",
+      subtitle: "Add Insertion Log",
+      logTitle: "Insertion Log",
+      iconType: "in",
+      accent: "#22c55e",
+      buttonLabel: "Add Insertion Log",
+      emptyText: "No insertion log yet.",
+    },
+    removal: {
+      title: "Removal",
+      subtitle: "Add Removal Log",
+      logTitle: "Removal Log",
+      iconType: "out",
+      accent: "#ef4444",
+      buttonLabel: "Add Removal Log",
+      emptyText: "No removal log yet.",
+    },
+    swapping: {
+      title: "Swapping",
+      subtitle: "Add Swapping Log",
+      logTitle: "Swapping Log",
+      iconType: "swap",
+      accent: "#f59e0b",
+      buttonLabel: "Add Swapping Log",
+      emptyText: "No swapping log yet.",
+    },
+  };
+
+  const MOVEMENT_OPERATIONS = ["insertion", "removal", "swapping"];
+
   const [entries, setEntries] = useState(() => loadTrainMovementLog());
   const [clockText, setClockText] = useState(() => formatTime(new Date()));
   const [copyFeedback, setCopyFeedback] = useState({});
   const copyFeedbackTimerRef = useRef({});
-  const [form, setForm] = useState({
-    trainId: "",
-    timingMode: "now",
-    customTime: "",
-    operation: "insertion",
-    depot: "west",
-    road: "WD-ST14",
-    tid: "",
-    swapReason: "RST PM",
-    replacedBy: "",
-    notes: "",
-  });
+  const [forms, setForms] = useState(() => createDefaultMovementForms());
 
   useEffect(() => { saveTrainMovementLog(entries); }, [entries]);
 
@@ -2954,6 +3004,44 @@ function TrainMovementContent() {
       Object.values(copyFeedbackTimerRef.current || {}).forEach((timer) => clearTimeout(timer));
     };
   }, []);
+
+  useEffect(() => {
+    const tick = () => setClockText(formatTime(new Date()));
+    tick();
+    const interval = setInterval(tick, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const insertionForm = forms.insertion || createDefaultMovementForms().insertion;
+    const roads = getMovementRoads(insertionForm.depot);
+    if (!roads.includes(insertionForm.road)) {
+      setForms((prev) => ({
+        ...prev,
+        insertion: {
+          ...prev.insertion,
+          road: roads[0],
+        },
+      }));
+    }
+  }, [forms.insertion?.depot, forms.insertion?.road]);
+
+  const updateMovementForm = (operation, field, value) => {
+    setForms((prev) => ({
+      ...prev,
+      [operation]: {
+        ...prev[operation],
+        [field]: value,
+      },
+    }));
+  };
+
+  const getMovementForm = (operation) => forms[operation] || createDefaultMovementForms()[operation];
+
+  const getResolvedMovementTime = (operation) => {
+    const current = getMovementForm(operation);
+    return current.timingMode === "custom" && current.customTime ? current.customTime : clockText;
+  };
 
   const showCopyFeedback = (key, status) => {
     setCopyFeedback((prev) => ({ ...prev, [key]: status }));
@@ -2979,44 +3067,23 @@ function TrainMovementContent() {
     return fallbackLabel;
   };
 
-  useEffect(() => {
-    const tick = () => setClockText(formatTime(new Date()));
-    tick();
-    const interval = setInterval(tick, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const roads = getMovementRoads(form.depot);
-    if (!roads.includes(form.road)) {
-      setForm((prev) => ({ ...prev, road: roads[0] }));
-    }
-  }, [form.depot, form.road]);
-
-  const updateForm = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const selectedDepotLabel = getMovementDepotLabel(form.depot);
-  const selectedTrack = getMovementTrack(form.depot);
-  const selectedRoads = getMovementRoads(form.depot);
-  const resolvedTime = form.timingMode === "custom" && form.customTime ? form.customTime : clockText;
-  const westEntries = entries.filter((entry) => entry.depot === "west");
-  const eastEntries = entries.filter((entry) => entry.depot === "east");
-
-  const buildMovementLine = () => {
-    const train = normalizeMovementTrain(form.trainId);
-    const tid = (form.tid || "").toString().replace(/\D/g, "").trim();
+  const buildMovementLine = (operation) => {
+    const current = getMovementForm(operation);
+    const train = normalizeMovementTrain(current.trainId);
+    const tid = (current.tid || "").toString().replace(/\D/g, "").trim();
     const tidPart = tid ? ` (TID ${tid})` : "";
-    const time = resolvedTime;
+    const time = getResolvedMovementTime(operation);
+    const selectedDepotLabel = getMovementDepotLabel(current.depot);
+    const selectedTrack = getMovementTrack(current.depot);
+    const selectedRoads = getMovementRoads(current.depot);
 
     if (!train) {
       alert("Please enter Train ID first.");
       return null;
     }
 
-    if (form.operation === "insertion") {
-      const road = form.road || selectedRoads[0];
+    if (operation === "insertion") {
+      const road = current.road || selectedRoads[0];
       return {
         text: `${time} hrs – ${train}${tidPart} inserted from ${road} to mainline track ${selectedTrack}.`,
         train,
@@ -3025,7 +3092,7 @@ function TrainMovementContent() {
       };
     }
 
-    if (form.operation === "removal") {
+    if (operation === "removal") {
       return {
         text: `${time} hrs – ${train}${tidPart} removed from mainline to ${selectedDepotLabel}.`,
         train,
@@ -3034,8 +3101,8 @@ function TrainMovementContent() {
       };
     }
 
-    const replacement = normalizeMovementTrain(form.replacedBy);
-    const reason = (form.swapReason || "").trim();
+    const replacement = normalizeMovementTrain(current.replacedBy);
+    const reason = (current.swapReason || "").trim();
     if (!replacement) {
       alert("Please enter the replacement train.");
       return null;
@@ -3055,16 +3122,38 @@ function TrainMovementContent() {
     };
   };
 
-  const addMovementLog = () => {
-    const built = buildMovementLine();
+  const buildMovementPreview = (operation) => {
+    const current = getMovementForm(operation);
+    const time = getResolvedMovementTime(operation);
+    const selectedDepotLabel = getMovementDepotLabel(current.depot);
+    const selectedTrack = getMovementTrack(current.depot);
+    const selectedRoads = getMovementRoads(current.depot);
+    const train = normalizeMovementTrain(current.trainId) || "T25";
+    const tid = (current.tid || "").toString().replace(/\D/g, "").trim();
+    const tidPart = tid ? ` (TID ${tid})` : "";
+
+    if (operation === "insertion") {
+      return `${time} hrs – ${train}${tidPart} inserted from ${current.road || selectedRoads[0]} to mainline track ${selectedTrack}.`;
+    }
+
+    if (operation === "removal") {
+      return `${time} hrs – ${train}${tidPart} removed from mainline to ${selectedDepotLabel}.`;
+    }
+
+    return `${time} hrs – ${train} removed from mainline to ${selectedDepotLabel} stabling due to ${current.swapReason || "RST PM"}. Replaced by ${normalizeMovementTrain(current.replacedBy) || "T30"}.`;
+  };
+
+  const addMovementLog = (operation) => {
+    const current = getMovementForm(operation);
+    const built = buildMovementLine(operation);
     if (!built) return;
 
     const now = new Date();
     const entry = {
       id: `movement-${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
-      depot: form.depot,
-      operation: form.operation,
-      time: resolvedTime,
+      depot: current.depot,
+      operation,
+      time: getResolvedMovementTime(operation),
       createdAt: now.toISOString(),
       text: built.text,
       train: built.train,
@@ -3072,16 +3161,19 @@ function TrainMovementContent() {
       road: built.road,
       replacement: built.replacement || "",
       reason: built.reason || "",
-      notes: form.notes || "",
+      notes: current.notes || "",
     };
 
     setEntries((prev) => [...prev, entry]);
-    setForm((prev) => ({
+    setForms((prev) => ({
       ...prev,
-      trainId: "",
-      tid: "",
-      replacedBy: "",
-      notes: "",
+      [operation]: {
+        ...prev[operation],
+        trainId: "",
+        tid: "",
+        replacedBy: "",
+        notes: "",
+      },
     }));
   };
 
@@ -3093,6 +3185,13 @@ function TrainMovementContent() {
     const label = getMovementDepotLabel(depot);
     if (!window.confirm(`Clear all Train Movement logs for ${label}?`)) return;
     setEntries((prev) => prev.filter((entry) => entry.depot !== depot));
+  };
+
+  const clearDepotOperationLogs = (depot, operation) => {
+    const label = getMovementDepotLabel(depot);
+    const operationLabel = OPERATION_META[operation]?.title || "Movement";
+    if (!window.confirm(`Clear ${operationLabel} logs for ${label}?`)) return;
+    setEntries((prev) => prev.filter((entry) => !(entry.depot === depot && entry.operation === operation)));
   };
 
   const copyDepotLogs = async (depot, operation = null) => {
@@ -3138,7 +3237,7 @@ function TrainMovementContent() {
 
       return (
         <>
-          <span>{time} hrs - </span>
+          <span>{time} hrs – </span>
           <span style={{ color: trainColor }}>{train}</span>
           {tid ? <span style={{ color: tidColor }}> (TID {tid})</span> : null}
           <span> </span>
@@ -3153,7 +3252,7 @@ function TrainMovementContent() {
     if (entry.operation === "removal") {
       return (
         <>
-          <span>{time} hrs - </span>
+          <span>{time} hrs – </span>
           <span style={{ color: trainColor }}>{train}</span>
           {tid ? <span style={{ color: tidColor }}> (TID {tid})</span> : null}
           <span> </span>
@@ -3168,7 +3267,7 @@ function TrainMovementContent() {
     if (entry.operation === "swapping") {
       return (
         <>
-          <span>{time} hrs - </span>
+          <span>{time} hrs – </span>
           <span style={{ color: trainColor }}>{train}</span>
           <span> </span>
           <span style={{ color: removedColor }}>removed</span>
@@ -3186,7 +3285,6 @@ function TrainMovementContent() {
     return <>{entry.text}</>;
   };
 
-
   const MovementIcon = ({ type = "train", color = "currentColor" }) => (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       {type === "train" && <><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M8 21l2-3"/><path d="M16 21l-2-3"/><path d="M8 8h8"/><path d="M8 13h.01"/><path d="M16 13h.01"/></>}
@@ -3199,30 +3297,13 @@ function TrainMovementContent() {
     </svg>
   );
 
-  const OperationButton = ({ value, label, iconType }) => {
-    const active = form.operation === value;
+  const DepotButton = ({ operation, depot, label, accent }) => {
+    const current = getMovementForm(operation);
+    const active = current.depot === depot;
     return (
       <button
         type="button"
-        onClick={() => updateForm("operation", value)}
-        className={`flex flex-1 items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-[10px] font-black transition-all ${
-          active
-            ? "border-blue-400 bg-blue-600/35 text-white shadow-[0_0_18px_rgba(59,130,246,0.28)]"
-            : "border-[#1e4060] bg-[#061827] text-[#7eb8e0] hover:border-[#4f8ef7] hover:text-white"
-        }`}
-      >
-        <MovementIcon type={iconType} />
-        {label}
-      </button>
-    );
-  };
-
-  const DepotButton = ({ depot, label, accent }) => {
-    const active = form.depot === depot;
-    return (
-      <button
-        type="button"
-        onClick={() => updateForm("depot", depot)}
+        onClick={() => updateMovementForm(operation, "depot", depot)}
         className="flex items-center justify-between rounded-lg border px-3 py-2 text-left transition-all"
         style={{
           background: active ? `linear-gradient(135deg, ${accent}38, #081e32 82%)` : "#061827",
@@ -3242,10 +3323,255 @@ function TrainMovementContent() {
     );
   };
 
+  const TimingPicker = ({ operation }) => {
+    const current = getMovementForm(operation);
+    return (
+      <div>
+        <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Timing</span>
+        <div className="grid grid-cols-2 gap-1 rounded-lg border border-[#1e4060] bg-[#061827] p-1">
+          <button
+            type="button"
+            onClick={() => updateMovementForm(operation, "timingMode", "now")}
+            className={`flex items-center justify-center rounded-md px-2.5 py-1.5 text-[11px] font-black transition-all ${current.timingMode === "now" ? "bg-blue-600/35 text-white border border-blue-400" : "text-[#7eb8e0] hover:text-white"}`}
+          >
+            <MovementIcon type="clock" /> <span className="ml-1">Now</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => updateMovementForm(operation, "timingMode", "custom")}
+            className={`flex items-center justify-center rounded-md px-2.5 py-1.5 text-[11px] font-black transition-all ${current.timingMode === "custom" ? "bg-blue-600/35 text-white border border-blue-400" : "text-[#7eb8e0] hover:text-white"}`}
+          >
+            Custom
+          </button>
+        </div>
+        {current.timingMode === "custom" ? (
+          <div className="mt-1.5 flex h-9 w-full items-center rounded-lg border border-[#1e4060] bg-[#061827] px-3 focus-within:border-[#4f8ef7]">
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={5}
+              value={current.customTime}
+              onChange={(e) => updateMovementForm(operation, "customTime", cleanMovementCustomTimeInput(e.target.value))}
+              onBlur={(e) => updateMovementForm(operation, "customTime", normalizeMovementCustomTimeInput(e.target.value))}
+              placeholder="05:06"
+              className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-semibold text-[#c8d8ea] outline-none placeholder:text-[#31516b]"
+            />
+            <span className="ml-2 shrink-0 text-[11px] font-semibold text-[#7eb8e0]">hrs</span>
+          </div>
+        ) : (
+          <div className="mt-1.5 flex h-8 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[11px] font-semibold text-[#7eb8e0]">
+            <MovementIcon type="clock" /> {clockText} hrs (current)
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const MovementFormCard = ({ operation }) => {
+    const meta = OPERATION_META[operation];
+    const current = getMovementForm(operation);
+    const selectedRoads = getMovementRoads(current.depot);
+    const isInsertion = operation === "insertion";
+    const isSwapping = operation === "swapping";
+
+    return (
+      <section
+        className="overflow-hidden rounded-xl border shadow-[0_14px_28px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.05)]"
+        style={{ borderColor: `${meta.accent}55`, background: "linear-gradient(180deg,#071e33 0%,#061827 100%)" }}
+      >
+        <div className="flex items-center gap-2.5 border-b px-4 py-3" style={{ borderColor: `${meta.accent}35`, background: `linear-gradient(90deg, ${meta.accent}1f, transparent)` }}>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: `${meta.accent}24`, color: meta.accent, boxShadow: `0 0 14px ${meta.accent}22` }}>
+            <MovementIcon type={meta.iconType} color={meta.accent} />
+          </div>
+          <div>
+            <h2 className="text-[15px] font-black leading-tight text-white">{meta.title}</h2>
+            <p className="mt-0.5 text-[11px] font-medium" style={{ color: meta.accent }}>{meta.subtitle}</p>
+          </div>
+        </div>
+
+        <div className="space-y-3 p-4">
+          <label className="block">
+            <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Train ID</span>
+            <div className="flex h-9 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 focus-within:border-[#4f8ef7]">
+              <span className="text-[#4f8ef7]">T</span>
+              <input
+                value={current.trainId}
+                onChange={(e) => updateMovementForm(operation, "trainId", e.target.value.replace(/\D/g, ""))}
+                placeholder="e.g. 25"
+                className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-bold text-white outline-none placeholder:text-[#31516b]"
+              />
+            </div>
+          </label>
+
+          <TimingPicker operation={operation} />
+
+          <div>
+            <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Depot</span>
+            <div className="grid gap-1.5">
+              <DepotButton operation={operation} depot="west" label="West Depot" accent="#8b5cf6" />
+              <DepotButton operation={operation} depot="east" label="East Depot" accent="#06d4e8" />
+            </div>
+          </div>
+
+          {isInsertion && (
+            <div>
+              <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Stabling road</span>
+              <div className="grid grid-cols-2 gap-1.5">
+                {selectedRoads.map((road) => {
+                  const active = current.road === road;
+                  return (
+                    <button
+                      key={road}
+                      type="button"
+                      onClick={() => updateMovementForm(operation, "road", road)}
+                      className={`rounded-lg border px-2 py-1.5 text-[11px] font-black transition-all ${active ? "border-blue-400 bg-blue-600/30 text-white" : "border-[#1e4060] bg-[#061827] text-[#7eb8e0] hover:border-[#4f8ef7] hover:text-white"}`}
+                    >
+                      {road}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {!isSwapping && (
+            <label className="block">
+              <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">TID <span className="text-[#4a6b85]">(optional)</span></span>
+              <input
+                value={current.tid}
+                onChange={(e) => updateMovementForm(operation, "tid", e.target.value.replace(/\D/g, ""))}
+                placeholder="e.g. 101"
+                className="h-9 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-bold text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
+              />
+            </label>
+          )}
+
+          {isSwapping && (
+            <div className="grid gap-3">
+              <label className="block">
+                <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Reason swap</span>
+                <input
+                  value={current.swapReason}
+                  onChange={(e) => updateMovementForm(operation, "swapReason", e.target.value)}
+                  placeholder="e.g. RST PM"
+                  className="h-9 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-bold text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Replaced by train</span>
+                <div className="flex h-9 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 focus-within:border-[#4f8ef7]">
+                  <span className="text-[#4f8ef7]">T</span>
+                  <input
+                    value={current.replacedBy}
+                    onChange={(e) => updateMovementForm(operation, "replacedBy", e.target.value.replace(/\D/g, ""))}
+                    placeholder="e.g. 30"
+                    className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-bold text-white outline-none placeholder:text-[#31516b]"
+                  />
+                </div>
+              </label>
+            </div>
+          )}
+
+          <label className="block">
+            <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Notes <span className="text-[#4a6b85]">(optional)</span></span>
+            <textarea
+              value={current.notes}
+              onChange={(e) => updateMovementForm(operation, "notes", e.target.value)}
+              placeholder="Any additional remarks..."
+              className="min-h-[54px] w-full resize-none rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2 text-[12px] font-semibold text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
+            />
+          </label>
+
+          <div className="rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2">
+            <p className="mb-1 text-[8px] font-black uppercase tracking-[0.18em] text-[#4a8ab5]">Preview</p>
+            <p className="font-mono text-[11px] font-semibold leading-snug text-[#c8d8ea]">
+              {buildMovementPreview(operation)}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => addMovementLog(operation)}
+            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[12px] font-black text-white shadow-[0_0_16px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01]"
+            style={{ borderColor: `${meta.accent}9a`, backgroundColor: `${meta.accent}33` }}
+          >
+            <span className="text-base leading-none">+</span> {meta.buttonLabel}
+          </button>
+        </div>
+      </section>
+    );
+  };
+
+  const TrainMovementOperationLogTable = ({ depot, operation, accent, logs }) => {
+    const meta = OPERATION_META[operation];
+    return (
+      <section className="overflow-hidden rounded-xl border" style={{ borderColor: `${meta.accent}42`, background: "linear-gradient(180deg,#041727 0%,#03111d 100%)" }}>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2" style={{ borderColor: `${meta.accent}30`, backgroundColor: `${meta.accent}10` }}>
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: `${meta.accent}22`, color: meta.accent }}>
+              <MovementIcon type={meta.iconType} color={meta.accent} />
+            </span>
+            <div className="min-w-0">
+              <h4 className="text-[12px] font-black uppercase tracking-wide text-white">{meta.logTitle}</h4>
+              <p className="text-[10px] font-semibold text-[#8ea8c0]">{logs.length} entries</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => copyDepotLogs(depot, operation)}
+              className="flex min-w-[72px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
+              style={{ borderColor: `${meta.accent}55`, color: meta.accent, backgroundColor: `${meta.accent}14` }}
+            >
+              <MovementIcon type="copy" />{getCopyButtonLabel(depot, operation, "Copy")}
+            </button>
+            <button
+              type="button"
+              onClick={() => clearDepotOperationLogs(depot, operation)}
+              className="flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
+              style={{ borderColor: `${meta.accent}55`, color: meta.accent, backgroundColor: `${meta.accent}14` }}
+            >
+              <MovementIcon type="trash" />Clear
+            </button>
+          </div>
+        </div>
+
+        <div className="min-h-[80px]">
+          {logs.length === 0 ? (
+            <div className="flex min-h-[80px] items-center justify-center px-3 text-center text-[11px] font-semibold text-[#7eb8e0]">
+              {meta.emptyText}
+            </div>
+          ) : (
+            logs.map((entry) => (
+              <div
+                key={entry.id}
+                className="group flex items-center gap-2 border-b border-[#12304a]/55 px-3 py-1.5 last:border-b-0"
+              >
+                <p className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.25] tracking-[-0.01em] text-[#f4f8ff]">
+                  {renderMovementLogLine(entry)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => removeMovementLog(entry.id)}
+                  title="Delete this log"
+                  aria-label="Delete this log"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-transparent text-red-400 opacity-80 transition-all hover:border-red-500/60 hover:bg-red-950/35 hover:text-red-300 group-hover:opacity-100"
+                >
+                  <MovementIcon type="trash" color="currentColor" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+    );
+  };
+
   const TrainMovementDepotCard = ({ depot, title, accent, logs }) => {
-    const insertionCount = logs.filter((entry) => entry.operation === "insertion").length;
-    const removalCount = logs.filter((entry) => entry.operation === "removal").length;
-    const swapCount = logs.filter((entry) => entry.operation === "swapping").length;
+    const insertionLogs = logs.filter((entry) => entry.operation === "insertion");
+    const removalLogs = logs.filter((entry) => entry.operation === "removal");
+    const swapLogs = logs.filter((entry) => entry.operation === "swapping");
 
     return (
       <section
@@ -3269,214 +3595,46 @@ function TrainMovementContent() {
                 </span>
               </div>
               <p className="mt-0.5 text-[10px] font-medium text-[#8ea8c0]">
-                Insertions {insertionCount} • Removals {removalCount} • Swaps {swapCount}
+                Insertions {insertionLogs.length} • Removals {removalLogs.length} • Swaps {swapLogs.length}
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            <button onClick={() => copyDepotLogs(depot, "insertion")} className="flex min-w-[82px] items-center justify-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition-all hover:scale-[1.02]" style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}><MovementIcon type="copy" />{getCopyButtonLabel(depot, "insertion", "Insertions")}</button>
-            <button onClick={() => copyDepotLogs(depot, "removal")} className="flex min-w-[82px] items-center justify-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition-all hover:scale-[1.02]" style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}><MovementIcon type="copy" />{getCopyButtonLabel(depot, "removal", "Removals")}</button>
-            <button onClick={() => copyDepotLogs(depot, "swapping")} className="flex min-w-[82px] items-center justify-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition-all hover:scale-[1.02]" style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}><MovementIcon type="copy" />{getCopyButtonLabel(depot, "swapping", "Swaps")}</button>
-            <button onClick={() => clearDepotLogs(depot)} className="flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition-all hover:scale-[1.02]" style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}><MovementIcon type="trash" />Clear</button>
+            <button onClick={() => copyDepotLogs(depot)} className="flex min-w-[82px] items-center justify-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition-all hover:scale-[1.02]" style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}><MovementIcon type="copy" />{getCopyButtonLabel(depot, "all", "Copy All")}</button>
+            <button onClick={() => clearDepotLogs(depot)} className="flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition-all hover:scale-[1.02]" style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}><MovementIcon type="trash" />Clear All</button>
           </div>
         </div>
 
-        <div className="min-h-[120px] px-4 py-2.5">
-          {logs.length === 0 ? (
-            <div className="flex min-h-[105px] flex-col items-center justify-center text-center">
-              <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-full border" style={{ borderColor: `${accent}33`, backgroundColor: `${accent}14`, color: accent }}>
-                <MovementIcon type="copy" color={accent} />
-              </div>
-              <p className="text-[13px] font-bold text-[#c8d8ea]">No entries for {title}</p>
-              <p className="mt-0.5 text-[11px] text-[#7eb8e0]">Add your first train movement using the form.</p>
-            </div>
-          ) : (
-            <div
-              className="overflow-hidden rounded-xl border font-mono shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]"
-              style={{ borderColor: `${accent}38`, background: "linear-gradient(180deg,#041727 0%,#03111d 100%)" }}
-            >
-              {logs.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="group flex items-center gap-2 border-b border-[#12304a]/55 px-4 py-1 last:border-b-0"
-                >
-                  <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-[12px] font-semibold leading-[1.25] tracking-[-0.01em] text-[#f4f8ff]">
-                    {renderMovementLogLine(entry)}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => removeMovementLog(entry.id)}
-                    title="Delete this log"
-                    aria-label="Delete this log"
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-transparent text-red-400 opacity-80 transition-all hover:border-red-500/60 hover:bg-red-950/35 hover:text-red-300 group-hover:opacity-100"
-                  >
-                    <MovementIcon type="trash" color="currentColor" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="grid gap-3 p-4">
+          <TrainMovementOperationLogTable depot={depot} operation="insertion" accent={accent} logs={insertionLogs} />
+          <TrainMovementOperationLogTable depot={depot} operation="removal" accent={accent} logs={removalLogs} />
+          <TrainMovementOperationLogTable depot={depot} operation="swapping" accent={accent} logs={swapLogs} />
         </div>
       </section>
     );
   };
 
+  const westEntries = entries.filter((entry) => entry.depot === "west");
+  const eastEntries = entries.filter((entry) => entry.depot === "east");
+
   return (
-    <div className="grid gap-3 items-start" style={{ gridTemplateColumns: "330px minmax(720px, 1fr)" }}>
-      <aside className="sticky top-[76px] rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]">
+    <div className="grid gap-3 items-start" style={{ gridTemplateColumns: "360px minmax(720px, 1fr)" }}>
+      <aside className="sticky top-[76px] max-h-[calc(100vh-92px)] overflow-y-auto rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]">
         <div className="flex items-center gap-2.5 border-b border-[#1a3a56] px-4 py-3" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600/25 text-blue-300 shadow-[0_0_14px_rgba(59,130,246,0.22)]">
             <MovementIcon type="train" />
           </div>
           <div>
-            <h2 className="text-[15px] font-black leading-tight text-white">Add insertion, removal, or swapping</h2>
-            <p className="mt-0.5 text-[11px] font-medium text-[#58a6ff]">Add Train Movement</p>
+            <h2 className="text-[15px] font-black leading-tight text-white">Add train movement</h2>
+            <p className="mt-0.5 text-[11px] font-medium text-[#58a6ff]">Separated by insertion, removal, and swapping</p>
           </div>
         </div>
 
-        <div className="space-y-3 p-4">
-          <label className="block">
-            <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Train ID</span>
-            <div className="flex h-9 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 focus-within:border-[#4f8ef7]">
-              <span className="text-[#4f8ef7]">T</span>
-              <input
-                value={form.trainId}
-                onChange={(e) => updateForm("trainId", e.target.value.replace(/\D/g, ""))}
-                placeholder="e.g. 25"
-                className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-bold text-white outline-none placeholder:text-[#31516b]"
-              />
-            </div>
-          </label>
-
-          <div>
-            <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Timing</span>
-            <div className="grid grid-cols-2 gap-1 rounded-lg border border-[#1e4060] bg-[#061827] p-1">
-              <button type="button" onClick={() => updateForm("timingMode", "now")} className={`flex items-center justify-center rounded-md px-2.5 py-1.5 text-[11px] font-black transition-all ${form.timingMode === "now" ? "bg-blue-600/35 text-white border border-blue-400" : "text-[#7eb8e0] hover:text-white"}`}><MovementIcon type="clock" /> <span className="ml-1">Now</span></button>
-              <button type="button" onClick={() => updateForm("timingMode", "custom")} className={`flex items-center justify-center rounded-md px-2.5 py-1.5 text-[11px] font-black transition-all ${form.timingMode === "custom" ? "bg-blue-600/35 text-white border border-blue-400" : "text-[#7eb8e0] hover:text-white"}`}>Custom</button>
-            </div>
-            {form.timingMode === "custom" ? (
-              <div className="mt-1.5 flex h-9 w-full items-center rounded-lg border border-[#1e4060] bg-[#061827] px-3 focus-within:border-[#4f8ef7]">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={5}
-                  value={form.customTime}
-                  onChange={(e) => updateForm("customTime", cleanMovementCustomTimeInput(e.target.value))}
-                  onBlur={(e) => updateForm("customTime", normalizeMovementCustomTimeInput(e.target.value))}
-                  placeholder="05:06"
-                  className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-semibold text-[#c8d8ea] outline-none placeholder:text-[#31516b]"
-                />
-                <span className="ml-2 shrink-0 text-[11px] font-semibold text-[#7eb8e0]">hrs</span>
-              </div>
-            ) : (
-              <div className="mt-1.5 flex h-8 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[11px] font-semibold text-[#7eb8e0]">
-                <MovementIcon type="clock" /> {clockText} hrs (current)
-              </div>
-            )}
-          </div>
-
-          <div>
-            <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Operation</span>
-            <div className="grid grid-cols-3 gap-1.5">
-              <OperationButton value="insertion" label="Insertion" iconType="in" />
-              <OperationButton value="removal" label="Removal" iconType="out" />
-              <OperationButton value="swapping" label="Swapping" iconType="swap" />
-            </div>
-          </div>
-
-          <div>
-            <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Depot</span>
-            <div className="grid gap-1.5">
-              <DepotButton depot="west" label="West Depot" accent="#8b5cf6" />
-              <DepotButton depot="east" label="East Depot" accent="#06d4e8" />
-            </div>
-          </div>
-
-          {form.operation === "insertion" && (
-            <div>
-              <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Stabling road</span>
-              <div className="grid grid-cols-2 gap-1.5">
-                {selectedRoads.map((road) => {
-                  const active = form.road === road;
-                  return (
-                    <button
-                      key={road}
-                      type="button"
-                      onClick={() => updateForm("road", road)}
-                      className={`rounded-lg border px-2 py-1.5 text-[11px] font-black transition-all ${active ? "border-blue-400 bg-blue-600/30 text-white" : "border-[#1e4060] bg-[#061827] text-[#7eb8e0] hover:border-[#4f8ef7] hover:text-white"}`}
-                    >
-                      {road}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {(form.operation === "insertion" || form.operation === "removal") && (
-            <label className="block">
-              <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">TID <span className="text-[#4a6b85]">(optional)</span></span>
-              <input
-                value={form.tid}
-                onChange={(e) => updateForm("tid", e.target.value.replace(/\D/g, ""))}
-                placeholder="e.g. 101"
-                className="h-9 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-bold text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
-              />
-            </label>
-          )}
-
-          {form.operation === "swapping" && (
-            <div className="grid gap-3">
-              <label className="block">
-                <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Reason swap</span>
-                <input
-                  value={form.swapReason}
-                  onChange={(e) => updateForm("swapReason", e.target.value)}
-                  placeholder="e.g. RST PM"
-                  className="h-9 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-bold text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Replaced by train</span>
-                <input
-                  value={form.replacedBy}
-                  onChange={(e) => updateForm("replacedBy", e.target.value.replace(/\D/g, ""))}
-                  placeholder="e.g. 30"
-                  className="h-9 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-bold text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
-                />
-              </label>
-            </div>
-          )}
-
-          <label className="block">
-            <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.18em] text-[#58a6ff]">Notes <span className="text-[#4a6b85]">(optional)</span></span>
-            <textarea
-              value={form.notes}
-              onChange={(e) => updateForm("notes", e.target.value)}
-              placeholder="Any additional remarks..."
-              className="min-h-[58px] w-full resize-none rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2 text-[12px] font-semibold text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
-            />
-          </label>
-
-          <div className="rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2">
-            <p className="mb-1 text-[8px] font-black uppercase tracking-[0.18em] text-[#4a8ab5]">Preview</p>
-            <p className="font-mono text-[11px] font-semibold leading-snug text-[#c8d8ea]">
-              {form.operation === "swapping"
-                ? `${resolvedTime} hrs – ${normalizeMovementTrain(form.trainId) || "T25"} removed from mainline to ${selectedDepotLabel} stabling due to ${form.swapReason || "RST PM"}. Replaced by ${normalizeMovementTrain(form.replacedBy) || "T30"}.`
-                : form.operation === "removal"
-                ? `${resolvedTime} hrs – ${normalizeMovementTrain(form.trainId) || "T25"}${form.tid ? ` (TID ${form.tid})` : ""} removed from mainline to ${selectedDepotLabel}.`
-                : `${resolvedTime} hrs – ${normalizeMovementTrain(form.trainId) || "T25"}${form.tid ? ` (TID ${form.tid})` : ""} inserted from ${form.road || selectedRoads[0]} to mainline track ${selectedTrack}.`}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={addMovementLog}
-            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-blue-400/65 bg-blue-600/35 text-[12px] font-black text-white shadow-[0_0_16px_rgba(59,130,246,0.22),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01] hover:bg-blue-600/45"
-          >
-            <span className="text-base leading-none">+</span> Add to Log
-          </button>
+        <div className="space-y-3 p-3">
+          {MOVEMENT_OPERATIONS.map((operation) => (
+            <MovementFormCard key={operation} operation={operation} />
+          ))}
         </div>
       </aside>
 
@@ -3488,7 +3646,7 @@ function TrainMovementContent() {
             </div>
             <div>
               <h2 className="text-[17px] font-black leading-tight text-white">Today's Log</h2>
-              <p className="mt-0.5 text-[11px] font-medium text-[#58a6ff]">{entries.length} entries</p>
+              <p className="mt-0.5 text-[11px] font-medium text-[#58a6ff]">{entries.length} entries • output logs separated by operation</p>
             </div>
           </div>
 
