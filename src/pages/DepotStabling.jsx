@@ -3701,7 +3701,7 @@ function TrainMovementContent() {
               </>
             )}
 
-            <label className="col-span-2 lg:col-span-5">
+            <label className={`col-span-2 lg:col-span-5 ${isSwapping ? "lg:translate-y-[4px]" : ""}`}>
               <span className={labelClass}>Notes <span className="text-[#4a6b85]">(optional)</span></span>
               <textarea
                 value={current.notes}
