@@ -3605,7 +3605,7 @@ function TrainMovementContent() {
         <div className="grid gap-3 p-4">
           <MovementFormCard operation={operation} />
 
-          <div className="grid content-start gap-3 xl:grid-cols-2">
+          <div className="grid content-start gap-3">
             <TrainMovementOperationLogTable depot="west" operation={operation} accent="#8b5cf6" logs={westLogs} />
             <TrainMovementOperationLogTable depot="east" operation={operation} accent="#06d4e8" logs={eastLogs} />
           </div>
