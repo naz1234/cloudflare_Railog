@@ -3378,19 +3378,9 @@ function TrainMovementContent() {
 
     return (
       <section
-        className="overflow-hidden rounded-xl border shadow-[0_14px_28px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.05)]"
-        style={{ borderColor: `${meta.accent}55`, background: "linear-gradient(180deg,#071e33 0%,#061827 100%)" }}
+        className="overflow-hidden rounded-xl border shadow-[0_14px_28px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.05)]"
+        style={{ borderColor: `${meta.accent}42`, background: "linear-gradient(180deg,#061827 0%,#041727 100%)" }}
       >
-        <div className="flex items-center gap-2.5 border-b px-4 py-3" style={{ borderColor: `${meta.accent}35`, background: `linear-gradient(90deg, ${meta.accent}1f, transparent)` }}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: `${meta.accent}24`, color: meta.accent, boxShadow: `0 0 14px ${meta.accent}22` }}>
-            <MovementIcon type={meta.iconType} color={meta.accent} />
-          </div>
-          <div>
-            <h2 className="text-[15px] font-black leading-tight text-white">{meta.title}</h2>
-            <p className="mt-0.5 text-[11px] font-medium" style={{ color: meta.accent }}>{meta.subtitle}</p>
-          </div>
-        </div>
-
         <div className="p-3 sm:p-4">
           <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-12 lg:items-end">
             <label className="col-span-1 lg:col-span-2">
@@ -3612,10 +3602,10 @@ function TrainMovementContent() {
           </div>
         </div>
 
-        <div className="grid gap-3 p-4 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="grid gap-3 p-4">
           <MovementFormCard operation={operation} />
 
-          <div className="grid content-start gap-3">
+          <div className="grid content-start gap-3 xl:grid-cols-2">
             <TrainMovementOperationLogTable depot="west" operation={operation} accent="#8b5cf6" logs={westLogs} />
             <TrainMovementOperationLogTable depot="east" operation={operation} accent="#06d4e8" logs={eastLogs} />
           </div>
