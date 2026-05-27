@@ -2871,6 +2871,7 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
 // ── Train Movement Internal Page ─────────────────────────────────────────────
 
 const TRAIN_MOVEMENT_LOG_KEY = "trainMovementLogState_v1";
+const TP1_MOVEMENT_LOG_KEY = "tp1MovementLogState_v1";
 
 function loadTrainMovementLog() {
   try {
@@ -2885,6 +2886,36 @@ function loadTrainMovementLog() {
 
 function saveTrainMovementLog(entries) {
   try { localStorage.setItem(TRAIN_MOVEMENT_LOG_KEY, JSON.stringify(entries || [])); } catch {}
+}
+
+function loadTp1MovementLog() {
+  try {
+    const raw = localStorage.getItem(TP1_MOVEMENT_LOG_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveTp1MovementLog(entries) {
+  try { localStorage.setItem(TP1_MOVEMENT_LOG_KEY, JSON.stringify(entries || [])); } catch {}
+}
+
+function formatTp1DateForLog(dateText) {
+  const raw = String(dateText || "").trim();
+  if (!raw) return "dd/mm/yyyy";
+
+  const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch;
+    return `${day}/${month}/${year}`;
+  }
+
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return raw;
+  return `${String(parsed.getDate()).padStart(2, "0")}/${String(parsed.getMonth() + 1).padStart(2, "0")}/${parsed.getFullYear()}`;
 }
 
 function getMovementDepotLabel(depot) {
@@ -2959,6 +2990,20 @@ function TrainMovementContent() {
     },
   });
 
+  const createDefaultTp1MovementForm = () => ({
+    trainSet: "",
+    planStatus: "Planned",
+    movementType: "automatic",
+    trAtTp1: "",
+    shunterName: "",
+    shunterAuth: "",
+    trLocalized: "",
+    nextWashDate: "",
+    nextWashTime: "",
+    fromTp1: "",
+    toManual: "",
+  });
+
   const OPERATION_META = {
     insertion: {
       title: "Insertion",
@@ -2992,10 +3037,12 @@ function TrainMovementContent() {
   const MOVEMENT_OPERATIONS = ["swapping", "insertion", "removal"];
 
   const [entries, setEntries] = useState(() => loadTrainMovementLog());
+  const [tp1Entries, setTp1Entries] = useState(() => loadTp1MovementLog());
   const [clockText, setClockText] = useState(() => formatTime(new Date()));
   const [copyFeedback, setCopyFeedback] = useState({});
   const copyFeedbackTimerRef = useRef({});
   const [forms, setForms] = useState(() => createDefaultMovementForms());
+  const [tp1Form, setTp1Form] = useState(() => createDefaultTp1MovementForm());
   const movementScrollRestoreRef = useRef(null);
 
   const captureMovementScrollPosition = () => {
@@ -3014,6 +3061,7 @@ function TrainMovementContent() {
   }, [forms, entries]);
 
   useEffect(() => { saveTrainMovementLog(entries); }, [entries]);
+  useEffect(() => { saveTp1MovementLog(tp1Entries); }, [tp1Entries]);
 
   useEffect(() => {
     return () => {
@@ -3053,6 +3101,14 @@ function TrainMovementContent() {
     }));
   };
 
+  const updateTp1MovementForm = (field, value) => {
+    captureMovementScrollPosition();
+    setTp1Form((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
   const getMovementForm = (operation) => forms[operation] || createDefaultMovementForms()[operation];
 
   const getResolvedMovementTime = (operation) => {
@@ -3079,6 +3135,13 @@ function TrainMovementContent() {
 
   const getCopyButtonLabel = (depot, operation, fallbackLabel) => {
     const status = copyFeedback[`${depot}-${operation}`];
+    if (status === "copied") return "copied !";
+    if (status === "empty") return "no log !";
+    return fallbackLabel;
+  };
+
+  const getTp1CopyButtonLabel = (fallbackLabel = "Copy") => {
+    const status = copyFeedback["tp1-all"];
     if (status === "copied") return "copied !";
     if (status === "empty") return "no log !";
     return fallbackLabel;
@@ -3238,6 +3301,118 @@ function TrainMovementContent() {
     }
 
     showCopyFeedback(feedbackKey, "copied");
+  };
+
+  const getTp1NextWashText = (form = tp1Form) => {
+    const dateText = form.nextWashDate ? formatTp1DateForLog(form.nextWashDate) : "dd/mm/yyyy";
+    const timeText = form.nextWashTime || "hh:mm";
+    return `${dateText} at ${timeText}`;
+  };
+
+  const getTp1MovementType = (form = tp1Form) => {
+    if (form.movementType === "manual" || form.movementType === "automatic") return form.movementType;
+    return form.trLocalized ? "automatic" : "manual";
+  };
+
+  const buildTp1MovementText = ({ preview = false } = {}) => {
+    const movementType = getTp1MovementType();
+    const train = normalizeMovementTrain(tp1Form.trainSet);
+    const displayTrain = train || "T19";
+    const planStatus = tp1Form.planStatus || "Planned";
+    const shunterName = (tp1Form.shunterName || "ALVIN").trim();
+    const trAtTp1 = tp1Form.trAtTp1 || "18:20";
+    const shunterAuth = tp1Form.shunterAuth || trAtTp1 || "18:20";
+    const trLocalized = tp1Form.trLocalized || "18:28";
+    const fromTp1 = tp1Form.fromTp1 || "18:30";
+    const toManual = tp1Form.toManual || "18:35";
+    const nextWash = getTp1NextWashText();
+
+    if (!preview) {
+      const missing = [];
+      if (!train) missing.push("Train Set");
+      if (!tp1Form.planStatus) missing.push("Plan / Unplanned");
+      if (!tp1Form.trAtTp1) missing.push("TR at TP1");
+      if (!tp1Form.shunterName) missing.push("Shunter Name");
+      if (!tp1Form.shunterAuth) missing.push("Shunter Auth");
+      if (!tp1Form.nextWashDate) missing.push("Next Wash Date");
+      if (!tp1Form.nextWashTime) missing.push("Next Wash Time");
+      if (movementType === "automatic" && !tp1Form.trLocalized) missing.push("TR Localized");
+      if (movementType === "manual" && !tp1Form.fromTp1) missing.push("From TP1");
+      if (movementType === "manual" && !tp1Form.toManual) missing.push("to Manual");
+
+      if (missing.length) {
+        alert(`Please complete: ${missing.join(", ")}.`);
+        return null;
+      }
+    }
+
+    if (movementType === "automatic") {
+      return `${displayTrain}: ${planStatus} movement to Automatic Area. ── Next wash: ${nextWash}.\n${trAtTp1} hrs – ${displayTrain} arrived at TP1 with Shunter ${shunterName} onboard.\n${shunterAuth} hrs – ${displayTrain} authorized to prepare the train, conduct a brake self-test, and localize the train.\n${trLocalized} hrs – ${displayTrain} localized at TP1.`;
+    }
+
+    return `${displayTrain}: ${planStatus} movement to Manual Area. ── Next wash: ${nextWash}.\n${trAtTp1} hrs – ${displayTrain} arrived at TP1.\n${shunterAuth} hrs – ${displayTrain} was authorized to prepare the train. Shunter ${shunterName} onboard.\n${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual Area at ${toManual} hrs.`;
+  };
+
+  const addTp1MovementLog = () => {
+    captureMovementScrollPosition();
+    const text = buildTp1MovementText();
+    if (!text) return;
+
+    const now = new Date();
+    const movementType = getTp1MovementType();
+    const entry = {
+      id: `tp1-movement-${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
+      type: movementType,
+      train: normalizeMovementTrain(tp1Form.trainSet),
+      planStatus: tp1Form.planStatus,
+      createdAt: now.toISOString(),
+      text,
+    };
+
+    setTp1Entries((prev) => [...prev, entry]);
+    setTp1Form((prev) => ({
+      ...prev,
+      trainSet: "",
+      trAtTp1: "",
+      shunterAuth: "",
+      trLocalized: "",
+      nextWashDate: "",
+      nextWashTime: "",
+      fromTp1: "",
+      toManual: "",
+    }));
+  };
+
+  const removeTp1MovementLog = (id) => {
+    captureMovementScrollPosition();
+    setTp1Entries((prev) => prev.filter((entry) => entry.id !== id));
+  };
+
+  const clearTp1MovementLogs = () => {
+    if (!window.confirm("Clear all TP1 movement logs?")) return;
+    captureMovementScrollPosition();
+    setTp1Entries([]);
+  };
+
+  const copyTp1MovementLogs = async () => {
+    const lines = tp1Entries.map((entry) => entry.text);
+    if (lines.length === 0) {
+      showCopyFeedback("tp1-all", "empty");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(lines.join("\n\n"));
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = lines.join("\n\n");
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+
+    showCopyFeedback("tp1-all", "copied");
   };
 
   const renderMovementLogLine = (entry) => {
@@ -3637,6 +3812,250 @@ function TrainMovementContent() {
     );
   };
 
+  const renderTp1MovementWindow = () => {
+    const movementType = getTp1MovementType();
+    const isAutomatic = movementType === "automatic";
+    const accent = isAutomatic ? "#22c55e" : "#f59e0b";
+    const labelClass = "mb-1.5 block text-[12px] font-medium uppercase tracking-[0.12em] text-[#58a6ff]";
+    const inputClass = "h-9 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
+    const glowInputBoxClass = "flex h-9 items-center gap-2 rounded-lg border border-[#2f7bc4] bg-[#061827] px-3 shadow-[0_0_14px_rgba(79,142,247,0.30),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_20px_rgba(79,142,247,0.48),inset_0_1px_0_rgba(255,255,255,0.08)]";
+
+    const renderTypeButton = (type, title, subtitle, color) => {
+      const active = movementType === type;
+      return (
+        <button
+          type="button"
+          onClick={() => updateTp1MovementForm("movementType", type)}
+          className="rounded-lg border px-3 py-2 text-left transition-all"
+          style={{
+            borderColor: active ? color : "#1e4060",
+            background: active ? `linear-gradient(135deg, ${color}30, #061827 86%)` : "#061827",
+            boxShadow: active ? `0 0 18px ${color}26, inset 0 1px 0 rgba(255,255,255,0.06)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
+          }}
+        >
+          <span className="block text-[12px] font-semibold text-white">{title}</span>
+          <span className="mt-0.5 block text-[10px] font-medium text-[#8ea8c0]">{subtitle}</span>
+        </button>
+      );
+    };
+
+    return (
+      <section
+        className="overflow-hidden rounded-xl border shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)] xl:sticky xl:top-3"
+        style={{
+          borderColor: `${accent}55`,
+          background: "linear-gradient(180deg,#071e33 0%,#061827 100%)",
+          boxShadow: `0 0 24px ${accent}16, inset 0 1px 0 rgba(255,255,255,0.05)`,
+        }}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2.5 border-b px-4 py-3" style={{ borderColor: `${accent}35`, background: `linear-gradient(90deg, ${accent}1f, transparent)` }}>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: `${accent}24`, color: accent, boxShadow: `0 0 14px ${accent}22` }}>
+              <MovementIcon type="train" color={accent} />
+            </div>
+            <div>
+              <h2 className="text-[16px] font-black leading-tight text-white">TP1 Movement Window</h2>
+              <p className="mt-0.5 text-[11px] font-medium" style={{ color: accent }}>Automatic / Manual Area log generator</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="rounded-md border px-2 py-1 text-[10px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}1c`, color: accent }}>
+              {tp1Entries.length} entries
+            </span>
+          </div>
+        </div>
+
+        <div className="grid gap-3 p-4">
+          <div className="grid grid-cols-2 gap-2">
+            {renderTypeButton("automatic", "Automatic Area", "Fill TR Localized", "#22c55e")}
+            {renderTypeButton("manual", "Manual Area", "Fill From TP1 + to Manual", "#f59e0b")}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <label className="col-span-1">
+              <span className={labelClass}>Train Set</span>
+              <div className={glowInputBoxClass}>
+                <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
+                <input
+                  value={tp1Form.trainSet}
+                  onChange={(e) => updateTp1MovementForm("trainSet", e.target.value.replace(/\D/g, ""))}
+                  placeholder="19"
+                  className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
+                />
+              </div>
+            </label>
+
+            <label className="col-span-1">
+              <span className={labelClass}>Plan / Unplanned</span>
+              <select
+                value={tp1Form.planStatus}
+                onChange={(e) => updateTp1MovementForm("planStatus", e.target.value)}
+                className={inputClass}
+              >
+                <option value="Planned">Planned</option>
+                <option value="Unplanned">Unplanned</option>
+              </select>
+            </label>
+
+            <label className="col-span-1">
+              <span className={labelClass}>TR at TP1</span>
+              <input
+                type="time"
+                value={tp1Form.trAtTp1}
+                onChange={(e) => updateTp1MovementForm("trAtTp1", e.target.value)}
+                className={inputClass}
+              />
+            </label>
+
+            <label className="col-span-1">
+              <span className={labelClass}>Shunter Name</span>
+              <input
+                value={tp1Form.shunterName}
+                onChange={(e) => updateTp1MovementForm("shunterName", e.target.value.toUpperCase())}
+                placeholder="ALVIN"
+                className={inputClass}
+              />
+            </label>
+
+            <label className="col-span-1">
+              <span className={labelClass}>Shunter Auth</span>
+              <input
+                type="time"
+                value={tp1Form.shunterAuth}
+                onChange={(e) => updateTp1MovementForm("shunterAuth", e.target.value)}
+                className={inputClass}
+              />
+            </label>
+
+            <label className="col-span-1">
+              <span className={labelClass}>TR Localized</span>
+              <input
+                type="time"
+                value={tp1Form.trLocalized}
+                onChange={(e) => updateTp1MovementForm("trLocalized", e.target.value)}
+                disabled={!isAutomatic}
+                className={`${inputClass} ${!isAutomatic ? "cursor-not-allowed opacity-35" : ""}`}
+              />
+            </label>
+
+            <label className="col-span-1">
+              <span className={labelClass}>Next Wash Date</span>
+              <input
+                type="date"
+                value={tp1Form.nextWashDate}
+                onChange={(e) => updateTp1MovementForm("nextWashDate", e.target.value)}
+                className={inputClass}
+              />
+            </label>
+
+            <label className="col-span-1">
+              <span className={labelClass}>Next Wash Time</span>
+              <input
+                type="time"
+                value={tp1Form.nextWashTime}
+                onChange={(e) => updateTp1MovementForm("nextWashTime", e.target.value)}
+                className={inputClass}
+              />
+            </label>
+
+            <label className="col-span-1">
+              <span className={labelClass}>From TP1</span>
+              <input
+                type="time"
+                value={tp1Form.fromTp1}
+                onChange={(e) => updateTp1MovementForm("fromTp1", e.target.value)}
+                disabled={isAutomatic}
+                className={`${inputClass} ${isAutomatic ? "cursor-not-allowed opacity-35" : ""}`}
+              />
+            </label>
+
+            <label className="col-span-1">
+              <span className={labelClass}>to Manual</span>
+              <input
+                type="time"
+                value={tp1Form.toManual}
+                onChange={(e) => updateTp1MovementForm("toManual", e.target.value)}
+                disabled={isAutomatic}
+                className={`${inputClass} ${isAutomatic ? "cursor-not-allowed opacity-35" : ""}`}
+              />
+            </label>
+          </div>
+
+          <div className="rounded-xl border border-[#1e4060] bg-[#041727] p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
+              <span className="rounded-md border px-2 py-1 text-[10px] font-bold" style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}12` }}>
+                {isAutomatic ? "Automatic" : "Manual"}
+              </span>
+            </div>
+            <pre className="max-h-44 overflow-auto whitespace-pre-wrap font-mono text-[12px] font-medium leading-[1.35] text-[#c8d8ea]">{buildTp1MovementText({ preview: true })}</pre>
+          </div>
+
+          <button
+            type="button"
+            onClick={addTp1MovementLog}
+            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[12px] font-medium text-white shadow-[0_0_16px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01]"
+            style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
+          >
+            <span className="text-[12px] leading-none">+</span> Add TP1 Movement Log
+          </button>
+
+          <section className="overflow-hidden rounded-xl border border-[#1e4060] bg-[#03111d]">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#12304a] px-3 py-2">
+              <div>
+                <h4 className="text-[12px] font-black uppercase tracking-wide text-white">TP1 Movement Log</h4>
+                <p className="text-[10px] font-semibold text-[#8ea8c0]">{tp1Entries.length} entries</p>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={copyTp1MovementLogs}
+                  className="flex min-w-[78px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
+                  style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}
+                >
+                  <MovementIcon type="copy" />{getTp1CopyButtonLabel("Copy All")}
+                </button>
+                <button
+                  type="button"
+                  onClick={clearTp1MovementLogs}
+                  className="flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
+                  style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}
+                >
+                  <MovementIcon type="trash" />Clear
+                </button>
+              </div>
+            </div>
+
+            <div className="min-h-[120px]">
+              {tp1Entries.length === 0 ? (
+                <div className="flex min-h-[120px] items-center justify-center px-3 text-center text-[11px] font-semibold text-[#7eb8e0]">
+                  No TP1 movement log yet.
+                </div>
+              ) : (
+                tp1Entries.map((entry) => (
+                  <div key={entry.id} className="group flex items-start gap-2 border-b border-[#12304a]/55 px-3 py-2 last:border-b-0">
+                    <pre className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.32] tracking-[-0.01em] text-[#f4f8ff]">{entry.text}</pre>
+                    <button
+                      type="button"
+                      onClick={() => removeTp1MovementLog(entry.id)}
+                      title="Delete this log"
+                      aria-label="Delete this log"
+                      className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-transparent text-red-400 opacity-80 transition-all hover:border-red-500/60 hover:bg-red-950/35 hover:text-red-300 group-hover:opacity-100"
+                    >
+                      <MovementIcon type="trash" color="currentColor" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        </div>
+      </section>
+    );
+  };
+
   const TrainMovementDepotCard = ({ depot, title, accent, logs }) => {
     const insertionLogs = logs.filter((entry) => entry.operation === "insertion");
     const removalLogs = logs.filter((entry) => entry.operation === "removal");
@@ -3685,7 +4104,7 @@ function TrainMovementContent() {
   };
 
   return (
-    <div className="grid w-full gap-3 xl:w-1/2">
+    <div className="grid w-full gap-3 xl:grid-cols-2 xl:items-start">
       <section className="rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_14px_30px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.05)]">
         <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[#1a3a56] px-4 py-3" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
           <div className="flex items-center gap-2">
@@ -3712,6 +4131,8 @@ function TrainMovementContent() {
           {MOVEMENT_OPERATIONS.map((operation) => renderTrainMovementOperationWindow(operation))}
         </div>
       </section>
+
+      {renderTp1MovementWindow()}
     </div>
   );
 }
