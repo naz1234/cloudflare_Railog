@@ -3973,10 +3973,12 @@ function TrainMovementContent() {
               {renderTp1TimeInput("shunterAuth")}
             </label>
 
-            <label className="col-span-1">
-              <span className={labelClass}>TR Localized</span>
-              {renderTp1TimeInput("trLocalized", !isAutomatic)}
-            </label>
+            {isAutomatic && (
+              <label className="col-span-1">
+                <span className={labelClass}>TR Localized</span>
+                {renderTp1TimeInput("trLocalized")}
+              </label>
+            )}
 
             <label className="col-span-1">
               <span className={labelClass}>Next Wash Date <span className="normal-case tracking-normal text-[#6f8fa8]">Optional</span></span>
