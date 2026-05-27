@@ -3337,7 +3337,7 @@ function TrainMovementContent() {
           <span className="flex h-7 w-7 items-center justify-center rounded-full" style={{ backgroundColor: `${accent}2e`, color: accent }}>
             <MovementIcon type="train" color={accent} />
           </span>
-          <span className="text-[13px] font-medium">{label}</span>
+          <span className="text-[12px] font-medium">{label}</span>
         </span>
         <span className="h-3.5 w-3.5 rounded-full border" style={{ borderColor: active ? accent : "#2b4f6b", backgroundColor: active ? accent : "transparent" }} />
       </button>
@@ -3348,19 +3348,19 @@ function TrainMovementContent() {
     const current = getMovementForm(operation);
     return (
       <div>
-        <span className="mb-1.5 block text-[13px] font-medium uppercase tracking-[0.12em] text-[#58a6ff]">Timing</span>
+        <span className="mb-1.5 block text-[12px] font-medium uppercase tracking-[0.12em] text-[#58a6ff]">Timing</span>
         <div className="grid grid-cols-2 gap-1 rounded-lg border border-[#1e4060] bg-[#061827] p-1">
           <button
             type="button"
             onClick={() => updateMovementForm(operation, "timingMode", "now")}
-            className={`flex items-center justify-center rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-all ${current.timingMode === "now" ? "bg-blue-600/35 text-white border border-blue-400" : "text-[#7eb8e0] hover:text-white"}`}
+            className={`flex items-center justify-center rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-all ${current.timingMode === "now" ? "bg-blue-600/35 text-white border border-blue-400" : "text-[#7eb8e0] hover:text-white"}`}
           >
             <MovementIcon type="clock" /> <span className="ml-1">Now</span>
           </button>
           <button
             type="button"
             onClick={() => updateMovementForm(operation, "timingMode", "custom")}
-            className={`flex items-center justify-center rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-all ${current.timingMode === "custom" ? "bg-blue-600/35 text-white border border-blue-400" : "text-[#7eb8e0] hover:text-white"}`}
+            className={`flex items-center justify-center rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-all ${current.timingMode === "custom" ? "bg-blue-600/35 text-white border border-blue-400" : "text-[#7eb8e0] hover:text-white"}`}
           >
             Custom
           </button>
@@ -3375,12 +3375,12 @@ function TrainMovementContent() {
               onChange={(e) => updateMovementForm(operation, "customTime", cleanMovementCustomTimeInput(e.target.value))}
               onBlur={(e) => updateMovementForm(operation, "customTime", normalizeMovementCustomTimeInput(e.target.value))}
               placeholder="05:06"
-              className="h-full min-w-0 flex-1 bg-transparent text-[13px] font-medium text-[#c8d8ea] outline-none placeholder:text-[#31516b]"
+              className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-[#c8d8ea] outline-none placeholder:text-[#31516b]"
             />
-            <span className="ml-2 shrink-0 text-[13px] font-medium text-[#7eb8e0]">hrs</span>
+            <span className="ml-2 shrink-0 text-[12px] font-medium text-[#7eb8e0]">hrs</span>
           </div>
         ) : (
-          <div className="mt-1.5 flex h-8 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[13px] font-medium text-[#7eb8e0]">
+          <div className="mt-1.5 flex h-8 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-medium text-[#7eb8e0]">
             <MovementIcon type="clock" /> {clockText} hrs (current)
           </div>
         )}
@@ -3394,8 +3394,8 @@ function TrainMovementContent() {
     const selectedRoads = getMovementRoads(current.depot);
     const isInsertion = operation === "insertion";
     const isSwapping = operation === "swapping";
-    const labelClass = "mb-1.5 block text-[13px] font-medium uppercase tracking-[0.12em] text-[#58a6ff]";
-    const inputClass = "h-9 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[13px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
+    const labelClass = "mb-1.5 block text-[12px] font-medium uppercase tracking-[0.12em] text-[#58a6ff]";
+    const inputClass = "h-9 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
 
     return (
       <section
@@ -3407,12 +3407,12 @@ function TrainMovementContent() {
             <label className="col-span-1 lg:col-span-2">
               <span className={labelClass}>Train ID</span>
               <div className="flex h-9 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 focus-within:border-[#4f8ef7]">
-                <span className="text-[13px] font-medium text-[#4f8ef7]">T</span>
+                <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
                 <input
                   value={current.trainId}
                   onChange={(e) => updateMovementForm(operation, "trainId", e.target.value.replace(/\D/g, ""))}
                   placeholder="e.g. 25"
-                  className="h-full min-w-0 flex-1 bg-transparent text-[13px] font-medium text-white outline-none placeholder:text-[#31516b]"
+                  className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
                 />
               </div>
             </label>
@@ -3440,7 +3440,7 @@ function TrainMovementContent() {
                         key={road}
                         type="button"
                         onClick={() => updateMovementForm(operation, "road", road)}
-                        className={`rounded-lg border px-2 py-1.5 text-[13px] font-medium transition-all ${active ? "border-blue-400 bg-blue-600/30 text-white" : "border-[#1e4060] bg-[#061827] text-[#7eb8e0] hover:border-[#4f8ef7] hover:text-white"}`}
+                        className={`rounded-lg border px-2 py-1.5 text-[12px] font-medium transition-all ${active ? "border-blue-400 bg-blue-600/30 text-white" : "border-[#1e4060] bg-[#061827] text-[#7eb8e0] hover:border-[#4f8ef7] hover:text-white"}`}
                       >
                         {road}
                       </button>
@@ -3476,12 +3476,12 @@ function TrainMovementContent() {
                 <label className="col-span-1 lg:col-span-3">
                   <span className={labelClass}>Replaced by train</span>
                   <div className="flex h-9 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 focus-within:border-[#4f8ef7]">
-                    <span className="text-[13px] font-medium text-[#4f8ef7]">T</span>
+                    <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
                     <input
                       value={current.replacedBy}
                       onChange={(e) => updateMovementForm(operation, "replacedBy", e.target.value.replace(/\D/g, ""))}
                       placeholder="e.g. 30"
-                      className="h-full min-w-0 flex-1 bg-transparent text-[13px] font-medium text-white outline-none placeholder:text-[#31516b]"
+                      className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
                     />
                   </div>
                 </label>
@@ -3494,13 +3494,13 @@ function TrainMovementContent() {
                 value={current.notes}
                 onChange={(e) => updateMovementForm(operation, "notes", e.target.value)}
                 placeholder="Any additional remarks..."
-                className="min-h-[42px] w-full resize-none rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2 text-[13px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
+                className="min-h-[42px] w-full resize-none rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2 text-[12px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
               />
             </label>
 
             <div className="col-span-2 self-stretch rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2 lg:col-span-7">
-              <p className="mb-1 text-[13px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
-              <p className="font-mono text-[13px] font-medium leading-snug text-[#c8d8ea]">
+              <p className="mb-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
+              <p className="font-mono text-[12px] font-medium leading-snug text-[#c8d8ea]">
                 {buildMovementPreview(operation)}
               </p>
             </div>
@@ -3508,10 +3508,10 @@ function TrainMovementContent() {
             <button
               type="button"
               onClick={() => addMovementLog(operation)}
-              className="col-span-2 flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[13px] font-medium text-white shadow-[0_0_16px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01] lg:col-span-12"
+              className="col-span-2 flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[12px] font-medium text-white shadow-[0_0_16px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01] lg:col-span-12"
               style={{ borderColor: `${meta.accent}9a`, backgroundColor: `${meta.accent}33` }}
             >
-              <span className="text-base leading-none">+</span> {meta.buttonLabel}
+              <span className="text-[12px] leading-none">+</span> {meta.buttonLabel}
             </button>
           </div>
         </div>
