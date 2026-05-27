@@ -2904,6 +2904,31 @@ function normalizeMovementTrain(value) {
   return normalized ? padTrainId(normalized) : "";
 }
 
+function cleanMovementCustomTimeInput(value) {
+  const raw = String(value || "").replace(/[^\d:]/g, "").slice(0, 5);
+  if (raw.includes(":")) {
+    const [hour = "", minute = ""] = raw.split(":");
+    return `${hour.slice(0, 2)}:${minute.slice(0, 2)}`;
+  }
+
+  const digits = raw.replace(/\D/g, "").slice(0, 4);
+  if (digits.length <= 2) return digits;
+  if (digits.length === 3) return `${digits.slice(0, 1)}:${digits.slice(1)}`;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
+function normalizeMovementCustomTimeInput(value) {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 4);
+  if (!digits) return "";
+
+  const hourText = digits.length <= 2 ? digits : digits.length === 3 ? digits.slice(0, 1) : digits.slice(0, 2);
+  const minuteText = digits.length <= 2 ? "00" : digits.length === 3 ? digits.slice(1) : digits.slice(2);
+  const hour = Math.min(Math.max(Number(hourText || 0), 0), 23);
+  const minute = Math.min(Math.max(Number(minuteText || 0), 0), 59);
+
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
 function TrainMovementContent() {
   const [entries, setEntries] = useState(() => loadTrainMovementLog());
   const [clockText, setClockText] = useState(() => formatTime(new Date()));
@@ -3331,12 +3356,19 @@ function TrainMovementContent() {
               <button type="button" onClick={() => updateForm("timingMode", "custom")} className={`flex items-center justify-center rounded-md px-2.5 py-1.5 text-[11px] font-black transition-all ${form.timingMode === "custom" ? "bg-blue-600/35 text-white border border-blue-400" : "text-[#7eb8e0] hover:text-white"}`}>Custom</button>
             </div>
             {form.timingMode === "custom" ? (
-              <input
-                type="time"
-                value={form.customTime}
-                onChange={(e) => updateForm("customTime", e.target.value)}
-                className="mt-1.5 h-9 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-bold text-[#c8d8ea] outline-none focus:border-[#4f8ef7]"
-              />
+              <div className="mt-1.5 flex h-9 w-full items-center rounded-lg border border-[#1e4060] bg-[#061827] px-3 focus-within:border-[#4f8ef7]">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={5}
+                  value={form.customTime}
+                  onChange={(e) => updateForm("customTime", cleanMovementCustomTimeInput(e.target.value))}
+                  onBlur={(e) => updateForm("customTime", normalizeMovementCustomTimeInput(e.target.value))}
+                  placeholder="05:06"
+                  className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-semibold text-[#c8d8ea] outline-none placeholder:text-[#31516b]"
+                />
+                <span className="ml-2 shrink-0 text-[11px] font-semibold text-[#7eb8e0]">hrs</span>
+              </div>
             ) : (
               <div className="mt-1.5 flex h-8 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[11px] font-semibold text-[#7eb8e0]">
                 <MovementIcon type="clock" /> {clockText} hrs (current)
