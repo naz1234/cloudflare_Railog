@@ -3504,15 +3504,16 @@ function TrainMovementContent() {
 
   const TrainMovementOperationLogTable = ({ depot, operation, accent, logs }) => {
     const meta = OPERATION_META[operation];
+    const depotLabel = getMovementDepotLabel(depot);
     return (
       <section className="overflow-hidden rounded-xl border" style={{ borderColor: `${meta.accent}42`, background: "linear-gradient(180deg,#041727 0%,#03111d 100%)" }}>
         <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2" style={{ borderColor: `${meta.accent}30`, backgroundColor: `${meta.accent}10` }}>
           <div className="flex min-w-0 items-center gap-2">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: `${meta.accent}22`, color: meta.accent }}>
-              <MovementIcon type={meta.iconType} color={meta.accent} />
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: `${accent || meta.accent}22`, color: accent || meta.accent }}>
+              <MovementIcon type={meta.iconType} color={accent || meta.accent} />
             </span>
             <div className="min-w-0">
-              <h4 className="text-[12px] font-black uppercase tracking-wide text-white">{meta.logTitle}</h4>
+              <h4 className="text-[12px] font-black uppercase tracking-wide text-white">{depotLabel} — {meta.logTitle}</h4>
               <p className="text-[10px] font-semibold text-[#8ea8c0]">{logs.length} entries</p>
             </div>
           </div>
@@ -3568,6 +3569,54 @@ function TrainMovementContent() {
     );
   };
 
+  const TrainMovementOperationWindow = ({ operation }) => {
+    const meta = OPERATION_META[operation];
+    const westLogs = entries.filter((entry) => entry.depot === "west" && entry.operation === operation);
+    const eastLogs = entries.filter((entry) => entry.depot === "east" && entry.operation === operation);
+    const totalLogs = westLogs.length + eastLogs.length;
+
+    return (
+      <section
+        className="overflow-hidden rounded-xl border shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]"
+        style={{
+          borderColor: `${meta.accent}55`,
+          background: "linear-gradient(180deg,#071e33 0%,#061827 100%)",
+          boxShadow: `0 0 24px ${meta.accent}16, inset 0 1px 0 rgba(255,255,255,0.05)`,
+        }}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2.5 border-b px-4 py-3" style={{ borderColor: `${meta.accent}35`, background: `linear-gradient(90deg, ${meta.accent}1f, transparent)` }}>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: `${meta.accent}24`, color: meta.accent, boxShadow: `0 0 14px ${meta.accent}22` }}>
+              <MovementIcon type={meta.iconType} color={meta.accent} />
+            </div>
+            <div>
+              <h2 className="text-[16px] font-black leading-tight text-white">{meta.title} Movement + Log</h2>
+              <p className="mt-0.5 text-[11px] font-medium" style={{ color: meta.accent }}>One window for input and output log</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="rounded-md border px-2 py-1 text-[10px] font-black" style={{ borderColor: `${meta.accent}55`, backgroundColor: `${meta.accent}1c`, color: meta.accent }}>
+              {totalLogs} entries
+            </span>
+            <span className="rounded-md border border-[#1e4060] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#8ea8c0]">
+              WD {westLogs.length} • ED {eastLogs.length}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid gap-3 p-4 xl:grid-cols-[360px_minmax(0,1fr)]">
+          <MovementFormCard operation={operation} />
+
+          <div className="grid content-start gap-3">
+            <TrainMovementOperationLogTable depot="west" operation={operation} accent="#8b5cf6" logs={westLogs} />
+            <TrainMovementOperationLogTable depot="east" operation={operation} accent="#06d4e8" logs={eastLogs} />
+          </div>
+        </div>
+      </section>
+    );
+  };
+
   const TrainMovementDepotCard = ({ depot, title, accent, logs }) => {
     const insertionLogs = logs.filter((entry) => entry.operation === "insertion");
     const removalLogs = logs.filter((entry) => entry.operation === "removal");
@@ -3615,50 +3664,34 @@ function TrainMovementContent() {
     );
   };
 
-  const westEntries = entries.filter((entry) => entry.depot === "west");
-  const eastEntries = entries.filter((entry) => entry.depot === "east");
-
   return (
-    <div className="grid gap-3 items-start" style={{ gridTemplateColumns: "360px minmax(720px, 1fr)" }}>
-      <aside className="sticky top-[76px] max-h-[calc(100vh-92px)] overflow-y-auto rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]">
-        <div className="flex items-center gap-2.5 border-b border-[#1a3a56] px-4 py-3" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600/25 text-blue-300 shadow-[0_0_14px_rgba(59,130,246,0.22)]">
-            <MovementIcon type="train" />
-          </div>
-          <div>
-            <h2 className="text-[15px] font-black leading-tight text-white">Add train movement</h2>
-            <p className="mt-0.5 text-[11px] font-medium text-[#58a6ff]">Separated by insertion, removal, and swapping</p>
-          </div>
-        </div>
-
-        <div className="space-y-3 p-3">
-          {MOVEMENT_OPERATIONS.map((operation) => (
-            <MovementFormCard key={operation} operation={operation} />
-          ))}
-        </div>
-      </aside>
-
+    <div className="grid gap-3">
       <section className="rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_14px_30px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.05)]">
         <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[#1a3a56] px-4 py-3" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600/25 text-purple-300 shadow-[0_0_14px_rgba(168,85,247,0.22)]">
-              <MovementIcon type="clock" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600/25 text-blue-300 shadow-[0_0_14px_rgba(59,130,246,0.22)]">
+              <MovementIcon type="train" />
             </div>
             <div>
-              <h2 className="text-[17px] font-black leading-tight text-white">Today's Log</h2>
-              <p className="mt-0.5 text-[11px] font-medium text-[#58a6ff]">{entries.length} entries • output logs separated by operation</p>
+              <h2 className="text-[17px] font-black leading-tight text-white">Train Movement + Log</h2>
+              <p className="mt-0.5 text-[11px] font-medium text-[#58a6ff]">Insertion, Removal, and Swapping are now separated into their own input + log windows</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button onClick={() => copyDepotLogs("west")} className="min-w-[82px] rounded-lg border border-[#2b4f6b] bg-[#061827] px-3 py-1.5 text-[11px] font-bold text-[#8b5cf6] hover:border-[#8b5cf6]">{getCopyButtonLabel("west", "all", "Copy West")}</button>
-            <button onClick={() => copyDepotLogs("east")} className="min-w-[82px] rounded-lg border border-[#2b4f6b] bg-[#061827] px-3 py-1.5 text-[11px] font-bold text-[#06d4e8] hover:border-[#06d4e8]">{getCopyButtonLabel("east", "all", "Copy East")}</button>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-lg border border-[#2b4f6b] bg-[#061827] px-3 py-1.5 font-mono text-[11px] font-bold text-[#7eb8e0]">
+              {clockText} hrs
+            </span>
+            <span className="rounded-lg border border-[#2b4f6b] bg-[#061827] px-3 py-1.5 text-[11px] font-bold text-[#8ea8c0]">
+              {entries.length} total logs
+            </span>
           </div>
         </div>
 
-        <div className="space-y-3 p-4">
-          <TrainMovementDepotCard depot="west" title="West Depot" accent="#8b5cf6" logs={westEntries} />
-          <TrainMovementDepotCard depot="east" title="East Depot" accent="#06d4e8" logs={eastEntries} />
+        <div className="grid gap-4 p-4">
+          {MOVEMENT_OPERATIONS.map((operation) => (
+            <TrainMovementOperationWindow key={operation} operation={operation} />
+          ))}
         </div>
       </section>
     </div>
