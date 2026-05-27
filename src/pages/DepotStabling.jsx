@@ -3630,11 +3630,11 @@ function TrainMovementContent() {
               </div>
             </label>
 
-            <div className="col-span-2 min-w-[250px] lg:col-span-4 xl:max-w-[300px]">
+            <div className="col-span-2 min-w-0 lg:col-span-5 xl:max-w-[300px]">
               {renderTimingPicker(operation)}
             </div>
 
-            <div className="col-span-2 lg:col-span-4 xl:max-w-[300px]">
+            <div className="col-span-2 min-w-0 lg:col-span-5 xl:max-w-[300px]">
               <span className={labelClass}>Depot</span>
               <div className="grid grid-cols-2 gap-1.5">
                 {renderDepotButton({ operation, depot: "west", label: "West Depot", accent: "#8b5cf6" })}
