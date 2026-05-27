@@ -2975,8 +2975,8 @@ function cleanMovementCustomTimeInput(value) {
   }
 
   const digits = raw.replace(/\D/g, "").slice(0, 4);
-  if (digits.length <= 2) return digits;
-  if (digits.length === 3) return `${digits.slice(0, 1)}:${digits.slice(1)}`;
+  if (digits.length <= 1) return digits;
+  if (digits.length === 2) return `${digits}:`;
   return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
 
@@ -2994,11 +2994,23 @@ function cleanTp1MovementTimeInput(value) {
 }
 
 function normalizeMovementCustomTimeInput(value) {
-  const digits = String(value || "").replace(/\D/g, "").slice(0, 4);
-  if (!digits) return "";
+  const raw = String(value || "").replace(/[^\d:]/g, "").slice(0, 5);
+  if (!raw) return "";
 
-  const hourText = digits.length <= 2 ? digits : digits.length === 3 ? digits.slice(0, 1) : digits.slice(0, 2);
-  const minuteText = digits.length <= 2 ? "00" : digits.length === 3 ? digits.slice(1) : digits.slice(2);
+  let hourText = "";
+  let minuteText = "";
+
+  if (raw.includes(":")) {
+    const [hour = "", minute = ""] = raw.split(":");
+    hourText = hour.slice(0, 2);
+    minuteText = minute.slice(0, 2) || "00";
+  } else {
+    const digits = raw.replace(/\D/g, "").slice(0, 4);
+    if (!digits) return "";
+    hourText = digits.length <= 2 ? digits : digits.slice(0, 2);
+    minuteText = digits.length <= 2 ? "00" : digits.slice(2);
+  }
+
   const hour = Math.min(Math.max(Number(hourText || 0), 0), 23);
   const minute = Math.min(Math.max(Number(minuteText || 0), 0), 59);
 
@@ -3638,6 +3650,14 @@ function TrainMovementContent() {
                 inputMode="numeric"
                 maxLength={5}
                 value={current.customTime}
+                onKeyDown={(e) => {
+                  const value = String(current.customTime || "");
+                  const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                  if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                    e.preventDefault();
+                    updateMovementForm(operation, "customTime", value.slice(0, -2));
+                  }
+                }}
                 onChange={(e) => updateMovementForm(operation, "customTime", cleanMovementCustomTimeInput(e.target.value))}
                 onBlur={(e) => updateMovementForm(operation, "customTime", normalizeMovementCustomTimeInput(e.target.value))}
                 placeholder="00:00"
