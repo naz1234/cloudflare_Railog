@@ -3993,15 +3993,19 @@ function TrainMovementContent() {
               {renderTp1TimeInput("nextWashTime")}
             </label>
 
-            <label className="col-span-1">
-              <span className={labelClass}>From TP1</span>
-              {renderTp1TimeInput("fromTp1", isAutomatic)}
-            </label>
+            {!isAutomatic && (
+              <>
+                <label className="col-span-1">
+                  <span className={labelClass}>From TP1</span>
+                  {renderTp1TimeInput("fromTp1")}
+                </label>
 
-            <label className="col-span-1">
-              <span className={labelClass}>to Manual</span>
-              {renderTp1TimeInput("toManual", isAutomatic)}
-            </label>
+                <label className="col-span-1">
+                  <span className={labelClass}>to Manual</span>
+                  {renderTp1TimeInput("toManual")}
+                </label>
+              </>
+            )}
           </div>
 
           <div className="rounded-xl border border-[#1e4060] bg-[#041727] p-3">
