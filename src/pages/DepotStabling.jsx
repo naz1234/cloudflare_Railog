@@ -1384,14 +1384,76 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   );
 }
 
-function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, pstState, prepState, onPSTTick, onPrepTick, taNameState, onTaNameChange }) {
+function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, pstState, prepState, onPSTTick, onPrepTick, taNameState, onTaNameChange, onClearPST, onClearPrep }) {
+  const [confirmClearAction, setConfirmClearAction] = useState(null);
+  const hasClearControls = Boolean(onClearPST || onClearPrep);
+  const pstClearCount = roads.reduce((count, road) => {
+    return count + blockIndices.filter((bi) => {
+      const state = pstState?.[`${road}-${bi}`];
+      return state?.done || state?.confirming;
+    }).length;
+  }, 0);
+  const prepClearCount = roads.reduce((count, road) => {
+    return count + blockIndices.filter((bi) => {
+      const state = prepState?.[`${road}-${bi}`];
+      return state?.started || state?.done;
+    }).length;
+  }, 0);
+
+  const handleSectionClear = (action) => {
+    const clearHandler = action === "pst" ? onClearPST : onClearPrep;
+    if (!clearHandler) return;
+
+    if (confirmClearAction === action) {
+      clearHandler();
+      setConfirmClearAction(null);
+      return;
+    }
+
+    setConfirmClearAction(action);
+    setTimeout(() => {
+      setConfirmClearAction((current) => (current === action ? null : current));
+    }, 3000);
+  };
+
+  const clearButtonBase = "rounded-xl border px-3 py-1.5 text-[10px] font-black uppercase tracking-wide transition-all disabled:cursor-not-allowed disabled:opacity-40";
+
   return (
     <section className="bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+          </div>
+          <h2 className="text-base leading-none font-black text-white tracking-widest uppercase whitespace-nowrap">{title}</h2>
         </div>
-        <h2 className="text-base leading-none font-black text-white tracking-widest uppercase">{title}</h2>
+
+        {hasClearControls && (
+          <div className="flex flex-shrink-0 items-center gap-2">
+            {onClearPST && (
+              <button
+                type="button"
+                onClick={() => handleSectionClear("pst")}
+                disabled={pstClearCount === 0}
+                className={`${clearButtonBase} ${confirmClearAction === "pst" ? "border-red-500 bg-red-600 text-white" : "border-emerald-500/50 bg-emerald-950/35 text-emerald-300 hover:border-emerald-400 hover:bg-emerald-900/50"}`}
+                title="Clear West Depot PST status only"
+              >
+                {confirmClearAction === "pst" ? "Confirm PST?" : "Clear PST"}
+              </button>
+            )}
+            {onClearPrep && (
+              <button
+                type="button"
+                onClick={() => handleSectionClear("prep")}
+                disabled={prepClearCount === 0}
+                className={`${clearButtonBase} ${confirmClearAction === "prep" ? "border-red-500 bg-red-600 text-white" : "border-blue-500/50 bg-blue-950/35 text-blue-300 hover:border-blue-400 hover:bg-blue-900/50"}`}
+                title="Clear West Depot Train Prep status only"
+              >
+                {confirmClearAction === "prep" ? "Confirm Prep?" : "Clear Train Prep"}
+              </button>
+            )}
+          </div>
+        )}
       </div>
       <div className="overflow-x-auto rounded-xl">
         <table className="border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 912, maxWidth: 912, width: 912 }}>
@@ -3482,7 +3544,7 @@ function buildPSTExportLinesFromVisibleState({
 }
 
 function PSTTabContent
-({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPrepTick, onRemoveLog, onClearDepotLog, taNameState, onTaNameChange, completedByNames, onCompletedByChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug }) {
+({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPrepTick, onRemoveLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug }) {
   const [downloadingExcel, setDownloadingExcel] = useState(false);
   const safeCompletedByNames = completedByNames || { west: "", east: "" };
   const sortedLogLines = sortPSTLogLinesByTime(logLines);
@@ -3556,7 +3618,7 @@ function PSTTabContent
   return (
     <div className="flex flex-col gap-5 w-fit">
       <div className="space-y-5 min-w-0">
-        <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPrepTick={onPrepTick} taNameState={taNameState} onTaNameChange={onTaNameChange} />
+        <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPrepTick={onPrepTick} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} />
         <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPrepTick={onPrepTick} taNameState={taNameState} onTaNameChange={onTaNameChange} />
       </div>
 
@@ -4935,33 +4997,34 @@ export default function DepotStablingPage() {
     else setPrepState((prev) => { const n = { ...prev }; delete n[parts]; return n; });
   };
 
+  const removePSTSectionKeys = (state, depot) => {
+    const roads = depot === "west" ? WEST_ROADS : EAST_ROADS;
+    const next = { ...state };
+    Object.keys(next).forEach((key) => {
+      if (roads.some((road) => key.startsWith(`${road}-`))) delete next[key];
+    });
+    return next;
+  };
+
+  const handleClearDepotPSTOnly = (depot) => {
+    markPSTLiveLocalEdit();
+    setPstLogLines((prev) => prev.filter((line) => !(line.depot === depot && line.type === "PST")));
+    setPstState((prev) => removePSTSectionKeys(prev, depot));
+  };
+
+  const handleClearDepotPrepOnly = (depot) => {
+    markPSTLiveLocalEdit();
+    setPstLogLines((prev) => prev.filter((line) => !(line.depot === depot && line.type === "Prep")));
+    setPrepState((prev) => removePSTSectionKeys(prev, depot));
+    setTaNameState((prev) => removePSTSectionKeys(prev, depot));
+  };
+
   const handleClearDepotPST = (depot) => {
     markPSTLiveLocalEdit();
     setPstLogLines((prev) => prev.filter((l) => l.depot !== depot));
-    setPstState((prev) => {
-      const roads = depot === "west" ? WEST_ROADS : EAST_ROADS;
-      const n = { ...prev };
-      Object.keys(n).forEach((k) => {
-        if (roads.some((r) => k.startsWith(r + "-"))) delete n[k];
-      });
-      return n;
-    });
-    setPrepState((prev) => {
-      const roads = depot === "west" ? WEST_ROADS : EAST_ROADS;
-      const n = { ...prev };
-      Object.keys(n).forEach((k) => {
-        if (roads.some((r) => k.startsWith(r + "-"))) delete n[k];
-      });
-      return n;
-    });
-    setTaNameState((prev) => {
-      const roads = depot === "west" ? WEST_ROADS : EAST_ROADS;
-      const n = { ...prev };
-      Object.keys(n).forEach((k) => {
-        if (roads.some((r) => k.startsWith(r + "-"))) delete n[k];
-      });
-      return n;
-    });
+    setPstState((prev) => removePSTSectionKeys(prev, depot));
+    setPrepState((prev) => removePSTSectionKeys(prev, depot));
+    setTaNameState((prev) => removePSTSectionKeys(prev, depot));
   };
 
   const handleAddRequest = async (reqData) => {
@@ -5323,6 +5386,8 @@ export default function DepotStablingPage() {
             onPrepTick={handlePrepTick}
             onRemoveLog={handleRemovePSTLog}
             onClearDepotLog={handleClearDepotPST}
+            onClearDepotPSTOnly={handleClearDepotPSTOnly}
+            onClearDepotPrepOnly={handleClearDepotPrepOnly}
             taNameState={taNameState}
             onTaNameChange={handleTaNameChange}
             completedByNames={pstCompletedByNames}
