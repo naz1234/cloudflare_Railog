@@ -1346,7 +1346,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
         {maintList.map((item) => <PSTBadge key={`${item.displayType}-${item.badgeText || ""}`} text={item.badgeText || item.displayType} bg={item.badgeBg} border={item.badgeBorder} />)}
         {key && pstEstimateTime && (
           <span
-            className="rounded-full border border-red-500/80 bg-red-950/55 px-1.5 py-0.5 text-[8px] font-black tracking-wide text-red-200 shadow-[0_0_10px_rgba(239,68,68,0.34)] whitespace-nowrap"
+            className="rounded-full border border-red-500/80 bg-red-950/55 px-1.5 py-0.5 text-[9px] font-normal tracking-wide text-red-200 shadow-[0_0_10px_rgba(239,68,68,0.34)] whitespace-nowrap"
             title={`Estimated PST completed at ${pstEstimateTime} hrs`}
           >
             {pstEstimateTime}
