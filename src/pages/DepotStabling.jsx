@@ -2989,7 +2989,7 @@ function TrainMovementContent() {
     },
   };
 
-  const MOVEMENT_OPERATIONS = ["insertion", "removal", "swapping"];
+  const MOVEMENT_OPERATIONS = ["swapping", "insertion", "removal"];
 
   const [entries, setEntries] = useState(() => loadTrainMovementLog());
   const [clockText, setClockText] = useState(() => formatTime(new Date()));
@@ -3674,7 +3674,7 @@ function TrainMovementContent() {
             </div>
             <div>
               <h2 className="text-[17px] font-black leading-tight text-white">Train Movement + Log</h2>
-              <p className="mt-0.5 text-[11px] font-medium text-[#58a6ff]">Insertion, Removal, and Swapping are now separated into their own input + log windows</p>
+              <p className="mt-0.5 text-[11px] font-medium text-[#58a6ff]">Swapping, Insertion, and Removal are separated into their own input + log windows</p>
             </div>
           </div>
 
