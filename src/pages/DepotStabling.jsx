@@ -3498,9 +3498,9 @@ function TrainMovementContent() {
               />
             </label>
 
-            <div className="col-span-2 self-stretch rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2 lg:col-span-7">
+            <div className="col-span-2 self-stretch rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2 lg:col-span-12">
               <p className="mb-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
-              <p className="font-mono text-[12px] font-medium leading-snug text-[#c8d8ea]">
+              <p className="overflow-x-auto whitespace-nowrap font-mono text-[12px] font-medium leading-snug text-[#c8d8ea]">
                 {buildMovementPreview(operation)}
               </p>
             </div>
