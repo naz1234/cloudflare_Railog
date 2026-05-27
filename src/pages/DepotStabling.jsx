@@ -3058,7 +3058,7 @@ function TrainMovementContent() {
     requestAnimationFrame(() => {
       window.scrollTo(position.x, position.y);
     });
-  }, [forms, entries]);
+  }, [forms, entries, tp1Form, tp1Entries]);
 
   useEffect(() => { saveTrainMovementLog(entries); }, [entries]);
   useEffect(() => { saveTp1MovementLog(tp1Entries); }, [tp1Entries]);
@@ -3114,6 +3114,21 @@ function TrainMovementContent() {
   const getResolvedMovementTime = (operation) => {
     const current = getMovementForm(operation);
     return current.timingMode === "custom" && current.customTime ? current.customTime : clockText;
+  };
+
+  const setMovementTimingMode = (operation, mode) => {
+    captureMovementScrollPosition();
+    setForms((prev) => {
+      const current = prev[operation] || createDefaultMovementForms()[operation];
+      return {
+        ...prev,
+        [operation]: {
+          ...current,
+          timingMode: mode,
+          customTime: mode === "custom" && !current.customTime ? clockText : current.customTime,
+        },
+      };
+    });
   };
 
   const showCopyFeedback = (key, status) => {
@@ -3303,10 +3318,11 @@ function TrainMovementContent() {
     showCopyFeedback(feedbackKey, "copied");
   };
 
-  const getTp1NextWashText = (form = tp1Form) => {
-    const dateText = form.nextWashDate ? formatTp1DateForLog(form.nextWashDate) : "dd/mm/yyyy";
-    const timeText = form.nextWashTime || "hh:mm";
-    return `${dateText} at ${timeText}`;
+  const getTp1NextWashSuffix = (form = tp1Form) => {
+    if (!form.nextWashDate || !form.nextWashTime) return "";
+    const dateText = formatTp1DateForLog(form.nextWashDate);
+    const timeText = form.nextWashTime;
+    return ` ── Next wash: ${dateText} at ${timeText}.`;
   };
 
   const getTp1MovementType = (form = tp1Form) => {
@@ -3325,7 +3341,7 @@ function TrainMovementContent() {
     const trLocalized = tp1Form.trLocalized || "18:28";
     const fromTp1 = tp1Form.fromTp1 || "18:30";
     const toManual = tp1Form.toManual || "18:35";
-    const nextWash = getTp1NextWashText();
+    const nextWashSuffix = getTp1NextWashSuffix();
 
     if (!preview) {
       const missing = [];
@@ -3334,8 +3350,6 @@ function TrainMovementContent() {
       if (!tp1Form.trAtTp1) missing.push("TR at TP1");
       if (!tp1Form.shunterName) missing.push("Shunter Name");
       if (!tp1Form.shunterAuth) missing.push("Shunter Auth");
-      if (!tp1Form.nextWashDate) missing.push("Next Wash Date");
-      if (!tp1Form.nextWashTime) missing.push("Next Wash Time");
       if (movementType === "automatic" && !tp1Form.trLocalized) missing.push("TR Localized");
       if (movementType === "manual" && !tp1Form.fromTp1) missing.push("From TP1");
       if (movementType === "manual" && !tp1Form.toManual) missing.push("to Manual");
@@ -3347,10 +3361,10 @@ function TrainMovementContent() {
     }
 
     if (movementType === "automatic") {
-      return `${displayTrain}: ${planStatus} movement to Automatic Area. ── Next wash: ${nextWash}.\n${trAtTp1} hrs – ${displayTrain} arrived at TP1 with Shunter ${shunterName} onboard.\n${shunterAuth} hrs – ${displayTrain} authorized to prepare the train, conduct a brake self-test, and localize the train.\n${trLocalized} hrs – ${displayTrain} localized at TP1.`;
+      return `${displayTrain}: ${planStatus} movement to Automatic Area.${nextWashSuffix}\n${trAtTp1} hrs – ${displayTrain} arrived at TP1 with Shunter ${shunterName} onboard.\n${shunterAuth} hrs – ${displayTrain} authorized to prepare the train, conduct a brake self-test, and localize the train.\n${trLocalized} hrs – ${displayTrain} localized at TP1.`;
     }
 
-    return `${displayTrain}: ${planStatus} movement to Manual Area. ── Next wash: ${nextWash}.\n${trAtTp1} hrs – ${displayTrain} arrived at TP1.\n${shunterAuth} hrs – ${displayTrain} was authorized to prepare the train. Shunter ${shunterName} onboard.\n${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual Area at ${toManual} hrs.`;
+    return `${displayTrain}: ${planStatus} movement to Manual Area.${nextWashSuffix}\n${trAtTp1} hrs – ${displayTrain} arrived at TP1.\n${shunterAuth} hrs – ${displayTrain} was authorized to prepare the train. Shunter ${shunterName} onboard.\n${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual Area at ${toManual} hrs.`;
   };
 
   const addTp1MovementLog = () => {
@@ -3490,6 +3504,7 @@ function TrainMovementContent() {
       {type === "swap" && <><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></>}
       {type === "in" && <><polyline points="5 12 12 5 19 12"/><line x1="12" y1="5" x2="12" y2="19"/></>}
       {type === "out" && <><polyline points="19 12 12 19 5 12"/><line x1="12" y1="5" x2="12" y2="19"/></>}
+      {type === "chevron" && <><polyline points="6 9 12 15 18 9"/></>}
     </svg>
   );
 
@@ -3521,44 +3536,66 @@ function TrainMovementContent() {
 
   const renderTimingPicker = (operation) => {
     const current = getMovementForm(operation);
+    const isNow = current.timingMode !== "custom";
+    const activeStyle = "text-white";
+    const inactiveStyle = "text-[#6fa8df] hover:text-white";
+    const currentDisplay = isNow ? `${clockText} hrs (current)` : `${current.customTime || clockText} hrs`;
+
     return (
       <div>
-        <span className="mb-1.5 block text-[12px] font-medium uppercase tracking-[0.12em] text-[#58a6ff]">Timing</span>
-        <div className="grid grid-cols-2 gap-1 rounded-lg border border-[#1e4060] bg-[#061827] p-1">
+        <span className="mb-1.5 block text-[12px] font-medium uppercase tracking-[0.22em] text-[#58a6ff]">Timing</span>
+        <div className="flex h-11 w-full items-center overflow-hidden rounded-xl border border-[#1e4060] bg-[#061827] shadow-[0_0_18px_rgba(79,142,247,0.12),inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-[#4f8ef7]">
+          <div className="flex h-full w-11 shrink-0 items-center justify-center text-white">
+            <MovementIcon type="clock" color="#dbeafe" />
+          </div>
+
           <button
             type="button"
-            onClick={() => updateMovementForm(operation, "timingMode", "now")}
-            className={`flex items-center justify-center rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-all ${current.timingMode === "now" ? "bg-blue-600/35 text-white border border-blue-400" : "text-[#7eb8e0] hover:text-white"}`}
+            onClick={() => setMovementTimingMode(operation, "now")}
+            className={`flex h-full shrink-0 items-center justify-center px-3 text-[12px] font-medium transition-all ${isNow ? activeStyle : inactiveStyle}`}
           >
-            <MovementIcon type="clock" /> <span className="ml-1">Now</span>
+            Now
           </button>
+
+          <div className="h-7 w-px shrink-0 bg-[#244b6b]" />
+
           <button
             type="button"
-            onClick={() => updateMovementForm(operation, "timingMode", "custom")}
-            className={`flex items-center justify-center rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-all ${current.timingMode === "custom" ? "bg-blue-600/35 text-white border border-blue-400" : "text-[#7eb8e0] hover:text-white"}`}
+            onClick={() => setMovementTimingMode(operation, "custom")}
+            className={`flex h-full shrink-0 items-center justify-center px-3 text-[12px] font-medium transition-all ${!isNow ? activeStyle : inactiveStyle}`}
           >
             Custom
           </button>
+
+          <div className="h-7 w-px shrink-0 bg-[#244b6b]" />
+
+          {isNow ? (
+            <button
+              type="button"
+              onClick={() => setMovementTimingMode(operation, "custom")}
+              className="flex h-full min-w-0 flex-1 items-center justify-between gap-2 px-3 text-left text-[12px] font-medium text-white transition-all hover:bg-[#0a2238]"
+              title="Click to enter custom timing"
+            >
+              <span className="min-w-0 truncate">{currentDisplay}</span>
+              <MovementIcon type="chevron" color="#b8cff0" />
+            </button>
+          ) : (
+            <div className="flex h-full min-w-0 flex-1 items-center gap-1 px-3">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={5}
+                value={current.customTime}
+                onChange={(e) => updateMovementForm(operation, "customTime", cleanMovementCustomTimeInput(e.target.value))}
+                onBlur={(e) => updateMovementForm(operation, "customTime", normalizeMovementCustomTimeInput(e.target.value))}
+                placeholder="00:00"
+                className="h-full min-w-[48px] flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
+              />
+              <span className="shrink-0 text-[12px] font-medium text-[#c8d8ea]">hrs</span>
+              <MovementIcon type="chevron" color="#b8cff0" />
+            </div>
+          )}
         </div>
-        {current.timingMode === "custom" ? (
-          <div className="mt-1.5 flex h-9 w-full items-center rounded-lg border border-[#1e4060] bg-[#061827] px-3 focus-within:border-[#4f8ef7]">
-            <input
-              type="text"
-              inputMode="numeric"
-              maxLength={5}
-              value={current.customTime}
-              onChange={(e) => updateMovementForm(operation, "customTime", cleanMovementCustomTimeInput(e.target.value))}
-              onBlur={(e) => updateMovementForm(operation, "customTime", normalizeMovementCustomTimeInput(e.target.value))}
-              placeholder="05:06"
-              className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-[#c8d8ea] outline-none placeholder:text-[#31516b]"
-            />
-            <span className="ml-2 shrink-0 text-[12px] font-medium text-[#7eb8e0]">hrs</span>
-          </div>
-        ) : (
-          <div className="mt-1.5 flex h-8 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-medium text-[#7eb8e0]">
-            <MovementIcon type="clock" /> {clockText} hrs (current)
-          </div>
-        )}
       </div>
     );
   };
@@ -3940,7 +3977,7 @@ function TrainMovementContent() {
             </label>
 
             <label className="col-span-1">
-              <span className={labelClass}>Next Wash Date</span>
+              <span className={labelClass}>Next Wash Date <span className="normal-case tracking-normal text-[#6f8fa8]">Optional</span></span>
               <input
                 type="date"
                 value={tp1Form.nextWashDate}
@@ -3950,7 +3987,7 @@ function TrainMovementContent() {
             </label>
 
             <label className="col-span-1">
-              <span className={labelClass}>Next Wash Time</span>
+              <span className={labelClass}>Next Wash Time <span className="normal-case tracking-normal text-[#6f8fa8]">Optional</span></span>
               <input
                 type="time"
                 value={tp1Form.nextWashTime}
