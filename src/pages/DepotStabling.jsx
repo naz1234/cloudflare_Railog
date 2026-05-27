@@ -3396,6 +3396,7 @@ function TrainMovementContent() {
     const isSwapping = operation === "swapping";
     const labelClass = "mb-1.5 block text-[12px] font-medium uppercase tracking-[0.12em] text-[#58a6ff]";
     const inputClass = "h-9 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-3 text-[12px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
+    const glowInputBoxClass = "flex h-9 items-center gap-2 rounded-lg border border-[#2f7bc4] bg-[#061827] px-3 shadow-[0_0_14px_rgba(79,142,247,0.30),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_20px_rgba(79,142,247,0.48),inset_0_1px_0_rgba(255,255,255,0.08)]";
 
     return (
       <section
@@ -3406,7 +3407,7 @@ function TrainMovementContent() {
           <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-12 lg:items-end">
             <label className="col-span-1 lg:col-span-2">
               <span className={labelClass}>Train ID</span>
-              <div className="flex h-9 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 focus-within:border-[#4f8ef7]">
+              <div className={glowInputBoxClass}>
                 <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
                 <input
                   value={current.trainId}
@@ -3475,7 +3476,7 @@ function TrainMovementContent() {
                 </label>
                 <label className="col-span-1 lg:col-span-3">
                   <span className={labelClass}>Replaced by train</span>
-                  <div className="flex h-9 items-center gap-2 rounded-lg border border-[#1e4060] bg-[#061827] px-3 focus-within:border-[#4f8ef7]">
+                  <div className={glowInputBoxClass}>
                     <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
                     <input
                       value={current.replacedBy}
