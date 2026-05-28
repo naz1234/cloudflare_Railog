@@ -1436,14 +1436,29 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
               <div className="w-full rounded-lg border border-amber-600/70 bg-amber-950/40 px-1 py-1">
                 <div className="mb-1 flex items-center gap-1">
                   <span className="shrink-0 text-[8px] font-black uppercase tracking-wide text-amber-300">Start</span>
-                  <input
-                    type="time"
-                    value={pst?.startTime || ""}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => onPSTStartTimeChange?.(road, bi, key, e.target.value)}
-                    className="min-w-0 flex-1 rounded-md border border-amber-500/60 bg-[#071828] px-1 py-0.5 text-center text-[9px] font-black leading-tight text-amber-100 outline-none focus:border-amber-300"
-                    title="Edit PST start time"
-                  />
+                  <div className="flex min-w-0 flex-1 items-center rounded-md border border-amber-500/60 bg-[#071828] px-1 py-0.5 focus-within:border-amber-300">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      value={pst?.startTime || ""}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => {
+                        const value = String(pst?.startTime || "");
+                        const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                        if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                          e.preventDefault();
+                          onPSTStartTimeChange?.(road, bi, key, value.slice(0, -2));
+                        }
+                      }}
+                      onChange={(e) => onPSTStartTimeChange?.(road, bi, key, cleanMovementCustomTimeInput(e.target.value))}
+                      onBlur={(e) => onPSTStartTimeChange?.(road, bi, key, normalizeMovementCustomTimeInput(e.target.value))}
+                      placeholder="00:00"
+                      className="min-w-0 flex-1 bg-transparent text-center text-[9px] font-black leading-tight text-amber-100 outline-none placeholder:text-amber-700"
+                      title="Edit PST start time"
+                    />
+                    <span className="shrink-0 pl-0.5 text-[8px] font-black leading-tight text-amber-300">hrs</span>
+                  </div>
                 </div>
                 <div className="mb-1 text-center text-[8px] font-black uppercase tracking-wide text-amber-300">Any alarm?</div>
                 <div className="grid grid-cols-2 gap-1">
@@ -5800,16 +5815,16 @@ export default function DepotStablingPage() {
   const getDepotFromRoad = (road) => WEST_ROADS.includes(road) ? "west" : "east";
 
   const handlePSTStartTimeChange = useCallback((road, bi, trainKey, startTime) => {
-    const cleanStartTime = String(startTime || "").trim();
-    if (!/^\d{2}:\d{2}$/.test(cleanStartTime)) return;
+    const cleanStartTime = cleanMovementCustomTimeInput(startTime);
 
     markPSTLiveLocalEdit();
     const cellKey = `${road}-${bi}`;
-    const endTime = addMinutesToHHMM(cleanStartTime, 6);
+    const isCompleteTime = /^\d{2}:\d{2}$/.test(cleanStartTime);
 
     setPstState((prev) => {
       const current = prev[cellKey];
       if (!current) return prev;
+      const endTime = isCompleteTime ? addMinutesToHHMM(cleanStartTime, 6) : current.endTime;
       return {
         ...prev,
         [cellKey]: {
@@ -5840,8 +5855,9 @@ export default function DepotStablingPage() {
 
     // Pending confirmation: user has clicked PST once and must confirm alarm / no alarm.
     if (current?.confirming && alarmStatus) {
-      const startTime = current.startTime;
-      const endTime = current.endTime;
+      const startTime = normalizeMovementCustomTimeInput(current.startTime);
+      if (!/^\d{2}:\d{2}$/.test(startTime)) return;
+      const endTime = addMinutesToHHMM(startTime, 6);
       const alarmText = alarmStatus === "alarm" ? " Alarm reported." : " No alarm reported.";
       const line = `${startTime} hrs \u2013 PST commenced at ${roadFormatted} for ${paddedKey}. Completed at ${endTime} hrs.${alarmText}`;
 
