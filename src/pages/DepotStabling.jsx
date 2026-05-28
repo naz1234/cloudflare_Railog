@@ -6266,16 +6266,20 @@ export default function DepotStablingPage() {
     if (showStatus) setSyncing(true);
 
     try {
-      const stablingRecords = await base44.entities.DepotStabling.list();
+      const [stablingRecords, maintenanceRecords] = await Promise.all([
+        base44.entities.DepotStabling.list(),
+        base44.entities.MaintenanceRequest.list(),
+      ]);
       const { map, newWest, newEast } = buildStablingStateFromRecords(stablingRecords);
 
       existingMapRef.current = map;
       setWestData(newWest);
       setEastData(newEast);
+      setRequests(maintenanceRecords || []);
       setLastSynced(new Date());
       setSyncError(false);
     } catch (err) {
-      console.error("Live stabling sync failed:", err);
+      console.error("Live stabling / maintenance sync failed:", err);
       setSyncError(true);
     } finally {
       pollInProgressRef.current = false;

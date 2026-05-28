@@ -7,6 +7,8 @@ const REQUEST_TYPES = [
   "Deep Cleaning", "INBOUND (G to C)", "CC Tech/Func. Alarm", "Door Issue", "Training", "APU alarm", "Other"
 ];
 
+const MIN_VISIBLE_REQUEST_ROWS = 20;
+
 export const REQUEST_COLORS = {
   // Matched with DepotStabling.jsx MAINT_STYLES badgeBorder values.
   // MaintenancePanel uses `bg` as the visible pill accent/border/text colour.
@@ -294,6 +296,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
   const displayType = (req) => req.requestType === "Other" ? (req.customType || "Other") : req.requestType;
   const sortedRequests = [...requests].sort((a, b) => displayType(a).localeCompare(displayType(b)));
+  const visibleRequestRowCount = Math.max(sortedRequests.length, requests.length === 0 ? 1 : 0);
+  const emptyRequestRowCount = Math.max(0, MIN_VISIBLE_REQUEST_ROWS - visibleRequestRowCount);
 
   const inputCls = "w-full border border-[#1e4060] rounded-full px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] bg-[#091828] text-[#c8d8ea] transition-all placeholder:text-[#2b4f6b]";
   const labelCls = "block text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-widest mb-1";
@@ -407,7 +411,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           </thead>
           <tbody>
             {requests.length === 0 && (
-              <tr><td colSpan={4} className="text-center text-[#3a5a7a] py-4 text-xs italic">No requests yet</td></tr>
+              <tr className="h-[24px] border-b border-[#0f2040]">
+                <td colSpan={4} className="text-center text-[#3a5a7a] py-1 text-xs italic">No requests yet</td>
+              </tr>
             )}
             {sortedRequests.map((req) => {
               const displayLabel = displayType(req);
@@ -415,7 +421,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               const requestPillStyle = getRequestPillStyle(typeKey, displayLabel);
               const notePillStyle = req.remark ? requestPillStyle : getNeutralPillStyle();
               return (
-                <tr key={req.id || req._tempId} className="border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors">
+                <tr key={req.id || req._tempId} className="h-[24px] border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors">
                   <td className="px-0.5 py-0.5 text-center">
                     <span className="inline-flex min-w-[34px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none" style={requestPillStyle}>{req.trainId}</span>
                   </td>
@@ -431,6 +437,14 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 </tr>
               );
             })}
+            {Array.from({ length: emptyRequestRowCount }).map((_, index) => (
+              <tr key={`maintenance-empty-${index}`} className="h-[24px] border-b border-[#0f2040] last:border-0">
+                <td className="px-0.5 py-0.5 text-center text-[#17314a]">&nbsp;</td>
+                <td className="px-0.5 py-0.5 text-center text-[#17314a]">&nbsp;</td>
+                <td className="px-0.5 py-0.5 text-center text-[#17314a]">&nbsp;</td>
+                <td className="pr-1 py-0.5 text-center">&nbsp;</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
