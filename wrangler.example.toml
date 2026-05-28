@@ -8,7 +8,3 @@ pages_build_output_dir = "dist"
 binding = "DB"
 database_name = "raillog-db"
 database_id = "PUT_YOUR_D1_DATABASE_ID_HERE"
-
-# Optional: token required by /api/email-request when configured in Cloudflare Pages.
-# In Pages dashboard, add this as an Environment Variable instead of committing a real token.
-# EMAIL_IMPORT_TOKEN = "choose-your-own-long-secret-token"
