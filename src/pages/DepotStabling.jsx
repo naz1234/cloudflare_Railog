@@ -3090,6 +3090,42 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
 
 const TRAIN_MOVEMENT_LOG_KEY = "trainMovementLogState_v1";
 const TP1_MOVEMENT_LOG_KEY = "tp1MovementLogState_v1";
+const TRAIN_MOVEMENT_FORM_KEY = "trainMovementFormState_v1";
+const TP1_MOVEMENT_FORM_KEY = "tp1MovementFormState_v1";
+
+function loadSavedMovementObject(key) {
+  try {
+    if (typeof localStorage === "undefined") return null;
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSavedMovementObject(key, value) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(key, JSON.stringify(value || {}));
+  } catch {}
+}
+
+function mergeTrainMovementForms(defaultForms, savedForms) {
+  if (!savedForms || typeof savedForms !== "object" || Array.isArray(savedForms)) return defaultForms;
+
+  return {
+    insertion: { ...defaultForms.insertion, ...(savedForms.insertion || {}) },
+    removal: { ...defaultForms.removal, ...(savedForms.removal || {}) },
+    swapping: { ...defaultForms.swapping, ...(savedForms.swapping || {}) },
+  };
+}
+
+function mergeTp1MovementForm(defaultForm, savedForm) {
+  if (!savedForm || typeof savedForm !== "object" || Array.isArray(savedForm)) return defaultForm;
+  return { ...defaultForm, ...savedForm };
+}
 
 function loadTrainMovementLog() {
   try {
@@ -3330,8 +3366,14 @@ function TrainMovementContent() {
   const [clockText, setClockText] = useState(() => formatTime(new Date()));
   const [copyFeedback, setCopyFeedback] = useState({});
   const copyFeedbackTimerRef = useRef({});
-  const [forms, setForms] = useState(() => createDefaultMovementForms());
-  const [tp1Form, setTp1Form] = useState(() => createDefaultTp1MovementForm());
+  const [forms, setForms] = useState(() => {
+    const defaultForms = createDefaultMovementForms();
+    return mergeTrainMovementForms(defaultForms, loadSavedMovementObject(TRAIN_MOVEMENT_FORM_KEY));
+  });
+  const [tp1Form, setTp1Form] = useState(() => {
+    const defaultForm = createDefaultTp1MovementForm();
+    return mergeTp1MovementForm(defaultForm, loadSavedMovementObject(TP1_MOVEMENT_FORM_KEY));
+  });
   const movementScrollRestoreRef = useRef(null);
 
   const captureMovementScrollPosition = () => {
@@ -3351,6 +3393,8 @@ function TrainMovementContent() {
 
   useEffect(() => { saveTrainMovementLog(entries); }, [entries]);
   useEffect(() => { saveTp1MovementLog(tp1Entries); }, [tp1Entries]);
+  useEffect(() => { saveSavedMovementObject(TRAIN_MOVEMENT_FORM_KEY, forms); }, [forms]);
+  useEffect(() => { saveSavedMovementObject(TP1_MOVEMENT_FORM_KEY, tp1Form); }, [tp1Form]);
 
   useEffect(() => {
     return () => {
