@@ -5107,6 +5107,7 @@ function SCSecurityMessage() {
 
 // ── Section 3: Sweeping ───────────────────────────────────────────────────────
 const POSSESSION_SWEEP_KEY = "sweepingLog_v1";
+const POSSESSION_SWEEP_ENTRIES_KEY = "sweepingLogEntries_v1";
 const defaultSweep = { trainSet: "", nameTa: "", startTime: "", sweepFrom: "", sweepTo: "", lineClearTime: "" };
 
 function formatTrainSet(val) {
@@ -5129,10 +5130,34 @@ function generateSweepOutput(f) {
 
 function SweepingLog() {
   const [form, setForm] = useState(() => { try { return { ...defaultSweep, ...JSON.parse(localStorage.getItem(POSSESSION_SWEEP_KEY) || "{}") }; } catch { return defaultSweep; } });
+  const [logEntries, setLogEntries] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(POSSESSION_SWEEP_ENTRIES_KEY) || "[]");
+      return Array.isArray(saved) ? saved : [];
+    } catch {
+      return [];
+    }
+  });
+  const [added, setAdded] = useState(false);
+
   useEffect(() => { localStorage.setItem(POSSESSION_SWEEP_KEY, JSON.stringify(form)); }, [form]);
+  useEffect(() => { localStorage.setItem(POSSESSION_SWEEP_ENTRIES_KEY, JSON.stringify(logEntries)); }, [logEntries]);
+
   const set = (field) => (val) => setForm((p) => ({ ...p, [field]: val }));
   const clear = () => { setForm(defaultSweep); localStorage.removeItem(POSSESSION_SWEEP_KEY); };
+  const clearLog = () => { setLogEntries([]); localStorage.removeItem(POSSESSION_SWEEP_ENTRIES_KEY); };
   const output = generateSweepOutput(form);
+  const hasOutput = output.trim() !== "";
+  const allLogsText = logEntries.map((entry) => entry.text).join("\n");
+
+  const addToLog = () => {
+    if (!hasOutput) return;
+    setLogEntries((prev) => [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, text: output }]);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1400);
+  };
+
+  const removeLogEntry = (id) => setLogEntries((prev) => prev.filter((entry) => entry.id !== id));
 
   return (
     <div className="grid grid-cols-[1fr_1fr] gap-4 items-start">
@@ -5142,11 +5167,11 @@ function SweepingLog() {
             <div className="w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center"><Wind className="w-3.5 h-3.5 text-[#4f8ef7]" /></div>
             <div>
               <h2 className="text-sm font-bold text-white">Sweeping (after Possession)</h2>
-              <p className="text-[10px] text-[#4a8ab5]">Fill in details to generate log</p>
+              <p className="text-[10px] text-[#4a8ab5]">Fill details, then add to sweeping log</p>
             </div>
           </div>
           <button onClick={clear} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-red-800/50 text-red-400 hover:bg-red-950/40 transition-colors">
-            <Trash2 className="w-3 h-3" /> Clear
+            <Trash2 className="w-3 h-3" /> Clear Form
           </button>
         </div>
         <div className="p-4 space-y-3">
@@ -5162,23 +5187,62 @@ function SweepingLog() {
             <POSSESSION_FIELD label="Start Time"><POSSESSION_TIME_INPUT value={form.startTime} onChange={set("startTime")} placeholder="e.g. 02:32" /></POSSESSION_FIELD>
             <POSSESSION_FIELD label="Line Clear Time"><POSSESSION_TIME_INPUT value={form.lineClearTime} onChange={set("lineClearTime")} placeholder="e.g. 03:32" /></POSSESSION_FIELD>
           </div>
+
+          {hasOutput && (
+            <div className="rounded-xl border border-[#1e3a56] bg-[#071828] px-3 py-2">
+              <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-[#4a8ab5]">Preview</p>
+              <p className="font-mono text-xs leading-relaxed text-[#c8d8ea]">{output}</p>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={addToLog}
+            disabled={!hasOutput}
+            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-[#2b4f6b] bg-[#0f2d4a] text-xs font-bold text-[#c8d8ea] hover:bg-[#12385c] hover:border-[#4f8ef7] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          >
+            {added ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" /> : <Plus className="w-3.5 h-3.5" />}
+            {added ? "Added to Log" : "Add to Log"}
+          </button>
         </div>
       </div>
       <div className={possessionCardCls}>
         <div className={possessionHeaderCls} style={possessionHeaderStyle}>
           <div>
-            <h2 className="text-sm font-bold text-white">Generated Output</h2>
-            <p className="text-[10px] text-[#4a8ab5]">Formatted sweeping log</p>
+            <h2 className="text-sm font-bold text-white">Sweeping Log</h2>
+            <p className="text-[10px] text-[#4a8ab5]">{logEntries.length} {logEntries.length === 1 ? "entry" : "entries"}</p>
           </div>
-          <PossessionCopyBtn text={output} disabled={!output} />
+          <div className="flex items-center gap-2">
+            <PossessionCopyBtn text={allLogsText} disabled={!allLogsText} />
+            <button onClick={clearLog} disabled={logEntries.length === 0} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border border-red-800/50 text-red-400 hover:bg-red-950/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              <Trash2 className="w-3 h-3" /> Clear Log
+            </button>
+          </div>
         </div>
         <div className="p-4 min-h-[160px]">
-          {output ? (
-            <pre className="font-mono text-xs text-[#c8d8ea] whitespace-pre-wrap leading-relaxed">{output}</pre>
+          {logEntries.length > 0 ? (
+            <div className="space-y-2">
+              {logEntries.map((entry, index) => (
+                <div key={entry.id || `${index}-${entry.text}`} className="group rounded-xl border border-[#1e3a56] bg-[#071828] p-3">
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-emerald-700/50 bg-emerald-900/40 text-[10px] font-black text-emerald-300">{index + 1}</span>
+                    <pre className="flex-1 whitespace-pre-wrap font-mono text-xs leading-relaxed text-[#c8d8ea]">{entry.text}</pre>
+                    <button
+                      type="button"
+                      onClick={() => removeLogEntry(entry.id)}
+                      className="rounded-lg border border-red-800/40 p-1 text-red-400 opacity-70 transition-all hover:bg-red-950/40 hover:opacity-100"
+                      title="Remove log"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="h-32 flex flex-col items-center justify-center gap-2 text-center">
               <Wind className="w-6 h-6 text-[#1e3a56]" />
-              <p className="text-[10px] text-[#3a5a7a] font-semibold">Fill in the form to generate output</p>
+              <p className="text-[10px] text-[#3a5a7a] font-semibold">Fill in the form and click Add to Log</p>
             </div>
           )}
         </div>
