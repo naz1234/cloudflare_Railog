@@ -6831,6 +6831,7 @@ export default function DepotStablingPage() {
             {
               key: "stabling",
               label: "Train Req",
+              to: "/depot-stabling",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
@@ -6841,6 +6842,7 @@ export default function DepotStablingPage() {
             {
               key: "movement",
               label: "Train Movement",
+              to: "/train-movement",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="4" y="3" width="16" height="15" rx="3"/><path d="M8 21l2-3"/><path d="M16 21l-2-3"/><path d="M8 8h8"/><path d="M8 13h.01"/><path d="M16 13h.01"/>
@@ -6851,6 +6853,7 @@ export default function DepotStablingPage() {
             {
               key: "pst",
               label: "PST / Train Prep",
+              to: "/pst-train-prep",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
@@ -6860,6 +6863,7 @@ export default function DepotStablingPage() {
             {
               key: "insertion",
               label: "Insertion",
+              to: "/insertion",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="5 12 12 5 19 12"/><line x1="12" y1="5" x2="12" y2="19"/>
@@ -6869,6 +6873,7 @@ export default function DepotStablingPage() {
             {
               key: "washing",
               label: "Train Washing",
+              to: "/train-washing",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
@@ -6878,6 +6883,7 @@ export default function DepotStablingPage() {
             {
               key: "odo",
               label: "ODO Reading",
+              to: "/odo-reading",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
@@ -6907,6 +6913,7 @@ export default function DepotStablingPage() {
                 <Link
                   key={key}
                   to={to}
+                  onClick={() => setActiveTab(key)}
                   title={isSidebarCollapsed ? label : undefined}
                   className={navClass}
                 >
