@@ -8735,78 +8735,84 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}) {
       return;
     }
 
-    const gap = 3;
+    const visiblePills = pills.slice(0, 3).map((pill) => ({
+      ...pill,
+      cleanText: sanitizePdfText(pill.text || "-"),
+    }));
+
+    const gap = visiblePills.length >= 3 ? 2 : 3;
     const pillHeight = Math.max(8.2, Math.min(10.8, rowH - 2.4));
     const pillY = rowY + (rowH - pillHeight) / 2;
     const basePillFontSize = Math.max(4.8, Math.min(5.8, fontSize - 0.55));
     const safeLeft = cellX + 4;
     const safeRight = cellX + cellWidth - 4;
-    const availableWidth = safeRight - safeLeft;
-    const pillPaddingX = pills.length > 1 ? 7 : 9;
-    const minPillWidth = pills.length > 1 ? 34 : 42;
+    const availableWidth = Math.max(10, safeRight - safeLeft);
+    const pillPaddingX = visiblePills.length > 1 ? 5 : 8;
 
-    const rawPills = pills.map((pill) => ({
-      ...pill,
-      cleanText: sanitizePdfText(pill.text || "-"),
-    }));
+    // Use equal pill slots for multiple remarks. This prevents the next coloured pill
+    // from covering the tail of short labels such as "TODAY PM".
+    const slotWidth = visiblePills.length > 1
+      ? Math.max(28, (availableWidth - gap * (visiblePills.length - 1)) / visiblePills.length)
+      : availableWidth;
 
-    const getNaturalPillWidth = (text, size) => Math.max(
-      minPillWidth,
-      getApproxPdfTextWidth(text, size, true) + pillPaddingX * 2
-    );
+    // More conservative than getApproxPdfTextWidth because PDF viewers/browser canvas
+    // can render Helvetica bold slightly wider. Short operational labels should shrink,
+    // not truncate, so "TODAY PM" never becomes "TODA".
+    const getSafeTextWidth = (value, size, bold = true) => sanitizePdfText(value || "").length * size * (bold ? 0.82 : 0.58);
 
-    // Start with the normal PDF font size. If many request pills are in one cell,
-    // reduce the pill text slightly before truncating. This keeps common labels
-    // such as TODAY PM / TMRW PM visible in full.
-    let pillFontSize = basePillFontSize;
-    let naturalWidths = rawPills.map((pill) => getNaturalPillWidth(pill.cleanText, pillFontSize));
-    let totalNaturalWidth = naturalWidths.reduce((sum, width) => sum + width, 0) + gap * Math.max(0, rawPills.length - 1);
-
-    while (totalNaturalWidth > availableWidth && pillFontSize > 4.2) {
-      pillFontSize -= 0.2;
-      naturalWidths = rawPills.map((pill) => getNaturalPillWidth(pill.cleanText, pillFontSize));
-      totalNaturalWidth = naturalWidths.reduce((sum, width) => sum + width, 0) + gap * Math.max(0, rawPills.length - 1);
-    }
-
-    const fitTextToWidth = (value, width) => {
+    const fitLabelForPill = (value, pillWidth) => {
       const clean = sanitizePdfText(value || "-");
-      const maxTextWidth = Math.max(8, width - pillPaddingX * 2);
+      const maxTextWidth = Math.max(8, pillWidth - pillPaddingX * 2);
+      let size = basePillFontSize;
 
-      if (getApproxPdfTextWidth(clean, pillFontSize, true) <= maxTextWidth) {
-        return clean;
+      while (getSafeTextWidth(clean, size, true) > maxTextWidth && size > 3.35) {
+        size -= 0.15;
+      }
+
+      // Keep common short request labels in full; reduce the font instead of cutting.
+      if (clean.length <= 10) {
+        return { text: clean, size: Math.max(3.35, size) };
+      }
+
+      if (getSafeTextWidth(clean, size, true) <= maxTextWidth) {
+        return { text: clean, size };
       }
 
       let fitted = clean;
-      while (fitted.length > 4 && getApproxPdfTextWidth(`${fitted}...`, pillFontSize, true) > maxTextWidth) {
+      while (fitted.length > 4 && getSafeTextWidth(`${fitted}...`, size, true) > maxTextWidth) {
         fitted = fitted.slice(0, -1).trimEnd();
       }
 
-      return fitted.length > 4 ? `${fitted}...` : fitted;
+      return { text: fitted.length > 4 ? `${fitted}...` : fitted, size };
     };
 
     let cursorX = safeLeft;
 
-    rawPills.forEach((pill, index) => {
-      if (cursorX >= safeRight - 10) return;
+    visiblePills.forEach((pill, index) => {
+      if (cursorX >= safeRight - 8) return;
 
-      const remainingPills = rawPills.length - index;
+      const remainingPills = visiblePills.length - index;
       const remainingWidth = safeRight - cursorX - gap * Math.max(0, remainingPills - 1);
-      const evenWidthLimit = Math.max(10, remainingWidth / remainingPills);
-      const naturalWidth = naturalWidths[index] || minPillWidth;
-      const pillWidth = totalNaturalWidth <= availableWidth
-        ? naturalWidth
-        : Math.max(minPillWidth, Math.min(naturalWidth, evenWidthLimit));
-      const fitted = fitTextToWidth(pill.cleanText, pillWidth);
-      const textWidth = getApproxPdfTextWidth(fitted, pillFontSize, true);
-      const textX = cursorX + Math.max(pillPaddingX, (pillWidth - textWidth) / 2);
+      const pillWidth = visiblePills.length > 1
+        ? Math.min(slotWidth, remainingWidth)
+        : Math.min(
+            availableWidth,
+            Math.max(
+              42,
+              getSafeTextWidth(pill.cleanText, basePillFontSize, true) + pillPaddingX * 2
+            )
+          );
+      const fitted = fitLabelForPill(pill.cleanText, pillWidth);
+      const textWidth = getSafeTextWidth(fitted.text, fitted.size, true);
+      const textX = cursorX + Math.max(2, (pillWidth - textWidth) / 2);
 
       ops += pdfRoundedRect(cursorX, pillY, pillWidth, pillHeight, pillHeight / 2, {
         fill: pill.fill || "#ffffff",
         stroke: pill.stroke || "#000000",
         strokeWidth: 0.35,
       });
-      ops += pdfText(fitted, textX, fallbackTextY, {
-        size: pillFontSize,
+      ops += pdfText(fitted.text, textX, fallbackTextY, {
+        size: fitted.size,
         color: "#000000",
         font: "F2",
       });
@@ -10491,7 +10497,7 @@ function RoadRow({
                 maintList.map((item) => (
                   <span
                     key={`${key}-${item.displayType}-${item.badgeText || ""}`}
-                    className="w-[92px] max-w-full px-1.5 py-0.5 rounded-full text-[10px] font-normal leading-none whitespace-nowrap text-center truncate"
+                    className="inline-flex min-w-[92px] w-fit max-w-full items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-normal leading-none whitespace-nowrap text-center"
                     style={getRequestPillStyle(item)}
                     title={item.badgeText || item.displayType}
                   >
