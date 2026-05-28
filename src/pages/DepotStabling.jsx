@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Save, CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X } from "lucide-react";
+import { Save, CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ExternalLink } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
@@ -4757,6 +4757,59 @@ export default function DepotStablingPage() {
     return "stabling";
   };
   const [activeTab, setActiveTab] = useState(() => getTabFromPath(location.pathname));
+  const [bookmarkMenuOpen, setBookmarkMenuOpen] = useState(false);
+  const bookmarkMenuRef = useRef(null);
+  const headerBookmarks = useMemo(() => [
+    {
+      key: "train-req",
+      label: "Train Req",
+      description: "Depot stabling and train request board",
+      type: "tab",
+      tab: "stabling",
+    },
+    {
+      key: "pst-train-prep",
+      label: "PST / Train Prep",
+      description: "PST, prep status and live output log",
+      type: "tab",
+      tab: "pst",
+    },
+    {
+      key: "train-movement",
+      label: "Train Movement",
+      description: "Swapping, insertion and removal movement log",
+      type: "tab",
+      tab: "movement",
+    },
+    {
+      key: "insertion",
+      label: "Insertion",
+      description: "Insertion timing and TID reference",
+      type: "tab",
+      tab: "insertion",
+    },
+    {
+      key: "train-washing",
+      label: "Train Washing",
+      description: "Automatic wash plant and DOCX export",
+      type: "tab",
+      tab: "washing",
+    },
+    {
+      key: "odo-reading",
+      label: "ODO Reading",
+      description: "ODO reading log output",
+      type: "tab",
+      tab: "odo",
+    },
+    {
+      key: "possession",
+      label: "Possession",
+      description: "Possession page",
+      type: "route",
+      to: "/possession",
+    },
+  ], []);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     try {
       return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
@@ -4770,6 +4823,33 @@ export default function DepotStablingPage() {
       localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isSidebarCollapsed));
     } catch {}
   }, [isSidebarCollapsed]);
+
+  useEffect(() => {
+    if (!bookmarkMenuOpen) return undefined;
+
+    const closeBookmarkMenu = (event) => {
+      if (!bookmarkMenuRef.current?.contains(event.target)) {
+        setBookmarkMenuOpen(false);
+      }
+    };
+
+    const closeBookmarkMenuByKey = (event) => {
+      if (event.key === "Escape") setBookmarkMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", closeBookmarkMenu);
+    document.addEventListener("keydown", closeBookmarkMenuByKey);
+
+    return () => {
+      document.removeEventListener("mousedown", closeBookmarkMenu);
+      document.removeEventListener("keydown", closeBookmarkMenuByKey);
+    };
+  }, [bookmarkMenuOpen]);
+
+  const openBookmarkedTab = (tab) => {
+    setActiveTab(tab);
+    setBookmarkMenuOpen(false);
+  };
 
   useEffect(() => {
     if (isSidebarCollapsed) return undefined;
@@ -6025,6 +6105,65 @@ export default function DepotStablingPage() {
                 );
               })}
             </nav>
+
+            <div className="relative" ref={bookmarkMenuRef}>
+              <button
+                type="button"
+                onClick={() => setBookmarkMenuOpen((prev) => !prev)}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shadow-sm ${
+                  bookmarkMenuOpen
+                    ? "bg-emerald-500/15 border-emerald-400/50 text-emerald-200 shadow-emerald-950/30"
+                    : "bg-emerald-500/10 border-emerald-400/30 text-emerald-200 hover:bg-emerald-500/20 hover:border-emerald-300/50"
+                }`}
+                aria-haspopup="menu"
+                aria-expanded={bookmarkMenuOpen}
+              >
+                <Bookmark className="w-3.5 h-3.5" />
+                <span>Bookmarks</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${bookmarkMenuOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {bookmarkMenuOpen && (
+                <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-[310px] overflow-hidden rounded-xl border border-[#1f4a6f] bg-[#071e33] shadow-2xl shadow-black/40">
+                  <div className="border-b border-[#1a3a56] bg-[#0c2e4a] px-4 py-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-300">Quick Hyperlinks</p>
+                    <p className="mt-1 text-[10px] text-[#7eb8e0]">Shortcut to important pages and sections.</p>
+                  </div>
+
+                  <div className="max-h-[360px] overflow-y-auto p-2">
+                    {headerBookmarks.map((item) => {
+                      const baseClass = "group flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-[#0f2d4a]";
+                      const content = (
+                        <>
+                          <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border border-emerald-400/25 bg-emerald-500/10 text-emerald-300 group-hover:border-emerald-300/50 group-hover:bg-emerald-500/20">
+                            <Bookmark className="h-3.5 w-3.5" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-xs font-bold text-white group-hover:text-emerald-100">{item.label}</span>
+                            <span className="mt-0.5 block text-[10px] leading-snug text-[#7eb8e0]">{item.description}</span>
+                          </span>
+                          <ExternalLink className="mt-1 h-3.5 w-3.5 flex-shrink-0 text-[#5a9cc8] opacity-70 group-hover:text-emerald-300 group-hover:opacity-100" />
+                        </>
+                      );
+
+                      if (item.type === "route") {
+                        return (
+                          <Link key={item.key} to={item.to} onClick={() => setBookmarkMenuOpen(false)} className={baseClass}>
+                            {content}
+                          </Link>
+                        );
+                      }
+
+                      return (
+                        <button key={item.key} type="button" onClick={() => openBookmarkedTab(item.tab)} className={baseClass}>
+                          {content}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <button
