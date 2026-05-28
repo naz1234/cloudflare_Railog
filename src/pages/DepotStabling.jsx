@@ -1542,6 +1542,7 @@ function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, lab
   };
 
   const clearButtonBase = "rounded-xl border px-3 py-1.5 text-[10px] font-black uppercase tracking-wide transition-all disabled:cursor-not-allowed disabled:opacity-40";
+  const sectionDepotLabel = title?.toUpperCase().includes("EAST") ? "East Depot" : "West Depot";
 
   return (
     <section className="bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
@@ -1561,7 +1562,7 @@ function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, lab
                 onClick={() => handleSectionClear("pst")}
                 disabled={pstClearCount === 0}
                 className={`${clearButtonBase} ${confirmClearAction === "pst" ? "border-red-500 bg-red-600 text-white" : "border-emerald-500/50 bg-emerald-950/35 text-emerald-300 hover:border-emerald-400 hover:bg-emerald-900/50"}`}
-                title="Clear West Depot PST status only"
+                title={`Clear ${sectionDepotLabel} PST status only`}
               >
                 {confirmClearAction === "pst" ? "Confirm PST?" : "Clear PST"}
               </button>
@@ -1572,7 +1573,7 @@ function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, lab
                 onClick={() => handleSectionClear("prep")}
                 disabled={prepClearCount === 0}
                 className={`${clearButtonBase} ${confirmClearAction === "prep" ? "border-red-500 bg-red-600 text-white" : "border-blue-500/50 bg-blue-950/35 text-blue-300 hover:border-blue-400 hover:bg-blue-900/50"}`}
-                title="Clear West Depot Train Prep status only"
+                title={`Clear ${sectionDepotLabel} Train Prep status only`}
               >
                 {confirmClearAction === "prep" ? "Confirm Prep?" : "Clear Train Prep"}
               </button>
@@ -4549,7 +4550,7 @@ function PSTTabContent
     <div className="flex flex-col gap-5 w-fit">
       <div className="space-y-5 min-w-0">
         <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} />
-        <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} taNameState={taNameState} onTaNameChange={onTaNameChange} />
+        <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} />
       </div>
 
       <div className="w-full max-w-[960px]">
