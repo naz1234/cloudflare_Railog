@@ -4811,21 +4811,47 @@ function PSTTabContent
 // ── Possession tab content (uses DepotStabling shared header + sidebar) ──────
 function parsePossessionTimeTo24(raw) {
   if (!raw) return "";
-  const clean = raw.trim();
+  const clean = String(raw).trim();
+
+  const isValid = (hour, minute) => hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
+
   const h24 = clean.match(/^(\d{1,2}):(\d{2})$/);
-  if (h24) return `${String(parseInt(h24[1])).padStart(2, "0")}:${h24[2]}`;
-  const h12 = clean.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)$/i);
-  if (h12) {
-    let h = parseInt(h12[1]); const m = h12[2]; const period = h12[3].toUpperCase();
-    if (period === "AM" && h === 12) h = 0;
-    if (period === "PM" && h !== 12) h += 12;
-    return `${String(h).padStart(2, "0")}:${m}`;
+  if (h24) {
+    const hour = Number(h24[1]);
+    const minute = Number(h24[2]);
+    if (!isValid(hour, minute)) return "";
+    return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
   }
-  return clean;
+
+  // Backward compatibility for old saved data only. The input fields below no longer accept AM/PM text.
+  const h12 = clean.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (h12) {
+    let hour = Number(h12[1]);
+    const minute = Number(h12[2]);
+    const period = h12[3].toUpperCase();
+    if (hour < 1 || hour > 12 || minute < 0 || minute > 59) return "";
+    if (period === "AM" && hour === 12) hour = 0;
+    if (period === "PM" && hour !== 12) hour += 12;
+    return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  }
+
+  return "";
 }
 
 function fmtPossession24(raw) { const t = parsePossessionTimeTo24(raw); return t ? `${t} hrs` : ""; }
 function cleanPossessionAccessNo(raw) { return raw.replace(/,/g, ""); }
+
+function formatPossessionTimeInput(raw, previousValue = "") {
+  const value = String(raw || "").toUpperCase();
+
+  // If user backspaces the auto colon from 12:, keep 12 instead of immediately forcing 12: again.
+  if (previousValue?.endsWith(":") && value === previousValue.slice(0, -1)) return value;
+
+  const digits = value.replace(/[^0-9]/g, "").slice(0, 4);
+  if (digits.length <= 1) return digits;
+  if (digits.length === 2) return `${digits}:`;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
 
 // ── Dark-themed shared primitives ─────────────────────────────────────────────
 
@@ -4851,9 +4877,23 @@ const POSSESSION_FIELD = ({ label, children }) => (
   </div>
 );
 
+const possessionInputCls = "w-full rounded-lg border border-[#1e3a56] bg-[#071828] px-3 py-2 text-xs text-[#c8d8ea] outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] transition-all placeholder:text-[#2b4f6b]";
+
 const POSSESSION_INPUT = ({ value, onChange, placeholder, className = "" }) => (
   <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || ""}
-    className={`w-full rounded-lg border border-[#1e3a56] bg-[#071828] px-3 py-2 text-xs text-[#c8d8ea] outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] transition-all placeholder:text-[#2b4f6b] ${className}`} />
+    className={`${possessionInputCls} ${className}`} />
+);
+
+const POSSESSION_TIME_INPUT = ({ value, onChange, placeholder = "e.g. 04:17", className = "" }) => (
+  <input
+    value={value}
+    onChange={(e) => onChange(formatPossessionTimeInput(e.target.value, value))}
+    placeholder={placeholder}
+    inputMode="numeric"
+    maxLength={5}
+    autoComplete="off"
+    className={`${possessionInputCls} font-mono tracking-wide ${className}`}
+  />
 );
 
 const POSSESSION_TEXTAREA = ({ value, onChange, placeholder, rows = 2 }) => (
@@ -4911,7 +4951,7 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
         <POSSESSION_FIELD label="Description"><POSSESSION_TEXTAREA value={entry.description} onChange={set("description")} placeholder="Work description..." rows={2} /></POSSESSION_FIELD>
         <div className="grid grid-cols-2 gap-3">
           <POSSESSION_FIELD label="Access No."><POSSESSION_INPUT value={entry.accessNo} onChange={set("accessNo")} placeholder="e.g. 268,216" /></POSSESSION_FIELD>
-          <POSSESSION_FIELD label="Issue Time"><POSSESSION_INPUT value={entry.issueTime} onChange={set("issueTime")} placeholder="e.g. 04:17 PM" /></POSSESSION_FIELD>
+          <POSSESSION_FIELD label="Issue Time"><POSSESSION_TIME_INPUT value={entry.issueTime} onChange={set("issueTime")} placeholder="e.g. 04:17" /></POSSESSION_FIELD>
         </div>
         <div>
           <label className="block text-[10px] font-semibold text-[#4a8ab5] tracking-widest uppercase mb-1">SCD?</label>
@@ -4928,12 +4968,12 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
           <div className="space-y-3 rounded-xl border border-amber-800/40 bg-amber-950/20 p-3">
             <POSSESSION_FIELD label="SCD Location"><POSSESSION_INPUT value={entry.scdLoc} onChange={set("scdLoc")} placeholder="e.g. Building A" /></POSSESSION_FIELD>
             <div className="grid grid-cols-2 gap-3">
-              <POSSESSION_FIELD label="SCD Apply Time"><POSSESSION_INPUT value={entry.scdApplyTime} onChange={set("scdApplyTime")} placeholder="e.g. 04:17 PM" /></POSSESSION_FIELD>
-              <POSSESSION_FIELD label="SCD Remove Time"><POSSESSION_INPUT value={entry.scdRemTime} onChange={set("scdRemTime")} placeholder="e.g. 02:10 AM" /></POSSESSION_FIELD>
+              <POSSESSION_FIELD label="SCD Apply Time"><POSSESSION_TIME_INPUT value={entry.scdApplyTime} onChange={set("scdApplyTime")} placeholder="e.g. 04:17" /></POSSESSION_FIELD>
+              <POSSESSION_FIELD label="SCD Remove Time"><POSSESSION_TIME_INPUT value={entry.scdRemTime} onChange={set("scdRemTime")} placeholder="e.g. 02:10" /></POSSESSION_FIELD>
             </div>
           </div>
         )}
-        <POSSESSION_FIELD label="Handback Time"><POSSESSION_INPUT value={entry.handbackTime} onChange={set("handbackTime")} placeholder="e.g. 08:19 PM" /></POSSESSION_FIELD>
+        <POSSESSION_FIELD label="Handback Time"><POSSESSION_TIME_INPUT value={entry.handbackTime} onChange={set("handbackTime")} placeholder="e.g. 08:19" /></POSSESSION_FIELD>
       </div>
     </div>
   );
@@ -5119,8 +5159,8 @@ function SweepingLog() {
             <POSSESSION_FIELD label="Sweeping To"><POSSESSION_INPUT value={form.sweepTo} onChange={set("sweepTo")} placeholder="e.g. b" /></POSSESSION_FIELD>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <POSSESSION_FIELD label="Start Time"><POSSESSION_INPUT value={form.startTime} onChange={set("startTime")} placeholder="e.g. 02:32 AM" /></POSSESSION_FIELD>
-            <POSSESSION_FIELD label="Line Clear Time"><POSSESSION_INPUT value={form.lineClearTime} onChange={set("lineClearTime")} placeholder="e.g. 03:32 AM" /></POSSESSION_FIELD>
+            <POSSESSION_FIELD label="Start Time"><POSSESSION_TIME_INPUT value={form.startTime} onChange={set("startTime")} placeholder="e.g. 02:32" /></POSSESSION_FIELD>
+            <POSSESSION_FIELD label="Line Clear Time"><POSSESSION_TIME_INPUT value={form.lineClearTime} onChange={set("lineClearTime")} placeholder="e.g. 03:32" /></POSSESSION_FIELD>
           </div>
         </div>
       </div>
