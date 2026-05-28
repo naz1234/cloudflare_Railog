@@ -4972,6 +4972,9 @@ export default function DepotStablingPage() {
   const getTabFromPath = (path) => {
     if (path === "/train-washing") return "washing";
     if (path === "/train-movement") return "movement";
+    if (path === "/pst-train-prep") return "pst";
+    if (path === "/insertion") return "insertion";
+    if (path === "/odo-reading") return "odo";
     return "stabling";
   };
   const [activeTab, setActiveTab] = useState(() => getTabFromPath(location.pathname));

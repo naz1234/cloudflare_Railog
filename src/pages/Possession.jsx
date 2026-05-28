@@ -343,11 +343,80 @@ function SweepingLog() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function Possession() {
   const location = useLocation();
-  const sideNavClass = (active) => `flex h-10 w-10 items-center justify-center rounded-lg text-[#7eb8e0] transition-all ${
-    active
-      ? "bg-[#1a3a5c] text-white shadow-sm border border-[#2b4f6b]"
-      : "hover:text-white hover:bg-[#0f2d4a]"
-  }`;
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const navItems = [
+    {
+      key: "stabling",
+      label: "Train Req",
+      to: "/depot-stabling",
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+        </svg>
+      ),
+    },
+    {
+      key: "movement",
+      label: "Train Movement",
+      to: "/train-movement",
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="3" width="16" height="15" rx="3"/><path d="M8 21l2-3"/><path d="M16 21l-2-3"/><path d="M8 8h8"/><path d="M8 13h.01"/><path d="M16 13h.01"/>
+        </svg>
+      ),
+    },
+    {
+      key: "pst",
+      label: "PST / Train Prep",
+      to: "/pst-train-prep",
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      ),
+    },
+    {
+      key: "insertion",
+      label: "Insertion",
+      to: "/insertion",
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="5 12 12 5 19 12"/><line x1="12" y1="5" x2="12" y2="19"/>
+        </svg>
+      ),
+    },
+    {
+      key: "washing",
+      label: "Train Washing",
+      to: "/train-washing",
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+        </svg>
+      ),
+    },
+    {
+      key: "odo",
+      label: "ODO Reading",
+      to: "/odo-reading",
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+      ),
+    },
+    {
+      key: "possession",
+      label: "Possession",
+      to: "/possession",
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/>
+        </svg>
+      ),
+    },
+  ];
 
   return (
     <div className="h-screen font-inter bg-[#071828] flex flex-col overflow-hidden">
@@ -372,30 +441,49 @@ export default function Possession() {
 
       <div className="flex flex-1 min-h-0">
         <aside
-          className="w-[58px] flex-shrink-0 flex flex-col items-center pt-4 gap-2"
+          className={`${isSidebarCollapsed ? "w-[58px] px-2" : "w-[200px] px-3"} flex-shrink-0 flex flex-col pt-4 gap-1 z-10 transition-all duration-300 ease-in-out`}
           style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", borderRight: "1px solid #1a3a56" }}
         >
-          <Link
-            to="/depot-stabling"
-            title="Depot Stabling"
-            aria-label="Depot Stabling"
-            className={sideNavClass(location.pathname === "/" || location.pathname === "/depot-stabling")}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-            </svg>
-          </Link>
-          <Link
-            to="/possession"
-            title="Possession"
-            aria-label="Possession"
-            className={sideNavClass(location.pathname === "/possession")}
-          >
-            <Shield className="w-4 h-4" />
-          </Link>
+          <div className={`mb-2 flex items-center ${isSidebarCollapsed ? "justify-center px-0" : "justify-between px-2"}`}>
+            {!isSidebarCollapsed && (
+              <p className="text-[9px] font-black tracking-widest uppercase text-[#4a8ab5]">Navigation</p>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsSidebarCollapsed((prev) => !prev)}
+              title={isSidebarCollapsed ? "Show navigation" : "Hide navigation"}
+              aria-label={isSidebarCollapsed ? "Show navigation" : "Hide navigation"}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#2b4f6b] bg-[#071828] text-[#7eb8e0] shadow-sm transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                {isSidebarCollapsed ? <path d="M9 6l6 6-6 6" /> : <path d="M15 6l-6 6 6 6" />}
+              </svg>
+            </button>
+          </div>
+
+          {navItems.map(({ key, label, icon, to }) => {
+            const isActive = location.pathname === to;
+            const navClass = `flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-2.5 px-3"} py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full ${
+              isActive
+                ? "bg-[#1a3a5c] text-white shadow-sm border border-[#2b4f6b]"
+                : "text-[#7eb8e0] hover:text-white hover:bg-[#0f2d4a]"
+            }`;
+
+            return (
+              <Link
+                key={key}
+                to={to}
+                title={isSidebarCollapsed ? label : undefined}
+                className={navClass}
+              >
+                <span className="flex-shrink-0">{icon}</span>
+                {!isSidebarCollapsed && <span>{label}</span>}
+              </Link>
+            );
+          })}
         </aside>
 
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto min-w-0">
           <div className="max-w-[1600px] mx-auto px-5 py-5 space-y-6">
             <section>
               <div className="flex items-center gap-2 mb-3">
