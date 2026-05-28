@@ -3598,7 +3598,7 @@ function TrainMovementContent() {
   };
 
   const clearTp1MovementLogs = () => {
-    if (!window.confirm("Clear all TP1 movement logs?")) return;
+    if (!window.confirm("Clear all inbound / outbound movement logs?")) return;
     captureMovementScrollPosition();
     setTp1Entries([]);
   };
@@ -4126,7 +4126,7 @@ function TrainMovementContent() {
               <MovementIcon type="train" color={accent} />
             </div>
             <div>
-              <h2 className="text-[16px] font-black leading-tight text-white">TP1 Movement Window</h2>
+              <h2 className="text-[16px] font-black leading-tight text-white">Inbound / Outbound Movement</h2>
               <p className="mt-0.5 text-[11px] font-medium" style={{ color: accent }}>Automatic / Manual Area log generator</p>
             </div>
           </div>
@@ -4244,13 +4244,13 @@ function TrainMovementContent() {
             className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[12px] font-medium text-white shadow-[0_0_16px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01]"
             style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
           >
-            <span className="text-[12px] leading-none">+</span> Add TP1 Movement Log
+            <span className="text-[12px] leading-none">+</span> Add Inbound / Outbound Movement Log
           </button>
 
           <section className="overflow-hidden rounded-xl border border-[#1e4060] bg-[#03111d]">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#12304a] px-3 py-2">
               <div>
-                <h4 className="text-[12px] font-black uppercase tracking-wide text-white">TP1 Movement Log</h4>
+                <h4 className="text-[12px] font-black uppercase tracking-wide text-white">Inbound / Outbound Movement Log</h4>
                 <p className="text-[10px] font-semibold text-[#8ea8c0]">{tp1Entries.length} entries</p>
               </div>
 
@@ -4277,7 +4277,7 @@ function TrainMovementContent() {
             <div className="min-h-[120px]">
               {tp1Entries.length === 0 ? (
                 <div className="flex min-h-[120px] items-center justify-center px-3 text-center text-[11px] font-semibold text-[#7eb8e0]">
-                  No TP1 movement log yet.
+                  No inbound / outbound movement log yet.
                 </div>
               ) : (
                 tp1Entries.map((entry) => (
