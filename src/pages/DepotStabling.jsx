@@ -32,6 +32,81 @@ function compactBookmarkUrl(value = "") {
     .replace(/\/$/, "");
 }
 
+const BOOKMARK_COLOR_THEMES = [
+  {
+    name: "Blue",
+    card: "border-sky-400/30 bg-sky-500/[0.08] hover:border-sky-300/55 hover:bg-sky-500/[0.13]",
+    icon: "border-sky-300/35 bg-sky-500/15 text-sky-200",
+    strip: "bg-sky-400",
+    chip: "border-sky-300/30 bg-sky-500/10 text-sky-100",
+    linkIcon: "text-sky-200",
+  },
+  {
+    name: "Emerald",
+    card: "border-emerald-400/30 bg-emerald-500/[0.08] hover:border-emerald-300/55 hover:bg-emerald-500/[0.13]",
+    icon: "border-emerald-300/35 bg-emerald-500/15 text-emerald-200",
+    strip: "bg-emerald-400",
+    chip: "border-emerald-300/30 bg-emerald-500/10 text-emerald-100",
+    linkIcon: "text-emerald-200",
+  },
+  {
+    name: "Purple",
+    card: "border-violet-400/30 bg-violet-500/[0.08] hover:border-violet-300/55 hover:bg-violet-500/[0.13]",
+    icon: "border-violet-300/35 bg-violet-500/15 text-violet-200",
+    strip: "bg-violet-400",
+    chip: "border-violet-300/30 bg-violet-500/10 text-violet-100",
+    linkIcon: "text-violet-200",
+  },
+  {
+    name: "Amber",
+    card: "border-amber-400/30 bg-amber-500/[0.08] hover:border-amber-300/55 hover:bg-amber-500/[0.13]",
+    icon: "border-amber-300/35 bg-amber-500/15 text-amber-200",
+    strip: "bg-amber-400",
+    chip: "border-amber-300/30 bg-amber-500/10 text-amber-100",
+    linkIcon: "text-amber-200",
+  },
+  {
+    name: "Rose",
+    card: "border-rose-400/30 bg-rose-500/[0.08] hover:border-rose-300/55 hover:bg-rose-500/[0.13]",
+    icon: "border-rose-300/35 bg-rose-500/15 text-rose-200",
+    strip: "bg-rose-400",
+    chip: "border-rose-300/30 bg-rose-500/10 text-rose-100",
+    linkIcon: "text-rose-200",
+  },
+  {
+    name: "Cyan",
+    card: "border-cyan-400/30 bg-cyan-500/[0.08] hover:border-cyan-300/55 hover:bg-cyan-500/[0.13]",
+    icon: "border-cyan-300/35 bg-cyan-500/15 text-cyan-200",
+    strip: "bg-cyan-400",
+    chip: "border-cyan-300/30 bg-cyan-500/10 text-cyan-100",
+    linkIcon: "text-cyan-200",
+  },
+];
+
+const BOOKMARK_KEYWORD_THEMES = [
+  { keywords: ["dc west", "west depot", "wd-"], index: 2, label: "WEST" },
+  { keywords: ["dc east", "east depot", "ed-"], index: 5, label: "EAST" },
+  { keywords: ["cms", "wash"], index: 3, label: "CMS" },
+  { keywords: ["handover", "tr handover"], index: 4, label: "TR" },
+  { keywords: ["sap"], index: 1, label: "SAP" },
+  { keywords: ["outlook", "mail"], index: 0, label: "MAIL" },
+  { keywords: ["sharepoint"], index: 2, label: "SP" },
+];
+
+function getBookmarkTheme(link = {}, index = 0) {
+  const searchable = `${link.title || ""} ${link.url || ""}`.toLowerCase();
+  const matched = BOOKMARK_KEYWORD_THEMES.find((item) =>
+    item.keywords.some((keyword) => searchable.includes(keyword))
+  );
+
+  if (matched) {
+    return { ...BOOKMARK_COLOR_THEMES[matched.index], label: matched.label };
+  }
+
+  const hash = searchable.split("").reduce((sum, char) => sum + char.charCodeAt(0), index);
+  return { ...BOOKMARK_COLOR_THEMES[hash % BOOKMARK_COLOR_THEMES.length], label: "LINK" };
+}
+
 // ── Train Washing XLSX → DOCX Export ────────────────────────────────────────
 // Added as a second Train Washing window so the existing Train Washing Log stays unchanged, while this JSX carries the latest
 // DOCX-only output window: date titles from Next Wash, HVAC header, centred cells,
@@ -5185,8 +5260,9 @@ function HeaderBookmarkDropdown({
               </div>
             ) : (
               <div className="space-y-1.5">
-                {links.map((link) => {
+                {links.map((link, index) => {
                   const isEditing = editId === link.id;
+                  const theme = getBookmarkTheme(link, index);
 
                   if (isEditing) {
                     return (
@@ -5204,28 +5280,34 @@ function HeaderBookmarkDropdown({
                   return (
                     <div
                       key={link.id}
-                      className="group flex items-center gap-2 rounded-xl border border-[#163450] bg-[#082036] px-3 py-2 transition hover:border-emerald-400/35 hover:bg-[#0c2e4a]"
+                      className={`group relative flex items-center gap-2 overflow-hidden rounded-xl border px-3 py-2 transition ${theme.card}`}
                     >
+                      <span className={`absolute left-0 top-0 h-full w-1 ${theme.strip}`} />
                       <a
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex min-w-0 flex-1 items-center gap-2"
+                        className="flex min-w-0 flex-1 items-center gap-2 pl-1"
                       >
-                        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border border-emerald-400/25 bg-emerald-500/10 text-emerald-200">
+                        <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border ${theme.icon}`}>
                           <Bookmark className="h-3.5 w-3.5" />
                         </span>
                         <span className="min-w-0">
-                          <span className="block truncate text-[12px] font-bold text-white">{link.title}</span>
+                          <span className="flex min-w-0 items-center gap-1.5">
+                            <span className="block truncate text-[12px] font-bold text-white">{link.title}</span>
+                            <span className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[8px] font-black leading-none tracking-[0.12em] ${theme.chip}`}>
+                              {theme.label}
+                            </span>
+                          </span>
                           <span className="block truncate text-[10px] text-[#7eb8e0]">{compactBookmarkUrl(link.url)}</span>
                         </span>
-                        <ExternalLink className="ml-auto h-3.5 w-3.5 flex-shrink-0 text-[#7eb8e0] opacity-70" />
+                        <ExternalLink className={`ml-auto h-3.5 w-3.5 flex-shrink-0 opacity-75 ${theme.linkIcon}`} />
                       </a>
 
                       <button
                         type="button"
                         onClick={() => onStartEdit(link)}
-                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border border-[#2b4f6b] bg-[#071828] text-[#7eb8e0] transition hover:border-cyan-300/50 hover:text-white"
+                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border border-[#2b4f6b] bg-[#071828]/80 text-[#7eb8e0] transition hover:border-cyan-300/50 hover:text-white"
                         title="Edit bookmark"
                         aria-label={`Edit ${link.title}`}
                       >
