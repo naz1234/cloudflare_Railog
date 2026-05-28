@@ -3307,7 +3307,6 @@ function TrainMovementContent() {
     movementType: "automatic",
     trAtTp1: "",
     shunterName: "",
-    shunterAuth: "",
     trLocalized: "",
     nextWashText: "",
     nextWashDate: "",
@@ -3684,7 +3683,7 @@ function TrainMovementContent() {
     const planStatus = tp1Form.planStatus || "Planned";
     const shunterName = (tp1Form.shunterName || "ALVIN").trim();
     const trAtTp1 = tp1Form.trAtTp1 || "18:20";
-    const shunterAuth = tp1Form.shunterAuth || trAtTp1 || "18:20";
+    const shunterAuth = trAtTp1;
     const trLocalized = tp1Form.trLocalized || "18:28";
     const fromTp1 = tp1Form.fromTp1 || "18:30";
     const toManual = tp1Form.toManual || "18:35";
@@ -3696,7 +3695,6 @@ function TrainMovementContent() {
       if (!tp1Form.planStatus) missing.push("Plan / Unplanned");
       if (!tp1Form.trAtTp1) missing.push("TR at TP1");
       if (!tp1Form.shunterName) missing.push("Shunter Name");
-      if (!tp1Form.shunterAuth) missing.push("Shunter Auth");
       if (movementType === "automatic" && !tp1Form.trLocalized) missing.push("TR Localized");
       if (movementType === "manual" && !tp1Form.fromTp1) missing.push("From TP1");
       if (movementType === "manual" && !tp1Form.toManual) missing.push("to Manual");
@@ -3735,7 +3733,6 @@ function TrainMovementContent() {
       ...prev,
       trainSet: "",
       trAtTp1: "",
-      shunterAuth: "",
       trLocalized: "",
       nextWashText: "",
       nextWashDate: "",
@@ -4340,11 +4337,6 @@ function TrainMovementContent() {
                   <option key={name} value={name}>{name}</option>
                 ))}
               </select>
-            </label>
-
-            <label className="col-span-1">
-              <span className={labelClass}>Shunter Auth</span>
-              {renderTp1TimeInput("shunterAuth")}
             </label>
 
             {isAutomatic && (
