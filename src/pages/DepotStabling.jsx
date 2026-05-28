@@ -5134,6 +5134,8 @@ const defaultEPAF = {
   issuedTime: "",
   powerOffTime: "",
   scd: "Yes",
+  accessPoint: "",
+  accessAuthTime: "",
   scdLoc: "",
   scdApplyTime: "",
   scdRemoveTime: "",
@@ -5178,6 +5180,11 @@ function generateEPAFOutput(f) {
   const scdApplyT = fmtPossession24(f.scdApplyTime);
   const scdRemoveT = fmtPossession24(f.scdRemoveTime);
   const scdLoc = String(f.scdLoc || "").trim();
+  const accessPoint = String(f.accessPoint || "").trim();
+  const accessAuthT = fmtPossession24(f.accessAuthTime);
+  if (f.scd !== "No" && accessAuthT && accessPoint) {
+    lines.push(`${accessAuthT} – PIC${pic ? ` ${pic}` : ""} authorized to access ${accessPoint} and start apply the SCD.`);
+  }
   if (f.scd === "No") {
     if (scdApplyT) lines.push(`${scdApplyT} – PIC confirmed the activity does not require SCD application.`);
   } else if (scdApplyT || scdRemoveT || scdLoc) {
@@ -5266,6 +5273,10 @@ function EPAFLog() {
 
             {form.scd === "Yes" ? (
               <>
+                <div className="grid grid-cols-2 gap-3">
+                  <POSSESSION_FIELD label="Access Point"><POSSESSION_INPUT value={form.accessPoint} onChange={set("accessPoint")} placeholder="e.g. Door B01" /></POSSESSION_FIELD>
+                  <POSSESSION_FIELD label="Access Authorized Time"><POSSESSION_TIME_INPUT value={form.accessAuthTime} onChange={set("accessAuthTime")} placeholder="00:00" /></POSSESSION_FIELD>
+                </div>
                 <POSSESSION_FIELD label="SCD Location"><POSSESSION_INPUT value={form.scdLoc} onChange={set("scdLoc")} placeholder="e.g. TRACK 1" /></POSSESSION_FIELD>
                 <div className="grid grid-cols-2 gap-3">
                   <POSSESSION_FIELD label="SCD Applied Time"><POSSESSION_TIME_INPUT value={form.scdApplyTime} onChange={set("scdApplyTime")} placeholder="16:51" /></POSSESSION_FIELD>
