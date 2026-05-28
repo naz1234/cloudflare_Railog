@@ -4895,6 +4895,13 @@ const POSSESSION_INPUT = ({ value, onChange, placeholder, className = "" }) => (
     className={`${possessionInputCls} ${className}`} />
 );
 
+const POSSESSION_SELECT = ({ value, onChange, children, className = "" }) => (
+  <select value={value} onChange={(e) => onChange(e.target.value)}
+    className={`${possessionInputCls} ${className}`}>
+    {children}
+  </select>
+);
+
 const POSSESSION_TIME_INPUT = ({ value, onChange, placeholder = "e.g. 04:17", className = "" }) => (
   <input
     value={value}
@@ -5116,7 +5123,194 @@ function SCSecurityMessage() {
   );
 }
 
-// ── Section 3: Sweeping ───────────────────────────────────────────────────────
+// ── Section 3: EPAF ────────────────────────────────────────────────────────────
+const POSSESSION_EPAF_KEY = "epafLog_v1";
+const defaultEPAF = {
+  activity: "",
+  picName: "",
+  location: "",
+  depot: "West Depot",
+  signallingAppliedTime: "",
+  issuedTime: "",
+  powerOffTime: "",
+  scd: "Yes",
+  scdLoc: "",
+  scdApplyTime: "",
+  scdRemoveTime: "",
+  withdrawnTime: "",
+  powerOnTime: "",
+};
+
+function buildEPAFLocation(f) {
+  const location = String(f.location || "").trim();
+  const depot = String(f.depot || "").trim();
+  if (!location) return depot;
+  if (!depot) return location;
+  if (location.toLowerCase().includes(depot.toLowerCase())) return location;
+  return `${location} ${depot}`;
+}
+
+function generateEPAFOutput(f) {
+  const lines = [];
+  const activity = String(f.activity || "").trim();
+  const pic = String(f.picName || "").trim();
+  const rawLocation = String(f.location || "").trim();
+  const location = rawLocation ? buildEPAFLocation(f) : "";
+
+  if (activity) lines.push(`EPAF for the ${activity}.`);
+  if (pic) lines.push(`PIC : ${pic}.`);
+  if (location) lines.push(`Location : ${location}.`);
+  if (lines.length > 0) lines.push("");
+
+  const signalT = fmtPossession24(f.signallingAppliedTime);
+  if (signalT) lines.push(`${signalT} – Signalling protection successfully applied.`);
+
+  const issuedT = fmtPossession24(f.issuedTime);
+  const powerOffT = fmtPossession24(f.powerOffTime);
+  if (issuedT && powerOffT) {
+    lines.push(`${issuedT} – EPAF issued; at ${powerOffT}, third rail power has been switched off.`);
+  } else if (issuedT) {
+    lines.push(`${issuedT} – EPAF issued.`);
+  } else if (powerOffT) {
+    lines.push(`${powerOffT} – Third rail power has been switched off.`);
+  }
+
+  const scdApplyT = fmtPossession24(f.scdApplyTime);
+  const scdRemoveT = fmtPossession24(f.scdRemoveTime);
+  const scdLoc = String(f.scdLoc || "").trim();
+  if (f.scd === "No") {
+    if (scdApplyT) lines.push(`${scdApplyT} – PIC confirmed the activity does not require SCD application.`);
+  } else if (scdApplyT || scdRemoveT || scdLoc) {
+    let scdLine = "";
+    if (scdApplyT) scdLine += `${scdApplyT} – SCD applied${scdLoc ? ` at ${scdLoc}` : ""}.`;
+    else if (scdLoc) scdLine += `SCD applied at ${scdLoc}.`;
+    if (scdRemoveT) scdLine += ` At ${scdRemoveT}, SCD confirmed removed.`;
+    if (scdLine) lines.push(scdLine);
+  }
+
+  const withdrawnT = fmtPossession24(f.withdrawnTime);
+  const powerOnT = fmtPossession24(f.powerOnTime);
+  if (withdrawnT && powerOnT) {
+    lines.push(`${withdrawnT} – EPAF withdrawn; at ${powerOnT}, third rail switched on; signalling protection removed.`);
+  } else if (withdrawnT) {
+    lines.push(`${withdrawnT} – EPAF withdrawn.`);
+  } else if (powerOnT) {
+    lines.push(`${powerOnT} – Third rail switched on; signalling protection removed.`);
+  }
+
+  return lines.join("\n").trim();
+}
+
+function EPAFLog() {
+  const [form, setForm] = useState(() => {
+    try { return { ...defaultEPAF, ...JSON.parse(localStorage.getItem(POSSESSION_EPAF_KEY) || "{}") }; }
+    catch { return defaultEPAF; }
+  });
+
+  useEffect(() => { localStorage.setItem(POSSESSION_EPAF_KEY, JSON.stringify(form)); }, [form]);
+
+  const set = (field) => (val) => setForm((p) => ({ ...p, [field]: val }));
+  const clear = () => { setForm(defaultEPAF); localStorage.removeItem(POSSESSION_EPAF_KEY); };
+  const output = generateEPAFOutput(form);
+  const hasContent = output.trim() !== "";
+
+  return (
+    <div className="grid grid-cols-[1fr_1fr] gap-4 items-start">
+      <div className={possessionCardCls}>
+        <div className={possessionHeaderCls} style={possessionHeaderStyle}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center"><FileText className="w-3.5 h-3.5 text-[#4f8ef7]" /></div>
+            <div>
+              <h2 className="text-sm font-bold text-white">EPAF</h2>
+              <p className="text-[10px] text-[#4a8ab5]">Extended protection authority form output</p>
+            </div>
+          </div>
+          <button onClick={clear} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-red-800/50 text-red-400 hover:bg-red-950/40 transition-colors">
+            <Trash2 className="w-3 h-3" /> Clear Form
+          </button>
+        </div>
+        <div className="p-4 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <POSSESSION_FIELD label="EPAF Title / Activity"><POSSESSION_INPUT value={form.activity} onChange={set("activity")} placeholder="e.g. ATWP BRUSH ISSUE" /></POSSESSION_FIELD>
+            <POSSESSION_FIELD label="PIC Name"><POSSESSION_INPUT value={form.picName} onChange={set("picName")} placeholder="e.g. AKMAL" /></POSSESSION_FIELD>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <POSSESSION_FIELD label="Location"><POSSESSION_INPUT value={form.location} onChange={set("location")} placeholder="e.g. ATWP BRUSH ISSUE" /></POSSESSION_FIELD>
+            <POSSESSION_FIELD label="Depot"><POSSESSION_SELECT value={form.depot} onChange={set("depot")}>
+              <option value="West Depot">West Depot</option>
+              <option value="East Depot">East Depot</option>
+            </POSSESSION_SELECT></POSSESSION_FIELD>
+          </div>
+
+          <div className="rounded-xl border border-[#1e3a56] bg-[#071828] p-3 space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#7eb8e0]">Protection Timing</p>
+            <div className="grid grid-cols-3 gap-3">
+              <POSSESSION_FIELD label="Protection Applied"><POSSESSION_TIME_INPUT value={form.signallingAppliedTime} onChange={set("signallingAppliedTime")} placeholder="16:50" /></POSSESSION_FIELD>
+              <POSSESSION_FIELD label="EPAF Issued"><POSSESSION_TIME_INPUT value={form.issuedTime} onChange={set("issuedTime")} placeholder="16:50" /></POSSESSION_FIELD>
+              <POSSESSION_FIELD label="Third Rail OFF"><POSSESSION_TIME_INPUT value={form.powerOffTime} onChange={set("powerOffTime")} placeholder="16:50" /></POSSESSION_FIELD>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-3 space-y-3">
+            <div>
+              <label className="block text-[10px] font-semibold text-[#d2a451] tracking-widest uppercase mb-1">SCD Required?</label>
+              <div className="flex gap-1.5">
+                {["Yes", "No"].map((opt) => (
+                  <button key={opt} type="button" onClick={() => set("scd")(opt)}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-semibold border transition-all ${form.scd === opt ? "bg-amber-900/60 text-amber-100 border-amber-500/70" : "bg-[#071828] text-[#4a8ab5] border-[#1e3a56] hover:border-amber-700/60 hover:text-[#c8d8ea]"}`}>
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {form.scd === "Yes" ? (
+              <>
+                <POSSESSION_FIELD label="SCD Location"><POSSESSION_INPUT value={form.scdLoc} onChange={set("scdLoc")} placeholder="e.g. TRACK 1" /></POSSESSION_FIELD>
+                <div className="grid grid-cols-2 gap-3">
+                  <POSSESSION_FIELD label="SCD Applied Time"><POSSESSION_TIME_INPUT value={form.scdApplyTime} onChange={set("scdApplyTime")} placeholder="16:51" /></POSSESSION_FIELD>
+                  <POSSESSION_FIELD label="SCD Removed Time"><POSSESSION_TIME_INPUT value={form.scdRemoveTime} onChange={set("scdRemoveTime")} placeholder="16:51" /></POSSESSION_FIELD>
+                </div>
+              </>
+            ) : (
+              <POSSESSION_FIELD label="No SCD Confirmation Time"><POSSESSION_TIME_INPUT value={form.scdApplyTime} onChange={set("scdApplyTime")} placeholder="16:51" /></POSSESSION_FIELD>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-[#1e3a56] bg-[#071828] p-3 space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#7eb8e0]">Withdrawal</p>
+            <div className="grid grid-cols-2 gap-3">
+              <POSSESSION_FIELD label="EPAF Withdrawn"><POSSESSION_TIME_INPUT value={form.withdrawnTime} onChange={set("withdrawnTime")} placeholder="16:51" /></POSSESSION_FIELD>
+              <POSSESSION_FIELD label="Third Rail ON"><POSSESSION_TIME_INPUT value={form.powerOnTime} onChange={set("powerOnTime")} placeholder="16:51" /></POSSESSION_FIELD>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={possessionCardCls}>
+        <div className={possessionHeaderCls} style={possessionHeaderStyle}>
+          <div>
+            <h2 className="text-sm font-bold text-white">Generated EPAF Output</h2>
+            <p className="text-[10px] text-[#4a8ab5]">Formatted EPAF log</p>
+          </div>
+          <PossessionCopyBtn text={hasContent ? output : ""} disabled={!hasContent} />
+        </div>
+        <div className="p-4 min-h-[220px]">
+          {hasContent ? (
+            <pre className="font-mono text-xs text-[#c8d8ea] whitespace-pre-wrap leading-relaxed">{output}</pre>
+          ) : (
+            <div className="h-40 flex flex-col items-center justify-center gap-2 text-center">
+              <FileText className="w-6 h-6 text-[#1e3a56]" />
+              <p className="text-[10px] text-[#3a5a7a] font-semibold">Fill in the EPAF form to generate output</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Section 4: Sweeping ───────────────────────────────────────────────────────
 const POSSESSION_SWEEP_KEY = "sweepingLog_v1";
 const POSSESSION_SWEEP_ENTRIES_KEY = "sweepingLogEntries_v1";
 const defaultSweep = { trainSet: "", nameTa: "", startTime: "", sweepFrom: "", sweepTo: "", lineClearTime: "" };
@@ -5276,7 +5470,16 @@ function PossessionTabContent() {
       <div className="border-t border-[#1e3a56]" />
       <section>
         <div className="flex items-center gap-2 mb-3">
-          <span className="w-5 h-5 rounded-full bg-sky-900/50 border border-sky-700/50 flex items-center justify-center text-[10px] font-black text-sky-300">2</span>
+          <span className="w-5 h-5 rounded-full bg-amber-900/50 border border-amber-700/50 flex items-center justify-center text-[10px] font-black text-amber-300">2</span>
+          <h1 className="text-sm font-black text-white tracking-widest uppercase">EPAF</h1>
+          <div className="flex-1 h-px bg-[#1e3a56]" />
+        </div>
+        <EPAFLog />
+      </section>
+      <div className="border-t border-[#1e3a56]" />
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="w-5 h-5 rounded-full bg-sky-900/50 border border-sky-700/50 flex items-center justify-center text-[10px] font-black text-sky-300">3</span>
           <h1 className="text-sm font-black text-white tracking-widest uppercase">Station Controller Security Message</h1>
           <div className="flex-1 h-px bg-[#1e3a56]" />
         </div>
@@ -5285,7 +5488,7 @@ function PossessionTabContent() {
       <div className="border-t border-[#1e3a56]" />
       <section>
         <div className="flex items-center gap-2 mb-3">
-          <span className="w-5 h-5 rounded-full bg-emerald-900/50 border border-emerald-700/50 flex items-center justify-center text-[10px] font-black text-emerald-300">3</span>
+          <span className="w-5 h-5 rounded-full bg-emerald-900/50 border border-emerald-700/50 flex items-center justify-center text-[10px] font-black text-emerald-300">4</span>
           <h1 className="text-sm font-black text-white tracking-widest uppercase">Sweeping (after Possession)</h1>
           <div className="flex-1 h-px bg-[#1e3a56]" />
         </div>
