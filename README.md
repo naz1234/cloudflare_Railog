@@ -52,6 +52,17 @@ To use Wrangler locally:
 2. Replace `PUT_YOUR_D1_DATABASE_ID_HERE` with your real D1 Database ID.
 3. Run the migration with Wrangler if you want to prepare the database manually.
 
+
+## Email to Maintenance Request auto update
+
+A webhook is included at `/api/email-request`. Connect Outlook/Power Automate, Gmail Apps Script, Make, or Zapier to POST new email text to this endpoint. It writes rows into the `MaintenanceRequest` D1 records, and the request panel refreshes automatically from D1 every 5 seconds.
+
+Setup guide:
+
+```txt
+docs/email-request-auto-update.md
+```
+
 ## Install and run locally
 
 ```bash
