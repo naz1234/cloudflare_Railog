@@ -3683,7 +3683,7 @@ function TrainMovementContent() {
     const planStatus = tp1Form.planStatus || "Planned";
     const shunterName = (tp1Form.shunterName || "ALVIN").trim();
     const trAtTp1 = tp1Form.trAtTp1 || "18:20";
-    const shunterAuth = trAtTp1;
+    const shunterAuth = addMinutesToHHMM(trAtTp1, 1);
     const trLocalized = tp1Form.trLocalized || "18:28";
     const fromTp1 = tp1Form.fromTp1 || "18:30";
     const toManual = tp1Form.toManual || "18:35";
