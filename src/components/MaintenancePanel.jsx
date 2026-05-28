@@ -49,9 +49,20 @@ const CUSTOM_REQUEST_PALETTE = [
   "#f97316", // orange
   "#34d399", // emerald
   "#e879f9", // fuchsia
+  "#84cc16", // lime
+  "#06b6d4", // cyan
+  "#d946ef", // magenta
+  "#facc15", // yellow
+  "#10b981", // mint
+  "#818cf8", // indigo
+  "#fb923c", // soft orange
+  "#2dd4bf", // aqua
 ];
 
-function getCustomRequestColor(label = "") {
+export function getCustomRequestColor(label = "") {
+  // Custom types entered through "Other" are coloured from the full label.
+  // This avoids different requests such as "TMRW IN BOUND" and "TMRW PM"
+  // being grouped by only the first two words.
   const key = label
     .toString()
     .trim()
@@ -59,14 +70,14 @@ function getCustomRequestColor(label = "") {
     .replace(/[^A-Z0-9]+/g, " ")
     .split(" ")
     .filter(Boolean)
-    .slice(0, 2)
     .join(" ");
 
   if (!key) return REQUEST_COLORS.Other.bg;
 
-  let hash = 0;
+  let hash = 2166136261;
   for (let i = 0; i < key.length; i += 1) {
-    hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+    hash ^= key.charCodeAt(i);
+    hash = Math.imul(hash, 16777619) >>> 0;
   }
 
   return CUSTOM_REQUEST_PALETTE[hash % CUSTOM_REQUEST_PALETTE.length];

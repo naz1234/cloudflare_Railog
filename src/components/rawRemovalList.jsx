@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { REQUEST_COLORS } from "./MaintenancePanel";
+import { REQUEST_COLORS, getCustomRequestColor } from "./MaintenancePanel";
 import { base44 } from "@/api/base44Client";
 
 const EMPTY_ROW = {
@@ -115,8 +115,11 @@ export default function RemovalList({ requests, depot: depotProp = "west", rowCo
     if (r.trainId?.trim()) {
       const key = normalizeId(r.trainId);
       if (!key) return;
-      requestMap[key]      = r.requestType === "Other" ? (r.customType || "Other") : r.requestType;
-      requestColorMap[key] = r.requestType === "Other" ? "Other" : r.requestType;
+      const displayType = r.requestType === "Other" ? (r.customType || "Other") : r.requestType;
+      requestMap[key] = displayType;
+      requestColorMap[key] = r.requestType === "Other"
+        ? { bg: getCustomRequestColor(displayType), text: "#000000" }
+        : (REQUEST_COLORS[r.requestType] || REQUEST_COLORS.Other);
     }
   });
 
@@ -942,7 +945,7 @@ export default function RemovalList({ requests, depot: depotProp = "west", rowCo
               ) : (
                 <div className="flex flex-wrap gap-1">
                   {missing.map((id) => {
-                    const color = REQUEST_COLORS[requestColorMap[id]] || REQUEST_COLORS.Other;
+                    const color = requestColorMap[id] || REQUEST_COLORS.Other;
                     return (
                       <span
                         key={id}

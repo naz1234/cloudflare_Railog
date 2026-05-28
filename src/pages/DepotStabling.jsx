@@ -1305,9 +1305,20 @@ const CUSTOM_REQUEST_PALETTE = [
   "#f97316",
   "#34d399",
   "#e879f9",
+  "#84cc16",
+  "#06b6d4",
+  "#d946ef",
+  "#facc15",
+  "#10b981",
+  "#818cf8",
+  "#fb923c",
+  "#2dd4bf",
 ];
 
 function getCustomRequestColor(label = "") {
+  // Custom types entered through "Other" are coloured from the full label.
+  // This avoids different requests such as "TMRW IN BOUND" and "TMRW PM"
+  // being grouped by only the first two words.
   const key = label
     .toString()
     .trim()
@@ -1315,14 +1326,14 @@ function getCustomRequestColor(label = "") {
     .replace(/[^A-Z0-9]+/g, " ")
     .split(" ")
     .filter(Boolean)
-    .slice(0, 2)
     .join(" ");
 
   if (!key) return MAINT_STYLES.Other.badgeBorder;
 
-  let hash = 0;
+  let hash = 2166136261;
   for (let i = 0; i < key.length; i += 1) {
-    hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+    hash ^= key.charCodeAt(i);
+    hash = Math.imul(hash, 16777619) >>> 0;
   }
 
   return CUSTOM_REQUEST_PALETTE[hash % CUSTOM_REQUEST_PALETTE.length];
