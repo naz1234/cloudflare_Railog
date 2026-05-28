@@ -8738,15 +8738,35 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}) {
     const gap = 3;
     const pillHeight = Math.max(8.2, Math.min(10.8, rowH - 2.4));
     const pillY = rowY + (rowH - pillHeight) / 2;
-    const pillFontSize = Math.max(4.8, Math.min(5.8, fontSize - 0.55));
+    const basePillFontSize = Math.max(4.8, Math.min(5.8, fontSize - 0.55));
     const safeLeft = cellX + 4;
     const safeRight = cellX + cellWidth - 4;
     const availableWidth = safeRight - safeLeft;
     const pillPaddingX = pills.length > 1 ? 7 : 9;
     const minPillWidth = pills.length > 1 ? 34 : 42;
-    const maxPillWidth = pills.length > 1
-      ? Math.max(42, (availableWidth - gap * (pills.length - 1)) / pills.length)
-      : availableWidth;
+
+    const rawPills = pills.map((pill) => ({
+      ...pill,
+      cleanText: sanitizePdfText(pill.text || "-"),
+    }));
+
+    const getNaturalPillWidth = (text, size) => Math.max(
+      minPillWidth,
+      getApproxPdfTextWidth(text, size, true) + pillPaddingX * 2
+    );
+
+    // Start with the normal PDF font size. If many request pills are in one cell,
+    // reduce the pill text slightly before truncating. This keeps common labels
+    // such as TODAY PM / TMRW PM visible in full.
+    let pillFontSize = basePillFontSize;
+    let naturalWidths = rawPills.map((pill) => getNaturalPillWidth(pill.cleanText, pillFontSize));
+    let totalNaturalWidth = naturalWidths.reduce((sum, width) => sum + width, 0) + gap * Math.max(0, rawPills.length - 1);
+
+    while (totalNaturalWidth > availableWidth && pillFontSize > 4.2) {
+      pillFontSize -= 0.2;
+      naturalWidths = rawPills.map((pill) => getNaturalPillWidth(pill.cleanText, pillFontSize));
+      totalNaturalWidth = naturalWidths.reduce((sum, width) => sum + width, 0) + gap * Math.max(0, rawPills.length - 1);
+    }
 
     const fitTextToWidth = (value, width) => {
       const clean = sanitizePdfText(value || "-");
@@ -8756,42 +8776,33 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}) {
         return clean;
       }
 
-      // Keep short labels like WASH, RST PM and PM readable. Only ellipsize when
-      // the actual text width cannot fit inside the available pill width.
       let fitted = clean;
       while (fitted.length > 4 && getApproxPdfTextWidth(`${fitted}...`, pillFontSize, true) > maxTextWidth) {
         fitted = fitted.slice(0, -1).trimEnd();
       }
 
-      if (fitted.length <= 4) return clean.slice(0, Math.max(1, fitted.length));
-      return `${fitted}...`;
+      return fitted.length > 4 ? `${fitted}...` : fitted;
     };
 
     let cursorX = safeLeft;
 
-    pills.forEach((pill, index) => {
+    rawPills.forEach((pill, index) => {
       if (cursorX >= safeRight - 10) return;
 
-      const remainingPills = pills.length - index;
+      const remainingPills = rawPills.length - index;
       const remainingWidth = safeRight - cursorX - gap * Math.max(0, remainingPills - 1);
-      const rawText = sanitizePdfText(pill.text || "-");
-      const previewText = truncatePdfText(rawText, pills.length > 1 ? 18 : 30);
-
-      // Width is based on the actual estimated text width. This fixes single WASH
-      // pills showing as "..." when the old character-based fitting became too tight.
-      const naturalWidth = Math.max(
-        minPillWidth,
-        getApproxPdfTextWidth(previewText, pillFontSize, true) + pillPaddingX * 2
-      );
-      const widthLimit = Math.max(10, Math.min(maxPillWidth, remainingWidth));
-      const pillWidth = Math.min(widthLimit, Math.max(minPillWidth, naturalWidth));
-      const fitted = fitTextToWidth(rawText, pillWidth);
+      const evenWidthLimit = Math.max(10, remainingWidth / remainingPills);
+      const naturalWidth = naturalWidths[index] || minPillWidth;
+      const pillWidth = totalNaturalWidth <= availableWidth
+        ? naturalWidth
+        : Math.max(minPillWidth, Math.min(naturalWidth, evenWidthLimit));
+      const fitted = fitTextToWidth(pill.cleanText, pillWidth);
       const textWidth = getApproxPdfTextWidth(fitted, pillFontSize, true);
       const textX = cursorX + Math.max(pillPaddingX, (pillWidth - textWidth) / 2);
 
       ops += pdfRoundedRect(cursorX, pillY, pillWidth, pillHeight, pillHeight / 2, {
         fill: pill.fill || "#ffffff",
-        stroke: "#000000",
+        stroke: pill.stroke || "#000000",
         strokeWidth: 0.35,
       });
       ops += pdfText(fitted, textX, fallbackTextY, {
@@ -8811,11 +8822,12 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}) {
 
     const colWidths = {
       no: 31,
-      train: 57,
-      tid: 45,
-      time: 68,
-      // Keep the remark column compact instead of stretching across the depot half.
-      remark: 120,
+      train: 53,
+      tid: 42,
+      time: 62,
+      // Wider remark column so paired request pills like "TODAY PM" and "TMRW PM"
+      // are printed in full in the Depot Removal Summary PDF.
+      remark: 192,
     };
     const colX = {
       no: x,
