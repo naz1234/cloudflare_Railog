@@ -5658,12 +5658,7 @@ function HeaderBookmarkDropdown({
                           <Bookmark className="h-3.5 w-3.5" />
                         </span>
                         <span className="min-w-0">
-                          <span className="flex min-w-0 items-center gap-1.5">
-                            <span className="block truncate text-[12px] font-bold text-white">{link.title}</span>
-                            <span className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[8px] font-black leading-none tracking-[0.12em] ${theme.chip}`}>
-                              {theme.label}
-                            </span>
-                          </span>
+                          <span className="block truncate text-[12px] font-bold text-white">{link.title}</span>
                           <span className="block truncate text-[10px] text-[#7eb8e0]">{compactBookmarkUrl(link.url)}</span>
                         </span>
                         <ExternalLink className={`ml-auto h-3.5 w-3.5 flex-shrink-0 opacity-75 ${theme.linkIcon}`} />
@@ -5672,20 +5667,20 @@ function HeaderBookmarkDropdown({
                       <button
                         type="button"
                         onClick={() => onStartEdit(link)}
-                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border border-[#2b4f6b] bg-[#071828]/80 text-[#7eb8e0] transition hover:border-cyan-300/50 hover:text-white"
+                        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border border-[#2b4f6b] bg-[#071828]/80 text-[#7eb8e0] transition hover:border-cyan-300/50 hover:text-white"
                         title="Edit bookmark"
                         aria-label={`Edit ${link.title}`}
                       >
-                        <Pencil className="h-3.5 w-3.5" />
+                        <Pencil className="h-3 w-3" />
                       </button>
                       <button
                         type="button"
                         onClick={() => onDelete(link)}
-                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border border-red-400/20 bg-red-500/5 text-red-200 transition hover:border-red-300/50 hover:bg-red-500/15"
+                        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border border-red-400/20 bg-red-500/5 text-red-200 transition hover:border-red-300/50 hover:bg-red-500/15"
                         title="Delete bookmark"
                         aria-label={`Delete ${link.title}`}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3 w-3" />
                       </button>
                     </div>
                   );
