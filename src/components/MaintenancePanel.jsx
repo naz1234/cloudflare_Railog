@@ -7,7 +7,7 @@ const REQUEST_TYPES = [
   "Deep Cleaning", "INBOUND (G to C)", "CC Tech/Func. Alarm", "Door Issue", "Training", "APU alarm", "Other"
 ];
 
-const MIN_VISIBLE_REQUEST_ROWS = 20;
+const MIN_VISIBLE_REQUEST_ROWS = 40;
 
 export const REQUEST_COLORS = {
   // Matched with DepotStabling.jsx MAINT_STYLES badgeBorder values.
