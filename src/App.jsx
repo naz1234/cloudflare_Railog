@@ -9,7 +9,6 @@ import { initCloudflareSchema } from '@/api/base44Client';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 // Add page imports here
 import DepotStabling from "./pages/DepotStabling";
-import Possession from "./pages/Possession";
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -44,7 +43,7 @@ const AuthenticatedApp = () => {
       <Route path="/insertion" element={<DepotStabling />} />
       <Route path="/train-washing" element={<DepotStabling />} />
       <Route path="/odo-reading" element={<DepotStabling />} />
-      <Route path="/possession" element={<Possession />} />
+      <Route path="/possession" element={<DepotStabling />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
