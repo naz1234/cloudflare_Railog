@@ -6743,26 +6743,7 @@ export default function DepotStablingPage() {
               <div className="w-px h-6 bg-[#1a3a56]" />
               <span className="text-sm font-bold text-white tracking-tight">L3 Depot Controller Template</span>
             </div>
-            <nav className="flex items-center gap-0.5 bg-[#071828] p-0.5 rounded-lg border border-[#1a3a56]">
-              {[
-                { to: "/depot-stabling", label: "Depot Stabling" },
-              ].map(({ to, label }) => {
-                const isActive = location.pathname === "/" || location.pathname === to;
-                return (
-                  <Link
-                    key={to}
-                    to={to}
-                    className={`px-3 py-1.5 rounded-md text-xs transition-colors ${
-                      isActive
-                        ? "font-semibold bg-[#1a3a5c] text-white shadow-sm border border-[#2b4f6b]"
-                        : "font-medium text-[#7eb8e0] hover:text-white hover:bg-[#0f2d4a]"
-                    }`}
-                  >
-                    {label}
-                  </Link>
-                );
-              })}
-            </nav>
+            
             <HeaderBookmarkDropdown
               links={bookmarkLinks}
               loading={bookmarkLoading}
