@@ -1457,7 +1457,6 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
                       className="min-w-0 flex-1 bg-transparent text-center text-[9px] font-black leading-tight text-amber-100 outline-none placeholder:text-amber-700"
                       title="Edit PST start time"
                     />
-                    <span className="shrink-0 pl-0.5 text-[8px] font-black leading-tight text-amber-300">hrs</span>
                   </div>
                 </div>
                 <div className="mb-1 text-center text-[8px] font-black uppercase tracking-wide text-amber-300">Any alarm?</div>
