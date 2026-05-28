@@ -2738,7 +2738,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
               <button
                 type="button"
                 onClick={() => handleTrainRemPdfDownload(depot)}
-                className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[7px] font-black text-cyan-100 transition-all hover:-translate-y-0.5"
+                className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black text-cyan-100 transition-all hover:-translate-y-0.5"
                 style={{
                   background: pdfActive ? "rgba(34,197,94,0.18)" : "rgba(6,212,232,0.14)",
                   borderColor: pdfActive ? "rgba(34,197,94,0.48)" : "rgba(34,211,238,0.55)",
@@ -2747,13 +2747,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
                 }}
                 title="Download one-page PDF: West Depot left, East Depot right"
               >
-                <FileText size={10} />
+                <FileText size={12} />
                 {pdfActive ? "Done" : "PDF"}
               </button>
 
               <button
                 onClick={() => clearDepotTrainRem(depot)}
-                className="px-1.5 py-0.5 rounded-md text-[7px] font-black border border-[#2b4f6b] bg-[#10263b] text-[#7eb8e0] hover:bg-red-950/30 hover:border-red-600/60 hover:text-red-300 transition-colors"
+                className="px-1.5 py-0.5 rounded-md text-[9px] font-black border border-[#2b4f6b] bg-[#10263b] text-[#7eb8e0] hover:bg-red-950/30 hover:border-red-600/60 hover:text-red-300 transition-colors"
               >
                 Clear
               </button>
