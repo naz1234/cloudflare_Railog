@@ -2,11 +2,6 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Copy, ClipboardCheck, Trash2, FileText, Shield, Wind, Plus, X } from "lucide-react";
 
-const NAV_LINKS = [
-  { to: "/depot-stabling", label: "Depot Stabling" },
-  { to: "/possession", label: "Possession" },
-];
-
 function parseTimeTo24(raw) {
   if (!raw) return "";
   const clean = raw.trim();
@@ -348,6 +343,12 @@ function SweepingLog() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function Possession() {
   const location = useLocation();
+  const sideNavClass = (active) => `flex h-10 w-10 items-center justify-center rounded-lg text-[#7eb8e0] transition-all ${
+    active
+      ? "bg-[#1a3a5c] text-white shadow-sm border border-[#2b4f6b]"
+      : "hover:text-white hover:bg-[#0f2d4a]"
+  }`;
+
   return (
     <div className="h-screen font-inter bg-[#071828] flex flex-col overflow-hidden">
       <header className="h-[56px] border-b border-[#1a3a56] shadow-sm flex-shrink-0" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
@@ -361,11 +362,6 @@ export default function Possession() {
               </div>
               <span className="text-sm font-bold text-white tracking-tight">TrainLog</span>
             </div>
-            <nav className="flex items-center gap-0.5 bg-[#050f1a] p-0.5 rounded-lg border border-[#1e3a56]">
-              {NAV_LINKS.map(({ to, label }) => (
-                <Link key={to} to={to} className={`px-3 py-1.5 rounded-md text-xs transition-colors ${location.pathname === to ? "font-semibold bg-[#0f2d4a] text-[#c8d8ea] shadow-sm border border-[#2b4f6b]" : "font-medium text-[#4a8ab5] hover:text-[#c8d8ea] hover:bg-[#0a1e2e]"}`}>{label}</Link>
-              ))}
-            </nav>
           </div>
           <div className="flex items-center gap-2 bg-[#050f1a] border border-[#1e3a56] px-3 py-1.5 rounded-lg">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -373,36 +369,63 @@ export default function Possession() {
           </div>
         </div>
       </header>
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-[1600px] mx-auto px-5 py-5 space-y-6">
-          <section>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-5 h-5 rounded-full bg-violet-900/50 border border-violet-700/50 flex items-center justify-center text-[10px] font-black text-violet-300">1</span>
-              <h1 className="text-sm font-black text-white tracking-widest uppercase">Possession Log</h1>
-              <div className="flex-1 h-px bg-[#1e3a56]" />
-            </div>
-            <PossessionLog />
-          </section>
-          <div className="border-t border-[#1e3a56]" />
-          <section>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-5 h-5 rounded-full bg-sky-900/50 border border-sky-700/50 flex items-center justify-center text-[10px] font-black text-sky-300">2</span>
-              <h1 className="text-sm font-black text-white tracking-widest uppercase">Station Controller Security Message</h1>
-              <div className="flex-1 h-px bg-[#1e3a56]" />
-            </div>
-            <SCSecurityMessage />
-          </section>
-          <div className="border-t border-[#1e3a56]" />
-          <section>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-5 h-5 rounded-full bg-emerald-900/50 border border-emerald-700/50 flex items-center justify-center text-[10px] font-black text-emerald-300">3</span>
-              <h1 className="text-sm font-black text-white tracking-widest uppercase">Sweeping (after Possession)</h1>
-              <div className="flex-1 h-px bg-[#1e3a56]" />
-            </div>
-            <SweepingLog />
-          </section>
-        </div>
-      </main>
+
+      <div className="flex flex-1 min-h-0">
+        <aside
+          className="w-[58px] flex-shrink-0 flex flex-col items-center pt-4 gap-2"
+          style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", borderRight: "1px solid #1a3a56" }}
+        >
+          <Link
+            to="/depot-stabling"
+            title="Depot Stabling"
+            aria-label="Depot Stabling"
+            className={sideNavClass(location.pathname === "/" || location.pathname === "/depot-stabling")}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+          </Link>
+          <Link
+            to="/possession"
+            title="Possession"
+            aria-label="Possession"
+            className={sideNavClass(location.pathname === "/possession")}
+          >
+            <Shield className="w-4 h-4" />
+          </Link>
+        </aside>
+
+        <main className="flex-1 overflow-auto">
+          <div className="max-w-[1600px] mx-auto px-5 py-5 space-y-6">
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-5 h-5 rounded-full bg-violet-900/50 border border-violet-700/50 flex items-center justify-center text-[10px] font-black text-violet-300">1</span>
+                <h1 className="text-sm font-black text-white tracking-widest uppercase">Possession Log</h1>
+                <div className="flex-1 h-px bg-[#1e3a56]" />
+              </div>
+              <PossessionLog />
+            </section>
+            <div className="border-t border-[#1e3a56]" />
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-5 h-5 rounded-full bg-sky-900/50 border border-sky-700/50 flex items-center justify-center text-[10px] font-black text-sky-300">2</span>
+                <h1 className="text-sm font-black text-white tracking-widest uppercase">Station Controller Security Message</h1>
+                <div className="flex-1 h-px bg-[#1e3a56]" />
+              </div>
+              <SCSecurityMessage />
+            </section>
+            <div className="border-t border-[#1e3a56]" />
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-5 h-5 rounded-full bg-emerald-900/50 border border-emerald-700/50 flex items-center justify-center text-[10px] font-black text-emerald-300">3</span>
+                <h1 className="text-sm font-black text-white tracking-widest uppercase">Sweeping (after Possession)</h1>
+                <div className="flex-1 h-px bg-[#1e3a56]" />
+              </div>
+              <SweepingLog />
+            </section>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

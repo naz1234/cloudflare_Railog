@@ -6369,9 +6369,8 @@ export default function DepotStablingPage() {
             <nav className="flex items-center gap-0.5 bg-[#071828] p-0.5 rounded-lg border border-[#1a3a56]">
               {[
                 { to: "/depot-stabling", label: "Depot Stabling" },
-                { to: "/possession", label: "Possession" },
               ].map(({ to, label }) => {
-                const isActive = location.pathname === to;
+                const isActive = location.pathname === "/" || location.pathname === to;
                 return (
                   <Link
                     key={to}
@@ -6509,21 +6508,50 @@ export default function DepotStablingPage() {
                 </svg>
               ),
             },
-          ].map(({ key, label, icon }) => (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key)}
-              title={isSidebarCollapsed ? label : undefined}
-              className={`flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-2.5 px-3"} py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full ${
-                activeTab === key
-                  ? "bg-[#1a3a5c] text-white shadow-sm border border-[#2b4f6b]"
-                  : "text-[#7eb8e0] hover:text-white hover:bg-[#0f2d4a]"
-              }`}
-            >
-              <span className="flex-shrink-0">{icon}</span>
-              {!isSidebarCollapsed && <span>{label}</span>}
-            </button>
-          ))}
+            {
+              key: "possession",
+              label: "Possession",
+              to: "/possession",
+              icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/>
+                </svg>
+              ),
+            },
+          ].map(({ key, label, icon, to }) => {
+            const isActive = to ? location.pathname === to : activeTab === key;
+            const navClass = `flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-2.5 px-3"} py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full ${
+              isActive
+                ? "bg-[#1a3a5c] text-white shadow-sm border border-[#2b4f6b]"
+                : "text-[#7eb8e0] hover:text-white hover:bg-[#0f2d4a]"
+            }`;
+
+            if (to) {
+              return (
+                <Link
+                  key={key}
+                  to={to}
+                  title={isSidebarCollapsed ? label : undefined}
+                  className={navClass}
+                >
+                  <span className="flex-shrink-0">{icon}</span>
+                  {!isSidebarCollapsed && <span>{label}</span>}
+                </Link>
+              );
+            }
+
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                title={isSidebarCollapsed ? label : undefined}
+                className={navClass}
+              >
+                <span className="flex-shrink-0">{icon}</span>
+                {!isSidebarCollapsed && <span>{label}</span>}
+              </button>
+            );
+          })}
         </aside>
 
         {/* Main Content */}
