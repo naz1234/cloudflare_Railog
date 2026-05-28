@@ -8,6 +8,7 @@ const ALLOWED_ENTITIES = new Set([
   'PSTTrainPrep',
   'RemovalListRow',
   'MainlineTrainRow',
+  'BookmarkLink',
 ]);
 
 const jsonHeaders = {

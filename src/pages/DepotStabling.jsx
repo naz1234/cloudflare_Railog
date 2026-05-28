@@ -2,13 +2,35 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Save, CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ExternalLink } from "lucide-react";
+import { Save, CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
 import TIDReferenceTable from "../components/TIDReferenceTable";
 import PSTLogOutput from "../components/depot/PSTLogOutput";
 import InsertionLogOutput from "../components/depot/InsertionLogOutput";
+
+const DEFAULT_BOOKMARK_LINKS = [
+  { title: "Outlook", url: "https://outlook.office.com", sortOrder: 0 },
+  { title: "SharePoint", url: "https://www.office.com/launch/sharepoint", sortOrder: 1 },
+  { title: "SAP", url: "https://www.sap.com", sortOrder: 2 },
+];
+
+const NEW_BOOKMARK_ID = "__new_bookmark__";
+
+function normalizeBookmarkUrl(value = "") {
+  const clean = String(value || "").trim();
+  if (!clean) return "";
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(clean)) return clean;
+  return `https://${clean}`;
+}
+
+function compactBookmarkUrl(value = "") {
+  return String(value || "")
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .replace(/\/$/, "");
+}
 
 // ── Train Washing XLSX → DOCX Export ────────────────────────────────────────
 // Added as a second Train Washing window so the existing Train Washing Log stays unchanged, while this JSX carries the latest
@@ -4712,6 +4734,202 @@ function PSTTabContent
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+function HeaderBookmarkDropdown({
+  links,
+  loading,
+  error,
+  isOpen,
+  setIsOpen,
+  menuRef,
+  editId,
+  draft,
+  saving,
+  onStartAdd,
+  onStartEdit,
+  onCancelEdit,
+  onDraftChange,
+  onSave,
+  onDelete,
+}) {
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all shadow-sm ${
+          isOpen
+            ? "bg-emerald-500/15 border-emerald-400/50 text-emerald-100"
+            : "bg-[#071828] border-emerald-400/30 text-emerald-200 hover:bg-emerald-500/10 hover:border-emerald-300/50"
+        }`}
+      >
+        <Bookmark className="w-3.5 h-3.5" />
+        Bookmarks
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-[360px] overflow-hidden rounded-2xl border border-[#1f4d6f] bg-[#071828] shadow-2xl shadow-black/50">
+          <div className="flex items-center justify-between border-b border-[#1a3a56] bg-[#0b253d] px-4 py-3">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-300">External Links</p>
+              <p className="mt-0.5 text-[10px] text-[#7eb8e0]">Outlook, SharePoint, SAP, and other shortcuts</p>
+            </div>
+            <button
+              type="button"
+              onClick={onStartAdd}
+              className="flex items-center gap-1 rounded-lg border border-emerald-400/35 bg-emerald-500/10 px-2.5 py-1.5 text-[10px] font-bold text-emerald-100 transition hover:bg-emerald-500/20"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add
+            </button>
+          </div>
+
+          <div className="max-h-[360px] overflow-y-auto p-2">
+            {error && (
+              <div className="mb-2 rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-[10px] text-red-100">
+                {error}
+              </div>
+            )}
+
+            {editId === NEW_BOOKMARK_ID && (
+              <BookmarkEditForm
+                draft={draft}
+                saving={saving}
+                onDraftChange={onDraftChange}
+                onCancel={onCancelEdit}
+                onSave={onSave}
+              />
+            )}
+
+            {loading ? (
+              <div className="flex items-center gap-2 rounded-xl border border-[#1a3a56] bg-[#082036] px-3 py-3 text-[11px] text-[#7eb8e0]">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Loading bookmarks...
+              </div>
+            ) : links.length === 0 && editId !== NEW_BOOKMARK_ID ? (
+              <div className="rounded-xl border border-dashed border-[#2b4f6b] bg-[#082036] px-3 py-4 text-center text-[11px] text-[#7eb8e0]">
+                No bookmark yet. Click <span className="font-bold text-emerald-200">Add</span> to create an external shortcut.
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {links.map((link) => {
+                  const isEditing = editId === link.id;
+
+                  if (isEditing) {
+                    return (
+                      <BookmarkEditForm
+                        key={link.id}
+                        draft={draft}
+                        saving={saving}
+                        onDraftChange={onDraftChange}
+                        onCancel={onCancelEdit}
+                        onSave={onSave}
+                      />
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={link.id}
+                      className="group flex items-center gap-2 rounded-xl border border-[#163450] bg-[#082036] px-3 py-2 transition hover:border-emerald-400/35 hover:bg-[#0c2e4a]"
+                    >
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex min-w-0 flex-1 items-center gap-2"
+                      >
+                        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border border-emerald-400/25 bg-emerald-500/10 text-emerald-200">
+                          <Bookmark className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-[12px] font-bold text-white">{link.title}</span>
+                          <span className="block truncate text-[10px] text-[#7eb8e0]">{compactBookmarkUrl(link.url)}</span>
+                        </span>
+                        <ExternalLink className="ml-auto h-3.5 w-3.5 flex-shrink-0 text-[#7eb8e0] opacity-70" />
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={() => onStartEdit(link)}
+                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border border-[#2b4f6b] bg-[#071828] text-[#7eb8e0] transition hover:border-cyan-300/50 hover:text-white"
+                        title="Edit bookmark"
+                        aria-label={`Edit ${link.title}`}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(link)}
+                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border border-red-400/20 bg-red-500/5 text-red-200 transition hover:border-red-300/50 hover:bg-red-500/15"
+                        title="Delete bookmark"
+                        aria-label={`Delete ${link.title}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-[#1a3a56] bg-[#061827] px-4 py-2 text-[9px] text-[#5d94bd]">
+            Links open in a new tab. Edit name or URL anytime from this dropdown.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BookmarkEditForm({ draft, saving, onDraftChange, onCancel, onSave }) {
+  return (
+    <div className="mb-2 rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-3">
+      <div className="grid gap-2">
+        <label className="grid gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-200">
+          Name
+          <input
+            value={draft.title}
+            onChange={(event) => onDraftChange("title", event.target.value)}
+            placeholder="Outlook"
+            className="h-8 rounded-lg border border-[#2b4f6b] bg-[#071828] px-2 text-[12px] font-medium normal-case tracking-normal text-white outline-none transition placeholder:text-[#4a8ab5] focus:border-emerald-300/60"
+          />
+        </label>
+        <label className="grid gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-200">
+          URL
+          <input
+            value={draft.url}
+            onChange={(event) => onDraftChange("url", event.target.value)}
+            placeholder="https://outlook.office.com"
+            className="h-8 rounded-lg border border-[#2b4f6b] bg-[#071828] px-2 text-[12px] font-medium normal-case tracking-normal text-white outline-none transition placeholder:text-[#4a8ab5] focus:border-emerald-300/60"
+          />
+        </label>
+      </div>
+      <div className="mt-3 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={saving}
+          className="rounded-lg border border-[#2b4f6b] bg-[#071828] px-3 py-1.5 text-[10px] font-bold text-[#7eb8e0] transition hover:bg-[#0f2d4a] disabled:opacity-60"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={saving}
+          className="rounded-lg border border-emerald-400/40 bg-emerald-500/15 px-3 py-1.5 text-[10px] font-bold text-emerald-100 transition hover:bg-emerald-500/25 disabled:opacity-60"
+        >
+          {saving ? "Saving..." : "Save Bookmark"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function DepotStablingPage() {
   const [westData, setWestData] = useState(initRoads(WEST_ROADS));
   const [eastData, setEastData] = useState(initRoads(EAST_ROADS));
@@ -4757,59 +4975,6 @@ export default function DepotStablingPage() {
     return "stabling";
   };
   const [activeTab, setActiveTab] = useState(() => getTabFromPath(location.pathname));
-  const [bookmarkMenuOpen, setBookmarkMenuOpen] = useState(false);
-  const bookmarkMenuRef = useRef(null);
-  const headerBookmarks = useMemo(() => [
-    {
-      key: "train-req",
-      label: "Train Req",
-      description: "Depot stabling and train request board",
-      type: "tab",
-      tab: "stabling",
-    },
-    {
-      key: "pst-train-prep",
-      label: "PST / Train Prep",
-      description: "PST, prep status and live output log",
-      type: "tab",
-      tab: "pst",
-    },
-    {
-      key: "train-movement",
-      label: "Train Movement",
-      description: "Swapping, insertion and removal movement log",
-      type: "tab",
-      tab: "movement",
-    },
-    {
-      key: "insertion",
-      label: "Insertion",
-      description: "Insertion timing and TID reference",
-      type: "tab",
-      tab: "insertion",
-    },
-    {
-      key: "train-washing",
-      label: "Train Washing",
-      description: "Automatic wash plant and DOCX export",
-      type: "tab",
-      tab: "washing",
-    },
-    {
-      key: "odo-reading",
-      label: "ODO Reading",
-      description: "ODO reading log output",
-      type: "tab",
-      tab: "odo",
-    },
-    {
-      key: "possession",
-      label: "Possession",
-      description: "Possession page",
-      type: "route",
-      to: "/possession",
-    },
-  ], []);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     try {
       return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
@@ -4818,38 +4983,20 @@ export default function DepotStablingPage() {
     }
   });
 
+  const [bookmarkLinks, setBookmarkLinks] = useState([]);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
+  const [bookmarkError, setBookmarkError] = useState("");
+  const [bookmarkOpen, setBookmarkOpen] = useState(false);
+  const [bookmarkEditId, setBookmarkEditId] = useState(null);
+  const [bookmarkDraft, setBookmarkDraft] = useState({ title: "", url: "" });
+  const [bookmarkSaving, setBookmarkSaving] = useState(false);
+  const bookmarkMenuRef = useRef(null);
+
   useEffect(() => {
     try {
       localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isSidebarCollapsed));
     } catch {}
   }, [isSidebarCollapsed]);
-
-  useEffect(() => {
-    if (!bookmarkMenuOpen) return undefined;
-
-    const closeBookmarkMenu = (event) => {
-      if (!bookmarkMenuRef.current?.contains(event.target)) {
-        setBookmarkMenuOpen(false);
-      }
-    };
-
-    const closeBookmarkMenuByKey = (event) => {
-      if (event.key === "Escape") setBookmarkMenuOpen(false);
-    };
-
-    document.addEventListener("mousedown", closeBookmarkMenu);
-    document.addEventListener("keydown", closeBookmarkMenuByKey);
-
-    return () => {
-      document.removeEventListener("mousedown", closeBookmarkMenu);
-      document.removeEventListener("keydown", closeBookmarkMenuByKey);
-    };
-  }, [bookmarkMenuOpen]);
-
-  const openBookmarkedTab = (tab) => {
-    setActiveTab(tab);
-    setBookmarkMenuOpen(false);
-  };
 
   useEffect(() => {
     if (isSidebarCollapsed) return undefined;
@@ -4864,6 +5011,141 @@ export default function DepotStablingPage() {
   useEffect(() => {
     setActiveTab(getTabFromPath(location.pathname));
   }, [location.pathname]);
+
+  const loadBookmarkLinks = useCallback(async () => {
+    setBookmarkLoading(true);
+    setBookmarkError("");
+
+    try {
+      let records = await base44.entities.BookmarkLink.list("sortOrder");
+
+      if (!records.length) {
+        records = await Promise.all(
+          DEFAULT_BOOKMARK_LINKS.map((link, index) =>
+            base44.entities.BookmarkLink.create({
+              ...link,
+              sortOrder: index,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            })
+          )
+        );
+      }
+
+      setBookmarkLinks(
+        [...records]
+          .filter((link) => link?.title && link?.url)
+          .sort((a, b) => Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0))
+      );
+    } catch (error) {
+      console.error("Bookmark links load failed:", error);
+      setBookmarkError("Unable to load bookmarks. Please check Cloudflare D1 binding and try again.");
+    } finally {
+      setBookmarkLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadBookmarkLinks();
+  }, [loadBookmarkLinks]);
+
+  useEffect(() => {
+    if (!bookmarkOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!bookmarkMenuRef.current?.contains(event.target)) {
+        setBookmarkOpen(false);
+        setBookmarkEditId(null);
+        setBookmarkError("");
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [bookmarkOpen]);
+
+  const handleStartAddBookmark = useCallback(() => {
+    setBookmarkError("");
+    setBookmarkEditId(NEW_BOOKMARK_ID);
+    setBookmarkDraft({ title: "", url: "" });
+    setBookmarkOpen(true);
+  }, []);
+
+  const handleStartEditBookmark = useCallback((link) => {
+    setBookmarkError("");
+    setBookmarkEditId(link.id);
+    setBookmarkDraft({ title: link.title || "", url: link.url || "" });
+  }, []);
+
+  const handleCancelBookmarkEdit = useCallback(() => {
+    setBookmarkEditId(null);
+    setBookmarkDraft({ title: "", url: "" });
+    setBookmarkError("");
+  }, []);
+
+  const handleBookmarkDraftChange = useCallback((field, value) => {
+    setBookmarkDraft((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
+  const handleSaveBookmark = useCallback(async () => {
+    const title = bookmarkDraft.title.trim();
+    const url = normalizeBookmarkUrl(bookmarkDraft.url);
+
+    if (!title || !url) {
+      setBookmarkError("Please enter both bookmark name and URL.");
+      return;
+    }
+
+    setBookmarkSaving(true);
+    setBookmarkError("");
+
+    try {
+      if (bookmarkEditId === NEW_BOOKMARK_ID) {
+        const created = await base44.entities.BookmarkLink.create({
+          title,
+          url,
+          sortOrder: bookmarkLinks.length,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        setBookmarkLinks((prev) => [...prev, created]);
+      } else {
+        const updated = await base44.entities.BookmarkLink.update(bookmarkEditId, {
+          title,
+          url,
+          updatedAt: new Date().toISOString(),
+        });
+        setBookmarkLinks((prev) => prev.map((link) => (link.id === bookmarkEditId ? updated : link)));
+      }
+
+      setBookmarkEditId(null);
+      setBookmarkDraft({ title: "", url: "" });
+    } catch (error) {
+      console.error("Bookmark save failed:", error);
+      setBookmarkError("Bookmark was not saved. Please try again.");
+    } finally {
+      setBookmarkSaving(false);
+    }
+  }, [bookmarkDraft, bookmarkEditId, bookmarkLinks.length]);
+
+  const handleDeleteBookmark = useCallback(async (link) => {
+    const confirmed = window.confirm(`Delete bookmark "${link.title}"?`);
+    if (!confirmed) return;
+
+    setBookmarkSaving(true);
+    setBookmarkError("");
+
+    try {
+      await base44.entities.BookmarkLink.delete(link.id);
+      setBookmarkLinks((prev) => prev.filter((item) => item.id !== link.id));
+      if (bookmarkEditId === link.id) handleCancelBookmarkEdit();
+    } catch (error) {
+      console.error("Bookmark delete failed:", error);
+      setBookmarkError("Bookmark was not deleted. Please try again.");
+    } finally {
+      setBookmarkSaving(false);
+    }
+  }, [bookmarkEditId, handleCancelBookmarkEdit]);
 
   const existingMapRef = useRef({});
   const autoSaveTimer = useRef(null);
@@ -6105,65 +6387,23 @@ export default function DepotStablingPage() {
                 );
               })}
             </nav>
-
-            <div className="relative" ref={bookmarkMenuRef}>
-              <button
-                type="button"
-                onClick={() => setBookmarkMenuOpen((prev) => !prev)}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shadow-sm ${
-                  bookmarkMenuOpen
-                    ? "bg-emerald-500/15 border-emerald-400/50 text-emerald-200 shadow-emerald-950/30"
-                    : "bg-emerald-500/10 border-emerald-400/30 text-emerald-200 hover:bg-emerald-500/20 hover:border-emerald-300/50"
-                }`}
-                aria-haspopup="menu"
-                aria-expanded={bookmarkMenuOpen}
-              >
-                <Bookmark className="w-3.5 h-3.5" />
-                <span>Bookmarks</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${bookmarkMenuOpen ? "rotate-180" : ""}`} />
-              </button>
-
-              {bookmarkMenuOpen && (
-                <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-[310px] overflow-hidden rounded-xl border border-[#1f4a6f] bg-[#071e33] shadow-2xl shadow-black/40">
-                  <div className="border-b border-[#1a3a56] bg-[#0c2e4a] px-4 py-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-300">Quick Hyperlinks</p>
-                    <p className="mt-1 text-[10px] text-[#7eb8e0]">Shortcut to important pages and sections.</p>
-                  </div>
-
-                  <div className="max-h-[360px] overflow-y-auto p-2">
-                    {headerBookmarks.map((item) => {
-                      const baseClass = "group flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-[#0f2d4a]";
-                      const content = (
-                        <>
-                          <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border border-emerald-400/25 bg-emerald-500/10 text-emerald-300 group-hover:border-emerald-300/50 group-hover:bg-emerald-500/20">
-                            <Bookmark className="h-3.5 w-3.5" />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-xs font-bold text-white group-hover:text-emerald-100">{item.label}</span>
-                            <span className="mt-0.5 block text-[10px] leading-snug text-[#7eb8e0]">{item.description}</span>
-                          </span>
-                          <ExternalLink className="mt-1 h-3.5 w-3.5 flex-shrink-0 text-[#5a9cc8] opacity-70 group-hover:text-emerald-300 group-hover:opacity-100" />
-                        </>
-                      );
-
-                      if (item.type === "route") {
-                        return (
-                          <Link key={item.key} to={item.to} onClick={() => setBookmarkMenuOpen(false)} className={baseClass}>
-                            {content}
-                          </Link>
-                        );
-                      }
-
-                      return (
-                        <button key={item.key} type="button" onClick={() => openBookmarkedTab(item.tab)} className={baseClass}>
-                          {content}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
+            <HeaderBookmarkDropdown
+              links={bookmarkLinks}
+              loading={bookmarkLoading}
+              error={bookmarkError}
+              isOpen={bookmarkOpen}
+              setIsOpen={setBookmarkOpen}
+              menuRef={bookmarkMenuRef}
+              editId={bookmarkEditId}
+              draft={bookmarkDraft}
+              saving={bookmarkSaving}
+              onStartAdd={handleStartAddBookmark}
+              onStartEdit={handleStartEditBookmark}
+              onCancelEdit={handleCancelBookmarkEdit}
+              onDraftChange={handleBookmarkDraftChange}
+              onSave={handleSaveBookmark}
+              onDelete={handleDeleteBookmark}
+            />
           </div>
           <div className="flex items-center gap-3">
             <button

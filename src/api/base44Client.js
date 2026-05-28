@@ -13,6 +13,7 @@ const ENTITY_NAMES = [
   'PSTTrainPrep',
   'RemovalListRow',
   'MainlineTrainRow',
+  'BookmarkLink',
 ];
 
 async function apiRequest(path, options = {}) {
