@@ -1422,6 +1422,29 @@ function normalizeRemarkText(value = "") {
   return (value || "").toString().trim().replace(/\s+/g, " ").toLowerCase();
 }
 
+const TRAIN_REM_NOTE_COLOR_OVERRIDES = {
+  "PM TODAY": "#fbbf24",
+  "TODAY PM": "#fbbf24",
+  "PM TOMORROW": "#38bdf8",
+  "TOMORROW PM": "#38bdf8",
+  "TMRW PM": "#38bdf8",
+};
+
+function normalizeRemarkColorKey(value = "") {
+  return (value || "")
+    .toString()
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .join(" ");
+}
+
+function getTrainRemNoteOverrideColor(value = "") {
+  return TRAIN_REM_NOTE_COLOR_OVERRIDES[normalizeRemarkColorKey(value)] || "";
+}
+
 function isDefaultAutoRequestRemarkText(value = "") {
   const clean = normalizeRemarkText(value);
   if (!clean) return false;
@@ -1473,17 +1496,22 @@ function getTrainRemRequestRemarkStyle(requestItem = null, label = "") {
     ""
   ).toString().trim();
 
+  // Train Rem remark colour must follow the NOTE text first.
+  // Example: RST PM with note "PM Today" should be amber, while
+  // RST PM with note "PM Tomorrow" should be blue.
+  const noteOverrideColor = getTrainRemNoteOverrideColor(requestLabel);
   const matchedKnownStyle = MAINT_STYLES[requestLabel] || null;
   const fallbackCustomStyle = requestLabel ? getCustomRequestStyle(requestLabel) : null;
   const accent =
+    noteOverrideColor ||
+    matchedKnownStyle?.badgeBorder ||
+    matchedKnownStyle?.badgeBg ||
+    getRemovalRemarkFillColor(requestLabel, null) ||
+    fallbackCustomStyle?.badgeBorder ||
+    fallbackCustomStyle?.badgeBg ||
     requestItem?.badgeBorder ||
     requestItem?.badgeBg ||
     requestItem?.trainColor ||
-    matchedKnownStyle?.badgeBorder ||
-    matchedKnownStyle?.badgeBg ||
-    getRemovalRemarkFillColor(requestLabel, requestItem) ||
-    fallbackCustomStyle?.badgeBorder ||
-    fallbackCustomStyle?.badgeBg ||
     "#fbbf24";
 
   return {
@@ -8307,8 +8335,8 @@ function getTrainRemRemovalRemarkItems(row = {}, maintenanceMap = {}) {
 }
 
 function getRemovalRemarkFillColor(remark = "", requestItem = null) {
-  if (requestItem?.badgeBg) return requestItem.badgeBg;
-  if (requestItem?.cellBg) return requestItem.cellBg;
+  const noteOverrideColor = getTrainRemNoteOverrideColor(remark);
+  if (noteOverrideColor) return noteOverrideColor;
 
   const clean = normalizeRemarkText(remark);
   if (!clean || clean === "-") return "";
@@ -8332,7 +8360,13 @@ function getRemovalRemarkFillColor(remark = "", requestItem = null) {
   ];
 
   const matchedStyle = styleChecks.find(([keyword]) => text.includes(keyword))?.[1];
-  return matchedStyle?.badgeBg || matchedStyle?.cellBg || "";
+  return (
+    matchedStyle?.badgeBg ||
+    matchedStyle?.cellBg ||
+    requestItem?.badgeBg ||
+    requestItem?.cellBg ||
+    ""
+  );
 }
 
 function getTrainRemRemovalEntries(trainRemState = {}, depot = "west", maintenanceMap = {}) {
