@@ -1510,8 +1510,12 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   let trainColor = "#e2eaf4";
   if (primaryMaint) { trainColor = primaryMaint.trainColor; }
   const cellKey = `${road}-${bi}`;
-  const pst = pstState[cellKey];
-  const prep = prepState[cellKey];
+  const rawPst = pstState[cellKey];
+  const rawPrep = prepState[cellKey];
+  const pstMatchesTrain = key && (!rawPst?.trainKey || normalizeTrainId(rawPst.trainKey) === key);
+  const prepMatchesTrain = key && (!rawPrep?.trainKey || normalizeTrainId(rawPrep.trainKey) === key);
+  const pst = pstMatchesTrain ? rawPst : null;
+  const prep = prepMatchesTrain ? rawPrep : null;
   const isPstDone = pst?.done;
   const isPstConfirming = pst?.confirming && !pst?.done;
   const pstEstimateTime = pst?.endTime || "";
@@ -6697,9 +6701,33 @@ export default function DepotStablingPage() {
     isEditingStablingRef.current = false;
   }, []);
 
+  const clearPSTTrainPrepForCell = useCallback((road, blockIndex) => {
+    const cellKey = `${road}-${blockIndex}`;
+    const removeCellKey = (prev) => {
+      if (!prev?.[cellKey]) return prev;
+      const next = { ...prev };
+      delete next[cellKey];
+      return next;
+    };
+
+    setPstState(removeCellKey);
+    setPrepState(removeCellKey);
+    setTaNameState(removeCellKey);
+    setPstLogLines((prev) => prev.filter((line) => line.key !== `pst-${cellKey}` && line.key !== `prep-${cellKey}`));
+  }, []);
+
   // Called on every keystroke — updates state freely so typing "33" works even if "3" exists
   const updateBlockTrain = (depot, road, blockIndex, value) => {
     const setter = depot === "west" ? setWestData : setEastData;
+    const sourceData = depot === "west" ? westDataRef.current : eastDataRef.current;
+    const previousKey = normalizeTrainId(sourceData?.[road]?.[blockIndex]?.trainId);
+    const incomingKey = normalizeTrainId(value);
+
+    if (previousKey !== incomingKey) {
+      markPSTLiveLocalEdit();
+      clearPSTTrainPrepForCell(road, blockIndex);
+    }
+
     setter((prev) => {
       const updated = { ...prev };
       const blocks = [...updated[road]];
@@ -6712,6 +6740,8 @@ export default function DepotStablingPage() {
   // Called on blur or Enter — runs duplicate check against the final typed value
   const commitBlockTrain = (depot, road, blockIndex, value) => {
     const setter = depot === "west" ? setWestData : setEastData;
+    const sourceData = depot === "west" ? westDataRef.current : eastDataRef.current;
+    const previousKey = normalizeTrainId(sourceData?.[road]?.[blockIndex]?.trainId);
     const incomingKey = normalizeTrainId(value);
 
     if (incomingKey) {
@@ -6733,6 +6763,10 @@ export default function DepotStablingPage() {
         const cellKey = `${depot}-${road}-${blockIndex}`;
         setFlashingCells((prev) => new Set([...prev, cellKey]));
         setTimeout(() => {
+          if (previousKey) {
+            markPSTLiveLocalEdit();
+            clearPSTTrainPrepForCell(road, blockIndex);
+          }
           setter((prev) => {
             const updated = { ...prev };
             const blocks = [...updated[road]];
@@ -6751,6 +6785,11 @@ export default function DepotStablingPage() {
     }
 
     // No duplicate — persist and schedule auto-save
+    if (previousKey !== incomingKey) {
+      markPSTLiveLocalEdit();
+      clearPSTTrainPrepForCell(road, blockIndex);
+    }
+
     setter((prev) => {
       const updated = { ...prev };
       const blocks = [...updated[road]];
@@ -6789,6 +6828,12 @@ export default function DepotStablingPage() {
   const handleClearStabling = (depot) => {
     const roads = depot === "west" ? WEST_ROADS : EAST_ROADS;
     const setter = depot === "west" ? setWestData : setEastData;
+
+    markPSTLiveLocalEdit();
+    setPstLogLines((prev) => prev.filter((line) => line.depot !== depot));
+    setPstState((prev) => removePSTSectionKeys(prev, depot));
+    setPrepState((prev) => removePSTSectionKeys(prev, depot));
+    setTaNameState((prev) => removePSTSectionKeys(prev, depot));
 
     setter((prev) => {
       const updated = { ...prev };
@@ -7110,6 +7155,7 @@ export default function DepotStablingPage() {
           startTime,
           endTime,
           alarmStatus,
+          trainKey: paddedKey,
         },
       }));
       setPstLogLines((prev) => sortPSTLogLinesByTime([
@@ -7130,6 +7176,7 @@ export default function DepotStablingPage() {
         confirming: true,
         startTime,
         endTime,
+        trainKey: paddedKey,
       },
     }));
     setPstLogLines((prev) => prev.filter((l) => l.key !== `pst-${cellKey}`));
@@ -7146,18 +7193,18 @@ export default function DepotStablingPage() {
       setTaNameState((prev) => { const n = { ...prev }; delete n[cellKey]; return n; });
       return;
     }
+    const paddedKey = trainKey.replace(/^T(\d+)$/, (_, n) => `T${n.padStart(2, "0")}`);
     if (!current?.started) {
-      setPrepState((prev) => ({ ...prev, [cellKey]: { started: true, done: false, startTime: formatTime(new Date()) } }));
+      setPrepState((prev) => ({ ...prev, [cellKey]: { started: true, done: false, startTime: formatTime(new Date()), trainKey: paddedKey } }));
     } else {
       const endTime = formatTime(new Date());
       const resolvedTaName = taNameState[cellKey] || taName;
       const taStr = resolvedTaName.trim() ? ` Performed by TA ${resolvedTaName.trim()}.` : "";
-      const paddedKey = trainKey.replace(/^T(\d+)$/, (_, n) => `T${n.padStart(2, "0")}`);
       const depotLabel = WEST_ROADS.includes(road) ? "WD" : "ED";
       const roadFormatted = road.replace(/^(WD|ED)-/, `${depotLabel}\u2013`);
       const line = `${current.startTime} hrs \u2013 Train preparation commenced at ${roadFormatted} for ${paddedKey}. Completed at ${endTime} hrs.${taStr}`;
       const depot = getDepotFromRoad(road);
-      setPrepState((prev) => ({ ...prev, [cellKey]: { ...prev[cellKey], done: true, endTime } }));
+      setPrepState((prev) => ({ ...prev, [cellKey]: { ...prev[cellKey], done: true, endTime, trainKey: paddedKey } }));
       setPstLogLines((prev) => sortPSTLogLinesByTime([...prev.filter((l) => l.key !== `prep-${cellKey}`), { key: `prep-${cellKey}`, text: line, type: "Prep", depot, trainKey: paddedKey, startTime: current.startTime, endTime, taName: resolvedTaName.trim() }]));
     }
   };
