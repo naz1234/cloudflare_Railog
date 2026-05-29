@@ -7481,11 +7481,6 @@ export default function DepotStablingPage() {
         ]}
       />
 
-      <ActiveLegend
-        westData={westData}
-        eastData={eastData}
-        maintenanceMap={maintenanceMap}
-      />
 
       <TrainRequestedNotInRemoval
         requests={requests}
@@ -7613,47 +7608,6 @@ export default function DepotStablingPage() {
         </div>
         </main>
       </div>
-    </div>
-  );
-}
-
-function ActiveLegend({ westData, eastData, maintenanceMap }) {
-  const activeTypes = [];
-
-  [...Object.values(westData), ...Object.values(eastData)].forEach((blocks) => {
-    blocks.forEach((block) => {
-      const key = normalizeTrainId(block.trainId);
-      if (!key) return;
-
-      const maintList = maintenanceMap[key] || [];
-
-      maintList.forEach((maint) => {
-        if (!activeTypes.some((item) => item.label === maint.displayType)) {
-          activeTypes.push({
-            label: maint.displayType,
-            dot: maint.badgeBg,
-          });
-        }
-      });
-    });
-  });
-
-  if (activeTypes.length === 0) return null;
-
-  return (
-    <div className="inline-flex flex-wrap items-center gap-4 bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-sm px-4 py-3">
-      {activeTypes.map((item) => (
-        <div key={item.label} className="flex items-center gap-2">
-          <span
-            className="w-3 h-3 rounded-full inline-block"
-            style={{ backgroundColor: item.dot }}
-          />
-
-          <span className="text-xs text-[#c8d8ea] font-medium">
-            {item.label}
-          </span>
-        </div>
-      ))}
     </div>
   );
 }
