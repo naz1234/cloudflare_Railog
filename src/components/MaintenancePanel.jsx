@@ -105,6 +105,35 @@ function getNeutralPillStyle() {
   };
 }
 
+const NOTE_COLOR_OVERRIDES = {
+  "PM TODAY": "#fbbf24",
+  "TODAY PM": "#fbbf24",
+  "PM TOMORROW": "#38bdf8",
+  "TOMORROW PM": "#38bdf8",
+  "TMRW PM": "#38bdf8",
+};
+
+function getRemarkPillStyle(remark = "") {
+  const cleanRemark = remark
+    .toString()
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .join(" ");
+
+  const accent = NOTE_COLOR_OVERRIDES[cleanRemark] || getCustomRequestColor(cleanRemark);
+
+  return {
+    backgroundColor: "#091828",
+    color: accent,
+    border: `1px solid ${accent}`,
+    boxShadow: `0 0 0 1px rgba(255,255,255,0.02), 0 0 8px ${accent}55`,
+    textShadow: `0 0 6px ${accent}88`,
+  };
+}
+
 const MONTHS_SHORT = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
@@ -430,7 +459,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               const displayLabel = displayType(req);
               const typeKey = req.requestType === "Other" ? displayLabel : req.requestType;
               const requestPillStyle = getRequestPillStyle(typeKey, displayLabel);
-              const notePillStyle = req.remark ? requestPillStyle : getNeutralPillStyle();
+              const notePillStyle = req.remark ? getRemarkPillStyle(req.remark) : getNeutralPillStyle();
               return (
                 <tr key={req.id || req._tempId} className="h-[24px] border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors">
                   <td className="px-0.5 py-0.5 text-center">
