@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Copy, ClipboardCheck, Trash2, X, ListChecks, ArrowRightLeft } from "lucide-react";
+import { Copy, ClipboardCheck, X } from "lucide-react";
 // ClipboardCheck used in CopyButton below
 
 const WEST_ROADS = ["WD-ST15", "WD-ST14", "WD-ST13", "WD-ST12"];

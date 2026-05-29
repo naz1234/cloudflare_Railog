@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Save, CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind } from "lucide-react";
+import { Save, CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2 } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
@@ -967,6 +967,7 @@ function buildInsertionLivePayload(state = {}) {
 
 const TRAIN_REM_STORAGE_KEY = "trainRemState_v1";
 const TRAIN_REM_SYNC_INTERVAL_MS = 5000;
+const TRAIN_REM_UNDO_LIMIT = 30;
 const TRAIN_REM_ROW_COUNTS = { west: 26, east: 14 };
 const TRAIN_REM_WEST_9AM_PRIORITY_INSERT_INDEX = 10;
 const TRAIN_REM_WEST_9AM_PRIORITY_TITLE = "Check this TID if required for washing and priority to swap";
@@ -1078,6 +1079,22 @@ function loadTrainRemState() {
 function saveTrainRemState(state) {
   try { localStorage.setItem(TRAIN_REM_STORAGE_KEY, JSON.stringify(state)); } catch {}
 }
+function cloneTrainRemState(state) {
+  try {
+    return JSON.parse(JSON.stringify(state));
+  } catch {
+    return buildDefaultTrainRemState();
+  }
+}
+
+function isSameTrainRemState(a, b) {
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
+}
+
 
 function getTrainRemEntity() {
   return base44?.entities?.TrainRem || null;
@@ -2308,8 +2325,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
   const [trainRemDebug, setTrainRemDebug] = useState("");
   const [trainRemFocusedTrainIdCell, setTrainRemFocusedTrainIdCell] = useState(null);
   const [trainRemPdfStatus, setTrainRemPdfStatus] = useState({ west: false, east: false });
+  const [trainRemUndoCount, setTrainRemUndoCount] = useState(0);
+
+  const trainRemStateRef = useRef(trainRemState);
 
   useEffect(() => {
+    trainRemStateRef.current = trainRemState;
     onTrainRemStateChange?.(trainRemState);
   }, [trainRemState, onTrainRemStateChange]);
 
@@ -2321,6 +2342,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
   const trainRemEditingRef = useRef(false);
   const trainRemPollingRef = useRef(false);
   const trainRemTrainIdRefs = useRef({});
+  const trainRemUndoStackRef = useRef([]);
   const trainRemSmartDirectionRef = useRef({});
   const trainRemLastFocusedIndexRef = useRef({});
   const trainRemFocusedTrainIdCellRef = useRef(null);
@@ -2517,11 +2539,30 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
   }, [saveTrainRemToDb]);
 
   const updateTrainRemState = useCallback((updater) => {
-    setTrainRemState((prev) => {
-      const nextState = typeof updater === "function" ? updater(prev) : updater;
-      scheduleTrainRemSave(nextState);
-      return nextState;
-    });
+    const prev = trainRemStateRef.current;
+    const nextState = typeof updater === "function" ? updater(prev) : updater;
+
+    if (isSameTrainRemState(prev, nextState)) return;
+
+    const nextUndoStack = [...trainRemUndoStackRef.current, cloneTrainRemState(prev)].slice(-TRAIN_REM_UNDO_LIMIT);
+    trainRemUndoStackRef.current = nextUndoStack;
+    trainRemStateRef.current = nextState;
+    setTrainRemUndoCount(nextUndoStack.length);
+    setTrainRemState(nextState);
+    scheduleTrainRemSave(nextState);
+  }, [scheduleTrainRemSave]);
+
+  const handleTrainRemUndo = useCallback(() => {
+    const previousState = trainRemUndoStackRef.current.pop();
+    if (!previousState) return;
+
+    const restoredState = cloneTrainRemState(previousState);
+    setTrainRemUndoCount(trainRemUndoStackRef.current.length);
+    setTrainRemFocusedTrainIdCell(null);
+    trainRemFocusedTrainIdCellRef.current = null;
+    trainRemStateRef.current = restoredState;
+    setTrainRemState(restoredState);
+    scheduleTrainRemSave(restoredState);
   }, [scheduleTrainRemSave]);
 
   useEffect(() => {
@@ -2836,6 +2877,22 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
               >
                 <FileText size={12} />
                 {pdfActive ? "Done" : "PDF"}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleTrainRemUndo}
+                disabled={trainRemUndoCount === 0}
+                className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0"
+                style={{
+                  background: "rgba(15,45,74,0.75)",
+                  borderColor: "rgba(74,138,181,0.55)",
+                  color: "#9ccbea",
+                }}
+                title={trainRemUndoCount > 0 ? "Undo last Train Rem change" : "No Train Rem changes to undo"}
+              >
+                <Undo2 size={12} />
+                Undo
               </button>
 
               <button

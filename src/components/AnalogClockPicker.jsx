@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Clock } from "lucide-react";
 
 // Draws an analog clock face for hour or minute selection
