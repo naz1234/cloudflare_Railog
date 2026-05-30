@@ -3562,17 +3562,27 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
           </div>
 
           <div className="mt-2 grid grid-cols-4 gap-1">
-            {FULL_ML_TID_PRESETS.map((preset) => (
-              <button
-                key={preset.label}
-                type="button"
-                onClick={() => applyFullMlTidPreset(preset)}
-                className="h-6 rounded-md border border-cyan-500/35 bg-cyan-950/25 px-1 text-[9px] font-black text-cyan-100 transition-colors hover:border-cyan-300/70 hover:bg-cyan-900/40"
-                title={`${preset.label} - fill ${preset.tids.length} TID rows`}
-              >
-                {preset.label}
-              </button>
-            ))}
+            {FULL_ML_TID_PRESETS.map((preset) => {
+              const presetLines = preset.label.split(/\s+/).filter(Boolean);
+
+              return (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => applyFullMlTidPreset(preset)}
+                  className="min-h-[30px] rounded-md border border-cyan-500/35 bg-cyan-950/25 px-1 py-1 text-[9px] font-black leading-[10px] text-cyan-100 transition-colors hover:border-cyan-300/70 hover:bg-cyan-900/40"
+                  title={`${preset.label} - fill ${preset.tids.length} TID rows`}
+                >
+                  <span className="flex flex-col items-center justify-center gap-0.5 whitespace-normal text-center">
+                    {presetLines.map((line, lineIndex) => (
+                      <span key={`${preset.label}-line-${lineIndex}`} className="block">
+                        {line}
+                      </span>
+                    ))}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
