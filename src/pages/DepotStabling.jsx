@@ -3311,12 +3311,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
           </div>
         </div>
 
-        <div className="max-h-[760px] overflow-auto">
-          <table className="w-full border-separate border-spacing-0 table-fixed text-[12px]">
-            <thead className="sticky top-0 z-10">
+        <div className="overflow-visible">
+          <table className="w-full border-separate border-spacing-0 table-fixed text-[11px]">
+            <thead>
               <tr>
-                <th className="h-5 px-1 text-left text-[9.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "50%" }}>Train ID</th>
-                <th className="h-5 px-1 text-left text-[9.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "50%" }}>TID</th>
+                <th className="h-4 px-1 text-left text-[8.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "50%" }}>Train ID</th>
+                <th className="h-4 px-1 text-left text-[8.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "50%" }}>TID</th>
               </tr>
             </thead>
             <tbody>
@@ -3328,7 +3328,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
 
                 return (
                   <tr key={`full-ml-tid-${index}`}>
-                    <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: rowBg }}>
+                    <td className="border-b border-[#10263b] px-1 py-0" style={{ backgroundColor: rowBg }}>
                       <input
                         value={trainIdValue}
                         onFocus={handleTrainRemOtherFieldFocus}
@@ -3338,17 +3338,17 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
                           handleTrainRemEditEnd();
                         }}
                         placeholder="T01"
-                        className="h-5 w-full rounded-md border border-[#1e4060] bg-[#091828] px-1 text-center text-[11px] font-bold text-[#e2eaf4] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]"
+                        className="h-4 w-full rounded border border-[#1e4060] bg-[#091828] px-1 text-center text-[10px] font-bold text-[#e2eaf4] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]"
                       />
                     </td>
-                    <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: rowBg }}>
+                    <td className="border-b border-[#10263b] px-1 py-0" style={{ backgroundColor: rowBg }}>
                       <input
                         value={row.tid}
                         onFocus={handleTrainRemOtherFieldFocus}
                         onChange={(e) => updateFullMlTidCell(index, "tid", e.target.value)}
                         onBlur={handleTrainRemEditEnd}
                         placeholder="TID"
-                        className="h-5 w-full rounded-md border border-[#1e4060] bg-[#091828] px-1 text-center text-[11px] font-bold text-[#c8d8ea] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]"
+                        className="h-4 w-full rounded border border-[#1e4060] bg-[#091828] px-1 text-center text-[10px] font-bold text-[#c8d8ea] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]"
                       />
                     </td>
                   </tr>
