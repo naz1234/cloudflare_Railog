@@ -970,6 +970,7 @@ const TRAIN_REM_SYNC_INTERVAL_MS = 5000;
 const TRAIN_REM_UNDO_LIMIT = 30;
 const TRAIN_REM_ROW_COUNTS = { west: 26, east: 14 };
 const FULL_ML_TID_ROW_COUNT = 40;
+const FULL_ML_TID_AUTO_CLEAR_MS = 5 * 60 * 1000;
 const FULL_ML_TID_PRESETS = [
   {
     label: "Preset 1",
@@ -1116,6 +1117,68 @@ function applyFullMlTidMatchesToTrainRemRows(rowsByDepot = {}, fullMlTidRows = [
   });
 
   return nextRows;
+}
+
+function getFullMlTidAutoClearInfo(fullMlTidRows = []) {
+  const activeRows = normalizeFullMlTidRows(fullMlTidRows)
+    .map((row, index) => ({
+      index,
+      trainId: normalizeFullMlTrainId(row.trainId),
+      tid: (row.tid || "").toString().replace(/[^0-9]/g, ""),
+    }))
+    .filter((row) => row.tid);
+
+  const filledRows = activeRows.filter((row) => row.trainId);
+
+  return {
+    activeCount: activeRows.length,
+    filledCount: filledRows.length,
+    isComplete: activeRows.length > 0 && filledRows.length === activeRows.length,
+    signature: activeRows.map((row) => `${row.index}:${row.tid}:${row.trainId}`).join("|"),
+  };
+}
+
+function clearAutoMatchedTrainRemRows(rowsByDepot = {}, fullMlTidRows = []) {
+  const activeMap = {};
+
+  normalizeFullMlTidRows(fullMlTidRows).forEach((row) => {
+    const tid = (row.tid || "").toString().replace(/[^0-9]/g, "");
+    const trainId = normalizeFullMlTrainId(row.trainId);
+    if (tid && trainId && !activeMap[tid]) activeMap[tid] = trainId;
+  });
+
+  const nextRows = {};
+
+  ["west", "east"].forEach((depot) => {
+    nextRows[depot] = normalizeTrainRemRows(rowsByDepot?.[depot], depot).map((row) => {
+      const tid = (row.tid || "").toString().replace(/[^0-9]/g, "");
+      const matchedTrainId = tid ? activeMap[tid] : "";
+
+      if (!matchedTrainId || normalizeFullMlTrainId(row.trainId) !== matchedTrainId) return row;
+
+      return {
+        ...row,
+        trainId: "",
+        remark: "",
+      };
+    });
+  });
+
+  return nextRows;
+}
+
+function clearFullMlTidTrainIdsFromState(state = {}) {
+  const currentFullRows = normalizeFullMlTidRows(state.fullMlTidRows);
+  const clearedFullRows = currentFullRows.map((row) => ({
+    ...row,
+    trainId: "",
+  }));
+
+  return {
+    ...state,
+    fullMlTidRows: clearedFullRows,
+    rows: clearAutoMatchedTrainRemRows(state.rows, currentFullRows),
+  };
 }
 
 function normalizeTrainRemRows(rows, depot) {
@@ -2486,6 +2549,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
   const trainRemPollingRef = useRef(false);
   const trainRemTrainIdRefs = useRef({});
   const fullMlTidTrainIdRefs = useRef({});
+  const fullMlTidAutoClearTimerRef = useRef(null);
+  const fullMlTidAutoClearSignatureRef = useRef("");
   const trainRemUndoStackRef = useRef([]);
   const trainRemSmartDirectionRef = useRef({});
   const trainRemLastFocusedIndexRef = useRef({});
@@ -2698,6 +2763,42 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
     scheduleTrainRemSave(nextState);
   }, [scheduleTrainRemSave]);
 
+  useEffect(() => {
+    const { isComplete, signature } = getFullMlTidAutoClearInfo(trainRemState.fullMlTidRows);
+
+    if (!isComplete) {
+      if (fullMlTidAutoClearTimerRef.current) {
+        clearTimeout(fullMlTidAutoClearTimerRef.current);
+        fullMlTidAutoClearTimerRef.current = null;
+      }
+      fullMlTidAutoClearSignatureRef.current = "";
+      return;
+    }
+
+    if (fullMlTidAutoClearTimerRef.current && fullMlTidAutoClearSignatureRef.current === signature) {
+      return;
+    }
+
+    if (fullMlTidAutoClearTimerRef.current) {
+      clearTimeout(fullMlTidAutoClearTimerRef.current);
+    }
+
+    fullMlTidAutoClearSignatureRef.current = signature;
+    fullMlTidAutoClearTimerRef.current = setTimeout(() => {
+      const currentInfo = getFullMlTidAutoClearInfo(trainRemStateRef.current.fullMlTidRows);
+
+      if (!currentInfo.isComplete || currentInfo.signature !== fullMlTidAutoClearSignatureRef.current) {
+        return;
+      }
+
+      fullMlTidAutoClearTimerRef.current = null;
+      fullMlTidAutoClearSignatureRef.current = "";
+      updateTrainRemState((prev) => clearFullMlTidTrainIdsFromState(prev));
+    }, FULL_ML_TID_AUTO_CLEAR_MS);
+
+    return undefined;
+  }, [trainRemState.fullMlTidRows, updateTrainRemState]);
+
   const handleTrainRemUndo = useCallback(() => {
     const previousState = trainRemUndoStackRef.current.pop();
     if (!previousState) return;
@@ -2770,6 +2871,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
       }
       if (trainRemEditEndTimerRef.current) {
         clearTimeout(trainRemEditEndTimerRef.current);
+      }
+      if (fullMlTidAutoClearTimerRef.current) {
+        clearTimeout(fullMlTidAutoClearTimerRef.current);
       }
     };
   }, []);
