@@ -3315,18 +3315,18 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
         <div className="px-2 py-2 border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="text-[9px] font-black text-white uppercase tracking-widest">Full ML TID</div>
+              <div className="text-[10px] font-black text-white uppercase tracking-widest">Full ML TID</div>
             </div>
 
             <div className="flex items-center gap-1 flex-shrink-0">
-              <div className="rounded-md border border-emerald-500/40 bg-emerald-950/25 px-1.5 py-0.5 text-[7px] font-black text-emerald-200 whitespace-nowrap">
+              <div className="rounded-md border border-emerald-500/40 bg-emerald-950/25 px-1.5 py-0.5 text-[8px] font-black text-emerald-200 whitespace-nowrap">
                 {matchedTidCount} matched
               </div>
 
               <button
                 type="button"
                 onClick={clearFullMlTidRows}
-                className="h-6 rounded-md border border-[#2b4f6b] bg-[#10263b] px-1.5 text-[9px] font-black text-[#7eb8e0] transition-colors hover:border-red-600/60 hover:bg-red-950/30 hover:text-red-300"
+                className="h-6 rounded-md border border-[#2b4f6b] bg-[#10263b] px-1.5 text-[10px] font-black text-[#7eb8e0] transition-colors hover:border-red-600/60 hover:bg-red-950/30 hover:text-red-300"
                 title="Clear Full ML TID list only"
               >
                 Clear
@@ -3340,7 +3340,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
                 key={preset.label}
                 type="button"
                 onClick={() => applyFullMlTidPreset(preset)}
-                className="h-6 rounded-md border border-cyan-500/35 bg-cyan-950/25 px-1 text-[8px] font-black text-cyan-100 transition-colors hover:border-cyan-300/70 hover:bg-cyan-900/40"
+                className="h-6 rounded-md border border-cyan-500/35 bg-cyan-950/25 px-1 text-[9px] font-black text-cyan-100 transition-colors hover:border-cyan-300/70 hover:bg-cyan-900/40"
                 title={`${preset.label} - fill ${preset.tids.length} TID rows`}
               >
                 {preset.label}
@@ -3350,11 +3350,11 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
         </div>
 
         <div className="overflow-visible">
-          <table className="w-full border-separate border-spacing-0 table-fixed text-[11px]">
+          <table className="w-full border-separate border-spacing-0 table-fixed text-[12px]">
             <thead>
               <tr>
-                <th className="h-4 px-1 text-left text-[8.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "50%" }}>Train ID</th>
-                <th className="h-4 px-1 text-left text-[8.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "50%" }}>TID</th>
+                <th className="h-4 px-1 text-left text-[9.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "50%" }}>Train ID</th>
+                <th className="h-4 px-1 text-left text-[9.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "50%" }}>TID</th>
               </tr>
             </thead>
             <tbody>
@@ -3385,7 +3385,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
                         onBlur={handleTrainRemEditEnd}
                         placeholder="ID"
                         inputMode="numeric"
-                        className="h-4 w-full rounded border border-[#1e4060] bg-[#091828] px-1 text-center text-[10px] font-bold text-[#e2eaf4] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]"
+                        className="h-4 w-full rounded border border-[#1e4060] bg-[#091828] px-1 text-center text-[11px] font-bold text-[#e2eaf4] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]"
                       />
                     </td>
                     <td className="border-b border-[#10263b] px-1 py-0" style={{ backgroundColor: rowBg }}>
@@ -3395,7 +3395,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
                         onChange={(e) => updateFullMlTidCell(index, "tid", e.target.value)}
                         onBlur={handleTrainRemEditEnd}
                         placeholder="TID"
-                        className="h-4 w-full rounded border border-[#1e4060] bg-[#091828] px-1 text-center text-[10px] font-bold text-[#c8d8ea] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]"
+                        className="h-4 w-full rounded border border-[#1e4060] bg-[#091828] px-1 text-center text-[11px] font-bold text-[#c8d8ea] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]"
                       />
                     </td>
                   </tr>
