@@ -1078,6 +1078,22 @@ function normalizeFullMlTidRows(rows) {
   }));
 }
 
+function getFullMlTidActivePresetLabel(rows = []) {
+  const currentTids = normalizeFullMlTidRows(rows).map((row) => (row.tid || "").toString().replace(/[^0-9]/g, ""));
+
+  for (const preset of FULL_ML_TID_PRESETS) {
+    const presetTids = (preset?.tids || []).map((tid) => String(tid));
+    const presetRowsMatch = presetTids.every((tid, index) => currentTids[index] === tid);
+    const remainingRowsClear = currentTids.slice(presetTids.length).every((tid) => !tid);
+
+    if (presetRowsMatch && remainingRowsClear) {
+      return preset.label;
+    }
+  }
+
+  return "";
+}
+
 function normalizeFullMlTrainId(value = "") {
   return cleanFullMlTrainIdInput(value);
 }
@@ -3536,6 +3552,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
       : autoClearInfo.activeCount > 0
         ? `Waiting ${autoClearInfo.filledCount}/${autoClearInfo.activeCount}`
         : "Timer inactive";
+    const activeFullMlTidPresetLabel = getFullMlTidActivePresetLabel(rows);
 
     return (
       <div className="rounded-xl border border-[#2b4f6b] bg-[#071828] overflow-hidden shadow-md">
@@ -3564,13 +3581,19 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
           <div className="mt-2 grid grid-cols-4 gap-1">
             {FULL_ML_TID_PRESETS.map((preset) => {
               const presetLines = preset.label.split(/\s+/).filter(Boolean);
+              const active = activeFullMlTidPresetLabel === preset.label;
 
               return (
                 <button
                   key={preset.label}
                   type="button"
+                  aria-pressed={active}
                   onClick={() => applyFullMlTidPreset(preset)}
-                  className="min-h-[30px] rounded-md border border-cyan-500/35 bg-cyan-950/25 px-1 py-1 text-[9px] font-black leading-[10px] text-cyan-100 transition-colors hover:border-cyan-300/70 hover:bg-cyan-900/40"
+                  className={`min-h-[30px] rounded-md border px-1 py-1 text-[9px] font-black leading-[10px] transition-colors ${
+                    active
+                      ? "border-amber-300/80 bg-amber-500/20 text-amber-50 shadow-[0_0_12px_rgba(251,191,36,0.35)] ring-1 ring-amber-300/40"
+                      : "border-cyan-500/35 bg-cyan-950/25 text-cyan-100 hover:border-cyan-300/70 hover:bg-cyan-900/40"
+                  }`}
                   title={`${preset.label} - fill ${preset.tids.length} TID rows`}
                 >
                   <span className="flex flex-col items-center justify-center gap-0.5 whitespace-normal text-center">
