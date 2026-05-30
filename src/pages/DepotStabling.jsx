@@ -1168,8 +1168,7 @@ function clearAutoMatchedTrainRemRows(rowsByDepot = {}, fullMlTidRows = []) {
 }
 
 function clearFullMlTidTrainIdsFromState(state = {}) {
-  const currentFullRows = normalizeFullMlTidRows(state.fullMlTidRows);
-  const clearedFullRows = currentFullRows.map((row) => ({
+  const clearedFullRows = normalizeFullMlTidRows(state.fullMlTidRows).map((row) => ({
     ...row,
     trainId: "",
   }));
@@ -1177,7 +1176,6 @@ function clearFullMlTidTrainIdsFromState(state = {}) {
   return {
     ...state,
     fullMlTidRows: clearedFullRows,
-    rows: clearAutoMatchedTrainRemRows(state.rows, currentFullRows),
   };
 }
 
