@@ -1062,18 +1062,23 @@ function emptyFullMlTidRows(count = FULL_ML_TID_ROW_COUNT) {
   }));
 }
 
+function cleanFullMlTrainIdInput(value = "") {
+  // Full ML TID uses plain 2-digit Train ID only (01, 02, 10).
+  // If old saved data contains T01/T1, strip the T and keep the number only.
+  return (value || "").toString().replace(/[^0-9]/g, "").slice(0, 2);
+}
+
 function normalizeFullMlTidRows(rows) {
   const source = Array.isArray(rows) ? rows : [];
 
   return Array.from({ length: FULL_ML_TID_ROW_COUNT }, (_, i) => ({
-    trainId: (source[i]?.trainId || "").toString(),
+    trainId: cleanFullMlTrainIdInput(source[i]?.trainId || ""),
     tid: (source[i]?.tid || "").toString().replace(/[^0-9]/g, ""),
   }));
 }
 
 function normalizeFullMlTrainId(value = "") {
-  const key = normalizeTrainId(value);
-  return key ? padTrainId(key) : "";
+  return cleanFullMlTrainIdInput(value);
 }
 
 function buildFullMlTidMap(rows = []) {
@@ -1100,7 +1105,7 @@ function applyFullMlTidMatchesToTrainRemRows(rowsByDepot = {}, fullMlTidRows = [
       const tid = (row.tid || "").toString().replace(/[^0-9]/g, "");
       const matchedTrainId = tid ? tidMap[tid] : "";
 
-      if (!matchedTrainId || normalizeFullMlTrainId(row.trainId) === matchedTrainId) return row;
+      if (!matchedTrainId || (normalizeFullMlTrainId(row.trainId) === matchedTrainId && (row.trainId || "").toString() === matchedTrainId)) return row;
 
       return {
         ...row,
@@ -2480,6 +2485,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
   const trainRemEditingRef = useRef(false);
   const trainRemPollingRef = useRef(false);
   const trainRemTrainIdRefs = useRef({});
+  const fullMlTidTrainIdRefs = useRef({});
   const trainRemUndoStackRef = useRef([]);
   const trainRemSmartDirectionRef = useRef({});
   const trainRemLastFocusedIndexRef = useRef({});
@@ -2802,6 +2808,26 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
     element.select();
   };
 
+  const setFullMlTidTrainIdRef = (rowIndex, element) => {
+    if (element) {
+      fullMlTidTrainIdRefs.current[rowIndex] = element;
+    } else {
+      delete fullMlTidTrainIdRefs.current[rowIndex];
+    }
+  };
+
+  const focusFullMlTidTrainId = (rowIndex) => {
+    const element = fullMlTidTrainIdRefs.current[rowIndex];
+    if (!element) return;
+
+    element.focus();
+    element.select();
+  };
+
+  const handleFullMlTidTrainIdFocus = () => {
+    handleTrainRemOtherFieldFocus();
+  };
+
   const handleTrainRemTrainIdFocus = (depot, rowIndex, rowCount) => {
     handleTrainRemEditStart();
 
@@ -2889,6 +2915,16 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
     window.setTimeout(() => focusTrainRemTrainId(depot, nextIndex), 0);
   };
 
+  const handleFullMlTidTrainIdAutoMove = (rowIndex, value) => {
+    const digitCount = cleanFullMlTrainIdInput(value).length;
+    if (digitCount < 2) return;
+
+    const nextIndex = rowIndex + 1;
+    if (nextIndex >= FULL_ML_TID_ROW_COUNT) return;
+
+    window.setTimeout(() => focusFullMlTidTrainId(nextIndex), 0);
+  };
+
   const applyPreset = (depot, label) => {
     const preset = TID_PRESETS[depot].find((item) => item.label === label);
     const tids = preset?.tids || [];
@@ -2962,7 +2998,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
       const nextRows = [...fullMlTidRows];
       nextRows[rowIndex] = {
         ...nextRows[rowIndex],
-        [field]: field === "tid" ? value.replace(/[^0-9]/g, "") : value,
+        [field]: field === "tid"
+          ? value.replace(/[^0-9]/g, "")
+          : cleanFullMlTrainIdInput(value),
       };
 
       const normalizedFullRows = normalizeFullMlTidRows(nextRows);
@@ -3330,14 +3368,23 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
                   <tr key={`full-ml-tid-${index}`}>
                     <td className="border-b border-[#10263b] px-1 py-0" style={{ backgroundColor: rowBg }}>
                       <input
+                        ref={(element) => setFullMlTidTrainIdRef(index, element)}
                         value={trainIdValue}
-                        onFocus={handleTrainRemOtherFieldFocus}
-                        onChange={(e) => updateFullMlTidCell(index, "trainId", e.target.value)}
-                        onBlur={() => {
-                          updateFullMlTidCell(index, "trainId", normalizeFullMlTrainId(trainIdValue));
-                          handleTrainRemEditEnd();
+                        onFocus={handleFullMlTidTrainIdFocus}
+                        onChange={(e) => {
+                          const nextValue = cleanFullMlTrainIdInput(e.target.value);
+                          updateFullMlTidCell(index, "trainId", nextValue);
+                          handleFullMlTidTrainIdAutoMove(index, nextValue);
                         }}
-                        placeholder="T01"
+                        onKeyDown={(e) => {
+                          if (e.key === "Backspace" && !row.trainId && index > 0) {
+                            e.preventDefault();
+                            focusFullMlTidTrainId(index - 1);
+                          }
+                        }}
+                        onBlur={handleTrainRemEditEnd}
+                        placeholder="ID"
+                        inputMode="numeric"
                         className="h-4 w-full rounded border border-[#1e4060] bg-[#091828] px-1 text-center text-[10px] font-bold text-[#e2eaf4] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]"
                       />
                     </td>
