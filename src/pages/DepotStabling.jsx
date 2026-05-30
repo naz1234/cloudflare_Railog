@@ -6498,6 +6498,16 @@ export default function DepotStablingPage() {
   const [bookmarkDraft, setBookmarkDraft] = useState({ title: "", url: "" });
   const [bookmarkSaving, setBookmarkSaving] = useState(false);
   const bookmarkMenuRef = useRef(null);
+  const mainContentScrollRef = useRef(null);
+  const stablingHorizontalScrollRef = useRef(null);
+
+  const handleHeaderHorizontalScroll = useCallback((direction) => {
+    const scrollTarget = stablingHorizontalScrollRef.current || mainContentScrollRef.current;
+    if (!scrollTarget) return;
+
+    const nextLeft = direction === "left" ? 0 : scrollTarget.scrollWidth;
+    scrollTarget.scrollTo({ left: nextLeft, behavior: "smooth" });
+  }, []);
 
   useEffect(() => {
     try {
@@ -7959,6 +7969,35 @@ export default function DepotStablingPage() {
               <span className="text-[10px] text-[#7eb8e0]">{new Date().toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}</span>
             </div>
           </div>
+
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleHeaderHorizontalScroll("left")}
+              title="Go to far left"
+              aria-label="Go to far left"
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#2b4f6b] bg-[#071828] px-3 text-[10px] font-black uppercase tracking-wide text-[#8bd5ff] shadow-[0_0_14px_rgba(79,142,247,0.18)] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-95"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5" />
+                <path d="M12 5l-7 7 7 7" />
+              </svg>
+              Left
+            </button>
+            <button
+              type="button"
+              onClick={() => handleHeaderHorizontalScroll("right")}
+              title="Go to far right"
+              aria-label="Go to far right"
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#2b4f6b] bg-[#071828] px-3 text-[10px] font-black uppercase tracking-wide text-[#8bd5ff] shadow-[0_0_14px_rgba(79,142,247,0.18)] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-95"
+            >
+              Right
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14" />
+                <path d="M12 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -8097,12 +8136,13 @@ export default function DepotStablingPage() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 overflow-auto">
+        <main ref={mainContentScrollRef} className="flex-1 min-w-0 overflow-auto">
         <div className="max-w-[1700px] mx-auto px-5 py-5">
 
   {activeTab === "stabling" && (
   <div
-    className="grid gap-5 items-start overflow-x-auto"
+    ref={stablingHorizontalScrollRef}
+    className="grid gap-5 items-start overflow-x-auto scroll-smooth"
     style={{ gridTemplateColumns: "960px auto" }}
   >
     {/* LEFT CONTENT - left aligned stabling tables */}
