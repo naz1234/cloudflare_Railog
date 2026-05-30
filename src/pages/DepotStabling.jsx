@@ -1138,6 +1138,14 @@ function getFullMlTidAutoClearInfo(fullMlTidRows = []) {
   };
 }
 
+function formatFullMlTidCountdown(seconds = 0) {
+  const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
+  const minutes = Math.floor(safeSeconds / 60);
+  const secs = safeSeconds % 60;
+
+  return `${minutes}:${secs.toString().padStart(2, "0")}`;
+}
+
 function clearAutoMatchedTrainRemRows(rowsByDepot = {}, fullMlTidRows = []) {
   const activeMap = {};
 
@@ -2530,6 +2538,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
   const [trainRemFocusedTrainIdCell, setTrainRemFocusedTrainIdCell] = useState(null);
   const [trainRemPdfStatus, setTrainRemPdfStatus] = useState({ west: false, east: false });
   const [trainRemUndoCount, setTrainRemUndoCount] = useState(0);
+  const [fullMlTidAutoClearEndsAt, setFullMlTidAutoClearEndsAt] = useState(null);
+  const [fullMlTidCountdownSeconds, setFullMlTidCountdownSeconds] = useState(0);
 
   const trainRemStateRef = useRef(trainRemState);
 
@@ -2770,6 +2780,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
         fullMlTidAutoClearTimerRef.current = null;
       }
       fullMlTidAutoClearSignatureRef.current = "";
+      setFullMlTidAutoClearEndsAt(null);
+      setFullMlTidCountdownSeconds(0);
       return;
     }
 
@@ -2781,7 +2793,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
       clearTimeout(fullMlTidAutoClearTimerRef.current);
     }
 
+    const nextEndsAt = Date.now() + FULL_ML_TID_AUTO_CLEAR_MS;
+
     fullMlTidAutoClearSignatureRef.current = signature;
+    setFullMlTidAutoClearEndsAt(nextEndsAt);
+    setFullMlTidCountdownSeconds(Math.ceil(FULL_ML_TID_AUTO_CLEAR_MS / 1000));
+
     fullMlTidAutoClearTimerRef.current = setTimeout(() => {
       const currentInfo = getFullMlTidAutoClearInfo(trainRemStateRef.current.fullMlTidRows);
 
@@ -2791,11 +2808,29 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
 
       fullMlTidAutoClearTimerRef.current = null;
       fullMlTidAutoClearSignatureRef.current = "";
+      setFullMlTidAutoClearEndsAt(null);
+      setFullMlTidCountdownSeconds(0);
       updateTrainRemState((prev) => clearFullMlTidTrainIdsFromState(prev));
     }, FULL_ML_TID_AUTO_CLEAR_MS);
 
     return undefined;
   }, [trainRemState.fullMlTidRows, updateTrainRemState]);
+
+  useEffect(() => {
+    if (!fullMlTidAutoClearEndsAt) {
+      setFullMlTidCountdownSeconds(0);
+      return undefined;
+    }
+
+    const tick = () => {
+      setFullMlTidCountdownSeconds(Math.max(0, Math.ceil((fullMlTidAutoClearEndsAt - Date.now()) / 1000)));
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+
+    return () => clearInterval(interval);
+  }, [fullMlTidAutoClearEndsAt]);
 
   const handleTrainRemUndo = useCallback(() => {
     const previousState = trainRemUndoStackRef.current.pop();
@@ -3411,6 +3446,14 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
         .map((row) => (row.tid || "").toString().replace(/[^0-9]/g, ""))
         .filter((tid) => tid && tidMap[tid])
     ).size;
+    const autoClearInfo = getFullMlTidAutoClearInfo(rows);
+    const countdownActive = Boolean(fullMlTidAutoClearEndsAt && autoClearInfo.isComplete);
+    const countdownValue = countdownActive ? formatFullMlTidCountdown(fullMlTidCountdownSeconds) : "--:--";
+    const countdownLabel = countdownActive
+      ? "Train ID auto-clear"
+      : autoClearInfo.activeCount > 0
+        ? `Waiting ${autoClearInfo.filledCount}/${autoClearInfo.activeCount}`
+        : "Timer inactive";
 
     return (
       <div className="rounded-xl border border-[#2b4f6b] bg-[#071828] overflow-hidden shadow-md">
@@ -3503,6 +3546,18 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
                   </tr>
                 );
               })}
+              <tr>
+                <td colSpan={2} className="px-1 py-1 bg-[#071828]">
+                  <div className={`flex h-7 items-center justify-between rounded-lg border px-2 ${
+                    countdownActive
+                      ? "border-amber-400/60 bg-amber-950/25 text-amber-100"
+                      : "border-[#1e4060] bg-[#091828] text-[#7eb8e0]"
+                  }`}>
+                    <span className="text-[10px] font-black uppercase tracking-widest">{countdownLabel}</span>
+                    <span className="font-mono text-[15px] font-black tabular-nums">{countdownValue}</span>
+                  </div>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
