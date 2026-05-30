@@ -970,6 +970,40 @@ const TRAIN_REM_SYNC_INTERVAL_MS = 5000;
 const TRAIN_REM_UNDO_LIMIT = 30;
 const TRAIN_REM_ROW_COUNTS = { west: 26, east: 14 };
 const FULL_ML_TID_ROW_COUNT = 40;
+const FULL_ML_TID_PRESETS = [
+  {
+    label: "Preset 1",
+    tids: [
+      101,102,103,104,105,106,107,108,109,110,
+      111,112,113,114,115,116,117,118,119,120,
+      201,202,203,204,205,206,207,208,209,210,
+      211,212,213,214,215,216,217,218,219,220,
+    ],
+  },
+  {
+    label: "Preset 2",
+    tids: [
+      101,103,105,107,109,111,113,115,117,119,
+      121,122,123,124,125,126,127,128,129,130,
+      201,203,205,207,209,211,213,215,217,219,
+      221,222,223,224,225,226,227,228,229,230,
+    ],
+  },
+  {
+    label: "Preset 3",
+    tids: [
+      101,103,105,107,109,111,113,115,117,119,
+      201,203,205,207,209,211,213,215,217,219,
+    ],
+  },
+  {
+    label: "Preset 4",
+    tids: [
+      121,122,123,124,125,126,127,128,129,130,
+      221,222,223,224,225,226,227,228,229,230,
+    ],
+  },
+];
 const TRAIN_REM_WEST_9AM_PRIORITY_INSERT_INDEX = 10;
 const TRAIN_REM_WEST_9AM_PRIORITY_TITLE = "Check this TID if required for washing and priority to swap";
 const TRAIN_REM_WEST_9AM_PRIORITY_TIDS = new Set(["207", "209", "211"]);
@@ -2948,6 +2982,25 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
     }));
   };
 
+  const applyFullMlTidPreset = (preset) => {
+    const tids = Array.isArray(preset?.tids) ? preset.tids : [];
+
+    updateTrainRemState((prev) => {
+      const existingRows = normalizeFullMlTidRows(prev.fullMlTidRows);
+      const nextRows = existingRows.map((row, index) => ({
+        ...row,
+        tid: tids[index] ? String(tids[index]) : "",
+      }));
+      const normalizedFullRows = normalizeFullMlTidRows(nextRows);
+
+      return {
+        ...prev,
+        fullMlTidRows: normalizedFullRows,
+        rows: applyFullMlTidMatchesToTrainRemRows(prev.rows, normalizedFullRows),
+      };
+    });
+  };
+
   const clearDepotTrainRem = (depot) => {
     updateTrainRemState((prev) => ({
       ...prev,
@@ -3243,6 +3296,19 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
             </div>
           </div>
 
+          <div className="mt-2 grid grid-cols-4 gap-1">
+            {FULL_ML_TID_PRESETS.map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => applyFullMlTidPreset(preset)}
+                className="h-6 rounded-md border border-cyan-500/35 bg-cyan-950/25 px-1 text-[8px] font-black text-cyan-100 transition-colors hover:border-cyan-300/70 hover:bg-cyan-900/40"
+                title={`${preset.label} - fill ${preset.tids.length} TID rows`}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="max-h-[760px] overflow-auto">
