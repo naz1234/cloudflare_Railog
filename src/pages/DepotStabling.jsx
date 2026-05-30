@@ -5052,7 +5052,7 @@ const possessionHeaderStyle = { background: "linear-gradient(180deg,#0c2e4a 0%,#
 // ── Section 1: Possession Log ─────────────────────────────────────────────────
 const POSSESSION_LOG_KEY = "possessionLog_v2";
 
-const defaultEntry = () => ({ picName: "", picId: "", description: "", accessNo: "", issueTime: "", scd: "Yes", scdLoc: "", scdApplyTime: "", scdRemTime: "", handbackTime: "" });
+const defaultEntry = () => ({ picName: "", picId: "", description: "", accessNo: "", issueTime: "", accessPoint: "", accessAuthTime: "", scd: "Yes", scdLoc: "", scdApplyTime: "", scdRemTime: "", handbackTime: "" });
 
 function generateEntryOutput(f) {
   const access = cleanPossessionAccessNo(f.accessNo);
@@ -5060,6 +5060,11 @@ function generateEntryOutput(f) {
   if (f.picName || f.picId) lines.push(`PIC - ${f.picName}${f.picId ? ` (${f.picId})` : ""}`);
   if (f.description) lines.push(f.description);
   lines.push("");
+  const accessPoint = String(f.accessPoint || "").trim();
+  const accessAuthT = fmtPossession24(f.accessAuthTime);
+  if (f.scd !== "No" && accessAuthT && accessPoint) {
+    lines.push(`${accessAuthT} – PIC${f.picName ? ` ${f.picName}` : ""} authorized to access ${accessPoint} and start apply the SCD.`);
+  }
   if (f.scd === "Yes" && (f.scdApplyTime || f.scdRemTime || f.scdLoc)) {
     const applyT = fmtPossession24(f.scdApplyTime); const remT = fmtPossession24(f.scdRemTime);
     let scdLine = "";
@@ -5093,8 +5098,12 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
         </div>
         <POSSESSION_FIELD label="Description"><POSSESSION_TEXTAREA value={entry.description} onChange={set("description")} placeholder="Work description..." rows={2} /></POSSESSION_FIELD>
         <div className="grid grid-cols-2 gap-3">
-          <POSSESSION_FIELD label="Access No."><POSSESSION_INPUT value={entry.accessNo} onChange={set("accessNo")} placeholder="e.g. 268,216" /></POSSESSION_FIELD>
-          <POSSESSION_FIELD label="Issue Time"><POSSESSION_TIME_INPUT value={entry.issueTime} onChange={set("issueTime")} placeholder="e.g. 04:17" /></POSSESSION_FIELD>
+          <POSSESSION_FIELD label="Access No."><POSSESSION_INPUT value={entry.accessNo || ""} onChange={set("accessNo")} placeholder="e.g. 268,216" /></POSSESSION_FIELD>
+          <POSSESSION_FIELD label="Issue Time"><POSSESSION_TIME_INPUT value={entry.issueTime || ""} onChange={set("issueTime")} placeholder="e.g. 04:17" /></POSSESSION_FIELD>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <POSSESSION_FIELD label="Access Point"><POSSESSION_INPUT value={entry.accessPoint || ""} onChange={set("accessPoint")} placeholder="e.g. DOOR B01" /></POSSESSION_FIELD>
+          <POSSESSION_FIELD label="Access Authorized Time"><POSSESSION_TIME_INPUT value={entry.accessAuthTime || ""} onChange={set("accessAuthTime")} placeholder="e.g. 18:10" /></POSSESSION_FIELD>
         </div>
         <div>
           <label className="block text-[10px] font-semibold text-[#4a8ab5] tracking-widest uppercase mb-1">SCD?</label>
@@ -5124,7 +5133,12 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
 
 function PossessionLog() {
   const [entries, setEntries] = useState(() => {
-    try { const saved = JSON.parse(localStorage.getItem(POSSESSION_LOG_KEY) || "null"); return Array.isArray(saved) && saved.length > 0 ? saved : [defaultEntry()]; }
+    try {
+      const saved = JSON.parse(localStorage.getItem(POSSESSION_LOG_KEY) || "null");
+      return Array.isArray(saved) && saved.length > 0
+        ? saved.map((entry) => ({ ...defaultEntry(), ...entry }))
+        : [defaultEntry()];
+    }
     catch { return [defaultEntry()]; }
   });
   useEffect(() => { localStorage.setItem(POSSESSION_LOG_KEY, JSON.stringify(entries)); }, [entries]);
