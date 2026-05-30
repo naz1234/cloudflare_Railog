@@ -969,6 +969,7 @@ const TRAIN_REM_STORAGE_KEY = "trainRemState_v1";
 const TRAIN_REM_SYNC_INTERVAL_MS = 5000;
 const TRAIN_REM_UNDO_LIMIT = 30;
 const TRAIN_REM_ROW_COUNTS = { west: 26, east: 14 };
+const FULL_ML_TID_ROW_COUNT = 40;
 const TRAIN_REM_WEST_9AM_PRIORITY_INSERT_INDEX = 10;
 const TRAIN_REM_WEST_9AM_PRIORITY_TITLE = "Check this TID if required for washing and priority to swap";
 const TRAIN_REM_WEST_9AM_PRIORITY_TIDS = new Set(["207", "209", "211"]);
@@ -1020,6 +1021,64 @@ function emptyTrainRemRows(count) {
   }));
 }
 
+function emptyFullMlTidRows(count = FULL_ML_TID_ROW_COUNT) {
+  return Array.from({ length: count }, () => ({
+    trainId: "",
+    tid: "",
+  }));
+}
+
+function normalizeFullMlTidRows(rows) {
+  const source = Array.isArray(rows) ? rows : [];
+
+  return Array.from({ length: FULL_ML_TID_ROW_COUNT }, (_, i) => ({
+    trainId: (source[i]?.trainId || "").toString(),
+    tid: (source[i]?.tid || "").toString().replace(/[^0-9]/g, ""),
+  }));
+}
+
+function normalizeFullMlTrainId(value = "") {
+  const key = normalizeTrainId(value);
+  return key ? padTrainId(key) : "";
+}
+
+function buildFullMlTidMap(rows = []) {
+  const map = {};
+
+  normalizeFullMlTidRows(rows).forEach((row) => {
+    const tid = (row.tid || "").toString().replace(/[^0-9]/g, "");
+    const trainId = normalizeFullMlTrainId(row.trainId);
+
+    if (tid && trainId && !map[tid]) {
+      map[tid] = trainId;
+    }
+  });
+
+  return map;
+}
+
+function applyFullMlTidMatchesToTrainRemRows(rowsByDepot = {}, fullMlTidRows = []) {
+  const tidMap = buildFullMlTidMap(fullMlTidRows);
+  const nextRows = {};
+
+  ["west", "east"].forEach((depot) => {
+    nextRows[depot] = normalizeTrainRemRows(rowsByDepot?.[depot], depot).map((row) => {
+      const tid = (row.tid || "").toString().replace(/[^0-9]/g, "");
+      const matchedTrainId = tid ? tidMap[tid] : "";
+
+      if (!matchedTrainId || normalizeFullMlTrainId(row.trainId) === matchedTrainId) return row;
+
+      return {
+        ...row,
+        trainId: matchedTrainId,
+        remark: "",
+      };
+    });
+  });
+
+  return nextRows;
+}
+
 function normalizeTrainRemRows(rows, depot) {
   const count = TRAIN_REM_ROW_COUNTS[depot];
   const source = Array.isArray(rows) ? rows : [];
@@ -1053,6 +1112,7 @@ function buildDefaultTrainRemState() {
       west: buildTrainRemRowsFromPreset("west", "9am"),
       east: buildTrainRemRowsFromPreset("east", "9am"),
     },
+    fullMlTidRows: emptyFullMlTidRows(),
   };
 }
 
@@ -1066,10 +1126,14 @@ function loadTrainRemState() {
         west: parsed?.selectedPreset?.west || "9am",
         east: parsed?.selectedPreset?.east || "9am",
       },
-      rows: {
-        west: normalizeTrainRemRows(parsed?.rows?.west, "west"),
-        east: normalizeTrainRemRows(parsed?.rows?.east, "east"),
-      },
+      rows: applyFullMlTidMatchesToTrainRemRows(
+        {
+          west: normalizeTrainRemRows(parsed?.rows?.west, "west"),
+          east: normalizeTrainRemRows(parsed?.rows?.east, "east"),
+        },
+        parsed?.fullMlTidRows
+      ),
+      fullMlTidRows: normalizeFullMlTidRows(parsed?.fullMlTidRows),
     };
   } catch {
     return buildDefaultTrainRemState();
@@ -1110,6 +1174,7 @@ function buildTrainRemStateFromRecords(records = []) {
   const state = {
     selectedPreset: { ...fallback.selectedPreset },
     rows: { ...fallback.rows },
+    fullMlTidRows: emptyFullMlTidRows(),
   };
 
   (records || []).forEach((rec) => {
@@ -1120,7 +1185,14 @@ function buildTrainRemStateFromRecords(records = []) {
 
     state.selectedPreset[depot] = rec.selectedPreset || fallback.selectedPreset[depot];
     state.rows[depot] = normalizeTrainRemRows(rec.rows, depot);
+
+    const fullRows = normalizeFullMlTidRows(rec.fullMlTidRows);
+    if (fullRows.some((row) => row.trainId || row.tid)) {
+      state.fullMlTidRows = fullRows;
+    }
   });
+
+  state.rows = applyFullMlTidMatchesToTrainRemRows(state.rows, state.fullMlTidRows);
 
   return { state, map };
 }
@@ -2467,6 +2539,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
             depot,
             selectedPreset: state.selectedPreset?.[depot] || "9am",
             rows: normalizeTrainRemRows(state.rows?.[depot], depot),
+            fullMlTidRows: normalizeFullMlTidRows(state.fullMlTidRows),
           });
           if (created?.id) map[depot] = created.id;
         }
@@ -2531,6 +2604,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
           depot,
           selectedPreset: state.selectedPreset?.[depot] || "9am",
           rows: normalizeTrainRemRows(state.rows?.[depot], depot),
+          fullMlTidRows: normalizeFullMlTidRows(state.fullMlTidRows),
         };
 
         if (trainRemMapRef.current[depot]) {
@@ -2793,17 +2867,20 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
           ...prev.selectedPreset,
           [depot]: label,
         },
-        rows: {
-          ...prev.rows,
-          [depot]: existingRows.map((row, index) => {
-            const tid = tids[index] ? String(tids[index]) : "";
-            return {
-              ...row,
-              tid,
-              timing: tid ? getTimingForTid(depot, label, tid) : "",
-            };
-          }),
-        },
+        rows: applyFullMlTidMatchesToTrainRemRows(
+          {
+            ...prev.rows,
+            [depot]: existingRows.map((row, index) => {
+              const tid = tids[index] ? String(tids[index]) : "";
+              return {
+                ...row,
+                tid,
+                timing: tid ? getTimingForTid(depot, label, tid) : "",
+              };
+            }),
+          },
+          prev.fullMlTidRows
+        ),
       };
     });
   };
@@ -2815,7 +2892,14 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
       const updatedRow = { ...rows[rowIndex], [field]: value };
 
       if (field === "tid") {
-        updatedRow.timing = getTimingForTid(depot, presetLabel, value);
+        const cleanTid = (value || "").toString().replace(/[^0-9]/g, "");
+        const matchedTrainId = buildFullMlTidMap(prev.fullMlTidRows)[cleanTid] || "";
+        updatedRow.tid = cleanTid;
+        updatedRow.timing = getTimingForTid(depot, presetLabel, cleanTid);
+        if (matchedTrainId) {
+          updatedRow.trainId = matchedTrainId;
+          updatedRow.remark = "";
+        }
       }
 
       if (field === "trainId") {
@@ -2836,6 +2920,32 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
         },
       };
     });
+  };
+
+  const updateFullMlTidCell = (rowIndex, field, value) => {
+    updateTrainRemState((prev) => {
+      const fullMlTidRows = normalizeFullMlTidRows(prev.fullMlTidRows);
+      const nextRows = [...fullMlTidRows];
+      nextRows[rowIndex] = {
+        ...nextRows[rowIndex],
+        [field]: field === "tid" ? value.replace(/[^0-9]/g, "") : value,
+      };
+
+      const normalizedFullRows = normalizeFullMlTidRows(nextRows);
+
+      return {
+        ...prev,
+        fullMlTidRows: normalizedFullRows,
+        rows: applyFullMlTidMatchesToTrainRemRows(prev.rows, normalizedFullRows),
+      };
+    });
+  };
+
+  const clearFullMlTidRows = () => {
+    updateTrainRemState((prev) => ({
+      ...prev,
+      fullMlTidRows: emptyFullMlTidRows(),
+    }));
   };
 
   const clearDepotTrainRem = (depot) => {
@@ -3099,8 +3209,98 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
     );
   };
 
+  const renderFullMlTidTable = () => {
+    const rows = normalizeFullMlTidRows(trainRemState.fullMlTidRows);
+    const tidMap = buildFullMlTidMap(rows);
+    const matchedTidCount = new Set(
+      ["west", "east"]
+        .flatMap((depot) => normalizeTrainRemRows(trainRemState.rows?.[depot], depot))
+        .map((row) => (row.tid || "").toString().replace(/[^0-9]/g, ""))
+        .filter((tid) => tid && tidMap[tid])
+    ).size;
+
+    return (
+      <div className="rounded-xl border border-[#2b4f6b] bg-[#071828] overflow-hidden shadow-md">
+        <div className="px-2 py-2 border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="text-[9px] font-black text-white uppercase tracking-widest">Full ML TID</div>
+              <div className="text-[7px] font-semibold text-[#7eb8e0] mt-0.5">Train ID and TID master matching list</div>
+            </div>
+
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <div className="rounded-md border border-emerald-500/40 bg-emerald-950/25 px-1.5 py-0.5 text-[7px] font-black text-emerald-200 whitespace-nowrap">
+                {matchedTidCount} matched
+              </div>
+
+              <button
+                type="button"
+                onClick={clearFullMlTidRows}
+                className="h-6 rounded-md border border-[#2b4f6b] bg-[#10263b] px-1.5 text-[9px] font-black text-[#7eb8e0] transition-colors hover:border-red-600/60 hover:bg-red-950/30 hover:text-red-300"
+                title="Clear Full ML TID list only"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-2 rounded-lg border border-cyan-400/20 bg-cyan-500/10 px-2 py-1 text-[7.5px] font-bold leading-snug text-cyan-100">
+            Update here, then Train Rem West / East will auto-fill Train ID by matching the same TID.
+          </div>
+        </div>
+
+        <div className="max-h-[760px] overflow-auto">
+          <table className="w-full border-separate border-spacing-0 table-fixed text-[12px]">
+            <thead className="sticky top-0 z-10">
+              <tr>
+                <th className="h-5 px-1 text-left text-[9.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "50%" }}>Train ID</th>
+                <th className="h-5 px-1 text-left text-[9.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "50%" }}>TID</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => {
+                const hasData = Boolean((row.trainId || "").toString().trim() || (row.tid || "").toString().trim());
+                const matchedTrainId = row.tid ? tidMap[row.tid] : "";
+                const rowBg = matchedTrainId ? "#082a25" : hasData ? "#08223b" : "#071828";
+                const trainIdValue = (row.trainId || "").toString();
+
+                return (
+                  <tr key={`full-ml-tid-${index}`}>
+                    <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: rowBg }}>
+                      <input
+                        value={trainIdValue}
+                        onFocus={handleTrainRemOtherFieldFocus}
+                        onChange={(e) => updateFullMlTidCell(index, "trainId", e.target.value)}
+                        onBlur={() => {
+                          updateFullMlTidCell(index, "trainId", normalizeFullMlTrainId(trainIdValue));
+                          handleTrainRemEditEnd();
+                        }}
+                        placeholder="T01"
+                        className="h-5 w-full rounded-md border border-[#1e4060] bg-[#091828] px-1 text-center text-[11px] font-bold text-[#e2eaf4] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]"
+                      />
+                    </td>
+                    <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: rowBg }}>
+                      <input
+                        value={row.tid}
+                        onFocus={handleTrainRemOtherFieldFocus}
+                        onChange={(e) => updateFullMlTidCell(index, "tid", e.target.value)}
+                        onBlur={handleTrainRemEditEnd}
+                        placeholder="TID"
+                        className="h-5 w-full rounded-md border border-[#1e4060] bg-[#091828] px-1 text-center text-[11px] font-bold text-[#c8d8ea] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]"
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <section className="w-[300px] flex-shrink-0 rounded-xl border border-[#2b4f6b] bg-[#0b1f33] p-2 shadow-md">
+    <section className="w-[560px] flex-shrink-0 rounded-xl border border-[#2b4f6b] bg-[#0b1f33] p-2 shadow-md">
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center flex-shrink-0">
@@ -3128,9 +3328,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
         </div>
       )}
 
-      <div className="space-y-1.5">
-        {renderDepotTable("west", "West Depot", "")}
-        {renderDepotTable("east", "East Depot", "")}
+      <div className="grid grid-cols-[300px_1fr] items-start gap-2">
+        <div className="space-y-1.5">
+          {renderDepotTable("west", "West Depot", "")}
+          {renderDepotTable("east", "East Depot", "")}
+        </div>
+
+        {renderFullMlTidTable()}
       </div>
     </section>
   );

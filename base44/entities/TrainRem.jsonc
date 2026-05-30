@@ -41,6 +41,21 @@
           "rowId"
         ]
       }
+    },
+    "fullMlTidRows": {
+      "type": "array",
+      "description": "40-row master Mainline TID matching list used to auto-fill Train Rem West/East Train ID by TID",
+      "items": {
+        "type": "object",
+        "properties": {
+          "trainId": {
+            "type": "string"
+          },
+          "tid": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "required": [
