@@ -3225,7 +3225,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="text-[9px] font-black text-white uppercase tracking-widest">Full ML TID</div>
-              <div className="text-[7px] font-semibold text-[#7eb8e0] mt-0.5">Train ID and TID master matching list</div>
             </div>
 
             <div className="flex items-center gap-1 flex-shrink-0">
@@ -3244,9 +3243,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
             </div>
           </div>
 
-          <div className="mt-2 rounded-lg border border-cyan-400/20 bg-cyan-500/10 px-2 py-1 text-[7.5px] font-bold leading-snug text-cyan-100">
-            Update here, then Train Rem West / East will auto-fill Train ID by matching the same TID.
-          </div>
         </div>
 
         <div className="max-h-[760px] overflow-auto">
