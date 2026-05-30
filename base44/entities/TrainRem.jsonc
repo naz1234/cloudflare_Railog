@@ -56,6 +56,26 @@
           }
         }
       }
+    },
+    "fullMlTidAutoClear": {
+      "type": "object",
+      "description": "Saved countdown metadata for Full ML TID Train ID auto-clear timer",
+      "properties": {
+        "signature": {
+          "type": "string"
+        },
+        "endsAt": {
+          "type": "number"
+        }
+      }
+    },
+    "fullMlTidAutoClearSignature": {
+      "type": "string",
+      "description": "Signature of active Full ML TID auto-clear countdown"
+    },
+    "fullMlTidAutoClearEndsAt": {
+      "type": "number",
+      "description": "Epoch milliseconds when the active Full ML TID Train ID auto-clear countdown ends"
     }
   },
   "required": [
