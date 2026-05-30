@@ -5166,8 +5166,8 @@ function PossessionLog() {
         <div className="p-4 space-y-3">
           {entries.map((entry, i) => (<AccessEntryForm key={i} entry={entry} index={i} onChange={(val) => updateEntry(i, val)} onRemove={() => removeEntry(i)} canRemove={entries.length > 1} />))}
           <button onClick={addEntry}
-            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed border-[#2b4f6b] text-xs font-semibold text-[#4a8ab5] hover:bg-[#0a1e2e] hover:border-[#4f8ef7] hover:text-[#c8d8ea] transition-all">
-            <Plus className="w-3.5 h-3.5" /> Add Another Access
+            className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-cyan-300/70 bg-cyan-400/10 text-xs font-bold text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.35),inset_0_0_14px_rgba(34,211,238,0.10)] hover:bg-cyan-400/20 hover:border-cyan-200 hover:text-white hover:shadow-[0_0_28px_rgba(34,211,238,0.70),inset_0_0_18px_rgba(34,211,238,0.18)] active:scale-[0.99] transition-all duration-200">
+            <Plus className="w-3.5 h-3.5 drop-shadow-[0_0_8px_rgba(34,211,238,0.90)]" /> Add Another Access
           </button>
         </div>
       </div>
