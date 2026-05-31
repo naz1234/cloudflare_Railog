@@ -2393,58 +2393,28 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
     }
   }, [roads.length, blockIndices.length, focusInsertionTid]);
 
-  const isActiveTidInputCell = useCallback((roadIdx, colIdx) => {
-    const road = roads[roadIdx];
-    const bi = blockIndices[colIdx];
-    const trainKey = normalizeTrainId(data?.[road]?.[bi]?.trainId || "");
-    if (!road || bi === undefined || !trainKey) return false;
-
-    // Once a train has already been inserted, the TID input is not active anymore.
-    return !insertionLog.some((entry) => entry.key === `ins-${road}-${bi}`);
-  }, [roads, blockIndices, data, insertionLog]);
-
-  const findActiveTidInputInRow = useCallback((roadIdx, startColIdx, step) => {
-    for (let colIdx = startColIdx; colIdx >= 0 && colIdx < blockIndices.length; colIdx += step) {
-      if (isActiveTidInputCell(roadIdx, colIdx)) return colIdx;
-    }
-    return null;
-  }, [blockIndices.length, isActiveTidInputCell]);
-
   const getNextTidAutoFocusTarget = useCallback((roadIdx, colIdx, direction) => {
     const totalRows = roads.length;
-    const step = direction === "left" ? -1 : 1;
+    const totalCols = blockIndices.length;
+    const horizontalColIdx = direction === "left" ? colIdx - 1 : colIdx + 1;
 
-    // Normal movement: keep moving in the selected direction, but skip
-    // empty blocks / inserted trains where no TID input is available.
-    const sameRowColIdx = findActiveTidInputInRow(roadIdx, colIdx + step, step);
-    if (sameRowColIdx !== null) {
-      return { roadIdx, colIdx: sameRowColIdx, direction };
+    // Normal movement: continue across the same road.
+    if (horizontalColIdx >= 0 && horizontalColIdx < totalCols) {
+      return { roadIdx, colIdx: horizontalColIdx, direction };
     }
 
-    // If there is no more active train in this road, go down to the next road.
-    // Keep the snake pattern by reversing direction on the next road. Start from
-    // the same visual block first, then find the nearest available active input.
-    const nextDirection = direction === "left" ? "right" : "left";
-    const nextStep = nextDirection === "left" ? -1 : 1;
-
-    for (let nextRoadIdx = roadIdx + 1; nextRoadIdx < totalRows; nextRoadIdx += 1) {
-      if (isActiveTidInputCell(nextRoadIdx, colIdx)) {
-        return { roadIdx: nextRoadIdx, colIdx, direction: nextDirection };
-      }
-
-      const forwardColIdx = findActiveTidInputInRow(nextRoadIdx, colIdx + nextStep, nextStep);
-      if (forwardColIdx !== null) {
-        return { roadIdx: nextRoadIdx, colIdx: forwardColIdx, direction: nextDirection };
-      }
-
-      const oppositeColIdx = findActiveTidInputInRow(nextRoadIdx, colIdx - nextStep, -nextStep);
-      if (oppositeColIdx !== null) {
-        return { roadIdx: nextRoadIdx, colIdx: oppositeColIdx, direction: nextDirection };
-      }
+    // Row end reached at Block 1 / Block 7: move down to the next road,
+    // then reverse direction so entry continues in a snake pattern.
+    if (roadIdx < totalRows - 1) {
+      return {
+        roadIdx: roadIdx + 1,
+        colIdx,
+        direction: direction === "left" ? "right" : "left",
+      };
     }
 
     return null;
-  }, [roads.length, blockIndices.length, isActiveTidInputCell, findActiveTidInputInRow]);
+  }, [roads.length, blockIndices.length]);
 
   const handleTidChange = (road, bi, value, roadIdx, colIdx) => {
     const cellKey = `${road}-${bi}`;
