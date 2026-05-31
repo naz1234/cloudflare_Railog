@@ -2393,6 +2393,29 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
     }
   }, [roads.length, blockIndices.length, focusInsertionTid]);
 
+  const getNextTidAutoFocusTarget = useCallback((roadIdx, colIdx, direction) => {
+    const totalRows = roads.length;
+    const totalCols = blockIndices.length;
+    const horizontalColIdx = direction === "left" ? colIdx - 1 : colIdx + 1;
+
+    // Normal movement: continue across the same road.
+    if (horizontalColIdx >= 0 && horizontalColIdx < totalCols) {
+      return { roadIdx, colIdx: horizontalColIdx, direction };
+    }
+
+    // Row end reached at Block 1 / Block 7: move down to the next road,
+    // then reverse direction so entry continues in a snake pattern.
+    if (roadIdx < totalRows - 1) {
+      return {
+        roadIdx: roadIdx + 1,
+        colIdx,
+        direction: direction === "left" ? "right" : "left",
+      };
+    }
+
+    return null;
+  }, [roads.length, blockIndices.length]);
+
   const handleTidChange = (road, bi, value, roadIdx, colIdx) => {
     const cellKey = `${road}-${bi}`;
     const previousValue = (tidInputs[cellKey] || "").toString().trim();
@@ -2400,14 +2423,16 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
 
     onTidChange(road, bi, value);
 
-    // Auto move horizontally only after a fresh 3-digit numeric TID remark is filled.
+    // Auto move only after a fresh 3-digit numeric TID remark is filled.
+    // It moves horizontally first, then drops to the next road at Block 1 / Block 7.
     if (/^\d{3}$/.test(nextValue) && !/^\d{3}$/.test(previousValue)) {
       const direction = tidAutoDirectionRef.current || getTidAutoDirection(colIdx);
-      const nextColIdx = direction === "left" ? colIdx - 1 : colIdx + 1;
+      const target = getNextTidAutoFocusTarget(roadIdx, colIdx, direction);
 
-      if (nextColIdx >= 0 && nextColIdx < blockIndices.length) {
+      if (target) {
         setTimeout(() => {
-          focusInsertionTid(roadIdx, nextColIdx, { autoAdvance: true });
+          tidAutoDirectionRef.current = target.direction;
+          focusInsertionTid(target.roadIdx, target.colIdx, { autoAdvance: true });
         }, 0);
       }
     }
