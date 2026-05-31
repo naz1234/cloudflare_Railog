@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import * as XLSX from "xlsx";
-import { Upload, Copy, ClipboardCheck, Trash2, Download, Droplets } from "lucide-react";
+import { Upload, Copy, ClipboardCheck, Trash2, Download, Droplets, PlusCircle } from "lucide-react";
 
 const SESSION_BREAK = 15 * 60 + 30;
 
@@ -79,6 +79,7 @@ function groupSessions(records) {
 }
 
 function buildLine(r) { return `${r.startTime} hrs - ${r.trainId} started PARTIAL wash. Completed by ${r.endTime} hrs.`; }
+function flattenSessions(sessions) { return sessions.flatMap((session) => session.records || []); }
 function sessionText(session) { const lines = session.records.map(buildLine); lines.push(`\nTotal: ${session.records.length} trains washed at the automatic wash plant.`); return lines.join("\n"); }
 
 function CopyBtn({ text }) {
@@ -96,6 +97,9 @@ export default function TrainWashing() {
   const [sessions, setSessions] = useState([]);
   const [fileName, setFileName] = useState(null);
   const [dragging, setDragging] = useState(false);
+  const [manualTrainId, setManualTrainId] = useState("");
+  const [manualStartTime, setManualStartTime] = useState("");
+  const [manualError, setManualError] = useState("");
   const fileInputRef = useRef(null);
   const bottomRef = useRef(null);
 
@@ -110,6 +114,31 @@ export default function TrainWashing() {
     };
     reader.readAsArrayBuffer(file);
   }, []);
+
+
+  const addManualWash = useCallback((e) => {
+    e?.preventDefault();
+    const trainId = formatTrainId(manualTrainId);
+    const startTime = extractTime(manualStartTime);
+
+    if (!trainId || !startTime) {
+      setManualError("Please enter Train ID and Start Washing Time.");
+      return;
+    }
+
+    const record = {
+      trainId,
+      startTime,
+      endTime: addMins(startTime, 4),
+      source: "manual",
+    };
+
+    setSessions((prev) => groupSessions([...flattenSessions(prev), record]));
+    setFileName((prev) => prev || "Manual entry");
+    setManualTrainId("");
+    setManualStartTime("");
+    setManualError("");
+  }, [manualTrainId, manualStartTime]);
 
   useEffect(() => {
     if (sessions.length > 0) setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
@@ -148,7 +177,7 @@ export default function TrainWashing() {
               <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#1e3a56] bg-[#0a1e2e] text-[#7eb8e0] hover:bg-[#0f2d4a] transition-colors">
                 <Download className="w-3.5 h-3.5" /> Export
               </button>
-              <button onClick={() => { setSessions([]); setFileName(null); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-800/50 text-red-400 bg-[#0a1e2e] hover:bg-red-950/40 transition-colors">
+              <button onClick={() => { setSessions([]); setFileName(null); setManualTrainId(""); setManualStartTime(""); setManualError(""); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-800/50 text-red-400 bg-[#0a1e2e] hover:bg-red-950/40 transition-colors">
                 <Trash2 className="w-3.5 h-3.5" /> Clear
               </button>
             </div>
@@ -166,6 +195,39 @@ export default function TrainWashing() {
           <p className="text-sm font-semibold text-[#7eb8e0]">{fileName ? `✓ ${fileName}` : "Drop Excel file here or click to upload"}</p>
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => { processFile(e.target.files[0]); e.target.value = ""; }} />
         </div>
+
+        {/* Manual Partial Wash */}
+        <form onSubmit={addManualWash} className="mx-5 mb-5 rounded-xl border border-[#1e3a56] bg-[#071828] p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div className="flex-1">
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#4a8ab5] mb-1.5">Train ID</label>
+              <input
+                value={manualTrainId}
+                onChange={(e) => { setManualTrainId(e.target.value); setManualError(""); }}
+                placeholder="Example: 31 or T31"
+                className="w-full rounded-lg border border-[#1e3a56] bg-[#0a1e2e] px-3 py-2 text-sm font-semibold text-white placeholder:text-[#4a6074] outline-none focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/20"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#4a8ab5] mb-1.5">Start Washing Time</label>
+              <input
+                type="time"
+                value={manualStartTime}
+                onChange={(e) => { setManualStartTime(e.target.value); setManualError(""); }}
+                className="w-full rounded-lg border border-[#1e3a56] bg-[#0a1e2e] px-3 py-2 text-sm font-semibold text-white outline-none focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/20"
+              />
+            </div>
+            <button
+              type="submit"
+              className="flex items-center justify-center gap-2 rounded-lg border border-[#2b4f6b] bg-[#0f2d4a] px-4 py-2 text-xs font-black uppercase tracking-wider text-[#c8d8ea] transition-colors hover:bg-[#12395f] hover:border-[#4f8ef7]"
+            >
+              <PlusCircle className="w-4 h-4 text-emerald-300" />
+              Add Manual Partial Wash
+            </button>
+          </div>
+          <p className="mt-2 font-mono text-[11px] text-[#7eb8e0]">Output: 07:30 hrs - T31 started PARTIAL wash. Completed by 07:34 hrs.</p>
+          {manualError && <p className="mt-2 text-xs font-semibold text-amber-300">⚠ {manualError}</p>}
+        </form>
       </div>
 
       {/* Log Output */}
