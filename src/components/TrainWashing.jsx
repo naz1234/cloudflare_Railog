@@ -129,7 +129,7 @@ function CopyBtn({ text, compact = false }) {
   const [copied, setCopied] = useState(false);
   return (
     <button onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-      className={`flex items-center gap-1.5 rounded-lg text-xs font-semibold border border-[#1e3a56] bg-[#0a1e2e] text-[#7eb8e0] hover:bg-[#0f2d4a] hover:border-[#2b4f6b] transition-colors ${compact ? "px-2.5 py-1.5" : "px-3 py-1.5"}`}
+      className={`flex items-center gap-1.5 rounded-lg text-xs font-semibold border border-[#1e3a56] bg-[#0a1e2e] text-[#7eb8e0] hover:bg-[#0f2d4a] hover:border-[#2b4f6b] transition-colors ${compact ? "px-2.5 py-1" : "px-3 py-1.5"}`}
       type="button">
       {copied ? <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
       {copied ? "Copied!" : "Copy"}
@@ -227,15 +227,6 @@ export default function TrainWashing() {
     XLSX.writeFile(wb, "washing_log.xlsx");
   };
 
-  const exportManualExcel = () => {
-    const rows = [["Log"]];
-    manualRecords.forEach((r) => rows.push([buildLine(r)]));
-    rows.push([`Total: ${manualRecords.length} trains washed at the automatic wash plant.`]);
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Manual Washing Log");
-    XLSX.writeFile(wb, "manual_washing_log.xlsx");
-  };
 
   return (
     <div className="space-y-5">
@@ -324,9 +315,6 @@ export default function TrainWashing() {
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold text-emerald-300 bg-emerald-900/40 border border-emerald-700/50 px-2.5 py-1 rounded-full">{totalManual} trains</span>
               <CopyBtn text={manualFullText} />
-              <button type="button" onClick={exportManualExcel} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-emerald-700/50 bg-[#071828] text-emerald-300 hover:bg-emerald-950/40 transition-colors">
-                <Download className="w-3.5 h-3.5" /> Export
-              </button>
               <button type="button" onClick={() => { setManualRecords([]); setManualTrainId(""); setManualTimingMode("now"); setManualCustomTime(""); setManualError(""); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-800/50 text-red-400 bg-[#071828] hover:bg-red-950/40 transition-colors">
                 <Trash2 className="w-3.5 h-3.5" /> Clear Manual
               </button>
@@ -430,15 +418,15 @@ export default function TrainWashing() {
               <span className="text-[10px] font-bold px-2.5 py-1 rounded-full text-emerald-300 bg-emerald-900/40 border border-emerald-700/50">{manualRecords.length} trains</span>
             </div>
 
-            <div className="px-5 py-4 space-y-2 bg-[#071828]">
+            <div className="px-4 py-2 space-y-1 bg-[#071828]">
               {manualRecords.map((record) => (
-                <div key={record.id} className="flex items-center gap-2 rounded-lg border border-emerald-900/40 bg-[#0a1e2e] px-3 py-2">
-                  <p className="min-w-0 flex-1 font-mono text-xs text-[#c8d8ea] leading-relaxed">{buildLine(record)}</p>
+                <div key={record.id} className="flex items-center gap-2 rounded-md border border-emerald-900/40 bg-[#0a1e2e] px-3 py-1">
+                  <p className="min-w-0 flex-1 font-mono text-xs text-[#c8d8ea] leading-snug">{buildLine(record)}</p>
                   <CopyBtn text={buildLine(record)} compact />
                   <button
                     type="button"
                     onClick={() => deleteManualRecord(record.id)}
-                    className="flex items-center gap-1.5 rounded-lg border border-red-800/50 bg-[#071828] px-2.5 py-1.5 text-xs font-semibold text-red-400 transition-colors hover:bg-red-950/40"
+                    className="flex items-center gap-1.5 rounded-md border border-red-800/50 bg-[#071828] px-2.5 py-1 text-xs font-semibold text-red-400 transition-colors hover:bg-red-950/40"
                     title="Delete this manual wash log"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
