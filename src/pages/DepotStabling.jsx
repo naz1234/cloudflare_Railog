@@ -1758,6 +1758,12 @@ const PSTBadge = ({ text, bg, border }) => (
   <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none whitespace-nowrap" style={{ backgroundColor: bg, color: "#000", border: `1px solid ${border}` }}>{text}</span>
 );
 
+function getPSTRequestTypeLabel(item = {}) {
+  // PST / Train Prep stabling should show Request Type only.
+  // Do not show Maintenance Request remark/note here.
+  return item.displayType || item.typeKey || item.requestType || "Request";
+}
+
 function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taName, onTaNameChange }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
@@ -1808,7 +1814,14 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
         <div className="w-full text-center font-black leading-none" style={{ fontSize: key ? 15 : 12, color: key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}>
           {displayVal || "—"}
         </div>
-        {maintList.map((item) => <PSTBadge key={`${item.displayType}-${item.badgeText || ""}`} text={item.badgeText || item.displayType} bg={item.badgeBg} border={item.badgeBorder} />)}
+        {maintList.map((item) => (
+          <PSTBadge
+            key={`${item.displayType || item.typeKey}-${item.badgeText || item.remark || ""}`}
+            text={getPSTRequestTypeLabel(item)}
+            bg={item.badgeBg}
+            border={item.badgeBorder}
+          />
+        ))}
         {key && pstEstimateTime && (
           <span
             className="rounded-full border border-red-500/80 bg-red-950/55 px-1.5 py-0.5 text-[9px] font-normal tracking-wide text-red-200 shadow-[0_0_10px_rgba(239,68,68,0.34)] whitespace-nowrap"
