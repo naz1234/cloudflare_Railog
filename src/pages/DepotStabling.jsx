@@ -7945,8 +7945,8 @@ export default function DepotStablingPage() {
   const buildTrainPrepLogLine = (time, trainKey, road, taName = "") => {
     const depotLabel = WEST_ROADS.includes(road) ? "WD" : "ED";
     const roadFormatted = road.replace(/^(WD|ED)-/, `${depotLabel}–`);
-    const completedTaName = String(taName || "").trim();
-    const taStr = completedTaName ? ` Performed by TA ${completedTaName}.` : "";
+    const formattedTaName = formatTACompletedBy(taName);
+    const taStr = formattedTaName ? ` Performed by ${formattedTaName}` : "";
     return `${time} hrs –  ${trainKey} Train preparation completed at ${roadFormatted}.${taStr}`;
   };
 
@@ -10363,13 +10363,26 @@ function getCompletedByForPSTEntry(entry = {}, completedBy = "") {
   return names.west || names.east;
 }
 
+function normalizeTACompletedByName(value = "") {
+  return String(value || "")
+    .trim()
+    .replace(/\.+$/g, "")
+    .replace(/^TA\b\s*/i, "")
+    .trim();
+}
+
+function formatTACompletedBy(value = "") {
+  const name = normalizeTACompletedByName(value);
+  return name ? `TA ${name}.` : "";
+}
+
 function getCompletedByForPrepEntry(entry = {}) {
   const explicitName = (entry?.taName || "").toString().trim();
-  if (explicitName) return explicitName;
+  if (explicitName) return formatTACompletedBy(explicitName);
 
   const text = (entry?.text || "").toString();
   const match = text.match(/Performed\s+by\s+TA\s+(.+?)\.?$/i);
-  return match ? match[1].trim().replace(/\.$/, "") : "";
+  return match ? formatTACompletedBy(match[1]) : "";
 }
 
 function buildLatestPSTExcelMap(entries = []) {
