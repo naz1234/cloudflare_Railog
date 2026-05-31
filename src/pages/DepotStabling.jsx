@@ -5363,7 +5363,8 @@ function buildPSTExportLinesFromVisibleState({
 
           const endTime = prep.endTime || prep.time || (sameTrain ? (oldEntry?.endTime || oldEntry?.time || oldEntry?.startTime) : "") || "";
           const taName = (prep.taName || (sameTrain ? oldEntry?.taName : "") || "").toString().trim();
-          const taStr = taName ? ` Performed by TA ${taName}.` : "";
+          const formattedTaName = formatTACompletedBy(taName);
+          const taStr = formattedTaName ? ` Performed by ${formattedTaName}` : "";
           const generatedText = `${endTime} hrs \u2013  ${trainKey} Train preparation completed at ${roadFormatted}.${taStr}`;
 
           exportLines.push({
@@ -10376,13 +10377,18 @@ function formatTACompletedBy(value = "") {
   return name ? `TA ${name}.` : "";
 }
 
+function formatTACompletedByExcel(value = "") {
+  const name = normalizeTACompletedByName(value);
+  return name ? `TA ${name}` : "";
+}
+
 function getCompletedByForPrepEntry(entry = {}) {
   const explicitName = (entry?.taName || "").toString().trim();
-  if (explicitName) return formatTACompletedBy(explicitName);
+  if (explicitName) return formatTACompletedByExcel(explicitName);
 
   const text = (entry?.text || "").toString();
   const match = text.match(/Performed\s+by\s+TA\s+(.+?)\.?$/i);
-  return match ? formatTACompletedBy(match[1]) : "";
+  return match ? formatTACompletedByExcel(match[1]) : "";
 }
 
 function buildLatestPSTExcelMap(entries = []) {
