@@ -1758,7 +1758,7 @@ const PSTBadge = ({ text, bg, border }) => (
   <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none whitespace-nowrap" style={{ backgroundColor: bg, color: "#000", border: `1px solid ${border}` }}>{text}</span>
 );
 
-function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, taName, onTaNameChange }) {
+function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taName, onTaNameChange }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const maintList = key ? maintenanceMap[key] || [] : [];
@@ -1799,7 +1799,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   const pstRowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
   return (
     <td className="p-1.5 align-top" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: pstRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-      <div className="relative flex flex-col items-center justify-start gap-1 rounded-xl" style={{ minHeight: pstEstimateTime ? 102 : 90, padding: "7px 5px", background: pstCardBg, border: pstCardBorder, boxShadow: key ? "0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)" : undefined }}>
+      <div className="relative flex flex-col items-center justify-start gap-1 rounded-xl" style={{ minHeight: isPrepDone ? 132 : pstEstimateTime ? 102 : 90, padding: "7px 5px", background: pstCardBg, border: pstCardBorder, boxShadow: key ? "0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)" : undefined }}>
         {key && (
           <div className="absolute top-1 right-1.5 opacity-20 pointer-events-none">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={trainColor} strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/></svg>
@@ -1861,6 +1861,31 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
                 {isPstDone ? "✓ PST" : "PST"}
               </button>
             )}
+            {isPrepDone && (
+              <div className="w-full rounded-lg border border-blue-500/60 bg-blue-950/30 px-1 py-1">
+                <div className="mb-0.5 text-center text-[8px] font-black uppercase tracking-wide text-blue-300">Completion</div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={5}
+                  value={prep?.endTime || prep?.time || ""}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    const value = String(prep?.endTime || prep?.time || "");
+                    const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                    if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                      e.preventDefault();
+                      onPrepCompletionTimeChange?.(road, bi, key, value.slice(0, -2));
+                    }
+                  }}
+                  onChange={(e) => onPrepCompletionTimeChange?.(road, bi, key, cleanMovementCustomTimeInput(e.target.value))}
+                  onBlur={(e) => onPrepCompletionTimeChange?.(road, bi, key, normalizeMovementCustomTimeInput(e.target.value))}
+                  placeholder="00:00"
+                  className="w-full rounded-md border border-blue-500/50 bg-[#071828] px-1 py-0.5 text-center text-[10px] font-black leading-tight text-blue-100 outline-none placeholder:text-blue-700 focus:border-blue-300"
+                  title="Edit Train Prep completion time"
+                />
+              </div>
+            )}
             {!isPrepDone && (
               <input value={taName} onChange={(e) => onTaNameChange(road, bi, e.target.value)} onClick={(e) => e.stopPropagation()} placeholder="TA name (optional)" className="w-full text-[11px] rounded-lg border border-blue-600/60 bg-blue-950/30 px-1 py-0.5 outline-none text-blue-200 placeholder:text-blue-700" />
             )}
@@ -1874,7 +1899,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   );
 }
 
-function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, taNameState, onTaNameChange, onClearPST, onClearPrep }) {
+function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taNameState, onTaNameChange, onClearPST, onClearPrep }) {
   const [confirmClearAction, setConfirmClearAction] = useState(null);
   const hasClearControls = Boolean(onClearPST || onClearPrep);
   const pstClearCount = roads.reduce((count, road) => {
@@ -1972,7 +1997,7 @@ function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, lab
                 <tr key={road}>
                   {labelSide === "left" && labelCell}
                   {blockIndices.map((bi, i) => (
-                    <PSTCell key={bi} block={data[road]?.[bi]} bi={bi} road={road} labelSide={labelSide} isLast={ri === roads.length - 1} isFirstBlock={i === 0} isLastBlock={i === blockIndices.length - 1} maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} taName={taNameState[`${road}-${bi}`] || ""} onTaNameChange={onTaNameChange} />
+                    <PSTCell key={bi} block={data[road]?.[bi]} bi={bi} road={road} labelSide={labelSide} isLast={ri === roads.length - 1} isFirstBlock={i === 0} isLastBlock={i === blockIndices.length - 1} maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taName={taNameState[`${road}-${bi}`] || ""} onTaNameChange={onTaNameChange} />
                   ))}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -5371,7 +5396,7 @@ function buildPSTExportLinesFromVisibleState({
 
 
 function PSTTabContent
-({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onRemoveLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug }) {
+({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug }) {
   const [downloadingExcel, setDownloadingExcel] = useState(false);
   const safeCompletedByNames = completedByNames || { west: "", east: "" };
   const sortedLogLines = sortPSTLogLinesByTime(logLines);
@@ -5447,8 +5472,8 @@ function PSTTabContent
   return (
     <div className="flex flex-col gap-5 w-fit">
       <div className="space-y-5 min-w-0">
-        <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} />
-        <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} />
+        <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} />
+        <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} />
       </div>
 
       <div className="w-full max-w-[960px]">
@@ -7921,6 +7946,72 @@ export default function DepotStablingPage() {
     setPstLogLines((prev) => prev.filter((l) => l.key !== `pst-${cellKey}`));
   };
 
+  const buildTrainPrepLogLine = (time, trainKey, road, taName = "") => {
+    const depotLabel = WEST_ROADS.includes(road) ? "WD" : "ED";
+    const roadFormatted = road.replace(/^(WD|ED)-/, `${depotLabel}–`);
+    const completedTaName = String(taName || "").trim();
+    const taStr = completedTaName ? ` Performed by TA ${completedTaName}.` : "";
+    return `${time} hrs –  ${trainKey} Train preparation completed at ${roadFormatted}.${taStr}`;
+  };
+
+  const handlePrepCompletionTimeChange = (road, bi, trainKey, endTime) => {
+    const cleanEndTime = cleanMovementCustomTimeInput(endTime);
+
+    markPSTLiveLocalEdit();
+    const cellKey = `${road}-${bi}`;
+    const paddedKey = trainKey.replace(/^T(\d+)$/, (_, n) => `T${n.padStart(2, "0")}`);
+    const currentPrep = prepState[cellKey];
+    if (!currentPrep?.done) return;
+    const completedTaName = (currentPrep.taName || taNameState[cellKey] || "").toString().trim();
+    const entryTrainKey = currentPrep.trainKey || paddedKey;
+
+    setPrepState((prev) => {
+      const current = prev[cellKey];
+      if (!current?.done) return prev;
+      return {
+        ...prev,
+        [cellKey]: {
+          ...current,
+          endTime: cleanEndTime,
+          time: cleanEndTime,
+          trainKey: current.trainKey || paddedKey,
+        },
+      };
+    });
+
+    setPstLogLines((prev) => {
+      const logKey = `prep-${cellKey}`;
+      let found = false;
+      const next = prev.map((entry) => {
+        if (entry.key !== logKey) return entry;
+        found = true;
+        return {
+          ...entry,
+          text: buildTrainPrepLogLine(cleanEndTime, entry.trainKey || entryTrainKey, road, entry.taName || completedTaName),
+          time: cleanEndTime,
+          endTime: cleanEndTime,
+          startTime: "",
+        };
+      });
+      if (!found) {
+        const depot = getDepotFromRoad(road);
+        next.push({
+          key: logKey,
+          text: buildTrainPrepLogLine(cleanEndTime, entryTrainKey, road, completedTaName),
+          type: "Prep",
+          depot,
+          road,
+          trainKey: entryTrainKey,
+          startTime: "",
+          time: cleanEndTime,
+          endTime: cleanEndTime,
+          taName: completedTaName,
+        });
+      }
+      return sortPSTLogLinesByTime(next);
+    });
+  };
+
   const handlePrepTick = (road, bi, trainKey, taName = "") => {
     markPSTLiveLocalEdit();
     const cellKey = `${road}-${bi}`;
@@ -7936,10 +8027,7 @@ export default function DepotStablingPage() {
     const endTime = formatTime(new Date());
     const resolvedTaName = taNameState[cellKey] || taName || "";
     const completedTaName = resolvedTaName.trim();
-    const taStr = completedTaName ? ` Performed by TA ${completedTaName}.` : "";
-    const depotLabel = WEST_ROADS.includes(road) ? "WD" : "ED";
-    const roadFormatted = road.replace(/^(WD|ED)-/, `${depotLabel}\u2013`);
-    const line = `${endTime} hrs \u2013  ${paddedKey} Train preparation completed at ${roadFormatted}.${taStr}`;
+    const line = buildTrainPrepLogLine(endTime, paddedKey, road, completedTaName);
     const depot = getDepotFromRoad(road);
 
     setPrepState((prev) => ({
@@ -8406,6 +8494,7 @@ export default function DepotStablingPage() {
             onPSTTick={handlePSTTick}
             onPSTStartTimeChange={handlePSTStartTimeChange}
             onPrepTick={handlePrepTick}
+            onPrepCompletionTimeChange={handlePrepCompletionTimeChange}
             onRemoveLog={handleRemovePSTLog}
             onClearDepotLog={handleClearDepotPST}
             onClearDepotPSTOnly={handleClearDepotPSTOnly}
