@@ -5274,14 +5274,19 @@ function buildPSTExportLinesFromVisibleState({
   westData = {},
   eastData = {},
   pstState = {},
+  prepState = {},
   logLines = [],
 } = {}) {
-  // Excel export must follow the visible PST table, not only the saved logLines.
-  // This prevents East Depot from exporting only 7 trains when both ED-ST02 and ED-ST03
-  // are already marked completed on screen.
+  // Excel export must follow the visible PST / Train Prep table, not only the saved logLines.
+  // This prevents a refreshed or synced screen from exporting an incomplete Excel file.
   const existingPstByKey = new Map(
     (Array.isArray(logLines) ? logLines : [])
       .filter((entry) => entry?.type === "PST" && entry?.key)
+      .map((entry) => [entry.key, entry])
+  );
+  const existingPrepByKey = new Map(
+    (Array.isArray(logLines) ? logLines : [])
+      .filter((entry) => entry?.type === "Prep" && entry?.key)
       .map((entry) => [entry.key, entry])
   );
 
@@ -5293,38 +5298,67 @@ function buildPSTExportLinesFromVisibleState({
 
       blocks.forEach((block, bi) => {
         const cellKey = `${road}-${bi}`;
-        const pst = pstState?.[cellKey];
-
-        if (!pst?.done) return;
-
         const trainKey = padTrainId(normalizeTrainId(block?.trainId || ""));
         if (!trainKey) return;
 
-        const logKey = `pst-${cellKey}`;
-        const oldEntry = existingPstByKey.get(logKey);
-        const oldTrainKey = padTrainId(normalizeTrainId(oldEntry?.trainKey || ""));
-        const sameTrain = oldTrainKey === trainKey;
-
-        const startTime = pst.startTime || (sameTrain ? oldEntry?.startTime : "") || "";
-        const endTime = pst.endTime || (sameTrain ? oldEntry?.endTime : "") || "";
-        const alarmStatus = pst.alarmStatus || (sameTrain ? oldEntry?.alarmStatus : "") || "no_alarm";
         const depotLabel = depot === "west" ? "WD" : "ED";
         const roadFormatted = road.replace(/^(WD|ED)-/, `${depotLabel}\u2013`);
-        const alarmText = alarmStatus === "alarm" ? " Alarm reported." : " No alarm reported.";
-        const generatedText = `${startTime} hrs \u2013 PST commenced at ${roadFormatted} for ${trainKey}. Completed at ${endTime} hrs.${alarmText}`;
 
-        exportLines.push({
-          ...(sameTrain ? oldEntry : {}),
-          key: logKey,
-          text: sameTrain && oldEntry?.text ? oldEntry.text : generatedText,
-          type: "PST",
-          depot,
-          road,
-          trainKey,
-          startTime,
-          endTime,
-          alarmStatus,
-        });
+        const pst = pstState?.[cellKey];
+        const pstMatchesTrain = !pst?.trainKey || padTrainId(normalizeTrainId(pst.trainKey)) === trainKey;
+        if (pst?.done && pstMatchesTrain) {
+          const logKey = `pst-${cellKey}`;
+          const oldEntry = existingPstByKey.get(logKey);
+          const oldTrainKey = padTrainId(normalizeTrainId(oldEntry?.trainKey || ""));
+          const sameTrain = oldTrainKey === trainKey;
+
+          const startTime = pst.startTime || (sameTrain ? oldEntry?.startTime : "") || "";
+          const endTime = pst.endTime || (sameTrain ? oldEntry?.endTime : "") || "";
+          const alarmStatus = pst.alarmStatus || (sameTrain ? oldEntry?.alarmStatus : "") || "no_alarm";
+          const alarmText = alarmStatus === "alarm" ? " Alarm reported." : " No alarm reported.";
+          const generatedText = `${startTime} hrs \u2013 PST commenced at ${roadFormatted} for ${trainKey}. Completed at ${endTime} hrs.${alarmText}`;
+
+          exportLines.push({
+            ...(sameTrain ? oldEntry : {}),
+            key: logKey,
+            text: sameTrain && oldEntry?.text ? oldEntry.text : generatedText,
+            type: "PST",
+            depot,
+            road,
+            trainKey,
+            startTime,
+            endTime,
+            alarmStatus,
+          });
+        }
+
+        const prep = prepState?.[cellKey];
+        const prepMatchesTrain = !prep?.trainKey || padTrainId(normalizeTrainId(prep.trainKey)) === trainKey;
+        if (prep?.done && prepMatchesTrain) {
+          const logKey = `prep-${cellKey}`;
+          const oldEntry = existingPrepByKey.get(logKey);
+          const oldTrainKey = padTrainId(normalizeTrainId(oldEntry?.trainKey || ""));
+          const sameTrain = oldTrainKey === trainKey;
+
+          const startTime = prep.startTime || (sameTrain ? oldEntry?.startTime : "") || "";
+          const endTime = prep.endTime || (sameTrain ? oldEntry?.endTime : "") || "";
+          const taName = (prep.taName || (sameTrain ? oldEntry?.taName : "") || "").toString().trim();
+          const taStr = taName ? ` Performed by TA ${taName}.` : "";
+          const generatedText = `${startTime} hrs \u2013 Train preparation commenced at ${roadFormatted} for ${trainKey}. Completed at ${endTime} hrs.${taStr}`;
+
+          exportLines.push({
+            ...(sameTrain ? oldEntry : {}),
+            key: logKey,
+            text: sameTrain && oldEntry?.text ? oldEntry.text : generatedText,
+            type: "Prep",
+            depot,
+            road,
+            trainKey,
+            startTime,
+            endTime,
+            taName,
+          });
+        }
       });
     });
   };
@@ -5335,6 +5369,7 @@ function buildPSTExportLinesFromVisibleState({
   return sortPSTLogLinesByTime(exportLines);
 }
 
+
 function PSTTabContent
 ({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onRemoveLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug }) {
   const [downloadingExcel, setDownloadingExcel] = useState(false);
@@ -5344,6 +5379,7 @@ function PSTTabContent
     westData,
     eastData,
     pstState,
+    prepState,
     logLines: sortedLogLines,
   });
 
@@ -5354,9 +5390,10 @@ function PSTTabContent
   const handleDownloadExcel = () => {
     if (downloadingExcel) return;
 
-    const pstEntries = (exportLogLines || []).filter((entry) => entry?.type === "PST");
-    if (pstEntries.length === 0) {
-      alert("No completed PST log to export yet.");
+    const completedEntries = (exportLogLines || []).filter((entry) => entry?.type === "PST" || entry?.type === "Prep");
+    const pstEntries = completedEntries.filter((entry) => entry?.type === "PST");
+    if (completedEntries.length === 0) {
+      alert("No completed PST or Train Prep log to export yet.");
       return;
     }
 
@@ -7906,8 +7943,9 @@ export default function DepotStablingPage() {
       const roadFormatted = road.replace(/^(WD|ED)-/, `${depotLabel}\u2013`);
       const line = `${current.startTime} hrs \u2013 Train preparation commenced at ${roadFormatted} for ${paddedKey}. Completed at ${endTime} hrs.${taStr}`;
       const depot = getDepotFromRoad(road);
-      setPrepState((prev) => ({ ...prev, [cellKey]: { ...prev[cellKey], done: true, endTime, trainKey: paddedKey } }));
-      setPstLogLines((prev) => sortPSTLogLinesByTime([...prev.filter((l) => l.key !== `prep-${cellKey}`), { key: `prep-${cellKey}`, text: line, type: "Prep", depot, trainKey: paddedKey, startTime: current.startTime, endTime, taName: resolvedTaName.trim() }]));
+      const completedTaName = resolvedTaName.trim();
+      setPrepState((prev) => ({ ...prev, [cellKey]: { ...prev[cellKey], done: true, endTime, trainKey: paddedKey, taName: completedTaName } }));
+      setPstLogLines((prev) => sortPSTLogLinesByTime([...prev.filter((l) => l.key !== `prep-${cellKey}`), { key: `prep-${cellKey}`, text: line, type: "Prep", depot, road, trainKey: paddedKey, startTime: current.startTime, endTime, taName: completedTaName }]));
     }
   };
 
@@ -10204,14 +10242,9 @@ function trainKeyToNumber(trainKey = "") {
 function extractPSTLocation(entry = {}) {
   if (entry.road) return entry.road;
   const text = entry.text || "";
-  const match = text.match(/PST\s+commenced\s+at\s+([A-Z]{2})[–-]([A-Z0-9]+)/i);
+  const match = text.match(/(?:PST|Train preparation)\s+commenced\s+at\s+([A-Z]{2})[–-]([A-Z0-9]+)/i);
   if (!match) return "";
   return `${match[1].toUpperCase()}-${match[2].toUpperCase()}`;
-}
-
-function getPSTExcelRemark() {
-  // Keep Excel Remarks column empty, even when the PST log says alarm / no alarm reported.
-  return "";
 }
 
 function getPSTDepotFromEntry(entry = {}) {
@@ -10242,54 +10275,78 @@ function getCompletedByForPSTEntry(entry = {}, completedBy = "") {
   return names.west || names.east;
 }
 
-function buildPSTExportRows(logLines = [], completedBy = "") {
-  const todayText = formatExcelExportDate(new Date());
-  const pstLogs = (logLines || []).filter((entry) => entry?.type === "PST");
+function getCompletedByForPrepEntry(entry = {}) {
+  const explicitName = (entry?.taName || "").toString().trim();
+  if (explicitName) return explicitName;
+
+  const text = (entry?.text || "").toString();
+  const match = text.match(/Performed\s+by\s+TA\s+(.+?)\.?$/i);
+  return match ? match[1].trim().replace(/\.$/, "") : "";
+}
+
+function buildLatestPSTExcelMap(entries = []) {
   const latestByTrain = new Map();
 
-  pstLogs.forEach((entry) => {
+  entries.forEach((entry) => {
     const trainNo = trainKeyToNumber(entry.trainKey);
     if (!trainNo) return;
     latestByTrain.set(trainNo, entry);
   });
 
-  const completedEntries = pstLogs.filter((entry) => trainKeyToNumber(entry.trainKey));
-  const westCount = completedEntries.filter((entry) => getPSTDepotFromEntry(entry) === "west").length;
-  const eastCount = completedEntries.filter((entry) => getPSTDepotFromEntry(entry) === "east").length;
+  return latestByTrain;
+}
+
+function buildPSTExportRows(logLines = [], completedBy = "") {
+  const todayText = formatExcelExportDate(new Date());
+  const safeLogLines = Array.isArray(logLines) ? logLines : [];
+  const pstLogs = safeLogLines.filter((entry) => entry?.type === "PST");
+  const prepLogs = safeLogLines.filter((entry) => entry?.type === "Prep");
+
+  const latestPSTByTrain = buildLatestPSTExcelMap(pstLogs);
+  const latestPrepByTrain = buildLatestPSTExcelMap(prepLogs);
+
+  const completedPSTEntries = Array.from(latestPSTByTrain.values());
+  const westCount = completedPSTEntries.filter((entry) => getPSTDepotFromEntry(entry) === "west").length;
+  const eastCount = completedPSTEntries.filter((entry) => getPSTDepotFromEntry(entry) === "east").length;
 
   const rows = [
-    ["Date", "Version Sheet", "TRAIN Number", "Start Time", "Location", "Passenger Service Test", "Awake Status", "Completion Time", "Completed by", "Remarks"],
-    ["", "", "", "", "", "", "", "", "", ""],
+    ["Date", "Version Sheet", "TRAIN Number", "Start Time", "Location", "Passenger Service Test", "Awake Status", "PST Completion Time", "PST Completed by", "Train Preparation Completion Time", "Train Preparation Completed By"],
+    ["", "", "", "", "", "", "", "", "", "", ""],
   ];
 
   for (let trainNo = 1; trainNo <= PST_EXCEL_TRAIN_COUNT; trainNo += 1) {
-    const entry = latestByTrain.get(trainNo);
+    const pstEntry = latestPSTByTrain.get(trainNo);
+    const prepEntry = latestPrepByTrain.get(trainNo);
+    const sourceEntry = pstEntry || prepEntry;
+
     rows.push([
       todayText,
       PST_EXCEL_VERSION,
       `TS#3${String(trainNo).padStart(2, "0")}`,
-      entry ? formatExcelExportTime(entry.startTime) : "",
-      entry ? extractPSTLocation(entry) : "",
-      entry ? "PASS" : "",
-      entry ? "Completely Awake" : "",
-      entry ? formatExcelExportTime(entry.endTime) : "",
-      entry ? getCompletedByForPSTEntry(entry, completedBy) : "",
-      entry ? getPSTExcelRemark(entry) : "",
+      pstEntry ? formatExcelExportTime(pstEntry.startTime) : "",
+      sourceEntry ? extractPSTLocation(sourceEntry) : "",
+      pstEntry ? "PASS" : "",
+      pstEntry ? "Completely Awake" : "",
+      pstEntry ? formatExcelExportTime(pstEntry.endTime) : "",
+      pstEntry ? getCompletedByForPSTEntry(pstEntry, completedBy) : "",
+      prepEntry ? formatExcelExportTime(prepEntry.endTime) : "",
+      prepEntry ? getCompletedByForPrepEntry(prepEntry) : "",
     ]);
   }
 
   rows.push([
-    `Total PST completed PASS is ${completedEntries.length}. (West Depot ${westCount} and East Depot ${eastCount})`,
-    "", "", "", "", "", "", "", "", "",
+    `Total PST completed PASS is ${completedPSTEntries.length}. (West Depot ${westCount} and East Depot ${eastCount})`,
+    "", "", "", "", "", "", "", "", "", "",
   ]);
 
   return rows;
 }
 
+
 function buildPSTFormRows() {
   const rows = Array.from({ length: 50 }, () => ["", "", "", "", "", ""]);
   rows[1] = ["", "TRAIN", "Location", "Status", "Passenger Service Test", "Version Sheet"];
-  rows[2] = ["", "N/A", "WD-ST12", "Completely Awake ", "PASS", ""];
+  rows[2] = ["", "N/A", "WD-ST12", "Completely Awake", "PASS", ""];
   rows[3] = ["", "TS#301", "WD-ST13", "Failed - Return to Park", "FAIL", "V07-01-02"];
   rows[4] = ["", "TS#302", "WD-ST14", "", "", ""];
   rows[5] = ["", "TS#303", "WD-ST15", "", "", ""];
@@ -10324,9 +10381,9 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "") {
     rows: rl3Rows,
     rowStyles: rl3RowStyles,
     rowHeights: rl3Rows.map((_, index) => index === 0 ? 16 : 15),
-    colWidths: [13, 16, 13, 14, 14, 22, 18, 16, 17, 38],
-    dimension: "A1:J50",
-    merges: ["A50:J50"],
+    colWidths: [13, 16, 18.28515625, 14, 14, 22, 21.42578125, 24.42578125, 20.85546875, 38, 38],
+    dimension: "A1:K50",
+    merges: ["A50:K50"],
   });
 
   const formXml = buildExcelWorksheetXml({
