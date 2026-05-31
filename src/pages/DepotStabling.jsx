@@ -1777,7 +1777,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   const isPstDone = pst?.done;
   const isPstConfirming = pst?.confirming && !pst?.done;
   const pstEstimateTime = pst?.endTime || "";
-  const isPrepStarted = prep?.started;
+  const isPrepStarted = false;
   const isPrepDone = prep?.done;
   if (isPstDone) { trainColor = "#4ade80"; }
   else if (isPstConfirming) { trainColor = "#facc15"; }
@@ -1861,11 +1861,11 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
                 {isPstDone ? "✓ PST" : "PST"}
               </button>
             )}
-            {isPrepStarted && !isPrepDone && (
-              <input value={taName} onChange={(e) => onTaNameChange(road, bi, e.target.value)} onClick={(e) => e.stopPropagation()} placeholder="TA name" className="w-full text-[11px] rounded-lg border border-yellow-600/60 bg-yellow-950/30 px-1 py-0.5 outline-none text-yellow-200 placeholder:text-yellow-700" />
+            {!isPrepDone && (
+              <input value={taName} onChange={(e) => onTaNameChange(road, bi, e.target.value)} onClick={(e) => e.stopPropagation()} placeholder="TA name (optional)" className="w-full text-[11px] rounded-lg border border-blue-600/60 bg-blue-950/30 px-1 py-0.5 outline-none text-blue-200 placeholder:text-blue-700" />
             )}
-            <button onClick={() => onPrepTick(road, bi, key, taName)} className={`w-full text-[9px] font-bold rounded-lg px-1 py-0.5 border transition-all leading-tight ${isPrepDone ? "bg-blue-900/60 border-blue-500 text-blue-200" : isPrepStarted ? "bg-yellow-950/50 border-yellow-600/60 text-yellow-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:border-indigo-500 hover:text-indigo-300"}`}>
-              {isPrepDone ? "✓ Prep" : isPrepStarted ? "⏱ Complete" : "Train Prep"}
+            <button onClick={() => onPrepTick(road, bi, key, taName)} className={`w-full text-[9px] font-bold rounded-lg px-1 py-0.5 border transition-all leading-tight ${isPrepDone ? "bg-blue-900/60 border-blue-500 text-blue-200" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:border-indigo-500 hover:text-indigo-300"}`}>
+              {isPrepDone ? "✓ Prep" : "Train Prep"}
             </button>
           </div>
         )}
@@ -1992,7 +1992,7 @@ function formatTrainList(trainKeys) {
 }
 
 function getPSTLogTimeMinutes(entry = {}) {
-  const rawTime = (entry.startTime || entry.time || "").toString().trim();
+  const rawTime = (entry.startTime || entry.time || entry.endTime || "").toString().trim();
   const textTime = (entry.text || "").toString().match(/(\d{1,2}):(\d{2})\s*hrs/i);
   const source = rawTime || (textTime ? `${textTime[1]}:${textTime[2]}` : "");
   const match = source.match(/^(\d{1,2}):(\d{2})$/);
@@ -5340,21 +5340,21 @@ function buildPSTExportLinesFromVisibleState({
           const oldTrainKey = padTrainId(normalizeTrainId(oldEntry?.trainKey || ""));
           const sameTrain = oldTrainKey === trainKey;
 
-          const startTime = prep.startTime || (sameTrain ? oldEntry?.startTime : "") || "";
-          const endTime = prep.endTime || (sameTrain ? oldEntry?.endTime : "") || "";
+          const endTime = prep.endTime || prep.time || (sameTrain ? (oldEntry?.endTime || oldEntry?.time || oldEntry?.startTime) : "") || "";
           const taName = (prep.taName || (sameTrain ? oldEntry?.taName : "") || "").toString().trim();
           const taStr = taName ? ` Performed by TA ${taName}.` : "";
-          const generatedText = `${startTime} hrs \u2013 Train preparation commenced at ${roadFormatted} for ${trainKey}. Completed at ${endTime} hrs.${taStr}`;
+          const generatedText = `${endTime} hrs \u2013  ${trainKey} Train preparation completed at ${roadFormatted}.${taStr}`;
 
           exportLines.push({
             ...(sameTrain ? oldEntry : {}),
             key: logKey,
-            text: sameTrain && oldEntry?.text ? oldEntry.text : generatedText,
+            text: generatedText,
             type: "Prep",
             depot,
             road,
             trainKey,
-            startTime,
+            startTime: "",
+            time: endTime,
             endTime,
             taName,
           });
@@ -7933,20 +7933,23 @@ export default function DepotStablingPage() {
       return;
     }
     const paddedKey = trainKey.replace(/^T(\d+)$/, (_, n) => `T${n.padStart(2, "0")}`);
-    if (!current?.started) {
-      setPrepState((prev) => ({ ...prev, [cellKey]: { started: true, done: false, startTime: formatTime(new Date()), trainKey: paddedKey } }));
-    } else {
-      const endTime = formatTime(new Date());
-      const resolvedTaName = taNameState[cellKey] || taName;
-      const taStr = resolvedTaName.trim() ? ` Performed by TA ${resolvedTaName.trim()}.` : "";
-      const depotLabel = WEST_ROADS.includes(road) ? "WD" : "ED";
-      const roadFormatted = road.replace(/^(WD|ED)-/, `${depotLabel}\u2013`);
-      const line = `${current.startTime} hrs \u2013 Train preparation commenced at ${roadFormatted} for ${paddedKey}. Completed at ${endTime} hrs.${taStr}`;
-      const depot = getDepotFromRoad(road);
-      const completedTaName = resolvedTaName.trim();
-      setPrepState((prev) => ({ ...prev, [cellKey]: { ...prev[cellKey], done: true, endTime, trainKey: paddedKey, taName: completedTaName } }));
-      setPstLogLines((prev) => sortPSTLogLinesByTime([...prev.filter((l) => l.key !== `prep-${cellKey}`), { key: `prep-${cellKey}`, text: line, type: "Prep", depot, road, trainKey: paddedKey, startTime: current.startTime, endTime, taName: completedTaName }]));
-    }
+    const endTime = formatTime(new Date());
+    const resolvedTaName = taNameState[cellKey] || taName || "";
+    const completedTaName = resolvedTaName.trim();
+    const taStr = completedTaName ? ` Performed by TA ${completedTaName}.` : "";
+    const depotLabel = WEST_ROADS.includes(road) ? "WD" : "ED";
+    const roadFormatted = road.replace(/^(WD|ED)-/, `${depotLabel}\u2013`);
+    const line = `${endTime} hrs \u2013  ${paddedKey} Train preparation completed at ${roadFormatted}.${taStr}`;
+    const depot = getDepotFromRoad(road);
+
+    setPrepState((prev) => ({
+      ...prev,
+      [cellKey]: { done: true, endTime, time: endTime, trainKey: paddedKey, taName: completedTaName },
+    }));
+    setPstLogLines((prev) => sortPSTLogLinesByTime([
+      ...prev.filter((l) => l.key !== `prep-${cellKey}`),
+      { key: `prep-${cellKey}`, text: line, type: "Prep", depot, road, trainKey: paddedKey, startTime: "", time: endTime, endTime, taName: completedTaName },
+    ]));
   };
 
   const handleRemovePSTLog = (key) => {
@@ -10242,7 +10245,7 @@ function trainKeyToNumber(trainKey = "") {
 function extractPSTLocation(entry = {}) {
   if (entry.road) return entry.road;
   const text = entry.text || "";
-  const match = text.match(/(?:PST|Train preparation)\s+commenced\s+at\s+([A-Z]{2})[–-]([A-Z0-9]+)/i);
+  const match = text.match(/(?:PST|Train preparation)\s+(?:commenced|completed)\s+at\s+([A-Z]{2})[–-]([A-Z0-9]+)/i);
   if (!match) return "";
   return `${match[1].toUpperCase()}-${match[2].toUpperCase()}`;
 }

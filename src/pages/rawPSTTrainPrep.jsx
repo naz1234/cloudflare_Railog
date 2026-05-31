@@ -537,20 +537,16 @@ export default function PSTTrainPrep() {
       return;
     }
 
-    if (!current?.started) {
-      const startTime = formatTime(new Date());
-      setPrepState((prev) => ({ ...prev, [cellKey]: { started: true, done: false, startTime } }));
-    } else {
-      const endTime = formatTime(new Date());
-      const taStr = taName.trim() ? ` Performed by TA ${taName.trim()}.` : "";
-      const line = `${current.startTime} hrs – ${trainKey} Train preparation started at ${roadLabel}. Completed (at ${endTime} hrs)${taStr}`;
-      const depot = getDepotFromRoad(road);
-      setPrepState((prev) => ({ ...prev, [cellKey]: { ...prev[cellKey], done: true, endTime } }));
-      setLogLines((prev) => [
-        ...prev.filter((l) => l.key !== `prep-${cellKey}`),
-        { key: `prep-${cellKey}`, text: line, type: "Prep", depot },
-      ]);
-    }
+    const endTime = formatTime(new Date());
+    const completedTaName = taName.trim();
+    const taStr = completedTaName ? ` Performed by TA ${completedTaName}.` : "";
+    const line = `${endTime} hrs –  ${trainKey} Train preparation completed at ${roadLabel}.${taStr}`;
+    const depot = getDepotFromRoad(road);
+    setPrepState((prev) => ({ ...prev, [cellKey]: { done: true, endTime, time: endTime, trainKey, taName: completedTaName } }));
+    setLogLines((prev) => [
+      ...prev.filter((l) => l.key !== `prep-${cellKey}`),
+      { key: `prep-${cellKey}`, text: line, type: "Prep", depot, trainKey, startTime: "", time: endTime, endTime, taName: completedTaName },
+    ]);
   };
 
   const handleRemoveLog = (key) => {

@@ -7,6 +7,13 @@ function formatTrainList(trainKeys) {
   return trainKeys.slice(0, -1).join(", ") + " and " + trainKeys[trainKeys.length - 1];
 }
 
+function getLogDisplayTime(entry = {}) {
+  const directTime = entry.endTime || entry.time || entry.startTime;
+  if (directTime) return directTime;
+  const match = (entry.text || "").match(/(\d{1,2}:\d{2})\s*hrs/i);
+  return match ? match[1] : "";
+}
+
 function buildPSTCopyText(pstLines) {
   if (pstLines.length === 0) return "";
   const firstTime = pstLines[0].startTime;
@@ -22,8 +29,8 @@ function buildPSTCopyText(pstLines) {
 
 function buildPrepCopyText(prepLines, depotLabel) {
   if (prepLines.length === 0) return "";
-  const firstTime = prepLines[0].startTime;
-  const lastTime = prepLines[prepLines.length - 1].startTime;
+  const firstTime = getLogDisplayTime(prepLines[0]);
+  const lastTime = getLogDisplayTime(prepLines[prepLines.length - 1]);
   const trainList = formatTrainList(prepLines.map((l) => l.trainKey));
   return [
     `Train Preparation at ${depotLabel} Depot: Total ${prepLines.length} train${prepLines.length !== 1 ? "s" : ""} completed from ${firstTime} to ${lastTime} hrs.`,
@@ -187,7 +194,7 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
               >
                 <div className="pb-2 mb-1 border-b border-blue-900/30 space-y-0.5 min-w-0 overflow-x-auto">
                   <p className="font-mono text-[11px] font-bold text-[#c8d8ea] whitespace-nowrap m-0">
-                    Train Preparation at {label} Depot: Total {prepLines.length} train{prepLines.length !== 1 ? "s" : ""} completed from {prepLines[0]?.startTime} to {prepLines[prepLines.length - 1]?.startTime} hrs.
+                    Train Preparation at {label} Depot: Total {prepLines.length} train{prepLines.length !== 1 ? "s" : ""} completed from {getLogDisplayTime(prepLines[0])} to {getLogDisplayTime(prepLines[prepLines.length - 1])} hrs.
                   </p>
                   <p className="font-mono text-[11px] text-[#4a8ab5] whitespace-nowrap m-0">
                     Trains: {formatTrainList(prepLines.map((l) => l.trainKey))}.
