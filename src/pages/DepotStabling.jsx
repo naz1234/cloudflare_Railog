@@ -2192,7 +2192,7 @@ function getSweepingClearTime(startTime, road, sweepTrack) {
   return startTime;
 }
 
-function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, tidInput, onTidChange, onTidKeyDown, tidInputRef, hideElapsedTid }) {
+function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const maintList = key ? maintenanceMap[key] || [] : [];
@@ -2274,7 +2274,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         )}
         <div className="w-full text-center font-black leading-none" style={{ fontSize: key ? 15 : 12, color: key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}>{displayVal || "—"}</div>
         {maintList.map((item) => (<span key={`${item.displayType}-${item.badgeText || ""}`} className="px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none whitespace-nowrap" style={{ backgroundColor: item.badgeBg, color: "#000", border: `1px solid ${item.badgeBorder}` }} title={item.badgeText || item.displayType}>{item.badgeText || item.displayType}</span>))}
-        {key && !inserted && (<input ref={tidInputRef} type="text" value={tidInput} onChange={(e) => onTidChange(road, bi, e.target.value)} onKeyDown={onTidKeyDown} placeholder="TID" className="w-full h-6 px-1 text-center text-[12px] font-semibold rounded-lg outline-none placeholder:text-[#2b4f6b]" style={insTidInputStyle} />)}
+        {key && !inserted && (<input ref={tidInputRef} type="text" value={tidInput} onChange={(e) => onTidChange(road, bi, e.target.value)} onKeyDown={onTidKeyDown} onFocus={onTidFocus} onPointerDown={onTidFocus} placeholder="TID" className="w-full h-6 px-1 text-center text-[12px] font-semibold rounded-lg outline-none placeholder:text-[#2b4f6b]" style={insTidInputStyle} />)}
         {key && inserted && insertedRemarkLabel && (<span className="text-[12px] font-bold text-emerald-400">{insertedRemarkLabel}</span>)}
         {key && !inserted && showSweepChoice && (
           <div className="w-full rounded-lg border border-purple-500/70 bg-purple-950/40 px-1 py-1 shadow-[0_0_12px_rgba(168,85,247,0.24)]">
@@ -2344,10 +2344,34 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
   // ── Keyboard navigation refs ─────────────────────────────────────────────
   // Key: "roadIndex-visualColIndex", value: input element
   const tidRefs = useRef({});
+  const tidAutoAdvanceRef = useRef(false);
+  const tidAutoDirectionRef = useRef(null);
 
-  const focusInsertionTid = useCallback((roadIdx, colIdx) => {
+  const getTidAutoDirection = useCallback((colIdx) => {
+    // Start from the visual right side = continue moving left.
+    // Start from the visual left side = continue moving right.
+    const middleCol = (blockIndices.length - 1) / 2;
+    return colIdx > middleCol ? "left" : "right";
+  }, [blockIndices.length]);
+
+  const rememberTidStartDirection = useCallback((colIdx) => {
+    if (tidAutoAdvanceRef.current) return;
+    tidAutoDirectionRef.current = getTidAutoDirection(colIdx);
+  }, [getTidAutoDirection]);
+
+  const focusInsertionTid = useCallback((roadIdx, colIdx, options = {}) => {
     const el = tidRefs.current[`${roadIdx}-${colIdx}`];
-    if (el) { el.focus(); el.select(); }
+    if (!el) return;
+
+    if (options.autoAdvance) tidAutoAdvanceRef.current = true;
+    el.focus();
+    el.select();
+
+    if (options.autoAdvance) {
+      setTimeout(() => {
+        tidAutoAdvanceRef.current = false;
+      }, 0);
+    }
   }, []);
 
   const handleTidKeyDown = useCallback((e, roadIdx, colIdx) => {
@@ -2369,8 +2393,24 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
     }
   }, [roads.length, blockIndices.length, focusInsertionTid]);
 
-  const handleTidChange = (road, bi, value) => {
+  const handleTidChange = (road, bi, value, roadIdx, colIdx) => {
+    const cellKey = `${road}-${bi}`;
+    const previousValue = (tidInputs[cellKey] || "").toString().trim();
+    const nextValue = (value || "").toString().trim();
+
     onTidChange(road, bi, value);
+
+    // Auto move horizontally only after a fresh 3-digit numeric TID remark is filled.
+    if (/^\d{3}$/.test(nextValue) && !/^\d{3}$/.test(previousValue)) {
+      const direction = tidAutoDirectionRef.current || getTidAutoDirection(colIdx);
+      const nextColIdx = direction === "left" ? colIdx - 1 : colIdx + 1;
+
+      if (nextColIdx >= 0 && nextColIdx < blockIndices.length) {
+        setTimeout(() => {
+          focusInsertionTid(roadIdx, nextColIdx, { autoAdvance: true });
+        }, 0);
+      }
+    }
   };
   // Count elapsed inserted TIDs for the manual Hide elapsed TID button.
   const elapsedTidCount = roads.reduce((acc, road) => {
@@ -2561,7 +2601,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
                         </td>
                       );
                     }
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={handleTidChange} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value) => handleTidChange(targetRoad, targetBi, value, ri, i)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
