@@ -83,7 +83,7 @@ function formatTrainId(raw) {
   const mv = str.match(/-(\d+)$/);
   if (mv) return `T${String(parseInt(mv[1], 10) % 100).padStart(2, "0")}`;
   const n = parseInt(str.replace(/^T/i, ""), 10);
-  if (!isNaN(n)) return `T${String(n).padStart(2, "0")}`;
+  if (!Number.isNaN(n)) return `T${String(n).padStart(2, "0")}`;
   return str.toUpperCase();
 }
 
@@ -122,14 +122,15 @@ function groupSessions(records) {
 }
 
 function buildLine(r) { return `${r.startTime} hrs - ${r.trainId} started PARTIAL wash. Completed by ${r.endTime} hrs.`; }
-function flattenSessions(sessions) { return sessions.flatMap((session) => session.records || []); }
 function sessionText(session) { const lines = session.records.map(buildLine); lines.push(`\nTotal: ${session.records.length} trains washed at the automatic wash plant.`); return lines.join("\n"); }
+function recordsText(records) { const lines = records.map(buildLine); lines.push(`\nTotal: ${records.length} trains washed at the automatic wash plant.`); return lines.join("\n"); }
 
-function CopyBtn({ text }) {
+function CopyBtn({ text, compact = false }) {
   const [copied, setCopied] = useState(false);
   return (
     <button onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#1e3a56] bg-[#0a1e2e] text-[#7eb8e0] hover:bg-[#0f2d4a] hover:border-[#2b4f6b] transition-colors">
+      className={`flex items-center gap-1.5 rounded-lg text-xs font-semibold border border-[#1e3a56] bg-[#0a1e2e] text-[#7eb8e0] hover:bg-[#0f2d4a] hover:border-[#2b4f6b] transition-colors ${compact ? "px-2.5 py-1.5" : "px-3 py-1.5"}`}
+      type="button">
       {copied ? <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
       {copied ? "Copied!" : "Copy"}
     </button>
@@ -139,7 +140,7 @@ function CopyBtn({ text }) {
 export default function TrainWashing() {
   const [excelSessions, setExcelSessions] = useState([]);
   const [excelFileName, setExcelFileName] = useState(null);
-  const [manualSessions, setManualSessions] = useState([]);
+  const [manualRecords, setManualRecords] = useState([]);
   const [dragging, setDragging] = useState(false);
   const [manualTrainId, setManualTrainId] = useState("");
   const [manualTimingMode, setManualTimingMode] = useState("now");
@@ -179,16 +180,21 @@ export default function TrainWashing() {
     }
 
     const record = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       trainId,
       startTime,
       endTime: addMins(startTime, 4),
       source: "manual",
     };
 
-    setManualSessions((prev) => groupSessions([...flattenSessions(prev), record]));
+    setManualRecords((prev) => [...prev, record].sort((a, b) => timeToMins(a.startTime) - timeToMins(b.startTime)));
     setManualTrainId("");
     setManualError("");
   }, [getManualStartTime, manualTrainId]);
+
+  const deleteManualRecord = useCallback((id) => {
+    setManualRecords((prev) => prev.filter((record) => record.id !== id));
+  }, []);
 
   useEffect(() => {
     const tick = () => setClockText(getCurrentHHMM());
@@ -198,19 +204,19 @@ export default function TrainWashing() {
   }, []);
 
   useEffect(() => {
-    if (excelSessions.length > 0 || manualSessions.length > 0) {
+    if (excelSessions.length > 0 || manualRecords.length > 0) {
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
-  }, [excelSessions, manualSessions]);
+  }, [excelSessions, manualRecords]);
 
   const manualPreviewTrain = formatTrainId(manualTrainId) || "T31";
   const manualPreviewStartTime = getManualStartTime();
   const manualPreviewText = `${manualPreviewStartTime} hrs - ${manualPreviewTrain} started PARTIAL wash. Completed by ${addMins(manualPreviewStartTime, 4)} hrs.`;
   const manualIsNow = manualTimingMode !== "custom";
   const excelFullText = excelSessions.map(sessionText).join("\n\n");
-  const manualFullText = manualSessions.map(sessionText).join("\n\n");
+  const manualFullText = manualRecords.length > 0 ? recordsText(manualRecords) : "";
   const totalExcel = excelSessions.reduce((s, sess) => s + sess.records.length, 0);
-  const totalManual = manualSessions.reduce((s, sess) => s + sess.records.length, 0);
+  const totalManual = manualRecords.length;
 
   const exportExcel = () => {
     const rows = [["Log"]];
@@ -223,7 +229,8 @@ export default function TrainWashing() {
 
   const exportManualExcel = () => {
     const rows = [["Log"]];
-    manualSessions.forEach((s) => { s.records.forEach((r) => rows.push([buildLine(r)])); rows.push([`Total: ${s.records.length} trains washed at the automatic wash plant.`]); rows.push([""]); });
+    manualRecords.forEach((r) => rows.push([buildLine(r)]));
+    rows.push([`Total: ${manualRecords.length} trains washed at the automatic wash plant.`]);
     const ws = XLSX.utils.aoa_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Manual Washing Log");
@@ -301,7 +308,7 @@ export default function TrainWashing() {
         </div>
       )}
 
-      {/* Manual Entry Window */}
+      {/* Manual Entry + Manual Log Output Window */}
       <div className="bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-md overflow-hidden">
         <div className="px-5 py-4 border-b border-[#1a3a56] flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0a2e1e 0%,#061f14 100%)" }}>
           <div className="flex items-center gap-3">
@@ -310,17 +317,17 @@ export default function TrainWashing() {
             </div>
             <div>
               <h2 className="text-sm font-black text-white tracking-widest uppercase">Manual Washing Entry</h2>
-              <p className="text-[10px] text-emerald-300/80">Add PARTIAL wash manually without mixing with Excel upload</p>
+              <p className="text-[10px] text-emerald-300/80">Manual PARTIAL wash entry with log output in the same window</p>
             </div>
           </div>
-          {manualSessions.length > 0 && (
+          {manualRecords.length > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold text-emerald-300 bg-emerald-900/40 border border-emerald-700/50 px-2.5 py-1 rounded-full">{totalManual} trains</span>
               <CopyBtn text={manualFullText} />
-              <button onClick={exportManualExcel} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-emerald-700/50 bg-[#071828] text-emerald-300 hover:bg-emerald-950/40 transition-colors">
+              <button type="button" onClick={exportManualExcel} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-emerald-700/50 bg-[#071828] text-emerald-300 hover:bg-emerald-950/40 transition-colors">
                 <Download className="w-3.5 h-3.5" /> Export
               </button>
-              <button onClick={() => { setManualSessions([]); setManualTrainId(""); setManualTimingMode("now"); setManualCustomTime(""); setManualError(""); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-800/50 text-red-400 bg-[#071828] hover:bg-red-950/40 transition-colors">
+              <button type="button" onClick={() => { setManualRecords([]); setManualTrainId(""); setManualTimingMode("now"); setManualCustomTime(""); setManualError(""); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-800/50 text-red-400 bg-[#071828] hover:bg-red-950/40 transition-colors">
                 <Trash2 className="w-3.5 h-3.5" /> Clear Manual
               </button>
             </div>
@@ -412,31 +419,41 @@ export default function TrainWashing() {
             {manualError && <p className="mt-2 text-xs font-semibold text-amber-300">⚠ {manualError}</p>}
           </div>
         </form>
-      </div>
 
-      {/* Manual Log Output */}
-      {manualSessions.length > 0 && manualSessions.map((session, si) => (
-        <div key={`manual-${si}`} className="bg-[#0b1f33] rounded-2xl border border-emerald-700/50 shadow-md overflow-hidden">
-          <div className="px-5 py-3 border-b border-emerald-800/50 flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0a2e1e 0%,#061f14 100%)" }}>
-            <div className="flex items-center gap-2.5">
-              <span className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-black text-white">{si + 1}</span>
-              <span className="text-xs font-black text-white tracking-widest uppercase">Manual Washing Log — {session.label.replace("Session ", "")}</span>
+        {manualRecords.length > 0 && (
+          <div className="border-t border-emerald-800/50">
+            <div className="px-5 py-3 flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0a2e1e 0%,#061f14 100%)" }}>
+              <div className="flex items-center gap-2.5">
+                <span className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-black text-white">1</span>
+                <span className="text-xs font-black text-white tracking-widest uppercase">Manual Washing Log</span>
+              </div>
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full text-emerald-300 bg-emerald-900/40 border border-emerald-700/50">{manualRecords.length} trains</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full text-emerald-300 bg-emerald-900/40 border border-emerald-700/50">{session.records.length} trains</span>
-              <CopyBtn text={sessionText(session)} />
+
+            <div className="px-5 py-4 space-y-2 bg-[#071828]">
+              {manualRecords.map((record) => (
+                <div key={record.id} className="flex items-center gap-2 rounded-lg border border-emerald-900/40 bg-[#0a1e2e] px-3 py-2">
+                  <p className="min-w-0 flex-1 font-mono text-xs text-[#c8d8ea] leading-relaxed">{buildLine(record)}</p>
+                  <CopyBtn text={buildLine(record)} compact />
+                  <button
+                    type="button"
+                    onClick={() => deleteManualRecord(record.id)}
+                    className="flex items-center gap-1.5 rounded-lg border border-red-800/50 bg-[#071828] px-2.5 py-1.5 text-xs font-semibold text-red-400 transition-colors hover:bg-red-950/40"
+                    title="Delete this manual wash log"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="px-5 py-3 border-t border-emerald-800/50" style={{ background: "linear-gradient(180deg,#0a2e1e 0%,#061f14 100%)" }}>
+              <p className="font-mono text-xs font-bold text-emerald-300">Total: {manualRecords.length} trains washed at the automatic wash plant.</p>
             </div>
           </div>
-          <div className="px-5 py-4 space-y-1">
-            {session.records.map((r, i) => (
-              <p key={i} className="font-mono text-xs text-[#c8d8ea] leading-relaxed">{buildLine(r)}</p>
-            ))}
-          </div>
-          <div className="px-5 py-3 border-t border-emerald-800/50" style={{ background: "linear-gradient(180deg,#0a2e1e 0%,#061f14 100%)" }}>
-            <p className="font-mono text-xs font-bold text-emerald-300">Total: {session.records.length} trains washed at the automatic wash plant.</p>
-          </div>
-        </div>
-      ))}
+        )}
+      </div>
 
       <div ref={bottomRef} />
     </div>
