@@ -112,8 +112,9 @@ function parseSheet(sheet) {
 }
 
 function groupSessions(records) {
-  const s1 = records.filter((r) => timeToMins(r.startTime) < SESSION_BREAK);
-  const s2 = records.filter((r) => timeToMins(r.startTime) >= SESSION_BREAK);
+  const sortedRecords = [...records].sort((a, b) => timeToMins(a.startTime) - timeToMins(b.startTime));
+  const s1 = sortedRecords.filter((r) => timeToMins(r.startTime) < SESSION_BREAK);
+  const s2 = sortedRecords.filter((r) => timeToMins(r.startTime) >= SESSION_BREAK);
   const sessions = [];
   if (s1.length > 0) sessions.push({ label: "Session 1 — 00:00 to 15:29", records: s1, headerStyle: { background: "linear-gradient(90deg,#0c2e4a,#082b46)" }, badgeCls: "text-sky-300 bg-sky-900/40 border border-sky-700/50" });
   if (s2.length > 0) sessions.push({ label: "Session 2 — 15:30 to 23:59", records: s2, headerStyle: { background: "linear-gradient(90deg,#0a2e1e,#061f14)" }, badgeCls: "text-emerald-300 bg-emerald-900/40 border border-emerald-700/50" });
@@ -136,8 +137,9 @@ function CopyBtn({ text }) {
 }
 
 export default function TrainWashing() {
-  const [sessions, setSessions] = useState([]);
-  const [fileName, setFileName] = useState(null);
+  const [excelSessions, setExcelSessions] = useState([]);
+  const [excelFileName, setExcelFileName] = useState(null);
+  const [manualSessions, setManualSessions] = useState([]);
   const [dragging, setDragging] = useState(false);
   const [manualTrainId, setManualTrainId] = useState("");
   const [manualTimingMode, setManualTimingMode] = useState("now");
@@ -149,16 +151,15 @@ export default function TrainWashing() {
 
   const processFile = useCallback((file) => {
     if (!file) return;
-    setFileName(file.name);
+    setExcelFileName(file.name);
     const reader = new FileReader();
     reader.onload = (e) => {
       const wb = XLSX.read(new Uint8Array(e.target.result), { type: "array", cellDates: false });
       const records = parseSheet(wb.Sheets[wb.SheetNames[0]]);
-      setSessions(groupSessions(records));
+      setExcelSessions(groupSessions(records));
     };
     reader.readAsArrayBuffer(file);
   }, []);
-
 
   const getManualStartTime = useCallback(() => {
     if (manualTimingMode === "custom" && manualCustomTime) {
@@ -184,8 +185,7 @@ export default function TrainWashing() {
       source: "manual",
     };
 
-    setSessions((prev) => groupSessions([...flattenSessions(prev), record]));
-    setFileName((prev) => prev || "Manual entry");
+    setManualSessions((prev) => groupSessions([...flattenSessions(prev), record]));
     setManualTrainId("");
     setManualError("");
   }, [getManualStartTime, manualTrainId]);
@@ -198,28 +198,41 @@ export default function TrainWashing() {
   }, []);
 
   useEffect(() => {
-    if (sessions.length > 0) setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-  }, [sessions]);
+    if (excelSessions.length > 0 || manualSessions.length > 0) {
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
+  }, [excelSessions, manualSessions]);
 
   const manualPreviewTrain = formatTrainId(manualTrainId) || "T31";
   const manualPreviewStartTime = getManualStartTime();
   const manualPreviewText = `${manualPreviewStartTime} hrs - ${manualPreviewTrain} started PARTIAL wash. Completed by ${addMins(manualPreviewStartTime, 4)} hrs.`;
   const manualIsNow = manualTimingMode !== "custom";
-  const fullText = sessions.map(sessionText).join("\n\n");
-  const totalAll = sessions.reduce((s, sess) => s + sess.records.length, 0);
+  const excelFullText = excelSessions.map(sessionText).join("\n\n");
+  const manualFullText = manualSessions.map(sessionText).join("\n\n");
+  const totalExcel = excelSessions.reduce((s, sess) => s + sess.records.length, 0);
+  const totalManual = manualSessions.reduce((s, sess) => s + sess.records.length, 0);
 
   const exportExcel = () => {
     const rows = [["Log"]];
-    sessions.forEach((s) => { s.records.forEach((r) => rows.push([buildLine(r)])); rows.push([`Total: ${s.records.length} trains washed at the automatic wash plant.`]); rows.push([""]); });
+    excelSessions.forEach((s) => { s.records.forEach((r) => rows.push([buildLine(r)])); rows.push([`Total: ${s.records.length} trains washed at the automatic wash plant.`]); rows.push([""]); });
     const ws = XLSX.utils.aoa_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Washing Log");
     XLSX.writeFile(wb, "washing_log.xlsx");
   };
 
+  const exportManualExcel = () => {
+    const rows = [["Log"]];
+    manualSessions.forEach((s) => { s.records.forEach((r) => rows.push([buildLine(r)])); rows.push([`Total: ${s.records.length} trains washed at the automatic wash plant.`]); rows.push([""]); });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Manual Washing Log");
+    XLSX.writeFile(wb, "manual_washing_log.xlsx");
+  };
+
   return (
     <div className="space-y-5">
-      {/* Upload Card */}
+      {/* Excel Upload Window */}
       <div className="bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-md overflow-hidden">
         <div className="px-5 py-4 border-b border-[#1a3a56] flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
           <div className="flex items-center gap-3">
@@ -228,23 +241,23 @@ export default function TrainWashing() {
             </div>
             <div>
               <h2 className="text-sm font-black text-white tracking-widest uppercase">Train Washing Log</h2>
-              <p className="text-[10px] text-[#4a8ab5]">Upload Excel — columns: Train Number, Last Wash</p>
+              <p className="text-[10px] text-[#4a8ab5]">Excel upload only — columns: Train Number, Last Wash</p>
             </div>
           </div>
-          {sessions.length > 0 && (
+          {excelSessions.length > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-emerald-300 bg-emerald-900/40 border border-emerald-700/50 px-2.5 py-1 rounded-full">{totalAll} trains</span>
-              <CopyBtn text={fullText} />
+              <span className="text-[10px] font-bold text-emerald-300 bg-emerald-900/40 border border-emerald-700/50 px-2.5 py-1 rounded-full">{totalExcel} trains</span>
+              <CopyBtn text={excelFullText} />
               <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#1e3a56] bg-[#0a1e2e] text-[#7eb8e0] hover:bg-[#0f2d4a] transition-colors">
                 <Download className="w-3.5 h-3.5" /> Export
               </button>
-              <button onClick={() => { setSessions([]); setFileName(null); setManualTrainId(""); setManualTimingMode("now"); setManualCustomTime(""); setManualError(""); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-800/50 text-red-400 bg-[#0a1e2e] hover:bg-red-950/40 transition-colors">
-                <Trash2 className="w-3.5 h-3.5" /> Clear
+              <button onClick={() => { setExcelSessions([]); setExcelFileName(null); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-800/50 text-red-400 bg-[#0a1e2e] hover:bg-red-950/40 transition-colors">
+                <Trash2 className="w-3.5 h-3.5" /> Clear Excel
               </button>
             </div>
           )}
         </div>
-        {/* Drop Zone */}
+
         <div className={`mx-5 my-4 rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-3 py-8 ${dragging ? "border-[#4f8ef7] bg-[#0f2d4a]" : "border-[#1e3a56] bg-[#071828] hover:border-[#2b4f6b] hover:bg-[#0a1e2e]"}`}
           onClick={() => fileInputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -253,99 +266,14 @@ export default function TrainWashing() {
           <div className="w-10 h-10 rounded-full bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center">
             <Upload className="w-5 h-5 text-[#4f8ef7]" />
           </div>
-          <p className="text-sm font-semibold text-[#7eb8e0]">{fileName ? `✓ ${fileName}` : "Drop Excel file here or click to upload"}</p>
+          <p className="text-sm font-semibold text-[#7eb8e0]">{excelFileName ? `✓ ${excelFileName}` : "Drop Excel file here or click to upload"}</p>
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => { processFile(e.target.files[0]); e.target.value = ""; }} />
         </div>
-
-        {/* Manual Partial Wash */}
-        <form onSubmit={addManualWash} className="mx-5 mb-5 rounded-xl border border-[#1e3a56] bg-[#071828] p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-            <div className="flex-1">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-[#4a8ab5] mb-1.5">Train ID</label>
-              <input
-                value={manualTrainId}
-                onChange={(e) => { setManualTrainId(e.target.value); setManualError(""); }}
-                placeholder="Example: 31 or T31"
-                className="w-full rounded-lg border border-[#1e3a56] bg-[#0a1e2e] px-3 py-2 text-sm font-semibold text-white placeholder:text-[#4a6074] outline-none focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/20"
-              />
-            </div>
-            <div className="flex-[1.25] min-w-[240px]">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-[#4a8ab5] mb-1.5">Start Washing Time</label>
-              <div className="flex h-10 w-full items-center overflow-hidden rounded-lg border border-[#1e3a56] bg-[#0a1e2e] shadow-[0_0_14px_rgba(79,142,247,0.10),inset_0_1px_0_rgba(255,255,255,0.04)] focus-within:border-[#4f8ef7]">
-                <div className="flex h-full w-9 shrink-0 items-center justify-center text-white">
-                  <Clock className="w-4 h-4 text-[#c8d8ea]" />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => { setManualTimingMode("now"); setManualError(""); }}
-                  className={`flex h-full shrink-0 items-center justify-center px-3 text-xs font-semibold transition-all ${manualIsNow ? "bg-[#1a3a5c] text-white" : "text-[#6fa8df] hover:text-white"}`}
-                >
-                  Now
-                </button>
-
-                <div className="h-5 w-px shrink-0 bg-[#244b6b]" />
-
-                <button
-                  type="button"
-                  onClick={() => { setManualTimingMode("custom"); setManualCustomTime((prev) => prev || clockText); setManualError(""); }}
-                  className={`flex h-full shrink-0 items-center justify-center px-3 text-xs font-semibold transition-all ${!manualIsNow ? "bg-[#1a3a5c] text-white" : "text-[#6fa8df] hover:text-white"}`}
-                >
-                  Custom
-                </button>
-
-                <div className="h-5 w-px shrink-0 bg-[#244b6b]" />
-
-                {manualIsNow ? (
-                  <button
-                    type="button"
-                    onClick={() => { setManualTimingMode("custom"); setManualCustomTime((prev) => prev || clockText); setManualError(""); }}
-                    className="flex h-full min-w-0 flex-1 items-center px-3 text-left text-xs font-semibold text-white transition-all hover:bg-[#0f2d4a]"
-                    title="Click to enter custom timing"
-                  >
-                    <span className="min-w-0 truncate">{clockText} hrs</span>
-                  </button>
-                ) : (
-                  <div className="flex h-full min-w-0 flex-1 items-center gap-1 px-3">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={5}
-                      value={manualCustomTime}
-                      onKeyDown={(e) => {
-                        const value = String(manualCustomTime || "");
-                        const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-                        if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                          e.preventDefault();
-                          setManualCustomTime(value.slice(0, -2));
-                        }
-                      }}
-                      onChange={(e) => { setManualCustomTime(cleanWashingCustomTimeInput(e.target.value)); setManualError(""); }}
-                      onBlur={(e) => setManualCustomTime(normalizeWashingCustomTimeInput(e.target.value))}
-                      placeholder="00:00"
-                      className="h-full min-w-[54px] flex-1 bg-transparent text-xs font-semibold text-white outline-none placeholder:text-[#31516b]"
-                    />
-                    <span className="shrink-0 text-xs font-semibold text-[#c8d8ea]">hrs</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <button
-              type="submit"
-              className="flex items-center justify-center gap-2 rounded-lg border border-[#2b4f6b] bg-[#0f2d4a] px-4 py-2 text-xs font-black uppercase tracking-wider text-[#c8d8ea] transition-colors hover:bg-[#12395f] hover:border-[#4f8ef7]"
-            >
-              <PlusCircle className="w-4 h-4 text-emerald-300" />
-              Add Manual Partial Wash
-            </button>
-          </div>
-          <p className="mt-2 font-mono text-[11px] text-[#7eb8e0]">Preview: {manualPreviewText}</p>
-          {manualError && <p className="mt-2 text-xs font-semibold text-amber-300">⚠ {manualError}</p>}
-        </form>
       </div>
 
-      {/* Log Output */}
-      {sessions.length > 0 && sessions.map((session, si) => (
-        <div key={si} className="bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-md overflow-hidden">
+      {/* Excel Log Output */}
+      {excelSessions.length > 0 && excelSessions.map((session, si) => (
+        <div key={`excel-${si}`} className="bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-md overflow-hidden">
           <div className="px-5 py-3 border-b border-[#1a3a56] flex items-center justify-between" style={session.headerStyle}>
             <div className="flex items-center gap-2.5">
               <span className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-black text-white">{si + 1}</span>
@@ -367,11 +295,149 @@ export default function TrainWashing() {
         </div>
       ))}
 
-      {sessions.length === 0 && fileName && (
+      {excelSessions.length === 0 && excelFileName && (
         <div className="bg-amber-950/40 border border-amber-700/60 rounded-xl px-5 py-4 text-sm text-amber-300 font-semibold">
           ⚠ No records found. Ensure the file has "Train Number" and "Last Wash" columns.
         </div>
       )}
+
+      {/* Manual Entry Window */}
+      <div className="bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-md overflow-hidden">
+        <div className="px-5 py-4 border-b border-[#1a3a56] flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0a2e1e 0%,#061f14 100%)" }}>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-[#0b2419] border border-emerald-700/50 flex items-center justify-center">
+              <PlusCircle className="w-4 h-4 text-emerald-300" />
+            </div>
+            <div>
+              <h2 className="text-sm font-black text-white tracking-widest uppercase">Manual Washing Entry</h2>
+              <p className="text-[10px] text-emerald-300/80">Add PARTIAL wash manually without mixing with Excel upload</p>
+            </div>
+          </div>
+          {manualSessions.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-emerald-300 bg-emerald-900/40 border border-emerald-700/50 px-2.5 py-1 rounded-full">{totalManual} trains</span>
+              <CopyBtn text={manualFullText} />
+              <button onClick={exportManualExcel} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-emerald-700/50 bg-[#071828] text-emerald-300 hover:bg-emerald-950/40 transition-colors">
+                <Download className="w-3.5 h-3.5" /> Export
+              </button>
+              <button onClick={() => { setManualSessions([]); setManualTrainId(""); setManualTimingMode("now"); setManualCustomTime(""); setManualError(""); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-800/50 text-red-400 bg-[#071828] hover:bg-red-950/40 transition-colors">
+                <Trash2 className="w-3.5 h-3.5" /> Clear Manual
+              </button>
+            </div>
+          )}
+        </div>
+
+        <form onSubmit={addManualWash} className="p-5">
+          <div className="rounded-xl border border-emerald-700/40 bg-[#071828] p-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+              <div className="flex-1">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-emerald-300/80 mb-1.5">Train ID</label>
+                <input
+                  value={manualTrainId}
+                  onChange={(e) => { setManualTrainId(e.target.value); setManualError(""); }}
+                  placeholder="Example: 31 or T31"
+                  className="w-full rounded-lg border border-[#1e3a56] bg-[#0a1e2e] px-3 py-2 text-sm font-semibold text-white placeholder:text-[#4a6074] outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
+                />
+              </div>
+              <div className="flex-[1.25] min-w-[240px]">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-emerald-300/80 mb-1.5">Start Washing Time</label>
+                <div className="flex h-10 w-full items-center overflow-hidden rounded-lg border border-[#1e3a56] bg-[#0a1e2e] shadow-[0_0_14px_rgba(16,185,129,0.10),inset_0_1px_0_rgba(255,255,255,0.04)] focus-within:border-emerald-400">
+                  <div className="flex h-full w-9 shrink-0 items-center justify-center text-white">
+                    <Clock className="w-4 h-4 text-[#c8d8ea]" />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => { setManualTimingMode("now"); setManualError(""); }}
+                    className={`flex h-full shrink-0 items-center justify-center px-3 text-xs font-semibold transition-all ${manualIsNow ? "bg-emerald-900/60 text-white" : "text-emerald-300 hover:text-white"}`}
+                  >
+                    Now
+                  </button>
+
+                  <div className="h-5 w-px shrink-0 bg-[#244b6b]" />
+
+                  <button
+                    type="button"
+                    onClick={() => { setManualTimingMode("custom"); setManualCustomTime((prev) => prev || clockText); setManualError(""); }}
+                    className={`flex h-full shrink-0 items-center justify-center px-3 text-xs font-semibold transition-all ${!manualIsNow ? "bg-emerald-900/60 text-white" : "text-emerald-300 hover:text-white"}`}
+                  >
+                    Custom
+                  </button>
+
+                  <div className="h-5 w-px shrink-0 bg-[#244b6b]" />
+
+                  {manualIsNow ? (
+                    <button
+                      type="button"
+                      onClick={() => { setManualTimingMode("custom"); setManualCustomTime((prev) => prev || clockText); setManualError(""); }}
+                      className="flex h-full min-w-0 flex-1 items-center px-3 text-left text-xs font-semibold text-white transition-all hover:bg-[#0f2d4a]"
+                      title="Click to enter custom timing"
+                    >
+                      <span className="min-w-0 truncate">{clockText} hrs</span>
+                    </button>
+                  ) : (
+                    <div className="flex h-full min-w-0 flex-1 items-center gap-1 px-3">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={5}
+                        value={manualCustomTime}
+                        onKeyDown={(e) => {
+                          const value = String(manualCustomTime || "");
+                          const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                          if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                            e.preventDefault();
+                            setManualCustomTime(value.slice(0, -2));
+                          }
+                        }}
+                        onChange={(e) => { setManualCustomTime(cleanWashingCustomTimeInput(e.target.value)); setManualError(""); }}
+                        onBlur={(e) => setManualCustomTime(normalizeWashingCustomTimeInput(e.target.value))}
+                        placeholder="00:00"
+                        className="h-full min-w-[54px] flex-1 bg-transparent text-xs font-semibold text-white outline-none placeholder:text-[#31516b]"
+                      />
+                      <span className="shrink-0 text-xs font-semibold text-[#c8d8ea]">hrs</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="flex items-center justify-center gap-2 rounded-lg border border-emerald-700/50 bg-emerald-950/40 px-4 py-2 text-xs font-black uppercase tracking-wider text-emerald-200 transition-colors hover:bg-emerald-900/50 hover:border-emerald-400"
+              >
+                <PlusCircle className="w-4 h-4 text-emerald-300" />
+                Add Manual Partial Wash
+              </button>
+            </div>
+            <p className="mt-2 font-mono text-[11px] text-emerald-300/90">Preview: {manualPreviewText}</p>
+            {manualError && <p className="mt-2 text-xs font-semibold text-amber-300">⚠ {manualError}</p>}
+          </div>
+        </form>
+      </div>
+
+      {/* Manual Log Output */}
+      {manualSessions.length > 0 && manualSessions.map((session, si) => (
+        <div key={`manual-${si}`} className="bg-[#0b1f33] rounded-2xl border border-emerald-700/50 shadow-md overflow-hidden">
+          <div className="px-5 py-3 border-b border-emerald-800/50 flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0a2e1e 0%,#061f14 100%)" }}>
+            <div className="flex items-center gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-black text-white">{si + 1}</span>
+              <span className="text-xs font-black text-white tracking-widest uppercase">Manual Washing Log — {session.label.replace("Session ", "")}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full text-emerald-300 bg-emerald-900/40 border border-emerald-700/50">{session.records.length} trains</span>
+              <CopyBtn text={sessionText(session)} />
+            </div>
+          </div>
+          <div className="px-5 py-4 space-y-1">
+            {session.records.map((r, i) => (
+              <p key={i} className="font-mono text-xs text-[#c8d8ea] leading-relaxed">{buildLine(r)}</p>
+            ))}
+          </div>
+          <div className="px-5 py-3 border-t border-emerald-800/50" style={{ background: "linear-gradient(180deg,#0a2e1e 0%,#061f14 100%)" }}>
+            <p className="font-mono text-xs font-bold text-emerald-300">Total: {session.records.length} trains washed at the automatic wash plant.</p>
+          </div>
+        </div>
+      ))}
+
       <div ref={bottomRef} />
     </div>
   );
