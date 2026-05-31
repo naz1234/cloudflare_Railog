@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import * as XLSX from "xlsx";
-import { Upload, Copy, ClipboardCheck, Trash2, Download, Droplets, PlusCircle } from "lucide-react";
+import { Upload, Copy, ClipboardCheck, Trash2, Download, Droplets, PlusCircle, Clock } from "lucide-react";
 
 const SESSION_BREAK = 15 * 60 + 30;
 
@@ -15,6 +15,48 @@ function addMins(hhmm, delta) {
   const h = Math.floor(total / 60) % 24;
   const m = total % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function getCurrentHHMM() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}
+
+function cleanWashingCustomTimeInput(value) {
+  const raw = String(value || "").replace(/[^\d:]/g, "").slice(0, 5);
+  if (raw.includes(":")) {
+    const [hour = "", minute = ""] = raw.split(":");
+    return `${hour.slice(0, 2)}:${minute.slice(0, 2)}`;
+  }
+
+  const digits = raw.replace(/\D/g, "").slice(0, 4);
+  if (digits.length <= 1) return digits;
+  if (digits.length === 2) return `${digits}:`;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
+function normalizeWashingCustomTimeInput(value) {
+  const raw = String(value || "").replace(/[^\d:]/g, "").slice(0, 5);
+  if (!raw) return "";
+
+  let hourText = "";
+  let minuteText = "";
+
+  if (raw.includes(":")) {
+    const [hour = "", minute = ""] = raw.split(":");
+    hourText = hour.slice(0, 2);
+    minuteText = minute.slice(0, 2) || "00";
+  } else {
+    const digits = raw.replace(/\D/g, "").slice(0, 4);
+    if (!digits) return "";
+    hourText = digits.length <= 2 ? digits : digits.slice(0, 2);
+    minuteText = digits.length <= 2 ? "00" : digits.slice(2);
+  }
+
+  const hour = Math.min(Math.max(Number(hourText || 0), 0), 23);
+  const minute = Math.min(Math.max(Number(minuteText || 0), 0), 59);
+
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
 function extractTime(raw) {
@@ -98,7 +140,9 @@ export default function TrainWashing() {
   const [fileName, setFileName] = useState(null);
   const [dragging, setDragging] = useState(false);
   const [manualTrainId, setManualTrainId] = useState("");
-  const [manualStartTime, setManualStartTime] = useState("");
+  const [manualTimingMode, setManualTimingMode] = useState("now");
+  const [manualCustomTime, setManualCustomTime] = useState("");
+  const [clockText, setClockText] = useState(() => getCurrentHHMM());
   const [manualError, setManualError] = useState("");
   const fileInputRef = useRef(null);
   const bottomRef = useRef(null);
@@ -116,13 +160,20 @@ export default function TrainWashing() {
   }, []);
 
 
+  const getManualStartTime = useCallback(() => {
+    if (manualTimingMode === "custom" && manualCustomTime) {
+      return normalizeWashingCustomTimeInput(manualCustomTime);
+    }
+    return clockText;
+  }, [clockText, manualCustomTime, manualTimingMode]);
+
   const addManualWash = useCallback((e) => {
     e?.preventDefault();
     const trainId = formatTrainId(manualTrainId);
-    const startTime = extractTime(manualStartTime);
+    const startTime = getManualStartTime();
 
     if (!trainId || !startTime) {
-      setManualError("Please enter Train ID and Start Washing Time.");
+      setManualError("Please enter Train ID and select washing timing.");
       return;
     }
 
@@ -136,14 +187,24 @@ export default function TrainWashing() {
     setSessions((prev) => groupSessions([...flattenSessions(prev), record]));
     setFileName((prev) => prev || "Manual entry");
     setManualTrainId("");
-    setManualStartTime("");
     setManualError("");
-  }, [manualTrainId, manualStartTime]);
+  }, [getManualStartTime, manualTrainId]);
+
+  useEffect(() => {
+    const tick = () => setClockText(getCurrentHHMM());
+    tick();
+    const interval = setInterval(tick, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (sessions.length > 0) setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
   }, [sessions]);
 
+  const manualPreviewTrain = formatTrainId(manualTrainId) || "T31";
+  const manualPreviewStartTime = getManualStartTime();
+  const manualPreviewText = `${manualPreviewStartTime} hrs - ${manualPreviewTrain} started PARTIAL wash. Completed by ${addMins(manualPreviewStartTime, 4)} hrs.`;
+  const manualIsNow = manualTimingMode !== "custom";
   const fullText = sessions.map(sessionText).join("\n\n");
   const totalAll = sessions.reduce((s, sess) => s + sess.records.length, 0);
 
@@ -177,7 +238,7 @@ export default function TrainWashing() {
               <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#1e3a56] bg-[#0a1e2e] text-[#7eb8e0] hover:bg-[#0f2d4a] transition-colors">
                 <Download className="w-3.5 h-3.5" /> Export
               </button>
-              <button onClick={() => { setSessions([]); setFileName(null); setManualTrainId(""); setManualStartTime(""); setManualError(""); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-800/50 text-red-400 bg-[#0a1e2e] hover:bg-red-950/40 transition-colors">
+              <button onClick={() => { setSessions([]); setFileName(null); setManualTrainId(""); setManualTimingMode("now"); setManualCustomTime(""); setManualError(""); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-800/50 text-red-400 bg-[#0a1e2e] hover:bg-red-950/40 transition-colors">
                 <Trash2 className="w-3.5 h-3.5" /> Clear
               </button>
             </div>
@@ -208,14 +269,66 @@ export default function TrainWashing() {
                 className="w-full rounded-lg border border-[#1e3a56] bg-[#0a1e2e] px-3 py-2 text-sm font-semibold text-white placeholder:text-[#4a6074] outline-none focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/20"
               />
             </div>
-            <div className="flex-1">
+            <div className="flex-[1.25] min-w-[240px]">
               <label className="block text-[10px] font-black uppercase tracking-widest text-[#4a8ab5] mb-1.5">Start Washing Time</label>
-              <input
-                type="time"
-                value={manualStartTime}
-                onChange={(e) => { setManualStartTime(e.target.value); setManualError(""); }}
-                className="w-full rounded-lg border border-[#1e3a56] bg-[#0a1e2e] px-3 py-2 text-sm font-semibold text-white outline-none focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/20"
-              />
+              <div className="flex h-10 w-full items-center overflow-hidden rounded-lg border border-[#1e3a56] bg-[#0a1e2e] shadow-[0_0_14px_rgba(79,142,247,0.10),inset_0_1px_0_rgba(255,255,255,0.04)] focus-within:border-[#4f8ef7]">
+                <div className="flex h-full w-9 shrink-0 items-center justify-center text-white">
+                  <Clock className="w-4 h-4 text-[#c8d8ea]" />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => { setManualTimingMode("now"); setManualError(""); }}
+                  className={`flex h-full shrink-0 items-center justify-center px-3 text-xs font-semibold transition-all ${manualIsNow ? "bg-[#1a3a5c] text-white" : "text-[#6fa8df] hover:text-white"}`}
+                >
+                  Now
+                </button>
+
+                <div className="h-5 w-px shrink-0 bg-[#244b6b]" />
+
+                <button
+                  type="button"
+                  onClick={() => { setManualTimingMode("custom"); setManualCustomTime((prev) => prev || clockText); setManualError(""); }}
+                  className={`flex h-full shrink-0 items-center justify-center px-3 text-xs font-semibold transition-all ${!manualIsNow ? "bg-[#1a3a5c] text-white" : "text-[#6fa8df] hover:text-white"}`}
+                >
+                  Custom
+                </button>
+
+                <div className="h-5 w-px shrink-0 bg-[#244b6b]" />
+
+                {manualIsNow ? (
+                  <button
+                    type="button"
+                    onClick={() => { setManualTimingMode("custom"); setManualCustomTime((prev) => prev || clockText); setManualError(""); }}
+                    className="flex h-full min-w-0 flex-1 items-center px-3 text-left text-xs font-semibold text-white transition-all hover:bg-[#0f2d4a]"
+                    title="Click to enter custom timing"
+                  >
+                    <span className="min-w-0 truncate">{clockText} hrs</span>
+                  </button>
+                ) : (
+                  <div className="flex h-full min-w-0 flex-1 items-center gap-1 px-3">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      value={manualCustomTime}
+                      onKeyDown={(e) => {
+                        const value = String(manualCustomTime || "");
+                        const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                        if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                          e.preventDefault();
+                          setManualCustomTime(value.slice(0, -2));
+                        }
+                      }}
+                      onChange={(e) => { setManualCustomTime(cleanWashingCustomTimeInput(e.target.value)); setManualError(""); }}
+                      onBlur={(e) => setManualCustomTime(normalizeWashingCustomTimeInput(e.target.value))}
+                      placeholder="00:00"
+                      className="h-full min-w-[54px] flex-1 bg-transparent text-xs font-semibold text-white outline-none placeholder:text-[#31516b]"
+                    />
+                    <span className="shrink-0 text-xs font-semibold text-[#c8d8ea]">hrs</span>
+                  </div>
+                )}
+              </div>
             </div>
             <button
               type="submit"
@@ -225,7 +338,7 @@ export default function TrainWashing() {
               Add Manual Partial Wash
             </button>
           </div>
-          <p className="mt-2 font-mono text-[11px] text-[#7eb8e0]">Output: 07:30 hrs - T31 started PARTIAL wash. Completed by 07:34 hrs.</p>
+          <p className="mt-2 font-mono text-[11px] text-[#7eb8e0]">Preview: {manualPreviewText}</p>
           {manualError && <p className="mt-2 text-xs font-semibold text-amber-300">⚠ {manualError}</p>}
         </form>
       </div>
