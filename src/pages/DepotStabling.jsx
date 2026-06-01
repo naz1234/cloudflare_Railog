@@ -10403,15 +10403,11 @@ function buildLatestPSTExcelMap(entries = []) {
   return latestByTrain;
 }
 
-function buildPSTExportRows(logLines = [], completedBy = "", depotFilter = "") {
+function buildPSTExportRows(logLines = [], completedBy = "") {
   const todayText = formatExcelExportDate(new Date());
   const safeLogLines = Array.isArray(logLines) ? logLines : [];
-  const normalizedDepot = depotFilter === "west" || depotFilter === "east" ? depotFilter : "";
-  const depotLabel = normalizedDepot === "west" ? "West Depot" : normalizedDepot === "east" ? "East Depot" : "";
-
-  const matchesDepot = (entry) => !normalizedDepot || getPSTDepotFromEntry(entry) === normalizedDepot;
-  const pstLogs = safeLogLines.filter((entry) => entry?.type === "PST" && matchesDepot(entry));
-  const prepLogs = safeLogLines.filter((entry) => entry?.type === "Prep" && matchesDepot(entry));
+  const pstLogs = safeLogLines.filter((entry) => entry?.type === "PST");
+  const prepLogs = safeLogLines.filter((entry) => entry?.type === "Prep");
 
   const latestPSTByTrain = buildLatestPSTExcelMap(pstLogs);
   const latestPrepByTrain = buildLatestPSTExcelMap(prepLogs);
@@ -10445,14 +10441,14 @@ function buildPSTExportRows(logLines = [], completedBy = "", depotFilter = "") {
     ]);
   }
 
-  const totalText = normalizedDepot
-    ? `Total PST completed PASS is ${completedPSTEntries.length}. (${depotLabel})`
-    : `Total PST completed PASS is ${completedPSTEntries.length}. (West Depot ${westCount} and East Depot ${eastCount})`;
-
-  rows.push([totalText, "", "", "", "", "", "", "", "", "", ""]);
+  rows.push([
+    `Total PST completed PASS is ${completedPSTEntries.length}. (West Depot ${westCount} and East Depot ${eastCount})`,
+    "", "", "", "", "", "", "", "", "", "",
+  ]);
 
   return rows;
 }
+
 
 function buildPSTFormRows() {
   const rows = Array.from({ length: 50 }, () => ["", "", "", "", "", ""]);
@@ -10477,29 +10473,25 @@ function buildPSTFormRows() {
 }
 
 function buildPSTExcelWorkbook(logLines = [], completedBy = "") {
-  const westRl3Rows = buildPSTExportRows(logLines, completedBy, "west");
-  const eastRl3Rows = buildPSTExportRows(logLines, completedBy, "east");
+  const rl3Rows = buildPSTExportRows(logLines, completedBy);
   const formRows = buildPSTFormRows();
 
-  const buildRL3RowStyles = (rows) => rows.map((_, index) => {
+  const rl3RowStyles = rl3Rows.map((_, index) => {
     if (index === 0) return 1;      // black header
     if (index === 1) return 2;      // orange separator
-    if (index === rows.length - 1) return 4; // total row
+    if (index === rl3Rows.length - 1) return 4; // total row
     return 3;                       // body
   });
   const formRowStyles = formRows.map((_, index) => index === 1 ? 1 : 3);
 
-  const buildRL3WorksheetXml = (rows) => buildExcelWorksheetXml({
-    rows,
-    rowStyles: buildRL3RowStyles(rows),
-    rowHeights: rows.map((_, index) => index === 0 ? 16 : 15),
+  const rl3Xml = buildExcelWorksheetXml({
+    rows: rl3Rows,
+    rowStyles: rl3RowStyles,
+    rowHeights: rl3Rows.map((_, index) => index === 0 ? 16 : 15),
     colWidths: [13, 16, 18.28515625, 14, 14, 22, 21.42578125, 24.42578125, 20.85546875, 38, 38],
     dimension: "A1:K50",
     merges: ["A50:K50"],
   });
-
-  const westRl3Xml = buildRL3WorksheetXml(westRl3Rows);
-  const eastRl3Xml = buildRL3WorksheetXml(eastRl3Rows);
 
   const formXml = buildExcelWorksheetXml({
     rows: formRows,
@@ -10512,9 +10504,8 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "") {
   const workbookXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <sheets>
-    <sheet name="WEST DEPOT" sheetId="1" r:id="rId1"/>
-    <sheet name="EAST DEPOT" sheetId="2" r:id="rId2"/>
-    <sheet name="FORM" sheetId="3" r:id="rId3"/>
+    <sheet name="RL3" sheetId="1" r:id="rId1"/>
+    <sheet name="FORM" sheetId="2" r:id="rId2"/>
   </sheets>
 </workbook>`;
 
@@ -10522,8 +10513,7 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "") {
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
-  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/>
-  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 </Relationships>`;
 
   const packageRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -10538,7 +10528,6 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "") {
   <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
   <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
   <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
-  <Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
   <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
 </Types>`;
 
@@ -10583,9 +10572,8 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "") {
     { name: "_rels/.rels", data: packageRelsXml },
     { name: "xl/workbook.xml", data: workbookXml },
     { name: "xl/_rels/workbook.xml.rels", data: workbookRelsXml },
-    { name: "xl/worksheets/sheet1.xml", data: westRl3Xml },
-    { name: "xl/worksheets/sheet2.xml", data: eastRl3Xml },
-    { name: "xl/worksheets/sheet3.xml", data: formXml },
+    { name: "xl/worksheets/sheet1.xml", data: rl3Xml },
+    { name: "xl/worksheets/sheet2.xml", data: formXml },
     { name: "xl/styles.xml", data: stylesXml },
   ]);
 }
@@ -10596,7 +10584,7 @@ function downloadPSTExcelExport(logLines = [], completedBy = "") {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
   const dateStamp = new Date().toISOString().slice(0, 10);
-  downloadBlob(blob, `Line-3-Passenger-Service-Test-West-East-${dateStamp}.xlsx`);
+  downloadBlob(blob, `Line-3-Passenger-Service-Test-${dateStamp}.xlsx`);
 }
 
 function sectionToPrintableSvg({
