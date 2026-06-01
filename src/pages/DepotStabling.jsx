@@ -5394,7 +5394,7 @@ function buildPSTExportLinesFromVisibleState({
 
 function PSTTabContent
 ({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug }) {
-  const [downloadingExcel, setDownloadingExcel] = useState(false);
+  const [downloadingExcelDepot, setDownloadingExcelDepot] = useState("");
   const safeCompletedByNames = completedByNames || { west: "", east: "" };
   const sortedLogLines = sortPSTLogLinesByTime(logLines);
   const exportLogLines = buildPSTExportLinesFromVisibleState({
@@ -5409,40 +5409,36 @@ function PSTTabContent
     onCompletedByChange?.(depot, value);
   };
 
-  const handleDownloadExcel = () => {
-    if (downloadingExcel) return;
+  const handleDownloadExcel = (depot) => {
+    if (downloadingExcelDepot) return;
 
-    const completedEntries = (exportLogLines || []).filter((entry) => entry?.type === "PST" || entry?.type === "Prep");
+    const normalizedDepot = depot === "west" || depot === "east" ? depot : "";
+    const depotLabel = normalizedDepot === "west" ? "West Depot" : "East Depot";
+    const completedEntries = (exportLogLines || [])
+      .filter((entry) => (entry?.type === "PST" || entry?.type === "Prep") && getPSTDepotFromEntry(entry) === normalizedDepot);
     const pstEntries = completedEntries.filter((entry) => entry?.type === "PST");
+
     if (completedEntries.length === 0) {
-      alert("No completed PST or Train Prep log to export yet.");
+      alert(`No completed PST or Train Prep log to export for ${depotLabel} yet.`);
       return;
     }
 
     const completedBy = normalizeCompletedByNames(safeCompletedByNames);
-    const hasWestPST = pstEntries.some((entry) => getPSTDepotFromEntry(entry) === "west");
-    const hasEastPST = pstEntries.some((entry) => getPSTDepotFromEntry(entry) === "east");
-
-    if (hasWestPST && !completedBy.west) {
-      alert("Please enter West Depot completed by name before downloading the Excel file.");
-      return;
-    }
-
-    if (hasEastPST && !completedBy.east) {
-      alert("Please enter East Depot completed by name before downloading the Excel file.");
+    if (pstEntries.length > 0 && !completedBy[normalizedDepot]) {
+      alert(`Please enter ${depotLabel} completed by name before downloading the Excel file.`);
       return;
     }
 
     try { localStorage.setItem("pstExcelCompletedByNames", JSON.stringify(completedBy)); } catch {}
-    setDownloadingExcel(true);
+    setDownloadingExcelDepot(normalizedDepot);
 
     try {
-      downloadPSTExcelExport(exportLogLines, completedBy);
+      downloadPSTExcelExport(exportLogLines, completedBy, normalizedDepot);
     } catch (error) {
       console.error("PST Excel export failed:", error);
       alert("Unable to create Excel export. Please try again.");
     } finally {
-      setDownloadingExcel(false);
+      setDownloadingExcelDepot("");
     }
   };
 
@@ -5560,25 +5556,45 @@ function PSTTabContent
             </div>
           </div>
 
-          <div className="lg:border-l lg:border-[#2b4f6b]/70 lg:pl-6">
+          <div className="flex flex-col gap-2 lg:border-l lg:border-[#2b4f6b]/70 lg:pl-6">
             <button
-              onClick={handleDownloadExcel}
-              disabled={downloadingExcel}
-              className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+              onClick={() => handleDownloadExcel("west")}
+              disabled={Boolean(downloadingExcelDepot)}
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
               style={{
-                background: "linear-gradient(135deg, rgba(34,197,94,0.16), rgba(6,78,59,0.22))",
-                borderColor: "rgba(34,197,94,0.62)",
-                color: "#86efac",
-                boxShadow: "0 0 18px rgba(34,197,94,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
+                background: "linear-gradient(135deg, rgba(37,99,235,0.18), rgba(30,64,175,0.22))",
+                borderColor: "rgba(88,166,255,0.62)",
+                color: "#bfdbfe",
+                boxShadow: "0 0 18px rgba(59,130,246,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
               }}
-              title="Download RL3 Passenger Service Test Excel"
+              title="Download West Depot only Excel"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              {downloadingExcel ? "Preparing Excel..." : "Download Excel"}
+              {downloadingExcelDepot === "west" ? "Preparing..." : "West Excel"}
+            </button>
+
+            <button
+              onClick={() => handleDownloadExcel("east")}
+              disabled={Boolean(downloadingExcelDepot)}
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
+              style={{
+                background: "linear-gradient(135deg, rgba(147,51,234,0.18), rgba(88,28,135,0.22))",
+                borderColor: "rgba(192,132,252,0.62)",
+                color: "#e9d5ff",
+                boxShadow: "0 0 18px rgba(168,85,247,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
+              }}
+              title="Download East Depot only Excel"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              {downloadingExcelDepot === "east" ? "Preparing..." : "East Excel"}
             </button>
           </div>
         </div>
@@ -10403,11 +10419,15 @@ function buildLatestPSTExcelMap(entries = []) {
   return latestByTrain;
 }
 
-function buildPSTExportRows(logLines = [], completedBy = "") {
+function buildPSTExportRows(logLines = [], completedBy = "", depotFilter = "") {
   const todayText = formatExcelExportDate(new Date());
   const safeLogLines = Array.isArray(logLines) ? logLines : [];
-  const pstLogs = safeLogLines.filter((entry) => entry?.type === "PST");
-  const prepLogs = safeLogLines.filter((entry) => entry?.type === "Prep");
+  const normalizedDepot = depotFilter === "west" || depotFilter === "east" ? depotFilter : "";
+  const depotLabel = normalizedDepot === "west" ? "West Depot" : normalizedDepot === "east" ? "East Depot" : "";
+
+  const matchesDepot = (entry) => !normalizedDepot || getPSTDepotFromEntry(entry) === normalizedDepot;
+  const pstLogs = safeLogLines.filter((entry) => entry?.type === "PST" && matchesDepot(entry));
+  const prepLogs = safeLogLines.filter((entry) => entry?.type === "Prep" && matchesDepot(entry));
 
   const latestPSTByTrain = buildLatestPSTExcelMap(pstLogs);
   const latestPrepByTrain = buildLatestPSTExcelMap(prepLogs);
@@ -10441,14 +10461,14 @@ function buildPSTExportRows(logLines = [], completedBy = "") {
     ]);
   }
 
-  rows.push([
-    `Total PST completed PASS is ${completedPSTEntries.length}. (West Depot ${westCount} and East Depot ${eastCount})`,
-    "", "", "", "", "", "", "", "", "", "",
-  ]);
+  const totalText = normalizedDepot
+    ? `Total PST completed PASS is ${completedPSTEntries.length}. (${depotLabel})`
+    : `Total PST completed PASS is ${completedPSTEntries.length}. (West Depot ${westCount} and East Depot ${eastCount})`;
+
+  rows.push([totalText, "", "", "", "", "", "", "", "", "", ""]);
 
   return rows;
 }
-
 
 function buildPSTFormRows() {
   const rows = Array.from({ length: 50 }, () => ["", "", "", "", "", ""]);
@@ -10472,22 +10492,24 @@ function buildPSTFormRows() {
   return rows;
 }
 
-function buildPSTExcelWorkbook(logLines = [], completedBy = "") {
-  const rl3Rows = buildPSTExportRows(logLines, completedBy);
+function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = "") {
+  const normalizedDepot = depotFilter === "west" || depotFilter === "east" ? depotFilter : "";
+  const westRl3Rows = buildPSTExportRows(logLines, completedBy, "west");
+  const eastRl3Rows = buildPSTExportRows(logLines, completedBy, "east");
   const formRows = buildPSTFormRows();
 
-  const rl3RowStyles = rl3Rows.map((_, index) => {
+  const buildRL3RowStyles = (rows) => rows.map((_, index) => {
     if (index === 0) return 1;      // black header
     if (index === 1) return 2;      // orange separator
-    if (index === rl3Rows.length - 1) return 4; // total row
+    if (index === rows.length - 1) return 4; // total row
     return 3;                       // body
   });
   const formRowStyles = formRows.map((_, index) => index === 1 ? 1 : 3);
 
-  const rl3Xml = buildExcelWorksheetXml({
-    rows: rl3Rows,
-    rowStyles: rl3RowStyles,
-    rowHeights: rl3Rows.map((_, index) => index === 0 ? 16 : 15),
+  const buildRL3WorksheetXml = (rows) => buildExcelWorksheetXml({
+    rows,
+    rowStyles: buildRL3RowStyles(rows),
+    rowHeights: rows.map((_, index) => index === 0 ? 16 : 15),
     colWidths: [13, 16, 18.28515625, 14, 14, 22, 21.42578125, 24.42578125, 20.85546875, 38, 38],
     dimension: "A1:K50",
     merges: ["A50:K50"],
@@ -10501,35 +10523,10 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "") {
     dimension: "A1:F50",
   });
 
-  const workbookXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-  <sheets>
-    <sheet name="RL3" sheetId="1" r:id="rId1"/>
-    <sheet name="FORM" sheetId="2" r:id="rId2"/>
-  </sheets>
-</workbook>`;
-
-  const workbookRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
-  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
-  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
-</Relationships>`;
-
   const packageRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
 </Relationships>`;
-
-  const contentTypesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
-  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
-  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
-  <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
-  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
-</Types>`;
 
   const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
@@ -10567,24 +10564,99 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "") {
   <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
 
+  if (normalizedDepot) {
+    const depotSheetName = normalizedDepot === "west" ? "WEST DEPOT" : "EAST DEPOT";
+    const depotRows = normalizedDepot === "west" ? westRl3Rows : eastRl3Rows;
+    const depotRl3Xml = buildRL3WorksheetXml(depotRows);
+
+    const workbookXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets>
+    <sheet name="${depotSheetName}" sheetId="1" r:id="rId1"/>
+    <sheet name="FORM" sheetId="2" r:id="rId2"/>
+  </sheets>
+</workbook>`;
+
+    const workbookRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+
+    const contentTypesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>`;
+
+    return buildStoredZip([
+      { name: "[Content_Types].xml", data: contentTypesXml },
+      { name: "_rels/.rels", data: packageRelsXml },
+      { name: "xl/workbook.xml", data: workbookXml },
+      { name: "xl/_rels/workbook.xml.rels", data: workbookRelsXml },
+      { name: "xl/worksheets/sheet1.xml", data: depotRl3Xml },
+      { name: "xl/worksheets/sheet2.xml", data: formXml },
+      { name: "xl/styles.xml", data: stylesXml },
+    ]);
+  }
+
+  const westRl3Xml = buildRL3WorksheetXml(westRl3Rows);
+  const eastRl3Xml = buildRL3WorksheetXml(eastRl3Rows);
+
+  const workbookXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets>
+    <sheet name="WEST DEPOT" sheetId="1" r:id="rId1"/>
+    <sheet name="EAST DEPOT" sheetId="2" r:id="rId2"/>
+    <sheet name="FORM" sheetId="3" r:id="rId3"/>
+  </sheets>
+</workbook>`;
+
+  const workbookRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/>
+  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+
+  const contentTypesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>`;
+
   return buildStoredZip([
     { name: "[Content_Types].xml", data: contentTypesXml },
     { name: "_rels/.rels", data: packageRelsXml },
     { name: "xl/workbook.xml", data: workbookXml },
     { name: "xl/_rels/workbook.xml.rels", data: workbookRelsXml },
-    { name: "xl/worksheets/sheet1.xml", data: rl3Xml },
-    { name: "xl/worksheets/sheet2.xml", data: formXml },
+    { name: "xl/worksheets/sheet1.xml", data: westRl3Xml },
+    { name: "xl/worksheets/sheet2.xml", data: eastRl3Xml },
+    { name: "xl/worksheets/sheet3.xml", data: formXml },
     { name: "xl/styles.xml", data: stylesXml },
   ]);
 }
 
-function downloadPSTExcelExport(logLines = [], completedBy = "") {
-  const xlsxBytes = buildPSTExcelWorkbook(logLines, completedBy);
+function downloadPSTExcelExport(logLines = [], completedBy = "", depotFilter = "") {
+  const normalizedDepot = depotFilter === "west" || depotFilter === "east" ? depotFilter : "";
+  const xlsxBytes = buildPSTExcelWorkbook(logLines, completedBy, normalizedDepot);
   const blob = new Blob([xlsxBytes], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
   const dateStamp = new Date().toISOString().slice(0, 10);
-  downloadBlob(blob, `Line-3-Passenger-Service-Test-${dateStamp}.xlsx`);
+  const depotFileLabel = normalizedDepot === "west" ? "West-Depot" : normalizedDepot === "east" ? "East-Depot" : "West-East";
+  downloadBlob(blob, `Line-3-Passenger-Service-Test-${depotFileLabel}-${dateStamp}.xlsx`);
 }
 
 function sectionToPrintableSvg({
