@@ -8796,7 +8796,10 @@ function requestedDocxRow(cells, { header = false } = {}) {
       </w:tr>`;
 }
 
-function buildRequestedTrainsDocx({ removalRows = [], swappingRows = [] } = {}) {
+function buildRequestedTrainsDocx({ removalRows = [], swappingRows = [], noteType = "dc" } = {}) {
+  const normalizedNoteType = (noteType || "dc").toString().toLowerCase();
+  const isTcNote = normalizedNoteType === "tc";
+
   const buildTableXml = (rows = []) => {
     const exportRows = getRequestedTrainDisplayRows(rows, 3);
     const tableRows = [
@@ -8871,6 +8874,16 @@ function buildRequestedTrainsDocx({ removalRows = [], swappingRows = [] } = {}) 
     </w:p>`;
   };
 
+  const buildDcNoteBodyXml = () => `
+    ${buildTitleXml("Train requested and will be removed to West Depot.", 0)}
+    ${buildTableXml(removalRows)}
+    ${buildTitleXml("Train requested and required for swapping.", 180, true)}
+    ${buildTableXml(swappingRows)}`;
+
+  const buildTcNoteBodyXml = () => `
+    ${buildTitleXml("Train requested and required for swapping.", 0, true)}
+    ${buildTableXml(swappingRows)}`;
+
   const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
@@ -8886,11 +8899,7 @@ function buildRequestedTrainsDocx({ removalRows = [], swappingRows = [] } = {}) 
   const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:body>
-    ${buildTitleXml("West Depot Train Request Overview")}
-    ${buildTitleXml("Train requested and will be removed to West Depot.", 80)}
-    ${buildTableXml(removalRows)}
-    ${buildTitleXml("Train requested and required for swapping.", 180, true)}
-    ${buildTableXml(swappingRows)}
+    ${isTcNote ? buildTcNoteBodyXml() : buildDcNoteBodyXml()}
     <w:sectPr>
       <w:pgSz w:w="11906" w:h="16838"/>
       <w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="0" w:footer="0" w:gutter="0"/>
@@ -8905,13 +8914,15 @@ function buildRequestedTrainsDocx({ removalRows = [], swappingRows = [] } = {}) 
   ]);
 }
 
-function downloadRequestedTrainsDocx({ removalRows = [], swappingRows = [] } = {}) {
-  const docxBytes = buildRequestedTrainsDocx({ removalRows, swappingRows });
+function downloadRequestedTrainsDocx({ removalRows = [], swappingRows = [], noteType = "dc" } = {}) {
+  const normalizedNoteType = (noteType || "dc").toString().toLowerCase();
+  const docxBytes = buildRequestedTrainsDocx({ removalRows, swappingRows, noteType: normalizedNoteType });
   const blob = new Blob([docxBytes], {
     type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   });
   const dateStamp = new Date().toISOString().slice(0, 10);
-  downloadBlob(blob, `requested-trains-west-depot-${dateStamp}.docx`);
+  const fileLabel = normalizedNoteType === "tc" ? "tc-note" : "dc-note";
+  downloadBlob(blob, `requested-trains-west-depot-${fileLabel}-${dateStamp}.docx`);
 }
 
 function RequestedTrainPill({ children, accent = "#4f8ef7", muted = false }) {
@@ -9032,7 +9043,7 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {} }) {
 }
 
 function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceMap = {}, westData = {} }) {
-  const [downloadingDocx, setDownloadingDocx] = useState(false);
+  const [downloadingDocxType, setDownloadingDocxType] = useState(null);
   const removalRows = getRequestedTrainsForWestDepotRemoval({
     requests,
     trainRemState,
@@ -9044,17 +9055,18 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
     westData,
   });
 
-  const handleDownloadDocx = () => {
-    if (downloadingDocx) return;
-    setDownloadingDocx(true);
+  const handleDownloadDocx = (noteType = "dc") => {
+    if (downloadingDocxType) return;
+    const normalizedNoteType = noteType === "tc" ? "tc" : "dc";
+    setDownloadingDocxType(normalizedNoteType);
 
     try {
-      downloadRequestedTrainsDocx({ removalRows, swappingRows });
+      downloadRequestedTrainsDocx({ removalRows, swappingRows, noteType: normalizedNoteType });
     } catch (error) {
       console.error("Requested trains DOCX export failed:", error);
       alert("Unable to create requested trains DOCX. Please try again.");
     } finally {
-      setTimeout(() => setDownloadingDocx(false), 400);
+      setTimeout(() => setDownloadingDocxType(null), 400);
     }
   };
 
@@ -9072,20 +9084,37 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
           </h2>
         </div>
 
-        <button
-          onClick={handleDownloadDocx}
-          disabled={downloadingDocx}
-          className="group flex items-center gap-1.5 h-6 px-2.5 rounded-[10px] border text-[10px] font-bold transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
-          style={{ ...MAIN_STABLING_BUTTON_BLUE, minHeight: 24, borderRadius: 10 }}
-          title="Download requested trains tables as DOCX"
-        >
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          {downloadingDocx ? "Preparing..." : "Download DOCX"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => handleDownloadDocx("dc")}
+            disabled={Boolean(downloadingDocxType)}
+            className="group flex items-center gap-1.5 h-6 px-2.5 rounded-[10px] border text-[10px] font-bold transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
+            style={{ ...MAIN_STABLING_BUTTON_BLUE, minHeight: 24, borderRadius: 10 }}
+            title="Download DC Note DOCX with removal and swapping tables"
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            {downloadingDocxType === "dc" ? "Preparing..." : "DOCX DC Note"}
+          </button>
+
+          <button
+            onClick={() => handleDownloadDocx("tc")}
+            disabled={Boolean(downloadingDocxType)}
+            className="group flex items-center gap-1.5 h-6 px-2.5 rounded-[10px] border text-[10px] font-bold transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
+            style={{ ...MAIN_STABLING_BUTTON_BLUE, minHeight: 24, borderRadius: 10 }}
+            title="Download TC Note DOCX with swapping table only"
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            {downloadingDocxType === "tc" ? "Preparing..." : "DOCX TC Note"}
+          </button>
+        </div>
       </div>
 
       <div className="space-y-2">
