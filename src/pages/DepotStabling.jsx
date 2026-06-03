@@ -2294,6 +2294,22 @@ function getSweepingClearTime(startTime, road, sweepTrack) {
   return startTime;
 }
 
+function getActiveInsertionEntryForCell(insertionLog = [], road, bi, trainKey = "") {
+  const normalizedTrainKey = normalizeTrainId(trainKey);
+  if (!normalizedTrainKey) return null;
+
+  const cellKey = `${road}-${bi}`;
+  const entry = insertionLog.find((l) => l.key === `ins-${cellKey}`);
+  if (!entry) return null;
+
+  // Prevent stale insertion status from staying green after the train is
+  // removed from the stabling cell, or after another train replaces it.
+  const entryTrainKey = normalizeTrainId(entry.trainKey || "");
+  if (entryTrainKey && entryTrainKey !== normalizedTrainKey) return null;
+
+  return entry;
+}
+
 function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
@@ -2302,7 +2318,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const isWestBottomRightCorner = labelSide === "left" && isLast && isLastBlock;
   const isEastBottomLeftCorner = labelSide === "right" && isLast && isFirstBlock;
   const cellKey = `${road}-${bi}`;
-  const inserted = insertionLog.find((l) => l.key === `ins-${cellKey}`);
+  const inserted = getActiveInsertionEntryForCell(insertionLog, road, bi, key);
   const insertedRemarkLabel = inserted?.tid
     ? `TID ${inserted.tid}`
     : inserted?.remark
@@ -2542,8 +2558,8 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
   // Count elapsed inserted TIDs for the manual Hide elapsed TID button.
   const elapsedTidCount = roads.reduce((acc, road) => {
     return acc + blockIndices.filter((bi) => {
-      const cellKey = `${road}-${bi}`;
-      const entry = insertionLog.find((l) => l.key === `ins-${cellKey}`);
+      const trainKey = normalizeTrainId(data[road]?.[bi]?.trainId || "");
+      const entry = getActiveInsertionEntryForCell(insertionLog, road, bi, trainKey);
       return entry && isTimePast(entry.time);
     }).length;
   }, 0);
@@ -2552,14 +2568,18 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
   );
   const hasInsertedTidRemarks = roads.some((road) =>
     blockIndices.some((bi) => {
-      const entry = insertionLog.find((l) => l.key === `ins-${road}-${bi}`);
+      const trainKey = normalizeTrainId(data[road]?.[bi]?.trainId || "");
+      const entry = getActiveInsertionEntryForCell(insertionLog, road, bi, trainKey);
       if (!entry) return false;
       return entry.tid !== null && entry.tid !== undefined || (entry.remark || "").toString().trim() !== "";
     })
   );
   const hasTidRemarks = hasLiveTidRemarks || hasInsertedTidRemarks;
   const hasInsertedTrains = roads.some((road) =>
-    blockIndices.some((bi) => insertionLog.some((l) => l.key === `ins-${road}-${bi}`))
+    blockIndices.some((bi) => {
+      const trainKey = normalizeTrainId(data[road]?.[bi]?.trainId || "");
+      return Boolean(getActiveInsertionEntryForCell(insertionLog, road, bi, trainKey));
+    })
   );
   const handleClearTidRemarks = () => {
     roads.forEach((road) => {
@@ -2588,8 +2608,11 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
     // Check live TID input typed by user
     const typed = (tidInputs[`${road}-${bi}`] || "").trim().toUpperCase();
     if (HIDE_REMARKS.some((r) => typed === r)) return true;
-    // Check remark stored on the insertion log entry for this cell
-    const logEntry = insertionLog.find((l) => l.key === `ins-${road}-${bi}`);
+    // Check remark stored on the active insertion log entry for this cell.
+    // Stale log entries are ignored when the train has already been removed
+    // from the stabling cell.
+    const trainKey = normalizeTrainId(block?.trainId || "");
+    const logEntry = getActiveInsertionEntryForCell(insertionLog, road, bi, trainKey);
     const logRemark = (logEntry?.remark || "").trim().toUpperCase();
     if (HIDE_REMARKS.some((r) => logRemark === r)) return true;
     // Check stabling extraRemark
@@ -7851,7 +7874,8 @@ export default function DepotStablingPage() {
     const cellKey = `${road}-${bi}`;
     const logKey = `ins-${cellKey}`;
     const existing = insertionLog.find((l) => l.key === logKey);
-    if (existing) {
+    const existingMatchesCurrentTrain = existing && normalizeTrainId(existing.trainKey || "") === normalizeTrainId(trainKey || "");
+    if (existingMatchesCurrentTrain) {
       setInsertionLog((prev) => prev.filter((l) => l.key !== logKey));
       return;
     }
@@ -7880,28 +7904,34 @@ export default function DepotStablingPage() {
       const clearTime = getSweepingClearTime(time, road, normalizedSweepTrack);
       const line = `${time} hrs – ${paddedTrainKey} sweeping started from ${road} to signal ${signal} at 45 kph. Track confirmed clear at ${clearTime} hrs.`;
 
-      setInsertionLog((prev) => sortInsertionLogByTime([...prev, {
-        key: logKey,
-        text: line,
-        time,
-        depot,
-        road,
-        trainKey: paddedTrainKey,
-        tid: null,
-        mainlineTrack,
-        remark: normalizedRemark,
-        sweepTrack: normalizedSweepTrack,
-        signal,
-        clearTime,
-        isSweeping: true,
-      }]));
+      setInsertionLog((prev) => sortInsertionLogByTime([
+        ...prev.filter((l) => l.key !== logKey),
+        {
+          key: logKey,
+          text: line,
+          time,
+          depot,
+          road,
+          trainKey: paddedTrainKey,
+          tid: null,
+          mainlineTrack,
+          remark: normalizedRemark,
+          sweepTrack: normalizedSweepTrack,
+          signal,
+          clearTime,
+          isSweeping: true,
+        },
+      ]));
       return;
     }
 
     // Parenthetical: TID number > remark label > nothing
     const tidPart = tid !== null ? ` (TID ${tid})` : tidStr ? ` (${tidStr})` : "";
     const line = `${time} hrs – ${paddedTrainKey}${tidPart} inserted from ${road} to mainline track ${mainlineTrack}.`;
-    setInsertionLog((prev) => sortInsertionLogByTime([...prev, { key: logKey, text: line, time, depot, road, trainKey: paddedTrainKey, tid, mainlineTrack, remark: tidStr || "" }]));
+    setInsertionLog((prev) => sortInsertionLogByTime([
+      ...prev.filter((l) => l.key !== logKey),
+      { key: logKey, text: line, time, depot, road, trainKey: paddedTrainKey, tid, mainlineTrack, remark: tidStr || "" },
+    ]));
   };
 
   const handleRemoveInsertionLog = (key) => {
@@ -11185,7 +11215,8 @@ function getInsertionPrintPillStyle(value = "") {
 
 function buildInsertionPrintPillItems({ road, bi, block, tidInputs = {}, insertionLog = [], getTidScheduledTime }) {
   const cellKey = `${road}-${bi}`;
-  const logEntry = insertionLog.find((entry) => entry.key === `ins-${cellKey}`);
+  const trainKey = normalizeTrainId(block?.trainId || "");
+  const logEntry = getActiveInsertionEntryForCell(insertionLog, road, bi, trainKey);
   const liveInput = (tidInputs[cellKey] || "").toString().trim();
   // Only print insertion-specific remarks/TIDs.
   // Do not read block.extraRemark here because main stabling remarks can contain
