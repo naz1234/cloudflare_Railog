@@ -447,73 +447,65 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
       {/* Workshop Requests */}
       {hasWorkshopRequests && (
-        <div className="border-b border-[#1a3a56] p-3">
-          <div className="rounded-xl border border-red-400/35 bg-red-950/10 shadow-inner overflow-visible">
-            <div className="flex items-start justify-between gap-2 border-b border-red-400/20 px-3 py-2">
-              <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-red-200">
-                  Workshop Train
-                </div>
-              </div>
-              <span className="shrink-0 rounded-full border border-red-400/40 bg-red-500/10 px-2 py-0.5 text-[10px] font-black text-red-200">
-                {workshopRequests.length}
-              </span>
-            </div>
-
-            <table className="w-full border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-red-400/20 bg-red-950/20">
-                  <th className="px-0.5 py-1 text-center text-[10px] font-semibold uppercase tracking-wider text-red-200/80">ID</th>
-                  <th className="px-0.5 py-1 text-center text-[10px] font-semibold uppercase tracking-wider text-red-200/80">Status</th>
-                  <th className="w-4" />
-                </tr>
-              </thead>
-              <tbody>
-                {workshopRequests.map((req) => {
-                  const displayLabel = displayType(req);
-                  const crossOutInfo = getCrossOutInfo(req);
-                  const crossOutReason = crossOutInfo.reason;
-                  const crossedOut = Boolean(crossOutReason);
-                  const requestPillStyle = {
-                    ...getRequestPillStyle(displayLabel, displayLabel),
-                    ...(crossedOut
-                      ? {
-                          opacity: 0.58,
-                        }
-                      : {}),
-                  };
-                  const titleTrainId = formatTrainIdForPopup(req.trainId || "");
-                  const crossOutMessage = crossOutReason === "STABLING"
-                    ? crossOutInfo.locationText
-                      ? `${titleTrainId} is already at ${crossOutInfo.locationText}`
-                      : `${titleTrainId} is already in main stabling`
-                    : "";
-
-                  return (
-                    <tr
-                      key={`workshop-${req.id || req._tempId}`}
-                      className="group h-[24px] border-b border-red-400/15 last:border-0 hover:bg-red-950/20 transition-colors"
-                      aria-label={crossOutMessage || undefined}
-                    >
-                      <td className="relative px-0.5 py-0.5 text-center">
-                        <span className="inline-flex min-w-[34px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none" style={requestPillStyle}>{req.trainId}</span>
-                        <RequestCrossLine show={crossedOut} />
-                        <RequestCrossBubble message={crossOutMessage} />
-                      </td>
-                      <td className="relative px-0.5 py-0.5 text-center">
-                        <span className="inline-flex max-w-[105px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none truncate" style={requestPillStyle}>{displayLabel}</span>
-                        <RequestCrossLine show={crossedOut} />
-                      </td>
-                      <td className="relative pr-1 py-0.5 text-center">
-                        <button onClick={() => onRemove(req.id)} className="text-[#3a5a7a] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
-                        <RequestCrossLine show={crossedOut} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        <div className="border-b border-[#1a3a56]">
+          <div className="flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Workshop Train</span>
+            <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{workshopRequests.length}</span>
           </div>
+
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+                <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">ID</th>
+                <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">Type</th>
+                <th className="w-4" />
+              </tr>
+            </thead>
+            <tbody>
+              {workshopRequests.map((req) => {
+                const displayLabel = displayType(req);
+                const crossOutInfo = getCrossOutInfo(req);
+                const crossOutReason = crossOutInfo.reason;
+                const crossedOut = Boolean(crossOutReason);
+                const requestPillStyle = {
+                  ...getRequestPillStyle(displayLabel, displayLabel),
+                  ...(crossedOut
+                    ? {
+                        opacity: 0.58,
+                      }
+                    : {}),
+                };
+                const titleTrainId = formatTrainIdForPopup(req.trainId || "");
+                const crossOutMessage = crossOutReason === "STABLING"
+                  ? crossOutInfo.locationText
+                    ? `${titleTrainId} is already at ${crossOutInfo.locationText}`
+                    : `${titleTrainId} is already in main stabling`
+                  : "";
+
+                return (
+                  <tr
+                    key={`workshop-${req.id || req._tempId}`}
+                    className="group h-[24px] border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors"
+                    aria-label={crossOutMessage || undefined}
+                  >
+                    <td className="relative px-0.5 py-0.5 text-center">
+                      <span className="inline-flex min-w-[34px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none" style={requestPillStyle}>{req.trainId}</span>
+                      <RequestCrossLine show={crossedOut} />
+                      <RequestCrossBubble message={crossOutMessage} />
+                    </td>
+                    <td className="relative px-0.5 py-0.5 text-center">
+                      <span className="inline-flex max-w-[105px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none truncate" style={requestPillStyle}>{displayLabel}</span>
+                      <RequestCrossLine show={crossedOut} />
+                    </td>
+                    <td className="relative pr-1 py-0.5 text-center">
+                      <button onClick={() => onRemove(req.id)} className="text-[#3a5a7a] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
+                      <RequestCrossLine show={crossedOut} />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 
