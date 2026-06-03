@@ -1616,11 +1616,6 @@ function buildMaintenanceMap(requests) {
     ) || "Request";
     const typeKey = displayType;
 
-    // Keep the request note/remark so main stabling can show Excel wash dates.
-    // Example: requestType = "WASH", remark = "wash 20 May" → badge shows "wash 20 May".
-    const remark = (req.remark || req.note || "").toString().trim();
-    const badgeText = remark || displayType;
-
     const styles = MAINT_STYLES[typeKey] || getCustomRequestStyle(displayType);
 
     if (!map[key]) {
@@ -1630,8 +1625,8 @@ function buildMaintenanceMap(requests) {
     map[key].push({
       typeKey,
       displayType,
-      remark,
-      badgeText,
+      remark: "",
+      badgeText: displayType,
       ...styles,
     });
   });
@@ -8647,14 +8642,12 @@ function getRequestNoteSummaryForTrain(requests = [], trainKey = "") {
     if (normalizeTrainId(request?.trainId) !== key) return;
 
     const displayType = getTrainRequestDisplayType(request);
-    const rawRemark = (request?.remark || request?.note || "").toString().trim();
-    const noteText = rawRemark || displayType;
-    const noteKey = normalizeRemarkText(noteText);
+    const noteKey = normalizeRemarkText(displayType);
 
-    if (!noteText || seen.has(noteKey)) return;
+    if (!displayType || seen.has(noteKey)) return;
 
     seen.add(noteKey);
-    notes.push(noteText);
+    notes.push(displayType);
   });
 
   return notes.join(", ");

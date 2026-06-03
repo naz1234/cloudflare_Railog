@@ -95,49 +95,6 @@ function getRequestPillStyle(typeKey, displayLabel = "") {
   };
 }
 
-function getNeutralPillStyle() {
-  return {
-    backgroundColor: "#091828",
-    color: "#7eb8e0",
-    border: "1px solid #1e4060",
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
-  };
-}
-
-const NOTE_COLOR_OVERRIDES = {
-  "PM TODAY": "#fbbf24",
-  "TODAY PM": "#fbbf24",
-  "PM TOMORROW": "#38bdf8",
-  "TOMORROW PM": "#38bdf8",
-  "TMRW PM": "#38bdf8",
-};
-
-function getRemarkPillStyle(remark = "") {
-  const cleanRemark = remark
-    .toString()
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, " ")
-    .split(" ")
-    .filter(Boolean)
-    .join(" ");
-
-  const accent = NOTE_COLOR_OVERRIDES[cleanRemark] || getCustomRequestColor(cleanRemark);
-
-  return {
-    backgroundColor: "#091828",
-    color: accent,
-    border: `1px solid ${accent}`,
-    boxShadow: `0 0 0 1px rgba(255,255,255,0.02), 0 0 8px ${accent}55`,
-    textShadow: `0 0 6px ${accent}88`,
-  };
-}
-
-const MONTHS_SHORT = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-];
-
 function getColumnValue(row, possibleNames) {
   const keys = Object.keys(row || {});
   const matchedKey = keys.find((key) =>
@@ -161,65 +118,9 @@ function normalizeExcelWashTrainNumber(value) {
   return match[1].slice(-2).padStart(2, "0");
 }
 
-function getDateParts(value) {
-  if (!value) return null;
-
-  if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return {
-      day: value.getDate(),
-      monthIndex: value.getMonth(),
-      year: value.getFullYear(),
-    };
-  }
-
-  if (typeof value === "number") {
-    // Excel serial date support.
-    const parsed = XLSX.SSF.parse_date_code(value);
-    if (parsed) {
-      return {
-        day: parsed.d,
-        monthIndex: parsed.m - 1,
-        year: parsed.y,
-      };
-    }
-  }
-
-  const text = String(value).trim();
-  if (!text) return null;
-
-  // Handles Excel text like: 5-20-26 11:17 AM or 5/20/2026 11:17 AM
-  const mmddyy = text.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})/);
-  if (mmddyy) {
-    return {
-      day: Number(mmddyy[2]),
-      monthIndex: Number(mmddyy[1]) - 1,
-      year: mmddyy[3].length === 2 ? 2000 + Number(mmddyy[3]) : Number(mmddyy[3]),
-    };
-  }
-
-  const parsedDate = new Date(text);
-  if (!Number.isNaN(parsedDate.getTime())) {
-    return {
-      day: parsedDate.getDate(),
-      monthIndex: parsedDate.getMonth(),
-      year: parsedDate.getFullYear(),
-    };
-  }
-
-  return null;
-}
-
-function formatWashRemark(nextWashValue) {
-  const parts = getDateParts(nextWashValue);
-  if (!parts || parts.monthIndex < 0 || parts.monthIndex > 11) return "wash";
-
-  return `wash ${parts.day} ${MONTHS_SHORT[parts.monthIndex]}`;
-}
-
 export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll }) {
   const [trainId, setTrainId] = useState("");
   const [requestType, setRequestType] = useState("");
-  const [remark, setRemark] = useState("");
   const [error, setError] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
   const [excelWashPreview, setExcelWashPreview] = useState([]);
@@ -243,9 +144,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     const newTrainIds = uniqueTrainIds.filter((id) => !hasSameTrainAndType(id));
     const skippedTrainIds = uniqueTrainIds.filter((id) => hasSameTrainAndType(id));
     if (newTrainIds.length === 0) { setError("Train ID already has this request type."); setTrainId(""); return; }
-    newTrainIds.forEach((id) => { onAdd({ trainId: id, requestType: cleanType, customType: "", remark: remark.trim() }); });
+    newTrainIds.forEach((id) => { onAdd({ trainId: id, requestType: cleanType, customType: "", remark: "" }); });
     if (skippedTrainIds.length > 0) { setError(`Skipped same type: ${skippedTrainIds.join(", ")}`); } else { setError(""); }
-    setTrainId(""); setRemark(""); setRequestType("");
+    setTrainId(""); setRequestType("");
   };
 
   const handleWashExcelUpload = async (event) => {
@@ -281,13 +182,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
       rows.forEach((row) => {
         const trainNumber = getColumnValue(row, ["Train Number", "Train No", "Train"]);
-        const nextWash = getColumnValue(row, ["Next Wash", "Next wash", "NEXT WASH"]);
-
         const trainId = normalizeExcelWashTrainNumber(trainNumber);
         if (!trainId) return;
 
-        const remarkText = formatWashRemark(nextWash);
-        const key = `${trainId}|${remarkText}`;
+        const key = `${trainId}|WASH`;
 
         if (seen.has(key)) return;
         seen.add(key);
@@ -296,7 +194,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           trainId,
           requestType: "WASH",
           customType: "",
-          remark: remarkText,
+          remark: "",
         });
       });
 
@@ -374,7 +272,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 Upload Excel
               </div>
               <p className="mt-0.5 text-[10px] leading-snug text-[#4a8ab5]">
-                Train Number + Next Wash will be added as WASH.
+                Train Number will be added as WASH.
               </p>
             </div>
 
@@ -400,10 +298,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             <div className="mt-2 flex max-h-20 flex-wrap gap-1.5 overflow-y-auto pr-1">
               {excelWashPreview.map((item, index) => (
                 <span
-                  key={`${item.trainId}-${item.remark}-${index}`}
+                  key={`${item.trainId}-WASH-${index}`}
                   className="inline-flex items-center rounded-full border border-[#ADD8E6] bg-[#091828] px-2 py-0.5 text-[10px] font-semibold text-[#ADD8E6]"
                 >
-                  {item.trainId} • WASH • {item.remark}
+                  {item.trainId} • WASH
                 </span>
               ))}
             </div>
@@ -437,10 +335,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             </div>
           )}
         </div>
-        <div>
-          <label className={labelCls}>Note <span className="normal-case font-normal">(optional)</span></label>
-          <input type="text" value={remark} onChange={(e) => setRemark(e.target.value)} className={inputCls} placeholder="Optional" />
-        </div>
         {error && <p className="text-[10px] text-red-400 bg-red-950/40 border border-red-800/60 rounded-lg px-2.5 py-1.5">{error}</p>}
         <button onClick={handleAdd}
           className="w-full bg-[#1a3a5c] hover:bg-[#1e4d72] border border-[#2b4f6b] active:scale-[0.98] text-[#c8d8ea] font-bold py-2 text-xs rounded-full transition-all flex items-center justify-center gap-1.5 mt-1">
@@ -455,21 +349,19 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             <tr className="border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
               <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">ID</th>
               <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">Type</th>
-              <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">Note</th>
               <th className="w-4" />
             </tr>
           </thead>
           <tbody>
             {requests.length === 0 && (
               <tr className="h-[24px] border-b border-[#0f2040]">
-                <td colSpan={4} className="text-center text-[#3a5a7a] py-1 text-xs italic">No requests yet</td>
+                <td colSpan={3} className="text-center text-[#3a5a7a] py-1 text-xs italic">No requests yet</td>
               </tr>
             )}
             {sortedRequests.map((req) => {
               const displayLabel = displayType(req);
               const typeKey = displayLabel;
               const requestPillStyle = getRequestPillStyle(typeKey, displayLabel);
-              const notePillStyle = req.remark ? getRemarkPillStyle(req.remark) : getNeutralPillStyle();
               return (
                 <tr key={req.id || req._tempId} className="h-[24px] border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors">
                   <td className="px-0.5 py-0.5 text-center">
@@ -477,9 +369,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   </td>
                   <td className="px-0.5 py-0.5 text-center">
                     <span className="inline-flex max-w-[105px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none truncate" style={requestPillStyle}>{displayType(req)}</span>
-                  </td>
-                  <td className="px-0.5 py-0.5 text-center">
-                    <span className="inline-flex min-w-[44px] max-w-[105px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none truncate" style={notePillStyle}>{req.remark || "Note"}</span>
                   </td>
                   <td className="pr-1 py-0.5 text-center">
                     <button onClick={() => onRemove(req.id)} className="text-[#3a5a7a] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
@@ -489,7 +378,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             })}
             {Array.from({ length: emptyRequestRowCount }).map((_, index) => (
               <tr key={`maintenance-empty-${index}`} className="h-[24px] border-b border-[#0f2040] last:border-0">
-                <td className="px-0.5 py-0.5 text-center text-[#17314a]">&nbsp;</td>
                 <td className="px-0.5 py-0.5 text-center text-[#17314a]">&nbsp;</td>
                 <td className="px-0.5 py-0.5 text-center text-[#17314a]">&nbsp;</td>
                 <td className="pr-1 py-0.5 text-center">&nbsp;</td>
