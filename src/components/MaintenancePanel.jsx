@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Trash2, Wrench, FileSpreadsheet, Upload } from "lucide-react";
+import { Plus, Trash2, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck } from "lucide-react";
 
 const MIN_VISIBLE_REQUEST_ROWS = 40;
 
@@ -175,6 +175,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const [confirmClear, setConfirmClear] = useState(false);
   const [excelWashPreview, setExcelWashPreview] = useState([]);
   const [excelUploadStatus, setExcelUploadStatus] = useState("");
+  const [workshopCopyStatus, setWorkshopCopyStatus] = useState("");
 
   const handleAdd = () => {
     const trainIds = trainId.split(/[\s,]+/).map(normalizeTrainId).filter(Boolean);
@@ -338,6 +339,28 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     .filter((req) => !isWorkshopRequest(req))
     .sort((a, b) => displayType(a).localeCompare(displayType(b)) || normalizeTrainCompareKey(a.trainId || "").localeCompare(normalizeTrainCompareKey(b.trainId || ""), undefined, { numeric: true }));
   const hasWorkshopRequests = workshopRequests.length > 0;
+  const buildWorkshopCopyText = () => {
+    const trainList = workshopRequests
+      .map((req) => normalizeTrainCompareKey(req.trainId || ""))
+      .filter(Boolean);
+
+    return [`Workshop Train (Total ${trainList.length} trains)`, ...trainList].join("\n");
+  };
+
+  const handleCopyWorkshopTrains = async () => {
+    if (!hasWorkshopRequests) return;
+
+    try {
+      await navigator.clipboard.writeText(buildWorkshopCopyText());
+      setWorkshopCopyStatus("copied");
+    } catch (copyError) {
+      console.error("Workshop train copy failed:", copyError);
+      setWorkshopCopyStatus("failed");
+    } finally {
+      setTimeout(() => setWorkshopCopyStatus(""), 1400);
+    }
+  };
+
   const visibleRequestRowCount = Math.max(regularRequests.length, 1);
   const emptyRequestRowCount = Math.max(0, MIN_VISIBLE_REQUEST_ROWS - visibleRequestRowCount);
 
@@ -450,7 +473,24 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         <div className="border-b border-[#1a3a56]">
           <div className="flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
             <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Workshop Train</span>
-            <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{workshopRequests.length}</span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleCopyWorkshopTrains}
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition-all ${
+                  workshopCopyStatus === "copied"
+                    ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-300"
+                    : workshopCopyStatus === "failed"
+                    ? "border-red-500/60 bg-red-500/15 text-red-300"
+                    : "border-[#2b4f6b] bg-[#10263b] text-[#c8d8ea] hover:bg-[#1a3a5c]"
+                }`}
+                title="Copy Workshop Train list"
+              >
+                {workshopCopyStatus === "copied" ? <ClipboardCheck className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                {workshopCopyStatus === "copied" ? "Copied" : workshopCopyStatus === "failed" ? "Failed" : "Copy"}
+              </button>
+              <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{workshopRequests.length}</span>
+            </div>
           </div>
 
           <table className="w-full border-collapse text-xs">
