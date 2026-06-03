@@ -4969,6 +4969,14 @@ function TrainMovementContent() {
           <div className="flex items-center gap-1.5">
             <button
               type="button"
+              onClick={() => copyDepotLogs(depot, operation)}
+              className="flex min-w-[78px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
+              style={{ borderColor: `${meta.accent}55`, color: meta.accent, backgroundColor: `${meta.accent}14` }}
+            >
+              <MovementIcon type="copy" />{getCopyButtonLabel(depot, operation, "Copy All")}
+            </button>
+            <button
+              type="button"
               onClick={() => clearDepotOperationLogs(depot, operation)}
               className="flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
               style={{ borderColor: `${meta.accent}55`, color: meta.accent, backgroundColor: `${meta.accent}14` }}
