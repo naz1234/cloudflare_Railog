@@ -8195,9 +8195,9 @@ export default function DepotStablingPage() {
   };
 
   const duplicates = getDuplicates(westData, eastData);
-  const mainStablingKeys = getMainStablingKeys(westData, eastData);
-  const mainStablingLocations = getMainStablingLocations(westData, eastData);
-  const maintenanceMap = buildMaintenanceMap(requests, mainStablingKeys);
+  const westStablingKeys = getWestStablingKeys(westData);
+  const westStablingLocations = getWestStablingLocations(westData);
+  const maintenanceMap = buildMaintenanceMap(requests, westStablingKeys);
 
   if (!loaded) {
     return (
@@ -8534,8 +8534,8 @@ export default function DepotStablingPage() {
           onAdd={handleAddRequest}
           onRemove={handleRemoveRequest}
           onClearAll={handleClearAllRequests}
-          stabledTrainIds={Array.from(mainStablingKeys)}
-          stabledTrainLocations={mainStablingLocations}
+          stabledTrainIds={Array.from(westStablingKeys)}
+          stabledTrainLocations={westStablingLocations}
         />
       </div>
 
@@ -8736,6 +8736,23 @@ function getMainStablingLocations(westData = {}, eastData = {}) {
   return locations;
 }
 
+function getWestStablingLocations(westData = {}) {
+  const locations = {};
+
+  Object.entries(westData || {}).forEach(([road, blocks]) => {
+    (blocks || []).forEach((block, blockIndex) => {
+      const key = normalizeTrainId(block?.trainId);
+      if (!key) return;
+
+      const locationText = `West Depot ${formatStablingRoadForPopup(road)} Block ${String(blockIndex + 1).padStart(2, "0")}`;
+      if (!locations[key]) locations[key] = [];
+      locations[key].push(locationText);
+    });
+  });
+
+  return locations;
+}
+
 function getRequestTid(request = {}, trainRemRow = {}, fullMlTidRows = []) {
   const fullMlTid = getFullMlTidForTrain(fullMlTidRows, request?.trainId || trainRemRow?.trainId);
 
@@ -8802,7 +8819,7 @@ function getWorkshopTrainRequestKeys(requests = []) {
 function getRequestedTrainsForWestDepotRemoval({ requests = [], trainRemState, westData = {}, eastData = {} }) {
   const westRemovalRowsMap = getWestRemovalRowsMap(trainRemState);
   const fullMlTidRows = trainRemState?.fullMlTidRows || [];
-  const westStablingKeys = getMainStablingKeys(westData, eastData);
+  const westStablingKeys = getWestStablingKeys(westData);
   const requestedRows = [];
   const seen = new Set();
 
@@ -8832,7 +8849,7 @@ function getRequestedTrainsForWestDepotRemoval({ requests = [], trainRemState, w
 function getRequestedTrainsNotInWestDepotStablingRemoval({ requests = [], trainRemState, westData = {}, eastData = {} }) {
   const westRemovalRowsMap = getWestRemovalRowsMap(trainRemState);
   const fullMlTidRows = trainRemState?.fullMlTidRows || [];
-  const westStablingKeys = getMainStablingKeys(westData, eastData);
+  const westStablingKeys = getWestStablingKeys(westData);
   const workshopTrainKeys = getWorkshopTrainRequestKeys(requests);
   const requestedRows = [];
   const seen = new Set();
