@@ -31,6 +31,16 @@ function normalizeTrainId(value) {
   return cleaned;
 }
 
+function normalizeTrainCompareKey(value) {
+  const cleaned = (value || "").toString().trim().toUpperCase().replace(/\s+/g, "");
+  if (!cleaned) return "";
+
+  const match = cleaned.match(/^T?0*(\d+)$/);
+  if (match) return String(Number(match[1])).padStart(2, "0");
+
+  return cleaned;
+}
+
 function cleanRequestLabel(value = "") {
   return value.toString().trim().replace(/\s+/g, " ");
 }
@@ -48,7 +58,7 @@ function isWorkshopRequestLabel(value = "") {
   return normalizeRequestIdentity(value).includes("WORKSHOP");
 }
 
-const WORKSHOP_CROSS_CELL_STYLE = {
+const REQUEST_CROSS_CELL_STYLE = {
   backgroundImage:
     "linear-gradient(to bottom, transparent calc(50% - 1px), rgba(239,68,68,0.95) calc(50% - 1px), rgba(239,68,68,0.95) calc(50% + 1px), transparent calc(50% + 1px))",
   backgroundRepeat: "no-repeat",
@@ -137,7 +147,7 @@ function normalizeExcelWashTrainNumber(value) {
   return match[1].slice(-2).padStart(2, "0");
 }
 
-export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll }) {
+export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, stabledTrainIds = [] }) {
   const [trainId, setTrainId] = useState("");
   const [requestType, setRequestType] = useState("");
   const [error, setError] = useState("");
@@ -256,12 +266,20 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const workshopTrainKeys = new Set(
     (requests || [])
       .filter((req) => isWorkshopRequestLabel(displayType(req)))
-      .map((req) => normalizeTrainId(req.trainId || ""))
+      .map((req) => normalizeTrainCompareKey(req.trainId || ""))
       .filter(Boolean)
   );
-  const isCrossedOutByWorkshop = (req) => {
-    const key = normalizeTrainId(req.trainId || "");
-    return Boolean(key && workshopTrainKeys.has(key) && !isWorkshopRequestLabel(displayType(req)));
+  const stabledTrainKeys = new Set(
+    (stabledTrainIds || [])
+      .map((id) => normalizeTrainCompareKey(id))
+      .filter(Boolean)
+  );
+  const getCrossOutReason = (req) => {
+    const key = normalizeTrainCompareKey(req.trainId || "");
+    if (!key) return "";
+    if (stabledTrainKeys.has(key)) return "STABLING";
+    if (workshopTrainKeys.has(key) && !isWorkshopRequestLabel(displayType(req))) return "WORKSHOP";
+    return "";
   };
   const sortedRequests = [...requests].sort((a, b) => displayType(a).localeCompare(displayType(b)));
   const visibleRequestRowCount = Math.max(sortedRequests.length, requests.length === 0 ? 1 : 0);
@@ -390,7 +408,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             {sortedRequests.map((req) => {
               const displayLabel = displayType(req);
               const typeKey = displayLabel;
-              const crossedOut = isCrossedOutByWorkshop(req);
+              const crossOutReason = getCrossOutReason(req);
+              const crossedOut = Boolean(crossOutReason);
               const requestPillStyle = {
                 ...getRequestPillStyle(typeKey, displayLabel),
                 ...(crossedOut
@@ -402,12 +421,17 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                     }
                   : {}),
               };
-              const cellStrikeStyle = crossedOut ? WORKSHOP_CROSS_CELL_STYLE : undefined;
+              const cellStrikeStyle = crossedOut ? REQUEST_CROSS_CELL_STYLE : undefined;
+              const crossOutTitle = crossOutReason === "STABLING"
+                ? "Crossed because this train is already in main stabling."
+                : crossOutReason === "WORKSHOP"
+                ? "Crossed because this train is in WORKSHOP."
+                : undefined;
               return (
                 <tr
                   key={req.id || req._tempId}
                   className="h-[24px] border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors"
-                  title={crossedOut ? "Crossed because this train is in WORKSHOP." : undefined}
+                  title={crossOutTitle}
                 >
                   <td className="px-0.5 py-0.5 text-center" style={cellStrikeStyle}>
                     <span className="inline-flex min-w-[34px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none" style={requestPillStyle}>{req.trainId}</span>

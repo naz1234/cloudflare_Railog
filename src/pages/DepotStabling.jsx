@@ -1615,7 +1615,7 @@ function getCustomRequestStyle(label = "") {
   };
 }
 
-function buildMaintenanceMap(requests) {
+function buildMaintenanceMap(requests, mainStablingKeys = new Set()) {
   const map = {};
   const workshopTrainKeys = new Set();
 
@@ -1646,6 +1646,12 @@ function buildMaintenanceMap(requests) {
     const typeKey = displayType;
     const isWorkshop = isWorkshopRequestLabel(displayType);
     const isSuppressedByWorkshop = workshopTrainKeys.has(key) && !isWorkshop;
+    const isSuppressedByStabling = mainStablingKeys.has(key);
+    const suppressionReason = isSuppressedByStabling
+      ? "STABLING"
+      : isSuppressedByWorkshop
+      ? "WORKSHOP"
+      : "";
 
     const styles = MAINT_STYLES[typeKey] || getCustomRequestStyle(displayType);
 
@@ -1660,6 +1666,9 @@ function buildMaintenanceMap(requests) {
       badgeText: displayType,
       isWorkshop,
       isSuppressedByWorkshop,
+      isSuppressedByStabling,
+      isSuppressed: Boolean(suppressionReason),
+      suppressionReason,
       ...styles,
     });
   });
@@ -1667,7 +1676,7 @@ function buildMaintenanceMap(requests) {
   Object.keys(map).forEach((key) => {
     map[key].sort((a, b) => {
       if (a.isWorkshop !== b.isWorkshop) return a.isWorkshop ? -1 : 1;
-      if (a.isSuppressedByWorkshop !== b.isSuppressedByWorkshop) return a.isSuppressedByWorkshop ? 1 : -1;
+      if (a.isSuppressed !== b.isSuppressed) return a.isSuppressed ? 1 : -1;
       return (a.displayType || "").localeCompare(b.displayType || "");
     });
   });
@@ -1754,7 +1763,7 @@ function getRequestPillStyle(item) {
     color: accent,
     border: `1px solid ${accent}`,
     boxShadow: `0 0 8px ${hexToRgba(accent, 0.24)}, inset 0 1px 0 rgba(255,255,255,0.05)`,
-    ...(item?.isSuppressedByWorkshop
+    ...(item?.isSuppressed
       ? {
           opacity: 0.5,
           textDecoration: "line-through",
@@ -8162,7 +8171,8 @@ export default function DepotStablingPage() {
   };
 
   const duplicates = getDuplicates(westData, eastData);
-  const maintenanceMap = buildMaintenanceMap(requests);
+  const mainStablingKeys = getMainStablingKeys(westData, eastData);
+  const maintenanceMap = buildMaintenanceMap(requests, mainStablingKeys);
 
   if (!loaded) {
     return (
@@ -8457,6 +8467,7 @@ export default function DepotStablingPage() {
         trainRemState={trainRemCheckState}
         maintenanceMap={maintenanceMap}
         westData={westData}
+        eastData={eastData}
       />
 
       <RemovalLogOutputFromTrainRem
@@ -8498,6 +8509,7 @@ export default function DepotStablingPage() {
           onAdd={handleAddRequest}
           onRemove={handleRemoveRequest}
           onClearAll={handleClearAllRequests}
+          stabledTrainIds={Array.from(mainStablingKeys)}
         />
       </div>
 
@@ -8657,6 +8669,19 @@ function getWestStablingKeys(westData = {}) {
   return westStablingKeys;
 }
 
+function getMainStablingKeys(westData = {}, eastData = {}) {
+  const stablingKeys = new Set();
+
+  [...Object.values(westData || {}), ...Object.values(eastData || {})].forEach((blocks) => {
+    (blocks || []).forEach((block) => {
+      const key = normalizeTrainId(block?.trainId);
+      if (key) stablingKeys.add(key);
+    });
+  });
+
+  return stablingKeys;
+}
+
 function getRequestTid(request = {}, trainRemRow = {}) {
   return (
     trainRemRow?.tid ||
@@ -8702,19 +8727,9 @@ function getRequestNoteSummaryForTrain(requests = [], trainKey = "") {
   return notes.join(", ");
 }
 
-function hasWorkshopRequestForTrain(requests = [], trainKey = "") {
-  const key = normalizeTrainId(trainKey);
-  if (!key) return false;
-
-  return (requests || []).some((request) => {
-    if (normalizeTrainId(request?.trainId) !== key) return false;
-    return isWorkshopRequestLabel(getTrainRequestDisplayType(request));
-  });
-}
-
-function getRequestedTrainsForWestDepotRemoval({ requests = [], trainRemState, westData = {} }) {
+function getRequestedTrainsForWestDepotRemoval({ requests = [], trainRemState, westData = {}, eastData = {} }) {
   const westRemovalRowsMap = getWestRemovalRowsMap(trainRemState);
-  const westStablingKeys = getWestStablingKeys(westData);
+  const westStablingKeys = getMainStablingKeys(westData, eastData);
   const requestedRows = [];
   const seen = new Set();
 
@@ -8741,9 +8756,9 @@ function getRequestedTrainsForWestDepotRemoval({ requests = [], trainRemState, w
   return requestedRows;
 }
 
-function getRequestedTrainsNotInWestDepotStablingRemoval({ requests = [], trainRemState, westData = {} }) {
+function getRequestedTrainsNotInWestDepotStablingRemoval({ requests = [], trainRemState, westData = {}, eastData = {} }) {
   const westRemovalRowsMap = getWestRemovalRowsMap(trainRemState);
-  const westStablingKeys = getWestStablingKeys(westData);
+  const westStablingKeys = getMainStablingKeys(westData, eastData);
   const requestedRows = [];
   const seen = new Set();
 
@@ -8751,13 +8766,7 @@ function getRequestedTrainsNotInWestDepotStablingRemoval({ requests = [], trainR
     if (isUnfitTrainRequest(request)) return;
 
     const key = normalizeTrainId(request?.trainId);
-    if (
-      !key ||
-      hasWorkshopRequestForTrain(requests, key) ||
-      westRemovalRowsMap.has(key) ||
-      westStablingKeys.has(key) ||
-      seen.has(key)
-    ) return;
+    if (!key || westRemovalRowsMap.has(key) || westStablingKeys.has(key) || seen.has(key)) return;
 
     seen.add(key);
     const trainRemRow = getTrainRemRowForTrain(trainRemState, key);
@@ -9107,17 +9116,19 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {} }) {
   );
 }
 
-function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceMap = {}, westData = {} }) {
+function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceMap = {}, westData = {}, eastData = {} }) {
   const [downloadingDocxType, setDownloadingDocxType] = useState(null);
   const removalRows = getRequestedTrainsForWestDepotRemoval({
     requests,
     trainRemState,
     westData,
+    eastData,
   });
   const swappingRows = getRequestedTrainsNotInWestDepotStablingRemoval({
     requests,
     trainRemState,
     westData,
+    eastData,
   });
 
   const handleDownloadDocx = (noteType = "dc") => {
@@ -10851,9 +10862,9 @@ function sectionToPrintableSvg({
           // Example: WASH = light blue, RST PM = light green, RST CM = orange,
           // Deep Cleaning = purple, INBOUND = yellow, Other = grey.
           fill: item.badgeBg || "#fff176",
-          stroke: item.isSuppressedByWorkshop ? "#ef4444" : item.badgeBorder || item.trainColor || "#000",
+          stroke: item.isSuppressed ? "#ef4444" : item.badgeBorder || item.trainColor || "#000",
           textFill: item.badgeColor || "#000",
-          strike: Boolean(item.isSuppressedByWorkshop),
+          strike: Boolean(item.isSuppressed),
         })),
       ];
       const x1 = blocksStartX + blockDrawWidth * i;
@@ -11616,7 +11627,9 @@ function RoadRow({
                     key={`${key}-${item.displayType}-${item.badgeText || ""}`}
                     className="inline-flex min-w-[92px] w-fit max-w-full items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-normal leading-none whitespace-nowrap text-center"
                     style={getRequestPillStyle(item)}
-                    title={item.isSuppressedByWorkshop ? `${item.badgeText || item.displayType} crossed because this train is in WORKSHOP.` : item.badgeText || item.displayType}
+                    title={item.isSuppressed
+                      ? `${item.badgeText || item.displayType} crossed because this train is already in ${item.suppressionReason === "STABLING" ? "main stabling" : "WORKSHOP"}.`
+                      : item.badgeText || item.displayType}
                   >
                     {item.badgeText || item.displayType}
                   </span>
