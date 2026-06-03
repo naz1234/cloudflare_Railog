@@ -60,7 +60,7 @@ function isWorkshopRequestLabel(value = "") {
 
 const REQUEST_CROSS_CELL_STYLE = {
   backgroundImage:
-    "linear-gradient(to bottom, transparent calc(50% - 1px), rgba(239,68,68,0.95) calc(50% - 1px), rgba(239,68,68,0.95) calc(50% + 1px), transparent calc(50% + 1px))",
+    "linear-gradient(to bottom, transparent calc(50% - 0.5px), rgba(239,68,68,0.95) calc(50% - 0.5px), rgba(239,68,68,0.95) calc(50% + 0.5px), transparent calc(50% + 0.5px))",
   backgroundRepeat: "no-repeat",
 };
 
@@ -417,7 +417,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                       opacity: 0.52,
                       textDecoration: "line-through",
                       textDecorationColor: "#ef4444",
-                      textDecorationThickness: "2px",
+                      textDecorationThickness: "1px",
                     }
                   : {}),
               };

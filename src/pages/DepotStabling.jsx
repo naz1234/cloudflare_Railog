@@ -1770,7 +1770,7 @@ function getRequestPillStyle(item, options = {}) {
           opacity: 0.5,
           textDecoration: "line-through",
           textDecorationColor: "#ef4444",
-          textDecorationThickness: "2px",
+          textDecorationThickness: "1px",
         }
       : {}),
   };
