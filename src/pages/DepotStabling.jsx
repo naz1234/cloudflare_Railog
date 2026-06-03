@@ -2310,7 +2310,7 @@ function getActiveInsertionEntryForCell(insertionLog = [], road, bi, trainKey = 
   return entry;
 }
 
-function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid }) {
+function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const maintList = key ? maintenanceMap[key] || [] : [];
@@ -2328,10 +2328,24 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const [showSweepChoice, setShowSweepChoice] = useState(false);
   const hasTidRemark = key && !inserted && tidRemarkText !== "";
   const specialTidRemarkStyle = hasTidRemark ? getInsertionRemarkStyle(tidRemarkText) : null;
+  const autoTidMatch = tidRemarkText.match(/^(?:TID[:\s-]*)?T?(\d{3})$/i);
+  const autoTid = autoTidMatch ? parseInt(autoTidMatch[1], 10) : null;
+  const autoTidDepot = WEST_ROADS.includes(road) ? "west" : "east";
+  const autoScheduledTime = autoTid !== null && typeof getTidScheduledTime === "function"
+    ? getTidScheduledTime(autoTid, autoTidDepot, { allowFallback: false })
+    : null;
+  const isNumericTidRemark = autoTid !== null;
+  const canAutoInsertTid = Boolean(key && !inserted && autoTid !== null && autoScheduledTime);
 
   useEffect(() => {
     if (tidRemarkText !== "SW" || inserted) setShowSweepChoice(false);
   }, [tidRemarkText, inserted]);
+
+  useEffect(() => {
+    if (!canAutoInsertTid) return;
+    setShowSweepChoice(false);
+    onInsertionTick(road, bi, key, tidInput);
+  }, [canAutoInsertTid, road, bi, key, tidInput, onInsertionTick]);
 
   const handleInsertClick = () => {
     if (tidRemarkText === "SW") {
@@ -2346,6 +2360,12 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const handleSweepChoice = (sweepTrack) => {
     setShowSweepChoice(false);
     onInsertionTick(road, bi, key, tidInput, sweepTrack);
+  };
+
+  const handleInsertedUndoClick = () => {
+    onTidChange?.(road, bi, "");
+    setShowSweepChoice(false);
+    onInsertionTick(road, bi, key, tidInput);
   };
 
   // Elapsed inserted trains are hidden only after user clicks "Hide elapsed TID".
@@ -2422,8 +2442,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             </button>
           </div>
         )}
-        {key && !inserted && !showSweepChoice && (<button onClick={handleInsertClick} className={`w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all ${hasTidRemark ? "bg-yellow-950/50 border-yellow-600/60 text-yellow-300 hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300"}`}>Insert</button>)}
-        {key && inserted && (<button onClick={() => onInsertionTick(road, bi, key, tidInput)} className="w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all bg-emerald-900/50 border-emerald-600 text-emerald-300 hover:bg-red-950/40 hover:border-red-700 hover:text-red-400" title="Click to undo">✓ {inserted.time}</button>)}
+        {key && !inserted && !showSweepChoice && isNumericTidRemark && !autoScheduledTime && (
+          <div className="w-full rounded-lg border border-amber-700/60 bg-amber-950/35 px-1 py-1 text-center text-[9px] font-bold leading-tight text-amber-300" title="This TID is not available in today's insertion schedule">
+            No TID time
+          </div>
+        )}
+        {key && !inserted && !showSweepChoice && !isNumericTidRemark && (<button onClick={handleInsertClick} className={`w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all ${hasTidRemark ? "bg-yellow-950/50 border-yellow-600/60 text-yellow-300 hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300"}`}>{hasTidRemark ? "Insert Remark" : "Insert"}</button>)}
+        {key && inserted && (<button onClick={handleInsertedUndoClick} className="w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all bg-emerald-900/50 border-emerald-600 text-emerald-300 hover:bg-red-950/40 hover:border-red-700 hover:text-red-400" title="Click to undo">✓ {inserted.time}</button>)}
       </div>
     </td>
   );
@@ -2751,7 +2776,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
                         </td>
                       );
                     }
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value) => handleTidChange(targetRoad, targetBi, value, ri, i)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value) => handleTidChange(targetRoad, targetBi, value, ri, i)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -7849,7 +7874,8 @@ export default function DepotStablingPage() {
     return "weekday";
   };
 
-  const getTidScheduledTime = (tid, depot) => {
+  const getTidScheduledTime = (tid, depot, options = {}) => {
+    const { allowFallback = true } = options || {};
     const dayKey = getDayScheduleKey();
     const cleanTid = Number(String(tid || "").replace(/\D/g, ""));
     if (!cleanTid) return null;
@@ -7861,6 +7887,7 @@ export default function DepotStablingPage() {
       TID_TIME_MAPS[dayKey]?.[depot === "west" ? "east" : "west"]?.[cleanTid];
 
     if (sameDayTime) return sameDayTime;
+    if (!allowFallback) return null;
 
     // PNG export can be prepared while viewing / typing TIDs from a different schedule day.
     // Keep the East Depot PNG from losing the timing pill by checking the remaining day maps too.
@@ -7899,7 +7926,7 @@ export default function DepotStablingPage() {
 
     // Insertion Log timing follows the TID schedule for the actual day:
     // weekday / friday / saturday. If the TID is not found, fallback to current clock time.
-    const scheduledTime = tid ? getTidScheduledTime(tid, depot) : null;
+    const scheduledTime = tid ? getTidScheduledTime(tid, depot, { allowFallback: false }) : null;
     const time = scheduledTime || formatTime(new Date());
 
     // SW is a sweeping movement. Ask the user to choose TK1/TK2 in the cell,
@@ -7942,13 +7969,48 @@ export default function DepotStablingPage() {
     ]));
   };
 
+  const clearTidInputForInsertionKey = (key) => {
+    const match = (key || "").match(/^ins-(.+)-(\d+)$/);
+    if (!match) return;
+
+    const cellKey = `${match[1]}-${match[2]}`;
+    setTidInputs((prev) => {
+      if (!Object.prototype.hasOwnProperty.call(prev, cellKey)) return prev;
+      const next = { ...prev };
+      delete next[cellKey];
+      return next;
+    });
+  };
+
+  const clearTidInputsForInsertionDepot = (depot) => {
+    const targetRoads = depot === "west" ? WEST_ROADS : EAST_ROADS;
+    setTidInputs((prev) => {
+      const next = { ...prev };
+      let changed = false;
+
+      targetRoads.forEach((road) => {
+        for (let bi = 0; bi < 7; bi += 1) {
+          const cellKey = `${road}-${bi}`;
+          if (Object.prototype.hasOwnProperty.call(next, cellKey)) {
+            delete next[cellKey];
+            changed = true;
+          }
+        }
+      });
+
+      return changed ? next : prev;
+    });
+  };
+
   const handleRemoveInsertionLog = (key) => {
     markInsertionLiveLocalEdit();
+    clearTidInputForInsertionKey(key);
     setInsertionLog((prev) => prev.filter((l) => l.key !== key));
   };
 
   const handleClearInsertionDepot = (depot) => {
     markInsertionLiveLocalEdit();
+    clearTidInputsForInsertionDepot(depot);
     setInsertionLog((prev) => prev.filter((l) => l.depot !== depot));
   };
 
