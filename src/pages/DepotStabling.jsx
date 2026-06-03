@@ -1255,6 +1255,24 @@ function normalizeTrainRemRows(rows, depot) {
   }));
 }
 
+function collectStablingTrainIds(data = {}, roads = []) {
+  const seen = new Set();
+  const trainIds = [];
+
+  (roads || []).forEach((road) => {
+    const blocks = Array.isArray(data?.[road]) ? data[road] : [];
+    blocks.forEach((block) => {
+      const trainKey = padTrainId(normalizeTrainId(block?.trainId || ""));
+      if (!trainKey || seen.has(trainKey)) return;
+
+      seen.add(trainKey);
+      trainIds.push(trainKey);
+    });
+  });
+
+  return trainIds;
+}
+
 function buildTrainRemRowsFromPreset(depot, label, existingRows = []) {
   const preset = TID_PRESETS[depot].find((item) => item.label === label);
   const tids = preset?.tids || [];
@@ -2792,7 +2810,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
 
 
 
-function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
+function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablingData = {} }) {
   const [trainRemState, setTrainRemState] = useState(() => loadTrainRemState());
   const [trainRemLoaded, setTrainRemLoaded] = useState(false);
   const [trainRemSyncing, setTrainRemSyncing] = useState(false);
@@ -2803,6 +2821,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
   const [trainRemFocusedTrainIdCell, setTrainRemFocusedTrainIdCell] = useState(null);
   const [trainRemPdfStatus, setTrainRemPdfStatus] = useState({ west: false, east: false });
   const [trainRemUndoCount, setTrainRemUndoCount] = useState(0);
+  const [eastDepotCopyStatus, setEastDepotCopyStatus] = useState("");
   const [fullMlTidAutoClearEndsAt, setFullMlTidAutoClearEndsAt] = useState(null);
   const [fullMlTidCountdownSeconds, setFullMlTidCountdownSeconds] = useState(0);
 
@@ -2828,6 +2847,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
   const trainRemSmartDirectionRef = useRef({});
   const trainRemLastFocusedIndexRef = useRef({});
   const trainRemFocusedTrainIdCellRef = useRef(null);
+  const eastDepotCopyTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (eastDepotCopyTimerRef.current) clearTimeout(eastDepotCopyTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const entity = getTrainRemEntity();
@@ -3530,6 +3556,46 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
     }
   };
 
+  const flashEastDepotCopyStatus = (status) => {
+    setEastDepotCopyStatus(status);
+
+    if (eastDepotCopyTimerRef.current) {
+      clearTimeout(eastDepotCopyTimerRef.current);
+    }
+
+    eastDepotCopyTimerRef.current = setTimeout(() => {
+      setEastDepotCopyStatus("");
+      eastDepotCopyTimerRef.current = null;
+    }, 1600);
+  };
+
+  const handleCopyEastDepotTrainList = async () => {
+    const removalTrainIds = normalizeTrainRemRows(trainRemStateRef.current?.rows?.east, "east")
+      .map((row) => padTrainId(normalizeTrainId(row.trainId)))
+      .filter(Boolean);
+    const stablingTrainIds = collectStablingTrainIds(eastStablingData, EAST_ROADS);
+    const combinedTrainIds = Array.from(new Set([...removalTrainIds, ...stablingTrainIds]));
+
+    if (combinedTrainIds.length === 0) {
+      flashEastDepotCopyStatus("empty");
+      return;
+    }
+
+    const text = combinedTrainIds
+      .map((trainId, index) => `${index + 1}. ${trainId}`)
+      .join("\n");
+
+    const ok = await copyTextToClipboard(text);
+    flashEastDepotCopyStatus(ok ? "copied" : "failed");
+  };
+
+  const getEastDepotCopyLabel = () => {
+    if (eastDepotCopyStatus === "copied") return "Copied";
+    if (eastDepotCopyStatus === "empty") return "No Train";
+    if (eastDepotCopyStatus === "failed") return "Failed";
+    return "Copy";
+  };
+
   const renderDepotTable = (depot, title, subtitle) => {
     const rows = normalizeTrainRemRows(trainRemState.rows?.[depot], depot);
     const selectedPreset = trainRemState.selectedPreset?.[depot] || "9am";
@@ -3561,6 +3627,24 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange }) {
                 <FileText size={12} />
                 {pdfActive ? "Done" : "PDF"}
               </button>
+
+              {depot === "east" && (
+                <button
+                  type="button"
+                  onClick={handleCopyEastDepotTrainList}
+                  className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5"
+                  style={{
+                    background: eastDepotCopyStatus === "copied" ? "rgba(34,197,94,0.18)" : "rgba(15,45,74,0.75)",
+                    borderColor: eastDepotCopyStatus === "copied" ? "rgba(34,197,94,0.48)" : "rgba(74,138,181,0.55)",
+                    color: eastDepotCopyStatus === "copied" ? "#86efac" : eastDepotCopyStatus === "empty" ? "#fbbf24" : "#9ccbea",
+                    boxShadow: eastDepotCopyStatus === "copied" ? "0 0 12px rgba(34,197,94,0.16)" : "none",
+                  }}
+                  title="Copy East Depot removal Train ID list together with main East Depot stabling Train ID list"
+                >
+                  {eastDepotCopyStatus === "copied" ? <ClipboardCheck size={12} /> : <Copy size={12} />}
+                  {getEastDepotCopyLabel()}
+                </button>
+              )}
 
               <button
                 type="button"
@@ -8641,6 +8725,7 @@ export default function DepotStablingPage() {
       <TrainRemPanel
         maintenanceMap={maintenanceMap}
         onTrainRemStateChange={setTrainRemCheckState}
+        eastStablingData={eastData}
       />
     </div>
   </div>
