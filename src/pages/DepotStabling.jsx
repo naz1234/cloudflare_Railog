@@ -8702,6 +8702,16 @@ function getRequestNoteSummaryForTrain(requests = [], trainKey = "") {
   return notes.join(", ");
 }
 
+function hasWorkshopRequestForTrain(requests = [], trainKey = "") {
+  const key = normalizeTrainId(trainKey);
+  if (!key) return false;
+
+  return (requests || []).some((request) => {
+    if (normalizeTrainId(request?.trainId) !== key) return false;
+    return isWorkshopRequestLabel(getTrainRequestDisplayType(request));
+  });
+}
+
 function getRequestedTrainsForWestDepotRemoval({ requests = [], trainRemState, westData = {} }) {
   const westRemovalRowsMap = getWestRemovalRowsMap(trainRemState);
   const westStablingKeys = getWestStablingKeys(westData);
@@ -8741,7 +8751,13 @@ function getRequestedTrainsNotInWestDepotStablingRemoval({ requests = [], trainR
     if (isUnfitTrainRequest(request)) return;
 
     const key = normalizeTrainId(request?.trainId);
-    if (!key || westRemovalRowsMap.has(key) || westStablingKeys.has(key) || seen.has(key)) return;
+    if (
+      !key ||
+      hasWorkshopRequestForTrain(requests, key) ||
+      westRemovalRowsMap.has(key) ||
+      westStablingKeys.has(key) ||
+      seen.has(key)
+    ) return;
 
     seen.add(key);
     const trainRemRow = getTrainRemRowForTrain(trainRemState, key);
