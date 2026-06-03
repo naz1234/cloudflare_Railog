@@ -327,7 +327,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             <div className="mt-1 flex items-center gap-1.5 text-[10px] text-[#4a8ab5]">
               <span>Colour preview:</span>
               <span
-                className="inline-flex max-w-[150px] items-center justify-center rounded-full px-2 py-0.5 font-semibold leading-none truncate"
+                className="inline-flex max-w-[150px] items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold leading-none truncate"
                 style={getRequestPillStyle(cleanRequestLabel(requestType), cleanRequestLabel(requestType))}
               >
                 {cleanRequestLabel(requestType)}
