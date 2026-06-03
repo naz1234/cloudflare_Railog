@@ -1481,6 +1481,19 @@ function cleanRequestLabel(value = "") {
   return value.toString().trim().replace(/\s+/g, " ");
 }
 
+function normalizeRequestIdentity(value = "") {
+  return cleanRequestLabel(value)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .join(" ");
+}
+
+function isWorkshopRequestLabel(value = "") {
+  return normalizeRequestIdentity(value).includes("WORKSHOP");
+}
+
 
 function padTrainId(trainId) {
   // Always format as T## — ensure minimum 2-digit number (T1→T01, T9→T09, T10→T10)
@@ -1604,6 +1617,22 @@ function getCustomRequestStyle(label = "") {
 
 function buildMaintenanceMap(requests) {
   const map = {};
+  const workshopTrainKeys = new Set();
+
+  (requests || []).forEach((req) => {
+    const key = normalizeTrainId(req.trainId);
+    if (!key) return;
+
+    const displayType = cleanRequestLabel(
+      req.requestType === "Other"
+        ? req.customType || "Other"
+        : req.requestType || "Request"
+    ) || "Request";
+
+    if (isWorkshopRequestLabel(displayType)) {
+      workshopTrainKeys.add(key);
+    }
+  });
 
   (requests || []).forEach((req) => {
     const key = normalizeTrainId(req.trainId);
@@ -1615,6 +1644,8 @@ function buildMaintenanceMap(requests) {
         : req.requestType || "Request"
     ) || "Request";
     const typeKey = displayType;
+    const isWorkshop = isWorkshopRequestLabel(displayType);
+    const isSuppressedByWorkshop = workshopTrainKeys.has(key) && !isWorkshop;
 
     const styles = MAINT_STYLES[typeKey] || getCustomRequestStyle(displayType);
 
@@ -1627,7 +1658,17 @@ function buildMaintenanceMap(requests) {
       displayType,
       remark: "",
       badgeText: displayType,
+      isWorkshop,
+      isSuppressedByWorkshop,
       ...styles,
+    });
+  });
+
+  Object.keys(map).forEach((key) => {
+    map[key].sort((a, b) => {
+      if (a.isWorkshop !== b.isWorkshop) return a.isWorkshop ? -1 : 1;
+      if (a.isSuppressedByWorkshop !== b.isSuppressedByWorkshop) return a.isSuppressedByWorkshop ? 1 : -1;
+      return (a.displayType || "").localeCompare(b.displayType || "");
     });
   });
 
@@ -1713,6 +1754,14 @@ function getRequestPillStyle(item) {
     color: accent,
     border: `1px solid ${accent}`,
     boxShadow: `0 0 8px ${hexToRgba(accent, 0.24)}, inset 0 1px 0 rgba(255,255,255,0.05)`,
+    ...(item?.isSuppressedByWorkshop
+      ? {
+          opacity: 0.5,
+          textDecoration: "line-through",
+          textDecorationColor: "#ef4444",
+          textDecorationThickness: "2px",
+        }
+      : {}),
   };
 }
 
@@ -10786,8 +10835,9 @@ function sectionToPrintableSvg({
           // Example: WASH = light blue, RST PM = light green, RST CM = orange,
           // Deep Cleaning = purple, INBOUND = yellow, Other = grey.
           fill: item.badgeBg || "#fff176",
-          stroke: item.badgeBorder || item.trainColor || "#000",
+          stroke: item.isSuppressedByWorkshop ? "#ef4444" : item.badgeBorder || item.trainColor || "#000",
           textFill: item.badgeColor || "#000",
+          strike: Boolean(item.isSuppressedByWorkshop),
         })),
       ];
       const x1 = blocksStartX + blockDrawWidth * i;
@@ -10829,9 +10879,12 @@ function sectionToPrintableSvg({
             rx: 9,
             fill: item.fill || "#fff176",
             stroke: item.stroke || "#000",
-            strokeWidth: 1,
+            strokeWidth: item.strike ? 2 : 1,
           });
           centerText(safeLabel, pillX, pillY, pillX + pillWidth, pillY + pillHeight, pillFontSize, 800, "", item.textFill || "#000");
+          if (item.strike) {
+            add(`<line x1="${pillX + 8}" y1="${pillY + pillHeight / 2}" x2="${pillX + pillWidth - 8}" y2="${pillY + pillHeight / 2}" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>`);
+          }
           pillY += pillHeight + pillGap;
         });
       } else {
@@ -11547,7 +11600,7 @@ function RoadRow({
                     key={`${key}-${item.displayType}-${item.badgeText || ""}`}
                     className="inline-flex min-w-[92px] w-fit max-w-full items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-normal leading-none whitespace-nowrap text-center"
                     style={getRequestPillStyle(item)}
-                    title={item.badgeText || item.displayType}
+                    title={item.isSuppressedByWorkshop ? `${item.badgeText || item.displayType} crossed because this train is in WORKSHOP.` : item.badgeText || item.displayType}
                   >
                     {item.badgeText || item.displayType}
                   </span>

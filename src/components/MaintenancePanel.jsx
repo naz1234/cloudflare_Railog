@@ -35,6 +35,25 @@ function cleanRequestLabel(value = "") {
   return value.toString().trim().replace(/\s+/g, " ");
 }
 
+function normalizeRequestIdentity(value = "") {
+  return cleanRequestLabel(value)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .join(" ");
+}
+
+function isWorkshopRequestLabel(value = "") {
+  return normalizeRequestIdentity(value).includes("WORKSHOP");
+}
+
+const WORKSHOP_CROSS_CELL_STYLE = {
+  backgroundImage:
+    "linear-gradient(to bottom, transparent calc(50% - 1px), rgba(239,68,68,0.95) calc(50% - 1px), rgba(239,68,68,0.95) calc(50% + 1px), transparent calc(50% + 1px))",
+  backgroundRepeat: "no-repeat",
+};
+
 const CUSTOM_REQUEST_PALETTE = [
   "#22c55e", // green
   "#38bdf8", // sky
@@ -234,6 +253,16 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   };
 
   const displayType = (req) => cleanRequestLabel(req.requestType === "Other" ? (req.customType || "Other") : req.requestType) || "Request";
+  const workshopTrainKeys = new Set(
+    (requests || [])
+      .filter((req) => isWorkshopRequestLabel(displayType(req)))
+      .map((req) => normalizeTrainId(req.trainId || ""))
+      .filter(Boolean)
+  );
+  const isCrossedOutByWorkshop = (req) => {
+    const key = normalizeTrainId(req.trainId || "");
+    return Boolean(key && workshopTrainKeys.has(key) && !isWorkshopRequestLabel(displayType(req)));
+  };
   const sortedRequests = [...requests].sort((a, b) => displayType(a).localeCompare(displayType(b)));
   const visibleRequestRowCount = Math.max(sortedRequests.length, requests.length === 0 ? 1 : 0);
   const emptyRequestRowCount = Math.max(0, MIN_VISIBLE_REQUEST_ROWS - visibleRequestRowCount);
@@ -361,16 +390,32 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             {sortedRequests.map((req) => {
               const displayLabel = displayType(req);
               const typeKey = displayLabel;
-              const requestPillStyle = getRequestPillStyle(typeKey, displayLabel);
+              const crossedOut = isCrossedOutByWorkshop(req);
+              const requestPillStyle = {
+                ...getRequestPillStyle(typeKey, displayLabel),
+                ...(crossedOut
+                  ? {
+                      opacity: 0.52,
+                      textDecoration: "line-through",
+                      textDecorationColor: "#ef4444",
+                      textDecorationThickness: "2px",
+                    }
+                  : {}),
+              };
+              const cellStrikeStyle = crossedOut ? WORKSHOP_CROSS_CELL_STYLE : undefined;
               return (
-                <tr key={req.id || req._tempId} className="h-[24px] border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors">
-                  <td className="px-0.5 py-0.5 text-center">
+                <tr
+                  key={req.id || req._tempId}
+                  className="h-[24px] border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors"
+                  title={crossedOut ? "Crossed because this train is in WORKSHOP." : undefined}
+                >
+                  <td className="px-0.5 py-0.5 text-center" style={cellStrikeStyle}>
                     <span className="inline-flex min-w-[34px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none" style={requestPillStyle}>{req.trainId}</span>
                   </td>
-                  <td className="px-0.5 py-0.5 text-center">
-                    <span className="inline-flex max-w-[105px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none truncate" style={requestPillStyle}>{displayType(req)}</span>
+                  <td className="px-0.5 py-0.5 text-center" style={cellStrikeStyle}>
+                    <span className="inline-flex max-w-[105px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none truncate" style={requestPillStyle}>{displayLabel}</span>
                   </td>
-                  <td className="pr-1 py-0.5 text-center">
+                  <td className="pr-1 py-0.5 text-center" style={cellStrikeStyle}>
                     <button onClick={() => onRemove(req.id)} className="text-[#3a5a7a] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
                   </td>
                 </tr>
