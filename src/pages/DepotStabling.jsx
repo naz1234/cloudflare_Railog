@@ -1113,6 +1113,28 @@ function buildFullMlTidMap(rows = []) {
   return map;
 }
 
+function buildFullMlTrainTidMap(rows = []) {
+  const map = {};
+
+  normalizeFullMlTidRows(rows).forEach((row) => {
+    const tid = (row.tid || "").toString().replace(/[^0-9]/g, "");
+    const trainKey = normalizeTrainId(row.trainId);
+
+    if (tid && trainKey && !map[trainKey]) {
+      map[trainKey] = tid;
+    }
+  });
+
+  return map;
+}
+
+function getFullMlTidForTrain(fullMlTidRows = [], trainKey = "") {
+  const normalizedTrainKey = normalizeTrainId(trainKey);
+  if (!normalizedTrainKey) return "";
+
+  return buildFullMlTrainTidMap(fullMlTidRows)[normalizedTrainKey] || "";
+}
+
 function applyFullMlTidMatchesToTrainRemRows(rowsByDepot = {}, fullMlTidRows = []) {
   const tidMap = buildFullMlTidMap(fullMlTidRows);
   const nextRows = {};
@@ -8684,9 +8706,12 @@ function getMainStablingKeys(westData = {}, eastData = {}) {
   return stablingKeys;
 }
 
-function getRequestTid(request = {}, trainRemRow = {}) {
+function getRequestTid(request = {}, trainRemRow = {}, fullMlTidRows = []) {
+  const fullMlTid = getFullMlTidForTrain(fullMlTidRows, request?.trainId || trainRemRow?.trainId);
+
   return (
     trainRemRow?.tid ||
+    fullMlTid ||
     request?.tid ||
     request?.TID ||
     request?.tidNo ||
@@ -8746,6 +8771,7 @@ function getWorkshopTrainRequestKeys(requests = []) {
 
 function getRequestedTrainsForWestDepotRemoval({ requests = [], trainRemState, westData = {}, eastData = {} }) {
   const westRemovalRowsMap = getWestRemovalRowsMap(trainRemState);
+  const fullMlTidRows = trainRemState?.fullMlTidRows || [];
   const westStablingKeys = getMainStablingKeys(westData, eastData);
   const requestedRows = [];
   const seen = new Set();
@@ -8763,7 +8789,7 @@ function getRequestedTrainsForWestDepotRemoval({ requests = [], trainRemState, w
     requestedRows.push({
       key,
       label: padTrainId(key),
-      tid: getRequestTid(request, trainRemRow),
+      tid: getRequestTid(request, trainRemRow, fullMlTidRows),
       requestType: getRequestNoteSummaryForTrain(requests, key) || getTrainRequestDisplayType(request),
       timeRemoved: getRequestTiming(request, trainRemRow),
       actionNote: "Removal to west depot",
@@ -8775,6 +8801,7 @@ function getRequestedTrainsForWestDepotRemoval({ requests = [], trainRemState, w
 
 function getRequestedTrainsNotInWestDepotStablingRemoval({ requests = [], trainRemState, westData = {}, eastData = {} }) {
   const westRemovalRowsMap = getWestRemovalRowsMap(trainRemState);
+  const fullMlTidRows = trainRemState?.fullMlTidRows || [];
   const westStablingKeys = getMainStablingKeys(westData, eastData);
   const workshopTrainKeys = getWorkshopTrainRequestKeys(requests);
   const requestedRows = [];
@@ -8800,7 +8827,7 @@ function getRequestedTrainsNotInWestDepotStablingRemoval({ requests = [], trainR
     requestedRows.push({
       key,
       label: padTrainId(key),
-      tid: getRequestTid(request, trainRemRow),
+      tid: getRequestTid(request, trainRemRow, fullMlTidRows),
       requestType: getRequestNoteSummaryForTrain(requests, key) || getTrainRequestDisplayType(request),
       timeRemoved: getRequestTiming(request, trainRemRow),
       actionNote: "",

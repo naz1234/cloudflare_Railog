@@ -58,11 +58,16 @@ function isWorkshopRequestLabel(value = "") {
   return normalizeRequestIdentity(value).includes("WORKSHOP");
 }
 
-const REQUEST_CROSS_CELL_STYLE = {
-  backgroundImage:
-    "linear-gradient(to bottom, transparent calc(50% - 0.5px), rgba(239,68,68,0.95) calc(50% - 0.5px), rgba(239,68,68,0.95) calc(50% + 0.5px), transparent calc(50% + 0.5px))",
-  backgroundRepeat: "no-repeat",
-};
+function RequestCrossLine({ show }) {
+  if (!show) return null;
+
+  return (
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute left-0 right-0 top-1/2 z-20 h-px -translate-y-1/2 bg-red-500/95"
+    />
+  );
+}
 
 const CUSTOM_REQUEST_PALETTE = [
   "#22c55e", // green
@@ -414,14 +419,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 ...getRequestPillStyle(typeKey, displayLabel),
                 ...(crossedOut
                   ? {
-                      opacity: 0.52,
-                      textDecoration: "line-through",
-                      textDecorationColor: "#ef4444",
-                      textDecorationThickness: "1px",
+                      opacity: 0.58,
                     }
                   : {}),
               };
-              const cellStrikeStyle = crossedOut ? REQUEST_CROSS_CELL_STYLE : undefined;
               const crossOutTitle = crossOutReason === "STABLING"
                 ? "Crossed because this train is already in main stabling."
                 : crossOutReason === "WORKSHOP"
@@ -433,14 +434,17 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   className="h-[24px] border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors"
                   title={crossOutTitle}
                 >
-                  <td className="px-0.5 py-0.5 text-center" style={cellStrikeStyle}>
+                  <td className="relative px-0.5 py-0.5 text-center">
                     <span className="inline-flex min-w-[34px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none" style={requestPillStyle}>{req.trainId}</span>
+                    <RequestCrossLine show={crossedOut} />
                   </td>
-                  <td className="px-0.5 py-0.5 text-center" style={cellStrikeStyle}>
+                  <td className="relative px-0.5 py-0.5 text-center">
                     <span className="inline-flex max-w-[105px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none truncate" style={requestPillStyle}>{displayLabel}</span>
+                    <RequestCrossLine show={crossedOut} />
                   </td>
-                  <td className="pr-1 py-0.5 text-center" style={cellStrikeStyle}>
+                  <td className="relative pr-1 py-0.5 text-center">
                     <button onClick={() => onRemove(req.id)} className="text-[#3a5a7a] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
+                    <RequestCrossLine show={crossedOut} />
                   </td>
                 </tr>
               );
