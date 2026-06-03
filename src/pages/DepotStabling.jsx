@@ -1541,6 +1541,12 @@ function padTrainId(trainId) {
   return trainId.replace(/^T(\d+)$/, (_, n) => `T${n.padStart(2, "0")}`);
 }
 
+function formatTrainNumberOnly(trainId) {
+  const trainKey = padTrainId(normalizeTrainId(trainId));
+  const match = trainKey.match(/^T(\d+)$/);
+  return match ? match[1].padStart(2, "0") : trainKey.replace(/^T/i, "");
+}
+
 
 function emptyBlocks() {
   return Array.from({ length: NUM_BLOCKS }, () => ({
@@ -3581,8 +3587,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       return;
     }
 
-    const text = combinedTrainIds
-      .map((trainId, index) => `${index + 1}. ${trainId}`)
+    const text = ["East Depot Train", ...combinedTrainIds.map(formatTrainNumberOnly)]
+      .filter(Boolean)
       .join("\n");
 
     const ok = await copyTextToClipboard(text);
