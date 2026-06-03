@@ -26,6 +26,45 @@ const MAINT_STYLES = {
   Other: { cellBg: "#f8fafc", trainColor: "#475569", badgeBg: "#D3D3D3", badgeBorder: "#cbd5e1" },
 };
 
+const CUSTOM_REQUEST_PALETTE = [
+  "#22c55e", "#38bdf8", "#a78bfa", "#f472b6", "#fbbf24",
+  "#2dd4bf", "#fb7185", "#c084fc", "#60a5fa", "#f97316",
+  "#34d399", "#e879f9", "#84cc16", "#06b6d4", "#d946ef",
+  "#facc15", "#10b981", "#818cf8", "#fb923c", "#2dd4bf",
+];
+
+function getCustomRequestColor(label = "") {
+  const key = label
+    .toString()
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .join(" ");
+
+  if (!key) return MAINT_STYLES.Other.badgeBorder;
+
+  let hash = 2166136261;
+  for (let i = 0; i < key.length; i += 1) {
+    hash ^= key.charCodeAt(i);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+
+  return CUSTOM_REQUEST_PALETTE[hash % CUSTOM_REQUEST_PALETTE.length];
+}
+
+function getCustomRequestStyle(label = "") {
+  const accent = getCustomRequestColor(label);
+
+  return {
+    cellBg: "#f8fafc",
+    trainColor: accent,
+    badgeBg: accent,
+    badgeBorder: accent,
+  };
+}
+
 function normalizeTrainId(value) {
   if (!value) return "";
   const cleaned = value.toString().trim().toUpperCase().replace(/\s+/g, "");
@@ -77,9 +116,12 @@ function buildMaintenanceMap(requests) {
   (requests || []).forEach((req) => {
     const key = normalizeTrainId(req.trainId);
     if (!key) return;
-    const typeKey = req.requestType === "Other" ? "Other" : req.requestType;
-    const displayType = req.requestType === "Other" ? req.customType || "Other" : req.requestType;
-    const styles = MAINT_STYLES[typeKey] || MAINT_STYLES.Other;
+    const displayType = (req.requestType === "Other" ? req.customType || "Other" : req.requestType || "Request")
+      .toString()
+      .trim()
+      .replace(/\s+/g, " ") || "Request";
+    const typeKey = displayType;
+    const styles = MAINT_STYLES[typeKey] || getCustomRequestStyle(displayType);
     if (!map[key]) map[key] = [];
     map[key].push({ typeKey, displayType, ...styles });
   });

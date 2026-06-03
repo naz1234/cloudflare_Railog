@@ -8,11 +8,11 @@
     },
     "requestType": {
       "type": "string",
-      "description": "Type of maintenance request: PM, WASH, CM, HVAC, Deep Cleaning, G To C, UNFIT, Other"
+      "description": "Manual maintenance request type entered by user"
     },
     "customType": {
       "type": "string",
-      "description": "Custom type text when requestType is Other"
+      "description": "Legacy custom type text for older saved records"
     },
     "remark": {
       "type": "string",

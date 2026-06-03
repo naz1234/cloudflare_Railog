@@ -1477,6 +1477,10 @@ function normalizeTrainId(value) {
   return cleaned;
 }
 
+function cleanRequestLabel(value = "") {
+  return value.toString().trim().replace(/\s+/g, " ");
+}
+
 
 function padTrainId(trainId) {
   // Always format as T## — ensure minimum 2-digit number (T1→T01, T9→T09, T10→T10)
@@ -1605,11 +1609,12 @@ function buildMaintenanceMap(requests) {
     const key = normalizeTrainId(req.trainId);
     if (!key) return;
 
-    const displayType =
+    const displayType = cleanRequestLabel(
       req.requestType === "Other"
         ? req.customType || "Other"
-        : req.requestType;
-    const typeKey = req.requestType === "Other" ? displayType : req.requestType;
+        : req.requestType || "Request"
+    ) || "Request";
+    const typeKey = displayType;
 
     // Keep the request note/remark so main stabling can show Excel wash dates.
     // Example: requestType = "WASH", remark = "wash 20 May" → badge shows "wash 20 May".
@@ -8535,9 +8540,11 @@ export default function DepotStablingPage() {
 }
 
 function getTrainRequestDisplayType(request = {}) {
-  return request?.requestType === "Other"
-    ? request?.customType || "Other"
-    : request?.requestType || "Request";
+  return cleanRequestLabel(
+    request?.requestType === "Other"
+      ? request?.customType || "Other"
+      : request?.requestType || "Request"
+  ) || "Request";
 }
 
 function isUnfitTrainRequest(request = {}) {

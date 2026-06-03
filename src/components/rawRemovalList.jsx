@@ -115,11 +115,13 @@ export default function RemovalList({ requests, depot: depotProp = "west", rowCo
     if (r.trainId?.trim()) {
       const key = normalizeId(r.trainId);
       if (!key) return;
-      const displayType = r.requestType === "Other" ? (r.customType || "Other") : r.requestType;
+      const displayType = (r.requestType === "Other" ? (r.customType || "Other") : r.requestType || "Request")
+        .toString()
+        .trim()
+        .replace(/\s+/g, " ") || "Request";
       requestMap[key] = displayType;
-      requestColorMap[key] = r.requestType === "Other"
-        ? { bg: getCustomRequestColor(displayType), text: "#000000" }
-        : (REQUEST_COLORS[r.requestType] || REQUEST_COLORS.Other);
+      requestColorMap[key] = REQUEST_COLORS[displayType]
+        || { bg: getCustomRequestColor(displayType), text: "#000000" };
     }
   });
 

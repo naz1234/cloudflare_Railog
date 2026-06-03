@@ -2,11 +2,6 @@ import { useState } from "react";
 import * as XLSX from "xlsx";
 import { Plus, Trash2, Wrench, FileSpreadsheet, Upload } from "lucide-react";
 
-const REQUEST_TYPES = [
-  "UNFIT", "Workshop /Unfit", "RST CM", "RST PM", "WASH", "TLC Comms", "ML Fault", "HVAC TESTING",
-  "Deep Cleaning", "INBOUND (G to C)", "CC Tech/Func. Alarm", "Door Issue", "Training", "APU alarm", "Other"
-];
-
 const MIN_VISIBLE_REQUEST_ROWS = 40;
 
 export const REQUEST_COLORS = {
@@ -34,6 +29,10 @@ function normalizeTrainId(value) {
   if (!cleaned) return "";
   if (/^\d+$/.test(cleaned)) return String(Number(cleaned)).padStart(2, "0");
   return cleaned;
+}
+
+function cleanRequestLabel(value = "") {
+  return value.toString().trim().replace(/\s+/g, " ");
 }
 
 const CUSTOM_REQUEST_PALETTE = [
@@ -219,8 +218,7 @@ function formatWashRemark(nextWashValue) {
 
 export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll }) {
   const [trainId, setTrainId] = useState("");
-  const [requestType, setRequestType] = useState("RST PM");
-  const [customType, setCustomType] = useState("");
+  const [requestType, setRequestType] = useState("");
   const [remark, setRemark] = useState("");
   const [error, setError] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
@@ -229,22 +227,25 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
   const handleAdd = () => {
     const trainIds = trainId.split(/[\s,]+/).map(normalizeTrainId).filter(Boolean);
+    const cleanType = cleanRequestLabel(requestType);
+
     if (trainIds.length === 0) { setError("Train ID is required."); return; }
-    if (requestType === "Other" && !customType.trim()) { setError("Please enter custom type."); return; }
+    if (!cleanType) { setError("Request type is required."); return; }
+
     const uniqueTrainIds = [...new Set(trainIds)];
-    const newType = requestType === "Other" ? customType.trim() || "Other" : requestType;
+    const newTypeKey = cleanType.toUpperCase();
     const hasSameTrainAndType = (id) =>
       requests.some((req) => {
         const existingTrainId = normalizeTrainId(req.trainId || "");
-        const existingType = req.requestType === "Other" ? req.customType || "Other" : req.requestType;
-        return existingTrainId === id && existingType === newType;
+        const existingType = cleanRequestLabel(req.requestType === "Other" ? req.customType || "Other" : req.requestType);
+        return existingTrainId === id && existingType.toUpperCase() === newTypeKey;
       });
     const newTrainIds = uniqueTrainIds.filter((id) => !hasSameTrainAndType(id));
     const skippedTrainIds = uniqueTrainIds.filter((id) => hasSameTrainAndType(id));
     if (newTrainIds.length === 0) { setError("Train ID already has this request type."); setTrainId(""); return; }
-    newTrainIds.forEach((id) => { onAdd({ trainId: id, requestType, customType: requestType === "Other" ? customType.trim() : "", remark: remark.trim() }); });
+    newTrainIds.forEach((id) => { onAdd({ trainId: id, requestType: cleanType, customType: "", remark: remark.trim() }); });
     if (skippedTrainIds.length > 0) { setError(`Skipped same type: ${skippedTrainIds.join(", ")}`); } else { setError(""); }
-    setTrainId(""); setRemark(""); setCustomType(""); setRequestType("RST PM");
+    setTrainId(""); setRemark(""); setRequestType("");
   };
 
   const handleWashExcelUpload = async (event) => {
@@ -334,7 +335,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     }
   };
 
-  const displayType = (req) => req.requestType === "Other" ? (req.customType || "Other") : req.requestType;
+  const displayType = (req) => cleanRequestLabel(req.requestType === "Other" ? (req.customType || "Other") : req.requestType) || "Request";
   const sortedRequests = [...requests].sort((a, b) => displayType(a).localeCompare(displayType(b)));
   const visibleRequestRowCount = Math.max(sortedRequests.length, requests.length === 0 ? 1 : 0);
   const emptyRequestRowCount = Math.max(0, MIN_VISIBLE_REQUEST_ROWS - visibleRequestRowCount);
@@ -416,17 +417,26 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         </div>
         <div>
           <label className={labelCls}>Request Type</label>
-          <select value={requestType} onChange={(e) => setRequestType(e.target.value)}
-            className="w-full border border-[#1e4060] rounded-full px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-[#4f8ef7] bg-[#091828] text-[#c8d8ea] transition-all">
-            {REQUEST_TYPES.map((t) => (<option key={t} value={t}>{t}</option>))}
-          </select>
+          <input
+            type="text"
+            value={requestType}
+            onChange={(e) => setRequestType(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+            className={inputCls}
+            placeholder="e.g. RST PM / INBOUND (G to C)"
+          />
+          {cleanRequestLabel(requestType) && (
+            <div className="mt-1 flex items-center gap-1.5 text-[10px] text-[#4a8ab5]">
+              <span>Colour preview:</span>
+              <span
+                className="inline-flex max-w-[150px] items-center justify-center rounded-full px-2 py-0.5 font-semibold leading-none truncate"
+                style={getRequestPillStyle(cleanRequestLabel(requestType), cleanRequestLabel(requestType))}
+              >
+                {cleanRequestLabel(requestType)}
+              </span>
+            </div>
+          )}
         </div>
-        {requestType === "Other" && (
-          <div>
-            <label className={labelCls}>Custom Type</label>
-            <input type="text" value={customType} onChange={(e) => setCustomType(e.target.value)} className={inputCls} placeholder="Enter type..." />
-          </div>
-        )}
         <div>
           <label className={labelCls}>Note <span className="normal-case font-normal">(optional)</span></label>
           <input type="text" value={remark} onChange={(e) => setRemark(e.target.value)} className={inputCls} placeholder="Optional" />
@@ -457,7 +467,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             )}
             {sortedRequests.map((req) => {
               const displayLabel = displayType(req);
-              const typeKey = req.requestType === "Other" ? displayLabel : req.requestType;
+              const typeKey = displayLabel;
               const requestPillStyle = getRequestPillStyle(typeKey, displayLabel);
               const notePillStyle = req.remark ? getRemarkPillStyle(req.remark) : getNeutralPillStyle();
               return (
