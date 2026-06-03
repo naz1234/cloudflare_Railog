@@ -3587,7 +3587,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       return;
     }
 
-    const text = ["East Depot Train", ...combinedTrainIds.map(formatTrainNumberOnly)]
+    const text = [`East Depot Train (Total ${combinedTrainIds.length} trains)`, ...combinedTrainIds.map(formatTrainNumberOnly)]
       .filter(Boolean)
       .join("\n");
 
