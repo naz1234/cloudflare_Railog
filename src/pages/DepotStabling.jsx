@@ -2395,28 +2395,34 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   // Elapsed inserted trains are hidden only after user clicks "Hide elapsed TID".
   const expired = Boolean(hideElapsedTid && inserted && isTimePast(inserted.time));
 
+  const requestAccent = primaryMaint ? getRequestAccent(primaryMaint) : "#4f8ef7";
   let trainColor = "#e2eaf4";
   if (expired) { trainColor = "#3a5068"; }
   else if (inserted) { trainColor = "#4ade80"; }
   else if (hasTidRemark) { trainColor = "#facc15"; }
-  else if (primaryMaint) { trainColor = primaryMaint.trainColor; }
+  else if (primaryMaint) { trainColor = requestAccent; }
 
   const displayVal = key ? key.replace(/^T/, "") : "";
 
-  const insCardBg = expired ? "linear-gradient(135deg,#071218,#050d14)" : inserted ? "linear-gradient(135deg,#0d2b1e,#082015)" : hasTidRemark ? "linear-gradient(135deg,#1f1c0a,#151205)" : key && primaryMaint ? `linear-gradient(135deg,${primaryMaint.cellBg},${primaryMaint.cellBg}bb)` : key ? "linear-gradient(135deg,#0f2d4a,#081e32)" : "none";
-  const insCardBorder = expired ? "1px solid #1a3040" : inserted ? "1px solid #059669" : hasTidRemark ? "1px solid #ca8a04" : key && primaryMaint ? `1px solid ${primaryMaint.badgeBorder}` : key ? "1px solid #1e4d72" : "1.5px dashed #1b3a55";
+  const insCardBg = expired ? "linear-gradient(135deg,#071218,#050d14)" : inserted ? "linear-gradient(135deg,#0d2b1e,#082015)" : hasTidRemark ? "linear-gradient(135deg,#1f1c0a,#151205)" : key && primaryMaint ? getRequestCardGradient(primaryMaint) : key ? "linear-gradient(135deg,#0f2d4a,#081e32)" : "none";
+  const insCardBorder = expired ? "1px solid #1a3040" : inserted ? "1.5px solid #059669" : hasTidRemark ? "1.5px solid #ca8a04" : key && primaryMaint ? `1.5px solid ${requestAccent}` : key ? "1px solid #1e4d72" : "1.5px dashed #1b3a55";
+  const insCardGlow = key && primaryMaint && !expired && !inserted && !hasTidRemark
+    ? getRequestGlow(primaryMaint)
+    : key && !expired
+    ? "0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)"
+    : undefined;
   const insTidInputStyle = {
     border: specialTidRemarkStyle ? `1px solid ${specialTidRemarkStyle.border}` : hasTidRemark ? "1px solid #ca8a04" : "1px solid #1e4060",
     backgroundColor: specialTidRemarkStyle ? specialTidRemarkStyle.bg : hasTidRemark ? "#1f1c0a" : "#091828",
     color: specialTidRemarkStyle ? specialTidRemarkStyle.color : hasTidRemark ? "#fde68a" : "#c8d8ea",
     boxShadow: specialTidRemarkStyle ? specialTidRemarkStyle.shadow : undefined,
   };
-  const insRowLine = isLast ? "1px solid #2b4f6b" : "2px solid #2b4f6b";
+  const insRowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
 
   if (expired) {
     return (
-      <td className="p-1.5 align-top" title="Elapsed TID hidden manually" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-        <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl select-none" style={{ minHeight: 90, padding: "7px 5px", background: insCardBg, border: insCardBorder, opacity: 0.55 }}>
+      <td className="p-1.5 align-middle" title="Elapsed TID hidden manually" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
+        <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl select-none" style={{ minHeight: 82, padding: "6px 4px", background: insCardBg, border: insCardBorder, opacity: 0.55 }}>
           <div className="w-full text-center font-black leading-none" style={{ fontSize: 14, color: "#3a5068" }}>{displayVal || "—"}</div>
           {insertedRemarkLabel && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
           <span className="text-[9px] font-semibold" style={{ color: "#3a5068" }}>✓ {inserted.time}</span>
@@ -2427,15 +2433,24 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   }
 
   return (
-    <td className="p-1.5 align-top" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-      <div className="relative flex flex-col items-center justify-start gap-1 rounded-xl" style={{ minHeight: showSweepChoice ? 118 : 90, padding: "7px 5px", background: insCardBg, border: insCardBorder, boxShadow: key ? "0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)" : undefined }}>
+    <td className="p-1.5 align-middle" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
+      <div className="relative flex flex-col items-center justify-start gap-1 rounded-xl" style={{ minHeight: showSweepChoice ? 118 : 82, padding: "6px 4px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow }}>
         {key && !inserted && (
           <div className="absolute top-1 right-1.5 opacity-20 pointer-events-none">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={trainColor} strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/></svg>
           </div>
         )}
         <div className="w-full text-center font-black leading-none" style={{ fontSize: key ? 15 : 12, color: key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}>{displayVal || "—"}</div>
-        {maintList.map((item) => (<span key={`${item.displayType}-${item.badgeText || ""}`} className="px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none whitespace-nowrap" style={{ backgroundColor: item.badgeBg, color: "#000", border: `1px solid ${item.badgeBorder}` }} title={item.badgeText || item.displayType}>{item.badgeText || item.displayType}</span>))}
+        {maintList.map((item) => (
+          <span
+            key={`${item.displayType}-${item.badgeText || ""}`}
+            className="inline-flex min-w-[92px] w-fit max-w-full items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-normal leading-none whitespace-nowrap text-center"
+            style={getRequestPillStyle(item, { showSuppressedStyle: false })}
+            title={item.badgeText || item.displayType}
+          >
+            {item.badgeText || item.displayType}
+          </span>
+        ))}
         {key && !inserted && (<input ref={tidInputRef} type="text" value={tidInput} onChange={(e) => onTidChange(road, bi, e.target.value)} onKeyDown={onTidKeyDown} onFocus={onTidFocus} onPointerDown={onTidFocus} placeholder="TID" className="w-full h-6 px-1 text-center text-[12px] font-semibold rounded-lg outline-none placeholder:text-[#2b4f6b]" style={insTidInputStyle} />)}
         {key && inserted && insertedRemarkLabel && (<span className="text-[12px] font-bold text-emerald-400">{insertedRemarkLabel}</span>)}
         {key && !inserted && showSweepChoice && (
@@ -2670,15 +2685,18 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
     return false;
   };
   return (
-    <section className="bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4">
-      <div className="flex items-center gap-2 mb-2">
-        <h2 className="text-sm leading-none font-black text-white tracking-widest uppercase">{title}</h2>
-        <button
-          onClick={handleDownloadPng}
-          disabled={downloadingPng}
-          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all bg-[#1f1246] border-[#a855f7] text-[#f0d9ff] shadow-[0_0_14px_rgba(168,85,247,0.55),inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-[#321968] hover:border-[#c084fc] hover:text-white hover:shadow-[0_0_22px_rgba(168,85,247,0.8),inset_0_1px_0_rgba(255,255,255,0.16)] disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-[#1f1246] disabled:hover:border-[#a855f7] disabled:hover:text-[#f0d9ff]"
-          title="Download PNG picture with insertion TID, timing and 3K1/SW pills"
-        >
+    <section className="bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
+      <SectionTitle
+        title={title}
+        action={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDownloadPng}
+              disabled={downloadingPng}
+              className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
+              style={MAIN_STABLING_BUTTON_BLUE}
+              title="Download PNG picture with insertion TID, timing and 3K1/SW pills"
+            >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="7 10 12 15 17 10" />
@@ -2686,14 +2704,11 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
           </svg>
           {downloadingPng ? "Preparing..." : "Download PNG"}
         </button>
-        <button
-          onClick={() => setHideFiltered((v) => !v)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${
-            hideFiltered
-              ? "bg-[#0c3a5a] border-[#38bdf8] text-white shadow-[0_0_16px_rgba(56,189,248,0.65),inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-[#0f4b73] hover:shadow-[0_0_22px_rgba(56,189,248,0.85),inset_0_1px_0_rgba(255,255,255,0.16)]"
-              : "bg-[#09233a] border-[#38bdf8] text-[#bae6fd] shadow-[0_0_14px_rgba(56,189,248,0.50),inset_0_1px_0_rgba(255,255,255,0.10)] hover:bg-[#0f3a5c] hover:border-[#7dd3fc] hover:text-white hover:shadow-[0_0_22px_rgba(56,189,248,0.78),inset_0_1px_0_rgba(255,255,255,0.16)]"
-          }`}
-        >
+            <button
+              onClick={() => setHideFiltered((v) => !v)}
+              className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
+              style={hideFiltered ? MAIN_STABLING_BUTTON_PRIMARY : MAIN_STABLING_BUTTON_BLUE}
+            >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             {hideFiltered
               ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>
@@ -2701,12 +2716,13 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
           </svg>
           {hideFiltered ? "Show 3K1 / SW" : "Hide 3K1 / SW"}
         </button>
-        <button
-          onClick={handleClearTidRemarks}
-          disabled={!hasTidRemarks}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all bg-[#3b0b12] border-[#ef4444] text-[#fecaca] shadow-[0_0_14px_rgba(239,68,68,0.50),inset_0_1px_0_rgba(255,255,255,0.10)] hover:bg-[#5a111b] hover:border-[#f87171] hover:text-white hover:shadow-[0_0_22px_rgba(239,68,68,0.78),inset_0_1px_0_rgba(255,255,255,0.16)] disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-[#3b0b12] disabled:hover:border-[#ef4444] disabled:hover:text-[#fecaca]"
-          title="Clear TID / remark inputs for this depot"
-        >
+            <button
+              onClick={handleClearTidRemarks}
+              disabled={!hasTidRemarks}
+              className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
+              style={MAIN_STABLING_BUTTON_DANGER}
+              title="Clear TID / remark inputs for this depot"
+            >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 6h18" />
             <path d="M8 6V4h8v2" />
@@ -2716,12 +2732,13 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
           </svg>
           Clear TID Remark
         </button>
-        <button
-          onClick={handleClearInsertedTrains}
-          disabled={!hasInsertedTrains}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all bg-[#3b0b12] border-[#ef4444] text-[#fecaca] shadow-[0_0_14px_rgba(239,68,68,0.50),inset_0_1px_0_rgba(255,255,255,0.10)] hover:bg-[#5a111b] hover:border-[#f87171] hover:text-white hover:shadow-[0_0_22px_rgba(239,68,68,0.78),inset_0_1px_0_rgba(255,255,255,0.16)] disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-[#3b0b12] disabled:hover:border-[#ef4444] disabled:hover:text-[#fecaca]"
-          title="Clear inserted status and insertion log for this depot"
-        >
+            <button
+              onClick={handleClearInsertedTrains}
+              disabled={!hasInsertedTrains}
+              className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
+              style={MAIN_STABLING_BUTTON_DANGER}
+              title="Clear inserted status and insertion log for this depot"
+            >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 6h18" />
             <path d="M8 6V4h8v2" />
@@ -2731,33 +2748,32 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
           </svg>
           Clear Inserted Train
         </button>
-        <button
-          onClick={() => setHideElapsedTid((v) => !v)}
-          disabled={elapsedTidCount === 0}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${
-            hideElapsedTid
-              ? "bg-[#0c3a5a] border-[#38bdf8] text-white shadow-[0_0_16px_rgba(56,189,248,0.55),inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-[#0f4b73] hover:border-[#7dd3fc]"
-              : "bg-[#3a2609] border-[#f59e0b] text-[#fde68a] shadow-[0_0_14px_rgba(245,158,11,0.48),inset_0_1px_0_rgba(255,255,255,0.10)] hover:bg-[#5a3a0b] hover:border-[#fbbf24] hover:text-white hover:shadow-[0_0_22px_rgba(245,158,11,0.75),inset_0_1px_0_rgba(255,255,255,0.16)]"
-          } disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-[#3a2609] disabled:hover:border-[#f59e0b] disabled:hover:text-[#fde68a]`}
-          title="Manually hide inserted TIDs where the scheduled time has elapsed"
-        >
+            <button
+              onClick={() => setHideElapsedTid((v) => !v)}
+              disabled={elapsedTidCount === 0}
+              className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
+              style={hideElapsedTid ? MAIN_STABLING_BUTTON_PRIMARY : MAIN_STABLING_BUTTON_BLUE}
+              title="Manually hide inserted TIDs where the scheduled time has elapsed"
+            >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             {hideElapsedTid
               ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>
               : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}
           </svg>
           {hideElapsedTid ? `Show elapsed TID (${elapsedTidCount})` : `Hide elapsed TID (${elapsedTidCount})`}
-        </button>
-      </div>
-      <div className="overflow-hidden rounded-xl">
-        <table className="border-separate border-spacing-0 w-full table-fixed text-xs">
+            </button>
+          </div>
+        }
+      />
+      <div className="overflow-x-auto rounded-xl">
+        <table className="border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 912, maxWidth: 912, width: 912 }}>
           <thead>
             <tr>
               {labelSide === "left" && <th className="w-[72px]" style={{ background: "transparent", border: "none" }} />}
               {blockLabels.map((label, i) => {
                 const isLastBlock = i === blockLabels.length - 1;
                 return (
-                  <th key={label} className="h-8 text-center text-[9px] font-black tracking-widest uppercase" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", color: "#4a8ab5", borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined, borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: "2px solid #1a3a56", borderTopLeftRadius: labelSide === "left" && i === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && isLastBlock ? 12 : undefined }}>
+                  <th key={label} className="h-8 text-center text-[9px] font-black tracking-widest uppercase" style={{ width: 120, minWidth: 120, maxWidth: 120, background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", color: "#4a8ab5", borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined, borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: "2px solid #1a3a56", borderTopLeftRadius: labelSide === "left" && i === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && isLastBlock ? 12 : undefined }}>
                     {label}
                   </th>
                 );
@@ -2788,13 +2804,13 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
                     const block = data[road]?.[bi];
                     const isLastBlock = i === blockIndices.length - 1;
                     const isLastRow = ri === roads.length - 1;
-                    const borderBottom = isLastRow ? "1px solid #2b4f6b" : "2px solid #2b4f6b";
+                    const borderBottom = isLastRow ? "1px solid #1a3a56" : "2px solid #1a3a56";
                     const borderBottomRightRadius = labelSide === "left" && isLastRow && isLastBlock ? 12 : undefined;
                     const borderBottomLeftRadius = labelSide === "right" && isLastRow && i === 0 ? 12 : undefined;
                     if (hideFiltered && isFiltered(block, road, bi)) {
                       return (
-                        <td key={bi} className="p-1.5 align-top" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom, borderBottomRightRadius, borderBottomLeftRadius }}>
-                          <div className="flex items-center justify-center rounded-xl" style={{ minHeight: 90, border: "1.5px dashed #1a3050" }}>
+                        <td key={bi} className="p-1.5 align-middle" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom, borderBottomRightRadius, borderBottomLeftRadius }}>
+                          <div className="flex items-center justify-center rounded-xl" style={{ minHeight: 82, border: "1.5px dashed #1a3050" }}>
                             <span className="text-[9px] font-black text-[#2a4464] tracking-widest uppercase">{(block?.extraRemark || "").trim()}</span>
                           </div>
                         </td>
