@@ -8196,6 +8196,7 @@ export default function DepotStablingPage() {
 
   const duplicates = getDuplicates(westData, eastData);
   const mainStablingKeys = getMainStablingKeys(westData, eastData);
+  const mainStablingLocations = getMainStablingLocations(westData, eastData);
   const maintenanceMap = buildMaintenanceMap(requests, mainStablingKeys);
 
   if (!loaded) {
@@ -8534,6 +8535,7 @@ export default function DepotStablingPage() {
           onRemove={handleRemoveRequest}
           onClearAll={handleClearAllRequests}
           stabledTrainIds={Array.from(mainStablingKeys)}
+          stabledTrainLocations={mainStablingLocations}
         />
       </div>
 
@@ -8704,6 +8706,34 @@ function getMainStablingKeys(westData = {}, eastData = {}) {
   });
 
   return stablingKeys;
+}
+
+function formatStablingRoadForPopup(road = "") {
+  const match = road.toString().trim().toUpperCase().match(/(?:WD|ED)-ST(\d+)/);
+  if (match) return `STB ${match[1].padStart(2, "0")}`;
+  return road.toString().trim().toUpperCase();
+}
+
+function getMainStablingLocations(westData = {}, eastData = {}) {
+  const locations = {};
+
+  const addDepotLocations = (depotLabel, data = {}) => {
+    Object.entries(data || {}).forEach(([road, blocks]) => {
+      (blocks || []).forEach((block, blockIndex) => {
+        const key = normalizeTrainId(block?.trainId);
+        if (!key) return;
+
+        const locationText = `${depotLabel} ${formatStablingRoadForPopup(road)} Block ${String(blockIndex + 1).padStart(2, "0")}`;
+        if (!locations[key]) locations[key] = [];
+        locations[key].push(locationText);
+      });
+    });
+  };
+
+  addDepotLocations("West Depot", westData);
+  addDepotLocations("East Depot", eastData);
+
+  return locations;
 }
 
 function getRequestTid(request = {}, trainRemRow = {}, fullMlTidRows = []) {
