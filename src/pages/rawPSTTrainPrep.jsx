@@ -195,20 +195,17 @@ function PSTCell({
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const displayVal = displayTrainId(val);
-  const maintList = key ? maintenanceMap[key] || [] : [];
-  const primaryMaint = maintList[0] || null;
+  // PST / Train Prep should not inherit Maintenance Request / Request Type colours.
+  // Keep normal train cells consistent; only PST / Prep status changes the colour.
+  void maintenanceMap;
 
   const rowLine = isLast ? "1px solid #cbd5e1" : "2px solid #cbd5e1";
 
   const isWestBottomRightCorner = labelSide === "left" && isLast && isLastBlock;
   const isEastBottomLeftCorner = labelSide === "right" && isLast && isFirstBlock;
 
-  let cellBg = "#ffffff";
-  let trainColor = "#071b3a";
-  if (primaryMaint) {
-    cellBg = primaryMaint.cellBg;
-    trainColor = primaryMaint.trainColor;
-  }
+  const cellBg = "#ffffff";
+  const trainColor = "#071b3a";
 
   const [taName, setTaName] = useState("");
 
@@ -246,10 +243,7 @@ function PSTCell({
           {displayVal || "–"}
         </div>
 
-        {/* Maintenance badges */}
-        {maintList.map((item) => (
-          <Badge key={item.displayType} text={item.displayType} bg={item.badgeBg} border={item.badgeBorder} />
-        ))}
+        {/* Maintenance Request / Request Type badges are intentionally hidden here. */}
 
         {key && (
           <div className="flex flex-col gap-1 w-full mt-1">

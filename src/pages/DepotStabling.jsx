@@ -1839,12 +1839,12 @@ function getTrainRemRequestRemarkStyle(requestItem = null, label = "") {
 function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taName, onTaNameChange }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
-  const maintList = key ? maintenanceMap[key] || [] : [];
-  const primaryMaint = maintList[0] || null;
+  // PST / Train Prep section must not inherit Maintenance Request / Request Type colors.
+  // Keep all normal train cells in one consistent colour; only PST / Prep status changes the colour.
+  void maintenanceMap;
   const isWestBottomRightCorner = labelSide === "left" && isLast && isLastBlock;
   const isEastBottomLeftCorner = labelSide === "right" && isLast && isFirstBlock;
   let trainColor = "#e2eaf4";
-  if (primaryMaint) { trainColor = primaryMaint.trainColor; }
   const cellKey = `${road}-${bi}`;
   const rawPst = pstState[cellKey];
   const rawPrep = prepState[cellKey];
@@ -1859,6 +1859,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   const isPrepDone = prep?.done;
   if (isPstDone) { trainColor = "#4ade80"; }
   else if (isPstConfirming) { trainColor = "#facc15"; }
+  else if (isPrepDone) { trainColor = "#93c5fd"; }
   const displayVal = key ? key.replace(/^T/, "") : "";
   const pstCardBg = isPstDone
     ? "linear-gradient(135deg,#0d2b1e,#082015)"
@@ -1868,12 +1869,10 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
     ? "linear-gradient(135deg,#0d1f2e,#081525)"
     : isPrepStarted
     ? "linear-gradient(135deg,#1f1c0a,#151205)"
-    : key && primaryMaint
-    ? `linear-gradient(135deg,${primaryMaint.cellBg},${primaryMaint.cellBg}bb)`
     : key
     ? "linear-gradient(135deg,#0f2d4a,#081e32)"
     : "none";
-  const pstCardBorder = isPstDone ? "1px solid #059669" : isPstConfirming ? "1px solid #ca8a04" : isPrepDone ? "1px solid #3b82f6" : isPrepStarted ? "1px solid #ca8a04" : key && primaryMaint ? `1px solid ${primaryMaint.badgeBorder}` : key ? "1px solid #1e4d72" : "1.5px dashed #1b3a55";
+  const pstCardBorder = isPstDone ? "1px solid #059669" : isPstConfirming ? "1px solid #ca8a04" : isPrepDone ? "1px solid #3b82f6" : isPrepStarted ? "1px solid #ca8a04" : key ? "1px solid #1e4d72" : "1.5px dashed #1b3a55";
   const pstRowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
   return (
     <td className="p-1.5 align-top" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: pstRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
