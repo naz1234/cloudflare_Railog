@@ -1756,14 +1756,16 @@ function getRequestGlow(item) {
   return `0 0 0 1px ${hexToRgba(accent, 0.16)}, 0 0 14px ${hexToRgba(accent, 0.28)}, 0 2px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06)`;
 }
 
-function getRequestPillStyle(item) {
+function getRequestPillStyle(item, options = {}) {
   const accent = getRequestAccent(item);
+  const showSuppressedStyle = options.showSuppressedStyle !== false;
+
   return {
     backgroundColor: hexToRgba(accent, 0.11),
     color: accent,
     border: `1px solid ${accent}`,
     boxShadow: `0 0 8px ${hexToRgba(accent, 0.24)}, inset 0 1px 0 rgba(255,255,255,0.05)`,
-    ...(item?.isSuppressed
+    ...(showSuppressedStyle && item?.isSuppressed
       ? {
           opacity: 0.5,
           textDecoration: "line-through",
@@ -10862,9 +10864,9 @@ function sectionToPrintableSvg({
           // Example: WASH = light blue, RST PM = light green, RST CM = orange,
           // Deep Cleaning = purple, INBOUND = yellow, Other = grey.
           fill: item.badgeBg || "#fff176",
-          stroke: item.isSuppressed ? "#ef4444" : item.badgeBorder || item.trainColor || "#000",
+          stroke: item.badgeBorder || item.trainColor || "#000",
           textFill: item.badgeColor || "#000",
-          strike: Boolean(item.isSuppressed),
+          strike: false,
         })),
       ];
       const x1 = blocksStartX + blockDrawWidth * i;
@@ -11626,10 +11628,8 @@ function RoadRow({
                   <span
                     key={`${key}-${item.displayType}-${item.badgeText || ""}`}
                     className="inline-flex min-w-[92px] w-fit max-w-full items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-normal leading-none whitespace-nowrap text-center"
-                    style={getRequestPillStyle(item)}
-                    title={item.isSuppressed
-                      ? `${item.badgeText || item.displayType} crossed because this train is already in ${item.suppressionReason === "STABLING" ? "main stabling" : "WORKSHOP"}.`
-                      : item.badgeText || item.displayType}
+                    style={getRequestPillStyle(item, { showSuppressedStyle: false })}
+                    title={item.badgeText || item.displayType}
                   >
                     {item.badgeText || item.displayType}
                   </span>
