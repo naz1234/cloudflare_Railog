@@ -9,6 +9,7 @@ const ALLOWED_ENTITIES = new Set([
   'RemovalListRow',
   'MainlineTrainRow',
   'BookmarkLink',
+  'TimetableFile',
 ]);
 
 const jsonHeaders = {

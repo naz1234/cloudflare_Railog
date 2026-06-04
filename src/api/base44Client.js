@@ -14,6 +14,7 @@ const ENTITY_NAMES = [
   'RemovalListRow',
   'MainlineTrainRow',
   'BookmarkLink',
+  'TimetableFile',
 ];
 
 async function apiRequest(path, options = {}) {

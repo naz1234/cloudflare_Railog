@@ -16,6 +16,354 @@ const DEFAULT_BOOKMARK_LINKS = [
   { title: "SAP", url: "https://www.sap.com", sortOrder: 2 },
 ];
 
+
+const TIMETABLE_TYPES = [
+  { key: "weekday", label: "Weekday", presetLabel: "9am" },
+  { key: "friday", label: "Friday", presetLabel: "Fri" },
+  { key: "saturday", label: "Saturday", presetLabel: "Sat" },
+  { key: "ph", label: "PH", presetLabel: "PH" },
+];
+
+const ACTIVE_TIMETABLE_TYPE_KEY = "activeTimetableType_v1";
+const LOCAL_TIMETABLE_RECORDS_KEY = "storedTimetableRecords_v1";
+
+function normalizeTimetableType(value = "") {
+  const clean = String(value || "").toLowerCase().replace(/[^a-z]/g, "");
+  if (["fri", "friday"].includes(clean)) return "friday";
+  if (["sat", "saturday"].includes(clean)) return "saturday";
+  if (["ph", "publicholiday", "holiday"].includes(clean)) return "ph";
+  return "weekday";
+}
+
+function getTimetableTypeLabel(type = "weekday") {
+  return TIMETABLE_TYPES.find((item) => item.key === normalizeTimetableType(type))?.label || "Weekday";
+}
+
+function getDefaultPresetLabelForTimetableType(type = "weekday", currentLabel = "") {
+  const normalized = normalizeTimetableType(type);
+  if (normalized === "friday") return "Fri";
+  if (normalized === "saturday") return "Sat";
+  if (normalized === "ph") return "PH";
+  return ["9am", "7pm", "12am"].includes(currentLabel) ? currentLabel : "9am";
+}
+
+function loadActiveTimetableType() {
+  try {
+    return normalizeTimetableType(localStorage.getItem(ACTIVE_TIMETABLE_TYPE_KEY) || "weekday");
+  } catch {
+    return "weekday";
+  }
+}
+
+function saveActiveTimetableType(type) {
+  try { localStorage.setItem(ACTIVE_TIMETABLE_TYPE_KEY, normalizeTimetableType(type)); } catch {}
+}
+
+function loadLocalTimetableRecords() {
+  try {
+    const raw = localStorage.getItem(LOCAL_TIMETABLE_RECORDS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalTimetableRecords(records = []) {
+  try { localStorage.setItem(LOCAL_TIMETABLE_RECORDS_KEY, JSON.stringify(records)); } catch {}
+}
+
+function getTimetableEntity() {
+  return base44?.entities?.TimetableFile || null;
+}
+
+function isTimetableEntityReady(entity = getTimetableEntity()) {
+  return Boolean(entity?.list && entity?.create);
+}
+
+function normalizeExcelHeader(value = "") {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function findExcelColumn(row = [], headerText = "", startIndex = 0) {
+  const wanted = normalizeExcelHeader(headerText);
+  for (let i = Math.max(0, startIndex); i < row.length; i += 1) {
+    if (normalizeExcelHeader(row[i]) === wanted) return i;
+  }
+  return -1;
+}
+
+function findReasonColumn(subHeaderRow = [], afterIndex = 0, beforeIndex = subHeaderRow.length) {
+  for (let i = Math.max(0, afterIndex); i < Math.min(subHeaderRow.length, beforeIndex); i += 1) {
+    const clean = normalizeExcelHeader(subHeaderRow[i]);
+    if (clean.includes("reason") && clean.includes("delay")) return i;
+  }
+  return -1;
+}
+
+function normalizeTidValue(value = "") {
+  const clean = String(value ?? "").replace(/[^0-9]/g, "");
+  return clean ? String(Number(clean)) : "";
+}
+
+function normalizeDidValue(value = "") {
+  const clean = String(value ?? "").replace(/[^0-9]/g, "");
+  return clean || "";
+}
+
+function excelTimeToMinutes(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const total = value.getHours() * 60 + value.getMinutes() + (value.getSeconds() >= 30 ? 1 : 0);
+    return total % 1440;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const dayFraction = value >= 1 ? value % 1 : value;
+    return Math.round(dayFraction * 24 * 60) % 1440;
+  }
+
+  const text = String(value ?? "").trim();
+  if (!text) return null;
+
+  const match = text.match(/(\d{1,2})[:.](\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
+  if (!match) return null;
+
+  let hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const second = Number(match[3] || 0);
+  const ampm = (match[4] || "").toUpperCase();
+
+  if (ampm === "PM" && hour < 12) hour += 12;
+  if (ampm === "AM" && hour === 12) hour = 0;
+
+  return (hour * 60 + minute + (second >= 30 ? 1 : 0)) % 1440;
+}
+
+function formatMinutesAsTime(minutes) {
+  if (!Number.isFinite(minutes)) return "";
+  const safe = ((Math.round(minutes) % 1440) + 1440) % 1440;
+  const hour = Math.floor(safe / 60);
+  const minute = safe % 60;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+function formatExcelTimeValue(value) {
+  const minutes = excelTimeToMinutes(value);
+  return minutes === null ? "" : formatMinutesAsTime(minutes);
+}
+
+function classifyRemovalPresetFromTime(timetableType, time = "") {
+  const normalizedType = normalizeTimetableType(timetableType);
+  if (normalizedType === "friday") return "Fri";
+  if (normalizedType === "saturday") return "Sat";
+  if (normalizedType === "ph") return "PH";
+
+  const minutes = excelTimeToMinutes(time);
+  if (minutes === null) return "9am";
+  if (minutes < 180) return "12am";
+  if (minutes >= 18 * 60) return "7pm";
+  return "9am";
+}
+
+function pushTimetableEntry(bucket, entry) {
+  if (!entry?.tid || !entry?.time) return;
+  bucket.entries.push(entry);
+  bucket.timeMap[entry.tid] = entry.time;
+  if (entry.label) {
+    if (!bucket.presets[entry.label]) bucket.presets[entry.label] = { tids: [], timeMap: {}, entries: [] };
+    bucket.presets[entry.label].tids.push(entry.tid);
+    bucket.presets[entry.label].timeMap[entry.tid] = entry.time;
+    bucket.presets[entry.label].entries.push(entry);
+  }
+}
+
+function sortTimetableBucket(bucket) {
+  const byTime = (a, b) => {
+    const aMinutes = excelTimeToMinutes(a.time) ?? 0;
+    const bMinutes = excelTimeToMinutes(b.time) ?? 0;
+    if (aMinutes !== bMinutes) return aMinutes - bMinutes;
+    return Number(a.tid || 0) - Number(b.tid || 0);
+  };
+
+  bucket.entries.sort(byTime);
+  Object.values(bucket.presets || {}).forEach((preset) => {
+    preset.entries.sort(byTime);
+    preset.tids = preset.entries.map((entry) => entry.tid);
+    preset.timeMap = Object.fromEntries(preset.entries.map((entry) => [entry.tid, entry.time]));
+  });
+  bucket.timeMap = Object.fromEntries(bucket.entries.map((entry) => [entry.tid, entry.time]));
+}
+
+function createEmptyParsedTimetable(timetableType = "weekday") {
+  const makeRemovalBucket = () => ({ entries: [], timeMap: {}, presets: {} });
+  const makeInsertionBucket = () => ({ entries: [], timeMap: {} });
+
+  return {
+    timetableType: normalizeTimetableType(timetableType),
+    parsedAt: new Date().toISOString(),
+    summary: {
+      insertion: { west: 0, east: 0 },
+      removal: { west: 0, east: 0 },
+    },
+    insertion: {
+      west: makeInsertionBucket(),
+      east: makeInsertionBucket(),
+    },
+    removal: {
+      west: makeRemovalBucket(),
+      east: makeRemovalBucket(),
+    },
+  };
+}
+
+function parseTimetableWorkbook(arrayBuffer, timetableType = "weekday", fileName = "") {
+  const workbook = XLSX.read(arrayBuffer, { type: "array", cellDates: true });
+  const parsed = createEmptyParsedTimetable(timetableType);
+  parsed.sourceFileName = fileName || "Uploaded timetable";
+
+  workbook.SheetNames.forEach((sheetName) => {
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) return;
+
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "" });
+    const headerIndex = rows.findIndex((row) =>
+      row.some((cell) => normalizeExcelHeader(cell) === "tid") &&
+      row.some((cell) => normalizeExcelHeader(cell) === "departure 3a1p1") &&
+      row.some((cell) => normalizeExcelHeader(cell) === "departure 3k1p2")
+    );
+
+    if (headerIndex === -1) return;
+
+    const headerRow = rows[headerIndex] || [];
+    const subHeaderRow = rows[headerIndex + 1] || [];
+    const tidIndex = findExcelColumn(headerRow, "TID");
+    const westDidIndex = findExcelColumn(headerRow, "DID", tidIndex + 1);
+    const westDepartureIndex = findExcelColumn(headerRow, "Departure 3A1P1");
+    const eastArrivalIndex = findExcelColumn(headerRow, "Arrival 3K1P1");
+    const eastDidIndex = findExcelColumn(headerRow, "DID", eastArrivalIndex + 1);
+    const eastDepartureIndex = findExcelColumn(headerRow, "Departure 3K1P2");
+    const westArrivalIndex = findExcelColumn(headerRow, "Arrival 3A1P2");
+    const leftReasonIndex = findReasonColumn(subHeaderRow, eastArrivalIndex + 1, eastDidIndex >= 0 ? eastDidIndex : subHeaderRow.length);
+    const rightReasonIndex = findReasonColumn(subHeaderRow, westArrivalIndex + 1, subHeaderRow.length);
+
+    if (tidIndex === -1) return;
+
+    rows.slice(headerIndex + 2).forEach((row) => {
+      const tid = normalizeTidValue(row[tidIndex]);
+      if (!tid) return;
+
+      const leftRemark = String(row[leftReasonIndex] || "").trim();
+      const rightRemark = String(row[rightReasonIndex] || "").trim();
+      const leftRemarkUpper = leftRemark.toUpperCase();
+      const rightRemarkUpper = rightRemark.toUpperCase();
+      const westDid = normalizeDidValue(row[westDidIndex]);
+      const eastDid = normalizeDidValue(row[eastDidIndex]);
+
+      if (leftRemarkUpper.includes("AUTOLAUNCH WEST DEPOT") || leftRemarkUpper.includes("MANUAL INSERTION 3A1 PF1")) {
+        const time = formatExcelTimeValue(row[westDepartureIndex]);
+        if (time) {
+          const entry = { tid, did: westDid, time, remark: leftRemark, sheetName };
+          parsed.insertion.west.entries.push(entry);
+          parsed.insertion.west.timeMap[tid] = time;
+        }
+      }
+
+      if (rightRemarkUpper.includes("AUTOLAUNCH EAST DEPOT") || rightRemarkUpper.includes("MANUAL INSERTION 3K1 PF2")) {
+        const time = formatExcelTimeValue(row[eastDepartureIndex]);
+        if (time) {
+          const entry = { tid, did: eastDid, time, remark: rightRemark, sheetName };
+          parsed.insertion.east.entries.push(entry);
+          parsed.insertion.east.timeMap[tid] = time;
+        }
+      }
+
+      if (rightRemarkUpper.includes("REMOVAL WEST DEPOT")) {
+        const time = formatExcelTimeValue(row[westArrivalIndex]);
+        const label = classifyRemovalPresetFromTime(timetableType, time);
+        pushTimetableEntry(parsed.removal.west, { tid, did: eastDid, time, remark: rightRemark, label, sheetName });
+      }
+
+      if (leftRemarkUpper.includes("REMOVAL EAST DEPOT")) {
+        const time = formatExcelTimeValue(row[eastArrivalIndex]);
+        const label = classifyRemovalPresetFromTime(timetableType, time);
+        pushTimetableEntry(parsed.removal.east, { tid, did: westDid, time, remark: leftRemark, label, sheetName });
+      }
+    });
+  });
+
+  ["west", "east"].forEach((depot) => {
+    parsed.insertion[depot].entries.sort((a, b) => (excelTimeToMinutes(a.time) ?? 0) - (excelTimeToMinutes(b.time) ?? 0));
+    parsed.insertion[depot].timeMap = Object.fromEntries(parsed.insertion[depot].entries.map((entry) => [entry.tid, entry.time]));
+    sortTimetableBucket(parsed.removal[depot]);
+    parsed.summary.insertion[depot] = parsed.insertion[depot].entries.length;
+    parsed.summary.removal[depot] = parsed.removal[depot].entries.length;
+  });
+
+  return parsed;
+}
+
+function findLatestTimetableRecord(records = [], type = "weekday") {
+  const normalizedType = normalizeTimetableType(type);
+  return (records || [])
+    .filter((record) => normalizeTimetableType(record?.timetableType || record?.parsedData?.timetableType) === normalizedType)
+    .sort((a, b) => new Date(b?.updatedAt || b?.updated_date || b?.createdAt || 0) - new Date(a?.updatedAt || a?.updated_date || a?.createdAt || 0))[0] || null;
+}
+
+function getActiveTimetableParsedData(activeTimetable = null) {
+  return activeTimetable?.parsedData || activeTimetable?.data || null;
+}
+
+function getTimetableInsertionTimeMap(activeTimetable = null, depot = "west") {
+  const parsed = getActiveTimetableParsedData(activeTimetable);
+  const depotKey = depot === "east" ? "east" : "west";
+  return parsed?.insertion?.[depotKey]?.timeMap || {};
+}
+
+function getTimetableRemovalPreset(activeTimetable = null, depot = "west", label = "9am") {
+  const parsed = getActiveTimetableParsedData(activeTimetable);
+  const depotKey = depot === "east" ? "east" : "west";
+  const preset = parsed?.removal?.[depotKey]?.presets?.[label];
+  if (!preset?.tids?.length) return null;
+  return preset;
+}
+
+function getTrainRemPresetConfig(depot = "west", label = "9am", activeTimetable = null) {
+  const dynamicPreset = getTimetableRemovalPreset(activeTimetable, depot, label);
+  if (dynamicPreset) {
+    return {
+      label,
+      tids: dynamicPreset.tids || [],
+      timeMap: dynamicPreset.timeMap || {},
+      source: "uploaded",
+    };
+  }
+
+  const fallbackPreset = TID_PRESETS[depot]?.find((item) => item.label === label) || { label, tids: [] };
+  return {
+    label,
+    tids: fallbackPreset.tids || [],
+    timeMap: TID_TIME_MAP?.[depot]?.[label] || {},
+    source: "fallback",
+  };
+}
+
+function buildTrainRemRowsFromPresetConfig(depot, label, existingRows = [], activeTimetable = null) {
+  const config = getTrainRemPresetConfig(depot, label, activeTimetable);
+  const rows = normalizeTrainRemRows(existingRows, depot);
+
+  return rows.map((row, index) => {
+    const tid = config.tids[index] ? String(config.tids[index]) : "";
+    return {
+      ...row,
+      tid,
+      timing: tid ? config.timeMap?.[tid] || "" : "",
+    };
+  });
+}
+
 const NEW_BOOKMARK_ID = "__new_bookmark__";
 
 function normalizeBookmarkUrl(value = "") {
@@ -2854,7 +3202,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
 
 
 
-function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablingData = {} }) {
+function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablingData = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
   const [trainRemState, setTrainRemState] = useState(() => loadTrainRemState());
   const [trainRemLoaded, setTrainRemLoaded] = useState(false);
   const [trainRemSyncing, setTrainRemSyncing] = useState(false);
@@ -2917,7 +3265,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const getTimingForTid = (depot, presetLabel, tid) => {
     const cleanTid = (tid || "").toString().trim();
     if (!cleanTid) return "";
-    return TID_TIME_MAP?.[depot]?.[presetLabel]?.[cleanTid] || "";
+    return getTrainRemPresetConfig(depot, presetLabel, activeTimetable).timeMap?.[cleanTid] || "";
   };
 
   const getRequestRemarkForTrain = useCallback((trainId) => {
@@ -3113,6 +3461,30 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     setTrainRemState(nextState);
     scheduleTrainRemSave(nextState);
   }, [scheduleTrainRemSave]);
+
+  useEffect(() => {
+    if (!trainRemLoaded) return;
+
+    const activePresetLabel = getDefaultPresetLabelForTimetableType(activeTimetableType, trainRemStateRef.current?.selectedPreset?.west);
+
+    updateTrainRemState((prev) => {
+      const nextRows = {};
+
+      ["west", "east"].forEach((depot) => {
+        const existingRows = normalizeTrainRemRows(prev.rows?.[depot], depot);
+        nextRows[depot] = buildTrainRemRowsFromPresetConfig(depot, activePresetLabel, existingRows, activeTimetable);
+      });
+
+      return {
+        ...prev,
+        selectedPreset: {
+          west: activePresetLabel,
+          east: activePresetLabel,
+        },
+        rows: applyFullMlTidMatchesToTrainRemRows(nextRows, prev.fullMlTidRows),
+      };
+    });
+  }, [activeTimetable?.id, activeTimetableType, trainRemLoaded, updateTrainRemState]);
 
   useEffect(() => {
     const autoClearInfo = getFullMlTidAutoClearInfo(trainRemState.fullMlTidRows);
@@ -3446,9 +3818,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   };
 
   const applyPreset = (depot, label) => {
-    const preset = TID_PRESETS[depot].find((item) => item.label === label);
-    const tids = preset?.tids || [];
-
     updateTrainRemState((prev) => {
       const existingRows = normalizeTrainRemRows(prev.rows?.[depot], depot);
       return {
@@ -3460,14 +3829,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         rows: applyFullMlTidMatchesToTrainRemRows(
           {
             ...prev.rows,
-            [depot]: existingRows.map((row, index) => {
-              const tid = tids[index] ? String(tids[index]) : "";
-              return {
-                ...row,
-                tid,
-                timing: tid ? getTimingForTid(depot, label, tid) : "",
-              };
-            }),
+            [depot]: buildTrainRemRowsFromPresetConfig(depot, label, existingRows, activeTimetable),
           },
           prev.fullMlTidRows
         ),
@@ -6640,6 +7002,67 @@ function PossessionTabContent() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+
+function TimetableHeaderControl({
+  selectedType,
+  activeTimetable,
+  loading,
+  saving,
+  error,
+  onTypeChange,
+  onUpload,
+}) {
+  const parsed = getActiveTimetableParsedData(activeTimetable);
+  const fileLabel = activeTimetable?.fileName || activeTimetable?.sourceFileName || parsed?.sourceFileName || "No file stored";
+  const hasFile = Boolean(activeTimetable);
+  const summary = parsed?.summary;
+  const totalRemoval = (summary?.removal?.west || 0) + (summary?.removal?.east || 0);
+  const totalInsertion = (summary?.insertion?.west || 0) + (summary?.insertion?.east || 0);
+
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-[#1a3a56] bg-[#071828] px-2 py-1.5 shadow-sm">
+      <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-300" />
+      <select
+        value={normalizeTimetableType(selectedType)}
+        onChange={(event) => onTypeChange(event.target.value)}
+        className="h-7 rounded-md border border-[#2b4f6b] bg-[#061827] px-2 text-[10px] font-black uppercase tracking-wide text-white outline-none focus:border-emerald-300/60"
+        title="Select timetable to apply to Train Rem and Insertion"
+      >
+        {TIMETABLE_TYPES.map((type) => (
+          <option key={type.key} value={type.key}>{type.label}</option>
+        ))}
+      </select>
+
+      <label className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-emerald-400/35 bg-emerald-500/10 px-2 text-[10px] font-black uppercase tracking-wide text-emerald-100 transition hover:bg-emerald-500/18">
+        {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+        {saving ? "Saving" : "Upload"}
+        <input
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          disabled={saving}
+          onChange={onUpload}
+        />
+      </label>
+
+      <div className="min-w-[190px] max-w-[260px]">
+        <div className={`truncate text-[10px] font-bold ${hasFile ? "text-emerald-200" : "text-amber-200"}`} title={fileLabel}>
+          {loading ? "Loading timetable..." : fileLabel}
+        </div>
+        <div className="truncate text-[8.5px] font-semibold text-[#5d94bd]">
+          {hasFile ? `Applied • REM ${totalRemoval} / INS ${totalInsertion}` : "Upload once, then reuse from storage"}
+        </div>
+      </div>
+
+      {error && (
+        <span className="max-w-[220px] truncate rounded-md border border-red-400/30 bg-red-500/10 px-2 py-1 text-[9px] font-semibold text-red-100" title={error}>
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function HeaderBookmarkDropdown({
   links,
   loading,
@@ -6904,6 +7327,106 @@ export default function DepotStablingPage() {
   const bookmarkMenuRef = useRef(null);
   const mainContentScrollRef = useRef(null);
   const stablingHorizontalScrollRef = useRef(null);
+
+  const [selectedTimetableType, setSelectedTimetableType] = useState(() => loadActiveTimetableType());
+  const [timetableRecords, setTimetableRecords] = useState(() => loadLocalTimetableRecords());
+  const [timetableLoading, setTimetableLoading] = useState(false);
+  const [timetableSaving, setTimetableSaving] = useState(false);
+  const [timetableError, setTimetableError] = useState("");
+
+  const activeTimetable = useMemo(
+    () => findLatestTimetableRecord(timetableRecords, selectedTimetableType),
+    [timetableRecords, selectedTimetableType]
+  );
+
+  const loadTimetableRecords = useCallback(async () => {
+    const localRecords = loadLocalTimetableRecords();
+    setTimetableLoading(true);
+    setTimetableError("");
+
+    try {
+      const entity = getTimetableEntity();
+
+      if (!isTimetableEntityReady(entity)) {
+        setTimetableRecords(localRecords);
+        return;
+      }
+
+      const records = await entity.list("-updatedAt");
+      const safeRecords = Array.isArray(records) ? records : [];
+      setTimetableRecords(safeRecords.length ? safeRecords : localRecords);
+      if (safeRecords.length) saveLocalTimetableRecords(safeRecords);
+    } catch (error) {
+      console.error("Timetable load failed:", error);
+      setTimetableRecords(localRecords);
+      setTimetableError("Timetable storage not available. Using local cache.");
+    } finally {
+      setTimetableLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTimetableRecords();
+  }, [loadTimetableRecords]);
+
+  const handleTimetableTypeChange = useCallback((type) => {
+    const nextType = normalizeTimetableType(type);
+    setSelectedTimetableType(nextType);
+    saveActiveTimetableType(nextType);
+  }, []);
+
+  const handleTimetableUpload = useCallback(async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setTimetableSaving(true);
+    setTimetableError("");
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const parsedData = parseTimetableWorkbook(buffer, selectedTimetableType, file.name);
+      const totalParsed =
+        (parsedData.summary?.removal?.west || 0) +
+        (parsedData.summary?.removal?.east || 0) +
+        (parsedData.summary?.insertion?.west || 0) +
+        (parsedData.summary?.insertion?.east || 0);
+
+      if (!totalParsed) {
+        throw new Error("No insertion/removal rows detected. Check that the Excel contains 3A1/3K1 timetable columns and movement remarks.");
+      }
+
+      const now = new Date().toISOString();
+      const payload = {
+        timetableType: normalizeTimetableType(selectedTimetableType),
+        typeLabel: getTimetableTypeLabel(selectedTimetableType),
+        fileName: file.name,
+        sourceFileName: file.name,
+        parsedData,
+        summary: parsedData.summary,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      let savedRecord = { id: `local-${Date.now()}`, ...payload };
+      const entity = getTimetableEntity();
+
+      if (isTimetableEntityReady(entity)) {
+        savedRecord = await entity.create(payload);
+      }
+
+      setTimetableRecords((prev) => {
+        const next = [savedRecord, ...prev].slice(0, 24);
+        saveLocalTimetableRecords(next);
+        return next;
+      });
+    } catch (error) {
+      console.error("Timetable upload failed:", error);
+      setTimetableError(error?.message || "Unable to read timetable Excel.");
+    } finally {
+      setTimetableSaving(false);
+    }
+  }, [selectedTimetableType]);
 
   const handleHeaderHorizontalScroll = useCallback((direction) => {
     const scrollTarget = stablingHorizontalScrollRef.current || mainContentScrollRef.current;
@@ -8010,7 +8533,15 @@ export default function DepotStablingPage() {
     },
   };
 
+  const activeInsertionTimeMaps = useMemo(() => ({
+    west: getTimetableInsertionTimeMap(activeTimetable, "west"),
+    east: getTimetableInsertionTimeMap(activeTimetable, "east"),
+  }), [activeTimetable]);
+
   const getDayScheduleKey = () => {
+    const selectedType = normalizeTimetableType(selectedTimetableType);
+    if (["weekday", "friday", "saturday"].includes(selectedType)) return selectedType;
+
     const day = new Date().getDay(); // 0 Sun, 1 Mon, 2 Tue, 3 Wed, 4 Thu, 5 Fri, 6 Sat
     if (day === 5) return "friday";
     if (day === 6) return "saturday";
@@ -8023,8 +8554,15 @@ export default function DepotStablingPage() {
     const cleanTid = Number(String(tid || "").replace(/\D/g, ""));
     if (!cleanTid) return null;
 
-    // First follow today's schedule for the depot the train is inserted from.
-    // If the TID is not listed under that depot, fall back to the other depot for the same day.
+    // Uploaded timetable selected in the header is the first source of truth.
+    // West insertion uses Departure 3A1P1, East insertion uses Departure 3K1P2.
+    const uploadedTime =
+      activeInsertionTimeMaps?.[depot]?.[cleanTid] ||
+      activeInsertionTimeMaps?.[depot === "west" ? "east" : "west"]?.[cleanTid];
+
+    if (uploadedTime) return uploadedTime;
+
+    // Then fall back to the built-in schedule for the selected timetable type.
     const sameDayTime =
       TID_TIME_MAPS[dayKey]?.[depot]?.[cleanTid] ||
       TID_TIME_MAPS[dayKey]?.[depot === "west" ? "east" : "west"]?.[cleanTid];
@@ -8481,6 +9019,16 @@ export default function DepotStablingPage() {
               onSave={handleSaveBookmark}
               onDelete={handleDeleteBookmark}
             />
+
+            <TimetableHeaderControl
+              selectedType={selectedTimetableType}
+              activeTimetable={activeTimetable}
+              loading={timetableLoading}
+              saving={timetableSaving}
+              error={timetableError}
+              onTypeChange={handleTimetableTypeChange}
+              onUpload={handleTimetableUpload}
+            />
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -8806,6 +9354,8 @@ export default function DepotStablingPage() {
         maintenanceMap={maintenanceMap}
         onTrainRemStateChange={setTrainRemCheckState}
         eastStablingData={eastData}
+        activeTimetable={activeTimetable}
+        activeTimetableType={selectedTimetableType}
       />
     </div>
   </div>
