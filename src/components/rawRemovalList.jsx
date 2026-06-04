@@ -730,7 +730,7 @@ export default function RemovalList({ requests, depot: depotProp = "west", rowCo
         <div className="flex flex-col items-start leading-none">
           <span className="text-[12px] font-bold text-white uppercase">{depotKey} Removal</span>
           <span
-            className="mt-1 text-[9px] font-mono rounded px-1.5 py-0.5 border"
+            className="mt-1 inline-flex w-[118px] justify-center whitespace-nowrap text-[9px] font-mono rounded px-1.5 py-0.5 border"
             style={{
               color:
                 syncState.status === "error"

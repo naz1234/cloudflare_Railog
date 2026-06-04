@@ -8491,9 +8491,9 @@ export default function DepotStablingPage() {
               {saved ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
               {saving ? "Saving..." : saved ? "Saved!" : "Save"}
             </button>
-            <div className="flex items-center gap-2 bg-[#071828] border border-[#1a3a56] px-3 py-1.5 rounded-lg">
-              <div className={`w-1.5 h-1.5 rounded-full ${syncError ? "bg-red-400" : syncing ? "bg-amber-400 animate-pulse" : "bg-emerald-400 animate-pulse"}`} />
-              <span className="text-[10px] text-[#7eb8e0]">
+            <div className="flex w-[178px] flex-none items-center gap-2 bg-[#071828] border border-[#1a3a56] px-3 py-1.5 rounded-lg">
+              <div className={`w-1.5 h-1.5 flex-none rounded-full ${syncError ? "bg-red-400" : syncing ? "bg-amber-400 animate-pulse" : "bg-emerald-400 animate-pulse"}`} />
+              <span className="min-w-0 truncate whitespace-nowrap text-[10px] text-[#7eb8e0]">
                 {syncError ? "Live sync issue" : syncing ? "Updating..." : lastSynced ? `Live sync on • Last synced ${formatTime(lastSynced)}` : "Live sync on"}
               </span>
             </div>
