@@ -1,6 +1,6 @@
 import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
 import * as XLSX from "xlsx";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Save, CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2 } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
@@ -6914,6 +6914,22 @@ export default function DepotStablingPage() {
     scrollTarget.scrollTo({ left: nextLeft, behavior: "smooth" });
   }, []);
 
+  const handleSidebarShortcutClick = useCallback((event, key, to) => {
+    event.preventDefault();
+    setActiveTab(key);
+
+    const route = to?.startsWith("/") ? to : `/${to || "depot-stabling"}`;
+    const targetHash = `#${route}`;
+
+    if (window.location.hash !== targetHash) {
+      window.location.hash = targetHash;
+    }
+
+    window.setTimeout(() => {
+      window.location.reload();
+    }, 0);
+  }, []);
+
   useEffect(() => {
     try {
       localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isSidebarCollapsed));
@@ -8639,10 +8655,10 @@ export default function DepotStablingPage() {
 
             if (to) {
               return (
-                <Link
+                <a
                   key={key}
-                  to={to}
-                  onClick={() => setActiveTab(key)}
+                  href={`#${to}`}
+                  onClick={(event) => handleSidebarShortcutClick(event, key, to)}
                   title={isSidebarCollapsed ? label : undefined}
                   className={navClass}
                 >
@@ -8652,7 +8668,7 @@ export default function DepotStablingPage() {
                     {code}
                   </span>
                   {!isSidebarCollapsed && <span>{label}</span>}
-                </Link>
+                </a>
               );
             }
 
