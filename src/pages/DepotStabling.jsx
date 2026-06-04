@@ -88,6 +88,66 @@ function normalizeExcelHeader(value = "") {
     .trim();
 }
 
+
+function normalizeRemarkForMatch(value = "") {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/&/g, " AND ")
+    .replace(/[^A-Z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function compactRemarkForMatch(value = "") {
+  return normalizeRemarkForMatch(value).replace(/\s+/g, "");
+}
+
+function remarkHasAll(value = "", tokens = []) {
+  const compact = compactRemarkForMatch(value);
+  return tokens.every((token) => compact.includes(String(token || "").toUpperCase().replace(/[^A-Z0-9]+/g, "")));
+}
+
+function remarkHasAny(value = "", tokens = []) {
+  const compact = compactRemarkForMatch(value);
+  return tokens.some((token) => compact.includes(String(token || "").toUpperCase().replace(/[^A-Z0-9]+/g, "")));
+}
+
+function remarkHasAutoLaunch(value = "") {
+  return remarkHasAll(value, ["AUTO", "LAUNCH"]) || compactRemarkForMatch(value).includes("AUTOLAUNCH");
+}
+
+function isWestInsertionRemark(value = "") {
+  return (
+    (remarkHasAll(value, ["WEST", "DEPOT"]) && remarkHasAutoLaunch(value)) ||
+    remarkHasAll(value, ["3A1", "PF1", "MANUAL", "INSERTION"]) ||
+    remarkHasAll(value, ["MANUAL", "INSERTION", "3A1", "P1"])
+  );
+}
+
+function isEastInsertionRemark(value = "") {
+  return (
+    (remarkHasAll(value, ["EAST", "DEPOT"]) && remarkHasAutoLaunch(value)) ||
+    remarkHasAll(value, ["3K1", "PF2", "MANUAL", "INSERTION"]) ||
+    remarkHasAll(value, ["MANUAL", "INSERTION", "3K1", "P2"])
+  );
+}
+
+function isWestRemovalRemark(value = "") {
+  return (
+    (remarkHasAll(value, ["WEST", "DEPOT", "REMOVAL"]) && !remarkHasAll(value, ["EAST", "DEPOT"])) ||
+    remarkHasAll(value, ["REMOVAL", "WD"]) ||
+    remarkHasAll(value, ["3K1", "PF1", "REMOVAL", "WD"])
+  );
+}
+
+function isEastRemovalRemark(value = "") {
+  return (
+    (remarkHasAll(value, ["EAST", "DEPOT", "REMOVAL"]) && !remarkHasAll(value, ["WEST", "DEPOT"])) ||
+    remarkHasAll(value, ["REMOVAL", "ED"]) ||
+    remarkHasAll(value, ["3A1", "PF2", "REMOVAL", "ED"])
+  );
+}
+
 function findExcelColumn(row = [], headerText = "", startIndex = 0) {
   const wanted = normalizeExcelHeader(headerText);
   for (let i = Math.max(0, startIndex); i < row.length; i += 1) {
@@ -257,12 +317,10 @@ function parseTimetableWorkbook(arrayBuffer, timetableType = "weekday", fileName
 
       const leftRemark = String(row[leftReasonIndex] || "").trim();
       const rightRemark = String(row[rightReasonIndex] || "").trim();
-      const leftRemarkUpper = leftRemark.toUpperCase();
-      const rightRemarkUpper = rightRemark.toUpperCase();
       const westDid = normalizeDidValue(row[westDidIndex]);
       const eastDid = normalizeDidValue(row[eastDidIndex]);
 
-      if (leftRemarkUpper.includes("AUTOLAUNCH WEST DEPOT") || leftRemarkUpper.includes("MANUAL INSERTION 3A1 PF1")) {
+      if (isWestInsertionRemark(leftRemark)) {
         const time = formatExcelTimeValue(row[westDepartureIndex]);
         if (time) {
           const entry = { tid, did: westDid, time, remark: leftRemark, sheetName };
@@ -271,7 +329,7 @@ function parseTimetableWorkbook(arrayBuffer, timetableType = "weekday", fileName
         }
       }
 
-      if (rightRemarkUpper.includes("AUTOLAUNCH EAST DEPOT") || rightRemarkUpper.includes("MANUAL INSERTION 3K1 PF2")) {
+      if (isEastInsertionRemark(rightRemark)) {
         const time = formatExcelTimeValue(row[eastDepartureIndex]);
         if (time) {
           const entry = { tid, did: eastDid, time, remark: rightRemark, sheetName };
@@ -280,13 +338,13 @@ function parseTimetableWorkbook(arrayBuffer, timetableType = "weekday", fileName
         }
       }
 
-      if (rightRemarkUpper.includes("REMOVAL WEST DEPOT")) {
+      if (isWestRemovalRemark(rightRemark)) {
         const time = formatExcelTimeValue(row[westArrivalIndex]);
         const label = classifyRemovalPresetFromTime(timetableType, time);
         pushTimetableEntry(parsed.removal.west, { tid, did: eastDid, time, remark: rightRemark, label, sheetName });
       }
 
-      if (leftRemarkUpper.includes("REMOVAL EAST DEPOT")) {
+      if (isEastRemovalRemark(leftRemark)) {
         const time = formatExcelTimeValue(row[eastArrivalIndex]);
         const label = classifyRemovalPresetFromTime(timetableType, time);
         pushTimetableEntry(parsed.removal.east, { tid, did: westDid, time, remark: leftRemark, label, sheetName });
