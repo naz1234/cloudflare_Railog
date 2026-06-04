@@ -9066,12 +9066,14 @@ function getRequestNoteSummaryForTrain(requests = [], trainKey = "") {
   return notes.join(", ");
 }
 
+const TOMORROW_SWAP_KEYWORDS = ["TMRW", "TOMORROW", "MRNING", "MORNING"];
+
 function isTomorrowRequestText(value = "") {
   const normalized = normalizeRequestIdentity(value);
   if (!normalized) return false;
 
   const tokens = normalized.split(" ").filter(Boolean);
-  return tokens.includes("TMRW") || tokens.includes("TOMORROW");
+  return TOMORROW_SWAP_KEYWORDS.some((keyword) => tokens.includes(keyword));
 }
 
 function isTomorrowTrainRequest(request = {}) {
@@ -9580,7 +9582,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
         <div className="flex flex-wrap items-center gap-2">
           <label
             className="flex h-6 items-center gap-1.5 rounded-[10px] border border-[#2b4f6b] bg-[#071828] px-2 text-[10px] font-bold text-[#cfe5fb] shadow-sm select-none"
-            title="Include or hide TMRW / tomorrow requests from the swapping table"
+            title="Include or hide TMRW / TOMORROW / MRNING / MORNING requests from the swapping table"
           >
             <input
               type="checkbox"
@@ -9588,7 +9590,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
               onChange={(event) => setIncludeTomorrowRequests(event.target.checked)}
               className="h-3 w-3 accent-sky-400"
             />
-            Include TMRW
+            Include TMRW / Morning
             {!includeTomorrowRequests && hiddenTomorrowSwapCount > 0 && (
               <span className="rounded-full border border-sky-300/30 bg-sky-500/10 px-1.5 py-0.5 text-[9px] font-bold text-sky-100">
                 {hiddenTomorrowSwapCount} hidden
