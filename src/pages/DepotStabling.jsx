@@ -295,7 +295,7 @@ function createEmptyParsedTimetable(timetableType = "weekday") {
     summary: {
       insertion: { west: 0, east: 0 },
       removal: { west: 0, east: 0 },
-      reference: { arrival3K1P1: 0 },
+      reference: { arrival3A1P2: 0 },
     },
     insertion: {
       west: makeInsertionBucket(),
@@ -306,7 +306,7 @@ function createEmptyParsedTimetable(timetableType = "weekday") {
       east: makeRemovalBucket(),
     },
     reference: {
-      arrival3K1P1: makeReferenceBucket(),
+      arrival3A1P2: makeReferenceBucket(),
     },
   };
 }
@@ -351,10 +351,10 @@ function parseTimetableWorkbook(arrayBuffer, timetableType = "weekday", fileName
       const rightRemark = String(row[rightReasonIndex] || "").trim();
       const westDid = normalizeDidValue(row[westDidIndex]);
       const eastDid = normalizeDidValue(row[eastDidIndex]);
-      const arrival3K1P1Time = formatExcelTimeValue(row[eastArrivalIndex]);
+      const arrival3A1P2Time = formatExcelTimeValue(row[westArrivalIndex]);
 
-      if (arrival3K1P1Time) {
-        pushTimetableReferenceEntry(parsed.reference.arrival3K1P1, { tid, did: westDid, time: arrival3K1P1Time, sheetName });
+      if (arrival3A1P2Time) {
+        pushTimetableReferenceEntry(parsed.reference.arrival3A1P2, { tid, did: eastDid, time: arrival3A1P2Time, sheetName });
       }
 
       if (isWestInsertionRemark(leftRemark)) {
@@ -397,8 +397,8 @@ function parseTimetableWorkbook(arrayBuffer, timetableType = "weekday", fileName
     parsed.summary.removal[depot] = parsed.removal[depot].entries.length;
   });
 
-  sortTimetableReferenceBucket(parsed.reference.arrival3K1P1);
-  parsed.summary.reference.arrival3K1P1 = parsed.reference.arrival3K1P1.entries.length;
+  sortTimetableReferenceBucket(parsed.reference.arrival3A1P2);
+  parsed.summary.reference.arrival3A1P2 = parsed.reference.arrival3A1P2.entries.length;
 
   return parsed;
 }
@@ -425,7 +425,7 @@ function getDayMinutes(date = new Date()) {
   return safeDate.getHours() * 60 + safeDate.getMinutes();
 }
 
-function getNextTimetableTimeForTid(activeTimetable = null, referenceKey = "arrival3K1P1", tid = "", date = new Date()) {
+function getNextTimetableTimeForTid(activeTimetable = null, referenceKey = "arrival3A1P2", tid = "", date = new Date()) {
   const parsed = getActiveTimetableParsedData(activeTimetable);
   const key = normalizeTidValue(tid);
   if (!parsed || !key) return "";
@@ -456,8 +456,8 @@ function getNextTimetableTimeForTid(activeTimetable = null, referenceKey = "arri
   return validTimes[0]?.time || "";
 }
 
-function getTimetableArrival3K1P1Time(activeTimetable = null, tid = "", date = new Date()) {
-  return getNextTimetableTimeForTid(activeTimetable, "arrival3K1P1", tid, date);
+function getTimetableArrival3A1P2Time(activeTimetable = null, tid = "", date = new Date()) {
+  return getNextTimetableTimeForTid(activeTimetable, "arrival3A1P2", tid, date);
 }
 
 function formatTimetableTimeWithHrs(value = "") {
@@ -465,10 +465,10 @@ function formatTimetableTimeWithHrs(value = "") {
   return time ? `${time} hrs` : "";
 }
 
-function addArrival3K1P1ToRequestedRows(rows = [], activeTimetable = null, date = new Date()) {
+function addArrival3A1P2ToRequestedRows(rows = [], activeTimetable = null, date = new Date()) {
   return (rows || []).map((row) => ({
     ...row,
-    arrival3K1P1: getTimetableArrival3K1P1Time(activeTimetable, row?.tid, date),
+    arrival3A1P2: getTimetableArrival3A1P2Time(activeTimetable, row?.tid, date),
   }));
 }
 
@@ -9954,7 +9954,7 @@ function getRequestedTrainDisplayRows(rows = [], minRows = 3) {
       manualTid,
       canEditTid: Boolean(row?.canEditTid && label),
       requestType: (row?.requestType || "").toString().trim(),
-      arrival3K1P1: (row?.arrival3K1P1 || "").toString().trim(),
+      arrival3A1P2: (row?.arrival3A1P2 || "").toString().trim(),
       actionNote: (row?.actionNote || row?.secondNote || "").toString().trim(),
     };
   });
@@ -9968,7 +9968,7 @@ function getRequestedTrainDisplayRows(rows = [], minRows = 3) {
       manualTid: "",
       canEditTid: false,
       requestType: "",
-      arrival3K1P1: "",
+      arrival3A1P2: "",
       actionNote: "",
     });
   }
@@ -10064,16 +10064,16 @@ function buildRequestedTrainsDocx({ removalRows = [], swappingRows = [], noteTyp
   const isTcNote = normalizedNoteType === "tc";
 
   const buildTableXml = (rows = [], options = {}) => {
-    const includeArrival3K1P1 = Boolean(options?.includeArrival3K1P1);
+    const includeArrival3A1P2 = Boolean(options?.includeArrival3A1P2);
     const exportRows = getRequestedTrainDisplayRows(rows, 3);
-    const widths = includeArrival3K1P1 ? [900, 650, 1050, 1475, 1475] : [1000, 750, 1900, 1900];
-    const headerCells = includeArrival3K1P1 ? ["Train Set", "TID", "Arrival 3K1P1", "Note:", "Note:"] : ["Train Set", "TID", "Note:", "Note:"];
+    const widths = includeArrival3A1P2 ? [900, 650, 1050, 1475, 1475] : [1000, 750, 1900, 1900];
+    const headerCells = includeArrival3A1P2 ? ["Train Set", "TID", "Arrival 3A1P2", "Note:", "Note:"] : ["Train Set", "TID", "Note:", "Note:"];
     const tableRows = [
       requestedDocxRow(headerCells, { header: true, widths }),
-      ...exportRows.map((row) => requestedDocxRow(includeArrival3K1P1 ? [
+      ...exportRows.map((row) => requestedDocxRow(includeArrival3A1P2 ? [
         (row.label || "").replace(/^T/, ""),
         row.tid || "",
-        formatTimetableTimeWithHrs(row.arrival3K1P1),
+        formatTimetableTimeWithHrs(row.arrival3A1P2),
         row.requestType || "",
         row.actionNote || "",
       ] : [
@@ -10145,13 +10145,13 @@ function buildRequestedTrainsDocx({ removalRows = [], swappingRows = [], noteTyp
 
   const buildDcNoteBodyXml = () => `
     ${buildTitleXml("Train requested and required for swapping.", 0, true)}
-    ${buildTableXml(swappingRows, { includeArrival3K1P1: true })}
+    ${buildTableXml(swappingRows, { includeArrival3A1P2: true })}
     ${buildTitleXml("Train requested and will be removed to West Depot.", 180)}
     ${buildTableXml(removalRows)}`;
 
   const buildTcNoteBodyXml = () => `
     ${buildTitleXml("Train requested and required for swapping.", 0, true)}
-    ${buildTableXml(swappingRows, { includeArrival3K1P1: true })}`;
+    ${buildTableXml(swappingRows, { includeArrival3A1P2: true })}`;
 
   const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
@@ -10254,9 +10254,9 @@ function RequestedTrainTitle({ title }) {
   );
 }
 
-function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTidChange = null, showArrival3K1P1 = false }) {
+function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTidChange = null, showArrival3A1P2 = false }) {
   const tableRows = getRequestedTrainDisplayRows(rows, 3);
-  const tableWidth = showArrival3K1P1 ? 682 : 574;
+  const tableWidth = showArrival3A1P2 ? 682 : 574;
 
   return (
     <div className="leading-tight">
@@ -10271,7 +10271,7 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
           <colgroup>
             <col style={{ width: 96 }} />
             <col style={{ width: 78 }} />
-            {showArrival3K1P1 && <col style={{ width: 108 }} />}
+            {showArrival3A1P2 && <col style={{ width: 108 }} />}
             <col style={{ width: 200 }} />
             <col style={{ width: 200 }} />
           </colgroup>
@@ -10279,8 +10279,8 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
             <tr className="bg-[#0a2237] text-[#cfe5fb]">
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Train Set</th>
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">TID</th>
-              {showArrival3K1P1 && (
-                <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Arrival 3K1P1</th>
+              {showArrival3A1P2 && (
+                <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Arrival 3A1P2</th>
               )}
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Note:</th>
               <th className="border-b border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Note:</th>
@@ -10290,8 +10290,8 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
             {tableRows.map((item, index) => {
               const maintItem = maintenanceMap?.[item.key]?.[0] || null;
               const accent = maintItem ? getRequestAccent(maintItem) : "#4f8ef7";
-              const arrival3K1P1 = formatTimetableTimeWithHrs(item.arrival3K1P1);
-              const isEmpty = !item.label && !item.tid && !item.requestType && !item.actionNote && !arrival3K1P1;
+              const arrival3A1P2 = formatTimetableTimeWithHrs(item.arrival3A1P2);
+              const isEmpty = !item.label && !item.tid && !item.requestType && !item.actionNote && !arrival3A1P2;
 
               return (
                 <tr key={`${item.key}-${index}`} className="odd:bg-[#081b2d] even:bg-[#0a2136]">
@@ -10322,9 +10322,9 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
                       <RequestedTrainPill accent={accent} muted={isEmpty || !item.tid}>{item.tid}</RequestedTrainPill>
                     )}
                   </td>
-                  {showArrival3K1P1 && (
+                  {showArrival3A1P2 && (
                     <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
-                      <RequestedTrainPill accent="#38bdf8" muted={isEmpty || !arrival3K1P1}>{arrival3K1P1}</RequestedTrainPill>
+                      <RequestedTrainPill accent="#38bdf8" muted={isEmpty || !arrival3A1P2}>{arrival3A1P2}</RequestedTrainPill>
                     </td>
                   )}
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-tight text-[#eaf4ff] whitespace-normal break-words">
@@ -10418,7 +10418,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
           requestType: row?.requestTypeWithoutTomorrow || row?.requestType || "",
         }));
 
-  const swappingRowsWithArrival3K1P1 = addArrival3K1P1ToRequestedRows(swappingRows, activeTimetable, arrivalLookupTime);
+  const swappingRowsWithArrival3A1P2 = addArrival3A1P2ToRequestedRows(swappingRows, activeTimetable, arrivalLookupTime);
 
   const handleDownloadDocx = (noteType = "dc") => {
     if (downloadingDocxType) return;
@@ -10426,7 +10426,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
     setDownloadingDocxType(normalizedNoteType);
 
     try {
-      downloadRequestedTrainsDocx({ removalRows, swappingRows: swappingRowsWithArrival3K1P1, noteType: normalizedNoteType });
+      downloadRequestedTrainsDocx({ removalRows, swappingRows: swappingRowsWithArrival3A1P2, noteType: normalizedNoteType });
     } catch (error) {
       console.error("Requested trains DOCX export failed:", error);
       alert("Unable to create requested trains DOCX. Please try again.");
@@ -10503,10 +10503,10 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
       <div className="space-y-2">
         <RequestedTrainTable
           title="Train requested and required for swapping."
-          rows={swappingRowsWithArrival3K1P1}
+          rows={swappingRowsWithArrival3A1P2}
           maintenanceMap={maintenanceMap}
           onManualTidChange={handleManualTidChange}
-          showArrival3K1P1
+          showArrival3A1P2
         />
 
         <RequestedTrainTable
