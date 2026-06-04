@@ -8603,11 +8603,17 @@ export default function DepotStablingPage() {
             },
           ].map(({ key, label, code, to }) => {
             const isActive = activeTab === key;
-            const navClass = `flex items-center ${isSidebarCollapsed ? "justify-center px-1" : "gap-2.5 px-3"} py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full ${
-              isActive
-                ? "bg-[#1a3a5c] text-white shadow-sm border border-[#2b4f6b]"
-                : "text-[#7eb8e0] hover:text-white hover:bg-[#0f2d4a]"
-            }`;
+            const navClass = isSidebarCollapsed
+              ? `flex items-center justify-center px-1 py-2.5 text-xs font-normal transition-all text-left w-full ${
+                  isActive
+                    ? "text-white"
+                    : "text-[#7eb8e0] hover:text-white"
+                }`
+              : `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full ${
+                  isActive
+                    ? "bg-[#1a3a5c] text-white shadow-sm border border-[#2b4f6b]"
+                    : "text-[#7eb8e0] hover:text-white hover:bg-[#0f2d4a]"
+                }`;
 
             if (to) {
               return (
@@ -8619,7 +8625,7 @@ export default function DepotStablingPage() {
                   className={navClass}
                 >
                   <span
-                    className={`${isSidebarCollapsed ? "h-7 w-9 text-[10px]" : "h-6 w-8 text-[9px]"} flex flex-shrink-0 items-center justify-center rounded-md border border-[#2b4f6b] bg-[#071828] font-black uppercase tracking-wider text-[#8bd5ff]`}
+                    className={`${isSidebarCollapsed ? "w-9 text-[10px]" : "w-8 text-[9px]"} flex flex-shrink-0 items-center justify-center font-normal uppercase tracking-wider text-current`}
                   >
                     {code}
                   </span>
@@ -8636,7 +8642,7 @@ export default function DepotStablingPage() {
                 className={navClass}
               >
                 <span
-                  className={`${isSidebarCollapsed ? "h-7 w-9 text-[10px]" : "h-6 w-8 text-[9px]"} flex flex-shrink-0 items-center justify-center rounded-md border border-[#2b4f6b] bg-[#071828] font-black uppercase tracking-wider text-[#8bd5ff]`}
+                  className={`${isSidebarCollapsed ? "w-9 text-[10px]" : "w-8 text-[9px]"} flex flex-shrink-0 items-center justify-center font-normal uppercase tracking-wider text-current`}
                 >
                   {code}
                 </span>
