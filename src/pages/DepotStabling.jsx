@@ -10059,9 +10059,7 @@ function requestedDocxRow(cells, { header = false, widths = null } = {}) {
       </w:tr>`;
 }
 
-function buildRequestedTrainsDocx({ removalRows = [], swappingRows = [], noteType = "dc" } = {}) {
-  const normalizedNoteType = (noteType || "dc").toString().toLowerCase();
-  const isTcNote = normalizedNoteType === "tc";
+function buildRequestedTrainsDocx({ swappingRows = [] } = {}) {
 
   const buildTableXml = (rows = [], options = {}) => {
     const includeArrival3A1P2 = Boolean(options?.includeArrival3A1P2);
@@ -10107,13 +10105,8 @@ function buildRequestedTrainsDocx({ removalRows = [], swappingRows = [], noteTyp
 
   const buildTitleXml = (title, before = 0, highlightSwapping = false) => {
     const swappingTarget = "required for swapping.";
-    const removalTarget = "will be removed to West Depot";
-    const target = highlightSwapping && title.includes(swappingTarget)
-      ? swappingTarget
-      : title.includes(removalTarget)
-      ? removalTarget
-      : "";
-    const highlightColor = target === removalTarget ? "00B050" : "FF0000";
+    const target = highlightSwapping && title.includes(swappingTarget) ? swappingTarget : "";
+    const highlightColor = "FF0000";
 
     if (!target) {
       return `
@@ -10143,13 +10136,7 @@ function buildRequestedTrainsDocx({ removalRows = [], swappingRows = [], noteTyp
     </w:p>`;
   };
 
-  const buildDcNoteBodyXml = () => `
-    ${buildTitleXml("Train requested and required for swapping.", 0, true)}
-    ${buildTableXml(swappingRows, { includeArrival3A1P2: true })}
-    ${buildTitleXml("Train requested and will be removed to West Depot.", 180)}
-    ${buildTableXml(removalRows)}`;
-
-  const buildTcNoteBodyXml = () => `
+  const buildSwappingNoteBodyXml = () => `
     ${buildTitleXml("Train requested and required for swapping.", 0, true)}
     ${buildTableXml(swappingRows, { includeArrival3A1P2: true })}`;
 
@@ -10168,7 +10155,7 @@ function buildRequestedTrainsDocx({ removalRows = [], swappingRows = [], noteTyp
   const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:body>
-    ${isTcNote ? buildTcNoteBodyXml() : buildDcNoteBodyXml()}
+    ${buildSwappingNoteBodyXml()}
     <w:sectPr>
       <w:pgSz w:w="11906" w:h="16838"/>
       <w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="0" w:footer="0" w:gutter="0"/>
@@ -10183,15 +10170,13 @@ function buildRequestedTrainsDocx({ removalRows = [], swappingRows = [], noteTyp
   ]);
 }
 
-function downloadRequestedTrainsDocx({ removalRows = [], swappingRows = [], noteType = "dc" } = {}) {
-  const normalizedNoteType = (noteType || "dc").toString().toLowerCase();
-  const docxBytes = buildRequestedTrainsDocx({ removalRows, swappingRows, noteType: normalizedNoteType });
+function downloadRequestedTrainsDocx({ swappingRows = [] } = {}) {
+  const docxBytes = buildRequestedTrainsDocx({ swappingRows });
   const blob = new Blob([docxBytes], {
     type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   });
   const dateStamp = new Date().toISOString().slice(0, 10);
-  const fileLabel = normalizedNoteType === "tc" ? "tc-note" : "dc-note";
-  downloadBlob(blob, `requested-trains-west-depot-${fileLabel}-${dateStamp}.docx`);
+  downloadBlob(blob, `requested-trains-required-for-swapping-${dateStamp}.docx`);
 }
 
 function RequestedTrainPill({ children, accent = "#4f8ef7", muted = false }) {
@@ -10214,34 +10199,24 @@ function RequestedTrainPill({ children, accent = "#4f8ef7", muted = false }) {
   );
 }
 
-function RequestedTrainTitle({ title }) {
-  const removalTarget = "will be removed to West Depot";
+function RequestedTrainTitle({ title = "" }) {
   const swappingTarget = "required for swapping.";
 
-  const isRemovalTitle = title.includes(removalTarget);
   const isSwappingTitle = title.includes(swappingTarget);
-  const target = isRemovalTitle ? removalTarget : isSwappingTitle ? swappingTarget : "";
+  const target = isSwappingTitle ? swappingTarget : "";
 
   if (!target) {
     return title;
   }
 
   const [prefix, suffix = ""] = title.split(target);
-  const glowStyle = isRemovalTitle
-    ? {
-        color: "#bbf7d0",
-        textShadow: "0 0 8px rgba(74,222,128,0.95), 0 0 16px rgba(34,197,94,0.85), 0 0 24px rgba(22,163,74,0.65)",
-        boxShadow: "0 0 10px rgba(34,197,94,0.45), inset 0 0 8px rgba(20,83,45,0.35)",
-        background: "linear-gradient(135deg,rgba(20,83,45,0.34),rgba(5,46,22,0.20))",
-        border: "1px solid rgba(74,222,128,0.44)",
-      }
-    : {
-        color: "#fecaca",
-        textShadow: "0 0 8px rgba(248,113,113,0.95), 0 0 16px rgba(239,68,68,0.85), 0 0 24px rgba(220,38,38,0.65)",
-        boxShadow: "0 0 10px rgba(239,68,68,0.45), inset 0 0 8px rgba(127,29,29,0.35)",
-        background: "linear-gradient(135deg,rgba(127,29,29,0.30),rgba(69,10,10,0.18))",
-        border: "1px solid rgba(248,113,113,0.42)",
-      };
+  const glowStyle = {
+    color: "#fecaca",
+    textShadow: "0 0 8px rgba(248,113,113,0.95), 0 0 16px rgba(239,68,68,0.85), 0 0 24px rgba(220,38,38,0.65)",
+    boxShadow: "0 0 10px rgba(239,68,68,0.45), inset 0 0 8px rgba(127,29,29,0.35)",
+    background: "linear-gradient(135deg,rgba(127,29,29,0.30),rgba(69,10,10,0.18))",
+    border: "1px solid rgba(248,113,113,0.42)",
+  };
 
   return (
     <>
@@ -10260,11 +10235,13 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
 
   return (
     <div className="leading-tight">
-      <div className="mb-2.5">
-        <div className="text-[11px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
-          <RequestedTrainTitle title={title} />
+      {title && (
+        <div className="mb-2.5">
+          <div className="text-[11px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
+            <RequestedTrainTitle title={title} />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
         <table className="table-fixed text-[11px] leading-none" style={{ width: tableWidth, maxWidth: "100%" }}>
@@ -10390,15 +10367,6 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
     });
   }, []);
 
-  const removalRows = applyManualTidToRequestedRows(
-    getRequestedTrainsForWestDepotRemoval({
-      requests,
-      trainRemState,
-      westData,
-      eastData,
-    }),
-    manualTidByTrain
-  );
   const allSwappingRows = applyManualTidToRequestedRows(
     getRequestedTrainsNotInWestDepotStablingRemoval({
       requests,
@@ -10420,13 +10388,12 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
 
   const swappingRowsWithArrival3A1P2 = addArrival3A1P2ToRequestedRows(swappingRows, activeTimetable, arrivalLookupTime);
 
-  const handleDownloadDocx = (noteType = "dc") => {
+  const handleDownloadDocx = () => {
     if (downloadingDocxType) return;
-    const normalizedNoteType = noteType === "tc" ? "tc" : "dc";
-    setDownloadingDocxType(normalizedNoteType);
+    setDownloadingDocxType("swapping");
 
     try {
-      downloadRequestedTrainsDocx({ removalRows, swappingRows: swappingRowsWithArrival3A1P2, noteType: normalizedNoteType });
+      downloadRequestedTrainsDocx({ swappingRows: swappingRowsWithArrival3A1P2 });
     } catch (error) {
       console.error("Requested trains DOCX export failed:", error);
       alert("Unable to create requested trains DOCX. Please try again.");
@@ -10445,7 +10412,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-[260px]">
           <h2 className="text-sm font-black uppercase tracking-[0.18em] text-white drop-shadow-[0_0_10px_rgba(147,197,253,0.26)]">
-            West Depot Train Request Overview
+            <RequestedTrainTitle title="Train requested and required for swapping." />
           </h2>
         </div>
 
@@ -10469,51 +10436,28 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
           </label>
 
           <button
-            onClick={() => handleDownloadDocx("dc")}
+            onClick={handleDownloadDocx}
             disabled={Boolean(downloadingDocxType)}
             className="group flex items-center gap-1.5 h-6 px-2.5 rounded-[10px] border text-[10px] font-bold transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
             style={{ ...MAIN_STABLING_BUTTON_BLUE, minHeight: 24, borderRadius: 10 }}
-            title="Download DC Note DOCX with removal and swapping tables"
+            title="Download DOCX with swapping table only"
           >
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            {downloadingDocxType === "dc" ? "Preparing..." : "DOCX DC Note"}
-          </button>
-
-          <button
-            onClick={() => handleDownloadDocx("tc")}
-            disabled={Boolean(downloadingDocxType)}
-            className="group flex items-center gap-1.5 h-6 px-2.5 rounded-[10px] border text-[10px] font-bold transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
-            style={{ ...MAIN_STABLING_BUTTON_BLUE, minHeight: 24, borderRadius: 10 }}
-            title="Download TC Note DOCX with swapping table only"
-          >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            {downloadingDocxType === "tc" ? "Preparing..." : "DOCX TC Note"}
+            {downloadingDocxType ? "Preparing..." : "Download DOCX"}
           </button>
         </div>
       </div>
 
       <div className="space-y-2">
         <RequestedTrainTable
-          title="Train requested and required for swapping."
           rows={swappingRowsWithArrival3A1P2}
           maintenanceMap={maintenanceMap}
           onManualTidChange={handleManualTidChange}
           showArrival3A1P2
-        />
-
-        <RequestedTrainTable
-          title="Train requested and will be removed to West Depot."
-          rows={removalRows}
-          maintenanceMap={maintenanceMap}
-          onManualTidChange={handleManualTidChange}
         />
       </div>
     </div>
