@@ -9018,12 +9018,9 @@ function getWestStablingLocations(westData = {}) {
   return locations;
 }
 
-function getRequestTid(request = {}, trainRemRow = {}, fullMlTidRows = []) {
-  const fullMlTid = getFullMlTidForTrain(fullMlTidRows, request?.trainId || trainRemRow?.trainId);
-
+function getRequestTid(request = {}, trainRemRow = {}) {
   return (
     trainRemRow?.tid ||
-    fullMlTid ||
     request?.tid ||
     request?.TID ||
     request?.tidNo ||
@@ -9135,7 +9132,6 @@ function getWorkshopTrainRequestKeys(requests = []) {
 
 function getRequestedTrainsForWestDepotRemoval({ requests = [], trainRemState, westData = {}, eastData = {} }) {
   const westRemovalRowsMap = getWestRemovalRowsMap(trainRemState);
-  const fullMlTidRows = trainRemState?.fullMlTidRows || [];
   const westStablingKeys = getWestStablingKeys(westData);
   const requestedRows = [];
   const seen = new Set();
@@ -9153,7 +9149,7 @@ function getRequestedTrainsForWestDepotRemoval({ requests = [], trainRemState, w
     requestedRows.push({
       key,
       label: padTrainId(key),
-      tid: getRequestTid(request, trainRemRow, fullMlTidRows),
+      tid: getRequestTid(request, trainRemRow),
       requestType: getRequestNoteSummaryForTrain(requests, key) || getTrainRequestDisplayType(request),
       timeRemoved: getRequestTiming(request, trainRemRow),
       actionNote: "Removal to west depot",
@@ -9165,7 +9161,6 @@ function getRequestedTrainsForWestDepotRemoval({ requests = [], trainRemState, w
 
 function getRequestedTrainsNotInWestDepotStablingRemoval({ requests = [], trainRemState, westData = {}, eastData = {} }) {
   const westRemovalRowsMap = getWestRemovalRowsMap(trainRemState);
-  const fullMlTidRows = trainRemState?.fullMlTidRows || [];
   const westStablingKeys = getWestStablingKeys(westData);
   const workshopTrainKeys = getWorkshopTrainRequestKeys(requests);
   const requestedRows = [];
@@ -9194,7 +9189,7 @@ function getRequestedTrainsNotInWestDepotStablingRemoval({ requests = [], trainR
     requestedRows.push({
       key,
       label: padTrainId(key),
-      tid: getRequestTid(request, trainRemRow, fullMlTidRows),
+      tid: getRequestTid(request, trainRemRow),
       requestType: getRequestNoteSummaryForTrain(requests, key) || getTrainRequestDisplayType(request),
       requestTypeWithoutTomorrow: getRequestNoteSummaryForTrain(requests, key, { includeTomorrowRequests: false }) || getTrainRequestDisplayType(request),
       timeRemoved: getRequestTiming(request, trainRemRow),
@@ -9244,25 +9239,93 @@ function sortRequestedTrainRowsByTid(rows = []) {
 
 function getRequestedTrainDisplayRows(rows = [], minRows = 3) {
   const normalizedRows = sortRequestedTrainRowsByTid(rows);
-  const paddedRows = normalizedRows.map((row, index) => ({
-    key: row?.key || `requested-${index}`,
-    label: row?.label || "",
-    tid: (row?.tid || "").toString().trim(),
-    requestType: (row?.requestType || "").toString().trim(),
-    actionNote: (row?.actionNote || row?.secondNote || "").toString().trim(),
-  }));
+  const paddedRows = normalizedRows.map((row, index) => {
+    const key = row?.key || `requested-${index}`;
+    const label = row?.label || "";
+    const manualTid = (row?.manualTid || "").toString().trim();
+    const autoTid = (row?.autoTid || "").toString().trim();
+    const tid = (row?.tid || "").toString().trim();
+
+    return {
+      key,
+      label,
+      tid,
+      autoTid,
+      manualTid,
+      canEditTid: Boolean(row?.canEditTid && label),
+      requestType: (row?.requestType || "").toString().trim(),
+      actionNote: (row?.actionNote || row?.secondNote || "").toString().trim(),
+    };
+  });
 
   while (paddedRows.length < minRows) {
     paddedRows.push({
       key: `empty-${paddedRows.length + 1}`,
       label: "",
       tid: "",
+      autoTid: "",
+      manualTid: "",
+      canEditTid: false,
       requestType: "",
       actionNote: "",
     });
   }
 
   return paddedRows;
+}
+
+const REQUESTED_TRAIN_MANUAL_TID_STORAGE_KEY = "requestedTrainManualTidByTrain";
+
+function cleanRequestedTrainTidInput(value = "") {
+  return (value || "").toString().replace(/[^0-9]/g, "").slice(0, 3);
+}
+
+function normalizeRequestedTrainManualTidMap(value = {}) {
+  const source = value && typeof value === "object" ? value : {};
+  const map = {};
+
+  Object.entries(source).forEach(([trainKey, tid]) => {
+    const key = normalizeTrainId(trainKey);
+    const cleanedTid = cleanRequestedTrainTidInput(tid);
+    if (key && cleanedTid) map[key] = cleanedTid;
+  });
+
+  return map;
+}
+
+function loadRequestedTrainManualTidMap() {
+  try {
+    return normalizeRequestedTrainManualTidMap(
+      JSON.parse(localStorage.getItem(REQUESTED_TRAIN_MANUAL_TID_STORAGE_KEY) || "{}")
+    );
+  } catch {
+    return {};
+  }
+}
+
+function saveRequestedTrainManualTidMap(map = {}) {
+  try {
+    localStorage.setItem(REQUESTED_TRAIN_MANUAL_TID_STORAGE_KEY, JSON.stringify(normalizeRequestedTrainManualTidMap(map)));
+  } catch {}
+}
+
+function applyManualTidToRequestedRows(rows = [], manualTidByTrain = {}) {
+  const manualTidMap = normalizeRequestedTrainManualTidMap(manualTidByTrain);
+
+  return (rows || []).map((row) => {
+    const key = normalizeTrainId(row?.key || row?.label || row?.trainId);
+    const autoTid = (row?.tid || "").toString().trim();
+    const manualTid = key ? manualTidMap[key] || "" : "";
+
+    return {
+      ...row,
+      key: row?.key || key,
+      autoTid,
+      manualTid,
+      tid: autoTid || manualTid || "",
+      canEditTid: Boolean(key && !autoTid),
+    };
+  });
 }
 
 function requestedDocxCell(text = "", { width = 1800, fontSize = 20, bold = false } = {}) {
@@ -9483,7 +9546,7 @@ function RequestedTrainTitle({ title }) {
   );
 }
 
-function RequestedTrainTable({ title, rows = [], maintenanceMap = {} }) {
+function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTidChange = null }) {
   const tableRows = getRequestedTrainDisplayRows(rows, 3);
 
   return (
@@ -9522,7 +9585,28 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {} }) {
                     <RequestedTrainPill accent={accent} muted={isEmpty}>{item.label}</RequestedTrainPill>
                   </td>
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none">
-                    <RequestedTrainPill accent={accent} muted={isEmpty || !item.tid}>{item.tid}</RequestedTrainPill>
+                    {item.canEditTid && typeof onManualTidChange === "function" ? (
+                      <input
+                        value={item.manualTid}
+                        onChange={(event) => onManualTidChange(item.key, event.target.value)}
+                        inputMode="numeric"
+                        maxLength={3}
+                        placeholder="--"
+                        title="Enter TID manually"
+                        className="h-[18px] w-[46px] rounded-full border px-2 py-0 text-center text-[10px] font-bold leading-none tracking-wide text-[#eef7ff] outline-none transition focus:border-sky-300 focus:bg-sky-500/10 placeholder:text-[#8fa6bd]"
+                        style={{
+                          background: item.manualTid
+                            ? `linear-gradient(135deg,${hexToRgba(accent, 0.20)} 0%,rgba(8,37,31,0.82) 100%)`
+                            : "rgba(255,255,255,0.06)",
+                          borderColor: item.manualTid ? hexToRgba(accent, 0.74) : "#2b4f6b",
+                          boxShadow: item.manualTid
+                            ? `0 0 8px ${hexToRgba(accent, 0.22)}, inset 0 1px 0 rgba(255,255,255,0.06)`
+                            : "inset 0 1px 0 rgba(255,255,255,0.04)",
+                        }}
+                      />
+                    ) : (
+                      <RequestedTrainPill accent={accent} muted={isEmpty || !item.tid}>{item.tid}</RequestedTrainPill>
+                    )}
                   </td>
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-tight text-[#eaf4ff] whitespace-normal break-words">
                     {item.requestType || ""}
@@ -9550,24 +9634,53 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
     }
   });
 
+  const [manualTidByTrain, setManualTidByTrain] = useState(loadRequestedTrainManualTidMap);
+
   useEffect(() => {
     try {
       localStorage.setItem("requestedTrainIncludeTomorrowSwaps", includeTomorrowRequests ? "true" : "false");
     } catch {}
   }, [includeTomorrowRequests]);
 
-  const removalRows = getRequestedTrainsForWestDepotRemoval({
-    requests,
-    trainRemState,
-    westData,
-    eastData,
-  });
-  const allSwappingRows = getRequestedTrainsNotInWestDepotStablingRemoval({
-    requests,
-    trainRemState,
-    westData,
-    eastData,
-  });
+  useEffect(() => {
+    saveRequestedTrainManualTidMap(manualTidByTrain);
+  }, [manualTidByTrain]);
+
+  const handleManualTidChange = useCallback((trainKey, value) => {
+    const key = normalizeTrainId(trainKey);
+    if (!key) return;
+
+    const cleanedTid = cleanRequestedTrainTidInput(value);
+
+    setManualTidByTrain((prev) => {
+      const next = { ...normalizeRequestedTrainManualTidMap(prev) };
+      if (cleanedTid) {
+        next[key] = cleanedTid;
+      } else {
+        delete next[key];
+      }
+      return next;
+    });
+  }, []);
+
+  const removalRows = applyManualTidToRequestedRows(
+    getRequestedTrainsForWestDepotRemoval({
+      requests,
+      trainRemState,
+      westData,
+      eastData,
+    }),
+    manualTidByTrain
+  );
+  const allSwappingRows = applyManualTidToRequestedRows(
+    getRequestedTrainsNotInWestDepotStablingRemoval({
+      requests,
+      trainRemState,
+      westData,
+      eastData,
+    }),
+    manualTidByTrain
+  );
   const hiddenTomorrowSwapCount = allSwappingRows.filter((row) => row?.hideWhenTomorrowExcluded).length;
   const swappingRows = includeTomorrowRequests
     ? allSwappingRows
@@ -9663,12 +9776,14 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
           title="Train requested and will be removed to West Depot."
           rows={removalRows}
           maintenanceMap={maintenanceMap}
+          onManualTidChange={handleManualTidChange}
         />
 
         <RequestedTrainTable
           title="Train requested and required for swapping."
           rows={swappingRows}
           maintenanceMap={maintenanceMap}
+          onManualTidChange={handleManualTidChange}
         />
       </div>
     </div>
