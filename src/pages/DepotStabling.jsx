@@ -9066,6 +9066,38 @@ function getRequestNoteSummaryForTrain(requests = [], trainKey = "") {
   return notes.join(", ");
 }
 
+function isTomorrowRequestText(value = "") {
+  const normalized = normalizeRequestIdentity(value);
+  if (!normalized) return false;
+
+  const tokens = normalized.split(" ").filter(Boolean);
+  return tokens.includes("TMRW") || tokens.includes("TOMORROW");
+}
+
+function isTomorrowTrainRequest(request = {}) {
+  return [
+    getTrainRequestDisplayType(request),
+    request?.requestType,
+    request?.customType,
+    request?.displayType,
+    request?.note,
+    request?.notes,
+    request?.remark,
+    request?.remarks,
+  ].some(isTomorrowRequestText);
+}
+
+function hasTomorrowRequestForTrain(requests = [], trainKey = "") {
+  const key = normalizeTrainId(trainKey);
+  if (!key) return false;
+
+  return (requests || []).some((request) => (
+    !isUnfitTrainRequest(request) &&
+    normalizeTrainId(request?.trainId) === key &&
+    isTomorrowTrainRequest(request)
+  ));
+}
+
 function getWorkshopTrainRequestKeys(requests = []) {
   const workshopKeys = new Set();
 
@@ -9135,6 +9167,7 @@ function getRequestedTrainsNotInWestDepotStablingRemoval({ requests = [], trainR
 
     seen.add(key);
     const trainRemRow = getTrainRemRowForTrain(trainRemState, key);
+    const hasTomorrowRequest = hasTomorrowRequestForTrain(requests, key);
 
     requestedRows.push({
       key,
@@ -9143,6 +9176,7 @@ function getRequestedTrainsNotInWestDepotStablingRemoval({ requests = [], trainR
       requestType: getRequestNoteSummaryForTrain(requests, key) || getTrainRequestDisplayType(request),
       timeRemoved: getRequestTiming(request, trainRemRow),
       actionNote: "",
+      hasTomorrowRequest,
     });
   });
 
@@ -9483,18 +9517,36 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {} }) {
 
 function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceMap = {}, westData = {}, eastData = {} }) {
   const [downloadingDocxType, setDownloadingDocxType] = useState(null);
+  const [includeTomorrowRequests, setIncludeTomorrowRequests] = useState(() => {
+    try {
+      return localStorage.getItem("requestedTrainIncludeTomorrowSwaps") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("requestedTrainIncludeTomorrowSwaps", includeTomorrowRequests ? "true" : "false");
+    } catch {}
+  }, [includeTomorrowRequests]);
+
   const removalRows = getRequestedTrainsForWestDepotRemoval({
     requests,
     trainRemState,
     westData,
     eastData,
   });
-  const swappingRows = getRequestedTrainsNotInWestDepotStablingRemoval({
+  const allSwappingRows = getRequestedTrainsNotInWestDepotStablingRemoval({
     requests,
     trainRemState,
     westData,
     eastData,
   });
+  const hiddenTomorrowSwapCount = allSwappingRows.filter((row) => row?.hasTomorrowRequest).length;
+  const swappingRows = includeTomorrowRequests
+    ? allSwappingRows
+    : allSwappingRows.filter((row) => !row?.hasTomorrowRequest);
 
   const handleDownloadDocx = (noteType = "dc") => {
     if (downloadingDocxType) return;
@@ -9526,6 +9578,24 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <label
+            className="flex h-6 items-center gap-1.5 rounded-[10px] border border-[#2b4f6b] bg-[#071828] px-2 text-[10px] font-bold text-[#cfe5fb] shadow-sm select-none"
+            title="Include or hide TMRW / tomorrow requests from the swapping table"
+          >
+            <input
+              type="checkbox"
+              checked={includeTomorrowRequests}
+              onChange={(event) => setIncludeTomorrowRequests(event.target.checked)}
+              className="h-3 w-3 accent-sky-400"
+            />
+            Include TMRW
+            {!includeTomorrowRequests && hiddenTomorrowSwapCount > 0 && (
+              <span className="rounded-full border border-sky-300/30 bg-sky-500/10 px-1.5 py-0.5 text-[9px] font-bold text-sky-100">
+                {hiddenTomorrowSwapCount} hidden
+              </span>
+            )}
+          </label>
+
           <button
             onClick={() => handleDownloadDocx("dc")}
             disabled={Boolean(downloadingDocxType)}
