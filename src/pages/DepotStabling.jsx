@@ -8400,9 +8400,9 @@ export default function DepotStablingPage() {
   };
 
   const duplicates = getDuplicates(westData, eastData);
-  const westStablingKeys = getWestStablingKeys(westData);
-  const westStablingLocations = getWestStablingLocations(westData);
-  const maintenanceMap = buildMaintenanceMap(requests, westStablingKeys);
+  const mainStablingKeys = getMainStablingKeys(westData, eastData);
+  const mainStablingLocations = getMainStablingLocations(westData, eastData);
+  const maintenanceMap = buildMaintenanceMap(requests, mainStablingKeys);
 
   if (!loaded) {
     return (
@@ -8760,8 +8760,8 @@ export default function DepotStablingPage() {
           onAdd={handleAddRequest}
           onRemove={handleRemoveRequest}
           onClearAll={handleClearAllRequests}
-          stabledTrainIds={Array.from(westStablingKeys)}
-          stabledTrainLocations={westStablingLocations}
+          stabledTrainIds={Array.from(mainStablingKeys)}
+          stabledTrainLocations={mainStablingLocations}
         />
       </div>
 
