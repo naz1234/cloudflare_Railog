@@ -6674,7 +6674,7 @@ function HeaderBookmarkDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-[360px] overflow-hidden rounded-2xl border border-[#1f4d6f] bg-[#071828] shadow-2xl shadow-black/50">
+        <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-[320px] overflow-hidden rounded-2xl border border-[#1f4d6f] bg-[#071828] shadow-2xl shadow-black/50">
           <div className="flex items-center justify-between border-b border-[#1a3a56] bg-[#0b253d] px-4 py-3">
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-300">External Links</p>
@@ -6690,7 +6690,7 @@ function HeaderBookmarkDropdown({
             </button>
           </div>
 
-          <div className="max-h-[360px] overflow-y-auto p-2">
+          <div className="max-h-[330px] overflow-y-auto p-2">
             {error && (
               <div className="mb-2 rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-[10px] text-red-100">
                 {error}
@@ -6738,29 +6738,28 @@ function HeaderBookmarkDropdown({
                   return (
                     <div
                       key={link.id}
-                      className={`group relative flex items-center gap-2 overflow-hidden rounded-xl border px-3 py-2 transition ${theme.card}`}
+                      className={`group relative flex items-center gap-1.5 overflow-hidden rounded-lg border px-2.5 py-1.5 transition ${theme.card}`}
                     >
                       <span className={`absolute left-0 top-0 h-full w-1 ${theme.strip}`} />
                       <a
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex min-w-0 flex-1 items-center gap-2 pl-1"
+                        className="flex min-w-0 flex-1 items-center gap-1.5 pl-1"
                       >
-                        <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border ${theme.icon}`}>
-                          <Bookmark className="h-3.5 w-3.5" />
+                        <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border ${theme.icon}`}>
+                          <Bookmark className="h-3 w-3" />
                         </span>
                         <span className="min-w-0">
-                          <span className="block truncate text-[12px] font-bold text-white">{link.title}</span>
-                          <span className="block truncate text-[10px] text-[#7eb8e0]">{compactBookmarkUrl(link.url)}</span>
+                          <span className="block truncate text-[12px] font-bold leading-5 text-white">{link.title}</span>
                         </span>
-                        <ExternalLink className={`ml-auto h-3.5 w-3.5 flex-shrink-0 opacity-75 ${theme.linkIcon}`} />
+                        <ExternalLink className={`ml-auto h-3 w-3 flex-shrink-0 opacity-75 ${theme.linkIcon}`} />
                       </a>
 
                       <button
                         type="button"
                         onClick={() => onStartEdit(link)}
-                        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border border-[#2b4f6b] bg-[#071828]/80 text-[#7eb8e0] transition hover:border-cyan-300/50 hover:text-white"
+                        className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border border-[#2b4f6b] bg-[#071828]/80 text-[#7eb8e0] transition hover:border-cyan-300/50 hover:text-white"
                         title="Edit bookmark"
                         aria-label={`Edit ${link.title}`}
                       >
@@ -6769,7 +6768,7 @@ function HeaderBookmarkDropdown({
                       <button
                         type="button"
                         onClick={() => onDelete(link)}
-                        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border border-red-400/20 bg-red-500/5 text-red-200 transition hover:border-red-300/50 hover:bg-red-500/15"
+                        className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border border-red-400/20 bg-red-500/5 text-red-200 transition hover:border-red-300/50 hover:bg-red-500/15"
                         title="Delete bookmark"
                         aria-label={`Delete ${link.title}`}
                       >
