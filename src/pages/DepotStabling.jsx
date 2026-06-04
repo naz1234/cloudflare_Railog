@@ -10182,7 +10182,7 @@ function downloadRequestedTrainsDocx({ swappingRows = [] } = {}) {
 function RequestedTrainPill({ children, accent = "#4f8ef7", muted = false }) {
   return (
     <span
-      className="inline-flex min-w-[46px] items-center justify-center rounded-full border px-2 py-0.5 text-[10px] font-bold leading-none tracking-wide whitespace-nowrap"
+      className="inline-flex min-w-[46px] items-center justify-center rounded-full border px-2 py-0.5 text-[12px] font-bold leading-none tracking-wide whitespace-nowrap"
       style={{
         background: muted
           ? "rgba(255,255,255,0.06)"
@@ -10284,7 +10284,7 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
                         maxLength={3}
                         placeholder="--"
                         title="Enter TID manually"
-                        className="h-[18px] w-[46px] rounded-full border px-2 py-0 text-center text-[10px] font-bold leading-none tracking-wide text-[#eef7ff] outline-none transition focus:border-sky-300 focus:bg-sky-500/10 placeholder:text-[#8fa6bd]"
+                        className="h-[18px] w-[46px] rounded-full border px-2 py-0 text-center text-[12px] font-bold leading-none tracking-wide text-[#eef7ff] outline-none transition focus:border-sky-300 focus:bg-sky-500/10 placeholder:text-[#8fa6bd]"
                         style={{
                           background: item.manualTid
                             ? `linear-gradient(135deg,${hexToRgba(accent, 0.20)} 0%,rgba(8,37,31,0.82) 100%)`
@@ -10414,6 +10414,9 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
           <h2 className="text-xs font-black uppercase tracking-[0.18em] text-white drop-shadow-[0_0_10px_rgba(147,197,253,0.26)]">
             <RequestedTrainTitle title="Train requested and required for swapping." />
           </h2>
+          <p className="mt-1 text-[10px] font-medium normal-case tracking-normal text-sky-100/75">
+            Note: Manually add TID to check Arrival 3A1P2.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
