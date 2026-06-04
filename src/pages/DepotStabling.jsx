@@ -9043,16 +9043,18 @@ function getRequestTiming(request = {}, trainRemRow = {}) {
   ).toString().trim();
 }
 
-function getRequestNoteSummaryForTrain(requests = [], trainKey = "") {
+function getRequestNoteSummaryForTrain(requests = [], trainKey = "", options = {}) {
   const key = normalizeTrainId(trainKey);
   if (!key) return "";
 
+  const { includeTomorrowRequests = true } = options || {};
   const notes = [];
   const seen = new Set();
 
   (requests || []).forEach((request) => {
     if (isUnfitTrainRequest(request)) return;
     if (normalizeTrainId(request?.trainId) !== key) return;
+    if (!includeTomorrowRequests && isTomorrowTrainRequest(request)) return;
 
     const displayType = getTrainRequestDisplayType(request);
     const noteKey = normalizeRemarkText(displayType);
@@ -9089,15 +9091,31 @@ function isTomorrowTrainRequest(request = {}) {
   ].some(isTomorrowRequestText);
 }
 
-function hasTomorrowRequestForTrain(requests = [], trainKey = "") {
+function getNonUnfitRequestsForTrain(requests = [], trainKey = "") {
   const key = normalizeTrainId(trainKey);
-  if (!key) return false;
+  if (!key) return [];
 
-  return (requests || []).some((request) => (
+  return (requests || []).filter((request) => (
     !isUnfitTrainRequest(request) &&
-    normalizeTrainId(request?.trainId) === key &&
-    isTomorrowTrainRequest(request)
+    normalizeTrainId(request?.trainId) === key
   ));
+}
+
+function hasTomorrowRequestForTrain(requests = [], trainKey = "") {
+  return getNonUnfitRequestsForTrain(requests, trainKey).some(isTomorrowTrainRequest);
+}
+
+function hasCurrentRequestForTrain(requests = [], trainKey = "") {
+  return getNonUnfitRequestsForTrain(requests, trainKey).some((request) => !isTomorrowTrainRequest(request));
+}
+
+function shouldHideFromSwappingWhenTomorrowExcluded(requests = [], trainKey = "") {
+  const trainRequests = getNonUnfitRequestsForTrain(requests, trainKey);
+  if (!trainRequests.length) return false;
+
+  // Hide only trains where every request is for TMRW/TOMORROW/MRNING/MORNING.
+  // If the train also has a current request like WASH, keep it visible for swapping.
+  return trainRequests.every(isTomorrowTrainRequest);
 }
 
 function getWorkshopTrainRequestKeys(requests = []) {
@@ -9170,15 +9188,20 @@ function getRequestedTrainsNotInWestDepotStablingRemoval({ requests = [], trainR
     seen.add(key);
     const trainRemRow = getTrainRemRowForTrain(trainRemState, key);
     const hasTomorrowRequest = hasTomorrowRequestForTrain(requests, key);
+    const hasCurrentRequest = hasCurrentRequestForTrain(requests, key);
+    const hideWhenTomorrowExcluded = shouldHideFromSwappingWhenTomorrowExcluded(requests, key);
 
     requestedRows.push({
       key,
       label: padTrainId(key),
       tid: getRequestTid(request, trainRemRow, fullMlTidRows),
       requestType: getRequestNoteSummaryForTrain(requests, key) || getTrainRequestDisplayType(request),
+      requestTypeWithoutTomorrow: getRequestNoteSummaryForTrain(requests, key, { includeTomorrowRequests: false }) || getTrainRequestDisplayType(request),
       timeRemoved: getRequestTiming(request, trainRemRow),
       actionNote: "",
       hasTomorrowRequest,
+      hasCurrentRequest,
+      hideWhenTomorrowExcluded,
     });
   });
 
@@ -9545,10 +9568,15 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
     westData,
     eastData,
   });
-  const hiddenTomorrowSwapCount = allSwappingRows.filter((row) => row?.hasTomorrowRequest).length;
+  const hiddenTomorrowSwapCount = allSwappingRows.filter((row) => row?.hideWhenTomorrowExcluded).length;
   const swappingRows = includeTomorrowRequests
     ? allSwappingRows
-    : allSwappingRows.filter((row) => !row?.hasTomorrowRequest);
+    : allSwappingRows
+        .filter((row) => !row?.hideWhenTomorrowExcluded)
+        .map((row) => ({
+          ...row,
+          requestType: row?.requestTypeWithoutTomorrow || row?.requestType || "",
+        }));
 
   const handleDownloadDocx = (noteType = "dc") => {
     if (downloadingDocxType) return;
