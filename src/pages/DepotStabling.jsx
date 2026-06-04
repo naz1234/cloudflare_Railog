@@ -911,8 +911,7 @@ const INSERTION_LIVE_RECORD_KEY = "insertion-live-main";
 const INSERTION_LIVE_SYNC_INTERVAL_MS = 5000;
 const INSERTION_LIVE_LOCAL_EDIT_HOLD_MS = 30000;
 const INSERTION_LIVE_POST_SAVE_HOLD_MS = 12000;
-const SIDEBAR_COLLAPSED_KEY = "depotSidebarCollapsed_v1";
-const SIDEBAR_AUTO_HIDE_MS = 3000;
+const SIDEBAR_COLLAPSED_KEY = "depotSidebarCollapsed_v2";
 
 function loadInsertionLog() {
   try {
@@ -6898,15 +6897,7 @@ export default function DepotStablingPage() {
     } catch {}
   }, [isSidebarCollapsed]);
 
-  useEffect(() => {
-    if (isSidebarCollapsed) return undefined;
-
-    const timer = window.setTimeout(() => {
-      setIsSidebarCollapsed(true);
-    }, SIDEBAR_AUTO_HIDE_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [isSidebarCollapsed]);
+  // Sidebar now stays open until user manually collapses it.
 
   useEffect(() => {
     setActiveTab(getTabFromPath(location.pathname));
@@ -8501,155 +8492,194 @@ export default function DepotStablingPage() {
 
         {/* Left Sidebar Tab Navigation */}
         <aside
-          className={`${isSidebarCollapsed ? "w-[58px] px-2" : "w-[200px] px-3"} flex-shrink-0 sticky top-[56px] h-[calc(100vh-56px)] flex flex-col pt-4 gap-1 z-10 transition-all duration-300 ease-in-out`}
-          style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", borderRight: "1px solid #1a3a56" }}
+          className={`${isSidebarCollapsed ? "w-[82px] px-3" : "w-[224px] px-5"} flex-shrink-0 sticky top-[56px] h-[calc(100vh-56px)] flex flex-col z-10 overflow-hidden transition-all duration-300 ease-in-out`}
+          style={{
+            background: "linear-gradient(180deg,#061a2b 0%,#071e33 48%,#061827 100%)",
+            borderRight: "1px solid rgba(89,154,208,0.18)",
+            boxShadow: "18px 0 38px rgba(0,0,0,0.20)",
+          }}
         >
-          <div className={`mb-2 flex items-center ${isSidebarCollapsed ? "justify-center px-0" : "justify-between px-2"}`}>
-            {!isSidebarCollapsed && (
-              <p className="text-[9px] font-black tracking-widest uppercase text-[#4a8ab5]">Navigation</p>
-            )}
+          <div className={`${isSidebarCollapsed ? "h-[86px] pt-4" : "h-[158px] pt-6"} flex flex-shrink-0 items-start justify-center transition-all duration-300`}>
+            <img
+              src="https://media.base44.com/images/public/69fd0add5545130d2d15d03c/456db1150_ChatGPTImageMay15202605_49_31PM.png"
+              alt="Riyadh Metro"
+              className={`${isSidebarCollapsed ? "h-10" : "h-[112px]"} w-auto object-contain opacity-95 transition-all duration-300`}
+            />
+          </div>
+
+          <nav className={`${isSidebarCollapsed ? "gap-4" : "gap-6"} flex flex-1 flex-col pt-2`}>
+            {[
+              {
+                key: "stabling",
+                label: "Train Request",
+                code: "REQ",
+                to: "/depot-stabling",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" className="h-full w-full">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M10 8l4 4-4 4" />
+                  </svg>
+                ),
+              },
+              {
+                key: "movement",
+                label: "Train Movement",
+                code: "MOV",
+                to: "/train-movement",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-full w-full">
+                    <path d="M4 7h13" />
+                    <path d="M13 3l4 4-4 4" />
+                    <path d="M20 17H7" />
+                    <path d="M11 13l-4 4 4 4" />
+                  </svg>
+                ),
+              },
+              {
+                key: "pst",
+                label: "PST Train Prep",
+                code: "PST",
+                to: "/pst-train-prep",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-full w-full">
+                    <path d="M7 3h7l4 4v14H7z" />
+                    <path d="M14 3v5h5" />
+                    <path d="M10 13h5" />
+                    <path d="M10 17h3" />
+                  </svg>
+                ),
+              },
+              {
+                key: "insertion",
+                label: "Train Insertion",
+                code: "INS",
+                to: "/insertion",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-full w-full">
+                    <path d="M14.7 6.3a4.4 4.4 0 0 0 3.1 1.2l-4 4-3.3-3.3 4-4c.1.8.5 1.5 1.2 2.1Z" />
+                    <path d="M11 12l-7 7a2 2 0 0 0 3 3l7-7" />
+                    <path d="M5.5 20.5l1.4-1.4" />
+                  </svg>
+                ),
+              },
+              {
+                key: "washing",
+                label: "Train Washing",
+                code: "WSH",
+                to: "/train-washing",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-full w-full">
+                    <rect x="5" y="4" width="14" height="12" rx="3" />
+                    <path d="M8 16l-2 3" />
+                    <path d="M16 16l2 3" />
+                    <path d="M8 8h8" />
+                    <path d="M8 12h8" />
+                    <path d="M7 21h10" />
+                  </svg>
+                ),
+              },
+              {
+                key: "odo",
+                label: "ODO Reading",
+                code: "ODO",
+                to: "/odo-reading",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-full w-full">
+                    <rect x="5" y="4" width="14" height="12" rx="3" />
+                    <path d="M8 8h8" />
+                    <path d="M8 16l-2 3" />
+                    <path d="M16 16l2 3" />
+                    <path d="M9 20h6" />
+                  </svg>
+                ),
+              },
+              {
+                key: "possession",
+                label: "Possession Log",
+                code: "PSS",
+                to: "/possession",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-full w-full">
+                    <circle cx="12" cy="7" r="3" />
+                    <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
+                  </svg>
+                ),
+              },
+            ].map(({ key, label, code, to, icon }) => {
+              const isActive = activeTab === key;
+              const navClass = isSidebarCollapsed
+                ? `relative flex h-[58px] w-full items-center justify-center rounded-2xl transition-all duration-200 ${
+                    isActive
+                      ? "bg-[#123657] text-white shadow-[0_0_20px_rgba(83,155,255,0.18)]"
+                      : "text-slate-200/90 hover:bg-[#0d2d47]/80 hover:text-white"
+                  }`
+                : `relative flex h-[82px] w-full items-center gap-6 rounded-[18px] px-8 text-left transition-all duration-200 ${
+                    isActive
+                      ? "bg-[#123657]/95 text-white shadow-[0_0_28px_rgba(83,155,255,0.22)] before:absolute before:left-0 before:top-0 before:h-full before:w-[5px] before:rounded-l-[18px] before:bg-[#5d9bff]"
+                      : "text-slate-100/90 hover:bg-[#0d2d47]/80 hover:text-white"
+                  }`;
+
+              const content = (
+                <>
+                  <span
+                    className={`${
+                      isSidebarCollapsed
+                        ? "h-9 w-9"
+                        : isActive
+                          ? "h-11 w-11 rounded-full border border-[#9fcaff]/60 bg-[#0d2d47]/80 p-2.5 shadow-[0_0_18px_rgba(119,181,255,0.28)]"
+                          : "h-11 w-11"
+                    } flex flex-shrink-0 items-center justify-center text-current transition-all duration-200`}
+                  >
+                    {isSidebarCollapsed ? <span className="text-[12px] font-medium uppercase tracking-wider">{code}</span> : icon}
+                  </span>
+                  {!isSidebarCollapsed && (
+                    <span className="text-[23px] font-medium uppercase tracking-wide leading-none text-current">
+                      {code}
+                    </span>
+                  )}
+                </>
+              );
+
+              if (to) {
+                return (
+                  <Link
+                    key={key}
+                    to={to}
+                    onClick={() => setActiveTab(key)}
+                    title={label}
+                    className={navClass}
+                  >
+                    {content}
+                  </Link>
+                );
+              }
+
+              return (
+                <button
+                  key={key}
+                  onClick={() => setActiveTab(key)}
+                  title={label}
+                  className={navClass}
+                >
+                  {content}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="flex flex-shrink-0 justify-center pb-7 pt-5">
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed((prev) => !prev)}
-              title={isSidebarCollapsed ? "Show navigation for 3 seconds" : "Hide navigation now"}
-              aria-label={isSidebarCollapsed ? "Show navigation for 3 seconds" : "Hide navigation now"}
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#2b4f6b] bg-[#071828] text-[#7eb8e0] shadow-sm transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white"
+              title={isSidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+              aria-label={isSidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+              className={`${isSidebarCollapsed ? "h-11 w-11" : "h-16 w-16"} flex items-center justify-center rounded-full border border-[#315879] bg-[#08243d]/80 text-slate-100 shadow-[0_0_20px_rgba(56,116,170,0.18)] transition hover:border-[#6da8e8] hover:bg-[#123657] hover:text-white active:scale-95`}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`${isSidebarCollapsed ? "h-5 w-5" : "h-7 w-7"}`}>
                 {isSidebarCollapsed ? <path d="M9 6l6 6-6 6" /> : <path d="M15 6l-6 6 6 6" />}
               </svg>
             </button>
           </div>
-
-          {[
-            {
-              key: "stabling",
-              label: "Train Request",
-              code: "REQ",
-              to: "/depot-stabling",
-              icon: (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-                </svg>
-              ),
-            },
-
-            {
-              key: "movement",
-              label: "Train Movement",
-              code: "MOV",
-              to: "/train-movement",
-              icon: (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="4" y="3" width="16" height="15" rx="3"/><path d="M8 21l2-3"/><path d="M16 21l-2-3"/><path d="M8 8h8"/><path d="M8 13h.01"/><path d="M16 13h.01"/>
-                </svg>
-              ),
-            },
-
-            {
-              key: "pst",
-              label: "PST Train Prep",
-              code: "PST",
-              to: "/pst-train-prep",
-              icon: (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-                </svg>
-              ),
-            },
-            {
-              key: "insertion",
-              label: "Train Insertion",
-              code: "INS",
-              to: "/insertion",
-              icon: (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="5 12 12 5 19 12"/><line x1="12" y1="5" x2="12" y2="19"/>
-                </svg>
-              ),
-            },
-            {
-              key: "washing",
-              label: "Train Washing",
-              code: "WSH",
-              to: "/train-washing",
-              icon: (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
-                </svg>
-              ),
-            },
-            {
-              key: "odo",
-              label: "ODO Reading",
-              code: "ODO",
-              to: "/odo-reading",
-              icon: (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                </svg>
-              ),
-            },
-            {
-              key: "possession",
-              label: "Possession Log",
-              code: "PSS",
-              to: "/possession",
-              icon: (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/>
-                </svg>
-              ),
-            },
-          ].map(({ key, label, code, to }) => {
-            const isActive = activeTab === key;
-            const navClass = isSidebarCollapsed
-              ? `flex items-center justify-center px-1 py-2.5 text-xs font-normal transition-all text-left w-full ${
-                  isActive
-                    ? "text-white"
-                    : "text-[#7eb8e0] hover:text-white"
-                }`
-              : `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full ${
-                  isActive
-                    ? "bg-[#1a3a5c] text-white shadow-sm border border-[#2b4f6b]"
-                    : "text-[#7eb8e0] hover:text-white hover:bg-[#0f2d4a]"
-                }`;
-
-            if (to) {
-              return (
-                <Link
-                  key={key}
-                  to={to}
-                  onClick={() => setActiveTab(key)}
-                  title={isSidebarCollapsed ? label : undefined}
-                  className={navClass}
-                >
-                  <span
-                    className={`${isSidebarCollapsed ? "w-9 text-[10px]" : "w-8 text-[9px]"} flex flex-shrink-0 items-center justify-center font-normal uppercase tracking-wider text-current`}
-                  >
-                    {code}
-                  </span>
-                  {!isSidebarCollapsed && <span>{label}</span>}
-                </Link>
-              );
-            }
-
-            return (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key)}
-                title={isSidebarCollapsed ? label : undefined}
-                className={navClass}
-              >
-                <span
-                  className={`${isSidebarCollapsed ? "w-9 text-[10px]" : "w-8 text-[9px]"} flex flex-shrink-0 items-center justify-center font-normal uppercase tracking-wider text-current`}
-                >
-                  {code}
-                </span>
-                {!isSidebarCollapsed && <span>{label}</span>}
-              </button>
-            );
-          })}
         </aside>
 
         {/* Main Content */}
