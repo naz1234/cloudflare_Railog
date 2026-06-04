@@ -8492,22 +8492,14 @@ export default function DepotStablingPage() {
 
         {/* Left Sidebar Tab Navigation */}
         <aside
-          className={`${isSidebarCollapsed ? "w-[46px] px-1.5" : "w-[108px] px-2"} flex-shrink-0 sticky top-[56px] h-[calc(100vh-56px)] flex flex-col z-10 overflow-hidden transition-all duration-300 ease-in-out`}
+          className={`${isSidebarCollapsed ? "w-[38px] px-1" : "w-[88px] px-1.5"} flex-shrink-0 sticky top-[56px] h-[calc(100vh-56px)] flex flex-col z-10 overflow-hidden transition-all duration-300 ease-in-out`}
           style={{
             background: "linear-gradient(180deg,#061a2b 0%,#071e33 48%,#061827 100%)",
             borderRight: "1px solid rgba(89,154,208,0.18)",
-            boxShadow: "18px 0 38px rgba(0,0,0,0.20)",
+            boxShadow: "14px 0 28px rgba(0,0,0,0.18)",
           }}
         >
-          <div className={`${isSidebarCollapsed ? "h-[44px] pt-2" : "h-[68px] pt-3"} flex flex-shrink-0 items-start justify-center transition-all duration-300`}>
-            <img
-              src="https://media.base44.com/images/public/69fd0add5545130d2d15d03c/456db1150_ChatGPTImageMay15202605_49_31PM.png"
-              alt="Riyadh Metro"
-              className={`${isSidebarCollapsed ? "h-6" : "h-[44px]"} w-auto object-contain opacity-95 transition-all duration-300`}
-            />
-          </div>
-
-          <nav className={`${isSidebarCollapsed ? "gap-1.5" : "gap-2"} flex flex-1 flex-col pt-1`}>
+          <nav className={`${isSidebarCollapsed ? "gap-1" : "gap-1.5"} flex flex-1 flex-col pt-3`}>
             {[
               {
                 key: "stabling",
@@ -8608,14 +8600,14 @@ export default function DepotStablingPage() {
             ].map(({ key, label, code, to, icon }) => {
               const isActive = activeTab === key;
               const navClass = isSidebarCollapsed
-                ? `relative flex h-[34px] w-full items-center justify-center rounded-lg transition-all duration-200 ${
+                ? `relative flex h-[28px] w-full items-center justify-center rounded-md transition-all duration-200 ${
                     isActive
-                      ? "bg-[#123657] text-white shadow-[0_0_10px_rgba(83,155,255,0.12)]"
+                      ? "bg-[#123657] text-white shadow-[0_0_8px_rgba(83,155,255,0.10)]"
                       : "text-slate-200/90 hover:bg-[#0d2d47]/80 hover:text-white"
                   }`
-                : `relative flex h-[40px] w-full items-center gap-2 rounded-lg px-2 text-left transition-all duration-200 ${
+                : `relative flex h-[32px] w-full items-center gap-1.5 rounded-md px-1.5 text-left transition-all duration-200 ${
                     isActive
-                      ? "bg-[#123657]/95 text-white shadow-[0_0_12px_rgba(83,155,255,0.14)] before:absolute before:left-0 before:top-0 before:h-full before:w-[2px] before:rounded-l-lg before:bg-[#5d9bff]"
+                      ? "bg-[#123657]/95 text-white shadow-[0_0_10px_rgba(83,155,255,0.12)] before:absolute before:left-0 before:top-0 before:h-full before:w-[2px] before:rounded-l-md before:bg-[#5d9bff]"
                       : "text-slate-100/90 hover:bg-[#0d2d47]/80 hover:text-white"
                   }`;
 
@@ -8624,16 +8616,16 @@ export default function DepotStablingPage() {
                   <span
                     className={`${
                       isSidebarCollapsed
-                        ? "h-6 w-6"
+                        ? "h-5 w-5"
                         : isActive
-                          ? "h-6 w-6 rounded-full border border-[#9fcaff]/60 bg-[#0d2d47]/80 p-1 shadow-[0_0_8px_rgba(119,181,255,0.18)]"
-                          : "h-6 w-6"
+                          ? "h-5 w-5 rounded-full border border-[#9fcaff]/60 bg-[#0d2d47]/80 p-1 shadow-[0_0_6px_rgba(119,181,255,0.16)]"
+                          : "h-5 w-5"
                     } flex flex-shrink-0 items-center justify-center text-current transition-all duration-200`}
                   >
-                    {isSidebarCollapsed ? <span className="text-[9px] font-normal uppercase tracking-normal">{code}</span> : icon}
+                    {isSidebarCollapsed ? <span className="text-[8px] font-normal uppercase tracking-normal">{code}</span> : icon}
                   </span>
                   {!isSidebarCollapsed && (
-                    <span className="text-[11px] font-normal uppercase tracking-wide leading-none text-current">
+                    <span className="text-[10px] font-normal uppercase tracking-wide leading-none text-current">
                       {code}
                     </span>
                   )}
@@ -8667,15 +8659,15 @@ export default function DepotStablingPage() {
             })}
           </nav>
 
-          <div className="flex flex-shrink-0 justify-center pb-3 pt-2">
+          <div className="flex flex-shrink-0 justify-center pb-2 pt-1">
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed((prev) => !prev)}
               title={isSidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
               aria-label={isSidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
-              className={`${isSidebarCollapsed ? "h-6 w-6" : "h-8 w-8"} flex items-center justify-center rounded-full border border-[#315879] bg-[#08243d]/80 text-slate-100 shadow-[0_0_14px_rgba(56,116,170,0.14)] transition hover:border-[#6da8e8] hover:bg-[#123657] hover:text-white active:scale-95`}
+              className={`${isSidebarCollapsed ? "h-5 w-5" : "h-6 w-6"} flex items-center justify-center rounded-full border border-[#315879] bg-[#08243d]/80 text-slate-100 shadow-[0_0_14px_rgba(56,116,170,0.14)] transition hover:border-[#6da8e8] hover:bg-[#123657] hover:text-white active:scale-95`}
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`${isSidebarCollapsed ? "h-3.5 w-3.5" : "h-4 w-4"}`}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`${isSidebarCollapsed ? "h-3 w-3" : "h-3.5 w-3.5"}`}>
                 {isSidebarCollapsed ? <path d="M9 6l6 6-6 6" /> : <path d="M15 6l-6 6 6 6" />}
               </svg>
             </button>
