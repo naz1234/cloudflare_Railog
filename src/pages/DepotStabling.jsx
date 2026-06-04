@@ -6664,8 +6664,8 @@ function HeaderBookmarkDropdown({
         onClick={() => setIsOpen((prev) => !prev)}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all shadow-sm ${
           isOpen
-            ? "bg-emerald-500/15 border-emerald-400/50 text-emerald-100"
-            : "bg-[#071828] border-emerald-400/30 text-emerald-200 hover:bg-emerald-500/10 hover:border-emerald-300/50"
+            ? "bg-cyan-500/15 border-cyan-300/55 text-cyan-100 shadow-cyan-500/10"
+            : "bg-[#071828] border-[#2b6f93] text-cyan-100 hover:bg-cyan-500/10 hover:border-cyan-300/55"
         }`}
       >
         <Bookmark className="w-3.5 h-3.5" />
@@ -6677,13 +6677,13 @@ function HeaderBookmarkDropdown({
         <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-[360px] overflow-hidden rounded-2xl border border-[#1f4d6f] bg-[#071828] shadow-2xl shadow-black/50">
           <div className="flex items-center justify-between border-b border-[#1a3a56] bg-[#0b253d] px-4 py-3">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-300">External Links</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-300">External Links</p>
               <p className="mt-0.5 text-[10px] text-[#7eb8e0]">Outlook, SharePoint, SAP, and other shortcuts</p>
             </div>
             <button
               type="button"
               onClick={onStartAdd}
-              className="flex items-center gap-1 rounded-lg border border-emerald-400/35 bg-emerald-500/10 px-2.5 py-1.5 text-[10px] font-bold text-emerald-100 transition hover:bg-emerald-500/20"
+              className="flex items-center gap-1 rounded-lg border border-cyan-300/40 bg-cyan-500/10 px-2.5 py-1.5 text-[10px] font-bold text-cyan-100 transition hover:bg-cyan-500/20"
             >
               <Plus className="h-3.5 w-3.5" />
               Add
@@ -6714,7 +6714,7 @@ function HeaderBookmarkDropdown({
               </div>
             ) : links.length === 0 && editId !== NEW_BOOKMARK_ID ? (
               <div className="rounded-xl border border-dashed border-[#2b4f6b] bg-[#082036] px-3 py-4 text-center text-[11px] text-[#7eb8e0]">
-                No bookmark yet. Click <span className="font-bold text-emerald-200">Add</span> to create an external shortcut.
+                No bookmark yet. Click <span className="font-bold text-cyan-200">Add</span> to create an external shortcut.
               </div>
             ) : (
               <div className="space-y-1.5">
@@ -6793,24 +6793,24 @@ function HeaderBookmarkDropdown({
 
 function BookmarkEditForm({ draft, saving, onDraftChange, onCancel, onSave }) {
   return (
-    <div className="mb-2 rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-3">
+    <div className="mb-2 rounded-xl border border-cyan-300/35 bg-cyan-500/10 p-3">
       <div className="grid gap-2">
-        <label className="grid gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-200">
+        <label className="grid gap-1 text-[10px] font-bold uppercase tracking-wider text-cyan-200">
           Name
           <input
             value={draft.title}
             onChange={(event) => onDraftChange("title", event.target.value)}
             placeholder="Outlook"
-            className="h-8 rounded-lg border border-[#2b4f6b] bg-[#071828] px-2 text-[12px] font-medium normal-case tracking-normal text-white outline-none transition placeholder:text-[#4a8ab5] focus:border-emerald-300/60"
+            className="h-8 rounded-lg border border-[#2b4f6b] bg-[#071828] px-2 text-[12px] font-medium normal-case tracking-normal text-white outline-none transition placeholder:text-[#4a8ab5] focus:border-cyan-300/60"
           />
         </label>
-        <label className="grid gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-200">
+        <label className="grid gap-1 text-[10px] font-bold uppercase tracking-wider text-cyan-200">
           URL
           <input
             value={draft.url}
             onChange={(event) => onDraftChange("url", event.target.value)}
             placeholder="https://outlook.office.com"
-            className="h-8 rounded-lg border border-[#2b4f6b] bg-[#071828] px-2 text-[12px] font-medium normal-case tracking-normal text-white outline-none transition placeholder:text-[#4a8ab5] focus:border-emerald-300/60"
+            className="h-8 rounded-lg border border-[#2b4f6b] bg-[#071828] px-2 text-[12px] font-medium normal-case tracking-normal text-white outline-none transition placeholder:text-[#4a8ab5] focus:border-cyan-300/60"
           />
         </label>
       </div>
@@ -6827,7 +6827,7 @@ function BookmarkEditForm({ draft, saving, onDraftChange, onCancel, onSave }) {
           type="button"
           onClick={onSave}
           disabled={saving}
-          className="rounded-lg border border-emerald-400/40 bg-emerald-500/15 px-3 py-1.5 text-[10px] font-bold text-emerald-100 transition hover:bg-emerald-500/25 disabled:opacity-60"
+          className="rounded-lg border border-cyan-300/45 bg-cyan-500/15 px-3 py-1.5 text-[10px] font-bold text-cyan-100 transition hover:bg-cyan-500/25 disabled:opacity-60"
         >
           {saving ? "Saving..." : "Save Bookmark"}
         </button>
@@ -9436,10 +9436,10 @@ function buildRequestedTrainsDocx({ removalRows = [], swappingRows = [], noteTyp
   };
 
   const buildDcNoteBodyXml = () => `
-    ${buildTitleXml("Train requested and will be removed to West Depot.", 0)}
-    ${buildTableXml(removalRows)}
-    ${buildTitleXml("Train requested and required for swapping.", 180, true)}
-    ${buildTableXml(swappingRows)}`;
+    ${buildTitleXml("Train requested and required for swapping.", 0, true)}
+    ${buildTableXml(swappingRows)}
+    ${buildTitleXml("Train requested and will be removed to West Depot.", 180)}
+    ${buildTableXml(removalRows)}`;
 
   const buildTcNoteBodyXml = () => `
     ${buildTitleXml("Train requested and required for swapping.", 0, true)}
@@ -9773,15 +9773,15 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
 
       <div className="space-y-2">
         <RequestedTrainTable
-          title="Train requested and will be removed to West Depot."
-          rows={removalRows}
+          title="Train requested and required for swapping."
+          rows={swappingRows}
           maintenanceMap={maintenanceMap}
           onManualTidChange={handleManualTidChange}
         />
 
         <RequestedTrainTable
-          title="Train requested and required for swapping."
-          rows={swappingRows}
+          title="Train requested and will be removed to West Depot."
+          rows={removalRows}
           maintenanceMap={maintenanceMap}
           onManualTidChange={handleManualTidChange}
         />
