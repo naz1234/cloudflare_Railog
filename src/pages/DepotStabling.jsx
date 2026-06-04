@@ -8524,7 +8524,8 @@ export default function DepotStablingPage() {
           {[
             {
               key: "stabling",
-              label: "Train Req",
+              label: "Train Request",
+              code: "REQ",
               to: "/depot-stabling",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -8536,6 +8537,7 @@ export default function DepotStablingPage() {
             {
               key: "movement",
               label: "Train Movement",
+              code: "MOV",
               to: "/train-movement",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -8546,7 +8548,8 @@ export default function DepotStablingPage() {
 
             {
               key: "pst",
-              label: "PST / Train Prep",
+              label: "PST Train Prep",
+              code: "PST",
               to: "/pst-train-prep",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -8556,7 +8559,8 @@ export default function DepotStablingPage() {
             },
             {
               key: "insertion",
-              label: "Insertion",
+              label: "Train Insertion",
+              code: "INS",
               to: "/insertion",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -8567,6 +8571,7 @@ export default function DepotStablingPage() {
             {
               key: "washing",
               label: "Train Washing",
+              code: "WSH",
               to: "/train-washing",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -8577,6 +8582,7 @@ export default function DepotStablingPage() {
             {
               key: "odo",
               label: "ODO Reading",
+              code: "ODO",
               to: "/odo-reading",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -8586,7 +8592,8 @@ export default function DepotStablingPage() {
             },
             {
               key: "possession",
-              label: "Possession",
+              label: "Possession Log",
+              code: "PSS",
               to: "/possession",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -8594,9 +8601,9 @@ export default function DepotStablingPage() {
                 </svg>
               ),
             },
-          ].map(({ key, label, icon, to }) => {
+          ].map(({ key, label, code, to }) => {
             const isActive = activeTab === key;
-            const navClass = `flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-2.5 px-3"} py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full ${
+            const navClass = `flex items-center ${isSidebarCollapsed ? "justify-center px-1" : "gap-2.5 px-3"} py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full ${
               isActive
                 ? "bg-[#1a3a5c] text-white shadow-sm border border-[#2b4f6b]"
                 : "text-[#7eb8e0] hover:text-white hover:bg-[#0f2d4a]"
@@ -8611,7 +8618,11 @@ export default function DepotStablingPage() {
                   title={isSidebarCollapsed ? label : undefined}
                   className={navClass}
                 >
-                  <span className="flex-shrink-0">{icon}</span>
+                  <span
+                    className={`${isSidebarCollapsed ? "h-7 w-9 text-[10px]" : "h-6 w-8 text-[9px]"} flex flex-shrink-0 items-center justify-center rounded-md border border-[#2b4f6b] bg-[#071828] font-black uppercase tracking-wider text-[#8bd5ff]`}
+                  >
+                    {code}
+                  </span>
                   {!isSidebarCollapsed && <span>{label}</span>}
                 </Link>
               );
@@ -8624,7 +8635,11 @@ export default function DepotStablingPage() {
                 title={isSidebarCollapsed ? label : undefined}
                 className={navClass}
               >
-                <span className="flex-shrink-0">{icon}</span>
+                <span
+                  className={`${isSidebarCollapsed ? "h-7 w-9 text-[10px]" : "h-6 w-8 text-[9px]"} flex flex-shrink-0 items-center justify-center rounded-md border border-[#2b4f6b] bg-[#071828] font-black uppercase tracking-wider text-[#8bd5ff]`}
+                >
+                  {code}
+                </span>
                 {!isSidebarCollapsed && <span>{label}</span>}
               </button>
             );
