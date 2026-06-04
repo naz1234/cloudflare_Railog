@@ -10411,7 +10411,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
     >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-[260px]">
-          <h2 className="text-sm font-black uppercase tracking-[0.18em] text-white drop-shadow-[0_0_10px_rgba(147,197,253,0.26)]">
+          <h2 className="text-xs font-black uppercase tracking-[0.18em] text-white drop-shadow-[0_0_10px_rgba(147,197,253,0.26)]">
             <RequestedTrainTitle title="Train requested and required for swapping." />
           </h2>
         </div>
