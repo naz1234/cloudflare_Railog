@@ -937,6 +937,24 @@ function saveTidInputs(inputs) {
   try { localStorage.setItem(TID_INPUTS_KEY, JSON.stringify(inputs)); } catch {}
 }
 
+const INSERTION_HIDE_ELAPSED_TID_KEY_PREFIX = "insertionHideElapsedTid_v1";
+function getInsertionHideElapsedTidKey(title = "", roads = []) {
+  const fallback = Array.isArray(roads) && roads.length ? roads.join("_") : "insertion";
+  const scope = String(title || fallback)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "") || "default";
+  return `${INSERTION_HIDE_ELAPSED_TID_KEY_PREFIX}_${scope}`;
+}
+function loadInsertionHideElapsedTid(title, roads) {
+  try {
+    return localStorage.getItem(getInsertionHideElapsedTidKey(title, roads)) === "true";
+  } catch { return false; }
+}
+function saveInsertionHideElapsedTid(title, roads, value) {
+  try { localStorage.setItem(getInsertionHideElapsedTidKey(title, roads), String(Boolean(value))); } catch {}
+}
+
 function normalizeInsertionLiveState(source = {}) {
   return {
     insertionLog: sortInsertionLogByTime(Array.isArray(source?.insertionLog) ? source.insertionLog : []),
@@ -2495,9 +2513,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
 function InsertionStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime }) {
   const [hideFiltered, setHideFiltered] = useState(false);
-  const [hideElapsedTid, setHideElapsedTid] = useState(false);
+  const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
   const HIDE_REMARKS = ["3K1", "SW", "2W"];
+
+  useEffect(() => {
+    saveInsertionHideElapsedTid(title, roads, hideElapsedTid);
+  }, [title, roads, hideElapsedTid]);
 
   const handleDownloadPng = async () => {
     if (downloadingPng) return;
