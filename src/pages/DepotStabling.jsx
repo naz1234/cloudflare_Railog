@@ -47,6 +47,20 @@ function getDefaultPresetLabelForTimetableType(type = "weekday", currentLabel = 
   return ["9am", "7pm", "12am"].includes(currentLabel) ? currentLabel : "9am";
 }
 
+function getValidTrainRemPresetLabelsForTimetableType(type = "weekday") {
+  const normalized = normalizeTimetableType(type);
+  if (normalized === "friday") return ["Fri"];
+  if (normalized === "saturday") return ["Sat"];
+  if (normalized === "ph") return ["PH"];
+  return ["9am", "7pm", "12am"];
+}
+
+function isTrainRemPresetMismatchWithTimetable(type = "weekday", presetLabel = "") {
+  const cleanPreset = String(presetLabel || "").trim();
+  if (!cleanPreset) return false;
+  return !getValidTrainRemPresetLabelsForTimetableType(type).includes(cleanPreset);
+}
+
 function loadActiveTimetableType() {
   try {
     return normalizeTimetableType(localStorage.getItem(ACTIVE_TIMETABLE_TYPE_KEY) || "weekday");
@@ -3615,26 +3629,23 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   useEffect(() => {
     if (!trainRemLoaded) return;
 
-    const activePresetLabel = getDefaultPresetLabelForTimetableType(activeTimetableType, trainRemStateRef.current?.selectedPreset?.west);
-
+    // Timetable selection must not auto-select Train Rem preset buttons.
+    // Only refresh the currently selected preset rows when a new uploaded timetable record is loaded.
     updateTrainRemState((prev) => {
       const nextRows = {};
 
       ["west", "east"].forEach((depot) => {
+        const currentPresetLabel = prev.selectedPreset?.[depot] || "9am";
         const existingRows = normalizeTrainRemRows(prev.rows?.[depot], depot);
-        nextRows[depot] = buildTrainRemRowsFromPresetConfig(depot, activePresetLabel, existingRows, activeTimetable);
+        nextRows[depot] = buildTrainRemRowsFromPresetConfig(depot, currentPresetLabel, existingRows, activeTimetable);
       });
 
       return {
         ...prev,
-        selectedPreset: {
-          west: activePresetLabel,
-          east: activePresetLabel,
-        },
         rows: applyFullMlTidMatchesToTrainRemRows(nextRows, prev.fullMlTidRows),
       };
     });
-  }, [activeTimetable?.id, activeTimetableType, trainRemLoaded, updateTrainRemState]);
+  }, [activeTimetable?.id, trainRemLoaded, updateTrainRemState]);
 
   useEffect(() => {
     const autoClearInfo = getFullMlTidAutoClearInfo(trainRemState.fullMlTidRows);
@@ -4158,6 +4169,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     const duplicateCounts = getTrainRemDuplicateCounts();
     const showWest9amPrioritySection = depot === "west" && selectedPreset === "9am";
     const pdfActive = Boolean(trainRemPdfStatus?.[depot]);
+    const activeTimetableLabel = getTimetableTypeLabel(activeTimetableType);
+    const timetablePresetNotice = isTrainRemPresetMismatchWithTimetable(activeTimetableType, selectedPreset)
+      ? `Currently timetable ${activeTimetableLabel} is used`
+      : "";
 
     return (
       <div className="rounded-xl border border-[#2b4f6b] bg-[#071828] overflow-hidden shadow-md">
@@ -4228,6 +4243,11 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
           </div>
 
           <div className="space-y-1 mt-2">
+            {timetablePresetNotice && (
+              <div className="rounded-md border border-amber-400/45 bg-amber-950/25 px-2 py-1 text-[9px] font-black leading-tight text-amber-200">
+                {timetablePresetNotice}
+              </div>
+            )}
             <div className="flex items-center gap-1">
               {TID_PRESETS[depot].slice(0, 3).map((preset) => {
                 const active = selectedPreset === preset.label;
