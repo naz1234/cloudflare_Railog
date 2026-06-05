@@ -6457,7 +6457,7 @@ function PSTTabContent
   const liveAccent = isLiveHealthy ? "#22c55e" : "#f59e0b";
 
   return (
-    <div className="flex flex-col lg:flex-row gap-5 w-fit items-start">
+    <div className="flex flex-col lg:flex-row gap-5 w-full items-start">
       <div className="flex flex-col gap-5 min-w-0 shrink-0">
         <div className="space-y-5 min-w-0">
           <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} />
@@ -6596,7 +6596,7 @@ function PSTTabContent
       </div>
     </div>
 
-      <div className="pst-train-prep-log-font-bump w-full max-w-[960px] lg:w-[520px] lg:max-w-[520px] lg:sticky lg:top-4">
+      <div className="pst-train-prep-log-font-bump w-full max-w-[960px] lg:w-[560px] lg:max-w-[560px] xl:w-[620px] xl:max-w-[620px] 2xl:w-[680px] 2xl:max-w-[680px] lg:sticky lg:top-4">
         <style>{`
         /* PST / Train Prep Log title: keep slightly smaller than the log text */
         .pst-train-prep-log-font-bump :is(h1, h2, h3),
@@ -6657,6 +6657,14 @@ function PSTTabContent
         .pst-train-prep-log-font-bump [class*="px-"] {
           padding-left: 0.75rem !important;
           padding-right: 0.75rem !important;
+        }
+
+        /* Right-side log: wrap long operational lines instead of showing horizontal scrollbars */
+        .pst-train-prep-log-font-bump .pst-log-wrap-line {
+          white-space: normal !important;
+          overflow-x: visible !important;
+          word-break: normal !important;
+          overflow-wrap: anywhere !important;
         }
       `}</style>
         <PSTLogOutput logLines={sortedLogLines} onRemove={onRemoveLog} onClearDepot={onClearDepotLog} />

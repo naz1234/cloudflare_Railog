@@ -303,15 +303,15 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
                 className="rounded-xl px-4 py-3 space-y-2 border border-emerald-900/50 min-w-0"
                 style={{ background: "#071828" }}
               >
-                <div className="pb-2 mb-1 border-b border-emerald-900/40 space-y-0.5 min-w-0 overflow-x-auto">
-                  <p className="font-mono text-[11px] font-bold text-[#c8d8ea] whitespace-nowrap m-0">
+                <div className="pb-2 mb-1 border-b border-emerald-900/40 space-y-0.5 min-w-0">
+                  <p className="pst-log-wrap-line font-mono text-[11px] font-bold text-[#c8d8ea] whitespace-normal break-words m-0">
                     Total PST completed: {pstLines.length} train{pstLines.length !== 1 ? "s" : ""} conducted from {getPSTStartTime(pstLines[0])} to {getPSTSummaryEndTime(pstLines)} hrs.
                   </p>
                 </div>
 
                 {groupedPSTLines.map((group) => (
                   <div key={group.key} className="group flex items-center gap-2 min-w-0">
-                    <p className="flex-1 min-w-0 overflow-x-auto font-mono text-[11px] text-[#c8d8ea] leading-5 whitespace-nowrap m-0 pr-2">
+                    <p className="pst-log-wrap-line flex-1 min-w-0 font-mono text-[11px] text-[#c8d8ea] leading-5 whitespace-normal break-words m-0 pr-2">
                       {group.text}
                     </p>
                     <button
@@ -340,15 +340,15 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
                 className="rounded-xl px-4 py-3 space-y-2 border border-blue-900/40 min-w-0"
                 style={{ background: "#071828" }}
               >
-                <div className="pb-2 mb-1 border-b border-blue-900/30 space-y-0.5 min-w-0 overflow-x-auto">
-                  <p className="font-mono text-[11px] font-bold text-[#c8d8ea] whitespace-nowrap m-0">
+                <div className="pb-2 mb-1 border-b border-blue-900/30 space-y-0.5 min-w-0">
+                  <p className="pst-log-wrap-line font-mono text-[11px] font-bold text-[#c8d8ea] whitespace-normal break-words m-0">
                     Train Preparation at {label} Depot: Total {prepLines.length} train{prepLines.length !== 1 ? "s" : ""} completed from {getLogDisplayTime(prepLines[0])} to {getLogDisplayTime(prepLines[prepLines.length - 1])} hrs.
                   </p>
                 </div>
 
                 {groupedPrepLines.map((group) => (
                   <div key={group.key} className="group flex items-center gap-2 min-w-0">
-                    <p className="flex-1 min-w-0 overflow-x-auto font-mono text-[11px] text-[#c8d8ea] leading-5 whitespace-nowrap m-0 pr-2">
+                    <p className="pst-log-wrap-line flex-1 min-w-0 font-mono text-[11px] text-[#c8d8ea] leading-5 whitespace-normal break-words m-0 pr-2">
                       {group.text}
                     </p>
                     <button
