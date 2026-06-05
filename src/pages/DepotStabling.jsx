@@ -2604,8 +2604,9 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   const pst = pstMatchesTrain ? rawPst : null;
   const prep = prepMatchesTrain ? rawPrep : null;
   const isPstDone = pst?.done;
-  const isPstConfirming = pst?.confirming && !pst?.done;
-  const pstEstimateTime = pst?.endTime || "";
+  // PST no longer asks for Alarm / No Alarm. Legacy confirming states are handled by the PST click handler.
+  const isPstConfirming = false;
+  const pstEstimateTime = isPstDone ? (pst?.endTime || "") : "";
   const isPrepStarted = false;
   const isPrepDone = prep?.done;
   if (isPstDone) { trainColor = "#4ade80"; }
@@ -2647,48 +2648,9 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
         )}
         {key && (
           <div className="flex flex-col gap-1 w-full mt-1">
-            {isPstConfirming ? (
-              <div className="w-full rounded-lg border border-amber-600/70 bg-amber-950/40 px-1 py-1">
-                <div className="mb-1 flex items-center gap-1">
-                  <span className="shrink-0 text-[8px] font-black uppercase tracking-wide text-amber-300">Start</span>
-                  <div className="flex min-w-0 flex-1 items-center rounded-md border border-amber-500/60 bg-[#071828] px-1 py-0.5 focus-within:border-amber-300">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={5}
-                      value={pst?.startTime || ""}
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => {
-                        const value = String(pst?.startTime || "");
-                        const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-                        if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                          e.preventDefault();
-                          onPSTStartTimeChange?.(road, bi, key, value.slice(0, -2));
-                        }
-                      }}
-                      onChange={(e) => onPSTStartTimeChange?.(road, bi, key, cleanMovementCustomTimeInput(e.target.value))}
-                      onBlur={(e) => onPSTStartTimeChange?.(road, bi, key, normalizeMovementCustomTimeInput(e.target.value))}
-                      placeholder="00:00"
-                      className="min-w-0 flex-1 bg-transparent text-center text-[9px] font-black leading-tight text-amber-100 outline-none placeholder:text-amber-700"
-                      title="Edit PST start time"
-                    />
-                  </div>
-                </div>
-                <div className="mb-1 text-center text-[8px] font-black uppercase tracking-wide text-amber-300">Any alarm?</div>
-                <div className="grid grid-cols-2 gap-1">
-                  <button onClick={() => onPSTTick(road, bi, key, "no_alarm")} className="rounded-md border border-emerald-600/70 bg-emerald-950/50 px-1 py-0.5 text-[8px] font-black leading-tight text-emerald-300 hover:bg-emerald-900/70">
-                    No
-                  </button>
-                  <button onClick={() => onPSTTick(road, bi, key, "alarm")} className="rounded-md border border-amber-500/80 bg-amber-900/50 px-1 py-0.5 text-[8px] font-black leading-tight text-amber-200 hover:bg-amber-800/70">
-                    Alarm
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button onClick={() => onPSTTick(road, bi, key)} className={`w-full text-[9px] font-bold rounded-lg px-1 py-0.5 border transition-all leading-tight ${isPstDone ? "bg-emerald-900/60 border-emerald-600 text-emerald-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:border-blue-500 hover:text-blue-300"}`}>
-                {isPstDone ? "✓ PST" : "PST"}
-              </button>
-            )}
+            <button onClick={() => onPSTTick(road, bi, key)} className={`w-full text-[9px] font-bold rounded-lg px-1 py-0.5 border transition-all leading-tight ${isPstDone ? "bg-emerald-900/60 border-emerald-600 text-emerald-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:border-blue-500 hover:text-blue-300"}`}>
+              {isPstDone ? "✓ PST" : "PST"}
+            </button>
             {isPrepDone && (
               <div className="w-full rounded-lg border border-blue-500/60 bg-blue-950/30 px-1 py-1">
                 <div className="mb-0.5 text-center text-[8px] font-black uppercase tracking-wide text-blue-300">Completion</div>
@@ -9229,12 +9191,13 @@ export default function DepotStablingPage() {
     const roadFormatted = road.replace(/^(WD|ED)-/, `${depotLabel}\u2013`);
     const depot = getDepotFromRoad(road);
 
-    // Pending confirmation: user has clicked PST once and must confirm alarm / no alarm.
-    if (current?.confirming && alarmStatus) {
+    // Legacy pending confirmation: finish it automatically with default "No alarm reported".
+    if (current?.confirming) {
       const startTime = normalizeMovementCustomTimeInput(current.startTime);
       if (!/^\d{2}:\d{2}$/.test(startTime)) return;
       const endTime = addMinutesToHHMM(startTime, 6);
-      const alarmText = alarmStatus === "alarm" ? " Alarm reported." : " No alarm reported.";
+      const finalAlarmStatus = alarmStatus || "no_alarm";
+      const alarmText = finalAlarmStatus === "alarm" ? " Alarm reported." : " No alarm reported.";
       const line = `${startTime} hrs \u2013 PST commenced at ${roadFormatted} for ${paddedKey}. Completed at ${endTime} hrs.${alarmText}`;
 
       setPstState((prev) => ({
@@ -9244,13 +9207,13 @@ export default function DepotStablingPage() {
           confirming: false,
           startTime,
           endTime,
-          alarmStatus,
+          alarmStatus: finalAlarmStatus,
           trainKey: paddedKey,
         },
       }));
       setPstLogLines((prev) => sortPSTLogLinesByTime([
         ...prev.filter((l) => l.key !== `pst-${cellKey}`),
-        { key: `pst-${cellKey}`, text: line, type: "PST", depot, road, trainKey: paddedKey, startTime, endTime, alarmStatus },
+        { key: `pst-${cellKey}`, text: line, type: "PST", depot, road, trainKey: paddedKey, startTime, endTime, alarmStatus: finalAlarmStatus },
       ]));
       return;
     }
