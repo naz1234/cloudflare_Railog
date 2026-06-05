@@ -10609,17 +10609,17 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
     >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-[260px]">
-          <h2 className="text-[11px] font-bold uppercase tracking-[2px] text-white whitespace-nowrap">
+          <h2 className="text-[13px] font-bold uppercase tracking-[2px] text-white whitespace-nowrap">
             TRAIN SWAPPING OVERVIEW
           </h2>
-          <p className="mt-[3px] text-[9px] font-normal normal-case tracking-normal text-[#c9d7e8]">
+          <p className="mt-[3px] text-[11px] font-normal normal-case tracking-normal text-[#c9d7e8]">
             Note: Add TID manually to check Arrival 3A1P2.
           </p>
-          <p className="mt-[3px] text-[9px] font-normal normal-case tracking-normal text-[#7dd3fc]">
+          <p className="mt-[3px] text-[11px] font-normal normal-case tracking-normal text-[#7dd3fc]">
             {timetableNotice}
           </p>
           {arrivalNotice && (
-            <p className="mt-[3px] text-[9px] font-normal normal-case tracking-normal text-amber-200">
+            <p className="mt-[3px] text-[11px] font-normal normal-case tracking-normal text-amber-200">
               {arrivalNotice}
             </p>
           )}
