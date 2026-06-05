@@ -9255,21 +9255,29 @@ export default function DepotStablingPage() {
       return;
     }
 
-    // First click: do not complete/log yet. Hold the cell in green/amber confirmation state.
+    // First click: complete PST immediately and generate the log with default "No alarm reported".
     const now = new Date();
     const startTime = formatTime(now);
     const endTime = formatTime(addMinutes(now, 6));
+    const finalAlarmStatus = alarmStatus || "no_alarm";
+    const alarmText = finalAlarmStatus === "alarm" ? " Alarm reported." : " No alarm reported.";
+    const line = `${startTime} hrs – PST commenced at ${roadFormatted} for ${paddedKey}. Completed at ${endTime} hrs.${alarmText}`;
+
     setPstState((prev) => ({
       ...prev,
       [cellKey]: {
-        done: false,
-        confirming: true,
+        done: true,
+        confirming: false,
         startTime,
         endTime,
+        alarmStatus: finalAlarmStatus,
         trainKey: paddedKey,
       },
     }));
-    setPstLogLines((prev) => prev.filter((l) => l.key !== `pst-${cellKey}`));
+    setPstLogLines((prev) => sortPSTLogLinesByTime([
+      ...prev.filter((l) => l.key !== `pst-${cellKey}`),
+      { key: `pst-${cellKey}`, text: line, type: "PST", depot, road, trainKey: paddedKey, startTime, endTime, alarmStatus: finalAlarmStatus },
+    ]));
   };
 
   const buildTrainPrepLogLine = (time, trainKey, road, taName = "") => {
