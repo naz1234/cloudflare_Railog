@@ -73,11 +73,21 @@ function isTrainRemPresetMismatchWithTimetable(type = "weekday", presetLabel = "
   return !getValidTrainRemPresetLabelsForTimetableType(type).includes(cleanPreset);
 }
 
+function getCurrentDayTimetableType(date = new Date()) {
+  const day = date.getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
+  if (day === 5) return "friday";
+  if (day === 6) return "saturday";
+  return "weekday";
+}
+
 function loadActiveTimetableType() {
   try {
-    return normalizeTimetableType(localStorage.getItem(ACTIVE_TIMETABLE_TYPE_KEY) || "weekday");
+    const storedType = normalizeTimetableType(localStorage.getItem(ACTIVE_TIMETABLE_TYPE_KEY) || "");
+    // PH is a manual override and must stay selected after page refresh.
+    // Other timetable types follow the current day whenever the page is reopened/refreshed.
+    return storedType === "ph" ? "ph" : getCurrentDayTimetableType();
   } catch {
-    return "weekday";
+    return getCurrentDayTimetableType();
   }
 }
 
