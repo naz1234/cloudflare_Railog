@@ -14,6 +14,67 @@ function getLogDisplayTime(entry = {}) {
   return match ? match[1] : "";
 }
 
+
+function getPrepLocation(entry = {}) {
+  const directRoad = (entry.road || "").toString().trim();
+  const textMatch = (entry.text || "").match(/completed\s+at\s+([A-Z]{2}[–-][A-Z0-9]+)/i);
+  const rawLocation = directRoad || (textMatch ? textMatch[1] : "");
+
+  if (!rawLocation) return "";
+
+  return rawLocation
+    .replace(/-/g, "–")
+    .replace(/^(WD|ED)–/i, (_, depot) => `${depot.toUpperCase()}–`);
+}
+
+function getPrepTAName(entry = {}) {
+  const explicitName = (entry.taName || "").toString().trim();
+  const textMatch = (entry.text || "").match(/(?:Performed\s+by|by)\s+TA\s+(.+?)\.?$/i);
+  const rawName = explicitName || (textMatch ? textMatch[1] : "");
+  const cleanName = rawName.replace(/^TA\b\s*/i, "").replace(/\.$/, "").trim();
+
+  return cleanName ? `TA ${cleanName}` : "";
+}
+
+function getPrepTrainKey(entry = {}) {
+  if (entry.trainKey) return entry.trainKey;
+  const match = (entry.text || "").match(/\b(T\d{1,2})\b/i);
+  return match ? match[1].toUpperCase().replace(/^T(\d)$/, "T0$1") : "";
+}
+
+function buildGroupedPrepLogLines(prepLines = []) {
+  const groups = [];
+  const groupMap = new Map();
+
+  prepLines.forEach((entry) => {
+    const time = getLogDisplayTime(entry);
+    const location = getPrepLocation(entry);
+    const taName = getPrepTAName(entry);
+    const trainKey = getPrepTrainKey(entry);
+    const groupKey = `${time}||${location}||${taName}`;
+
+    if (!groupMap.has(groupKey)) {
+      const group = { key: groupKey, time, location, taName, trainKeys: [], entries: [] };
+      groupMap.set(groupKey, group);
+      groups.push(group);
+    }
+
+    const group = groupMap.get(groupKey);
+    if (trainKey && !group.trainKeys.includes(trainKey)) group.trainKeys.push(trainKey);
+    group.entries.push(entry);
+  });
+
+  return groups.map((group) => {
+    const trainList = formatTrainList(group.trainKeys);
+    const locationText = group.location ? ` at ${group.location}` : "";
+    const taText = group.taName ? ` by ${group.taName}` : "";
+    return {
+      ...group,
+      text: `${group.time} hrs – ${trainList} completed${locationText}${taText}.`,
+    };
+  });
+}
+
 function buildPSTCopyText(pstLines) {
   if (pstLines.length === 0) return "";
   const firstTime = pstLines[0].startTime;
@@ -29,14 +90,14 @@ function buildPSTCopyText(pstLines) {
 
 function buildPrepCopyText(prepLines, depotLabel) {
   if (prepLines.length === 0) return "";
+  const groupedLines = buildGroupedPrepLogLines(prepLines);
   const firstTime = getLogDisplayTime(prepLines[0]);
   const lastTime = getLogDisplayTime(prepLines[prepLines.length - 1]);
-  const trainList = formatTrainList(prepLines.map((l) => l.trainKey));
+
   return [
     `Train Preparation at ${depotLabel} Depot: Total ${prepLines.length} train${prepLines.length !== 1 ? "s" : ""} completed from ${firstTime} to ${lastTime} hrs.`,
-    `Trains: ${trainList}.`,
     "",
-    ...prepLines.map((l) => l.text),
+    ...groupedLines.map((group) => group.text),
   ].join("\n");
 }
 
@@ -67,6 +128,7 @@ function CopyBtn({ text, label, disabled }) {
 function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
   const pstLines = lines.filter((l) => l.type === "PST");
   const prepLines = lines.filter((l) => l.type === "Prep");
+  const groupedPrepLines = buildGroupedPrepLogLines(prepLines);
   const isWest = label === "West";
   const [confirmClear, setConfirmClear] = useState(false);
 
@@ -196,18 +258,16 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
                   <p className="font-mono text-[11px] font-bold text-[#c8d8ea] whitespace-nowrap m-0">
                     Train Preparation at {label} Depot: Total {prepLines.length} train{prepLines.length !== 1 ? "s" : ""} completed from {getLogDisplayTime(prepLines[0])} to {getLogDisplayTime(prepLines[prepLines.length - 1])} hrs.
                   </p>
-                  <p className="font-mono text-[11px] text-[#4a8ab5] whitespace-nowrap m-0">
-                    Trains: {formatTrainList(prepLines.map((l) => l.trainKey))}.
-                  </p>
                 </div>
 
-                {prepLines.map((entry) => (
-                  <div key={entry.key} className="group flex items-center gap-2 min-w-0">
+                {groupedPrepLines.map((group) => (
+                  <div key={group.key} className="group flex items-center gap-2 min-w-0">
                     <p className="flex-1 min-w-0 overflow-x-auto font-mono text-[11px] text-[#c8d8ea] leading-5 whitespace-nowrap m-0 pr-2">
-                      {entry.text}
+                      {group.text}
                     </p>
                     <button
-                      onClick={() => onRemove(entry.key)}
+                      onClick={() => group.entries.forEach((entry) => onRemove(entry.key))}
+                      title={group.entries.length > 1 ? "Remove grouped Train Prep entries" : "Remove Train Prep entry"}
                       className="opacity-0 group-hover:opacity-100 w-4 h-4 flex items-center justify-center rounded text-[#3a5a7a] hover:text-red-400 transition-all flex-shrink-0"
                     >
                       <X className="w-3 h-3" />
