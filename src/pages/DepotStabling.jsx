@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Save, CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2 } from "lucide-react";
+import { Save, CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Download } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
@@ -85,6 +85,102 @@ function loadLocalTimetableRecords() {
 
 function saveLocalTimetableRecords(records = []) {
   try { localStorage.setItem(LOCAL_TIMETABLE_RECORDS_KEY, JSON.stringify(records)); } catch {}
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    const chunk = bytes.subarray(index, index + chunkSize);
+    binary += String.fromCharCode.apply(null, chunk);
+  }
+  return btoa(binary);
+}
+
+function base64ToBlob(base64 = "", mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
+  const byteCharacters = atob(base64);
+  const byteArrays = [];
+  const sliceSize = 1024;
+  for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+    const slice = byteCharacters.slice(offset, offset + sliceSize);
+    const byteNumbers = new Array(slice.length);
+    for (let index = 0; index < slice.length; index += 1) {
+      byteNumbers[index] = slice.charCodeAt(index);
+    }
+    byteArrays.push(new Uint8Array(byteNumbers));
+  }
+  return new Blob(byteArrays, { type: mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+}
+
+function sanitizeDownloadFileName(fileName = "uploaded_timetable.xlsx") {
+  const clean = String(fileName || "uploaded_timetable.xlsx")
+    .replace(/[\\/:*?"<>|]+/g, "_")
+    .replace(/\s+/g, " ")
+    .trim();
+  return clean || "uploaded_timetable.xlsx";
+}
+
+function triggerFileDownload(blob, fileName = "uploaded_timetable.xlsx") {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = sanitizeDownloadFileName(fileName);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 500);
+}
+
+function buildTimetableDownloadWorkbook(activeTimetable = null) {
+  const parsed = getActiveTimetableParsedData(activeTimetable);
+  const workbook = XLSX.utils.book_new();
+  const makeRows = (entries = []) => (Array.isArray(entries) ? entries : []).map((entry) => ({
+    TID: entry?.tid || "",
+    DID: entry?.did || "",
+    Timing: entry?.time || "",
+    Remark: entry?.remark || "",
+    Preset: entry?.label || "",
+    Sheet: entry?.sheetName || "",
+  }));
+  const sheets = [
+    ["Removal West", makeRows(parsed?.removal?.west?.entries)],
+    ["Removal East", makeRows(parsed?.removal?.east?.entries)],
+    ["Insertion West", makeRows(parsed?.insertion?.west?.entries)],
+    ["Insertion East", makeRows(parsed?.insertion?.east?.entries)],
+    ["Arrival 3A1P2", makeRows(parsed?.reference?.arrival3A1P2?.entries)],
+  ];
+
+  let appended = false;
+  sheets.forEach(([name, rows]) => {
+    if (!rows.length) return;
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), name);
+    appended = true;
+  });
+
+  if (!appended) {
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([
+      ["Timetable", activeTimetable?.fileName || activeTimetable?.sourceFileName || parsed?.sourceFileName || "Uploaded timetable"],
+      ["Status", "Original file data is not stored for this older upload."],
+    ]), "Timetable");
+  }
+
+  const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+  return new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+}
+
+function downloadStoredTimetableFile(activeTimetable = null) {
+  if (!activeTimetable) return false;
+  const fileName = sanitizeDownloadFileName(activeTimetable?.fileName || activeTimetable?.sourceFileName || activeTimetable?.parsedData?.sourceFileName || "uploaded_timetable.xlsx");
+  const base64 = activeTimetable?.fileBase64 || activeTimetable?.originalFileBase64 || activeTimetable?.sourceFileBase64 || "";
+  if (base64) {
+    triggerFileDownload(base64ToBlob(base64, activeTimetable?.fileMimeType), fileName);
+    return true;
+  }
+
+  const fallbackName = fileName.toLowerCase().endsWith(".xlsx") ? fileName.replace(/\.xlsx$/i, "_parsed.xlsx") : `${fileName}_parsed.xlsx`;
+  triggerFileDownload(buildTimetableDownloadWorkbook(activeTimetable), fallbackName);
+  return true;
 }
 
 function getTimetableEntity() {
@@ -7181,6 +7277,7 @@ function TimetableHeaderControl({
   error,
   onTypeChange,
   onUpload,
+  onDownload,
 }) {
   const parsed = getActiveTimetableParsedData(activeTimetable);
   const fileLabel = activeTimetable?.fileName || activeTimetable?.sourceFileName || parsed?.sourceFileName || "No file stored";
@@ -7214,6 +7311,18 @@ function TimetableHeaderControl({
           onChange={onUpload}
         />
       </label>
+
+      {hasFile && (
+        <button
+          type="button"
+          onClick={onDownload}
+          className="inline-flex h-7 items-center gap-1.5 rounded-md border border-[#2b4f6b] bg-[#0a1e2e] px-2 text-[10px] font-black uppercase tracking-wide text-[#9bd0f1] transition hover:border-cyan-300/50 hover:bg-[#0f2d4a]"
+          title="Download uploaded timetable Excel"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Download
+        </button>
+      )}
 
       <div className="min-w-[190px] max-w-[260px]">
         <div className={`truncate text-[10px] font-bold ${hasFile ? "text-emerald-200" : "text-amber-200"}`} title={fileLabel}>
@@ -7572,6 +7681,9 @@ export default function DepotStablingPage() {
         typeLabel: getTimetableTypeLabel(selectedTimetableType),
         fileName: file.name,
         sourceFileName: file.name,
+        fileMimeType: file.type || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        fileSize: file.size || buffer.byteLength || 0,
+        fileBase64: arrayBufferToBase64(buffer),
         parsedData,
         summary: parsedData.summary,
         createdAt: now,
@@ -7597,6 +7709,15 @@ export default function DepotStablingPage() {
       setTimetableSaving(false);
     }
   }, [selectedTimetableType]);
+
+  const handleTimetableDownload = useCallback(() => {
+    try {
+      downloadStoredTimetableFile(activeTimetable);
+    } catch (error) {
+      console.error("Timetable download failed:", error);
+      setTimetableError("Unable to download timetable file.");
+    }
+  }, [activeTimetable]);
 
   const handleHeaderHorizontalScroll = useCallback((direction) => {
     const scrollTarget = stablingHorizontalScrollRef.current || mainContentScrollRef.current;
@@ -9198,6 +9319,7 @@ export default function DepotStablingPage() {
               error={timetableError}
               onTypeChange={handleTimetableTypeChange}
               onUpload={handleTimetableUpload}
+              onDownload={handleTimetableDownload}
             />
           </div>
           <div className="flex items-center gap-3">
