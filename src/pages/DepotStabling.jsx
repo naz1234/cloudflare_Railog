@@ -10137,7 +10137,7 @@ function buildRequestedTrainsDocx({ swappingRows = [] } = {}) {
   };
 
   const buildSwappingNoteBodyXml = () => `
-    ${buildTitleXml("Train requested and required for swapping.", 0, true)}
+    ${buildTitleXml("TRAIN SWAPPING OVERVIEW", 0, false)}
     ${buildTableXml(swappingRows, { includeArrival3A1P2: true })}`;
 
   const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -10411,11 +10411,11 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
     >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-[260px]">
-          <h2 className="text-xs font-black uppercase tracking-[0.18em] text-white drop-shadow-[0_0_10px_rgba(147,197,253,0.26)]">
-            <RequestedTrainTitle title="Train requested and required for swapping." />
+          <h2 className="text-[11px] font-bold uppercase tracking-[2px] text-white whitespace-nowrap">
+            TRAIN SWAPPING OVERVIEW
           </h2>
-          <p className="mt-1 text-[10px] font-medium normal-case tracking-normal text-sky-100/75">
-            Note: Manually add TID to check Arrival 3A1P2.
+          <p className="mt-[3px] text-[9px] font-normal normal-case tracking-normal text-[#c9d7e8]">
+            Note: Add TID manually to check Arrival 3A1P2.
           </p>
         </div>
 
