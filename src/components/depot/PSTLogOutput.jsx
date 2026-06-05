@@ -75,16 +75,103 @@ function buildGroupedPrepLogLines(prepLines = []) {
   });
 }
 
+function getPSTStartTime(entry = {}) {
+  const directTime = (entry.startTime || entry.time || "").toString().trim();
+  if (directTime) return directTime;
+
+  const textMatch = (entry.text || "").match(/^(\d{1,2}:\d{2})\s*hrs/i);
+  return textMatch ? textMatch[1] : "";
+}
+
+function getPSTEndTime(entry = {}) {
+  const directTime = (entry.endTime || "").toString().trim();
+  if (directTime) return directTime;
+
+  const textMatch = (entry.text || "").match(/Completed\s+at\s+(\d{1,2}:\d{2})\s*hrs/i);
+  return textMatch ? textMatch[1] : getPSTStartTime(entry);
+}
+
+function getPSTLocation(entry = {}) {
+  const directRoad = (entry.road || "").toString().trim();
+  const textMatch = (entry.text || "").match(/PST\s+commenced\s+at\s+([A-Z]{2}[–-][A-Z0-9]+)\s+for/i);
+  const rawLocation = directRoad || (textMatch ? textMatch[1] : "");
+
+  if (!rawLocation) return "";
+
+  return rawLocation
+    .replace(/-/g, "–")
+    .replace(/^(WD|ED)–/i, (_, depot) => `${depot.toUpperCase()}–`);
+}
+
+function getPSTTrainKey(entry = {}) {
+  if (entry.trainKey) return entry.trainKey;
+  const textMatch = (entry.text || "").match(/\b(T\d{1,2})\b/i);
+  return textMatch ? textMatch[1].toUpperCase().replace(/^T(\d)$/, "T0$1") : "";
+}
+
+function getPSTAlarmText(entry = {}) {
+  const status = (entry.alarmStatus || "").toString().trim().toLowerCase();
+  if (status === "alarm") return "Alarm reported.";
+  if (status === "no_alarm" || status === "no alarm") return "No alarm reported.";
+
+  const text = (entry.text || "").toString();
+  if (/No\s+alarm\s+reported\.?/i.test(text)) return "No alarm reported.";
+  if (/Alarm\s+reported\.?/i.test(text)) return "Alarm reported.";
+  return "";
+}
+
+function buildGroupedPSTLogLines(pstLines = []) {
+  const groups = [];
+  const groupMap = new Map();
+
+  pstLines.forEach((entry) => {
+    const startTime = getPSTStartTime(entry);
+    const endTime = getPSTEndTime(entry);
+    const location = getPSTLocation(entry);
+    const alarmText = getPSTAlarmText(entry);
+    const trainKey = getPSTTrainKey(entry);
+    const groupKey = `${startTime}||${location}||${endTime}||${alarmText}`;
+
+    if (!groupMap.has(groupKey)) {
+      const group = { key: groupKey, startTime, endTime, location, alarmText, trainKeys: [], entries: [] };
+      groupMap.set(groupKey, group);
+      groups.push(group);
+    }
+
+    const group = groupMap.get(groupKey);
+    if (trainKey && !group.trainKeys.includes(trainKey)) group.trainKeys.push(trainKey);
+    group.entries.push(entry);
+  });
+
+  return groups.map((group) => {
+    const trainList = formatTrainList(group.trainKeys);
+    const locationText = group.location ? ` at ${group.location}` : "";
+    const completedText = group.endTime ? ` from ${group.startTime} to ${group.endTime} hrs` : "";
+    const alarmText = group.alarmText ? ` ${group.alarmText}` : "";
+
+    return {
+      ...group,
+      text: `${group.startTime} hrs – ${trainList} PST completed${locationText}${completedText}.${alarmText}`,
+    };
+  });
+}
+
+function getPSTSummaryEndTime(pstLines = []) {
+  if (pstLines.length === 0) return "";
+  const lastEntry = pstLines[pstLines.length - 1];
+  return getPSTEndTime(lastEntry) || getPSTStartTime(lastEntry);
+}
+
 function buildPSTCopyText(pstLines) {
   if (pstLines.length === 0) return "";
-  const firstTime = pstLines[0].startTime;
-  const lastTime = pstLines[pstLines.length - 1].startTime;
-  const trainList = formatTrainList(pstLines.map((l) => l.trainKey));
+  const groupedLines = buildGroupedPSTLogLines(pstLines);
+  const firstTime = getPSTStartTime(pstLines[0]);
+  const lastTime = getPSTSummaryEndTime(pstLines);
+
   return [
     `Total PST completed: ${pstLines.length} train${pstLines.length !== 1 ? "s" : ""} conducted from ${firstTime} to ${lastTime} hrs.`,
-    `Trains: ${trainList}.`,
     "",
-    ...pstLines.map((l) => l.text),
+    ...groupedLines.map((group) => group.text),
   ].join("\n");
 }
 
@@ -128,6 +215,7 @@ function CopyBtn({ text, label, disabled }) {
 function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
   const pstLines = lines.filter((l) => l.type === "PST");
   const prepLines = lines.filter((l) => l.type === "Prep");
+  const groupedPSTLines = buildGroupedPSTLogLines(pstLines);
   const groupedPrepLines = buildGroupedPrepLogLines(prepLines);
   const isWest = label === "West";
   const [confirmClear, setConfirmClear] = useState(false);
@@ -217,20 +305,18 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
               >
                 <div className="pb-2 mb-1 border-b border-emerald-900/40 space-y-0.5 min-w-0 overflow-x-auto">
                   <p className="font-mono text-[11px] font-bold text-[#c8d8ea] whitespace-nowrap m-0">
-                    Total PST completed: {pstLines.length} train{pstLines.length !== 1 ? "s" : ""} conducted from {pstLines[0]?.startTime} to {pstLines[pstLines.length - 1]?.startTime} hrs.
-                  </p>
-                  <p className="font-mono text-[11px] text-[#4a8ab5] whitespace-nowrap m-0">
-                    Trains: {formatTrainList(pstLines.map((l) => l.trainKey))}.
+                    Total PST completed: {pstLines.length} train{pstLines.length !== 1 ? "s" : ""} conducted from {getPSTStartTime(pstLines[0])} to {getPSTSummaryEndTime(pstLines)} hrs.
                   </p>
                 </div>
 
-                {pstLines.map((entry) => (
-                  <div key={entry.key} className="group flex items-center gap-2 min-w-0">
+                {groupedPSTLines.map((group) => (
+                  <div key={group.key} className="group flex items-center gap-2 min-w-0">
                     <p className="flex-1 min-w-0 overflow-x-auto font-mono text-[11px] text-[#c8d8ea] leading-5 whitespace-nowrap m-0 pr-2">
-                      {entry.text}
+                      {group.text}
                     </p>
                     <button
-                      onClick={() => onRemove(entry.key)}
+                      onClick={() => group.entries.forEach((entry) => onRemove(entry.key))}
+                      title={group.entries.length > 1 ? "Remove grouped PST entries" : "Remove PST entry"}
                       className="opacity-0 group-hover:opacity-100 w-4 h-4 flex items-center justify-center rounded text-[#3a5a7a] hover:text-red-400 transition-all flex-shrink-0"
                     >
                       <X className="w-3 h-3" />
