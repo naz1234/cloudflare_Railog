@@ -6457,11 +6457,12 @@ function PSTTabContent
   const liveAccent = isLiveHealthy ? "#22c55e" : "#f59e0b";
 
   return (
-    <div className="flex flex-col gap-5 w-fit">
-      <div className="space-y-5 min-w-0">
-        <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} />
-        <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} />
-      </div>
+    <div className="flex flex-col lg:flex-row gap-5 w-fit items-start">
+      <div className="flex flex-col gap-5 min-w-0 shrink-0">
+        <div className="space-y-5 min-w-0">
+          <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} />
+          <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} />
+        </div>
 
       <div className="w-full max-w-[960px]">
         <div
@@ -6592,72 +6593,73 @@ function PSTTabContent
             </button>
           </div>
         </div>
+      </div>
+    </div>
 
-        <div className="pst-train-prep-log-font-bump">
-          <style>{`
-          /* PST / Train Prep Log title: keep slightly smaller than the log text */
-          .pst-train-prep-log-font-bump :is(h1, h2, h3),
-          .pst-train-prep-log-font-bump [data-log-title],
-          .pst-train-prep-log-font-bump .log-title,
-          .pst-train-prep-log-font-bump .pst-log-title {
-            font-size: 18px !important;
-            line-height: 1.25 !important;
-          }
+      <div className="pst-train-prep-log-font-bump w-full max-w-[960px] lg:w-[520px] lg:max-w-[520px] lg:sticky lg:top-4">
+        <style>{`
+        /* PST / Train Prep Log title: keep slightly smaller than the log text */
+        .pst-train-prep-log-font-bump :is(h1, h2, h3),
+        .pst-train-prep-log-font-bump [data-log-title],
+        .pst-train-prep-log-font-bump .log-title,
+        .pst-train-prep-log-font-bump .pst-log-title {
+          font-size: 18px !important;
+          line-height: 1.25 !important;
+        }
 
-          /* PST / Train Prep actual log text: force compact 13px text */
-          .pst-train-prep-log-font-bump :is(pre, code, textarea),
-          .pst-train-prep-log-font-bump [class*="font-mono"],
-          .pst-train-prep-log-font-bump [class*="whitespace-pre"],
-          .pst-train-prep-log-font-bump [class*="text-[8px]"],
-          .pst-train-prep-log-font-bump [class*="text-[9px]"],
-          .pst-train-prep-log-font-bump [class*="text-[10px]"],
-          .pst-train-prep-log-font-bump [class*="text-[11px]"],
-          .pst-train-prep-log-font-bump [class*="text-xs"],
-          .pst-train-prep-log-font-bump [data-log-line],
-          .pst-train-prep-log-font-bump .log-line,
-          .pst-train-prep-log-font-bump .log-content,
-          .pst-train-prep-log-font-bump .log-output,
-          .pst-train-prep-log-font-bump .pst-log-line,
-          .pst-train-prep-log-font-bump .pst-log-content {
-            font-size: 13px !important;
-            line-height: 1.1 !important;
-          }
+        /* PST / Train Prep actual log text: force compact 13px text */
+        .pst-train-prep-log-font-bump :is(pre, code, textarea),
+        .pst-train-prep-log-font-bump [class*="font-mono"],
+        .pst-train-prep-log-font-bump [class*="whitespace-pre"],
+        .pst-train-prep-log-font-bump [class*="text-[8px]"],
+        .pst-train-prep-log-font-bump [class*="text-[9px]"],
+        .pst-train-prep-log-font-bump [class*="text-[10px]"],
+        .pst-train-prep-log-font-bump [class*="text-[11px]"],
+        .pst-train-prep-log-font-bump [class*="text-xs"],
+        .pst-train-prep-log-font-bump [data-log-line],
+        .pst-train-prep-log-font-bump .log-line,
+        .pst-train-prep-log-font-bump .log-content,
+        .pst-train-prep-log-font-bump .log-output,
+        .pst-train-prep-log-font-bump .pst-log-line,
+        .pst-train-prep-log-font-bump .pst-log-content {
+          font-size: 13px !important;
+          line-height: 1.1 !important;
+        }
 
-          /* Make the PST / Train Prep Log output tighter vertically */
-          .pst-train-prep-log-font-bump :is(p, pre, div, section) {
-            line-height: 1.1 !important;
-          }
+        /* Make the PST / Train Prep Log output tighter vertically */
+        .pst-train-prep-log-font-bump :is(p, pre, div, section) {
+          line-height: 1.1 !important;
+        }
 
-          .pst-train-prep-log-font-bump :is(p, pre) {
-            margin-top: 0.05rem !important;
-            margin-bottom: 0.05rem !important;
-          }
+        .pst-train-prep-log-font-bump :is(p, pre) {
+          margin-top: 0.05rem !important;
+          margin-bottom: 0.05rem !important;
+        }
 
-          .pst-train-prep-log-font-bump :is(hr) {
-            margin-top: 0.2rem !important;
-            margin-bottom: 0.2rem !important;
-          }
+        .pst-train-prep-log-font-bump :is(hr) {
+          margin-top: 0.2rem !important;
+          margin-bottom: 0.2rem !important;
+        }
 
-          .pst-train-prep-log-font-bump [class*="space-y-"] > :not([hidden]) ~ :not([hidden]) {
-            margin-top: 0.12rem !important;
-          }
+        .pst-train-prep-log-font-bump [class*="space-y-"] > :not([hidden]) ~ :not([hidden]) {
+          margin-top: 0.12rem !important;
+        }
 
-          .pst-train-prep-log-font-bump [class*="gap-"] {
-            gap: 0.12rem !important;
-          }
+        .pst-train-prep-log-font-bump [class*="gap-"] {
+          gap: 0.12rem !important;
+        }
 
-          .pst-train-prep-log-font-bump [class*="py-"] {
-            padding-top: 0.25rem !important;
-            padding-bottom: 0.25rem !important;
-          }
+        .pst-train-prep-log-font-bump [class*="py-"] {
+          padding-top: 0.25rem !important;
+          padding-bottom: 0.25rem !important;
+        }
 
-          .pst-train-prep-log-font-bump [class*="px-"] {
-            padding-left: 0.75rem !important;
-            padding-right: 0.75rem !important;
-          }
-        `}</style>
-          <PSTLogOutput logLines={sortedLogLines} onRemove={onRemoveLog} onClearDepot={onClearDepotLog} />
-        </div>
+        .pst-train-prep-log-font-bump [class*="px-"] {
+          padding-left: 0.75rem !important;
+          padding-right: 0.75rem !important;
+        }
+      `}</style>
+        <PSTLogOutput logLines={sortedLogLines} onRemove={onRemoveLog} onClearDepot={onClearDepotLog} />
       </div>
     </div>
   );
