@@ -232,13 +232,13 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
 
   return (
     <div
-      className="rounded-2xl border p-4 space-y-3"
+      className="rounded-2xl border p-3 space-y-2"
       style={{
         borderColor: "#2b4f6b",
         background: "linear-gradient(135deg,#0c2240 0%,#071828 100%)",
       }}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isWest ? "bg-purple-400" : "bg-cyan-400"}`} />
           <h3 className={`text-xs font-black tracking-widest uppercase whitespace-nowrap ${isWest ? "text-purple-300" : "text-cyan-300"}`}>
@@ -249,7 +249,7 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
           </span>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex flex-wrap items-center justify-end gap-1.5 flex-shrink-0">
           <CopyBtn text={buildPSTCopyText(pstLines)} label="PST" disabled={pstLines.length === 0} />
           <CopyBtn text={buildPrepCopyText(prepLines, label)} label="Train Prep" disabled={prepLines.length === 0} />
 
@@ -289,7 +289,7 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
           <span className="text-[11px] font-medium">No entries for {label} Depot</span>
         </div>
       ) : (
-        <div className="space-y-3 min-w-0">
+        <div className="space-y-2 min-w-0">
           {pstLines.length > 0 && (
             <div className="space-y-1 min-w-0">
               <div className="flex items-center gap-1.5 px-1">
@@ -300,18 +300,18 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
               </div>
 
               <div
-                className="rounded-xl px-4 py-3 space-y-2 border border-emerald-900/50 min-w-0"
+                className="rounded-xl px-3 py-2 space-y-1.5 border border-emerald-900/50 min-w-0"
                 style={{ background: "#071828" }}
               >
-                <div className="pb-2 mb-1 border-b border-emerald-900/40 space-y-0.5 min-w-0 overflow-x-auto">
-                  <p className="font-mono text-[11px] font-bold text-[#c8d8ea] whitespace-nowrap m-0">
+                <div className="pb-1.5 mb-1 border-b border-emerald-900/40 space-y-0.5 min-w-0">
+                  <p className="font-mono text-[11px] font-bold text-[#c8d8ea] whitespace-normal break-words m-0">
                     Total PST completed: {pstLines.length} train{pstLines.length !== 1 ? "s" : ""} conducted from {getPSTStartTime(pstLines[0])} to {getPSTSummaryEndTime(pstLines)} hrs.
                   </p>
                 </div>
 
                 {groupedPSTLines.map((group) => (
                   <div key={group.key} className="group flex items-center gap-2 min-w-0">
-                    <p className="flex-1 min-w-0 overflow-x-auto font-mono text-[11px] text-[#c8d8ea] leading-5 whitespace-nowrap m-0 pr-2">
+                    <p className="flex-1 min-w-0 font-mono text-[11px] text-[#c8d8ea] leading-5 whitespace-normal break-words m-0 pr-2">
                       {group.text}
                     </p>
                     <button
@@ -337,18 +337,18 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
               </div>
 
               <div
-                className="rounded-xl px-4 py-3 space-y-2 border border-blue-900/40 min-w-0"
+                className="rounded-xl px-3 py-2 space-y-1.5 border border-blue-900/40 min-w-0"
                 style={{ background: "#071828" }}
               >
-                <div className="pb-2 mb-1 border-b border-blue-900/30 space-y-0.5 min-w-0 overflow-x-auto">
-                  <p className="font-mono text-[11px] font-bold text-[#c8d8ea] whitespace-nowrap m-0">
+                <div className="pb-1.5 mb-1 border-b border-blue-900/30 space-y-0.5 min-w-0">
+                  <p className="font-mono text-[11px] font-bold text-[#c8d8ea] whitespace-normal break-words m-0">
                     Train Preparation at {label} Depot: Total {prepLines.length} train{prepLines.length !== 1 ? "s" : ""} completed from {getLogDisplayTime(prepLines[0])} to {getLogDisplayTime(prepLines[prepLines.length - 1])} hrs.
                   </p>
                 </div>
 
                 {groupedPrepLines.map((group) => (
                   <div key={group.key} className="group flex items-center gap-2 min-w-0">
-                    <p className="flex-1 min-w-0 overflow-x-auto font-mono text-[11px] text-[#c8d8ea] leading-5 whitespace-nowrap m-0 pr-2">
+                    <p className="flex-1 min-w-0 font-mono text-[11px] text-[#c8d8ea] leading-5 whitespace-normal break-words m-0 pr-2">
                       {group.text}
                     </p>
                     <button
@@ -398,7 +398,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
         </div>
       </div>
 
-      <div className="p-4 space-y-4 max-h-[80vh] overflow-y-auto">
+      <div className="p-3 space-y-3 max-h-[80vh] overflow-y-auto">
         <PSTDepotBlock label="West" lines={westLines} onRemove={onRemove} onClearDepot={() => onClearDepot("west")} />
         <PSTDepotBlock label="East" lines={eastLines} onRemove={onRemove} onClearDepot={() => onClearDepot("east")} />
       </div>
