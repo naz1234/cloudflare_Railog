@@ -1440,6 +1440,9 @@ const INSERTION_ROAD_PILLS = {
   "ED-ST03": "2519",
 };
 const NUM_BLOCKS = 7;
+const LOCAL_STABLING_STATE_KEY = "depotStablingLocalState_v2";
+const STABLING_LOCAL_EDIT_HOLD_MS = 15000;
+const STABLING_POST_SAVE_HOLD_MS = 8000;
 
 const MAINT_STYLES = {
   UNFIT: {
@@ -2223,6 +2226,64 @@ function emptyBlocks() {
 
 function initRoads(roads) {
   return Object.fromEntries(roads.map((r) => [r, emptyBlocks()]));
+}
+
+function normalizeStablingBlocks(blocks = []) {
+  const source = Array.isArray(blocks) ? blocks : [];
+  return Array.from({ length: NUM_BLOCKS }, (_, index) => ({
+    trainId: source[index]?.trainId || "",
+    extraRemark: source[index]?.extraRemark || "",
+  }));
+}
+
+function normalizeStablingDepotData(data = {}, roads = []) {
+  const normalized = initRoads(roads);
+  roads.forEach((road) => {
+    normalized[road] = normalizeStablingBlocks(data?.[road]);
+  });
+  return normalized;
+}
+
+function hasAnyStablingTrain(data = {}, roads = []) {
+  return roads.some((road) => (data?.[road] || []).some((block) => normalizeTrainId(block?.trainId || "")));
+}
+
+function getStablingRecordsUpdatedMs(records = []) {
+  return (records || []).reduce((latest, rec) => {
+    const ms = Date.parse(rec?.updatedAt || rec?.updated_date || rec?.createdAt || rec?.created_date || "");
+    return Number.isFinite(ms) ? Math.max(latest, ms) : latest;
+  }, 0);
+}
+
+function loadLocalStablingState() {
+  const fallback = { westData: initRoads(WEST_ROADS), eastData: initRoads(EAST_ROADS), updatedAt: "", updatedMs: 0 };
+  try {
+    if (typeof localStorage === "undefined") return fallback;
+    const raw = localStorage.getItem(LOCAL_STABLING_STATE_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    const updatedAt = parsed?.updatedAt || "";
+    const updatedMs = Date.parse(updatedAt || "") || 0;
+    return {
+      westData: normalizeStablingDepotData(parsed?.westData || parsed?.west || {}, WEST_ROADS),
+      eastData: normalizeStablingDepotData(parsed?.eastData || parsed?.east || {}, EAST_ROADS),
+      updatedAt,
+      updatedMs,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function saveLocalStablingState(westData = {}, eastData = {}, updatedAt = new Date().toISOString()) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(LOCAL_STABLING_STATE_KEY, JSON.stringify({
+      westData: normalizeStablingDepotData(westData, WEST_ROADS),
+      eastData: normalizeStablingDepotData(eastData, EAST_ROADS),
+      updatedAt,
+    }));
+  } catch {}
 }
 
 function buildStablingStateFromRecords(stablingRecords = []) {
@@ -7580,8 +7641,8 @@ function BookmarkEditForm({ draft, saving, onDraftChange, onCancel, onSave }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function DepotStablingPage() {
-  const [westData, setWestData] = useState(initRoads(WEST_ROADS));
-  const [eastData, setEastData] = useState(initRoads(EAST_ROADS));
+  const [westData, setWestData] = useState(() => loadLocalStablingState().westData);
+  const [eastData, setEastData] = useState(() => loadLocalStablingState().eastData);
   const [requests, setRequests] = useState([]);
   const [trainRemCheckState, setTrainRemCheckState] = useState(() => loadTrainRemState());
   const [saving, setSaving] = useState(false);
@@ -7952,6 +8013,9 @@ export default function DepotStablingPage() {
   const isSavingRef = useRef(false);
   const pendingSaveRef = useRef(false);
   const pollInProgressRef = useRef(false);
+  const stablingLocalUpdatedAtRef = useRef(loadLocalStablingState().updatedMs || 0);
+  const stablingRemoteUpdatedAtRef = useRef(0);
+  const stablingLocalEditUntilRef = useRef(0);
 
   const pstLiveRecordIdRef = useRef(null);
   const pstLiveAutoSaveTimerRef = useRef(null);
@@ -7986,6 +8050,14 @@ export default function DepotStablingPage() {
   useEffect(() => { pstCompletedByNamesRef.current = pstCompletedByNames; }, [pstCompletedByNames]);
   useEffect(() => { insertionLogRef.current = insertionLog; }, [insertionLog]);
   useEffect(() => { tidInputsRef.current = tidInputs; }, [tidInputs]);
+
+  const markStablingLocalEdit = useCallback((nextWest = westDataRef.current, nextEast = eastDataRef.current) => {
+    const updatedAt = new Date().toISOString();
+    const updatedMs = Date.parse(updatedAt);
+    stablingLocalUpdatedAtRef.current = Number.isFinite(updatedMs) ? updatedMs : Date.now();
+    stablingLocalEditUntilRef.current = Date.now() + STABLING_LOCAL_EDIT_HOLD_MS;
+    saveLocalStablingState(nextWest, nextEast, updatedAt);
+  }, []);
 
   const markPSTLiveLocalEdit = useCallback(() => {
     const now = Date.now();
@@ -8504,10 +8576,26 @@ export default function DepotStablingPage() {
         base44.entities.MaintenanceRequest.list(),
       ]);
       const { map, newWest, newEast } = buildStablingStateFromRecords(stablingRecords);
+      const remoteUpdatedMs = getStablingRecordsUpdatedMs(stablingRecords);
+      const localUpdatedMs = stablingLocalUpdatedAtRef.current || 0;
+      const hasLocalTrains = hasAnyStablingTrain(westDataRef.current, WEST_ROADS) || hasAnyStablingTrain(eastDataRef.current, EAST_ROADS);
+      const hasRemoteTrains = hasAnyStablingTrain(newWest, WEST_ROADS) || hasAnyStablingTrain(newEast, EAST_ROADS);
+      const shouldKeepLocalStabling = hasLocalTrains && localUpdatedMs && (
+        Date.now() < stablingLocalEditUntilRef.current ||
+        (!hasRemoteTrains && !remoteUpdatedMs) ||
+        (remoteUpdatedMs && remoteUpdatedMs + 1000 < localUpdatedMs)
+      );
 
       existingMapRef.current = map;
-      setWestData(newWest);
-      setEastData(newEast);
+      if (!shouldKeepLocalStabling) {
+        setWestData(newWest);
+        setEastData(newEast);
+        if (remoteUpdatedMs) {
+          stablingRemoteUpdatedAtRef.current = Math.max(stablingRemoteUpdatedAtRef.current, remoteUpdatedMs);
+          stablingLocalUpdatedAtRef.current = Math.max(stablingLocalUpdatedAtRef.current, remoteUpdatedMs);
+        }
+        saveLocalStablingState(newWest, newEast, new Date(remoteUpdatedMs || Date.now()).toISOString());
+      }
       setRequests(maintenanceRecords || []);
       setLastSynced(new Date());
       setSyncError(false);
@@ -8526,10 +8614,25 @@ export default function DepotStablingPage() {
       base44.entities.MaintenanceRequest.list(),
     ]).then(([stablingRecords, maintenanceRecords]) => {
       const { map, newWest, newEast } = buildStablingStateFromRecords(stablingRecords);
+      const remoteUpdatedMs = getStablingRecordsUpdatedMs(stablingRecords);
+      const localUpdatedMs = stablingLocalUpdatedAtRef.current || 0;
+      const hasLocalTrains = hasAnyStablingTrain(westDataRef.current, WEST_ROADS) || hasAnyStablingTrain(eastDataRef.current, EAST_ROADS);
+      const hasRemoteTrains = hasAnyStablingTrain(newWest, WEST_ROADS) || hasAnyStablingTrain(newEast, EAST_ROADS);
+      const shouldKeepLocalStabling = hasLocalTrains && localUpdatedMs && (
+        (!hasRemoteTrains && !remoteUpdatedMs) ||
+        (remoteUpdatedMs && remoteUpdatedMs + 1000 < localUpdatedMs)
+      );
 
       existingMapRef.current = map;
-      setWestData(newWest);
-      setEastData(newEast);
+      if (!shouldKeepLocalStabling) {
+        setWestData(newWest);
+        setEastData(newEast);
+        if (remoteUpdatedMs) {
+          stablingRemoteUpdatedAtRef.current = Math.max(stablingRemoteUpdatedAtRef.current, remoteUpdatedMs);
+          stablingLocalUpdatedAtRef.current = Math.max(stablingLocalUpdatedAtRef.current, remoteUpdatedMs);
+        }
+        saveLocalStablingState(newWest, newEast, new Date(remoteUpdatedMs || Date.now()).toISOString());
+      }
       setRequests(maintenanceRecords || []);
       setLastSynced(new Date());
       setLoaded(true);
@@ -8560,36 +8663,54 @@ export default function DepotStablingPage() {
     isSavingRef.current = true;
     setSaving(true);
 
+    const saveUpdatedAt = new Date().toISOString();
     const allEntries = [
       ...WEST_ROADS.map((road) => ({
         depot: "west",
         road,
         blocks: west[road],
+        updatedAt: saveUpdatedAt,
       })),
       ...EAST_ROADS.map((road) => ({
         depot: "east",
         road,
         blocks: east[road],
+        updatedAt: saveUpdatedAt,
       })),
     ];
+
+    saveLocalStablingState(west, east, saveUpdatedAt);
 
     try {
       // Save sequentially to avoid overwhelming the server with concurrent requests
       for (const entry of allEntries) {
         const key = `${entry.depot}_${entry.road}`;
         if (existingMapRef.current[key]) {
-          await base44.entities.DepotStabling.update(existingMapRef.current[key], entry);
+          try {
+            await base44.entities.DepotStabling.update(existingMapRef.current[key], entry);
+          } catch (err) {
+            // If a row id is stale/missing in D1, recreate that road instead of losing the local edit.
+            if (err?.status !== 404) throw err;
+            const created = await base44.entities.DepotStabling.create(entry);
+            existingMapRef.current[key] = created.id;
+          }
         } else {
           const created = await base44.entities.DepotStabling.create(entry);
           existingMapRef.current[key] = created.id;
         }
       }
+      const savedMs = Date.parse(saveUpdatedAt) || Date.now();
+      stablingRemoteUpdatedAtRef.current = Math.max(stablingRemoteUpdatedAtRef.current, savedMs);
+      stablingLocalUpdatedAtRef.current = Math.max(stablingLocalUpdatedAtRef.current, savedMs);
+      stablingLocalEditUntilRef.current = Date.now() + STABLING_POST_SAVE_HOLD_MS;
       setSaved(true);
       setLastSynced(new Date());
       setSyncError(false);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       console.error("Save failed:", err);
+      setSyncError(true);
+      stablingLocalEditUntilRef.current = Date.now() + STABLING_LOCAL_EDIT_HOLD_MS;
     } finally {
       pendingSaveRef.current = false;
       isSavingRef.current = false;
@@ -8602,7 +8723,6 @@ export default function DepotStablingPage() {
       pendingSaveRef.current = true;
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
       autoSaveTimer.current = setTimeout(() => {
-        pendingSaveRef.current = false;
         saveToDb(west, east);
       }, 1500);
     },
@@ -8649,6 +8769,9 @@ export default function DepotStablingPage() {
       const blocks = [...updated[road]];
       blocks[blockIndex] = { ...blocks[blockIndex], trainId: value };
       updated[road] = blocks;
+      const newWest = depot === "west" ? updated : westDataRef.current;
+      const newEast = depot === "east" ? updated : eastDataRef.current;
+      markStablingLocalEdit(newWest, newEast);
       return updated;
     });
   };
@@ -8675,32 +8798,21 @@ export default function DepotStablingPage() {
       collectFrom(eastDataRef.current, "east");
 
       if (allKeys.includes(incomingKey)) {
-        // Flash cell red, revert to empty after 800ms — do NOT save
+        // Keep the typed Train ID visible. Duplicate trains are highlighted red instead
+        // of auto-clearing, so the user can see and correct the duplicated entry.
         const cellKey = `${depot}-${road}-${blockIndex}`;
         setFlashingCells((prev) => new Set([...prev, cellKey]));
         setTimeout(() => {
-          if (previousKey) {
-            markPSTLiveLocalEdit();
-            clearPSTTrainPrepForCell(road, blockIndex);
-          }
-          setter((prev) => {
-            const updated = { ...prev };
-            const blocks = [...updated[road]];
-            blocks[blockIndex] = { ...blocks[blockIndex], trainId: "" };
-            updated[road] = blocks;
-            return updated;
-          });
           setFlashingCells((prev) => {
             const next = new Set(prev);
             next.delete(cellKey);
             return next;
           });
-        }, 800);
-        return; // prevent save
+        }, 1200);
       }
     }
 
-    // No duplicate — persist and schedule auto-save
+    // Persist and schedule auto-save. If duplicate, it stays visible and the DUP highlight shows it.
     if (previousKey !== incomingKey) {
       markPSTLiveLocalEdit();
       clearPSTTrainPrepForCell(road, blockIndex);
@@ -8713,6 +8825,7 @@ export default function DepotStablingPage() {
       updated[road] = blocks;
       const newWest = depot === "west" ? updated : westDataRef.current;
       const newEast = depot === "east" ? updated : eastDataRef.current;
+      markStablingLocalEdit(newWest, newEast);
       scheduleAutoSave(newWest, newEast);
       return updated;
     });
