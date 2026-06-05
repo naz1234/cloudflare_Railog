@@ -39,6 +39,18 @@ function getTimetableTypeLabel(type = "weekday") {
   return TIMETABLE_TYPES.find((item) => item.key === normalizeTimetableType(type))?.label || "Weekday";
 }
 
+function detectTimetableTypeFromFileName(fileName = "", fallbackType = "weekday") {
+  const clean = String(fileName || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const compact = clean.replace(/\s+/g, "");
+
+  if (/\bfri(day)?\b/.test(clean) || compact.includes("fullfri")) return "friday";
+  if (/\bsat(urday)?\b/.test(clean) || compact.includes("fullsat")) return "saturday";
+  if (/\bph\b/.test(clean) || compact.includes("publicholiday") || /\bholiday\b/.test(clean)) return "ph";
+  if (/\bweek(day)?\b/.test(clean) || compact.includes("weekday")) return "weekday";
+
+  return normalizeTimetableType(fallbackType);
+}
+
 function getDefaultPresetLabelForTimetableType(type = "weekday", currentLabel = "") {
   const normalized = normalizeTimetableType(type);
   if (normalized === "friday") return "Fri";
@@ -513,10 +525,16 @@ function parseTimetableWorkbook(arrayBuffer, timetableType = "weekday", fileName
   return parsed;
 }
 
+function getTimetableRecordType(record = null) {
+  const storedType = normalizeTimetableType(record?.timetableType || record?.parsedData?.timetableType || "weekday");
+  const fileName = record?.fileName || record?.sourceFileName || record?.parsedData?.sourceFileName || "";
+  return detectTimetableTypeFromFileName(fileName, storedType);
+}
+
 function findLatestTimetableRecord(records = [], type = "weekday") {
   const normalizedType = normalizeTimetableType(type);
   return (records || [])
-    .filter((record) => normalizeTimetableType(record?.timetableType || record?.parsedData?.timetableType) === normalizedType)
+    .filter((record) => getTimetableRecordType(record) === normalizedType)
     .sort((a, b) => new Date(b?.updatedAt || b?.updated_date || b?.createdAt || 0) - new Date(a?.updatedAt || a?.updated_date || a?.createdAt || 0))[0] || null;
 }
 
@@ -586,8 +604,20 @@ function getTimetableRemovalPreset(activeTimetable = null, depot = "west", label
   const parsed = getActiveTimetableParsedData(activeTimetable);
   const depotKey = depot === "east" ? "east" : "west";
   const preset = parsed?.removal?.[depotKey]?.presets?.[label];
-  if (!preset?.tids?.length) return null;
-  return preset;
+  if (preset?.tids?.length) return preset;
+
+  const recordType = getTimetableRecordType(activeTimetable);
+  const entries = parsed?.removal?.[depotKey]?.entries || [];
+  if (getValidTrainRemPresetLabelsForTimetableType(recordType).includes(label) && entries.length) {
+    return {
+      label,
+      entries,
+      tids: entries.map((entry) => entry.tid).filter(Boolean),
+      timeMap: Object.fromEntries(entries.filter((entry) => entry?.tid && entry?.time).map((entry) => [entry.tid, entry.time])),
+    };
+  }
+
+  return null;
 }
 
 function getTrainRemPresetConfig(depot = "west", label = "9am", activeTimetable = null) {
@@ -7664,21 +7694,26 @@ export default function DepotStablingPage() {
 
     try {
       const buffer = await file.arrayBuffer();
-      const parsedData = parseTimetableWorkbook(buffer, selectedTimetableType, file.name);
+      const detectedTimetableType = detectTimetableTypeFromFileName(file.name, selectedTimetableType);
+      const parsedData = parseTimetableWorkbook(buffer, detectedTimetableType, file.name);
       const totalParsed =
         (parsedData.summary?.removal?.west || 0) +
         (parsedData.summary?.removal?.east || 0) +
         (parsedData.summary?.insertion?.west || 0) +
-        (parsedData.summary?.insertion?.east || 0);
+        (parsedData.summary?.insertion?.east || 0) +
+        (parsedData.summary?.reference?.arrival3A1P2 || 0);
 
       if (!totalParsed) {
         throw new Error("No insertion/removal rows detected. Check that the Excel contains 3A1/3K1 timetable columns and movement remarks.");
       }
 
+      setSelectedTimetableType(detectedTimetableType);
+      saveActiveTimetableType(detectedTimetableType);
+
       const now = new Date().toISOString();
       const payload = {
-        timetableType: normalizeTimetableType(selectedTimetableType),
-        typeLabel: getTimetableTypeLabel(selectedTimetableType),
+        timetableType: normalizeTimetableType(detectedTimetableType),
+        typeLabel: getTimetableTypeLabel(detectedTimetableType),
         fileName: file.name,
         sourceFileName: file.name,
         fileMimeType: file.type || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -9597,6 +9632,7 @@ export default function DepotStablingPage() {
         westData={westData}
         eastData={eastData}
         activeTimetable={activeTimetable}
+        activeTimetableType={selectedTimetableType}
       />
 
       <RemovalLogOutputFromTrainRem
@@ -10462,7 +10498,7 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
   );
 }
 
-function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceMap = {}, westData = {}, eastData = {}, activeTimetable = null }) {
+function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceMap = {}, westData = {}, eastData = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
   const [downloadingDocxType, setDownloadingDocxType] = useState(null);
   const [arrivalLookupTime, setArrivalLookupTime] = useState(() => new Date());
   const [includeTomorrowRequests, setIncludeTomorrowRequests] = useState(() => {
@@ -10529,6 +10565,16 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
         }));
 
   const swappingRowsWithArrival3A1P2 = addArrival3A1P2ToRequestedRows(swappingRows, activeTimetable, arrivalLookupTime);
+  const activeTimetableLabel = getTimetableTypeLabel(activeTimetableType);
+  const parsedTimetable = getActiveTimetableParsedData(activeTimetable);
+  const arrivalReferenceCount = parsedTimetable?.summary?.reference?.arrival3A1P2 || parsedTimetable?.reference?.arrival3A1P2?.entries?.length || 0;
+  const hasTidWithoutArrival = swappingRowsWithArrival3A1P2.some((row) => row?.tid && !row?.arrival3A1P2);
+  const timetableNotice = activeTimetable
+    ? `Currently timetable ${activeTimetableLabel} is used`
+    : `Currently timetable ${activeTimetableLabel} is used — no uploaded timetable found`;
+  const arrivalNotice = activeTimetable && hasTidWithoutArrival && arrivalReferenceCount === 0
+    ? `No Arrival 3A1P2 data found in ${activeTimetableLabel} timetable`
+    : "";
 
   const handleDownloadDocx = () => {
     if (downloadingDocxType) return;
@@ -10559,6 +10605,14 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
           <p className="mt-[3px] text-[9px] font-normal normal-case tracking-normal text-[#c9d7e8]">
             Note: Add TID manually to check Arrival 3A1P2.
           </p>
+          <p className="mt-[3px] text-[9px] font-normal normal-case tracking-normal text-[#7dd3fc]">
+            {timetableNotice}
+          </p>
+          {arrivalNotice && (
+            <p className="mt-[3px] text-[9px] font-normal normal-case tracking-normal text-amber-200">
+              {arrivalNotice}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
