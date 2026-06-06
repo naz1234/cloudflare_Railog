@@ -6714,7 +6714,7 @@ function PSTTabContent
       </div>
     </div>
 
-      <div className="pst-train-prep-log-font-bump h-[calc(100vh-32px)] max-h-[calc(100vh-32px)] w-full max-w-[1380px] overflow-hidden lg:w-[1120px] lg:max-w-[1120px] lg:shrink-0 lg:sticky lg:top-4">
+      <div className="pst-train-prep-log-font-bump h-[calc(100vh-32px)] max-h-[calc(100vh-32px)] w-full max-w-[900px] overflow-hidden lg:w-[900px] lg:max-w-[900px] lg:shrink-0 lg:sticky lg:top-4">
         <style>{`
         /* PST / Train Prep Log output: keep the new card design spacing intact */
         .pst-train-prep-log-font-bump .pst-log-shell {
