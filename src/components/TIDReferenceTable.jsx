@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 
 const WEEKDAY_EAST_ROWS = [
   { tid: 201, remark: "Late Rem", time: "05:24" },
@@ -136,6 +136,73 @@ const SCHEDULES = {
   },
 };
 
+function normalizeTimetableTypeKey(value = "weekday") {
+  const text = String(value || "weekday").trim().toLowerCase();
+  if (/fri/.test(text)) return "friday";
+  if (/sat/.test(text)) return "saturday";
+  if (/ph|public|holiday/.test(text)) return "ph";
+  return "weekday";
+}
+
+function getTimetableTypeLabel(value = "weekday") {
+  const key = normalizeTimetableTypeKey(value);
+  if (key === "friday") return "Friday";
+  if (key === "saturday") return "Saturday";
+  if (key === "ph") return "PH";
+  return "Weekday";
+}
+
+function getParsedTimetable(activeTimetable = null) {
+  return activeTimetable?.parsedData || activeTimetable?.data || null;
+}
+
+function buildDepotRowsFromUploadedTimetable(activeTimetable = null, depot = "west") {
+  const parsed = getParsedTimetable(activeTimetable);
+  const depotKey = depot === "east" ? "east" : "west";
+  const entries = Array.isArray(parsed?.insertion?.[depotKey]?.entries)
+    ? parsed.insertion[depotKey].entries
+    : [];
+
+  return entries
+    .map((entry) => {
+      const tidText = String(entry?.tid ?? "").replace(/\D/g, "");
+      const time = String(entry?.time ?? "").trim().replace(/\s*hrs\.?$/i, "");
+      if (!tidText || !/^\d{1,2}:\d{2}$/.test(time)) return null;
+      return { tid: Number(tidText), time };
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      const aMinutes = toMinutes(a.time);
+      const bMinutes = toMinutes(b.time);
+      if (aMinutes !== bMinutes) return aMinutes - bMinutes;
+      return Number(a.tid || 0) - Number(b.tid || 0);
+    });
+}
+
+function buildSchedules(activeTimetable = null, activeTimetableType = "weekday") {
+  const typeKey = normalizeTimetableTypeKey(activeTimetableType || getParsedTimetable(activeTimetable)?.timetableType || "weekday");
+  const dynamicWest = buildDepotRowsFromUploadedTimetable(activeTimetable, "west");
+  const dynamicEast = buildDepotRowsFromUploadedTimetable(activeTimetable, "east");
+  const nextSchedules = { ...SCHEDULES };
+
+  if (typeKey === "ph" && !nextSchedules.ph) {
+    nextSchedules.ph = { label: "PH", west: [], east: [] };
+  }
+
+  if (dynamicWest.length || dynamicEast.length) {
+    const fallback = nextSchedules[typeKey] || { label: getTimetableTypeLabel(typeKey), west: [], east: [] };
+    nextSchedules[typeKey] = {
+      ...fallback,
+      label: getTimetableTypeLabel(typeKey),
+      west: dynamicWest.length ? dynamicWest : fallback.west,
+      east: dynamicEast.length ? dynamicEast : fallback.east,
+      source: "uploaded",
+    };
+  }
+
+  return nextSchedules;
+}
+
 const DEPOT_ACCENTS = {
   west: {
     accent: "#38bdf8",
@@ -251,7 +318,7 @@ function formatDay(now) {
   return now.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
 }
 
-function HeaderCard({ now, scheduleKey, setScheduleKey, todayScheduleKey, isScheduleOverride }) {
+function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todayScheduleKey, isScheduleOverride }) {
   const hh = String(now.getHours()).padStart(2, "0");
   const mm = String(now.getMinutes()).padStart(2, "0");
   const currentTimeStr = `${hh}:${mm}`;
@@ -358,7 +425,7 @@ function HeaderCard({ now, scheduleKey, setScheduleKey, todayScheduleKey, isSche
           boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
         }}
       >
-        {Object.entries(SCHEDULES).map(([key, schedule]) => {
+        {Object.entries(schedules).map(([key, schedule]) => {
           const isActive = key === scheduleKey;
           const isWrongActiveTab = isActive && isScheduleOverride && key !== todayScheduleKey;
 
@@ -772,12 +839,17 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
   );
 }
 
-export default function TIDReferenceTable({ withinSchedule = true }) {
+export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday" }) {
   const [now, setNow] = useState(new Date());
-  const [scheduleKey, setScheduleKey] = useState(getDefaultScheduleKey);
-  const activeSchedule = SCHEDULES[scheduleKey];
+  const selectedScheduleKey = normalizeTimetableTypeKey(activeTimetableType);
+  const schedules = useMemo(
+    () => buildSchedules(activeTimetable, selectedScheduleKey),
+    [activeTimetable, selectedScheduleKey]
+  );
+  const [scheduleKey, setScheduleKey] = useState(() => selectedScheduleKey || getDefaultScheduleKey());
+  const activeSchedule = schedules[scheduleKey] || schedules[selectedScheduleKey] || schedules[getDefaultScheduleKey()] || schedules.weekday;
   const todayScheduleKey = getTodayScheduleKey(now);
-  const todaySchedule = SCHEDULES[todayScheduleKey];
+  const todaySchedule = schedules[todayScheduleKey] || SCHEDULES[todayScheduleKey] || schedules.weekday;
   const isScheduleOverride = scheduleKey !== todayScheduleKey;
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const isWeekday = scheduleKey === "weekday";
@@ -786,6 +858,10 @@ export default function TIDReferenceTable({ withinSchedule = true }) {
     const id = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (schedules[selectedScheduleKey]) setScheduleKey(selectedScheduleKey);
+  }, [selectedScheduleKey, schedules]);
 
   return (
     <div
@@ -817,6 +893,7 @@ export default function TIDReferenceTable({ withinSchedule = true }) {
 
       <HeaderCard
         now={now}
+        schedules={schedules}
         scheduleKey={scheduleKey}
         setScheduleKey={setScheduleKey}
         todayScheduleKey={todayScheduleKey}

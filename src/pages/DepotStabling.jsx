@@ -26,7 +26,7 @@ const TIMETABLE_TYPES = [
 
 const ACTIVE_TIMETABLE_TYPE_KEY = "activeTimetableType_v1";
 const LOCAL_TIMETABLE_RECORDS_KEY = "storedTimetableRecords_v1";
-const TIMETABLE_PARSE_VERSION = 2;
+const TIMETABLE_PARSE_VERSION = 3;
 
 function normalizeTimetableType(value = "") {
   const clean = String(value || "").toLowerCase().replace(/[^a-z]/g, "");
@@ -647,9 +647,15 @@ function getActiveTimetableParsedData(activeTimetable = null) {
   return activeTimetable?.parsedData || activeTimetable?.data || null;
 }
 
+function normalizeDepotKey(value = "west") {
+  const text = String(value || "west").trim().toLowerCase();
+  if (text === "east" || text.includes("east") || text.startsWith("ed")) return "east";
+  return "west";
+}
+
 function getTimetableInsertionTimeMap(activeTimetable = null, depot = "west") {
   const parsed = getActiveTimetableParsedData(activeTimetable);
-  const depotKey = depot === "east" ? "east" : "west";
+  const depotKey = normalizeDepotKey(depot);
   return parsed?.insertion?.[depotKey]?.timeMap || {};
 }
 
@@ -3166,6 +3172,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const autoTidMatch = tidRemarkText.match(/^(?:TID[:\s-]*)?T?(\d{3})$/i);
   const autoTid = autoTidMatch ? parseInt(autoTidMatch[1], 10) : null;
   const autoTidDepot = WEST_ROADS.includes(road) ? "west" : "east";
+  const insertedTid = inserted?.tid !== null && inserted?.tid !== undefined
+    ? parseInt(String(inserted.tid).replace(/\D/g, ""), 10)
+    : null;
+  const insertedScheduledTime = insertedTid && typeof getTidScheduledTime === "function"
+    ? getTidScheduledTime(insertedTid, autoTidDepot, { allowFallback: false })
+    : null;
+  const insertedDisplayTime = insertedScheduledTime || inserted?.time || "";
   const autoScheduledTime = autoTid !== null && typeof getTidScheduledTime === "function"
     ? getTidScheduledTime(autoTid, autoTidDepot, { allowFallback: false })
     : null;
@@ -3236,7 +3249,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl select-none" style={{ minHeight: 82, padding: "6px 4px", background: insCardBg, border: insCardBorder, opacity: 0.55 }}>
           <div className="w-full text-center font-black leading-none" style={{ fontSize: 14, color: "#3a5068" }}>{displayVal || "—"}</div>
           {insertedRemarkLabel && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
-          <span className="text-[9px] font-semibold" style={{ color: "#3a5068" }}>✓ {inserted.time}</span>
+          <span className="text-[9px] font-semibold" style={{ color: "#3a5068" }}>✓ {insertedDisplayTime}</span>
           <span className="text-[8px] tracking-wide uppercase" style={{ color: "#1e3a52" }}>elapsed hidden</span>
         </div>
       </td>
@@ -3298,7 +3311,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           </div>
         )}
         {key && !inserted && !showSweepChoice && !isNumericTidRemark && (<button onClick={handleInsertClick} className={`w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all ${hasTidRemark ? "bg-yellow-950/50 border-yellow-600/60 text-yellow-300 hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300"}`}>{hasTidRemark ? "Insert Remark" : "Insert"}</button>)}
-        {key && inserted && (<button onClick={handleInsertedUndoClick} className="w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all bg-emerald-900/50 border-emerald-600 text-emerald-300 hover:bg-red-950/40 hover:border-red-700 hover:text-red-400" title="Click to undo">✓ {inserted.time}</button>)}
+        {key && inserted && (<button onClick={handleInsertedUndoClick} className="w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all bg-emerald-900/50 border-emerald-600 text-emerald-300 hover:bg-red-950/40 hover:border-red-700 hover:text-red-400" title="Click to undo">✓ {insertedDisplayTime}</button>)}
       </div>
     </td>
   );
@@ -4877,7 +4890,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   );
 }
 
-function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog, onInsertionTick, onRemoveInsertionLog, onClearInsertionDepot, onClearInsertedTidRemarks, onClearInsertedTrains, tidInputs, onTidChange, getTidScheduledTime, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug }) {
+function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog, onInsertionTick, onRemoveInsertionLog, onClearInsertionDepot, onClearInsertedTidRemarks, onClearInsertedTrains, tidInputs, onTidChange, getTidScheduledTime, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug }) {
   // TID schedule range: earliest first-TID time across both series, latest last-TID time.
   // Series 1xx: 05:25–06:22 | Series 2xx: 05:24–06:21
   // Grey-out in the TID Reference Table only applies while current time is within this window.
@@ -4900,7 +4913,7 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
       <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto 1fr" }}>
         {/* TID Reference Tables — left column */}
         <div className="sticky top-16">
-          <TIDReferenceTable withinSchedule={withinTIDSchedule} />
+          <TIDReferenceTable withinSchedule={withinTIDSchedule} activeTimetable={activeTimetable} activeTimetableType={activeTimetableType} />
         </div>
 
         {/* Stabling sections — centre column */}
@@ -9091,6 +9104,8 @@ export default function DepotStablingPage() {
   const getTidScheduledTime = (tid, depot, options = {}) => {
     const { allowFallback = true } = options || {};
     const dayKey = getDayScheduleKey();
+    const depotKey = normalizeDepotKey(depot);
+    const oppositeDepotKey = depotKey === "west" ? "east" : "west";
     const cleanTid = Number(String(tid || "").replace(/\D/g, ""));
     if (!cleanTid) return null;
 
@@ -9098,15 +9113,15 @@ export default function DepotStablingPage() {
     // West insertion uses Departure 3A1P1 minus 00:04:30.
     // East insertion uses Departure 3K1P2 minus 00:05:22.
     const uploadedTime =
-      activeInsertionTimeMaps?.[depot]?.[cleanTid] ||
-      activeInsertionTimeMaps?.[depot === "west" ? "east" : "west"]?.[cleanTid];
+      activeInsertionTimeMaps?.[depotKey]?.[cleanTid] ||
+      activeInsertionTimeMaps?.[oppositeDepotKey]?.[cleanTid];
 
     if (uploadedTime) return uploadedTime;
 
     // Then fall back to the built-in schedule for the selected timetable type.
     const sameDayTime =
-      TID_TIME_MAPS[dayKey]?.[depot]?.[cleanTid] ||
-      TID_TIME_MAPS[dayKey]?.[depot === "west" ? "east" : "west"]?.[cleanTid];
+      TID_TIME_MAPS[dayKey]?.[depotKey]?.[cleanTid] ||
+      TID_TIME_MAPS[dayKey]?.[oppositeDepotKey]?.[cleanTid];
 
     if (sameDayTime) return sameDayTime;
     if (!allowFallback) return null;
@@ -9117,8 +9132,8 @@ export default function DepotStablingPage() {
 
     for (const fallbackDay of fallbackDayOrder) {
       const fallbackTime =
-        TID_TIME_MAPS[fallbackDay]?.[depot]?.[cleanTid] ||
-        TID_TIME_MAPS[fallbackDay]?.[depot === "west" ? "east" : "west"]?.[cleanTid];
+        TID_TIME_MAPS[fallbackDay]?.[depotKey]?.[cleanTid] ||
+        TID_TIME_MAPS[fallbackDay]?.[oppositeDepotKey]?.[cleanTid];
 
       if (fallbackTime) return fallbackTime;
     }
@@ -10011,6 +10026,8 @@ export default function DepotStablingPage() {
             tidInputs={tidInputs}
             onTidChange={handleTidChange}
             getTidScheduledTime={getTidScheduledTime}
+            activeTimetable={activeTimetable}
+            activeTimetableType={selectedTimetableType}
             insertionLiveStatusText={insertionLiveStatusText}
             insertionLiveStatusClass={insertionLiveStatusClass}
             insertionLiveDebug={insertionLiveDebug}
