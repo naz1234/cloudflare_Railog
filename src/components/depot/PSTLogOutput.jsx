@@ -370,8 +370,45 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
   const eastLines = safeLogLines.filter((line) => line.depot === "east");
   const allCopyText = [buildDepotCopyText("West", westLines), buildDepotCopyText("East", eastLines)].filter(Boolean).join("\n\n");
 
+  const scrollMainPageFromLog = (event) => {
+    if (event.ctrlKey || event.metaKey) return;
+
+    const deltaY = event.deltaY || 0;
+    const deltaX = event.deltaX || 0;
+    if (!deltaY && !deltaX) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    let parent = event.currentTarget?.parentElement;
+    while (parent) {
+      const style = window.getComputedStyle(parent);
+      const canScrollY = /(auto|scroll|overlay)/.test(style.overflowY || "");
+      const canScrollX = /(auto|scroll|overlay)/.test(style.overflowX || "");
+      const hasVerticalRoom = parent.scrollHeight > parent.clientHeight + 1;
+      const hasHorizontalRoom = parent.scrollWidth > parent.clientWidth + 1;
+
+      if ((canScrollY && hasVerticalRoom) || (canScrollX && hasHorizontalRoom)) {
+        parent.scrollTop += deltaY;
+        parent.scrollLeft += deltaX;
+        return;
+      }
+
+      parent = parent.parentElement;
+    }
+
+    const pageScroller = document.scrollingElement || document.documentElement || document.body;
+    if (pageScroller) {
+      pageScroller.scrollTop += deltaY;
+      pageScroller.scrollLeft += deltaX;
+      return;
+    }
+
+    window.scrollBy({ top: deltaY, left: deltaX, behavior: "auto" });
+  };
+
   return (
-    <div className="pst-log-shell">
+    <div className="pst-log-shell" onWheel={scrollMainPageFromLog}>
       <style>{`
         .pst-log-shell {
           height: 100%;
@@ -419,7 +456,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
           flex: 1 1 auto;
           min-height: 0;
           overflow-y: auto;
-          overscroll-behavior: contain;
+          overscroll-behavior: auto;
           -webkit-overflow-scrolling: touch;
           padding: 7px;
           scrollbar-width: thin;
