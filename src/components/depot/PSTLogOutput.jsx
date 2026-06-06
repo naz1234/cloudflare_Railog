@@ -239,20 +239,21 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
       }}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
           <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isWest ? "bg-purple-400" : "bg-cyan-400"}`} />
           <h3 className={`text-xs font-black tracking-widest uppercase whitespace-nowrap ${isWest ? "text-purple-300" : "text-cyan-300"}`}>
             {label} Depot
           </h3>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <CopyBtn text={buildPSTCopyText(pstLines)} label="PST" disabled={pstLines.length === 0} />
+            <CopyBtn text={buildPrepCopyText(prepLines, label)} label="Train Prep" disabled={prepLines.length === 0} />
+          </div>
           <span className="text-[10px] text-[#4a8ab5] font-medium whitespace-nowrap">
             {lines.length} {lines.length === 1 ? "entry" : "entries"}
           </span>
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-1.5 flex-shrink-0">
-          <CopyBtn text={buildPSTCopyText(pstLines)} label="PST" disabled={pstLines.length === 0} />
-          <CopyBtn text={buildPrepCopyText(prepLines, label)} label="Train Prep" disabled={prepLines.length === 0} />
-
           {lines.length > 0 && (
             <button
               onClick={handleDepotClear}
