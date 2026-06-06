@@ -6714,9 +6714,9 @@ function PSTTabContent
       </div>
     </div>
 
-      <div className="pst-train-prep-log-font-bump w-full max-w-[760px] overflow-visible lg:w-[760px] lg:max-w-[760px] lg:shrink-0 lg:self-start lg:sticky lg:top-4">
+      <div className="pst-train-prep-log-font-bump w-full max-w-[900px] overflow-visible lg:w-[900px] lg:max-w-[900px] lg:shrink-0 lg:self-start lg:sticky lg:top-4">
         <style>{`
-        /* PST / Train Prep Log output: auto-height, compact width, +2px text */
+        /* PST / Train Prep Log output: auto-height, wider width, +2px text */
         .pst-train-prep-log-font-bump {
           height: auto !important;
           min-height: 0;
