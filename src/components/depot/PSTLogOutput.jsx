@@ -392,7 +392,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
           align-items: center;
           justify-content: space-between;
           gap: 10px;
-          min-height: 38px;
+          min-height: 42px;
           padding: 6px 9px;
           border-bottom: 1px solid #234764;
           background: #082239;
@@ -401,7 +401,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
         .pst-plain-main-title {
           margin: 0;
           color: #eef7ff;
-          font-size: 12px;
+          font-size: 14px;
           line-height: 1.05;
           font-weight: 800;
           letter-spacing: 0.03em;
@@ -410,7 +410,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
         .pst-plain-main-count {
           margin: 2px 0 0;
           color: #69b9ee;
-          font-size: 9px;
+          font-size: 11px;
           line-height: 1;
           font-weight: 700;
         }
@@ -448,7 +448,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
 
         .pst-plain-depot-title {
           color: #a7e6ff;
-          font-size: 10px;
+          font-size: 12px;
           line-height: 1.05;
           font-weight: 800;
           letter-spacing: 0.12em;
@@ -456,7 +456,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
 
         .pst-plain-count {
           color: #6d91aa;
-          font-size: 8px;
+          font-size: 10px;
           line-height: 1;
           margin-top: 2px;
           font-weight: 700;
@@ -471,13 +471,13 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
         }
 
         .pst-plain-button {
-          height: 18px;
+          height: 20px;
           padding: 0 7px;
           border: 1px solid #31536b;
           border-radius: 999px;
           background: #0b2338;
           color: #b7d9ee;
-          font-size: 8px;
+          font-size: 10px;
           font-weight: 800;
           line-height: 1;
           cursor: pointer;
@@ -511,7 +511,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
 
         .pst-plain-title {
           color: #69d2ff;
-          font-size: 9px;
+          font-size: 11px;
           line-height: 1.05;
           font-weight: 900;
           letter-spacing: 0.08em;
@@ -523,7 +523,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
         .pst-plain-train,
         .pst-plain-row-text,
         .pst-plain-empty {
-          font-size: 9px;
+          font-size: 11px;
           line-height: 1.42;
           color: #e8f0f7;
           white-space: pre-wrap;
@@ -552,12 +552,12 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
           grid-template-columns: minmax(0, 1fr) 16px;
           gap: 4px;
           align-items: start;
-          min-height: 14px;
+          min-height: 16px;
         }
 
         .pst-plain-remove {
-          width: 14px;
-          height: 14px;
+          width: 16px;
+          height: 16px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -565,7 +565,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
           border-radius: 3px;
           background: transparent;
           color: #49677a;
-          font-size: 12px;
+          font-size: 14px;
           line-height: 1;
           cursor: pointer;
           opacity: 0;
