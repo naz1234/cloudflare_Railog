@@ -6714,41 +6714,53 @@ function PSTTabContent
       </div>
     </div>
 
-      <div className="pst-train-prep-log-font-bump h-[calc(100vh-32px)] max-h-[calc(100vh-32px)] w-full max-w-[760px] overflow-hidden lg:w-[760px] lg:max-w-[760px] lg:shrink-0 lg:sticky lg:top-4">
+      <div className="pst-train-prep-log-font-bump w-full max-w-[760px] overflow-visible lg:w-[760px] lg:max-w-[760px] lg:shrink-0 lg:self-start lg:sticky lg:top-4">
         <style>{`
-        /* PST / Train Prep Log output: keep the new card design spacing intact */
-        .pst-train-prep-log-font-bump .pst-log-shell {
-          width: 100%;
+        /* PST / Train Prep Log output: auto-height, compact width, +2px text */
+        .pst-train-prep-log-font-bump {
+          height: auto !important;
+          min-height: 0;
         }
 
-        .pst-train-prep-log-font-bump,
-        .pst-train-prep-log-font-bump .pst-log-shell,
+        .pst-train-prep-log-font-bump .pst-log-shell {
+          width: 100%;
+          height: auto !important;
+          min-height: 0;
+        }
+
         .pst-train-prep-log-font-bump .pst-log-scroll {
           min-height: 0;
         }
 
-        .pst-train-prep-log-font-bump .pst-log-title-main {
-          font-size: 18px !important;
+        .pst-train-prep-log-font-bump .pst-plain-main-title {
+          font-size: 16px !important;
           line-height: 1.1 !important;
         }
 
-        .pst-train-prep-log-font-bump .pst-depot-title {
-          font-size: 18px !important;
+        .pst-train-prep-log-font-bump .pst-plain-main-count {
+          font-size: 13px !important;
+        }
+
+        .pst-train-prep-log-font-bump .pst-plain-depot-title {
+          font-size: 14px !important;
           line-height: 1.1 !important;
         }
 
-        .pst-train-prep-log-font-bump .pst-section-title {
+        .pst-train-prep-log-font-bump .pst-plain-count,
+        .pst-train-prep-log-font-bump .pst-plain-button {
+          font-size: 12px !important;
+        }
+
+        .pst-train-prep-log-font-bump .pst-plain-title {
           font-size: 13px !important;
           line-height: 1.1 !important;
         }
 
-        .pst-train-prep-log-font-bump .pst-summary-text,
-        .pst-train-prep-log-font-bump .pst-log-line-text,
-        .pst-train-prep-log-font-bump .pst-row-time {
-          font-size: 12.5px !important;
-        }
-
-        .pst-train-prep-log-font-bump .pst-log-line-text {
+        .pst-train-prep-log-font-bump .pst-plain-summary,
+        .pst-train-prep-log-font-bump .pst-plain-train,
+        .pst-train-prep-log-font-bump .pst-plain-row-text,
+        .pst-train-prep-log-font-bump .pst-plain-empty {
+          font-size: 13px !important;
           line-height: 1.45 !important;
         }
 
