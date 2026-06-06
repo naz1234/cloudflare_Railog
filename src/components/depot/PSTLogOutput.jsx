@@ -209,12 +209,6 @@ function getPrepSectionText(prepLines = [], depotLabel = "") {
   ].filter(Boolean).join("\n");
 }
 
-function buildDepotCopyText(depotLabel, lines = []) {
-  const pstLines = lines.filter(isPSTEntry);
-  const prepLines = lines.filter(isPrepEntry);
-  return [getPSTSectionText(pstLines, depotLabel), getPrepSectionText(prepLines, depotLabel)].filter(Boolean).join("\n\n");
-}
-
 function CopyButton({ text, label, disabled }) {
   const [copied, setCopied] = useState(false);
 
@@ -318,8 +312,6 @@ function DepotPlainBlock({ depotLabel, lines = [], onRemove, onClearDepot }) {
   const groupedPrepLines = buildGroupedPrepLogLines(prepLines);
   const pstTrainList = getUniqueTrainKeys(pstLines, getPSTTrainKey).join(", ");
   const prepTrainList = getUniqueTrainKeys(prepLines, getPrepTrainKey).join(", ");
-  const depotText = buildDepotCopyText(depotLabel, lines);
-
   const pstSummary = pstLines.length
     ? `PST at ${depotLabel} Depot: Total ${pstLines.length} train${pstLines.length !== 1 ? "s" : ""} completed from ${getPSTStartTime(pstLines[0])} to ${getPSTSummaryEndTime(pstLines)} hrs.`
     : "";
@@ -335,13 +327,10 @@ function DepotPlainBlock({ depotLabel, lines = [], onRemove, onClearDepot }) {
           <div className="pst-plain-depot-title-row">
             <div className="pst-plain-depot-title">{depotLabel.toUpperCase()} DEPOT</div>
             <CopyButton text={getPSTSectionText(pstLines, depotLabel)} label="PST" disabled={!pstLines.length} />
+            <CopyButton text={getPrepSectionText(prepLines, depotLabel)} label="Train Prep" disabled={!prepLines.length} />
+            <ClearDepotButton depotLabel={depotLabel} disabled={!lines.length} onClear={onClearDepot} />
           </div>
           <div className="pst-plain-count">{lines.length} {lines.length === 1 ? "entry" : "entries"}</div>
-        </div>
-        <div className="pst-plain-actions">
-          <CopyButton text={getPrepSectionText(prepLines, depotLabel)} label="Train Prep" disabled={!prepLines.length} />
-          <CopyButton text={depotText} label="Copy All" disabled={!lines.length} />
-          <ClearDepotButton depotLabel={depotLabel} disabled={!lines.length} onClear={onClearDepot} />
         </div>
       </div>
 
@@ -370,8 +359,6 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
   const safeLogLines = Array.isArray(logLines) ? logLines : [];
   const westLines = safeLogLines.filter((line) => line.depot === "west");
   const eastLines = safeLogLines.filter((line) => line.depot === "east");
-  const allCopyText = [buildDepotCopyText("West", westLines), buildDepotCopyText("East", eastLines)].filter(Boolean).join("\n\n");
-
   const scrollMainPageFromLog = (event) => {
     if (event.ctrlKey || event.metaKey) return;
 
@@ -646,9 +633,6 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
         <div>
           <p className="pst-plain-main-title">PST / Train Prep Log</p>
           <p className="pst-plain-main-count">{safeLogLines.length} {safeLogLines.length === 1 ? "entry" : "entries"}</p>
-        </div>
-        <div className="pst-plain-actions">
-          <CopyButton text={allCopyText} label="Copy All" disabled={!safeLogLines.length} />
         </div>
       </header>
 
