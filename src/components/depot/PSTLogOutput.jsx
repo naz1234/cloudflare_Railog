@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 
 function formatTrainList(trainKeys) {
@@ -212,7 +212,7 @@ function CopyBtn({ text, label, disabled }) {
   );
 }
 
-function PSTDepotBlock({ label, lines, onRemove, onClearDepot, blockRef }) {
+function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
   const pstLines = lines.filter((l) => l.type === "PST");
   const prepLines = lines.filter((l) => l.type === "Prep");
   const groupedPSTLines = buildGroupedPSTLogLines(pstLines);
@@ -232,20 +232,13 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot, blockRef }) {
 
   return (
     <div
-      ref={blockRef}
-      className="rounded-2xl border p-3 space-y-2 max-h-[72vh] overflow-y-auto scroll-mt-4"
+      className="rounded-2xl border p-3 space-y-2"
       style={{
         borderColor: "#2b4f6b",
         background: "linear-gradient(135deg,#0c2240 0%,#071828 100%)",
       }}
     >
-      <div
-        className="sticky top-0 z-20 -mx-3 -mt-3 px-3 pt-3 pb-2 flex flex-wrap items-center justify-between gap-2 rounded-t-2xl"
-        style={{
-          background: "linear-gradient(135deg,#0c2240 0%,#071828 100%)",
-          borderBottom: "1px solid rgba(43,79,107,0.65)",
-        }}
-      >
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2 min-w-0">
           <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isWest ? "bg-purple-400" : "bg-cyan-400"}`} />
           <h3 className={`text-xs font-black tracking-widest uppercase whitespace-nowrap ${isWest ? "text-purple-300" : "text-cyan-300"}`}>
@@ -380,12 +373,6 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot, blockRef }) {
 export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
   const westLines = logLines.filter((l) => l.depot === "west");
   const eastLines = logLines.filter((l) => l.depot === "east");
-  const westRef = useRef(null);
-  const eastRef = useRef(null);
-
-  const scrollToDepot = (ref) => {
-    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
 
   return (
     <div className="bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-sm overflow-hidden">
@@ -404,36 +391,17 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
           </svg>
         </div>
 
-        <div className="flex-1 min-w-0">
+        <div className="flex-1">
           <p className="text-xs font-black text-white">PST / Train Prep Log</p>
           <p className="text-[10px] text-[#4a8ab5]">
             {logLines.length} {logLines.length === 1 ? "entry" : "entries"}
           </p>
         </div>
-
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <button
-            onClick={() => scrollToDepot(westRef)}
-            className="px-2.5 py-1 rounded-lg text-[10px] font-bold border text-purple-200 hover:text-white transition-colors"
-            style={{ borderColor: "#2b4f6b", background: "rgba(255,255,255,0.07)" }}
-          >
-            West
-          </button>
-          <button
-            onClick={() => scrollToDepot(eastRef)}
-            className="px-2.5 py-1 rounded-lg text-[10px] font-bold border text-cyan-200 hover:text-white transition-colors"
-            style={{ borderColor: "#2b4f6b", background: "rgba(255,255,255,0.07)" }}
-          >
-            East
-          </button>
-        </div>
       </div>
 
-      <div className="p-3">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-          <PSTDepotBlock blockRef={westRef} label="West" lines={westLines} onRemove={onRemove} onClearDepot={() => onClearDepot("west")} />
-          <PSTDepotBlock blockRef={eastRef} label="East" lines={eastLines} onRemove={onRemove} onClearDepot={() => onClearDepot("east")} />
-        </div>
+      <div className="p-3 space-y-3 max-h-[80vh] overflow-y-auto">
+        <PSTDepotBlock label="West" lines={westLines} onRemove={onRemove} onClearDepot={() => onClearDepot("west")} />
+        <PSTDepotBlock label="East" lines={eastLines} onRemove={onRemove} onClearDepot={() => onClearDepot("east")} />
       </div>
     </div>
   );
