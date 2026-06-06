@@ -342,6 +342,53 @@ function formatMinutesAsTime(minutes) {
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
+function excelTimeToSeconds(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return ((value.getHours() * 3600) + (value.getMinutes() * 60) + value.getSeconds()) % 86400;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const dayFraction = value >= 1 ? value % 1 : value;
+    return Math.round(dayFraction * 24 * 60 * 60) % 86400;
+  }
+
+  const text = String(value ?? "").trim();
+  if (!text) return null;
+
+  const match = text.match(/(\d{1,2})[:.](\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
+  if (!match) return null;
+
+  let hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const second = Number(match[3] || 0);
+  const ampm = (match[4] || "").toUpperCase();
+
+  if (ampm === "PM" && hour < 12) hour += 12;
+  if (ampm === "AM" && hour === 12) hour = 0;
+
+  return ((hour * 3600) + (minute * 60) + second) % 86400;
+}
+
+function formatSecondsAsTime(seconds) {
+  if (!Number.isFinite(seconds)) return "";
+  const safe = ((Math.floor(seconds) % 86400) + 86400) % 86400;
+  const hour = Math.floor(safe / 3600);
+  const minute = Math.floor((safe % 3600) / 60);
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+const DEPOT_TIMETABLE_OFFSET_SECONDS = {
+  west: (4 * 60) + 30,
+  east: (5 * 60) + 22,
+};
+
+function formatDepotMovementStartTime(value, depot = "west") {
+  const seconds = excelTimeToSeconds(value);
+  if (seconds === null) return "";
+  const depotKey = depot === "east" ? "east" : "west";
+  return formatSecondsAsTime(seconds - (DEPOT_TIMETABLE_OFFSET_SECONDS[depotKey] || 0));
+}
+
 function formatExcelTimeValue(value) {
   const minutes = excelTimeToMinutes(value);
   return minutes === null ? "" : formatMinutesAsTime(minutes);
@@ -490,7 +537,8 @@ function parseTimetableWorkbook(arrayBuffer, timetableType = "weekday", fileName
       }
 
       if (isWestInsertionRemark(leftRemark)) {
-        const time = formatExcelTimeValue(row[westDepartureIndex]);
+        // Departure 3A1P1 is the platform time. Insertion starts from West Depot 4m30s earlier.
+        const time = formatDepotMovementStartTime(row[westDepartureIndex], "west");
         if (time) {
           const entry = { tid, did: westDid, time, remark: leftRemark, sheetName };
           parsed.insertion.west.entries.push(entry);
@@ -499,7 +547,8 @@ function parseTimetableWorkbook(arrayBuffer, timetableType = "weekday", fileName
       }
 
       if (isEastInsertionRemark(rightRemark)) {
-        const time = formatExcelTimeValue(row[eastDepartureIndex]);
+        // Departure 3K1P2 is the platform time. Insertion starts from East Depot 5m22s earlier.
+        const time = formatDepotMovementStartTime(row[eastDepartureIndex], "east");
         if (time) {
           const entry = { tid, did: eastDid, time, remark: rightRemark, sheetName };
           parsed.insertion.east.entries.push(entry);
@@ -508,14 +557,16 @@ function parseTimetableWorkbook(arrayBuffer, timetableType = "weekday", fileName
       }
 
       if (isWestRemovalRemark(rightRemark)) {
-        const time = formatExcelTimeValue(row[westArrivalIndex]);
-        const label = classifyRemovalPresetFromTime(timetableType, time);
+        const platformTime = formatExcelTimeValue(row[westArrivalIndex]);
+        const time = formatDepotMovementStartTime(row[westArrivalIndex], "west");
+        const label = classifyRemovalPresetFromTime(timetableType, platformTime);
         pushTimetableEntry(parsed.removal.west, { tid, did: eastDid, time, remark: rightRemark, label, sheetName });
       }
 
       if (isEastRemovalRemark(leftRemark)) {
-        const time = formatExcelTimeValue(row[eastArrivalIndex]);
-        const label = classifyRemovalPresetFromTime(timetableType, time);
+        const platformTime = formatExcelTimeValue(row[eastArrivalIndex]);
+        const time = formatDepotMovementStartTime(row[eastArrivalIndex], "east");
+        const label = classifyRemovalPresetFromTime(timetableType, platformTime);
         pushTimetableEntry(parsed.removal.east, { tid, did: westDid, time, remark: leftRemark, label, sheetName });
       }
     });
