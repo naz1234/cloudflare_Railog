@@ -26,6 +26,7 @@ const TIMETABLE_TYPES = [
 
 const ACTIVE_TIMETABLE_TYPE_KEY = "activeTimetableType_v1";
 const LOCAL_TIMETABLE_RECORDS_KEY = "storedTimetableRecords_v1";
+const TIMETABLE_PARSE_VERSION = 2;
 
 function normalizeTimetableType(value = "") {
   const clean = String(value || "").toLowerCase().replace(/[^a-z]/g, "");
@@ -118,6 +119,15 @@ function arrayBufferToBase64(buffer) {
     binary += String.fromCharCode.apply(null, chunk);
   }
   return btoa(binary);
+}
+
+function base64ToArrayBuffer(base64 = "") {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes.buffer;
 }
 
 function base64ToBlob(base64 = "", mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
@@ -471,6 +481,7 @@ function createEmptyParsedTimetable(timetableType = "weekday") {
   return {
     timetableType: normalizeTimetableType(timetableType),
     parsedAt: new Date().toISOString(),
+    depotTimingOffsetVersion: TIMETABLE_PARSE_VERSION,
     summary: {
       insertion: { west: 0, east: 0 },
       removal: { west: 0, east: 0 },
@@ -584,6 +595,39 @@ function parseTimetableWorkbook(arrayBuffer, timetableType = "weekday", fileName
   parsed.summary.reference.arrival3A1P2 = parsed.reference.arrival3A1P2.entries.length;
 
   return parsed;
+}
+
+function normalizeStoredTimetableRecord(record = null) {
+  if (!record) return record;
+
+  const parsed = getActiveTimetableParsedData(record);
+  const version = Number(parsed?.depotTimingOffsetVersion || 0);
+  if (version >= TIMETABLE_PARSE_VERSION) return record;
+
+  const base64 = record?.fileBase64 || record?.originalFileBase64 || record?.sourceFileBase64 || "";
+  if (!base64) return record;
+
+  try {
+    const fileName = record?.fileName || record?.sourceFileName || parsed?.sourceFileName || "Uploaded timetable";
+    const type = detectTimetableTypeFromFileName(fileName, record?.timetableType || parsed?.timetableType || "weekday");
+    const reparsedData = parseTimetableWorkbook(base64ToArrayBuffer(base64), type, fileName);
+
+    return {
+      ...record,
+      timetableType: normalizeTimetableType(type),
+      typeLabel: getTimetableTypeLabel(type),
+      parsedData: reparsedData,
+      summary: reparsedData.summary,
+    };
+  } catch (error) {
+    console.warn("Unable to refresh stored timetable timing offsets:", error);
+    return record;
+  }
+}
+
+function normalizeStoredTimetableRecords(records = []) {
+  if (!Array.isArray(records)) return [];
+  return records.map((record) => normalizeStoredTimetableRecord(record));
 }
 
 function getTimetableRecordType(record = null) {
@@ -7751,7 +7795,11 @@ export default function DepotStablingPage() {
   const stablingHorizontalScrollRef = useRef(null);
 
   const [selectedTimetableType, setSelectedTimetableType] = useState(() => loadActiveTimetableType());
-  const [timetableRecords, setTimetableRecords] = useState(() => loadLocalTimetableRecords());
+  const [timetableRecords, setTimetableRecords] = useState(() => {
+    const records = normalizeStoredTimetableRecords(loadLocalTimetableRecords());
+    if (records.length) saveLocalTimetableRecords(records);
+    return records;
+  });
   const [timetableLoading, setTimetableLoading] = useState(false);
   const [timetableSaving, setTimetableSaving] = useState(false);
   const [timetableError, setTimetableError] = useState("");
@@ -7762,7 +7810,8 @@ export default function DepotStablingPage() {
   );
 
   const loadTimetableRecords = useCallback(async () => {
-    const localRecords = loadLocalTimetableRecords();
+    const localRecords = normalizeStoredTimetableRecords(loadLocalTimetableRecords());
+    if (localRecords.length) saveLocalTimetableRecords(localRecords);
     setTimetableLoading(true);
     setTimetableError("");
 
@@ -7775,7 +7824,7 @@ export default function DepotStablingPage() {
       }
 
       const records = await entity.list("-updatedAt");
-      const safeRecords = Array.isArray(records) ? records : [];
+      const safeRecords = normalizeStoredTimetableRecords(Array.isArray(records) ? records : []);
       setTimetableRecords(safeRecords.length ? safeRecords : localRecords);
       if (safeRecords.length) saveLocalTimetableRecords(safeRecords);
     } catch (error) {
