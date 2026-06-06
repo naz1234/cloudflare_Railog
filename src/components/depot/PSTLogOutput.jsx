@@ -14,7 +14,6 @@ function getLogDisplayTime(entry = {}) {
   return match ? match[1] : "";
 }
 
-
 function getPrepLocation(entry = {}) {
   const directRoad = (entry.road || "").toString().trim();
   const textMatch = (entry.text || "").match(/completed\s+at\s+([A-Z]{2}[–-][A-Z0-9]+)/i);
@@ -151,6 +150,7 @@ function buildGroupedPSTLogLines(pstLines = []) {
 
     return {
       ...group,
+      time: group.startTime,
       text: `${group.startTime} hrs – ${trainList} PST completed${locationText}${completedText}.${alarmText}`,
     };
   });
@@ -188,11 +188,87 @@ function buildPrepCopyText(prepLines, depotLabel) {
   ].join("\n");
 }
 
-function CopyBtn({ text, label, disabled }) {
+function stripLeadingTime(line = "") {
+  return line.replace(/^\s*\d{1,2}:\d{2}\s*hrs\s*[–-]\s*/i, "");
+}
+
+function IconMenu({ color = "currentColor" }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round">
+      <line x1="4" y1="6" x2="20" y2="6" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="18" x2="20" y2="18" />
+    </svg>
+  );
+}
+
+function IconDepot({ color = "currentColor" }) {
+  return (
+    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 21h18" />
+      <path d="M5 21V9l7-4 7 4v12" />
+      <path d="M9 21v-7h6v7" />
+      <path d="M8 10h8" />
+    </svg>
+  );
+}
+
+function IconClock({ color = "currentColor" }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+function IconCheck({ color = "currentColor" }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="m8.5 12.2 2.2 2.2 4.8-5" />
+    </svg>
+  );
+}
+
+function IconTrain({ color = "currentColor" }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="3" width="14" height="14" rx="3" />
+      <path d="M8 17l-2 4" />
+      <path d="M18 21l-2-4" />
+      <path d="M9 7h6" />
+      <path d="M8 12h.01M16 12h.01" />
+    </svg>
+  );
+}
+
+function IconCopy({ color = "currentColor" }) {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function IconTrash({ color = "currentColor" }) {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="m19 6-1 14H6L5 6" />
+      <path d="M10 11v5M14 11v5" />
+    </svg>
+  );
+}
+
+function CopyBtn({ text, label, disabled, accent = "#58a6ff" }) {
   const [copied, setCopied] = useState(false);
 
   return (
     <button
+      type="button"
       onClick={() => {
         if (disabled) return;
         navigator.clipboard.writeText(text);
@@ -200,29 +276,235 @@ function CopyBtn({ text, label, disabled }) {
         setTimeout(() => setCopied(false), 2000);
       }}
       disabled={disabled}
-      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      className="pst-copy-button"
       style={{
-        background: copied ? "#16a34a" : "rgba(255,255,255,0.1)",
-        borderColor: "#2b4f6b",
-        color: "#c8d8ea",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        minHeight: 28,
+        padding: "0 11px",
+        borderRadius: 999,
+        border: `1px solid ${copied ? "#22c55e" : `${accent}55`}`,
+        background: copied
+          ? "linear-gradient(135deg, rgba(34,197,94,0.95), rgba(22,163,74,0.9))"
+          : `linear-gradient(135deg, ${accent}24, rgba(255,255,255,0.045))`,
+        color: copied ? "#ffffff" : "#dce9f7",
+        fontSize: 11,
+        fontWeight: 800,
+        letterSpacing: "0.01em",
+        boxShadow: disabled ? "none" : `0 0 16px ${accent}18, inset 0 1px 0 rgba(255,255,255,0.07)`,
+        opacity: disabled ? 0.42 : 1,
+        cursor: disabled ? "not-allowed" : "pointer",
+        transition: "transform .15s ease, border-color .15s ease, background .15s ease",
+        whiteSpace: "nowrap",
       }}
     >
-      {copied ? "Copied!" : label}
+      <IconCopy color="currentColor" />
+      {copied ? "Copied" : label}
     </button>
   );
 }
 
+function SectionTitle({ title, count, accent, type }) {
+  const icon = type === "prep" ? <IconTrain color={accent} /> : <IconCheck color={accent} />;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 9,
+        padding: "2px 2px 6px",
+      }}
+    >
+      <span
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: 999,
+          background: accent,
+          boxShadow: `0 0 12px ${accent}`,
+          flexShrink: 0,
+        }}
+      />
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 7, color: accent }}>
+        {icon}
+      </span>
+      <span
+        className="pst-section-title"
+        style={{
+          color: accent,
+          fontSize: 13,
+          fontWeight: 900,
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          lineHeight: 1.1,
+        }}
+      >
+        {title} ({count})
+      </span>
+    </div>
+  );
+}
+
+function SummaryBar({ children, accent, type }) {
+  return (
+    <div
+      className="pst-summary-bar"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        width: "100%",
+        minHeight: 38,
+        padding: "8px 13px",
+        borderRadius: 13,
+        border: `1px solid ${accent}3d`,
+        background: `linear-gradient(135deg, ${accent}12, rgba(255,255,255,0.035))`,
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+      }}
+    >
+      <span
+        style={{
+          width: 25,
+          height: 25,
+          borderRadius: 999,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          border: `1px solid ${accent}66`,
+          background: `${accent}17`,
+          color: accent,
+        }}
+      >
+        {type === "prep" ? <IconTrain color="currentColor" /> : <IconCheck color="currentColor" />}
+      </span>
+      <p className="pst-summary-text" style={{ margin: 0, color: "#e5edf7", fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", fontSize: 12.5, fontWeight: 800, lineHeight: 1.35 }}>
+        {children}
+      </p>
+    </div>
+  );
+}
+
+function LogRow({ group, accent, type, onRemove }) {
+  const time = type === "pst" ? group.startTime : group.time;
+  const body = stripLeadingTime(group.text);
+
+  return (
+    <div
+      className="pst-log-row group"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "138px minmax(0,1fr) 24px",
+        alignItems: "start",
+        gap: 10,
+        minHeight: 34,
+        padding: "7px 10px",
+        borderRadius: 11,
+        border: "1px solid rgba(43,79,107,0.32)",
+        background: "linear-gradient(90deg, rgba(6,19,32,0.92), rgba(8,31,50,0.68))",
+      }}
+    >
+      <div
+        className="pst-row-time"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 7,
+          color: accent,
+          fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+          fontSize: 12.5,
+          fontWeight: 900,
+          lineHeight: 1.4,
+          whiteSpace: "nowrap",
+        }}
+      >
+        <IconClock color="currentColor" />
+        {time || "--:--"} hrs
+      </div>
+
+      <p
+        className="pst-log-line-text"
+        style={{
+          margin: 0,
+          color: "#cbd8e6",
+          fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+          fontSize: 12.5,
+          fontWeight: 650,
+          lineHeight: 1.45,
+          wordBreak: "break-word",
+          overflowWrap: "anywhere",
+        }}
+      >
+        {body}
+      </p>
+
+      <button
+        type="button"
+        onClick={() => group.entries.forEach((entry) => onRemove(entry.key))}
+        title={group.entries.length > 1 ? `Remove ${type === "pst" ? "grouped PST entries" : "grouped Train Prep entries"}` : `Remove ${type === "pst" ? "PST entry" : "Train Prep entry"}`}
+        className="pst-remove-button"
+        style={{
+          width: 22,
+          height: 22,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 8,
+          border: "1px solid rgba(43,79,107,0.35)",
+          background: "rgba(255,255,255,0.025)",
+          color: "#526e8c",
+          opacity: 0.38,
+          cursor: "pointer",
+          transition: "opacity .15s ease, color .15s ease, border-color .15s ease",
+        }}
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
+function EmptyDepot({ label }) {
+  return (
+    <div
+      style={{
+        minHeight: 112,
+        borderRadius: 15,
+        border: "1px dashed rgba(74,138,181,0.35)",
+        background: "rgba(7,24,40,0.76)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 9,
+        color: "#5f7d9c",
+      }}
+    >
+      <IconMenu color="#5f7d9c" />
+      <span style={{ fontSize: 12, fontWeight: 750 }}>No entries for {label} Depot</span>
+    </div>
+  );
+}
+
 function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
-  const pstLines = lines.filter((l) => l.type === "PST");
-  const prepLines = lines.filter((l) => l.type === "Prep");
+  const safeLines = Array.isArray(lines) ? lines : [];
+  const pstLines = safeLines.filter((l) => l.type === "PST");
+  const prepLines = safeLines.filter((l) => l.type === "Prep");
   const groupedPSTLines = buildGroupedPSTLogLines(pstLines);
   const groupedPrepLines = buildGroupedPrepLogLines(prepLines);
   const isWest = label === "West";
   const [confirmClear, setConfirmClear] = useState(false);
+  const depotAccent = isWest ? "#c084fc" : "#22d3ee";
+  const depotAccentAlt = isWest ? "#7c3aed" : "#0891b2";
+  const pstAccent = "#22c55e";
+  const prepAccent = "#38bdf8";
 
   const handleDepotClear = () => {
     if (confirmClear) {
-      onClearDepot();
+      onClearDepot?.();
       setConfirmClear(false);
     } else {
       setConfirmClear(true);
@@ -231,175 +513,277 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
   };
 
   return (
-    <div
-      className="rounded-2xl border p-3 space-y-2"
+    <section
+      className="pst-depot-card"
       style={{
-        borderColor: "#2b4f6b",
-        background: "linear-gradient(135deg,#0c2240 0%,#071828 100%)",
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 18,
+        border: `1px solid ${depotAccent}36`,
+        background: "linear-gradient(145deg, rgba(9,28,47,0.98), rgba(5,16,28,0.98))",
+        boxShadow: `0 16px 28px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 1px ${depotAccent}10`,
       }}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2 min-w-0">
-          <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isWest ? "bg-purple-400" : "bg-cyan-400"}`} />
-          <h3 className={`text-xs font-black tracking-widest uppercase whitespace-nowrap ${isWest ? "text-purple-300" : "text-cyan-300"}`}>
-            {label} Depot
-          </h3>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <CopyBtn text={buildPSTCopyText(pstLines)} label="PST" disabled={pstLines.length === 0} />
-            <CopyBtn text={buildPrepCopyText(prepLines, label)} label="Train Prep" disabled={prepLines.length === 0} />
-          </div>
-          <span className="text-[10px] text-[#4a8ab5] font-medium whitespace-nowrap">
-            {lines.length} {lines.length === 1 ? "entry" : "entries"}
-          </span>
-        </div>
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 5,
+          background: `linear-gradient(180deg, ${depotAccent}, ${depotAccentAlt})`,
+          boxShadow: `0 0 22px ${depotAccent}66`,
+        }}
+      />
 
-        <div className="flex flex-wrap items-center justify-end gap-1.5 flex-shrink-0">
-          {lines.length > 0 && (
-            <button
-              onClick={handleDepotClear}
-              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors ${
-                confirmClear
-                  ? "bg-red-600 border-red-600 text-white"
-                  : "text-[#7a91b0] hover:text-red-400 hover:border-red-700/60"
-              }`}
+      <div style={{ padding: "18px 18px 14px 25px" }}>
+        <div
+          className="pst-depot-header"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 14,
+            marginBottom: 14,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 13, minWidth: 0 }}>
+            <div
               style={{
-                borderColor: confirmClear ? undefined : "#2b4f6b",
-                background: confirmClear ? undefined : "transparent",
+                width: 44,
+                height: 44,
+                borderRadius: 999,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: `1px solid ${depotAccent}55`,
+                color: depotAccent,
+                background: `radial-gradient(circle at 35% 28%, ${depotAccent}33, ${depotAccentAlt}18 58%, rgba(6,18,31,0.92))`,
+                boxShadow: `0 0 22px ${depotAccent}24, inset 0 1px 0 rgba(255,255,255,0.08)`,
+                flexShrink: 0,
               }}
             >
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                <path d="M10 11v6M14 11v6" />
-                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-              </svg>
-              {confirmClear ? "Confirm?" : "Clear"}
+              <IconDepot color="currentColor" />
+            </div>
+
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <h3
+                  className="pst-depot-title"
+                  style={{
+                    margin: 0,
+                    color: depotAccent,
+                    fontSize: 18,
+                    fontWeight: 950,
+                    letterSpacing: "0.12em",
+                    lineHeight: 1.1,
+                    textTransform: "uppercase",
+                    whiteSpace: "nowrap",
+                    textShadow: `0 0 18px ${depotAccent}30`,
+                  }}
+                >
+                  {label} Depot
+                </h3>
+
+                <span
+                  style={{
+                    color: depotAccent,
+                    fontSize: 12,
+                    fontWeight: 800,
+                    letterSpacing: "0.02em",
+                    opacity: 0.85,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {safeLines.length} {safeLines.length === 1 ? "entry" : "entries"}
+                </span>
+              </div>
+
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                <CopyBtn text={buildPSTCopyText(pstLines)} label="PST" disabled={pstLines.length === 0} accent={depotAccent} />
+                <CopyBtn text={buildPrepCopyText(prepLines, label)} label="Train Prep" disabled={prepLines.length === 0} accent={prepAccent} />
+              </div>
+            </div>
+          </div>
+
+          {safeLines.length > 0 && (
+            <button
+              type="button"
+              onClick={handleDepotClear}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 7,
+                minHeight: 30,
+                padding: "0 12px",
+                borderRadius: 999,
+                border: `1px solid ${confirmClear ? "#ef4444" : "rgba(74,138,181,0.36)"}`,
+                background: confirmClear ? "linear-gradient(135deg,#dc2626,#991b1b)" : "rgba(255,255,255,0.025)",
+                color: confirmClear ? "#ffffff" : "#8ca6c2",
+                fontSize: 11,
+                fontWeight: 850,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+              title={`Clear all ${label} Depot PST / Train Prep log entries`}
+            >
+              <IconTrash color="currentColor" />
+              {confirmClear ? "Confirm" : "Clear"}
             </button>
           )}
         </div>
+
+        {safeLines.length === 0 ? (
+          <EmptyDepot label={label} />
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+            {pstLines.length > 0 && (
+              <section
+                style={{
+                  borderRadius: 16,
+                  border: "1px solid rgba(34,197,94,0.22)",
+                  background: "linear-gradient(180deg, rgba(6,20,33,0.86), rgba(4,14,24,0.92))",
+                  padding: 12,
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+                }}
+              >
+                <SectionTitle title="PST" count={pstLines.length} accent={pstAccent} type="pst" />
+                <SummaryBar accent={pstAccent} type="pst">
+                  Total PST completed: {pstLines.length} train{pstLines.length !== 1 ? "s" : ""} conducted from {getPSTStartTime(pstLines[0])} to {getPSTSummaryEndTime(pstLines)} hrs.
+                </SummaryBar>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+                  {groupedPSTLines.map((group) => (
+                    <LogRow key={group.key} group={group} accent={pstAccent} type="pst" onRemove={onRemove} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {prepLines.length > 0 && (
+              <section
+                style={{
+                  borderRadius: 16,
+                  border: "1px solid rgba(56,189,248,0.22)",
+                  background: "linear-gradient(180deg, rgba(6,20,33,0.86), rgba(4,14,24,0.92))",
+                  padding: 12,
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+                }}
+              >
+                <SectionTitle title="Train Prep" count={prepLines.length} accent={prepAccent} type="prep" />
+                <SummaryBar accent={prepAccent} type="prep">
+                  Train Preparation at {label} Depot: Total {prepLines.length} train{prepLines.length !== 1 ? "s" : ""} completed from {getLogDisplayTime(prepLines[0])} to {getLogDisplayTime(prepLines[prepLines.length - 1])} hrs.
+                </SummaryBar>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+                  {groupedPrepLines.map((group) => (
+                    <LogRow key={group.key} group={group} accent={prepAccent} type="prep" onRemove={onRemove} />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
       </div>
-
-      {lines.length === 0 ? (
-        <div
-          className="rounded-xl border border-[#1a3a56] py-6 flex flex-col items-center justify-center gap-2 text-[#3a5a7a]"
-          style={{ background: "#071828" }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M8 7h12M8 12h12M8 17h12M3 7h.01M3 12h.01M3 17h.01" />
-          </svg>
-          <span className="text-[11px] font-medium">No entries for {label} Depot</span>
-        </div>
-      ) : (
-        <div className="space-y-2 min-w-0">
-          {pstLines.length > 0 && (
-            <div className="space-y-1 min-w-0">
-              <div className="flex items-center gap-1.5 px-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-[10px] font-black tracking-widest uppercase text-emerald-400">
-                  PST ({pstLines.length})
-                </span>
-              </div>
-
-              <div
-                className="rounded-xl px-3 py-2 space-y-1.5 border border-emerald-900/50 min-w-0"
-                style={{ background: "#071828" }}
-              >
-                <div className="pb-1.5 mb-1 border-b border-emerald-900/40 space-y-0.5 min-w-0">
-                  <p className="font-mono text-[11px] font-bold text-[#c8d8ea] whitespace-normal break-words m-0">
-                    Total PST completed: {pstLines.length} train{pstLines.length !== 1 ? "s" : ""} conducted from {getPSTStartTime(pstLines[0])} to {getPSTSummaryEndTime(pstLines)} hrs.
-                  </p>
-                </div>
-
-                {groupedPSTLines.map((group) => (
-                  <div key={group.key} className="group flex items-center gap-2 min-w-0">
-                    <p className="flex-1 min-w-0 font-mono text-[11px] text-[#c8d8ea] leading-5 whitespace-normal break-words m-0 pr-2">
-                      {group.text}
-                    </p>
-                    <button
-                      onClick={() => group.entries.forEach((entry) => onRemove(entry.key))}
-                      title={group.entries.length > 1 ? "Remove grouped PST entries" : "Remove PST entry"}
-                      className="opacity-0 group-hover:opacity-100 w-4 h-4 flex items-center justify-center rounded text-[#3a5a7a] hover:text-red-400 transition-all flex-shrink-0"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {prepLines.length > 0 && (
-            <div className="space-y-1 min-w-0">
-              <div className="flex items-center gap-1.5 px-1">
-                <span className="w-2 h-2 rounded-full bg-blue-400" />
-                <span className="text-[10px] font-black tracking-widest uppercase text-blue-400">
-                  Train Prep ({prepLines.length})
-                </span>
-              </div>
-
-              <div
-                className="rounded-xl px-3 py-2 space-y-1.5 border border-blue-900/40 min-w-0"
-                style={{ background: "#071828" }}
-              >
-                <div className="pb-1.5 mb-1 border-b border-blue-900/30 space-y-0.5 min-w-0">
-                  <p className="font-mono text-[11px] font-bold text-[#c8d8ea] whitespace-normal break-words m-0">
-                    Train Preparation at {label} Depot: Total {prepLines.length} train{prepLines.length !== 1 ? "s" : ""} completed from {getLogDisplayTime(prepLines[0])} to {getLogDisplayTime(prepLines[prepLines.length - 1])} hrs.
-                  </p>
-                </div>
-
-                {groupedPrepLines.map((group) => (
-                  <div key={group.key} className="group flex items-center gap-2 min-w-0">
-                    <p className="flex-1 min-w-0 font-mono text-[11px] text-[#c8d8ea] leading-5 whitespace-normal break-words m-0 pr-2">
-                      {group.text}
-                    </p>
-                    <button
-                      onClick={() => group.entries.forEach((entry) => onRemove(entry.key))}
-                      title={group.entries.length > 1 ? "Remove grouped Train Prep entries" : "Remove Train Prep entry"}
-                      className="opacity-0 group-hover:opacity-100 w-4 h-4 flex items-center justify-center rounded text-[#3a5a7a] hover:text-red-400 transition-all flex-shrink-0"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+    </section>
   );
 }
 
 export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
-  const westLines = logLines.filter((l) => l.depot === "west");
-  const eastLines = logLines.filter((l) => l.depot === "east");
+  const safeLogLines = Array.isArray(logLines) ? logLines : [];
+  const westLines = safeLogLines.filter((l) => l.depot === "west");
+  const eastLines = safeLogLines.filter((l) => l.depot === "east");
 
   return (
-    <div className="bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-sm overflow-hidden">
-      <div
-        className="px-5 py-3 border-b border-[#1a3a56] flex items-center gap-3"
-        style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}
+    <div
+      className="pst-log-shell"
+      style={{
+        borderRadius: 18,
+        border: "1px solid rgba(79,142,247,0.30)",
+        background: "linear-gradient(180deg, rgba(8,31,51,0.98), rgba(4,14,24,0.99))",
+        boxShadow: "0 24px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)",
+        overflow: "hidden",
+      }}
+    >
+      <style>{`
+        .pst-log-shell button:hover:not(:disabled) { transform: translateY(-1px); }
+        .pst-log-row:hover { border-color: rgba(88,166,255,0.38) !important; background: linear-gradient(90deg, rgba(8,28,47,0.96), rgba(10,43,69,0.78)) !important; }
+        .pst-log-row:hover .pst-remove-button { opacity: 1 !important; color: #fb7185 !important; border-color: rgba(251,113,133,0.35) !important; }
+        @media (max-width: 640px) {
+          .pst-depot-header { align-items: flex-start !important; flex-direction: column !important; }
+          .pst-log-row { grid-template-columns: 1fr 24px !important; }
+          .pst-row-time { grid-column: 1 / 2; }
+          .pst-log-line-text { grid-column: 1 / 2; }
+          .pst-remove-button { grid-column: 2 / 3; grid-row: 1 / 3; }
+        }
+      `}</style>
+
+      <header
+        className="pst-log-header"
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 5,
+          display: "flex",
+          alignItems: "center",
+          gap: 15,
+          padding: "14px 18px",
+          borderBottom: "1px solid rgba(43,79,107,0.72)",
+          background: "linear-gradient(135deg, rgba(10,42,68,0.98), rgba(6,22,37,0.98))",
+          backdropFilter: "blur(10px)",
+        }}
       >
-        <div className="w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2.2">
-            <line x1="8" y1="6" x2="21" y2="6" />
-            <line x1="8" y1="12" x2="21" y2="12" />
-            <line x1="8" y1="18" x2="21" y2="18" />
-            <line x1="3" y1="6" x2="3.01" y2="6" />
-            <line x1="3" y1="12" x2="3.01" y2="12" />
-            <line x1="3" y1="18" x2="3.01" y2="18" />
-          </svg>
+        <div
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 13,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            border: "1px solid rgba(79,142,247,0.45)",
+            color: "#7da9ff",
+            background: "linear-gradient(135deg, rgba(79,142,247,0.18), rgba(6,18,31,0.68))",
+            boxShadow: "0 0 20px rgba(79,142,247,0.18), inset 0 1px 0 rgba(255,255,255,0.06)",
+            flexShrink: 0,
+          }}
+        >
+          <IconMenu color="currentColor" />
         </div>
 
-        <div className="flex-1">
-          <p className="text-xs font-black text-white">PST / Train Prep Log</p>
-          <p className="text-[10px] text-[#4a8ab5]">
-            {logLines.length} {logLines.length === 1 ? "entry" : "entries"}
+        <div style={{ minWidth: 0 }}>
+          <p
+            className="pst-log-title-main"
+            style={{
+              margin: 0,
+              color: "#ffffff",
+              fontSize: 18,
+              fontWeight: 950,
+              letterSpacing: "0.04em",
+              lineHeight: 1.1,
+            }}
+          >
+            PST / Train Prep Log
+          </p>
+          <p style={{ margin: "4px 0 0", color: "#7cc7ff", fontSize: 12.5, fontWeight: 700, lineHeight: 1.2 }}>
+            {safeLogLines.length} {safeLogLines.length === 1 ? "entry" : "entries"}
           </p>
         </div>
-      </div>
+      </header>
 
-      <div className="p-3 space-y-3 max-h-[80vh] overflow-y-auto">
+      <div
+        className="pst-log-scroll"
+        style={{
+          maxHeight: "calc(100vh - 72px)",
+          overflowY: "auto",
+          padding: 14,
+          display: "flex",
+          flexDirection: "column",
+          gap: 14,
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(88,166,255,0.42) rgba(7,24,40,0.9)",
+        }}
+      >
         <PSTDepotBlock label="West" lines={westLines} onRemove={onRemove} onClearDepot={() => onClearDepot("west")} />
         <PSTDepotBlock label="East" lines={eastLines} onRemove={onRemove} onClearDepot={() => onClearDepot("east")} />
       </div>

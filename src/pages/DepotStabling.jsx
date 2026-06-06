@@ -6695,65 +6695,48 @@ function PSTTabContent
 
       <div className="pst-train-prep-log-font-bump w-full max-w-[1380px] lg:w-[1120px] lg:max-w-[1120px] lg:shrink-0 lg:sticky lg:top-4">
         <style>{`
-        /* PST / Train Prep Log title: keep slightly smaller than the log text */
-        .pst-train-prep-log-font-bump :is(h1, h2, h3),
-        .pst-train-prep-log-font-bump [data-log-title],
-        .pst-train-prep-log-font-bump .log-title,
-        .pst-train-prep-log-font-bump .pst-log-title {
-          font-size: 18px !important;
-          line-height: 1.25 !important;
+        /* PST / Train Prep Log output: keep the new card design spacing intact */
+        .pst-train-prep-log-font-bump .pst-log-shell {
+          width: 100%;
         }
 
-        /* PST / Train Prep actual log text: force compact 13px text */
-        .pst-train-prep-log-font-bump :is(pre, code, textarea),
-        .pst-train-prep-log-font-bump [class*="font-mono"],
-        .pst-train-prep-log-font-bump [class*="whitespace-pre"],
-        .pst-train-prep-log-font-bump [class*="text-[8px]"],
-        .pst-train-prep-log-font-bump [class*="text-[9px]"],
-        .pst-train-prep-log-font-bump [class*="text-[10px]"],
-        .pst-train-prep-log-font-bump [class*="text-[11px]"],
-        .pst-train-prep-log-font-bump [class*="text-xs"],
-        .pst-train-prep-log-font-bump [data-log-line],
-        .pst-train-prep-log-font-bump .log-line,
-        .pst-train-prep-log-font-bump .log-content,
-        .pst-train-prep-log-font-bump .log-output,
-        .pst-train-prep-log-font-bump .pst-log-line,
-        .pst-train-prep-log-font-bump .pst-log-content {
+        .pst-train-prep-log-font-bump .pst-log-title-main {
+          font-size: 18px !important;
+          line-height: 1.1 !important;
+        }
+
+        .pst-train-prep-log-font-bump .pst-depot-title {
+          font-size: 18px !important;
+          line-height: 1.1 !important;
+        }
+
+        .pst-train-prep-log-font-bump .pst-section-title {
           font-size: 13px !important;
           line-height: 1.1 !important;
         }
 
-        /* Make the PST / Train Prep Log output tighter vertically */
-        .pst-train-prep-log-font-bump :is(p, pre, div, section) {
-          line-height: 1.1 !important;
+        .pst-train-prep-log-font-bump .pst-summary-text,
+        .pst-train-prep-log-font-bump .pst-log-line-text,
+        .pst-train-prep-log-font-bump .pst-row-time {
+          font-size: 12.5px !important;
         }
 
-        .pst-train-prep-log-font-bump :is(p, pre) {
-          margin-top: 0.05rem !important;
-          margin-bottom: 0.05rem !important;
+        .pst-train-prep-log-font-bump .pst-log-line-text {
+          line-height: 1.45 !important;
         }
 
-        .pst-train-prep-log-font-bump :is(hr) {
-          margin-top: 0.2rem !important;
-          margin-bottom: 0.2rem !important;
+        .pst-train-prep-log-font-bump .pst-log-scroll::-webkit-scrollbar {
+          width: 8px;
         }
 
-        .pst-train-prep-log-font-bump [class*="space-y-"] > :not([hidden]) ~ :not([hidden]) {
-          margin-top: 0.12rem !important;
+        .pst-train-prep-log-font-bump .pst-log-scroll::-webkit-scrollbar-track {
+          background: rgba(7,24,40,0.9);
+          border-radius: 999px;
         }
 
-        .pst-train-prep-log-font-bump [class*="gap-"] {
-          gap: 0.12rem !important;
-        }
-
-        .pst-train-prep-log-font-bump [class*="py-"] {
-          padding-top: 0.25rem !important;
-          padding-bottom: 0.25rem !important;
-        }
-
-        .pst-train-prep-log-font-bump [class*="px-"] {
-          padding-left: 0.75rem !important;
-          padding-right: 0.75rem !important;
+        .pst-train-prep-log-font-bump .pst-log-scroll::-webkit-scrollbar-thumb {
+          background: rgba(88,166,255,0.38);
+          border-radius: 999px;
         }
       `}</style>
         <PSTLogOutput logLines={sortedLogLines} onRemove={onRemoveLog} onClearDepot={onClearDepotLog} />
