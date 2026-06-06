@@ -194,7 +194,7 @@ function stripLeadingTime(line = "") {
 
 function IconMenu({ color = "currentColor" }) {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round">
       <line x1="4" y1="6" x2="20" y2="6" />
       <line x1="4" y1="12" x2="20" y2="12" />
       <line x1="4" y1="18" x2="20" y2="18" />
@@ -204,7 +204,7 @@ function IconMenu({ color = "currentColor" }) {
 
 function IconDepot({ color = "currentColor" }) {
   return (
-    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 21h18" />
       <path d="M5 21V9l7-4 7 4v12" />
       <path d="M9 21v-7h6v7" />
@@ -215,7 +215,7 @@ function IconDepot({ color = "currentColor" }) {
 
 function IconClock({ color = "currentColor" }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="9" />
       <path d="M12 7v5l3 2" />
     </svg>
@@ -224,7 +224,7 @@ function IconClock({ color = "currentColor" }) {
 
 function IconCheck({ color = "currentColor" }) {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="9" />
       <path d="m8.5 12.2 2.2 2.2 4.8-5" />
     </svg>
@@ -233,7 +233,7 @@ function IconCheck({ color = "currentColor" }) {
 
 function IconTrain({ color = "currentColor" }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
       <rect x="5" y="3" width="14" height="14" rx="3" />
       <path d="M8 17l-2 4" />
       <path d="M18 21l-2-4" />
@@ -245,7 +245,7 @@ function IconTrain({ color = "currentColor" }) {
 
 function IconCopy({ color = "currentColor" }) {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
       <rect x="9" y="9" width="11" height="11" rx="2" />
       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
     </svg>
@@ -254,7 +254,7 @@ function IconCopy({ color = "currentColor" }) {
 
 function IconTrash({ color = "currentColor" }) {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 6h18" />
       <path d="M8 6V4h8v2" />
       <path d="m19 6-1 14H6L5 6" />
@@ -281,19 +281,19 @@ function CopyBtn({ text, label, disabled, accent = "#58a6ff" }) {
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: 6,
-        minHeight: 28,
-        padding: "0 11px",
+        gap: 4,
+        minHeight: 22,
+        padding: "0 8px",
         borderRadius: 999,
         border: `1px solid ${copied ? "#22c55e" : `${accent}55`}`,
         background: copied
           ? "linear-gradient(135deg, rgba(34,197,94,0.95), rgba(22,163,74,0.9))"
           : `linear-gradient(135deg, ${accent}24, rgba(255,255,255,0.045))`,
         color: copied ? "#ffffff" : "#dce9f7",
-        fontSize: 11,
-        fontWeight: 800,
+        fontSize: 10,
+        fontWeight: 750,
         letterSpacing: "0.01em",
-        boxShadow: disabled ? "none" : `0 0 16px ${accent}18, inset 0 1px 0 rgba(255,255,255,0.07)`,
+        boxShadow: disabled ? "none" : `0 0 10px ${accent}14, inset 0 1px 0 rgba(255,255,255,0.06)`,
         opacity: disabled ? 0.42 : 1,
         cursor: disabled ? "not-allowed" : "pointer",
         transition: "transform .15s ease, border-color .15s ease, background .15s ease",
@@ -314,30 +314,30 @@ function SectionTitle({ title, count, accent, type }) {
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 9,
-        padding: "2px 2px 6px",
+        gap: 6,
+        padding: "0 1px 4px",
       }}
     >
       <span
         style={{
-          width: 8,
-          height: 8,
+          width: 6,
+          height: 6,
           borderRadius: 999,
           background: accent,
-          boxShadow: `0 0 12px ${accent}`,
+          boxShadow: `0 0 8px ${accent}`,
           flexShrink: 0,
         }}
       />
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 7, color: accent }}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: accent }}>
         {icon}
       </span>
       <span
         className="pst-section-title"
         style={{
           color: accent,
-          fontSize: 13,
-          fontWeight: 900,
-          letterSpacing: "0.14em",
+          fontSize: 11.5,
+          fontWeight: 850,
+          letterSpacing: "0.11em",
           textTransform: "uppercase",
           lineHeight: 1.1,
         }}
@@ -355,11 +355,11 @@ function SummaryBar({ children, accent, type }) {
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 12,
+        gap: 8,
         width: "100%",
-        minHeight: 38,
-        padding: "8px 13px",
-        borderRadius: 13,
+        minHeight: 28,
+        padding: "5px 9px",
+        borderRadius: 10,
         border: `1px solid ${accent}3d`,
         background: `linear-gradient(135deg, ${accent}12, rgba(255,255,255,0.035))`,
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
@@ -367,8 +367,8 @@ function SummaryBar({ children, accent, type }) {
     >
       <span
         style={{
-          width: 25,
-          height: 25,
+          width: 20,
+          height: 20,
           borderRadius: 999,
           display: "inline-flex",
           alignItems: "center",
@@ -381,7 +381,7 @@ function SummaryBar({ children, accent, type }) {
       >
         {type === "prep" ? <IconTrain color="currentColor" /> : <IconCheck color="currentColor" />}
       </span>
-      <p className="pst-summary-text" style={{ margin: 0, color: "#e5edf7", fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", fontSize: 12.5, fontWeight: 800, lineHeight: 1.35 }}>
+      <p className="pst-summary-text" style={{ margin: 0, color: "#e5edf7", fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", fontSize: 10.8, fontWeight: 750, lineHeight: 1.28 }}>
         {children}
       </p>
     </div>
@@ -397,12 +397,12 @@ function LogRow({ group, accent, type, onRemove }) {
       className="pst-log-row group"
       style={{
         display: "grid",
-        gridTemplateColumns: "138px minmax(0,1fr) 24px",
+        gridTemplateColumns: "91px minmax(0,1fr) 20px",
         alignItems: "start",
-        gap: 10,
-        minHeight: 34,
-        padding: "7px 10px",
-        borderRadius: 11,
+        gap: 7,
+        minHeight: 26,
+        padding: "4px 7px",
+        borderRadius: 6,
         border: "1px solid rgba(43,79,107,0.32)",
         background: "linear-gradient(90deg, rgba(6,19,32,0.92), rgba(8,31,50,0.68))",
       }}
@@ -412,12 +412,12 @@ function LogRow({ group, accent, type, onRemove }) {
         style={{
           display: "inline-flex",
           alignItems: "center",
-          gap: 7,
+          gap: 5,
           color: accent,
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-          fontSize: 12.5,
-          fontWeight: 900,
-          lineHeight: 1.4,
+          fontSize: 10.8,
+          fontWeight: 850,
+          lineHeight: 1.3,
           whiteSpace: "nowrap",
         }}
       >
@@ -431,9 +431,9 @@ function LogRow({ group, accent, type, onRemove }) {
           margin: 0,
           color: "#cbd8e6",
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-          fontSize: 12.5,
-          fontWeight: 650,
-          lineHeight: 1.45,
+          fontSize: 10.8,
+          fontWeight: 600,
+          lineHeight: 1.32,
           wordBreak: "break-word",
           overflowWrap: "anywhere",
         }}
@@ -447,12 +447,12 @@ function LogRow({ group, accent, type, onRemove }) {
         title={group.entries.length > 1 ? `Remove ${type === "pst" ? "grouped PST entries" : "grouped Train Prep entries"}` : `Remove ${type === "pst" ? "PST entry" : "Train Prep entry"}`}
         className="pst-remove-button"
         style={{
-          width: 22,
-          height: 22,
+          width: 18,
+          height: 18,
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          borderRadius: 8,
+          borderRadius: 6,
           border: "1px solid rgba(43,79,107,0.35)",
           background: "rgba(255,255,255,0.025)",
           color: "#526e8c",
@@ -461,7 +461,7 @@ function LogRow({ group, accent, type, onRemove }) {
           transition: "opacity .15s ease, color .15s ease, border-color .15s ease",
         }}
       >
-        <X className="w-3.5 h-3.5" />
+        <X className="w-3 h-3" />
       </button>
     </div>
   );
@@ -471,20 +471,20 @@ function EmptyDepot({ label }) {
   return (
     <div
       style={{
-        minHeight: 112,
-        borderRadius: 15,
+        minHeight: 74,
+        borderRadius: 12,
         border: "1px dashed rgba(74,138,181,0.35)",
         background: "rgba(7,24,40,0.76)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: 9,
+        gap: 6,
         color: "#5f7d9c",
       }}
     >
       <IconMenu color="#5f7d9c" />
-      <span style={{ fontSize: 12, fontWeight: 750 }}>No entries for {label} Depot</span>
+      <span style={{ fontSize: 10.5, fontWeight: 700 }}>No entries for {label} Depot</span>
     </div>
   );
 }
@@ -518,10 +518,10 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
       style={{
         position: "relative",
         overflow: "hidden",
-        borderRadius: 18,
+        borderRadius: 14,
         border: `1px solid ${depotAccent}36`,
         background: "linear-gradient(145deg, rgba(9,28,47,0.98), rgba(5,16,28,0.98))",
-        boxShadow: `0 16px 28px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 1px ${depotAccent}10`,
+        boxShadow: `0 10px 18px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 0 1px ${depotAccent}10`,
       }}
     >
       <div
@@ -531,28 +531,28 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
           left: 0,
           top: 0,
           bottom: 0,
-          width: 5,
+          width: 4,
           background: `linear-gradient(180deg, ${depotAccent}, ${depotAccentAlt})`,
-          boxShadow: `0 0 22px ${depotAccent}66`,
+          boxShadow: `0 0 16px ${depotAccent}55`,
         }}
       />
 
-      <div style={{ padding: "18px 18px 14px 25px" }}>
+      <div style={{ padding: "10px 10px 10px 15px" }}>
         <div
           className="pst-depot-header"
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: 14,
-            marginBottom: 14,
+            gap: 8,
+            marginBottom: 8,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 13, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
             <div
               style={{
-                width: 44,
-                height: 44,
+                width: 30,
+                height: 30,
                 borderRadius: 999,
                 display: "flex",
                 alignItems: "center",
@@ -560,7 +560,7 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
                 border: `1px solid ${depotAccent}55`,
                 color: depotAccent,
                 background: `radial-gradient(circle at 35% 28%, ${depotAccent}33, ${depotAccentAlt}18 58%, rgba(6,18,31,0.92))`,
-                boxShadow: `0 0 22px ${depotAccent}24, inset 0 1px 0 rgba(255,255,255,0.08)`,
+                boxShadow: `0 0 14px ${depotAccent}20, inset 0 1px 0 rgba(255,255,255,0.07)`,
                 flexShrink: 0,
               }}
             >
@@ -568,15 +568,15 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
             </div>
 
             <div style={{ minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
                 <h3
                   className="pst-depot-title"
                   style={{
                     margin: 0,
                     color: depotAccent,
-                    fontSize: 18,
-                    fontWeight: 950,
-                    letterSpacing: "0.12em",
+                    fontSize: 14,
+                    fontWeight: 900,
+                    letterSpacing: "0.10em",
                     lineHeight: 1.1,
                     textTransform: "uppercase",
                     whiteSpace: "nowrap",
@@ -589,8 +589,8 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
                 <span
                   style={{
                     color: depotAccent,
-                    fontSize: 12,
-                    fontWeight: 800,
+                    fontSize: 10.5,
+                    fontWeight: 750,
                     letterSpacing: "0.02em",
                     opacity: 0.85,
                     whiteSpace: "nowrap",
@@ -600,7 +600,7 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
                 </span>
               </div>
 
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 5 }}>
                 <CopyBtn text={buildPSTCopyText(pstLines)} label="PST" disabled={pstLines.length === 0} accent={depotAccent} />
                 <CopyBtn text={buildPrepCopyText(prepLines, label)} label="Train Prep" disabled={prepLines.length === 0} accent={prepAccent} />
               </div>
@@ -615,15 +615,15 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 7,
-                minHeight: 30,
-                padding: "0 12px",
+                gap: 5,
+                minHeight: 24,
+                padding: "0 8px",
                 borderRadius: 999,
                 border: `1px solid ${confirmClear ? "#ef4444" : "rgba(74,138,181,0.36)"}`,
                 background: confirmClear ? "linear-gradient(135deg,#dc2626,#991b1b)" : "rgba(255,255,255,0.025)",
                 color: confirmClear ? "#ffffff" : "#8ca6c2",
-                fontSize: 11,
-                fontWeight: 850,
+                fontSize: 10,
+                fontWeight: 750,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
               }}
@@ -638,14 +638,14 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
         {safeLines.length === 0 ? (
           <EmptyDepot label={label} />
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {pstLines.length > 0 && (
               <section
                 style={{
-                  borderRadius: 16,
+                  borderRadius: 12,
                   border: "1px solid rgba(34,197,94,0.22)",
                   background: "linear-gradient(180deg, rgba(6,20,33,0.86), rgba(4,14,24,0.92))",
-                  padding: 12,
+                  padding: 7,
                   boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
                 }}
               >
@@ -653,7 +653,7 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
                 <SummaryBar accent={pstAccent} type="pst">
                   Total PST completed: {pstLines.length} train{pstLines.length !== 1 ? "s" : ""} conducted from {getPSTStartTime(pstLines[0])} to {getPSTSummaryEndTime(pstLines)} hrs.
                 </SummaryBar>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 5 }}>
                   {groupedPSTLines.map((group) => (
                     <LogRow key={group.key} group={group} accent={pstAccent} type="pst" onRemove={onRemove} />
                   ))}
@@ -664,10 +664,10 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
             {prepLines.length > 0 && (
               <section
                 style={{
-                  borderRadius: 16,
+                  borderRadius: 12,
                   border: "1px solid rgba(56,189,248,0.22)",
                   background: "linear-gradient(180deg, rgba(6,20,33,0.86), rgba(4,14,24,0.92))",
-                  padding: 12,
+                  padding: 7,
                   boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
                 }}
               >
@@ -675,7 +675,7 @@ function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
                 <SummaryBar accent={prepAccent} type="prep">
                   Train Preparation at {label} Depot: Total {prepLines.length} train{prepLines.length !== 1 ? "s" : ""} completed from {getLogDisplayTime(prepLines[0])} to {getLogDisplayTime(prepLines[prepLines.length - 1])} hrs.
                 </SummaryBar>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 5 }}>
                   {groupedPrepLines.map((group) => (
                     <LogRow key={group.key} group={group} accent={prepAccent} type="prep" onRemove={onRemove} />
                   ))}
@@ -698,7 +698,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
     <div
       className="pst-log-shell"
       style={{
-        borderRadius: 18,
+        borderRadius: 14,
         border: "1px solid rgba(79,142,247,0.30)",
         background: "linear-gradient(180deg, rgba(8,31,51,0.98), rgba(4,14,24,0.99))",
         boxShadow: "0 24px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)",
@@ -726,8 +726,8 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
           zIndex: 5,
           display: "flex",
           alignItems: "center",
-          gap: 15,
-          padding: "14px 18px",
+          gap: 10,
+          padding: "9px 12px",
           borderBottom: "1px solid rgba(43,79,107,0.72)",
           background: "linear-gradient(135deg, rgba(10,42,68,0.98), rgba(6,22,37,0.98))",
           backdropFilter: "blur(10px)",
@@ -735,16 +735,16 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
       >
         <div
           style={{
-            width: 38,
-            height: 38,
-            borderRadius: 13,
+            width: 28,
+            height: 28,
+            borderRadius: 10,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             border: "1px solid rgba(79,142,247,0.45)",
             color: "#7da9ff",
             background: "linear-gradient(135deg, rgba(79,142,247,0.18), rgba(6,18,31,0.68))",
-            boxShadow: "0 0 20px rgba(79,142,247,0.18), inset 0 1px 0 rgba(255,255,255,0.06)",
+            boxShadow: "0 0 12px rgba(79,142,247,0.16), inset 0 1px 0 rgba(255,255,255,0.06)",
             flexShrink: 0,
           }}
         >
@@ -757,15 +757,15 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
             style={{
               margin: 0,
               color: "#ffffff",
-              fontSize: 18,
-              fontWeight: 950,
+              fontSize: 14.5,
+              fontWeight: 900,
               letterSpacing: "0.04em",
               lineHeight: 1.1,
             }}
           >
             PST / Train Prep Log
           </p>
-          <p style={{ margin: "4px 0 0", color: "#7cc7ff", fontSize: 12.5, fontWeight: 700, lineHeight: 1.2 }}>
+          <p style={{ margin: "2px 0 0", color: "#7cc7ff", fontSize: 10.5, fontWeight: 650, lineHeight: 1.15 }}>
             {safeLogLines.length} {safeLogLines.length === 1 ? "entry" : "entries"}
           </p>
         </div>
@@ -774,12 +774,12 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
       <div
         className="pst-log-scroll"
         style={{
-          maxHeight: "calc(100vh - 72px)",
+          maxHeight: "calc(100vh - 56px)",
           overflowY: "auto",
-          padding: 14,
+          padding: 8,
           display: "flex",
           flexDirection: "column",
-          gap: 14,
+          gap: 8,
           scrollbarWidth: "thin",
           scrollbarColor: "rgba(88,166,255,0.42) rgba(7,24,40,0.9)",
         }}
