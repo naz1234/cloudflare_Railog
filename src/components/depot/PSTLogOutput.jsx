@@ -698,6 +698,11 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
     <div
       className="pst-log-shell"
       style={{
+        height: "min(760px, calc(100vh - 32px))",
+        maxHeight: "calc(100vh - 32px)",
+        minHeight: 360,
+        display: "flex",
+        flexDirection: "column",
         borderRadius: 14,
         border: "1px solid rgba(79,142,247,0.30)",
         background: "linear-gradient(180deg, rgba(8,31,51,0.98), rgba(4,14,24,0.99))",
@@ -721,6 +726,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
       <header
         className="pst-log-header"
         style={{
+          flexShrink: 0,
           position: "sticky",
           top: 0,
           zIndex: 5,
@@ -774,9 +780,12 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
       <div
         className="pst-log-scroll"
         style={{
-          maxHeight: "calc(100vh - 56px)",
+          flex: "1 1 auto",
+          minHeight: 0,
           overflowY: "auto",
-          padding: 8,
+          overscrollBehavior: "contain",
+          WebkitOverflowScrolling: "touch",
+          padding: "8px 8px 18px",
           display: "flex",
           flexDirection: "column",
           gap: 8,
