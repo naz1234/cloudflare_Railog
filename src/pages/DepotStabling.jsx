@@ -2928,6 +2928,27 @@ function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, lab
   );
 }
 
+function normalizePSTEntryType(entry = {}) {
+  return (entry?.type || entry?.logType || entry?.category || "").toString().trim().toLowerCase().replace(/[\s_-]+/g, "");
+}
+
+function isPSTLogEntry(entry = {}) {
+  const normalizedType = normalizePSTEntryType(entry);
+  const text = (entry?.text || "").toString();
+  return normalizedType === "pst" || /\bPST\b/i.test(text);
+}
+
+function isTrainPrepLogEntry(entry = {}) {
+  const normalizedType = normalizePSTEntryType(entry);
+  const text = (entry?.text || "").toString();
+  return (
+    normalizedType === "prep" ||
+    normalizedType === "trainprep" ||
+    normalizedType === "trainpreparation" ||
+    /train\s+prep(?:aration)?/i.test(text)
+  );
+}
+
 function formatTrainList(trainKeys) {
   if (trainKeys.length === 0) return "";
   if (trainKeys.length === 1) return trainKeys[0];
@@ -6506,8 +6527,8 @@ function PSTTabContent
     const normalizedDepot = depot === "west" || depot === "east" ? depot : "";
     const depotLabel = normalizedDepot === "west" ? "West Depot" : "East Depot";
     const completedEntries = (exportLogLines || [])
-      .filter((entry) => (entry?.type === "PST" || entry?.type === "Prep") && getPSTDepotFromEntry(entry) === normalizedDepot);
-    const pstEntries = completedEntries.filter((entry) => entry?.type === "PST");
+      .filter((entry) => (isPSTLogEntry(entry) || isTrainPrepLogEntry(entry)) && getPSTDepotFromEntry(entry) === normalizedDepot);
+    const pstEntries = completedEntries.filter(isPSTLogEntry);
 
     if (completedEntries.length === 0) {
       alert(`No completed PST or Train Prep log to export for ${depotLabel} yet.`);
@@ -6693,7 +6714,7 @@ function PSTTabContent
       </div>
     </div>
 
-      <div className="pst-train-prep-log-font-bump w-full max-w-[1380px] lg:w-[1120px] lg:max-w-[1120px] lg:shrink-0 lg:sticky lg:top-4 lg:max-h-[calc(100vh-32px)] lg:overflow-hidden">
+      <div className="pst-train-prep-log-font-bump h-[calc(100vh-32px)] max-h-[calc(100vh-32px)] w-full max-w-[1380px] overflow-hidden lg:w-[1120px] lg:max-w-[1120px] lg:shrink-0 lg:sticky lg:top-4">
         <style>{`
         /* PST / Train Prep Log output: keep the new card design spacing intact */
         .pst-train-prep-log-font-bump .pst-log-shell {
@@ -9572,7 +9593,7 @@ export default function DepotStablingPage() {
 
   const handleClearDepotPrepOnly = (depot) => {
     markPSTLiveLocalEdit();
-    setPstLogLines((prev) => prev.filter((line) => !(line.depot === depot && line.type === "Prep")));
+    setPstLogLines((prev) => prev.filter((line) => !(line.depot === depot && isTrainPrepLogEntry(line))));
     setPrepState((prev) => removePSTSectionKeys(prev, depot));
     setTaNameState((prev) => removePSTSectionKeys(prev, depot));
   };

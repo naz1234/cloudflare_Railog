@@ -1,6 +1,28 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 
+
+function normalizeLogType(entry = {}) {
+  return (entry?.type || entry?.logType || entry?.category || "").toString().trim().toLowerCase().replace(/[\s_-]+/g, "");
+}
+
+function isPSTEntry(entry = {}) {
+  const normalizedType = normalizeLogType(entry);
+  const text = (entry?.text || "").toString();
+  return normalizedType === "pst" || /\bPST\b/i.test(text);
+}
+
+function isPrepEntry(entry = {}) {
+  const normalizedType = normalizeLogType(entry);
+  const text = (entry?.text || "").toString();
+  return (
+    normalizedType === "prep" ||
+    normalizedType === "trainprep" ||
+    normalizedType === "trainpreparation" ||
+    /train\s+prep(?:aration)?/i.test(text)
+  );
+}
+
 function formatTrainList(trainKeys) {
   if (trainKeys.length === 0) return "";
   if (trainKeys.length === 1) return trainKeys[0];
@@ -491,8 +513,8 @@ function EmptyDepot({ label }) {
 
 function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
   const safeLines = Array.isArray(lines) ? lines : [];
-  const pstLines = safeLines.filter((l) => l.type === "PST");
-  const prepLines = safeLines.filter((l) => l.type === "Prep");
+  const pstLines = safeLines.filter(isPSTEntry);
+  const prepLines = safeLines.filter(isPrepEntry);
   const groupedPSTLines = buildGroupedPSTLogLines(pstLines);
   const groupedPrepLines = buildGroupedPrepLogLines(prepLines);
   const isWest = label === "West";
@@ -698,9 +720,9 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
     <div
       className="pst-log-shell"
       style={{
-        height: "min(760px, calc(100vh - 32px))",
-        maxHeight: "calc(100vh - 32px)",
-        minHeight: 360,
+        height: "100%",
+        maxHeight: "100%",
+        minHeight: 0,
         display: "flex",
         flexDirection: "column",
         borderRadius: 14,
