@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { X } from "lucide-react";
-
 
 function normalizeLogType(entry = {}) {
   return (entry?.type || entry?.logType || entry?.category || "").toString().trim().toLowerCase().replace(/[\s_-]+/g, "");
@@ -23,29 +21,32 @@ function isPrepEntry(entry = {}) {
   );
 }
 
-function formatTrainList(trainKeys) {
+function formatTrainList(trainKeys = []) {
   if (trainKeys.length === 0) return "";
   if (trainKeys.length === 1) return trainKeys[0];
-  return trainKeys.slice(0, -1).join(", ") + " and " + trainKeys[trainKeys.length - 1];
+  return `${trainKeys.slice(0, -1).join(", ")} and ${trainKeys[trainKeys.length - 1]}`;
+}
+
+function normalizeTrainKey(value = "") {
+  const text = value.toString().trim().toUpperCase().replace(/\s+/g, "");
+  const match = text.match(/^T?(\d+)$/);
+  if (!match) return text;
+  return `T${match[1].padStart(2, "0")}`;
 }
 
 function getLogDisplayTime(entry = {}) {
   const directTime = entry.endTime || entry.time || entry.startTime;
   if (directTime) return directTime;
   const match = (entry.text || "").match(/(\d{1,2}:\d{2})\s*hrs/i);
-  return match ? match[1] : "";
+  return match ? match[1].padStart(5, "0") : "";
 }
 
 function getPrepLocation(entry = {}) {
   const directRoad = (entry.road || "").toString().trim();
   const textMatch = (entry.text || "").match(/completed\s+at\s+([A-Z]{2}[–-][A-Z0-9]+)/i);
   const rawLocation = directRoad || (textMatch ? textMatch[1] : "");
-
   if (!rawLocation) return "";
-
-  return rawLocation
-    .replace(/-/g, "–")
-    .replace(/^(WD|ED)–/i, (_, depot) => `${depot.toUpperCase()}–`);
+  return rawLocation.replace(/-/g, "–").replace(/^(WD|ED)–/i, (_, depot) => `${depot.toUpperCase()}–`);
 }
 
 function getPrepTAName(entry = {}) {
@@ -53,14 +54,13 @@ function getPrepTAName(entry = {}) {
   const textMatch = (entry.text || "").match(/(?:Performed\s+by|by)\s+TA\s+(.+?)\.?$/i);
   const rawName = explicitName || (textMatch ? textMatch[1] : "");
   const cleanName = rawName.replace(/^TA\b\s*/i, "").replace(/\.$/, "").trim();
-
   return cleanName ? `TA ${cleanName}` : "";
 }
 
 function getPrepTrainKey(entry = {}) {
-  if (entry.trainKey) return entry.trainKey;
-  const match = (entry.text || "").match(/\b(T\d{1,2})\b/i);
-  return match ? match[1].toUpperCase().replace(/^T(\d)$/, "T0$1") : "";
+  if (entry.trainKey) return normalizeTrainKey(entry.trainKey);
+  const match = (entry.text || "").match(/\bT\d{1,2}\b/i);
+  return match ? normalizeTrainKey(match[0]) : "";
 }
 
 function buildGroupedPrepLogLines(prepLines = []) {
@@ -99,35 +99,29 @@ function buildGroupedPrepLogLines(prepLines = []) {
 function getPSTStartTime(entry = {}) {
   const directTime = (entry.startTime || entry.time || "").toString().trim();
   if (directTime) return directTime;
-
   const textMatch = (entry.text || "").match(/^(\d{1,2}:\d{2})\s*hrs/i);
-  return textMatch ? textMatch[1] : "";
+  return textMatch ? textMatch[1].padStart(5, "0") : "";
 }
 
 function getPSTEndTime(entry = {}) {
   const directTime = (entry.endTime || "").toString().trim();
   if (directTime) return directTime;
-
   const textMatch = (entry.text || "").match(/Completed\s+at\s+(\d{1,2}:\d{2})\s*hrs/i);
-  return textMatch ? textMatch[1] : getPSTStartTime(entry);
+  return textMatch ? textMatch[1].padStart(5, "0") : getPSTStartTime(entry);
 }
 
 function getPSTLocation(entry = {}) {
   const directRoad = (entry.road || "").toString().trim();
   const textMatch = (entry.text || "").match(/PST\s+commenced\s+at\s+([A-Z]{2}[–-][A-Z0-9]+)\s+for/i);
   const rawLocation = directRoad || (textMatch ? textMatch[1] : "");
-
   if (!rawLocation) return "";
-
-  return rawLocation
-    .replace(/-/g, "–")
-    .replace(/^(WD|ED)–/i, (_, depot) => `${depot.toUpperCase()}–`);
+  return rawLocation.replace(/-/g, "–").replace(/^(WD|ED)–/i, (_, depot) => `${depot.toUpperCase()}–`);
 }
 
 function getPSTTrainKey(entry = {}) {
-  if (entry.trainKey) return entry.trainKey;
-  const textMatch = (entry.text || "").match(/\b(T\d{1,2})\b/i);
-  return textMatch ? textMatch[1].toUpperCase().replace(/^T(\d)$/, "T0$1") : "";
+  if (entry.trainKey) return normalizeTrainKey(entry.trainKey);
+  const textMatch = (entry.text || "").match(/\bT\d{1,2}\b/i);
+  return textMatch ? normalizeTrainKey(textMatch[0]) : "";
 }
 
 function getPSTAlarmText(entry = {}) {
@@ -184,639 +178,437 @@ function getPSTSummaryEndTime(pstLines = []) {
   return getPSTEndTime(lastEntry) || getPSTStartTime(lastEntry);
 }
 
-function buildPSTCopyText(pstLines) {
-  if (pstLines.length === 0) return "";
+function getUniqueTrainKeys(lines = [], extractor) {
+  const keys = [];
+  lines.forEach((line) => {
+    const trainKey = extractor(line);
+    if (trainKey && !keys.includes(trainKey)) keys.push(trainKey);
+  });
+  return keys;
+}
+
+function getPSTSectionText(pstLines = [], depotLabel = "") {
+  if (!pstLines.length) return "";
   const groupedLines = buildGroupedPSTLogLines(pstLines);
-  const firstTime = getPSTStartTime(pstLines[0]);
-  const lastTime = getPSTSummaryEndTime(pstLines);
-
+  const trainList = getUniqueTrainKeys(pstLines, getPSTTrainKey).join(", ");
   return [
-    `Total PST completed: ${pstLines.length} train${pstLines.length !== 1 ? "s" : ""} conducted from ${firstTime} to ${lastTime} hrs.`,
-    "",
+    `PST at ${depotLabel} Depot: Total ${pstLines.length} train${pstLines.length !== 1 ? "s" : ""} completed from ${getPSTStartTime(pstLines[0])} to ${getPSTSummaryEndTime(pstLines)} hrs.`,
+    trainList ? `Train: ${trainList}` : "",
     ...groupedLines.map((group) => group.text),
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
-function buildPrepCopyText(prepLines, depotLabel) {
-  if (prepLines.length === 0) return "";
+function getPrepSectionText(prepLines = [], depotLabel = "") {
+  if (!prepLines.length) return "";
   const groupedLines = buildGroupedPrepLogLines(prepLines);
-  const firstTime = getLogDisplayTime(prepLines[0]);
-  const lastTime = getLogDisplayTime(prepLines[prepLines.length - 1]);
-
+  const trainList = getUniqueTrainKeys(prepLines, getPrepTrainKey).join(", ");
   return [
-    `Train Preparation at ${depotLabel} Depot: Total ${prepLines.length} train${prepLines.length !== 1 ? "s" : ""} completed from ${firstTime} to ${lastTime} hrs.`,
-    "",
+    `Train Preparation at ${depotLabel} Depot: Total ${prepLines.length} train${prepLines.length !== 1 ? "s" : ""} completed from ${getLogDisplayTime(prepLines[0])} to ${getLogDisplayTime(prepLines[prepLines.length - 1])} hrs.`,
+    trainList ? `Train: ${trainList}` : "",
     ...groupedLines.map((group) => group.text),
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
-function stripLeadingTime(line = "") {
-  return line.replace(/^\s*\d{1,2}:\d{2}\s*hrs\s*[–-]\s*/i, "");
+function buildDepotCopyText(depotLabel, lines = []) {
+  const pstLines = lines.filter(isPSTEntry);
+  const prepLines = lines.filter(isPrepEntry);
+  return [getPSTSectionText(pstLines, depotLabel), getPrepSectionText(prepLines, depotLabel)].filter(Boolean).join("\n\n");
 }
 
-function IconMenu({ color = "currentColor" }) {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round">
-      <line x1="4" y1="6" x2="20" y2="6" />
-      <line x1="4" y1="12" x2="20" y2="12" />
-      <line x1="4" y1="18" x2="20" y2="18" />
-    </svg>
-  );
-}
-
-function IconDepot({ color = "currentColor" }) {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 21h18" />
-      <path d="M5 21V9l7-4 7 4v12" />
-      <path d="M9 21v-7h6v7" />
-      <path d="M8 10h8" />
-    </svg>
-  );
-}
-
-function IconClock({ color = "currentColor" }) {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" />
-    </svg>
-  );
-}
-
-function IconCheck({ color = "currentColor" }) {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" />
-      <path d="m8.5 12.2 2.2 2.2 4.8-5" />
-    </svg>
-  );
-}
-
-function IconTrain({ color = "currentColor" }) {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="5" y="3" width="14" height="14" rx="3" />
-      <path d="M8 17l-2 4" />
-      <path d="M18 21l-2-4" />
-      <path d="M9 7h6" />
-      <path d="M8 12h.01M16 12h.01" />
-    </svg>
-  );
-}
-
-function IconCopy({ color = "currentColor" }) {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="9" y="9" width="11" height="11" rx="2" />
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-  );
-}
-
-function IconTrash({ color = "currentColor" }) {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 6h18" />
-      <path d="M8 6V4h8v2" />
-      <path d="m19 6-1 14H6L5 6" />
-      <path d="M10 11v5M14 11v5" />
-    </svg>
-  );
-}
-
-function CopyBtn({ text, label, disabled, accent = "#58a6ff" }) {
+function CopyButton({ text, label, disabled }) {
   const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    if (disabled || !text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setCopied(false);
+    }
+  };
 
   return (
     <button
       type="button"
-      onClick={() => {
-        if (disabled) return;
-        navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }}
+      onClick={handleCopy}
       disabled={disabled}
-      className="pst-copy-button"
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 4,
-        minHeight: 22,
-        padding: "0 8px",
-        borderRadius: 999,
-        border: `1px solid ${copied ? "#22c55e" : `${accent}55`}`,
-        background: copied
-          ? "linear-gradient(135deg, rgba(34,197,94,0.95), rgba(22,163,74,0.9))"
-          : `linear-gradient(135deg, ${accent}24, rgba(255,255,255,0.045))`,
-        color: copied ? "#ffffff" : "#dce9f7",
-        fontSize: 10,
-        fontWeight: 750,
-        letterSpacing: "0.01em",
-        boxShadow: disabled ? "none" : `0 0 10px ${accent}14, inset 0 1px 0 rgba(255,255,255,0.06)`,
-        opacity: disabled ? 0.42 : 1,
-        cursor: disabled ? "not-allowed" : "pointer",
-        transition: "transform .15s ease, border-color .15s ease, background .15s ease",
-        whiteSpace: "nowrap",
-      }}
+      className="pst-plain-button"
+      title={`Copy ${label}`}
     >
-      <IconCopy color="currentColor" />
       {copied ? "Copied" : label}
     </button>
   );
 }
 
-function SectionTitle({ title, count, accent, type }) {
-  const icon = type === "prep" ? <IconTrain color={accent} /> : <IconCheck color={accent} />;
+function ClearDepotButton({ depotLabel, disabled, onClear }) {
+  const [confirm, setConfirm] = useState(false);
 
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        padding: "0 1px 4px",
-      }}
-    >
-      <span
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: 999,
-          background: accent,
-          boxShadow: `0 0 8px ${accent}`,
-          flexShrink: 0,
-        }}
-      />
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: accent }}>
-        {icon}
-      </span>
-      <span
-        className="pst-section-title"
-        style={{
-          color: accent,
-          fontSize: 11.5,
-          fontWeight: 850,
-          letterSpacing: "0.11em",
-          textTransform: "uppercase",
-          lineHeight: 1.1,
-        }}
-      >
-        {title} ({count})
-      </span>
-    </div>
-  );
-}
-
-function SummaryBar({ children, accent, type }) {
-  return (
-    <div
-      className="pst-summary-bar"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        width: "100%",
-        minHeight: 28,
-        padding: "5px 9px",
-        borderRadius: 10,
-        border: `1px solid ${accent}3d`,
-        background: `linear-gradient(135deg, ${accent}12, rgba(255,255,255,0.035))`,
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
-      }}
-    >
-      <span
-        style={{
-          width: 20,
-          height: 20,
-          borderRadius: 999,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          border: `1px solid ${accent}66`,
-          background: `${accent}17`,
-          color: accent,
-        }}
-      >
-        {type === "prep" ? <IconTrain color="currentColor" /> : <IconCheck color="currentColor" />}
-      </span>
-      <p className="pst-summary-text" style={{ margin: 0, color: "#e5edf7", fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", fontSize: 10.8, fontWeight: 750, lineHeight: 1.28 }}>
-        {children}
-      </p>
-    </div>
-  );
-}
-
-function LogRow({ group, accent, type, onRemove }) {
-  const time = type === "pst" ? group.startTime : group.time;
-  const body = stripLeadingTime(group.text);
-
-  return (
-    <div
-      className="pst-log-row group"
-      style={{
-        display: "grid",
-        gridTemplateColumns: "91px minmax(0,1fr) 20px",
-        alignItems: "start",
-        gap: 7,
-        minHeight: 26,
-        padding: "4px 7px",
-        borderRadius: 6,
-        border: "1px solid rgba(43,79,107,0.32)",
-        background: "linear-gradient(90deg, rgba(6,19,32,0.92), rgba(8,31,50,0.68))",
-      }}
-    >
-      <div
-        className="pst-row-time"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 5,
-          color: accent,
-          fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-          fontSize: 10.8,
-          fontWeight: 850,
-          lineHeight: 1.3,
-          whiteSpace: "nowrap",
-        }}
-      >
-        <IconClock color="currentColor" />
-        {time || "--:--"} hrs
-      </div>
-
-      <p
-        className="pst-log-line-text"
-        style={{
-          margin: 0,
-          color: "#cbd8e6",
-          fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-          fontSize: 10.8,
-          fontWeight: 600,
-          lineHeight: 1.32,
-          wordBreak: "break-word",
-          overflowWrap: "anywhere",
-        }}
-      >
-        {body}
-      </p>
-
-      <button
-        type="button"
-        onClick={() => group.entries.forEach((entry) => onRemove(entry.key))}
-        title={group.entries.length > 1 ? `Remove ${type === "pst" ? "grouped PST entries" : "grouped Train Prep entries"}` : `Remove ${type === "pst" ? "PST entry" : "Train Prep entry"}`}
-        className="pst-remove-button"
-        style={{
-          width: 18,
-          height: 18,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          borderRadius: 6,
-          border: "1px solid rgba(43,79,107,0.35)",
-          background: "rgba(255,255,255,0.025)",
-          color: "#526e8c",
-          opacity: 0.38,
-          cursor: "pointer",
-          transition: "opacity .15s ease, color .15s ease, border-color .15s ease",
-        }}
-      >
-        <X className="w-3 h-3" />
-      </button>
-    </div>
-  );
-}
-
-function EmptyDepot({ label }) {
-  return (
-    <div
-      style={{
-        minHeight: 74,
-        borderRadius: 12,
-        border: "1px dashed rgba(74,138,181,0.35)",
-        background: "rgba(7,24,40,0.76)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 6,
-        color: "#5f7d9c",
-      }}
-    >
-      <IconMenu color="#5f7d9c" />
-      <span style={{ fontSize: 10.5, fontWeight: 700 }}>No entries for {label} Depot</span>
-    </div>
-  );
-}
-
-function PSTDepotBlock({ label, lines, onRemove, onClearDepot }) {
-  const safeLines = Array.isArray(lines) ? lines : [];
-  const pstLines = safeLines.filter(isPSTEntry);
-  const prepLines = safeLines.filter(isPrepEntry);
-  const groupedPSTLines = buildGroupedPSTLogLines(pstLines);
-  const groupedPrepLines = buildGroupedPrepLogLines(prepLines);
-  const isWest = label === "West";
-  const [confirmClear, setConfirmClear] = useState(false);
-  const depotAccent = isWest ? "#c084fc" : "#22d3ee";
-  const depotAccentAlt = isWest ? "#7c3aed" : "#0891b2";
-  const pstAccent = "#22c55e";
-  const prepAccent = "#38bdf8";
-
-  const handleDepotClear = () => {
-    if (confirmClear) {
-      onClearDepot?.();
-      setConfirmClear(false);
-    } else {
-      setConfirmClear(true);
-      setTimeout(() => setConfirmClear(false), 3000);
+  const handleClear = () => {
+    if (disabled || !onClear) return;
+    if (!confirm) {
+      setConfirm(true);
+      window.setTimeout(() => setConfirm(false), 2200);
+      return;
     }
+    onClear();
+    setConfirm(false);
   };
 
   return (
-    <section
-      className="pst-depot-card"
-      style={{
-        position: "relative",
-        overflow: "hidden",
-        borderRadius: 14,
-        border: `1px solid ${depotAccent}36`,
-        background: "linear-gradient(145deg, rgba(9,28,47,0.98), rgba(5,16,28,0.98))",
-        boxShadow: `0 10px 18px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 0 1px ${depotAccent}10`,
-      }}
+    <button
+      type="button"
+      onClick={handleClear}
+      disabled={disabled}
+      className={confirm ? "pst-plain-button pst-plain-danger" : "pst-plain-button"}
+      title={`Clear ${depotLabel} Depot log`}
     >
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 4,
-          background: `linear-gradient(180deg, ${depotAccent}, ${depotAccentAlt})`,
-          boxShadow: `0 0 16px ${depotAccent}55`,
-        }}
-      />
+      {confirm ? "Confirm" : "Clear"}
+    </button>
+  );
+}
 
-      <div style={{ padding: "10px 10px 10px 15px" }}>
-        <div
-          className="pst-depot-header"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 8,
-            marginBottom: 8,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
-            <div
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: 999,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: `1px solid ${depotAccent}55`,
-                color: depotAccent,
-                background: `radial-gradient(circle at 35% 28%, ${depotAccent}33, ${depotAccentAlt}18 58%, rgba(6,18,31,0.92))`,
-                boxShadow: `0 0 14px ${depotAccent}20, inset 0 1px 0 rgba(255,255,255,0.07)`,
-                flexShrink: 0,
-              }}
-            >
-              <IconDepot color="currentColor" />
-            </div>
-
-            <div style={{ minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
-                <h3
-                  className="pst-depot-title"
-                  style={{
-                    margin: 0,
-                    color: depotAccent,
-                    fontSize: 14,
-                    fontWeight: 900,
-                    letterSpacing: "0.10em",
-                    lineHeight: 1.1,
-                    textTransform: "uppercase",
-                    whiteSpace: "nowrap",
-                    textShadow: `0 0 18px ${depotAccent}30`,
-                  }}
-                >
-                  {label} Depot
-                </h3>
-
-                <span
-                  style={{
-                    color: depotAccent,
-                    fontSize: 10.5,
-                    fontWeight: 750,
-                    letterSpacing: "0.02em",
-                    opacity: 0.85,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {safeLines.length} {safeLines.length === 1 ? "entry" : "entries"}
-                </span>
-              </div>
-
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 5 }}>
-                <CopyBtn text={buildPSTCopyText(pstLines)} label="PST" disabled={pstLines.length === 0} accent={depotAccent} />
-                <CopyBtn text={buildPrepCopyText(prepLines, label)} label="Train Prep" disabled={prepLines.length === 0} accent={prepAccent} />
-              </div>
-            </div>
-          </div>
-
-          {safeLines.length > 0 && (
+function PlainRows({ groups, onRemove }) {
+  return (
+    <div className="pst-plain-lines">
+      {groups.map((group) => (
+        <div className="pst-plain-row" key={group.key}>
+          <span className="pst-plain-row-text">{group.text}</span>
+          {onRemove && group.entries?.length > 0 && (
             <button
               type="button"
-              onClick={handleDepotClear}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 5,
-                minHeight: 24,
-                padding: "0 8px",
-                borderRadius: 999,
-                border: `1px solid ${confirmClear ? "#ef4444" : "rgba(74,138,181,0.36)"}`,
-                background: confirmClear ? "linear-gradient(135deg,#dc2626,#991b1b)" : "rgba(255,255,255,0.025)",
-                color: confirmClear ? "#ffffff" : "#8ca6c2",
-                fontSize: 10,
-                fontWeight: 750,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-              title={`Clear all ${label} Depot PST / Train Prep log entries`}
+              className="pst-plain-remove"
+              onClick={() => group.entries.forEach((entry) => onRemove(entry.key))}
+              title="Remove this log line"
             >
-              <IconTrash color="currentColor" />
-              {confirmClear ? "Confirm" : "Clear"}
+              ×
             </button>
           )}
         </div>
+      ))}
+    </div>
+  );
+}
 
-        {safeLines.length === 0 ? (
-          <EmptyDepot label={label} />
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {pstLines.length > 0 && (
-              <section
-                style={{
-                  borderRadius: 12,
-                  border: "1px solid rgba(34,197,94,0.22)",
-                  background: "linear-gradient(180deg, rgba(6,20,33,0.86), rgba(4,14,24,0.92))",
-                  padding: 7,
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
-                }}
-              >
-                <SectionTitle title="PST" count={pstLines.length} accent={pstAccent} type="pst" />
-                <SummaryBar accent={pstAccent} type="pst">
-                  Total PST completed: {pstLines.length} train{pstLines.length !== 1 ? "s" : ""} conducted from {getPSTStartTime(pstLines[0])} to {getPSTSummaryEndTime(pstLines)} hrs.
-                </SummaryBar>
-                <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 5 }}>
-                  {groupedPSTLines.map((group) => (
-                    <LogRow key={group.key} group={group} accent={pstAccent} type="pst" onRemove={onRemove} />
-                  ))}
-                </div>
-              </section>
-            )}
+function PlainSection({ title, summary, trainLine, groups, emptyText, onRemove }) {
+  if (!groups.length) {
+    return (
+      <section className="pst-plain-section">
+        <div className="pst-plain-title">{title}</div>
+        <div className="pst-plain-empty">{emptyText}</div>
+      </section>
+    );
+  }
 
-            {prepLines.length > 0 && (
-              <section
-                style={{
-                  borderRadius: 12,
-                  border: "1px solid rgba(56,189,248,0.22)",
-                  background: "linear-gradient(180deg, rgba(6,20,33,0.86), rgba(4,14,24,0.92))",
-                  padding: 7,
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
-                }}
-              >
-                <SectionTitle title="Train Prep" count={prepLines.length} accent={prepAccent} type="prep" />
-                <SummaryBar accent={prepAccent} type="prep">
-                  Train Preparation at {label} Depot: Total {prepLines.length} train{prepLines.length !== 1 ? "s" : ""} completed from {getLogDisplayTime(prepLines[0])} to {getLogDisplayTime(prepLines[prepLines.length - 1])} hrs.
-                </SummaryBar>
-                <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 5 }}>
-                  {groupedPrepLines.map((group) => (
-                    <LogRow key={group.key} group={group} accent={prepAccent} type="prep" onRemove={onRemove} />
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
-        )}
-      </div>
+  return (
+    <section className="pst-plain-section">
+      <div className="pst-plain-title">{title}</div>
+      <div className="pst-plain-summary">{summary}</div>
+      {trainLine && <div className="pst-plain-train">{trainLine}</div>}
+      <PlainRows groups={groups} onRemove={onRemove} />
     </section>
+  );
+}
+
+function DepotPlainBlock({ depotLabel, lines = [], onRemove, onClearDepot }) {
+  const pstLines = lines.filter(isPSTEntry);
+  const prepLines = lines.filter(isPrepEntry);
+  const groupedPSTLines = buildGroupedPSTLogLines(pstLines);
+  const groupedPrepLines = buildGroupedPrepLogLines(prepLines);
+  const pstTrainList = getUniqueTrainKeys(pstLines, getPSTTrainKey).join(", ");
+  const prepTrainList = getUniqueTrainKeys(prepLines, getPrepTrainKey).join(", ");
+  const depotText = buildDepotCopyText(depotLabel, lines);
+
+  const pstSummary = pstLines.length
+    ? `PST at ${depotLabel} Depot: Total ${pstLines.length} train${pstLines.length !== 1 ? "s" : ""} completed from ${getPSTStartTime(pstLines[0])} to ${getPSTSummaryEndTime(pstLines)} hrs.`
+    : "";
+
+  const prepSummary = prepLines.length
+    ? `Train Preparation at ${depotLabel} Depot: Total ${prepLines.length} train${prepLines.length !== 1 ? "s" : ""} completed from ${getLogDisplayTime(prepLines[0])} to ${getLogDisplayTime(prepLines[prepLines.length - 1])} hrs.`
+    : "";
+
+  return (
+    <div className="pst-plain-depot">
+      <div className="pst-plain-depot-header">
+        <div>
+          <div className="pst-plain-depot-title">{depotLabel.toUpperCase()} DEPOT</div>
+          <div className="pst-plain-count">{lines.length} {lines.length === 1 ? "entry" : "entries"}</div>
+        </div>
+        <div className="pst-plain-actions">
+          <CopyButton text={getPSTSectionText(pstLines, depotLabel)} label="PST" disabled={!pstLines.length} />
+          <CopyButton text={getPrepSectionText(prepLines, depotLabel)} label="Train Prep" disabled={!prepLines.length} />
+          <CopyButton text={depotText} label="Copy All" disabled={!lines.length} />
+          <ClearDepotButton depotLabel={depotLabel} disabled={!lines.length} onClear={onClearDepot} />
+        </div>
+      </div>
+
+      <PlainSection
+        title="PST"
+        summary={pstSummary}
+        trainLine={pstTrainList ? `Train: ${pstTrainList}` : ""}
+        groups={groupedPSTLines}
+        emptyText="No PST entries."
+        onRemove={onRemove}
+      />
+
+      <PlainSection
+        title="Train Prep"
+        summary={prepSummary}
+        trainLine={prepTrainList ? `Train: ${prepTrainList}` : ""}
+        groups={groupedPrepLines}
+        emptyText="No Train Prep entries."
+        onRemove={onRemove}
+      />
+    </div>
   );
 }
 
 export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
   const safeLogLines = Array.isArray(logLines) ? logLines : [];
-  const westLines = safeLogLines.filter((l) => l.depot === "west");
-  const eastLines = safeLogLines.filter((l) => l.depot === "east");
+  const westLines = safeLogLines.filter((line) => line.depot === "west");
+  const eastLines = safeLogLines.filter((line) => line.depot === "east");
+  const allCopyText = [buildDepotCopyText("West", westLines), buildDepotCopyText("East", eastLines)].filter(Boolean).join("\n\n");
 
   return (
-    <div
-      className="pst-log-shell"
-      style={{
-        height: "100%",
-        maxHeight: "100%",
-        minHeight: 0,
-        display: "flex",
-        flexDirection: "column",
-        borderRadius: 14,
-        border: "1px solid rgba(79,142,247,0.30)",
-        background: "linear-gradient(180deg, rgba(8,31,51,0.98), rgba(4,14,24,0.99))",
-        boxShadow: "0 24px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)",
-        overflow: "hidden",
-      }}
-    >
+    <div className="pst-log-shell">
       <style>{`
-        .pst-log-shell button:hover:not(:disabled) { transform: translateY(-1px); }
-        .pst-log-row:hover { border-color: rgba(88,166,255,0.38) !important; background: linear-gradient(90deg, rgba(8,28,47,0.96), rgba(10,43,69,0.78)) !important; }
-        .pst-log-row:hover .pst-remove-button { opacity: 1 !important; color: #fb7185 !important; border-color: rgba(251,113,133,0.35) !important; }
-        @media (max-width: 640px) {
-          .pst-depot-header { align-items: flex-start !important; flex-direction: column !important; }
-          .pst-log-row { grid-template-columns: 1fr 24px !important; }
-          .pst-row-time { grid-column: 1 / 2; }
-          .pst-log-line-text { grid-column: 1 / 2; }
-          .pst-remove-button { grid-column: 2 / 3; grid-row: 1 / 3; }
+        .pst-log-shell {
+          height: 100%;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          border-radius: 8px;
+          border: 1px solid #234764;
+          background: #061523;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 18px 34px rgba(0,0,0,0.28);
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        .pst-plain-header {
+          flex: 0 0 auto;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          min-height: 38px;
+          padding: 6px 9px;
+          border-bottom: 1px solid #234764;
+          background: #082239;
+        }
+
+        .pst-plain-main-title {
+          margin: 0;
+          color: #eef7ff;
+          font-size: 12px;
+          line-height: 1.05;
+          font-weight: 800;
+          letter-spacing: 0.03em;
+        }
+
+        .pst-plain-main-count {
+          margin: 2px 0 0;
+          color: #69b9ee;
+          font-size: 9px;
+          line-height: 1;
+          font-weight: 700;
+        }
+
+        .pst-log-scroll {
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          -webkit-overflow-scrolling: touch;
+          padding: 7px;
+          scrollbar-width: thin;
+          scrollbar-color: #3c7297 #061523;
+        }
+
+        .pst-log-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .pst-log-scroll::-webkit-scrollbar-track { background: #061523; }
+        .pst-log-scroll::-webkit-scrollbar-thumb { background: #3c7297; border-radius: 999px; }
+
+        .pst-plain-depot {
+          border: 1px solid #15344c;
+          background: #06111d;
+          margin-bottom: 8px;
+        }
+
+        .pst-plain-depot-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          padding: 5px 7px;
+          border-bottom: 1px solid #15344c;
+          background: #071d30;
+        }
+
+        .pst-plain-depot-title {
+          color: #a7e6ff;
+          font-size: 10px;
+          line-height: 1.05;
+          font-weight: 800;
+          letter-spacing: 0.12em;
+        }
+
+        .pst-plain-count {
+          color: #6d91aa;
+          font-size: 8px;
+          line-height: 1;
+          margin-top: 2px;
+          font-weight: 700;
+        }
+
+        .pst-plain-actions {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 4px;
+          flex-wrap: wrap;
+        }
+
+        .pst-plain-button {
+          height: 18px;
+          padding: 0 7px;
+          border: 1px solid #31536b;
+          border-radius: 999px;
+          background: #0b2338;
+          color: #b7d9ee;
+          font-size: 8px;
+          font-weight: 800;
+          line-height: 1;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .pst-plain-button:hover:not(:disabled) {
+          border-color: #65a7d1;
+          color: #ffffff;
+        }
+
+        .pst-plain-button:disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+        }
+
+        .pst-plain-danger {
+          border-color: #ef4444 !important;
+          background: #7f1d1d !important;
+          color: #ffffff !important;
+        }
+
+        .pst-plain-section {
+          padding: 5px 7px 7px;
+          border-top: 1px solid rgba(35,71,100,0.52);
+        }
+
+        .pst-plain-section:first-of-type {
+          border-top: 0;
+        }
+
+        .pst-plain-title {
+          color: #69d2ff;
+          font-size: 9px;
+          line-height: 1.05;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-bottom: 4px;
+        }
+
+        .pst-plain-summary,
+        .pst-plain-train,
+        .pst-plain-row-text,
+        .pst-plain-empty {
+          font-size: 9px;
+          line-height: 1.42;
+          color: #e8f0f7;
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
+
+        .pst-plain-summary {
+          color: #f3f7fb;
+          font-weight: 800;
+          margin-bottom: 1px;
+        }
+
+        .pst-plain-train {
+          color: #c8d9e7;
+          margin-bottom: 4px;
+        }
+
+        .pst-plain-lines {
+          display: flex;
+          flex-direction: column;
+          gap: 1px;
+        }
+
+        .pst-plain-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 16px;
+          gap: 4px;
+          align-items: start;
+          min-height: 14px;
+        }
+
+        .pst-plain-remove {
+          width: 14px;
+          height: 14px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 0;
+          border-radius: 3px;
+          background: transparent;
+          color: #49677a;
+          font-size: 12px;
+          line-height: 1;
+          cursor: pointer;
+          opacity: 0;
+        }
+
+        .pst-plain-row:hover .pst-plain-remove {
+          opacity: 1;
+        }
+
+        .pst-plain-remove:hover {
+          color: #ff7b8f;
+          background: rgba(255,123,143,0.10);
+        }
+
+        .pst-plain-empty {
+          color: #637f92;
+          font-style: italic;
         }
       `}</style>
 
-      <header
-        className="pst-log-header"
-        style={{
-          flexShrink: 0,
-          position: "sticky",
-          top: 0,
-          zIndex: 5,
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "9px 12px",
-          borderBottom: "1px solid rgba(43,79,107,0.72)",
-          background: "linear-gradient(135deg, rgba(10,42,68,0.98), rgba(6,22,37,0.98))",
-          backdropFilter: "blur(10px)",
-        }}
-      >
-        <div
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 10,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            border: "1px solid rgba(79,142,247,0.45)",
-            color: "#7da9ff",
-            background: "linear-gradient(135deg, rgba(79,142,247,0.18), rgba(6,18,31,0.68))",
-            boxShadow: "0 0 12px rgba(79,142,247,0.16), inset 0 1px 0 rgba(255,255,255,0.06)",
-            flexShrink: 0,
-          }}
-        >
-          <IconMenu color="currentColor" />
+      <header className="pst-plain-header">
+        <div>
+          <p className="pst-plain-main-title">PST / Train Prep Log</p>
+          <p className="pst-plain-main-count">{safeLogLines.length} {safeLogLines.length === 1 ? "entry" : "entries"}</p>
         </div>
-
-        <div style={{ minWidth: 0 }}>
-          <p
-            className="pst-log-title-main"
-            style={{
-              margin: 0,
-              color: "#ffffff",
-              fontSize: 14.5,
-              fontWeight: 900,
-              letterSpacing: "0.04em",
-              lineHeight: 1.1,
-            }}
-          >
-            PST / Train Prep Log
-          </p>
-          <p style={{ margin: "2px 0 0", color: "#7cc7ff", fontSize: 10.5, fontWeight: 650, lineHeight: 1.15 }}>
-            {safeLogLines.length} {safeLogLines.length === 1 ? "entry" : "entries"}
-          </p>
+        <div className="pst-plain-actions">
+          <CopyButton text={allCopyText} label="Copy All" disabled={!safeLogLines.length} />
         </div>
       </header>
 
-      <div
-        className="pst-log-scroll"
-        style={{
-          flex: "1 1 auto",
-          minHeight: 0,
-          overflowY: "auto",
-          overscrollBehavior: "contain",
-          WebkitOverflowScrolling: "touch",
-          padding: "8px 8px 18px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-          scrollbarWidth: "thin",
-          scrollbarColor: "rgba(88,166,255,0.42) rgba(7,24,40,0.9)",
-        }}
-      >
-        <PSTDepotBlock label="West" lines={westLines} onRemove={onRemove} onClearDepot={() => onClearDepot("west")} />
-        <PSTDepotBlock label="East" lines={eastLines} onRemove={onRemove} onClearDepot={() => onClearDepot("east")} />
+      <div className="pst-log-scroll">
+        <DepotPlainBlock
+          depotLabel="West"
+          lines={westLines}
+          onRemove={onRemove}
+          onClearDepot={() => onClearDepot?.("west")}
+        />
+        <DepotPlainBlock
+          depotLabel="East"
+          lines={eastLines}
+          onRemove={onRemove}
+          onClearDepot={() => onClearDepot?.("east")}
+        />
       </div>
     </div>
   );
