@@ -6649,10 +6649,15 @@ function PSTTabContent
   const handleDownloadExcel = (depot) => {
     if (downloadingExcelDepot) return;
 
+    const isCombinedDepot = depot === "combined" || depot === "all" || depot === "";
     const normalizedDepot = depot === "west" || depot === "east" ? depot : "";
-    const depotLabel = normalizedDepot === "west" ? "West Depot" : "East Depot";
+    const downloadKey = isCombinedDepot ? "combined" : normalizedDepot;
+    const depotLabel = isCombinedDepot ? "Combined West + East Depot" : normalizedDepot === "west" ? "West Depot" : "East Depot";
     const completedEntries = (exportLogLines || [])
-      .filter((entry) => (isPSTLogEntry(entry) || isTrainPrepLogEntry(entry)) && getPSTDepotFromEntry(entry) === normalizedDepot);
+      .filter((entry) => {
+        if (!isPSTLogEntry(entry) && !isTrainPrepLogEntry(entry)) return false;
+        return isCombinedDepot || getPSTDepotFromEntry(entry) === normalizedDepot;
+      });
     const pstEntries = completedEntries.filter(isPSTLogEntry);
 
     if (completedEntries.length === 0) {
@@ -6661,13 +6666,26 @@ function PSTTabContent
     }
 
     const completedBy = normalizeCompletedByNames(safeCompletedByNames);
-    if (pstEntries.length > 0 && !completedBy[normalizedDepot]) {
+    const hasWestPST = pstEntries.some((entry) => getPSTDepotFromEntry(entry) === "west");
+    const hasEastPST = pstEntries.some((entry) => getPSTDepotFromEntry(entry) === "east");
+
+    if (!isCombinedDepot && pstEntries.length > 0 && !completedBy[normalizedDepot]) {
       alert(`Please enter ${depotLabel} completed by name before downloading the Excel file.`);
       return;
     }
 
+    if (isCombinedDepot && hasWestPST && !completedBy.west) {
+      alert("Please enter West Depot completed by name before downloading the combined Excel file.");
+      return;
+    }
+
+    if (isCombinedDepot && hasEastPST && !completedBy.east) {
+      alert("Please enter East Depot completed by name before downloading the combined Excel file.");
+      return;
+    }
+
     try { localStorage.setItem("pstExcelCompletedByNames", JSON.stringify(completedBy)); } catch {}
-    setDownloadingExcelDepot(normalizedDepot);
+    setDownloadingExcelDepot(downloadKey);
 
     try {
       downloadPSTExcelExport(exportLogLines, completedBy, normalizedDepot);
@@ -6833,6 +6851,27 @@ function PSTTabContent
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
               {downloadingExcelDepot === "east" ? "Preparing..." : "East Excel"}
+            </button>
+
+
+            <button
+              onClick={() => handleDownloadExcel("combined")}
+              disabled={Boolean(downloadingExcelDepot)}
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
+              style={{
+                background: "linear-gradient(135deg, rgba(20,184,166,0.18), rgba(14,116,144,0.22))",
+                borderColor: "rgba(94,234,212,0.58)",
+                color: "#ccfbf1",
+                boxShadow: "0 0 18px rgba(20,184,166,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
+              }}
+              title="Download combined West + East Depot Excel"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              {downloadingExcelDepot === "combined" ? "Preparing..." : "Combined Excel"}
             </button>
           </div>
         </div>
@@ -12518,6 +12557,7 @@ function buildPSTFormRows() {
 
 function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = "") {
   const normalizedDepot = depotFilter === "west" || depotFilter === "east" ? depotFilter : "";
+  const combinedRl3Rows = buildPSTExportRows(logLines, completedBy, "");
   const westRl3Rows = buildPSTExportRows(logLines, completedBy, "west");
   const eastRl3Rows = buildPSTExportRows(logLines, completedBy, "east");
   const formRows = buildPSTFormRows();
@@ -12629,15 +12669,17 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = ""
     ]);
   }
 
+  const combinedRl3Xml = buildRL3WorksheetXml(combinedRl3Rows);
   const westRl3Xml = buildRL3WorksheetXml(westRl3Rows);
   const eastRl3Xml = buildRL3WorksheetXml(eastRl3Rows);
 
   const workbookXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <sheets>
-    <sheet name="WEST DEPOT" sheetId="1" r:id="rId1"/>
-    <sheet name="EAST DEPOT" sheetId="2" r:id="rId2"/>
-    <sheet name="FORM" sheetId="3" r:id="rId3"/>
+    <sheet name="WEST + EAST" sheetId="1" r:id="rId1"/>
+    <sheet name="WEST DEPOT" sheetId="2" r:id="rId2"/>
+    <sheet name="EAST DEPOT" sheetId="3" r:id="rId3"/>
+    <sheet name="FORM" sheetId="4" r:id="rId4"/>
   </sheets>
 </workbook>`;
 
@@ -12646,7 +12688,8 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = ""
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
   <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/>
-  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet4.xml"/>
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 </Relationships>`;
 
   const contentTypesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -12657,6 +12700,7 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = ""
   <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
   <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
   <Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet4.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
   <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
 </Types>`;
 
@@ -12665,9 +12709,10 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = ""
     { name: "_rels/.rels", data: packageRelsXml },
     { name: "xl/workbook.xml", data: workbookXml },
     { name: "xl/_rels/workbook.xml.rels", data: workbookRelsXml },
-    { name: "xl/worksheets/sheet1.xml", data: westRl3Xml },
-    { name: "xl/worksheets/sheet2.xml", data: eastRl3Xml },
-    { name: "xl/worksheets/sheet3.xml", data: formXml },
+    { name: "xl/worksheets/sheet1.xml", data: combinedRl3Xml },
+    { name: "xl/worksheets/sheet2.xml", data: westRl3Xml },
+    { name: "xl/worksheets/sheet3.xml", data: eastRl3Xml },
+    { name: "xl/worksheets/sheet4.xml", data: formXml },
     { name: "xl/styles.xml", data: stylesXml },
   ]);
 }
