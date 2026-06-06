@@ -2607,6 +2607,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   // PST no longer asks for Alarm / No Alarm. Legacy confirming states are handled by the PST click handler.
   const isPstConfirming = false;
   const pstEstimateTime = isPstDone ? (pst?.endTime || "") : "";
+  const pstStartTime = isPstDone ? (pst?.startTime || "") : "";
   const isPrepStarted = false;
   const isPrepDone = prep?.done;
   if (isPstDone) { trainColor = "#4ade80"; }
@@ -2628,7 +2629,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   const pstRowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
   return (
     <td className="p-1.5 align-top" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: pstRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-      <div className="relative flex flex-col items-center justify-start gap-1 rounded-xl" style={{ minHeight: isPrepDone ? 132 : pstEstimateTime ? 102 : 90, padding: "7px 5px", background: pstCardBg, border: pstCardBorder, boxShadow: key ? "0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)" : undefined }}>
+      <div className="relative flex flex-col items-center justify-start gap-1 rounded-xl" style={{ minHeight: isPrepDone ? 156 : isPstDone ? 128 : pstEstimateTime ? 102 : 90, padding: "7px 5px", background: pstCardBg, border: pstCardBorder, boxShadow: key ? "0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)" : undefined }}>
         {key && (
           <div className="absolute top-1 right-1.5 opacity-20 pointer-events-none">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={trainColor} strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/></svg>
@@ -2641,10 +2642,35 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
         {key && pstEstimateTime && (
           <span
             className="rounded-full border border-red-500/80 bg-red-950/55 px-1.5 py-0.5 text-[9px] font-normal tracking-wide text-red-200 shadow-[0_0_10px_rgba(239,68,68,0.34)] whitespace-nowrap"
-            title={`Estimated PST completed at ${pstEstimateTime} hrs`}
+            title={`PST completed at ${pstEstimateTime} hrs`}
           >
             {pstEstimateTime}
           </span>
+        )}
+        {key && isPstDone && (
+          <div className="w-full rounded-lg border border-emerald-500/60 bg-emerald-950/30 px-1 py-1">
+            <div className="mb-0.5 text-center text-[8px] font-black uppercase tracking-wide text-emerald-300">PST Time</div>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={5}
+              value={pstStartTime}
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                const value = String(pstStartTime || "");
+                const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                  e.preventDefault();
+                  onPSTStartTimeChange?.(road, bi, key, value.slice(0, -2));
+                }
+              }}
+              onChange={(e) => onPSTStartTimeChange?.(road, bi, key, cleanMovementCustomTimeInput(e.target.value))}
+              onBlur={(e) => onPSTStartTimeChange?.(road, bi, key, normalizeMovementCustomTimeInput(e.target.value))}
+              placeholder="00:00"
+              className="w-full rounded-md border border-emerald-500/50 bg-[#071828] px-1 py-0.5 text-center text-[10px] font-normal leading-tight text-emerald-100 outline-none placeholder:text-emerald-700 focus:border-emerald-300"
+              title="Edit PST start time. Completion time updates automatically +6 minutes."
+            />
+          </div>
         )}
         {key && (
           <div className="flex flex-col gap-1 w-full mt-1">
@@ -9152,27 +9178,61 @@ export default function DepotStablingPage() {
 
   const getDepotFromRoad = (road) => WEST_ROADS.includes(road) ? "west" : "east";
 
+  const buildPSTLogLine = (startTime, endTime, road, trainKey, alarmStatus = "no_alarm") => {
+    const paddedKey = padTrainId(normalizeTrainId(trainKey));
+    const depotLabel = WEST_ROADS.includes(road) ? "WD" : "ED";
+    const roadFormatted = road.replace(/^(WD|ED)-/, `${depotLabel}–`);
+    const alarmText = alarmStatus === "alarm" ? " Alarm reported." : " No alarm reported.";
+    return `${startTime} hrs – PST commenced at ${roadFormatted} for ${paddedKey}. Completed at ${endTime} hrs.${alarmText}`;
+  };
+
   const handlePSTStartTimeChange = useCallback((road, bi, trainKey, startTime) => {
     const cleanStartTime = cleanMovementCustomTimeInput(startTime);
 
     markPSTLiveLocalEdit();
     const cellKey = `${road}-${bi}`;
+    const logKey = `pst-${cellKey}`;
+    const currentPst = pstState[cellKey];
+    if (!currentPst) return;
+
+    const paddedKey = padTrainId(normalizeTrainId(trainKey || currentPst.trainKey));
     const isCompleteTime = /^\d{2}:\d{2}$/.test(cleanStartTime);
+    const endTime = isCompleteTime ? addMinutesToHHMM(cleanStartTime, 6) : currentPst.endTime;
+    const alarmStatus = currentPst.alarmStatus || "no_alarm";
 
     setPstState((prev) => {
       const current = prev[cellKey];
       if (!current) return prev;
-      const endTime = isCompleteTime ? addMinutesToHHMM(cleanStartTime, 6) : current.endTime;
       return {
         ...prev,
         [cellKey]: {
           ...current,
           startTime: cleanStartTime,
           endTime,
+          trainKey: paddedKey || current.trainKey,
         },
       };
     });
-  }, [markPSTLiveLocalEdit]);
+
+    if (currentPst.done && isCompleteTime) {
+      const depot = getDepotFromRoad(road);
+      const nextLogEntry = {
+        key: logKey,
+        text: buildPSTLogLine(cleanStartTime, endTime, road, paddedKey, alarmStatus),
+        type: "PST",
+        depot,
+        road,
+        trainKey: paddedKey,
+        startTime: cleanStartTime,
+        endTime,
+        alarmStatus,
+      };
+      setPstLogLines((prev) => sortPSTLogLinesByTime([
+        ...prev.filter((line) => line.key !== logKey),
+        nextLogEntry,
+      ]));
+    }
+  }, [markPSTLiveLocalEdit, pstState]);
 
   const handlePSTTick = (road, bi, trainKey, alarmStatus = null) => {
     markPSTLiveLocalEdit();
@@ -9186,9 +9246,7 @@ export default function DepotStablingPage() {
       return;
     }
 
-    const paddedKey = trainKey.replace(/^T(\d+)$/, (_, n) => `T${n.padStart(2, "0")}`);
-    const depotLabel = WEST_ROADS.includes(road) ? "WD" : "ED";
-    const roadFormatted = road.replace(/^(WD|ED)-/, `${depotLabel}\u2013`);
+    const paddedKey = padTrainId(normalizeTrainId(trainKey));
     const depot = getDepotFromRoad(road);
 
     // Legacy pending confirmation: finish it automatically with default "No alarm reported".
@@ -9197,8 +9255,7 @@ export default function DepotStablingPage() {
       if (!/^\d{2}:\d{2}$/.test(startTime)) return;
       const endTime = addMinutesToHHMM(startTime, 6);
       const finalAlarmStatus = alarmStatus || "no_alarm";
-      const alarmText = finalAlarmStatus === "alarm" ? " Alarm reported." : " No alarm reported.";
-      const line = `${startTime} hrs \u2013 PST commenced at ${roadFormatted} for ${paddedKey}. Completed at ${endTime} hrs.${alarmText}`;
+      const line = buildPSTLogLine(startTime, endTime, road, paddedKey, finalAlarmStatus);
 
       setPstState((prev) => ({
         ...prev,
@@ -9223,8 +9280,7 @@ export default function DepotStablingPage() {
     const startTime = formatTime(now);
     const endTime = formatTime(addMinutes(now, 6));
     const finalAlarmStatus = alarmStatus || "no_alarm";
-    const alarmText = finalAlarmStatus === "alarm" ? " Alarm reported." : " No alarm reported.";
-    const line = `${startTime} hrs – PST commenced at ${roadFormatted} for ${paddedKey}. Completed at ${endTime} hrs.${alarmText}`;
+    const line = buildPSTLogLine(startTime, endTime, road, paddedKey, finalAlarmStatus);
 
     setPstState((prev) => ({
       ...prev,
