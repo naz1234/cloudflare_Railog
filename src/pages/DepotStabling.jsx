@@ -1962,6 +1962,74 @@ function normalizeFullMlTidAutoClearMeta(meta = {}) {
   return { signature, endsAt };
 }
 
+function getTrainRemTimestampValue(value) {
+  const time = Date.parse((value || "").toString());
+  return Number.isFinite(time) ? time : 0;
+}
+
+function getTrainRemStateTimestamp(state = {}) {
+  return getTrainRemTimestampValue(state?.updatedAt || state?.updated_date || state?.updatedDate);
+}
+
+function getTrainRemRecordTimestamp(record = {}) {
+  return getTrainRemTimestampValue(
+    record?.updatedAt ||
+    record?.updated_date ||
+    record?.updatedDate ||
+    record?.createdAt ||
+    record?.created_date
+  );
+}
+
+function getTrainRemRecordFilledTrainIdCount(record = {}) {
+  const depot = record?.depot === "east" ? "east" : record?.depot === "west" ? "west" : null;
+  const rows = depot ? normalizeTrainRemRows(record?.rows, depot) : Array.isArray(record?.rows) ? record.rows : [];
+
+  return rows.filter((row) => normalizeTrainId(row?.trainId || "")).length;
+}
+
+function stampTrainRemState(state = {}, updatedAt = new Date().toISOString()) {
+  return {
+    ...state,
+    updatedAt,
+  };
+}
+
+function isTrainRemLocalStateNewer(localState = {}, dbState = {}) {
+  const localTime = getTrainRemStateTimestamp(localState);
+  const dbTime = getTrainRemStateTimestamp(dbState);
+
+  return localTime > 0 && localTime > dbTime;
+}
+
+function getLatestTrainRemRecordsByDepot(records = []) {
+  const latestByDepot = {};
+
+  (records || []).forEach((record) => {
+    const depot = record?.depot === "east" ? "east" : record?.depot === "west" ? "west" : null;
+    if (!depot) return;
+
+    const recordTime = getTrainRemRecordTimestamp(record);
+    const existingTime = getTrainRemRecordTimestamp(latestByDepot[depot]);
+
+    const recordFilledCount = getTrainRemRecordFilledTrainIdCount(record);
+    const existingFilledCount = getTrainRemRecordFilledTrainIdCount(latestByDepot[depot]);
+
+    // D1 can contain duplicate depot records from older app versions. Keep the
+    // newest record, and if timestamps match, keep the one with more Train ID
+    // data so an empty duplicate cannot erase typed Train IDs.
+    if (
+      !latestByDepot[depot] ||
+      recordTime > existingTime ||
+      (recordTime === existingTime && recordFilledCount > existingFilledCount)
+    ) {
+      latestByDepot[depot] = record;
+    }
+  });
+
+  return latestByDepot;
+}
+
 function emptyFullMlTidAutoClearMeta() {
   return { signature: "", endsAt: null };
 }
@@ -2067,6 +2135,7 @@ function buildDefaultTrainRemState() {
     },
     fullMlTidRows: emptyFullMlTidRows(),
     fullMlTidAutoClear: emptyFullMlTidAutoClearMeta(),
+    updatedAt: "",
   };
 }
 
@@ -2089,6 +2158,7 @@ function loadTrainRemState() {
       ),
       fullMlTidRows: normalizeFullMlTidRows(parsed?.fullMlTidRows),
       fullMlTidAutoClear: normalizeFullMlTidAutoClearMeta(parsed?.fullMlTidAutoClear),
+      updatedAt: (parsed?.updatedAt || parsed?.updated_date || parsed?.updatedDate || "").toString(),
     };
   } catch {
     return buildDefaultTrainRemState();
@@ -2123,6 +2193,23 @@ function isTrainRemEntityReady(entity = getTrainRemEntity()) {
   return Boolean(entity?.list && entity?.create && entity?.update);
 }
 
+function buildTrainRemDepotPayload(state = {}, depot = "west") {
+  const safeDepot = depot === "east" ? "east" : "west";
+  const autoClearMeta = normalizeFullMlTidAutoClearMeta(state.fullMlTidAutoClear);
+
+  return {
+    depot: safeDepot,
+    key: safeDepot,
+    selectedPreset: state.selectedPreset?.[safeDepot] || "9am",
+    rows: normalizeTrainRemRows(state.rows?.[safeDepot], safeDepot),
+    fullMlTidRows: normalizeFullMlTidRows(state.fullMlTidRows),
+    fullMlTidAutoClear: autoClearMeta,
+    fullMlTidAutoClearSignature: autoClearMeta.signature,
+    fullMlTidAutoClearEndsAt: autoClearMeta.endsAt || null,
+    updatedAt: state.updatedAt || new Date().toISOString(),
+  };
+}
+
 function buildTrainRemStateFromRecords(records = []) {
   const fallback = buildDefaultTrainRemState();
   const map = {};
@@ -2131,9 +2218,13 @@ function buildTrainRemStateFromRecords(records = []) {
     rows: { ...fallback.rows },
     fullMlTidRows: emptyFullMlTidRows(),
     fullMlTidAutoClear: emptyFullMlTidAutoClearMeta(),
+    updatedAt: "",
   };
 
-  (records || []).forEach((rec) => {
+  const latestByDepot = getLatestTrainRemRecordsByDepot(records);
+  const selectedRecords = [latestByDepot.west, latestByDepot.east].filter(Boolean);
+
+  selectedRecords.forEach((rec) => {
     const depot = rec?.depot === "east" ? "east" : rec?.depot === "west" ? "west" : null;
     if (!depot) return;
 
@@ -2157,6 +2248,11 @@ function buildTrainRemStateFromRecords(records = []) {
       if (!currentAutoClear.endsAt || fullMlTidAutoClear.endsAt > currentAutoClear.endsAt) {
         state.fullMlTidAutoClear = fullMlTidAutoClear;
       }
+    }
+
+    const recordUpdatedAt = (rec?.updatedAt || rec?.updated_date || rec?.updatedDate || "").toString();
+    if (getTrainRemTimestampValue(recordUpdatedAt) >= getTrainRemStateTimestamp(state)) {
+      state.updatedAt = recordUpdatedAt;
     }
   });
 
@@ -3708,6 +3804,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const trainRemEditEndTimerRef = useRef(null);
   const trainRemSavingRef = useRef(false);
   const trainRemPendingSaveRef = useRef(false);
+  const trainRemSaveRevisionRef = useRef(0);
   const trainRemEditingRef = useRef(false);
   const trainRemPollingRef = useRef(false);
   const trainRemTrainIdRefs = useRef({});
@@ -3803,19 +3900,14 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     if (showStatus) setTrainRemSyncing(true);
 
     try {
-      const records = await entity.list();
+      const records = await entity.list("-updated_date");
 
       if (!records || records.length === 0) {
-        const state = loadTrainRemState();
+        const state = stampTrainRemState(loadTrainRemState());
         const map = {};
 
         for (const depot of ["west", "east"]) {
-          const created = await entity.create({
-            depot,
-            selectedPreset: state.selectedPreset?.[depot] || "9am",
-            rows: normalizeTrainRemRows(state.rows?.[depot], depot),
-            fullMlTidRows: normalizeFullMlTidRows(state.fullMlTidRows),
-          });
+          const created = await entity.create(buildTrainRemDepotPayload(stampTrainRemState(state), depot));
           if (created?.id) map[depot] = created.id;
         }
 
@@ -3831,12 +3923,40 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
       const { state, map } = buildTrainRemStateFromRecords(records || []);
       const dbAutoClearMeta = normalizeFullMlTidAutoClearMeta(state.fullMlTidAutoClear);
-      const localAutoClearMeta = normalizeFullMlTidAutoClearMeta(trainRemStateRef.current.fullMlTidAutoClear);
+      const localState = loadTrainRemState();
+      const localAutoClearMeta = normalizeFullMlTidAutoClearMeta(localState.fullMlTidAutoClear);
+
       if (!dbAutoClearMeta.signature && localAutoClearMeta.signature && localAutoClearMeta.endsAt) {
         state.fullMlTidAutoClear = localAutoClearMeta;
       }
 
+      if (isTrainRemLocalStateNewer(localState, state)) {
+        trainRemMapRef.current = map;
+        trainRemStateRef.current = localState;
+        setTrainRemState(localState);
+        saveTrainRemState(localState);
+
+        for (const depot of ["west", "east"]) {
+          const payload = buildTrainRemDepotPayload(localState, depot);
+
+          if (trainRemMapRef.current[depot]) {
+            await entity.update(trainRemMapRef.current[depot], payload);
+          } else {
+            const created = await entity.create(payload);
+            if (created?.id) trainRemMapRef.current[depot] = created.id;
+          }
+        }
+
+        setTrainRemLastSynced(new Date());
+        setTrainRemSyncError(false);
+        setTrainRemDebug("");
+        setTrainRemDbReady(true);
+        setTrainRemLoaded(true);
+        return;
+      }
+
       trainRemMapRef.current = map;
+      trainRemStateRef.current = state;
       setTrainRemState(state);
       saveTrainRemState(state);
       setTrainRemLastSynced(new Date());
@@ -3856,7 +3976,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     }
   }, []);
 
-  const saveTrainRemToDb = useCallback(async (state) => {
+  const saveTrainRemToDb = useCallback(async (state, saveRevision = trainRemSaveRevisionRef.current) => {
     const entity = getTrainRemEntity();
 
     saveTrainRemState(state);
@@ -3880,15 +4000,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
     try {
       for (const depot of ["west", "east"]) {
-        const payload = {
-          depot,
-          selectedPreset: state.selectedPreset?.[depot] || "9am",
-          rows: normalizeTrainRemRows(state.rows?.[depot], depot),
-          fullMlTidRows: normalizeFullMlTidRows(state.fullMlTidRows),
-          fullMlTidAutoClear: normalizeFullMlTidAutoClearMeta(state.fullMlTidAutoClear),
-          fullMlTidAutoClearSignature: normalizeFullMlTidAutoClearMeta(state.fullMlTidAutoClear).signature,
-          fullMlTidAutoClearEndsAt: normalizeFullMlTidAutoClearMeta(state.fullMlTidAutoClear).endsAt || null,
-        };
+        const payload = buildTrainRemDepotPayload(state, depot);
 
         if (trainRemMapRef.current[depot]) {
           await entity.update(trainRemMapRef.current[depot], payload);
@@ -3905,17 +4017,29 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     } catch (err) {
       const message = err?.message || err?.response?.data?.message || String(err);
       console.error("Train Rem save failed:", err);
-      setTrainRemDebug(`Save failed: ${message}`);
-      setTrainRemSyncError(true);
+
+      if (saveRevision === trainRemSaveRevisionRef.current) {
+        setTrainRemDebug(`Save failed: ${message}`);
+        setTrainRemSyncError(true);
+      }
     } finally {
-      trainRemPendingSaveRef.current = false;
-      trainRemSavingRef.current = false;
-      setTrainRemSyncing(false);
+      const isLatestSave = saveRevision === trainRemSaveRevisionRef.current;
+
+      if (isLatestSave) {
+        trainRemPendingSaveRef.current = false;
+        trainRemSavingRef.current = false;
+        setTrainRemSyncing(false);
+      }
     }
   }, []);
 
   const scheduleTrainRemSave = useCallback((nextState) => {
-    saveTrainRemState(nextState);
+    const stateToSave = nextState?.updatedAt ? nextState : stampTrainRemState(nextState);
+    const saveRevision = trainRemSaveRevisionRef.current + 1;
+
+    trainRemSaveRevisionRef.current = saveRevision;
+    trainRemStateRef.current = stateToSave;
+    saveTrainRemState(stateToSave);
     trainRemPendingSaveRef.current = true;
 
     if (trainRemAutoSaveTimerRef.current) {
@@ -3923,16 +4047,17 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     }
 
     trainRemAutoSaveTimerRef.current = setTimeout(() => {
-      saveTrainRemToDb(nextState);
+      saveTrainRemToDb(stateToSave, saveRevision);
     }, 1200);
   }, [saveTrainRemToDb]);
 
   const updateTrainRemState = useCallback((updater) => {
     const prev = trainRemStateRef.current;
-    const nextState = typeof updater === "function" ? updater(prev) : updater;
+    const nextStateBase = typeof updater === "function" ? updater(prev) : updater;
 
-    if (isSameTrainRemState(prev, nextState)) return;
+    if (isSameTrainRemState(prev, nextStateBase)) return;
 
+    const nextState = stampTrainRemState(nextStateBase);
     const nextUndoStack = [...trainRemUndoStackRef.current, cloneTrainRemState(prev)].slice(-TRAIN_REM_UNDO_LIMIT);
     trainRemUndoStackRef.current = nextUndoStack;
     trainRemStateRef.current = nextState;
@@ -3982,10 +4107,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
       if (isSameFullMlTidAutoClearMeta(currentState.fullMlTidAutoClear, normalizedMeta)) return;
 
-      const nextState = {
+      const nextState = stampTrainRemState({
         ...currentState,
         fullMlTidAutoClear: normalizedMeta,
-      };
+      });
 
       trainRemStateRef.current = nextState;
       setTrainRemState(nextState);
@@ -4067,7 +4192,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     const previousState = trainRemUndoStackRef.current.pop();
     if (!previousState) return;
 
-    const restoredState = cloneTrainRemState(previousState);
+    const restoredState = stampTrainRemState(cloneTrainRemState(previousState));
     setTrainRemUndoCount(trainRemUndoStackRef.current.length);
     setTrainRemFocusedTrainIdCell(null);
     trainRemFocusedTrainIdCellRef.current = null;

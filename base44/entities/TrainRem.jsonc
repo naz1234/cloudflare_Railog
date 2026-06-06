@@ -76,6 +76,10 @@
     "fullMlTidAutoClearEndsAt": {
       "type": "number",
       "description": "Epoch milliseconds when the active Full ML TID Train ID auto-clear countdown ends"
+    },
+    "updatedAt": {
+      "type": "string",
+      "description": "Last Train Rem client-side save timestamp used to prevent older duplicate records from overwriting the latest Train ID inputs"
     }
   },
   "required": [
