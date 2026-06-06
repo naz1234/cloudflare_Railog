@@ -9046,7 +9046,8 @@ export default function DepotStablingPage() {
     if (!cleanTid) return null;
 
     // Uploaded timetable selected in the header is the first source of truth.
-    // West insertion uses Departure 3A1P1, East insertion uses Departure 3K1P2.
+    // West insertion uses Departure 3A1P1 minus 00:04:30.
+    // East insertion uses Departure 3K1P2 minus 00:05:22.
     const uploadedTime =
       activeInsertionTimeMaps?.[depot]?.[cleanTid] ||
       activeInsertionTimeMaps?.[depot === "west" ? "east" : "west"]?.[cleanTid];
@@ -9075,6 +9076,54 @@ export default function DepotStablingPage() {
 
     return null;
   };
+
+  const rebuildInsertionLogLineWithTime = (entry = {}, scheduledTime = "") => {
+    const depot = entry.depot || getDepotFromRoad(entry.road || "");
+    const mainlineTrack = entry.mainlineTrack || (depot === "west" ? 1 : 2);
+    const trainKey = entry.trainKey || "";
+    const road = entry.road || "";
+    const tid = entry.tid !== null && entry.tid !== undefined
+      ? String(entry.tid).replace(/\D/g, "")
+      : String(entry.remark || entry.text || "").match(/TID\s*(\d{1,3})/i)?.[1] || "";
+
+    if (!scheduledTime || !trainKey || !road) {
+      return (entry.text || "").replace(/^\d{1,2}:\d{2}\s+hrs\s+–\s+/i, `${scheduledTime} hrs – `);
+    }
+
+    const tidPart = tid ? ` (TID ${tid})` : "";
+    return `${scheduledTime} hrs – ${trainKey}${tidPart} inserted from ${road} to mainline track ${mainlineTrack}.`;
+  };
+
+  useEffect(() => {
+    if (!insertionLog.length) return;
+
+    let changed = false;
+    const nextLog = insertionLog.map((entry) => {
+      if (!entry || entry.isSweeping) return entry;
+
+      const tid = entry.tid !== null && entry.tid !== undefined
+        ? String(entry.tid).replace(/\D/g, "")
+        : String(entry.remark || entry.text || "").match(/TID\s*(\d{1,3})/i)?.[1] || "";
+      const depot = entry.depot || getDepotFromRoad(entry.road || "");
+      const scheduledTime = tid ? getTidScheduledTime(tid, depot, { allowFallback: false }) : null;
+      if (!scheduledTime) return entry;
+
+      const nextText = rebuildInsertionLogLineWithTime(entry, scheduledTime);
+      if (entry.time === scheduledTime && entry.text === nextText) return entry;
+
+      changed = true;
+      return {
+        ...entry,
+        time: scheduledTime,
+        text: nextText,
+      };
+    });
+
+    if (changed) {
+      markInsertionLiveLocalEdit();
+      setInsertionLog(sortInsertionLogByTime(nextLog));
+    }
+  }, [activeTimetable?.id, selectedTimetableType, insertionLiveLoaded, insertionLog]);
 
   const handleInsertionTick = (road, bi, trainKey, remark = "", sweepTrack = "") => {
     markInsertionLiveLocalEdit();
