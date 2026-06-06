@@ -6693,7 +6693,7 @@ function PSTTabContent
       </div>
     </div>
 
-      <div className="pst-train-prep-log-font-bump w-full max-w-[1040px] lg:w-[700px] lg:max-w-[700px] lg:shrink-0 lg:sticky lg:top-4">
+      <div className="pst-train-prep-log-font-bump w-full max-w-[1180px] lg:w-[860px] lg:max-w-[860px] lg:shrink-0 lg:sticky lg:top-4">
         <style>{`
         /* PST / Train Prep Log title: keep slightly smaller than the log text */
         .pst-train-prep-log-font-bump :is(h1, h2, h3),
