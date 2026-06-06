@@ -331,12 +331,14 @@ function DepotPlainBlock({ depotLabel, lines = [], onRemove, onClearDepot }) {
   return (
     <div className="pst-plain-depot">
       <div className="pst-plain-depot-header">
-        <div>
-          <div className="pst-plain-depot-title">{depotLabel.toUpperCase()} DEPOT</div>
+        <div className="pst-plain-depot-info">
+          <div className="pst-plain-depot-title-row">
+            <div className="pst-plain-depot-title">{depotLabel.toUpperCase()} DEPOT</div>
+            <CopyButton text={getPSTSectionText(pstLines, depotLabel)} label="PST" disabled={!pstLines.length} />
+          </div>
           <div className="pst-plain-count">{lines.length} {lines.length === 1 ? "entry" : "entries"}</div>
         </div>
         <div className="pst-plain-actions">
-          <CopyButton text={getPSTSectionText(pstLines, depotLabel)} label="PST" disabled={!pstLines.length} />
           <CopyButton text={getPrepSectionText(prepLines, depotLabel)} label="Train Prep" disabled={!prepLines.length} />
           <CopyButton text={depotText} label="Copy All" disabled={!lines.length} />
           <ClearDepotButton depotLabel={depotLabel} disabled={!lines.length} onClear={onClearDepot} />
@@ -483,12 +485,29 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
           background: #071d30;
         }
 
+        .pst-plain-depot-info {
+          min-width: 0;
+        }
+
+        .pst-plain-depot-title-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+
         .pst-plain-depot-title {
           color: #a7e6ff;
           font-size: 12px;
           line-height: 1.05;
           font-weight: 800;
           letter-spacing: 0.12em;
+        }
+
+        .pst-plain-depot-title-row .pst-plain-button {
+          height: 18px;
+          padding: 0 6px;
+          font-size: 9px;
         }
 
         .pst-plain-count {
