@@ -5258,6 +5258,23 @@ function sortTp1MovementEntries(entries = []) {
     return String(a?.createdAt || "").localeCompare(String(b?.createdAt || ""));
   });
 }
+function getTp1TimedLineMinutes(line = "") {
+  const match = String(line || "").match(/^\s*(\d{1,2}:\d{2})\s*hrs\s*[\u2013-]/i);
+  const minutes = excelTimeToMinutes(match?.[1]);
+  return minutes !== null ? minutes : 99999;
+}
+
+function sortTp1TimedLogLines(lines = []) {
+  return [...(Array.isArray(lines) ? lines : [])].sort((a, b) => getTp1TimedLineMinutes(a) - getTp1TimedLineMinutes(b));
+}
+
+function sortTp1MovementTextLinesByTime(text = "") {
+  const lines = String(text || "").split(/\r?\n/).filter((line) => line.trim());
+  const titleLines = lines.filter((line) => getTp1TimedLineMinutes(line) === 99999);
+  const timedLines = lines.filter((line) => getTp1TimedLineMinutes(line) !== 99999);
+  return [...titleLines, ...sortTp1TimedLogLines(timedLines)].join("\n");
+}
+
 
 function normalizeTp1ExcelRoad(road = "") {
   const clean = String(road || "").trim();
@@ -5975,29 +5992,32 @@ function TrainMovementContent() {
     }
 
     if (movementType === "automatic") {
-      const lines = [
-        `${displayTrain}: ${planStatus} movement to Automatic Area.${nextWashSuffix}`,
+      const titleLine = `${displayTrain}: ${planStatus} movement to Automatic Area.${nextWashSuffix}`;
+      const timedLines = [
         `${trAtTp1} hrs – ${displayTrain} arrived at TP1 with Shunter ${shunterNameForLog} onboard.`,
         `${shunterAuth} hrs – ${displayTrain} authorized to prepare the train, conduct a brake self-test, and localize the train.`,
+        `${trLocalized} hrs – ${displayTrain} localized at TP1.`,
       ];
 
-      lines.push(`${trLocalized} hrs – ${displayTrain} localized at TP1.`);
-
       if (trainPrepCompletedTime) {
-        lines.push(`${trainPrepCompletedTime} hrs – ${displayTrain} Train preparation completed at ${stablingRoad} by Shunter ${shunterNameForLog}.`);
+        timedLines.push(`${trainPrepCompletedTime} hrs – ${displayTrain} Train preparation completed at ${stablingRoad} by Shunter ${shunterNameForLog}.`);
       }
 
       if (pstPerformedTime) {
-        lines.push(`${pstPerformedTime} hrs – ${displayTrain} PST completed at ${stablingRoad} from ${pstPerformedTime} to ${pstCompletedTime} hrs. No alarm reported.`);
+        timedLines.push(`${pstPerformedTime} hrs – ${displayTrain} PST completed at ${stablingRoad} from ${pstPerformedTime} to ${pstCompletedTime} hrs. No alarm reported.`);
       }
 
-      return lines.join("\n");
+      return [titleLine, ...sortTp1TimedLogLines(timedLines)].join("\n");
     }
 
-    return `${displayTrain}: ${planStatus} movement to Manual Area.${nextWashSuffix}
-${trAtTp1} hrs – ${displayTrain} arrived at TP1.
-${shunterAuth} hrs – ${displayTrain} was authorized to prepare the train. Shunter ${shunterNameForLog} onboard.
-${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual Area at ${toManual} hrs.`;
+    return [
+      `${displayTrain}: ${planStatus} movement to Manual Area.${nextWashSuffix}`,
+      ...sortTp1TimedLogLines([
+        `${trAtTp1} hrs – ${displayTrain} arrived at TP1.`,
+        `${shunterAuth} hrs – ${displayTrain} was authorized to prepare the train. Shunter ${shunterNameForLog} onboard.`,
+        `${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual Area at ${toManual} hrs.`,
+      ]),
+    ].join("\n");
   };
 
   const addTp1MovementLog = () => {
@@ -6058,7 +6078,7 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
   };
 
   const copyTp1MovementLogs = async () => {
-    const lines = sortTp1MovementEntries(tp1Entries).map((entry) => entry.text);
+    const lines = sortTp1MovementEntries(tp1Entries).map((entry) => sortTp1MovementTextLinesByTime(entry.text));
     if (lines.length === 0) {
       showCopyFeedback("tp1-all", "empty");
       return;
@@ -6940,7 +6960,7 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
               ) : (
                 sortTp1MovementEntries(tp1Entries).map((entry) => (
                   <div key={entry.id} className="group flex items-start gap-2 border-b border-[#12304a]/55 px-3 py-2 last:border-b-0">
-                    <pre className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.32] tracking-[-0.01em] text-[#f4f8ff]">{entry.text}</pre>
+                    <pre className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.32] tracking-[-0.01em] text-[#f4f8ff]">{sortTp1MovementTextLinesByTime(entry.text)}</pre>
                     <button
                       type="button"
                       onClick={() => removeTp1MovementLog(entry.id)}
