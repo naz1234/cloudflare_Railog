@@ -6445,6 +6445,271 @@ function TrainMovementContent() {
   };
 
 
+  const resetMovementFlow = (operation) => {
+    captureMovementScrollPosition();
+    setForms((prev) => ({
+      ...prev,
+      [operation]: createDefaultMovementForms()[operation],
+    }));
+  };
+
+  const isMovementTimeReady = (current = {}) => {
+    if (current.timingMode !== "custom") return true;
+    return /^\d{2}:\d{2}$/.test(String(current.customTime || ""));
+  };
+
+  const renderMovementTimeFlowInput = (operation) => {
+    const current = getMovementForm(operation);
+    const isNow = current.timingMode !== "custom";
+    const currentDisplay = isNow ? `${clockText} hrs` : `${current.customTime || "00:00"} hrs`;
+
+    return (
+      <div className="flex h-8 w-full items-center overflow-hidden rounded-lg border border-[#1e4060] bg-[#061827] shadow-[0_0_14px_rgba(79,142,247,0.10),inset_0_1px_0_rgba(255,255,255,0.04)] focus-within:border-[#4f8ef7]">
+        <button
+          type="button"
+          onClick={() => setMovementTimingMode(operation, "now")}
+          className={`flex h-full shrink-0 items-center justify-center px-2 text-[11px] font-medium transition-all ${isNow ? "text-white" : "text-[#6fa8df] hover:text-white"}`}
+        >
+          Now
+        </button>
+        <div className="h-5 w-px shrink-0 bg-[#244b6b]" />
+        <button
+          type="button"
+          onClick={() => setMovementTimingMode(operation, "custom")}
+          className={`flex h-full shrink-0 items-center justify-center px-2 text-[11px] font-medium transition-all ${!isNow ? "text-white" : "text-[#6fa8df] hover:text-white"}`}
+        >
+          Custom
+        </button>
+        <div className="h-5 w-px shrink-0 bg-[#244b6b]" />
+        {isNow ? (
+          <button
+            type="button"
+            onClick={() => setMovementTimingMode(operation, "custom")}
+            className="flex h-full min-w-0 flex-1 items-center justify-between gap-1.5 px-2 text-left text-[11px] font-medium text-white transition-all hover:bg-[#0a2238]"
+            title="Click to enter custom timing"
+          >
+            <span className="min-w-0 truncate">{currentDisplay}</span>
+            <MovementIcon type="chevron" color="#b8cff0" />
+          </button>
+        ) : (
+          <div className="flex h-full min-w-0 flex-1 items-center gap-1 px-2">
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={5}
+              value={current.customTime}
+              onKeyDown={(e) => {
+                const value = String(current.customTime || "");
+                const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                  e.preventDefault();
+                  updateMovementForm(operation, "customTime", value.slice(0, -2));
+                }
+              }}
+              onChange={(e) => updateMovementForm(operation, "customTime", cleanMovementCustomTimeInput(e.target.value))}
+              onBlur={(e) => updateMovementForm(operation, "customTime", normalizeMovementCustomTimeInput(e.target.value))}
+              placeholder="00:00"
+              className="h-full min-w-[42px] flex-1 bg-transparent text-[11px] font-medium text-white outline-none placeholder:text-[#31516b]"
+            />
+            <span className="shrink-0 text-[11px] font-medium text-[#c8d8ea]">hrs</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderMovementAutomaticFlowCard = (operation) => {
+    const meta = OPERATION_META[operation];
+    const current = getMovementForm(operation);
+    const selectedRoads = getMovementRoads(current.depot);
+    const isInsertion = operation === "insertion";
+    const isRemoval = operation === "removal";
+    const isSwapping = operation === "swapping";
+    const accent = meta.accent;
+    const inputClass = "h-8 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
+    const glowInputBoxClass = "flex h-8 items-center gap-1.5 rounded-lg border border-[#2f7bc4] bg-[#061827] px-2 shadow-[0_0_12px_rgba(79,142,247,0.25),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_16px_rgba(79,142,247,0.42),inset_0_1px_0_rgba(255,255,255,0.08)]";
+    const trainReady = Boolean(normalizeMovementTrain(current.trainId));
+    const timingReady = trainReady && isMovementTimeReady(current);
+    const depotReady = timingReady && Boolean(current.depot);
+    const roadReady = !isInsertion || (depotReady && Boolean(current.road || selectedRoads[0]));
+    const reasonReady = isSwapping && depotReady && Boolean(String(current.swapReason || "").trim());
+    const replacementReady = isSwapping && reasonReady && Boolean(normalizeMovementTrain(current.replacedBy));
+    const requiredReady = isSwapping ? replacementReady : roadReady;
+
+    const trainInput = () => (
+      <div className={glowInputBoxClass}>
+        <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
+        <input
+          value={current.trainId}
+          onChange={(e) => updateMovementForm(operation, "trainId", e.target.value.replace(/\D/g, ""))}
+          placeholder="25"
+          className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
+        />
+      </div>
+    );
+
+    const depotInput = () => (
+      <div className="grid grid-cols-2 gap-1.5">
+        {renderDepotButton({ operation, depot: "west", label: "West Depot", accent: "#8b5cf6" })}
+        {renderDepotButton({ operation, depot: "east", label: "East Depot", accent: "#06d4e8" })}
+      </div>
+    );
+
+    const roadInput = () => (
+      <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+        {selectedRoads.map((road) => {
+          const active = current.road === road;
+          return (
+            <button
+              key={road}
+              type="button"
+              onClick={() => updateMovementForm(operation, "road", road)}
+              className={`rounded-lg border px-2 py-1.5 text-[12px] font-medium transition-all ${active ? "border-blue-400 bg-blue-600/30 text-white" : "border-[#1e4060] bg-[#061827] text-[#7eb8e0] hover:border-[#4f8ef7] hover:text-white"}`}
+            >
+              {road}
+            </button>
+          );
+        })}
+      </div>
+    );
+
+    const tidInput = () => (
+      <input
+        value={current.tid}
+        onChange={(e) => updateMovementForm(operation, "tid", e.target.value.replace(/\D/g, ""))}
+        placeholder="Optional, e.g. 101"
+        className={inputClass}
+      />
+    );
+
+    const reasonInput = () => (
+      <input
+        value={current.swapReason}
+        onChange={(e) => updateMovementForm(operation, "swapReason", e.target.value)}
+        placeholder="e.g. RST PM"
+        className={inputClass}
+      />
+    );
+
+    const replacementInput = () => (
+      <div className={glowInputBoxClass}>
+        <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
+        <input
+          value={current.replacedBy}
+          onChange={(e) => updateMovementForm(operation, "replacedBy", e.target.value.replace(/\D/g, ""))}
+          placeholder="30"
+          className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
+        />
+      </div>
+    );
+
+    const steps = [
+      { key: "trainId", label: "Train ID", visible: true, complete: trainReady, render: trainInput },
+      { key: "timing", label: "Timing", visible: trainReady, complete: timingReady, render: () => renderMovementTimeFlowInput(operation) },
+      { key: "depot", label: "Depot", visible: timingReady, complete: depotReady, render: depotInput },
+    ];
+
+    if (isInsertion) {
+      steps.push(
+        { key: "road", label: "Stabling Road", visible: depotReady, complete: roadReady, render: roadInput },
+        { key: "tid", label: "TID Optional", visible: roadReady, optional: true, complete: Boolean(String(current.tid || "").trim()), render: tidInput }
+      );
+    }
+
+    if (isRemoval) {
+      steps.push({ key: "tid", label: "TID Optional", visible: depotReady, optional: true, complete: Boolean(String(current.tid || "").trim()), render: tidInput });
+    }
+
+    if (isSwapping) {
+      steps.push(
+        { key: "swapReason", label: "Reason Swap", visible: depotReady, complete: reasonReady, render: reasonInput },
+        { key: "replacedBy", label: "Replaced By Train", visible: reasonReady, complete: replacementReady, render: replacementInput }
+      );
+    }
+
+    const visibleSteps = steps.filter((step) => step.visible);
+
+    return (
+      <section
+        className="overflow-hidden rounded-xl border shadow-[0_14px_28px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.05)]"
+        style={{ borderColor: `${accent}42`, background: "linear-gradient(180deg,#061827 0%,#041727 100%)" }}
+      >
+        <div className="border-b px-3 py-2" style={{ borderColor: `${accent}30`, backgroundColor: `${accent}0d` }}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-white">{meta.title} Automatic Flow</p>
+              <p className="text-[10px] font-semibold text-[#8ea8c0]">Next pill appears after current step is completed.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => resetMovementFlow(operation)}
+              className="rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] shadow-[0_0_14px_rgba(239,68,68,0.38),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.03]"
+              style={{ borderColor: "rgba(248,113,113,0.85)", backgroundColor: "rgba(127,29,29,0.36)", color: "#fecaca" }}
+              title={`Reset ${meta.title} Flow`}
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <div className="grid gap-3 p-3">
+          <div className="grid grid-cols-2 gap-x-2.5 gap-y-2">
+            {visibleSteps.map((step, index) => {
+              const pairIndex = Math.floor(index / 2);
+              const firstInPair = index % 2 === 0;
+              const leftToRight = pairIndex % 2 === 0;
+              const columnStart = leftToRight ? (firstInPair ? 1 : 2) : (firstInPair ? 2 : 1);
+              const rowStart = pairIndex + 1;
+              const directionText = index === visibleSteps.length - 1 ? "" : leftToRight === firstInPair ? "→" : "←";
+
+              return (
+                <div
+                  key={step.key}
+                  className="rounded-xl border p-2 transition-all"
+                  style={{
+                    gridColumnStart: columnStart,
+                    gridRowStart: rowStart,
+                    borderColor: step.complete ? `${accent}70` : "#1e4060",
+                    background: step.complete ? `linear-gradient(135deg, ${accent}14, #061827 82%)` : "#061827",
+                    boxShadow: step.complete ? `0 0 10px ${accent}12, inset 0 1px 0 rgba(255,255,255,0.05)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
+                  }}
+                >
+                  <div className="mb-1 flex items-center justify-between gap-1.5">
+                    <span className="inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]" style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: step.complete ? accent : "#7ea6c2", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
+                      <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal" style={{ borderColor: step.complete ? `${accent}80` : "#31516b" }}>{index + 1}</span>
+                      <span className="truncate">{step.label}</span>
+                    </span>
+                    <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>{step.complete ? "DONE" : step.optional ? "OPTIONAL" : directionText}</span>
+                  </div>
+                  {step.render()}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2">
+            <p className="mb-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
+            <p className="overflow-x-auto whitespace-nowrap font-mono text-[12px] font-medium leading-snug text-[#c8d8ea]">
+              {buildMovementPreview(operation)}
+            </p>
+          </div>
+
+          {requiredReady && (
+            <button
+              type="button"
+              onClick={() => addMovementLog(operation)}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[12px] font-medium text-white shadow-[0_0_16px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01]"
+              style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
+            >
+              <span className="text-[12px] leading-none">+</span> {meta.buttonLabel}
+            </button>
+          )}
+        </div>
+      </section>
+    );
+  };
+
+
   const renderTrainMovementOperationLogTable = ({ depot, operation, accent, logs }) => {
     const meta = OPERATION_META[operation];
     const depotLabel = getMovementDepotLabel(depot);
@@ -6564,7 +6829,7 @@ function TrainMovementContent() {
         </div>
 
         <div className="grid gap-3 p-4">
-          {renderMovementFormCard(operation)}
+          {renderMovementAutomaticFlowCard(operation)}
 
           <div className="grid content-start gap-3">
             {renderTrainMovementOperationLogTable({ depot: "west", operation, accent: "#8b5cf6", logs: westLogs })}
