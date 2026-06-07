@@ -5962,11 +5962,11 @@ function TrainMovementContent() {
         `${shunterAuth} hrs – ${displayTrain} authorized to prepare the train, conduct a brake self-test, and localize the train.`,
       ];
 
+      lines.push(`${trLocalized} hrs – ${displayTrain} localized at TP1.`);
+
       if (trainPrepCompletedTime) {
         lines.push(`${trainPrepCompletedTime} hrs – ${displayTrain} Train preparation completed at ${stablingRoad} by Shunter ${shunterNameForLog}.`);
       }
-
-      lines.push(`${trLocalized} hrs – ${displayTrain} localized at TP1.`);
 
       if (pstPerformedTime) {
         lines.push(`${pstPerformedTime} hrs – ${displayTrain} PST completed at ${stablingRoad} from ${pstPerformedTime} to ${pstCompletedTime} hrs. No alarm reported.`);
@@ -6572,6 +6572,130 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
       );
     };
 
+    const automaticTrainSetReady = Boolean(normalizeMovementTrain(tp1Form.trainSet));
+    const automaticPlanReady = automaticTrainSetReady && Boolean(tp1Form.planStatus);
+    const automaticTrAtTp1Ready = automaticPlanReady && Boolean(tp1Form.trAtTp1);
+    const automaticShunterReady = automaticTrAtTp1Ready && Boolean(tp1Form.shunterName);
+    const automaticTrLocalizedReady = automaticShunterReady && Boolean(tp1Form.trLocalized);
+    const automaticTrainPrepReady = automaticTrLocalizedReady && Boolean(tp1Form.trainPrepCompletedTime);
+    const automaticPstReady = automaticTrainPrepReady && Boolean(tp1Form.pstPerformedTime);
+    const automaticCompletedDcReady = automaticPstReady && Boolean(String(tp1Form.completedByDc || "").trim());
+
+    const automaticFlowSteps = [
+      {
+        key: "trainSet",
+        label: "Train Set",
+        visible: true,
+        complete: automaticTrainSetReady,
+        render: () => (
+          <div className={glowInputBoxClass}>
+            <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
+            <input
+              value={tp1Form.trainSet}
+              onChange={(e) => updateTp1MovementForm("trainSet", e.target.value.replace(/\D/g, ""))}
+              placeholder="19"
+              className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
+            />
+          </div>
+        ),
+      },
+      {
+        key: "planStatus",
+        label: "Plan / Unplanned",
+        visible: automaticTrainSetReady,
+        complete: automaticPlanReady,
+        render: () => (
+          <select
+            value={tp1Form.planStatus}
+            onChange={(e) => updateTp1MovementForm("planStatus", e.target.value)}
+            className={inputClass}
+          >
+            <option value="Planned">Planned</option>
+            <option value="Unplanned">Unplanned</option>
+          </select>
+        ),
+      },
+      {
+        key: "trAtTp1",
+        label: "TR at TP1",
+        visible: automaticPlanReady,
+        complete: automaticTrAtTp1Ready,
+        render: () => renderTp1TimeInput("trAtTp1"),
+      },
+      {
+        key: "shunterName",
+        label: "Shunter Name",
+        visible: automaticTrAtTp1Ready,
+        complete: automaticShunterReady,
+        render: () => (
+          <select
+            value={tp1Form.shunterName}
+            onChange={(e) => updateTp1MovementForm("shunterName", e.target.value)}
+            className={inputClass}
+          >
+            <option value="">Select Shunter</option>
+            {SHUNTER_NAME_OPTIONS.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+        ),
+      },
+      {
+        key: "trLocalized",
+        label: "TR Localized",
+        visible: automaticShunterReady,
+        complete: automaticTrLocalizedReady,
+        render: () => renderTp1TimeInput("trLocalized"),
+      },
+      {
+        key: "trainPrepCompletedTime",
+        label: "Train Prep Completed",
+        visible: automaticTrLocalizedReady,
+        complete: automaticTrainPrepReady,
+        render: () => renderTp1TimeInput("trainPrepCompletedTime"),
+      },
+      {
+        key: "pstPerformedTime",
+        label: "PST Performed",
+        visible: automaticTrainPrepReady,
+        complete: automaticPstReady,
+        render: () => renderTp1TimeInput("pstPerformedTime"),
+      },
+      {
+        key: "completedByDc",
+        label: "Completed By DC",
+        visible: automaticPstReady,
+        complete: automaticCompletedDcReady,
+        render: () => (
+          <input
+            type="text"
+            value={tp1Form.completedByDc || ""}
+            onChange={(e) => updateTp1MovementForm("completedByDc", e.target.value)}
+            placeholder="DC name"
+            className={inputClass}
+          />
+        ),
+      },
+      {
+        key: "nextWashText",
+        label: "Next Wash Optional",
+        visible: automaticCompletedDcReady,
+        complete: Boolean(String(tp1Form.nextWashText || "").trim()),
+        render: () => (
+          <input
+            type="text"
+            maxLength={19}
+            value={tp1Form.nextWashText || ""}
+            onChange={(e) => updateTp1MovementForm("nextWashText", e.target.value)}
+            placeholder="28-05-2026 12:23:00"
+            className={inputClass}
+          />
+        ),
+      },
+    ];
+
+    const visibleAutomaticFlowSteps = automaticFlowSteps.filter((step) => step.visible);
+
     return (
       <section
         className="overflow-hidden rounded-xl border shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)] xl:sticky xl:top-3"
@@ -6605,107 +6729,114 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
             {renderTypeButton("manual", "Manual Area", "Fill From TP1 + to Manual", "#f59e0b")}
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            <label className="col-span-1">
-              <span className={labelClass}>Train Set</span>
-              <div className={glowInputBoxClass}>
-                <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
-                <input
-                  value={tp1Form.trainSet}
-                  onChange={(e) => updateTp1MovementForm("trainSet", e.target.value.replace(/\D/g, ""))}
-                  placeholder="19"
-                  className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
-                />
+          {isAutomatic ? (
+            <div className="rounded-xl border border-[#1e4060] bg-[#031827] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-[12px] font-black uppercase tracking-[0.12em] text-white">Automatic Flow</p>
+                  <p className="text-[10px] font-semibold text-[#8ea8c0]">Next pill box appears after the current step is completed.</p>
+                </div>
+                <span className="rounded-full border px-2.5 py-1 text-[10px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}16`, color: accent }}>
+                  Step-by-step
+                </span>
               </div>
-            </label>
 
-            <label className="col-span-1">
-              <span className={labelClass}>Plan / Unplanned</span>
-              <select
-                value={tp1Form.planStatus}
-                onChange={(e) => updateTp1MovementForm("planStatus", e.target.value)}
-                className={inputClass}
-              >
-                <option value="Planned">Planned</option>
-                <option value="Unplanned">Unplanned</option>
-              </select>
-            </label>
-
-            <label className="col-span-1">
-              <span className={labelClass}>TR at TP1</span>
-              {renderTp1TimeInput("trAtTp1")}
-            </label>
-
-            <label className="col-span-1">
-              <span className={labelClass}>Shunter Name</span>
-              <select
-                value={tp1Form.shunterName}
-                onChange={(e) => updateTp1MovementForm("shunterName", e.target.value)}
-                className={inputClass}
-              >
-                <option value="">Select Shunter</option>
-                {SHUNTER_NAME_OPTIONS.map((name) => (
-                  <option key={name} value={name}>{name}</option>
+              <div className="grid gap-2.5">
+                {visibleAutomaticFlowSteps.map((step, index) => (
+                  <Fragment key={step.key}>
+                    <div
+                      className="rounded-2xl border p-2.5 transition-all"
+                      style={{
+                        borderColor: step.complete ? `${accent}88` : "#1e4060",
+                        background: step.complete ? `linear-gradient(135deg, ${accent}18, #061827 82%)` : "#061827",
+                        boxShadow: step.complete ? `0 0 14px ${accent}18, inset 0 1px 0 rgba(255,255,255,0.05)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
+                      }}
+                    >
+                      <div className="mb-1.5 flex items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em]" style={{ borderColor: step.complete ? `${accent}88` : "#244761", color: step.complete ? accent : "#7ea6c2", backgroundColor: step.complete ? `${accent}12` : "#061827" }}>
+                          <span className="flex h-4 w-4 items-center justify-center rounded-full border text-[9px]" style={{ borderColor: step.complete ? `${accent}88` : "#31516b" }}>{index + 1}</span>
+                          {step.label}
+                        </span>
+                        {step.complete && <span className="text-[10px] font-black" style={{ color: accent }}>DONE</span>}
+                      </div>
+                      {step.render()}
+                    </div>
+                    {index < visibleAutomaticFlowSteps.length - 1 && (
+                      <div className="flex h-3 items-center justify-center text-[12px] font-black text-[#4a8ab5]">↓</div>
+                    )}
+                  </Fragment>
                 ))}
-              </select>
-            </label>
-
-            {isAutomatic && (
-              <>
-                <label className="col-span-1">
-                  <span className={labelClass}>TR Localized</span>
-                  {renderTp1TimeInput("trLocalized")}
-                </label>
-
-                <label className="col-span-1">
-                  <span className={labelClass}>Train Prep Completed <span className="normal-case tracking-normal text-[#6f8fa8]">Optional</span></span>
-                  {renderTp1TimeInput("trainPrepCompletedTime")}
-                </label>
-
-                <label className="col-span-1">
-                  <span className={labelClass}>PST Performed <span className="normal-case tracking-normal text-[#6f8fa8]">Optional</span></span>
-                  {renderTp1TimeInput("pstPerformedTime")}
-                </label>
-
-                <label className="col-span-1">
-                  <span className={labelClass}>Completed By DC</span>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2.5">
+              <label className="col-span-1">
+                <span className={labelClass}>Train Set</span>
+                <div className={glowInputBoxClass}>
+                  <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
                   <input
-                    type="text"
-                    value={tp1Form.completedByDc || ""}
-                    onChange={(e) => updateTp1MovementForm("completedByDc", e.target.value)}
-                    placeholder="DC name"
-                    className={inputClass}
+                    value={tp1Form.trainSet}
+                    onChange={(e) => updateTp1MovementForm("trainSet", e.target.value.replace(/\D/g, ""))}
+                    placeholder="19"
+                    className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
                   />
-                </label>
-              </>
-            )}
+                </div>
+              </label>
 
-            <label className="col-span-2">
-              <span className={labelClass}>Next Wash <span className="normal-case tracking-normal text-[#6f8fa8]">Optional</span></span>
-              <input
-                type="text"
-                maxLength={19}
-                value={tp1Form.nextWashText || ""}
-                onChange={(e) => updateTp1MovementForm("nextWashText", e.target.value)}
-                placeholder="28-05-2026 12:23:00"
-                className={inputClass}
-              />
-            </label>
+              <label className="col-span-1">
+                <span className={labelClass}>Plan / Unplanned</span>
+                <select
+                  value={tp1Form.planStatus}
+                  onChange={(e) => updateTp1MovementForm("planStatus", e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="Planned">Planned</option>
+                  <option value="Unplanned">Unplanned</option>
+                </select>
+              </label>
 
-            {!isAutomatic && (
-              <>
-                <label className="col-span-1">
-                  <span className={labelClass}>From TP1</span>
-                  {renderTp1TimeInput("fromTp1")}
-                </label>
+              <label className="col-span-1">
+                <span className={labelClass}>TR at TP1</span>
+                {renderTp1TimeInput("trAtTp1")}
+              </label>
 
-                <label className="col-span-1">
-                  <span className={labelClass}>to Manual</span>
-                  {renderTp1TimeInput("toManual")}
-                </label>
-              </>
-            )}
-          </div>
+              <label className="col-span-1">
+                <span className={labelClass}>Shunter Name</span>
+                <select
+                  value={tp1Form.shunterName}
+                  onChange={(e) => updateTp1MovementForm("shunterName", e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select Shunter</option>
+                  {SHUNTER_NAME_OPTIONS.map((name) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="col-span-2">
+                <span className={labelClass}>Next Wash <span className="normal-case tracking-normal text-[#6f8fa8]">Optional</span></span>
+                <input
+                  type="text"
+                  maxLength={19}
+                  value={tp1Form.nextWashText || ""}
+                  onChange={(e) => updateTp1MovementForm("nextWashText", e.target.value)}
+                  placeholder="28-05-2026 12:23:00"
+                  className={inputClass}
+                />
+              </label>
+
+              <label className="col-span-1">
+                <span className={labelClass}>From TP1</span>
+                {renderTp1TimeInput("fromTp1")}
+              </label>
+
+              <label className="col-span-1">
+                <span className={labelClass}>to Manual</span>
+                {renderTp1TimeInput("toManual")}
+              </label>
+            </div>
+          )}
 
           <div className="rounded-xl border border-[#1e4060] bg-[#041727] p-3">
             <div className="mb-2 flex items-center justify-between gap-2">
