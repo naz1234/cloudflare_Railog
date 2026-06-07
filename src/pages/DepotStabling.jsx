@@ -1669,6 +1669,9 @@ const INSERTION_LIVE_LOCAL_EDIT_HOLD_MS = 30000;
 const INSERTION_LIVE_POST_SAVE_HOLD_MS = 12000;
 const SIDEBAR_COLLAPSED_KEY = "depotSidebarCollapsed_v1";
 const SIDEBAR_AUTO_HIDE_MS = 3000;
+const ADM_SESSION_KEY = "admAdminUnlocked_v1";
+const ADM_LOGIN_ID = "admin";
+const ADM_LOGIN_PASSWORD = "921016";
 
 function loadInsertionLog() {
   try {
@@ -9091,9 +9094,19 @@ export default function DepotStablingPage() {
     if (path === "/odo-reading") return "odo";
     if (path === "/possession") return "possession";
     if (path === "/alarm") return "alarm";
+    if (path === "/admin" || path === "/adm") return "admin";
     return "stabling";
   };
   const [activeTab, setActiveTab] = useState(() => getTabFromPath(location.pathname));
+  const [adminCredentials, setAdminCredentials] = useState({ id: "", password: "" });
+  const [adminError, setAdminError] = useState("");
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(() => {
+    try {
+      return sessionStorage.getItem(ADM_SESSION_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     try {
       return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
@@ -9241,6 +9254,31 @@ export default function DepotStablingPage() {
 
     const nextLeft = direction === "left" ? 0 : scrollTarget.scrollWidth;
     scrollTarget.scrollTo({ left: nextLeft, behavior: "smooth" });
+  }, []);
+
+  const handleAdminLogin = useCallback((event) => {
+    event.preventDefault();
+    const loginId = String(adminCredentials.id || "").trim();
+    const loginPassword = String(adminCredentials.password || "");
+
+    if (loginId === ADM_LOGIN_ID && loginPassword === ADM_LOGIN_PASSWORD) {
+      setIsAdminUnlocked(true);
+      setAdminError("");
+      setAdminCredentials({ id: "", password: "" });
+      try { sessionStorage.setItem(ADM_SESSION_KEY, "true"); } catch {}
+      return;
+    }
+
+    setIsAdminUnlocked(false);
+    setAdminError("Invalid admin ID or password.");
+    try { sessionStorage.removeItem(ADM_SESSION_KEY); } catch {}
+  }, [adminCredentials]);
+
+  const handleAdminLogout = useCallback(() => {
+    setIsAdminUnlocked(false);
+    setAdminCredentials({ id: "", password: "" });
+    setAdminError("");
+    try { sessionStorage.removeItem(ADM_SESSION_KEY); } catch {}
   }, []);
 
   const handleSidebarShortcutClick = useCallback((event, key, to) => {
@@ -11172,15 +11210,28 @@ export default function DepotStablingPage() {
                 </svg>
               ),
             },
+            {
+              key: "admin",
+              label: "Admin",
+              code: "ADM",
+              to: "/admin",
+              icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2l8 4v6c0 5-3.4 9.4-8 10-4.6-.6-8-5-8-10V6l8-4z"/>
+                  <path d="M9 12l2 2 4-4"/>
+                </svg>
+              ),
+            },
           ].map(({ key, label, code, to }) => {
             const isActive = activeTab === key;
+            const adminBottomClass = key === "admin" ? " mt-auto" : "";
             const navClass = isSidebarCollapsed
-              ? `flex items-center justify-center px-1 py-2.5 text-xs font-normal transition-all text-left w-full ${
+              ? `flex items-center justify-center px-1 py-2.5 text-xs font-normal transition-all text-left w-full${adminBottomClass} ${
                   isActive
                     ? "text-white"
                     : "text-[#7eb8e0] hover:text-white"
                 }`
-              : `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full ${
+              : `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full${adminBottomClass} ${
                   isActive
                     ? "bg-[#1a3a5c] text-white shadow-sm border border-[#2b4f6b]"
                     : "text-[#7eb8e0] hover:text-white hover:bg-[#0f2d4a]"
@@ -11426,6 +11477,70 @@ export default function DepotStablingPage() {
                 <h2 className="mt-1 text-[18px] font-normal text-white">Alarm</h2>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === "admin" && (
+          <div className="w-full min-h-[calc(100vh-120px)] rounded-2xl border border-[#1a3a56] bg-[#061a2b]/70 p-5">
+            <div className="flex items-center justify-between border-b border-[#1a3a56]/70 pb-3">
+              <div>
+                <p className="text-[10px] font-normal uppercase tracking-[0.28em] text-[#4a8ab5]">ADM</p>
+                <h2 className="mt-1 text-[18px] font-normal text-white">Admin</h2>
+              </div>
+              {isAdminUnlocked && (
+                <button
+                  type="button"
+                  onClick={handleAdminLogout}
+                  className="rounded-lg border border-[#2b4f6b] bg-[#071828] px-3 py-1.5 text-[10px] font-normal uppercase tracking-wide text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white"
+                >
+                  Logout
+                </button>
+              )}
+            </div>
+
+            {!isAdminUnlocked ? (
+              <form onSubmit={handleAdminLogin} className="mt-5 max-w-[360px] rounded-2xl border border-[#1a3a56] bg-[#071828]/80 p-4">
+                <p className="text-[12px] font-normal text-[#9ccbea]">Admin login required.</p>
+                <label className="mt-4 block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                  ID
+                  <input
+                    value={adminCredentials.id}
+                    onChange={(event) => {
+                      setAdminCredentials((prev) => ({ ...prev, id: event.target.value }));
+                      setAdminError("");
+                    }}
+                    className="mt-1 w-full rounded-lg border border-[#2b4f6b] bg-[#04111f] px-3 py-2 text-[13px] font-normal text-white outline-none transition focus:border-[#4f8ef7]"
+                    autoComplete="username"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                  />
+                </label>
+                <label className="mt-3 block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                  Password
+                  <input
+                    type="password"
+                    value={adminCredentials.password}
+                    onChange={(event) => {
+                      setAdminCredentials((prev) => ({ ...prev, password: event.target.value }));
+                      setAdminError("");
+                    }}
+                    className="mt-1 w-full rounded-lg border border-[#2b4f6b] bg-[#04111f] px-3 py-2 text-[13px] font-normal text-white outline-none transition focus:border-[#4f8ef7]"
+                    autoComplete="current-password"
+                  />
+                </label>
+                {adminError && <p className="mt-3 text-[11px] font-normal text-red-300">{adminError}</p>}
+                <button
+                  type="submit"
+                  className="mt-4 rounded-lg border border-[#4f8ef7]/60 bg-[#0f2d4a] px-4 py-2 text-[11px] font-normal uppercase tracking-wide text-white transition hover:bg-[#1a3a5c]"
+                >
+                  Login
+                </button>
+              </form>
+            ) : (
+              <div className="mt-5 min-h-[360px] rounded-2xl border border-dashed border-[#2b4f6b] bg-[#04111f]/45 p-5">
+                <p className="text-[12px] font-normal text-[#7eb8e0]">Admin page unlocked.</p>
+              </div>
+            )}
           </div>
         )}
 
