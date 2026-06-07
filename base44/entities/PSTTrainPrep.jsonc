@@ -37,6 +37,15 @@
     "completedByEast": {
       "type": "string",
       "description": "East Depot completed-by name for Excel export"
+    },
+    "completedByNames": {
+      "type": "object",
+      "description": "West/East completed-by names for Excel export",
+      "additionalProperties": true
+    },
+    "updatedAt": {
+      "type": "string",
+      "description": "Last PST / Train Prep state update timestamp"
     }
   },
   "required": [

@@ -2385,11 +2385,30 @@ function normalizePSTLiveState(source = {}) {
     logLines: sortPSTLogLinesByTime(Array.isArray(source?.logLines) ? source.logLines : []),
     taNameState: source?.taNameState && typeof source.taNameState === "object" ? source.taNameState : {},
     completedByNames: {
-      west: (source?.completedByNames?.west || "").toString(),
-      east: (source?.completedByNames?.east || "").toString(),
+      west: (source?.completedByNames?.west || source?.completedByWest || "").toString(),
+      east: (source?.completedByNames?.east || source?.completedByEast || "").toString(),
     },
-    updatedAt: (source?.updatedAt || "").toString(),
+    updatedAt: (source?.updatedAt || source?.updated_date || source?.updatedDate || source?.createdAt || source?.created_date || "").toString(),
   };
+}
+
+function getPSTLiveRecordUpdatedMs(record = {}) {
+  const normalized = normalizePSTLiveState(record);
+  return Date.parse(normalized.updatedAt || "") || 0;
+}
+
+function selectPSTLiveRecord(records = []) {
+  const list = Array.isArray(records) ? records.filter(Boolean) : [];
+  if (!list.length) return null;
+
+  const preferredRecords = list.filter((item) => (
+    item?.stateKey === PST_LIVE_RECORD_KEY ||
+    item?.recordKey === PST_LIVE_RECORD_KEY ||
+    item?.key === PST_LIVE_RECORD_KEY
+  ));
+
+  const candidates = preferredRecords.length ? preferredRecords : list;
+  return [...candidates].sort((a, b) => getPSTLiveRecordUpdatedMs(b) - getPSTLiveRecordUpdatedMs(a))[0] || null;
 }
 
 function loadSavedPSTState() {
@@ -2425,7 +2444,7 @@ function loadSavedPSTState() {
   }
 }
 
-function savePSTState(pstState, prepState, logLines, taNameState, completedByNames = { west: "", east: "" }) {
+function savePSTState(pstState, prepState, logLines, taNameState, completedByNames = { west: "", east: "" }, updatedAt = new Date().toISOString()) {
   const normalizedCompletedByNames = {
     west: (completedByNames?.west || "").toString(),
     east: (completedByNames?.east || "").toString(),
@@ -2440,6 +2459,7 @@ function savePSTState(pstState, prepState, logLines, taNameState, completedByNam
         logLines: sortPSTLogLinesByTime(logLines),
         taNameState,
         completedByNames: normalizedCompletedByNames,
+        updatedAt,
       })
     );
     localStorage.setItem("pstExcelCompletedByNames", JSON.stringify(normalizedCompletedByNames));
@@ -9208,9 +9228,6 @@ export default function DepotStablingPage() {
 
   useEffect(() => { saveTidInputs(tidInputs); }, [tidInputs]);
 
-  const handleTaNameChange = useCallback((road, bi, value) => {
-    setTaNameState((prev) => ({ ...prev, [`${road}-${bi}`]: value }));
-  }, []);
   const getTabFromPath = (path) => {
     if (path === "/train-washing") return "washing";
     if (path === "/train-movement") return "movement";
@@ -9829,7 +9846,7 @@ export default function DepotStablingPage() {
   const pstLogLinesRef = useRef(pstLogLines);
   const taNameStateRef = useRef(taNameState);
   const pstCompletedByNamesRef = useRef(pstCompletedByNames);
-  const pstLiveLocalUpdatedAtRef = useRef(0);
+  const pstLiveLocalUpdatedAtRef = useRef(Date.parse(savedPST.updatedAt || "") || 0);
   const pstLiveRemoteUpdatedAtRef = useRef(0);
 
   const insertionLiveRecordIdRef = useRef(null);
@@ -9865,6 +9882,11 @@ export default function DepotStablingPage() {
     pstLiveLocalUpdatedAtRef.current = now;
     pstLiveLocalEditUntilRef.current = now + PST_LIVE_LOCAL_EDIT_HOLD_MS;
   }, []);
+
+  const handleTaNameChange = useCallback((road, bi, value) => {
+    markPSTLiveLocalEdit();
+    setTaNameState((prev) => ({ ...prev, [`${road}-${bi}`]: value }));
+  }, [markPSTLiveLocalEdit]);
 
   const markInsertionLiveLocalEdit = useCallback(() => {
     const now = Date.now();
@@ -9909,7 +9931,8 @@ export default function DepotStablingPage() {
       normalized.prepState,
       normalized.logLines,
       normalized.taNameState,
-      normalized.completedByNames
+      normalized.completedByNames,
+      normalized.updatedAt
     );
   }, []);
 
@@ -9922,7 +9945,8 @@ export default function DepotStablingPage() {
       payload.prepState,
       payload.logLines,
       payload.taNameState,
-      payload.completedByNames
+      payload.completedByNames,
+      payload.updatedAt
     );
 
     if (!isPSTTrainPrepEntityReady(entity)) {
@@ -9977,7 +10001,8 @@ export default function DepotStablingPage() {
       payload.prepState,
       payload.logLines,
       payload.taNameState,
-      payload.completedByNames
+      payload.completedByNames,
+      payload.updatedAt
     );
 
     pstLivePendingSaveRef.current = true;
@@ -10018,7 +10043,7 @@ export default function DepotStablingPage() {
 
     try {
       const records = await entity.list();
-      const record = (records || []).find((item) => item?.stateKey === PST_LIVE_RECORD_KEY || item?.key === PST_LIVE_RECORD_KEY) || (records || [])[0];
+      const record = selectPSTLiveRecord(records);
 
       if (!record) {
         const payload = buildPSTLivePayload({
@@ -10084,11 +10109,19 @@ export default function DepotStablingPage() {
       taNameState,
       completedByNames: pstCompletedByNames,
     };
+    const payload = buildPSTLivePayload(state);
 
-    savePSTState(pstState, prepState, pstLogLines, taNameState, pstCompletedByNames);
+    savePSTState(
+      payload.pstState,
+      payload.prepState,
+      payload.logLines,
+      payload.taNameState,
+      payload.completedByNames,
+      payload.updatedAt
+    );
 
     if (!pstLiveLoaded) return;
-    schedulePSTLiveSave(state);
+    schedulePSTLiveSave(payload);
   }, [pstState, prepState, pstLogLines, taNameState, pstCompletedByNames, pstLiveLoaded, schedulePSTLiveSave]);
 
   useEffect(() => {
