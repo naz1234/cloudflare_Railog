@@ -5672,6 +5672,8 @@ function TrainMovementContent() {
     return mergeTp1MovementForm(defaultForm, loadSavedMovementObject(TP1_MOVEMENT_FORM_KEY));
   });
   const [focusedFlowInput, setFocusedFlowInput] = useState("");
+  const [flowSettledInputs, setFlowSettledInputs] = useState({});
+  const flowInputSettleTimerRef = useRef({});
   const movementScrollRestoreRef = useRef(null);
 
   const captureMovementScrollPosition = () => {
@@ -5744,16 +5746,37 @@ function TrainMovementContent() {
   const getTp1FlowInputKey = (field) => `tp1:${field}`;
   const isFlowInputFocused = (key) => focusedFlowInput === key;
   const focusFlowInput = (key) => setFocusedFlowInput(key);
+  const markFlowInputSettledNow = (key) => {
+    if (flowInputSettleTimerRef.current[key]) {
+      clearTimeout(flowInputSettleTimerRef.current[key]);
+      delete flowInputSettleTimerRef.current[key];
+    }
+    setFlowSettledInputs((prev) => ({ ...prev, [key]: true }));
+  };
+  const scheduleFlowInputSettled = (key, delay = 650) => {
+    if (!key) return;
+    if (flowInputSettleTimerRef.current[key]) {
+      clearTimeout(flowInputSettleTimerRef.current[key]);
+    }
+    setFlowSettledInputs((prev) => ({ ...prev, [key]: false }));
+    flowInputSettleTimerRef.current[key] = setTimeout(() => {
+      setFlowSettledInputs((prev) => ({ ...prev, [key]: true }));
+      delete flowInputSettleTimerRef.current[key];
+    }, delay);
+  };
   const blurFlowInput = (key) => {
     setFocusedFlowInput((current) => (current === key ? "" : current));
+    markFlowInputSettledNow(key);
   };
 
-  const isMovementFlowFieldSettled = (operation, field) => !isFlowInputFocused(getMovementFlowInputKey(operation, field));
-  const isTp1FlowFieldSettled = (field) => !isFlowInputFocused(getTp1FlowInputKey(field));
+  const isFlowInputSettled = (key) => !isFlowInputFocused(key) || flowSettledInputs[key] === true;
+  const isMovementFlowFieldSettled = (operation, field) => isFlowInputSettled(getMovementFlowInputKey(operation, field));
+  const isTp1FlowFieldSettled = (field) => isFlowInputSettled(getTp1FlowInputKey(field));
 
   const resetTp1AutomaticFlow = () => {
     captureMovementScrollPosition();
     setFocusedFlowInput("");
+    setFlowSettledInputs({});
     setTp1Form((prev) => ({
       ...prev,
       movementType: "automatic",
@@ -5775,6 +5798,7 @@ function TrainMovementContent() {
   const resetTp1ManualFlow = () => {
     captureMovementScrollPosition();
     setFocusedFlowInput("");
+    setFlowSettledInputs({});
     setTp1Form((prev) => ({
       ...prev,
       movementType: "manual",
@@ -5922,6 +5946,7 @@ function TrainMovementContent() {
   const addMovementLog = (operation) => {
     captureMovementScrollPosition();
     setFocusedFlowInput("");
+    setFlowSettledInputs({});
     const current = getMovementForm(operation);
     const built = buildMovementLine(operation);
     if (!built) return;
@@ -6396,7 +6421,10 @@ function TrainMovementContent() {
                 <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
                 <input
                   value={current.trainId}
-                  onChange={(e) => updateMovementForm(operation, "trainId", e.target.value.replace(/\D/g, ""))}
+                  onChange={(e) => {
+            updateMovementForm(operation, "trainId", e.target.value.replace(/\D/g, ""));
+            scheduleFlowInputSettled(getMovementFlowInputKey(operation, "trainId"));
+          }}
                   placeholder="e.g. 25"
                   className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
                 />
@@ -6441,7 +6469,10 @@ function TrainMovementContent() {
                 <span className={labelClass}>TID <span className="text-[#4a6b85]">(optional)</span></span>
                 <input
                   value={current.tid}
-                  onChange={(e) => updateMovementForm(operation, "tid", e.target.value.replace(/\D/g, ""))}
+                  onChange={(e) => {
+          updateMovementForm(operation, "tid", e.target.value.replace(/\D/g, ""));
+          scheduleFlowInputSettled(getMovementFlowInputKey(operation, "tid"));
+        }}
                   placeholder="e.g. 101"
                   className={inputClass}
                 />
@@ -6454,7 +6485,10 @@ function TrainMovementContent() {
                   <span className={labelClass}>Reason swap</span>
                   <input
                     value={current.swapReason}
-                    onChange={(e) => updateMovementForm(operation, "swapReason", e.target.value)}
+                    onChange={(e) => {
+          updateMovementForm(operation, "swapReason", e.target.value);
+          scheduleFlowInputSettled(getMovementFlowInputKey(operation, "swapReason"));
+        }}
                     placeholder="e.g. RST PM"
                     className={inputClass}
                   />
@@ -6465,7 +6499,10 @@ function TrainMovementContent() {
                     <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
                     <input
                       value={current.replacedBy}
-                      onChange={(e) => updateMovementForm(operation, "replacedBy", e.target.value.replace(/\D/g, ""))}
+                      onChange={(e) => {
+            updateMovementForm(operation, "replacedBy", e.target.value.replace(/\D/g, ""));
+            scheduleFlowInputSettled(getMovementFlowInputKey(operation, "replacedBy"));
+          }}
                       placeholder="e.g. 30"
                       className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
                     />
@@ -6509,6 +6546,7 @@ function TrainMovementContent() {
   const resetMovementFlow = (operation) => {
     captureMovementScrollPosition();
     setFocusedFlowInput("");
+    setFlowSettledInputs({});
     setForms((prev) => ({
       ...prev,
       [operation]: createDefaultMovementForms()[operation],
@@ -6574,7 +6612,10 @@ function TrainMovementContent() {
                   updateMovementForm(operation, "customTime", value.slice(0, -2));
                 }
               }}
-              onChange={(e) => updateMovementForm(operation, "customTime", cleanMovementCustomTimeInput(e.target.value))}
+              onChange={(e) => {
+                updateMovementForm(operation, "customTime", cleanMovementCustomTimeInput(e.target.value));
+                scheduleFlowInputSettled(fieldKey);
+              }}
               onBlur={(e) => {
                 updateMovementForm(operation, "customTime", normalizeMovementCustomTimeInput(e.target.value));
                 blurFlowInput(fieldKey);
@@ -6784,7 +6825,7 @@ function TrainMovementContent() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-white">{meta.title} Automatic Flow</p>
-              <p className="text-[10px] font-semibold text-[#8ea8c0]">Next pill appears after current step is completed.</p>
+              <p className="text-[10px] font-semibold text-[#8ea8c0]">Next pill appears automatically after typing stops.</p>
             </div>
             <button
               type="button"
@@ -6985,7 +7026,10 @@ function TrainMovementContent() {
                 updateTp1MovementForm(field, value.slice(0, -2));
               }
             }}
-            onChange={(e) => updateTp1MovementForm(field, cleanTp1MovementTimeInput(e.target.value))}
+            onChange={(e) => {
+              updateTp1MovementForm(field, cleanTp1MovementTimeInput(e.target.value));
+              scheduleFlowInputSettled(fieldKey);
+            }}
             onBlur={(e) => {
               updateTp1MovementForm(field, normalizeMovementCustomTimeInput(e.target.value));
               blurFlowInput(fieldKey);
@@ -7043,7 +7087,10 @@ function TrainMovementContent() {
               value={tp1Form.trainSet}
               onFocus={() => focusFlowInput(getTp1FlowInputKey("trainSet"))}
               onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-              onChange={(e) => updateTp1MovementForm("trainSet", e.target.value.replace(/\D/g, ""))}
+              onChange={(e) => {
+                updateTp1MovementForm("trainSet", e.target.value.replace(/\D/g, ""));
+                scheduleFlowInputSettled(getTp1FlowInputKey("trainSet"));
+              }}
               onBlur={() => blurFlowInput(getTp1FlowInputKey("trainSet"))}
               placeholder="19"
               className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
@@ -7142,7 +7189,10 @@ function TrainMovementContent() {
             value={tp1Form.completedByDc || ""}
             onFocus={() => focusFlowInput(getTp1FlowInputKey("completedByDc"))}
             onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-            onChange={(e) => updateTp1MovementForm("completedByDc", e.target.value)}
+            onChange={(e) => {
+              updateTp1MovementForm("completedByDc", e.target.value);
+              scheduleFlowInputSettled(getTp1FlowInputKey("completedByDc"));
+            }}
             onBlur={() => blurFlowInput(getTp1FlowInputKey("completedByDc"))}
             placeholder="DC name"
             className={inputClass}
@@ -7161,7 +7211,10 @@ function TrainMovementContent() {
             value={tp1Form.nextWashText || ""}
             onFocus={() => focusFlowInput(getTp1FlowInputKey("nextWashText"))}
             onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-            onChange={(e) => updateTp1MovementForm("nextWashText", e.target.value)}
+            onChange={(e) => {
+              updateTp1MovementForm("nextWashText", e.target.value);
+              scheduleFlowInputSettled(getTp1FlowInputKey("nextWashText"));
+            }}
             onBlur={() => blurFlowInput(getTp1FlowInputKey("nextWashText"))}
             placeholder="28-05-2026 12:23:00"
             className={inputClass}
@@ -7192,7 +7245,10 @@ function TrainMovementContent() {
               value={tp1Form.trainSet}
               onFocus={() => focusFlowInput(getTp1FlowInputKey("trainSet"))}
               onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-              onChange={(e) => updateTp1MovementForm("trainSet", e.target.value.replace(/\D/g, ""))}
+              onChange={(e) => {
+                updateTp1MovementForm("trainSet", e.target.value.replace(/\D/g, ""));
+                scheduleFlowInputSettled(getTp1FlowInputKey("trainSet"));
+              }}
               onBlur={() => blurFlowInput(getTp1FlowInputKey("trainSet"))}
               placeholder="19"
               className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
@@ -7267,7 +7323,10 @@ function TrainMovementContent() {
             value={tp1Form.nextWashText || ""}
             onFocus={() => focusFlowInput(getTp1FlowInputKey("nextWashText"))}
             onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-            onChange={(e) => updateTp1MovementForm("nextWashText", e.target.value)}
+            onChange={(e) => {
+              updateTp1MovementForm("nextWashText", e.target.value);
+              scheduleFlowInputSettled(getTp1FlowInputKey("nextWashText"));
+            }}
             onBlur={() => blurFlowInput(getTp1FlowInputKey("nextWashText"))}
             placeholder="28-05-2026 12:23:00"
             className={inputClass}
@@ -7402,14 +7461,14 @@ function TrainMovementContent() {
           {isAutomatic
             ? renderTp1ZigZagFlowCard({
                 title: "Automatic Flow",
-                subtitle: "Compact flow with left ↔ right arrows only.",
+                subtitle: "Compact flow. Next pill appears automatically after typing stops.",
                 steps: visibleAutomaticFlowSteps,
                 onReset: resetTp1AutomaticFlow,
                 resetTitle: "Reset Automatic Flow",
               })
             : renderTp1ZigZagFlowCard({
                 title: "Manual Flow",
-                subtitle: "Compact flow with left ↔ right arrows only.",
+                subtitle: "Compact flow. Next pill appears automatically after typing stops.",
                 steps: visibleManualFlowSteps,
                 onReset: resetTp1ManualFlow,
                 resetTitle: "Reset Manual Flow",
