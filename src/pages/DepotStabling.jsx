@@ -6798,7 +6798,7 @@ function TrainMovementContent() {
           const arrow = second ? (leftToRight ? "→" : "←") : "";
 
           return (
-            <div key={`${first.key}-${second?.key || "last"}`} className="grid grid-cols-[minmax(0,1fr)_24px_minmax(0,1fr)] items-center gap-x-1.5">
+            <div key={`movement-flow-row-${pairIndex}`} className="grid grid-cols-[minmax(0,1fr)_24px_minmax(0,1fr)] items-center gap-x-1.5">
               <div>{leftStep ? renderMovementFlowStepCard(leftStep, leftIndex) : null}</div>
               <div className="flex items-center justify-center">
                 <span
@@ -7380,7 +7380,7 @@ function TrainMovementContent() {
           const arrow = second ? (leftToRight ? "→" : "←") : "";
 
           return (
-            <div key={`${first.key}-${second?.key || "last"}`} className="grid grid-cols-[minmax(0,1fr)_24px_minmax(0,1fr)] items-center gap-x-1.5">
+            <div key={`movement-flow-row-${pairIndex}`} className="grid grid-cols-[minmax(0,1fr)_24px_minmax(0,1fr)] items-center gap-x-1.5">
               <div>{leftStep ? renderTp1FlowStepCard(leftStep, leftIndex) : null}</div>
               <div className="flex items-center justify-center">
                 <span
