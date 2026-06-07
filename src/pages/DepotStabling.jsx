@@ -3132,41 +3132,49 @@ const INSERTION_REMARK_STYLES = {
   },
 };
 
-const INSERTION_TID_REMARK_NO_CHANGE = new Set([
-  201, 203, 205, 213, 215, 217, 219,
-  101, 103, 105, 107, 109, 111, 113, 115, 117, 119,
-]);
-
-const INSERTION_TID_REMARK_GREEN = new Set([
-  212, 214, 216, 218, 220,
-  102, 104, 106, 108, 110,
-]);
-
-const INSERTION_TID_REMARK_RED = new Set([
-  112, 114, 116, 118, 120,
-  202, 204, 206, 208, 210,
-]);
-
-const INSERTION_TID_REMARK_GRAY = new Set([211, 209, 207]);
-
-const INSERTION_TID_REMARK_COLOR_STYLES = {
-  green: {
-    bg: "rgba(22, 163, 74, 0.30)",
+const INSERTION_ASSIST_REMARK_STYLES = {
+  "Early Rem": {
+    bg: "rgba(34, 197, 94, 0.22)",
+    cardBg: "linear-gradient(135deg, rgba(20, 83, 45, 0.92), rgba(5, 46, 22, 0.92))",
     border: "#22c55e",
-    color: "#dcfce7",
-    shadow: "0 0 10px rgba(34, 197, 94, 0.36), inset 0 1px 0 rgba(255,255,255,0.08)",
+    color: "#bbf7d0",
+    shadow: "0 0 12px rgba(34, 197, 94, 0.34), inset 0 1px 0 rgba(255,255,255,0.08)",
   },
-  red: {
-    bg: "rgba(185, 28, 28, 0.36)",
-    border: "#ef4444",
-    color: "#fee2e2",
-    shadow: "0 0 10px rgba(239, 68, 68, 0.38), inset 0 1px 0 rgba(255,255,255,0.08)",
+  "Late Rem": {
+    bg: "rgba(244, 63, 94, 0.22)",
+    cardBg: "linear-gradient(135deg, rgba(127, 29, 29, 0.92), rgba(76, 5, 25, 0.92))",
+    border: "#fb7185",
+    color: "#ffe4e6",
+    shadow: "0 0 12px rgba(251, 113, 133, 0.34), inset 0 1px 0 rgba(255,255,255,0.08)",
   },
-  gray: {
-    bg: "rgba(75, 85, 99, 0.42)",
-    border: "#9ca3af",
-    color: "#f3f4f6",
-    shadow: "0 0 10px rgba(156, 163, 175, 0.28), inset 0 1px 0 rgba(255,255,255,0.08)",
+  "ED (7pm)": {
+    bg: "rgba(248, 113, 113, 0.23)",
+    cardBg: "linear-gradient(135deg, rgba(127, 29, 29, 0.94), rgba(69, 10, 10, 0.92))",
+    border: "#f87171",
+    color: "#fecaca",
+    shadow: "0 0 12px rgba(248, 113, 113, 0.34), inset 0 1px 0 rgba(255,255,255,0.08)",
+  },
+  ED: {
+    bg: "rgba(250, 204, 21, 0.22)",
+    cardBg: "linear-gradient(135deg, rgba(113, 63, 18, 0.92), rgba(69, 26, 3, 0.92))",
+    border: "#facc15",
+    color: "#fde68a",
+    shadow: "0 0 12px rgba(250, 204, 21, 0.32), inset 0 1px 0 rgba(255,255,255,0.08)",
+  },
+};
+
+const WEEKDAY_INSERTION_ASSIST_REMARKS = {
+  west: {
+    101: "Late Rem", 102: "Early Rem", 103: "Late Rem", 104: "Early Rem", 105: "Late Rem",
+    106: "Early Rem", 107: "Late Rem", 108: "Early Rem", 109: "Late Rem", 110: "Early Rem",
+    111: "Late Rem", 112: "ED", 113: "Late Rem", 114: "ED", 115: "Late Rem",
+    116: "ED", 117: "Late Rem", 118: "ED", 119: "Late Rem", 120: "ED",
+  },
+  east: {
+    201: "Late Rem", 202: "ED", 203: "Late Rem", 204: "ED", 205: "Late Rem",
+    206: "ED", 207: "ED (7pm)", 208: "ED", 209: "ED (7pm)", 210: "ED",
+    211: "ED (7pm)", 212: "Early Rem", 213: "Late Rem", 214: "Early Rem", 215: "Late Rem",
+    216: "Early Rem", 217: "Late Rem", 218: "Early Rem", 219: "Late Rem", 220: "Early Rem",
   },
 };
 
@@ -3181,24 +3189,54 @@ function getInsertionTidRemarkNumber(value) {
   return match ? Number(match[1]) : null;
 }
 
+function normalizeInsertionAssistRemark(value = "") {
+  const text = String(value || "").trim().replace(/\s+/g, " ");
+  if (/^early\s*rem$/i.test(text)) return "Early Rem";
+  if (/^late\s*rem$/i.test(text)) return "Late Rem";
+  if (/^ed\s*\(\s*7\s*pm\s*\)$/i.test(text)) return "ED (7pm)";
+  if (/^ed$/i.test(text)) return "ED";
+  return "";
+}
+
+function getInsertionAssistRemarkStyle(remark = "") {
+  const normalized = normalizeInsertionAssistRemark(remark);
+  return normalized ? INSERTION_ASSIST_REMARK_STYLES[normalized] || null : null;
+}
+
+function getBuiltinInsertionAssistRemark(dayKey = "weekday", depot = "west", tid = "") {
+  if (normalizeTimetableType(dayKey) !== "weekday") return "";
+  const depotKey = normalizeDepotKey(depot);
+  const cleanTid = Number(String(tid || "").replace(/\D/g, ""));
+  return WEEKDAY_INSERTION_ASSIST_REMARKS[depotKey]?.[cleanTid] || "";
+}
+
+function getTimetableInsertionRemarkMap(activeTimetable = null, depot = "west") {
+  const parsed = getActiveTimetableParsedData(activeTimetable);
+  const depotKey = normalizeDepotKey(depot);
+  const entries = Array.isArray(parsed?.insertion?.[depotKey]?.entries)
+    ? parsed.insertion[depotKey].entries
+    : [];
+
+  return entries.reduce((map, entry) => {
+    const tid = Number(normalizeTidValue(entry?.tid));
+    if (!tid) return map;
+
+    const remark = normalizeInsertionAssistRemark(entry?.assistRemark || entry?.displayRemark || entry?.remark);
+    if (remark) map[tid] = remark;
+    return map;
+  }, {});
+}
+
 function getInsertionRemarkStyle(value) {
   const key = (value || "").toString().trim().toUpperCase();
 
   // Keep 3K1 / SW / 2W colours active every day.
   if (INSERTION_REMARK_STYLES[key]) return INSERTION_REMARK_STYLES[key];
 
-  // TID number colours are in-app only and must not affect Friday/Saturday.
-  if (isFridayOrSaturday()) return null;
-
-  const tid = getInsertionTidRemarkNumber(key);
-  if (tid === null) return null;
-
-  // Yellow/no-change TIDs must stay normal yellow even when repeated
-  // inside the green or red lists. Then gray overrides red, and red overrides green.
-  if (INSERTION_TID_REMARK_NO_CHANGE.has(tid)) return null;
-  if (INSERTION_TID_REMARK_GRAY.has(tid)) return INSERTION_TID_REMARK_COLOR_STYLES.gray;
-  if (INSERTION_TID_REMARK_RED.has(tid)) return INSERTION_TID_REMARK_COLOR_STYLES.red;
-  if (INSERTION_TID_REMARK_GREEN.has(tid)) return INSERTION_TID_REMARK_COLOR_STYLES.green;
+  // Allow manual text such as Early Rem, Late Rem, ED, and ED (7pm)
+  // to use the same colours as the assist table pill.
+  const assistStyle = getInsertionAssistRemarkStyle(value);
+  if (assistStyle) return assistStyle;
 
   return null;
 }
@@ -3268,7 +3306,7 @@ function getActiveInsertionEntryForCell(insertionLog = [], road, bi, trainKey = 
   return entry;
 }
 
-function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime }) {
+function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemarkStyle }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const maintList = key ? maintenanceMap[key] || [] : [];
@@ -3285,13 +3323,19 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const tidRemarkText = (tidInput || "").toString().trim().toUpperCase();
   const [showSweepChoice, setShowSweepChoice] = useState(false);
   const hasTidRemark = key && !inserted && tidRemarkText !== "";
-  const specialTidRemarkStyle = hasTidRemark ? getInsertionRemarkStyle(tidRemarkText) : null;
   const autoTidMatch = tidRemarkText.match(/^(?:TID[:\s-]*)?T?(\d{3})$/i);
   const autoTid = autoTidMatch ? parseInt(autoTidMatch[1], 10) : null;
   const autoTidDepot = WEST_ROADS.includes(road) ? "west" : "east";
+  const specialTidRemarkStyle = hasTidRemark
+    ? (typeof getTidAssistRemarkStyle === "function" ? getTidAssistRemarkStyle(tidRemarkText, autoTidDepot) : null) || getInsertionRemarkStyle(tidRemarkText)
+    : null;
   const insertedTid = inserted?.tid !== null && inserted?.tid !== undefined
     ? parseInt(String(inserted.tid).replace(/\D/g, ""), 10)
     : null;
+  const insertedTidRemarkStyle = insertedTid && typeof getTidAssistRemarkStyle === "function"
+    ? getTidAssistRemarkStyle(insertedTid, autoTidDepot)
+    : null;
+  const activeTidRemarkStyle = inserted ? insertedTidRemarkStyle : specialTidRemarkStyle;
   const insertedScheduledTime = insertedTid && typeof getTidScheduledTime === "function"
     ? getTidScheduledTime(insertedTid, autoTidDepot, { allowFallback: false })
     : null;
@@ -3339,15 +3383,42 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const requestAccent = primaryMaint ? getRequestAccent(primaryMaint) : "#4f8ef7";
   let trainColor = "#e2eaf4";
   if (expired) { trainColor = "#3a5068"; }
+  else if (activeTidRemarkStyle) { trainColor = activeTidRemarkStyle.color; }
   else if (inserted) { trainColor = "#4ade80"; }
   else if (hasTidRemark) { trainColor = "#facc15"; }
   else if (primaryMaint) { trainColor = requestAccent; }
 
   const displayVal = key ? key.replace(/^T/, "") : "";
 
-  const insCardBg = expired ? "linear-gradient(135deg,#071218,#050d14)" : inserted ? "linear-gradient(135deg,#0d2b1e,#082015)" : hasTidRemark ? "linear-gradient(135deg,#1f1c0a,#151205)" : key && primaryMaint ? getRequestCardGradient(primaryMaint) : key ? "linear-gradient(135deg,#0f2d4a,#081e32)" : "none";
-  const insCardBorder = expired ? "1px solid #1a3040" : inserted ? "1.5px solid #059669" : hasTidRemark ? "1.5px solid #ca8a04" : key && primaryMaint ? `1.5px solid ${requestAccent}` : key ? "1px solid #1e4d72" : "1.5px dashed #1b3a55";
-  const insCardGlow = key && primaryMaint && !expired && !inserted && !hasTidRemark
+  const insCardBg = expired
+    ? "linear-gradient(135deg,#071218,#050d14)"
+    : activeTidRemarkStyle?.cardBg || activeTidRemarkStyle?.bg
+      ? activeTidRemarkStyle.cardBg || activeTidRemarkStyle.bg
+      : inserted
+        ? "linear-gradient(135deg,#0d2b1e,#082015)"
+        : hasTidRemark
+          ? "linear-gradient(135deg,#1f1c0a,#151205)"
+          : key && primaryMaint
+            ? getRequestCardGradient(primaryMaint)
+            : key
+              ? "linear-gradient(135deg,#0f2d4a,#081e32)"
+              : "none";
+  const insCardBorder = expired
+    ? "1px solid #1a3040"
+    : activeTidRemarkStyle
+      ? `1.5px solid ${activeTidRemarkStyle.border}`
+      : inserted
+        ? "1.5px solid #059669"
+        : hasTidRemark
+          ? "1.5px solid #ca8a04"
+          : key && primaryMaint
+            ? `1.5px solid ${requestAccent}`
+            : key
+              ? "1px solid #1e4d72"
+              : "1.5px dashed #1b3a55";
+  const insCardGlow = activeTidRemarkStyle && !expired
+    ? activeTidRemarkStyle.shadow
+    : key && primaryMaint && !expired && !inserted && !hasTidRemark
     ? getRequestGlow(primaryMaint)
     : key && !expired
     ? "0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)"
@@ -3393,7 +3464,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           </span>
         ))}
         {key && !inserted && (<input ref={tidInputRef} type="text" value={tidInput} onChange={(e) => onTidChange(road, bi, e.target.value)} onKeyDown={onTidKeyDown} onFocus={onTidFocus} onPointerDown={onTidFocus} placeholder="TID" className="w-full h-6 px-1 text-center text-[12px] font-semibold rounded-lg outline-none placeholder:text-[#2b4f6b]" style={insTidInputStyle} />)}
-        {key && inserted && insertedRemarkLabel && (<span className="text-[12px] font-bold text-emerald-400">{insertedRemarkLabel}</span>)}
+        {key && inserted && insertedRemarkLabel && (
+          <span
+            className="text-[12px] font-bold"
+            style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
+          >
+            {insertedRemarkLabel}
+          </span>
+        )}
         {key && !inserted && showSweepChoice && (
           <div className="w-full rounded-lg border border-purple-500/70 bg-purple-950/40 px-1 py-1 shadow-[0_0_12px_rgba(168,85,247,0.24)]">
             <div className="mb-1 text-center text-[8px] font-black uppercase tracking-wide text-purple-200">Choose SW track</div>
@@ -3428,13 +3506,30 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           </div>
         )}
         {key && !inserted && !showSweepChoice && !isNumericTidRemark && (<button onClick={handleInsertClick} className={`w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all ${hasTidRemark ? "bg-yellow-950/50 border-yellow-600/60 text-yellow-300 hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300"}`}>{hasTidRemark ? "Insert Remark" : "Insert"}</button>)}
-        {key && inserted && (<button onClick={handleInsertedUndoClick} className="w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all bg-emerald-900/50 border-emerald-600 text-emerald-300 hover:bg-red-950/40 hover:border-red-700 hover:text-red-400" title="Click to undo">✓ {insertedDisplayTime}</button>)}
+        {key && inserted && (
+          <button
+            onClick={handleInsertedUndoClick}
+            className="w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all hover:bg-red-950/40 hover:border-red-700 hover:text-red-400"
+            style={activeTidRemarkStyle ? {
+              backgroundColor: activeTidRemarkStyle.bg,
+              borderColor: activeTidRemarkStyle.border,
+              color: activeTidRemarkStyle.color,
+            } : {
+              backgroundColor: "rgba(6, 78, 59, 0.5)",
+              borderColor: "#059669",
+              color: "#6ee7b7",
+            }}
+            title="Click to undo"
+          >
+            ✓ {insertedDisplayTime}
+          </button>
+        )}
       </div>
     </td>
   );
 }
 
-function InsertionStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime }) {
+function InsertionStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemarkStyle }) {
   const [hideFiltered, setHideFiltered] = useState(false);
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
@@ -3761,7 +3856,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
                         </td>
                       );
                     }
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value) => handleTidChange(targetRoad, targetBi, value, ri, i)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value) => handleTidChange(targetRoad, targetBi, value, ri, i)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -5036,7 +5131,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   );
 }
 
-function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog, onInsertionTick, onRemoveInsertionLog, onClearInsertionDepot, onClearInsertedTidRemarks, onClearInsertedTrains, tidInputs, onTidChange, getTidScheduledTime, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug }) {
+function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog, onInsertionTick, onRemoveInsertionLog, onClearInsertionDepot, onClearInsertedTidRemarks, onClearInsertedTrains, tidInputs, onTidChange, getTidScheduledTime, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug }) {
   // TID schedule range: earliest first-TID time across both series, latest last-TID time.
   // Series 1xx: 05:25–06:22 | Series 2xx: 05:24–06:21
   // Grey-out in the TID Reference Table only applies while current time is within this window.
@@ -5064,8 +5159,8 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
 
         {/* Stabling sections — centre column */}
         <div className="space-y-5 min-w-0">
-          <InsertionStablingSection title="WEST DEPOT" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} />
-          <InsertionStablingSection title="EAST DEPOT" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} />
+          <InsertionStablingSection title="WEST DEPOT" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} />
+          <InsertionStablingSection title="EAST DEPOT" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} />
         </div>
       </div>
 
@@ -9277,6 +9372,11 @@ export default function DepotStablingPage() {
     east: getTimetableInsertionTimeMap(activeTimetable, "east"),
   }), [activeTimetable]);
 
+  const activeInsertionRemarkMaps = useMemo(() => ({
+    west: getTimetableInsertionRemarkMap(activeTimetable, "west"),
+    east: getTimetableInsertionRemarkMap(activeTimetable, "east"),
+  }), [activeTimetable]);
+
   const getDayScheduleKey = () => {
     const selectedType = normalizeTimetableType(selectedTimetableType);
     if (["weekday", "friday", "saturday"].includes(selectedType)) return selectedType;
@@ -9286,6 +9386,24 @@ export default function DepotStablingPage() {
     if (day === 6) return "saturday";
     return "weekday";
   };
+
+  const getTidAssistRemarkStyle = useCallback((value, depot) => {
+    const specialStyle = getInsertionRemarkStyle(value);
+    const cleanTid = getInsertionTidRemarkNumber(value);
+    if (!cleanTid) return specialStyle;
+
+    const dayKey = getDayScheduleKey();
+    const depotKey = normalizeDepotKey(depot);
+    const oppositeDepotKey = depotKey === "west" ? "east" : "west";
+    const uploadedRemark =
+      activeInsertionRemarkMaps?.[depotKey]?.[cleanTid] ||
+      activeInsertionRemarkMaps?.[oppositeDepotKey]?.[cleanTid];
+    const fallbackRemark =
+      getBuiltinInsertionAssistRemark(dayKey, depotKey, cleanTid) ||
+      getBuiltinInsertionAssistRemark(dayKey, oppositeDepotKey, cleanTid);
+
+    return getInsertionAssistRemarkStyle(uploadedRemark || fallbackRemark) || specialStyle;
+  }, [activeInsertionRemarkMaps, selectedTimetableType]);
 
   const getTidScheduledTime = (tid, depot, options = {}) => {
     const { allowFallback = true } = options || {};
@@ -10212,6 +10330,7 @@ export default function DepotStablingPage() {
             tidInputs={tidInputs}
             onTidChange={handleTidChange}
             getTidScheduledTime={getTidScheduledTime}
+            getTidAssistRemarkStyle={getTidAssistRemarkStyle}
             activeTimetable={activeTimetable}
             activeTimetableType={selectedTimetableType}
             insertionLiveStatusText={insertionLiveStatusText}
