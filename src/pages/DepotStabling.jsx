@@ -5550,6 +5550,14 @@ function normalizeMovementCustomTimeInput(value) {
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
+function isCompleteMovementTimeInput(value) {
+  const match = String(value || "").match(/^(\d{2}):(\d{2})$/);
+  if (!match) return false;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
+}
+
 function TrainMovementContent() {
   const createDefaultMovementForms = () => ({
     insertion: {
@@ -5663,6 +5671,7 @@ function TrainMovementContent() {
     const defaultForm = createDefaultTp1MovementForm();
     return mergeTp1MovementForm(defaultForm, loadSavedMovementObject(TP1_MOVEMENT_FORM_KEY));
   });
+  const [focusedFlowInput, setFocusedFlowInput] = useState("");
   const movementScrollRestoreRef = useRef(null);
 
   const captureMovementScrollPosition = () => {
@@ -5731,8 +5740,20 @@ function TrainMovementContent() {
     }));
   };
 
+  const getMovementFlowInputKey = (operation, field) => `movement:${operation}:${field}`;
+  const getTp1FlowInputKey = (field) => `tp1:${field}`;
+  const isFlowInputFocused = (key) => focusedFlowInput === key;
+  const focusFlowInput = (key) => setFocusedFlowInput(key);
+  const blurFlowInput = (key) => {
+    setFocusedFlowInput((current) => (current === key ? "" : current));
+  };
+
+  const isMovementFlowFieldSettled = (operation, field) => !isFlowInputFocused(getMovementFlowInputKey(operation, field));
+  const isTp1FlowFieldSettled = (field) => !isFlowInputFocused(getTp1FlowInputKey(field));
+
   const resetTp1AutomaticFlow = () => {
     captureMovementScrollPosition();
+    setFocusedFlowInput("");
     setTp1Form((prev) => ({
       ...prev,
       movementType: "automatic",
@@ -5753,6 +5774,7 @@ function TrainMovementContent() {
 
   const resetTp1ManualFlow = () => {
     captureMovementScrollPosition();
+    setFocusedFlowInput("");
     setTp1Form((prev) => ({
       ...prev,
       movementType: "manual",
@@ -5899,6 +5921,7 @@ function TrainMovementContent() {
 
   const addMovementLog = (operation) => {
     captureMovementScrollPosition();
+    setFocusedFlowInput("");
     const current = getMovementForm(operation);
     const built = buildMovementLine(operation);
     if (!built) return;
@@ -6027,12 +6050,14 @@ function TrainMovementContent() {
       const missing = [];
       if (!train) missing.push("Train Set");
       if (!tp1Form.planStatus) missing.push("Plan / Unplanned");
-      if (!tp1Form.trAtTp1) missing.push("TR at TP1");
+      if (!isCompleteMovementTimeInput(tp1Form.trAtTp1)) missing.push("TR at TP1 (HH:MM)");
       if (!tp1Form.shunterName) missing.push("Shunter Name");
-      if (movementType === "automatic" && !tp1Form.trLocalized) missing.push("TR Localized");
+      if (movementType === "automatic" && !isCompleteMovementTimeInput(tp1Form.trLocalized)) missing.push("TR Localized (HH:MM)");
       if (movementType === "automatic" && !tp1Form.automaticStablingRoad) missing.push("Stabling");
-      if (movementType === "manual" && !tp1Form.fromTp1) missing.push("From TP1");
-      if (movementType === "manual" && !tp1Form.toManual) missing.push("to Manual");
+      if (movementType === "automatic" && !isCompleteMovementTimeInput(tp1Form.trainPrepCompletedTime)) missing.push("Train Prep Completed (HH:MM)");
+      if (movementType === "automatic" && !isCompleteMovementTimeInput(tp1Form.pstPerformedTime)) missing.push("PST Performed (HH:MM)");
+      if (movementType === "manual" && !isCompleteMovementTimeInput(tp1Form.fromTp1)) missing.push("From TP1 (HH:MM)");
+      if (movementType === "manual" && !isCompleteMovementTimeInput(tp1Form.toManual)) missing.push("to Manual (HH:MM)");
 
       if (missing.length) {
         alert(`Please complete: ${missing.join(", ")}.`);
@@ -6071,6 +6096,7 @@ function TrainMovementContent() {
 
   const addTp1MovementLog = () => {
     captureMovementScrollPosition();
+    setFocusedFlowInput("");
     const text = buildTp1MovementText();
     if (!text) return;
 
@@ -6482,6 +6508,7 @@ function TrainMovementContent() {
 
   const resetMovementFlow = (operation) => {
     captureMovementScrollPosition();
+    setFocusedFlowInput("");
     setForms((prev) => ({
       ...prev,
       [operation]: createDefaultMovementForms()[operation],
@@ -6490,13 +6517,14 @@ function TrainMovementContent() {
 
   const isMovementTimeReady = (current = {}) => {
     if (current.timingMode !== "custom") return true;
-    return /^\d{2}:\d{2}$/.test(String(current.customTime || ""));
+    return isCompleteMovementTimeInput(current.customTime);
   };
 
   const renderMovementTimeFlowInput = (operation) => {
     const current = getMovementForm(operation);
     const isNow = current.timingMode !== "custom";
     const currentDisplay = isNow ? `${clockText} hrs` : `${current.customTime || "00:00"} hrs`;
+    const fieldKey = getMovementFlowInputKey(operation, "customTime");
 
     return (
       <div className="flex h-8 w-full items-center overflow-hidden rounded-lg border border-[#1e4060] bg-[#061827] shadow-[0_0_14px_rgba(79,142,247,0.10),inset_0_1px_0_rgba(255,255,255,0.04)] focus-within:border-[#4f8ef7]">
@@ -6533,16 +6561,24 @@ function TrainMovementContent() {
               inputMode="numeric"
               maxLength={5}
               value={current.customTime}
+              onFocus={() => focusFlowInput(fieldKey)}
               onKeyDown={(e) => {
                 const value = String(current.customTime || "");
                 const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                if (e.key === "Enter") {
+                  e.currentTarget.blur();
+                  return;
+                }
                 if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
                   e.preventDefault();
                   updateMovementForm(operation, "customTime", value.slice(0, -2));
                 }
               }}
               onChange={(e) => updateMovementForm(operation, "customTime", cleanMovementCustomTimeInput(e.target.value))}
-              onBlur={(e) => updateMovementForm(operation, "customTime", normalizeMovementCustomTimeInput(e.target.value))}
+              onBlur={(e) => {
+                updateMovementForm(operation, "customTime", normalizeMovementCustomTimeInput(e.target.value));
+                blurFlowInput(fieldKey);
+              }}
               placeholder="00:00"
               className="h-full min-w-[42px] flex-1 bg-transparent text-[11px] font-medium text-white outline-none placeholder:text-[#31516b]"
             />
@@ -6563,12 +6599,12 @@ function TrainMovementContent() {
     const accent = meta.accent;
     const inputClass = "h-8 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
     const glowInputBoxClass = "flex h-8 items-center gap-1.5 rounded-lg border border-[#2f7bc4] bg-[#061827] px-2 shadow-[0_0_12px_rgba(79,142,247,0.25),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_16px_rgba(79,142,247,0.42),inset_0_1px_0_rgba(255,255,255,0.08)]";
-    const trainReady = Boolean(normalizeMovementTrain(current.trainId));
-    const timingReady = trainReady && isMovementTimeReady(current);
+    const trainReady = Boolean(normalizeMovementTrain(current.trainId)) && isMovementFlowFieldSettled(operation, "trainId");
+    const timingReady = trainReady && isMovementTimeReady(current) && isMovementFlowFieldSettled(operation, "customTime");
     const depotReady = timingReady && Boolean(current.depot);
     const roadReady = !isInsertion || (depotReady && Boolean(current.road || selectedRoads[0]));
-    const reasonReady = isSwapping && depotReady && Boolean(String(current.swapReason || "").trim());
-    const replacementReady = isSwapping && reasonReady && Boolean(normalizeMovementTrain(current.replacedBy));
+    const reasonReady = isSwapping && depotReady && Boolean(String(current.swapReason || "").trim()) && isMovementFlowFieldSettled(operation, "swapReason");
+    const replacementReady = isSwapping && reasonReady && Boolean(normalizeMovementTrain(current.replacedBy)) && isMovementFlowFieldSettled(operation, "replacedBy");
     const requiredReady = isSwapping ? replacementReady : roadReady;
 
     const trainInput = () => (
@@ -6576,7 +6612,10 @@ function TrainMovementContent() {
         <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
         <input
           value={current.trainId}
+          onFocus={() => focusFlowInput(getMovementFlowInputKey(operation, "trainId"))}
+          onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
           onChange={(e) => updateMovementForm(operation, "trainId", e.target.value.replace(/\D/g, ""))}
+          onBlur={() => blurFlowInput(getMovementFlowInputKey(operation, "trainId"))}
           placeholder="25"
           className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
         />
@@ -6611,7 +6650,10 @@ function TrainMovementContent() {
     const tidInput = () => (
       <input
         value={current.tid}
+        onFocus={() => focusFlowInput(getMovementFlowInputKey(operation, "tid"))}
+        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
         onChange={(e) => updateMovementForm(operation, "tid", e.target.value.replace(/\D/g, ""))}
+        onBlur={() => blurFlowInput(getMovementFlowInputKey(operation, "tid"))}
         placeholder="Optional, e.g. 101"
         className={inputClass}
       />
@@ -6620,7 +6662,10 @@ function TrainMovementContent() {
     const reasonInput = () => (
       <input
         value={current.swapReason}
+        onFocus={() => focusFlowInput(getMovementFlowInputKey(operation, "swapReason"))}
+        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
         onChange={(e) => updateMovementForm(operation, "swapReason", e.target.value)}
+        onBlur={() => blurFlowInput(getMovementFlowInputKey(operation, "swapReason"))}
         placeholder="e.g. RST PM"
         className={inputClass}
       />
@@ -6631,7 +6676,10 @@ function TrainMovementContent() {
         <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
         <input
           value={current.replacedBy}
+          onFocus={() => focusFlowInput(getMovementFlowInputKey(operation, "replacedBy"))}
+          onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
           onChange={(e) => updateMovementForm(operation, "replacedBy", e.target.value.replace(/\D/g, ""))}
+          onBlur={() => blurFlowInput(getMovementFlowInputKey(operation, "replacedBy"))}
           placeholder="30"
           className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
         />
@@ -6915,30 +6963,41 @@ function TrainMovementContent() {
     const glowInputBoxClass = "flex h-8 items-center gap-1.5 rounded-lg border border-[#2f7bc4] bg-[#061827] px-2 shadow-[0_0_12px_rgba(79,142,247,0.25),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_16px_rgba(79,142,247,0.42),inset_0_1px_0_rgba(255,255,255,0.08)]";
     const timeInputBoxClass = "flex h-8 w-full items-center gap-1.5 rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-all focus-within:border-[#4f8ef7]";
 
-    const renderTp1TimeInput = (field, disabled = false) => (
-      <div className={`${timeInputBoxClass} ${disabled ? "cursor-not-allowed opacity-35" : ""}`}>
-        <input
-          type="text"
-          inputMode="numeric"
-          maxLength={5}
-          value={tp1Form[field]}
-          onKeyDown={(e) => {
-            const value = String(tp1Form[field] || "");
-            const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-            if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-              e.preventDefault();
-              updateTp1MovementForm(field, value.slice(0, -2));
-            }
-          }}
-          onChange={(e) => updateTp1MovementForm(field, cleanTp1MovementTimeInput(e.target.value))}
-          onBlur={(e) => updateTp1MovementForm(field, normalizeMovementCustomTimeInput(e.target.value))}
-          placeholder="00:00"
-          disabled={disabled}
-          className="h-full min-w-0 flex-1 bg-transparent text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] disabled:cursor-not-allowed"
-        />
-        <span className="shrink-0 text-[10px] font-medium text-[#8ea8c0]">hrs</span>
-      </div>
-    );
+    const renderTp1TimeInput = (field, disabled = false) => {
+      const fieldKey = getTp1FlowInputKey(field);
+      return (
+        <div className={`${timeInputBoxClass} ${disabled ? "cursor-not-allowed opacity-35" : ""}`}>
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={5}
+            value={tp1Form[field]}
+            onFocus={() => focusFlowInput(fieldKey)}
+            onKeyDown={(e) => {
+              const value = String(tp1Form[field] || "");
+              const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+              if (e.key === "Enter") {
+                e.currentTarget.blur();
+                return;
+              }
+              if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                e.preventDefault();
+                updateTp1MovementForm(field, value.slice(0, -2));
+              }
+            }}
+            onChange={(e) => updateTp1MovementForm(field, cleanTp1MovementTimeInput(e.target.value))}
+            onBlur={(e) => {
+              updateTp1MovementForm(field, normalizeMovementCustomTimeInput(e.target.value));
+              blurFlowInput(fieldKey);
+            }}
+            placeholder="00:00"
+            disabled={disabled}
+            className="h-full min-w-0 flex-1 bg-transparent text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] disabled:cursor-not-allowed"
+          />
+          <span className="shrink-0 text-[10px] font-medium text-[#8ea8c0]">hrs</span>
+        </div>
+      );
+    };
 
     const renderTypeButton = (type, title, subtitle, color) => {
       const active = movementType === type;
@@ -6959,15 +7018,17 @@ function TrainMovementContent() {
       );
     };
 
-    const automaticTrainSetReady = Boolean(normalizeMovementTrain(tp1Form.trainSet));
+    const isTp1TimeReady = (field) => isCompleteMovementTimeInput(tp1Form[field]) && isTp1FlowFieldSettled(field);
+
+    const automaticTrainSetReady = Boolean(normalizeMovementTrain(tp1Form.trainSet)) && isTp1FlowFieldSettled("trainSet");
     const automaticPlanReady = automaticTrainSetReady && Boolean(tp1Form.planStatus);
-    const automaticTrAtTp1Ready = automaticPlanReady && Boolean(tp1Form.trAtTp1);
+    const automaticTrAtTp1Ready = automaticPlanReady && isTp1TimeReady("trAtTp1");
     const automaticShunterReady = automaticTrAtTp1Ready && Boolean(tp1Form.shunterName);
-    const automaticTrLocalizedReady = automaticShunterReady && Boolean(tp1Form.trLocalized);
+    const automaticTrLocalizedReady = automaticShunterReady && isTp1TimeReady("trLocalized");
     const automaticStablingReady = automaticTrLocalizedReady && Boolean(tp1Form.automaticStablingRoad);
-    const automaticTrainPrepReady = automaticStablingReady && Boolean(tp1Form.trainPrepCompletedTime);
-    const automaticPstReady = automaticTrainPrepReady && Boolean(tp1Form.pstPerformedTime);
-    const automaticCompletedDcReady = automaticPstReady && Boolean(String(tp1Form.completedByDc || "").trim());
+    const automaticTrainPrepReady = automaticStablingReady && isTp1TimeReady("trainPrepCompletedTime");
+    const automaticPstReady = automaticTrainPrepReady && isTp1TimeReady("pstPerformedTime");
+    const automaticCompletedDcReady = automaticPstReady && Boolean(String(tp1Form.completedByDc || "").trim()) && isTp1FlowFieldSettled("completedByDc");
 
     const automaticFlowSteps = [
       {
@@ -6980,7 +7041,10 @@ function TrainMovementContent() {
             <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
             <input
               value={tp1Form.trainSet}
+              onFocus={() => focusFlowInput(getTp1FlowInputKey("trainSet"))}
+              onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
               onChange={(e) => updateTp1MovementForm("trainSet", e.target.value.replace(/\D/g, ""))}
+              onBlur={() => blurFlowInput(getTp1FlowInputKey("trainSet"))}
               placeholder="19"
               className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
             />
@@ -7076,7 +7140,10 @@ function TrainMovementContent() {
           <input
             type="text"
             value={tp1Form.completedByDc || ""}
+            onFocus={() => focusFlowInput(getTp1FlowInputKey("completedByDc"))}
+            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
             onChange={(e) => updateTp1MovementForm("completedByDc", e.target.value)}
+            onBlur={() => blurFlowInput(getTp1FlowInputKey("completedByDc"))}
             placeholder="DC name"
             className={inputClass}
           />
@@ -7092,7 +7159,10 @@ function TrainMovementContent() {
             type="text"
             maxLength={19}
             value={tp1Form.nextWashText || ""}
+            onFocus={() => focusFlowInput(getTp1FlowInputKey("nextWashText"))}
+            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
             onChange={(e) => updateTp1MovementForm("nextWashText", e.target.value)}
+            onBlur={() => blurFlowInput(getTp1FlowInputKey("nextWashText"))}
             placeholder="28-05-2026 12:23:00"
             className={inputClass}
           />
@@ -7102,12 +7172,12 @@ function TrainMovementContent() {
 
     const visibleAutomaticFlowSteps = automaticFlowSteps.filter((step) => step.visible);
 
-    const manualTrainSetReady = Boolean(normalizeMovementTrain(tp1Form.trainSet));
+    const manualTrainSetReady = Boolean(normalizeMovementTrain(tp1Form.trainSet)) && isTp1FlowFieldSettled("trainSet");
     const manualPlanReady = manualTrainSetReady && Boolean(tp1Form.planStatus);
-    const manualTrAtTp1Ready = manualPlanReady && Boolean(tp1Form.trAtTp1);
+    const manualTrAtTp1Ready = manualPlanReady && isTp1TimeReady("trAtTp1");
     const manualShunterReady = manualTrAtTp1Ready && Boolean(tp1Form.shunterName);
-    const manualFromTp1Ready = manualShunterReady && Boolean(tp1Form.fromTp1);
-    const manualToManualReady = manualFromTp1Ready && Boolean(tp1Form.toManual);
+    const manualFromTp1Ready = manualShunterReady && isTp1TimeReady("fromTp1");
+    const manualToManualReady = manualFromTp1Ready && isTp1TimeReady("toManual");
 
     const manualFlowSteps = [
       {
@@ -7120,7 +7190,10 @@ function TrainMovementContent() {
             <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
             <input
               value={tp1Form.trainSet}
+              onFocus={() => focusFlowInput(getTp1FlowInputKey("trainSet"))}
+              onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
               onChange={(e) => updateTp1MovementForm("trainSet", e.target.value.replace(/\D/g, ""))}
+              onBlur={() => blurFlowInput(getTp1FlowInputKey("trainSet"))}
               placeholder="19"
               className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
             />
@@ -7192,7 +7265,10 @@ function TrainMovementContent() {
             type="text"
             maxLength={19}
             value={tp1Form.nextWashText || ""}
+            onFocus={() => focusFlowInput(getTp1FlowInputKey("nextWashText"))}
+            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
             onChange={(e) => updateTp1MovementForm("nextWashText", e.target.value)}
+            onBlur={() => blurFlowInput(getTp1FlowInputKey("nextWashText"))}
             placeholder="28-05-2026 12:23:00"
             className={inputClass}
           />
