@@ -5758,23 +5758,22 @@ function TrainMovementContent() {
     }
     setFlowSettledInputs((prev) => ({ ...prev, [key]: true }));
   };
-  const scheduleFlowInputSettled = (key, delay = 650) => {
+  const scheduleFlowInputSettled = (key) => {
     if (!key) return;
     if (flowInputSettleTimerRef.current[key]) {
       clearTimeout(flowInputSettleTimerRef.current[key]);
-    }
-    setFlowSettledInputs((prev) => ({ ...prev, [key]: false }));
-    flowInputSettleTimerRef.current[key] = setTimeout(() => {
-      setFlowSettledInputs((prev) => ({ ...prev, [key]: true }));
       delete flowInputSettleTimerRef.current[key];
-    }, delay);
+    }
+    // Show the next flow pill immediately once the current input has valid text/time.
+    // Keep focus/cursor inside the current input so the user can continue typing.
+    setFlowSettledInputs((prev) => ({ ...prev, [key]: true }));
   };
   const blurFlowInput = (key) => {
     setFocusedFlowInput((current) => (current === key ? "" : current));
     markFlowInputSettledNow(key);
   };
 
-  const isFlowInputSettled = (key) => !isFlowInputFocused(key) || flowSettledInputs[key] === true;
+  const isFlowInputSettled = () => true;
   const isMovementFlowFieldSettled = (operation, field) => isFlowInputSettled(getMovementFlowInputKey(operation, field));
   const isTp1FlowFieldSettled = (field) => isFlowInputSettled(getTp1FlowInputKey(field));
 
@@ -6830,7 +6829,7 @@ function TrainMovementContent() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-white">{meta.title} Automatic Flow</p>
-              <p className="text-[10px] font-semibold text-[#8ea8c0]">Next pill appears automatically after typing stops.</p>
+              <p className="text-[10px] font-semibold text-[#8ea8c0]">Next pill appears immediately while typing continues.</p>
             </div>
             <button
               type="button"
@@ -7466,14 +7465,14 @@ function TrainMovementContent() {
           {isAutomatic
             ? renderTp1ZigZagFlowCard({
                 title: "Automatic Flow",
-                subtitle: "Compact flow. Next pill appears automatically after typing stops.",
+                subtitle: "Compact flow. Next pill appears immediately while typing continues.",
                 steps: visibleAutomaticFlowSteps,
                 onReset: resetTp1AutomaticFlow,
                 resetTitle: "Reset Automatic Flow",
               })
             : renderTp1ZigZagFlowCard({
                 title: "Manual Flow",
-                subtitle: "Compact flow. Next pill appears automatically after typing stops.",
+                subtitle: "Compact flow. Next pill appears immediately while typing continues.",
                 steps: visibleManualFlowSteps,
                 onReset: resetTp1ManualFlow,
                 resetTitle: "Reset Manual Flow",
