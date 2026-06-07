@@ -3394,10 +3394,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   else if (activeTidRemarkStyle) { trainColor = activeTidRemarkStyle.color; }
   else if (inserted) { trainColor = "#4ade80"; }
   else if (hasTidRemark) { trainColor = "#facc15"; }
-  else if (primaryMaint) { trainColor = requestAccent; }
 
   const displayVal = key ? key.replace(/^T/, "") : "";
 
+  // Maintenance/request remarks already show their own coloured pill.
+  // Keep the stabling card border/background neutral so the pill is the only request colour.
   const insCardBg = expired
     ? "linear-gradient(135deg,#071218,#050d14)"
     : activeTidRemarkStyle?.cardBg || activeTidRemarkStyle?.bg
@@ -3406,11 +3407,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         ? "linear-gradient(135deg,#0d2b1e,#082015)"
         : hasTidRemark
           ? "linear-gradient(135deg,#1f1c0a,#151205)"
-          : key && primaryMaint
-            ? getRequestCardGradient(primaryMaint)
-            : key
-              ? "linear-gradient(135deg,#0f2d4a,#081e32)"
-              : "none";
+          : key
+            ? "linear-gradient(135deg,#0f2d4a,#081e32)"
+            : "none";
   const insCardBorder = expired
     ? "1px solid #1a3040"
     : activeTidRemarkStyle
@@ -3419,15 +3418,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         ? "1.5px solid #059669"
         : hasTidRemark
           ? "1.5px solid #ca8a04"
-          : key && primaryMaint
-            ? `1.5px solid ${requestAccent}`
-            : key
-              ? "1px solid #1e4d72"
-              : "1.5px dashed #1b3a55";
+          : key
+            ? "1px solid #1e4d72"
+            : "1.5px dashed #1b3a55";
   const insCardGlow = activeTidRemarkStyle && !expired
     ? activeTidRemarkStyle.shadow
-    : key && primaryMaint && !expired && !inserted && !hasTidRemark
-    ? getRequestGlow(primaryMaint)
     : key && !expired
     ? "0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)"
     : undefined;
