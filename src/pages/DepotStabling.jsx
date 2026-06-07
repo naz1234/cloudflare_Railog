@@ -5266,6 +5266,46 @@ function formatTp1NextWashForLog(value) {
   };
 }
 
+
+function formatTp1RoadForLog(road = "") {
+  const clean = String(road || "").trim().toUpperCase();
+  if (!clean) return "";
+  return clean.replace(/^(WD|ED)[\s\u2013-]*(ST\d+)/i, (_, depot, stabling) => `${depot.toUpperCase()}\u2013${stabling.toUpperCase()}`);
+}
+
+function findTp1TrainStablingRoad(trainId = "") {
+  const trainKey = padTrainId(normalizeTrainId(trainId || ""));
+  if (!trainKey) return "";
+
+  const state = loadLocalStablingState();
+  const depots = [
+    { roads: WEST_ROADS, data: state.westData },
+    { roads: EAST_ROADS, data: state.eastData },
+  ];
+
+  for (const depot of depots) {
+    for (const road of depot.roads) {
+      const blocks = Array.isArray(depot.data?.[road]) ? depot.data[road] : [];
+      const found = blocks.some((block) => padTrainId(normalizeTrainId(block?.trainId || "")) === trainKey);
+      if (found) return formatTp1RoadForLog(road);
+    }
+  }
+
+  return "";
+}
+
+function formatTp1ShunterNameForLog(name = "") {
+  const clean = String(name || "").trim();
+  if (!clean) return "";
+  return clean
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+
 function getMovementDepotLabel(depot) {
   return depot === "east" ? "East Depot" : "West Depot";
 }
@@ -5370,6 +5410,8 @@ function TrainMovementContent() {
     trAtTp1: "",
     shunterName: "",
     trLocalized: "",
+    trainPrepCompletedTime: "",
+    pstPerformedTime: "",
     nextWashText: "",
     nextWashDate: "",
     nextWashTime: "",
@@ -5744,9 +5786,14 @@ function TrainMovementContent() {
     const displayTrain = train || "T19";
     const planStatus = tp1Form.planStatus || "Planned";
     const shunterName = (tp1Form.shunterName || "ALVIN").trim();
+    const shunterNameForLog = formatTp1ShunterNameForLog(shunterName) || shunterName;
     const trAtTp1 = tp1Form.trAtTp1 || "18:20";
     const shunterAuth = addMinutesToHHMM(trAtTp1, 1);
     const trLocalized = tp1Form.trLocalized || "18:28";
+    const trainPrepCompletedTime = tp1Form.trainPrepCompletedTime || "";
+    const pstPerformedTime = tp1Form.pstPerformedTime || "";
+    const pstCompletedTime = pstPerformedTime ? addMinutesToHHMM(pstPerformedTime, 6) : "";
+    const stablingRoad = findTp1TrainStablingRoad(train || displayTrain) || "Automatic Area";
     const fromTp1 = tp1Form.fromTp1 || "18:30";
     const toManual = tp1Form.toManual || "18:35";
     const nextWashSuffix = getTp1NextWashSuffix();
@@ -5768,10 +5815,29 @@ function TrainMovementContent() {
     }
 
     if (movementType === "automatic") {
-      return `${displayTrain}: ${planStatus} movement to Automatic Area.${nextWashSuffix}\n${trAtTp1} hrs – ${displayTrain} arrived at TP1 with Shunter ${shunterName} onboard.\n${shunterAuth} hrs – ${displayTrain} authorized to prepare the train, conduct a brake self-test, and localize the train.\n${trLocalized} hrs – ${displayTrain} localized at TP1.`;
+      const lines = [
+        `${displayTrain}: ${planStatus} movement to Automatic Area.${nextWashSuffix}`,
+        `${trAtTp1} hrs – ${displayTrain} arrived at TP1 with Shunter ${shunterNameForLog} onboard.`,
+        `${shunterAuth} hrs – ${displayTrain} authorized to prepare the train, conduct a brake self-test, and localize the train.`,
+      ];
+
+      if (trainPrepCompletedTime) {
+        lines.push(`${trainPrepCompletedTime} hrs – ${displayTrain} Train preparation completed at ${stablingRoad} by Shunter ${shunterNameForLog}.`);
+      }
+
+      lines.push(`${trLocalized} hrs – ${displayTrain} localized at TP1.`);
+
+      if (pstPerformedTime) {
+        lines.push(`${pstPerformedTime} hrs – ${displayTrain} PST completed at ${stablingRoad} from ${pstPerformedTime} to ${pstCompletedTime} hrs. No alarm reported.`);
+      }
+
+      return lines.join("\n");
     }
 
-    return `${displayTrain}: ${planStatus} movement to Manual Area.${nextWashSuffix}\n${trAtTp1} hrs – ${displayTrain} arrived at TP1.\n${shunterAuth} hrs – ${displayTrain} was authorized to prepare the train. Shunter ${shunterName} onboard.\n${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual Area at ${toManual} hrs.`;
+    return `${displayTrain}: ${planStatus} movement to Manual Area.${nextWashSuffix}
+${trAtTp1} hrs – ${displayTrain} arrived at TP1.
+${shunterAuth} hrs – ${displayTrain} was authorized to prepare the train. Shunter ${shunterNameForLog} onboard.
+${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual Area at ${toManual} hrs.`;
   };
 
   const addTp1MovementLog = () => {
@@ -5796,6 +5862,8 @@ function TrainMovementContent() {
       trainSet: "",
       trAtTp1: "",
       trLocalized: "",
+      trainPrepCompletedTime: "",
+      pstPerformedTime: "",
       nextWashText: "",
       nextWashDate: "",
       nextWashTime: "",
@@ -6410,10 +6478,22 @@ function TrainMovementContent() {
             </label>
 
             {isAutomatic && (
-              <label className="col-span-1">
-                <span className={labelClass}>TR Localized</span>
-                {renderTp1TimeInput("trLocalized")}
-              </label>
+              <>
+                <label className="col-span-1">
+                  <span className={labelClass}>TR Localized</span>
+                  {renderTp1TimeInput("trLocalized")}
+                </label>
+
+                <label className="col-span-1">
+                  <span className={labelClass}>Train Prep Completed <span className="normal-case tracking-normal text-[#6f8fa8]">Optional</span></span>
+                  {renderTp1TimeInput("trainPrepCompletedTime")}
+                </label>
+
+                <label className="col-span-1">
+                  <span className={labelClass}>PST Performed <span className="normal-case tracking-normal text-[#6f8fa8]">Optional</span></span>
+                  {renderTp1TimeInput("pstPerformedTime")}
+                </label>
+              </>
             )}
 
             <label className="col-span-2">
