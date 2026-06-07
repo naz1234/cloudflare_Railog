@@ -5219,6 +5219,46 @@ function saveTp1MovementLog(entries) {
   try { localStorage.setItem(TP1_MOVEMENT_LOG_KEY, JSON.stringify(entries || [])); } catch {}
 }
 
+
+function getTp1EntrySection(entry = {}) {
+  const type = String(entry?.type || "").toLowerCase();
+  const text = String(entry?.text || "").toLowerCase();
+
+  if (type === "automatic" || text.includes("automatic area")) return "automatic";
+  if (type === "manual" || text.includes("manual area")) return "manual";
+  return "other";
+}
+
+function getTp1EntrySectionOrder(entry = {}) {
+  const section = getTp1EntrySection(entry);
+  if (section === "automatic") return 0;
+  if (section === "manual") return 1;
+  return 2;
+}
+
+function getTp1EntrySortMinutes(entry = {}) {
+  const preferredTime = entry?.trAtTp1 || entry?.startTime || entry?.time;
+  const preferredMinutes = excelTimeToMinutes(preferredTime);
+  if (preferredMinutes !== null) return preferredMinutes;
+
+  const text = String(entry?.text || "");
+  const firstLogTime = text.match(/(\d{1,2}:\d{2})\s*hrs/i)?.[1] || text.match(/(\d{1,2}:\d{2})/)?.[1];
+  const firstLogMinutes = excelTimeToMinutes(firstLogTime);
+  return firstLogMinutes !== null ? firstLogMinutes : 99999;
+}
+
+function sortTp1MovementEntries(entries = []) {
+  return [...(Array.isArray(entries) ? entries : [])].sort((a, b) => {
+    const sectionDiff = getTp1EntrySectionOrder(a) - getTp1EntrySectionOrder(b);
+    if (sectionDiff !== 0) return sectionDiff;
+
+    const timeDiff = getTp1EntrySortMinutes(a) - getTp1EntrySortMinutes(b);
+    if (timeDiff !== 0) return timeDiff;
+
+    return String(a?.createdAt || "").localeCompare(String(b?.createdAt || ""));
+  });
+}
+
 function formatTp1DateForLog(dateText) {
   const raw = String(dateText || "").trim();
   if (!raw) return "dd/mm/yyyy";
@@ -5465,7 +5505,7 @@ function TrainMovementContent() {
   ];
 
   const [entries, setEntries] = useState(() => loadTrainMovementLog());
-  const [tp1Entries, setTp1Entries] = useState(() => loadTp1MovementLog());
+  const [tp1Entries, setTp1Entries] = useState(() => sortTp1MovementEntries(loadTp1MovementLog()));
   const [clockText, setClockText] = useState(() => formatTime(new Date()));
   const [copyFeedback, setCopyFeedback] = useState({});
   const copyFeedbackTimerRef = useRef({});
@@ -5495,7 +5535,7 @@ function TrainMovementContent() {
   }, [forms, entries, tp1Form, tp1Entries]);
 
   useEffect(() => { saveTrainMovementLog(entries); }, [entries]);
-  useEffect(() => { saveTp1MovementLog(tp1Entries); }, [tp1Entries]);
+  useEffect(() => { saveTp1MovementLog(sortTp1MovementEntries(tp1Entries)); }, [tp1Entries]);
   useEffect(() => { saveSavedMovementObject(TRAIN_MOVEMENT_FORM_KEY, forms); }, [forms]);
   useEffect(() => { saveSavedMovementObject(TP1_MOVEMENT_FORM_KEY, tp1Form); }, [tp1Form]);
 
@@ -5852,11 +5892,12 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
       type: movementType,
       train: normalizeMovementTrain(tp1Form.trainSet),
       planStatus: tp1Form.planStatus,
+      startTime: tp1Form.trAtTp1,
       createdAt: now.toISOString(),
       text,
     };
 
-    setTp1Entries((prev) => [...prev, entry]);
+    setTp1Entries((prev) => sortTp1MovementEntries([...prev, entry]));
     setTp1Form((prev) => ({
       ...prev,
       trainSet: "",
@@ -5884,7 +5925,7 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
   };
 
   const copyTp1MovementLogs = async () => {
-    const lines = tp1Entries.map((entry) => entry.text);
+    const lines = sortTp1MovementEntries(tp1Entries).map((entry) => entry.text);
     if (lines.length === 0) {
       showCopyFeedback("tp1-all", "empty");
       return;
@@ -6575,7 +6616,7 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
                   No inbound / outbound movement log yet.
                 </div>
               ) : (
-                tp1Entries.map((entry) => (
+                sortTp1MovementEntries(tp1Entries).map((entry) => (
                   <div key={entry.id} className="group flex items-start gap-2 border-b border-[#12304a]/55 px-3 py-2 last:border-b-0">
                     <pre className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.32] tracking-[-0.01em] text-[#f4f8ff]">{entry.text}</pre>
                     <button
