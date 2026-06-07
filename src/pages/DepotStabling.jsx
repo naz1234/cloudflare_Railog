@@ -5722,6 +5722,23 @@ function TrainMovementContent() {
     }));
   };
 
+  const resetTp1ManualFlow = () => {
+    captureMovementScrollPosition();
+    setTp1Form((prev) => ({
+      ...prev,
+      movementType: "manual",
+      trainSet: "",
+      planStatus: "Planned",
+      trAtTp1: "",
+      shunterName: "",
+      fromTp1: "",
+      toManual: "",
+      nextWashText: "",
+      nextWashDate: "",
+      nextWashTime: "",
+    }));
+  };
+
   const getMovementForm = (operation) => forms[operation] || createDefaultMovementForms()[operation];
 
   const getResolvedMovementTime = (operation) => {
@@ -6735,6 +6752,165 @@ function TrainMovementContent() {
 
     const visibleAutomaticFlowSteps = automaticFlowSteps.filter((step) => step.visible);
 
+    const manualTrainSetReady = Boolean(normalizeMovementTrain(tp1Form.trainSet));
+    const manualPlanReady = manualTrainSetReady && Boolean(tp1Form.planStatus);
+    const manualTrAtTp1Ready = manualPlanReady && Boolean(tp1Form.trAtTp1);
+    const manualShunterReady = manualTrAtTp1Ready && Boolean(tp1Form.shunterName);
+    const manualFromTp1Ready = manualShunterReady && Boolean(tp1Form.fromTp1);
+    const manualToManualReady = manualFromTp1Ready && Boolean(tp1Form.toManual);
+
+    const manualFlowSteps = [
+      {
+        key: "trainSet",
+        label: "Train Set",
+        visible: true,
+        complete: manualTrainSetReady,
+        render: () => (
+          <div className={glowInputBoxClass}>
+            <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
+            <input
+              value={tp1Form.trainSet}
+              onChange={(e) => updateTp1MovementForm("trainSet", e.target.value.replace(/\D/g, ""))}
+              placeholder="19"
+              className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
+            />
+          </div>
+        ),
+      },
+      {
+        key: "planStatus",
+        label: "Plan / Unplanned",
+        visible: manualTrainSetReady,
+        complete: manualPlanReady,
+        render: () => (
+          <select
+            value={tp1Form.planStatus}
+            onChange={(e) => updateTp1MovementForm("planStatus", e.target.value)}
+            className={inputClass}
+          >
+            <option value="Planned">Planned</option>
+            <option value="Unplanned">Unplanned</option>
+          </select>
+        ),
+      },
+      {
+        key: "trAtTp1",
+        label: "TR at TP1",
+        visible: manualPlanReady,
+        complete: manualTrAtTp1Ready,
+        render: () => renderTp1TimeInput("trAtTp1"),
+      },
+      {
+        key: "shunterName",
+        label: "Shunter Name",
+        visible: manualTrAtTp1Ready,
+        complete: manualShunterReady,
+        render: () => (
+          <select
+            value={tp1Form.shunterName}
+            onChange={(e) => updateTp1MovementForm("shunterName", e.target.value)}
+            className={inputClass}
+          >
+            <option value="">Select Shunter</option>
+            {SHUNTER_NAME_OPTIONS.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+        ),
+      },
+      {
+        key: "fromTp1",
+        label: "From TP1",
+        visible: manualShunterReady,
+        complete: manualFromTp1Ready,
+        render: () => renderTp1TimeInput("fromTp1"),
+      },
+      {
+        key: "toManual",
+        label: "to Manual",
+        visible: manualFromTp1Ready,
+        complete: manualToManualReady,
+        render: () => renderTp1TimeInput("toManual"),
+      },
+      {
+        key: "nextWashText",
+        label: "Next Wash Optional",
+        visible: manualToManualReady,
+        complete: Boolean(String(tp1Form.nextWashText || "").trim()),
+        render: () => (
+          <input
+            type="text"
+            maxLength={19}
+            value={tp1Form.nextWashText || ""}
+            onChange={(e) => updateTp1MovementForm("nextWashText", e.target.value)}
+            placeholder="28-05-2026 12:23:00"
+            className={inputClass}
+          />
+        ),
+      },
+    ];
+
+    const visibleManualFlowSteps = manualFlowSteps.filter((step) => step.visible);
+
+    const renderTp1ZigZagFlowCard = ({ title, subtitle, steps, onReset, resetTitle }) => (
+      <div className="rounded-xl border border-[#1e4060] bg-[#031827] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-[12px] font-black uppercase tracking-[0.12em] text-white">{title}</p>
+            <p className="text-[10px] font-semibold text-[#8ea8c0]">{subtitle}</p>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="rounded-full border px-2 py-0.5 text-[9px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}16`, color: accent }}>
+              Zig-zag
+            </span>
+            <button
+              type="button"
+              onClick={onReset}
+              className="rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] shadow-[0_0_14px_rgba(239,68,68,0.38),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.03]"
+              style={{ borderColor: "rgba(248,113,113,0.85)", backgroundColor: "rgba(127,29,29,0.36)", color: "#fecaca" }}
+              title={resetTitle}
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-x-2.5 gap-y-2">
+          {steps.map((step, index) => {
+            const pairIndex = Math.floor(index / 2);
+            const firstInPair = index % 2 === 0;
+            const leftToRight = pairIndex % 2 === 0;
+            const columnStart = leftToRight ? (firstInPair ? 1 : 2) : (firstInPair ? 2 : 1);
+            const rowStart = pairIndex + 1;
+            const directionText = index === steps.length - 1 ? "" : leftToRight === firstInPair ? "→" : "←";
+
+            return (
+              <div
+                key={step.key}
+                className="rounded-xl border p-2 transition-all"
+                style={{
+                  gridColumnStart: columnStart,
+                  gridRowStart: rowStart,
+                  borderColor: step.complete ? `${accent}70` : "#1e4060",
+                  background: step.complete ? `linear-gradient(135deg, ${accent}14, #061827 82%)` : "#061827",
+                  boxShadow: step.complete ? `0 0 10px ${accent}12, inset 0 1px 0 rgba(255,255,255,0.05)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
+                }}
+              >
+                <div className="mb-1 flex items-center justify-between gap-1.5">
+                  <span className="inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]" style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: step.complete ? accent : "#7ea6c2", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
+                    <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal" style={{ borderColor: step.complete ? `${accent}80` : "#31516b" }}>{index + 1}</span>
+                    <span className="truncate">{step.label}</span>
+                  </span>
+                  <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>{step.complete ? "DONE" : directionText}</span>
+                </div>
+                {step.render()}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+
     return (
       <section
         className="overflow-hidden rounded-xl border shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)] xl:sticky xl:top-3"
@@ -6768,132 +6944,21 @@ function TrainMovementContent() {
             {renderTypeButton("manual", "Manual Area", "Fill From TP1 + to Manual", "#f59e0b")}
           </div>
 
-          {isAutomatic ? (
-            <div className="rounded-xl border border-[#1e4060] bg-[#031827] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <p className="text-[12px] font-black uppercase tracking-[0.12em] text-white">Automatic Flow</p>
-                  <p className="text-[10px] font-semibold text-[#8ea8c0]">Compact zig-zag: left → right → down → left.</p>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="rounded-full border px-2 py-0.5 text-[9px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}16`, color: accent }}>
-                    Zig-zag
-                  </span>
-                  <button
-                    type="button"
-                    onClick={resetTp1AutomaticFlow}
-                    className="rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] shadow-[0_0_14px_rgba(239,68,68,0.38),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.03]"
-                    style={{ borderColor: "rgba(248,113,113,0.85)", backgroundColor: "rgba(127,29,29,0.36)", color: "#fecaca" }}
-                    title="Reset Automatic Flow"
-                  >
-                    Reset
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-x-2.5 gap-y-2">
-                {visibleAutomaticFlowSteps.map((step, index) => {
-                  const pairIndex = Math.floor(index / 2);
-                  const firstInPair = index % 2 === 0;
-                  const leftToRight = pairIndex % 2 === 0;
-                  const columnStart = leftToRight ? (firstInPair ? 1 : 2) : (firstInPair ? 2 : 1);
-                  const rowStart = pairIndex + 1;
-                  const directionText = index === visibleAutomaticFlowSteps.length - 1 ? "" : leftToRight === firstInPair ? "→" : "←";
-
-                  return (
-                    <div
-                      key={step.key}
-                      className="rounded-xl border p-2 transition-all"
-                      style={{
-                        gridColumnStart: columnStart,
-                        gridRowStart: rowStart,
-                        borderColor: step.complete ? `${accent}70` : "#1e4060",
-                        background: step.complete ? `linear-gradient(135deg, ${accent}14, #061827 82%)` : "#061827",
-                        boxShadow: step.complete ? `0 0 10px ${accent}12, inset 0 1px 0 rgba(255,255,255,0.05)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
-                      }}
-                    >
-                      <div className="mb-1 flex items-center justify-between gap-1.5">
-                        <span className="inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]" style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: step.complete ? accent : "#7ea6c2", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
-                          <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal" style={{ borderColor: step.complete ? `${accent}80` : "#31516b" }}>{index + 1}</span>
-                          <span className="truncate">{step.label}</span>
-                        </span>
-                        <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>{step.complete ? "DONE" : directionText}</span>
-                      </div>
-                      {step.render()}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2.5">
-              <label className="col-span-1">
-                <span className={labelClass}>Train Set</span>
-                <div className={glowInputBoxClass}>
-                  <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
-                  <input
-                    value={tp1Form.trainSet}
-                    onChange={(e) => updateTp1MovementForm("trainSet", e.target.value.replace(/\D/g, ""))}
-                    placeholder="19"
-                    className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
-                  />
-                </div>
-              </label>
-
-              <label className="col-span-1">
-                <span className={labelClass}>Plan / Unplanned</span>
-                <select
-                  value={tp1Form.planStatus}
-                  onChange={(e) => updateTp1MovementForm("planStatus", e.target.value)}
-                  className={inputClass}
-                >
-                  <option value="Planned">Planned</option>
-                  <option value="Unplanned">Unplanned</option>
-                </select>
-              </label>
-
-              <label className="col-span-1">
-                <span className={labelClass}>TR at TP1</span>
-                {renderTp1TimeInput("trAtTp1")}
-              </label>
-
-              <label className="col-span-1">
-                <span className={labelClass}>Shunter Name</span>
-                <select
-                  value={tp1Form.shunterName}
-                  onChange={(e) => updateTp1MovementForm("shunterName", e.target.value)}
-                  className={inputClass}
-                >
-                  <option value="">Select Shunter</option>
-                  {SHUNTER_NAME_OPTIONS.map((name) => (
-                    <option key={name} value={name}>{name}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="col-span-2">
-                <span className={labelClass}>Next Wash <span className="normal-case tracking-normal text-[#6f8fa8]">Optional</span></span>
-                <input
-                  type="text"
-                  maxLength={19}
-                  value={tp1Form.nextWashText || ""}
-                  onChange={(e) => updateTp1MovementForm("nextWashText", e.target.value)}
-                  placeholder="28-05-2026 12:23:00"
-                  className={inputClass}
-                />
-              </label>
-
-              <label className="col-span-1">
-                <span className={labelClass}>From TP1</span>
-                {renderTp1TimeInput("fromTp1")}
-              </label>
-
-              <label className="col-span-1">
-                <span className={labelClass}>to Manual</span>
-                {renderTp1TimeInput("toManual")}
-              </label>
-            </div>
-          )}
+          {isAutomatic
+            ? renderTp1ZigZagFlowCard({
+                title: "Automatic Flow",
+                subtitle: "Compact zig-zag: left → right → down → left.",
+                steps: visibleAutomaticFlowSteps,
+                onReset: resetTp1AutomaticFlow,
+                resetTitle: "Reset Automatic Flow",
+              })
+            : renderTp1ZigZagFlowCard({
+                title: "Manual Flow",
+                subtitle: "Train Set → Plan/Unplanned → TR at TP1 → Manual Area.",
+                steps: visibleManualFlowSteps,
+                onReset: resetTp1ManualFlow,
+                resetTitle: "Reset Manual Flow",
+              })}
 
           <div className="rounded-xl border border-[#1e4060] bg-[#041727] p-3">
             <div className="mb-2 flex items-center justify-between gap-2">
