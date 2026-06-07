@@ -5686,6 +5686,25 @@ function TrainMovementContent() {
     }));
   };
 
+  const resetTp1AutomaticFlow = () => {
+    captureMovementScrollPosition();
+    setTp1Form((prev) => ({
+      ...prev,
+      movementType: "automatic",
+      trainSet: "",
+      planStatus: "Planned",
+      trAtTp1: "",
+      shunterName: "",
+      trLocalized: "",
+      trainPrepCompletedTime: "",
+      pstPerformedTime: "",
+      completedByDc: "",
+      nextWashText: "",
+      nextWashDate: "",
+      nextWashTime: "",
+    }));
+  };
+
   const getMovementForm = (operation) => forms[operation] || createDefaultMovementForms()[operation];
 
   const getResolvedMovementTime = (operation) => {
@@ -6736,9 +6755,20 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
                   <p className="text-[12px] font-black uppercase tracking-[0.12em] text-white">Automatic Flow</p>
                   <p className="text-[10px] font-semibold text-[#8ea8c0]">Compact zig-zag: left → right → down → left.</p>
                 </div>
-                <span className="rounded-full border px-2 py-0.5 text-[9px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}16`, color: accent }}>
-                  Zig-zag
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="rounded-full border px-2 py-0.5 text-[9px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}16`, color: accent }}>
+                    Zig-zag
+                  </span>
+                  <button
+                    type="button"
+                    onClick={resetTp1AutomaticFlow}
+                    className="rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] transition-all hover:scale-[1.03]"
+                    style={{ borderColor: `${accent}55`, backgroundColor: `${accent}10`, color: accent }}
+                    title="Reset Automatic Flow"
+                  >
+                    Reset
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-x-2.5 gap-y-2">
