@@ -3688,7 +3688,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
       return Boolean(getActiveInsertionEntryForCell(insertionLog, road, bi, trainKey));
     })
   );
-  const handleClearTidRemarks = () => {
+  const handleClearAllTid = () => {
     roads.forEach((road) => {
       blockIndices.forEach((bi) => {
         if ((tidInputs[`${road}-${bi}`] || "").trim() !== "") {
@@ -3697,17 +3697,8 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
       });
     });
 
+    // One action to clear both manual TID/remark inputs and inserted TID status/logs.
     onClearInsertedTidRemarks?.(roads, blockIndices);
-  };
-  const handleClearInsertedTrains = () => {
-    roads.forEach((road) => {
-      blockIndices.forEach((bi) => {
-        if ((tidInputs[`${road}-${bi}`] || "").trim() !== "") {
-          onTidChange(road, bi, "");
-        }
-      });
-    });
-
     onClearInsertedTrains?.(roads, blockIndices);
     setHideElapsedTid(false);
   };
@@ -3760,11 +3751,11 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
           {hideFiltered ? "Show 3K1 / SW" : "Hide 3K1 / SW"}
         </button>
             <button
-              onClick={handleClearTidRemarks}
-              disabled={!hasTidRemarks}
+              onClick={handleClearAllTid}
+              disabled={!hasTidRemarks && !hasInsertedTrains}
               className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
               style={MAIN_STABLING_BUTTON_DANGER}
-              title="Clear TID / remark inputs for this depot"
+              title="Clear all TID inputs, remarks and inserted TID status for this depot"
             >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 6h18" />
@@ -3773,23 +3764,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
             <path d="M10 11v5" />
             <path d="M14 11v5" />
           </svg>
-          Clear TID Remark
-        </button>
-            <button
-              onClick={handleClearInsertedTrains}
-              disabled={!hasInsertedTrains}
-              className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
-              style={MAIN_STABLING_BUTTON_DANGER}
-              title="Clear inserted status and insertion log for this depot"
-            >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 6h18" />
-            <path d="M8 6V4h8v2" />
-            <path d="M19 6l-1 14H6L5 6" />
-            <path d="M10 11v5" />
-            <path d="M14 11v5" />
-          </svg>
-          Clear Inserted Train
+          Clear All TID
         </button>
             <button
               onClick={() => setHideElapsedTid((v) => !v)}
