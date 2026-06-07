@@ -11481,66 +11481,81 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "admin" && (
-          <div className="w-full min-h-[calc(100vh-120px)] rounded-2xl border border-[#1a3a56] bg-[#061a2b]/70 p-5">
-            <div className="flex items-center justify-between border-b border-[#1a3a56]/70 pb-3">
-              <div>
-                <p className="text-[10px] font-normal uppercase tracking-[0.28em] text-[#4a8ab5]">ADM</p>
-                <h2 className="mt-1 text-[18px] font-normal text-white">Admin</h2>
+          <div className="w-full min-h-[calc(100vh-120px)] px-2 pt-8">
+            <div className="mx-auto w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[#23506f]/80 bg-[#061827]/95 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur">
+              <div className="relative border-b border-[#1a3a56]/80 bg-gradient-to-br from-[#0d3455] via-[#08223a] to-[#061827] px-5 py-5">
+                <div className="absolute right-5 top-5 h-10 w-10 rounded-full border border-[#4f8ef7]/25 bg-[#4f8ef7]/10 blur-[1px]" />
+                <div className="relative flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#4f8ef7]/40 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.22em] text-[#bceaff] shadow-[0_0_22px_rgba(79,142,247,0.18)]">
+                    ADM
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-normal uppercase tracking-[0.24em] text-[#6db6e8]">Admin access</p>
+                    <h2 className="mt-1 text-[18px] font-semibold text-white">Admin Login</h2>
+                  </div>
+                </div>
+                <p className="relative mt-4 text-[11px] leading-relaxed text-[#8dc7ed]">
+                  Enter admin ID and password to unlock this page.
+                </p>
               </div>
-              {isAdminUnlocked && (
-                <button
-                  type="button"
-                  onClick={handleAdminLogout}
-                  className="rounded-lg border border-[#2b4f6b] bg-[#071828] px-3 py-1.5 text-[10px] font-normal uppercase tracking-wide text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white"
-                >
-                  Logout
-                </button>
+
+              {!isAdminUnlocked ? (
+                <form onSubmit={handleAdminLogin} className="px-5 py-5">
+                  <label className="block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                    ID
+                    <input
+                      value={adminCredentials.id}
+                      onChange={(event) => {
+                        setAdminCredentials((prev) => ({ ...prev, id: event.target.value }));
+                        setAdminError("");
+                      }}
+                      className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
+                      autoComplete="username"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                    />
+                  </label>
+                  <label className="mt-4 block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                    Password
+                    <input
+                      type="password"
+                      value={adminCredentials.password}
+                      onChange={(event) => {
+                        setAdminCredentials((prev) => ({ ...prev, password: event.target.value }));
+                        setAdminError("");
+                      }}
+                      className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
+                      autoComplete="current-password"
+                    />
+                  </label>
+                  {adminError && (
+                    <p className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-[11px] font-normal text-red-200">
+                      {adminError}
+                    </p>
+                  )}
+                  <button
+                    type="submit"
+                    className="mt-5 flex h-10 w-full items-center justify-center rounded-xl border border-[#4f8ef7]/60 bg-[#1b5f93] text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(79,142,247,0.22)] transition hover:bg-[#2476b4] active:scale-[0.99]"
+                  >
+                    Login
+                  </button>
+                </form>
+              ) : (
+                <div className="px-5 py-5">
+                  <div className="rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-4">
+                    <p className="text-[13px] font-semibold text-emerald-100">Admin page unlocked.</p>
+                    <p className="mt-1 text-[11px] font-normal text-[#9ccbea]">This admin area is ready for future controls.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAdminLogout}
+                    className="mt-4 flex h-10 w-full items-center justify-center rounded-xl border border-[#2b4f6b] bg-[#071828] text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-[0.99]"
+                  >
+                    Logout
+                  </button>
+                </div>
               )}
             </div>
-
-            {!isAdminUnlocked ? (
-              <form onSubmit={handleAdminLogin} className="mt-5 max-w-[360px] rounded-2xl border border-[#1a3a56] bg-[#071828]/80 p-4">
-                <p className="text-[12px] font-normal text-[#9ccbea]">Admin login required.</p>
-                <label className="mt-4 block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
-                  ID
-                  <input
-                    value={adminCredentials.id}
-                    onChange={(event) => {
-                      setAdminCredentials((prev) => ({ ...prev, id: event.target.value }));
-                      setAdminError("");
-                    }}
-                    className="mt-1 w-full rounded-lg border border-[#2b4f6b] bg-[#04111f] px-3 py-2 text-[13px] font-normal text-white outline-none transition focus:border-[#4f8ef7]"
-                    autoComplete="username"
-                    autoCapitalize="none"
-                    autoCorrect="off"
-                  />
-                </label>
-                <label className="mt-3 block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
-                  Password
-                  <input
-                    type="password"
-                    value={adminCredentials.password}
-                    onChange={(event) => {
-                      setAdminCredentials((prev) => ({ ...prev, password: event.target.value }));
-                      setAdminError("");
-                    }}
-                    className="mt-1 w-full rounded-lg border border-[#2b4f6b] bg-[#04111f] px-3 py-2 text-[13px] font-normal text-white outline-none transition focus:border-[#4f8ef7]"
-                    autoComplete="current-password"
-                  />
-                </label>
-                {adminError && <p className="mt-3 text-[11px] font-normal text-red-300">{adminError}</p>}
-                <button
-                  type="submit"
-                  className="mt-4 rounded-lg border border-[#4f8ef7]/60 bg-[#0f2d4a] px-4 py-2 text-[11px] font-normal uppercase tracking-wide text-white transition hover:bg-[#1a3a5c]"
-                >
-                  Login
-                </button>
-              </form>
-            ) : (
-              <div className="mt-5 min-h-[360px] rounded-2xl border border-dashed border-[#2b4f6b] bg-[#04111f]/45 p-5">
-                <p className="text-[12px] font-normal text-[#7eb8e0]">Admin page unlocked.</p>
-              </div>
-            )}
           </div>
         )}
 
