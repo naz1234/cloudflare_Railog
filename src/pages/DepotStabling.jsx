@@ -2396,8 +2396,22 @@ function normalizeRequestIdentity(value = "") {
     .join(" ");
 }
 
+const TOMORROW_REQUEST_TOKENS = new Set(["TOM", "TMRW", "TOMORROW"]);
+
+function hasTomorrowRequestToken(value = "") {
+  const normalized = normalizeRequestIdentity(value);
+  if (!normalized) return false;
+
+  return normalized
+    .split(" ")
+    .filter(Boolean)
+    .some((token) => TOMORROW_REQUEST_TOKENS.has(token));
+}
+
 function isWorkshopRequestLabel(value = "") {
-  return normalizeRequestIdentity(value).includes("WORKSHOP");
+  const normalized = normalizeRequestIdentity(value);
+
+  return normalized.includes("WORKSHOP") && !hasTomorrowRequestToken(normalized);
 }
 
 
@@ -2675,6 +2689,8 @@ function normalizeRemarkText(value = "") {
 const TRAIN_REM_NOTE_COLOR_OVERRIDES = {
   "PM TODAY": "#fbbf24",
   "TODAY PM": "#fbbf24",
+  "PM TOM": "#38bdf8",
+  "TOM PM": "#38bdf8",
   "PM TOMORROW": "#38bdf8",
   "TOMORROW PM": "#38bdf8",
   "TMRW PM": "#38bdf8",
@@ -11338,7 +11354,7 @@ function getRequestNoteSummaryForTrain(requests = [], trainKey = "", options = {
   return notes.join(", ");
 }
 
-const TOMORROW_SWAP_KEYWORDS = ["TMRW", "TOMORROW", "MRNING", "MORNING"];
+const TOMORROW_SWAP_KEYWORDS = ["TOM", "TMRW", "TOMORROW", "MRNING", "MORNING"];
 
 function isTomorrowRequestText(value = "") {
   const normalized = normalizeRequestIdentity(value);

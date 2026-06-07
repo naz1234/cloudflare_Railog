@@ -54,8 +54,22 @@ function normalizeRequestIdentity(value = "") {
     .join(" ");
 }
 
+const TOMORROW_REQUEST_TOKENS = new Set(["TOM", "TMRW", "TOMORROW"]);
+
+function hasTomorrowRequestToken(value = "") {
+  const normalized = normalizeRequestIdentity(value);
+  if (!normalized) return false;
+
+  return normalized
+    .split(" ")
+    .filter(Boolean)
+    .some((token) => TOMORROW_REQUEST_TOKENS.has(token));
+}
+
 function isWorkshopRequestLabel(value = "") {
-  return normalizeRequestIdentity(value).includes("WORKSHOP");
+  const normalized = normalizeRequestIdentity(value);
+
+  return normalized.includes("WORKSHOP") && !hasTomorrowRequestToken(normalized);
 }
 
 function formatTrainIdForPopup(value = "") {
