@@ -5574,7 +5574,7 @@ function TrainMovementContent() {
       timingMode: "now",
       customTime: "",
       depot: "west",
-      swapReason: "RST PM",
+      swapReason: "",
       replacedBy: "",
       notes: "",
     },
@@ -5885,7 +5885,7 @@ function TrainMovementContent() {
       return `${time} hrs – ${train}${tidPart} removed from mainline to ${selectedDepotLabel}.`;
     }
 
-    return `${time} hrs – ${train} removed from mainline to ${selectedDepotLabel} stabling due to ${current.swapReason || "RST PM"}. Replaced by ${normalizeMovementTrain(current.replacedBy) || "T30"}.`;
+    return `${time} hrs – ${train} removed from mainline to ${selectedDepotLabel} stabling due to ${(current.swapReason || "").trim()}. Replaced by ${normalizeMovementTrain(current.replacedBy) || "T30"}.`;
   };
 
   const addMovementLog = (operation) => {
@@ -5917,6 +5917,7 @@ function TrainMovementContent() {
         ...prev[operation],
         trainId: "",
         tid: "",
+        swapReason: operation === "swapping" ? "" : prev[operation].swapReason,
         replacedBy: "",
         notes: "",
       },
@@ -6207,7 +6208,7 @@ function TrainMovementContent() {
           <span> from mainline to </span>
           <span style={{ color: depotColor }}>{depotName}</span>
           <span> stabling due to </span>
-          <span style={{ color: tidColor }}>{entry.reason || "RST PM"}</span>
+          <span style={{ color: tidColor }}>{entry.reason || ""}</span>
           <span>. Replaced by </span>
           <span style={{ color: trainColor }}>{entry.replacement || ""}</span>
           <span>.</span>
@@ -6694,14 +6695,12 @@ function TrainMovementContent() {
               <div>{leftStep ? renderMovementFlowStepCard(leftStep, leftIndex) : null}</div>
               <div className="flex items-center justify-center">
                 <span
-                  className="flex h-6 w-6 items-center justify-center rounded-full border text-[15px] font-black leading-none animate-pulse"
+                  className="flex h-6 w-6 items-center justify-center rounded-full border text-[17px] font-black leading-none"
                   style={{
                     opacity: arrow ? 1 : 0,
-                    borderColor: `${accent}cc`,
-                    background: `radial-gradient(circle, ${accent}34 0%, ${accent}18 62%, rgba(6,24,39,0.82) 100%)`,
+                    borderColor: `${accent}55`,
+                    backgroundColor: `${accent}10`,
                     color: accent,
-                    textShadow: `0 0 8px ${accent}, 0 0 14px ${accent}`,
-                    boxShadow: `0 0 10px ${accent}66, 0 0 22px ${accent}44, 0 0 34px ${accent}2e, inset 0 0 10px ${accent}24`,
                   }}
                 >
                   {arrow || "→"}
@@ -7213,14 +7212,12 @@ function TrainMovementContent() {
               <div>{leftStep ? renderTp1FlowStepCard(leftStep, leftIndex) : null}</div>
               <div className="flex items-center justify-center">
                 <span
-                  className="flex h-6 w-6 items-center justify-center rounded-full border text-[15px] font-black leading-none animate-pulse"
+                  className="flex h-6 w-6 items-center justify-center rounded-full border text-[17px] font-black leading-none"
                   style={{
                     opacity: arrow ? 1 : 0,
-                    borderColor: `${accent}cc`,
-                    background: `radial-gradient(circle, ${accent}34 0%, ${accent}18 62%, rgba(6,24,39,0.82) 100%)`,
+                    borderColor: `${accent}55`,
+                    backgroundColor: `${accent}10`,
                     color: accent,
-                    textShadow: `0 0 8px ${accent}, 0 0 14px ${accent}`,
-                    boxShadow: `0 0 10px ${accent}66, 0 0 22px ${accent}44, 0 0 34px ${accent}2e, inset 0 0 10px ${accent}24`,
                   }}
                 >
                   {arrow || "→"}
