@@ -5587,6 +5587,7 @@ function TrainMovementContent() {
     trAtTp1: "",
     shunterName: "",
     trLocalized: "",
+    automaticStablingRoad: "",
     trainPrepCompletedTime: "",
     pstPerformedTime: "",
     completedByDc: "",
@@ -5640,6 +5641,13 @@ function TrainMovementContent() {
     "LEO",
     "FARAS",
     "MIRAN",
+  ];
+
+  const TP1_AUTOMATIC_STABLING_OPTIONS = [
+    "WD-ST15",
+    "WD-ST14",
+    "WD-ST13",
+    "WD-ST12",
   ];
 
   const [entries, setEntries] = useState(() => loadTrainMovementLog());
@@ -5733,6 +5741,7 @@ function TrainMovementContent() {
       trAtTp1: "",
       shunterName: "",
       trLocalized: "",
+      automaticStablingRoad: "",
       trainPrepCompletedTime: "",
       pstPerformedTime: "",
       completedByDc: "",
@@ -6008,7 +6017,8 @@ function TrainMovementContent() {
     const trainPrepCompletedTime = tp1Form.trainPrepCompletedTime || "";
     const pstPerformedTime = tp1Form.pstPerformedTime || "";
     const pstCompletedTime = pstPerformedTime ? addMinutesToHHMM(pstPerformedTime, 6) : "";
-    const stablingRoad = findTp1TrainStablingRoad(train || displayTrain) || "Automatic Area";
+    const selectedAutomaticStablingRoad = formatTp1RoadForLog(tp1Form.automaticStablingRoad);
+    const stablingRoad = selectedAutomaticStablingRoad || findTp1TrainStablingRoad(train || displayTrain) || "Automatic Area";
     const fromTp1 = tp1Form.fromTp1 || "18:30";
     const toManual = tp1Form.toManual || "18:35";
     const nextWashSuffix = getTp1NextWashSuffix();
@@ -6020,6 +6030,7 @@ function TrainMovementContent() {
       if (!tp1Form.trAtTp1) missing.push("TR at TP1");
       if (!tp1Form.shunterName) missing.push("Shunter Name");
       if (movementType === "automatic" && !tp1Form.trLocalized) missing.push("TR Localized");
+      if (movementType === "automatic" && !tp1Form.automaticStablingRoad) missing.push("Stabling");
       if (movementType === "manual" && !tp1Form.fromTp1) missing.push("From TP1");
       if (movementType === "manual" && !tp1Form.toManual) missing.push("to Manual");
 
@@ -6066,7 +6077,8 @@ function TrainMovementContent() {
     const now = new Date();
     const movementType = getTp1MovementType();
     const normalizedTrain = normalizeMovementTrain(tp1Form.trainSet);
-    const stablingRoad = movementType === "automatic" ? (findTp1TrainStablingRoad(normalizedTrain) || "Automatic Area") : "";
+    const selectedAutomaticStablingRoad = formatTp1RoadForLog(tp1Form.automaticStablingRoad);
+    const stablingRoad = movementType === "automatic" ? (selectedAutomaticStablingRoad || findTp1TrainStablingRoad(normalizedTrain) || "Automatic Area") : "";
     const pstPerformedTime = tp1Form.pstPerformedTime || "";
     const entry = {
       id: `tp1-movement-${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -6076,6 +6088,7 @@ function TrainMovementContent() {
       startTime: tp1Form.trAtTp1,
       trAtTp1: tp1Form.trAtTp1,
       trLocalized: tp1Form.trLocalized,
+      automaticStablingRoad: tp1Form.automaticStablingRoad,
       trainPrepCompletedTime: tp1Form.trainPrepCompletedTime,
       pstPerformedTime,
       pstCompletedTime: pstPerformedTime ? addMinutesToHHMM(pstPerformedTime, 6) : "",
@@ -6094,6 +6107,7 @@ function TrainMovementContent() {
       trainSet: "",
       trAtTp1: "",
       trLocalized: "",
+      automaticStablingRoad: "",
       trainPrepCompletedTime: "",
       pstPerformedTime: "",
       nextWashText: "",
@@ -6950,7 +6964,8 @@ function TrainMovementContent() {
     const automaticTrAtTp1Ready = automaticPlanReady && Boolean(tp1Form.trAtTp1);
     const automaticShunterReady = automaticTrAtTp1Ready && Boolean(tp1Form.shunterName);
     const automaticTrLocalizedReady = automaticShunterReady && Boolean(tp1Form.trLocalized);
-    const automaticTrainPrepReady = automaticTrLocalizedReady && Boolean(tp1Form.trainPrepCompletedTime);
+    const automaticStablingReady = automaticTrLocalizedReady && Boolean(tp1Form.automaticStablingRoad);
+    const automaticTrainPrepReady = automaticStablingReady && Boolean(tp1Form.trainPrepCompletedTime);
     const automaticPstReady = automaticTrainPrepReady && Boolean(tp1Form.pstPerformedTime);
     const automaticCompletedDcReady = automaticPstReady && Boolean(String(tp1Form.completedByDc || "").trim());
 
@@ -7021,9 +7036,27 @@ function TrainMovementContent() {
         render: () => renderTp1TimeInput("trLocalized"),
       },
       {
+        key: "automaticStablingRoad",
+        label: "Stabling",
+        visible: automaticTrLocalizedReady,
+        complete: automaticStablingReady,
+        render: () => (
+          <select
+            value={tp1Form.automaticStablingRoad || ""}
+            onChange={(e) => updateTp1MovementForm("automaticStablingRoad", e.target.value)}
+            className={inputClass}
+          >
+            <option value="">Select STB</option>
+            {TP1_AUTOMATIC_STABLING_OPTIONS.map((road) => (
+              <option key={road} value={road}>{road}</option>
+            ))}
+          </select>
+        ),
+      },
+      {
         key: "trainPrepCompletedTime",
         label: "Train Prep Completed",
-        visible: automaticTrLocalizedReady,
+        visible: automaticStablingReady,
         complete: automaticTrainPrepReady,
         render: () => renderTp1TimeInput("trainPrepCompletedTime"),
       },
