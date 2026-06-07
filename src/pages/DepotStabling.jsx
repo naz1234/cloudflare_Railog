@@ -3134,32 +3134,40 @@ const INSERTION_REMARK_STYLES = {
 
 const INSERTION_ASSIST_REMARK_STYLES = {
   "Early Rem": {
-    bg: "rgba(34, 197, 94, 0.22)",
-    cardBg: "linear-gradient(135deg, rgba(20, 83, 45, 0.92), rgba(5, 46, 22, 0.92))",
+    // Match the TID Reference Table colour transparency.
+    // Table row uses 20% fading to 7%; pill fill uses 17%.
+    bg: "rgba(34, 197, 94, 0.17)",
+    cardBg: "linear-gradient(135deg, rgba(34, 197, 94, 0.20) 0%, rgba(34, 197, 94, 0.07) 100%)",
     border: "#22c55e",
     color: "#bbf7d0",
-    shadow: "0 0 12px rgba(34, 197, 94, 0.34), inset 0 1px 0 rgba(255,255,255,0.08)",
+    shadow: "0 0 12px rgba(34, 197, 94, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
   "Late Rem": {
-    bg: "rgba(250, 204, 21, 0.22)",
-    cardBg: "linear-gradient(135deg, rgba(113, 63, 18, 0.92), rgba(69, 26, 3, 0.92))",
+    // Match the TID Reference Table colour transparency.
+    // Table row uses 20% fading to 7%; pill fill uses 17%.
+    bg: "rgba(250, 204, 21, 0.17)",
+    cardBg: "linear-gradient(135deg, rgba(250, 204, 21, 0.20) 0%, rgba(250, 204, 21, 0.07) 100%)",
     border: "#facc15",
     color: "#fde68a",
-    shadow: "0 0 12px rgba(250, 204, 21, 0.32), inset 0 1px 0 rgba(255,255,255,0.08)",
+    shadow: "0 0 12px rgba(250, 204, 21, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
   "ED (7pm)": {
-    bg: "rgba(248, 113, 113, 0.23)",
-    cardBg: "linear-gradient(135deg, rgba(127, 29, 29, 0.94), rgba(69, 10, 10, 0.92))",
+    // Match the TID Reference Table colour transparency.
+    // Table row uses 20% fading to 7%; pill fill uses 18%.
+    bg: "rgba(248, 113, 113, 0.18)",
+    cardBg: "linear-gradient(135deg, rgba(248, 113, 113, 0.20) 0%, rgba(248, 113, 113, 0.07) 100%)",
     border: "#f87171",
     color: "#fecaca",
-    shadow: "0 0 12px rgba(248, 113, 113, 0.34), inset 0 1px 0 rgba(255,255,255,0.08)",
+    shadow: "0 0 12px rgba(248, 113, 113, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
   ED: {
-    bg: "rgba(248, 113, 113, 0.23)",
-    cardBg: "linear-gradient(135deg, rgba(127, 29, 29, 0.94), rgba(69, 10, 10, 0.92))",
+    // Match the TID Reference Table colour transparency.
+    // Table row uses 20% fading to 7%; pill fill uses 18%.
+    bg: "rgba(248, 113, 113, 0.18)",
+    cardBg: "linear-gradient(135deg, rgba(248, 113, 113, 0.20) 0%, rgba(248, 113, 113, 0.07) 100%)",
     border: "#f87171",
     color: "#fecaca",
-    shadow: "0 0 12px rgba(248, 113, 113, 0.34), inset 0 1px 0 rgba(255,255,255,0.08)",
+    shadow: "0 0 12px rgba(248, 113, 113, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
 };
 
