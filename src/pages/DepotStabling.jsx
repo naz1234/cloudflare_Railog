@@ -9137,6 +9137,41 @@ function BookmarkEditForm({ draft, saving, onDraftChange, onCancel, onSave }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+
+function AdminAutoResizeTextarea({ value, onChange, placeholder }) {
+  const textareaRef = useRef(null);
+
+  const resizeTextarea = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+    const nextHeight = Math.min(Math.max(textarea.scrollHeight + 10, 112), 620);
+    textarea.style.height = `${nextHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > 620 ? "auto" : "hidden";
+  }, []);
+
+  useLayoutEffect(() => {
+    resizeTextarea();
+  }, [value, resizeTextarea]);
+
+  return (
+    <textarea
+      ref={textareaRef}
+      value={value}
+      onChange={(event) => {
+        onChange(event.target.value);
+        window.requestAnimationFrame(resizeTextarea);
+      }}
+      onInput={resizeTextarea}
+      onFocus={resizeTextarea}
+      placeholder={placeholder}
+      rows={4}
+      className="min-h-[112px] w-full resize-none overflow-hidden rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] font-normal leading-relaxed text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200"
+    />
+  );
+}
+
 export default function DepotStablingPage() {
   const [westData, setWestData] = useState(() => loadLocalStablingState().westData);
   const [eastData, setEastData] = useState(() => loadLocalStablingState().eastData);
@@ -11999,11 +12034,10 @@ export default function DepotStablingPage() {
 
                           {isExpanded && !isEditingTitle && (
                             <div className="mt-1.5 rounded-2xl border border-white/65 bg-white/80 p-2 shadow-inner shadow-white/40">
-                              <textarea
+                              <AdminAutoResizeTextarea
                                 value={item.note || ""}
-                                onChange={(event) => handleAdminNoteChange(item.id, event.target.value)}
+                                onChange={(value) => handleAdminNoteChange(item.id, value)}
                                 placeholder="Write note here..."
-                                className="min-h-[92px] w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] font-normal leading-relaxed text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200"
                               />
                               <div className="mt-1 flex items-center justify-between px-1 text-[10px] font-semibold text-slate-500">
                                 <span>{adminNotesDbReady ? "Live saved after refresh" : adminNotesLiveStatus}</span>
