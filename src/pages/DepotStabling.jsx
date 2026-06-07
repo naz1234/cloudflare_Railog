@@ -26,7 +26,7 @@ const TIMETABLE_TYPES = [
 
 const ACTIVE_TIMETABLE_TYPE_KEY = "activeTimetableType_v1";
 const LOCAL_TIMETABLE_RECORDS_KEY = "storedTimetableRecords_v1";
-const TIMETABLE_PARSE_VERSION = 3;
+const TIMETABLE_PARSE_VERSION = 4;
 
 function normalizeTimetableType(value = "") {
   const clean = String(value || "").toLowerCase().replace(/[^a-z]/g, "");
@@ -392,11 +392,13 @@ const DEPOT_TIMETABLE_OFFSET_SECONDS = {
   east: (5 * 60) + 22,
 };
 
-function formatDepotMovementStartTime(value, depot = "west") {
+function formatDepotMovementStartTime(value, depot = "west", movementType = "insertion") {
   const seconds = excelTimeToSeconds(value);
   if (seconds === null) return "";
   const depotKey = depot === "east" ? "east" : "west";
-  return formatSecondsAsTime(seconds - (DEPOT_TIMETABLE_OFFSET_SECONDS[depotKey] || 0));
+  const offset = DEPOT_TIMETABLE_OFFSET_SECONDS[depotKey] || 0;
+  const isRemovalToDepot = movementType === "removal";
+  return formatSecondsAsTime(seconds + (isRemovalToDepot ? offset : -offset));
 }
 
 function formatExcelTimeValue(value) {
@@ -569,14 +571,16 @@ function parseTimetableWorkbook(arrayBuffer, timetableType = "weekday", fileName
 
       if (isWestRemovalRemark(rightRemark)) {
         const platformTime = formatExcelTimeValue(row[westArrivalIndex]);
-        const time = formatDepotMovementStartTime(row[westArrivalIndex], "west");
+        // Arrival 3A1P2 is the platform time. Removal reaches West Depot 4m30s later.
+        const time = formatDepotMovementStartTime(row[westArrivalIndex], "west", "removal");
         const label = classifyRemovalPresetFromTime(timetableType, platformTime);
         pushTimetableEntry(parsed.removal.west, { tid, did: eastDid, time, remark: rightRemark, label, sheetName });
       }
 
       if (isEastRemovalRemark(leftRemark)) {
         const platformTime = formatExcelTimeValue(row[eastArrivalIndex]);
-        const time = formatDepotMovementStartTime(row[eastArrivalIndex], "east");
+        // Arrival 3K1P1 is the platform time. Removal reaches East Depot 5m22s later.
+        const time = formatDepotMovementStartTime(row[eastArrivalIndex], "east", "removal");
         const label = classifyRemovalPresetFromTime(timetableType, platformTime);
         pushTimetableEntry(parsed.removal.east, { tid, did: westDid, time, remark: leftRemark, label, sheetName });
       }
