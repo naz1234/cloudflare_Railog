@@ -5259,6 +5259,106 @@ function sortTp1MovementEntries(entries = []) {
   });
 }
 
+function normalizeTp1ExcelRoad(road = "") {
+  const clean = String(road || "").trim();
+  if (!clean) return "Automatic Area";
+  if (/automatic\s+area/i.test(clean)) return "Automatic Area";
+  return clean.replace(/[\u2012\u2013\u2014\u2212]/g, "-").replace(/\s+/g, "").toUpperCase();
+}
+
+function getTp1DepotFromExcelRoad(road = "") {
+  const clean = normalizeTp1ExcelRoad(road);
+  if (/^WD-/i.test(clean)) return "west";
+  if (/^ED-/i.test(clean)) return "east";
+  return "";
+}
+
+function getFirstTp1TimeMatch(text = "", pattern) {
+  const match = String(text || "").match(pattern);
+  return match ? match[1].padStart(5, "0") : "";
+}
+
+function getTp1AutomaticEntryMeta(entry = {}) {
+  const text = String(entry?.text || "");
+  const trainKey = padTrainId(normalizeTrainId(entry?.train || text.match(/\bT\s*(\d{1,2})\b/i)?.[0] || ""));
+  const roadMatch = text.match(/(?:Train preparation|PST)\s+completed\s+at\s+([^\n.]+?)(?:\s+by\s+Shunter|\s+from|\.|$)/i);
+  const road = normalizeTp1ExcelRoad(entry?.stablingRoad || roadMatch?.[1] || "Automatic Area");
+  const prepTime = entry?.trainPrepCompletedTime || getFirstTp1TimeMatch(text, /^(\d{1,2}:\d{2})\s+hrs\s+[\u2013-].*?Train preparation completed/im);
+  const pstStartTime = entry?.pstPerformedTime || getFirstTp1TimeMatch(text, /^(\d{1,2}:\d{2})\s+hrs\s+[\u2013-].*?PST completed/im);
+  const pstEndTime = entry?.pstCompletedTime || text.match(/\bfrom\s+\d{1,2}:\d{2}\s+to\s+(\d{1,2}:\d{2})\s+hrs/i)?.[1] || (pstStartTime ? addMinutesToHHMM(pstStartTime, 6) : "");
+  const shunterName = formatTp1ShunterNameForLog(
+    entry?.shunterName ||
+    text.match(/\bby\s+Shunter\s+([^\n.]+)/i)?.[1] ||
+    text.match(/\bwith\s+Shunter\s+(.+?)\s+onboard/i)?.[1] ||
+    ""
+  );
+
+  return {
+    trainKey,
+    road,
+    depot: entry?.depot || getTp1DepotFromExcelRoad(road),
+    prepTime,
+    pstStartTime,
+    pstEndTime,
+    shunterName,
+  };
+}
+
+function buildTp1AutomaticPSTExportLines(entries = []) {
+  const exportLines = [];
+
+  sortTp1MovementEntries(entries)
+    .filter((entry) => getTp1EntrySection(entry) === "automatic")
+    .forEach((entry, index) => {
+      const meta = getTp1AutomaticEntryMeta(entry);
+      if (!meta.trainKey) return;
+      const safeKey = entry?.id || `tp1-${index}`;
+      const roadForLog = meta.road === "Automatic Area" ? "Automatic Area" : meta.road;
+
+      if (meta.pstStartTime) {
+        exportLines.push({
+          key: `tp1-pst-${safeKey}`,
+          text: `${meta.pstStartTime} hrs \u2013 ${meta.trainKey} PST completed at ${roadForLog} from ${meta.pstStartTime} to ${meta.pstEndTime} hrs. No alarm reported.`,
+          type: "PST",
+          depot: meta.depot,
+          road: roadForLog,
+          trainKey: meta.trainKey,
+          startTime: meta.pstStartTime,
+          endTime: meta.pstEndTime,
+          alarmStatus: "no_alarm",
+        });
+      }
+
+      if (meta.prepTime) {
+        const completedByText = meta.shunterName ? `Shunter ${meta.shunterName}` : "Shunter";
+        exportLines.push({
+          key: `tp1-prep-${safeKey}`,
+          text: `${meta.prepTime} hrs \u2013 ${meta.trainKey} Train preparation completed at ${roadForLog} by ${completedByText}.`,
+          type: "Prep",
+          depot: meta.depot,
+          road: roadForLog,
+          trainKey: meta.trainKey,
+          startTime: "",
+          time: meta.prepTime,
+          endTime: meta.prepTime,
+          completedByText,
+        });
+      }
+    });
+
+  return sortPSTLogLinesByTime(exportLines);
+}
+
+function downloadTp1AutomaticExcelExport(entries = [], completedByDc = "") {
+  const exportLines = buildTp1AutomaticPSTExportLines(entries);
+  const xlsxBytes = buildPSTExcelWorkbook(exportLines, String(completedByDc || "").trim(), "");
+  const blob = new Blob([xlsxBytes], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const dateStamp = new Date().toISOString().slice(0, 10);
+  downloadBlob(blob, `Line-3-Inbound-Outbound-Automatic-PST-Train-Prep-${dateStamp}.xlsx`);
+}
+
 function formatTp1DateForLog(dateText) {
   const raw = String(dateText || "").trim();
   if (!raw) return "dd/mm/yyyy";
@@ -5452,6 +5552,7 @@ function TrainMovementContent() {
     trLocalized: "",
     trainPrepCompletedTime: "",
     pstPerformedTime: "",
+    completedByDc: "",
     nextWashText: "",
     nextWashDate: "",
     nextWashTime: "",
@@ -5887,12 +5988,25 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
 
     const now = new Date();
     const movementType = getTp1MovementType();
+    const normalizedTrain = normalizeMovementTrain(tp1Form.trainSet);
+    const stablingRoad = movementType === "automatic" ? (findTp1TrainStablingRoad(normalizedTrain) || "Automatic Area") : "";
+    const pstPerformedTime = tp1Form.pstPerformedTime || "";
     const entry = {
       id: `tp1-movement-${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
       type: movementType,
-      train: normalizeMovementTrain(tp1Form.trainSet),
+      train: normalizedTrain,
       planStatus: tp1Form.planStatus,
       startTime: tp1Form.trAtTp1,
+      trAtTp1: tp1Form.trAtTp1,
+      trLocalized: tp1Form.trLocalized,
+      trainPrepCompletedTime: tp1Form.trainPrepCompletedTime,
+      pstPerformedTime,
+      pstCompletedTime: pstPerformedTime ? addMinutesToHHMM(pstPerformedTime, 6) : "",
+      shunterName: tp1Form.shunterName,
+      stablingRoad,
+      fromTp1: tp1Form.fromTp1,
+      toManual: tp1Form.toManual,
+      nextWashText: tp1Form.nextWashText || "",
       createdAt: now.toISOString(),
       text,
     };
@@ -5943,6 +6057,23 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
     }
 
     showCopyFeedback("tp1-all", "copied");
+  };
+
+  const handleDownloadTp1AutomaticExcel = () => {
+    const completedByDc = String(tp1Form.completedByDc || "").trim();
+    const exportLines = buildTp1AutomaticPSTExportLines(tp1Entries);
+
+    if (!exportLines.length) {
+      alert("No Automatic Area PST or Train Prep log to export yet.");
+      return;
+    }
+
+    if (!completedByDc) {
+      alert("Please enter Completed By DC name before downloading the Excel file.");
+      return;
+    }
+
+    downloadTp1AutomaticExcelExport(tp1Entries, completedByDc);
   };
 
   const renderMovementLogLine = (entry) => {
@@ -6016,6 +6147,7 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
       {type === "train" && <><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M8 21l2-3"/><path d="M16 21l-2-3"/><path d="M8 8h8"/><path d="M8 13h.01"/><path d="M16 13h.01"/></>}
       {type === "clock" && <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>}
       {type === "copy" && <><rect x="9" y="9" width="11" height="11" rx="2"/><rect x="4" y="4" width="11" height="11" rx="2"/></>}
+      {type === "download" && <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>}
       {type === "trash" && <><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></>}
       {type === "swap" && <><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></>}
       {type === "in" && <><polyline points="5 12 12 5 19 12"/><line x1="12" y1="5" x2="12" y2="19"/></>}
@@ -6534,6 +6666,17 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
                   <span className={labelClass}>PST Performed <span className="normal-case tracking-normal text-[#6f8fa8]">Optional</span></span>
                   {renderTp1TimeInput("pstPerformedTime")}
                 </label>
+
+                <label className="col-span-1">
+                  <span className={labelClass}>Completed By DC</span>
+                  <input
+                    type="text"
+                    value={tp1Form.completedByDc || ""}
+                    onChange={(e) => updateTp1MovementForm("completedByDc", e.target.value)}
+                    placeholder="DC name"
+                    className={inputClass}
+                  />
+                </label>
               </>
             )}
 
@@ -6599,6 +6742,17 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
                 >
                   <MovementIcon type="copy" />{getTp1CopyButtonLabel("Copy All")}
                 </button>
+                {isAutomatic && (
+                  <button
+                    type="button"
+                    onClick={handleDownloadTp1AutomaticExcel}
+                    className="flex min-w-[78px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
+                    style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}
+                    title="Download Automatic Area PST / Train Prep Excel"
+                  >
+                    <MovementIcon type="download" />Excel
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={clearTp1MovementLogs}
@@ -12635,8 +12789,8 @@ function extractPSTLocation(entry = {}) {
 
 function getPSTDepotFromEntry(entry = {}) {
   const location = extractPSTLocation(entry);
-  if (entry?.depot === "west" || /^WD-/i.test(location)) return "west";
-  if (entry?.depot === "east" || /^ED-/i.test(location)) return "east";
+  if (entry?.depot === "west" || /^WD[‒–—−-]/i.test(location)) return "west";
+  if (entry?.depot === "east" || /^ED[‒–—−-]/i.test(location)) return "east";
   return "";
 }
 
@@ -12680,10 +12834,16 @@ function formatTACompletedByExcel(value = "") {
 }
 
 function getCompletedByForPrepEntry(entry = {}) {
+  const explicitCompletedBy = (entry?.completedByText || entry?.completedBy || "").toString().trim();
+  if (explicitCompletedBy) return explicitCompletedBy;
+
   const explicitName = (entry?.taName || "").toString().trim();
   if (explicitName) return formatTACompletedByExcel(explicitName);
 
   const text = (entry?.text || "").toString();
+  const shunterMatch = text.match(/by\s+Shunter\s+(.+?)\.?$/i);
+  if (shunterMatch) return `Shunter ${formatTp1ShunterNameForLog(shunterMatch[1]) || shunterMatch[1].trim()}`;
+
   const match = text.match(/Performed\s+by\s+TA\s+(.+?)\.?$/i);
   return match ? formatTACompletedByExcel(match[1]) : "";
 }
