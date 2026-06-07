@@ -6762,8 +6762,8 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
                   <button
                     type="button"
                     onClick={resetTp1AutomaticFlow}
-                    className="rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] transition-all hover:scale-[1.03]"
-                    style={{ borderColor: `${accent}55`, backgroundColor: `${accent}10`, color: accent }}
+                    className="rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] shadow-[0_0_14px_rgba(239,68,68,0.38),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.03]"
+                    style={{ borderColor: "rgba(248,113,113,0.85)", backgroundColor: "rgba(127,29,29,0.36)", color: "#fecaca" }}
                     title="Reset Automatic Flow"
                   >
                     Reset
@@ -6793,8 +6793,8 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
                       }}
                     >
                       <div className="mb-1 flex items-center justify-between gap-1.5">
-                        <span className="inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.07em]" style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: step.complete ? accent : "#7ea6c2", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
-                          <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px]" style={{ borderColor: step.complete ? `${accent}80` : "#31516b" }}>{index + 1}</span>
+                        <span className="inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]" style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: step.complete ? accent : "#7ea6c2", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
+                          <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal" style={{ borderColor: step.complete ? `${accent}80` : "#31516b" }}>{index + 1}</span>
                           <span className="truncate">{step.label}</span>
                         </span>
                         <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>{step.complete ? "DONE" : directionText}</span>
@@ -6914,8 +6914,8 @@ ${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual A
                   <button
                     type="button"
                     onClick={handleDownloadTp1AutomaticExcel}
-                    className="flex min-w-[78px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
-                    style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}
+                    className="flex min-w-[78px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold shadow-[0_0_14px_rgba(34,197,94,0.35),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.02]"
+                    style={{ borderColor: "rgba(74,222,128,0.82)", color: "#86efac", backgroundColor: "rgba(20,83,45,0.32)" }}
                     title="Download Automatic Area PST / Train Prep Excel"
                   >
                     <MovementIcon type="download" />Excel
