@@ -5734,6 +5734,11 @@ function TrainMovementContent() {
     }));
   };
 
+  const updateMovementFlowTextField = (operation, field, value) => {
+    updateMovementForm(operation, field, value);
+    scheduleFlowInputSettled(getMovementFlowInputKey(operation, field));
+  };
+
   const updateTp1MovementForm = (field, value) => {
     captureMovementScrollPosition();
     setTp1Form((prev) => ({
@@ -6655,7 +6660,7 @@ function TrainMovementContent() {
           value={current.trainId}
           onFocus={() => focusFlowInput(getMovementFlowInputKey(operation, "trainId"))}
           onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-          onChange={(e) => updateMovementForm(operation, "trainId", e.target.value.replace(/\D/g, ""))}
+          onChange={(e) => updateMovementFlowTextField(operation, "trainId", e.target.value.replace(/\D/g, ""))}
           onBlur={() => blurFlowInput(getMovementFlowInputKey(operation, "trainId"))}
           placeholder="25"
           className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
@@ -6693,7 +6698,7 @@ function TrainMovementContent() {
         value={current.tid}
         onFocus={() => focusFlowInput(getMovementFlowInputKey(operation, "tid"))}
         onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-        onChange={(e) => updateMovementForm(operation, "tid", e.target.value.replace(/\D/g, ""))}
+        onChange={(e) => updateMovementFlowTextField(operation, "tid", e.target.value.replace(/\D/g, ""))}
         onBlur={() => blurFlowInput(getMovementFlowInputKey(operation, "tid"))}
         placeholder="Optional, e.g. 101"
         className={inputClass}
@@ -6705,7 +6710,7 @@ function TrainMovementContent() {
         value={current.swapReason}
         onFocus={() => focusFlowInput(getMovementFlowInputKey(operation, "swapReason"))}
         onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-        onChange={(e) => updateMovementForm(operation, "swapReason", e.target.value)}
+        onChange={(e) => updateMovementFlowTextField(operation, "swapReason", e.target.value)}
         onBlur={() => blurFlowInput(getMovementFlowInputKey(operation, "swapReason"))}
         placeholder="e.g. RST PM"
         className={inputClass}
@@ -6719,7 +6724,7 @@ function TrainMovementContent() {
           value={current.replacedBy}
           onFocus={() => focusFlowInput(getMovementFlowInputKey(operation, "replacedBy"))}
           onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-          onChange={(e) => updateMovementForm(operation, "replacedBy", e.target.value.replace(/\D/g, ""))}
+          onChange={(e) => updateMovementFlowTextField(operation, "replacedBy", e.target.value.replace(/\D/g, ""))}
           onBlur={() => blurFlowInput(getMovementFlowInputKey(operation, "replacedBy"))}
           placeholder="30"
           className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
