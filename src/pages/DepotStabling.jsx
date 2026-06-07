@@ -3141,11 +3141,11 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     shadow: "0 0 12px rgba(34, 197, 94, 0.34), inset 0 1px 0 rgba(255,255,255,0.08)",
   },
   "Late Rem": {
-    bg: "rgba(244, 63, 94, 0.22)",
-    cardBg: "linear-gradient(135deg, rgba(127, 29, 29, 0.92), rgba(76, 5, 25, 0.92))",
-    border: "#fb7185",
-    color: "#ffe4e6",
-    shadow: "0 0 12px rgba(251, 113, 133, 0.34), inset 0 1px 0 rgba(255,255,255,0.08)",
+    bg: "rgba(250, 204, 21, 0.22)",
+    cardBg: "linear-gradient(135deg, rgba(113, 63, 18, 0.92), rgba(69, 26, 3, 0.92))",
+    border: "#facc15",
+    color: "#fde68a",
+    shadow: "0 0 12px rgba(250, 204, 21, 0.32), inset 0 1px 0 rgba(255,255,255,0.08)",
   },
   "ED (7pm)": {
     bg: "rgba(248, 113, 113, 0.23)",
@@ -3155,11 +3155,11 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     shadow: "0 0 12px rgba(248, 113, 113, 0.34), inset 0 1px 0 rgba(255,255,255,0.08)",
   },
   ED: {
-    bg: "rgba(250, 204, 21, 0.22)",
-    cardBg: "linear-gradient(135deg, rgba(113, 63, 18, 0.92), rgba(69, 26, 3, 0.92))",
-    border: "#facc15",
-    color: "#fde68a",
-    shadow: "0 0 12px rgba(250, 204, 21, 0.32), inset 0 1px 0 rgba(255,255,255,0.08)",
+    bg: "rgba(248, 113, 113, 0.23)",
+    cardBg: "linear-gradient(135deg, rgba(127, 29, 29, 0.94), rgba(69, 10, 10, 0.92))",
+    border: "#f87171",
+    color: "#fecaca",
+    shadow: "0 0 12px rgba(248, 113, 113, 0.34), inset 0 1px 0 rgba(255,255,255,0.08)",
   },
 };
 

@@ -280,11 +280,11 @@ function getRemarkStyle(remark) {
 
   if (normalized === "Late Rem") {
     return {
-      backgroundColor: "rgba(244, 63, 94, 0.17)",
-      color: "#fda4af",
-      borderColor: "rgba(253, 164, 175, 0.36)",
-      rowBackground: "linear-gradient(90deg, rgba(244, 63, 94, 0.20) 0%, rgba(244, 63, 94, 0.07) 100%)",
-      sideColor: "#fb7185",
+      backgroundColor: "rgba(250, 204, 21, 0.17)",
+      color: "#fde68a",
+      borderColor: "rgba(250, 204, 21, 0.40)",
+      rowBackground: "linear-gradient(90deg, rgba(250, 204, 21, 0.20) 0%, rgba(250, 204, 21, 0.07) 100%)",
+      sideColor: "#facc15",
     };
   }
 
@@ -300,11 +300,11 @@ function getRemarkStyle(remark) {
 
   if (normalized === "ED") {
     return {
-      backgroundColor: "rgba(250, 204, 21, 0.17)",
-      color: "#f87171",
-      borderColor: "rgba(250, 204, 21, 0.40)",
-      rowBackground: "linear-gradient(90deg, rgba(250, 204, 21, 0.20) 0%, rgba(250, 204, 21, 0.07) 100%)",
-      sideColor: "#facc15",
+      backgroundColor: "rgba(248, 113, 113, 0.18)",
+      color: "#fecaca",
+      borderColor: "rgba(252, 165, 165, 0.38)",
+      rowBackground: "linear-gradient(90deg, rgba(248, 113, 113, 0.20) 0%, rgba(248, 113, 113, 0.07) 100%)",
+      sideColor: "#f87171",
     };
   }
 
