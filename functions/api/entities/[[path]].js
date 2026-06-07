@@ -10,6 +10,7 @@ const ALLOWED_ENTITIES = new Set([
   'MainlineTrainRow',
   'BookmarkLink',
   'TimetableFile',
+  'AdminNote',
 ]);
 
 const jsonHeaders = {

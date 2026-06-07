@@ -1673,6 +1673,8 @@ const ADM_SESSION_KEY = "admAdminUnlocked_v1";
 const ADM_LOGIN_ID = "admin";
 const ADM_LOGIN_PASSWORD = "921016";
 const ADMIN_NOTES_STORAGE_KEY = "admModernNotes_v1";
+const ADMIN_NOTE_LIVE_RECORD_KEY = "adm-modern-notes-main";
+const ADMIN_NOTE_SAVE_DEBOUNCE_MS = 700;
 const ADMIN_NOTE_THEMES = [
   { from: "#e2e8f0", to: "#cbd5e1", border: "#cbd5e1", shadow: "rgba(100, 116, 139, 0.18)" },
   { from: "#dbeafe", to: "#bfdbfe", border: "#93c5fd", shadow: "rgba(59, 130, 246, 0.18)" },
@@ -1709,15 +1711,7 @@ function normalizeAdminNoteItem(item = {}, index = 0) {
   };
 }
 
-function loadAdminNotes() {
-  try {
-    const raw = localStorage.getItem(ADMIN_NOTES_STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
-    if (Array.isArray(parsed) && parsed.length) {
-      return parsed.map((item, index) => normalizeAdminNoteItem(item, index));
-    }
-  } catch {}
-
+function getDefaultAdminNotes() {
   return [
     {
       id: "adm-note-default",
@@ -1730,8 +1724,34 @@ function loadAdminNotes() {
   ];
 }
 
+function normalizeAdminNoteList(notes = []) {
+  const cleanNotes = Array.isArray(notes) ? notes : [];
+  if (!cleanNotes.length) return getDefaultAdminNotes();
+  return cleanNotes.map((item, index) => normalizeAdminNoteItem(item, index));
+}
+
+function loadAdminNotes() {
+  try {
+    const raw = localStorage.getItem(ADMIN_NOTES_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (Array.isArray(parsed) && parsed.length) {
+      return normalizeAdminNoteList(parsed);
+    }
+  } catch {}
+
+  return getDefaultAdminNotes();
+}
+
 function saveAdminNotes(notes = []) {
-  try { localStorage.setItem(ADMIN_NOTES_STORAGE_KEY, JSON.stringify(notes)); } catch {}
+  try { localStorage.setItem(ADMIN_NOTES_STORAGE_KEY, JSON.stringify(normalizeAdminNoteList(notes))); } catch {}
+}
+
+function getAdminNoteEntity() {
+  return base44?.entities?.AdminNote || null;
+}
+
+function isAdminNoteEntityReady(entity = getAdminNoteEntity()) {
+  return Boolean(entity?.list && entity?.create && entity?.update);
 }
 
 function getAdminNoteCardStyle(index) {
@@ -9181,6 +9201,10 @@ export default function DepotStablingPage() {
   const [adminSearch, setAdminSearch] = useState("");
   const [adminEditingNoteId, setAdminEditingNoteId] = useState(null);
   const [adminTitleDraft, setAdminTitleDraft] = useState("");
+  const [adminNotesLoading, setAdminNotesLoading] = useState(false);
+  const [adminNotesSaving, setAdminNotesSaving] = useState(false);
+  const [adminNotesLiveStatus, setAdminNotesLiveStatus] = useState("Local cache ready");
+  const [adminNotesDbReady, setAdminNotesDbReady] = useState(() => isAdminNoteEntityReady());
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     try {
       return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
@@ -9199,6 +9223,11 @@ export default function DepotStablingPage() {
   const bookmarkMenuRef = useRef(null);
   const mainContentScrollRef = useRef(null);
   const stablingHorizontalScrollRef = useRef(null);
+  const adminNotesLiveIdRef = useRef(null);
+  const adminNotesLoadedRef = useRef(false);
+  const adminNotesLastSavedJsonRef = useRef("");
+  const adminNotesSaveTimerRef = useRef(null);
+  const adminNotesCurrentRef = useRef(adminNotes);
 
   const [selectedTimetableType, setSelectedTimetableType] = useState(() => loadActiveTimetableType());
   const [timetableRecords, setTimetableRecords] = useState(() => {
@@ -9352,8 +9381,74 @@ export default function DepotStablingPage() {
     setIsAdminUnlocked(false);
     setAdminCredentials({ id: "", password: "" });
     setAdminError("");
+    setAdminNotesLoading(false);
+    setAdminNotesSaving(false);
+    setAdminNotesLiveStatus("Local cache ready");
     try { sessionStorage.removeItem(ADM_SESSION_KEY); } catch {}
   }, []);
+
+  const loadAdminNotesLive = useCallback(async () => {
+    const entity = getAdminNoteEntity();
+    const entityReady = isAdminNoteEntityReady(entity);
+
+    adminNotesLoadedRef.current = false;
+    setAdminNotesDbReady(entityReady);
+
+    if (!entityReady) {
+      adminNotesLoadedRef.current = true;
+      setAdminNotesLiveStatus("Local only - D1 entity unavailable");
+      return;
+    }
+
+    setAdminNotesLoading(true);
+    setAdminNotesLiveStatus("Loading live notes...");
+
+    try {
+      const records = await entity.list("-updatedAt");
+      const liveRecord = (Array.isArray(records) ? records : []).find((record) => (
+        record?.recordKey === ADMIN_NOTE_LIVE_RECORD_KEY
+      ));
+
+      if (liveRecord && Array.isArray(liveRecord.notes)) {
+        const normalizedNotes = normalizeAdminNoteList(liveRecord.notes);
+        const notesJson = JSON.stringify(normalizedNotes);
+
+        adminNotesLiveIdRef.current = liveRecord.id;
+        adminNotesLastSavedJsonRef.current = notesJson;
+        setAdminNotes(normalizedNotes);
+        saveAdminNotes(normalizedNotes);
+        setAdminNotesDbReady(true);
+        setAdminNotesLiveStatus("Live saved");
+        return;
+      }
+
+      const notesToCreate = normalizeAdminNoteList(adminNotesCurrentRef.current);
+      const created = await entity.create({
+        recordKey: ADMIN_NOTE_LIVE_RECORD_KEY,
+        notes: notesToCreate,
+        updatedAt: new Date().toISOString(),
+      });
+
+      adminNotesLiveIdRef.current = created?.id || null;
+      adminNotesLastSavedJsonRef.current = JSON.stringify(notesToCreate);
+      setAdminNotes(notesToCreate);
+      saveAdminNotes(notesToCreate);
+      setAdminNotesDbReady(true);
+      setAdminNotesLiveStatus("Live saved");
+    } catch (error) {
+      console.error("Admin notes live load failed:", error);
+      setAdminNotesDbReady(false);
+      setAdminNotesLiveStatus("D1 unavailable - local saved");
+    } finally {
+      adminNotesLoadedRef.current = true;
+      setAdminNotesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isAdminUnlocked) return;
+    loadAdminNotesLive();
+  }, [isAdminUnlocked, loadAdminNotesLive]);
 
   const adminSearchKeyword = adminSearch.trim().toLowerCase();
 
@@ -9453,8 +9548,78 @@ export default function DepotStablingPage() {
   }, [isSidebarCollapsed]);
 
   useEffect(() => {
+    adminNotesCurrentRef.current = adminNotes;
     saveAdminNotes(adminNotes);
   }, [adminNotes]);
+
+  useEffect(() => {
+    if (!isAdminUnlocked || !adminNotesLoadedRef.current) return undefined;
+
+    const entity = getAdminNoteEntity();
+    if (!isAdminNoteEntityReady(entity)) {
+      setAdminNotesDbReady(false);
+      return undefined;
+    }
+
+    const notesToSave = normalizeAdminNoteList(adminNotes);
+    const nextNotesJson = JSON.stringify(notesToSave);
+    if (nextNotesJson === adminNotesLastSavedJsonRef.current) return undefined;
+
+    if (adminNotesSaveTimerRef.current) {
+      window.clearTimeout(adminNotesSaveTimerRef.current);
+      adminNotesSaveTimerRef.current = null;
+    }
+
+    setAdminNotesSaving(true);
+    setAdminNotesLiveStatus("Saving live...");
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const payload = {
+          recordKey: ADMIN_NOTE_LIVE_RECORD_KEY,
+          notes: notesToSave,
+          updatedAt: new Date().toISOString(),
+        };
+
+        let savedRecord = null;
+        const existingId = adminNotesLiveIdRef.current;
+
+        if (existingId) {
+          try {
+            savedRecord = await entity.update(existingId, payload);
+          } catch (error) {
+            if (error?.status !== 404) throw error;
+            savedRecord = await entity.create(payload);
+          }
+        } else {
+          savedRecord = await entity.create(payload);
+        }
+
+        if (savedRecord?.id) adminNotesLiveIdRef.current = savedRecord.id;
+        adminNotesLastSavedJsonRef.current = nextNotesJson;
+        setAdminNotesDbReady(true);
+        setAdminNotesLiveStatus("Live saved");
+      } catch (error) {
+        console.error("Admin notes live save failed:", error);
+        setAdminNotesDbReady(false);
+        setAdminNotesLiveStatus("D1 save failed - local saved");
+      } finally {
+        setAdminNotesSaving(false);
+        if (adminNotesSaveTimerRef.current === timer) {
+          adminNotesSaveTimerRef.current = null;
+        }
+      }
+    }, ADMIN_NOTE_SAVE_DEBOUNCE_MS);
+
+    adminNotesSaveTimerRef.current = timer;
+
+    return () => {
+      window.clearTimeout(timer);
+      if (adminNotesSaveTimerRef.current === timer) {
+        adminNotesSaveTimerRef.current = null;
+      }
+    };
+  }, [adminNotes, isAdminUnlocked]);
 
   useEffect(() => {
     if (isSidebarCollapsed) return undefined;
@@ -11705,6 +11870,10 @@ export default function DepotStablingPage() {
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Admin notes</p>
                         <h2 className="truncate text-[17px] font-normal leading-tight text-white">Modern Note</h2>
+                        <p className={`mt-0.5 flex items-center gap-1 text-[10px] font-semibold ${adminNotesDbReady ? "text-emerald-300" : "text-amber-300"}`}>
+                          {(adminNotesLoading || adminNotesSaving) && <Loader2 className="h-3 w-3 animate-spin" />}
+                          {adminNotesLoading ? "Loading live notes..." : adminNotesSaving ? "Saving live..." : adminNotesLiveStatus}
+                        </p>
                       </div>
                       <button
                         type="button"
@@ -11837,7 +12006,7 @@ export default function DepotStablingPage() {
                                 className="min-h-[92px] w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] font-normal leading-relaxed text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200"
                               />
                               <div className="mt-1 flex items-center justify-between px-1 text-[10px] font-semibold text-slate-500">
-                                <span>Auto saved</span>
+                                <span>{adminNotesDbReady ? "Live saved after refresh" : adminNotesLiveStatus}</span>
                                 <span>{item.title}</span>
                               </div>
                             </div>
