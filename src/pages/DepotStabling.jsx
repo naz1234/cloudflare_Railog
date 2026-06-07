@@ -6645,6 +6645,70 @@ function TrainMovementContent() {
 
     const visibleSteps = steps.filter((step) => step.visible);
 
+    const renderMovementFlowStepCard = (step, index) => (
+      <div
+        key={step.key}
+        className="rounded-xl border p-2 transition-all"
+        style={{
+          borderColor: step.complete ? `${accent}70` : "#1e4060",
+          background: step.complete ? `linear-gradient(135deg, ${accent}14, #061827 82%)` : "#061827",
+          boxShadow: step.complete ? `0 0 10px ${accent}12, inset 0 1px 0 rgba(255,255,255,0.05)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
+        }}
+      >
+        <div className="mb-1 flex items-center justify-between gap-1.5">
+          <span className="inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]" style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: step.complete ? accent : "#7ea6c2", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
+            <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal" style={{ borderColor: step.complete ? `${accent}80` : "#31516b" }}>{index + 1}</span>
+            <span className="truncate">{step.label}</span>
+          </span>
+          <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>
+            {step.complete ? "DONE" : step.optional ? "OPTIONAL" : "NEXT"}
+          </span>
+        </div>
+        {step.render()}
+      </div>
+    );
+
+    const renderMovementFlowRows = (items) => (
+      <div className="grid gap-y-2">
+        {items.reduce((rows, _step, index) => {
+          if (index % 2 === 0) rows.push(items.slice(index, index + 2));
+          return rows;
+        }, []).map((pair, pairIndex) => {
+          const leftToRight = pairIndex % 2 === 0;
+          const firstIndex = pairIndex * 2;
+          const secondIndex = firstIndex + 1;
+          const first = pair[0];
+          const second = pair[1];
+          const leftStep = leftToRight ? first : second;
+          const rightStep = leftToRight ? second : first;
+          const leftIndex = leftToRight ? firstIndex : secondIndex;
+          const rightIndex = leftToRight ? secondIndex : firstIndex;
+          const arrow = second ? (leftToRight ? "→" : "←") : "";
+
+          return (
+            <div key={`${first.key}-${second?.key || "last"}`} className="grid grid-cols-[minmax(0,1fr)_24px_minmax(0,1fr)] items-center gap-x-1.5">
+              <div>{leftStep ? renderMovementFlowStepCard(leftStep, leftIndex) : null}</div>
+              <div className="flex items-center justify-center">
+                <span
+                  className="flex h-6 w-6 items-center justify-center rounded-full border text-[15px] font-black leading-none"
+                  style={{
+                    opacity: arrow ? 1 : 0,
+                    borderColor: `${accent}55`,
+                    backgroundColor: `${accent}12`,
+                    color: accent,
+                    boxShadow: `0 0 12px ${accent}22`,
+                  }}
+                >
+                  {arrow || "→"}
+                </span>
+              </div>
+              <div>{rightStep ? renderMovementFlowStepCard(rightStep, rightIndex) : null}</div>
+            </div>
+          );
+        })}
+      </div>
+    );
+
     return (
       <section
         className="overflow-hidden rounded-xl border shadow-[0_14px_28px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.05)]"
@@ -6669,39 +6733,7 @@ function TrainMovementContent() {
         </div>
 
         <div className="grid gap-3 p-3">
-          <div className="grid grid-cols-2 gap-x-2.5 gap-y-2">
-            {visibleSteps.map((step, index) => {
-              const pairIndex = Math.floor(index / 2);
-              const firstInPair = index % 2 === 0;
-              const leftToRight = pairIndex % 2 === 0;
-              const columnStart = leftToRight ? (firstInPair ? 1 : 2) : (firstInPair ? 2 : 1);
-              const rowStart = pairIndex + 1;
-              const directionText = index === visibleSteps.length - 1 ? "" : leftToRight === firstInPair ? "→" : "←";
-
-              return (
-                <div
-                  key={step.key}
-                  className="rounded-xl border p-2 transition-all"
-                  style={{
-                    gridColumnStart: columnStart,
-                    gridRowStart: rowStart,
-                    borderColor: step.complete ? `${accent}70` : "#1e4060",
-                    background: step.complete ? `linear-gradient(135deg, ${accent}14, #061827 82%)` : "#061827",
-                    boxShadow: step.complete ? `0 0 10px ${accent}12, inset 0 1px 0 rgba(255,255,255,0.05)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
-                  }}
-                >
-                  <div className="mb-1 flex items-center justify-between gap-1.5">
-                    <span className="inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]" style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: step.complete ? accent : "#7ea6c2", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
-                      <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal" style={{ borderColor: step.complete ? `${accent}80` : "#31516b" }}>{index + 1}</span>
-                      <span className="truncate">{step.label}</span>
-                    </span>
-                    <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>{step.complete ? "DONE" : step.optional ? "OPTIONAL" : directionText}</span>
-                  </div>
-                  {step.render()}
-                </div>
-              );
-            })}
-          </div>
+          {renderMovementFlowRows(visibleSteps)}
 
           <div className="rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2">
             <p className="mb-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
@@ -7133,6 +7165,68 @@ function TrainMovementContent() {
 
     const visibleManualFlowSteps = manualFlowSteps.filter((step) => step.visible);
 
+    const renderTp1FlowStepCard = (step, index) => (
+      <div
+        key={step.key}
+        className="rounded-xl border p-2 transition-all"
+        style={{
+          borderColor: step.complete ? `${accent}70` : "#1e4060",
+          background: step.complete ? `linear-gradient(135deg, ${accent}14, #061827 82%)` : "#061827",
+          boxShadow: step.complete ? `0 0 10px ${accent}12, inset 0 1px 0 rgba(255,255,255,0.05)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
+        }}
+      >
+        <div className="mb-1 flex items-center justify-between gap-1.5">
+          <span className="inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]" style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: step.complete ? accent : "#7ea6c2", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
+            <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal" style={{ borderColor: step.complete ? `${accent}80` : "#31516b" }}>{index + 1}</span>
+            <span className="truncate">{step.label}</span>
+          </span>
+          <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>{step.complete ? "DONE" : "NEXT"}</span>
+        </div>
+        {step.render()}
+      </div>
+    );
+
+    const renderTp1FlowRows = (items) => (
+      <div className="grid gap-y-2">
+        {items.reduce((rows, _step, index) => {
+          if (index % 2 === 0) rows.push(items.slice(index, index + 2));
+          return rows;
+        }, []).map((pair, pairIndex) => {
+          const leftToRight = pairIndex % 2 === 0;
+          const firstIndex = pairIndex * 2;
+          const secondIndex = firstIndex + 1;
+          const first = pair[0];
+          const second = pair[1];
+          const leftStep = leftToRight ? first : second;
+          const rightStep = leftToRight ? second : first;
+          const leftIndex = leftToRight ? firstIndex : secondIndex;
+          const rightIndex = leftToRight ? secondIndex : firstIndex;
+          const arrow = second ? (leftToRight ? "→" : "←") : "";
+
+          return (
+            <div key={`${first.key}-${second?.key || "last"}`} className="grid grid-cols-[minmax(0,1fr)_24px_minmax(0,1fr)] items-center gap-x-1.5">
+              <div>{leftStep ? renderTp1FlowStepCard(leftStep, leftIndex) : null}</div>
+              <div className="flex items-center justify-center">
+                <span
+                  className="flex h-6 w-6 items-center justify-center rounded-full border text-[15px] font-black leading-none"
+                  style={{
+                    opacity: arrow ? 1 : 0,
+                    borderColor: `${accent}55`,
+                    backgroundColor: `${accent}12`,
+                    color: accent,
+                    boxShadow: `0 0 12px ${accent}22`,
+                  }}
+                >
+                  {arrow || "→"}
+                </span>
+              </div>
+              <div>{rightStep ? renderTp1FlowStepCard(rightStep, rightIndex) : null}</div>
+            </div>
+          );
+        })}
+      </div>
+    );
+
     const renderTp1ZigZagFlowCard = ({ title, subtitle, steps, onReset, resetTitle }) => (
       <div className="rounded-xl border border-[#1e4060] bg-[#031827] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -7142,7 +7236,7 @@ function TrainMovementContent() {
           </div>
           <div className="flex items-center gap-1.5">
             <span className="rounded-full border px-2 py-0.5 text-[9px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}16`, color: accent }}>
-              Zig-zag
+              L ↔ R
             </span>
             <button
               type="button"
@@ -7156,39 +7250,7 @@ function TrainMovementContent() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-2.5 gap-y-2">
-          {steps.map((step, index) => {
-            const pairIndex = Math.floor(index / 2);
-            const firstInPair = index % 2 === 0;
-            const leftToRight = pairIndex % 2 === 0;
-            const columnStart = leftToRight ? (firstInPair ? 1 : 2) : (firstInPair ? 2 : 1);
-            const rowStart = pairIndex + 1;
-            const directionText = index === steps.length - 1 ? "" : leftToRight === firstInPair ? "→" : "←";
-
-            return (
-              <div
-                key={step.key}
-                className="rounded-xl border p-2 transition-all"
-                style={{
-                  gridColumnStart: columnStart,
-                  gridRowStart: rowStart,
-                  borderColor: step.complete ? `${accent}70` : "#1e4060",
-                  background: step.complete ? `linear-gradient(135deg, ${accent}14, #061827 82%)` : "#061827",
-                  boxShadow: step.complete ? `0 0 10px ${accent}12, inset 0 1px 0 rgba(255,255,255,0.05)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
-                }}
-              >
-                <div className="mb-1 flex items-center justify-between gap-1.5">
-                  <span className="inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]" style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: step.complete ? accent : "#7ea6c2", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
-                    <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal" style={{ borderColor: step.complete ? `${accent}80` : "#31516b" }}>{index + 1}</span>
-                    <span className="truncate">{step.label}</span>
-                  </span>
-                  <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>{step.complete ? "DONE" : directionText}</span>
-                </div>
-                {step.render()}
-              </div>
-            );
-          })}
-        </div>
+        {renderTp1FlowRows(steps)}
       </div>
     );
 
@@ -7228,14 +7290,14 @@ function TrainMovementContent() {
           {isAutomatic
             ? renderTp1ZigZagFlowCard({
                 title: "Automatic Flow",
-                subtitle: "Compact zig-zag: left → right → down → left.",
+                subtitle: "Compact flow with left ↔ right arrows only.",
                 steps: visibleAutomaticFlowSteps,
                 onReset: resetTp1AutomaticFlow,
                 resetTitle: "Reset Automatic Flow",
               })
             : renderTp1ZigZagFlowCard({
                 title: "Manual Flow",
-                subtitle: "Train Set → Plan/Unplanned → TR at TP1 → Manual Area.",
+                subtitle: "Compact flow with left ↔ right arrows only.",
                 steps: visibleManualFlowSteps,
                 onReset: resetTp1ManualFlow,
                 resetTitle: "Reset Manual Flow",
