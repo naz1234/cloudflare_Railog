@@ -44,6 +44,7 @@ const AuthenticatedApp = () => {
       <Route path="/train-washing" element={<DepotStabling />} />
       <Route path="/odo-reading" element={<DepotStabling />} />
       <Route path="/possession" element={<DepotStabling />} />
+      <Route path="/alarm" element={<DepotStabling />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>

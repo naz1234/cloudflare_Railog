@@ -9090,6 +9090,7 @@ export default function DepotStablingPage() {
     if (path === "/insertion") return "insertion";
     if (path === "/odo-reading") return "odo";
     if (path === "/possession") return "possession";
+    if (path === "/alarm") return "alarm";
     return "stabling";
   };
   const [activeTab, setActiveTab] = useState(() => getTabFromPath(location.pathname));
@@ -11148,6 +11149,19 @@ export default function DepotStablingPage() {
               ),
             },
             {
+              key: "alarm",
+              label: "Alarm",
+              code: "ALM",
+              to: "/alarm",
+              icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              ),
+            },
+            {
               key: "possession",
               label: "Possession Log",
               code: "PSS",
@@ -11402,6 +11416,17 @@ export default function DepotStablingPage() {
 
         {activeTab === "possession" && (
           <PossessionTabContent />
+        )}
+
+        {activeTab === "alarm" && (
+          <div className="w-full min-h-[calc(100vh-120px)] rounded-2xl border border-[#1a3a56] bg-[#061a2b]/70 p-5">
+            <div className="flex items-center justify-between border-b border-[#1a3a56]/70 pb-3">
+              <div>
+                <p className="text-[10px] font-normal uppercase tracking-[0.28em] text-[#4a8ab5]">ALM</p>
+                <h2 className="mt-1 text-[18px] font-normal text-white">Alarm</h2>
+              </div>
+            </div>
+          </div>
         )}
 
 
