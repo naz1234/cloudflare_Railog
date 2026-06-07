@@ -156,19 +156,45 @@ function getParsedTimetable(activeTimetable = null) {
   return activeTimetable?.parsedData || activeTimetable?.data || null;
 }
 
-function buildDepotRowsFromUploadedTimetable(activeTimetable = null, depot = "west") {
+function normalizeAssistRemark(value = "") {
+  const text = String(value || "").trim();
+  const compact = text.replace(/\s+/g, " ");
+
+  if (/^early\s*rem$/i.test(compact)) return "Early Rem";
+  if (/^late\s*rem$/i.test(compact)) return "Late Rem";
+  if (/^ed\s*\(\s*7\s*pm\s*\)$/i.test(compact)) return "ED (7pm)";
+  if (/^ed$/i.test(compact)) return "ED";
+
+  return "";
+}
+
+function buildFallbackRemarkMap(typeKey = "weekday", depot = "west") {
+  const depotKey = depot === "east" ? "east" : "west";
+  const rows = SCHEDULES[typeKey]?.[depotKey] || SCHEDULES.weekday?.[depotKey] || [];
+
+  return Object.fromEntries(
+    rows
+      .filter((row) => row?.tid && row?.remark)
+      .map((row) => [String(row.tid), normalizeAssistRemark(row.remark) || row.remark])
+  );
+}
+
+function buildDepotRowsFromUploadedTimetable(activeTimetable = null, depot = "west", typeKey = "weekday") {
   const parsed = getParsedTimetable(activeTimetable);
   const depotKey = depot === "east" ? "east" : "west";
   const entries = Array.isArray(parsed?.insertion?.[depotKey]?.entries)
     ? parsed.insertion[depotKey].entries
     : [];
+  const fallbackRemarkMap = buildFallbackRemarkMap(typeKey, depotKey);
 
   return entries
     .map((entry) => {
       const tidText = String(entry?.tid ?? "").replace(/\D/g, "");
       const time = String(entry?.time ?? "").trim().replace(/\s*hrs\.?$/i, "");
       if (!tidText || !/^\d{1,2}:\d{2}$/.test(time)) return null;
-      return { tid: Number(tidText), time };
+
+      const remark = normalizeAssistRemark(entry?.assistRemark || entry?.displayRemark || entry?.remark) || fallbackRemarkMap[tidText] || "";
+      return { tid: Number(tidText), remark, time };
     })
     .filter(Boolean)
     .sort((a, b) => {
@@ -181,8 +207,8 @@ function buildDepotRowsFromUploadedTimetable(activeTimetable = null, depot = "we
 
 function buildSchedules(activeTimetable = null, activeTimetableType = "weekday") {
   const typeKey = normalizeTimetableTypeKey(activeTimetableType || getParsedTimetable(activeTimetable)?.timetableType || "weekday");
-  const dynamicWest = buildDepotRowsFromUploadedTimetable(activeTimetable, "west");
-  const dynamicEast = buildDepotRowsFromUploadedTimetable(activeTimetable, "east");
+  const dynamicWest = buildDepotRowsFromUploadedTimetable(activeTimetable, "west", typeKey);
+  const dynamicEast = buildDepotRowsFromUploadedTimetable(activeTimetable, "east", typeKey);
   const nextSchedules = { ...SCHEDULES };
 
   if (typeKey === "ph" && !nextSchedules.ph) {
@@ -240,10 +266,55 @@ function getDefaultScheduleKey() {
 }
 
 function getRemarkStyle(remark) {
-  if (remark === "Early Rem") return { backgroundColor: "rgba(34, 197, 94, 0.12)", color: "#4ade80", borderColor: "rgba(74, 222, 128, 0.28)" };
-  if (remark === "Late Rem") return { backgroundColor: "rgba(245, 158, 11, 0.13)", color: "#fbbf24", borderColor: "rgba(251, 191, 36, 0.28)" };
-  if (remark?.startsWith("ED")) return { backgroundColor: "rgba(248, 113, 113, 0.12)", color: "#f87171", borderColor: "rgba(248, 113, 113, 0.26)" };
-  return { backgroundColor: "rgba(148, 163, 184, 0.10)", color: "#94a3b8", borderColor: "rgba(148, 163, 184, 0.20)" };
+  const normalized = normalizeAssistRemark(remark) || String(remark || "").trim();
+
+  if (normalized === "Early Rem") {
+    return {
+      backgroundColor: "rgba(34, 197, 94, 0.17)",
+      color: "#86efac",
+      borderColor: "rgba(134, 239, 172, 0.36)",
+      rowBackground: "linear-gradient(90deg, rgba(34, 197, 94, 0.20) 0%, rgba(34, 197, 94, 0.07) 100%)",
+      sideColor: "#22c55e",
+    };
+  }
+
+  if (normalized === "Late Rem") {
+    return {
+      backgroundColor: "rgba(244, 63, 94, 0.17)",
+      color: "#fda4af",
+      borderColor: "rgba(253, 164, 175, 0.36)",
+      rowBackground: "linear-gradient(90deg, rgba(244, 63, 94, 0.20) 0%, rgba(244, 63, 94, 0.07) 100%)",
+      sideColor: "#fb7185",
+    };
+  }
+
+  if (normalized === "ED (7pm)") {
+    return {
+      backgroundColor: "rgba(248, 113, 113, 0.18)",
+      color: "#fca5a5",
+      borderColor: "rgba(252, 165, 165, 0.38)",
+      rowBackground: "linear-gradient(90deg, rgba(248, 113, 113, 0.20) 0%, rgba(248, 113, 113, 0.07) 100%)",
+      sideColor: "#f87171",
+    };
+  }
+
+  if (normalized === "ED") {
+    return {
+      backgroundColor: "rgba(250, 204, 21, 0.17)",
+      color: "#f87171",
+      borderColor: "rgba(250, 204, 21, 0.40)",
+      rowBackground: "linear-gradient(90deg, rgba(250, 204, 21, 0.20) 0%, rgba(250, 204, 21, 0.07) 100%)",
+      sideColor: "#facc15",
+    };
+  }
+
+  return {
+    backgroundColor: "rgba(148, 163, 184, 0.10)",
+    color: "#94a3b8",
+    borderColor: "rgba(148, 163, 184, 0.20)",
+    rowBackground: "",
+    sideColor: "transparent",
+  };
 }
 
 function toMinutes(timeStr) {
@@ -742,9 +813,11 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
 
               const rowBackground = isActive
                 ? accent.rowGradient
-                : idx % 2 === 0
-                  ? "rgba(8, 32, 52, 0.58)"
-                  : "rgba(6, 24, 39, 0.68)";
+                : remark
+                  ? remarkStyle.rowBackground
+                  : idx % 2 === 0
+                    ? "rgba(8, 32, 52, 0.58)"
+                    : "rgba(6, 24, 39, 0.68)";
 
               const commonCellStyle = {
                 padding: isWeekday ? "3px 6px" : "1px 6px",
@@ -761,7 +834,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                     style={{
                       ...commonCellStyle,
                       textAlign: isWeekday ? "left" : "center",
-                      borderLeft: isActive ? `3px solid ${accent.accent}` : "3px solid transparent",
+                      borderLeft: isActive ? `3px solid ${accent.accent}` : `3px solid ${remark ? remarkStyle.sideColor : "transparent"}`,
                       borderRight: "1px solid rgba(125, 184, 224, 0.10)",
                       boxShadow: isActive ? `inset 10px 0 20px ${accent.glow}` : "none",
                     }}
