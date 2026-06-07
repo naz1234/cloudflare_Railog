@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Save, CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Download } from "lucide-react";
+import { Save, CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Download, Search, ArrowUp, ArrowDown, Check } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
@@ -1672,6 +1672,76 @@ const SIDEBAR_AUTO_HIDE_MS = 3000;
 const ADM_SESSION_KEY = "admAdminUnlocked_v1";
 const ADM_LOGIN_ID = "admin";
 const ADM_LOGIN_PASSWORD = "921016";
+const ADMIN_NOTES_STORAGE_KEY = "admModernNotes_v1";
+const ADMIN_NOTE_THEMES = [
+  { from: "#e2e8f0", to: "#cbd5e1", border: "#cbd5e1", shadow: "rgba(100, 116, 139, 0.18)" },
+  { from: "#dbeafe", to: "#bfdbfe", border: "#93c5fd", shadow: "rgba(59, 130, 246, 0.18)" },
+  { from: "#ccfbf1", to: "#99f6e4", border: "#5eead4", shadow: "rgba(20, 184, 166, 0.18)" },
+  { from: "#fce7f3", to: "#fbcfe8", border: "#f9a8d4", shadow: "rgba(236, 72, 153, 0.18)" },
+  { from: "#ffedd5", to: "#fed7aa", border: "#fdba74", shadow: "rgba(249, 115, 22, 0.18)" },
+  { from: "#cffafe", to: "#bae6fd", border: "#7dd3fc", shadow: "rgba(14, 165, 233, 0.18)" },
+  { from: "#ede9fe", to: "#ddd6fe", border: "#c4b5fd", shadow: "rgba(139, 92, 246, 0.18)" },
+];
+
+function createAdminNoteItem(title = "New Parent") {
+  const now = new Date().toISOString();
+  return {
+    id: `adm-note-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    title,
+    note: "",
+    collapsed: false,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+function normalizeAdminNoteItem(item = {}, index = 0) {
+  const fallback = createAdminNoteItem(`Parent ${index + 1}`);
+  return {
+    ...fallback,
+    ...item,
+    id: String(item.id || fallback.id),
+    title: String(item.title || `Parent ${index + 1}`).trim() || `Parent ${index + 1}`,
+    note: String(item.note || ""),
+    collapsed: item.collapsed === true || item.collapsed === "true",
+    createdAt: item.createdAt || item.created_date || fallback.createdAt,
+    updatedAt: item.updatedAt || item.updated_date || fallback.updatedAt,
+  };
+}
+
+function loadAdminNotes() {
+  try {
+    const raw = localStorage.getItem(ADMIN_NOTES_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (Array.isArray(parsed) && parsed.length) {
+      return parsed.map((item, index) => normalizeAdminNoteItem(item, index));
+    }
+  } catch {}
+
+  return [
+    {
+      id: "adm-note-default",
+      title: "Admin Note",
+      note: "",
+      collapsed: false,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    },
+  ];
+}
+
+function saveAdminNotes(notes = []) {
+  try { localStorage.setItem(ADMIN_NOTES_STORAGE_KEY, JSON.stringify(notes)); } catch {}
+}
+
+function getAdminNoteCardStyle(index) {
+  const theme = ADMIN_NOTE_THEMES[index % ADMIN_NOTE_THEMES.length];
+  return {
+    background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)`,
+    borderColor: theme.border,
+    boxShadow: `0 12px 26px -20px ${theme.shadow}`,
+  };
+}
 
 function loadInsertionLog() {
   try {
@@ -9107,6 +9177,10 @@ export default function DepotStablingPage() {
       return false;
     }
   });
+  const [adminNotes, setAdminNotes] = useState(() => loadAdminNotes());
+  const [adminSearch, setAdminSearch] = useState("");
+  const [adminEditingNoteId, setAdminEditingNoteId] = useState(null);
+  const [adminTitleDraft, setAdminTitleDraft] = useState("");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     try {
       return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
@@ -9281,6 +9355,81 @@ export default function DepotStablingPage() {
     try { sessionStorage.removeItem(ADM_SESSION_KEY); } catch {}
   }, []);
 
+  const adminSearchKeyword = adminSearch.trim().toLowerCase();
+
+  const visibleAdminNotes = useMemo(() => {
+    if (!adminSearchKeyword) return adminNotes;
+
+    return adminNotes.filter((item) => {
+      const title = String(item.title || "").toLowerCase();
+      const note = String(item.note || "").toLowerCase();
+      return title.includes(adminSearchKeyword) || note.includes(adminSearchKeyword);
+    });
+  }, [adminNotes, adminSearchKeyword]);
+
+  const handleAddAdminNote = useCallback(() => {
+    setAdminNotes((prev) => [
+      ...prev.map((item) => ({ ...item, collapsed: true })),
+      createAdminNoteItem(`Parent ${prev.length + 1}`),
+    ]);
+  }, []);
+
+  const toggleAdminNoteCollapsed = useCallback((id) => {
+    setAdminNotes((prev) => prev.map((item) => (
+      item.id === id ? { ...item, collapsed: !item.collapsed } : item
+    )));
+  }, []);
+
+  const handleAdminNoteChange = useCallback((id, value) => {
+    setAdminNotes((prev) => prev.map((item) => (
+      item.id === id ? { ...item, note: value, updatedAt: new Date().toISOString() } : item
+    )));
+  }, []);
+
+  const startAdminTitleEdit = useCallback((item) => {
+    setAdminEditingNoteId(item.id);
+    setAdminTitleDraft(item.title || "");
+  }, []);
+
+  const cancelAdminTitleEdit = useCallback(() => {
+    setAdminEditingNoteId(null);
+    setAdminTitleDraft("");
+  }, []);
+
+  const saveAdminTitle = useCallback((event, item) => {
+    event.preventDefault();
+    const cleanTitle = adminTitleDraft.trim() || item.title || "Admin Note";
+    setAdminNotes((prev) => prev.map((noteItem) => (
+      noteItem.id === item.id
+        ? { ...noteItem, title: cleanTitle, updatedAt: new Date().toISOString() }
+        : noteItem
+    )));
+    setAdminEditingNoteId(null);
+    setAdminTitleDraft("");
+  }, [adminTitleDraft]);
+
+  const deleteAdminNote = useCallback((id) => {
+    setAdminNotes((prev) => {
+      if (prev.length <= 1) {
+        return [{ ...prev[0], title: "Admin Note", note: "", collapsed: false, updatedAt: new Date().toISOString() }];
+      }
+      return prev.filter((item) => item.id !== id);
+    });
+  }, []);
+
+  const moveAdminNote = useCallback((id, direction) => {
+    setAdminNotes((prev) => {
+      const currentIndex = prev.findIndex((item) => item.id === id);
+      if (currentIndex < 0) return prev;
+      const nextIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+      if (nextIndex < 0 || nextIndex >= prev.length) return prev;
+
+      const next = [...prev];
+      [next[currentIndex], next[nextIndex]] = [next[nextIndex], next[currentIndex]];
+      return next;
+    });
+  }, []);
+
   const handleSidebarShortcutClick = useCallback((event, key, to) => {
     event.preventDefault();
     setActiveTab(key);
@@ -9302,6 +9451,10 @@ export default function DepotStablingPage() {
       localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isSidebarCollapsed));
     } catch {}
   }, [isSidebarCollapsed]);
+
+  useEffect(() => {
+    saveAdminNotes(adminNotes);
+  }, [adminNotes]);
 
   useEffect(() => {
     if (isSidebarCollapsed) return undefined;
@@ -11481,78 +11634,228 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "admin" && (
-          <div className="w-full min-h-[calc(100vh-120px)] px-2 pt-8">
-            <div className="mx-auto w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[#23506f]/80 bg-[#061827]/95 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur">
-              <div className="relative border-b border-[#1a3a56]/80 bg-gradient-to-br from-[#0d3455] via-[#08223a] to-[#061827] px-5 py-5">
-                <div className="absolute right-5 top-5 h-10 w-10 rounded-full border border-[#4f8ef7]/25 bg-[#4f8ef7]/10 blur-[1px]" />
-                <div className="relative flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#4f8ef7]/40 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.22em] text-[#bceaff] shadow-[0_0_22px_rgba(79,142,247,0.18)]">
-                    ADM
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-normal uppercase tracking-[0.24em] text-[#6db6e8]">Admin access</p>
-                    <h2 className="mt-1 text-[18px] font-semibold text-white">Admin Login</h2>
-                  </div>
-                </div>
-                <p className="relative mt-4 text-[11px] leading-relaxed text-[#8dc7ed]">
-                  Enter admin ID and password to unlock this page.
-                </p>
-              </div>
-
+          <div className="w-full px-2 pb-10 pt-6">
+            <div className="mx-auto w-full max-w-[620px]">
               {!isAdminUnlocked ? (
-                <form onSubmit={handleAdminLogin} className="px-5 py-5">
-                  <label className="block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
-                    ID
-                    <input
-                      value={adminCredentials.id}
-                      onChange={(event) => {
-                        setAdminCredentials((prev) => ({ ...prev, id: event.target.value }));
-                        setAdminError("");
-                      }}
-                      className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
-                      autoComplete="username"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                    />
-                  </label>
-                  <label className="mt-4 block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
-                    Password
-                    <input
-                      type="password"
-                      value={adminCredentials.password}
-                      onChange={(event) => {
-                        setAdminCredentials((prev) => ({ ...prev, password: event.target.value }));
-                        setAdminError("");
-                      }}
-                      className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
-                      autoComplete="current-password"
-                    />
-                  </label>
-                  {adminError && (
-                    <p className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-[11px] font-normal text-red-200">
-                      {adminError}
+                <div className="mx-auto w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[#23506f]/80 bg-[#061827]/95 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur">
+                  <div className="relative border-b border-[#1a3a56]/80 bg-gradient-to-br from-[#0d3455] via-[#08223a] to-[#061827] px-5 py-5">
+                    <div className="absolute right-5 top-5 h-10 w-10 rounded-full border border-[#4f8ef7]/25 bg-[#4f8ef7]/10 blur-[1px]" />
+                    <div className="relative flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#4f8ef7]/40 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.22em] text-[#bceaff] shadow-[0_0_22px_rgba(79,142,247,0.18)]">
+                        ADM
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-normal uppercase tracking-[0.24em] text-[#6db6e8]">Admin access</p>
+                        <h2 className="mt-1 text-[18px] font-semibold text-white">Admin Login</h2>
+                      </div>
+                    </div>
+                    <p className="relative mt-4 text-[11px] leading-relaxed text-[#8dc7ed]">
+                      Enter admin ID and password to unlock this page.
                     </p>
-                  )}
-                  <button
-                    type="submit"
-                    className="mt-5 flex h-10 w-full items-center justify-center rounded-xl border border-[#4f8ef7]/60 bg-[#1b5f93] text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(79,142,247,0.22)] transition hover:bg-[#2476b4] active:scale-[0.99]"
-                  >
-                    Login
-                  </button>
-                </form>
-              ) : (
-                <div className="px-5 py-5">
-                  <div className="rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-4">
-                    <p className="text-[13px] font-semibold text-emerald-100">Admin page unlocked.</p>
-                    <p className="mt-1 text-[11px] font-normal text-[#9ccbea]">This admin area is ready for future controls.</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleAdminLogout}
-                    className="mt-4 flex h-10 w-full items-center justify-center rounded-xl border border-[#2b4f6b] bg-[#071828] text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-[0.99]"
-                  >
-                    Logout
-                  </button>
+
+                  <form onSubmit={handleAdminLogin} className="px-5 py-5">
+                    <label className="block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                      ID
+                      <input
+                        value={adminCredentials.id}
+                        onChange={(event) => {
+                          setAdminCredentials((prev) => ({ ...prev, id: event.target.value }));
+                          setAdminError("");
+                        }}
+                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
+                        autoComplete="username"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                      />
+                    </label>
+                    <label className="mt-4 block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                      Password
+                      <input
+                        type="password"
+                        value={adminCredentials.password}
+                        onChange={(event) => {
+                          setAdminCredentials((prev) => ({ ...prev, password: event.target.value }));
+                          setAdminError("");
+                        }}
+                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
+                        autoComplete="current-password"
+                      />
+                    </label>
+                    {adminError && (
+                      <p className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-[11px] font-normal text-red-200">
+                        {adminError}
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      className="mt-5 flex h-10 w-full items-center justify-center rounded-xl border border-[#4f8ef7]/60 bg-[#1b5f93] text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(79,142,247,0.22)] transition hover:bg-[#2476b4] active:scale-[0.99]"
+                    >
+                      Login
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  <div className="rounded-[24px] border border-[#1d4869] bg-[#061827]/90 p-3 shadow-[0_18px_55px_rgba(0,0,0,0.25)]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[10px] font-semibold tracking-[0.16em] text-[#bceaff]">
+                        ADM
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Admin notes</p>
+                        <h2 className="truncate text-[17px] font-normal leading-tight text-white">Modern Note</h2>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddAdminNote}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[#dbeafe] text-[#0f2d4a] shadow-sm transition active:scale-95"
+                        title="Add parent"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAdminLogout}
+                        className="rounded-2xl border border-[#2b4f6b] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-[0.98]"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <input
+                      value={adminSearch}
+                      onChange={(event) => setAdminSearch(event.target.value)}
+                      placeholder="Search admin note"
+                      className="h-11 w-full rounded-2xl border border-[#d7e3ee] bg-[#f8fbff] pl-11 pr-4 text-[13px] font-normal text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#93c5fd] focus:ring-2 focus:ring-[#93c5fd]/30"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {visibleAdminNotes.map((item, visibleIndex) => {
+                      const itemIndex = adminNotes.findIndex((noteItem) => noteItem.id === item.id);
+                      const isEditingTitle = adminEditingNoteId === item.id;
+                      const isExpanded = adminSearchKeyword ? true : !item.collapsed;
+                      const noteChars = String(item.note || "").trim().length;
+
+                      return (
+                        <section
+                          key={item.id}
+                          className="rounded-2xl border px-2.5 py-1.5 shadow-sm"
+                          style={getAdminNoteCardStyle(visibleIndex)}
+                        >
+                          {isEditingTitle ? (
+                            <form onSubmit={(event) => saveAdminTitle(event, item)} className="flex items-center gap-1.5">
+                              <input
+                                autoFocus
+                                value={adminTitleDraft}
+                                onChange={(event) => setAdminTitleDraft(event.target.value)}
+                                placeholder="Parent name"
+                                className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[15px] font-normal text-slate-800 outline-none transition focus:bg-white focus:ring-2 focus:ring-indigo-200"
+                              />
+                              <button
+                                type="submit"
+                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-sm transition-transform active:scale-95"
+                                title="Save name"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={cancelAdminTitleEdit}
+                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-transform active:scale-95"
+                                title="Cancel"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </form>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => toggleAdminNoteCollapsed(item.id)}
+                                className="flex min-w-0 flex-1 items-center gap-1.5 rounded-2xl text-left transition active:scale-[0.99]"
+                                aria-expanded={isExpanded}
+                              >
+                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-white/65 text-slate-600 ring-1 ring-white/70">
+                                  {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate text-[17px] font-normal leading-tight tracking-tight text-slate-800">{item.title}</span>
+                                  <span className="mt-px block text-[10px] font-semibold leading-tight text-slate-500">
+                                    {noteChars ? `${noteChars} chars saved` : "empty note"}
+                                  </span>
+                                </span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => moveAdminNote(item.id, "up")}
+                                disabled={itemIndex <= 0}
+                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-white/60 hover:text-slate-700 disabled:opacity-25"
+                                title="Move up"
+                              >
+                                <ArrowUp className="h-3 w-3" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveAdminNote(item.id, "down")}
+                                disabled={itemIndex < 0 || itemIndex === adminNotes.length - 1}
+                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-white/60 hover:text-slate-700 disabled:opacity-25"
+                                title="Move down"
+                              >
+                                <ArrowDown className="h-3 w-3" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => startAdminTitleEdit(item)}
+                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-white/60 hover:text-slate-700"
+                                title="Edit parent name"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteAdminNote(item.id)}
+                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-rose-500 transition-colors hover:bg-white/60 hover:text-rose-600"
+                                title="Delete parent"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          )}
+
+                          {isExpanded && !isEditingTitle && (
+                            <div className="mt-1.5 rounded-2xl border border-white/65 bg-white/80 p-2 shadow-inner shadow-white/40">
+                              <textarea
+                                value={item.note || ""}
+                                onChange={(event) => handleAdminNoteChange(item.id, event.target.value)}
+                                placeholder="Write note here..."
+                                className="min-h-[92px] w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] font-normal leading-relaxed text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200"
+                              />
+                              <div className="mt-1 flex items-center justify-between px-1 text-[10px] font-semibold text-slate-500">
+                                <span>Auto saved</span>
+                                <span>{item.title}</span>
+                              </div>
+                            </div>
+                          )}
+                        </section>
+                      );
+                    })}
+
+                    {adminSearchKeyword && visibleAdminNotes.length === 0 && (
+                      <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center shadow-sm">
+                        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-500">
+                          <Search className="h-4 w-4" />
+                        </div>
+                        <h3 className="mt-2 text-sm font-normal text-slate-800">No admin note found</h3>
+                        <p className="mt-1 text-xs text-slate-400">Try another parent name or note keyword.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
