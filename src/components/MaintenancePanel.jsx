@@ -17,6 +17,10 @@ export const REQUEST_COLORS = {
   "HVAC TESTING":        { bg: "#f9a8d4", text: "#000000" },
   "Deep Cleaning":       { bg: "#d8b4fe", text: "#000000" },
   "INBOUND (G to C)":    { bg: "#fde047", text: "#000000" },
+  "Morning G to C":       { bg: "#fef08a", text: "#000000" },
+  "Evening G to C":       { bg: "#fde047", text: "#000000" },
+  "Evening PM":           { bg: "#fdba74", text: "#000000" },
+  "Morning PM":           { bg: "#86efac", text: "#000000" },
   "CC Tech/Func. Alarm": { bg: "#f59e0b", text: "#000000" },
   "Door Issue":          { bg: "#ef4444", text: "#000000" },
   Training:              { bg: "#0284c7", text: "#000000" },
@@ -70,6 +74,48 @@ function isWorkshopRequestLabel(value = "") {
   const normalized = normalizeRequestIdentity(value);
 
   return normalized.includes("WORKSHOP") && !hasTomorrowRequestToken(normalized);
+}
+
+const AI_MAINTENANCE_IMAGE_FIELDS = [
+  ["morningGToC", "Morning G to C"],
+  ["eveningGToC", "Evening G to C"],
+  ["eveningPM", "Evening PM"],
+  ["morningPM", "Morning PM"],
+];
+
+function normalizeAiTrainList(value) {
+  const source = Array.isArray(value) ? value : String(value || "").split(/[,\n]/);
+  const seen = new Set();
+  const list = [];
+
+  source.forEach((item) => {
+    const trainId = normalizeTrainId(item);
+    if (!trainId || seen.has(trainId)) return;
+    seen.add(trainId);
+    list.push(trainId);
+  });
+
+  return list;
+}
+
+function normalizeAiExtraction(value = {}) {
+  return {
+    morningGToC: normalizeAiTrainList(value.morningGToC),
+    eveningGToC: normalizeAiTrainList(value.eveningGToC),
+    eveningPM: normalizeAiTrainList(value.eveningPM),
+    morningPM: normalizeAiTrainList(value.morningPM),
+  };
+}
+
+function buildAiMaintenanceItems(extraction) {
+  return AI_MAINTENANCE_IMAGE_FIELDS.flatMap(([key, requestType]) =>
+    (extraction[key] || []).map((trainId) => ({
+      trainId,
+      requestType,
+      customType: "",
+      remark: "",
+    }))
+  );
 }
 
 function formatTrainIdForPopup(value = "") {
@@ -190,6 +236,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const [excelWashPreview, setExcelWashPreview] = useState([]);
   const [excelUploadStatus, setExcelUploadStatus] = useState("");
   const [workshopCopyStatus, setWorkshopCopyStatus] = useState("");
+  const [imageAiStatus, setImageAiStatus] = useState("");
+  const [imageAiPreview, setImageAiPreview] = useState(null);
+  const [imageAiPendingItems, setImageAiPendingItems] = useState([]);
 
   const handleAdd = () => {
     const trainIds = trainId.split(/[\s,]+/).map(normalizeTrainId).filter(Boolean);
@@ -212,6 +261,47 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     newTrainIds.forEach((id) => { onAdd({ trainId: id, requestType: cleanType, customType: "", remark: "" }); });
     if (skippedTrainIds.length > 0) { setError(`Skipped same type: ${skippedTrainIds.join(", ")}`); } else { setError(""); }
     setTrainId(""); setRequestType("");
+  };
+
+  const getNewAiItems = (items = []) => {
+    const existingKeys = new Set(
+      (requests || []).map((req) => {
+        const existingTrainId = normalizeTrainId(req.trainId || "");
+        const existingType = cleanRequestLabel(req.requestType === "Other" ? req.customType || "Other" : req.requestType);
+        return `${existingTrainId}|${existingType.toUpperCase()}`;
+      })
+    );
+
+    return (items || []).filter((item) => {
+      const key = `${normalizeTrainId(item.trainId)}|${cleanRequestLabel(item.requestType).toUpperCase()}`;
+      if (existingKeys.has(key)) return false;
+      existingKeys.add(key);
+      return true;
+    });
+  };
+
+  const handleConfirmAiItems = async () => {
+    const newItems = getNewAiItems(imageAiPendingItems);
+
+    if (newItems.length === 0) {
+      setImageAiPendingItems([]);
+      setImageAiStatus("All AI detected request types already exist.");
+      return;
+    }
+
+    await Promise.all(newItems.map((item) => onAdd(item)));
+    setImageAiPendingItems([]);
+
+    if (newItems.length < imageAiPendingItems.length) {
+      setImageAiStatus(`${newItems.length} added. ${imageAiPendingItems.length - newItems.length} already existed.`);
+    } else {
+      setImageAiStatus(`${newItems.length} added from image.`);
+    }
+  };
+
+  const handleCancelAiItems = () => {
+    setImageAiPendingItems([]);
+    setImageAiStatus("AI image result cancelled. Nothing added.");
   };
 
   const handleWashExcelUpload = async (event) => {
@@ -293,6 +383,66 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     } catch (uploadError) {
       console.error("Wash Excel upload error:", uploadError);
       setExcelUploadStatus("Unable to read Excel file.");
+    } finally {
+      event.target.value = "";
+    }
+  };
+
+  const handleMaintenanceImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setError("");
+      setImageAiStatus("AI reading image...");
+      setImageAiPreview(null);
+      setImageAiPendingItems([]);
+
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch("/api/maintenance-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || "Unable to analyse image.");
+      }
+
+      const extraction = normalizeAiExtraction(data.extraction || {});
+      const detectedItems = buildAiMaintenanceItems(extraction);
+
+      if (data.uncertain) {
+        setImageAiPreview({ extraction, items: [] });
+        setImageAiPendingItems([]);
+        setImageAiStatus(data.warning || "AI result uncertain. Nothing added. Try a clearer/cropped image.");
+        return;
+      }
+
+      if (detectedItems.length === 0) {
+        setImageAiPreview({ extraction, items: [] });
+        setImageAiPendingItems([]);
+        setImageAiStatus("No train information detected. Try a clearer/cropped image.");
+        return;
+      }
+
+      const newItems = getNewAiItems(detectedItems);
+      setImageAiPreview({ extraction, items: detectedItems });
+      setImageAiPendingItems(newItems);
+
+      if (newItems.length === 0) {
+        setImageAiStatus(`${detectedItems.length} detected. All already exist. Nothing added.`);
+      } else if (newItems.length < detectedItems.length) {
+        setImageAiStatus(`${newItems.length} new detected, ${detectedItems.length - newItems.length} already existed. Review then tap Add.`);
+      } else {
+        setImageAiStatus(`${newItems.length} detected from image. Review then tap Add.`);
+      }
+    } catch (uploadError) {
+      console.error("Maintenance AI image upload error:", uploadError);
+      setImageAiPendingItems([]);
+      setImageAiStatus(uploadError?.message || "Unable to analyse image.");
     } finally {
       event.target.value = "";
     }
@@ -473,6 +623,70 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   {item.trainId} • WASH
                 </span>
               ))}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-[#1e4060] bg-[#071e33] p-2.5 shadow-inner">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">
+                <Upload className="w-3.5 h-3.5 text-[#4f8ef7]" />
+                AI Image Extract
+              </div>
+              <p className="mt-0.5 text-[10px] leading-snug text-[#4a8ab5]">
+                Image will preview Morning/Evening G to C and PM before adding.
+              </p>
+            </div>
+
+            <label className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[#2b4f6b] bg-[#10263b] px-2.5 py-1.5 text-[10px] font-bold text-[#c8d8ea] transition-all hover:bg-[#1a3a5c] active:scale-[0.98]">
+              <Upload className="w-3 h-3" />
+              Image
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleMaintenanceImageUpload}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          {imageAiStatus && (
+            <div className="mt-2 rounded-lg border border-[#1e4060] bg-[#091828] px-2 py-1 text-[10px] text-[#c8d8ea]">
+              {imageAiStatus}
+            </div>
+          )}
+
+          {imageAiPreview && (
+            <div className="mt-2 space-y-1 rounded-lg border border-[#1e4060] bg-[#091828] px-2 py-1.5 text-[10px] text-[#c8d8ea]">
+              {AI_MAINTENANCE_IMAGE_FIELDS.map(([key, label]) => {
+                const trains = imageAiPreview.extraction?.[key] || [];
+                return (
+                  <div key={key} className="flex gap-1.5 leading-snug">
+                    <span className="shrink-0 font-semibold text-[#7eb8e0]">{label}:</span>
+                    <span className="min-w-0 break-words">{trains.length ? trains.join(", ") : "-"}</span>
+                  </div>
+                );
+              })}
+
+              {imageAiPendingItems.length > 0 && (
+                <div className="mt-2 flex gap-2 border-t border-[#1e4060] pt-2">
+                  <button
+                    type="button"
+                    onClick={handleConfirmAiItems}
+                    className="flex-1 rounded-full border border-green-500/60 bg-green-950/40 px-2 py-1 text-[10px] font-bold text-green-200 hover:bg-green-900/60 active:scale-[0.98]"
+                  >
+                    Add AI Result
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelAiItems}
+                    className="rounded-full border border-red-500/50 bg-red-950/30 px-2.5 py-1 text-[10px] font-bold text-red-200 hover:bg-red-900/50 active:scale-[0.98]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

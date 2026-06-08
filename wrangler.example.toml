@@ -8,3 +8,7 @@ pages_build_output_dir = "dist"
 binding = "DB"
 database_name = "raillog-db"
 database_id = "PUT_YOUR_D1_DATABASE_ID_HERE"
+
+# Workers AI binding used by /api/maintenance-image for LLaVA image extraction.
+[ai]
+binding = "AI"
