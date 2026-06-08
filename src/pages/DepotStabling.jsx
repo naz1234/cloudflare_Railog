@@ -1786,6 +1786,95 @@ function saveTidInputs(inputs) {
   try { localStorage.setItem(TID_INPUTS_KEY, JSON.stringify(inputs)); } catch {}
 }
 
+const INSERTION_ACTIVE_PG_KEY = "insertionActivePg_v1";
+const INSERTION_PG2_STABLING_KEY = "insertionPg2StablingState_v1";
+const INSERTION_PG2_LOG_KEY = "insertionPg2LogState_v1";
+const INSERTION_PG2_TID_INPUTS_KEY = "insertionPg2TidInputsState_v1";
+
+function normalizeInsertionPg(value = "pg1") {
+  return String(value || "").toLowerCase() === "pg2" ? "pg2" : "pg1";
+}
+
+function cloneInsertionStablingState(westData = {}, eastData = {}) {
+  return {
+    westData: normalizeStablingDepotData(westData, WEST_ROADS),
+    eastData: normalizeStablingDepotData(eastData, EAST_ROADS),
+  };
+}
+
+function loadInsertionActivePg() {
+  try {
+    if (typeof localStorage === "undefined") return "pg1";
+    return normalizeInsertionPg(localStorage.getItem(INSERTION_ACTIVE_PG_KEY));
+  } catch {
+    return "pg1";
+  }
+}
+
+function saveInsertionActivePg(value = "pg1") {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(INSERTION_ACTIVE_PG_KEY, normalizeInsertionPg(value));
+  } catch {}
+}
+
+function normalizeInsertionPg2Stabling(source = {}, fallbackWest = {}, fallbackEast = {}) {
+  const hasSource = source && typeof source === "object" && (source.westData || source.west || source.eastData || source.east);
+  return cloneInsertionStablingState(
+    hasSource ? source.westData || source.west || {} : fallbackWest,
+    hasSource ? source.eastData || source.east || {} : fallbackEast
+  );
+}
+
+function loadInsertionPg2Stabling(fallbackWest = {}, fallbackEast = {}) {
+  try {
+    if (typeof localStorage === "undefined") return cloneInsertionStablingState(fallbackWest, fallbackEast);
+    const raw = localStorage.getItem(INSERTION_PG2_STABLING_KEY);
+    if (!raw) return cloneInsertionStablingState(fallbackWest, fallbackEast);
+    return normalizeInsertionPg2Stabling(JSON.parse(raw), fallbackWest, fallbackEast);
+  } catch {
+    return cloneInsertionStablingState(fallbackWest, fallbackEast);
+  }
+}
+
+function saveInsertionPg2Stabling(state = {}) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(INSERTION_PG2_STABLING_KEY, JSON.stringify(normalizeInsertionPg2Stabling(state)));
+  } catch {}
+}
+
+function loadInsertionPg2Log() {
+  try {
+    if (typeof localStorage === "undefined") return [];
+    const raw = localStorage.getItem(INSERTION_PG2_LOG_KEY);
+    if (!raw) return [];
+    return sortInsertionLogByTime(JSON.parse(raw) || []);
+  } catch { return []; }
+}
+function saveInsertionPg2Log(log = []) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(INSERTION_PG2_LOG_KEY, JSON.stringify(sortInsertionLogByTime(Array.isArray(log) ? log : [])));
+  } catch {}
+}
+
+function loadInsertionPg2TidInputs() {
+  try {
+    if (typeof localStorage === "undefined") return {};
+    const raw = localStorage.getItem(INSERTION_PG2_TID_INPUTS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch { return {}; }
+}
+function saveInsertionPg2TidInputs(inputs = {}) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(INSERTION_PG2_TID_INPUTS_KEY, JSON.stringify(inputs && typeof inputs === "object" ? inputs : {}));
+  } catch {}
+}
+
 const INSERTION_HIDE_ELAPSED_TID_KEY_PREFIX = "insertionHideElapsedTid_v1";
 function getInsertionHideElapsedTidKey(title = "", roads = []) {
   const fallback = Array.isArray(roads) && roads.length ? roads.join("_") : "insertion";
@@ -1805,9 +1894,18 @@ function saveInsertionHideElapsedTid(title, roads, value) {
 }
 
 function normalizeInsertionLiveState(source = {}) {
+  const hasPg2Stabling = Boolean(source?.pg2Stabling || source?.pg2WestData || source?.pg2EastData);
+  const pg2StablingSource = source?.pg2Stabling || {
+    westData: source?.pg2WestData,
+    eastData: source?.pg2EastData,
+  };
+
   return {
     insertionLog: sortInsertionLogByTime(Array.isArray(source?.insertionLog) ? source.insertionLog : []),
     tidInputs: source?.tidInputs && typeof source.tidInputs === "object" ? source.tidInputs : {},
+    pg2Stabling: hasPg2Stabling ? normalizeInsertionPg2Stabling(pg2StablingSource) : null,
+    pg2InsertionLog: Array.isArray(source?.pg2InsertionLog) ? sortInsertionLogByTime(source.pg2InsertionLog) : null,
+    pg2TidInputs: source?.pg2TidInputs && typeof source.pg2TidInputs === "object" ? source.pg2TidInputs : null,
     updatedAt: (source?.updatedAt || "").toString(),
   };
 }
@@ -1827,6 +1925,9 @@ function buildInsertionLivePayload(state = {}) {
     stateKey: INSERTION_LIVE_RECORD_KEY,
     insertionLog: normalized.insertionLog,
     tidInputs: normalized.tidInputs,
+    pg2Stabling: normalized.pg2Stabling || normalizeInsertionPg2Stabling(state?.pg2Stabling || {}),
+    pg2InsertionLog: normalized.pg2InsertionLog || [],
+    pg2TidInputs: normalized.pg2TidInputs || {},
     updatedAt: new Date().toISOString(),
   };
 }
@@ -3447,7 +3548,7 @@ function getActiveInsertionEntryForCell(insertionLog = [], road, bi, trainKey = 
   return entry;
 }
 
-function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemarkStyle }) {
+function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const maintList = key ? maintenanceMap[key] || [] : [];
@@ -3588,7 +3689,23 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={trainColor} strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/></svg>
           </div>
         )}
-        <div className="w-full text-center font-black leading-none" style={{ fontSize: key ? 15 : 12, color: key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}>{displayVal || "—"}</div>
+        {stablingEditable ? (
+          <input
+            type="text"
+            value={val}
+            onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
+            placeholder="Train ID"
+            className="w-full h-6 rounded-lg border px-1 text-center text-[13px] font-black uppercase outline-none placeholder:text-[#2b4f6b]"
+            style={{
+              borderColor: key ? "#1e4d72" : "#1a3a56",
+              backgroundColor: key ? "#081e32" : "#071828",
+              color: key ? trainColor : "#4a6f8c",
+              letterSpacing: key ? "0.05em" : undefined,
+            }}
+          />
+        ) : (
+          <div className="w-full text-center font-black leading-none" style={{ fontSize: key ? 15 : 12, color: key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}>{displayVal || "—"}</div>
+        )}
         {maintList.map((item) => (
           <span
             key={`${item.displayType}-${item.badgeText || ""}`}
@@ -3665,7 +3782,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   );
 }
 
-function InsertionStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemarkStyle }) {
+function InsertionStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange }) {
   const [hideFiltered, setHideFiltered] = useState(false);
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
@@ -3967,7 +4084,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
                         </td>
                       );
                     }
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value) => handleTidChange(targetRoad, targetBi, value, ri, i)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value) => handleTidChange(targetRoad, targetBi, value, ri, i)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -5242,7 +5359,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   );
 }
 
-function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog, onInsertionTick, onRemoveInsertionLog, onClearInsertionDepot, onClearInsertedTidRemarks, onClearInsertedTrains, tidInputs, onTidChange, getTidScheduledTime, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug }) {
+function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog, onInsertionTick, onRemoveInsertionLog, onClearInsertionDepot, onClearInsertedTidRemarks, onClearInsertedTrains, tidInputs, onTidChange, getTidScheduledTime, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug, activePg = "pg1", onPgChange, onRefreshPg2, stablingEditable = false, onEditableTrainIdChange }) {
   // TID schedule range: earliest first-TID time across both series, latest last-TID time.
   // Series 1xx: 05:25–06:22 | Series 2xx: 05:24–06:21
   // Grey-out in the TID Reference Table only applies while current time is within this window.
@@ -5252,8 +5369,42 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
 
   return (
     <div className="flex flex-col gap-5">
-      <div className={`inline-flex w-fit items-center rounded-full border px-3 py-1 text-[11px] font-bold ${insertionLiveStatusClass || "border-slate-600/50 bg-slate-950/40 text-slate-300"}`}>
-        {insertionLiveStatusText || "Insertion Local only"}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex w-fit items-center rounded-full border border-[#2b4f6b] bg-[#071828] p-1 text-[10px] font-black shadow-inner shadow-black/20">
+          {(["pg1", "pg2"]).map((pg) => {
+            const selected = normalizeInsertionPg(activePg) === pg;
+            return (
+              <button
+                key={pg}
+                type="button"
+                onClick={() => onPgChange?.(pg)}
+                className="rounded-full px-3 py-1 transition-all"
+                style={selected ? MAIN_STABLING_BUTTON_PRIMARY : { color: "#7eb8e0", background: "transparent" }}
+                title={pg === "pg1" ? "PG1 default stabling" : "PG2 editable stabling"}
+              >
+                {pg.toUpperCase()}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={onRefreshPg2}
+          className="group flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
+          style={MAIN_STABLING_BUTTON_BLUE}
+          title="Refresh PG2 back to the current default PG1 stabling"
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12a9 9 0 0 1-15.5 6.2" />
+            <path d="M3 12A9 9 0 0 1 18.5 5.8" />
+            <path d="M18 2v4h4" />
+            <path d="M6 22v-4H2" />
+          </svg>
+          Refresh PG2
+        </button>
+        <div className={`inline-flex w-fit items-center rounded-full border px-3 py-1 text-[11px] font-bold ${insertionLiveStatusClass || "border-slate-600/50 bg-slate-950/40 text-slate-300"}`}>
+          {insertionLiveStatusText || "Insertion Local only"}
+        </div>
       </div>
       {insertionLiveDebug && (
         <div className="w-fit rounded-xl border border-amber-600/40 bg-amber-950/25 px-3 py-2 text-[11px] text-amber-200">
@@ -5270,8 +5421,8 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
 
         {/* Stabling sections — centre column */}
         <div className="space-y-5 min-w-0">
-          <InsertionStablingSection title="WEST DEPOT" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} />
-          <InsertionStablingSection title="EAST DEPOT" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} />
+          <InsertionStablingSection title="WEST DEPOT" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditableTrainIdChange?.("west", road, bi, value)} />
+          <InsertionStablingSection title="EAST DEPOT" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditableTrainIdChange?.("east", road, bi, value)} />
         </div>
       </div>
 
@@ -9741,6 +9892,10 @@ export default function DepotStablingPage() {
   const [pstLiveDebug, setPstLiveDebug] = useState("");
   const [insertionLog, setInsertionLog] = useState(() => loadInsertionLog());
   const [tidInputs, setTidInputs] = useState(() => loadTidInputs());
+  const [activeInsertionPg, setActiveInsertionPg] = useState(() => loadInsertionActivePg());
+  const [pg2Stabling, setPg2Stabling] = useState(() => loadInsertionPg2Stabling(westData, eastData));
+  const [pg2InsertionLog, setPg2InsertionLog] = useState(() => loadInsertionPg2Log());
+  const [pg2TidInputs, setPg2TidInputs] = useState(() => loadInsertionPg2TidInputs());
   const [insertionLiveLoaded, setInsertionLiveLoaded] = useState(false);
   const [insertionLiveSyncing, setInsertionLiveSyncing] = useState(false);
   const [insertionLiveLastSynced, setInsertionLiveLastSynced] = useState(null);
@@ -9750,6 +9905,10 @@ export default function DepotStablingPage() {
   const [flashingCells, setFlashingCells] = useState(new Set());
 
   useEffect(() => { saveTidInputs(tidInputs); }, [tidInputs]);
+  useEffect(() => { saveInsertionActivePg(activeInsertionPg); }, [activeInsertionPg]);
+  useEffect(() => { saveInsertionPg2Stabling(pg2Stabling); }, [pg2Stabling]);
+  useEffect(() => { saveInsertionPg2Log(pg2InsertionLog); }, [pg2InsertionLog]);
+  useEffect(() => { saveInsertionPg2TidInputs(pg2TidInputs); }, [pg2TidInputs]);
 
   const getTabFromPath = (path) => {
     if (path === "/train-washing") return "washing";
@@ -10381,6 +10540,9 @@ export default function DepotStablingPage() {
   const insertionLiveApplyingRemoteRef = useRef(false);
   const insertionLogRef = useRef(insertionLog);
   const tidInputsRef = useRef(tidInputs);
+  const pg2StablingRef = useRef(pg2Stabling);
+  const pg2InsertionLogRef = useRef(pg2InsertionLog);
+  const pg2TidInputsRef = useRef(pg2TidInputs);
   const insertionLiveLocalUpdatedAtRef = useRef(0);
   const insertionLiveRemoteUpdatedAtRef = useRef(0);
 
@@ -10391,6 +10553,9 @@ export default function DepotStablingPage() {
   useEffect(() => { pstCompletedByNamesRef.current = pstCompletedByNames; }, [pstCompletedByNames]);
   useEffect(() => { insertionLogRef.current = insertionLog; }, [insertionLog]);
   useEffect(() => { tidInputsRef.current = tidInputs; }, [tidInputs]);
+  useEffect(() => { pg2StablingRef.current = pg2Stabling; }, [pg2Stabling]);
+  useEffect(() => { pg2InsertionLogRef.current = pg2InsertionLog; }, [pg2InsertionLog]);
+  useEffect(() => { pg2TidInputsRef.current = pg2TidInputs; }, [pg2TidInputs]);
 
   const markStablingLocalEdit = useCallback((nextWest = westDataRef.current, nextEast = eastDataRef.current) => {
     const updatedAt = new Date().toISOString();
@@ -10696,6 +10861,19 @@ export default function DepotStablingPage() {
     setTidInputs(normalized.tidInputs);
     saveInsertionLog(normalized.insertionLog);
     saveTidInputs(normalized.tidInputs);
+
+    if (normalized.pg2Stabling) {
+      setPg2Stabling(normalized.pg2Stabling);
+      saveInsertionPg2Stabling(normalized.pg2Stabling);
+    }
+    if (Array.isArray(normalized.pg2InsertionLog)) {
+      setPg2InsertionLog(normalized.pg2InsertionLog);
+      saveInsertionPg2Log(normalized.pg2InsertionLog);
+    }
+    if (normalized.pg2TidInputs && typeof normalized.pg2TidInputs === "object") {
+      setPg2TidInputs(normalized.pg2TidInputs);
+      saveInsertionPg2TidInputs(normalized.pg2TidInputs);
+    }
   }, []);
 
   const saveInsertionLiveToDb = useCallback(async (state) => {
@@ -10704,6 +10882,9 @@ export default function DepotStablingPage() {
 
     saveInsertionLog(payload.insertionLog);
     saveTidInputs(payload.tidInputs);
+    saveInsertionPg2Stabling(payload.pg2Stabling);
+    saveInsertionPg2Log(payload.pg2InsertionLog);
+    saveInsertionPg2TidInputs(payload.pg2TidInputs);
 
     if (!isInsertionLiveEntityReady(entity)) {
       setInsertionLiveDbReady(false);
@@ -10753,6 +10934,9 @@ export default function DepotStablingPage() {
 
     saveInsertionLog(payload.insertionLog);
     saveTidInputs(payload.tidInputs);
+    saveInsertionPg2Stabling(payload.pg2Stabling);
+    saveInsertionPg2Log(payload.pg2InsertionLog);
+    saveInsertionPg2TidInputs(payload.pg2TidInputs);
 
     insertionLivePendingSaveRef.current = true;
     insertionLiveLocalEditUntilRef.current = Date.now() + INSERTION_LIVE_LOCAL_EDIT_HOLD_MS;
@@ -10798,6 +10982,9 @@ export default function DepotStablingPage() {
         const payload = buildInsertionLivePayload({
           insertionLog: insertionLogRef.current,
           tidInputs: tidInputsRef.current,
+          pg2Stabling: pg2StablingRef.current,
+          pg2InsertionLog: pg2InsertionLogRef.current,
+          pg2TidInputs: pg2TidInputsRef.current,
         });
         const created = await entity.create(payload);
         if (created?.id) insertionLiveRecordIdRef.current = created.id;
@@ -10853,10 +11040,16 @@ export default function DepotStablingPage() {
     const payload = {
       insertionLog,
       tidInputs,
+      pg2Stabling,
+      pg2InsertionLog,
+      pg2TidInputs,
     };
 
     saveInsertionLog(sortInsertionLogByTime(insertionLog));
     saveTidInputs(tidInputs);
+    saveInsertionPg2Stabling(pg2Stabling);
+    saveInsertionPg2Log(pg2InsertionLog);
+    saveInsertionPg2TidInputs(pg2TidInputs);
 
     if (insertionLiveApplyingRemoteRef.current) {
       insertionLiveApplyingRemoteRef.current = false;
@@ -10865,7 +11058,7 @@ export default function DepotStablingPage() {
 
     if (!insertionLiveLoaded) return;
     scheduleInsertionLiveSave(payload);
-  }, [insertionLog, tidInputs, insertionLiveLoaded, scheduleInsertionLiveSave]);
+  }, [insertionLog, tidInputs, pg2Stabling, pg2InsertionLog, pg2TidInputs, insertionLiveLoaded, scheduleInsertionLiveSave]);
 
   useEffect(() => {
     return () => {
@@ -11465,19 +11658,51 @@ export default function DepotStablingPage() {
     }
   }, [activeTimetable?.id, selectedTimetableType, insertionLiveLoaded, insertionLog]);
 
-  const handleInsertionTick = (road, bi, trainKey, remark = "", sweepTrack = "") => {
-    markInsertionLiveLocalEdit();
+  useEffect(() => {
+    if (!pg2InsertionLog.length) return;
+
+    let changed = false;
+    const nextLog = pg2InsertionLog.map((entry) => {
+      if (!entry || entry.isSweeping) return entry;
+
+      const tid = entry.tid !== null && entry.tid !== undefined
+        ? String(entry.tid).replace(/\D/g, "")
+        : String(entry.remark || entry.text || "").match(/TID\s*(\d{1,3})/i)?.[1] || "";
+      const depot = entry.depot || getDepotFromRoad(entry.road || "");
+      const scheduledTime = tid ? getTidScheduledTime(tid, depot, { allowFallback: false }) : null;
+      if (!scheduledTime) return entry;
+
+      const nextText = rebuildInsertionLogLineWithTime(entry, scheduledTime);
+      if (entry.time === scheduledTime && entry.text === nextText) return entry;
+
+      changed = true;
+      return {
+        ...entry,
+        time: scheduledTime,
+        text: nextText,
+      };
+    });
+
+    if (changed) {
+      markInsertionLiveLocalEdit();
+      setPg2InsertionLog(sortInsertionLogByTime(nextLog));
+    }
+  }, [activeTimetable?.id, selectedTimetableType, insertionLiveLoaded, pg2InsertionLog]);
+
+  const applyInsertionTickToLog = useCallback((prevLog = [], road, bi, trainKey, remark = "", sweepTrack = "") => {
     const cellKey = `${road}-${bi}`;
     const logKey = `ins-${cellKey}`;
-    const existing = insertionLog.find((l) => l.key === logKey);
+    const existing = (prevLog || []).find((l) => l.key === logKey);
     const existingMatchesCurrentTrain = existing && normalizeTrainId(existing.trainKey || "") === normalizeTrainId(trainKey || "");
     if (existingMatchesCurrentTrain) {
-      setInsertionLog((prev) => prev.filter((l) => l.key !== logKey));
-      return;
+      return (prevLog || []).filter((l) => l.key !== logKey);
     }
-    const depot = getDepotFromRoad(road);
+
+    const depot = WEST_ROADS.includes(road) ? "west" : "east";
     const mainlineTrack = depot === "west" ? 1 : 2;
-    const paddedTrainKey = trainKey.replace(/^T(\d+)$/, (_, n) => `T${n.padStart(2, "0")}`);
+    const paddedTrainKey = padTrainId(normalizeTrainId(trainKey));
+    if (!paddedTrainKey) return prevLog || [];
+
     // Parse remark: plain number, "TID N", "TID: N" or "T121" => TID.
     // Anything else (e.g. "3K1" / "SW") stays as a destination/remark label.
     const tidStr = remark && remark.toString().trim();
@@ -11494,14 +11719,14 @@ export default function DepotStablingPage() {
     // then generate the road-specific signal log instead of normal insertion.
     if (normalizedRemark === "SW") {
       const normalizedSweepTrack = (sweepTrack || "").toString().trim().toUpperCase();
-      if (!["TK1", "TK2"].includes(normalizedSweepTrack)) return;
+      if (!["TK1", "TK2"].includes(normalizedSweepTrack)) return prevLog || [];
 
       const signal = getSweepingSignal(road, normalizedSweepTrack);
       const clearTime = getSweepingClearTime(time, road, normalizedSweepTrack);
       const line = `${time} hrs – ${paddedTrainKey} sweeping started from ${road} to signal ${signal} at 45 kph. Track confirmed clear at ${clearTime} hrs.`;
 
-      setInsertionLog((prev) => sortInsertionLogByTime([
-        ...prev.filter((l) => l.key !== logKey),
+      return sortInsertionLogByTime([
+        ...(prevLog || []).filter((l) => l.key !== logKey),
         {
           key: logKey,
           text: line,
@@ -11517,18 +11742,28 @@ export default function DepotStablingPage() {
           clearTime,
           isSweeping: true,
         },
-      ]));
-      return;
+      ]);
     }
 
     // Parenthetical: TID number > remark label > nothing
     const tidPart = tid !== null ? ` (TID ${tid})` : tidStr ? ` (${tidStr})` : "";
     const line = `${time} hrs – ${paddedTrainKey}${tidPart} inserted from ${road} to mainline track ${mainlineTrack}.`;
-    setInsertionLog((prev) => sortInsertionLogByTime([
-      ...prev.filter((l) => l.key !== logKey),
+
+    return sortInsertionLogByTime([
+      ...(prevLog || []).filter((l) => l.key !== logKey),
       { key: logKey, text: line, time, depot, road, trainKey: paddedTrainKey, tid, mainlineTrack, remark: tidStr || "" },
-    ]));
-  };
+    ]);
+  }, [getTidScheduledTime]);
+
+  const handleInsertionTick = useCallback((road, bi, trainKey, remark = "", sweepTrack = "") => {
+    markInsertionLiveLocalEdit();
+    setInsertionLog((prev) => applyInsertionTickToLog(prev, road, bi, trainKey, remark, sweepTrack));
+  }, [applyInsertionTickToLog, markInsertionLiveLocalEdit]);
+
+  const handlePg2InsertionTick = useCallback((road, bi, trainKey, remark = "", sweepTrack = "") => {
+    markInsertionLiveLocalEdit();
+    setPg2InsertionLog((prev) => applyInsertionTickToLog(prev, road, bi, trainKey, remark, sweepTrack));
+  }, [applyInsertionTickToLog, markInsertionLiveLocalEdit]);
 
   const clearTidInputForInsertionKey = (key) => {
     const match = (key || "").match(/^ins-(.+)-(\d+)$/);
@@ -11563,6 +11798,45 @@ export default function DepotStablingPage() {
     });
   };
 
+  const clearPg2TidInputForInsertionKey = (key) => {
+    const match = (key || "").match(/^ins-(.+)-(\d+)$/);
+    if (!match) return;
+
+    const cellKey = `${match[1]}-${match[2]}`;
+    setPg2TidInputs((prev) => {
+      if (!Object.prototype.hasOwnProperty.call(prev, cellKey)) return prev;
+      const next = { ...prev };
+      delete next[cellKey];
+      return next;
+    });
+  };
+
+  const clearPg2TidInputsForInsertionDepot = (depot) => {
+    const targetRoads = depot === "west" ? WEST_ROADS : EAST_ROADS;
+    setPg2TidInputs((prev) => {
+      const next = { ...prev };
+      let changed = false;
+
+      targetRoads.forEach((road) => {
+        for (let bi = 0; bi < 7; bi += 1) {
+          const cellKey = `${road}-${bi}`;
+          if (Object.prototype.hasOwnProperty.call(next, cellKey)) {
+            delete next[cellKey];
+            changed = true;
+          }
+        }
+      });
+
+      return changed ? next : prev;
+    });
+  };
+
+  const handleRemovePg2InsertionLog = (key) => {
+    markInsertionLiveLocalEdit();
+    clearPg2TidInputForInsertionKey(key);
+    setPg2InsertionLog((prev) => prev.filter((l) => l.key !== key));
+  };
+
   const handleRemoveInsertionLog = (key) => {
     markInsertionLiveLocalEdit();
     clearTidInputForInsertionKey(key);
@@ -11573,6 +11847,12 @@ export default function DepotStablingPage() {
     markInsertionLiveLocalEdit();
     clearTidInputsForInsertionDepot(depot);
     setInsertionLog((prev) => prev.filter((l) => l.depot !== depot));
+  };
+
+  const handleClearPg2InsertionDepot = (depot) => {
+    markInsertionLiveLocalEdit();
+    clearPg2TidInputsForInsertionDepot(depot);
+    setPg2InsertionLog((prev) => prev.filter((l) => l.depot !== depot));
   };
 
   const handleClearInsertedTidRemarks = useCallback((roads, blockIndices) => {
@@ -11615,6 +11895,91 @@ export default function DepotStablingPage() {
     });
 
     setInsertionLog((prev) => prev.filter((entry) => !targetKeys.has(entry.key)));
+  }, [markInsertionLiveLocalEdit]);
+
+  const handleClearPg2InsertedTidRemarks = useCallback((roads, blockIndices) => {
+    markInsertionLiveLocalEdit();
+    const targetKeys = new Set();
+    roads.forEach((road) => {
+      blockIndices.forEach((bi) => targetKeys.add(`ins-${road}-${bi}`));
+    });
+
+    setPg2InsertionLog((prev) => prev.map((entry) => {
+      if (!targetKeys.has(entry.key)) return entry;
+      if (entry.isSweeping) return entry;
+
+      const time = entry.time || formatTime(new Date());
+      const trainKey = entry.trainKey || "";
+      const road = entry.road || "";
+      const mainlineTrack = entry.mainlineTrack || (getDepotFromRoad(road) === "west" ? 1 : 2);
+      const cleanText = trainKey && road
+        ? `${time} hrs – ${trainKey} inserted from ${road} to mainline track ${mainlineTrack}.`
+        : (entry.text || "").replace(/(hrs\s+–\s+T\d{1,2})\s*\([^)]*\)(\s+inserted)/i, "$1$2");
+
+      return {
+        ...entry,
+        text: cleanText,
+        tid: null,
+        remark: "",
+        sweepTrack: "",
+        signal: "",
+        clearTime: "",
+        isSweeping: false,
+      };
+    }));
+  }, [markInsertionLiveLocalEdit]);
+
+  const handleClearPg2InsertedTrains = useCallback((roads, blockIndices) => {
+    markInsertionLiveLocalEdit();
+    const targetKeys = new Set();
+    roads.forEach((road) => {
+      blockIndices.forEach((bi) => targetKeys.add(`ins-${road}-${bi}`));
+    });
+
+    setPg2InsertionLog((prev) => prev.filter((entry) => !targetKeys.has(entry.key)));
+  }, [markInsertionLiveLocalEdit]);
+
+  const handlePg2TidChange = useCallback((road, bi, value) => {
+    markInsertionLiveLocalEdit();
+    setPg2TidInputs((prev) => ({ ...prev, [`${road}-${bi}`]: value }));
+  }, [markInsertionLiveLocalEdit]);
+
+  const handlePg2TrainIdChange = useCallback((depot, road, blockIndex, value) => {
+    markInsertionLiveLocalEdit();
+    const normalizedDepot = normalizeDepotKey(depot);
+    const cellKey = `${road}-${blockIndex}`;
+    const logKey = `ins-${cellKey}`;
+
+    setPg2Stabling((prev) => {
+      const currentDepotData = normalizedDepot === "west" ? prev.westData : prev.eastData;
+      const previousKey = normalizeTrainId(currentDepotData?.[road]?.[blockIndex]?.trainId || "");
+      const incomingKey = normalizeTrainId(value);
+
+      if (previousKey !== incomingKey) {
+        setPg2TidInputs((prevInputs) => {
+          if (!Object.prototype.hasOwnProperty.call(prevInputs, cellKey)) return prevInputs;
+          const nextInputs = { ...prevInputs };
+          delete nextInputs[cellKey];
+          return nextInputs;
+        });
+        setPg2InsertionLog((prevLog) => prevLog.filter((entry) => entry.key !== logKey));
+      }
+
+      const next = cloneInsertionStablingState(prev.westData, prev.eastData);
+      const target = normalizedDepot === "west" ? next.westData : next.eastData;
+      const blocks = [...(target[road] || emptyBlocks())];
+      blocks[blockIndex] = { ...(blocks[blockIndex] || { trainId: "", extraRemark: "" }), trainId: value };
+      target[road] = blocks;
+      return next;
+    });
+  }, [markInsertionLiveLocalEdit]);
+
+  const handleRefreshPg2FromDefault = useCallback(() => {
+    markInsertionLiveLocalEdit();
+    setPg2Stabling(cloneInsertionStablingState(westDataRef.current, eastDataRef.current));
+    setPg2InsertionLog([]);
+    setPg2TidInputs({});
+    setActiveInsertionPg("pg2");
   }, [markInsertionLiveLocalEdit]);
 
   const getDepotFromRoad = (road) => WEST_ROADS.includes(road) ? "west" : "east";
@@ -11897,6 +12262,17 @@ export default function DepotStablingPage() {
   const westStablingKeys = getWestStablingKeys(westData);
   const westStablingLocations = getWestStablingLocations(westData);
   const maintenanceMap = buildMaintenanceMap(requests, westStablingKeys);
+  const activeInsertionPgKey = normalizeInsertionPg(activeInsertionPg);
+  const activeInsertionWestData = activeInsertionPgKey === "pg2" ? pg2Stabling.westData : westData;
+  const activeInsertionEastData = activeInsertionPgKey === "pg2" ? pg2Stabling.eastData : eastData;
+  const activeInsertionLog = activeInsertionPgKey === "pg2" ? pg2InsertionLog : insertionLog;
+  const activeInsertionTidInputs = activeInsertionPgKey === "pg2" ? pg2TidInputs : tidInputs;
+  const activeInsertionTickHandler = activeInsertionPgKey === "pg2" ? handlePg2InsertionTick : handleInsertionTick;
+  const activeInsertionRemoveHandler = activeInsertionPgKey === "pg2" ? handleRemovePg2InsertionLog : handleRemoveInsertionLog;
+  const activeInsertionClearDepotHandler = activeInsertionPgKey === "pg2" ? handleClearPg2InsertionDepot : handleClearInsertionDepot;
+  const activeClearInsertedTidRemarksHandler = activeInsertionPgKey === "pg2" ? handleClearPg2InsertedTidRemarks : handleClearInsertedTidRemarks;
+  const activeClearInsertedTrainsHandler = activeInsertionPgKey === "pg2" ? handleClearPg2InsertedTrains : handleClearInsertedTrains;
+  const activeTidChangeHandler = activeInsertionPgKey === "pg2" ? handlePg2TidChange : handleTidChange;
 
   if (!loaded) {
     return (
@@ -12316,17 +12692,17 @@ export default function DepotStablingPage() {
 
         {activeTab === "insertion" && (
           <InsertionTabContent
-            westData={westData}
-            eastData={eastData}
+            westData={activeInsertionWestData}
+            eastData={activeInsertionEastData}
             maintenanceMap={maintenanceMap}
-            insertionLog={insertionLog}
-            onInsertionTick={handleInsertionTick}
-            onRemoveInsertionLog={handleRemoveInsertionLog}
-            onClearInsertionDepot={handleClearInsertionDepot}
-            onClearInsertedTidRemarks={handleClearInsertedTidRemarks}
-            onClearInsertedTrains={handleClearInsertedTrains}
-            tidInputs={tidInputs}
-            onTidChange={handleTidChange}
+            insertionLog={activeInsertionLog}
+            onInsertionTick={activeInsertionTickHandler}
+            onRemoveInsertionLog={activeInsertionRemoveHandler}
+            onClearInsertionDepot={activeInsertionClearDepotHandler}
+            onClearInsertedTidRemarks={activeClearInsertedTidRemarksHandler}
+            onClearInsertedTrains={activeClearInsertedTrainsHandler}
+            tidInputs={activeInsertionTidInputs}
+            onTidChange={activeTidChangeHandler}
             getTidScheduledTime={getTidScheduledTime}
             getTidAssistRemarkStyle={getTidAssistRemarkStyle}
             activeTimetable={activeTimetable}
@@ -12334,6 +12710,11 @@ export default function DepotStablingPage() {
             insertionLiveStatusText={insertionLiveStatusText}
             insertionLiveStatusClass={insertionLiveStatusClass}
             insertionLiveDebug={insertionLiveDebug}
+            activePg={activeInsertionPgKey}
+            onPgChange={setActiveInsertionPg}
+            onRefreshPg2={handleRefreshPg2FromDefault}
+            stablingEditable={activeInsertionPgKey === "pg2"}
+            onEditableTrainIdChange={handlePg2TrainIdChange}
           />
         )}
 
