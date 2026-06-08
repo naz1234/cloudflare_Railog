@@ -9589,24 +9589,16 @@ function AlarmContent() {
   );
 
   return (
-    <div className="w-full min-h-[calc(100vh-120px)] space-y-4 rounded-2xl border border-[#1a3a56] bg-[#061a2b]/70 p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1a3a56]/70 pb-3">
-        <div>
-          <p className="text-[10px] font-normal uppercase tracking-[0.28em] text-[#4a8ab5]">ALM</p>
-          <h2 className="mt-1 text-[18px] font-normal text-white">CC Technical Failure</h2>
-          <p className="mt-0.5 text-[11px] font-medium text-[#7eb8e0]">Fixed CC Technical Failure template. Fill Train ID, ATC, shunter, onboard time, CC reset time, and fit time.</p>
-        </div>
-      </div>
-
+    <div className="flex w-full min-h-[calc(100vh-120px)] justify-center p-5">
       <section
-        className="overflow-hidden rounded-xl border shadow-[0_14px_28px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.05)]"
+        className="w-full max-w-6xl overflow-hidden rounded-xl border shadow-[0_14px_28px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.05)]"
         style={{ borderColor: `${accent}42`, background: "linear-gradient(180deg,#061827 0%,#041727 100%)" }}
       >
         <div className="border-b px-3 py-2" style={{ borderColor: `${accent}30`, backgroundColor: `${accent}0d` }}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-white">CC Technical Failure Flow</p>
-              <p className="text-[10px] font-semibold text-[#8ea8c0]">Fixed workaround text. Next pill appears immediately while typing continues.</p>
+              <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-white">CC Technical Failure</p>
+              <p className="text-[10px] font-semibold text-[#8ea8c0]">Fixed CC Technical Failure template. Fill Train ID, ATC, shunter, onboard time, CC reset time, and fit time.</p>
             </div>
             <button
               type="button"
