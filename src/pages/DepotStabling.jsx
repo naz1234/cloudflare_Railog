@@ -9591,7 +9591,7 @@ function AlarmContent() {
   return (
     <div className="flex w-full min-h-[calc(100vh-120px)] justify-center p-5">
       <section
-        className="w-full max-w-6xl overflow-hidden rounded-xl border shadow-[0_14px_28px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.05)]"
+        className="w-full max-w-4xl overflow-hidden rounded-xl border shadow-[0_14px_28px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.05)]"
         style={{ borderColor: `${accent}42`, background: "linear-gradient(180deg,#061827 0%,#041727 100%)" }}
       >
         <div className="border-b px-3 py-2" style={{ borderColor: `${accent}30`, backgroundColor: `${accent}0d` }}>
