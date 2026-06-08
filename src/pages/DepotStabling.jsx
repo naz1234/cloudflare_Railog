@@ -4872,10 +4872,17 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const handleTrainRemPdfDownload = (depot) => {
     const westLog = buildTrainRemRemovalLog(trainRemState, "west", maintenanceMap);
     const eastLog = buildTrainRemRemovalLog(trainRemState, "east", maintenanceMap);
+    const swappingRows = getRemovalPdfSwappingRows({
+      requests,
+      trainRemState,
+      westData,
+      eastData,
+      activeTimetable,
+    });
     setTrainRemPdfStatus((prev) => ({ ...prev, [depot]: true }));
 
     try {
-      downloadCombinedRemovalPdf(westLog, eastLog);
+      downloadCombinedRemovalPdf(westLog, eastLog, { swappingRows });
     } catch (error) {
       console.error("Train Rem PDF export failed:", error);
       alert("Unable to create removal PDF. Please try again.");
@@ -12637,6 +12644,10 @@ export default function DepotStablingPage() {
       <RemovalLogOutputFromTrainRem
         trainRemState={trainRemCheckState}
         maintenanceMap={maintenanceMap}
+        requests={requests}
+        westData={westData}
+        eastData={eastData}
+        activeTimetable={activeTimetable}
       />
     </div>
 
@@ -13440,6 +13451,39 @@ function saveRequestedTrainManualTidMap(map = {}) {
   } catch {}
 }
 
+function loadRequestedTrainIncludeTomorrowSwaps() {
+  try {
+    return localStorage.getItem("requestedTrainIncludeTomorrowSwaps") === "true";
+  } catch {
+    return false;
+  }
+}
+
+function getRemovalPdfSwappingRows({ requests = [], trainRemState = {}, westData = {}, eastData = {}, activeTimetable = null } = {}) {
+  const manualTidByTrain = loadRequestedTrainManualTidMap();
+  const includeTomorrowRequests = loadRequestedTrainIncludeTomorrowSwaps();
+  const allRows = applyManualTidToRequestedRows(
+    getRequestedTrainsNotInWestDepotStablingRemoval({
+      requests,
+      trainRemState,
+      westData,
+      eastData,
+    }),
+    manualTidByTrain
+  );
+
+  const displayRows = includeTomorrowRequests
+    ? allRows
+    : allRows
+        .filter((row) => !row?.hideWhenTomorrowExcluded)
+        .map((row) => ({
+          ...row,
+          requestType: row?.requestTypeWithoutTomorrow || row?.requestType || "",
+        }));
+
+  return addArrival3A1P2ToRequestedRows(displayRows, activeTimetable, new Date());
+}
+
 function applyManualTidToRequestedRows(rows = [], manualTidByTrain = {}) {
   const manualTidMap = normalizeRequestedTrainManualTidMap(manualTidByTrain);
 
@@ -13752,13 +13796,7 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
 function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceMap = {}, westData = {}, eastData = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
   const [downloadingDocxType, setDownloadingDocxType] = useState(null);
   const [arrivalLookupTime, setArrivalLookupTime] = useState(() => new Date());
-  const [includeTomorrowRequests, setIncludeTomorrowRequests] = useState(() => {
-    try {
-      return localStorage.getItem("requestedTrainIncludeTomorrowSwaps") === "true";
-    } catch {
-      return false;
-    }
-  });
+  const [includeTomorrowRequests, setIncludeTomorrowRequests] = useState(loadRequestedTrainIncludeTomorrowSwaps);
 
   const [manualTidByTrain, setManualTidByTrain] = useState(loadRequestedTrainManualTidMap);
 
@@ -14385,9 +14423,9 @@ function buildRemovalPdfBlob(log = {}) {
 }
 
 
-function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}) {
-  // A4 landscape, one page: West at left and East at right.
-  // Table layout with compact colour-coded remark pills inside each remark cell.
+function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
+  // A4 landscape, one page: West at left, East at right, with requested swapping table
+  // placed directly under the West Depot table.
   const pageWidth = 841.89;
   const pageHeight = 595.28;
   const marginX = 22;
@@ -14398,17 +14436,31 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}) {
 
   const westRows = Array.isArray(westLog?.entries) ? westLog.entries : [];
   const eastRows = Array.isArray(eastLog?.entries) ? eastLog.entries : [];
-  const maxRows = Math.max(westRows.length, eastRows.length, 1);
+  const rawSwappingRows = Array.isArray(options?.swappingRows) ? options.swappingRows : [];
+  const swappingRows = getRequestedTrainDisplayRows(rawSwappingRows, rawSwappingRows.length ? rawSwappingRows.length : 1);
+  const hasSwappingRows = rawSwappingRows.length > 0;
 
   const titleTop = 28;
   const columnTitleTop = 62;
   const tableTop = 108;
   const tableBottomTop = 566;
   const headerHeight = 17;
-  const availableBodyHeight = tableBottomTop - tableTop - headerHeight;
-  const rowHeight = Math.max(11.5, Math.min(15.2, availableBodyHeight / maxRows));
-  const fontSize = rowHeight <= 12 ? 5.7 : rowHeight <= 13 ? 6.1 : rowHeight <= 14 ? 6.4 : 6.8;
+  const swapSectionGap = 30;
   const headerFontSize = 6.4;
+
+  const westRowCount = Math.max(westRows.length, 1);
+  const swappingRowCount = Math.max(swappingRows.length, 1);
+  const leftAvailableHeight = tableBottomTop - tableTop;
+  const leftRowHeight = Math.max(
+    8.4,
+    Math.min(14.2, (leftAvailableHeight - headerHeight * 2 - swapSectionGap) / (westRowCount + swappingRowCount))
+  );
+  const westTableHeight = headerHeight + westRowCount * leftRowHeight;
+  const swapTitleTop = tableTop + westTableHeight + 14;
+  const swapTableTop = tableTop + westTableHeight + swapSectionGap;
+
+  const eastAvailableBodyHeight = tableBottomTop - tableTop - headerHeight;
+  const eastRowHeight = Math.max(11.5, Math.min(15.2, eastAvailableBodyHeight / Math.max(eastRows.length, 1)));
 
   const rect = (x, y, width, height, { fill = "", stroke = "#000000", strokeWidth = 0.45 } = {}) => {
     const fillCmd = fill ? `${pdfColor(fill)} rg` : "";
@@ -14424,28 +14476,31 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}) {
   let ops = "";
   ops += rect(0, 0, pageWidth, pageHeight, { fill: "#ffffff", stroke: "" });
 
-  // Simple text header, no rounded label/pill.
   ops += pdfText("DEPOT REMOVAL SUMMARY", marginX, yFromTop(titleTop), {
     size: 14,
     color: "#000000",
     font: "F2",
   });
-  ops += pdfText(`West: ${westRows.length} ${westRows.length === 1 ? "train" : "trains"}   |   East: ${eastRows.length} ${eastRows.length === 1 ? "train" : "trains"}`, marginX, yFromTop(titleTop + 16), {
-    size: 7.3,
-    color: "#000000",
-  });
+  ops += pdfText(
+    `West: ${westRows.length} ${westRows.length === 1 ? "train" : "trains"}   |   East: ${eastRows.length} ${eastRows.length === 1 ? "train" : "trains"}   |   Requested for swapping: ${rawSwappingRows.length}`,
+    marginX,
+    yFromTop(titleTop + 16),
+    {
+      size: 7.3,
+      color: "#000000",
+    }
+  );
   ops += line(marginX, yFromTop(titleTop + 24), pageWidth - marginX, yFromTop(titleTop + 24), 0.5);
 
   const getFittedPdfText = (value, maxLength) => truncatePdfText(value || "-", maxLength);
+  const getFontSizeForRowHeight = (rowH) => (rowH <= 9.2 ? 4.7 : rowH <= 10.5 ? 5.2 : rowH <= 12 ? 5.8 : rowH <= 13.5 ? 6.4 : 6.8);
 
   const getApproxPdfTextWidth = (value, size, bold = false) => {
     const text = sanitizePdfText(value || "");
-    // Slightly conservative width estimate for PDF Helvetica text.
-    // This prevents long bold remark labels from overflowing their pill background.
     return text.length * size * (bold ? 0.66 : 0.54);
   };
 
-  const drawTextInCell = (value, x, y, maxLength, { size = fontSize, bold = false, align = "left", width = 0 } = {}) => {
+  const drawTextInCell = (value, x, y, maxLength, { size = 6.2, bold = false, align = "left", width = 0 } = {}) => {
     const fittedText = getFittedPdfText(value, maxLength);
     let drawX = x;
 
@@ -14460,13 +14515,13 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}) {
     });
   };
 
-  const drawRemarkPills = (entry = {}, cellX, rowY, cellWidth, rowH, fallbackTextY) => {
+  const drawRemarkPills = (entry = {}, cellX, rowY, cellWidth, rowH, fallbackTextY, activeFontSize) => {
     const pills = Array.isArray(entry?.remarkPills)
       ? entry.remarkPills.filter((pill) => (pill?.text || "").toString().trim())
       : [];
 
     if (pills.length === 0) {
-      drawTextInCell("-", cellX + 8, fallbackTextY, 2, { size: fontSize, bold: false });
+      drawTextInCell("-", cellX + 8, fallbackTextY, 2, { size: activeFontSize, bold: false });
       return;
     }
 
@@ -14476,23 +14531,18 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}) {
     }));
 
     const gap = visiblePills.length >= 3 ? 2 : 3;
-    const pillHeight = Math.max(8.2, Math.min(10.8, rowH - 2.4));
+    const pillHeight = Math.max(6.4, Math.min(10.8, rowH - 2.4));
     const pillY = rowY + (rowH - pillHeight) / 2;
-    const basePillFontSize = Math.max(4.8, Math.min(5.8, fontSize - 0.55));
+    const basePillFontSize = Math.max(3.8, Math.min(5.8, activeFontSize - 0.55));
     const safeLeft = cellX + 4;
     const safeRight = cellX + cellWidth - 4;
     const availableWidth = Math.max(10, safeRight - safeLeft);
     const pillPaddingX = visiblePills.length > 1 ? 5 : 8;
 
-    // Use equal pill slots for multiple remarks. This prevents the next coloured pill
-    // from covering the tail of short labels such as "TODAY PM".
     const slotWidth = visiblePills.length > 1
       ? Math.max(28, (availableWidth - gap * (visiblePills.length - 1)) / visiblePills.length)
       : availableWidth;
 
-    // More conservative than getApproxPdfTextWidth because PDF viewers/browser canvas
-    // can render Helvetica bold slightly wider. Short operational labels should shrink,
-    // not truncate, so "TODAY PM" never becomes "TODA".
     const getSafeTextWidth = (value, size, bold = true) => sanitizePdfText(value || "").length * size * (bold ? 0.82 : 0.58);
 
     const fitLabelForPill = (value, pillWidth) => {
@@ -14500,13 +14550,12 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}) {
       const maxTextWidth = Math.max(8, pillWidth - pillPaddingX * 2);
       let size = basePillFontSize;
 
-      while (getSafeTextWidth(clean, size, true) > maxTextWidth && size > 3.35) {
+      while (getSafeTextWidth(clean, size, true) > maxTextWidth && size > 3.0) {
         size -= 0.15;
       }
 
-      // Keep common short request labels in full; reduce the font instead of cutting.
       if (clean.length <= 10) {
-        return { text: clean, size: Math.max(3.35, size) };
+        return { text: clean, size: Math.max(3.0, size) };
       }
 
       if (getSafeTextWidth(clean, size, true) <= maxTextWidth) {
@@ -14556,18 +14605,21 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}) {
     });
   };
 
-  const drawColumn = (log = {}, x, sideLabel) => {
+  const drawRemovalColumn = (log = {}, x, sideLabel, optionsForTable = {}) => {
     const rows = Array.isArray(log?.entries) ? log.entries : [];
     const source = log?.source || "Mainline";
     const title = sideLabel === "west" ? "WEST DEPOT" : "EAST DEPOT";
+    const activeTableTop = optionsForTable.tableTop ?? tableTop;
+    const activeColumnTitleTop = optionsForTable.columnTitleTop ?? columnTitleTop;
+    const activeRowHeight = optionsForTable.rowHeight ?? eastRowHeight;
+    const activeFontSize = getFontSizeForRowHeight(activeRowHeight);
+    const rowCount = Math.max(rows.length, 1);
 
     const colWidths = {
       no: 31,
       train: 53,
       tid: 42,
       time: 62,
-      // Wider remark column so paired request pills like "TODAY PM" and "TMRW PM"
-      // are printed in full in the Depot Removal Summary PDF.
       remark: 192,
     };
     const colX = {
@@ -14578,33 +14630,29 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}) {
       remark: x + colWidths.no + colWidths.train + colWidths.tid + colWidths.time,
     };
     const tableWidth = colWidths.no + colWidths.train + colWidths.tid + colWidths.time + colWidths.remark;
-    const tableHeight = headerHeight + Math.max(rows.length, 1) * rowHeight;
-    const tableY = yFromTop(tableTop, tableHeight);
+    const tableHeight = headerHeight + rowCount * activeRowHeight;
+    const tableY = yFromTop(activeTableTop, tableHeight);
 
-    ops += pdfText(title, x, yFromTop(columnTitleTop), {
+    ops += pdfText(title, x, yFromTop(activeColumnTitleTop), {
       size: 11,
       color: "#000000",
       font: "F2",
     });
-    ops += pdfText(`Source: ${source} | Total: ${rows.length}`, x, yFromTop(columnTitleTop + 14), {
+    ops += pdfText(`Source: ${source} | Total: ${rows.length}`, x, yFromTop(activeColumnTitleTop + 14), {
       size: 6.8,
       color: "#000000",
     });
 
-    // Outer table border.
     ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
 
-    // Header row line.
-    const headerBottomY = yFromTop(tableTop + headerHeight);
+    const headerBottomY = yFromTop(activeTableTop + headerHeight);
     ops += line(x, headerBottomY, x + tableWidth, headerBottomY, 0.55);
 
-    // Vertical grid lines.
     [colX.train, colX.tid, colX.time, colX.remark].forEach((gridX) => {
       ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
     });
 
-    // Header labels.
-    const headerTextY = yFromTop(tableTop + 11);
+    const headerTextY = yFromTop(activeTableTop + 11);
     drawTextInCell("NO", colX.no + 7, headerTextY, 4, { size: headerFontSize, bold: true });
     drawTextInCell("TRAIN", colX.train + 9, headerTextY, 8, { size: headerFontSize, bold: true });
     drawTextInCell("TID", colX.tid + 10, headerTextY, 5, { size: headerFontSize, bold: true });
@@ -14612,42 +14660,131 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}) {
     drawTextInCell("REMARK", colX.remark + 8, headerTextY, 10, { size: headerFontSize, bold: true });
 
     if (rows.length === 0) {
-      const rowTop = tableTop + headerHeight;
-      const rowY = yFromTop(rowTop, rowHeight);
-      drawTextInCell(log?.noEntryText || "No valid removal entries", x + 10, rowY + rowHeight / 2 - 2, 46, {
-        size: 6.8,
+      const rowTop = activeTableTop + headerHeight;
+      const rowY = yFromTop(rowTop, activeRowHeight);
+      drawTextInCell(log?.noEntryText || "No valid removal entries", x + 10, rowY + activeRowHeight / 2 - 2, 46, {
+        size: activeFontSize,
         bold: true,
       });
-      return;
+    } else {
+      rows.forEach((entry, index) => {
+        const rowTop = activeTableTop + headerHeight + index * activeRowHeight;
+        const rowY = yFromTop(rowTop, activeRowHeight);
+        const textY = rowY + activeRowHeight / 2 - 2.2;
+
+        drawTextInCell(String(index + 1).padStart(2, "0"), colX.no + 8, textY, 4, { size: activeFontSize, bold: false });
+        drawTextInCell(entry.trainId || "-", colX.train, textY, 8, { size: activeFontSize, bold: true, align: "center", width: colWidths.train });
+        drawTextInCell(entry.tid || "-", colX.tid + 8, textY, 6, { size: activeFontSize, bold: false });
+        drawTextInCell(entry.time ? `${entry.time} hrs` : "-", colX.time + 8, textY, 11, { size: activeFontSize, bold: false });
+        drawRemarkPills(entry, colX.remark, rowY, colWidths.remark, activeRowHeight, textY, activeFontSize);
+      });
     }
 
-    rows.forEach((entry, index) => {
-      const rowTop = tableTop + headerHeight + index * rowHeight;
-      const rowY = yFromTop(rowTop, rowHeight);
-      const textY = rowY + rowHeight / 2 - 2.2;
-
-      drawTextInCell(String(index + 1).padStart(2, "0"), colX.no + 8, textY, 4, { size: fontSize, bold: false });
-      drawTextInCell(entry.trainId || "-", colX.train, textY, 8, { size: fontSize, bold: true, align: "center", width: colWidths.train });
-      drawTextInCell(entry.tid || "-", colX.tid + 8, textY, 6, { size: fontSize, bold: false });
-      drawTextInCell(entry.time ? `${entry.time} hrs` : "-", colX.time + 8, textY, 11, { size: fontSize, bold: false });
-      drawRemarkPills(entry, colX.remark, rowY, colWidths.remark, rowHeight, textY);
-    });
-
-    // Draw all horizontal row lines clearly across every column.
-    for (let i = 0; i <= Math.max(rows.length, 1); i += 1) {
-      const rowLineY = yFromTop(tableTop + headerHeight + i * rowHeight);
+    for (let i = 0; i <= rowCount; i += 1) {
+      const rowLineY = yFromTop(activeTableTop + headerHeight + i * activeRowHeight);
       ops += line(x, rowLineY, x + tableWidth, rowLineY, 0.38);
     }
 
-    // Draw vertical table lines so the table remains clean.
     [x, colX.train, colX.tid, colX.time, colX.remark, x + tableWidth].forEach((gridX) => {
       ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
     });
     ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
   };
 
-  drawColumn(westLog, marginX, "west");
-  drawColumn(eastLog, marginX + columnWidth + gutter, "east");
+  const drawRequestedSwappingTable = (rows = [], x, titleTopForTable, tableTopForTable, rowH) => {
+    const activeFontSize = getFontSizeForRowHeight(rowH);
+    const rowCount = Math.max(rows.length, 1);
+    const colWidths = {
+      no: 25,
+      train: 48,
+      tid: 36,
+      arrival: 62,
+      note1: 111,
+      note2: 98,
+    };
+    const colX = {
+      no: x,
+      train: x + colWidths.no,
+      tid: x + colWidths.no + colWidths.train,
+      arrival: x + colWidths.no + colWidths.train + colWidths.tid,
+      note1: x + colWidths.no + colWidths.train + colWidths.tid + colWidths.arrival,
+      note2: x + colWidths.no + colWidths.train + colWidths.tid + colWidths.arrival + colWidths.note1,
+    };
+    const tableWidth = colWidths.no + colWidths.train + colWidths.tid + colWidths.arrival + colWidths.note1 + colWidths.note2;
+    const tableHeight = headerHeight + rowCount * rowH;
+    const tableY = yFromTop(tableTopForTable, tableHeight);
+
+    ops += pdfText("TRAIN REQUESTED FOR SWAPPING", x, yFromTop(titleTopForTable), {
+      size: 9.4,
+      color: "#000000",
+      font: "F2",
+    });
+    ops += pdfText(`Total: ${hasSwappingRows ? rawSwappingRows.length : 0}`, x, yFromTop(titleTopForTable + 12), {
+      size: 6.5,
+      color: "#000000",
+    });
+
+    ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
+    const headerBottomY = yFromTop(tableTopForTable + headerHeight);
+    ops += line(x, headerBottomY, x + tableWidth, headerBottomY, 0.55);
+
+    [colX.train, colX.tid, colX.arrival, colX.note1, colX.note2].forEach((gridX) => {
+      ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
+    });
+
+    const headerTextY = yFromTop(tableTopForTable + 11);
+    drawTextInCell("NO", colX.no + 6, headerTextY, 4, { size: headerFontSize - 0.5, bold: true });
+    drawTextInCell("TRAIN", colX.train + 8, headerTextY, 8, { size: headerFontSize - 0.5, bold: true });
+    drawTextInCell("TID", colX.tid + 8, headerTextY, 5, { size: headerFontSize - 0.5, bold: true });
+    drawTextInCell("ARRIVAL", colX.arrival + 7, headerTextY, 9, { size: headerFontSize - 0.5, bold: true });
+    drawTextInCell("NOTE", colX.note1 + 8, headerTextY, 10, { size: headerFontSize - 0.5, bold: true });
+    drawTextInCell("NOTE", colX.note2 + 8, headerTextY, 10, { size: headerFontSize - 0.5, bold: true });
+
+    if (!hasSwappingRows) {
+      const rowY = yFromTop(tableTopForTable + headerHeight, rowH);
+      drawTextInCell("No train requested for swapping", x + 10, rowY + rowH / 2 - 2, 42, {
+        size: activeFontSize,
+        bold: true,
+      });
+    } else {
+      rows.forEach((entry, index) => {
+        const rowTop = tableTopForTable + headerHeight + index * rowH;
+        const rowY = yFromTop(rowTop, rowH);
+        const textY = rowY + rowH / 2 - 2.2;
+        const label = (entry?.label || "").replace(/^T/i, "");
+        const arrival3A1P2 = formatTimetableTimeWithHrs(entry?.arrival3A1P2);
+
+        drawTextInCell(String(index + 1).padStart(2, "0"), colX.no + 6, textY, 4, { size: activeFontSize, bold: false });
+        drawTextInCell(label || "-", colX.train, textY, 6, { size: activeFontSize, bold: true, align: "center", width: colWidths.train });
+        drawTextInCell(entry?.tid || "-", colX.tid, textY, 5, { size: activeFontSize, bold: true, align: "center", width: colWidths.tid });
+        drawTextInCell(arrival3A1P2 || "-", colX.arrival + 6, textY, 11, { size: activeFontSize, bold: false });
+        drawTextInCell(entry?.requestType || "-", colX.note1 + 5, textY, 24, { size: Math.max(3.9, activeFontSize - 0.2), bold: false });
+        drawTextInCell(entry?.actionNote || "-", colX.note2 + 5, textY, 20, { size: Math.max(3.9, activeFontSize - 0.2), bold: false });
+      });
+    }
+
+    for (let i = 0; i <= rowCount; i += 1) {
+      const rowLineY = yFromTop(tableTopForTable + headerHeight + i * rowH);
+      ops += line(x, rowLineY, x + tableWidth, rowLineY, 0.38);
+    }
+
+    [x, colX.train, colX.tid, colX.arrival, colX.note1, colX.note2, x + tableWidth].forEach((gridX) => {
+      ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
+    });
+    ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
+  };
+
+  drawRemovalColumn(westLog, marginX, "west", {
+    tableTop,
+    columnTitleTop,
+    rowHeight: leftRowHeight,
+  });
+  drawRequestedSwappingTable(swappingRows, marginX, swapTitleTop, swapTableTop, leftRowHeight);
+  drawRemovalColumn(eastLog, marginX + columnWidth + gutter, "east", {
+    tableTop,
+    columnTitleTop,
+    rowHeight: eastRowHeight,
+  });
 
   ops += pdfText("Generated by TrainLog", marginX, 18, {
     size: 6.5,
@@ -14677,9 +14814,9 @@ function downloadRemovalPdf(log = {}) {
 }
 
 
-function downloadCombinedRemovalPdf(westLog = {}, eastLog = {}) {
+function downloadCombinedRemovalPdf(westLog = {}, eastLog = {}, options = {}) {
   const dateStamp = new Date().toISOString().slice(0, 10);
-  const blob = buildCombinedRemovalPdfBlob(westLog, eastLog);
+  const blob = buildCombinedRemovalPdfBlob(westLog, eastLog, options);
   downloadClientBlob(blob, `west-east-depot-removal-${dateStamp}.pdf`);
 }
 
@@ -14701,7 +14838,10 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
 
     try {
       if (westLog && eastLog) {
-        downloadCombinedRemovalPdf(westLog, eastLog);
+        const latestSwappingRows = typeof combinedLogs?.getSwappingRows === "function"
+          ? combinedLogs.getSwappingRows()
+          : combinedLogs?.swappingRows || [];
+        downloadCombinedRemovalPdf(westLog, eastLog, { swappingRows: latestSwappingRows });
       } else {
         downloadRemovalPdf(log);
       }
@@ -14790,9 +14930,17 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
   );
 }
 
-function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {} }) {
+function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {}, requests = [], westData = {}, eastData = {}, activeTimetable = null }) {
   const westLog = buildTrainRemRemovalLog(trainRemState, "west", maintenanceMap);
   const eastLog = buildTrainRemRemovalLog(trainRemState, "east", maintenanceMap);
+  const getLatestSwappingRows = () => getRemovalPdfSwappingRows({
+    requests,
+    trainRemState,
+    westData,
+    eastData,
+    activeTimetable,
+  });
+  const swappingRows = getLatestSwappingRows();
 
   return (
     <section
@@ -14820,8 +14968,8 @@ function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {} }) {
       </div>
 
       <div className="space-y-2">
-        <RemovalDepotLogCard log={westLog} combinedLogs={{ westLog, eastLog }} />
-        <RemovalDepotLogCard log={eastLog} combinedLogs={{ westLog, eastLog }} />
+        <RemovalDepotLogCard log={westLog} combinedLogs={{ westLog, eastLog, swappingRows, getSwappingRows: getLatestSwappingRows }} />
+        <RemovalDepotLogCard log={eastLog} combinedLogs={{ westLog, eastLog, swappingRows, getSwappingRows: getLatestSwappingRows }} />
       </div>
     </section>
   );
