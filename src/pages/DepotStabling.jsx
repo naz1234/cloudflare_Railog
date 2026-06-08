@@ -4870,26 +4870,28 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     : "border-emerald-600/50 bg-emerald-950/30 text-emerald-300";
 
   const handleTrainRemPdfDownload = (depot) => {
-    const westLog = buildTrainRemRemovalLog(trainRemState, "west", maintenanceMap);
-    const eastLog = buildTrainRemRemovalLog(trainRemState, "east", maintenanceMap);
+    const latestTrainRemState = trainRemStateRef.current || trainRemState;
+    const westLog = buildTrainRemRemovalLog(latestTrainRemState, "west", maintenanceMap);
+    const eastLog = buildTrainRemRemovalLog(latestTrainRemState, "east", maintenanceMap);
     const swappingRows = getRemovalPdfSwappingRows({
       requests,
-      trainRemState,
+      trainRemState: latestTrainRemState,
       westData,
       eastData,
       activeTimetable,
     });
-    setTrainRemPdfStatus((prev) => ({ ...prev, [depot]: true }));
 
     try {
+      // Keep the file download as the first action in the click handler.
+      // Some browsers/PWA views can ignore the download when a state update runs first.
       downloadCombinedRemovalPdf(westLog, eastLog, { swappingRows });
-    } catch (error) {
-      console.error("Train Rem PDF export failed:", error);
-      alert("Unable to create removal PDF. Please try again.");
-    } finally {
+      setTrainRemPdfStatus((prev) => ({ ...prev, [depot]: true }));
       setTimeout(() => {
         setTrainRemPdfStatus((prev) => ({ ...prev, [depot]: false }));
       }, 700);
+    } catch (error) {
+      console.error("Train Rem PDF export failed:", error);
+      alert("Unable to create removal PDF. Please try again.");
     }
   };
 
