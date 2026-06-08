@@ -290,11 +290,11 @@ function getRemarkStyle(remark) {
 
   if (normalized === "ED (7pm)") {
     return {
-      backgroundColor: "rgba(248, 113, 113, 0.18)",
-      color: "#fca5a5",
-      borderColor: "rgba(252, 165, 165, 0.38)",
-      rowBackground: "linear-gradient(90deg, rgba(248, 113, 113, 0.20) 0%, rgba(248, 113, 113, 0.07) 100%)",
-      sideColor: "#f87171",
+      backgroundColor: "rgba(244, 114, 182, 0.18)",
+      color: "#f9a8d4",
+      borderColor: "rgba(251, 207, 232, 0.38)",
+      rowBackground: "linear-gradient(90deg, rgba(244, 114, 182, 0.20) 0%, rgba(244, 114, 182, 0.07) 100%)",
+      sideColor: "#f472b6",
     };
   }
 
