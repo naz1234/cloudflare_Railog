@@ -125,33 +125,16 @@ function uint8ArrayToBase64(bytes) {
   return btoa(binary);
 }
 
-function collectOpenAiOutputText(responseBody) {
-  if (!responseBody) return '';
-  if (typeof responseBody.output_text === 'string') return responseBody.output_text;
-
-  const chunks = [];
-  const walk = (value) => {
-    if (!value) return;
-    if (typeof value === 'string') return;
-    if (Array.isArray(value)) {
-      value.forEach(walk);
-      return;
-    }
-    if (typeof value !== 'object') return;
-
-    if (value.type === 'output_text' && typeof value.text === 'string') {
-      chunks.push(value.text);
-      return;
-    }
-
-    Object.values(value).forEach(walk);
-  };
-
-  walk(responseBody.output);
-  return chunks.join('\n').trim();
+function collectGeminiOutputText(responseBody) {
+  const parts = responseBody?.candidates?.[0]?.content?.parts || [];
+  return parts
+    .map((part) => (typeof part?.text === 'string' ? part.text : ''))
+    .filter(Boolean)
+    .join('\n')
+    .trim();
 }
 
-const openAiExtractionPrompt = `
+const geminiExtractionPrompt = `
 You are reading a depot maintenance planning image/table.
 Extract ONLY these four fields and return valid JSON only:
 {
@@ -194,30 +177,38 @@ Expected example for the provided layout:
 }
 `;
 
-async function runOpenAiVision({ env, imageFile, arrayBuffer }) {
+async function runGeminiVision({ env, imageFile, arrayBuffer }) {
   const imageBytes = new Uint8Array(arrayBuffer);
   const base64 = uint8ArrayToBase64(imageBytes);
   const mediaType = imageFile.type && imageFile.type.startsWith('image/') ? imageFile.type : 'image/png';
-  const model = env.OPENAI_MODEL || 'gpt-4.1-mini';
+  const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
 
-  const response = await fetch('https://api.openai.com/v1/responses', {
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+      'x-goog-api-key': env.GEMINI_API_KEY,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model,
-      max_output_tokens: 800,
-      input: [
+      contents: [
         {
-          role: 'user',
-          content: [
-            { type: 'input_text', text: openAiExtractionPrompt },
-            { type: 'input_image', image_url: `data:${mediaType};base64,${base64}` },
+          parts: [
+            { text: geminiExtractionPrompt },
+            {
+              inline_data: {
+                mime_type: mediaType,
+                data: base64,
+              },
+            },
           ],
         },
       ],
+      generationConfig: {
+        temperature: 0,
+        maxOutputTokens: 800,
+        responseMimeType: 'application/json',
+      },
     }),
   });
 
@@ -231,11 +222,16 @@ async function runOpenAiVision({ env, imageFile, arrayBuffer }) {
   }
 
   if (!response.ok) {
-    const message = responseBody?.error?.message || responseText || 'OpenAI request failed.';
+    const message = responseBody?.error?.message || responseText || 'Gemini request failed.';
     throw new Error(message);
   }
 
-  const text = collectOpenAiOutputText(responseBody) || responseText;
+  const blockReason = responseBody?.promptFeedback?.blockReason;
+  if (blockReason) {
+    throw new Error(`Gemini blocked the request: ${blockReason}`);
+  }
+
+  const text = collectGeminiOutputText(responseBody) || responseText;
   const parsed = extractJsonObject(text) || {};
 
   return {
@@ -250,10 +246,10 @@ export async function onRequestOptions() {
 }
 
 export async function onRequestPost({ request, env }) {
-  if (!env.OPENAI_API_KEY) {
+  if (!env.GEMINI_API_KEY) {
     return json({
       success: false,
-      error: 'OpenAI API key is missing. Add OPENAI_API_KEY in Cloudflare Pages Environment Variables, then redeploy.',
+      error: 'Gemini API key is missing. Add GEMINI_API_KEY in Cloudflare Pages Variables and secrets, then redeploy.',
     }, 500);
   }
 
@@ -271,27 +267,27 @@ export async function onRequestPost({ request, env }) {
       return json({ success: false, error: 'Uploaded image is empty.' }, 400);
     }
 
-    const result = await runOpenAiVision({ env, imageFile, arrayBuffer });
+    const result = await runGeminiVision({ env, imageFile, arrayBuffer });
     const extraction = result.extraction;
     const uncertain = looksSuspicious(extraction);
     const items = uncertain ? [] : toRequestItems(extraction);
 
     return json({
       success: true,
-      provider: 'openai',
+      provider: 'gemini',
       model: result.model,
       extraction,
       items,
       uncertain,
       warning: uncertain
-        ? 'OpenAI result looks duplicated/uncertain. Edit the preview first, then add.'
+        ? 'Gemini result looks duplicated/uncertain. Edit the preview first, then add.'
         : '',
       rawText: {
-        openai: result.text,
+        gemini: result.text,
       },
     });
   } catch (error) {
-    console.error('Maintenance image OpenAI error:', error);
+    console.error('Maintenance image Gemini error:', error);
     return json({
       success: false,
       error: error?.message || 'Unable to analyse uploaded image.',

@@ -415,7 +415,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
     try {
       setError("");
-      setImageAiStatus("OpenAI reading image...");
+      setImageAiStatus("Gemini reading image...");
       setImageAiPreview(null);
       setImageAiDraft(formatAiExtractionForEdit({}));
       setImageAiEdited(false);
@@ -656,7 +656,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 AI Image Extract
               </div>
               <p className="mt-0.5 text-[10px] leading-snug text-[#4a8ab5]">
-                OpenAI will preview Morning/Evening G to C and PM before adding.
+                Gemini will preview Morning/Evening G to C and PM before adding.
               </p>
             </div>
 
