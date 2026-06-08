@@ -4100,7 +4100,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
 
 
 
-function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablingData = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
+function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablingData = {}, requests = [], westData = {}, eastData = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
   const [trainRemState, setTrainRemState] = useState(() => loadTrainRemState());
   const [trainRemLoaded, setTrainRemLoaded] = useState(false);
   const [trainRemSyncing, setTrainRemSyncing] = useState(false);
@@ -4883,10 +4883,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         requests,
         trainRemState: latestTrainRemState,
         westData,
-        eastData,
+        eastData: Object.keys(eastData || {}).length ? eastData : eastStablingData,
         activeTimetable,
       });
 
+      // Keep the file download as the first action in the click handler.
+      // Some browsers/PWA views can ignore the download when a state update runs first.
       downloadCombinedRemovalPdf(westLog, eastLog, { swappingRows });
       setTrainRemPdfStatus((prev) => ({ ...prev, [depot]: true }));
       setTimeout(() => {
@@ -5010,7 +5012,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               </button>
 
               <button
-                type="button"
                 onClick={() => clearDepotTrainRem(depot)}
                 className="px-1.5 py-0.5 rounded-md text-[9px] font-black border border-[#2b4f6b] bg-[#10263b] text-[#7eb8e0] hover:bg-red-950/30 hover:border-red-600/60 hover:text-red-300 transition-colors"
               >
@@ -12700,6 +12701,9 @@ export default function DepotStablingPage() {
         maintenanceMap={maintenanceMap}
         onTrainRemStateChange={setTrainRemCheckState}
         eastStablingData={eastData}
+        requests={requests}
+        westData={westData}
+        eastData={eastData}
         activeTimetable={activeTimetable}
         activeTimetableType={selectedTimetableType}
       />
@@ -14196,7 +14200,13 @@ function escapePdfText(value = "") {
 }
 
 function hexToPdfColor(hex = "#ffffff") {
-  const clean = hex.replace("#", "").trim();
+  const raw = typeof hex === "string" ? hex.trim() : "";
+  const rgbMatch = raw.match(/^rgba?\(\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)/i);
+  if (rgbMatch) {
+    return [1, 2, 3].map((index) => Math.max(0, Math.min(255, Number.parseFloat(rgbMatch[index]) || 0)) / 255);
+  }
+
+  const clean = raw.replace("#", "").trim();
   if (!/^[0-9a-f]{6}$/i.test(clean)) return [1, 1, 1];
   return [0, 2, 4].map((start) => Number.parseInt(clean.slice(start, start + 2), 16) / 255);
 }
@@ -14803,24 +14813,14 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
 }
 
 function downloadClientBlob(blob, filename) {
-  if (typeof document === "undefined" || typeof URL === "undefined") return;
-
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;
-  link.rel = "noopener";
-  link.style.display = "none";
   document.body.appendChild(link);
-
-  if (typeof link.download === "undefined" && typeof window !== "undefined") {
-    window.open(url, "_blank", "noopener,noreferrer");
-  } else {
-    link.click();
-  }
-
+  link.click();
   link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function downloadRemovalPdf(log = {}) {
