@@ -9192,6 +9192,639 @@ function AdminAutoResizeTextarea({ value, onChange, placeholder }) {
   );
 }
 
+
+// ── Alarm Internal Page ───────────────────────────────────────────────────────
+
+const ALARM_FLOW_FORM_KEY = "alarmFlowFormState_v1";
+const ALARM_FLOW_LOG_KEY = "alarmFlowLogState_v1";
+
+function loadAlarmFlowEntries() {
+  try {
+    if (typeof localStorage === "undefined") return [];
+    const raw = localStorage.getItem(ALARM_FLOW_LOG_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveAlarmFlowEntries(entries = []) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(ALARM_FLOW_LOG_KEY, JSON.stringify(entries || []));
+  } catch {}
+}
+
+function loadAlarmFlowForm(defaultForm) {
+  try {
+    if (typeof localStorage === "undefined") return defaultForm;
+    const raw = localStorage.getItem(ALARM_FLOW_FORM_KEY);
+    if (!raw) return defaultForm;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? { ...defaultForm, ...parsed } : defaultForm;
+  } catch {
+    return defaultForm;
+  }
+}
+
+function saveAlarmFlowForm(form = {}) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(ALARM_FLOW_FORM_KEY, JSON.stringify(form || {}));
+  } catch {}
+}
+
+function getAlarmEntryMinutes(entry = {}) {
+  const minutes = excelTimeToMinutes(entry?.time || "");
+  if (minutes !== null) return minutes;
+  const text = String(entry?.text || "");
+  const match = text.match(/(\d{1,2}:\d{2})\s*hrs/i);
+  const fallback = excelTimeToMinutes(match?.[1]);
+  return fallback !== null ? fallback : 99999;
+}
+
+function sortAlarmFlowEntries(entries = []) {
+  return [...(Array.isArray(entries) ? entries : [])].sort((a, b) => {
+    const timeDiff = getAlarmEntryMinutes(a) - getAlarmEntryMinutes(b);
+    if (timeDiff !== 0) return timeDiff;
+    return String(a?.createdAt || "").localeCompare(String(b?.createdAt || ""));
+  });
+}
+
+function normalizeAlarmActionLines(actionText = "", train = "", time = "") {
+  const lines = String(actionText || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) {
+    return [`${time} hrs – ${train} alarm attended. Alarm cleared. ${train} confirmed fit for service.`];
+  }
+
+  return lines.map((line) => {
+    if (/^\d{1,2}:\d{2}\s*hrs\s*[\u2013-]/i.test(line)) return line;
+    return `${time} hrs – ${train} ${line}`;
+  });
+}
+
+function buildAlarmFlowText(form = {}, { preview = false } = {}) {
+  const train = normalizeMovementTrain(form.trainId) || (preview ? "T15" : "");
+  const alarmName = String(form.alarmName || "").trim() || (preview ? "CC Technical Failure" : "");
+  const source = String(form.source || "").trim() || (preview ? "Train Status in ATS" : "");
+  const sr = String(form.sr || "").trim();
+  const time = form.timingMode === "custom" && form.customTime ? form.customTime : (form.time || formatTime(new Date()));
+
+  if (!preview && (!train || !alarmName || !source)) return "";
+
+  const actionLines = normalizeAlarmActionLines(form.actionText, train, time);
+  return [
+    `${train} showed ${alarmName} alarm from ${source}.`,
+    `SR:${sr ? ` ${sr}` : ""}`,
+    "",
+    "Action:",
+    ...actionLines,
+  ].join("\n");
+}
+
+function AlarmContent() {
+  const createDefaultAlarmForm = () => ({
+    trainId: "",
+    alarmName: "",
+    source: "Train Status in ATS",
+    sr: "",
+    timingMode: "now",
+    customTime: "",
+    actionText: "",
+  });
+
+  const SOURCE_OPTIONS = ["Train Status in ATS", "ATS", "TCMS", "SCADA", "DMS"];
+  const accent = "#f59e0b";
+  const [entries, setEntries] = useState(() => sortAlarmFlowEntries(loadAlarmFlowEntries()));
+  const [form, setForm] = useState(() => loadAlarmFlowForm(createDefaultAlarmForm()));
+  const [clockText, setClockText] = useState(() => formatTime(new Date()));
+  const [focusedFlowInput, setFocusedFlowInput] = useState("");
+  const [flowSettledInputs, setFlowSettledInputs] = useState({});
+  const [copyFeedback, setCopyFeedback] = useState({});
+  const copyFeedbackTimerRef = useRef({});
+  const alarmScrollRestoreRef = useRef(null);
+
+  const captureAlarmScrollPosition = () => {
+    if (typeof window === "undefined") return;
+    alarmScrollRestoreRef.current = { x: window.scrollX, y: window.scrollY };
+  };
+
+  useLayoutEffect(() => {
+    const position = alarmScrollRestoreRef.current;
+    if (!position || typeof window === "undefined") return;
+
+    alarmScrollRestoreRef.current = null;
+    requestAnimationFrame(() => {
+      window.scrollTo(position.x, position.y);
+    });
+  }, [form, entries]);
+
+  useEffect(() => { saveAlarmFlowEntries(sortAlarmFlowEntries(entries)); }, [entries]);
+  useEffect(() => { saveAlarmFlowForm(form); }, [form]);
+
+  useEffect(() => {
+    const tick = () => setClockText(formatTime(new Date()));
+    tick();
+    const interval = setInterval(tick, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      Object.values(copyFeedbackTimerRef.current || {}).forEach((timer) => clearTimeout(timer));
+    };
+  }, []);
+
+  const getAlarmFlowInputKey = (field) => `alarm:${field}`;
+  const focusFlowInput = (key) => setFocusedFlowInput(key);
+  const blurFlowInput = (key) => {
+    setFocusedFlowInput((current) => (current === key ? "" : current));
+    setFlowSettledInputs((prev) => ({ ...prev, [key]: true }));
+  };
+  const scheduleFlowInputSettled = (key) => {
+    if (!key) return;
+    // Same as Train Movement Automatic Flow: show next pill immediately while cursor stays in current input.
+    setFlowSettledInputs((prev) => ({ ...prev, [key]: true }));
+  };
+  const isFlowFieldSettled = (field) => Boolean(flowSettledInputs[getAlarmFlowInputKey(field)] || focusedFlowInput === getAlarmFlowInputKey(field) || true);
+
+  const updateForm = (field, value) => {
+    captureAlarmScrollPosition();
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateFlowTextField = (field, value) => {
+    updateForm(field, value);
+    scheduleFlowInputSettled(getAlarmFlowInputKey(field));
+  };
+
+  const resolvedTime = form.timingMode === "custom" && form.customTime ? form.customTime : clockText;
+  const trainReady = Boolean(normalizeMovementTrain(form.trainId)) && isFlowFieldSettled("trainId");
+  const alarmReady = trainReady && Boolean(String(form.alarmName || "").trim()) && isFlowFieldSettled("alarmName");
+  const sourceReady = alarmReady && Boolean(String(form.source || "").trim()) && isFlowFieldSettled("source");
+  const timingReady = sourceReady && (form.timingMode !== "custom" || isCompleteMovementTimeInput(form.customTime)) && isFlowFieldSettled("customTime");
+  const actionReady = timingReady && Boolean(String(form.actionText || "").trim()) && isFlowFieldSettled("actionText");
+  const requiredReady = timingReady;
+
+  const inputClass = "h-8 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
+  const glowInputBoxClass = "flex h-8 items-center gap-1.5 rounded-lg border border-[#2f7bc4] bg-[#061827] px-2 shadow-[0_0_12px_rgba(79,142,247,0.25),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_16px_rgba(79,142,247,0.42),inset_0_1px_0_rgba(255,255,255,0.08)]";
+
+  const showCopyFeedback = (key, status) => {
+    setCopyFeedback((prev) => ({ ...prev, [key]: status }));
+
+    if (copyFeedbackTimerRef.current[key]) clearTimeout(copyFeedbackTimerRef.current[key]);
+
+    copyFeedbackTimerRef.current[key] = setTimeout(() => {
+      setCopyFeedback((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+      delete copyFeedbackTimerRef.current[key];
+    }, 1600);
+  };
+
+  const copyTextToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+  };
+
+  const resetAlarmFlow = () => {
+    captureAlarmScrollPosition();
+    setFocusedFlowInput("");
+    setFlowSettledInputs({});
+    setForm(createDefaultAlarmForm());
+  };
+
+  const addAlarmLog = () => {
+    const text = buildAlarmFlowText({ ...form, time: resolvedTime });
+    if (!text) return;
+
+    const now = new Date();
+    const entry = {
+      id: `alarm-${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
+      time: resolvedTime,
+      train: normalizeMovementTrain(form.trainId),
+      alarmName: String(form.alarmName || "").trim(),
+      source: String(form.source || "").trim(),
+      sr: String(form.sr || "").trim(),
+      actionText: String(form.actionText || "").trim(),
+      text,
+      createdAt: now.toISOString(),
+    };
+
+    captureAlarmScrollPosition();
+    setEntries((prev) => sortAlarmFlowEntries([...prev, entry]));
+    setFocusedFlowInput("");
+    setFlowSettledInputs({});
+    setForm((prev) => ({
+      ...prev,
+      trainId: "",
+      alarmName: "",
+      sr: "",
+      actionText: "",
+    }));
+  };
+
+  const removeAlarmLog = (id) => {
+    captureAlarmScrollPosition();
+    setEntries((prev) => prev.filter((entry) => entry.id !== id));
+  };
+
+  const clearAlarmLogs = () => {
+    if (!window.confirm("Clear all ALM logs?")) return;
+    captureAlarmScrollPosition();
+    setEntries([]);
+  };
+
+  const copyAllAlarmLogs = async () => {
+    if (!entries.length) {
+      showCopyFeedback("alarm-all", "empty");
+      return;
+    }
+    await copyTextToClipboard(sortAlarmFlowEntries(entries).map((entry) => entry.text).join("\n\n"));
+    showCopyFeedback("alarm-all", "copied");
+  };
+
+  const copySingleAlarmLog = async (entry) => {
+    if (!entry?.text) return;
+    await copyTextToClipboard(entry.text);
+    showCopyFeedback(`alarm-entry-${entry.id}`, "copied");
+  };
+
+  const getCopyButtonLabel = () => {
+    const status = copyFeedback["alarm-all"];
+    if (status === "copied") return "copied !";
+    if (status === "empty") return "no log !";
+    return "Copy All";
+  };
+
+  const setTimingMode = (mode) => {
+    captureAlarmScrollPosition();
+    setForm((prev) => ({
+      ...prev,
+      timingMode: mode,
+      customTime: mode === "custom" && !prev.customTime ? clockText : prev.customTime,
+    }));
+    scheduleFlowInputSettled(getAlarmFlowInputKey("customTime"));
+  };
+
+  const renderTimingInput = () => {
+    const isNow = form.timingMode !== "custom";
+    return (
+      <div className="grid gap-1.5">
+        <div className="flex h-8 w-full items-center overflow-hidden rounded-lg border border-[#1e4060] bg-[#061827] shadow-[0_0_14px_rgba(79,142,247,0.10),inset_0_1px_0_rgba(255,255,255,0.04)] focus-within:border-[#4f8ef7]">
+          <button
+            type="button"
+            onClick={() => setTimingMode("now")}
+            className={`h-full px-2 text-[10px] font-medium uppercase tracking-wide transition ${isNow ? "bg-[#1b5f93] text-white" : "text-[#6fa8df] hover:text-white"}`}
+          >
+            Now
+          </button>
+          <button
+            type="button"
+            onClick={() => setTimingMode("custom")}
+            className={`h-full border-l border-[#1e4060] px-2 text-[10px] font-medium uppercase tracking-wide transition ${!isNow ? "bg-[#1b5f93] text-white" : "text-[#6fa8df] hover:text-white"}`}
+          >
+            Edit
+          </button>
+          <div className="flex min-w-0 flex-1 items-center justify-end px-2 font-mono text-[11px] font-medium text-[#c8d8ea]">
+            {isNow ? `${clockText} hrs` : `${form.customTime || clockText} hrs`}
+          </div>
+        </div>
+
+        {!isNow && (
+          <div className="flex h-8 w-full items-center gap-1.5 rounded-lg border border-[#2f7bc4] bg-[#061827] px-2 shadow-[0_0_12px_rgba(79,142,247,0.25),inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-[#7ab7ff]">
+            <input
+              value={form.customTime}
+              inputMode="numeric"
+              maxLength={5}
+              onFocus={() => focusFlowInput(getAlarmFlowInputKey("customTime"))}
+              onKeyDown={(event) => {
+                const value = String(form.customTime || "");
+                const cursorAtEnd = event.currentTarget.selectionStart === value.length && event.currentTarget.selectionEnd === value.length;
+                if (event.key === "Enter") {
+                  event.currentTarget.blur();
+                  return;
+                }
+                if (event.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                  event.preventDefault();
+                  updateForm("customTime", value.slice(0, -2));
+                }
+              }}
+              onChange={(event) => {
+                updateForm("customTime", cleanMovementCustomTimeInput(event.target.value));
+                scheduleFlowInputSettled(getAlarmFlowInputKey("customTime"));
+              }}
+              onBlur={(event) => {
+                updateForm("customTime", normalizeMovementCustomTimeInput(event.target.value));
+                blurFlowInput(getAlarmFlowInputKey("customTime"));
+              }}
+              placeholder="00:00"
+              className="h-full min-w-[42px] flex-1 bg-transparent text-[11px] font-medium text-white outline-none placeholder:text-[#31516b]"
+            />
+            <span className="shrink-0 text-[11px] font-medium text-[#c8d8ea]">hrs</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderTrainInput = () => (
+    <div className={glowInputBoxClass}>
+      <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
+      <input
+        value={form.trainId}
+        onFocus={() => focusFlowInput(getAlarmFlowInputKey("trainId"))}
+        onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
+        onChange={(event) => updateFlowTextField("trainId", event.target.value.replace(/\D/g, ""))}
+        onBlur={() => blurFlowInput(getAlarmFlowInputKey("trainId"))}
+        placeholder="15"
+        className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
+      />
+    </div>
+  );
+
+  const renderAlarmNameInput = () => (
+    <input
+      value={form.alarmName}
+      onFocus={() => focusFlowInput(getAlarmFlowInputKey("alarmName"))}
+      onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
+      onChange={(event) => updateFlowTextField("alarmName", event.target.value)}
+      onBlur={() => blurFlowInput(getAlarmFlowInputKey("alarmName"))}
+      placeholder="e.g. CC Technical Failure"
+      className={inputClass}
+    />
+  );
+
+  const renderSourceInput = () => (
+    <div className="grid gap-2">
+      <input
+        value={form.source}
+        onFocus={() => focusFlowInput(getAlarmFlowInputKey("source"))}
+        onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
+        onChange={(event) => updateFlowTextField("source", event.target.value)}
+        onBlur={() => blurFlowInput(getAlarmFlowInputKey("source"))}
+        placeholder="Train Status in ATS"
+        className={inputClass}
+      />
+      <div className="flex flex-wrap gap-1">
+        {SOURCE_OPTIONS.map((option) => {
+          const active = form.source === option;
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => updateFlowTextField("source", option)}
+              className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold transition ${active ? "border-amber-300 bg-amber-400/20 text-amber-100" : "border-[#1e4060] bg-[#061827] text-[#7eb8e0] hover:border-[#4f8ef7] hover:text-white"}`}
+            >
+              {option}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const renderSrInput = () => (
+    <input
+      value={form.sr}
+      onFocus={() => focusFlowInput(getAlarmFlowInputKey("sr"))}
+      onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
+      onChange={(event) => updateFlowTextField("sr", event.target.value)}
+      onBlur={() => blurFlowInput(getAlarmFlowInputKey("sr"))}
+      placeholder="Optional / leave empty"
+      className={inputClass}
+    />
+  );
+
+  const renderActionInput = () => (
+    <textarea
+      value={form.actionText}
+      onFocus={() => focusFlowInput(getAlarmFlowInputKey("actionText"))}
+      onChange={(event) => updateFlowTextField("actionText", event.target.value)}
+      onBlur={() => blurFlowInput(getAlarmFlowInputKey("actionText"))}
+      placeholder={"ATC Moiz and Shunter Gerald on board.\nT15 performed CC reset.\n03:32 hrs – T15 alarm cleared. ATC Moiz confirmed T15 fit for service."}
+      rows={4}
+      className="min-h-[92px] w-full resize-y rounded-lg border border-[#1e4060] bg-[#061827] px-2 py-2 text-[11px] font-medium leading-relaxed text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
+    />
+  );
+
+  const steps = [
+    { key: "trainId", label: "Train ID", visible: true, complete: trainReady, render: renderTrainInput },
+    { key: "alarmName", label: "Alarm", visible: trainReady, complete: alarmReady, render: renderAlarmNameInput },
+    { key: "source", label: "From", visible: alarmReady, complete: sourceReady, render: renderSourceInput },
+    { key: "sr", label: "SR Optional", visible: sourceReady, optional: true, complete: Boolean(String(form.sr || "").trim()), render: renderSrInput },
+    { key: "timing", label: "Action Time", visible: sourceReady, complete: timingReady, render: renderTimingInput },
+    { key: "actionText", label: "Action", visible: timingReady, optional: true, complete: actionReady, render: renderActionInput },
+  ];
+
+  const visibleSteps = steps.filter((step) => step.visible);
+
+  const renderFlowStepCard = (step, index) => (
+    <div
+      key={step.key}
+      className="rounded-xl border p-2 transition-all"
+      style={{
+        borderColor: step.complete ? `${accent}70` : "#1e4060",
+        background: step.complete ? `linear-gradient(135deg, ${accent}14, #061827 82%)` : "#061827",
+        boxShadow: step.complete ? `0 0 10px ${accent}12, inset 0 1px 0 rgba(255,255,255,0.05)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
+      }}
+    >
+      <div className="mb-1 flex items-center justify-between gap-1.5">
+        <span className="inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]" style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: step.complete ? accent : "#7ea6c2", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
+          <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal" style={{ borderColor: step.complete ? `${accent}80` : "#31516b" }}>{index + 1}</span>
+          <span className="truncate">{step.label}</span>
+        </span>
+        <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>
+          {step.complete ? "DONE" : step.optional ? "OPTIONAL" : "NEXT"}
+        </span>
+      </div>
+      {step.render()}
+    </div>
+  );
+
+  const renderFlowRows = (items) => (
+    <div className="grid gap-y-2">
+      {items.reduce((rows, _step, index) => {
+        if (index % 2 === 0) rows.push(items.slice(index, index + 2));
+        return rows;
+      }, []).map((pair, pairIndex) => {
+        const leftToRight = pairIndex % 2 === 0;
+        const firstIndex = pairIndex * 2;
+        const secondIndex = firstIndex + 1;
+        const first = pair[0];
+        const second = pair[1];
+        const leftStep = leftToRight ? first : second;
+        const rightStep = leftToRight ? second : first;
+        const leftIndex = leftToRight ? firstIndex : secondIndex;
+        const rightIndex = leftToRight ? secondIndex : firstIndex;
+        const arrow = second ? (leftToRight ? "→" : "←") : "";
+
+        return (
+          <div key={`alarm-flow-row-${pairIndex}`} className="grid grid-cols-[minmax(0,1fr)_24px_minmax(0,1fr)] items-center gap-x-1.5">
+            <div>{leftStep ? renderFlowStepCard(leftStep, leftIndex) : null}</div>
+            <div className="flex items-center justify-center">
+              <span
+                className="flex h-6 w-6 items-center justify-center rounded-full border text-[17px] font-black leading-none"
+                style={{
+                  opacity: arrow ? 1 : 0,
+                  borderColor: `${accent}55`,
+                  backgroundColor: `${accent}10`,
+                  color: accent,
+                }}
+              >
+                {arrow || "→"}
+              </span>
+            </div>
+            <div>{rightStep ? renderFlowStepCard(rightStep, rightIndex) : null}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <div className="w-full min-h-[calc(100vh-120px)] space-y-4 rounded-2xl border border-[#1a3a56] bg-[#061a2b]/70 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1a3a56]/70 pb-3">
+        <div>
+          <p className="text-[10px] font-normal uppercase tracking-[0.28em] text-[#4a8ab5]">ALM</p>
+          <h2 className="mt-1 text-[18px] font-normal text-white">Alarm</h2>
+          <p className="mt-0.5 text-[11px] font-medium text-[#7eb8e0]">Automatic Flow style input + saved alarm log window.</p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.85fr)]">
+        <section
+          className="overflow-hidden rounded-xl border shadow-[0_14px_28px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.05)]"
+          style={{ borderColor: `${accent}42`, background: "linear-gradient(180deg,#061827 0%,#041727 100%)" }}
+        >
+          <div className="border-b px-3 py-2" style={{ borderColor: `${accent}30`, backgroundColor: `${accent}0d` }}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-white">Alarm Automatic Flow</p>
+                <p className="text-[10px] font-semibold text-[#8ea8c0]">Next pill appears immediately while typing continues.</p>
+              </div>
+              <button
+                type="button"
+                onClick={resetAlarmFlow}
+                className="rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] shadow-[0_0_14px_rgba(239,68,68,0.38),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.03]"
+                style={{ borderColor: "rgba(248,113,113,0.85)", backgroundColor: "rgba(127,29,29,0.36)", color: "#fecaca" }}
+                title="Reset Alarm Flow"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-3 p-3">
+            {renderFlowRows(visibleSteps)}
+
+            <div className="rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2">
+              <p className="mb-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
+              <pre className="max-h-[220px] overflow-auto whitespace-pre-wrap break-words font-mono text-[12px] font-medium leading-snug text-[#c8d8ea]">
+                {buildAlarmFlowText({ ...form, time: resolvedTime }, { preview: true })}
+              </pre>
+            </div>
+
+            {requiredReady && (
+              <button
+                type="button"
+                onClick={addAlarmLog}
+                className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[12px] font-medium text-white shadow-[0_0_16px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01]"
+                style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
+              >
+                <Plus className="h-3.5 w-3.5" /> Add Alarm Log
+              </button>
+            )}
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-xl border border-[#1d4869] bg-[#041727]">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1d4869] bg-[#061827] px-3 py-2">
+            <div className="min-w-0">
+              <h3 className="text-[12px] font-black uppercase tracking-wide text-white">Alarm Log</h3>
+              <p className="text-[10px] font-semibold text-[#8ea8c0]">{entries.length} entries saved locally</p>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={copyAllAlarmLogs}
+                className="flex min-w-[82px] items-center justify-center gap-1 rounded-lg border border-amber-400/55 bg-amber-400/10 px-2 py-1 text-[10px] font-bold text-amber-200 transition-all hover:scale-[1.02]"
+              >
+                <Copy className="h-3 w-3" />{getCopyButtonLabel()}
+              </button>
+              <button
+                type="button"
+                onClick={clearAlarmLogs}
+                className="flex items-center gap-1 rounded-lg border border-red-400/55 bg-red-500/10 px-2 py-1 text-[10px] font-bold text-red-200 transition-all hover:scale-[1.02]"
+              >
+                <Trash2 className="h-3 w-3" />Clear
+              </button>
+            </div>
+          </div>
+
+          <div className="min-h-[240px]">
+            {entries.length === 0 ? (
+              <div className="flex min-h-[240px] items-center justify-center px-3 text-center text-[11px] font-semibold text-[#7eb8e0]">
+                No alarm log yet.
+              </div>
+            ) : (
+              sortAlarmFlowEntries(entries).map((entry) => (
+                <div key={entry.id} className="group border-b border-[#12304a]/70 px-3 py-2 last:border-b-0">
+                  <div className="flex items-start gap-2">
+                    <pre className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.25] tracking-[-0.01em] text-[#f4f8ff]">
+                      {entry.text}
+                    </pre>
+                    <div className="flex shrink-0 flex-col gap-1">
+                      <button
+                        type="button"
+                        onClick={() => copySingleAlarmLog(entry)}
+                        title="Copy this log"
+                        aria-label="Copy this log"
+                        className="flex h-6 w-6 items-center justify-center rounded-md border border-transparent text-amber-200 opacity-80 transition-all hover:scale-[1.04] group-hover:opacity-100"
+                      >
+                        {copyFeedback[`alarm-entry-${entry.id}`] === "copied" ? (
+                          <Check className="h-3.5 w-3.5" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeAlarmLog(entry.id)}
+                        title="Delete this log"
+                        aria-label="Delete this log"
+                        className="flex h-6 w-6 items-center justify-center rounded-md border border-transparent text-red-400 opacity-80 transition-all hover:border-red-500/60 hover:bg-red-950/35 hover:text-red-300 group-hover:opacity-100"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 export default function DepotStablingPage() {
   const [westData, setWestData] = useState(() => loadLocalStablingState().westData);
   const [eastData, setEastData] = useState(() => loadLocalStablingState().eastData);
@@ -11856,14 +12489,7 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "alarm" && (
-          <div className="w-full min-h-[calc(100vh-120px)] rounded-2xl border border-[#1a3a56] bg-[#061a2b]/70 p-5">
-            <div className="flex items-center justify-between border-b border-[#1a3a56]/70 pb-3">
-              <div>
-                <p className="text-[10px] font-normal uppercase tracking-[0.28em] text-[#4a8ab5]">ALM</p>
-                <h2 className="mt-1 text-[18px] font-normal text-white">Alarm</h2>
-              </div>
-            </div>
-          </div>
+          <AlarmContent />
         )}
 
         {activeTab === "admin" && (
