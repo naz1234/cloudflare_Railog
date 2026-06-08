@@ -10209,6 +10209,10 @@ export default function DepotStablingPage() {
     )));
   }, []);
 
+  const collapseAllAdminNotes = useCallback(() => {
+    setAdminNotes((prev) => prev.map((item) => ({ ...item, collapsed: true })));
+  }, []);
+
   const handleAdminNoteChange = useCallback((id, value) => {
     setAdminNotes((prev) => prev.map((item) => (
       item.id === id ? { ...item, note: value, updatedAt: new Date().toISOString() } : item
@@ -12840,6 +12844,14 @@ export default function DepotStablingPage() {
                           {adminNotesLoading ? "Loading live notes..." : adminNotesSaving ? "Saving live..." : adminNotesLiveStatus}
                         </p>
                       </div>
+                      <button
+                        type="button"
+                        onClick={collapseAllAdminNotes}
+                        className="shrink-0 rounded-2xl border border-[#2b4f6b] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-[0.98]"
+                        title="Collapse all expanded parents"
+                      >
+                        Collapse All
+                      </button>
                       <button
                         type="button"
                         onClick={handleAddAdminNote}
