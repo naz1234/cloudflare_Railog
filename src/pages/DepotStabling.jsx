@@ -5773,7 +5773,6 @@ function TrainMovementContent() {
 
   const [entries, setEntries] = useState(() => loadTrainMovementLog());
   const [tp1Entries, setTp1Entries] = useState(() => sortTp1MovementEntries(loadTp1MovementLog()));
-  const [clockText, setClockText] = useState(() => formatTime(new Date()));
   const [copyFeedback, setCopyFeedback] = useState({});
   const copyFeedbackTimerRef = useRef({});
   const [forms, setForms] = useState(() => {
@@ -5813,13 +5812,6 @@ function TrainMovementContent() {
     return () => {
       Object.values(copyFeedbackTimerRef.current || {}).forEach((timer) => clearTimeout(timer));
     };
-  }, []);
-
-  useEffect(() => {
-    const tick = () => setClockText(formatTime(new Date()));
-    tick();
-    const interval = setInterval(tick, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -9257,10 +9249,11 @@ function buildCcTechnicalFailureText(form = {}, { preview = false } = {}) {
   const train = normalizeMovementTrain(form.trainId) || (preview ? "T15" : "");
   const atcName = String(form.atcName || "").trim() || (preview ? "Moiz" : "");
   const shunterName = String(form.shunterName || "").trim() || (preview ? "Gerald" : "");
-  const startTime = form.timingMode === "custom" && form.customTime ? form.customTime : (form.time || formatTime(new Date()));
-  const completedTime = String(form.completedTime || "").trim() || (preview ? "03:32" : "");
+  const onboardTime = String(form.onboardTime || "").trim() || (preview ? "03:22" : "");
+  const ccResetTime = String(form.ccResetTime || "").trim() || (preview ? "03:22" : "");
+  const fitTime = String(form.fitTime || "").trim() || (preview ? "03:32" : "");
 
-  if (!preview && (!train || !atcName || !shunterName || !startTime || !completedTime)) return "";
+  if (!preview && (!train || !atcName || !shunterName || !onboardTime || !ccResetTime || !fitTime)) return "";
 
   const atcLabel = atcName ? `ATC ${atcName}` : "ATC";
   const shunterLabel = shunterName ? `Shunter ${shunterName}` : "Shunter";
@@ -9270,10 +9263,10 @@ function buildCcTechnicalFailureText(form = {}, { preview = false } = {}) {
     "SR:",
     "",
     "Action:",
-    `${startTime} hrs – ${train} ${atcLabel} and ${shunterLabel} on board.`,
-    `${startTime} hrs – ${train} shunter authorized to switch DMF, and ATC started troubleshooting.`,
-    `${startTime} hrs – ${train} performed CC reset and was authorized to localize the train after completion.`,
-    `${completedTime} hrs – ${train} ${atcLabel} and ${shunterLabel} alighted. Alarm cleared. ${atcLabel} confirmed ${train} fit for service.`,
+    `${onboardTime} hrs – ${train} ${atcLabel} and ${shunterLabel} on board.`,
+    `${onboardTime} hrs – ${train} shunter authorized to switch DMF, and ATC started troubleshooting.`,
+    `${ccResetTime} hrs – ${train} performed CC reset and was authorized to localize the train after completion.`,
+    `${fitTime} hrs – ${train} ${atcLabel} and ${shunterLabel} alighted. Alarm cleared. ${atcLabel} confirmed ${train} fit for service.`,
   ].join("\n");
 }
 
@@ -9284,18 +9277,16 @@ function buildAlarmFlowText(form = {}, options = {}) {
 function AlarmContent() {
   const createDefaultAlarmForm = () => ({
     trainId: "",
-    timingMode: "now",
-    customTime: "",
-    completedTime: "",
     atcName: "",
     shunterName: "",
+    onboardTime: "",
+    ccResetTime: "",
+    fitTime: "",
   });
 
-  const SOURCE_OPTIONS = ["Train Status in ATS", "ATS", "TCMS", "SCADA", "DMS"];
   const accent = "#f59e0b";
   const [entries, setEntries] = useState(() => sortAlarmFlowEntries(loadAlarmFlowEntries()));
   const [form, setForm] = useState(() => loadAlarmFlowForm(createDefaultAlarmForm()));
-  const [clockText, setClockText] = useState(() => formatTime(new Date()));
   const [focusedFlowInput, setFocusedFlowInput] = useState("");
   const [flowSettledInputs, setFlowSettledInputs] = useState({});
   const [copyFeedback, setCopyFeedback] = useState({});
@@ -9319,13 +9310,6 @@ function AlarmContent() {
 
   useEffect(() => { saveAlarmFlowEntries(sortAlarmFlowEntries(entries)); }, [entries]);
   useEffect(() => { saveAlarmFlowForm(form); }, [form]);
-
-  useEffect(() => {
-    const tick = () => setClockText(formatTime(new Date()));
-    tick();
-    const interval = setInterval(tick, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -9356,13 +9340,13 @@ function AlarmContent() {
     scheduleFlowInputSettled(getAlarmFlowInputKey(field));
   };
 
-  const resolvedTime = form.timingMode === "custom" && form.customTime ? form.customTime : clockText;
   const trainReady = Boolean(normalizeMovementTrain(form.trainId)) && isFlowFieldSettled("trainId");
-  const timingReady = trainReady && (form.timingMode !== "custom" || isCompleteMovementTimeInput(form.customTime)) && isFlowFieldSettled("customTime");
-  const completedTimeReady = timingReady && isCompleteMovementTimeInput(form.completedTime) && isFlowFieldSettled("completedTime");
-  const atcReady = completedTimeReady && Boolean(String(form.atcName || "").trim()) && isFlowFieldSettled("atcName");
+  const atcReady = trainReady && Boolean(String(form.atcName || "").trim()) && isFlowFieldSettled("atcName");
   const shunterReady = atcReady && Boolean(String(form.shunterName || "").trim()) && isFlowFieldSettled("shunterName");
-  const requiredReady = shunterReady;
+  const onboardTimeReady = shunterReady && isCompleteMovementTimeInput(form.onboardTime) && isFlowFieldSettled("onboardTime");
+  const ccResetTimeReady = onboardTimeReady && isCompleteMovementTimeInput(form.ccResetTime) && isFlowFieldSettled("ccResetTime");
+  const fitTimeReady = ccResetTimeReady && isCompleteMovementTimeInput(form.fitTime) && isFlowFieldSettled("fitTime");
+  const requiredReady = fitTimeReady;
 
   const inputClass = "h-8 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
   const glowInputBoxClass = "flex h-8 items-center gap-1.5 rounded-lg border border-[#2f7bc4] bg-[#061827] px-2 shadow-[0_0_12px_rgba(79,142,247,0.25),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_16px_rgba(79,142,247,0.42),inset_0_1px_0_rgba(255,255,255,0.08)]";
@@ -9403,17 +9387,19 @@ function AlarmContent() {
   };
 
   const addAlarmLog = () => {
-    const text = buildAlarmFlowText({ ...form, time: resolvedTime });
+    const text = buildAlarmFlowText(form);
     if (!text) return;
 
     const now = new Date();
     const entry = {
       id: `alarm-${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
-      time: resolvedTime,
+      time: String(form.onboardTime || "").trim(),
       train: normalizeMovementTrain(form.trainId),
       alarmName: "CC Technical Failure",
       source: "Train Status in ATS",
-      completedTime: String(form.completedTime || "").trim(),
+      onboardTime: String(form.onboardTime || "").trim(),
+      ccResetTime: String(form.ccResetTime || "").trim(),
+      fitTime: String(form.fitTime || "").trim(),
       atcName: String(form.atcName || "").trim(),
       shunterName: String(form.shunterName || "").trim(),
       text,
@@ -9427,7 +9413,9 @@ function AlarmContent() {
     setForm((prev) => ({
       ...prev,
       trainId: "",
-      completedTime: "",
+      onboardTime: "",
+      ccResetTime: "",
+      fitTime: "",
     }));
   };
 
@@ -9463,78 +9451,6 @@ function AlarmContent() {
     if (status === "empty") return "no log !";
     return "Copy All";
   };
-
-  const setTimingMode = (mode) => {
-    captureAlarmScrollPosition();
-    setForm((prev) => ({
-      ...prev,
-      timingMode: mode,
-      customTime: mode === "custom" && !prev.customTime ? clockText : prev.customTime,
-    }));
-    scheduleFlowInputSettled(getAlarmFlowInputKey("customTime"));
-  };
-
-  const renderTimingInput = () => {
-    const isNow = form.timingMode !== "custom";
-    return (
-      <div className="grid gap-1.5">
-        <div className="flex h-8 w-full items-center overflow-hidden rounded-lg border border-[#1e4060] bg-[#061827] shadow-[0_0_14px_rgba(79,142,247,0.10),inset_0_1px_0_rgba(255,255,255,0.04)] focus-within:border-[#4f8ef7]">
-          <button
-            type="button"
-            onClick={() => setTimingMode("now")}
-            className={`h-full px-2 text-[10px] font-medium uppercase tracking-wide transition ${isNow ? "bg-[#1b5f93] text-white" : "text-[#6fa8df] hover:text-white"}`}
-          >
-            Now
-          </button>
-          <button
-            type="button"
-            onClick={() => setTimingMode("custom")}
-            className={`h-full border-l border-[#1e4060] px-2 text-[10px] font-medium uppercase tracking-wide transition ${!isNow ? "bg-[#1b5f93] text-white" : "text-[#6fa8df] hover:text-white"}`}
-          >
-            Edit
-          </button>
-          <div className="flex min-w-0 flex-1 items-center justify-end px-2 font-mono text-[11px] font-medium text-[#c8d8ea]">
-            {isNow ? `${clockText} hrs` : `${form.customTime || clockText} hrs`}
-          </div>
-        </div>
-
-        {!isNow && (
-          <div className="flex h-8 w-full items-center gap-1.5 rounded-lg border border-[#2f7bc4] bg-[#061827] px-2 shadow-[0_0_12px_rgba(79,142,247,0.25),inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-[#7ab7ff]">
-            <input
-              value={form.customTime}
-              inputMode="numeric"
-              maxLength={5}
-              onFocus={() => focusFlowInput(getAlarmFlowInputKey("customTime"))}
-              onKeyDown={(event) => {
-                const value = String(form.customTime || "");
-                const cursorAtEnd = event.currentTarget.selectionStart === value.length && event.currentTarget.selectionEnd === value.length;
-                if (event.key === "Enter") {
-                  event.currentTarget.blur();
-                  return;
-                }
-                if (event.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                  event.preventDefault();
-                  updateForm("customTime", value.slice(0, -2));
-                }
-              }}
-              onChange={(event) => {
-                updateForm("customTime", cleanMovementCustomTimeInput(event.target.value));
-                scheduleFlowInputSettled(getAlarmFlowInputKey("customTime"));
-              }}
-              onBlur={(event) => {
-                updateForm("customTime", normalizeMovementCustomTimeInput(event.target.value));
-                blurFlowInput(getAlarmFlowInputKey("customTime"));
-              }}
-              placeholder="00:00"
-              className="h-full min-w-[42px] flex-1 bg-transparent text-[11px] font-medium text-white outline-none placeholder:text-[#31516b]"
-            />
-            <span className="shrink-0 text-[11px] font-medium text-[#c8d8ea]">hrs</span>
-          </div>
-        )}
-      </div>
-    );
-  };
-
 
   const renderSimpleTimeInput = (field, placeholder = "03:32") => (
     <div className={glowInputBoxClass}>
@@ -9598,77 +9514,13 @@ function AlarmContent() {
     </div>
   );
 
-  const renderAlarmNameInput = () => (
-    <input
-      value={form.alarmName}
-      onFocus={() => focusFlowInput(getAlarmFlowInputKey("alarmName"))}
-      onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
-      onChange={(event) => updateFlowTextField("alarmName", event.target.value)}
-      onBlur={() => blurFlowInput(getAlarmFlowInputKey("alarmName"))}
-      placeholder="e.g. CC Technical Failure"
-      className={inputClass}
-    />
-  );
-
-  const renderSourceInput = () => (
-    <div className="grid gap-2">
-      <input
-        value={form.source}
-        onFocus={() => focusFlowInput(getAlarmFlowInputKey("source"))}
-        onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
-        onChange={(event) => updateFlowTextField("source", event.target.value)}
-        onBlur={() => blurFlowInput(getAlarmFlowInputKey("source"))}
-        placeholder="Train Status in ATS"
-        className={inputClass}
-      />
-      <div className="flex flex-wrap gap-1">
-        {SOURCE_OPTIONS.map((option) => {
-          const active = form.source === option;
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => updateFlowTextField("source", option)}
-              className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold transition ${active ? "border-amber-300 bg-amber-400/20 text-amber-100" : "border-[#1e4060] bg-[#061827] text-[#7eb8e0] hover:border-[#4f8ef7] hover:text-white"}`}
-            >
-              {option}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-
-  const renderSrInput = () => (
-    <input
-      value={form.sr}
-      onFocus={() => focusFlowInput(getAlarmFlowInputKey("sr"))}
-      onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
-      onChange={(event) => updateFlowTextField("sr", event.target.value)}
-      onBlur={() => blurFlowInput(getAlarmFlowInputKey("sr"))}
-      placeholder="Optional / leave empty"
-      className={inputClass}
-    />
-  );
-
-  const renderActionInput = () => (
-    <textarea
-      value={form.actionText}
-      onFocus={() => focusFlowInput(getAlarmFlowInputKey("actionText"))}
-      onChange={(event) => updateFlowTextField("actionText", event.target.value)}
-      onBlur={() => blurFlowInput(getAlarmFlowInputKey("actionText"))}
-      placeholder={"ATC Moiz and Shunter Gerald on board.\nT15 performed CC reset.\n03:32 hrs – T15 alarm cleared. ATC Moiz confirmed T15 fit for service."}
-      rows={4}
-      className="min-h-[92px] w-full resize-y rounded-lg border border-[#1e4060] bg-[#061827] px-2 py-2 text-[11px] font-medium leading-relaxed text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]"
-    />
-  );
-
   const steps = [
     { key: "trainId", label: "Train ID", visible: true, complete: trainReady, render: renderTrainInput },
-    { key: "timing", label: "Start Time", visible: trainReady, complete: timingReady, render: renderTimingInput },
-    { key: "completedTime", label: "Alighted / Clear Time", visible: timingReady, complete: completedTimeReady, render: () => renderSimpleTimeInput("completedTime", "03:32") },
-    { key: "atcName", label: "ATC Name", visible: completedTimeReady, complete: atcReady, render: () => renderNameInput("atcName", "Moiz") },
+    { key: "atcName", label: "ATC Name", visible: trainReady, complete: atcReady, render: () => renderNameInput("atcName", "Moiz") },
     { key: "shunterName", label: "Shunter Name", visible: atcReady, complete: shunterReady, render: () => renderNameInput("shunterName", "Gerald") },
+    { key: "onboardTime", label: "ATC/SHUNTER Onboard Time", visible: shunterReady, complete: onboardTimeReady, render: () => renderSimpleTimeInput("onboardTime", "03:22") },
+    { key: "ccResetTime", label: "CC Reset Time", visible: onboardTimeReady, complete: ccResetTimeReady, render: () => renderSimpleTimeInput("ccResetTime", "03:22") },
+    { key: "fitTime", label: "ATC Confirmed Train Fit Time", visible: ccResetTimeReady, complete: fitTimeReady, render: () => renderSimpleTimeInput("fitTime", "03:32") },
   ];
 
   const visibleSteps = steps.filter((step) => step.visible);
@@ -9742,7 +9594,7 @@ function AlarmContent() {
         <div>
           <p className="text-[10px] font-normal uppercase tracking-[0.28em] text-[#4a8ab5]">ALM</p>
           <h2 className="mt-1 text-[18px] font-normal text-white">CC Technical Failure</h2>
-          <p className="mt-0.5 text-[11px] font-medium text-[#7eb8e0]">Fixed CC Technical Failure template. Fill timing, ATC name, and shunter name only.</p>
+          <p className="mt-0.5 text-[11px] font-medium text-[#7eb8e0]">Fixed CC Technical Failure template. Fill Train ID, ATC, shunter, onboard time, CC reset time, and fit time.</p>
         </div>
       </div>
 
@@ -9775,7 +9627,7 @@ function AlarmContent() {
             <div className="rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2">
               <p className="mb-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
               <pre className="max-h-[220px] overflow-auto whitespace-pre-wrap break-words font-mono text-[12px] font-medium leading-snug text-[#c8d8ea]">
-                {buildAlarmFlowText({ ...form, time: resolvedTime }, { preview: true })}
+                {buildAlarmFlowText(form, { preview: true })}
               </pre>
             </div>
 
