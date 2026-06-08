@@ -9253,50 +9253,42 @@ function sortAlarmFlowEntries(entries = []) {
   });
 }
 
-function normalizeAlarmActionLines(actionText = "", train = "", time = "") {
-  const lines = String(actionText || "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  if (lines.length === 0) {
-    return [`${time} hrs – ${train} alarm attended. Alarm cleared. ${train} confirmed fit for service.`];
-  }
-
-  return lines.map((line) => {
-    if (/^\d{1,2}:\d{2}\s*hrs\s*[\u2013-]/i.test(line)) return line;
-    return `${time} hrs – ${train} ${line}`;
-  });
-}
-
-function buildAlarmFlowText(form = {}, { preview = false } = {}) {
+function buildCcTechnicalFailureText(form = {}, { preview = false } = {}) {
   const train = normalizeMovementTrain(form.trainId) || (preview ? "T15" : "");
-  const alarmName = String(form.alarmName || "").trim() || (preview ? "CC Technical Failure" : "");
-  const source = String(form.source || "").trim() || (preview ? "Train Status in ATS" : "");
-  const sr = String(form.sr || "").trim();
-  const time = form.timingMode === "custom" && form.customTime ? form.customTime : (form.time || formatTime(new Date()));
+  const atcName = String(form.atcName || "").trim() || (preview ? "Moiz" : "");
+  const shunterName = String(form.shunterName || "").trim() || (preview ? "Gerald" : "");
+  const startTime = form.timingMode === "custom" && form.customTime ? form.customTime : (form.time || formatTime(new Date()));
+  const completedTime = String(form.completedTime || "").trim() || (preview ? "03:32" : "");
 
-  if (!preview && (!train || !alarmName || !source)) return "";
+  if (!preview && (!train || !atcName || !shunterName || !startTime || !completedTime)) return "";
 
-  const actionLines = normalizeAlarmActionLines(form.actionText, train, time);
+  const atcLabel = atcName ? `ATC ${atcName}` : "ATC";
+  const shunterLabel = shunterName ? `Shunter ${shunterName}` : "Shunter";
+
   return [
-    `${train} showed ${alarmName} alarm from ${source}.`,
-    `SR:${sr ? ` ${sr}` : ""}`,
+    `${train} showed CC Technical Failure alarm from Train Status in ATS.`,
+    "SR:",
     "",
     "Action:",
-    ...actionLines,
+    `${startTime} hrs – ${train} ${atcLabel} and ${shunterLabel} on board.`,
+    `${startTime} hrs – ${train} shunter authorized to switch DMF, and ATC started troubleshooting.`,
+    `${startTime} hrs – ${train} performed CC reset and was authorized to localize the train after completion.`,
+    `${completedTime} hrs – ${train} ${atcLabel} and ${shunterLabel} alighted. Alarm cleared. ${atcLabel} confirmed ${train} fit for service.`,
   ].join("\n");
+}
+
+function buildAlarmFlowText(form = {}, options = {}) {
+  return buildCcTechnicalFailureText(form, options);
 }
 
 function AlarmContent() {
   const createDefaultAlarmForm = () => ({
     trainId: "",
-    alarmName: "",
-    source: "Train Status in ATS",
-    sr: "",
     timingMode: "now",
     customTime: "",
-    actionText: "",
+    completedTime: "",
+    atcName: "",
+    shunterName: "",
   });
 
   const SOURCE_OPTIONS = ["Train Status in ATS", "ATS", "TCMS", "SCADA", "DMS"];
@@ -9366,11 +9358,11 @@ function AlarmContent() {
 
   const resolvedTime = form.timingMode === "custom" && form.customTime ? form.customTime : clockText;
   const trainReady = Boolean(normalizeMovementTrain(form.trainId)) && isFlowFieldSettled("trainId");
-  const alarmReady = trainReady && Boolean(String(form.alarmName || "").trim()) && isFlowFieldSettled("alarmName");
-  const sourceReady = alarmReady && Boolean(String(form.source || "").trim()) && isFlowFieldSettled("source");
-  const timingReady = sourceReady && (form.timingMode !== "custom" || isCompleteMovementTimeInput(form.customTime)) && isFlowFieldSettled("customTime");
-  const actionReady = timingReady && Boolean(String(form.actionText || "").trim()) && isFlowFieldSettled("actionText");
-  const requiredReady = timingReady;
+  const timingReady = trainReady && (form.timingMode !== "custom" || isCompleteMovementTimeInput(form.customTime)) && isFlowFieldSettled("customTime");
+  const completedTimeReady = timingReady && isCompleteMovementTimeInput(form.completedTime) && isFlowFieldSettled("completedTime");
+  const atcReady = completedTimeReady && Boolean(String(form.atcName || "").trim()) && isFlowFieldSettled("atcName");
+  const shunterReady = atcReady && Boolean(String(form.shunterName || "").trim()) && isFlowFieldSettled("shunterName");
+  const requiredReady = shunterReady;
 
   const inputClass = "h-8 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
   const glowInputBoxClass = "flex h-8 items-center gap-1.5 rounded-lg border border-[#2f7bc4] bg-[#061827] px-2 shadow-[0_0_12px_rgba(79,142,247,0.25),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_16px_rgba(79,142,247,0.42),inset_0_1px_0_rgba(255,255,255,0.08)]";
@@ -9419,10 +9411,11 @@ function AlarmContent() {
       id: `alarm-${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
       time: resolvedTime,
       train: normalizeMovementTrain(form.trainId),
-      alarmName: String(form.alarmName || "").trim(),
-      source: String(form.source || "").trim(),
-      sr: String(form.sr || "").trim(),
-      actionText: String(form.actionText || "").trim(),
+      alarmName: "CC Technical Failure",
+      source: "Train Status in ATS",
+      completedTime: String(form.completedTime || "").trim(),
+      atcName: String(form.atcName || "").trim(),
+      shunterName: String(form.shunterName || "").trim(),
       text,
       createdAt: now.toISOString(),
     };
@@ -9434,9 +9427,7 @@ function AlarmContent() {
     setForm((prev) => ({
       ...prev,
       trainId: "",
-      alarmName: "",
-      sr: "",
-      actionText: "",
+      completedTime: "",
     }));
   };
 
@@ -9544,6 +9535,54 @@ function AlarmContent() {
     );
   };
 
+
+  const renderSimpleTimeInput = (field, placeholder = "03:32") => (
+    <div className={glowInputBoxClass}>
+      <input
+        value={form[field] || ""}
+        inputMode="numeric"
+        maxLength={5}
+        onFocus={() => focusFlowInput(getAlarmFlowInputKey(field))}
+        onKeyDown={(event) => {
+          const value = String(form[field] || "");
+          const cursorAtEnd = event.currentTarget.selectionStart === value.length && event.currentTarget.selectionEnd === value.length;
+          if (event.key === "Enter") {
+            event.currentTarget.blur();
+            return;
+          }
+          if (event.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+            event.preventDefault();
+            updateForm(field, value.slice(0, -2));
+          }
+        }}
+        onChange={(event) => {
+          updateForm(field, cleanMovementCustomTimeInput(event.target.value));
+          scheduleFlowInputSettled(getAlarmFlowInputKey(field));
+        }}
+        onBlur={(event) => {
+          updateForm(field, normalizeMovementCustomTimeInput(event.target.value));
+          blurFlowInput(getAlarmFlowInputKey(field));
+        }}
+        placeholder={placeholder}
+        className="h-full min-w-[42px] flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
+      />
+      <span className="shrink-0 text-[11px] font-medium text-[#c8d8ea]">hrs</span>
+    </div>
+  );
+
+  const renderNameInput = (field, placeholder) => (
+    <input
+      type="text"
+      value={form[field] || ""}
+      onFocus={() => focusFlowInput(getAlarmFlowInputKey(field))}
+      onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
+      onChange={(event) => updateFlowTextField(field, event.target.value)}
+      onBlur={() => blurFlowInput(getAlarmFlowInputKey(field))}
+      placeholder={placeholder}
+      className={inputClass}
+    />
+  );
+
   const renderTrainInput = () => (
     <div className={glowInputBoxClass}>
       <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
@@ -9626,11 +9665,10 @@ function AlarmContent() {
 
   const steps = [
     { key: "trainId", label: "Train ID", visible: true, complete: trainReady, render: renderTrainInput },
-    { key: "alarmName", label: "Alarm", visible: trainReady, complete: alarmReady, render: renderAlarmNameInput },
-    { key: "source", label: "From", visible: alarmReady, complete: sourceReady, render: renderSourceInput },
-    { key: "sr", label: "SR Optional", visible: sourceReady, optional: true, complete: Boolean(String(form.sr || "").trim()), render: renderSrInput },
-    { key: "timing", label: "Action Time", visible: sourceReady, complete: timingReady, render: renderTimingInput },
-    { key: "actionText", label: "Action", visible: timingReady, optional: true, complete: actionReady, render: renderActionInput },
+    { key: "timing", label: "Start Time", visible: trainReady, complete: timingReady, render: renderTimingInput },
+    { key: "completedTime", label: "Alighted / Clear Time", visible: timingReady, complete: completedTimeReady, render: () => renderSimpleTimeInput("completedTime", "03:32") },
+    { key: "atcName", label: "ATC Name", visible: completedTimeReady, complete: atcReady, render: () => renderNameInput("atcName", "Moiz") },
+    { key: "shunterName", label: "Shunter Name", visible: atcReady, complete: shunterReady, render: () => renderNameInput("shunterName", "Gerald") },
   ];
 
   const visibleSteps = steps.filter((step) => step.visible);
@@ -9703,8 +9741,8 @@ function AlarmContent() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1a3a56]/70 pb-3">
         <div>
           <p className="text-[10px] font-normal uppercase tracking-[0.28em] text-[#4a8ab5]">ALM</p>
-          <h2 className="mt-1 text-[18px] font-normal text-white">Alarm</h2>
-          <p className="mt-0.5 text-[11px] font-medium text-[#7eb8e0]">Automatic Flow style input + saved alarm log window.</p>
+          <h2 className="mt-1 text-[18px] font-normal text-white">CC Technical Failure</h2>
+          <p className="mt-0.5 text-[11px] font-medium text-[#7eb8e0]">Fixed CC Technical Failure template. Fill timing, ATC name, and shunter name only.</p>
         </div>
       </div>
 
@@ -9716,8 +9754,8 @@ function AlarmContent() {
           <div className="border-b px-3 py-2" style={{ borderColor: `${accent}30`, backgroundColor: `${accent}0d` }}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-white">Alarm Automatic Flow</p>
-                <p className="text-[10px] font-semibold text-[#8ea8c0]">Next pill appears immediately while typing continues.</p>
+                <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-white">CC Technical Failure Flow</p>
+                <p className="text-[10px] font-semibold text-[#8ea8c0]">Fixed workaround text. Next pill appears immediately while typing continues.</p>
               </div>
               <button
                 type="button"
@@ -9748,7 +9786,7 @@ function AlarmContent() {
                 className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[12px] font-medium text-white shadow-[0_0_16px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01]"
                 style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
               >
-                <Plus className="h-3.5 w-3.5" /> Add Alarm Log
+                <Plus className="h-3.5 w-3.5" /> Add CC Technical Failure Log
               </button>
             )}
           </div>
@@ -9757,7 +9795,7 @@ function AlarmContent() {
         <section className="overflow-hidden rounded-xl border border-[#1d4869] bg-[#041727]">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1d4869] bg-[#061827] px-3 py-2">
             <div className="min-w-0">
-              <h3 className="text-[12px] font-black uppercase tracking-wide text-white">Alarm Log</h3>
+              <h3 className="text-[12px] font-black uppercase tracking-wide text-white">CC Technical Failure Log</h3>
               <p className="text-[10px] font-semibold text-[#8ea8c0]">{entries.length} entries saved locally</p>
             </div>
             <div className="flex items-center gap-1.5">
@@ -9781,7 +9819,7 @@ function AlarmContent() {
           <div className="min-h-[240px]">
             {entries.length === 0 ? (
               <div className="flex min-h-[240px] items-center justify-center px-3 text-center text-[11px] font-semibold text-[#7eb8e0]">
-                No alarm log yet.
+                No CC Technical Failure log yet.
               </div>
             ) : (
               sortAlarmFlowEntries(entries).map((entry) => (
