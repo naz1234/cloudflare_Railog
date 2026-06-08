@@ -5771,6 +5771,16 @@ function TrainMovementContent() {
     "WD-ST12",
   ];
 
+  const [clockText, setClockText] = useState(() => formatTime(new Date()));
+
+  useEffect(() => {
+    const updateClock = () => setClockText(formatTime(new Date()));
+    updateClock();
+
+    const timer = window.setInterval(updateClock, 30000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const [entries, setEntries] = useState(() => loadTrainMovementLog());
   const [tp1Entries, setTp1Entries] = useState(() => sortTp1MovementEntries(loadTp1MovementLog()));
   const [copyFeedback, setCopyFeedback] = useState({});
