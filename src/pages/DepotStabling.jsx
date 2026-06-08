@@ -9598,119 +9598,117 @@ function AlarmContent() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.85fr)]">
-        <section
-          className="overflow-hidden rounded-xl border shadow-[0_14px_28px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.05)]"
-          style={{ borderColor: `${accent}42`, background: "linear-gradient(180deg,#061827 0%,#041727 100%)" }}
-        >
-          <div className="border-b px-3 py-2" style={{ borderColor: `${accent}30`, backgroundColor: `${accent}0d` }}>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-white">CC Technical Failure Flow</p>
-                <p className="text-[10px] font-semibold text-[#8ea8c0]">Fixed workaround text. Next pill appears immediately while typing continues.</p>
+      <section
+        className="overflow-hidden rounded-xl border shadow-[0_14px_28px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.05)]"
+        style={{ borderColor: `${accent}42`, background: "linear-gradient(180deg,#061827 0%,#041727 100%)" }}
+      >
+        <div className="border-b px-3 py-2" style={{ borderColor: `${accent}30`, backgroundColor: `${accent}0d` }}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-white">CC Technical Failure Flow</p>
+              <p className="text-[10px] font-semibold text-[#8ea8c0]">Fixed workaround text. Next pill appears immediately while typing continues.</p>
+            </div>
+            <button
+              type="button"
+              onClick={resetAlarmFlow}
+              className="rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] shadow-[0_0_14px_rgba(239,68,68,0.38),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.03]"
+              style={{ borderColor: "rgba(248,113,113,0.85)", backgroundColor: "rgba(127,29,29,0.36)", color: "#fecaca" }}
+              title="Reset Alarm Flow"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <div className="grid gap-3 p-3">
+          {renderFlowRows(visibleSteps)}
+
+          <div className="rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2">
+            <p className="mb-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
+            <pre className="max-h-[220px] overflow-auto whitespace-pre-wrap break-words font-mono text-[12px] font-medium leading-snug text-[#c8d8ea]">
+              {buildAlarmFlowText(form, { preview: true })}
+            </pre>
+          </div>
+
+          {requiredReady && (
+            <button
+              type="button"
+              onClick={addAlarmLog}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[12px] font-medium text-white shadow-[0_0_16px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01]"
+              style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
+            >
+              <Plus className="h-3.5 w-3.5" /> Add
+            </button>
+          )}
+
+          <div className="overflow-hidden rounded-xl border border-[#1d4869] bg-[#041727]">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1d4869] bg-[#061827] px-3 py-2">
+              <div className="min-w-0">
+                <h3 className="text-[12px] font-black uppercase tracking-wide text-white">Log Output</h3>
+                <p className="text-[10px] font-semibold text-[#8ea8c0]">{entries.length} entries saved locally</p>
               </div>
-              <button
-                type="button"
-                onClick={resetAlarmFlow}
-                className="rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] shadow-[0_0_14px_rgba(239,68,68,0.38),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.03]"
-                style={{ borderColor: "rgba(248,113,113,0.85)", backgroundColor: "rgba(127,29,29,0.36)", color: "#fecaca" }}
-                title="Reset Alarm Flow"
-              >
-                Reset
-              </button>
-            </div>
-          </div>
-
-          <div className="grid gap-3 p-3">
-            {renderFlowRows(visibleSteps)}
-
-            <div className="rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2">
-              <p className="mb-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
-              <pre className="max-h-[220px] overflow-auto whitespace-pre-wrap break-words font-mono text-[12px] font-medium leading-snug text-[#c8d8ea]">
-                {buildAlarmFlowText(form, { preview: true })}
-              </pre>
-            </div>
-
-            {requiredReady && (
-              <button
-                type="button"
-                onClick={addAlarmLog}
-                className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[12px] font-medium text-white shadow-[0_0_16px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01]"
-                style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
-              >
-                <Plus className="h-3.5 w-3.5" /> Add CC Technical Failure Log
-              </button>
-            )}
-          </div>
-        </section>
-
-        <section className="overflow-hidden rounded-xl border border-[#1d4869] bg-[#041727]">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1d4869] bg-[#061827] px-3 py-2">
-            <div className="min-w-0">
-              <h3 className="text-[12px] font-black uppercase tracking-wide text-white">CC Technical Failure Log</h3>
-              <p className="text-[10px] font-semibold text-[#8ea8c0]">{entries.length} entries saved locally</p>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={copyAllAlarmLogs}
-                className="flex min-w-[82px] items-center justify-center gap-1 rounded-lg border border-amber-400/55 bg-amber-400/10 px-2 py-1 text-[10px] font-bold text-amber-200 transition-all hover:scale-[1.02]"
-              >
-                <Copy className="h-3 w-3" />{getCopyButtonLabel()}
-              </button>
-              <button
-                type="button"
-                onClick={clearAlarmLogs}
-                className="flex items-center gap-1 rounded-lg border border-red-400/55 bg-red-500/10 px-2 py-1 text-[10px] font-bold text-red-200 transition-all hover:scale-[1.02]"
-              >
-                <Trash2 className="h-3 w-3" />Clear
-              </button>
-            </div>
-          </div>
-
-          <div className="min-h-[240px]">
-            {entries.length === 0 ? (
-              <div className="flex min-h-[240px] items-center justify-center px-3 text-center text-[11px] font-semibold text-[#7eb8e0]">
-                No CC Technical Failure log yet.
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={copyAllAlarmLogs}
+                  className="flex min-w-[82px] items-center justify-center gap-1 rounded-lg border border-amber-400/55 bg-amber-400/10 px-2 py-1 text-[10px] font-bold text-amber-200 transition-all hover:scale-[1.02]"
+                >
+                  <Copy className="h-3 w-3" />{getCopyButtonLabel()}
+                </button>
+                <button
+                  type="button"
+                  onClick={clearAlarmLogs}
+                  className="flex items-center gap-1 rounded-lg border border-red-400/55 bg-red-500/10 px-2 py-1 text-[10px] font-bold text-red-200 transition-all hover:scale-[1.02]"
+                >
+                  <Trash2 className="h-3 w-3" />Clear
+                </button>
               </div>
-            ) : (
-              sortAlarmFlowEntries(entries).map((entry) => (
-                <div key={entry.id} className="group border-b border-[#12304a]/70 px-3 py-2 last:border-b-0">
-                  <div className="flex items-start gap-2">
-                    <pre className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.25] tracking-[-0.01em] text-[#f4f8ff]">
-                      {entry.text}
-                    </pre>
-                    <div className="flex shrink-0 flex-col gap-1">
-                      <button
-                        type="button"
-                        onClick={() => copySingleAlarmLog(entry)}
-                        title="Copy this log"
-                        aria-label="Copy this log"
-                        className="flex h-6 w-6 items-center justify-center rounded-md border border-transparent text-amber-200 opacity-80 transition-all hover:scale-[1.04] group-hover:opacity-100"
-                      >
-                        {copyFeedback[`alarm-entry-${entry.id}`] === "copied" ? (
-                          <Check className="h-3.5 w-3.5" />
-                        ) : (
-                          <Copy className="h-3.5 w-3.5" />
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeAlarmLog(entry.id)}
-                        title="Delete this log"
-                        aria-label="Delete this log"
-                        className="flex h-6 w-6 items-center justify-center rounded-md border border-transparent text-red-400 opacity-80 transition-all hover:border-red-500/60 hover:bg-red-950/35 hover:text-red-300 group-hover:opacity-100"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+            </div>
+
+            <div className="min-h-[180px]">
+              {entries.length === 0 ? (
+                <div className="flex min-h-[180px] items-center justify-center px-3 text-center text-[11px] font-semibold text-[#7eb8e0]">
+                  No CC Technical Failure log yet.
+                </div>
+              ) : (
+                sortAlarmFlowEntries(entries).map((entry) => (
+                  <div key={entry.id} className="group border-b border-[#12304a]/70 px-3 py-2 last:border-b-0">
+                    <div className="flex items-start gap-2">
+                      <pre className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.25] tracking-[-0.01em] text-[#f4f8ff]">
+                        {entry.text}
+                      </pre>
+                      <div className="flex shrink-0 flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={() => copySingleAlarmLog(entry)}
+                          title="Copy this log"
+                          aria-label="Copy this log"
+                          className="flex h-6 w-6 items-center justify-center rounded-md border border-transparent text-amber-200 opacity-80 transition-all hover:scale-[1.04] group-hover:opacity-100"
+                        >
+                          {copyFeedback[`alarm-entry-${entry.id}`] === "copied" ? (
+                            <Check className="h-3.5 w-3.5" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeAlarmLog(entry.id)}
+                          title="Delete this log"
+                          aria-label="Delete this log"
+                          className="flex h-6 w-6 items-center justify-center rounded-md border border-transparent text-red-400 opacity-80 transition-all hover:border-red-500/60 hover:bg-red-950/35 hover:text-red-300 group-hover:opacity-100"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   );
 }
