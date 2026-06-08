@@ -11,6 +11,7 @@ const ALLOWED_ENTITIES = new Set([
   'BookmarkLink',
   'TimetableFile',
   'AdminNote',
+  'InboundOutboundMovement',
 ]);
 
 const jsonHeaders = {

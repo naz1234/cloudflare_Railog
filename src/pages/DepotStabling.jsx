@@ -5453,6 +5453,11 @@ const TRAIN_MOVEMENT_LOG_KEY = "trainMovementLogState_v1";
 const TP1_MOVEMENT_LOG_KEY = "tp1MovementLogState_v1";
 const TRAIN_MOVEMENT_FORM_KEY = "trainMovementFormState_v1";
 const TP1_MOVEMENT_FORM_KEY = "tp1MovementFormState_v1";
+const TP1_MOVEMENT_LIVE_RECORD_KEY = "tp1MovementLiveState_v1";
+const TP1_MOVEMENT_LIVE_SYNC_INTERVAL_MS = 3000;
+const TP1_MOVEMENT_LIVE_SAVE_DEBOUNCE_MS = 700;
+const TP1_MOVEMENT_LIVE_LOCAL_EDIT_HOLD_MS = 2500;
+const TP1_MOVEMENT_LIVE_POST_SAVE_HOLD_MS = 1200;
 
 function loadSavedMovementObject(key) {
   try {
@@ -5516,6 +5521,19 @@ function loadTp1MovementLog() {
 
 function saveTp1MovementLog(entries) {
   try { localStorage.setItem(TP1_MOVEMENT_LOG_KEY, JSON.stringify(entries || [])); } catch {}
+}
+
+function getTp1MovementLiveEntity() {
+  return base44?.entities?.InboundOutboundMovement || null;
+}
+
+function isTp1MovementLiveEntityReady(entity = getTp1MovementLiveEntity()) {
+  return Boolean(entity?.list && entity?.create && entity?.update);
+}
+
+function selectTp1MovementLiveRecord(records = []) {
+  const list = Array.isArray(records) ? records : [];
+  return list.find((item) => item?.stateKey === TP1_MOVEMENT_LIVE_RECORD_KEY || item?.key === TP1_MOVEMENT_LIVE_RECORD_KEY) || list[0] || null;
 }
 
 
@@ -5963,6 +5981,22 @@ function TrainMovementContent() {
   const [flowSettledInputs, setFlowSettledInputs] = useState({});
   const flowInputSettleTimerRef = useRef({});
   const movementScrollRestoreRef = useRef(null);
+  const [tp1LiveLoaded, setTp1LiveLoaded] = useState(false);
+  const [tp1LiveSyncing, setTp1LiveSyncing] = useState(false);
+  const [tp1LiveLastSynced, setTp1LiveLastSynced] = useState(null);
+  const [tp1LiveSyncError, setTp1LiveSyncError] = useState(false);
+  const [tp1LiveDbReady, setTp1LiveDbReady] = useState(() => isTp1MovementLiveEntityReady());
+  const [tp1LiveDebug, setTp1LiveDebug] = useState("");
+  const tp1FormRef = useRef(tp1Form);
+  const tp1EntriesRef = useRef(tp1Entries);
+  const tp1LiveRecordIdRef = useRef("");
+  const tp1LiveRemoteUpdatedAtRef = useRef(0);
+  const tp1LiveLocalEditUntilRef = useRef(0);
+  const tp1LiveAutoSaveTimerRef = useRef(null);
+  const tp1LivePendingSaveRef = useRef(false);
+  const tp1LiveSavingRef = useRef(false);
+  const tp1LivePollingRef = useRef(false);
+  const tp1LiveApplyingRemoteRef = useRef(false);
 
   const captureMovementScrollPosition = () => {
     if (typeof window === "undefined") return;
@@ -5979,14 +6013,228 @@ function TrainMovementContent() {
     });
   }, [forms, entries, tp1Form, tp1Entries]);
 
+  useEffect(() => { tp1FormRef.current = tp1Form; }, [tp1Form]);
+  useEffect(() => { tp1EntriesRef.current = sortTp1MovementEntries(tp1Entries); }, [tp1Entries]);
+
   useEffect(() => { saveTrainMovementLog(entries); }, [entries]);
-  useEffect(() => { saveTp1MovementLog(sortTp1MovementEntries(tp1Entries)); }, [tp1Entries]);
   useEffect(() => { saveSavedMovementObject(TRAIN_MOVEMENT_FORM_KEY, forms); }, [forms]);
-  useEffect(() => { saveSavedMovementObject(TP1_MOVEMENT_FORM_KEY, tp1Form); }, [tp1Form]);
+
+  const normalizeTp1MovementLiveState = useCallback((source = {}) => {
+    const formSource = source?.form || source?.tp1Form || source?.draft || {};
+    const entriesSource = Array.isArray(source?.entries)
+      ? source.entries
+      : Array.isArray(source?.tp1Entries)
+      ? source.tp1Entries
+      : [];
+
+    return {
+      form: mergeTp1MovementForm(createDefaultTp1MovementForm(), formSource),
+      entries: sortTp1MovementEntries(entriesSource),
+      updatedAt: String(source?.updatedAt || source?.updated_date || source?.updatedAt || ""),
+    };
+  }, []);
+
+  const buildTp1MovementLivePayload = useCallback((state = {}) => {
+    const normalized = normalizeTp1MovementLiveState({
+      form: state.form || state.tp1Form || tp1FormRef.current,
+      entries: state.entries || state.tp1Entries || tp1EntriesRef.current,
+    });
+
+    return {
+      stateKey: TP1_MOVEMENT_LIVE_RECORD_KEY,
+      form: normalized.form,
+      entries: normalized.entries,
+      updatedAt: new Date().toISOString(),
+    };
+  }, [normalizeTp1MovementLiveState]);
+
+  const applyTp1MovementLiveState = useCallback((incomingState = {}) => {
+    const normalized = normalizeTp1MovementLiveState(incomingState);
+    const remoteUpdatedMs = Date.parse(normalized.updatedAt || "");
+
+    if (remoteUpdatedMs && remoteUpdatedMs + 250 < tp1LiveRemoteUpdatedAtRef.current) return;
+
+    tp1LiveApplyingRemoteRef.current = true;
+    setTp1Form(normalized.form);
+    setTp1Entries(normalized.entries);
+    saveSavedMovementObject(TP1_MOVEMENT_FORM_KEY, normalized.form);
+    saveTp1MovementLog(normalized.entries);
+
+    if (remoteUpdatedMs) {
+      tp1LiveRemoteUpdatedAtRef.current = Math.max(tp1LiveRemoteUpdatedAtRef.current, remoteUpdatedMs);
+    }
+  }, [normalizeTp1MovementLiveState]);
+
+  const saveTp1MovementLiveToDb = useCallback(async (state) => {
+    const entity = getTp1MovementLiveEntity();
+    const payload = buildTp1MovementLivePayload(state);
+
+    saveSavedMovementObject(TP1_MOVEMENT_FORM_KEY, payload.form);
+    saveTp1MovementLog(payload.entries);
+
+    if (!isTp1MovementLiveEntityReady(entity)) {
+      setTp1LiveDbReady(false);
+      setTp1LiveSyncError(true);
+      setTp1LiveDebug("Inbound / Outbound Movement live draft will stay local until the InboundOutboundMovement entity is deployed.");
+      tp1LivePendingSaveRef.current = false;
+      return;
+    }
+
+    tp1LiveSavingRef.current = true;
+    setTp1LiveSyncing(true);
+
+    try {
+      if (tp1LiveRecordIdRef.current) {
+        await entity.update(tp1LiveRecordIdRef.current, payload);
+      } else {
+        const records = await entity.list();
+        const existing = selectTp1MovementLiveRecord(records);
+        if (existing?.id) {
+          tp1LiveRecordIdRef.current = existing.id;
+          await entity.update(existing.id, payload);
+        } else {
+          const created = await entity.create(payload);
+          if (created?.id) tp1LiveRecordIdRef.current = created.id;
+        }
+      }
+
+      const payloadUpdatedMs = Date.parse(payload.updatedAt || "");
+      if (payloadUpdatedMs) {
+        tp1LiveRemoteUpdatedAtRef.current = Math.max(tp1LiveRemoteUpdatedAtRef.current, payloadUpdatedMs);
+      }
+
+      setTp1LiveLastSynced(new Date());
+      setTp1LiveSyncError(false);
+      setTp1LiveDbReady(true);
+      setTp1LiveDebug("");
+    } catch (err) {
+      const message = err?.message || String(err);
+      console.error("Inbound / Outbound Movement live save failed:", err);
+      setTp1LiveSyncError(true);
+      setTp1LiveDebug(`Inbound / Outbound live save failed: ${message}`);
+    } finally {
+      tp1LiveLocalEditUntilRef.current = Date.now() + TP1_MOVEMENT_LIVE_POST_SAVE_HOLD_MS;
+      tp1LivePendingSaveRef.current = false;
+      tp1LiveSavingRef.current = false;
+      setTp1LiveSyncing(false);
+    }
+  }, [buildTp1MovementLivePayload]);
+
+  const scheduleTp1MovementLiveSave = useCallback((state) => {
+    const payload = buildTp1MovementLivePayload(state);
+
+    saveSavedMovementObject(TP1_MOVEMENT_FORM_KEY, payload.form);
+    saveTp1MovementLog(payload.entries);
+
+    tp1LivePendingSaveRef.current = true;
+    tp1LiveLocalEditUntilRef.current = Date.now() + TP1_MOVEMENT_LIVE_LOCAL_EDIT_HOLD_MS;
+
+    if (tp1LiveAutoSaveTimerRef.current) {
+      clearTimeout(tp1LiveAutoSaveTimerRef.current);
+    }
+
+    tp1LiveAutoSaveTimerRef.current = setTimeout(() => {
+      saveTp1MovementLiveToDb(payload);
+    }, TP1_MOVEMENT_LIVE_SAVE_DEBOUNCE_MS);
+  }, [buildTp1MovementLivePayload, saveTp1MovementLiveToDb]);
+
+  const refreshTp1MovementLiveFromDb = useCallback(async ({ showStatus = false } = {}) => {
+    const entity = getTp1MovementLiveEntity();
+
+    if (!isTp1MovementLiveEntityReady(entity)) {
+      setTp1LiveDbReady(false);
+      setTp1LiveLoaded(true);
+      setTp1LiveDebug("Inbound / Outbound Movement live draft is local only until InboundOutboundMovement is available in D1.");
+      return;
+    }
+
+    if (
+      Date.now() < tp1LiveLocalEditUntilRef.current ||
+      tp1LiveSavingRef.current ||
+      tp1LivePendingSaveRef.current ||
+      tp1LivePollingRef.current
+    ) {
+      return;
+    }
+
+    tp1LivePollingRef.current = true;
+    if (showStatus) setTp1LiveSyncing(true);
+
+    try {
+      const records = await entity.list();
+      const record = selectTp1MovementLiveRecord(records);
+
+      if (!record) {
+        const payload = buildTp1MovementLivePayload({
+          form: tp1FormRef.current,
+          entries: tp1EntriesRef.current,
+        });
+        const created = await entity.create(payload);
+        if (created?.id) tp1LiveRecordIdRef.current = created.id;
+
+        const payloadUpdatedMs = Date.parse(payload.updatedAt || "");
+        if (payloadUpdatedMs) {
+          tp1LiveRemoteUpdatedAtRef.current = Math.max(tp1LiveRemoteUpdatedAtRef.current, payloadUpdatedMs);
+        }
+
+        setTp1LiveLastSynced(new Date());
+        setTp1LiveSyncError(false);
+        setTp1LiveDbReady(true);
+        setTp1LiveDebug("");
+        setTp1LiveLoaded(true);
+        return;
+      }
+
+      if (record?.id) tp1LiveRecordIdRef.current = record.id;
+      applyTp1MovementLiveState(record);
+      setTp1LiveLastSynced(new Date());
+      setTp1LiveSyncError(false);
+      setTp1LiveDbReady(true);
+      setTp1LiveDebug("");
+      setTp1LiveLoaded(true);
+    } catch (err) {
+      const message = err?.message || String(err);
+      console.error("Inbound / Outbound Movement live sync failed:", err);
+      setTp1LiveSyncError(true);
+      setTp1LiveDebug(`Inbound / Outbound live sync failed: ${message}`);
+      setTp1LiveLoaded(true);
+    } finally {
+      tp1LivePollingRef.current = false;
+      if (showStatus) setTp1LiveSyncing(false);
+    }
+  }, [applyTp1MovementLiveState, buildTp1MovementLivePayload]);
+
+  useEffect(() => {
+    refreshTp1MovementLiveFromDb({ showStatus: true });
+  }, [refreshTp1MovementLiveFromDb]);
+
+  useEffect(() => {
+    if (!tp1LiveLoaded || !tp1LiveDbReady) return;
+
+    const interval = setInterval(() => {
+      refreshTp1MovementLiveFromDb({ showStatus: true });
+    }, TP1_MOVEMENT_LIVE_SYNC_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [tp1LiveLoaded, tp1LiveDbReady, refreshTp1MovementLiveFromDb]);
+
+  useEffect(() => {
+    saveSavedMovementObject(TP1_MOVEMENT_FORM_KEY, tp1Form);
+    saveTp1MovementLog(sortTp1MovementEntries(tp1Entries));
+
+    if (tp1LiveApplyingRemoteRef.current) {
+      tp1LiveApplyingRemoteRef.current = false;
+      return;
+    }
+
+    if (!tp1LiveLoaded) return;
+    scheduleTp1MovementLiveSave({ form: tp1Form, entries: tp1Entries });
+  }, [tp1Form, tp1Entries, tp1LiveLoaded, scheduleTp1MovementLiveSave]);
 
   useEffect(() => {
     return () => {
       Object.values(copyFeedbackTimerRef.current || {}).forEach((timer) => clearTimeout(timer));
+      if (tp1LiveAutoSaveTimerRef.current) clearTimeout(tp1LiveAutoSaveTimerRef.current);
     };
   }, []);
 
@@ -7280,6 +7528,20 @@ function TrainMovementContent() {
     );
   };
 
+  const tp1LiveStatusText = !tp1LiveDbReady
+    ? "Local only"
+    : tp1LiveSyncError
+    ? "Sync issue"
+    : tp1LiveSyncing
+    ? "Syncing..."
+    : tp1LiveLastSynced
+    ? `Live synced ${formatTime(tp1LiveLastSynced)}`
+    : "Live ready";
+
+  const tp1LiveStatusClass = !tp1LiveDbReady || tp1LiveSyncError
+    ? "border-amber-600/50 bg-amber-950/30 text-amber-300"
+    : "border-emerald-600/50 bg-emerald-950/30 text-emerald-300";
+
   const renderTp1MovementWindow = () => {
     const movementType = getTp1MovementType();
     const isAutomatic = movementType === "automatic";
@@ -7733,6 +7995,9 @@ function TrainMovementContent() {
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="rounded-md border px-2 py-1 text-[10px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}1c`, color: accent }}>
               {tp1Entries.length} entries
+            </span>
+            <span className={`rounded-md border px-2 py-1 text-[10px] font-black ${tp1LiveStatusClass}`} title={tp1LiveDebug || tp1LiveStatusText}>
+              {tp1LiveStatusText}
             </span>
           </div>
         </div>

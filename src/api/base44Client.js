@@ -16,6 +16,7 @@ const ENTITY_NAMES = [
   'BookmarkLink',
   'TimetableFile',
   'AdminNote',
+  'InboundOutboundMovement',
 ];
 
 async function apiRequest(path, options = {}) {
