@@ -187,15 +187,22 @@ function getUniqueTrainKeys(lines = [], extractor) {
   return keys;
 }
 
-function getPSTSectionText(pstLines = [], depotLabel = "") {
+function getPSTDCSummary(totalCount = 0) {
+  if (!totalCount) return "";
+  return `DC checked and confirmed that PST was performed and updated for ${totalCount} train${totalCount !== 1 ? "s" : ""} at West and East Depot.`;
+}
+
+function getPSTSectionText(pstLines = [], depotLabel = "", totalPSTCount = pstLines.length) {
   if (!pstLines.length) return "";
   const groupedLines = buildGroupedPSTLogLines(pstLines);
   const trainList = getUniqueTrainKeys(pstLines, getPSTTrainKey).join(", ");
   return [
     `PST at ${depotLabel} Depot: Total ${pstLines.length} train${pstLines.length !== 1 ? "s" : ""} completed from ${getPSTStartTime(pstLines[0])} to ${getPSTSummaryEndTime(pstLines)} hrs.`,
+    getPSTDCSummary(totalPSTCount),
     trainList ? `Train: ${trainList}` : "",
+    "",
     ...groupedLines.map((group) => group.text),
-  ].filter(Boolean).join("\n");
+  ].filter((line) => line !== null && line !== undefined).join("\n").trim();
 }
 
 function getPrepSectionText(prepLines = [], depotLabel = "") {
@@ -285,7 +292,7 @@ function PlainRows({ groups, onRemove }) {
   );
 }
 
-function PlainSection({ title, summary, trainLine, groups, emptyText, onRemove }) {
+function PlainSection({ title, summary, dcLine, trainLine, groups, emptyText, onRemove }) {
   if (!groups.length) {
     return (
       <section className="pst-plain-section">
@@ -299,13 +306,14 @@ function PlainSection({ title, summary, trainLine, groups, emptyText, onRemove }
     <section className="pst-plain-section">
       <div className="pst-plain-title">{title}</div>
       <div className="pst-plain-summary">{summary}</div>
+      {dcLine && <div className="pst-plain-dc-summary">{dcLine}</div>}
       {trainLine && <div className="pst-plain-train">{trainLine}</div>}
       <PlainRows groups={groups} onRemove={onRemove} />
     </section>
   );
 }
 
-function DepotPlainBlock({ depotLabel, lines = [], onRemove, onClearDepot }) {
+function DepotPlainBlock({ depotLabel, lines = [], totalPSTCount = 0, onRemove, onClearDepot }) {
   const pstLines = lines.filter(isPSTEntry);
   const prepLines = lines.filter(isPrepEntry);
   const groupedPSTLines = buildGroupedPSTLogLines(pstLines);
@@ -315,6 +323,7 @@ function DepotPlainBlock({ depotLabel, lines = [], onRemove, onClearDepot }) {
   const pstSummary = pstLines.length
     ? `PST at ${depotLabel} Depot: Total ${pstLines.length} train${pstLines.length !== 1 ? "s" : ""} completed from ${getPSTStartTime(pstLines[0])} to ${getPSTSummaryEndTime(pstLines)} hrs.`
     : "";
+  const pstDCSummary = pstLines.length ? getPSTDCSummary(totalPSTCount || pstLines.length) : "";
 
   const prepSummary = prepLines.length
     ? `Train Preparation at ${depotLabel} Depot: Total ${prepLines.length} train${prepLines.length !== 1 ? "s" : ""} completed from ${getLogDisplayTime(prepLines[0])} to ${getLogDisplayTime(prepLines[prepLines.length - 1])} hrs.`
@@ -326,7 +335,7 @@ function DepotPlainBlock({ depotLabel, lines = [], onRemove, onClearDepot }) {
         <div className="pst-plain-depot-info">
           <div className="pst-plain-depot-title-row">
             <div className="pst-plain-depot-title">{depotLabel.toUpperCase()} DEPOT</div>
-            <CopyButton text={getPSTSectionText(pstLines, depotLabel)} label="PST" disabled={!pstLines.length} />
+            <CopyButton text={getPSTSectionText(pstLines, depotLabel, totalPSTCount || pstLines.length)} label="PST" disabled={!pstLines.length} />
             <CopyButton text={getPrepSectionText(prepLines, depotLabel)} label="Train Prep" disabled={!prepLines.length} />
             <ClearDepotButton depotLabel={depotLabel} disabled={!lines.length} onClear={onClearDepot} />
           </div>
@@ -337,6 +346,7 @@ function DepotPlainBlock({ depotLabel, lines = [], onRemove, onClearDepot }) {
       <PlainSection
         title="PST"
         summary={pstSummary}
+        dcLine={pstDCSummary}
         trainLine={pstTrainList ? `Train: ${pstTrainList}` : ""}
         groups={groupedPSTLines}
         emptyText="No PST entries."
@@ -359,6 +369,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
   const safeLogLines = Array.isArray(logLines) ? logLines : [];
   const westLines = safeLogLines.filter((line) => line.depot === "west");
   const eastLines = safeLogLines.filter((line) => line.depot === "east");
+  const totalPSTCount = safeLogLines.filter(isPSTEntry).length;
   const scrollMainPageFromLog = (event) => {
     if (event.ctrlKey || event.metaKey) return;
 
@@ -563,6 +574,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
         }
 
         .pst-plain-summary,
+        .pst-plain-dc-summary,
         .pst-plain-train,
         .pst-plain-row-text,
         .pst-plain-empty {
@@ -576,6 +588,11 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
         .pst-plain-summary {
           color: #f3f7fb;
           font-weight: 800;
+          margin-bottom: 1px;
+        }
+
+        .pst-plain-dc-summary {
+          color: #e8f0f7;
           margin-bottom: 1px;
         }
 
@@ -640,12 +657,14 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
         <DepotPlainBlock
           depotLabel="West"
           lines={westLines}
+          totalPSTCount={totalPSTCount}
           onRemove={onRemove}
           onClearDepot={() => onClearDepot?.("west")}
         />
         <DepotPlainBlock
           depotLabel="East"
           lines={eastLines}
+          totalPSTCount={totalPSTCount}
           onRemove={onRemove}
           onClearDepot={() => onClearDepot?.("east")}
         />
