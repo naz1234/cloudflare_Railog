@@ -4869,21 +4869,24 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     ? "border-amber-600/50 bg-amber-950/30 text-amber-300"
     : "border-emerald-600/50 bg-emerald-950/30 text-emerald-300";
 
-  const handleTrainRemPdfDownload = (depot) => {
-    const latestTrainRemState = trainRemStateRef.current || trainRemState;
-    const westLog = buildTrainRemRemovalLog(latestTrainRemState, "west", maintenanceMap);
-    const eastLog = buildTrainRemRemovalLog(latestTrainRemState, "east", maintenanceMap);
-    const swappingRows = getRemovalPdfSwappingRows({
-      requests,
-      trainRemState: latestTrainRemState,
-      westData,
-      eastData,
-      activeTimetable,
-    });
+  const handleTrainRemPdfDownload = (depot, event = null) => {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+
+    if (trainRemPdfStatus?.[depot]) return;
 
     try {
-      // Keep the file download as the first action in the click handler.
-      // Some browsers/PWA views can ignore the download when a state update runs first.
+      const latestTrainRemState = trainRemStateRef.current || trainRemState;
+      const westLog = buildTrainRemRemovalLog(latestTrainRemState, "west", maintenanceMap);
+      const eastLog = buildTrainRemRemovalLog(latestTrainRemState, "east", maintenanceMap);
+      const swappingRows = getRemovalPdfSwappingRows({
+        requests,
+        trainRemState: latestTrainRemState,
+        westData,
+        eastData,
+        activeTimetable,
+      });
+
       downloadCombinedRemovalPdf(westLog, eastLog, { swappingRows });
       setTrainRemPdfStatus((prev) => ({ ...prev, [depot]: true }));
       setTimeout(() => {
@@ -4892,6 +4895,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     } catch (error) {
       console.error("Train Rem PDF export failed:", error);
       alert("Unable to create removal PDF. Please try again.");
+      setTrainRemPdfStatus((prev) => ({ ...prev, [depot]: false }));
     }
   };
 
@@ -4957,7 +4961,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
             <div className="flex items-center gap-1 flex-shrink-0">
               <button
                 type="button"
-                onClick={() => handleTrainRemPdfDownload(depot)}
+                onClick={(event) => handleTrainRemPdfDownload(depot, event)}
                 className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black text-cyan-100 transition-all hover:-translate-y-0.5"
                 style={{
                   background: pdfActive ? "rgba(34,197,94,0.18)" : "rgba(6,212,232,0.14)",
@@ -5006,6 +5010,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               </button>
 
               <button
+                type="button"
                 onClick={() => clearDepotTrainRem(depot)}
                 className="px-1.5 py-0.5 rounded-md text-[9px] font-black border border-[#2b4f6b] bg-[#10263b] text-[#7eb8e0] hover:bg-red-950/30 hover:border-red-600/60 hover:text-red-300 transition-colors"
               >
@@ -14798,14 +14803,24 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
 }
 
 function downloadClientBlob(blob, filename) {
+  if (typeof document === "undefined" || typeof URL === "undefined") return;
+
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;
+  link.rel = "noopener";
+  link.style.display = "none";
   document.body.appendChild(link);
-  link.click();
+
+  if (typeof link.download === "undefined" && typeof window !== "undefined") {
+    window.open(url, "_blank", "noopener,noreferrer");
+  } else {
+    link.click();
+  }
+
   link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
 function downloadRemovalPdf(log = {}) {
