@@ -1973,8 +1973,6 @@ const FULL_ML_TID_PRESETS = [
     ],
   },
 ];
-const TRAIN_REM_WEST_9AM_PRIORITY_INSERT_INDEX = 10;
-const TRAIN_REM_WEST_9AM_PRIORITY_TITLE = "Check this TID if required for washing and priority to swap";
 const TRAIN_REM_WEST_9AM_PRIORITY_TIDS = new Set(["207", "209", "211"]);
 
 const TID_PRESETS = {
@@ -4962,7 +4960,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     const rows = normalizeTrainRemRows(trainRemState.rows?.[depot], depot);
     const selectedPreset = trainRemState.selectedPreset?.[depot] || "9am";
     const duplicateCounts = getTrainRemDuplicateCounts();
-    const showWest9amPrioritySection = depot === "west" && selectedPreset === "9am";
     const pdfActive = Boolean(trainRemPdfStatus?.[depot]);
     const activeTimetableLabel = getTimetableTypeLabel(activeTimetableType);
     const timetablePresetNotice = isTrainRemPresetMismatchWithTimetable(activeTimetableType, selectedPreset)
@@ -5120,16 +5117,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
                 return (
                   <Fragment key={`${depot}-train-rem-${index}`}>
-                    {showWest9amPrioritySection && index === TRAIN_REM_WEST_9AM_PRIORITY_INSERT_INDEX && (
-                      <tr>
-                        <td colSpan={4} className="border-b border-[#10263b] px-1 py-1.5" style={{ backgroundColor: "#071828" }}>
-                          <div className="flex min-h-[26px] w-full items-center justify-center rounded-full border border-[#1e4060] bg-[#091828] px-2 text-center text-[10px] font-bold leading-snug text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_14px_rgba(79,142,247,0.12)]">
-                            {TRAIN_REM_WEST_9AM_PRIORITY_TITLE} :
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-
                     <tr>
                   <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: filledRowBg }}>
                     <input
