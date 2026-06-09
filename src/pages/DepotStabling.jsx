@@ -13993,17 +13993,23 @@ function buildRequestedTrainsDocx({ swappingRows = [], actionOverviewRows = [] }
   };
 
   const buildActionOverviewTableXml = (rows = []) => {
-    const safeRows = (rows || []).filter((row) => row && !row.isSeparator);
+    const displayRows = Array.isArray(rows) ? rows : [];
+    const safeRows = displayRows.filter((row) => row && !row.isSeparator);
     if (!safeRows.length) return "";
 
-    const widths = [1450, 2400, 1700];
+    const widths = [1250, 850, 1650, 1800];
     const tableRows = [
-      requestedDocxRow(["Trainset number", "Remark Request", ""], { header: true, widths }),
-      ...safeRows.map((row) => requestedDocxRow([
-        formatRequestedTrainNumber(row.trainsetNumber || row.key),
-        row.requestType || "",
-        row.actionStatus || "",
-      ], { widths })),
+      requestedDocxRow(["Trainset number", "TID", "Remark Request", ""], { header: true, widths }),
+      ...displayRows.map((row) => {
+        if (row?.isSeparator) return requestedDocxRow(["", "", "", ""], { widths });
+
+        return requestedDocxRow([
+          formatRequestedTrainNumber(row.trainsetNumber || row.key),
+          "",
+          row.requestType || "",
+          row.actionStatus || "",
+        ], { widths });
+      }),
     ].join("");
 
     return `
@@ -14259,15 +14265,17 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
       </div>
 
       <div className="w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
-        <table className="table-fixed text-[11px] leading-none" style={{ width: 474, maxWidth: "100%" }}>
+        <table className="table-fixed text-[11px] leading-none" style={{ width: 574, maxWidth: "100%" }}>
           <colgroup>
-            <col style={{ width: 150 }} />
-            <col style={{ width: 174 }} />
-            <col style={{ width: 150 }} />
+            <col style={{ width: 130 }} />
+            <col style={{ width: 78 }} />
+            <col style={{ width: 180 }} />
+            <col style={{ width: 186 }} />
           </colgroup>
           <thead>
             <tr className="bg-[#0a2237] text-[#cfe5fb]">
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Trainset number</th>
+              <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">TID</th>
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Remark Request</th>
               <th className="border-b border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none"></th>
             </tr>
@@ -14277,7 +14285,10 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
               if (item?.isSeparator) {
                 return (
                   <tr key={item.key || `separator-${index}`} className="bg-[#071828]">
-                    <td colSpan={3} className="border-b border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
+                    <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
+                    <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
+                    <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
+                    <td className="border-b border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                   </tr>
                 );
               }
@@ -14286,6 +14297,9 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
                 <tr key={`${item.key}-${item.requestType}-${item.actionStatus}-${index}`} className="odd:bg-[#081b2d] even:bg-[#0a2136]">
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
                     {formatRequestedTrainNumber(item.trainsetNumber || item.key)}
+                  </td>
+                  <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
+                    {""}
                   </td>
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-tight text-[#eaf4ff] whitespace-normal break-words">
                     {item.requestType || ""}
@@ -14297,7 +14311,7 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
               );
             }) : (
               <tr className="bg-[#081b2d]">
-                <td colSpan={3} className="border-b border-[#193752] px-2 py-2 text-center align-middle leading-none text-[#8fa6bd]">
+                <td colSpan={4} className="border-b border-[#193752] px-2 py-2 text-center align-middle leading-none text-[#8fa6bd]">
                   No requested train action found
                 </td>
               </tr>
@@ -15322,15 +15336,17 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const rowCount = Math.max(displayRows.length, 1);
     const colWidths = {
       train: 94,
-      request: 164,
-      action: 122,
+      tid: 52,
+      request: 132,
+      action: 102,
     };
     const colX = {
       train: x,
-      request: x + colWidths.train,
-      action: x + colWidths.train + colWidths.request,
+      tid: x + colWidths.train,
+      request: x + colWidths.train + colWidths.tid,
+      action: x + colWidths.train + colWidths.tid + colWidths.request,
     };
-    const tableWidth = colWidths.train + colWidths.request + colWidths.action;
+    const tableWidth = colWidths.train + colWidths.tid + colWidths.request + colWidths.action;
     const tableHeight = headerHeight + rowCount * rowH;
     const tableY = yFromTop(tableTopForTable, tableHeight);
 
@@ -15348,12 +15364,13 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const headerBottomY = yFromTop(tableTopForTable + headerHeight);
     ops += line(x, headerBottomY, x + tableWidth, headerBottomY, 0.55);
 
-    [colX.request, colX.action].forEach((gridX) => {
+    [colX.tid, colX.request, colX.action].forEach((gridX) => {
       ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
     });
 
     const headerTextY = yFromTop(tableTopForTable + 11);
     drawTextInCell("TRAINSET NUMBER", colX.train + 5, headerTextY, 17, { size: headerFontSize - 0.5, bold: true });
+    drawTextInCell("TID", colX.tid + 8, headerTextY, 5, { size: headerFontSize - 0.5, bold: true });
     drawTextInCell("REMARK REQUEST", colX.request + 7, headerTextY, 17, { size: headerFontSize - 0.5, bold: true });
 
     if (!hasActionOverviewRows) {
@@ -15376,11 +15393,17 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
           align: "center",
           width: colWidths.train,
         });
-        drawTextInCell(entry?.requestType || "-", colX.request + 6, textY, 26, {
+        drawTextInCell("", colX.tid, textY, 5, {
+          size: activeFontSize,
+          bold: false,
+          align: "center",
+          width: colWidths.tid,
+        });
+        drawTextInCell(entry?.requestType || "-", colX.request + 6, textY, 20, {
           size: Math.max(3.9, activeFontSize - 0.2),
           bold: false,
         });
-        drawTextInCell(entry?.actionStatus || "-", colX.action + 6, textY, 18, {
+        drawTextInCell(entry?.actionStatus || "-", colX.action + 6, textY, 16, {
           size: Math.max(3.9, activeFontSize - 0.2),
           bold: false,
         });
@@ -15392,7 +15415,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
       ops += line(x, rowLineY, x + tableWidth, rowLineY, 0.38);
     }
 
-    [x, colX.request, colX.action, x + tableWidth].forEach((gridX) => {
+    [x, colX.tid, colX.request, colX.action, x + tableWidth].forEach((gridX) => {
       ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
     });
     ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
