@@ -13834,6 +13834,42 @@ function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, wes
   return [...sortedSwapRows, ...sortedRemovalRows];
 }
 
+function getRequestedTrainActionOverviewRowsFromSwappingTable({ swappingRows = [], actionOverviewRows = [] } = {}) {
+  const displayedSwapRows = sortRequestedTrainRowsByTid(swappingRows)
+    .filter((row) => row && normalizeTrainId(row?.key || row?.label || row?.trainId));
+  const removalRows = (Array.isArray(actionOverviewRows) ? actionOverviewRows : [])
+    .filter((row) => row && !row.isSeparator && row.group === "removal");
+
+  const swapRows = displayedSwapRows.map((row, index) => {
+    const key = normalizeTrainId(row?.key || row?.label || row?.trainId);
+    const requestNotes = [row?.requestType, row?.actionNote]
+      .map((value) => (value || "").toString().trim())
+      .filter(Boolean);
+    const actionLabel = "Need Swapping";
+    const actionSymbol = "⇆";
+
+    return {
+      key: key || `swap-table-${index}`,
+      trainsetNumber: formatRequestedTrainNumber(key || row?.label || row?.trainId),
+      requestType: requestNotes.join(", "),
+      actionLabel,
+      actionSymbol,
+      actionStatus: `${actionLabel} ${actionSymbol}`,
+      group: "swap",
+    };
+  });
+
+  if (swapRows.length && removalRows.length) {
+    return [
+      ...swapRows,
+      { key: "requested-action-overview-separator", isSeparator: true },
+      ...removalRows,
+    ];
+  }
+
+  return [...swapRows, ...removalRows];
+}
+
 const REQUESTED_TRAIN_MANUAL_TID_STORAGE_KEY = "requestedTrainManualTidByTrain";
 
 function cleanRequestedTrainTidInput(value = "") {
@@ -14397,12 +14433,16 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
         }));
 
   const swappingRowsWithArrival3A1P2 = addArrival3A1P2ToRequestedRows(swappingRows, activeTimetable, arrivalLookupTime);
-  const actionOverviewRows = getRequestedTrainActionOverviewRows({
+  const rawActionOverviewRows = getRequestedTrainActionOverviewRows({
     requests,
     trainRemState,
     westData,
     eastData,
     includeTomorrowRequests,
+  });
+  const actionOverviewRows = getRequestedTrainActionOverviewRowsFromSwappingTable({
+    swappingRows: swappingRowsWithArrival3A1P2,
+    actionOverviewRows: rawActionOverviewRows,
   });
   const activeTimetableLabel = getTimetableTypeLabel(activeTimetableType);
   const parsedTimetable = getActiveTimetableParsedData(activeTimetable);
