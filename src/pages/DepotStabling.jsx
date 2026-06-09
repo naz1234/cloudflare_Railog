@@ -15811,7 +15811,7 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
 
       <div className="min-h-[76px] rounded-b-lg border-t border-[#1a3a56] bg-[#061321] px-3 py-2">
         {hasEntries ? (
-          <pre className="whitespace-pre-wrap break-words text-[10px] leading-[1.35] font-normal text-[#d8e7f7]">
+          <pre className="whitespace-pre-wrap break-words text-[11px] leading-[1.4] font-normal text-[#d8e7f7]">
             {log.text}
           </pre>
         ) : (
