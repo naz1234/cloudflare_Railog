@@ -14370,7 +14370,7 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
   const tableWidth = showArrival3A1P2 ? 282 : 174;
 
   return (
-    <div className="h-full leading-tight">
+    <div className="flex h-full min-h-0 self-stretch flex-col leading-tight">
       {title && (
         <div className="mb-2.5">
           <div className="text-[11px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
@@ -14379,8 +14379,8 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
         </div>
       )}
 
-      <div className="h-full w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
-        <table className="h-full table-fixed text-[11px] leading-none" style={{ width: tableWidth, maxWidth: "100%" }}>
+      <div className="flex-1 w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
+        <table className="h-full min-h-full table-fixed text-[11px] leading-none" style={{ width: tableWidth, maxWidth: "100%" }}>
           <colgroup>
             <col style={{ width: 96 }} />
             <col style={{ width: 78 }} />
@@ -14446,7 +14446,7 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
   const hasRows = displayRows.some((row) => row && !row.isSeparator);
 
   return (
-    <div className="relative leading-tight">
+    <div className="relative h-fit self-start leading-tight">
       <div className="absolute left-0 top-[-18px]">
         <div className="text-[11px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
           REQUEST / ACTION OVERVIEW
@@ -14682,7 +14682,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
       </div>
 
       <div className="w-fit max-w-full">
-        <div className="flex flex-wrap items-stretch gap-4">
+        <div className="grid w-fit max-w-full grid-cols-[auto_auto] items-stretch gap-4 overflow-x-auto">
           <RequestedTrainTable
             rows={swappingRowsWithArrival3A1P2}
             maintenanceMap={maintenanceMap}
