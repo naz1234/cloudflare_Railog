@@ -5432,13 +5432,13 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
         </div>
         <div className="grid gap-2 text-[12px] font-semibold leading-snug text-[#c8d8ea] md:grid-cols-3">
           <div className="rounded-xl border border-[#1e4d72] bg-[#0b1f33] px-3 py-2">
-            Go to PG2 if a train ID needs to be changed or removed from STB. No need to edit it from the main page.
+            Go to <span className="text-amber-200">PG2</span> if a train ID needs to be changed or removed from STB. No need to edit it from the main page.
           </div>
           <div className="rounded-xl border border-[#1e4d72] bg-[#0b1f33] px-3 py-2">
-            <span className="font-black text-white">Night shift WD DC:</span> Send 4 trains to 3K1 with the remark <span className="text-amber-200">Wash Only</span>. It will automatically be removed during Early or Late Shift at WD.
+            <span className="font-black text-white">Night shift WD DC:</span> Send <span className="text-amber-200">4 trains to 3K1</span> with the remark <span className="text-amber-200">Wash Only</span>. It will automatically be removed during Early or Late Shift at WD.
           </div>
           <div className="rounded-xl border border-[#1e4d72] bg-[#0b1f33] px-3 py-2">
-            <span className="font-black text-white">Night shift ED DC:</span> Use TID 203 and 205 with the remark <span className="text-amber-200">Wash Only</span>. It will automatically be removed during Late Shift at WD.
+            <span className="font-black text-white">Night shift ED DC:</span> Use <span className="text-amber-200">TID 203 and 205</span> with the remark <span className="text-amber-200">Wash Only</span>. It will automatically be removed during Late Shift at WD.
           </div>
         </div>
       </div>
