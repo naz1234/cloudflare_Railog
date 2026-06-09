@@ -4879,17 +4879,24 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       const latestTrainRemState = trainRemStateRef.current || trainRemState;
       const westLog = buildTrainRemRemovalLog(latestTrainRemState, "west", maintenanceMap);
       const eastLog = buildTrainRemRemovalLog(latestTrainRemState, "east", maintenanceMap);
+      const latestEastData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
       const swappingRows = getRemovalPdfSwappingRows({
         requests,
         trainRemState: latestTrainRemState,
         westData,
-        eastData: Object.keys(eastData || {}).length ? eastData : eastStablingData,
+        eastData: latestEastData,
         activeTimetable,
+      });
+      const actionOverviewRows = getRemovalPdfActionOverviewRows({
+        requests,
+        trainRemState: latestTrainRemState,
+        westData,
+        eastData: latestEastData,
       });
 
       // Keep the file download as the first action in the click handler.
       // Some browsers/PWA views can ignore the download when a state update runs first.
-      downloadCombinedRemovalPdf(westLog, eastLog, { swappingRows });
+      downloadCombinedRemovalPdf(westLog, eastLog, { swappingRows, actionOverviewRows });
       setTrainRemPdfStatus((prev) => ({ ...prev, [depot]: true }));
       setTimeout(() => {
         setTrainRemPdfStatus((prev) => ({ ...prev, [depot]: false }));
