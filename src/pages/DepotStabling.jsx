@@ -2817,6 +2817,16 @@ function getCustomRequestStyle(label = "") {
   };
 }
 
+function getKnownMaintenanceStyle(label = "") {
+  const clean = cleanRequestLabel(label);
+  if (MAINT_STYLES[clean]) return MAINT_STYLES[clean];
+
+  const normalized = normalizeRequestIdentity(clean);
+  if (normalized.split(" ").includes("WASH")) return MAINT_STYLES.WASH;
+
+  return null;
+}
+
 function buildMaintenanceMap(requests, mainStablingKeys = new Set()) {
   const map = {};
   const workshopTrainKeys = new Set();
@@ -2855,7 +2865,7 @@ function buildMaintenanceMap(requests, mainStablingKeys = new Set()) {
       ? "WORKSHOP"
       : "";
 
-    const styles = MAINT_STYLES[typeKey] || getCustomRequestStyle(displayType);
+    const styles = getKnownMaintenanceStyle(typeKey) || getCustomRequestStyle(displayType);
 
     if (!map[key]) {
       map[key] = [];

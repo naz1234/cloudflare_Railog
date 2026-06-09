@@ -147,7 +147,8 @@ export function getCustomRequestColor(label = "") {
 }
 
 function getRequestPillStyle(typeKey, displayLabel = "") {
-  const color = REQUEST_COLORS[typeKey];
+  const styleKey = getKnownRequestColorKey(typeKey || displayLabel);
+  const color = REQUEST_COLORS[styleKey];
   const accent = color?.bg || getCustomRequestColor(displayLabel || typeKey);
 
   return {
@@ -180,6 +181,102 @@ function normalizeExcelWashTrainNumber(value) {
   if (!match) return "";
 
   return match[1].slice(-2).padStart(2, "0");
+}
+
+
+const EXCEL_WASH_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const EXCEL_WASH_MONTH_LOOKUP = {
+  jan: 1, january: 1,
+  feb: 2, february: 2,
+  mar: 3, march: 3,
+  apr: 4, april: 4,
+  may: 5,
+  jun: 6, june: 6,
+  jul: 7, july: 7,
+  aug: 8, august: 8,
+  sep: 9, sept: 9, september: 9,
+  oct: 10, october: 10,
+  nov: 11, november: 11,
+  dec: 12, december: 12,
+};
+
+function formatExcelWashDayMonth(day, month) {
+  const dayNum = Number(day);
+  const monthNum = Number(month);
+
+  if (!Number.isFinite(dayNum) || !Number.isFinite(monthNum)) return "";
+  if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12) return "";
+
+  return `${dayNum}-${EXCEL_WASH_MONTHS[monthNum - 1]}`;
+}
+
+function formatExcelWashDatePart(value) {
+  if (value === null || value === undefined || value === "") return "";
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return formatExcelWashDayMonth(value.getDate(), value.getMonth() + 1);
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const parsed = XLSX.SSF?.parse_date_code?.(value);
+    if (parsed?.d && parsed?.m) return formatExcelWashDayMonth(parsed.d, parsed.m);
+
+    const fallbackDate = new Date(Math.round((Math.floor(value) - 25569) * 86400 * 1000));
+    if (!Number.isNaN(fallbackDate.getTime())) {
+      return formatExcelWashDayMonth(fallbackDate.getUTCDate(), fallbackDate.getUTCMonth() + 1);
+    }
+  }
+
+  const text = value.toString().trim();
+  if (!text) return "";
+
+  const numericText = Number(text);
+  if (Number.isFinite(numericText) && numericText > 20000) {
+    return formatExcelWashDatePart(numericText);
+  }
+
+  const isoMatch = text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (isoMatch) return formatExcelWashDayMonth(isoMatch[3], isoMatch[2]);
+
+  const namedMonthMatch = text.match(/^(\d{1,2})\s*[-/\s]\s*([A-Za-z]{3,9})/i);
+  if (namedMonthMatch) {
+    const month = EXCEL_WASH_MONTH_LOOKUP[namedMonthMatch[2].toLowerCase()];
+    if (month) return formatExcelWashDayMonth(namedMonthMatch[1], month);
+  }
+
+  const numericDateMatch = text.match(/^(\d{1,2})[/-](\d{1,2})(?:[/-]\d{2,4})?/);
+  if (numericDateMatch) return formatExcelWashDayMonth(numericDateMatch[1], numericDateMatch[2]);
+
+  const parsedTextDate = new Date(text);
+  if (!Number.isNaN(parsedTextDate.getTime())) {
+    return formatExcelWashDayMonth(parsedTextDate.getDate(), parsedTextDate.getMonth() + 1);
+  }
+
+  return "";
+}
+
+function buildExcelWashRequestLabel(nextWashValue) {
+  const datePart = formatExcelWashDatePart(nextWashValue);
+  return datePart ? `Wash ${datePart}` : "WASH";
+}
+
+function isWashRequestLabel(value = "") {
+  return normalizeRequestIdentity(value).split(" ").includes("WASH");
+}
+
+function getKnownRequestColorKey(label = "") {
+  const clean = cleanRequestLabel(label);
+  if (REQUEST_COLORS[clean]) return clean;
+  if (isWashRequestLabel(clean)) return "WASH";
+  return clean;
+}
+
+function getRequestDisplayLabel(request = {}) {
+  return cleanRequestLabel(
+    request?.requestType === "Other"
+      ? request?.customType || "Other"
+      : request?.requestType || ""
+  );
 }
 
 export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, stabledTrainIds = [], stabledTrainLocations = {} }) {
@@ -247,17 +344,19 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
       rows.forEach((row) => {
         const trainNumber = getColumnValue(row, ["Train Number", "Train No", "Train"]);
+        const nextWash = getColumnValue(row, ["Next Wash", "NextWash", "Next Washing"]);
         const trainId = normalizeExcelWashTrainNumber(trainNumber);
         if (!trainId) return;
 
-        const key = `${trainId}|WASH`;
+        const requestLabel = buildExcelWashRequestLabel(nextWash);
+        const key = `${trainId}|${normalizeRequestIdentity(requestLabel) || "WASH"}`;
 
         if (seen.has(key)) return;
         seen.add(key);
 
         detected.push({
           trainId,
-          requestType: "WASH",
+          requestType: requestLabel,
           customType: "",
           remark: "",
         });
@@ -268,27 +367,46 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         return;
       }
 
-      const alreadyExists = (item) =>
-        requests.some((req) => {
+      const getExistingWashRequests = (item) =>
+        requests.filter((req) => {
           const existingTrainId = normalizeTrainId(req.trainId || "");
-          const existingType = req.requestType === "Other" ? req.customType || "Other" : req.requestType;
-          return existingTrainId === item.trainId && existingType === "WASH";
+          const existingType = getRequestDisplayLabel(req);
+          return existingTrainId === item.trainId && isWashRequestLabel(existingType);
         });
+
+      const alreadyExists = (item) =>
+        getExistingWashRequests(item).some((req) =>
+          normalizeRequestIdentity(getRequestDisplayLabel(req)) === normalizeRequestIdentity(item.requestType)
+        );
+
+      const washRequestsToReplace = detected
+        .flatMap((item) => getExistingWashRequests(item))
+        .filter((req, index, all) => req?.id && all.findIndex((item) => item?.id === req.id) === index)
+        .filter((req) => !detected.some((item) =>
+          normalizeTrainId(req.trainId || "") === item.trainId &&
+          normalizeRequestIdentity(getRequestDisplayLabel(req)) === normalizeRequestIdentity(item.requestType)
+        ));
 
       const newWashItems = detected.filter((item) => !alreadyExists(item));
 
-      newWashItems.forEach((item) => {
-        onAdd(item);
-      });
+      for (const req of washRequestsToReplace) {
+        await onRemove(req.id);
+      }
+
+      for (const item of newWashItems) {
+        await onAdd(item);
+      }
 
       setExcelWashPreview(detected);
 
+      const replacedText = washRequestsToReplace.length > 0 ? ` ${washRequestsToReplace.length} old WASH remark replaced.` : "";
+
       if (newWashItems.length === 0) {
-        setExcelUploadStatus(`${detected.length} wash trains detected. All already exist.`);
+        setExcelUploadStatus(`${detected.length} wash trains detected. All already exist.${replacedText}`);
       } else if (newWashItems.length < detected.length) {
-        setExcelUploadStatus(`${newWashItems.length} new wash trains added. ${detected.length - newWashItems.length} already existed.`);
+        setExcelUploadStatus(`${newWashItems.length} new wash trains added. ${detected.length - newWashItems.length} already existed.${replacedText}`);
       } else {
-        setExcelUploadStatus(`${newWashItems.length} wash trains added.`);
+        setExcelUploadStatus(`${newWashItems.length} wash trains added.${replacedText}`);
       }
     } catch (uploadError) {
       console.error("Wash Excel upload error:", uploadError);
@@ -298,7 +416,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     }
   };
 
-  const displayType = (req) => cleanRequestLabel(req.requestType === "Other" ? (req.customType || "Other") : req.requestType) || "Request";
+  const displayType = (req) => getRequestDisplayLabel(req) || "Request";
   const isWorkshopRequest = (req) => isWorkshopRequestLabel(displayType(req));
   const workshopTrainKeys = new Set(
     (requests || [])
@@ -441,7 +559,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 Upload Excel
               </div>
               <p className="mt-0.5 text-[10px] leading-snug text-[#4a8ab5]">
-                Train Number will be added as WASH.
+                Train Number will be added as Wash + Next Wash date.
               </p>
             </div>
 
@@ -467,10 +585,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             <div className="mt-2 flex max-h-20 flex-wrap gap-1.5 overflow-y-auto pr-1">
               {excelWashPreview.map((item, index) => (
                 <span
-                  key={`${item.trainId}-WASH-${index}`}
+                  key={`${item.trainId}-${item.requestType}-${index}`}
                   className="inline-flex items-center rounded-full border border-[#ADD8E6] bg-[#091828] px-2 py-0.5 text-[10px] font-semibold text-[#ADD8E6]"
                 >
-                  {item.trainId} • WASH
+                  {item.trainId} • {item.requestType}
                 </span>
               ))}
             </div>
