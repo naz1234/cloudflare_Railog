@@ -17006,14 +17006,10 @@ function StablingSection({
           return val ? padTrainId(normalizeTrainId(val)) : null;
         })
         .filter(Boolean);
-      if (trains.length === 0) return null;
       const roadNum = road.replace(/^[A-Z]+-ST0?/, "");
       const label = `STABLING ${roadNum.padStart(2, "0")}`;
-      return labelSide === "left"
-        ? `${label}: ${trains.join(", ")}`
-        : `${trains.join(", ")} : ${label}`;
-    }).filter(Boolean);
-    if (lines.length === 0) return;
+      return `${label}: ${trains.join(", ")}`;
+    });
     navigator.clipboard.writeText(lines.join("\n"));
     setCopiedStabling(true);
     setTimeout(() => setCopiedStabling(false), 2000);
