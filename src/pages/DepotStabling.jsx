@@ -13779,21 +13779,33 @@ function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, wes
     if (!includeTomorrowRequests && isTomorrowTrainRequest(request)) return;
 
     const key = normalizeTrainId(request?.trainId);
-    if (!key || workshopTrainKeys.has(key) || westStablingKeys.has(key)) return;
+    if (!key || workshopTrainKeys.has(key)) return;
 
     const requestType = getTrainRequestDisplayType(request);
     const westRemovalRow = westRemovalRowsMap.get(key) || null;
     const isRemoval = isRequestCoveredByWestRemoval(request, westRemovalRow);
+
+    // Keep trains that are covered by the West removal table so the
+    // REQUEST / ACTION OVERVIEW can show the Removal ✓ group.
+    // Only hide already-West-Depot trains when they are not covered by removal,
+    // because those do not need swapping action.
+    if (!isRemoval && westStablingKeys.has(key)) return;
+
     const group = isRemoval ? "removal" : "swap";
     const seenKey = `${key}|${normalizeRequestIdentity(requestType)}|${group}`;
     if (seen.has(seenKey)) return;
     seen.add(seenKey);
 
+    const actionLabel = isRemoval ? "Removal" : "Need Swapping";
+    const actionSymbol = isRemoval ? "✓" : "⇆";
+
     const row = {
       key,
       trainsetNumber: formatRequestedTrainNumber(key),
       requestType,
-      actionStatus: isRemoval ? "Removal ✓" : "Need Swapping ⇆",
+      actionLabel,
+      actionSymbol,
+      actionStatus: `${actionLabel} ${actionSymbol}`,
       group,
     };
 
@@ -14305,7 +14317,8 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
                     {item.requestType || ""}
                   </td>
                   <td className="border-b border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff] whitespace-nowrap">
-                    {item.actionStatus || ""}
+                    <span>{item.actionLabel || (item.group === "removal" ? "Removal" : "Need Swapping")}</span>
+                    {item.actionSymbol && <span className="ml-1 font-semibold">{item.actionSymbol}</span>}
                   </td>
                 </tr>
               );
@@ -15071,6 +15084,49 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     });
   };
 
+  const drawCheckIcon = (x, centerY, size = 5.6) => {
+    ops += line(x, centerY - 0.1, x + size * 0.38, centerY - size * 0.42, 0.65);
+    ops += line(x + size * 0.38, centerY - size * 0.42, x + size, centerY + size * 0.45, 0.65);
+  };
+
+  const drawSwapIcon = (x, centerY, width = 11) => {
+    const topY = centerY + 1.8;
+    const bottomY = centerY - 1.8;
+    const leftX = x;
+    const rightX = x + width;
+
+    ops += line(leftX, topY, rightX, topY, 0.55);
+    ops += line(rightX, topY, rightX - 2.8, topY + 1.9, 0.55);
+    ops += line(rightX, topY, rightX - 2.8, topY - 1.9, 0.55);
+
+    ops += line(rightX, bottomY, leftX, bottomY, 0.55);
+    ops += line(leftX, bottomY, leftX + 2.8, bottomY + 1.9, 0.55);
+    ops += line(leftX, bottomY, leftX + 2.8, bottomY - 1.9, 0.55);
+  };
+
+  const drawActionStatusInCell = (entry = {}, cellX, rowY, cellWidth, rowH, textY, activeFontSize) => {
+    const group = entry?.group === "removal" ? "removal" : "swap";
+    const label = entry?.actionLabel || (group === "removal" ? "Removal" : "Need Swapping");
+    const textX = cellX + 6;
+    const cleanLabel = sanitizePdfText(label);
+    const maxLength = group === "removal" ? 10 : 18;
+
+    drawTextInCell(cleanLabel, textX, textY, maxLength, {
+      size: Math.max(3.9, activeFontSize - 0.2),
+      bold: false,
+    });
+
+    const labelWidth = getApproxPdfTextWidth(cleanLabel, Math.max(3.9, activeFontSize - 0.2), false);
+    const iconX = Math.min(cellX + cellWidth - 18, textX + labelWidth + 5);
+    const centerY = rowY + rowH / 2;
+
+    if (group === "removal") {
+      drawCheckIcon(iconX, centerY, Math.max(4.4, Math.min(6.2, rowH * 0.55)));
+    } else {
+      drawSwapIcon(iconX, centerY, Math.max(8.5, Math.min(12, rowH * 0.9)));
+    }
+  };
+
   const drawRemarkPills = (entry = {}, cellX, rowY, cellWidth, rowH, fallbackTextY, activeFontSize) => {
     const pills = Array.isArray(entry?.remarkPills)
       ? entry.remarkPills.filter((pill) => (pill?.text || "").toString().trim())
@@ -15403,10 +15459,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
           size: Math.max(3.9, activeFontSize - 0.2),
           bold: false,
         });
-        drawTextInCell(entry?.actionStatus || "-", colX.action + 6, textY, 16, {
-          size: Math.max(3.9, activeFontSize - 0.2),
-          bold: false,
-        });
+        drawActionStatusInCell(entry, colX.action, rowY, colWidths.action, rowH, textY, activeFontSize);
       });
     }
 
