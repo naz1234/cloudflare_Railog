@@ -14599,7 +14599,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="flex flex-wrap items-start gap-4">
         <RequestedTrainTable
           rows={swappingRowsWithArrival3A1P2}
           maintenanceMap={maintenanceMap}
