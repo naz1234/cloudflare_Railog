@@ -92,7 +92,7 @@ function RequestCrossBubble({ message }) {
   if (!message) return null;
 
   return (
-    <span className="pointer-events-none absolute left-[38px] top-1/2 z-[80] -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150 group-hover:opacity-100 group-hover:scale-100 group-focus-within:opacity-100 group-focus-within:scale-100">
+    <span className="request-cross-bubble pointer-events-none absolute left-[38px] top-1/2 z-[80] -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150">
       <span className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-b border-l border-slate-200 bg-white" />
       <span className="relative z-10">{message}</span>
     </span>
@@ -566,17 +566,17 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                     className="group h-[24px] border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors"
                     aria-label={crossOutMessage || undefined}
                   >
-                    <td className="relative px-0.5 py-0.5 text-center">
+                    <td className="request-cross-trigger relative px-0.5 py-0.5 text-center">
                       <span className="inline-flex min-w-[34px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none" style={requestPillStyle}>{req.trainId}</span>
                       <RequestCrossLine show={crossedOut} />
                       <RequestCrossBubble message={crossOutMessage} />
                     </td>
-                    <td className="relative px-0.5 py-0.5 text-center">
+                    <td className="request-cross-trigger relative px-0.5 py-0.5 text-center">
                       <span className="inline-flex max-w-[105px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none truncate" style={requestPillStyle}>{displayLabel}</span>
                       <RequestCrossLine show={crossedOut} />
                     </td>
                     <td className="relative pr-1 py-0.5 text-center">
-                      <button onClick={() => onRemove(req.id)} className="text-[#3a5a7a] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
+                      <button onClick={() => onRemove(req.id)} className="relative z-30 text-[#3a5a7a] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
                       <RequestCrossLine show={crossedOut} />
                     </td>
                   </tr>
@@ -620,17 +620,17 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                     className="group h-[24px] border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors"
                     aria-label={crossOutMessage || undefined}
                   >
-                    <td className="relative px-0.5 py-0.5 text-center">
+                    <td className="request-cross-trigger relative px-0.5 py-0.5 text-center">
                       <span className="inline-flex min-w-[34px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none" style={requestPillStyle}>{req.trainId}</span>
                       <RequestCrossLine show />
                       <RequestCrossBubble message={crossOutMessage} />
                     </td>
-                    <td className="relative px-0.5 py-0.5 text-center">
+                    <td className="request-cross-trigger relative px-0.5 py-0.5 text-center">
                       <span className="inline-flex max-w-[105px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none truncate" style={requestPillStyle}>{displayLabel}</span>
                       <RequestCrossLine show />
                     </td>
                     <td className="relative pr-1 py-0.5 text-center">
-                      <button onClick={() => onRemove(req.id)} className="text-[#3a5a7a] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
+                      <button onClick={() => onRemove(req.id)} className="relative z-30 text-[#3a5a7a] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
                       <RequestCrossLine show />
                     </td>
                   </tr>
@@ -686,17 +686,17 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   className="group h-[24px] border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors"
                   aria-label={crossOutMessage || undefined}
                 >
-                  <td className="relative px-0.5 py-0.5 text-center">
+                  <td className="request-cross-trigger relative px-0.5 py-0.5 text-center">
                     <span className="inline-flex min-w-[34px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none" style={requestPillStyle}>{req.trainId}</span>
                     <RequestCrossLine show={crossedOut} />
                     <RequestCrossBubble message={crossOutMessage} />
                   </td>
-                  <td className="relative px-0.5 py-0.5 text-center">
+                  <td className="request-cross-trigger relative px-0.5 py-0.5 text-center">
                     <span className="inline-flex max-w-[105px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none truncate" style={requestPillStyle}>{displayLabel}</span>
                     <RequestCrossLine show={crossedOut} />
                   </td>
                   <td className="relative pr-1 py-0.5 text-center">
-                    <button onClick={() => onRemove(req.id)} className="text-[#3a5a7a] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
+                    <button onClick={() => onRemove(req.id)} className="relative z-30 text-[#3a5a7a] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
                     <RequestCrossLine show={crossedOut} />
                   </td>
                 </tr>

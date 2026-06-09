@@ -40,3 +40,11 @@
     @apply bg-background text-foreground font-inter;
   }
 }
+
+@layer components {
+  .request-cross-trigger:hover .request-cross-bubble,
+  .request-cross-trigger:focus-within .request-cross-bubble {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
