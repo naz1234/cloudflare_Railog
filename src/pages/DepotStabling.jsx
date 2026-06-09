@@ -1,5 +1,5 @@
 import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
-import * as XLSX from "xlsx"; 
+import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Save, CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Download, Search, ArrowUp, ArrowDown, Check } from "lucide-react";
@@ -1618,34 +1618,6 @@ const MAINT_STYLES = {
     trainColor: "#a16207",
     badgeBg: "#FFFF99",
     badgeBorder: "#fde047",
-    badgeColor: "#000000",
-  },
-  "Morning G to C": {
-    cellBg: "#fefce8",
-    trainColor: "#a16207",
-    badgeBg: "#fef08a",
-    badgeBorder: "#fef08a",
-    badgeColor: "#000000",
-  },
-  "Evening G to C": {
-    cellBg: "#fefce8",
-    trainColor: "#a16207",
-    badgeBg: "#FFFF99",
-    badgeBorder: "#fde047",
-    badgeColor: "#000000",
-  },
-  "Evening PM": {
-    cellBg: "#fff7ed",
-    trainColor: "#c2410c",
-    badgeBg: "#fed7aa",
-    badgeBorder: "#fdba74",
-    badgeColor: "#000000",
-  },
-  "Morning PM": {
-    cellBg: "#ecfdf5",
-    trainColor: "#047857",
-    badgeBg: "#90EE90",
-    badgeBorder: "#86efac",
     badgeColor: "#000000",
   },
   "CC Tech/Func. Alarm": {
