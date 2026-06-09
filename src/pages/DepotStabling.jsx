@@ -2612,7 +2612,7 @@ function normalizeRequestIdentity(value = "") {
     .join(" ");
 }
 
-const TOMORROW_REQUEST_TOKENS = new Set(["TOM", "TMRW", "TOMORROW"]);
+const TOMORROW_REQUEST_TOKENS = new Set(["TOM", "TMR", "TMRW", "TOMORROW"]);
 
 function hasTomorrowRequestToken(value = "") {
   const normalized = normalizeRequestIdentity(value);
@@ -13989,44 +13989,67 @@ function joinRequestedSummaryTrainList(trains = []) {
   return `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}`;
 }
 
+function createRequestedSummaryBucket() {
+  return { trains: [], seen: new Set() };
+}
+
+function formatRequestedSummaryCmActivityLabel(value = "") {
+  const normalized = normalizeRequestIdentity(value);
+  if (!normalized || normalized === "CM") return "RST CM";
+  return normalized;
+}
+
 function buildRequestedActionSummaryLines(rows = []) {
-  const inbound = { trains: [], seen: new Set() };
-  const pm = { trains: [], seen: new Set() };
-  const cm = { trains: [], seen: new Set() };
+  const inbound = createRequestedSummaryBucket();
+  const todayPm = createRequestedSummaryBucket();
+  const morningPm = createRequestedSummaryBucket();
+  const cm = createRequestedSummaryBucket();
+  let cmActivityLabel = "RST CM";
 
   (Array.isArray(rows) ? rows : []).forEach((row) => {
     if (!row || row.isSeparator) return;
 
-    const normalized = normalizeRequestIdentity(row?.requestType || "");
+    const requestType = row?.requestType || "";
+    const normalized = normalizeRequestIdentity(requestType);
     if (!normalized) return;
 
     const tokens = normalized.split(" ").filter(Boolean);
     const hasInbound = tokens.includes("INBOUND") || normalized.includes("G TO C");
     const hasPm = tokens.includes("PM");
     const hasCm = tokens.includes("CM");
+    const isTomorrowPm = hasTomorrowRequestToken(requestType) || tokens.includes("MORNING");
 
     if (hasInbound) appendRequestedSummaryTrain(inbound, row);
-    if (hasPm) appendRequestedSummaryTrain(pm, row);
-    if (hasCm) appendRequestedSummaryTrain(cm, row);
+    if (hasPm) appendRequestedSummaryTrain(isTomorrowPm ? morningPm : todayPm, row);
+    if (hasCm) {
+      appendRequestedSummaryTrain(cm, row);
+      const requestedCmLabel = formatRequestedSummaryCmActivityLabel(requestType);
+      if (requestedCmLabel !== "RST CM") cmActivityLabel = requestedCmLabel;
+    }
   });
 
   const lines = [];
   const inboundList = joinRequestedSummaryTrainList(inbound.trains);
-  const pmList = joinRequestedSummaryTrainList(pm.trains);
-  const cmList = joinRequestedSummaryTrainList(cm.trains);
+  const todayPmList = joinRequestedSummaryTrainList(todayPm.trains);
+  const morningPmList = joinRequestedSummaryTrainList(morningPm.trains);
 
   if (inboundList) {
     const verb = inbound.trains.length === 1 ? "was" : "were";
     lines.push(`${inboundList} ${verb} requested for inbound movement G to C.`);
   }
 
-  if (pmList) {
-    lines.push(`RST requested ${pmList} for morning PM activity.`);
+  if (morningPmList) {
+    lines.push(`RST requested ${morningPmList} for morning PM activity.`);
   }
 
+  if (todayPmList) {
+    lines.push(`RST requested ${todayPmList} for Today PM activity.`);
+  }
+
+  const cmList = joinRequestedSummaryTrainList(cm.trains);
   if (cmList) {
     const verb = cm.trains.length === 1 ? "was" : "were";
-    lines.push(`${cmList} ${verb} requested for CM activity. Closing SR.`);
+    lines.push(`${cmList} ${verb} requested for ${cmActivityLabel} activity. Closing SR.`);
   }
 
   return lines;
