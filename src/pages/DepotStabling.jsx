@@ -13481,6 +13481,57 @@ function getRequestNoteSummaryForTrain(requests = [], trainKey = "", options = {
   return notes.join(", ");
 }
 
+function getRequestNoteSummaryFromRequests(requests = []) {
+  const notes = [];
+  const seen = new Set();
+
+  (requests || []).forEach((request) => {
+    if (isUnfitTrainRequest(request)) return;
+
+    const displayType = getTrainRequestDisplayType(request);
+    const noteKey = normalizeRemarkText(displayType);
+
+    if (!displayType || seen.has(noteKey)) return;
+
+    seen.add(noteKey);
+    notes.push(displayType);
+  });
+
+  return notes.join(", ");
+}
+
+function doesTrainRemRemarkCoverRequest(trainRemRemark = "", requestType = "") {
+  const remarkKey = normalizeRequestIdentity(trainRemRemark);
+  const requestKey = normalizeRequestIdentity(requestType);
+
+  // When the removal row has no remark, treat the removal row as covering the request.
+  if (!remarkKey) return true;
+  if (!requestKey) return false;
+  if (remarkKey === requestKey) return true;
+
+  const remarkTokens = new Set(remarkKey.split(" ").filter(Boolean));
+  return requestKey.split(" ").filter(Boolean).every((token) => remarkTokens.has(token));
+}
+
+function isRequestCoveredByWestRemoval(request = {}, westRemovalRow = null) {
+  if (!westRemovalRow) return false;
+  return doesTrainRemRemarkCoverRequest(westRemovalRow?.remark || "", getTrainRequestDisplayType(request));
+}
+
+function getSwappingRequestsForTrain(requests = [], trainKey = "", westRemovalRow = null, options = {}) {
+  const key = normalizeTrainId(trainKey);
+  if (!key) return [];
+
+  const { includeTomorrowRequests = true } = options || {};
+
+  return (requests || []).filter((request) => {
+    if (isUnfitTrainRequest(request)) return false;
+    if (normalizeTrainId(request?.trainId) !== key) return false;
+    if (!includeTomorrowRequests && isTomorrowTrainRequest(request)) return false;
+    return !isRequestCoveredByWestRemoval(request, westRemovalRow);
+  });
+}
+
 const TOMORROW_SWAP_KEYWORDS = ["TOM", "TMRW", "TOMORROW", "MRNING", "MORNING"];
 
 function isTomorrowRequestText(value = "") {
@@ -13589,25 +13640,29 @@ function getRequestedTrainsNotInWestDepotStablingRemoval({ requests = [], trainR
     if (
       !key ||
       workshopTrainKeys.has(key) ||
-      westRemovalRowsMap.has(key) ||
       westStablingKeys.has(key) ||
       seen.has(key)
     ) {
       return;
     }
 
+    const westRemovalRow = westRemovalRowsMap.get(key) || null;
+    const swappingRequests = getSwappingRequestsForTrain(requests, key, westRemovalRow);
+    if (!swappingRequests.length) return;
+
     seen.add(key);
     const trainRemRow = getTrainRemRowForTrain(trainRemState, key);
-    const hasTomorrowRequest = hasTomorrowRequestForTrain(requests, key);
-    const hasCurrentRequest = hasCurrentRequestForTrain(requests, key);
-    const hideWhenTomorrowExcluded = shouldHideFromSwappingWhenTomorrowExcluded(requests, key);
+    const currentSwappingRequests = swappingRequests.filter((item) => !isTomorrowTrainRequest(item));
+    const hasTomorrowRequest = swappingRequests.some(isTomorrowTrainRequest);
+    const hasCurrentRequest = currentSwappingRequests.length > 0;
+    const hideWhenTomorrowExcluded = swappingRequests.every(isTomorrowTrainRequest);
 
     requestedRows.push({
       key,
       label: padTrainId(key),
       tid: getRequestTid(request, trainRemRow),
-      requestType: getRequestNoteSummaryForTrain(requests, key) || getTrainRequestDisplayType(request),
-      requestTypeWithoutTomorrow: getRequestNoteSummaryForTrain(requests, key, { includeTomorrowRequests: false }) || getTrainRequestDisplayType(request),
+      requestType: getRequestNoteSummaryFromRequests(swappingRequests) || getTrainRequestDisplayType(request),
+      requestTypeWithoutTomorrow: getRequestNoteSummaryFromRequests(currentSwappingRequests),
       timeRemoved: getRequestTiming(request, trainRemRow),
       actionNote: "",
       hasTomorrowRequest,
@@ -13690,6 +13745,74 @@ function getRequestedTrainDisplayRows(rows = [], minRows = 3) {
   }
 
   return paddedRows;
+}
+
+
+function formatRequestedTrainNumber(value = "") {
+  const trainNumber = formatTrainNumberOnly(value);
+  if (trainNumber) return trainNumber;
+  return (value || "").toString().trim().replace(/^T/i, "");
+}
+
+function getRequestedActionTrainSortValue(row = {}) {
+  const trainNumber = Number(formatRequestedTrainNumber(row?.trainsetNumber || row?.key));
+  return Number.isFinite(trainNumber) ? trainNumber : Number.POSITIVE_INFINITY;
+}
+
+function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, westData = {}, eastData = {}, includeTomorrowRequests = true } = {}) {
+  const westRemovalRowsMap = getWestRemovalRowsMap(trainRemState);
+  const westStablingKeys = getWestStablingKeys(westData);
+  const workshopTrainKeys = getWorkshopTrainRequestKeys(requests);
+  const swapRows = [];
+  const removalRows = [];
+  const seen = new Set();
+
+  (requests || []).forEach((request) => {
+    if (isUnfitTrainRequest(request)) return;
+    if (!includeTomorrowRequests && isTomorrowTrainRequest(request)) return;
+
+    const key = normalizeTrainId(request?.trainId);
+    if (!key || workshopTrainKeys.has(key) || westStablingKeys.has(key)) return;
+
+    const requestType = getTrainRequestDisplayType(request);
+    const westRemovalRow = westRemovalRowsMap.get(key) || null;
+    const isRemoval = isRequestCoveredByWestRemoval(request, westRemovalRow);
+    const group = isRemoval ? "removal" : "swap";
+    const seenKey = `${key}|${normalizeRequestIdentity(requestType)}|${group}`;
+    if (seen.has(seenKey)) return;
+    seen.add(seenKey);
+
+    const row = {
+      key,
+      trainsetNumber: formatRequestedTrainNumber(key),
+      requestType,
+      actionStatus: isRemoval ? "Removal ✓" : "Need Swapping ⇆",
+      group,
+    };
+
+    if (isRemoval) removalRows.push(row);
+    else swapRows.push(row);
+  });
+
+  const sortRows = (rows = []) => [...rows].sort((a, b) => {
+    const trainA = getRequestedActionTrainSortValue(a);
+    const trainB = getRequestedActionTrainSortValue(b);
+    if (trainA !== trainB) return trainA - trainB;
+    return (a?.requestType || "").localeCompare(b?.requestType || "");
+  });
+
+  const sortedSwapRows = sortRows(swapRows);
+  const sortedRemovalRows = sortRows(removalRows);
+
+  if (sortedSwapRows.length && sortedRemovalRows.length) {
+    return [
+      ...sortedSwapRows,
+      { key: "requested-action-overview-separator", isSeparator: true },
+      ...sortedRemovalRows,
+    ];
+  }
+
+  return [...sortedSwapRows, ...sortedRemovalRows];
 }
 
 const REQUESTED_TRAIN_MANUAL_TID_STORAGE_KEY = "requestedTrainManualTidByTrain";
@@ -13808,13 +13931,13 @@ function requestedDocxRow(cells, { header = false, widths = null } = {}) {
       </w:tr>`;
 }
 
-function buildRequestedTrainsDocx({ swappingRows = [] } = {}) {
+function buildRequestedTrainsDocx({ swappingRows = [], actionOverviewRows = [] } = {}) {
 
   const buildTableXml = (rows = [], options = {}) => {
     const includeArrival3A1P2 = Boolean(options?.includeArrival3A1P2);
     const exportRows = getRequestedTrainDisplayRows(rows, 3);
     const widths = includeArrival3A1P2 ? [900, 650, 1050, 1475, 1475] : [1000, 750, 1900, 1900];
-    const headerCells = includeArrival3A1P2 ? ["Train Set", "TID", "Arrival 3A1P2", "Note:", "Note:"] : ["Train Set", "TID", "Note:", "Note:"];
+    const headerCells = includeArrival3A1P2 ? ["Trainset number", "TID", "Arrival 3A1P2", "Note:", "Note:"] : ["Trainset number", "TID", "Note:", "Note:"];
     const tableRows = [
       requestedDocxRow(headerCells, { header: true, widths }),
       ...exportRows.map((row) => requestedDocxRow(includeArrival3A1P2 ? [
@@ -13828,6 +13951,41 @@ function buildRequestedTrainsDocx({ swappingRows = [] } = {}) {
         row.tid || "",
         row.requestType || "",
         row.actionNote || "",
+      ], { widths })),
+    ].join("");
+
+    return `
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:w="5550" w:type="dxa"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:sz="8" w:space="0" w:color="000000"/>
+          <w:left w:val="single" w:sz="8" w:space="0" w:color="000000"/>
+          <w:bottom w:val="single" w:sz="8" w:space="0" w:color="000000"/>
+          <w:right w:val="single" w:sz="8" w:space="0" w:color="000000"/>
+          <w:insideH w:val="single" w:sz="8" w:space="0" w:color="000000"/>
+          <w:insideV w:val="single" w:sz="8" w:space="0" w:color="000000"/>
+        </w:tblBorders>
+        <w:tblLayout w:type="fixed"/>
+      </w:tblPr>
+      <w:tblGrid>
+        ${widths.map((width) => `<w:gridCol w:w="${width}"/>`).join("\n        ")}
+      </w:tblGrid>
+      ${tableRows}
+    </w:tbl>`;
+  };
+
+  const buildActionOverviewTableXml = (rows = []) => {
+    const safeRows = (rows || []).filter((row) => row && !row.isSeparator);
+    if (!safeRows.length) return "";
+
+    const widths = [1450, 2400, 1700];
+    const tableRows = [
+      requestedDocxRow(["Trainset number", "Remark Request", ""], { header: true, widths }),
+      ...safeRows.map((row) => requestedDocxRow([
+        formatRequestedTrainNumber(row.trainsetNumber || row.key),
+        row.requestType || "",
+        row.actionStatus || "",
       ], { widths })),
     ].join("");
 
@@ -13887,7 +14045,9 @@ function buildRequestedTrainsDocx({ swappingRows = [] } = {}) {
 
   const buildSwappingNoteBodyXml = () => `
     ${buildTitleXml("TRAIN SWAPPING OVERVIEW", 0, false)}
-    ${buildTableXml(swappingRows, { includeArrival3A1P2: true })}`;
+    ${buildTableXml(swappingRows, { includeArrival3A1P2: true })}
+    ${buildActionOverviewTableXml(actionOverviewRows) ? buildTitleXml("REQUEST / ACTION OVERVIEW", 220, false) : ""}
+    ${buildActionOverviewTableXml(actionOverviewRows)}`;
 
   const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
@@ -13919,8 +14079,8 @@ function buildRequestedTrainsDocx({ swappingRows = [] } = {}) {
   ]);
 }
 
-function downloadRequestedTrainsDocx({ swappingRows = [] } = {}) {
-  const docxBytes = buildRequestedTrainsDocx({ swappingRows });
+function downloadRequestedTrainsDocx({ swappingRows = [], actionOverviewRows = [] } = {}) {
+  const docxBytes = buildRequestedTrainsDocx({ swappingRows, actionOverviewRows });
   const blob = new Blob([docxBytes], {
     type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   });
@@ -14003,7 +14163,7 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
           </colgroup>
           <thead>
             <tr className="bg-[#0a2237] text-[#cfe5fb]">
-              <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Train Set</th>
+              <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Trainset number</th>
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">TID</th>
               {showArrival3A1P2 && (
                 <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Arrival 3A1P2</th>
@@ -14022,7 +14182,7 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
               return (
                 <tr key={`${item.key}-${index}`} className="odd:bg-[#081b2d] even:bg-[#0a2136]">
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none">
-                    <RequestedTrainPill accent={accent} muted={isEmpty}>{item.label}</RequestedTrainPill>
+                    <RequestedTrainPill accent={accent} muted={isEmpty}>{formatRequestedTrainNumber(item.label)}</RequestedTrainPill>
                   </td>
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none">
                     {item.canEditTid && typeof onManualTidChange === "function" ? (
@@ -14062,6 +14222,69 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
                 </tr>
               );
             })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function RequestedTrainActionOverviewTable({ rows = [] }) {
+  const displayRows = Array.isArray(rows) ? rows : [];
+  const hasRows = displayRows.some((row) => row && !row.isSeparator);
+
+  return (
+    <div className="leading-tight">
+      <div className="mb-2.5">
+        <div className="text-[11px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
+          REQUEST / ACTION OVERVIEW
+        </div>
+      </div>
+
+      <div className="w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
+        <table className="table-fixed text-[11px] leading-none" style={{ width: 474, maxWidth: "100%" }}>
+          <colgroup>
+            <col style={{ width: 150 }} />
+            <col style={{ width: 174 }} />
+            <col style={{ width: 150 }} />
+          </colgroup>
+          <thead>
+            <tr className="bg-[#0a2237] text-[#cfe5fb]">
+              <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Trainset number</th>
+              <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Remark Request</th>
+              <th className="border-b border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {hasRows ? displayRows.map((item, index) => {
+              if (item?.isSeparator) {
+                return (
+                  <tr key={item.key || `separator-${index}`} className="bg-[#071828]">
+                    <td colSpan={3} className="border-b border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
+                  </tr>
+                );
+              }
+
+              return (
+                <tr key={`${item.key}-${item.requestType}-${item.actionStatus}-${index}`} className="odd:bg-[#081b2d] even:bg-[#0a2136]">
+                  <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
+                    {formatRequestedTrainNumber(item.trainsetNumber || item.key)}
+                  </td>
+                  <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-tight text-[#eaf4ff] whitespace-normal break-words">
+                    {item.requestType || ""}
+                  </td>
+                  <td className="border-b border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff] whitespace-nowrap">
+                    {item.actionStatus || ""}
+                  </td>
+                </tr>
+              );
+            }) : (
+              <tr className="bg-[#081b2d]">
+                <td colSpan={3} className="border-b border-[#193752] px-2 py-2 text-center align-middle leading-none text-[#8fa6bd]">
+                  No requested train action found
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -14130,6 +14353,13 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
         }));
 
   const swappingRowsWithArrival3A1P2 = addArrival3A1P2ToRequestedRows(swappingRows, activeTimetable, arrivalLookupTime);
+  const actionOverviewRows = getRequestedTrainActionOverviewRows({
+    requests,
+    trainRemState,
+    westData,
+    eastData,
+    includeTomorrowRequests,
+  });
   const activeTimetableLabel = getTimetableTypeLabel(activeTimetableType);
   const parsedTimetable = getActiveTimetableParsedData(activeTimetable);
   const arrivalReferenceCount = parsedTimetable?.summary?.reference?.arrival3A1P2 || parsedTimetable?.reference?.arrival3A1P2?.entries?.length || 0;
@@ -14146,7 +14376,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
     setDownloadingDocxType("swapping");
 
     try {
-      downloadRequestedTrainsDocx({ swappingRows: swappingRowsWithArrival3A1P2 });
+      downloadRequestedTrainsDocx({ swappingRows: swappingRowsWithArrival3A1P2, actionOverviewRows });
     } catch (error) {
       console.error("Requested trains DOCX export failed:", error);
       alert("Unable to create requested trains DOCX. Please try again.");
@@ -14204,7 +14434,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
             disabled={Boolean(downloadingDocxType)}
             className="group flex items-center gap-1.5 h-6 px-2.5 rounded-[10px] border text-[10px] font-bold transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
             style={{ ...MAIN_STABLING_BUTTON_BLUE, minHeight: 24, borderRadius: 10 }}
-            title="Download DOCX with swapping table only"
+            title="Download DOCX with both overview tables"
           >
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -14223,6 +14453,8 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
           onManualTidChange={handleManualTidChange}
           showArrival3A1P2
         />
+
+        <RequestedTrainActionOverviewTable rows={actionOverviewRows} />
       </div>
     </div>
   );
