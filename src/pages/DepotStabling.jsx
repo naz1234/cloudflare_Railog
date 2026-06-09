@@ -14575,19 +14575,47 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
 }
 
 function RequestedTrainActionSummary({ rows = [], requests = [] }) {
+  const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef(null);
   const summaryRows = Array.isArray(requests) && requests.length
     ? getRequestedActionSummaryRowsFromRequests(requests)
     : rows;
   const summaryLines = buildRequestedActionSummaryLines(summaryRows);
   if (!summaryLines.length) return null;
 
+  const summaryText = summaryLines.join("\n");
+
+  const handleCopySummary = async () => {
+    const ok = await copyTextToClipboard(summaryText);
+    if (!ok) return;
+    setCopied(true);
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => {
+      setCopied(false);
+      copyTimerRef.current = null;
+    }, 1400);
+  };
+
   return (
-    <div className="mt-3 w-full max-w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[11px] leading-snug text-[#eaf4ff]">
-      {summaryLines.map((line, index) => (
-        <p key={`requested-action-summary-${index}`} className={index > 0 ? "mt-1" : ""}>
-          {line}
-        </p>
-      ))}
+    <div className="mt-3 w-full max-w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[12px] leading-snug text-[#eaf4ff]">
+      <div className="mb-1.5 flex items-center justify-end">
+        <button
+          type="button"
+          onClick={handleCopySummary}
+          className="inline-flex items-center gap-1 rounded-lg border border-[#2f6e9f] bg-[#0d2b45] px-2 py-1 text-[10px] font-semibold leading-none text-[#dff3ff] shadow-[0_0_10px_rgba(56,189,248,0.18)] transition hover:bg-[#123957] active:scale-95"
+          title="Copy requested summary"
+        >
+          {copied ? <ClipboardCheck className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <div>
+        {summaryLines.map((line, index) => (
+          <p key={`requested-action-summary-${index}`} className={index > 0 ? "mt-1" : ""}>
+            {line}
+          </p>
+        ))}
+      </div>
     </div>
   );
 }
