@@ -5425,6 +5425,24 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
           {insertionLiveStatusText || "Insertion Local only"}
         </div>
       </div>
+      <div className="w-fit max-w-[980px] rounded-2xl border border-sky-500/35 bg-[#071828] px-4 py-3 shadow-[0_0_18px_rgba(14,165,233,0.10)]">
+        <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-sky-300">
+          <span className="h-2 w-2 rounded-full bg-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.9)]" />
+          Insertion Notes
+        </div>
+        <div className="grid gap-2 text-[11px] font-semibold leading-snug text-[#c8d8ea] md:grid-cols-3">
+          <div className="rounded-xl border border-[#1e4d72] bg-[#0b1f33] px-3 py-2">
+            <span className="font-black text-white">PG2 editable train ID:</span> Go to PG2 if a train ID needs to be changed or removed from STB. No need to edit it from the main page.
+          </div>
+          <div className="rounded-xl border border-[#1e4d72] bg-[#0b1f33] px-3 py-2">
+            <span className="font-black text-white">Night shift WD DC:</span> Send 4 trains to 3K1 with the remark <span className="text-amber-200">Wash Only</span>. It will automatically be removed during Early or Late Shift at WD.
+          </div>
+          <div className="rounded-xl border border-[#1e4d72] bg-[#0b1f33] px-3 py-2">
+            <span className="font-black text-white">Night shift ED DC:</span> Use TID 203 and 205 with the remark <span className="text-amber-200">Wash Only</span>. It will automatically be removed during Late Shift at WD.
+          </div>
+        </div>
+      </div>
+
       {insertionLiveDebug && (
         <div className="w-fit rounded-xl border border-amber-600/40 bg-amber-950/25 px-3 py-2 text-[11px] text-amber-200">
           {insertionLiveDebug}
