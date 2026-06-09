@@ -13713,6 +13713,10 @@ function getRequestedTrainLabelSortValue(value = "") {
 
 function sortRequestedTrainRowsByTid(rows = []) {
   return [...(Array.isArray(rows) ? rows : [])].sort((a, b) => {
+    const washA = getRequestedRowWashOnlySortValue(a);
+    const washB = getRequestedRowWashOnlySortValue(b);
+    if (washA !== washB) return washA - washB;
+
     const tidA = getRequestedTrainTidSortValue(a?.tid);
     const tidB = getRequestedTrainTidSortValue(b?.tid);
 
@@ -13784,13 +13788,17 @@ function splitRequestedActionRemarks(value = "") {
     .filter(Boolean);
 }
 
+function isWashRequestedActionRemark(value = "") {
+  return normalizeRequestIdentity(value).includes("WASH");
+}
+
 function getRequestedActionRemarkPriority(value = "") {
   const normalized = normalizeRequestIdentity(value);
   if (!normalized) return 999;
-  if (normalized.includes("WASH")) return 10;
-  if (normalized === "SR") return 20;
-  if (normalized === "CM") return 30;
-  return 999;
+  if (normalized === "SR") return 10;
+  if (normalized === "CM") return 20;
+  if (normalized.includes("WASH")) return 90;
+  return 30;
 }
 
 function buildRequestedActionRemarkSummary(values = []) {
@@ -13812,6 +13820,30 @@ function buildRequestedActionRemarkSummary(values = []) {
     : entries;
 
   return orderedEntries.map((entry) => entry.value).join(", ");
+}
+
+function getRequestedWashOnlySortValue(value = "") {
+  const remarks = splitRequestedActionRemarks(value);
+  if (!remarks.length) return 2;
+  return remarks.every(isWashRequestedActionRemark) ? 1 : 0;
+}
+
+function getRequestedRowWashOnlySortValue(row = {}) {
+  return getRequestedWashOnlySortValue(row?.requestType || row?.actionNote || "");
+}
+
+function sortRequestedActionRows(rows = []) {
+  return [...(Array.isArray(rows) ? rows : [])].sort((a, b) => {
+    const washA = getRequestedRowWashOnlySortValue(a);
+    const washB = getRequestedRowWashOnlySortValue(b);
+    if (washA !== washB) return washA - washB;
+
+    const trainA = getRequestedActionTrainSortValue(a);
+    const trainB = getRequestedActionTrainSortValue(b);
+    if (trainA !== trainB) return trainA - trainB;
+
+    return (a?.requestType || "").localeCompare(b?.requestType || "");
+  });
 }
 
 function mergeRequestedActionRowsByTrain(rows = []) {
@@ -13892,12 +13924,7 @@ function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, wes
     else swapRows.push(row);
   });
 
-  const sortRows = (rows = []) => mergeRequestedActionRowsByTrain(rows).sort((a, b) => {
-    const trainA = getRequestedActionTrainSortValue(a);
-    const trainB = getRequestedActionTrainSortValue(b);
-    if (trainA !== trainB) return trainA - trainB;
-    return (a?.requestType || "").localeCompare(b?.requestType || "");
-  });
+  const sortRows = (rows = []) => sortRequestedActionRows(mergeRequestedActionRowsByTrain(rows));
 
   const sortedSwapRows = sortRows(swapRows);
   const sortedRemovalRows = sortRows(removalRows);
@@ -13938,8 +13965,8 @@ function getRequestedTrainActionOverviewRowsFromSwappingTable({ swappingRows = [
     };
   });
 
-  const mergedSwapRows = mergeRequestedActionRowsByTrain(swapRows);
-  const mergedRemovalRows = mergeRequestedActionRowsByTrain(removalRows);
+  const mergedSwapRows = sortRequestedActionRows(mergeRequestedActionRowsByTrain(swapRows));
+  const mergedRemovalRows = sortRequestedActionRows(mergeRequestedActionRowsByTrain(removalRows));
 
   if (mergedSwapRows.length && mergedRemovalRows.length) {
     return [
