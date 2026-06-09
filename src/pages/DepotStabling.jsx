@@ -14380,8 +14380,8 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
   const hasRows = displayRows.some((row) => row && !row.isSeparator);
 
   return (
-    <div className="leading-tight">
-      <div className="mb-2.5">
+    <div className="relative leading-tight">
+      <div className="absolute left-0 top-[-18px]">
         <div className="text-[11px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
           REQUEST / ACTION OVERVIEW
         </div>
