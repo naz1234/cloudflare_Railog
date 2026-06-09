@@ -13766,6 +13766,75 @@ function getRequestedActionTrainSortValue(row = {}) {
   return Number.isFinite(trainNumber) ? trainNumber : Number.POSITIVE_INFINITY;
 }
 
+function splitRequestedActionRemarks(value = "") {
+  return (value || "")
+    .toString()
+    .split(",")
+    .map((item) => cleanRequestLabel(item))
+    .filter(Boolean);
+}
+
+function getRequestedActionRemarkPriority(value = "") {
+  const normalized = normalizeRequestIdentity(value);
+  if (!normalized) return 999;
+  if (normalized.includes("WASH")) return 10;
+  if (normalized === "SR") return 20;
+  if (normalized === "CM") return 30;
+  return 999;
+}
+
+function buildRequestedActionRemarkSummary(values = []) {
+  const entries = [];
+  const seen = new Set();
+
+  (values || []).forEach((value) => {
+    splitRequestedActionRemarks(value).forEach((remark) => {
+      const key = normalizeRequestIdentity(remark);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      entries.push({ value: remark, index: entries.length, priority: getRequestedActionRemarkPriority(remark) });
+    });
+  });
+
+  const allKnownPriority = entries.length > 0 && entries.every((entry) => entry.priority < 999);
+  const orderedEntries = allKnownPriority
+    ? [...entries].sort((a, b) => (a.priority - b.priority) || (a.index - b.index))
+    : entries;
+
+  return orderedEntries.map((entry) => entry.value).join(", ");
+}
+
+function mergeRequestedActionRowsByTrain(rows = []) {
+  const mergedMap = new Map();
+
+  (rows || []).forEach((row) => {
+    if (!row || row.isSeparator) return;
+
+    const key = normalizeTrainId(row?.key || row?.trainsetNumber);
+    const group = row?.group === "removal" ? "removal" : "swap";
+    if (!key) return;
+
+    const mapKey = `${group}|${key}`;
+    const existing = mergedMap.get(mapKey);
+
+    if (existing) {
+      existing._requestTypes.push(row?.requestType || "");
+      existing.requestType = buildRequestedActionRemarkSummary(existing._requestTypes);
+      return;
+    }
+
+    mergedMap.set(mapKey, {
+      ...row,
+      key,
+      trainsetNumber: formatRequestedTrainNumber(key),
+      requestType: buildRequestedActionRemarkSummary([row?.requestType || ""]),
+      _requestTypes: [row?.requestType || ""],
+    });
+  });
+
+  return [...mergedMap.values()].map(({ _requestTypes, ...row }) => row);
+}
+
 function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, westData = {}, eastData = {}, includeTomorrowRequests = true } = {}) {
   const westRemovalRowsMap = getWestRemovalRowsMap(trainRemState);
   const westStablingKeys = getWestStablingKeys(westData);
@@ -13813,7 +13882,7 @@ function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, wes
     else swapRows.push(row);
   });
 
-  const sortRows = (rows = []) => [...rows].sort((a, b) => {
+  const sortRows = (rows = []) => mergeRequestedActionRowsByTrain(rows).sort((a, b) => {
     const trainA = getRequestedActionTrainSortValue(a);
     const trainB = getRequestedActionTrainSortValue(b);
     if (trainA !== trainB) return trainA - trainB;
@@ -13859,15 +13928,18 @@ function getRequestedTrainActionOverviewRowsFromSwappingTable({ swappingRows = [
     };
   });
 
-  if (swapRows.length && removalRows.length) {
+  const mergedSwapRows = mergeRequestedActionRowsByTrain(swapRows);
+  const mergedRemovalRows = mergeRequestedActionRowsByTrain(removalRows);
+
+  if (mergedSwapRows.length && mergedRemovalRows.length) {
     return [
-      ...swapRows,
+      ...mergedSwapRows,
       { key: "requested-action-overview-separator", isSeparator: true },
-      ...removalRows,
+      ...mergedRemovalRows,
     ];
   }
 
-  return [...swapRows, ...removalRows];
+  return [...mergedSwapRows, ...mergedRemovalRows];
 }
 
 const REQUESTED_TRAIN_MANUAL_TID_STORAGE_KEY = "requestedTrainManualTidByTrain";
@@ -14162,16 +14234,10 @@ function downloadRequestedTrainsDocx({ swappingRows = [], actionOverviewRows = [
 function RequestedTrainPill({ children, accent = "#4f8ef7", muted = false }) {
   return (
     <span
-      className="inline-flex min-w-[46px] items-center justify-center rounded-full border px-2 py-0.5 text-[13px] font-normal leading-none tracking-wide whitespace-nowrap"
+      className="inline-flex min-w-[46px] items-center justify-center px-1 py-0 text-[12px] font-normal leading-none tracking-wide whitespace-nowrap"
       style={{
-        background: muted
-          ? "rgba(255,255,255,0.06)"
-          : `linear-gradient(135deg,${hexToRgba(accent, 0.20)} 0%,rgba(8,37,31,0.82) 100%)`,
-        borderColor: muted ? "#2b4f6b" : hexToRgba(accent, 0.74),
-        color: muted ? "#8fa6bd" : "#eef7ff",
-        boxShadow: muted
-          ? "inset 0 1px 0 rgba(255,255,255,0.04)"
-          : `0 0 8px ${hexToRgba(accent, 0.22)}, inset 0 1px 0 rgba(255,255,255,0.06)`,
+        color: muted ? "#8fa6bd" : accent || "#eef7ff",
+        textShadow: muted ? "none" : `0 0 5px ${hexToRgba(accent || "#eaf4ff", 0.25)}`,
       }}
     >
       {children || "--"}
@@ -14264,15 +14330,10 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
                         maxLength={3}
                         placeholder="--"
                         title="Enter TID manually"
-                        className="h-[19px] w-[46px] rounded-full border px-2 py-0 text-center text-[13px] font-normal leading-none tracking-wide text-[#eef7ff] outline-none transition focus:border-sky-300 focus:bg-sky-500/10 placeholder:text-[#8fa6bd]"
+                        className="h-[19px] w-[46px] bg-transparent px-1 py-0 text-center text-[12px] font-normal leading-none tracking-wide text-[#eef7ff] outline-none placeholder:text-[#8fa6bd] focus:text-sky-200"
                         style={{
-                          background: item.manualTid
-                            ? `linear-gradient(135deg,${hexToRgba(accent, 0.20)} 0%,rgba(8,37,31,0.82) 100%)`
-                            : "rgba(255,255,255,0.06)",
-                          borderColor: item.manualTid ? hexToRgba(accent, 0.74) : "#2b4f6b",
-                          boxShadow: item.manualTid
-                            ? `0 0 8px ${hexToRgba(accent, 0.22)}, inset 0 1px 0 rgba(255,255,255,0.06)`
-                            : "inset 0 1px 0 rgba(255,255,255,0.04)",
+                          color: item.manualTid ? accent : undefined,
+                          textShadow: item.manualTid ? `0 0 5px ${hexToRgba(accent, 0.25)}` : "none",
                         }}
                       />
                     ) : (
@@ -14313,17 +14374,15 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
       </div>
 
       <div className="w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
-        <table className="table-fixed text-[11px] leading-none" style={{ width: 574, maxWidth: "100%" }}>
+        <table className="table-fixed text-[11px] leading-none" style={{ width: 496, maxWidth: "100%" }}>
           <colgroup>
             <col style={{ width: 130 }} />
-            <col style={{ width: 78 }} />
             <col style={{ width: 180 }} />
             <col style={{ width: 186 }} />
           </colgroup>
           <thead>
             <tr className="bg-[#0a2237] text-[#cfe5fb]">
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Trainset number</th>
-              <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">TID</th>
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Remark Request</th>
               <th className="border-b border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none"></th>
             </tr>
@@ -14333,7 +14392,6 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
               if (item?.isSeparator) {
                 return (
                   <tr key={item.key || `separator-${index}`} className="bg-[#071828]">
-                    <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                     <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                     <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                     <td className="border-b border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
@@ -14346,9 +14404,6 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
                     {formatRequestedTrainNumber(item.trainsetNumber || item.key)}
                   </td>
-                  <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
-                    {""}
-                  </td>
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-tight text-[#eaf4ff] whitespace-normal break-words">
                     {item.requestType || ""}
                   </td>
@@ -14360,7 +14415,7 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
               );
             }) : (
               <tr className="bg-[#081b2d]">
-                <td colSpan={4} className="border-b border-[#193752] px-2 py-2 text-center align-middle leading-none text-[#8fa6bd]">
+                <td colSpan={3} className="border-b border-[#193752] px-2 py-2 text-center align-middle leading-none text-[#8fa6bd]">
                   No requested train action found
                 </td>
               </tr>
