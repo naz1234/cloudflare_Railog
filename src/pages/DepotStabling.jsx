@@ -14446,8 +14446,8 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
   const hasRows = displayRows.some((row) => row && !row.isSeparator);
 
   return (
-    <div className="relative h-fit self-start leading-tight">
-      <div className="absolute left-0 top-[-18px]">
+    <div className="flex h-fit self-start flex-col leading-tight">
+      <div className="mb-2.5">
         <div className="text-[11px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
           REQUEST / ACTION OVERVIEW
         </div>
@@ -14632,17 +14632,6 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
           <h2 className="text-[13px] font-bold uppercase tracking-[2px] text-white whitespace-nowrap">
             TRAIN SWAPPING OVERVIEW
           </h2>
-          <p className="mt-[3px] text-[11px] font-normal normal-case tracking-normal text-[#c9d7e8]">
-            Note: Add TID manually to check Arrival 3A1P2.
-          </p>
-          <p className="mt-[3px] text-[11px] font-normal normal-case tracking-normal text-[#7dd3fc]">
-            {timetableNotice}
-          </p>
-          {arrivalNotice && (
-            <p className="mt-[3px] text-[11px] font-normal normal-case tracking-normal text-amber-200">
-              {arrivalNotice}
-            </p>
-          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -14684,6 +14673,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
       <div className="w-fit max-w-full">
         <div className="grid w-fit max-w-full grid-cols-[auto_auto] items-stretch gap-4 overflow-x-auto">
           <RequestedTrainTable
+            title="TRAIN REQUESTED FOR SWAPPING"
             rows={swappingRowsWithArrival3A1P2}
             maintenanceMap={maintenanceMap}
             onManualTidChange={handleManualTidChange}
