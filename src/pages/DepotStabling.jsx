@@ -14030,6 +14030,7 @@ function buildRequestedActionSummaryLines(rows = []) {
   const todayPm = createRequestedSummaryBucket();
   const morningPm = createRequestedSummaryBucket();
   const cm = createRequestedSummaryBucket();
+  const tlc = createRequestedSummaryBucket();
   let cmActivityLabel = "RST CM";
 
   (Array.isArray(rows) ? rows : []).forEach((row) => {
@@ -14043,10 +14044,12 @@ function buildRequestedActionSummaryLines(rows = []) {
     const hasInbound = tokens.includes("INBOUND") || normalized.includes("G TO C");
     const hasPm = tokens.includes("PM");
     const hasCm = tokens.includes("CM");
+    const hasTlc = tokens.includes("TLC");
     const isTomorrowPm = hasTomorrowRequestToken(requestType) || tokens.includes("MORNING");
 
     if (hasInbound) appendRequestedSummaryTrain(inbound, row);
     if (hasPm) appendRequestedSummaryTrain(isTomorrowPm ? morningPm : todayPm, row);
+    if (hasTlc) appendRequestedSummaryTrain(tlc, row);
     if (hasCm) {
       appendRequestedSummaryTrain(cm, row);
       const requestedCmLabel = formatRequestedSummaryCmActivityLabel(requestType);
@@ -14076,6 +14079,11 @@ function buildRequestedActionSummaryLines(rows = []) {
   if (cmList) {
     const verb = cm.trains.length === 1 ? "was" : "were";
     lines.push(`${cmList} ${verb} requested for ${cmActivityLabel} activity. Closing SR.`);
+  }
+
+  const tlcList = joinRequestedSummaryTrainList(tlc.trains);
+  if (tlcList) {
+    lines.push(`${tlcList} requested for TLC team.`);
   }
 
   return lines;
