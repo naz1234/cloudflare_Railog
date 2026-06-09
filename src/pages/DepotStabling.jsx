@@ -13536,7 +13536,7 @@ function getSwappingRequestsForTrain(requests = [], trainKey = "", westRemovalRo
   });
 }
 
-const TOMORROW_SWAP_KEYWORDS = ["TOM", "TMRW", "TOMORROW", "MRNING", "MORNING"];
+const TOMORROW_SWAP_KEYWORDS = ["TOM", "TMR", "TMRW", "TOMORROW", "MRNING", "MORNING"];
 
 function isTomorrowRequestText(value = "") {
   const normalized = normalizeRequestIdentity(value);
@@ -13997,6 +13997,32 @@ function formatRequestedSummaryCmActivityLabel(value = "") {
   const normalized = normalizeRequestIdentity(value);
   if (!normalized || normalized === "CM") return "RST CM";
   return normalized;
+}
+
+function getRequestedActionSummaryRowsFromRequests(requests = []) {
+  const rows = [];
+  const seen = new Set();
+
+  (Array.isArray(requests) ? requests : []).forEach((request) => {
+    if (isUnfitTrainRequest(request)) return;
+
+    const key = normalizeTrainId(request?.trainId);
+    const requestType = getTrainRequestDisplayType(request);
+    const requestKey = normalizeRequestIdentity(requestType);
+    if (!key || !requestKey) return;
+
+    const seenKey = `${key}|${requestKey}`;
+    if (seen.has(seenKey)) return;
+    seen.add(seenKey);
+
+    rows.push({
+      key,
+      trainsetNumber: formatRequestedTrainNumber(key),
+      requestType,
+    });
+  });
+
+  return rows;
 }
 
 function buildRequestedActionSummaryLines(rows = []) {
@@ -14540,8 +14566,11 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
   );
 }
 
-function RequestedTrainActionSummary({ rows = [] }) {
-  const summaryLines = buildRequestedActionSummaryLines(rows);
+function RequestedTrainActionSummary({ rows = [], requests = [] }) {
+  const summaryRows = Array.isArray(requests) && requests.length
+    ? getRequestedActionSummaryRowsFromRequests(requests)
+    : rows;
+  const summaryLines = buildRequestedActionSummaryLines(summaryRows);
   if (!summaryLines.length) return null;
 
   return (
@@ -14715,7 +14744,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
           <RequestedTrainActionOverviewTable rows={actionOverviewRows} />
         </div>
 
-        <RequestedTrainActionSummary rows={actionOverviewRows} />
+        <RequestedTrainActionSummary rows={actionOverviewRows} requests={requests} />
       </div>
     </div>
   );

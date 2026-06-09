@@ -54,7 +54,7 @@ function normalizeRequestIdentity(value = "") {
     .join(" ");
 }
 
-const TOMORROW_REQUEST_TOKENS = new Set(["TOM", "TMRW", "TOMORROW"]);
+const TOMORROW_REQUEST_TOKENS = new Set(["TOM", "TMR", "TMRW", "TOMORROW"]);
 
 function hasTomorrowRequestToken(value = "") {
   const normalized = normalizeRequestIdentity(value);
