@@ -14287,7 +14287,7 @@ function RequestedTrainTitle({ title = "" }) {
 
 function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTidChange = null, showArrival3A1P2 = false }) {
   const tableRows = getRequestedTrainDisplayRows(rows, 3);
-  const tableWidth = showArrival3A1P2 ? 682 : 574;
+  const tableWidth = showArrival3A1P2 ? 282 : 174;
 
   return (
     <div className="leading-tight">
@@ -14305,18 +14305,14 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
             <col style={{ width: 96 }} />
             <col style={{ width: 78 }} />
             {showArrival3A1P2 && <col style={{ width: 108 }} />}
-            <col style={{ width: 200 }} />
-            <col style={{ width: 200 }} />
           </colgroup>
           <thead>
             <tr className="bg-[#0a2237] text-[#cfe5fb]">
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Trainset number</th>
-              <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">TID</th>
+              <th className={`border-b ${showArrival3A1P2 ? "border-r" : ""} border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none`}>TID</th>
               {showArrival3A1P2 && (
-                <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Arrival 3A1P2</th>
+                <th className="border-b border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Arrival 3A1P2</th>
               )}
-              <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Note:</th>
-              <th className="border-b border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Note:</th>
             </tr>
           </thead>
           <tbody>
@@ -14331,7 +14327,7 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none">
                     <RequestedTrainPill accent={accent} muted={isEmpty}>{formatRequestedTrainNumber(item.label)}</RequestedTrainPill>
                   </td>
-                  <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none">
+                  <td className={`border-b ${showArrival3A1P2 ? "border-r" : ""} border-[#193752] px-2 py-1 text-center align-middle leading-none`}>
                     {item.canEditTid && typeof onManualTidChange === "function" ? (
                       <input
                         value={item.manualTid}
@@ -14351,16 +14347,10 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
                     )}
                   </td>
                   {showArrival3A1P2 && (
-                    <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
+                    <td className="border-b border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
                       <RequestedTrainPill accent="#38bdf8" muted={isEmpty || !arrival3A1P2}>{arrival3A1P2}</RequestedTrainPill>
                     </td>
                   )}
-                  <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-tight text-[#eaf4ff] whitespace-normal break-words">
-                    {item.requestType || ""}
-                  </td>
-                  <td className="border-b border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
-                    {item.actionNote || ""}
-                  </td>
                 </tr>
               );
             })}
