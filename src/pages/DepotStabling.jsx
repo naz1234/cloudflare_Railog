@@ -13883,6 +13883,16 @@ function getRemovalPdfSwappingRows({ requests = [], trainRemState = {}, westData
   return addArrival3A1P2ToRequestedRows(displayRows, activeTimetable, new Date());
 }
 
+function getRemovalPdfActionOverviewRows({ requests = [], trainRemState = {}, westData = {}, eastData = {} } = {}) {
+  return getRequestedTrainActionOverviewRows({
+    requests,
+    trainRemState,
+    westData,
+    eastData,
+    includeTomorrowRequests: loadRequestedTrainIncludeTomorrowSwaps(),
+  });
+}
+
 function applyManualTidToRequestedRows(rows = [], manualTidByTrain = {}) {
   const manualTidMap = normalizeRequestedTrainManualTidMap(manualTidByTrain);
 
@@ -14938,8 +14948,8 @@ function buildRemovalPdfBlob(log = {}) {
 
 
 function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
-  // A4 landscape, one page: West at left, East at right, with requested swapping table
-  // placed directly under the West Depot table.
+  // A4 landscape, one page: West at left, East at right.
+  // Requested swapping table is placed under West Depot; request/action table is placed under East Depot.
   const pageWidth = 841.89;
   const pageHeight = 595.28;
   const marginX = 22;
@@ -14951,8 +14961,11 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
   const westRows = Array.isArray(westLog?.entries) ? westLog.entries : [];
   const eastRows = Array.isArray(eastLog?.entries) ? eastLog.entries : [];
   const rawSwappingRows = Array.isArray(options?.swappingRows) ? options.swappingRows : [];
+  const rawActionOverviewRows = Array.isArray(options?.actionOverviewRows) ? options.actionOverviewRows : [];
   const swappingRows = getRequestedTrainDisplayRows(rawSwappingRows, rawSwappingRows.length ? rawSwappingRows.length : 1);
+  const actionOverviewRows = rawActionOverviewRows.length ? rawActionOverviewRows : [];
   const hasSwappingRows = rawSwappingRows.length > 0;
+  const hasActionOverviewRows = actionOverviewRows.some((row) => row && !row.isSeparator);
 
   const titleTop = 28;
   const columnTitleTop = 62;
@@ -14963,7 +14976,9 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
   const headerFontSize = 6.4;
 
   const westRowCount = Math.max(westRows.length, 1);
+  const eastRowCount = Math.max(eastRows.length, 1);
   const swappingRowCount = Math.max(swappingRows.length, 1);
+  const actionOverviewRowCount = Math.max(actionOverviewRows.length, 1);
   const leftAvailableHeight = tableBottomTop - tableTop;
   const leftRowHeight = Math.max(
     8.4,
@@ -14973,8 +14988,14 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
   const swapTitleTop = tableTop + westTableHeight + 14;
   const swapTableTop = tableTop + westTableHeight + swapSectionGap;
 
-  const eastAvailableBodyHeight = tableBottomTop - tableTop - headerHeight;
-  const eastRowHeight = Math.max(11.5, Math.min(15.2, eastAvailableBodyHeight / Math.max(eastRows.length, 1)));
+  const rightAvailableHeight = tableBottomTop - tableTop;
+  const rightRowHeight = Math.max(
+    8.4,
+    Math.min(14.2, (rightAvailableHeight - headerHeight * 2 - swapSectionGap) / (eastRowCount + actionOverviewRowCount))
+  );
+  const eastTableHeight = headerHeight + eastRowCount * rightRowHeight;
+  const actionTitleTop = tableTop + eastTableHeight + 14;
+  const actionTableTop = tableTop + eastTableHeight + swapSectionGap;
 
   const rect = (x, y, width, height, { fill = "", stroke = "#000000", strokeWidth = 0.45 } = {}) => {
     const fillCmd = fill ? `${pdfColor(fill)} rg` : "";
@@ -14996,7 +15017,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     font: "F2",
   });
   ops += pdfText(
-    `West: ${westRows.length} ${westRows.length === 1 ? "train" : "trains"}   |   East: ${eastRows.length} ${eastRows.length === 1 ? "train" : "trains"}   |   Requested for swapping: ${rawSwappingRows.length}`,
+    `West: ${westRows.length} ${westRows.length === 1 ? "train" : "trains"}   |   East: ${eastRows.length} ${eastRows.length === 1 ? "train" : "trains"}   |   Requested for swapping: ${rawSwappingRows.length}   |   Request/action: ${rawActionOverviewRows.filter((row) => row && !row.isSeparator).length}`,
     marginX,
     yFromTop(titleTop + 16),
     {
@@ -15125,7 +15146,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const title = sideLabel === "west" ? "WEST DEPOT" : "EAST DEPOT";
     const activeTableTop = optionsForTable.tableTop ?? tableTop;
     const activeColumnTitleTop = optionsForTable.columnTitleTop ?? columnTitleTop;
-    const activeRowHeight = optionsForTable.rowHeight ?? eastRowHeight;
+    const activeRowHeight = optionsForTable.rowHeight ?? rightRowHeight;
     const activeFontSize = getFontSizeForRowHeight(activeRowHeight);
     const rowCount = Math.max(rows.length, 1);
 
@@ -15288,17 +15309,102 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
   };
 
+  const drawRequestedActionOverviewTable = (rows = [], x, titleTopForTable, tableTopForTable, rowH) => {
+    const activeFontSize = getFontSizeForRowHeight(rowH);
+    const displayRows = rows.length ? rows : [{ key: "no-action-overview", empty: true }];
+    const rowCount = Math.max(displayRows.length, 1);
+    const colWidths = {
+      train: 94,
+      request: 164,
+      action: 122,
+    };
+    const colX = {
+      train: x,
+      request: x + colWidths.train,
+      action: x + colWidths.train + colWidths.request,
+    };
+    const tableWidth = colWidths.train + colWidths.request + colWidths.action;
+    const tableHeight = headerHeight + rowCount * rowH;
+    const tableY = yFromTop(tableTopForTable, tableHeight);
+
+    ops += pdfText("REQUEST / ACTION OVERVIEW", x, yFromTop(titleTopForTable), {
+      size: 9.4,
+      color: "#000000",
+      font: "F2",
+    });
+    ops += pdfText(`Total: ${rawActionOverviewRows.filter((row) => row && !row.isSeparator).length}`, x, yFromTop(titleTopForTable + 12), {
+      size: 6.5,
+      color: "#000000",
+    });
+
+    ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
+    const headerBottomY = yFromTop(tableTopForTable + headerHeight);
+    ops += line(x, headerBottomY, x + tableWidth, headerBottomY, 0.55);
+
+    [colX.request, colX.action].forEach((gridX) => {
+      ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
+    });
+
+    const headerTextY = yFromTop(tableTopForTable + 11);
+    drawTextInCell("TRAINSET NUMBER", colX.train + 5, headerTextY, 17, { size: headerFontSize - 0.5, bold: true });
+    drawTextInCell("REMARK REQUEST", colX.request + 7, headerTextY, 17, { size: headerFontSize - 0.5, bold: true });
+
+    if (!hasActionOverviewRows) {
+      const rowY = yFromTop(tableTopForTable + headerHeight, rowH);
+      drawTextInCell("No requested train action found", x + 10, rowY + rowH / 2 - 2, 42, {
+        size: activeFontSize,
+        bold: true,
+      });
+    } else {
+      displayRows.forEach((entry, index) => {
+        const rowTop = tableTopForTable + headerHeight + index * rowH;
+        const rowY = yFromTop(rowTop, rowH);
+        const textY = rowY + rowH / 2 - 2.2;
+
+        if (entry?.isSeparator) return;
+
+        drawTextInCell(formatRequestedTrainNumber(entry?.trainsetNumber || entry?.key) || "-", colX.train, textY, 8, {
+          size: activeFontSize,
+          bold: true,
+          align: "center",
+          width: colWidths.train,
+        });
+        drawTextInCell(entry?.requestType || "-", colX.request + 6, textY, 26, {
+          size: Math.max(3.9, activeFontSize - 0.2),
+          bold: false,
+        });
+        drawTextInCell(entry?.actionStatus || "-", colX.action + 6, textY, 18, {
+          size: Math.max(3.9, activeFontSize - 0.2),
+          bold: false,
+        });
+      });
+    }
+
+    for (let i = 0; i <= rowCount; i += 1) {
+      const rowLineY = yFromTop(tableTopForTable + headerHeight + i * rowH);
+      ops += line(x, rowLineY, x + tableWidth, rowLineY, 0.38);
+    }
+
+    [x, colX.request, colX.action, x + tableWidth].forEach((gridX) => {
+      ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
+    });
+    ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
+  };
+
+  const rightColumnX = marginX + columnWidth + gutter;
+
   drawRemovalColumn(westLog, marginX, "west", {
     tableTop,
     columnTitleTop,
     rowHeight: leftRowHeight,
   });
   drawRequestedSwappingTable(swappingRows, marginX, swapTitleTop, swapTableTop, leftRowHeight);
-  drawRemovalColumn(eastLog, marginX + columnWidth + gutter, "east", {
+  drawRemovalColumn(eastLog, rightColumnX, "east", {
     tableTop,
     columnTitleTop,
-    rowHeight: eastRowHeight,
+    rowHeight: rightRowHeight,
   });
+  drawRequestedActionOverviewTable(actionOverviewRows, rightColumnX, actionTitleTop, actionTableTop, rightRowHeight);
 
   ops += pdfText("Generated by TrainLog", marginX, 18, {
     size: 6.5,
@@ -15355,7 +15461,13 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
         const latestSwappingRows = typeof combinedLogs?.getSwappingRows === "function"
           ? combinedLogs.getSwappingRows()
           : combinedLogs?.swappingRows || [];
-        downloadCombinedRemovalPdf(westLog, eastLog, { swappingRows: latestSwappingRows });
+        const latestActionOverviewRows = typeof combinedLogs?.getActionOverviewRows === "function"
+          ? combinedLogs.getActionOverviewRows()
+          : combinedLogs?.actionOverviewRows || [];
+        downloadCombinedRemovalPdf(westLog, eastLog, {
+          swappingRows: latestSwappingRows,
+          actionOverviewRows: latestActionOverviewRows,
+        });
       } else {
         downloadRemovalPdf(log);
       }
@@ -15454,7 +15566,14 @@ function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {}, requ
     eastData,
     activeTimetable,
   });
+  const getLatestActionOverviewRows = () => getRemovalPdfActionOverviewRows({
+    requests,
+    trainRemState,
+    westData,
+    eastData,
+  });
   const swappingRows = getLatestSwappingRows();
+  const actionOverviewRows = getLatestActionOverviewRows();
 
   return (
     <section
@@ -15482,8 +15601,28 @@ function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {}, requ
       </div>
 
       <div className="space-y-2">
-        <RemovalDepotLogCard log={westLog} combinedLogs={{ westLog, eastLog, swappingRows, getSwappingRows: getLatestSwappingRows }} />
-        <RemovalDepotLogCard log={eastLog} combinedLogs={{ westLog, eastLog, swappingRows, getSwappingRows: getLatestSwappingRows }} />
+        <RemovalDepotLogCard
+          log={westLog}
+          combinedLogs={{
+            westLog,
+            eastLog,
+            swappingRows,
+            actionOverviewRows,
+            getSwappingRows: getLatestSwappingRows,
+            getActionOverviewRows: getLatestActionOverviewRows,
+          }}
+        />
+        <RemovalDepotLogCard
+          log={eastLog}
+          combinedLogs={{
+            westLog,
+            eastLog,
+            swappingRows,
+            actionOverviewRows,
+            getSwappingRows: getLatestSwappingRows,
+            getActionOverviewRows: getLatestActionOverviewRows,
+          }}
+        />
       </div>
     </section>
   );
