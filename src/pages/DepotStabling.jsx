@@ -15310,19 +15310,17 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
       no: 25,
       train: 48,
       tid: 36,
-      arrival: 62,
-      note1: 111,
-      note2: 98,
+      note1: 142,
+      note2: 129,
     };
     const colX = {
       no: x,
       train: x + colWidths.no,
       tid: x + colWidths.no + colWidths.train,
-      arrival: x + colWidths.no + colWidths.train + colWidths.tid,
-      note1: x + colWidths.no + colWidths.train + colWidths.tid + colWidths.arrival,
-      note2: x + colWidths.no + colWidths.train + colWidths.tid + colWidths.arrival + colWidths.note1,
+      note1: x + colWidths.no + colWidths.train + colWidths.tid,
+      note2: x + colWidths.no + colWidths.train + colWidths.tid + colWidths.note1,
     };
-    const tableWidth = colWidths.no + colWidths.train + colWidths.tid + colWidths.arrival + colWidths.note1 + colWidths.note2;
+    const tableWidth = colWidths.no + colWidths.train + colWidths.tid + colWidths.note1 + colWidths.note2;
     const tableHeight = headerHeight + rowCount * rowH;
     const tableY = yFromTop(tableTopForTable, tableHeight);
 
@@ -15340,7 +15338,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const headerBottomY = yFromTop(tableTopForTable + headerHeight);
     ops += line(x, headerBottomY, x + tableWidth, headerBottomY, 0.55);
 
-    [colX.train, colX.tid, colX.arrival, colX.note1, colX.note2].forEach((gridX) => {
+    [colX.train, colX.tid, colX.note1, colX.note2].forEach((gridX) => {
       ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
     });
 
@@ -15348,7 +15346,6 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     drawTextInCell("NO", colX.no + 6, headerTextY, 4, { size: headerFontSize - 0.5, bold: true });
     drawTextInCell("TRAIN", colX.train + 8, headerTextY, 8, { size: headerFontSize - 0.5, bold: true });
     drawTextInCell("TID", colX.tid + 8, headerTextY, 5, { size: headerFontSize - 0.5, bold: true });
-    drawTextInCell("ARRIVAL", colX.arrival + 7, headerTextY, 9, { size: headerFontSize - 0.5, bold: true });
     drawTextInCell("NOTE", colX.note1 + 8, headerTextY, 10, { size: headerFontSize - 0.5, bold: true });
     drawTextInCell("NOTE", colX.note2 + 8, headerTextY, 10, { size: headerFontSize - 0.5, bold: true });
 
@@ -15364,14 +15361,12 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
         const rowY = yFromTop(rowTop, rowH);
         const textY = rowY + rowH / 2 - 2.2;
         const label = (entry?.label || "").replace(/^T/i, "");
-        const arrival3A1P2 = formatTimetableTimeWithHrs(entry?.arrival3A1P2);
 
         drawTextInCell(String(index + 1).padStart(2, "0"), colX.no + 6, textY, 4, { size: activeFontSize, bold: false });
         drawTextInCell(label || "-", colX.train, textY, 6, { size: activeFontSize, bold: true, align: "center", width: colWidths.train });
-        drawTextInCell(entry?.tid || "-", colX.tid, textY, 5, { size: activeFontSize, bold: true, align: "center", width: colWidths.tid });
-        drawTextInCell(arrival3A1P2 || "-", colX.arrival + 6, textY, 11, { size: activeFontSize, bold: false });
-        drawTextInCell(entry?.requestType || "-", colX.note1 + 5, textY, 24, { size: Math.max(3.9, activeFontSize - 0.2), bold: false });
-        drawTextInCell(entry?.actionNote || "-", colX.note2 + 5, textY, 20, { size: Math.max(3.9, activeFontSize - 0.2), bold: false });
+        drawTextInCell("", colX.tid, textY, 5, { size: activeFontSize, bold: false, align: "center", width: colWidths.tid });
+        drawTextInCell(entry?.requestType || "-", colX.note1 + 5, textY, 30, { size: Math.max(3.9, activeFontSize - 0.2), bold: false });
+        drawTextInCell(entry?.actionNote || "-", colX.note2 + 5, textY, 28, { size: Math.max(3.9, activeFontSize - 0.2), bold: false });
       });
     }
 
@@ -15380,7 +15375,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
       ops += line(x, rowLineY, x + tableWidth, rowLineY, 0.38);
     }
 
-    [x, colX.train, colX.tid, colX.arrival, colX.note1, colX.note2, x + tableWidth].forEach((gridX) => {
+    [x, colX.train, colX.tid, colX.note1, colX.note2, x + tableWidth].forEach((gridX) => {
       ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
     });
     ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
