@@ -14444,7 +14444,6 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
 function RequestedTrainActionOverviewTable({ rows = [] }) {
   const displayRows = Array.isArray(rows) ? rows : [];
   const hasRows = displayRows.some((row) => row && !row.isSeparator);
-  const summaryLines = buildRequestedActionSummaryLines(displayRows);
 
   return (
     <div className="relative leading-tight">
@@ -14505,15 +14504,21 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
         </table>
       </div>
 
-      {summaryLines.length > 0 && (
-        <div className="mt-2 w-[496px] max-w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[11px] leading-snug text-[#eaf4ff]">
-          {summaryLines.map((line, index) => (
-            <p key={`requested-action-summary-${index}`} className={index > 0 ? "mt-1" : ""}>
-              {line}
-            </p>
-          ))}
-        </div>
-      )}
+    </div>
+  );
+}
+
+function RequestedTrainActionSummary({ rows = [] }) {
+  const summaryLines = buildRequestedActionSummaryLines(rows);
+  if (!summaryLines.length) return null;
+
+  return (
+    <div className="mt-3 w-full max-w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[11px] leading-snug text-[#eaf4ff]">
+      {summaryLines.map((line, index) => (
+        <p key={`requested-action-summary-${index}`} className={index > 0 ? "mt-1" : ""}>
+          {line}
+        </p>
+      ))}
     </div>
   );
 }
@@ -14676,15 +14681,19 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
         </div>
       </div>
 
-      <div className="flex flex-wrap items-start gap-4">
-        <RequestedTrainTable
-          rows={swappingRowsWithArrival3A1P2}
-          maintenanceMap={maintenanceMap}
-          onManualTidChange={handleManualTidChange}
-          showArrival3A1P2
-        />
+      <div className="w-fit max-w-full">
+        <div className="flex flex-wrap items-start gap-4">
+          <RequestedTrainTable
+            rows={swappingRowsWithArrival3A1P2}
+            maintenanceMap={maintenanceMap}
+            onManualTidChange={handleManualTidChange}
+            showArrival3A1P2
+          />
 
-        <RequestedTrainActionOverviewTable rows={actionOverviewRows} />
+          <RequestedTrainActionOverviewTable rows={actionOverviewRows} />
+        </div>
+
+        <RequestedTrainActionSummary rows={actionOverviewRows} />
       </div>
     </div>
   );
