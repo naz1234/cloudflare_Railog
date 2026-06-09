@@ -13966,6 +13966,72 @@ function getRequestedTrainActionOverviewRowsFromSwappingTable({ swappingRows = [
   return [...mergedSwapRows, ...mergedRemovalRows];
 }
 
+
+function formatRequestedSummaryTrainLabel(value = "") {
+  const formatted = formatRequestedTrainNumber(value);
+  if (!formatted) return "";
+  return /^T/i.test(formatted) ? padTrainId(formatted) : `T${formatted}`;
+}
+
+function appendRequestedSummaryTrain(bucket, row = {}) {
+  const key = normalizeTrainId(row?.key || row?.trainsetNumber);
+  const label = formatRequestedSummaryTrainLabel(key || row?.trainsetNumber);
+  if (!key || !label || bucket.seen.has(key)) return;
+
+  bucket.seen.add(key);
+  bucket.trains.push(label);
+}
+
+function joinRequestedSummaryTrainList(trains = []) {
+  const list = (trains || []).filter(Boolean);
+  if (list.length <= 1) return list.join("");
+  if (list.length === 2) return `${list[0]} and ${list[1]}`;
+  return `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}`;
+}
+
+function buildRequestedActionSummaryLines(rows = []) {
+  const inbound = { trains: [], seen: new Set() };
+  const pm = { trains: [], seen: new Set() };
+  const cm = { trains: [], seen: new Set() };
+
+  (Array.isArray(rows) ? rows : []).forEach((row) => {
+    if (!row || row.isSeparator) return;
+
+    const normalized = normalizeRequestIdentity(row?.requestType || "");
+    if (!normalized) return;
+
+    const tokens = normalized.split(" ").filter(Boolean);
+    const hasInbound = tokens.includes("INBOUND") || normalized.includes("G TO C");
+    const hasPm = tokens.includes("PM");
+    const hasCm = tokens.includes("CM");
+
+    if (hasInbound) appendRequestedSummaryTrain(inbound, row);
+    if (hasPm) appendRequestedSummaryTrain(pm, row);
+    if (hasCm) appendRequestedSummaryTrain(cm, row);
+  });
+
+  const lines = [];
+  const inboundList = joinRequestedSummaryTrainList(inbound.trains);
+  const pmList = joinRequestedSummaryTrainList(pm.trains);
+  const cmList = joinRequestedSummaryTrainList(cm.trains);
+
+  if (inboundList) {
+    const verb = inbound.trains.length === 1 ? "was" : "were";
+    lines.push(`${inboundList} ${verb} requested for inbound movement G to C.`);
+  }
+
+  if (pmList) {
+    lines.push(`RST requested ${pmList} for morning PM activity.`);
+  }
+
+  if (cmList) {
+    const verb = cm.trains.length === 1 ? "was" : "were";
+    lines.push(`${cmList} ${verb} requested for CM activity. Closing SR.`);
+  }
+
+  return lines;
+}
+
 const REQUESTED_TRAIN_MANUAL_TID_STORAGE_KEY = "requestedTrainManualTidByTrain";
 
 function cleanRequestedTrainTidInput(value = "") {
@@ -14378,6 +14444,7 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
 function RequestedTrainActionOverviewTable({ rows = [] }) {
   const displayRows = Array.isArray(rows) ? rows : [];
   const hasRows = displayRows.some((row) => row && !row.isSeparator);
+  const summaryLines = buildRequestedActionSummaryLines(displayRows);
 
   return (
     <div className="relative leading-tight">
@@ -14437,6 +14504,16 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
           </tbody>
         </table>
       </div>
+
+      {summaryLines.length > 0 && (
+        <div className="mt-2 w-[496px] max-w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[11px] leading-snug text-[#eaf4ff]">
+          {summaryLines.map((line, index) => (
+            <p key={`requested-action-summary-${index}`} className={index > 0 ? "mt-1" : ""}>
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
