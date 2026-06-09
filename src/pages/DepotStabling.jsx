@@ -14397,8 +14397,8 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
           </thead>
           <tbody>
             {tableRows.map((item, index) => {
-              const maintItem = maintenanceMap?.[item.key]?.[0] || null;
-              const accent = maintItem ? getRequestAccent(maintItem) : "#4f8ef7";
+              const accent = "#ffffff";
+              const arrivalAccent = "#ffffff";
               const arrival3A1P2 = formatTimetableTimeWithHrs(item.arrival3A1P2);
               const isEmpty = !item.label && !item.tid && !item.requestType && !item.actionNote && !arrival3A1P2;
 
@@ -14418,8 +14418,8 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
                         title="Enter TID manually"
                         className="h-[19px] w-[46px] bg-transparent px-1 py-0 text-center text-[12px] font-normal leading-none tracking-wide text-[#eef7ff] outline-none placeholder:text-[#8fa6bd] focus:text-sky-200"
                         style={{
-                          color: item.manualTid ? accent : undefined,
-                          textShadow: item.manualTid ? `0 0 5px ${hexToRgba(accent, 0.25)}` : "none",
+                          color: item.manualTid ? "#ffffff" : undefined,
+                          textShadow: "none",
                         }}
                       />
                     ) : (
@@ -14428,7 +14428,7 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
                   </td>
                   {showArrival3A1P2 && (
                     <td className="border-b border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
-                      <RequestedTrainPill accent="#38bdf8" muted={isEmpty || !arrival3A1P2}>{arrival3A1P2}</RequestedTrainPill>
+                      <RequestedTrainPill accent={arrivalAccent} muted={isEmpty || !arrival3A1P2}>{arrival3A1P2}</RequestedTrainPill>
                     </td>
                   )}
                 </tr>
