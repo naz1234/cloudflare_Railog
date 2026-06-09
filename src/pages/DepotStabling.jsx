@@ -14253,7 +14253,7 @@ function buildRequestedTrainsDocx({ swappingRows = [], actionOverviewRows = [] }
     <w:p>
       <w:pPr><w:spacing w:before="${before}" w:after="160"/></w:pPr>
       <w:r>
-        <w:rPr><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>
+        <w:rPr><w:sz w:val="26"/><w:szCs w:val="26"/></w:rPr>
         <w:t xml:space="preserve">${xmlEscape(title)}</w:t>
       </w:r>
     </w:p>`;
@@ -14265,19 +14265,19 @@ function buildRequestedTrainsDocx({ swappingRows = [], actionOverviewRows = [] }
     <w:p>
       <w:pPr><w:spacing w:before="${before}" w:after="160"/></w:pPr>
       <w:r>
-        <w:rPr><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>
+        <w:rPr><w:sz w:val="26"/><w:szCs w:val="26"/></w:rPr>
         <w:t xml:space="preserve">${xmlEscape(prefix)}</w:t>
       </w:r>
       <w:r>
-        <w:rPr><w:sz w:val="24"/><w:szCs w:val="24"/><w:color w:val="${highlightColor}"/></w:rPr>
+        <w:rPr><w:sz w:val="26"/><w:szCs w:val="26"/><w:color w:val="${highlightColor}"/></w:rPr>
         <w:t xml:space="preserve">${xmlEscape(target)}</w:t>
       </w:r>
-      ${suffix ? `<w:r><w:rPr><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">${xmlEscape(suffix)}</w:t></w:r>` : ""}
+      ${suffix ? `<w:r><w:rPr><w:sz w:val="26"/><w:szCs w:val="26"/></w:rPr><w:t xml:space="preserve">${xmlEscape(suffix)}</w:t></w:r>` : ""}
     </w:p>`;
   };
 
   const buildSwappingNoteBodyXml = () => `
-    ${buildTitleXml("TRAIN SWAPPING OVERVIEW", 0, false)}
+    ${buildTitleXml("TRAIN REMOVAL PLAN", 0, false)}
     ${buildTableXml(swappingRows, { includeArrival3A1P2: true })}
     ${buildActionOverviewTableXml(actionOverviewRows) ? buildTitleXml("REQUEST / ACTION OVERVIEW", 220, false) : ""}
     ${buildActionOverviewTableXml(actionOverviewRows)}`;
@@ -14373,7 +14373,7 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
     <div className="flex h-full min-h-0 self-stretch flex-col leading-tight">
       {title && (
         <div className="mb-2.5">
-          <div className="text-[11px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
+          <div className="text-[12px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
             <RequestedTrainTitle title={title} />
           </div>
         </div>
@@ -14448,7 +14448,7 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
   return (
     <div className="flex h-fit self-start flex-col leading-tight">
       <div className="mb-2.5">
-        <div className="text-[11px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
+        <div className="text-[12px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
           REQUEST / ACTION OVERVIEW
         </div>
       </div>
@@ -14630,7 +14630,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-[260px]">
           <h2 className="text-[13px] font-bold uppercase tracking-[2px] text-white whitespace-nowrap">
-            TRAIN SWAPPING OVERVIEW
+            TRAIN REMOVAL PLAN
           </h2>
         </div>
 
@@ -15510,7 +15510,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const tableY = yFromTop(tableTopForTable, tableHeight);
 
     ops += pdfText("TRAIN REQUESTED FOR SWAPPING", x, yFromTop(titleTopForTable), {
-      size: 9.4,
+      size: 10.4,
       color: "#000000",
       font: "F2",
     });
@@ -15587,7 +15587,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const tableY = yFromTop(tableTopForTable, tableHeight);
 
     ops += pdfText("REQUEST / ACTION OVERVIEW", x, yFromTop(titleTopForTable), {
-      size: 9.4,
+      size: 10.4,
       color: "#000000",
       font: "F2",
     });
