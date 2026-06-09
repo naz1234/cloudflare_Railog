@@ -14369,7 +14369,7 @@ function RequestedTrainTitle({ title = "" }) {
 function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTidChange = null, showArrival3A1P2 = false }) {
   const tableRows = getRequestedTrainDisplayRows(rows, 3);
   const tableWidth = showArrival3A1P2 ? 282 : 174;
-  let visibleRowNumber = 0;
+  const totalRows = tableRows.filter((item) => item && (item.label || item.tid || item.requestType || item.actionNote || item.arrival3A1P2)).length;
 
   return (
     <div className="flex h-full min-h-0 self-stretch flex-col leading-tight">
@@ -14378,20 +14378,21 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
           <div className="text-[12px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
             <RequestedTrainTitle title={title} />
           </div>
+          <div className="mt-0.5 text-[10px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
+            Total: {totalRows}
+          </div>
         </div>
       )}
 
       <div className="flex-1 w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
         <table className="h-full min-h-full table-fixed text-[11px] leading-none" style={{ width: tableWidth, maxWidth: "100%" }}>
           <colgroup>
-            <col style={{ width: 34 }} />
-            <col style={{ width: 76 }} />
-            <col style={{ width: 64 }} />
+            <col style={{ width: 96 }} />
+            <col style={{ width: 78 }} />
             {showArrival3A1P2 && <col style={{ width: 108 }} />}
           </colgroup>
           <thead>
             <tr className="bg-[#0a2237] text-[#cfe5fb]">
-              <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">No</th>
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Trainset number</th>
               <th className={`border-b ${showArrival3A1P2 ? "border-r" : ""} border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none`}>TID</th>
               {showArrival3A1P2 && (
@@ -14405,13 +14406,9 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
               const arrivalAccent = "#ffffff";
               const arrival3A1P2 = formatTimetableTimeWithHrs(item.arrival3A1P2);
               const isEmpty = !item.label && !item.tid && !item.requestType && !item.actionNote && !arrival3A1P2;
-              const rowNumber = isEmpty ? "" : String(++visibleRowNumber).padStart(2, "0");
 
               return (
                 <tr key={`${item.key}-${index}`} className="odd:bg-[#081b2d] even:bg-[#0a2136]">
-                  <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
-                    {rowNumber}
-                  </td>
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none">
                     <RequestedTrainPill accent={accent} muted={isEmpty}>{formatRequestedTrainNumber(item.label)}</RequestedTrainPill>
                   </td>
@@ -14452,7 +14449,7 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
 function RequestedTrainActionOverviewTable({ rows = [] }) {
   const displayRows = Array.isArray(rows) ? rows : [];
   const hasRows = displayRows.some((row) => row && !row.isSeparator);
-  let visibleRowNumber = 0;
+  const totalRows = displayRows.filter((row) => row && !row.isSeparator).length;
 
   return (
     <div className="flex h-fit self-start flex-col leading-tight">
@@ -14460,19 +14457,20 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
         <div className="text-[12px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
           REQUEST / ACTION OVERVIEW
         </div>
+        <div className="mt-0.5 text-[10px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
+          Total: {totalRows}
+        </div>
       </div>
 
       <div className="w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
         <table className="table-fixed text-[11px] leading-none" style={{ width: 496, maxWidth: "100%" }}>
           <colgroup>
-            <col style={{ width: 36 }} />
-            <col style={{ width: 116 }} />
-            <col style={{ width: 178 }} />
-            <col style={{ width: 166 }} />
+            <col style={{ width: 130 }} />
+            <col style={{ width: 180 }} />
+            <col style={{ width: 186 }} />
           </colgroup>
           <thead>
             <tr className="bg-[#0a2237] text-[#cfe5fb]">
-              <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">No</th>
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Trainset number</th>
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Remark Request</th>
               <th className="border-b border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none"></th>
@@ -14485,19 +14483,13 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
                   <tr key={item.key || `separator-${index}`} className="bg-[#071828]">
                     <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                     <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
-                    <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                     <td className="border-b border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                   </tr>
                 );
               }
 
-              const rowNumber = String(++visibleRowNumber).padStart(2, "0");
-
               return (
                 <tr key={`${item.key}-${item.requestType}-${item.actionStatus}-${index}`} className="odd:bg-[#081b2d] even:bg-[#0a2136]">
-                  <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
-                    {rowNumber}
-                  </td>
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
                     {formatRequestedTrainNumber(item.trainsetNumber || item.key)}
                   </td>
@@ -14512,7 +14504,7 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
               );
             }) : (
               <tr className="bg-[#081b2d]">
-                <td colSpan={4} className="border-b border-[#193752] px-2 py-2 text-center align-middle leading-none text-[#8fa6bd]">
+                <td colSpan={3} className="border-b border-[#193752] px-2 py-2 text-center align-middle leading-none text-[#8fa6bd]">
                   No requested train action found
                 </td>
               </tr>
