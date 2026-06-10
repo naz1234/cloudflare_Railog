@@ -14525,7 +14525,7 @@ function downloadRequestedTrainsDocx({ swappingRows = [], actionOverviewRows = [
 function RequestedTrainPill({ children, accent = "#4f8ef7", muted = false }) {
   return (
     <span
-      className="inline-flex min-w-[46px] items-center justify-center px-1 py-0 text-[12px] font-normal leading-none tracking-wide whitespace-nowrap"
+      className="inline-flex min-w-[46px] items-center justify-center px-1 py-0 text-[11px] font-normal leading-none tracking-wide whitespace-nowrap"
       style={{
         color: muted ? "#8fa6bd" : accent || "#eef7ff",
         textShadow: muted ? "none" : `0 0 5px ${hexToRgba(accent || "#eaf4ff", 0.25)}`,
@@ -14629,7 +14629,7 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
                         maxLength={3}
                         placeholder="--"
                         title={item.manualTid ? "Enter TID manually" : (displayTid ? "Matched TID from train removal/reference row" : "Enter TID manually")}
-                        className="h-[19px] w-[46px] bg-transparent px-1 py-0 text-center text-[12px] font-normal leading-none tracking-wide text-[#eef7ff] outline-none placeholder:text-[#8fa6bd] focus:text-sky-200"
+                        className="h-[19px] w-[46px] bg-transparent px-1 py-0 text-center text-[11px] font-normal leading-none tracking-wide text-[#eef7ff] outline-none placeholder:text-[#8fa6bd] focus:text-sky-200"
                         style={{
                           color: displayTid ? "#ffffff" : undefined,
                           textShadow: "none",
@@ -14762,11 +14762,11 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
 
   return (
     <div className="mt-3 w-full max-w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[12px] leading-snug text-[#eaf4ff]">
-      <div className="mb-1.5 flex items-center justify-end">
+      <div className="mb-1.5 flex w-full items-center justify-end">
         <button
           type="button"
           onClick={handleCopySummary}
-          className="inline-flex items-center gap-1 rounded-lg border border-[#2f6e9f] bg-[#0d2b45] px-2 py-1 text-[10px] font-semibold leading-none text-[#dff3ff] shadow-[0_0_10px_rgba(56,189,248,0.18)] transition hover:bg-[#123957] active:scale-95"
+          className="ml-auto inline-flex items-center gap-1 rounded-lg border border-[#2f6e9f] bg-[#0d2b45] px-2 py-1 text-[10px] font-semibold leading-none text-[#dff3ff] shadow-[0_0_10px_rgba(56,189,248,0.18)] transition hover:bg-[#123957] active:scale-95"
           title="Copy requested summary"
         >
           {copied ? <ClipboardCheck className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
