@@ -13795,7 +13795,7 @@ function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, wes
     const isRemoval = isRequestCoveredByWestRemoval(request, westRemovalRow);
 
     // Keep trains that are covered by the West removal table so the
-    // REQUEST / ACTION OVERVIEW can show the Removal ✓ group.
+    // REQUESTED TRAIN: can show the Removal ✓ group.
     // Only hide already-West-Depot trains when they are not covered by removal,
     // because those do not need swapping action.
     if (!isRemoval && westStablingKeys.has(key)) return;
@@ -14248,7 +14248,7 @@ function buildRequestedTrainsDocx({ swappingRows = [], actionOverviewRows = [] }
   const buildSwappingNoteBodyXml = () => `
     ${buildTitleXml("TRAIN REMOVAL PLAN", 0, false)}
     ${buildTableXml(swappingRows, { includeArrival3A1P2: true })}
-    ${buildActionOverviewTableXml(actionOverviewRows) ? buildTitleXml("REQUEST / ACTION OVERVIEW", 220, false) : ""}
+    ${buildActionOverviewTableXml(actionOverviewRows) ? buildTitleXml("REQUESTED TRAIN:", 220, false) : ""}
     ${buildActionOverviewTableXml(actionOverviewRows)}`;
 
   const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -14423,7 +14423,7 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
     <div className="flex h-fit self-start flex-col leading-tight">
       <div className="mb-2.5">
         <div className="text-[12px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
-          REQUEST / ACTION OVERVIEW
+          REQUESTED TRAIN:
         </div>
         <div className="mt-0.5 text-[10px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
           Total: {totalRows}
@@ -15594,7 +15594,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const tableHeight = headerHeight + rowCount * rowH;
     const tableY = yFromTop(tableTopForTable, tableHeight);
 
-    ops += pdfText("REQUEST / ACTION OVERVIEW", x, yFromTop(titleTopForTable), {
+    ops += pdfText("REQUESTED TRAIN:", x, yFromTop(titleTopForTable), {
       size: 10.4,
       color: "#000000",
       font: "F2",
