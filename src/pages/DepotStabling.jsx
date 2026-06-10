@@ -4691,7 +4691,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       const scanRows = normalizeTrainRemRowsForPreset(trainRemState.rows?.[scanDepot], scanDepot, scanPreset);
 
       scanRows.forEach((scanRow, scanIndex) => {
-        if (isTrainRemReferenceOnlyIndex(scanDepot, scanPreset, scanIndex)) return;
+        // Reference-only washing rows are excluded from log/PDF output,
+        // but still participate in duplicate detection so users can see
+        // when a real removal train ID matches the washing reference list.
         if (shouldIgnoreFocusedPartialDuplicate(scanDepot, scanIndex, scanRow.trainId)) return;
 
         const key = getTrainRemDuplicateKey(scanRow.trainId);
