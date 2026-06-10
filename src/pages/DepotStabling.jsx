@@ -14443,9 +14443,9 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
       <div className="w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
         <table className="table-fixed text-[11px] leading-none" style={{ width: 496, maxWidth: "100%" }}>
           <colgroup>
-            <col style={{ width: 130 }} />
-            <col style={{ width: 180 }} />
-            <col style={{ width: 186 }} />
+            <col style={{ width: 76 }} />
+            <col style={{ width: 220 }} />
+            <col style={{ width: 200 }} />
           </colgroup>
           <thead>
             <tr className="bg-[#0a2237] text-[#cfe5fb]">
