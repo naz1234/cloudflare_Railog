@@ -1938,7 +1938,6 @@ const TRAIN_REM_SYNC_INTERVAL_MS = 5000;
 const TRAIN_REM_UNDO_LIMIT = 30;
 const TRAIN_REM_ROW_COUNTS = { west: 26, east: 14 };
 const FULL_ML_TID_ROW_COUNT = 40;
-const FULL_ML_TID_AUTO_CLEAR_MS = 5 * 60 * 1000;
 const FULL_ML_TID_PRESETS = [
   {
     label: "Preset 1",
@@ -2345,13 +2344,10 @@ function loadTrainRemState() {
         west: parsed?.selectedPreset?.west || "9am",
         east: parsed?.selectedPreset?.east || "9am",
       },
-      rows: applyFullMlTidMatchesToTrainRemRows(
-        {
-          west: normalizeTrainRemRows(parsed?.rows?.west, "west"),
-          east: normalizeTrainRemRows(parsed?.rows?.east, "east"),
-        },
-        parsed?.fullMlTidRows
-      ),
+      rows: {
+        west: normalizeTrainRemRows(parsed?.rows?.west, "west"),
+        east: normalizeTrainRemRows(parsed?.rows?.east, "east"),
+      },
       fullMlTidRows: normalizeFullMlTidRows(parsed?.fullMlTidRows),
       fullMlTidAutoClear: normalizeFullMlTidAutoClearMeta(parsed?.fullMlTidAutoClear),
       updatedAt: (parsed?.updatedAt || parsed?.updated_date || parsed?.updatedDate || "").toString(),
@@ -2451,8 +2447,6 @@ function buildTrainRemStateFromRecords(records = []) {
       state.updatedAt = recordUpdatedAt;
     }
   });
-
-  state.rows = applyFullMlTidMatchesToTrainRemRows(state.rows, state.fullMlTidRows);
 
   return { state, map };
 }
@@ -4120,8 +4114,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const [trainRemPdfStatus, setTrainRemPdfStatus] = useState({ west: false, east: false });
   const [trainRemUndoCount, setTrainRemUndoCount] = useState(0);
   const [eastDepotCopyStatus, setEastDepotCopyStatus] = useState("");
-  const [fullMlTidAutoClearEndsAt, setFullMlTidAutoClearEndsAt] = useState(null);
-  const [fullMlTidCountdownSeconds, setFullMlTidCountdownSeconds] = useState(0);
 
   const trainRemStateRef = useRef(trainRemState);
 
@@ -4140,8 +4132,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const trainRemPollingRef = useRef(false);
   const trainRemTrainIdRefs = useRef({});
   const fullMlTidTrainIdRefs = useRef({});
-  const fullMlTidAutoClearTimerRef = useRef(null);
-  const fullMlTidAutoClearSignatureRef = useRef("");
   const trainRemUndoStackRef = useRef([]);
   const trainRemSmartDirectionRef = useRef({});
   const trainRemLastFocusedIndexRef = useRef({});
@@ -4413,111 +4403,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
       return {
         ...prev,
-        rows: applyFullMlTidMatchesToTrainRemRows(nextRows, prev.fullMlTidRows),
+        rows: nextRows,
       };
     });
   }, [activeTimetable?.id, trainRemLoaded, updateTrainRemState]);
-
-  useEffect(() => {
-    const autoClearInfo = getFullMlTidAutoClearInfo(trainRemState.fullMlTidRows);
-    const { isComplete, signature } = autoClearInfo;
-
-    const resetRunningTimer = () => {
-      if (fullMlTidAutoClearTimerRef.current) {
-        clearTimeout(fullMlTidAutoClearTimerRef.current);
-        fullMlTidAutoClearTimerRef.current = null;
-      }
-      fullMlTidAutoClearSignatureRef.current = "";
-      setFullMlTidAutoClearEndsAt(null);
-      setFullMlTidCountdownSeconds(0);
-    };
-
-    const saveAutoClearMeta = (meta) => {
-      const normalizedMeta = normalizeFullMlTidAutoClearMeta(meta);
-      const currentState = trainRemStateRef.current;
-
-      if (isSameFullMlTidAutoClearMeta(currentState.fullMlTidAutoClear, normalizedMeta)) return;
-
-      const nextState = stampTrainRemState({
-        ...currentState,
-        fullMlTidAutoClear: normalizedMeta,
-      });
-
-      trainRemStateRef.current = nextState;
-      setTrainRemState(nextState);
-      scheduleTrainRemSave(nextState);
-    };
-
-    const clearFullMlTidTrainIdsAndTimer = () => {
-      resetRunningTimer();
-      updateTrainRemState((prev) => ({
-        ...clearFullMlTidTrainIdsFromState(prev),
-        fullMlTidAutoClear: emptyFullMlTidAutoClearMeta(),
-      }));
-    };
-
-    if (!isComplete) {
-      resetRunningTimer();
-      saveAutoClearMeta(emptyFullMlTidAutoClearMeta());
-      return undefined;
-    }
-
-    if (fullMlTidAutoClearTimerRef.current && fullMlTidAutoClearSignatureRef.current === signature) {
-      return undefined;
-    }
-
-    resetRunningTimer();
-
-    const now = Date.now();
-    const savedAutoClearMeta = normalizeFullMlTidAutoClearMeta(trainRemState.fullMlTidAutoClear);
-    let nextEndsAt = null;
-
-    if (savedAutoClearMeta.signature === signature && savedAutoClearMeta.endsAt) {
-      if (savedAutoClearMeta.endsAt <= now) {
-        clearFullMlTidTrainIdsAndTimer();
-        return undefined;
-      }
-
-      nextEndsAt = savedAutoClearMeta.endsAt;
-    } else {
-      nextEndsAt = now + FULL_ML_TID_AUTO_CLEAR_MS;
-      saveAutoClearMeta({ signature, endsAt: nextEndsAt });
-    }
-
-    const remainingMs = Math.max(0, nextEndsAt - now);
-
-    fullMlTidAutoClearSignatureRef.current = signature;
-    setFullMlTidAutoClearEndsAt(nextEndsAt);
-    setFullMlTidCountdownSeconds(Math.ceil(remainingMs / 1000));
-
-    fullMlTidAutoClearTimerRef.current = setTimeout(() => {
-      const currentInfo = getFullMlTidAutoClearInfo(trainRemStateRef.current.fullMlTidRows);
-
-      if (!currentInfo.isComplete || currentInfo.signature !== fullMlTidAutoClearSignatureRef.current) {
-        return;
-      }
-
-      clearFullMlTidTrainIdsAndTimer();
-    }, remainingMs);
-
-    return undefined;
-  }, [trainRemState.fullMlTidRows, trainRemState.fullMlTidAutoClear, scheduleTrainRemSave, updateTrainRemState]);
-
-  useEffect(() => {
-    if (!fullMlTidAutoClearEndsAt) {
-      setFullMlTidCountdownSeconds(0);
-      return undefined;
-    }
-
-    const tick = () => {
-      setFullMlTidCountdownSeconds(Math.max(0, Math.ceil((fullMlTidAutoClearEndsAt - Date.now()) / 1000)));
-    };
-
-    tick();
-    const interval = setInterval(tick, 1000);
-
-    return () => clearInterval(interval);
-  }, [fullMlTidAutoClearEndsAt]);
 
   const handleTrainRemUndo = useCallback(() => {
     const previousState = trainRemUndoStackRef.current.pop();
@@ -4591,9 +4480,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       }
       if (trainRemEditEndTimerRef.current) {
         clearTimeout(trainRemEditEndTimerRef.current);
-      }
-      if (fullMlTidAutoClearTimerRef.current) {
-        clearTimeout(fullMlTidAutoClearTimerRef.current);
       }
     };
   }, []);
@@ -4758,13 +4644,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
           ...prev.selectedPreset,
           [depot]: label,
         },
-        rows: applyFullMlTidMatchesToTrainRemRows(
-          {
-            ...prev.rows,
-            [depot]: buildTrainRemRowsFromPresetConfig(depot, label, existingRows, activeTimetable),
-          },
-          prev.fullMlTidRows
-        ),
+        rows: {
+          ...prev.rows,
+          [depot]: buildTrainRemRowsFromPresetConfig(depot, label, existingRows, activeTimetable),
+        },
       };
     });
   };
@@ -4777,13 +4660,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
       if (field === "tid") {
         const cleanTid = (value || "").toString().replace(/[^0-9]/g, "");
-        const matchedTrainId = buildFullMlTidMap(prev.fullMlTidRows)[cleanTid] || "";
         updatedRow.tid = cleanTid;
         updatedRow.timing = getTimingForTid(depot, presetLabel, cleanTid);
-        if (matchedTrainId) {
-          updatedRow.trainId = matchedTrainId;
-          updatedRow.remark = "";
-        }
       }
 
       if (field === "trainId") {
@@ -4822,7 +4700,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       return {
         ...prev,
         fullMlTidRows: normalizedFullRows,
-        rows: applyFullMlTidMatchesToTrainRemRows(prev.rows, normalizedFullRows),
       };
     });
   };
@@ -4848,9 +4725,16 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       return {
         ...prev,
         fullMlTidRows: normalizedFullRows,
-        rows: applyFullMlTidMatchesToTrainRemRows(prev.rows, normalizedFullRows),
       };
     });
+  };
+
+  const matchFullMlTidToTrainRemoval = () => {
+    updateTrainRemState((prev) => ({
+      ...prev,
+      fullMlTidAutoClear: emptyFullMlTidAutoClearMeta(),
+      rows: applyFullMlTidMatchesToTrainRemRows(prev.rows, prev.fullMlTidRows),
+    }));
   };
 
   const clearDepotTrainRem = (depot) => {
@@ -5198,17 +5082,14 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     const matchedTidCount = new Set(
       ["west", "east"]
         .flatMap((depot) => normalizeTrainRemRows(trainRemState.rows?.[depot], depot))
-        .map((row) => (row.tid || "").toString().replace(/[^0-9]/g, ""))
-        .filter((tid) => tid && tidMap[tid])
+        .map((row) => {
+          const tid = (row.tid || "").toString().replace(/[^0-9]/g, "");
+          const matchedTrainId = tid ? tidMap[tid] : "";
+          const currentTrainId = normalizeFullMlTrainId(row.trainId);
+          return tid && matchedTrainId && currentTrainId === matchedTrainId ? tid : "";
+        })
+        .filter(Boolean)
     ).size;
-    const autoClearInfo = getFullMlTidAutoClearInfo(rows);
-    const countdownActive = Boolean(fullMlTidAutoClearEndsAt && autoClearInfo.isComplete);
-    const countdownValue = countdownActive ? formatFullMlTidCountdown(fullMlTidCountdownSeconds) : "--:--";
-    const countdownLabel = countdownActive
-      ? "Train ID auto-clear"
-      : autoClearInfo.activeCount > 0
-        ? `Waiting ${autoClearInfo.filledCount}/${autoClearInfo.activeCount}`
-        : "Timer inactive";
     const activeFullMlTidPresetLabel = getFullMlTidActivePresetLabel(rows);
 
     return (
@@ -5320,13 +5201,16 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               })}
               <tr>
                 <td colSpan={2} className="px-1 py-1 bg-[#071828]">
-                  <div className={`flex h-7 items-center justify-between rounded-lg border px-2 ${
-                    countdownActive
-                      ? "border-amber-400/60 bg-amber-950/25 text-amber-100"
-                      : "border-[#1e4060] bg-[#091828] text-[#7eb8e0]"
-                  }`}>
-                    <span className="text-[10px] font-black uppercase tracking-widest">{countdownLabel}</span>
-                    <span className="font-mono text-[15px] font-black tabular-nums">{countdownValue}</span>
+                  <div className="flex h-7 items-center justify-between gap-2 rounded-lg border border-[#1e4060] bg-[#091828] px-2 text-[#7eb8e0]">
+                    <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Manual match only</span>
+                    <button
+                      type="button"
+                      onClick={matchFullMlTidToTrainRemoval}
+                      className="h-5 rounded-md border border-emerald-500/50 bg-emerald-950/35 px-2 text-[10px] font-black uppercase tracking-widest text-emerald-100 transition-colors hover:border-emerald-300 hover:bg-emerald-900/45"
+                      title="Click to match Full ML TID Train ID with Train Rem rows"
+                    >
+                      Match
+                    </button>
                   </div>
                 </td>
               </tr>
