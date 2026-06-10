@@ -1949,6 +1949,12 @@ const TRAIN_REM_WEST_9AM_REFERENCE_TIDS = [
   101, 103, 105, 107, 109, 111, 113, 115, 117, 119,
   201, 203, 205, 207, 209, 211, 213, 215, 217, 219,
 ];
+const TRAIN_REM_WEST_9AM_REAL_TIDS = [212, 214, 216, 218, 220, 102, 104, 106, 108, 110];
+const TRAIN_REM_WASH_LATE_SHIFT_TIDS = [
+  101, 103, 105, 107, 109, 111, 113, 115, 117, 119,
+  201, 203, 205, 213, 215, 217, 219,
+];
+const TRAIN_REM_WASH_NEED_SWAP_TIDS = [207, 209, 211];
 const FULL_ML_TID_ROW_COUNT = 40;
 const FULL_ML_TID_PRESETS = [
   {
@@ -1985,6 +1991,48 @@ const FULL_ML_TID_PRESETS = [
   },
 ];
 const TRAIN_REM_WEST_9AM_PRIORITY_TIDS = new Set(TRAIN_REM_WEST_9AM_REFERENCE_TIDS.map((tid) => String(tid)));
+const TRAIN_REM_WEST_9AM_REAL_TID_SET = new Set(TRAIN_REM_WEST_9AM_REAL_TIDS.map((tid) => String(tid)));
+const TRAIN_REM_WASH_LATE_SHIFT_TID_SET = new Set(TRAIN_REM_WASH_LATE_SHIFT_TIDS.map((tid) => String(tid)));
+const TRAIN_REM_WASH_NEED_SWAP_TID_SET = new Set(TRAIN_REM_WASH_NEED_SWAP_TIDS.map((tid) => String(tid)));
+
+function normalizeTrainRemTidValue(value = "") {
+  return (value || "").toString().replace(/[^0-9]/g, "");
+}
+
+function isWashOnlyRequestedRemark(value = "") {
+  return getRequestedWashOnlySortValue(value) === 1;
+}
+
+function getWashOnlyShiftRemovalAction({ tid = "", requestType = "", westRemovalRow = null } = {}) {
+  if (!isWashOnlyRequestedRemark(requestType)) return null;
+
+  const tidKey = normalizeTrainRemTidValue(tid || westRemovalRow?.tid || "");
+  if (!tidKey) return null;
+
+  if (westRemovalRow?.isWest9amRealRemoval || TRAIN_REM_WEST_9AM_REAL_TID_SET.has(tidKey)) {
+    return {
+      actionLabel: "Early Shift Rem",
+      actionSymbol: "",
+      actionStatus: "Early Shift Rem",
+      actionType: "earlyShiftRem",
+      group: "removal",
+    };
+  }
+
+  if (TRAIN_REM_WASH_NEED_SWAP_TID_SET.has(tidKey)) return null;
+
+  if (TRAIN_REM_WASH_LATE_SHIFT_TID_SET.has(tidKey)) {
+    return {
+      actionLabel: "Late Shift Rem",
+      actionSymbol: "",
+      actionStatus: "Late Shift Rem",
+      actionType: "lateShiftRem",
+      group: "removal",
+    };
+  }
+
+  return null;
+}
 
 function isTrainRemWest9amPreset(depot = "west", label = "9am") {
   return depot === "west" && label === "9am";
@@ -13420,6 +13468,9 @@ function getWestRemovalRowsMap(trainRemState = {}) {
       tid: (row.tid || "").toString().trim(),
       timing: (row.timing || "").toString().trim(),
       remark: (row.remark || "").toString().trim(),
+      rowIndex: index,
+      selectedPreset,
+      isWest9amRealRemoval: isTrainRemWest9amPreset("west", selectedPreset) && index < TRAIN_REM_WEST_9AM_REAL_ROW_COUNT,
     });
   });
 
@@ -13953,21 +14004,33 @@ function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, wes
     if (seen.has(seenKey)) return;
     seen.add(seenKey);
 
-    const actionLabel = isRemoval ? "Removal" : "Need Swapping";
-    const actionSymbol = isRemoval ? "✓" : "⇆";
+    const trainRemRow = isRemoval ? westRemovalRow : getTrainRemRowForTrain(trainRemState, key);
+    const requestTid = isRemoval
+      ? (westRemovalRow?.tid || "").toString().trim()
+      : getRequestTid(request, trainRemRow);
+    const washShiftAction = getWashOnlyShiftRemovalAction({
+      tid: requestTid,
+      requestType,
+      westRemovalRow: isRemoval ? westRemovalRow : null,
+    });
+    const finalGroup = washShiftAction?.group || group;
+    const actionLabel = washShiftAction?.actionLabel || (isRemoval ? "Removal" : "Need Swapping");
+    const actionSymbol = washShiftAction ? washShiftAction.actionSymbol : (isRemoval ? "✓" : "⇆");
+    const actionStatus = washShiftAction?.actionStatus || `${actionLabel} ${actionSymbol}`;
 
     const row = {
       key,
       trainsetNumber: formatRequestedTrainNumber(key),
-      tid: isRemoval ? (westRemovalRow?.tid || "").toString().trim() : "",
+      tid: finalGroup === "removal" ? requestTid : "",
       requestType,
       actionLabel,
       actionSymbol,
-      actionStatus: `${actionLabel} ${actionSymbol}`,
-      group,
+      actionStatus,
+      actionType: washShiftAction?.actionType || "",
+      group: finalGroup,
     };
 
-    if (isRemoval) removalRows.push(row);
+    if (finalGroup === "removal") removalRows.push(row);
     else swapRows.push(row);
   });
 
@@ -13993,28 +14056,42 @@ function getRequestedTrainActionOverviewRowsFromSwappingTable({ swappingRows = [
   const removalRows = (Array.isArray(actionOverviewRows) ? actionOverviewRows : [])
     .filter((row) => row && !row.isSeparator && row.group === "removal");
 
-  const swapRows = displayedSwapRows.map((row, index) => {
+  const requestedActionRows = displayedSwapRows.map((row, index) => {
     const key = normalizeTrainId(row?.key || row?.label || row?.trainId);
     const requestNotes = [row?.requestType, row?.actionNote]
       .map((value) => (value || "").toString().trim())
       .filter(Boolean);
-    const actionLabel = "Need Swapping";
-    const actionSymbol = "⇆";
+    const requestType = requestNotes.join(", ");
+    const rowTid = (row?.tid || row?.manualTid || row?.autoTid || "").toString().trim();
+    const washShiftAction = getWashOnlyShiftRemovalAction({
+      tid: rowTid,
+      requestType,
+    });
+    const actionLabel = washShiftAction?.actionLabel || "Need Swapping";
+    const actionSymbol = washShiftAction ? washShiftAction.actionSymbol : "⇆";
+    const actionStatus = washShiftAction?.actionStatus || `${actionLabel} ${actionSymbol}`;
+    const group = washShiftAction?.group || "swap";
 
     return {
       key: key || `swap-table-${index}`,
       trainsetNumber: formatRequestedTrainNumber(key || row?.label || row?.trainId),
-      tid: "",
-      requestType: requestNotes.join(", "),
+      tid: group === "removal" ? rowTid : "",
+      requestType,
       actionLabel,
       actionSymbol,
-      actionStatus: `${actionLabel} ${actionSymbol}`,
-      group: "swap",
+      actionStatus,
+      actionType: washShiftAction?.actionType || "",
+      group,
     };
   });
 
-  const mergedSwapRows = sortRequestedActionRows(mergeRequestedActionRowsByTrain(swapRows));
-  const mergedRemovalRows = sortRequestedActionRows(mergeRequestedActionRowsByTrain(removalRows));
+  const mergedSwapRows = sortRequestedActionRows(mergeRequestedActionRowsByTrain(
+    requestedActionRows.filter((row) => row?.group !== "removal")
+  ));
+  const mergedRemovalRows = sortRequestedActionRows(mergeRequestedActionRowsByTrain([
+    ...removalRows,
+    ...requestedActionRows.filter((row) => row?.group === "removal"),
+  ]));
 
   if (mergedSwapRows.length && mergedRemovalRows.length) {
     return [
@@ -15473,20 +15550,25 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const label = entry?.actionLabel || (group === "removal" ? "Removal" : "Need Swapping");
     const textX = cellX + 6;
     const cleanLabel = sanitizePdfText(label);
-    const maxLength = group === "removal" ? 10 : 18;
+    const maxLength = entry?.actionType ? 18 : group === "removal" ? 10 : 18;
 
     drawTextInCell(cleanLabel, textX, textY, maxLength, {
       size: Math.max(3.9, activeFontSize - 0.2),
       bold: false,
     });
 
+    const hasExplicitActionSymbol = Object.prototype.hasOwnProperty.call(entry || {}, "actionSymbol");
+    const actionSymbol = (entry?.actionSymbol || "").toString().trim();
+    const symbolToDraw = hasExplicitActionSymbol ? actionSymbol : (group === "removal" ? "✓" : "⇆");
+    if (!symbolToDraw) return;
+
     const labelWidth = getApproxPdfTextWidth(cleanLabel, Math.max(3.9, activeFontSize - 0.2), false);
     const iconX = Math.min(cellX + cellWidth - 18, textX + labelWidth + 5);
     const centerY = rowY + rowH / 2;
 
-    if (group === "removal") {
+    if (symbolToDraw === "✓") {
       drawCheckIcon(iconX, centerY, Math.max(4.4, Math.min(6.2, rowH * 0.55)));
-    } else {
+    } else if (symbolToDraw === "⇆") {
       drawSwapIcon(iconX, centerY, Math.max(8.5, Math.min(12, rowH * 0.9)));
     }
   };
