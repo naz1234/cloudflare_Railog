@@ -1936,7 +1936,7 @@ function buildInsertionLivePayload(state = {}) {
 const TRAIN_REM_STORAGE_KEY = "trainRemState_v1";
 const TRAIN_REM_SYNC_INTERVAL_MS = 5000;
 const TRAIN_REM_UNDO_LIMIT = 30;
-const TRAIN_REM_ROW_COUNTS = { west: 29, east: 14 };
+const TRAIN_REM_ROW_COUNTS = { west: 32, east: 14 };
 const FULL_ML_TID_ROW_COUNT = 40;
 const FULL_ML_TID_PRESETS = [
   {
