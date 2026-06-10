@@ -14610,7 +14610,10 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
               const arrivalAccent = "#ffffff";
               const arrival3A1P2 = formatTimetableTimeWithHrs(item.arrival3A1P2);
               const noteText = [item.requestType, item.actionNote].map((value) => (value || "").toString().trim()).filter(Boolean).join(", ");
-              const isEmpty = !item.label && !item.tid && !item.requestType && !item.actionNote && !arrival3A1P2;
+              const displayTid = [item.manualTid, item.autoTid, item.tid]
+                .map((value) => (value || "").toString().trim())
+                .find(Boolean) || "";
+              const isEmpty = !item.label && !displayTid && !item.requestType && !item.actionNote && !arrival3A1P2;
 
               return (
                 <tr key={`${item.key}-${index}`} className="odd:bg-[#081b2d] even:bg-[#0a2136]">
@@ -14620,20 +14623,20 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
                   <td className={`border-b ${(showArrival3A1P2 || showNote) ? "border-r" : ""} border-[#193752] px-2 py-1 text-center align-middle leading-none`}>
                     {item.canEditTid && typeof onManualTidChange === "function" ? (
                       <input
-                        value={item.manualTid}
+                        value={displayTid}
                         onChange={(event) => onManualTidChange(item.key, event.target.value)}
                         inputMode="numeric"
                         maxLength={3}
                         placeholder="--"
-                        title="Enter TID manually"
+                        title={item.manualTid ? "Enter TID manually" : (displayTid ? "Matched TID from train removal/reference row" : "Enter TID manually")}
                         className="h-[19px] w-[46px] bg-transparent px-1 py-0 text-center text-[12px] font-normal leading-none tracking-wide text-[#eef7ff] outline-none placeholder:text-[#8fa6bd] focus:text-sky-200"
                         style={{
-                          color: item.manualTid ? "#ffffff" : undefined,
+                          color: displayTid ? "#ffffff" : undefined,
                           textShadow: "none",
                         }}
                       />
                     ) : (
-                      <RequestedTrainPill accent={accent} muted={isEmpty || !item.tid}>{item.tid}</RequestedTrainPill>
+                      <RequestedTrainPill accent={accent} muted={isEmpty || !displayTid}>{displayTid}</RequestedTrainPill>
                     )}
                   </td>
                   {showArrival3A1P2 && (
