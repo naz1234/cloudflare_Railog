@@ -758,13 +758,17 @@ function getTrainRemPresetConfig(depot = "west", label = "9am", activeTimetable 
 function buildTrainRemRowsFromPresetConfig(depot, label, existingRows = [], activeTimetable = null) {
   const config = getTrainRemPresetConfig(depot, label, activeTimetable);
   const rows = normalizeTrainRemRows(existingRows, depot);
+  const tids = getTrainRemPresetRowTids(depot, label, config.tids);
 
   return rows.map((row, index) => {
-    const tid = config.tids[index] ? String(config.tids[index]) : "";
+    const tid = tids[index] ? String(tids[index]) : "";
+    const referenceOnly = isTrainRemReferenceOnlyIndex(depot, label, index);
     return {
       ...row,
+      trainId: isTrainRemReferenceSeparatorIndex(depot, label, index) ? "" : row.trainId,
       tid,
-      timing: tid ? config.timeMap?.[tid] || "" : "",
+      timing: tid && !referenceOnly ? config.timeMap?.[tid] || "" : "",
+      remark: referenceOnly ? "" : row.remark,
     };
   });
 }
@@ -1937,6 +1941,14 @@ const TRAIN_REM_STORAGE_KEY = "trainRemState_v1";
 const TRAIN_REM_SYNC_INTERVAL_MS = 5000;
 const TRAIN_REM_UNDO_LIMIT = 30;
 const TRAIN_REM_ROW_COUNTS = { west: 32, east: 14 };
+const TRAIN_REM_WEST_9AM_REAL_ROW_COUNT = 10;
+const TRAIN_REM_WEST_9AM_REFERENCE_SEPARATOR_COUNT = 2;
+const TRAIN_REM_WEST_9AM_REFERENCE_START_INDEX = TRAIN_REM_WEST_9AM_REAL_ROW_COUNT + TRAIN_REM_WEST_9AM_REFERENCE_SEPARATOR_COUNT;
+const TRAIN_REM_WEST_9AM_REFERENCE_NOTE = "Enter the Train IDs below to minimize train swapping for washing.";
+const TRAIN_REM_WEST_9AM_REFERENCE_TIDS = [
+  101, 103, 105, 107, 109, 111, 113, 115, 117, 119,
+  201, 203, 205, 207, 209, 211, 213, 215, 217, 219,
+];
 const FULL_ML_TID_ROW_COUNT = 40;
 const FULL_ML_TID_PRESETS = [
   {
@@ -1972,11 +1984,56 @@ const FULL_ML_TID_PRESETS = [
     ],
   },
 ];
-const TRAIN_REM_WEST_9AM_PRIORITY_TIDS = new Set(["207", "209", "211"]);
+const TRAIN_REM_WEST_9AM_PRIORITY_TIDS = new Set(TRAIN_REM_WEST_9AM_REFERENCE_TIDS.map((tid) => String(tid)));
+
+function isTrainRemWest9amPreset(depot = "west", label = "9am") {
+  return depot === "west" && label === "9am";
+}
+
+function isTrainRemReferenceSeparatorIndex(depot = "west", label = "9am", rowIndex = -1) {
+  return (
+    isTrainRemWest9amPreset(depot, label) &&
+    rowIndex >= TRAIN_REM_WEST_9AM_REAL_ROW_COUNT &&
+    rowIndex < TRAIN_REM_WEST_9AM_REFERENCE_START_INDEX
+  );
+}
+
+function isTrainRemReferenceOnlyIndex(depot = "west", label = "9am", rowIndex = -1) {
+  return isTrainRemWest9amPreset(depot, label) && rowIndex >= TRAIN_REM_WEST_9AM_REAL_ROW_COUNT;
+}
+
+function getTrainRemPresetRowTids(depot = "west", label = "9am", tids = []) {
+  const sourceTids = Array.isArray(tids) ? tids : [];
+
+  if (!isTrainRemWest9amPreset(depot, label)) {
+    return sourceTids;
+  }
+
+  const realRemovalTids = sourceTids
+    .slice(0, TRAIN_REM_WEST_9AM_REAL_ROW_COUNT)
+    .map((tid) => (tid ? String(tid) : ""));
+
+  while (realRemovalTids.length < TRAIN_REM_WEST_9AM_REAL_ROW_COUNT) {
+    realRemovalTids.push("");
+  }
+
+  return [
+    ...realRemovalTids,
+    ...Array.from({ length: TRAIN_REM_WEST_9AM_REFERENCE_SEPARATOR_COUNT }, () => ""),
+    ...TRAIN_REM_WEST_9AM_REFERENCE_TIDS.map((tid) => String(tid)),
+  ].slice(0, TRAIN_REM_ROW_COUNTS.west);
+}
 
 const TID_PRESETS = {
   west: [
-    { label: "9am",  tids: [212,214,216,218,220,102,104,106,108,110,207,209,211] },
+    {
+      label: "9am",
+      tids: [
+        212, 214, 216, 218, 220, 102, 104, 106, 108, 110,
+        "", "",
+        ...TRAIN_REM_WEST_9AM_REFERENCE_TIDS,
+      ],
+    },
     { label: "7pm",  tids: [213,215,217,219,101,103,105,107,109,111,113,115,117,119,201,203,205] },
     { label: "12am", tids: [122,123,124,125,126,127,128,129,130,221] },
     { label: "Fri",  tids: [102,103,104,105,106,107,108,109,110,201] },
@@ -2180,7 +2237,11 @@ function getTrainRemRecordFilledTrainIdCount(record = {}) {
   const depot = record?.depot === "east" ? "east" : record?.depot === "west" ? "west" : null;
   const rows = depot ? normalizeTrainRemRows(record?.rows, depot) : Array.isArray(record?.rows) ? record.rows : [];
 
-  return rows.filter((row) => normalizeTrainId(row?.trainId || "")).length;
+  const selectedPreset = record?.selectedPreset || "9am";
+  return rows.filter((row, index) => {
+    if (isTrainRemReferenceOnlyIndex(depot, selectedPreset, index)) return false;
+    return normalizeTrainId(row?.trainId || "");
+  }).length;
 }
 
 function stampTrainRemState(state = {}, updatedAt = new Date().toISOString()) {
@@ -2288,6 +2349,36 @@ function normalizeTrainRemRows(rows, depot) {
   }));
 }
 
+function normalizeTrainRemRowsForPreset(rows, depot, label = "9am") {
+  const normalizedRows = normalizeTrainRemRows(rows, depot);
+
+  if (!isTrainRemWest9amPreset(depot, label)) return normalizedRows;
+
+  return normalizedRows.map((row, index) => {
+    if (isTrainRemReferenceSeparatorIndex(depot, label, index)) {
+      return {
+        ...row,
+        trainId: "",
+        tid: "",
+        timing: "",
+        remark: "",
+      };
+    }
+
+    if (isTrainRemReferenceOnlyIndex(depot, label, index)) {
+      const referenceTid = TRAIN_REM_WEST_9AM_REFERENCE_TIDS[index - TRAIN_REM_WEST_9AM_REFERENCE_START_INDEX];
+      return {
+        ...row,
+        tid: referenceTid ? String(referenceTid) : "",
+        timing: "",
+        remark: "",
+      };
+    }
+
+    return row;
+  });
+}
+
 function collectStablingTrainIds(data = {}, roads = []) {
   const seen = new Set();
   const trainIds = [];
@@ -2308,15 +2399,18 @@ function collectStablingTrainIds(data = {}, roads = []) {
 
 function buildTrainRemRowsFromPreset(depot, label, existingRows = []) {
   const preset = TID_PRESETS[depot].find((item) => item.label === label);
-  const tids = preset?.tids || [];
+  const tids = getTrainRemPresetRowTids(depot, label, preset?.tids || []);
   const rows = normalizeTrainRemRows(existingRows, depot);
 
   return rows.map((row, index) => {
     const tid = tids[index] ? String(tids[index]) : "";
+    const referenceOnly = isTrainRemReferenceOnlyIndex(depot, label, index);
     return {
       ...row,
+      trainId: isTrainRemReferenceSeparatorIndex(depot, label, index) ? "" : row.trainId,
       tid,
-      timing: tid ? TID_TIME_MAP?.[depot]?.[label]?.[tid] || "" : "",
+      timing: tid && !referenceOnly ? TID_TIME_MAP?.[depot]?.[label]?.[tid] || "" : "",
+      remark: referenceOnly ? "" : row.remark,
     };
   });
 }
@@ -2345,8 +2439,8 @@ function loadTrainRemState() {
         east: parsed?.selectedPreset?.east || "9am",
       },
       rows: {
-        west: normalizeTrainRemRows(parsed?.rows?.west, "west"),
-        east: normalizeTrainRemRows(parsed?.rows?.east, "east"),
+        west: normalizeTrainRemRowsForPreset(parsed?.rows?.west, "west", parsed?.selectedPreset?.west || "9am"),
+        east: normalizeTrainRemRowsForPreset(parsed?.rows?.east, "east", parsed?.selectedPreset?.east || "9am"),
       },
       fullMlTidRows: normalizeFullMlTidRows(parsed?.fullMlTidRows),
       fullMlTidAutoClear: normalizeFullMlTidAutoClearMeta(parsed?.fullMlTidAutoClear),
@@ -2393,7 +2487,7 @@ function buildTrainRemDepotPayload(state = {}, depot = "west") {
     depot: safeDepot,
     key: safeDepot,
     selectedPreset: state.selectedPreset?.[safeDepot] || "9am",
-    rows: normalizeTrainRemRows(state.rows?.[safeDepot], safeDepot),
+    rows: normalizeTrainRemRowsForPreset(state.rows?.[safeDepot], safeDepot, state.selectedPreset?.[safeDepot] || "9am"),
     fullMlTidRows: normalizeFullMlTidRows(state.fullMlTidRows),
     fullMlTidAutoClear: autoClearMeta,
     fullMlTidAutoClearSignature: autoClearMeta.signature,
@@ -2423,7 +2517,7 @@ function buildTrainRemStateFromRecords(records = []) {
     if (rec.id) map[depot] = rec.id;
 
     state.selectedPreset[depot] = rec.selectedPreset || fallback.selectedPreset[depot];
-    state.rows[depot] = normalizeTrainRemRows(rec.rows, depot);
+    state.rows[depot] = normalizeTrainRemRowsForPreset(rec.rows, depot, state.selectedPreset[depot]);
 
     const fullRows = normalizeFullMlTidRows(rec.fullMlTidRows);
     if (fullRows.some((row) => row.trainId || row.tid)) {
@@ -4593,9 +4687,11 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     const counts = {};
 
     ["west", "east"].forEach((scanDepot) => {
-      const scanRows = normalizeTrainRemRows(trainRemState.rows?.[scanDepot], scanDepot);
+      const scanPreset = trainRemState.selectedPreset?.[scanDepot] || "9am";
+      const scanRows = normalizeTrainRemRowsForPreset(trainRemState.rows?.[scanDepot], scanDepot, scanPreset);
 
       scanRows.forEach((scanRow, scanIndex) => {
+        if (isTrainRemReferenceOnlyIndex(scanDepot, scanPreset, scanIndex)) return;
         if (shouldIgnoreFocusedPartialDuplicate(scanDepot, scanIndex, scanRow.trainId)) return;
 
         const key = getTrainRemDuplicateKey(scanRow.trainId);
@@ -4655,13 +4751,14 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const updateTrainRemCell = (depot, rowIndex, field, value) => {
     updateTrainRemState((prev) => {
       const presetLabel = prev.selectedPreset?.[depot] || "9am";
-      const rows = normalizeTrainRemRows(prev.rows?.[depot], depot);
+      const rows = normalizeTrainRemRowsForPreset(prev.rows?.[depot], depot, presetLabel);
+      const referenceOnly = isTrainRemReferenceOnlyIndex(depot, presetLabel, rowIndex);
       const updatedRow = { ...rows[rowIndex], [field]: value };
 
       if (field === "tid") {
         const cleanTid = (value || "").toString().replace(/[^0-9]/g, "");
         updatedRow.tid = cleanTid;
-        updatedRow.timing = getTimingForTid(depot, presetLabel, cleanTid);
+        updatedRow.timing = referenceOnly ? "" : getTimingForTid(depot, presetLabel, cleanTid);
       }
 
       if (field === "trainId") {
@@ -4669,6 +4766,11 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         // from maintenanceMap and should not be stored in row.remark.
         // Always clear row.remark on Train ID change to prevent stale WASH/PM/etc.
         // from the previously typed train from staying visible.
+        updatedRow.remark = "";
+      }
+
+      if (referenceOnly) {
+        updatedRow.timing = "";
         updatedRow.remark = "";
       }
 
@@ -4841,8 +4943,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   };
 
   const renderDepotTable = (depot, title, subtitle) => {
-    const rows = normalizeTrainRemRows(trainRemState.rows?.[depot], depot);
     const selectedPreset = trainRemState.selectedPreset?.[depot] || "9am";
+    const rows = normalizeTrainRemRowsForPreset(trainRemState.rows?.[depot], depot, selectedPreset);
     const duplicateCounts = getTrainRemDuplicateCounts();
     const pdfActive = Boolean(trainRemPdfStatus?.[depot]);
     const activeTimetableLabel = getTimetableTypeLabel(activeTimetableType);
@@ -4978,6 +5080,23 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
             </thead>
             <tbody>
               {rows.map((row, index) => {
+                const referenceSeparator = isTrainRemReferenceSeparatorIndex(depot, selectedPreset, index);
+                const referenceOnly = isTrainRemReferenceOnlyIndex(depot, selectedPreset, index);
+
+                if (referenceSeparator) {
+                  return (
+                    <tr key={`${depot}-train-rem-reference-note-${index}`}>
+                      <td
+                        colSpan={4}
+                        className="border-b border-[#1f3c55] px-2 py-1 text-center text-[9.5px] font-black text-amber-100"
+                        style={{ backgroundColor: index === TRAIN_REM_WEST_9AM_REAL_ROW_COUNT ? "#2a2110" : "#071828" }}
+                      >
+                        {index === TRAIN_REM_WEST_9AM_REAL_ROW_COUNT ? TRAIN_REM_WEST_9AM_REFERENCE_NOTE : ""}
+                      </td>
+                    </tr>
+                  );
+                }
+
                 const trainRemRequestKey = normalizeTrainId(row.trainId);
                 const trainRemRequestItems = trainRemRequestKey ? maintenanceMap?.[trainRemRequestKey] || [] : [];
                 const requestRemark = getRequestRemarkForTrain(row.trainId);
@@ -4992,7 +5111,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   duplicateCounts[duplicateKey] > 1 &&
                   !shouldIgnoreFocusedPartialDuplicate(depot, index, row.trainId)
                 );
-                const filledRowBg = isDuplicateTrainId ? "#2a0b13" : hasTrainId ? "#082a25" : "#071828";
+                const filledRowBg = referenceOnly ? (hasTrainId ? "#1f2615" : "#121d18") : isDuplicateTrainId ? "#2a0b13" : hasTrainId ? "#082a25" : "#071828";
                 const trainIdInputClass = isDuplicateTrainId
                   ? "border-red-500/90 bg-red-950/50 text-red-100 shadow-[0_0_0_1px_rgba(248,113,113,0.28),0_0_12px_rgba(248,113,113,0.16)]"
                   : hasTrainId
@@ -5020,7 +5139,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       }}
                       onBlur={() => handleTrainRemTrainIdBlur(depot, index)}
                       placeholder="ID"
-                      title={isDuplicateTrainId ? "Duplicate Train ID detected" : ""}
+                      title={referenceOnly ? "Reference only — excluded from removal log and PDF" : isDuplicateTrainId ? "Duplicate Train ID detected" : ""}
                       className={`w-full h-5 rounded-md border px-1 text-center text-[11px] font-bold outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${trainIdInputClass}`}
                     />
                   </td>
@@ -5028,20 +5147,40 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     <input
                       value={row.tid}
                       onFocus={handleTrainRemOtherFieldFocus}
-                      onChange={(e) => updateTrainRemCell(depot, index, "tid", e.target.value.replace(/[^0-9]/g, ""))}
+                      onChange={(e) => {
+                        if (!referenceOnly) {
+                          updateTrainRemCell(depot, index, "tid", e.target.value.replace(/[^0-9]/g, ""));
+                        }
+                      }}
                       onBlur={handleTrainRemEditEnd}
                       placeholder="TID"
-                      className="w-full h-5 rounded-md border border-[#1e4060] bg-[#091828] px-1 text-center text-[11px] font-bold text-[#c8d8ea] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]"
+                      readOnly={referenceOnly}
+                      title={referenceOnly ? "Reference only — excluded from removal log and PDF" : ""}
+                      className={`w-full h-5 rounded-md border px-1 text-center text-[11px] font-bold outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${
+                        referenceOnly
+                          ? "border-amber-500/45 bg-amber-950/20 text-amber-100 cursor-default"
+                          : "border-[#1e4060] bg-[#091828] text-[#c8d8ea]"
+                      }`}
                     />
                   </td>
                   <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: filledRowBg }}>
                     <input
                       value={row.timing}
                       onFocus={handleTrainRemOtherFieldFocus}
-                      onChange={(e) => updateTrainRemCell(depot, index, "timing", e.target.value)}
+                      onChange={(e) => {
+                        if (!referenceOnly) {
+                          updateTrainRemCell(depot, index, "timing", e.target.value);
+                        }
+                      }}
                       onBlur={handleTrainRemEditEnd}
-                      placeholder="00:00"
-                      className="w-full h-5 rounded-md border border-[#1e4060] bg-[#071828] px-1 text-center text-[11px] font-bold text-[#7eb8e0] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]"
+                      placeholder={referenceOnly ? "REF" : "00:00"}
+                      readOnly={referenceOnly}
+                      title={referenceOnly ? "Reference only — timing disabled so it will not export" : ""}
+                      className={`w-full h-5 rounded-md border px-1 text-center text-[11px] font-bold outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${
+                        referenceOnly
+                          ? "border-amber-500/35 bg-[#121d18] text-amber-100 cursor-default placeholder:text-amber-700/70"
+                          : "border-[#1e4060] bg-[#071828] text-[#7eb8e0]"
+                      }`}
                     />
                   </td>
                   <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: filledRowBg }}>
@@ -5049,20 +5188,20 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       value={remarkValue}
                       onFocus={handleTrainRemOtherFieldFocus}
                       onChange={(e) => {
-                        if (!requestRemark) {
+                        if (!requestRemark && !referenceOnly) {
                           updateTrainRemCell(depot, index, "remark", e.target.value);
                         }
                       }}
                       onBlur={handleTrainRemEditEnd}
-                      readOnly={Boolean(requestRemark)}
-                      title={requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
-                      placeholder="Remark"
+                      readOnly={Boolean(requestRemark) || referenceOnly}
+                      title={referenceOnly ? "Reference only — excluded from removal log and PDF" : requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
+                      placeholder={referenceOnly ? "Reference only" : "Remark"}
                       style={requestRemarkStyle}
                       className={`w-full h-5 rounded-md border px-1.5 text-[11px] font-semibold outline-none placeholder:text-[#2b4f6b] ${
-                        requestRemark
+                        requestRemark || referenceOnly
                           ? "cursor-default"
                           : "border-[#1e4060] bg-[#091828] text-[#c8d8ea] focus:border-[#4f8ef7]"
-                      }`}
+                      } ${referenceOnly ? "border-amber-500/35 bg-[#121d18] text-amber-100 placeholder:text-amber-700/70" : ""}`}
                     />
                   </td>
                     </tr>
@@ -13235,8 +13374,12 @@ function getTrainRemRowForTrain(trainRemState = {}, trainKey = "") {
   if (!key) return null;
 
   for (const depot of ["west", "east"]) {
-    const rows = normalizeTrainRemRows(trainRemState?.rows?.[depot], depot);
-    const match = rows.find((row) => normalizeTrainId(row.trainId) === key);
+    const selectedPreset = trainRemState?.selectedPreset?.[depot] || "9am";
+    const rows = normalizeTrainRemRowsForPreset(trainRemState?.rows?.[depot], depot, selectedPreset);
+    const match = rows.find((row, index) => {
+      if (isTrainRemReferenceOnlyIndex(depot, selectedPreset, index)) return false;
+      return normalizeTrainId(row.trainId) === key;
+    });
     if (match) {
       return {
         depot,
@@ -13250,20 +13393,23 @@ function getTrainRemRowForTrain(trainRemState = {}, trainKey = "") {
   return null;
 }
 
-function isWest9amPrioritySwapTid(trainRemState = {}, row = {}) {
+function isWest9amPrioritySwapTid(trainRemState = {}, row = {}, rowIndex = -1) {
   const selectedPreset = trainRemState?.selectedPreset?.west || "";
-  const tid = (row?.tid || "").toString().trim();
 
-  return selectedPreset === "9am" && TRAIN_REM_WEST_9AM_PRIORITY_TIDS.has(tid);
+  if (isTrainRemReferenceOnlyIndex("west", selectedPreset, rowIndex)) return true;
+
+  const tid = (row?.tid || "").toString().trim();
+  return selectedPreset === "9am" && rowIndex < 0 && TRAIN_REM_WEST_9AM_PRIORITY_TIDS.has(tid);
 }
 
 function getWestRemovalRowsMap(trainRemState = {}) {
   const map = new Map();
 
-  normalizeTrainRemRows(trainRemState?.rows?.west, "west").forEach((row) => {
-    // West 9am priority TIDs 207 / 209 / 211 are only for washing / swap checking.
+  const selectedPreset = trainRemState?.selectedPreset?.west || "9am";
+  normalizeTrainRemRowsForPreset(trainRemState?.rows?.west, "west", selectedPreset).forEach((row, index) => {
+    // West 9am washing reference rows are only for checking/minimising swapping.
     // They must not make the train appear under "will be removed to West Depot".
-    if (isWest9amPrioritySwapTid(trainRemState, row)) return;
+    if (isWest9amPrioritySwapTid(trainRemState, row, index)) return;
 
     const key = normalizeTrainId(row.trainId);
     if (!key) return;
@@ -14830,9 +14976,11 @@ function getRemovalRemarkFillColor(remark = "", requestItem = null) {
 }
 
 function getTrainRemRemovalEntries(trainRemState = {}, depot = "west", maintenanceMap = {}) {
-  return normalizeTrainRemRows(trainRemState?.rows?.[depot], depot)
+  const selectedPreset = trainRemState?.selectedPreset?.[depot] || "9am";
+
+  return normalizeTrainRemRowsForPreset(trainRemState?.rows?.[depot], depot, selectedPreset)
     .map((row, index) => {
-      if (depot === "west" && isWest9amPrioritySwapTid(trainRemState, row)) return null;
+      if (isTrainRemReferenceOnlyIndex(depot, selectedPreset, index)) return null;
 
       const key = normalizeTrainId(row?.trainId);
       const time = cleanRemovalTime(row?.timing);
