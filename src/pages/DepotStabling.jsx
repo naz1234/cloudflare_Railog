@@ -5090,7 +5090,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     <tr key={`${depot}-train-rem-reference-note-${index}`}>
                       <td
                         colSpan={4}
-                        className="border-b border-[#1f3c55] px-2 py-1 text-left text-[9.5px] font-black text-amber-100"
+                        className="border-b border-[#1f3c55] px-2 py-1 text-left text-[9.5px] font-normal text-amber-100"
                         style={{ backgroundColor: index === TRAIN_REM_WEST_9AM_REAL_ROW_COUNT ? "#2a2110" : "#071828" }}
                       >
                         {index === TRAIN_REM_WEST_9AM_REAL_ROW_COUNT ? TRAIN_REM_WEST_9AM_REFERENCE_NOTE : ""}
@@ -5142,7 +5142,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       onBlur={() => handleTrainRemTrainIdBlur(depot, index)}
                       placeholder="ID"
                       title={referenceOnly ? "Reference only — excluded from removal log and PDF" : isDuplicateTrainId ? "Duplicate Train ID detected" : ""}
-                      className={`w-full h-5 rounded-md border px-1 text-center text-[11px] font-bold outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${trainIdInputClass}`}
+                      className={`w-full h-5 rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${trainIdInputClass}`}
                     />
                   </td>
                   <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: filledRowBg }}>
@@ -5158,7 +5158,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       placeholder="TID"
                       readOnly={referenceOnly}
                       title={referenceOnly ? "Reference only — excluded from removal log and PDF" : ""}
-                      className={`w-full h-5 rounded-md border px-1 text-center text-[11px] font-bold outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${
+                      className={`w-full h-5 rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${
                         referenceOnly
                           ? "border-amber-500/45 bg-amber-950/20 text-amber-100 cursor-default"
                           : "border-[#1e4060] bg-[#091828] text-[#c8d8ea]"
@@ -5178,7 +5178,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       placeholder={referenceOnly ? "REF" : "00:00"}
                       readOnly={referenceOnly}
                       title={referenceOnly ? "Reference only — timing disabled so it will not export" : ""}
-                      className={`w-full h-5 rounded-md border px-1 text-center text-[11px] font-bold outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${
+                      className={`w-full h-5 rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${
                         referenceOnly
                           ? "border-amber-500/35 bg-[#121d18] text-amber-100 cursor-default placeholder:text-amber-700/70"
                           : "border-[#1e4060] bg-[#071828] text-[#7eb8e0]"
@@ -5199,7 +5199,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       title={referenceOnly ? "Reference only — excluded from removal log and PDF" : requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
                       placeholder={referenceOnly ? "Reference only" : "Remark"}
                       style={requestRemarkStyle}
-                      className={`w-full h-5 rounded-md border px-1.5 text-[11px] font-semibold outline-none placeholder:text-[#2b4f6b] ${
+                      className={`w-full h-5 rounded-md border px-1.5 text-[11px] ${referenceOnly ? "font-normal" : "font-semibold"} outline-none placeholder:text-[#2b4f6b] ${
                         requestRemark || referenceOnly
                           ? "cursor-default"
                           : "border-[#1e4060] bg-[#091828] text-[#c8d8ea] focus:border-[#4f8ef7]"
