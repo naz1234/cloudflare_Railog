@@ -5440,14 +5440,13 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
             <div className="mb-2 text-[15px] font-black leading-tight text-cyan-300">Night Shift WD DC</div>
             <div>
               Send <span className="font-black text-yellow-300">4 trains to 3K1</span> with the remark <span className="font-black text-yellow-300">Wash Only</span>.<br />
-              It will automatically be removed during Early or Late Shift at WD.
+              It will automatically be removed during Early or <span className="font-black text-yellow-300">Late Shift</span> at WD.
             </div>
           </div>
           <div className="rounded-xl border border-purple-500/20 bg-gradient-to-br from-[#171b3a]/90 to-[#071827]/90 px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
             <div className="mb-2 text-[15px] font-black leading-tight text-purple-300">Night Shift ED DC</div>
             <div>
-              Use <span className="font-black text-yellow-300">TID 203 and 205</span> with the remark <span className="font-black text-yellow-300">Wash Only</span>.<br />
-              It will automatically be removed during Late Shift at WD.
+              Utilize <span className="font-black text-yellow-300">TID 203 and 205</span> with the remark <span className="font-black text-yellow-300">Wash Only</span>. It will automatically be removed during <span className="font-black text-yellow-300">Late Shift</span> at WD.
             </div>
           </div>
         </div>
