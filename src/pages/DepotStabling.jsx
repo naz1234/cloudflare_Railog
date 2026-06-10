@@ -14336,7 +14336,7 @@ function RequestedTrainTitle({ title = "" }) {
 
 function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTidChange = null, showArrival3A1P2 = false, showNote = false }) {
   const tableRows = getRequestedTrainDisplayRows(rows, 3);
-  const tableWidth = 174 + (showArrival3A1P2 ? 108 : 0) + (showNote ? 138 : 0);
+  const tableWidth = 132 + (showArrival3A1P2 ? 88 : 0) + (showNote ? 112 : 0);
   const totalRows = tableRows.filter((item) => item && (item.label || item.tid || item.requestType || item.actionNote || item.arrival3A1P2)).length;
 
   return (
@@ -14355,10 +14355,10 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
       <div className="flex-1 w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
         <table className="h-full min-h-full table-fixed text-[11px] leading-none" style={{ width: tableWidth, maxWidth: "100%" }}>
           <colgroup>
-            <col style={{ width: 96 }} />
-            <col style={{ width: 78 }} />
-            {showArrival3A1P2 && <col style={{ width: 108 }} />}
-            {showNote && <col style={{ width: 138 }} />}
+            <col style={{ width: 74 }} />
+            <col style={{ width: 58 }} />
+            {showArrival3A1P2 && <col style={{ width: 88 }} />}
+            {showNote && <col style={{ width: 112 }} />}
           </colgroup>
           <thead>
             <tr className="bg-[#0a2237] text-[#cfe5fb]">
@@ -14441,11 +14441,11 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
       </div>
 
       <div className="w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
-        <table className="table-fixed text-[11px] leading-none" style={{ width: 496, maxWidth: "100%" }}>
+        <table className="table-fixed text-[11px] leading-none" style={{ width: 400, maxWidth: "100%" }}>
           <colgroup>
-            <col style={{ width: 76 }} />
-            <col style={{ width: 220 }} />
-            <col style={{ width: 200 }} />
+            <col style={{ width: 58 }} />
+            <col style={{ width: 198 }} />
+            <col style={{ width: 144 }} />
           </colgroup>
           <thead>
             <tr className="bg-[#0a2237] text-[#cfe5fb]">
@@ -14689,7 +14689,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
       </div>
 
       <div className="w-fit max-w-full">
-        <div className="grid w-fit max-w-full grid-cols-[auto_auto] items-stretch gap-4 overflow-x-auto">
+        <div className="grid w-fit max-w-full grid-cols-[auto_auto] items-stretch gap-3 overflow-x-hidden">
           <RequestedTrainTable
             title="TRAIN REQUESTED FOR SWAPPING"
             rows={swappingRowsWithArrival3A1P2}
