@@ -5429,24 +5429,24 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
         <div className="mb-3 text-[12px] font-black uppercase tracking-[0.16em] text-white">
           Insertion Notes
         </div>
-        <div className="grid grid-cols-1 gap-3 text-[13px] font-semibold leading-relaxed text-[#e5eef8] lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 text-[13px] font-normal leading-relaxed text-[#e5eef8] lg:grid-cols-3">
           <div className="rounded-xl border border-sky-500/20 bg-gradient-to-br from-[#0a2440]/90 to-[#071827]/90 px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
             <div className="mb-2 text-[15px] font-black leading-tight text-sky-400">PG2 Editable Train ID</div>
             <div>
-              Go to <span className="font-black text-yellow-300">PG2</span> if a train ID needs to be changed or removed from STB. No need to edit it from the main page.
+              Go to <span className="text-yellow-300">PG2</span> if a train ID needs to be changed or removed from STB. No need to edit it from the main page.
             </div>
           </div>
           <div className="rounded-xl border border-cyan-500/20 bg-gradient-to-br from-[#082939]/90 to-[#071827]/90 px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
             <div className="mb-2 text-[15px] font-black leading-tight text-cyan-300">Night Shift WD DC</div>
             <div>
-              Utilize <span className="font-black text-yellow-300">4 trains to 3K1</span> with the remark <span className="font-black text-yellow-300">Wash Only</span>.<br />
-              It will automatically be removed during Early or <span className="font-black text-yellow-300">Late Shift</span> at WD.
+              Utilize <span className="text-yellow-300">4 trains to 3K1</span> with the remark <span className="text-yellow-300">Wash Only</span>.<br />
+              It will automatically be removed during Early or <span className="text-yellow-300">Late Shift</span> at WD.
             </div>
           </div>
           <div className="rounded-xl border border-purple-500/20 bg-gradient-to-br from-[#171b3a]/90 to-[#071827]/90 px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
             <div className="mb-2 text-[15px] font-black leading-tight text-purple-300">Night Shift ED DC</div>
             <div>
-              Utilize <span className="font-black text-yellow-300">TID 203 and 205</span> with the remark <span className="font-black text-yellow-300">Wash Only</span>. It will automatically be removed during <span className="font-black text-yellow-300">Late Shift</span> at WD.
+              Utilize <span className="text-yellow-300">TID 203 and 205</span> with the remark <span className="text-yellow-300">Wash Only</span>. It will automatically be removed during <span className="text-yellow-300">Late Shift</span> at WD.
             </div>
           </div>
         </div>
