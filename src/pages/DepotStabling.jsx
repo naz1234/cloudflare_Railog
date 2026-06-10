@@ -5088,7 +5088,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     <tr key={`${depot}-train-rem-reference-note-${index}`}>
                       <td
                         colSpan={4}
-                        className="border-b border-[#1f3c55] px-2 py-1 text-center text-[9.5px] font-black text-amber-100"
+                        className="border-b border-[#1f3c55] px-2 py-1 text-left text-[9.5px] font-black text-amber-100"
                         style={{ backgroundColor: index === TRAIN_REM_WEST_9AM_REAL_ROW_COUNT ? "#2a2110" : "#071828" }}
                       >
                         {index === TRAIN_REM_WEST_9AM_REAL_ROW_COUNT ? TRAIN_REM_WEST_9AM_REFERENCE_NOTE : ""}
