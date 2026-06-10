@@ -13811,6 +13811,7 @@ function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, wes
     const row = {
       key,
       trainsetNumber: formatRequestedTrainNumber(key),
+      tid: isRemoval ? (westRemovalRow?.tid || "").toString().trim() : "",
       requestType,
       actionLabel,
       actionSymbol,
@@ -13855,6 +13856,7 @@ function getRequestedTrainActionOverviewRowsFromSwappingTable({ swappingRows = [
     return {
       key: key || `swap-table-${index}`,
       trainsetNumber: formatRequestedTrainNumber(key || row?.label || row?.trainId),
+      tid: "",
       requestType: requestNotes.join(", "),
       actionLabel,
       actionSymbol,
@@ -14184,7 +14186,7 @@ function buildRequestedTrainsDocx({ swappingRows = [], actionOverviewRows = [] }
 
         return requestedDocxRow([
           formatRequestedTrainNumber(row.trainsetNumber || row.key),
-          "",
+          row.group === "removal" ? (row.tid || "") : "",
           row.requestType || "",
           row.actionStatus || "",
         ], { widths });
@@ -14444,12 +14446,14 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
         <table className="table-fixed text-[11px] leading-none" style={{ width: 400, maxWidth: "100%" }}>
           <colgroup>
             <col style={{ width: 58 }} />
-            <col style={{ width: 198 }} />
-            <col style={{ width: 144 }} />
+            <col style={{ width: 46 }} />
+            <col style={{ width: 176 }} />
+            <col style={{ width: 120 }} />
           </colgroup>
           <thead>
             <tr className="bg-[#0a2237] text-[#cfe5fb]">
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Trainset number</th>
+              <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">TID</th>
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Remark Request</th>
               <th className="border-b border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none"></th>
             </tr>
@@ -14461,15 +14465,21 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
                   <tr key={item.key || `separator-${index}`} className="bg-[#071828]">
                     <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                     <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
+                    <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                     <td className="border-b border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                   </tr>
                 );
               }
 
+              const displayTid = item.group === "removal" ? (item.tid || "") : "";
+
               return (
                 <tr key={`${item.key}-${item.requestType}-${item.actionStatus}-${index}`} className="odd:bg-[#081b2d] even:bg-[#0a2136]">
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
                     {formatRequestedTrainNumber(item.trainsetNumber || item.key)}
+                  </td>
+                  <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
+                    {displayTid}
                   </td>
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-tight text-[#eaf4ff] whitespace-normal break-words">
                     {item.requestType || ""}
@@ -14482,7 +14492,7 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
               );
             }) : (
               <tr className="bg-[#081b2d]">
-                <td colSpan={3} className="border-b border-[#193752] px-2 py-2 text-center align-middle leading-none text-[#8fa6bd]">
+                <td colSpan={4} className="border-b border-[#193752] px-2 py-2 text-center align-middle leading-none text-[#8fa6bd]">
                   No requested train action found
                 </td>
               </tr>
@@ -15648,7 +15658,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
           align: "center",
           width: colWidths.train,
         });
-        drawTextInCell("", colX.tid, textY, 5, {
+        drawTextInCell(entry?.group === "removal" ? (entry?.tid || "") : "", colX.tid, textY, 5, {
           size: activeFontSize,
           bold: false,
           align: "center",
