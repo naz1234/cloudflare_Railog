@@ -13426,16 +13426,19 @@ function getTrainRemRowForTrain(trainRemState = {}, trainKey = "") {
   for (const depot of ["west", "east"]) {
     const selectedPreset = trainRemState?.selectedPreset?.[depot] || "9am";
     const rows = normalizeTrainRemRowsForPreset(trainRemState?.rows?.[depot], depot, selectedPreset);
-    const match = rows.find((row, index) => {
-      if (isTrainRemReferenceOnlyIndex(depot, selectedPreset, index)) return false;
-      return normalizeTrainId(row.trainId) === key;
-    });
-    if (match) {
+    const matchIndex = rows.findIndex((row) => normalizeTrainId(row.trainId) === key);
+    if (matchIndex >= 0) {
+      const match = rows[matchIndex];
+      const isWest9amPreset = isTrainRemWest9amPreset(depot, selectedPreset);
       return {
         depot,
         tid: (match.tid || "").toString().trim(),
         timing: (match.timing || "").toString().trim(),
         remark: (match.remark || "").toString().trim(),
+        rowIndex: matchIndex,
+        selectedPreset,
+        isWest9amReferenceOnly: isTrainRemReferenceOnlyIndex(depot, selectedPreset, matchIndex),
+        isWest9amRealRemoval: isWest9amPreset && matchIndex < TRAIN_REM_WEST_9AM_REAL_ROW_COUNT,
       };
     }
   }
@@ -13751,21 +13754,19 @@ function getRequestedTrainsNotInWestDepotStablingRemoval({ requests = [], trainR
     if (isUnfitTrainRequest(request)) return;
 
     const key = normalizeTrainId(request?.trainId);
-    if (
-      !key ||
-      workshopTrainKeys.has(key) ||
-      westStablingKeys.has(key) ||
-      seen.has(key)
-    ) {
-      return;
-    }
+    if (!key || workshopTrainKeys.has(key) || seen.has(key)) return;
+
+    const trainRemRow = getTrainRemRowForTrain(trainRemState, key);
+    const requestType = getTrainRequestDisplayType(request);
+    const isWashReferenceRow = Boolean(trainRemRow?.isWest9amReferenceOnly && isWashOnlyRequestedRemark(requestType));
+
+    if (westStablingKeys.has(key) && !isWashReferenceRow) return;
 
     const westRemovalRow = westRemovalRowsMap.get(key) || null;
     const swappingRequests = getSwappingRequestsForTrain(requests, key, westRemovalRow);
     if (!swappingRequests.length) return;
 
     seen.add(key);
-    const trainRemRow = getTrainRemRowForTrain(trainRemState, key);
     const currentSwappingRequests = swappingRequests.filter((item) => !isTomorrowTrainRequest(item));
     const hasTomorrowRequest = swappingRequests.some(isTomorrowTrainRequest);
     const hasCurrentRequest = currentSwappingRequests.length > 0;
@@ -13775,6 +13776,7 @@ function getRequestedTrainsNotInWestDepotStablingRemoval({ requests = [], trainR
       key,
       label: padTrainId(key),
       tid: getRequestTid(request, trainRemRow),
+      isWest9amReferenceTid: Boolean(trainRemRow?.isWest9amReferenceOnly),
       requestType: getRequestNoteSummaryFromRequests(swappingRequests) || getTrainRequestDisplayType(request),
       requestTypeWithoutTomorrow: getRequestNoteSummaryFromRequests(currentSwappingRequests),
       timeRemoved: getRequestTiming(request, trainRemRow),
@@ -13991,20 +13993,22 @@ function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, wes
 
     const requestType = getTrainRequestDisplayType(request);
     const westRemovalRow = westRemovalRowsMap.get(key) || null;
+    const trainRemRow = getTrainRemRowForTrain(trainRemState, key);
     const isRemoval = isRequestCoveredByWestRemoval(request, westRemovalRow);
+    const isWashReferenceRow = Boolean(trainRemRow?.isWest9amReferenceOnly && isWashOnlyRequestedRemark(requestType));
 
     // Keep trains that are covered by the West removal table so the
     // REQUESTED TRAIN: can show the Removal ✓ group.
-    // Only hide already-West-Depot trains when they are not covered by removal,
-    // because those do not need swapping action.
-    if (!isRemoval && westStablingKeys.has(key)) return;
+    // Also keep West 9am washing-reference rows for wash-only requests so they
+    // can display Late Shift Rem / Need Swapping even though they do not export.
+    // Only hide already-West-Depot trains when they have no removal/reference action.
+    if (!isRemoval && !isWashReferenceRow && westStablingKeys.has(key)) return;
 
     const group = isRemoval ? "removal" : "swap";
     const seenKey = `${key}|${normalizeRequestIdentity(requestType)}|${group}`;
     if (seen.has(seenKey)) return;
     seen.add(seenKey);
 
-    const trainRemRow = isRemoval ? westRemovalRow : getTrainRemRowForTrain(trainRemState, key);
     const requestTid = isRemoval
       ? (westRemovalRow?.tid || "").toString().trim()
       : getRequestTid(request, trainRemRow);
@@ -14311,15 +14315,16 @@ function applyManualTidToRequestedRows(rows = [], manualTidByTrain = {}) {
   return (rows || []).map((row) => {
     const key = normalizeTrainId(row?.key || row?.label || row?.trainId);
     const manualTid = key ? manualTidMap[key] || "" : "";
+    const referenceTid = row?.isWest9amReferenceTid ? cleanRequestedTrainTidInput(row?.tid || "") : "";
 
     return {
       ...row,
       key: row?.key || key,
-      // Do not auto-match TID from Train Rem / request data for this table.
-      // User will key in the TID manually, then Arrival 3A1P2 will follow the manual TID.
-      autoTid: "",
+      // Do not auto-match from Full ML TID. West 9am washing-reference rows are
+      // allowed because the user manually enters the train ID there for wash planning.
+      autoTid: referenceTid,
       manualTid,
-      tid: manualTid || "",
+      tid: manualTid || referenceTid || "",
       canEditTid: Boolean(key),
     };
   });
