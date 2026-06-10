@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 
 const WEEKDAY_EAST_ROWS = [
   { tid: 201, remark: "Late Rem", time: "05:24" },
@@ -322,6 +322,81 @@ function toMinutes(timeStr) {
   return h * 60 + m;
 }
 
+const TID_SOUND_ENABLED_KEY = "insertionTidSoundEnabled_v1";
+
+function formatClockTime(date = new Date()) {
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+function getLocalDateKey(date = new Date()) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function loadTidSoundEnabled() {
+  try {
+    return localStorage.getItem(TID_SOUND_ENABLED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function saveTidSoundEnabled(value) {
+  try {
+    localStorage.setItem(TID_SOUND_ENABLED_KEY, value ? "true" : "false");
+  } catch {}
+}
+
+function buildDueTidList(activeSchedule = {}, currentTime = "") {
+  const entries = [];
+
+  [
+    ["East", activeSchedule?.east],
+    ["West", activeSchedule?.west],
+  ].forEach(([depot, rows]) => {
+    (Array.isArray(rows) ? rows : []).forEach((row) => {
+      if (row?.time === currentTime) entries.push(`${depot} TID ${row.tid}`);
+    });
+  });
+
+  return entries;
+}
+
+function playTidMatchBeep(audioContextRef) {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return false;
+
+  const context = audioContextRef.current || new AudioContextClass();
+  audioContextRef.current = context;
+
+  if (context.state === "suspended") {
+    context.resume().catch(() => {});
+  }
+
+  const baseTime = context.currentTime + 0.03;
+  [0, 0.24, 0.48].forEach((offset) => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(880, baseTime + offset);
+    gain.gain.setValueAtTime(0.0001, baseTime + offset);
+    gain.gain.exponentialRampToValueAtTime(0.24, baseTime + offset + 0.025);
+    gain.gain.exponentialRampToValueAtTime(0.0001, baseTime + offset + 0.16);
+
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(baseTime + offset);
+    oscillator.stop(baseTime + offset + 0.18);
+  });
+
+  return true;
+}
+
 function getNextIndex(rows, nowMinutes) {
   return rows.findIndex((r) => toMinutes(r.time) >= nowMinutes);
 }
@@ -389,10 +464,8 @@ function formatDay(now) {
   return now.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
 }
 
-function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todayScheduleKey, isScheduleOverride }) {
-  const hh = String(now.getHours()).padStart(2, "0");
-  const mm = String(now.getMinutes()).padStart(2, "0");
-  const currentTimeStr = `${hh}:${mm}`;
+function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todayScheduleKey, isScheduleOverride, soundEnabled = false, soundReady = false, onToggleSound }) {
+  const currentTimeStr = formatClockTime(now);
 
   return (
     <div
@@ -562,6 +635,34 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
           );
         })}
       </div>
+
+      <button
+        type="button"
+        onClick={onToggleSound}
+        style={{
+          border: "1px solid",
+          borderColor: soundEnabled ? (soundReady ? "rgba(74, 222, 128, 0.62)" : "rgba(251, 191, 36, 0.62)") : "rgba(125, 184, 224, 0.20)",
+          background: soundEnabled
+            ? soundReady
+              ? "linear-gradient(135deg, rgba(22, 163, 74, 0.30), rgba(6, 78, 59, 0.28))"
+              : "linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(120, 53, 15, 0.24))"
+            : "linear-gradient(180deg, rgba(10, 30, 46, 0.95), rgba(7, 24, 40, 0.95))",
+          color: soundEnabled ? (soundReady ? "#bbf7d0" : "#fde68a") : "#9fb8cb",
+          fontSize: 9,
+          fontWeight: 400,
+          padding: "6px 8px",
+          borderRadius: 9,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+          boxShadow: soundEnabled && soundReady ? "0 0 16px rgba(34,197,94,0.18)" : "none",
+          transition: "all 160ms ease",
+        }}
+        title={soundEnabled ? "Click to turn off TID time sound" : "Click to enable sound when TID time matches"}
+      >
+        {soundEnabled ? (soundReady ? "Sound ON" : "Enable sound") : "Sound OFF"}
+      </button>
     </div>
   );
 }
@@ -914,6 +1015,10 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
 
 export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday" }) {
   const [now, setNow] = useState(new Date());
+  const [soundEnabled, setSoundEnabled] = useState(loadTidSoundEnabled);
+  const [soundReady, setSoundReady] = useState(false);
+  const audioContextRef = useRef(null);
+  const lastSoundKeyRef = useRef("");
   const selectedScheduleKey = normalizeTimetableTypeKey(activeTimetableType);
   const schedules = useMemo(
     () => buildSchedules(activeTimetable, selectedScheduleKey),
@@ -928,9 +1033,58 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
   const isWeekday = scheduleKey === "weekday";
 
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 30000);
+    const id = setInterval(() => setNow(new Date()), 10000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    saveTidSoundEnabled(soundEnabled);
+  }, [soundEnabled]);
+
+  const handleToggleSound = useCallback(async () => {
+    if (soundEnabled) {
+      setSoundEnabled(false);
+      setSoundReady(false);
+      return;
+    }
+
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) {
+        alert("Sound is not supported in this browser.");
+        return;
+      }
+
+      const context = audioContextRef.current || new AudioContextClass();
+      audioContextRef.current = context;
+      if (context.state === "suspended") await context.resume();
+
+      setSoundEnabled(true);
+      setSoundReady(context.state === "running");
+      playTidMatchBeep(audioContextRef);
+    } catch (error) {
+      console.error("Unable to enable TID sound:", error);
+      alert("Unable to enable sound. Please click the page once and try again.");
+    }
+  }, [soundEnabled]);
+
+  useEffect(() => {
+    if (!soundEnabled || !activeSchedule) return;
+
+    const currentTime = formatClockTime(now);
+    const dueTidList = buildDueTidList(activeSchedule, currentTime);
+    if (!dueTidList.length) return;
+
+    const soundKey = `${getLocalDateKey(now)}|${scheduleKey}|${currentTime}|${dueTidList.join(",")}`;
+    if (lastSoundKeyRef.current === soundKey) return;
+    lastSoundKeyRef.current = soundKey;
+
+    const played = playTidMatchBeep(audioContextRef);
+    if (played) {
+      const context = audioContextRef.current;
+      setSoundReady(Boolean(context && context.state === "running"));
+    }
+  }, [now, soundEnabled, activeSchedule, scheduleKey]);
 
   useEffect(() => {
     if (schedules[selectedScheduleKey]) setScheduleKey(selectedScheduleKey);
@@ -971,6 +1125,9 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
         setScheduleKey={setScheduleKey}
         todayScheduleKey={todayScheduleKey}
         isScheduleOverride={isScheduleOverride}
+        soundEnabled={soundEnabled}
+        soundReady={soundReady}
+        onToggleSound={handleToggleSound}
       />
 
       {isWeekday ? (
