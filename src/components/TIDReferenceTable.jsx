@@ -323,6 +323,12 @@ function toMinutes(timeStr) {
 }
 
 const TID_SOUND_ENABLED_KEY = "insertionTidSoundEnabled_v1";
+const TID_SOUND_SETTINGS_KEY = "insertionTidSoundSettings_v2";
+const DEFAULT_TID_SOUND_SETTINGS = { east: false, west: false };
+const DEPOT_SOUND_CONFIG = {
+  east: { label: "ED", frequency: 660, color: "#d8b4fe", readyColor: "#f0abfc", glow: "rgba(168, 85, 247, 0.24)" },
+  west: { label: "WD", frequency: 880, color: "#67e8f9", readyColor: "#7dd3fc", glow: "rgba(14, 165, 233, 0.24)" },
+};
 
 function formatClockTime(date = new Date()) {
   const hh = String(date.getHours()).padStart(2, "0");
@@ -337,36 +343,57 @@ function getLocalDateKey(date = new Date()) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function loadTidSoundEnabled() {
+function loadTidSoundSettings() {
   try {
-    return localStorage.getItem(TID_SOUND_ENABLED_KEY) === "true";
-  } catch {
-    return false;
-  }
+    const saved = localStorage.getItem(TID_SOUND_SETTINGS_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        east: Boolean(parsed?.east),
+        west: Boolean(parsed?.west),
+      };
+    }
+
+    // Migrate old single ON/OFF sound setting. If user had sound ON before,
+    // keep both depot sounds ON instead of silently disabling it.
+    if (localStorage.getItem(TID_SOUND_ENABLED_KEY) === "true") {
+      return { east: true, west: true };
+    }
+  } catch {}
+
+  return { ...DEFAULT_TID_SOUND_SETTINGS };
 }
 
-function saveTidSoundEnabled(value) {
+function saveTidSoundSettings(value) {
   try {
-    localStorage.setItem(TID_SOUND_ENABLED_KEY, value ? "true" : "false");
+    localStorage.setItem(
+      TID_SOUND_SETTINGS_KEY,
+      JSON.stringify({ east: Boolean(value?.east), west: Boolean(value?.west) })
+    );
   } catch {}
 }
 
-function buildDueTidList(activeSchedule = {}, currentTime = "") {
+function isAnyTidSoundEnabled(soundSettings = DEFAULT_TID_SOUND_SETTINGS) {
+  return Boolean(soundSettings?.east || soundSettings?.west);
+}
+
+function buildDueTidList(activeSchedule = {}, currentTime = "", soundSettings = DEFAULT_TID_SOUND_SETTINGS) {
   const entries = [];
 
   [
-    ["East", activeSchedule?.east],
-    ["West", activeSchedule?.west],
-  ].forEach(([depot, rows]) => {
+    ["east", "East", activeSchedule?.east],
+    ["west", "West", activeSchedule?.west],
+  ].forEach(([depotKey, depotLabel, rows]) => {
+    if (!soundSettings?.[depotKey]) return;
     (Array.isArray(rows) ? rows : []).forEach((row) => {
-      if (row?.time === currentTime) entries.push(`${depot} TID ${row.tid}`);
+      if (row?.time === currentTime) entries.push({ depot: depotKey, text: `${depotLabel} TID ${row.tid}` });
     });
   });
 
   return entries;
 }
 
-function playTidMatchBeep(audioContextRef) {
+function playTidMatchBeep(audioContextRef, depotType = "west", startDelay = 0) {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) return false;
 
@@ -377,13 +404,14 @@ function playTidMatchBeep(audioContextRef) {
     context.resume().catch(() => {});
   }
 
-  const baseTime = context.currentTime + 0.03;
+  const soundConfig = DEPOT_SOUND_CONFIG[depotType] || DEPOT_SOUND_CONFIG.west;
+  const baseTime = context.currentTime + 0.03 + startDelay;
   [0, 0.24, 0.48].forEach((offset) => {
     const oscillator = context.createOscillator();
     const gain = context.createGain();
 
     oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(880, baseTime + offset);
+    oscillator.frequency.setValueAtTime(soundConfig.frequency, baseTime + offset);
     gain.gain.setValueAtTime(0.0001, baseTime + offset);
     gain.gain.exponentialRampToValueAtTime(0.24, baseTime + offset + 0.025);
     gain.gain.exponentialRampToValueAtTime(0.0001, baseTime + offset + 0.16);
@@ -464,7 +492,7 @@ function formatDay(now) {
   return now.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
 }
 
-function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todayScheduleKey, isScheduleOverride, soundEnabled = false, soundReady = false, onToggleSound }) {
+function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todayScheduleKey, isScheduleOverride, soundSettings = DEFAULT_TID_SOUND_SETTINGS, soundReady = false, onToggleDepotSound }) {
   const currentTimeStr = formatClockTime(now);
 
   return (
@@ -636,33 +664,57 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
         })}
       </div>
 
-      <button
-        type="button"
-        onClick={onToggleSound}
+      <div
         style={{
-          border: "1px solid",
-          borderColor: soundEnabled ? (soundReady ? "rgba(74, 222, 128, 0.62)" : "rgba(251, 191, 36, 0.62)") : "rgba(125, 184, 224, 0.20)",
-          background: soundEnabled
-            ? soundReady
-              ? "linear-gradient(135deg, rgba(22, 163, 74, 0.30), rgba(6, 78, 59, 0.28))"
-              : "linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(120, 53, 15, 0.24))"
-            : "linear-gradient(180deg, rgba(10, 30, 46, 0.95), rgba(7, 24, 40, 0.95))",
-          color: soundEnabled ? (soundReady ? "#bbf7d0" : "#fde68a") : "#9fb8cb",
-          fontSize: 9,
-          fontWeight: 400,
-          padding: "6px 8px",
-          borderRadius: 9,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          cursor: "pointer",
-          whiteSpace: "nowrap",
-          boxShadow: soundEnabled && soundReady ? "0 0 16px rgba(34,197,94,0.18)" : "none",
-          transition: "all 160ms ease",
+          display: "flex",
+          gap: 4,
+          padding: 2,
+          borderRadius: 10,
+          background: "rgba(6, 24, 39, 0.60)",
+          border: "1px solid rgba(125, 184, 224, 0.14)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
         }}
-        title={soundEnabled ? "Click to turn off TID time sound" : "Click to enable sound when TID time matches"}
       >
-        {soundEnabled ? (soundReady ? "Sound ON" : "Enable sound") : "Sound OFF"}
-      </button>
+        {["east", "west"].map((depotKey) => {
+          const config = DEPOT_SOUND_CONFIG[depotKey];
+          const enabled = Boolean(soundSettings?.[depotKey]);
+
+          return (
+            <button
+              key={depotKey}
+              type="button"
+              onClick={() => onToggleDepotSound(depotKey)}
+              style={{
+                border: "1px solid",
+                borderColor: enabled
+                  ? soundReady
+                    ? `${config.readyColor}99`
+                    : "rgba(251, 191, 36, 0.62)"
+                  : "rgba(125, 184, 224, 0.20)",
+                background: enabled
+                  ? soundReady
+                    ? `linear-gradient(135deg, ${config.glow}, rgba(6, 24, 39, 0.76))`
+                    : "linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(120, 53, 15, 0.24))"
+                  : "linear-gradient(180deg, rgba(10, 30, 46, 0.95), rgba(7, 24, 40, 0.95))",
+                color: enabled ? (soundReady ? config.readyColor : "#fde68a") : "#9fb8cb",
+                fontSize: 9,
+                fontWeight: 400,
+                padding: "6px 8px",
+                borderRadius: 8,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                boxShadow: enabled && soundReady ? `0 0 16px ${config.glow}` : "none",
+                transition: "all 160ms ease",
+              }}
+              title={enabled ? `Click to turn off ${config.label} time sound` : `Click to enable ${config.label} time sound`}
+            >
+              {config.label} Sound {enabled ? "ON" : "OFF"}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1015,7 +1067,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
 
 export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday" }) {
   const [now, setNow] = useState(new Date());
-  const [soundEnabled, setSoundEnabled] = useState(loadTidSoundEnabled);
+  const [soundSettings, setSoundSettings] = useState(loadTidSoundSettings);
   const [soundReady, setSoundReady] = useState(false);
   const audioContextRef = useRef(null);
   const lastSoundKeyRef = useRef("");
@@ -1038,13 +1090,14 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
   }, []);
 
   useEffect(() => {
-    saveTidSoundEnabled(soundEnabled);
-  }, [soundEnabled]);
+    saveTidSoundSettings(soundSettings);
+  }, [soundSettings]);
 
-  const handleToggleSound = useCallback(async () => {
-    if (soundEnabled) {
-      setSoundEnabled(false);
-      setSoundReady(false);
+  const handleToggleDepotSound = useCallback(async (depotType) => {
+    const depotKey = depotType === "east" ? "east" : "west";
+
+    if (soundSettings?.[depotKey]) {
+      setSoundSettings((prev) => ({ ...DEFAULT_TID_SOUND_SETTINGS, ...prev, [depotKey]: false }));
       return;
     }
 
@@ -1059,32 +1112,36 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
       audioContextRef.current = context;
       if (context.state === "suspended") await context.resume();
 
-      setSoundEnabled(true);
+      setSoundSettings((prev) => ({ ...DEFAULT_TID_SOUND_SETTINGS, ...prev, [depotKey]: true }));
       setSoundReady(context.state === "running");
-      playTidMatchBeep(audioContextRef);
+      playTidMatchBeep(audioContextRef, depotKey);
     } catch (error) {
-      console.error("Unable to enable TID sound:", error);
+      console.error("Unable to enable depot TID sound:", error);
       alert("Unable to enable sound. Please click the page once and try again.");
     }
-  }, [soundEnabled]);
+  }, [soundSettings]);
 
   useEffect(() => {
-    if (!soundEnabled || !activeSchedule) return;
+    if (!isAnyTidSoundEnabled(soundSettings) || !activeSchedule) return;
 
     const currentTime = formatClockTime(now);
-    const dueTidList = buildDueTidList(activeSchedule, currentTime);
+    const dueTidList = buildDueTidList(activeSchedule, currentTime, soundSettings);
     if (!dueTidList.length) return;
 
-    const soundKey = `${getLocalDateKey(now)}|${scheduleKey}|${currentTime}|${dueTidList.join(",")}`;
+    const soundKey = `${getLocalDateKey(now)}|${scheduleKey}|${currentTime}|${dueTidList.map((item) => item.text).join(",")}`;
     if (lastSoundKeyRef.current === soundKey) return;
     lastSoundKeyRef.current = soundKey;
 
-    const played = playTidMatchBeep(audioContextRef);
+    let played = false;
+    [...new Set(dueTidList.map((item) => item.depot))].forEach((depotKey, index) => {
+      if (playTidMatchBeep(audioContextRef, depotKey, index * 0.82)) played = true;
+    });
+
     if (played) {
       const context = audioContextRef.current;
       setSoundReady(Boolean(context && context.state === "running"));
     }
-  }, [now, soundEnabled, activeSchedule, scheduleKey]);
+  }, [now, soundSettings, activeSchedule, scheduleKey]);
 
   useEffect(() => {
     if (schedules[selectedScheduleKey]) setScheduleKey(selectedScheduleKey);
@@ -1125,9 +1182,9 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
         setScheduleKey={setScheduleKey}
         todayScheduleKey={todayScheduleKey}
         isScheduleOverride={isScheduleOverride}
-        soundEnabled={soundEnabled}
+        soundSettings={soundSettings}
         soundReady={soundReady}
-        onToggleSound={handleToggleSound}
+        onToggleDepotSound={handleToggleDepotSound}
       />
 
       {isWeekday ? (
