@@ -15516,8 +15516,8 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     return `q ${fillCmd} ${strokeCmd} ${x.toFixed(2)} ${y.toFixed(2)} ${width.toFixed(2)} ${height.toFixed(2)} re ${paintCmd} Q\n`;
   };
 
-  const line = (x1, y1, x2, y2, width = 0.35) => {
-    return `q ${pdfColor("#000000")} RG ${width.toFixed(2)} w ${x1.toFixed(2)} ${y1.toFixed(2)} m ${x2.toFixed(2)} ${y2.toFixed(2)} l S Q\n`;
+  const line = (x1, y1, x2, y2, width = 0.35, color = "#000000") => {
+    return `q ${pdfColor(color)} RG ${width.toFixed(2)} w ${x1.toFixed(2)} ${y1.toFixed(2)} m ${x2.toFixed(2)} ${y2.toFixed(2)} l S Q\n`;
   };
 
   let ops = "";
@@ -15562,51 +15562,80 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     });
   };
 
-  const drawCheckIcon = (x, centerY, size = 5.6) => {
-    ops += line(x, centerY - 0.1, x + size * 0.38, centerY - size * 0.42, 0.65);
-    ops += line(x + size * 0.38, centerY - size * 0.42, x + size, centerY + size * 0.45, 0.65);
+  const drawCheckIcon = (x, centerY, size = 5.6, color = "#000000") => {
+    ops += line(x, centerY - 0.1, x + size * 0.38, centerY - size * 0.42, 0.65, color);
+    ops += line(x + size * 0.38, centerY - size * 0.42, x + size, centerY + size * 0.45, 0.65, color);
   };
 
-  const drawSwapIcon = (x, centerY, width = 11) => {
+  const drawSwapIcon = (x, centerY, width = 11, color = "#000000") => {
     const topY = centerY + 1.8;
     const bottomY = centerY - 1.8;
     const leftX = x;
     const rightX = x + width;
 
-    ops += line(leftX, topY, rightX, topY, 0.55);
-    ops += line(rightX, topY, rightX - 2.8, topY + 1.9, 0.55);
-    ops += line(rightX, topY, rightX - 2.8, topY - 1.9, 0.55);
+    ops += line(leftX, topY, rightX, topY, 0.55, color);
+    ops += line(rightX, topY, rightX - 2.8, topY + 1.9, 0.55, color);
+    ops += line(rightX, topY, rightX - 2.8, topY - 1.9, 0.55, color);
 
-    ops += line(rightX, bottomY, leftX, bottomY, 0.55);
-    ops += line(leftX, bottomY, leftX + 2.8, bottomY + 1.9, 0.55);
-    ops += line(leftX, bottomY, leftX + 2.8, bottomY - 1.9, 0.55);
+    ops += line(rightX, bottomY, leftX, bottomY, 0.55, color);
+    ops += line(leftX, bottomY, leftX + 2.8, bottomY + 1.9, 0.55, color);
+    ops += line(leftX, bottomY, leftX + 2.8, bottomY - 1.9, 0.55, color);
+  };
+
+  const getPdfActionStatusColors = (entry = {}) => {
+    const label = (entry?.actionLabel || "").toString().toLowerCase();
+    const actionType = (entry?.actionType || "").toString();
+
+    if (actionType === "lateShiftRem" || label.includes("late shift")) {
+      return { fill: "#0ea5e9", stroke: "#0369a1", text: "#ffffff", icon: "#ffffff" };
+    }
+
+    if (actionType === "earlyShiftRem" || label.includes("early shift")) {
+      return { fill: "#facc15", stroke: "#ca8a04", text: "#000000", icon: "#000000" };
+    }
+
+    return { fill: "#ef4444", stroke: "#b91c1c", text: "#ffffff", icon: "#ffffff" };
   };
 
   const drawActionStatusInCell = (entry = {}, cellX, rowY, cellWidth, rowH, textY, activeFontSize) => {
     const group = entry?.group === "removal" ? "removal" : "swap";
     const label = entry?.actionLabel || (group === "removal" ? "Removal" : "Need Swapping");
-    const textX = cellX + 6;
     const cleanLabel = sanitizePdfText(label);
-    const maxLength = entry?.actionType ? 18 : group === "removal" ? 10 : 18;
-
-    drawTextInCell(cleanLabel, textX, textY, maxLength, {
-      size: Math.max(3.9, activeFontSize - 0.2),
-      bold: false,
-    });
-
     const hasExplicitActionSymbol = Object.prototype.hasOwnProperty.call(entry || {}, "actionSymbol");
     const actionSymbol = (entry?.actionSymbol || "").toString().trim();
     const symbolToDraw = hasExplicitActionSymbol ? actionSymbol : (group === "removal" ? "✓" : "⇆");
+    const colors = getPdfActionStatusColors(entry);
+    const pillHeight = Math.max(6.2, Math.min(rowH - 1.4, 9.8));
+    const pillY = rowY + (rowH - pillHeight) / 2;
+    const labelSize = Math.max(3.2, Math.min(5.0, activeFontSize - 0.55));
+    const cleanLabelWidth = getApproxPdfTextWidth(cleanLabel, labelSize, false);
+    const symbolWidth = symbolToDraw ? (symbolToDraw === "⇆" ? Math.max(7.8, pillHeight * 1.05) : Math.max(4.4, pillHeight * 0.55)) : 0;
+    const pillWidth = Math.min(cellWidth - 6, Math.max(54, cleanLabelWidth + symbolWidth + 18));
+    const pillX = cellX + Math.max(3, (cellWidth - pillWidth) / 2);
+    const centerY = rowY + rowH / 2;
+    const contentWidth = cleanLabelWidth + (symbolToDraw ? symbolWidth + 4 : 0);
+    const textX = pillX + Math.max(6, (pillWidth - contentWidth) / 2);
+    const pillTextY = centerY - labelSize * 0.36;
+
+    ops += pdfRoundedRect(pillX, pillY, pillWidth, pillHeight, pillHeight / 2, {
+      fill: colors.fill,
+      stroke: colors.stroke,
+      strokeWidth: 0.45,
+    });
+
+    ops += pdfText(cleanLabel, textX, pillTextY, {
+      size: labelSize,
+      color: colors.text,
+      font: "F2",
+    });
+
     if (!symbolToDraw) return;
 
-    const labelWidth = getApproxPdfTextWidth(cleanLabel, Math.max(3.9, activeFontSize - 0.2), false);
-    const iconX = Math.min(cellX + cellWidth - 18, textX + labelWidth + 5);
-    const centerY = rowY + rowH / 2;
-
+    const iconX = Math.min(pillX + pillWidth - symbolWidth - 5, textX + cleanLabelWidth + 4);
     if (symbolToDraw === "✓") {
-      drawCheckIcon(iconX, centerY, Math.max(4.4, Math.min(6.2, rowH * 0.55)));
+      drawCheckIcon(iconX, centerY, Math.max(4.1, Math.min(5.9, pillHeight * 0.55)), colors.icon);
     } else if (symbolToDraw === "⇆") {
-      drawSwapIcon(iconX, centerY, Math.max(8.5, Math.min(12, rowH * 0.9)));
+      drawSwapIcon(iconX, centerY, Math.max(7.6, Math.min(10.5, pillHeight * 1.05)), colors.icon);
     }
   };
 
