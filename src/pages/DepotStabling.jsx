@@ -8662,7 +8662,7 @@ function PSTTabContent
 
       <div className="pst-train-prep-log-font-bump w-full max-w-[900px] overflow-visible lg:w-[900px] lg:max-w-[900px] lg:shrink-0 lg:self-start lg:sticky lg:top-4">
         <style>{`
-        /* PST / Train Prep Log output: auto-height, wider width, +2px text */
+        /* PST / Train Prep Log output: auto-height, wider width, compact header */
         .pst-train-prep-log-font-bump {
           height: auto !important;
           min-height: 0;
@@ -8679,7 +8679,7 @@ function PSTTabContent
         }
 
         .pst-train-prep-log-font-bump .pst-plain-main-title {
-          font-size: 25px !important;
+          font-size: 17px !important;
           line-height: 1.04 !important;
         }
 
@@ -8688,7 +8688,7 @@ function PSTTabContent
         }
 
         .pst-train-prep-log-font-bump .pst-plain-depot-title {
-          font-size: 18px !important;
+          font-size: 13px !important;
           line-height: 1.05 !important;
         }
 
