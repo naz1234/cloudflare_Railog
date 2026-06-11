@@ -3266,7 +3266,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
             </button>
             {isPrepDone && (
               <div className="w-full rounded-lg border border-blue-500/60 bg-blue-950/30 px-1 py-1">
-                <div className="mb-0.5 text-center text-[8px] font-black uppercase tracking-wide text-blue-300">Completion</div>
+                <div className="mb-0.5 text-center text-[8px] font-black uppercase tracking-wide text-blue-300">PREP Done :</div>
                 <input
                   type="text"
                   inputMode="numeric"
