@@ -212,8 +212,9 @@ function getPrepSectionText(prepLines = [], depotLabel = "") {
   return [
     `Train Preparation at ${depotLabel} Depot: Total ${prepLines.length} train${prepLines.length !== 1 ? "s" : ""} completed from ${getLogDisplayTime(prepLines[0])} to ${getLogDisplayTime(prepLines[prepLines.length - 1])} hrs.`,
     trainList ? `Train: ${trainList}` : "",
+    "",
     ...groupedLines.map((group) => group.text),
-  ].filter(Boolean).join("\n");
+  ].filter((line) => line !== null && line !== undefined).join("\n").trim();
 }
 
 
