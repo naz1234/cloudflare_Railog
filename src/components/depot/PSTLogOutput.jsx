@@ -525,7 +525,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
           margin: 0;
           color: #f7fbff;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 22px;
+          font-size: 17px;
           line-height: 1.04;
           font-weight: 850;
           letter-spacing: -0.03em;
@@ -636,7 +636,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
         .pst-plain-depot-title {
           color: #f3f8ff;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 16px;
+          font-size: 13px;
           line-height: 1.05;
           font-weight: 850;
           letter-spacing: -0.01em;
