@@ -262,8 +262,7 @@ export default function OdoReading() {
       const val = workshops[ts] ? "WORKSHOP" : mileages[ts] || "";
       return `${ts}\t:\t${val}`;
     });
-    const summary = `\nTotal train for commercial services is ${nonWorkshopCount}`;
-    return [header1, "", ...rows, summary].join("\n");
+    return [header1, "", ...rows].join("\n");
   };
 
   const handleCopy = () => {
@@ -486,11 +485,6 @@ export default function OdoReading() {
             </div>
           </div>
 
-          <div className="mt-2 rounded-lg border border-slate-700/80 bg-[#071827] px-3 py-2">
-            <p className="text-xs font-bold text-slate-200">
-              Total train for commercial services is <span className="text-base font-black text-indigo-300">{nonWorkshopCount}</span>
-            </p>
-          </div>
         </section>
       </div>
     </div>
