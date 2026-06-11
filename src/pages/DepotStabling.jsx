@@ -15594,7 +15594,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
       return { fill: "#facc15", stroke: "#ca8a04", text: "#000000", icon: "#000000" };
     }
 
-    return { fill: "#ef4444", stroke: "#b91c1c", text: "#000000", icon: "#000000" };
+    return { fill: "#ef4444", stroke: "#b91c1c", text: "#ffffff", icon: "#ffffff" };
   };
 
   const drawActionStatusInCell = (entry = {}, cellX, rowY, cellWidth, rowH, textY, activeFontSize) => {
