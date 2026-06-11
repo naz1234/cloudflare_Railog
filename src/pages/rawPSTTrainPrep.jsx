@@ -11,6 +11,7 @@ const PST_STORAGE_KEY = "pstTrainPrepState_v1";
 
 const MAINT_STYLES = {
   UNFIT: { cellBg: "#fff1f2", trainColor: "#be123c", badgeBg: "#fecaca", badgeBorder: "#fca5a5" },
+  "Not Fit": { cellBg: "#fff1f2", trainColor: "#be123c", badgeBg: "#fecaca", badgeBorder: "#fca5a5" },
   "RST CM": { cellBg: "#fff7ed", trainColor: "#c2410c", badgeBg: "#FFA500", badgeBorder: "#fb923c" },
   "RST PM": { cellBg: "#ecfdf5", trainColor: "#047857", badgeBg: "#90EE90", badgeBorder: "#86efac" },
   WASH: { cellBg: "#eaf8ff", trainColor: "#0e7490", badgeBg: "#ADD8E6", badgeBorder: "#7dd3fc" },

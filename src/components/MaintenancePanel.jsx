@@ -8,6 +8,7 @@ export const REQUEST_COLORS = {
   // Matched with DepotStabling.jsx MAINT_STYLES badgeBorder values.
   // MaintenancePanel uses `bg` as the visible pill accent/border/text colour.
   UNFIT:                 { bg: "#fca5a5", text: "#000000" },
+  "Not Fit":             { bg: "#fca5a5", text: "#000000" },
   "Workshop /Unfit":      { bg: "#fca5a5", text: "#000000" },
   "RST CM":              { bg: "#fb923c", text: "#000000" },
   "RST PM":              { bg: "#86efac", text: "#000000" },
@@ -267,6 +268,11 @@ function isWashRequestLabel(value = "") {
 function getKnownRequestColorKey(label = "") {
   const clean = cleanRequestLabel(label);
   if (REQUEST_COLORS[clean]) return clean;
+
+  const normalized = normalizeRequestIdentity(clean);
+  if (normalized === "UNFIT") return "UNFIT";
+  if (normalized === "NOT FIT" || normalized === "NOTFIT") return "Not Fit";
+  if (normalized === "WORKSHOP UNFIT") return "Workshop /Unfit";
   if (isWashRequestLabel(clean)) return "WASH";
   return clean;
 }

@@ -1561,6 +1561,13 @@ const MAINT_STYLES = {
     badgeBorder: "#fca5a5",
     badgeColor: "#000000",
   },
+  "Not Fit": {
+    cellBg: "#fff1f2",
+    trainColor: "#be123c",
+    badgeBg: "#fecaca",
+    badgeBorder: "#fca5a5",
+    badgeColor: "#000000",
+  },
   "Workshop /Unfit": {
     cellBg: "#fff1f2",
     trainColor: "#be123c",
@@ -2956,6 +2963,9 @@ function getKnownMaintenanceStyle(label = "") {
   if (MAINT_STYLES[clean]) return MAINT_STYLES[clean];
 
   const normalized = normalizeRequestIdentity(clean);
+  if (normalized === "UNFIT") return MAINT_STYLES.UNFIT;
+  if (normalized === "NOT FIT" || normalized === "NOTFIT") return MAINT_STYLES["Not Fit"] || MAINT_STYLES.UNFIT;
+  if (normalized === "WORKSHOP UNFIT") return MAINT_STYLES["Workshop /Unfit"] || MAINT_STYLES.UNFIT;
   if (normalized.split(" ").includes("WASH")) return MAINT_STYLES.WASH;
 
   return null;
@@ -3041,6 +3051,7 @@ const TRAIN_REM_AUTO_REMARK_LABELS = [
   "HVAC",
   "HVAC TESTING",
   "UNFIT",
+  "NOT FIT",
   "Other",
 ];
 
@@ -13415,8 +13426,8 @@ function getTrainRequestDisplayType(request = {}) {
 }
 
 function isUnfitTrainRequest(request = {}) {
-  const displayType = normalizeRemarkText(getTrainRequestDisplayType(request));
-  return displayType === "unfit" || displayType === "workshop /unfit" || displayType === "workshop / unfit";
+  const displayType = normalizeRequestIdentity(getTrainRequestDisplayType(request));
+  return displayType === "UNFIT" || displayType === "NOT FIT" || displayType === "NOTFIT" || displayType === "WORKSHOP UNFIT";
 }
 
 function getTrainRemRowForTrain(trainRemState = {}, trainKey = "") {
@@ -15070,6 +15081,7 @@ function getRemovalRemarkFillColor(remark = "", requestItem = null) {
     ["WASH", MAINT_STYLES.WASH],
     ["HVAC TESTING", MAINT_STYLES["HVAC TESTING"]],
     ["HVAC", MAINT_STYLES["HVAC TESTING"]],
+    ["NOT FIT", MAINT_STYLES["Not Fit"] || MAINT_STYLES.UNFIT],
     ["UNFIT", MAINT_STYLES.UNFIT],
     ["TLC", MAINT_STYLES["TLC Comms"]],
     ["ML FAULT", MAINT_STYLES["ML Fault"]],
