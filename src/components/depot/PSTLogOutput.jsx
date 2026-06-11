@@ -525,7 +525,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
           margin: 0;
           color: #f7fbff;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 17px;
+          font-size: 14px;
           line-height: 1.04;
           font-weight: 850;
           letter-spacing: -0.03em;
@@ -536,7 +536,7 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
           margin: 5px 0 0;
           color: #bdd2ec;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 14px;
+          font-size: 11px;
           line-height: 1;
           font-weight: 650;
           letter-spacing: 0.01em;
@@ -592,9 +592,10 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
 
         .pst-plain-depot-header {
           display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
+          align-items: flex-start;
+          justify-content: flex-start;
+          flex-direction: column;
+          gap: 8px;
           padding: 11px 13px;
           border-bottom: 1px solid rgba(48, 91, 126, 0.66);
           background:
@@ -643,9 +644,10 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
         }
 
         .pst-plain-depot-actions {
+          width: 100%;
           display: flex;
           align-items: center;
-          justify-content: flex-end;
+          justify-content: flex-start;
           gap: 8px;
           flex-wrap: wrap;
         }

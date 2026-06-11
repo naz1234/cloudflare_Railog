@@ -8679,12 +8679,12 @@ function PSTTabContent
         }
 
         .pst-train-prep-log-font-bump .pst-plain-main-title {
-          font-size: 17px !important;
+          font-size: 14px !important;
           line-height: 1.04 !important;
         }
 
         .pst-train-prep-log-font-bump .pst-plain-main-count {
-          font-size: 14px !important;
+          font-size: 11px !important;
         }
 
         .pst-train-prep-log-font-bump .pst-plain-depot-title {
