@@ -592,9 +592,10 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
 
         .pst-plain-depot-header {
           display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
+          align-items: flex-start;
+          justify-content: flex-start;
+          flex-direction: column;
+          gap: 8px;
           padding: 11px 13px;
           border-bottom: 1px solid rgba(48, 91, 126, 0.66);
           background:
@@ -643,9 +644,10 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
         }
 
         .pst-plain-depot-actions {
+          width: 100%;
           display: flex;
           align-items: center;
-          justify-content: flex-end;
+          justify-content: flex-start;
           gap: 8px;
           flex-wrap: wrap;
         }
