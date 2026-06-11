@@ -8679,20 +8679,23 @@ function PSTTabContent
         }
 
         .pst-train-prep-log-font-bump .pst-plain-main-title {
-          font-size: 16px !important;
-          line-height: 1.1 !important;
+          font-size: 25px !important;
+          line-height: 1.04 !important;
         }
 
         .pst-train-prep-log-font-bump .pst-plain-main-count {
-          font-size: 13px !important;
+          font-size: 14px !important;
         }
 
         .pst-train-prep-log-font-bump .pst-plain-depot-title {
-          font-size: 14px !important;
-          line-height: 1.1 !important;
+          font-size: 18px !important;
+          line-height: 1.05 !important;
         }
 
-        .pst-train-prep-log-font-bump .pst-plain-count,
+        .pst-train-prep-log-font-bump .pst-plain-count {
+          font-size: 13px !important;
+        }
+
         .pst-train-prep-log-font-bump .pst-plain-button {
           font-size: 12px !important;
         }

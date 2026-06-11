@@ -216,6 +216,37 @@ function getPrepSectionText(prepLines = [], depotLabel = "") {
   ].filter(Boolean).join("\n");
 }
 
+
+function TrainLogIcon() {
+  return (
+    <div className="pst-plain-main-icon" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="3" width="16" height="14" rx="3" />
+        <path d="M8 17l-2 3" />
+        <path d="M16 17l2 3" />
+        <path d="M8 7h8" />
+        <path d="M8 11h.01" />
+        <path d="M16 11h.01" />
+      </svg>
+    </div>
+  );
+}
+
+function DepotLogIcon() {
+  return (
+    <div className="pst-plain-depot-icon" aria-hidden="true">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 21h18" />
+        <path d="M5 21V9l7-4 7 4v12" />
+        <path d="M9 21v-7h6v7" />
+        <path d="M8 11h.01" />
+        <path d="M12 11h.01" />
+        <path d="M16 11h.01" />
+      </svg>
+    </div>
+  );
+}
+
 function CopyButton({ text, label, disabled }) {
   const [copied, setCopied] = useState(false);
 
@@ -333,13 +364,16 @@ function DepotPlainBlock({ depotLabel, lines = [], totalPSTCount = 0, onRemove, 
     <div className="pst-plain-depot">
       <div className="pst-plain-depot-header">
         <div className="pst-plain-depot-info">
-          <div className="pst-plain-depot-title-row">
+          <DepotLogIcon />
+          <div className="pst-plain-depot-text">
             <div className="pst-plain-depot-title">{depotLabel.toUpperCase()} DEPOT</div>
-            <CopyButton text={getPSTSectionText(pstLines, depotLabel, totalPSTCount || pstLines.length)} label="PST" disabled={!pstLines.length} />
-            <CopyButton text={getPrepSectionText(prepLines, depotLabel)} label="Train Prep" disabled={!prepLines.length} />
-            <ClearDepotButton depotLabel={depotLabel} disabled={!lines.length} onClear={onClearDepot} />
+            <div className="pst-plain-count">{lines.length} {lines.length === 1 ? "entry" : "entries"}</div>
           </div>
-          <div className="pst-plain-count">{lines.length} {lines.length === 1 ? "entry" : "entries"}</div>
+        </div>
+        <div className="pst-plain-depot-actions">
+          <CopyButton text={getPSTSectionText(pstLines, depotLabel, totalPSTCount || pstLines.length)} label="PST" disabled={!pstLines.length} />
+          <CopyButton text={getPrepSectionText(prepLines, depotLabel)} label="Train Prep" disabled={!prepLines.length} />
+          <ClearDepotButton depotLabel={depotLabel} disabled={!lines.length} onClear={onClearDepot} />
         </div>
       </div>
 
@@ -416,40 +450,115 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
           display: flex;
           flex-direction: column;
           overflow: hidden;
-          border-radius: 8px;
-          border: 1px solid #234764;
+          border-radius: 16px;
+          border: 1px solid rgba(79, 143, 198, 0.46);
           background: #061523;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 18px 34px rgba(0,0,0,0.28);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 18px 34px rgba(0,0,0,0.28);
           font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         }
 
         .pst-plain-header {
+          position: relative;
           flex: 0 0 auto;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 10px;
-          min-height: 42px;
-          padding: 6px 9px;
-          border-bottom: 1px solid #234764;
-          background: #082239;
+          gap: 12px;
+          min-height: 78px;
+          padding: 14px 18px;
+          overflow: hidden;
+          border-bottom: 1px solid rgba(52, 128, 205, 0.58);
+          background:
+            radial-gradient(circle at 14% 0%, rgba(64, 142, 255, 0.28), transparent 32%),
+            linear-gradient(135deg, #081832 0%, #0a2a55 52%, #051325 100%);
+        }
+
+        .pst-plain-header::before,
+        .pst-plain-header::after {
+          content: "";
+          position: absolute;
+          pointer-events: none;
+          border-radius: 999px;
+        }
+
+        .pst-plain-header::before {
+          width: 520px;
+          height: 160px;
+          right: -120px;
+          top: -116px;
+          border: 1px solid rgba(80, 147, 255, 0.34);
+          transform: rotate(-17deg);
+        }
+
+        .pst-plain-header::after {
+          width: 640px;
+          height: 210px;
+          right: -220px;
+          top: -152px;
+          border: 1px solid rgba(39, 112, 245, 0.24);
+          transform: rotate(-17deg);
+        }
+
+        .pst-plain-header-left {
+          position: relative;
+          z-index: 1;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          min-width: 0;
+        }
+
+        .pst-plain-main-icon {
+          flex: 0 0 auto;
+          width: 48px;
+          height: 48px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 14px;
+          color: #ffffff;
+          background: linear-gradient(135deg, #1d5fd1 0%, #0ea5e9 100%);
+          box-shadow: 0 14px 26px rgba(14, 116, 222, 0.34), inset 0 1px 0 rgba(255,255,255,0.22);
         }
 
         .pst-plain-main-title {
           margin: 0;
-          color: #eef7ff;
-          font-size: 14px;
-          line-height: 1.05;
-          font-weight: 800;
-          letter-spacing: 0.03em;
+          color: #f7fbff;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 25px;
+          line-height: 1.04;
+          font-weight: 850;
+          letter-spacing: -0.03em;
+          text-shadow: 0 2px 14px rgba(0,0,0,0.38);
         }
 
         .pst-plain-main-count {
-          margin: 2px 0 0;
-          color: #69b9ee;
-          font-size: 11px;
+          margin: 5px 0 0;
+          color: #bdd2ec;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 14px;
           line-height: 1;
-          font-weight: 700;
+          font-weight: 650;
+          letter-spacing: 0.01em;
+        }
+
+        .pst-plain-date-pill {
+          position: relative;
+          z-index: 1;
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          flex: 0 0 auto;
+          padding: 8px 10px;
+          border: 1px solid rgba(73, 151, 232, 0.32);
+          border-radius: 999px;
+          background: rgba(5, 17, 34, 0.38);
+          color: #dceeff;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 13px;
+          font-weight: 760;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+          white-space: nowrap;
         }
 
         .pst-log-scroll {
@@ -458,7 +567,8 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
           overflow-y: auto;
           overscroll-behavior: auto;
           -webkit-overflow-scrolling: touch;
-          padding: 7px;
+          padding: 10px;
+          background: linear-gradient(180deg, rgba(8, 30, 50, 0.9) 0%, rgba(5, 17, 29, 0.98) 100%);
           scrollbar-width: thin;
           scrollbar-color: #3c7297 #061523;
         }
@@ -468,22 +578,51 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
         .pst-log-scroll::-webkit-scrollbar-thumb { background: #3c7297; border-radius: 999px; }
 
         .pst-plain-depot {
-          border: 1px solid #15344c;
+          overflow: hidden;
+          border: 1px solid rgba(48, 91, 126, 0.68);
+          border-radius: 14px;
           background: #06111d;
-          margin-bottom: 8px;
+          margin-bottom: 10px;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 10px 24px rgba(0,0,0,0.18);
+        }
+
+        .pst-plain-depot:last-child {
+          margin-bottom: 0;
         }
 
         .pst-plain-depot-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 8px;
-          padding: 5px 7px;
-          border-bottom: 1px solid #15344c;
-          background: #071d30;
+          gap: 12px;
+          padding: 11px 13px;
+          border-bottom: 1px solid rgba(48, 91, 126, 0.66);
+          background:
+            radial-gradient(circle at 4% 0%, rgba(54, 195, 225, 0.18), transparent 38%),
+            linear-gradient(135deg, rgba(9, 31, 52, 0.98) 0%, rgba(8, 24, 41, 0.96) 100%);
         }
 
         .pst-plain-depot-info {
+          display: flex;
+          align-items: center;
+          gap: 11px;
+          min-width: 0;
+        }
+
+        .pst-plain-depot-icon {
+          flex: 0 0 auto;
+          width: 38px;
+          height: 38px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 999px;
+          color: #ffffff;
+          background: linear-gradient(135deg, #214cdb 0%, #0ea5a5 100%);
+          box-shadow: 0 10px 18px rgba(14, 165, 233, 0.22), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        .pst-plain-depot-text {
           min-width: 0;
         }
 
@@ -495,25 +634,36 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
         }
 
         .pst-plain-depot-title {
-          color: #a7e6ff;
-          font-size: 12px;
+          color: #f3f8ff;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 18px;
           line-height: 1.05;
-          font-weight: 800;
-          letter-spacing: 0.12em;
+          font-weight: 850;
+          letter-spacing: -0.01em;
         }
 
-        .pst-plain-depot-title-row .pst-plain-button {
-          height: 18px;
-          padding: 0 6px;
-          font-size: 9px;
+        .pst-plain-depot-actions {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .pst-plain-depot-title-row .pst-plain-button,
+        .pst-plain-depot-actions .pst-plain-button {
+          height: 29px;
+          padding: 0 10px;
+          font-size: 12px;
         }
 
         .pst-plain-count {
-          color: #6d91aa;
-          font-size: 10px;
+          color: #a5b8cb;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 13px;
           line-height: 1;
-          margin-top: 2px;
-          font-weight: 700;
+          margin-top: 5px;
+          font-weight: 650;
         }
 
         .pst-plain-actions {
@@ -525,22 +675,25 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
         }
 
         .pst-plain-button {
-          height: 20px;
-          padding: 0 7px;
-          border: 1px solid #31536b;
+          height: 25px;
+          padding: 0 9px;
+          border: 1px solid rgba(91, 134, 169, 0.74);
           border-radius: 999px;
-          background: #0b2338;
-          color: #b7d9ee;
-          font-size: 10px;
+          background: linear-gradient(180deg, rgba(17, 44, 72, 0.95), rgba(10, 31, 52, 0.98));
+          color: #c8e6fb;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 11px;
           font-weight: 800;
           line-height: 1;
           cursor: pointer;
           white-space: nowrap;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
         }
 
         .pst-plain-button:hover:not(:disabled) {
           border-color: #65a7d1;
           color: #ffffff;
+          background: linear-gradient(180deg, rgba(20, 68, 111, 0.98), rgba(12, 43, 72, 0.98));
         }
 
         .pst-plain-button:disabled {
@@ -644,12 +797,52 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
           color: #637f92;
           font-style: italic;
         }
+
+        @media (max-width: 640px) {
+          .pst-plain-header {
+            align-items: flex-start;
+            flex-direction: column;
+            min-height: 0;
+            padding: 12px;
+          }
+
+          .pst-plain-date-pill {
+            align-self: flex-start;
+          }
+
+          .pst-plain-main-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+          }
+
+          .pst-plain-depot-header {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .pst-plain-depot-actions {
+            justify-content: flex-start;
+          }
+        }
       `}</style>
 
       <header className="pst-plain-header">
-        <div>
-          <p className="pst-plain-main-title">PST / Train Prep Log</p>
-          <p className="pst-plain-main-count">{safeLogLines.length} {safeLogLines.length === 1 ? "entry" : "entries"}</p>
+        <div className="pst-plain-header-left">
+          <TrainLogIcon />
+          <div>
+            <p className="pst-plain-main-title">PST / Train Prep Log</p>
+            <p className="pst-plain-main-count">{safeLogLines.length} {safeLogLines.length === 1 ? "entry" : "entries"}</p>
+          </div>
+        </div>
+        <div className="pst-plain-date-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <path d="M16 2v4" />
+            <path d="M8 2v4" />
+            <path d="M3 10h18" />
+          </svg>
+          {new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
         </div>
       </header>
 
