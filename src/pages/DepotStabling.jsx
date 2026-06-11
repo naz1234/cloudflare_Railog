@@ -15587,14 +15587,14 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const actionType = (entry?.actionType || "").toString();
 
     if (actionType === "lateShiftRem" || label.includes("late shift")) {
-      return { fill: "#0ea5e9", stroke: "#0369a1", text: "#ffffff", icon: "#ffffff" };
+      return { fill: "#0ea5e9", stroke: "#0369a1", text: "#000000", icon: "#000000" };
     }
 
     if (actionType === "earlyShiftRem" || label.includes("early shift")) {
       return { fill: "#facc15", stroke: "#ca8a04", text: "#000000", icon: "#000000" };
     }
 
-    return { fill: "#ef4444", stroke: "#b91c1c", text: "#ffffff", icon: "#ffffff" };
+    return { fill: "#ef4444", stroke: "#b91c1c", text: "#000000", icon: "#000000" };
   };
 
   const drawActionStatusInCell = (entry = {}, cellX, rowY, cellWidth, rowH, textY, activeFontSize) => {
@@ -15605,9 +15605,9 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const actionSymbol = (entry?.actionSymbol || "").toString().trim();
     const symbolToDraw = hasExplicitActionSymbol ? actionSymbol : (group === "removal" ? "✓" : "⇆");
     const colors = getPdfActionStatusColors(entry);
-    const pillHeight = Math.max(6.2, Math.min(rowH - 1.4, 9.8));
+    const pillHeight = Math.max(7.0, Math.min(rowH - 1.0, 10.8));
     const pillY = rowY + (rowH - pillHeight) / 2;
-    const labelSize = Math.max(3.2, Math.min(5.0, activeFontSize - 0.55));
+    const labelSize = Math.max(4.2, Math.min(6.0, activeFontSize + 0.45));
     const cleanLabelWidth = getApproxPdfTextWidth(cleanLabel, labelSize, false);
     const symbolWidth = symbolToDraw ? (symbolToDraw === "⇆" ? Math.max(7.8, pillHeight * 1.05) : Math.max(4.4, pillHeight * 0.55)) : 0;
     const pillWidth = Math.min(cellWidth - 6, Math.max(54, cleanLabelWidth + symbolWidth + 18));
