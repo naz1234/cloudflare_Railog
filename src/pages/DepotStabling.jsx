@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react"; 
+import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -3237,7 +3237,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
         {key && (isPstDone || isPstConfirming) && (
           <div className={`w-full rounded-lg border px-1 py-1 ${isPstConfirming ? "border-amber-500/60 bg-amber-950/25" : "border-emerald-500/60 bg-emerald-950/30"}`}>
             <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap">
-              <span className={`shrink-0 text-[8px] font-bold leading-tight ${isPstConfirming ? "text-amber-300" : "text-emerald-300"}`}>Start :</span>
+              <span className={`shrink-0 text-[9px] font-bold leading-tight ${isPstConfirming ? "text-amber-300" : "text-emerald-300"}`}>Start :</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -3258,6 +3258,12 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
                 className={`w-[36px] rounded-md border bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight outline-none ${isPstConfirming ? "border-amber-500/50 text-amber-100 placeholder:text-amber-700 focus:border-amber-300" : "border-emerald-500/50 text-emerald-100 placeholder:text-emerald-700 focus:border-emerald-300"}`}
                 title="Edit PST start time. Completion time updates automatically +6 minutes."
               />
+            </div>
+            <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap pt-0.5">
+              <span className={`shrink-0 text-[9px] font-bold leading-tight ${isPstConfirming ? "text-amber-300" : "text-emerald-300"}`}>End :</span>
+              <span className={`min-w-[36px] rounded-md border bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight ${isPstConfirming ? "border-amber-500/50 text-amber-100" : "border-emerald-500/50 text-emerald-100"}`}>
+                {pstEstimateTime || "--:--"}
+              </span>
             </div>
           </div>
         )}
