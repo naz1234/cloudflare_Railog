@@ -2012,8 +2012,8 @@ function getWashOnlyShiftRemovalAction({ tid = "", requestType = "", westRemoval
   if (westRemovalRow?.isWest9amRealRemoval || TRAIN_REM_WEST_9AM_REAL_TID_SET.has(tidKey)) {
     return {
       actionLabel: "Early Shift Rem",
-      actionSymbol: "",
-      actionStatus: "Early Shift Rem",
+      actionSymbol: "✓",
+      actionStatus: "Early Shift Rem ✓",
       actionType: "earlyShiftRem",
       group: "removal",
     };
@@ -2024,8 +2024,8 @@ function getWashOnlyShiftRemovalAction({ tid = "", requestType = "", westRemoval
   if (TRAIN_REM_WASH_LATE_SHIFT_TID_SET.has(tidKey)) {
     return {
       actionLabel: "Late Shift Rem",
-      actionSymbol: "",
-      actionStatus: "Late Shift Rem",
+      actionSymbol: "✓",
+      actionStatus: "Late Shift Rem ✓",
       actionType: "lateShiftRem",
       group: "removal",
     };
@@ -14659,6 +14659,36 @@ function RequestedTrainTable({ title, rows = [], maintenanceMap = {}, onManualTi
   );
 }
 
+function getRequestedActionPillStyle(item = {}) {
+  const label = (item?.actionLabel || "").toString().toLowerCase();
+  const actionType = (item?.actionType || "").toString();
+
+  if (actionType === "lateShiftRem" || label.includes("late shift")) {
+    return "border-[#38bdf8] bg-[#0ea5e9]/25 text-[#dff6ff] shadow-[0_0_8px_rgba(56,189,248,0.22)]";
+  }
+
+  if (actionType === "earlyShiftRem" || label.includes("early shift")) {
+    return "border-[#facc15] bg-[#facc15]/25 text-[#fff7c2] shadow-[0_0_8px_rgba(250,204,21,0.22)]";
+  }
+
+  return "border-[#ef4444] bg-[#ef4444]/22 text-[#ffe4e6] shadow-[0_0_8px_rgba(239,68,68,0.22)]";
+}
+
+function RequestedActionStatusPill({ item }) {
+  const group = item?.group === "removal" ? "removal" : "swap";
+  const label = item?.actionLabel || (group === "removal" ? "Removal" : "Need Swapping");
+  const symbol = Object.prototype.hasOwnProperty.call(item || {}, "actionSymbol")
+    ? (item?.actionSymbol || "").toString().trim()
+    : (group === "removal" ? "✓" : "⇆");
+
+  return (
+    <span className={`inline-flex min-w-[104px] items-center justify-center rounded-full border px-2 py-[3px] text-[10px] font-normal leading-none whitespace-nowrap ${getRequestedActionPillStyle(item)}`}>
+      <span>{label}</span>
+      {symbol && <span className="ml-1 font-normal">{symbol}</span>}
+    </span>
+  );
+}
+
 function RequestedTrainActionOverviewTable({ rows = [] }) {
   const displayRows = Array.isArray(rows) ? rows : [];
   const hasRows = displayRows.some((row) => row && !row.isSeparator);
@@ -14717,9 +14747,8 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-tight text-[#eaf4ff] whitespace-normal break-words">
                     {item.requestType || ""}
                   </td>
-                  <td className="border-b border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff] whitespace-nowrap">
-                    <span>{item.actionLabel || (item.group === "removal" ? "Removal" : "Need Swapping")}</span>
-                    {item.actionSymbol && <span className="ml-1 font-semibold">{item.actionSymbol}</span>}
+                  <td className="border-b border-[#193752] px-2 py-1 text-center align-middle leading-none whitespace-nowrap">
+                    <RequestedActionStatusPill item={item} />
                   </td>
                 </tr>
               );
