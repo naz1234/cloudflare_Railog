@@ -3226,14 +3226,6 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
           {displayVal || "—"}
         </div>
         {/* PST / Train Prep cells intentionally hide Maintenance Request type / remark pills. */}
-        {key && pstEstimateTime && (
-          <span
-            className="rounded-full border border-red-500/80 bg-red-950/55 px-1.5 py-0.5 text-[9px] font-normal tracking-wide text-red-200 shadow-[0_0_10px_rgba(239,68,68,0.34)] whitespace-nowrap"
-            title={`PST completed at ${pstEstimateTime} hrs`}
-          >
-            {pstEstimateTime}
-          </span>
-        )}
         {key && (isPstDone || isPstConfirming) && (
           <div className={`w-full rounded-lg border px-1 py-1 ${isPstConfirming ? "border-amber-500/60 bg-amber-950/25" : "border-emerald-500/60 bg-emerald-950/30"}`}>
             <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap">
