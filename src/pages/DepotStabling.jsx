@@ -1681,6 +1681,7 @@ const INSERTION_LIVE_POST_SAVE_HOLD_MS = 12000;
 const SIDEBAR_COLLAPSED_KEY = "depotSidebarCollapsed_v1";
 const SIDEBAR_AUTO_HIDE_MS = 3000;
 const ADM_SESSION_KEY = "admAdminUnlocked_v1";
+const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
 const ADM_LOGIN_ID = "admin";
 const ADM_LOGIN_PASSWORD = "921016";
 const ADMIN_NOTES_STORAGE_KEY = "admModernNotes_v1";
@@ -10856,6 +10857,15 @@ export default function DepotStablingPage() {
       return false;
     }
   });
+  const [alarmCredentials, setAlarmCredentials] = useState({ id: "", password: "" });
+  const [alarmError, setAlarmError] = useState("");
+  const [isAlarmUnlocked, setIsAlarmUnlocked] = useState(() => {
+    try {
+      return sessionStorage.getItem(ALM_SESSION_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
   const [adminNotes, setAdminNotes] = useState(() => loadAdminNotes());
   const [adminSearch, setAdminSearch] = useState("");
   const [alarmSearch, setAlarmSearch] = useState("");
@@ -11044,8 +11054,33 @@ export default function DepotStablingPage() {
     setAdminNotesLoading(false);
     setAdminNotesSaving(false);
     setAdminNotesLiveStatus("Local cache ready");
-    setAlarmSearch("");
     try { sessionStorage.removeItem(ADM_SESSION_KEY); } catch {}
+  }, []);
+
+  const handleAlarmLogin = useCallback((event) => {
+    event.preventDefault();
+    const loginId = String(alarmCredentials.id || "").trim();
+    const loginPassword = String(alarmCredentials.password || "");
+
+    if (loginId === ADM_LOGIN_ID && loginPassword === ADM_LOGIN_PASSWORD) {
+      setIsAlarmUnlocked(true);
+      setAlarmError("");
+      setAlarmCredentials({ id: "", password: "" });
+      try { sessionStorage.setItem(ALM_SESSION_KEY, "true"); } catch {}
+      return;
+    }
+
+    setIsAlarmUnlocked(false);
+    setAlarmError("Invalid ID or password.");
+    try { sessionStorage.removeItem(ALM_SESSION_KEY); } catch {}
+  }, [alarmCredentials]);
+
+  const handleAlarmLogout = useCallback(() => {
+    setIsAlarmUnlocked(false);
+    setAlarmCredentials({ id: "", password: "" });
+    setAlarmError("");
+    setAlarmSearch("");
+    try { sessionStorage.removeItem(ALM_SESSION_KEY); } catch {}
   }, []);
 
   const loadAdminNotesLive = useCallback(async () => {
@@ -13698,7 +13733,7 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "alarm" && (
-          isAdminUnlocked ? (
+          isAlarmUnlocked ? (
             <div className="w-full px-2 pb-10 pt-6">
               <div className="mx-auto mb-2.5 w-full max-w-4xl space-y-2.5">
                 <div className="rounded-[24px] border border-[#1d4869] bg-[#061827]/90 p-3 shadow-[0_18px_55px_rgba(0,0,0,0.25)]">
@@ -13715,7 +13750,7 @@ export default function DepotStablingPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={handleAdminLogout}
+                      onClick={handleAlarmLogout}
                       className="rounded-2xl border border-[#2b4f6b] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-[0.98]"
                     >
                       Logout
@@ -13756,14 +13791,14 @@ export default function DepotStablingPage() {
                     </p>
                   </div>
 
-                  <form onSubmit={handleAdminLogin} className="px-5 py-5">
+                  <form onSubmit={handleAlarmLogin} className="px-5 py-5">
                     <label className="block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
                       ID
                       <input
-                        value={adminCredentials.id}
+                        value={alarmCredentials.id}
                         onChange={(event) => {
-                          setAdminCredentials((prev) => ({ ...prev, id: event.target.value }));
-                          setAdminError("");
+                          setAlarmCredentials((prev) => ({ ...prev, id: event.target.value }));
+                          setAlarmError("");
                         }}
                         className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
                         autoComplete="username"
@@ -13775,18 +13810,18 @@ export default function DepotStablingPage() {
                       Password
                       <input
                         type="password"
-                        value={adminCredentials.password}
+                        value={alarmCredentials.password}
                         onChange={(event) => {
-                          setAdminCredentials((prev) => ({ ...prev, password: event.target.value }));
-                          setAdminError("");
+                          setAlarmCredentials((prev) => ({ ...prev, password: event.target.value }));
+                          setAlarmError("");
                         }}
                         className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
                         autoComplete="current-password"
                       />
                     </label>
-                    {adminError && (
+                    {alarmError && (
                       <p className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-[11px] font-normal text-red-200">
-                        {adminError}
+                        {alarmError}
                       </p>
                     )}
                     <button
