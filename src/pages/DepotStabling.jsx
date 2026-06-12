@@ -10316,45 +10316,87 @@ function normalizePlatformNumber(value = "") {
   return String(value || "").replace(/\D/g, "").slice(0, 1);
 }
 
-function buildDoorObstructionText(form = {}, { preview = false } = {}) {
-  const eventTime = String(form.eventTime || "").trim() || (preview ? "18:22" : "");
-  const location = String(form.location || "").trim().toUpperCase() || (preview ? "3B2" : "");
-  const platform = normalizePlatformNumber(form.platform) || (preview ? "1" : "");
-  const msdNo = normalizeMsdNumber(form.msdNo) || (preview ? "09" : "");
-  const train = normalizeMovementTrain(form.trainId) || (preview ? "T27" : "");
-  const tidDigits = String(form.tid || "").replace(/\D/g, "").slice(0, 3) || (preview ? "122" : "");
-  const ssTime = String(form.ssTime || "").trim() || (preview ? "18:27" : "");
-  const flrtTime = String(form.flrtTime || "").trim() || (preview ? "18:55" : "");
-  const dcuResetTime = String(form.dcuResetTime || "").trim();
-  const isolationTime = String(form.isolationTime || "").trim() || (preview ? "20:01" : "");
-  const srNo = String(form.srNo || "").replace(/\D/g, "").trim() || (preview ? "10119486" : "");
-  const remarks = String(form.remarks || "").trim();
-  const obstructionStatus = String(form.obstructionStatus || "none");
+function getDoorPhysicalStatus(form = {}) {
+  const legacy = String(form.obstructionStatus || "");
+  if (!form.physicalStatus && legacy === "physical") return "object_removed";
+  if (!form.physicalStatus && legacy === "abnormal") return "abnormal_sound";
+  if (!form.physicalStatus && legacy === "none") return "no_obstruction";
+  return String(form.physicalStatus || "no_obstruction");
+}
 
-  if (!preview && (!eventTime || !location || !platform || !msdNo || !train)) return "";
+function isDoorFlagEnabled(value) {
+  return value === true || value === "true" || value === "1";
+}
+
+function buildDoorObstructionText(form = {}, { preview = false } = {}) {
+  const scenarioType = String(form.scenarioType || "slow_closing");
+  const eventTime = String(form.eventTime || "").trim() || (preview ? "14:25" : "");
+  const location = String(form.location || "").trim().toUpperCase() || (preview ? "3A1" : "");
+  const platform = normalizePlatformNumber(form.platform) || (preview ? "2" : "");
+  const msdNo = normalizeMsdNumber(form.msdNo) || (preview ? "05" : "");
+  const train = normalizeMovementTrain(form.trainId) || (preview && scenarioType === "physical_stuck" ? "T45" : "");
+  const tidDigits = String(form.tid || "").replace(/\D/g, "").slice(0, 3) || (preview && scenarioType === "physical_stuck" ? "225" : "");
+  const ssTime = String(form.ssTime || "").trim() || (preview ? "14:35" : "");
+  const flrtInformTime = String(form.flrtInformTime || "").trim() || (preview ? "14:26" : "");
+  const flrtArrivalTime = String(form.flrtArrivalTime || form.flrtTime || "").trim() || (preview ? "14:49" : "");
+  const dcuResetTime = String(form.dcuResetTime || "").trim() || (preview && scenarioType !== "physical_stuck" ? "14:57" : "");
+  const cctvNormalTime = String(form.cctvNormalTime || "").trim() || (preview && scenarioType !== "physical_stuck" ? "15:02" : "");
+  const observeCompleteTime = String(form.observeCompleteTime || "").trim() || (preview && scenarioType !== "physical_stuck" ? "15:10" : "");
+  const isolationTime = String(form.isolationTime || "").trim();
+  const srNo = String(form.srNo || "").replace(/\D/g, "").trim() || (preview ? "10119624" : "");
+  const remarks = String(form.remarks || "").trim();
+  const physicalStatus = getDoorPhysicalStatus(form);
+  const cctvChecked = isDoorFlagEnabled(form.cctvChecked) || Boolean(cctvNormalTime) || preview;
+  const flrtInformed = isDoorFlagEnabled(form.flrtInformed) || Boolean(flrtInformTime);
+  const observeThreeTrains = isDoorFlagEnabled(form.observeThreeTrains) || Boolean(observeCompleteTime) || Boolean(cctvNormalTime);
+  const msdIsolated = isDoorFlagEnabled(form.msdIsolated) || Boolean(isolationTime);
+
+  if (!preview && (!eventTime || !location || !platform || !msdNo)) return "";
 
   const pfLabel = `${location} PF${platform}`;
   const msdLabel = `MSD${msdNo}`;
-  const trainTidLabel = tidDigits ? `${train} TID${tidDigits}` : train;
-  const lines = [
-    `${eventTime} hrs – ${pfLabel} ${msdLabel} showed Door recycled (D031), PSDS right closing issue (W269) and Door obstructed (D030).`,
-    `${eventTime} hrs – TC held ${trainTidLabel} at ${pfLabel}. TC performed door cycling and alarm cleared. ${train} departed.`,
-    `${eventTime} hrs – TC instructed SS to RESPOND to ${msdLabel}, check for obstruction and confirm train safe to depart.`,
-  ];
+  const trainTidLabel = train ? (tidDigits ? `${train} TID${tidDigits}` : train) : "";
+  const lines = [];
+
+  if (scenarioType === "physical_stuck") {
+    const trainPart = trainTidLabel ? ` affecting ${trainTidLabel}` : "";
+    lines.push(`${eventTime} hrs – ${pfLabel} ${msdLabel} physical obstruction stuck on MSD${trainPart}.`);
+    if (trainTidLabel) lines.push(`${eventTime} hrs – TC held ${trainTidLabel} at ${pfLabel} and informed SS/SA/TR.`);
+    lines.push(`${eventTime} hrs – TC instructed SS to RESPOND to ${msdLabel}, remove the obstruction pinned on the MSD using triangular key and report back confirmation.`);
+  } else {
+    lines.push(`${eventTime} hrs – ${pfLabel} ${msdLabel} showed Door recycled (D031), Door obstructed (D030) and PSDS right closing issue (W269).`);
+    if (cctvChecked) {
+      lines.push(`${eventTime} hrs – TC received ATS alarm and CCTV showed ${msdLabel} slow in closing. TC instructed SS to RESPOND to ${msdLabel}.`);
+    } else {
+      lines.push(`${eventTime} hrs – TC received ATS alarm and instructed SS to RESPOND to ${msdLabel}.`);
+    }
+    if (trainTidLabel) lines.push(`${eventTime} hrs – TC held ${trainTidLabel} at ${pfLabel}. TC performed door cycling and alarm cleared. ${train} departed.`);
+  }
 
   if (ssTime) {
-    if (obstructionStatus === "physical") {
-      lines.push(`${ssTime} hrs – SS removed obstruction from ${msdLabel}, confirmed the MSD was physically closed and reported train safe to depart.`);
-    } else if (obstructionStatus === "abnormal") {
+    if (physicalStatus === "object_removed") {
+      lines.push(`${ssTime} hrs – SS removed the obstruction from ${msdLabel}, confirmed the MSD was physically closed and reported train safe to depart.`);
+    } else if (physicalStatus === "abnormal_sound") {
       lines.push(`${ssTime} hrs – SS confirmed no physical obstruction at ${msdLabel}, but abnormal sound/obstruction was observed while the door was operating.`);
+    } else if (physicalStatus === "unable_confirm") {
+      lines.push(`${ssTime} hrs – SS attended ${msdLabel} and reported the door status to TC. Physical obstruction status unable to confirm.`);
     } else {
-      lines.push(`${ssTime} hrs – SS confirmed no physical obstruction at ${msdLabel} and reported back to TC.`);
+      lines.push(`${ssTime} hrs – SS confirmed ${msdLabel} was slow in closing and no physical obstruction was found.`);
     }
   }
 
-  if (flrtTime) lines.push(`${flrtTime} hrs – FLRT arrived at ${pfLabel} and attended ${msdLabel}.`);
-  if (dcuResetTime) lines.push(`${dcuResetTime} hrs – FLRT performed DCU reset for ${msdLabel}.`);
-  if (isolationTime) lines.push(`${isolationTime} hrs – ${msdLabel} at ${pfLabel} LCKS switched to Isolate position. SS barricaded ${msdLabel} and assigned staff for assistance.`);
+  if (flrtInformed) lines.push(flrtInformTime ? `${flrtInformTime} hrs – FLRT informed.` : `FLRT informed.`);
+  if (flrtArrivalTime) lines.push(`${flrtArrivalTime} hrs – FLRT arrived at ${pfLabel} and attended ${msdLabel}.`);
+  if (dcuResetTime) {
+    const observeText = observeThreeTrains ? " TC instructed SS to observe three consecutive trains." : "";
+    lines.push(`${dcuResetTime} hrs – DCU reset completed by FLRT for ${msdLabel}.${observeText}`);
+  }
+  if (cctvNormalTime) lines.push(`${cctvNormalTime} hrs – ${msdLabel} opened and closed normally from CCTV.`);
+  if (observeCompleteTime) lines.push(`${observeCompleteTime} hrs – SS confirmed ${msdLabel} opened and closed normally after observing three consecutive trains.`);
+  if (msdIsolated) {
+    const isolateText = `${msdLabel} at ${pfLabel} LCKS switched to Isolate position. SS barricaded ${msdLabel} and assigned staff for assistance.`;
+    lines.push(isolationTime ? `${isolationTime} hrs – ${isolateText}` : isolateText);
+  }
   if (remarks) lines.push(`Remarks: ${remarks}`);
   if (srNo) lines.push(`SR ${srNo}`);
 
@@ -10369,10 +10411,22 @@ function DoorObstructionContent() {
     msdNo: "",
     trainId: "",
     tid: "",
+    scenarioType: "slow_closing",
+    physicalStatus: "no_obstruction",
     obstructionStatus: "none",
+    cctvChecked: true,
+    ssResponded: true,
+    flrtInformed: false,
+    dcuResetDone: false,
+    observeThreeTrains: false,
+    msdIsolated: false,
     ssTime: "",
+    flrtInformTime: "",
+    flrtArrivalTime: "",
     flrtTime: "",
     dcuResetTime: "",
+    cctvNormalTime: "",
+    observeCompleteTime: "",
     isolationTime: "",
     srNo: "",
     remarks: "",
@@ -10395,6 +10449,7 @@ function DoorObstructionContent() {
 
   const inputClass = "h-8 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#38bdf8]";
   const labelClass = "mb-1 block text-[9px] font-black uppercase tracking-[0.08em] text-[#8ea8c0]";
+  const checkboxClass = "flex items-center gap-1.5 rounded-lg border border-[#1e4060] bg-[#041727] px-2 py-1.5 text-[10px] font-bold text-[#c8d8ea]";
 
   const updateForm = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -10426,7 +10481,7 @@ function DoorObstructionContent() {
     }
   };
 
-  const renderTimeInput = (field, placeholder = "18:22") => (
+  const renderTimeInput = (field, placeholder = "14:25") => (
     <input
       value={form[field] || ""}
       inputMode="numeric"
@@ -10445,6 +10500,18 @@ function DoorObstructionContent() {
       placeholder={placeholder}
       className={inputClass}
     />
+  );
+
+  const renderCheckbox = (field, label) => (
+    <label className={checkboxClass}>
+      <input
+        type="checkbox"
+        checked={isDoorFlagEnabled(form[field])}
+        onChange={(event) => updateForm(field, event.target.checked)}
+        className="h-3.5 w-3.5 accent-sky-400"
+      />
+      <span>{label}</span>
+    </label>
   );
 
   const resetDoorForm = () => setForm(createDefaultDoorObstructionForm());
@@ -10471,10 +10538,18 @@ function DoorObstructionContent() {
       trainId: "",
       tid: "",
       ssTime: "",
+      flrtInformTime: "",
+      flrtArrivalTime: "",
       flrtTime: "",
       dcuResetTime: "",
+      cctvNormalTime: "",
+      observeCompleteTime: "",
       isolationTime: "",
       remarks: "",
+      flrtInformed: false,
+      dcuResetDone: false,
+      observeThreeTrains: false,
+      msdIsolated: false,
     }));
   };
 
@@ -10504,8 +10579,7 @@ function DoorObstructionContent() {
     isCompleteMovementTimeInput(form.eventTime) &&
     String(form.location || "").trim() &&
     normalizePlatformNumber(form.platform) &&
-    normalizeMsdNumber(form.msdNo) &&
-    normalizeMovementTrain(form.trainId)
+    normalizeMsdNumber(form.msdNo)
   );
 
   const getCopyButtonLabel = () => {
@@ -10525,7 +10599,7 @@ function DoorObstructionContent() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-white">Door Obstruction</p>
-              <p className="text-[10px] font-semibold text-[#8ea8c0]">MSD fails to close / D030 obstruction template. Uses RESPOND action from WI.</p>
+              <p className="text-[10px] font-semibold text-[#8ea8c0]">D030 slow closing / physical stuck template. RESPOND first, OBSERVE only for follow-up trains.</p>
             </div>
             <button
               type="button"
@@ -10543,28 +10617,49 @@ function DoorObstructionContent() {
           <div className="rounded-xl border border-[#1e4060] bg-[#061827] p-2">
             <p className="mb-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#7dd3fc]">Main Details</p>
             <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-              <label><span className={labelClass}>Time</span>{renderTimeInput("eventTime", "18:22")}</label>
-              <label><span className={labelClass}>Station</span><input value={form.location || ""} onChange={(event) => updateForm("location", event.target.value.toUpperCase())} placeholder="3B2" className={inputClass} /></label>
-              <label><span className={labelClass}>Platform</span><input value={form.platform || ""} inputMode="numeric" maxLength={1} onChange={(event) => updateForm("platform", normalizePlatformNumber(event.target.value))} placeholder="1" className={inputClass} /></label>
-              <label><span className={labelClass}>MSD</span><input value={form.msdNo || ""} inputMode="numeric" maxLength={2} onChange={(event) => updateForm("msdNo", event.target.value.replace(/\D/g, "").slice(0, 2))} onBlur={(event) => updateForm("msdNo", normalizeMsdNumber(event.target.value))} placeholder="09" className={inputClass} /></label>
-              <label><span className={labelClass}>Train</span><input value={form.trainId || ""} inputMode="numeric" maxLength={2} onChange={(event) => updateForm("trainId", event.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="27" className={inputClass} /></label>
-              <label><span className={labelClass}>TID</span><input value={form.tid || ""} inputMode="numeric" maxLength={3} onChange={(event) => updateForm("tid", event.target.value.replace(/\D/g, "").slice(0, 3))} placeholder="122" className={inputClass} /></label>
-              <label className="col-span-2"><span className={labelClass}>Obstruction Check</span><select value={form.obstructionStatus || "none"} onChange={(event) => updateForm("obstructionStatus", event.target.value)} className={inputClass}>
-                <option value="none">No physical obstruction</option>
-                <option value="abnormal">No obstruction + abnormal sound</option>
-                <option value="physical">Physical obstruction removed</option>
+              <label><span className={labelClass}>Scenario Type</span><select value={form.scenarioType || "slow_closing"} onChange={(event) => updateForm("scenarioType", event.target.value)} className={inputClass}>
+                <option value="slow_closing">Door obstructed / slow closing</option>
+                <option value="physical_stuck">Physical obstruction stuck</option>
+                <option value="repeat_isolate">Repeated obstruction / isolate required</option>
               </select></label>
+              <label><span className={labelClass}>Physical Obstruction</span><select value={getDoorPhysicalStatus(form)} onChange={(event) => updateForm("physicalStatus", event.target.value)} className={inputClass}>
+                <option value="no_obstruction">No obstruction found</option>
+                <option value="abnormal_sound">No obstruction + abnormal sound</option>
+                <option value="object_removed">Object removed</option>
+                <option value="unable_confirm">Unable to confirm</option>
+              </select></label>
+              <label><span className={labelClass}>Time</span>{renderTimeInput("eventTime", "14:25")}</label>
+              <label><span className={labelClass}>Station</span><input value={form.location || ""} onChange={(event) => updateForm("location", event.target.value.toUpperCase())} placeholder="3A1" className={inputClass} /></label>
+              <label><span className={labelClass}>Platform</span><input value={form.platform || ""} inputMode="numeric" maxLength={1} onChange={(event) => updateForm("platform", normalizePlatformNumber(event.target.value))} placeholder="2" className={inputClass} /></label>
+              <label><span className={labelClass}>MSD</span><input value={form.msdNo || ""} inputMode="numeric" maxLength={2} onChange={(event) => updateForm("msdNo", event.target.value.replace(/\D/g, "").slice(0, 2))} onBlur={(event) => updateForm("msdNo", normalizeMsdNumber(event.target.value))} placeholder="05" className={inputClass} /></label>
+              <label><span className={labelClass}>Train Optional</span><input value={form.trainId || ""} inputMode="numeric" maxLength={2} onChange={(event) => updateForm("trainId", event.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="blank ok" className={inputClass} /></label>
+              <label><span className={labelClass}>TID Optional</span><input value={form.tid || ""} inputMode="numeric" maxLength={3} onChange={(event) => updateForm("tid", event.target.value.replace(/\D/g, "").slice(0, 3))} placeholder="blank ok" className={inputClass} /></label>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-[#1e4060] bg-[#061827] p-2">
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#7dd3fc]">WI Checklist</p>
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+              {renderCheckbox("cctvChecked", "CCTV checked")}
+              {renderCheckbox("ssResponded", "SS responded")}
+              {renderCheckbox("flrtInformed", "FLRT informed")}
+              {renderCheckbox("dcuResetDone", "DCU reset completed")}
+              {renderCheckbox("observeThreeTrains", "Observed 3 trains")}
+              {renderCheckbox("msdIsolated", "MSD isolated / barricaded")}
             </div>
           </div>
 
           <div className="rounded-xl border border-[#1e4060] bg-[#061827] p-2">
             <p className="mb-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#7dd3fc]">Follow Up</p>
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
-              <label><span className={labelClass}>SS Check Time</span>{renderTimeInput("ssTime", "18:27")}</label>
-              <label><span className={labelClass}>FLRT Arrival</span>{renderTimeInput("flrtTime", "18:55")}</label>
-              <label><span className={labelClass}>DCU Reset</span>{renderTimeInput("dcuResetTime", "19:51")}</label>
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+              <label><span className={labelClass}>SS Check</span>{renderTimeInput("ssTime", "14:35")}</label>
+              <label><span className={labelClass}>FLRT Informed</span>{renderTimeInput("flrtInformTime", "14:26")}</label>
+              <label><span className={labelClass}>FLRT Arrival</span>{renderTimeInput("flrtArrivalTime", "14:49")}</label>
+              <label><span className={labelClass}>DCU Reset</span>{renderTimeInput("dcuResetTime", "14:57")}</label>
+              <label><span className={labelClass}>CCTV Normal</span>{renderTimeInput("cctvNormalTime", "15:02")}</label>
+              <label><span className={labelClass}>3 Trains OK</span>{renderTimeInput("observeCompleteTime", "15:10")}</label>
               <label><span className={labelClass}>Isolate Time</span>{renderTimeInput("isolationTime", "20:01")}</label>
-              <label><span className={labelClass}>SR</span><input value={form.srNo || ""} inputMode="numeric" maxLength={8} onChange={(event) => updateForm("srNo", event.target.value.replace(/\D/g, "").slice(0, 8))} placeholder="10119486" className={inputClass} /></label>
+              <label><span className={labelClass}>SR</span><input value={form.srNo || ""} inputMode="numeric" maxLength={8} onChange={(event) => updateForm("srNo", event.target.value.replace(/\D/g, "").slice(0, 8))} placeholder="10119624" className={inputClass} /></label>
             </div>
             <label className="mt-2 block">
               <span className={labelClass}>Remarks / repeated train notes</span>
