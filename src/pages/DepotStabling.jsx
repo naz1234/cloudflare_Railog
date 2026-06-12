@@ -9835,7 +9835,7 @@ function buildAlarmFlowText(form = {}, options = {}) {
   return buildCcTechnicalFailureText(form, options);
 }
 
-function AlarmContent() {
+function CcTechnicalFailureContent() {
   const createDefaultAlarmForm = () => ({
     trainId: "",
     atcName: "",
@@ -10265,6 +10265,384 @@ function AlarmContent() {
     </div>
   );
 }
+
+const DOOR_OBSTRUCTION_FORM_KEY = "doorObstructionFormState_v1";
+const DOOR_OBSTRUCTION_LOG_KEY = "doorObstructionLogState_v1";
+
+function loadDoorObstructionEntries() {
+  try {
+    if (typeof localStorage === "undefined") return [];
+    const raw = localStorage.getItem(DOOR_OBSTRUCTION_LOG_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveDoorObstructionEntries(entries = []) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(DOOR_OBSTRUCTION_LOG_KEY, JSON.stringify(entries || []));
+  } catch {}
+}
+
+function loadDoorObstructionForm(defaultForm) {
+  try {
+    if (typeof localStorage === "undefined") return defaultForm;
+    const raw = localStorage.getItem(DOOR_OBSTRUCTION_FORM_KEY);
+    if (!raw) return defaultForm;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? { ...defaultForm, ...parsed } : defaultForm;
+  } catch {
+    return defaultForm;
+  }
+}
+
+function saveDoorObstructionForm(form = {}) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(DOOR_OBSTRUCTION_FORM_KEY, JSON.stringify(form || {}));
+  } catch {}
+}
+
+function normalizeMsdNumber(value = "") {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 2);
+  return digits ? digits.padStart(2, "0") : "";
+}
+
+function normalizePlatformNumber(value = "") {
+  return String(value || "").replace(/\D/g, "").slice(0, 1);
+}
+
+function buildDoorObstructionText(form = {}, { preview = false } = {}) {
+  const eventTime = String(form.eventTime || "").trim() || (preview ? "18:22" : "");
+  const location = String(form.location || "").trim().toUpperCase() || (preview ? "3B2" : "");
+  const platform = normalizePlatformNumber(form.platform) || (preview ? "1" : "");
+  const msdNo = normalizeMsdNumber(form.msdNo) || (preview ? "09" : "");
+  const train = normalizeMovementTrain(form.trainId) || (preview ? "T27" : "");
+  const tidDigits = String(form.tid || "").replace(/\D/g, "").slice(0, 3) || (preview ? "122" : "");
+  const ssTime = String(form.ssTime || "").trim() || (preview ? "18:27" : "");
+  const flrtTime = String(form.flrtTime || "").trim() || (preview ? "18:55" : "");
+  const dcuResetTime = String(form.dcuResetTime || "").trim();
+  const isolationTime = String(form.isolationTime || "").trim() || (preview ? "20:01" : "");
+  const srNo = String(form.srNo || "").replace(/\D/g, "").trim() || (preview ? "10119486" : "");
+  const remarks = String(form.remarks || "").trim();
+  const obstructionStatus = String(form.obstructionStatus || "none");
+
+  if (!preview && (!eventTime || !location || !platform || !msdNo || !train)) return "";
+
+  const pfLabel = `${location} PF${platform}`;
+  const msdLabel = `MSD${msdNo}`;
+  const trainTidLabel = tidDigits ? `${train} TID${tidDigits}` : train;
+  const lines = [
+    `${eventTime} hrs – ${pfLabel} ${msdLabel} showed Door recycled (D031), PSDS right closing issue (W269) and Door obstructed (D030).`,
+    `${eventTime} hrs – TC held ${trainTidLabel} at ${pfLabel}. TC performed door cycling and alarm cleared. ${train} departed.`,
+    `${eventTime} hrs – TC instructed SS to RESPOND to ${msdLabel}, check for obstruction and confirm train safe to depart.`,
+  ];
+
+  if (ssTime) {
+    if (obstructionStatus === "physical") {
+      lines.push(`${ssTime} hrs – SS removed obstruction from ${msdLabel}, confirmed the MSD was physically closed and reported train safe to depart.`);
+    } else if (obstructionStatus === "abnormal") {
+      lines.push(`${ssTime} hrs – SS confirmed no physical obstruction at ${msdLabel}, but abnormal sound/obstruction was observed while the door was operating.`);
+    } else {
+      lines.push(`${ssTime} hrs – SS confirmed no physical obstruction at ${msdLabel} and reported back to TC.`);
+    }
+  }
+
+  if (flrtTime) lines.push(`${flrtTime} hrs – FLRT arrived at ${pfLabel} and attended ${msdLabel}.`);
+  if (dcuResetTime) lines.push(`${dcuResetTime} hrs – FLRT performed DCU reset for ${msdLabel}.`);
+  if (isolationTime) lines.push(`${isolationTime} hrs – ${msdLabel} at ${pfLabel} LCKS switched to Isolate position. SS barricaded ${msdLabel} and assigned staff for assistance.`);
+  if (remarks) lines.push(`Remarks: ${remarks}`);
+  if (srNo) lines.push(`SR ${srNo}`);
+
+  return lines.join("\n");
+}
+
+function DoorObstructionContent() {
+  const createDefaultDoorObstructionForm = () => ({
+    eventTime: "",
+    location: "",
+    platform: "",
+    msdNo: "",
+    trainId: "",
+    tid: "",
+    obstructionStatus: "none",
+    ssTime: "",
+    flrtTime: "",
+    dcuResetTime: "",
+    isolationTime: "",
+    srNo: "",
+    remarks: "",
+  });
+
+  const accent = "#38bdf8";
+  const [entries, setEntries] = useState(() => sortAlarmFlowEntries(loadDoorObstructionEntries()));
+  const [form, setForm] = useState(() => loadDoorObstructionForm(createDefaultDoorObstructionForm()));
+  const [copyFeedback, setCopyFeedback] = useState({});
+  const copyFeedbackTimerRef = useRef({});
+
+  useEffect(() => { saveDoorObstructionEntries(sortAlarmFlowEntries(entries)); }, [entries]);
+  useEffect(() => { saveDoorObstructionForm(form); }, [form]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(copyFeedbackTimerRef.current || {}).forEach((timer) => clearTimeout(timer));
+    };
+  }, []);
+
+  const inputClass = "h-8 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#38bdf8]";
+  const labelClass = "mb-1 block text-[9px] font-black uppercase tracking-[0.08em] text-[#8ea8c0]";
+
+  const updateForm = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const showCopyFeedback = (key, status) => {
+    setCopyFeedback((prev) => ({ ...prev, [key]: status }));
+    if (copyFeedbackTimerRef.current[key]) clearTimeout(copyFeedbackTimerRef.current[key]);
+    copyFeedbackTimerRef.current[key] = setTimeout(() => {
+      setCopyFeedback((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+      delete copyFeedbackTimerRef.current[key];
+    }, 1600);
+  };
+
+  const copyTextToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+  };
+
+  const renderTimeInput = (field, placeholder = "18:22") => (
+    <input
+      value={form[field] || ""}
+      inputMode="numeric"
+      maxLength={5}
+      onKeyDown={(event) => {
+        const value = String(form[field] || "");
+        const cursorAtEnd = event.currentTarget.selectionStart === value.length && event.currentTarget.selectionEnd === value.length;
+        if (event.key === "Enter") event.currentTarget.blur();
+        if (event.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+          event.preventDefault();
+          updateForm(field, value.slice(0, -2));
+        }
+      }}
+      onChange={(event) => updateForm(field, cleanMovementCustomTimeInput(event.target.value))}
+      onBlur={(event) => updateForm(field, normalizeMovementCustomTimeInput(event.target.value))}
+      placeholder={placeholder}
+      className={inputClass}
+    />
+  );
+
+  const resetDoorForm = () => setForm(createDefaultDoorObstructionForm());
+
+  const addDoorObstructionLog = () => {
+    const text = buildDoorObstructionText(form);
+    if (!text) return;
+
+    const now = new Date();
+    const entry = {
+      id: `door-obstruction-${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
+      time: String(form.eventTime || "").trim(),
+      train: normalizeMovementTrain(form.trainId),
+      alarmName: "Door Obstruction",
+      source: "PSD / MSD",
+      text,
+      createdAt: now.toISOString(),
+    };
+
+    setEntries((prev) => sortAlarmFlowEntries([...prev, entry]));
+    setForm((prev) => ({
+      ...prev,
+      eventTime: "",
+      trainId: "",
+      tid: "",
+      ssTime: "",
+      flrtTime: "",
+      dcuResetTime: "",
+      isolationTime: "",
+      remarks: "",
+    }));
+  };
+
+  const removeDoorLog = (id) => setEntries((prev) => prev.filter((entry) => entry.id !== id));
+
+  const clearDoorLogs = () => {
+    if (!window.confirm("Clear all Door Obstruction logs?")) return;
+    setEntries([]);
+  };
+
+  const copyAllDoorLogs = async () => {
+    if (!entries.length) {
+      showCopyFeedback("door-all", "empty");
+      return;
+    }
+    await copyTextToClipboard(sortAlarmFlowEntries(entries).map((entry) => entry.text).join("\n\n"));
+    showCopyFeedback("door-all", "copied");
+  };
+
+  const copySingleDoorLog = async (entry) => {
+    if (!entry?.text) return;
+    await copyTextToClipboard(entry.text);
+    showCopyFeedback(`door-entry-${entry.id}`, "copied");
+  };
+
+  const requiredReady = Boolean(
+    isCompleteMovementTimeInput(form.eventTime) &&
+    String(form.location || "").trim() &&
+    normalizePlatformNumber(form.platform) &&
+    normalizeMsdNumber(form.msdNo) &&
+    normalizeMovementTrain(form.trainId)
+  );
+
+  const getCopyButtonLabel = () => {
+    const status = copyFeedback["door-all"];
+    if (status === "copied") return "copied !";
+    if (status === "empty") return "no log !";
+    return "Copy All";
+  };
+
+  return (
+    <div className="flex w-full justify-center px-5 pb-5">
+      <section
+        className="w-full max-w-4xl overflow-hidden rounded-xl border shadow-[0_14px_28px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.05)]"
+        style={{ borderColor: `${accent}42`, background: "linear-gradient(180deg,#061827 0%,#041727 100%)" }}
+      >
+        <div className="border-b px-3 py-2" style={{ borderColor: `${accent}30`, backgroundColor: `${accent}0d` }}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-white">Door Obstruction</p>
+              <p className="text-[10px] font-semibold text-[#8ea8c0]">MSD fails to close / D030 obstruction template. Uses RESPOND action from WI.</p>
+            </div>
+            <button
+              type="button"
+              onClick={resetDoorForm}
+              className="rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] shadow-[0_0_14px_rgba(239,68,68,0.38),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.03]"
+              style={{ borderColor: "rgba(248,113,113,0.85)", backgroundColor: "rgba(127,29,29,0.36)", color: "#fecaca" }}
+              title="Reset Door Obstruction Form"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <div className="grid gap-3 p-3">
+          <div className="rounded-xl border border-[#1e4060] bg-[#061827] p-2">
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#7dd3fc]">Main Details</p>
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+              <label><span className={labelClass}>Time</span>{renderTimeInput("eventTime", "18:22")}</label>
+              <label><span className={labelClass}>Station</span><input value={form.location || ""} onChange={(event) => updateForm("location", event.target.value.toUpperCase())} placeholder="3B2" className={inputClass} /></label>
+              <label><span className={labelClass}>Platform</span><input value={form.platform || ""} inputMode="numeric" maxLength={1} onChange={(event) => updateForm("platform", normalizePlatformNumber(event.target.value))} placeholder="1" className={inputClass} /></label>
+              <label><span className={labelClass}>MSD</span><input value={form.msdNo || ""} inputMode="numeric" maxLength={2} onChange={(event) => updateForm("msdNo", event.target.value.replace(/\D/g, "").slice(0, 2))} onBlur={(event) => updateForm("msdNo", normalizeMsdNumber(event.target.value))} placeholder="09" className={inputClass} /></label>
+              <label><span className={labelClass}>Train</span><input value={form.trainId || ""} inputMode="numeric" maxLength={2} onChange={(event) => updateForm("trainId", event.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="27" className={inputClass} /></label>
+              <label><span className={labelClass}>TID</span><input value={form.tid || ""} inputMode="numeric" maxLength={3} onChange={(event) => updateForm("tid", event.target.value.replace(/\D/g, "").slice(0, 3))} placeholder="122" className={inputClass} /></label>
+              <label className="col-span-2"><span className={labelClass}>Obstruction Check</span><select value={form.obstructionStatus || "none"} onChange={(event) => updateForm("obstructionStatus", event.target.value)} className={inputClass}>
+                <option value="none">No physical obstruction</option>
+                <option value="abnormal">No obstruction + abnormal sound</option>
+                <option value="physical">Physical obstruction removed</option>
+              </select></label>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-[#1e4060] bg-[#061827] p-2">
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#7dd3fc]">Follow Up</p>
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+              <label><span className={labelClass}>SS Check Time</span>{renderTimeInput("ssTime", "18:27")}</label>
+              <label><span className={labelClass}>FLRT Arrival</span>{renderTimeInput("flrtTime", "18:55")}</label>
+              <label><span className={labelClass}>DCU Reset</span>{renderTimeInput("dcuResetTime", "19:51")}</label>
+              <label><span className={labelClass}>Isolate Time</span>{renderTimeInput("isolationTime", "20:01")}</label>
+              <label><span className={labelClass}>SR</span><input value={form.srNo || ""} inputMode="numeric" maxLength={8} onChange={(event) => updateForm("srNo", event.target.value.replace(/\D/g, "").slice(0, 8))} placeholder="10119486" className={inputClass} /></label>
+            </div>
+            <label className="mt-2 block">
+              <span className={labelClass}>Remarks / repeated train notes</span>
+              <textarea
+                value={form.remarks || ""}
+                onChange={(event) => updateForm("remarks", event.target.value)}
+                placeholder="Same alarm repeated with T46, T24, T21 and T15 before isolation."
+                rows={2}
+                className="min-h-[58px] w-full resize-none rounded-lg border border-[#1e4060] bg-[#061827] px-2 py-1.5 text-[11px] font-medium leading-snug text-white outline-none placeholder:text-[#31516b] focus:border-[#38bdf8]"
+              />
+            </label>
+          </div>
+
+          <div className="rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2">
+            <p className="mb-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
+            <pre className="max-h-[220px] overflow-auto whitespace-pre-wrap break-words font-mono text-[12px] font-medium leading-snug text-[#c8d8ea]">
+              {buildDoorObstructionText(form, { preview: true })}
+            </pre>
+          </div>
+
+          {requiredReady && (
+            <button
+              type="button"
+              onClick={addDoorObstructionLog}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[12px] font-medium text-white shadow-[0_0_16px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01]"
+              style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
+            >
+              <Plus className="h-3.5 w-3.5" /> Add Door Obstruction Log
+            </button>
+          )}
+
+          <div className="overflow-hidden rounded-xl border border-[#1d4869] bg-[#041727]">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1d4869] bg-[#061827] px-3 py-2">
+              <div className="min-w-0">
+                <h3 className="text-[12px] font-black uppercase tracking-wide text-white">Door Obstruction Output</h3>
+                <p className="text-[10px] font-semibold text-[#8ea8c0]">{entries.length} entries saved locally</p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button type="button" onClick={copyAllDoorLogs} className="flex min-w-[82px] items-center justify-center gap-1 rounded-lg border border-sky-300/55 bg-sky-400/10 px-2 py-1 text-[10px] font-bold text-sky-200 transition-all hover:scale-[1.02]"><Copy className="h-3 w-3" />{getCopyButtonLabel()}</button>
+                <button type="button" onClick={clearDoorLogs} className="flex items-center gap-1 rounded-lg border border-red-400/55 bg-red-500/10 px-2 py-1 text-[10px] font-bold text-red-200 transition-all hover:scale-[1.02]"><Trash2 className="h-3 w-3" />Clear</button>
+              </div>
+            </div>
+
+            <div className="min-h-[150px]">
+              {entries.length === 0 ? (
+                <div className="flex min-h-[150px] items-center justify-center px-3 text-center text-[11px] font-semibold text-[#7eb8e0]">No Door Obstruction log yet.</div>
+              ) : (
+                sortAlarmFlowEntries(entries).map((entry) => (
+                  <div key={entry.id} className="group border-b border-[#12304a]/70 px-3 py-2 last:border-b-0">
+                    <div className="flex items-start gap-2">
+                      <pre className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.25] tracking-[-0.01em] text-[#f4f8ff]">{entry.text}</pre>
+                      <div className="flex shrink-0 flex-col gap-1">
+                        <button type="button" onClick={() => copySingleDoorLog(entry)} title="Copy this log" aria-label="Copy this log" className="flex h-6 w-6 items-center justify-center rounded-md border border-transparent text-sky-200 opacity-80 transition-all hover:scale-[1.04] group-hover:opacity-100">
+                          {copyFeedback[`door-entry-${entry.id}`] === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                        </button>
+                        <button type="button" onClick={() => removeDoorLog(entry.id)} title="Delete this log" aria-label="Delete this log" className="flex h-6 w-6 items-center justify-center rounded-md border border-transparent text-red-400 opacity-80 transition-all hover:border-red-500/60 hover:bg-red-950/35 hover:text-red-300 group-hover:opacity-100"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function AlarmContent() {
+  return (
+    <div className="w-full">
+      <CcTechnicalFailureContent />
+      <DoorObstructionContent />
+    </div>
+  );
+}
+
 
 export default function DepotStablingPage() {
   const [westData, setWestData] = useState(() => loadLocalStablingState().westData);
