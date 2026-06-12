@@ -6502,11 +6502,15 @@ function TrainMovementContent() {
     }, 1600);
   };
 
-  const getCopyButtonLabel = (depot, operation, fallbackLabel) => {
-    const status = copyFeedback[`${depot}-${operation}`];
+  const getCopyFeedbackLabel = (feedbackKey, fallbackLabel) => {
+    const status = copyFeedback[feedbackKey];
     if (status === "copied") return "copied !";
     if (status === "empty") return "no log !";
     return fallbackLabel;
+  };
+
+  const getCopyButtonLabel = (depot, operation, fallbackLabel) => {
+    return getCopyFeedbackLabel(`${depot}-${operation}`, fallbackLabel);
   };
 
   const getTp1CopyButtonLabel = (fallbackLabel = "Copy") => {
@@ -6658,6 +6662,13 @@ function TrainMovementContent() {
     setEntries((prev) => prev.filter((entry) => !(entry.depot === depot && entry.operation === operation)));
   };
 
+  const clearOperationLogs = (operation) => {
+    const operationLabel = OPERATION_META[operation]?.title || "Movement";
+    if (!window.confirm(`Clear all ${operationLabel} logs for West and East Depot?`)) return;
+    captureMovementScrollPosition();
+    setEntries((prev) => prev.filter((entry) => entry.operation !== operation));
+  };
+
   const copyTextToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -6675,6 +6686,21 @@ function TrainMovementContent() {
     const feedbackKey = `${depot}-${operation || "all"}`;
     const lines = entries
       .filter((entry) => entry.depot === depot && (!operation || entry.operation === operation))
+      .map((entry) => entry.text);
+
+    if (lines.length === 0) {
+      showCopyFeedback(feedbackKey, "empty");
+      return;
+    }
+
+    await copyTextToClipboard(lines.join("\n"));
+    showCopyFeedback(feedbackKey, "copied");
+  };
+
+  const copyOperationLogs = async (operation, depot = null) => {
+    const feedbackKey = `operation-${operation}-${depot || "all"}`;
+    const lines = entries
+      .filter((entry) => entry.operation === operation && (!depot || entry.depot === depot))
       .map((entry) => entry.text);
 
     if (lines.length === 0) {
@@ -7489,34 +7515,50 @@ function TrainMovementContent() {
   };
 
 
-  const renderTrainMovementOperationLogTable = ({ depot, operation, accent, logs }) => {
+  const renderTrainMovementOperationLogTable = ({ operation, logs, westCount = 0, eastCount = 0 }) => {
     const meta = OPERATION_META[operation];
-    const depotLabel = getMovementDepotLabel(depot);
+
     return (
       <section className="overflow-hidden rounded-xl border" style={{ borderColor: `${meta.accent}42`, background: "linear-gradient(180deg,#041727 0%,#03111d 100%)" }}>
         <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2" style={{ borderColor: `${meta.accent}30`, backgroundColor: `${meta.accent}10` }}>
           <div className="flex min-w-0 items-center gap-2">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: `${accent || meta.accent}22`, color: accent || meta.accent }}>
-              <MovementIcon type={meta.iconType} color={accent || meta.accent} />
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: `${meta.accent}22`, color: meta.accent }}>
+              <MovementIcon type={meta.iconType} color={meta.accent} />
             </span>
             <div className="min-w-0">
-              <h4 className="text-[12px] font-black uppercase tracking-wide text-white">{depotLabel} — {meta.logTitle}</h4>
-              <p className="text-[10px] font-semibold text-[#8ea8c0]">{logs.length} entries</p>
+              <h4 className="text-[12px] font-black uppercase tracking-wide text-white">{meta.logTitle}</h4>
+              <p className="text-[10px] font-semibold text-[#8ea8c0]">{logs.length} entries • WD {westCount} • ED {eastCount}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
-              onClick={() => copyDepotLogs(depot, operation)}
-              className="flex min-w-[78px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
+              onClick={() => copyOperationLogs(operation)}
+              className="flex min-w-[76px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
               style={{ borderColor: `${meta.accent}55`, color: meta.accent, backgroundColor: `${meta.accent}14` }}
             >
-              <MovementIcon type="copy" />{getCopyButtonLabel(depot, operation, "Copy All")}
+              <MovementIcon type="copy" />{getCopyFeedbackLabel(`operation-${operation}-all`, "Copy All")}
             </button>
             <button
               type="button"
-              onClick={() => clearDepotOperationLogs(depot, operation)}
+              onClick={() => copyOperationLogs(operation, "west")}
+              className="flex min-w-[82px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
+              style={{ borderColor: "#8b5cf655", color: "#c4b5fd", backgroundColor: "#8b5cf614" }}
+            >
+              <MovementIcon type="copy" />{getCopyFeedbackLabel(`operation-${operation}-west`, "Copy West")}
+            </button>
+            <button
+              type="button"
+              onClick={() => copyOperationLogs(operation, "east")}
+              className="flex min-w-[82px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
+              style={{ borderColor: "#06d4e855", color: "#67e8f9", backgroundColor: "#06d4e814" }}
+            >
+              <MovementIcon type="copy" />{getCopyFeedbackLabel(`operation-${operation}-east`, "Copy East")}
+            </button>
+            <button
+              type="button"
+              onClick={() => clearOperationLogs(operation)}
               className="flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
               style={{ borderColor: `${meta.accent}55`, color: meta.accent, backgroundColor: `${meta.accent}14` }}
             >
@@ -7525,45 +7567,57 @@ function TrainMovementContent() {
           </div>
         </div>
 
-        <div className="min-h-[80px]">
+        <div className="min-h-[92px]">
           {logs.length === 0 ? (
-            <div className="flex min-h-[80px] items-center justify-center px-3 text-center text-[11px] font-semibold text-[#7eb8e0]">
+            <div className="flex min-h-[92px] items-center justify-center px-3 text-center text-[11px] font-semibold text-[#7eb8e0]">
               {meta.emptyText}
             </div>
           ) : (
-            logs.map((entry) => (
-              <div
-                key={entry.id}
-                className="group flex items-center gap-2 border-b border-[#12304a]/55 px-3 py-1.5 last:border-b-0"
-              >
-                <p className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.25] tracking-[-0.01em] text-[#f4f8ff]">
-                  {renderMovementLogLine(entry)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => copySingleMovementLog(entry)}
-                  title="Copy this log"
-                  aria-label="Copy this log"
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-transparent opacity-80 transition-all hover:scale-[1.04] group-hover:opacity-100"
-                  style={{ color: meta.accent }}
+            logs.map((entry) => {
+              const isWest = entry.depot === "west";
+              const depotBadge = isWest ? "WD" : "ED";
+              const depotColor = isWest ? "#8b5cf6" : "#06d4e8";
+
+              return (
+                <div
+                  key={entry.id}
+                  className="group flex items-center gap-2 border-b border-[#12304a]/55 px-3 py-1.5 last:border-b-0"
                 >
-                  {copyFeedback[`movement-entry-${entry.id}`] === "copied" ? (
-                    <span className="text-[11px] font-black leading-none">✓</span>
-                  ) : (
-                    <MovementIcon type="copy" color="currentColor" />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeMovementLog(entry.id)}
-                  title="Delete this log"
-                  aria-label="Delete this log"
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-transparent text-red-400 opacity-80 transition-all hover:border-red-500/60 hover:bg-red-950/35 hover:text-red-300 group-hover:opacity-100"
-                >
-                  <MovementIcon type="trash" color="currentColor" />
-                </button>
-              </div>
-            ))
+                  <span
+                    className="flex h-5 w-7 shrink-0 items-center justify-center rounded-md border text-[9px] font-black leading-none"
+                    style={{ borderColor: `${depotColor}66`, backgroundColor: `${depotColor}18`, color: depotColor }}
+                  >
+                    {depotBadge}
+                  </span>
+                  <p className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.25] tracking-[-0.01em] text-[#f4f8ff]">
+                    {renderMovementLogLine(entry)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => copySingleMovementLog(entry)}
+                    title="Copy this log"
+                    aria-label="Copy this log"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-transparent opacity-80 transition-all hover:scale-[1.04] group-hover:opacity-100"
+                    style={{ color: meta.accent }}
+                  >
+                    {copyFeedback[`movement-entry-${entry.id}`] === "copied" ? (
+                      <span className="text-[11px] font-black leading-none">✓</span>
+                    ) : (
+                      <MovementIcon type="copy" color="currentColor" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeMovementLog(entry.id)}
+                    title="Delete this log"
+                    aria-label="Delete this log"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-transparent text-red-400 opacity-80 transition-all hover:border-red-500/60 hover:bg-red-950/35 hover:text-red-300 group-hover:opacity-100"
+                  >
+                    <MovementIcon type="trash" color="currentColor" />
+                  </button>
+                </div>
+              );
+            })
           )}
         </div>
       </section>
@@ -7574,7 +7628,8 @@ function TrainMovementContent() {
     const meta = OPERATION_META[operation];
     const westLogs = entries.filter((entry) => entry.depot === "west" && entry.operation === operation);
     const eastLogs = entries.filter((entry) => entry.depot === "east" && entry.operation === operation);
-    const totalLogs = westLogs.length + eastLogs.length;
+    const operationLogs = entries.filter((entry) => entry.operation === operation);
+    const totalLogs = operationLogs.length;
 
     return (
       <section
@@ -7611,8 +7666,7 @@ function TrainMovementContent() {
           {renderMovementAutomaticFlowCard(operation)}
 
           <div className="grid content-start gap-3">
-            {renderTrainMovementOperationLogTable({ depot: "west", operation, accent: "#8b5cf6", logs: westLogs })}
-            {renderTrainMovementOperationLogTable({ depot: "east", operation, accent: "#06d4e8", logs: eastLogs })}
+            {renderTrainMovementOperationLogTable({ operation, logs: operationLogs, westCount: westLogs.length, eastCount: eastLogs.length })}
           </div>
         </div>
       </section>
