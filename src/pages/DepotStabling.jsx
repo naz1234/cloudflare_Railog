@@ -13403,6 +13403,17 @@ export default function DepotStablingPage() {
               ),
             },
             {
+              key: "possession",
+              label: "Possession Log",
+              code: "PSS",
+              to: "/possession",
+              icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/>
+                </svg>
+              ),
+            },
+            {
               key: "alarm",
               label: "Alarm",
               code: "ALM",
@@ -13412,17 +13423,6 @@ export default function DepotStablingPage() {
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
                   <line x1="12" y1="9" x2="12" y2="13"/>
                   <line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
-              ),
-            },
-            {
-              key: "possession",
-              label: "Possession Log",
-              code: "PSS",
-              to: "/possession",
-              icon: (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/>
                 </svg>
               ),
             },
@@ -13440,14 +13440,14 @@ export default function DepotStablingPage() {
             },
           ].map(({ key, label, code, to }) => {
             const isActive = activeTab === key;
-            const adminBottomClass = key === "admin" ? " mt-auto" : "";
+            const bottomShortcutClass = key === "alarm" ? " mt-auto" : "";
             const navClass = isSidebarCollapsed
-              ? `flex items-center justify-center px-1 py-2.5 text-xs font-normal transition-all text-left w-full${adminBottomClass} ${
+              ? `flex items-center justify-center px-1 py-2.5 text-xs font-normal transition-all text-left w-full${bottomShortcutClass} ${
                   isActive
                     ? "text-white"
                     : "text-[#7eb8e0] hover:text-white"
                 }`
-              : `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full${adminBottomClass} ${
+              : `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full${bottomShortcutClass} ${
                   isActive
                     ? "bg-[#1a3a5c] text-white shadow-sm border border-[#2b4f6b]"
                     : "text-[#7eb8e0] hover:text-white hover:bg-[#0f2d4a]"
