@@ -6466,7 +6466,8 @@ function TrainMovementContent() {
 
   const getResolvedMovementTime = (operation) => {
     const current = getMovementForm(operation);
-    return current.timingMode === "custom" && current.customTime ? current.customTime : clockText;
+    const normalizedTime = normalizeMovementCustomTimeInput(current.customTime);
+    return isCompleteMovementTimeInput(normalizedTime) ? normalizedTime : "";
   };
 
   const setMovementTimingMode = (operation, mode) => {
@@ -6530,10 +6531,16 @@ function TrainMovementContent() {
       return null;
     }
 
+    if (!time) {
+      alert("Please enter Timing (HH:MM).");
+      return null;
+    }
+
     if (operation === "insertion") {
       const road = current.road || selectedRoads[0];
       return {
         text: `${time} hrs – ${train}${tidPart} inserted from ${road} to mainline track ${selectedTrack}.`,
+        time,
         train,
         tid,
         road,
@@ -6543,6 +6550,7 @@ function TrainMovementContent() {
     if (operation === "removal") {
       return {
         text: `${time} hrs – ${train}${tidPart} removed from mainline to ${selectedDepotLabel}.`,
+        time,
         train,
         tid,
         road: "",
@@ -6562,6 +6570,7 @@ function TrainMovementContent() {
 
     return {
       text: `${time} hrs – ${train} removed from mainline to ${selectedDepotLabel} stabling due to ${reason}. Replaced by ${replacement}.`,
+      time,
       train,
       tid: "",
       road: "",
@@ -6572,7 +6581,7 @@ function TrainMovementContent() {
 
   const buildMovementPreview = (operation) => {
     const current = getMovementForm(operation);
-    const time = getResolvedMovementTime(operation);
+    const time = getResolvedMovementTime(operation) || "00:00";
     const selectedDepotLabel = getMovementDepotLabel(current.depot);
     const selectedTrack = getMovementTrack(current.depot);
     const selectedRoads = getMovementRoads(current.depot);
@@ -6604,7 +6613,7 @@ function TrainMovementContent() {
       id: `movement-${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
       depot: current.depot,
       operation,
-      time: getResolvedMovementTime(operation),
+      time: built.time || getResolvedMovementTime(operation),
       createdAt: now.toISOString(),
       text: built.text,
       train: built.train,
@@ -7202,78 +7211,45 @@ function TrainMovementContent() {
   };
 
   const isMovementTimeReady = (current = {}) => {
-    if (current.timingMode !== "custom") return true;
-    return isCompleteMovementTimeInput(current.customTime);
+    return isCompleteMovementTimeInput(normalizeMovementCustomTimeInput(current.customTime));
   };
 
   const renderMovementTimeFlowInput = (operation) => {
     const current = getMovementForm(operation);
-    const isNow = current.timingMode !== "custom";
-    const currentDisplay = isNow ? `${clockText} hrs` : `${current.customTime || "00:00"} hrs`;
     const fieldKey = getMovementFlowInputKey(operation, "customTime");
 
     return (
-      <div className="flex h-8 w-full items-center overflow-hidden rounded-lg border border-[#1e4060] bg-[#061827] shadow-[0_0_14px_rgba(79,142,247,0.10),inset_0_1px_0_rgba(255,255,255,0.04)] focus-within:border-[#4f8ef7]">
-        <button
-          type="button"
-          onClick={() => setMovementTimingMode(operation, "now")}
-          className={`flex h-full shrink-0 items-center justify-center px-2 text-[11px] font-medium transition-all ${isNow ? "text-white" : "text-[#6fa8df] hover:text-white"}`}
-        >
-          Now
-        </button>
-        <div className="h-5 w-px shrink-0 bg-[#244b6b]" />
-        <button
-          type="button"
-          onClick={() => setMovementTimingMode(operation, "custom")}
-          className={`flex h-full shrink-0 items-center justify-center px-2 text-[11px] font-medium transition-all ${!isNow ? "text-white" : "text-[#6fa8df] hover:text-white"}`}
-        >
-          Custom
-        </button>
-        <div className="h-5 w-px shrink-0 bg-[#244b6b]" />
-        {isNow ? (
-          <button
-            type="button"
-            onClick={() => setMovementTimingMode(operation, "custom")}
-            className="flex h-full min-w-0 flex-1 items-center justify-between gap-1.5 px-2 text-left text-[11px] font-medium text-white transition-all hover:bg-[#0a2238]"
-            title="Click to enter custom timing"
-          >
-            <span className="min-w-0 truncate">{currentDisplay}</span>
-            <MovementIcon type="chevron" color="#b8cff0" />
-          </button>
-        ) : (
-          <div className="flex h-full min-w-0 flex-1 items-center gap-1 px-2">
-            <input
-              type="text"
-              inputMode="numeric"
-              maxLength={5}
-              value={current.customTime}
-              onFocus={() => focusFlowInput(fieldKey)}
-              onKeyDown={(e) => {
-                const value = String(current.customTime || "");
-                const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-                if (e.key === "Enter") {
-                  e.currentTarget.blur();
-                  return;
-                }
-                if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                  e.preventDefault();
-                  updateMovementForm(operation, "customTime", value.slice(0, -2));
-                }
-              }}
-              onChange={(e) => {
-                updateMovementForm(operation, "customTime", cleanMovementCustomTimeInput(e.target.value));
-                scheduleFlowInputSettled(fieldKey);
-              }}
-              onBlur={(e) => {
-                updateMovementForm(operation, "customTime", normalizeMovementCustomTimeInput(e.target.value));
-                blurFlowInput(fieldKey);
-              }}
-              placeholder="00:00"
-              className="h-full min-w-[42px] flex-1 bg-transparent text-[11px] font-medium text-white outline-none placeholder:text-[#31516b]"
-            />
-            <span className="shrink-0 text-[11px] font-medium text-[#c8d8ea]">hrs</span>
-          </div>
-        )}
+      <div className="flex h-8 w-full items-center gap-1.5 rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-all focus-within:border-[#4f8ef7]">
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={5}
+          value={current.customTime}
+          onFocus={() => focusFlowInput(fieldKey)}
+          onKeyDown={(e) => {
+            const value = String(current.customTime || "");
+            const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+              return;
+            }
+            if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+              e.preventDefault();
+              updateMovementForm(operation, "customTime", value.slice(0, -2));
+            }
+          }}
+          onChange={(e) => {
+            updateMovementForm(operation, "customTime", cleanMovementCustomTimeInput(e.target.value));
+            scheduleFlowInputSettled(fieldKey);
+          }}
+          onBlur={(e) => {
+            updateMovementForm(operation, "customTime", normalizeMovementCustomTimeInput(e.target.value));
+            blurFlowInput(fieldKey);
+          }}
+          placeholder="00:00"
+          className="h-full min-w-[42px] flex-1 bg-transparent text-[11px] font-medium text-white outline-none placeholder:text-[#31516b]"
+        />
+        <span className="shrink-0 text-[11px] font-medium text-[#c8d8ea]">hrs</span>
       </div>
     );
   };
