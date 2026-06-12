@@ -10759,11 +10759,33 @@ function DoorObstructionContent() {
   );
 }
 
-function AlarmContent() {
+function AlarmContent({ search = "" }) {
+  const alarmSearchKeyword = String(search || "").trim().toLowerCase();
+  const alarmWindows = [
+    { key: "cc-technical-failure", title: "CC Technical Failure", content: <CcTechnicalFailureContent /> },
+    { key: "door-obstruction", title: "Door Obstruction", content: <DoorObstructionContent /> },
+  ];
+  const visibleAlarmWindows = alarmSearchKeyword
+    ? alarmWindows.filter((item) => item.title.toLowerCase().includes(alarmSearchKeyword))
+    : alarmWindows;
+
   return (
     <div className="w-full">
-      <CcTechnicalFailureContent />
-      <DoorObstructionContent />
+      {visibleAlarmWindows.map((item) => (
+        <Fragment key={item.key}>{item.content}</Fragment>
+      ))}
+
+      {alarmSearchKeyword && visibleAlarmWindows.length === 0 && (
+        <div className="flex w-full justify-center px-5 pb-5 pt-2">
+          <div className="w-full max-w-4xl rounded-xl border border-dashed border-[#2b4f6b] bg-[#061827]/80 px-4 py-8 text-center shadow-[0_14px_28px_rgba(0,0,0,0.16)]">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[#8bd5ff]">
+              <Search className="h-4 w-4" />
+            </div>
+            <h3 className="mt-2 text-[13px] font-normal text-white">No alarm window found</h3>
+            <p className="mt-1 text-[11px] font-semibold text-[#8ea8c0]">Search matches the alarm window header title only.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -10836,6 +10858,7 @@ export default function DepotStablingPage() {
   });
   const [adminNotes, setAdminNotes] = useState(() => loadAdminNotes());
   const [adminSearch, setAdminSearch] = useState("");
+  const [alarmSearch, setAlarmSearch] = useState("");
   const [adminEditingNoteId, setAdminEditingNoteId] = useState(null);
   const [adminTitleDraft, setAdminTitleDraft] = useState("");
   const [adminNotesLoading, setAdminNotesLoading] = useState(false);
@@ -11021,6 +11044,7 @@ export default function DepotStablingPage() {
     setAdminNotesLoading(false);
     setAdminNotesSaving(false);
     setAdminNotesLiveStatus("Local cache ready");
+    setAlarmSearch("");
     try { sessionStorage.removeItem(ADM_SESSION_KEY); } catch {}
   }, []);
 
@@ -13675,7 +13699,43 @@ export default function DepotStablingPage() {
 
         {activeTab === "alarm" && (
           isAdminUnlocked ? (
-            <AlarmContent />
+            <div className="w-full px-2 pb-10 pt-6">
+              <div className="mx-auto mb-2.5 w-full max-w-4xl space-y-2.5">
+                <div className="rounded-[24px] border border-[#1d4869] bg-[#061827]/90 p-3 shadow-[0_18px_55px_rgba(0,0,0,0.25)]">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[10px] font-semibold tracking-[0.16em] text-[#bceaff]">
+                      ALM
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Alarm windows</p>
+                      <h2 className="truncate text-[17px] font-normal leading-tight text-white">Alarm Template</h2>
+                      <p className="mt-0.5 text-[10px] font-semibold text-[#8ea8c0]">
+                        Search matches window header title.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAdminLogout}
+                      className="rounded-2xl border border-[#2b4f6b] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-[0.98]"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={alarmSearch}
+                    onChange={(event) => setAlarmSearch(event.target.value)}
+                    placeholder="Search alarm window title"
+                    className="h-11 w-full rounded-2xl border border-[#d7e3ee] bg-[#f8fbff] pl-11 pr-4 text-[13px] font-normal text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#93c5fd] focus:ring-2 focus:ring-[#93c5fd]/30"
+                  />
+                </div>
+              </div>
+
+              <AlarmContent search={alarmSearch} />
+            </div>
           ) : (
             <div className="w-full px-2 pb-10 pt-6">
               <div className="mx-auto w-full max-w-[620px]">
