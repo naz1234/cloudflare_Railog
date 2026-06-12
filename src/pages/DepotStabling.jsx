@@ -13674,7 +13674,72 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "alarm" && (
-          <AlarmContent />
+          isAdminUnlocked ? (
+            <AlarmContent />
+          ) : (
+            <div className="w-full px-2 pb-10 pt-6">
+              <div className="mx-auto w-full max-w-[620px]">
+                <div className="mx-auto w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[#23506f]/80 bg-[#061827]/95 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur">
+                  <div className="relative border-b border-[#1a3a56]/80 bg-gradient-to-br from-[#0d3455] via-[#08223a] to-[#061827] px-5 py-5">
+                    <div className="absolute right-5 top-5 h-10 w-10 rounded-full border border-[#4f8ef7]/25 bg-[#4f8ef7]/10 blur-[1px]" />
+                    <div className="relative flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#4f8ef7]/40 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.22em] text-[#bceaff] shadow-[0_0_22px_rgba(79,142,247,0.18)]">
+                        ALM
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-normal uppercase tracking-[0.24em] text-[#6db6e8]">Alarm access</p>
+                        <h2 className="mt-1 text-[18px] font-semibold text-white">Alarm Login</h2>
+                      </div>
+                    </div>
+                    <p className="relative mt-4 text-[11px] leading-relaxed text-[#8dc7ed]">
+                      Enter ID and password to unlock this page.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleAdminLogin} className="px-5 py-5">
+                    <label className="block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                      ID
+                      <input
+                        value={adminCredentials.id}
+                        onChange={(event) => {
+                          setAdminCredentials((prev) => ({ ...prev, id: event.target.value }));
+                          setAdminError("");
+                        }}
+                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
+                        autoComplete="username"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                      />
+                    </label>
+                    <label className="mt-4 block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                      Password
+                      <input
+                        type="password"
+                        value={adminCredentials.password}
+                        onChange={(event) => {
+                          setAdminCredentials((prev) => ({ ...prev, password: event.target.value }));
+                          setAdminError("");
+                        }}
+                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
+                        autoComplete="current-password"
+                      />
+                    </label>
+                    {adminError && (
+                      <p className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-[11px] font-normal text-red-200">
+                        {adminError}
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      className="mt-5 flex h-10 w-full items-center justify-center rounded-xl border border-[#4f8ef7]/60 bg-[#1b5f93] text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(79,142,247,0.22)] transition hover:bg-[#2476b4] active:scale-[0.99]"
+                    >
+                      Login
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )
         )}
 
         {activeTab === "admin" && (
