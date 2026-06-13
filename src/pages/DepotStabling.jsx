@@ -2011,13 +2011,29 @@ function isWashOnlyRequestedRemark(value = "") {
   return getRequestedWashOnlySortValue(value) === 1;
 }
 
-function getWashOnlyShiftRemovalAction({ tid = "", requestType = "", westRemovalRow = null } = {}) {
+function getWashOnlyShiftRemovalAction({ tid = "", requestType = "", westRemovalRow = null, activeTimetableType = "weekday" } = {}) {
   if (!isWashOnlyRequestedRemark(requestType)) return null;
 
   const tidKey = normalizeTrainRemTidValue(tid || westRemovalRow?.tid || "");
   if (!tidKey) return null;
 
-  if (westRemovalRow?.isWest9amRealRemoval || TRAIN_REM_WEST_9AM_REAL_TID_SET.has(tidKey)) {
+  const isFridayOrSaturdayTimetable = ["friday", "saturday"].includes(normalizeTimetableType(activeTimetableType));
+  const isEarlyShiftRemoval = Boolean(
+    westRemovalRow?.isWest9amRealRemoval || TRAIN_REM_WEST_9AM_REAL_TID_SET.has(tidKey)
+  );
+  const isLateShiftRemoval = TRAIN_REM_WASH_LATE_SHIFT_TID_SET.has(tidKey);
+
+  if (isFridayOrSaturdayTimetable && (isEarlyShiftRemoval || isLateShiftRemoval)) {
+    return {
+      actionLabel: "EOS Removal",
+      actionSymbol: "✓",
+      actionStatus: "EOS Removal ✓",
+      actionType: "eosRemoval",
+      group: "removal",
+    };
+  }
+
+  if (isEarlyShiftRemoval) {
     return {
       actionLabel: "Early Shift Rem",
       actionSymbol: "✓",
@@ -2029,7 +2045,7 @@ function getWashOnlyShiftRemovalAction({ tid = "", requestType = "", westRemoval
 
   if (TRAIN_REM_WASH_NEED_SWAP_TID_SET.has(tidKey)) return null;
 
-  if (TRAIN_REM_WASH_LATE_SHIFT_TID_SET.has(tidKey)) {
+  if (isLateShiftRemoval) {
     return {
       actionLabel: "Late Shift Rem",
       actionSymbol: "✓",
@@ -4949,6 +4965,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         westData,
         eastData: latestEastData,
         activeTimetable,
+        activeTimetableType,
       });
 
       // Keep the file download as the first action in the click handler.
@@ -13604,6 +13621,7 @@ export default function DepotStablingPage() {
         westData={westData}
         eastData={eastData}
         activeTimetable={activeTimetable}
+        activeTimetableType={selectedTimetableType}
       />
     </div>
 
@@ -14661,7 +14679,7 @@ function mergeRequestedActionRowsByTrain(rows = []) {
   return [...mergedMap.values()].map(({ _requestTypes, ...row }) => row);
 }
 
-function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, westData = {}, eastData = {}, includeTomorrowRequests = true } = {}) {
+function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, westData = {}, eastData = {}, includeTomorrowRequests = true, activeTimetableType = "weekday" } = {}) {
   const westRemovalRowsMap = getWestRemovalRowsMap(trainRemState);
   const westStablingKeys = getWestStablingKeys(westData);
   const workshopTrainKeys = getWorkshopTrainRequestKeys(requests);
@@ -14701,6 +14719,7 @@ function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, wes
       tid: requestTid,
       requestType,
       westRemovalRow: isRemoval ? westRemovalRow : null,
+      activeTimetableType,
     });
     const finalGroup = washShiftAction?.group || group;
     const actionLabel = washShiftAction?.actionLabel || (isRemoval ? "Removal" : "Need Swapping");
@@ -14739,7 +14758,7 @@ function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, wes
   return [...sortedSwapRows, ...sortedRemovalRows];
 }
 
-function getRequestedTrainActionOverviewRowsFromSwappingTable({ swappingRows = [], actionOverviewRows = [] } = {}) {
+function getRequestedTrainActionOverviewRowsFromSwappingTable({ swappingRows = [], actionOverviewRows = [], activeTimetableType = "weekday" } = {}) {
   const displayedSwapRows = sortRequestedTrainRowsByTid(swappingRows)
     .filter((row) => row && normalizeTrainId(row?.key || row?.label || row?.trainId));
   const removalRows = (Array.isArray(actionOverviewRows) ? actionOverviewRows : [])
@@ -14755,6 +14774,7 @@ function getRequestedTrainActionOverviewRowsFromSwappingTable({ swappingRows = [
     const washShiftAction = getWashOnlyShiftRemovalAction({
       tid: rowTid,
       requestType,
+      activeTimetableType,
     });
     const actionLabel = washShiftAction?.actionLabel || "Need Swapping";
     const actionSymbol = washShiftAction ? washShiftAction.actionSymbol : "⇆";
@@ -14988,7 +15008,7 @@ function getRemovalPdfSwappingRows({ requests = [], trainRemState = {}, westData
   return addArrival3A1P2ToRequestedRows(displayRows, activeTimetable, new Date());
 }
 
-function getRemovalPdfActionOverviewRows({ requests = [], trainRemState = {}, westData = {}, eastData = {}, activeTimetable = null } = {}) {
+function getRemovalPdfActionOverviewRows({ requests = [], trainRemState = {}, westData = {}, eastData = {}, activeTimetable = null, activeTimetableType = "weekday" } = {}) {
   const swappingRows = getRemovalPdfSwappingRows({
     requests,
     trainRemState,
@@ -15002,10 +15022,12 @@ function getRemovalPdfActionOverviewRows({ requests = [], trainRemState = {}, we
     westData,
     eastData,
     includeTomorrowRequests: loadRequestedTrainIncludeTomorrowSwaps(),
+    activeTimetableType,
   });
   const combinedRows = getRequestedTrainActionOverviewRowsFromSwappingTable({
     swappingRows,
     actionOverviewRows: rawActionOverviewRows,
+    activeTimetableType,
   });
 
   return addArrival3A1P2ToRequestedRows(combinedRows, activeTimetable, new Date());
@@ -15373,6 +15395,10 @@ function getRequestedActionPillStyle(item = {}) {
     return "border-[#facc15] bg-[#facc15]/25 text-[#fff7c2] shadow-[0_0_8px_rgba(250,204,21,0.22)]";
   }
 
+  if (actionType === "eosRemoval" || label.includes("eos removal")) {
+    return "border-[#38bdf8] bg-[#0ea5e9]/25 text-[#dff6ff] shadow-[0_0_8px_rgba(56,189,248,0.22)]";
+  }
+
   return "border-[#ef4444] bg-[#ef4444]/22 text-[#ffe4e6] shadow-[0_0_8px_rgba(239,68,68,0.22)]";
 }
 
@@ -15602,11 +15628,13 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
     westData,
     eastData,
     includeTomorrowRequests,
+    activeTimetableType,
   });
   const actionOverviewRows = addArrival3A1P2ToRequestedRows(
     getRequestedTrainActionOverviewRowsFromSwappingTable({
       swappingRows: swappingRowsWithArrival3A1P2,
       actionOverviewRows: rawActionOverviewRows,
+      activeTimetableType,
     }),
     activeTimetable,
     arrivalLookupTime
@@ -16390,6 +16418,10 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
       return { fill: "#facc15", stroke: "#ca8a04", text: "#000000", icon: "#000000" };
     }
 
+    if (actionType === "eosRemoval" || label.includes("eos removal")) {
+      return { fill: "#0ea5e9", stroke: "#0369a1", text: "#000000", icon: "#000000" };
+    }
+
     return { fill: "#ef4444", stroke: "#b91c1c", text: "#ffffff", icon: "#ffffff" };
   };
 
@@ -16875,7 +16907,7 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
   );
 }
 
-function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {}, requests = [], westData = {}, eastData = {}, activeTimetable = null }) {
+function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {}, requests = [], westData = {}, eastData = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
   const westLog = buildTrainRemRemovalLog(trainRemState, "west", maintenanceMap);
   const eastLog = buildTrainRemRemovalLog(trainRemState, "east", maintenanceMap);
   const getLatestSwappingRows = () => getRemovalPdfSwappingRows({
@@ -16891,6 +16923,7 @@ function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {}, requ
     westData,
     eastData,
     activeTimetable,
+    activeTimetableType,
   });
   const swappingRows = getLatestSwappingRows();
   const actionOverviewRows = getLatestActionOverviewRows();
