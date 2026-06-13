@@ -4948,6 +4948,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         trainRemState: latestTrainRemState,
         westData,
         eastData: latestEastData,
+        activeTimetable,
       });
 
       // Keep the file download as the first action in the click handler.
@@ -14640,6 +14641,11 @@ function mergeRequestedActionRowsByTrain(rows = []) {
     if (existing) {
       existing._requestTypes.push(row?.requestType || "");
       existing.requestType = buildRequestedActionRemarkSummary(existing._requestTypes);
+      if (!existing.tid && row?.tid) existing.tid = row.tid;
+      if (!existing.manualTid && row?.manualTid) existing.manualTid = row.manualTid;
+      if (!existing.autoTid && row?.autoTid) existing.autoTid = row.autoTid;
+      if (!existing.arrival3A1P2 && row?.arrival3A1P2) existing.arrival3A1P2 = row.arrival3A1P2;
+      existing.canEditTid = Boolean(existing.canEditTid || row?.canEditTid);
       return;
     }
 
@@ -14758,7 +14764,11 @@ function getRequestedTrainActionOverviewRowsFromSwappingTable({ swappingRows = [
     return {
       key: key || `swap-table-${index}`,
       trainsetNumber: formatRequestedTrainNumber(key || row?.label || row?.trainId),
-      tid: group === "removal" ? rowTid : "",
+      tid: rowTid,
+      manualTid: (row?.manualTid || "").toString().trim(),
+      autoTid: (row?.autoTid || "").toString().trim(),
+      canEditTid: Boolean(row?.canEditTid),
+      arrival3A1P2: (row?.arrival3A1P2 || "").toString().trim(),
       requestType,
       actionLabel,
       actionSymbol,
@@ -14978,14 +14988,27 @@ function getRemovalPdfSwappingRows({ requests = [], trainRemState = {}, westData
   return addArrival3A1P2ToRequestedRows(displayRows, activeTimetable, new Date());
 }
 
-function getRemovalPdfActionOverviewRows({ requests = [], trainRemState = {}, westData = {}, eastData = {} } = {}) {
-  return getRequestedTrainActionOverviewRows({
+function getRemovalPdfActionOverviewRows({ requests = [], trainRemState = {}, westData = {}, eastData = {}, activeTimetable = null } = {}) {
+  const swappingRows = getRemovalPdfSwappingRows({
+    requests,
+    trainRemState,
+    westData,
+    eastData,
+    activeTimetable,
+  });
+  const rawActionOverviewRows = getRequestedTrainActionOverviewRows({
     requests,
     trainRemState,
     westData,
     eastData,
     includeTomorrowRequests: loadRequestedTrainIncludeTomorrowSwaps(),
   });
+  const combinedRows = getRequestedTrainActionOverviewRowsFromSwappingTable({
+    swappingRows,
+    actionOverviewRows: rawActionOverviewRows,
+  });
+
+  return addArrival3A1P2ToRequestedRows(combinedRows, activeTimetable, new Date());
 }
 
 function applyManualTidToRequestedRows(rows = [], manualTidByTrain = {}) {
@@ -15087,15 +15110,16 @@ function buildRequestedTrainsDocx({ swappingRows = [], actionOverviewRows = [] }
     const safeRows = displayRows.filter((row) => row && !row.isSeparator);
     if (!safeRows.length) return "";
 
-    const widths = [1250, 850, 1650, 1800];
+    const widths = [850, 650, 1050, 1700, 1300];
     const tableRows = [
-      requestedDocxRow(["Trainset number", "TID", "Remark Request", ""], { header: true, widths }),
+      requestedDocxRow(["Trainset number", "TID", "Arrival 3A1P2", "Remark Request", ""], { header: true, widths }),
       ...displayRows.map((row) => {
-        if (row?.isSeparator) return requestedDocxRow(["", "", "", ""], { widths });
+        if (row?.isSeparator) return requestedDocxRow(["", "", "", "", ""], { widths });
 
         return requestedDocxRow([
           formatRequestedTrainNumber(row.trainsetNumber || row.key),
-          row.group === "removal" ? (row.tid || "") : "",
+          row.tid || "",
+          formatTimetableTimeWithHrs(row.arrival3A1P2),
           row.requestType || "",
           row.actionStatus || "",
         ], { widths });
@@ -15158,8 +15182,7 @@ function buildRequestedTrainsDocx({ swappingRows = [], actionOverviewRows = [] }
 
   const buildSwappingNoteBodyXml = () => `
     ${buildTitleXml("TRAIN REMOVAL PLAN", 0, false)}
-    ${buildTableXml(swappingRows, { includeArrival3A1P2: true })}
-    ${buildActionOverviewTableXml(actionOverviewRows) ? buildTitleXml("REQUESTED TRAIN:", 220, false) : ""}
+    ${buildActionOverviewTableXml(actionOverviewRows) ? buildTitleXml("REQUESTED TRAIN:", 120, false) : ""}
     ${buildActionOverviewTableXml(actionOverviewRows)}`;
 
   const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -15198,7 +15221,7 @@ function downloadRequestedTrainsDocx({ swappingRows = [], actionOverviewRows = [
     type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   });
   const dateStamp = new Date().toISOString().slice(0, 10);
-  downloadBlob(blob, `requested-trains-required-for-swapping-${dateStamp}.docx`);
+  downloadBlob(blob, `requested-train-plan-${dateStamp}.docx`);
 }
 
 function RequestedTrainPill({ children, accent = "#4f8ef7", muted = false }) {
@@ -15368,7 +15391,7 @@ function RequestedActionStatusPill({ item }) {
   );
 }
 
-function RequestedTrainActionOverviewTable({ rows = [] }) {
+function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null }) {
   const displayRows = Array.isArray(rows) ? rows : [];
   const hasRows = displayRows.some((row) => row && !row.isSeparator);
   const totalRows = displayRows.filter((row) => row && !row.isSeparator).length;
@@ -15385,17 +15408,19 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
       </div>
 
       <div className="w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
-        <table className="table-fixed text-[11px] leading-none" style={{ width: 400, maxWidth: "100%" }}>
+        <table className="table-fixed text-[11px] leading-none" style={{ width: 500, maxWidth: "100%" }}>
           <colgroup>
             <col style={{ width: 58 }} />
-            <col style={{ width: 46 }} />
+            <col style={{ width: 52 }} />
+            <col style={{ width: 92 }} />
             <col style={{ width: 176 }} />
-            <col style={{ width: 120 }} />
+            <col style={{ width: 122 }} />
           </colgroup>
           <thead>
             <tr className="bg-[#0a2237] text-[#cfe5fb]">
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Trainset number</th>
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">TID</th>
+              <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Arrival 3A1P2</th>
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Remark Request</th>
               <th className="border-b border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none"></th>
             </tr>
@@ -15408,12 +15433,17 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
                     <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                     <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                     <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
+                    <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                     <td className="border-b border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                   </tr>
                 );
               }
 
-              const displayTid = item.group === "removal" ? (item.tid || "") : "";
+              const displayTid = [item?.manualTid, item?.autoTid, item?.tid]
+                .map((value) => (value || "").toString().trim())
+                .find(Boolean) || "";
+              const arrival3A1P2 = formatTimetableTimeWithHrs(item?.arrival3A1P2);
+              const canEditTid = item?.group !== "removal" && item?.canEditTid && typeof onManualTidChange === "function";
 
               return (
                 <tr key={`${item.key}-${item.requestType}-${item.actionStatus}-${index}`} className="odd:bg-[#081b2d] even:bg-[#0a2136]">
@@ -15421,7 +15451,20 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
                     {formatRequestedTrainNumber(item.trainsetNumber || item.key)}
                   </td>
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
-                    {displayTid}
+                    {canEditTid ? (
+                      <input
+                        value={displayTid}
+                        onChange={(event) => onManualTidChange(item.key, event.target.value)}
+                        inputMode="numeric"
+                        maxLength={3}
+                        placeholder="--"
+                        title={item.manualTid ? "Enter TID manually" : (displayTid ? "Matched TID from train removal/reference row" : "Enter TID manually")}
+                        className="h-[19px] w-[46px] bg-transparent px-1 py-0 text-center text-[11px] font-normal leading-none tracking-wide text-[#eef7ff] outline-none placeholder:text-[#8fa6bd] focus:text-sky-200"
+                      />
+                    ) : displayTid}
+                  </td>
+                  <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff] whitespace-nowrap">
+                    {arrival3A1P2}
                   </td>
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-tight text-[#eaf4ff] whitespace-normal break-words">
                     {item.requestType || ""}
@@ -15433,7 +15476,7 @@ function RequestedTrainActionOverviewTable({ rows = [] }) {
               );
             }) : (
               <tr className="bg-[#081b2d]">
-                <td colSpan={4} className="border-b border-[#193752] px-2 py-2 text-center align-middle leading-none text-[#8fa6bd]">
+                <td colSpan={5} className="border-b border-[#193752] px-2 py-2 text-center align-middle leading-none text-[#8fa6bd]">
                   No requested train action found
                 </td>
               </tr>
@@ -15560,10 +15603,14 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
     eastData,
     includeTomorrowRequests,
   });
-  const actionOverviewRows = getRequestedTrainActionOverviewRowsFromSwappingTable({
-    swappingRows: swappingRowsWithArrival3A1P2,
-    actionOverviewRows: rawActionOverviewRows,
-  });
+  const actionOverviewRows = addArrival3A1P2ToRequestedRows(
+    getRequestedTrainActionOverviewRowsFromSwappingTable({
+      swappingRows: swappingRowsWithArrival3A1P2,
+      actionOverviewRows: rawActionOverviewRows,
+    }),
+    activeTimetable,
+    arrivalLookupTime
+  );
   const activeTimetableLabel = getTimetableTypeLabel(activeTimetableType);
   const parsedTimetable = getActiveTimetableParsedData(activeTimetable);
   const arrivalReferenceCount = parsedTimetable?.summary?.reference?.arrival3A1P2 || parsedTimetable?.reference?.arrival3A1P2?.entries?.length || 0;
@@ -15627,7 +15674,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
             disabled={Boolean(downloadingDocxType)}
             className="group flex items-center gap-1.5 h-6 px-2.5 rounded-[10px] border text-[10px] font-bold transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
             style={{ ...MAIN_STABLING_BUTTON_BLUE, minHeight: 24, borderRadius: 10 }}
-            title="Download DOCX with both overview tables"
+            title="Download REQUESTED TRAIN table as DOCX"
           >
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -15640,18 +15687,10 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
       </div>
 
       <div className="w-fit max-w-full">
-        <div className="grid w-fit max-w-full grid-cols-[auto_auto] items-stretch gap-3 overflow-x-hidden">
-          <RequestedTrainTable
-            title="TRAIN REQUESTED FOR SWAPPING"
-            rows={swappingRowsWithArrival3A1P2}
-            maintenanceMap={maintenanceMap}
-            onManualTidChange={handleManualTidChange}
-            showArrival3A1P2
-            showNote
-          />
-
-          <RequestedTrainActionOverviewTable rows={actionOverviewRows} />
-        </div>
+        <RequestedTrainActionOverviewTable
+          rows={actionOverviewRows}
+          onManualTidChange={handleManualTidChange}
+        />
 
         <RequestedTrainActionSummary rows={actionOverviewRows} requests={requests} />
       </div>
@@ -16141,7 +16180,7 @@ function buildRemovalPdfBlob(log = {}) {
 
 function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
   // A4 landscape, one page: West at left, East at right.
-  // Requested swapping table is placed under West Depot; request/action table is placed under East Depot.
+  // West removal stays on the left; the single consolidated REQUESTED TRAIN table is placed under East Depot.
   const pageWidth = 841.89;
   const pageHeight = 595.28;
   const marginX = 22;
@@ -16152,11 +16191,8 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
 
   const westRows = Array.isArray(westLog?.entries) ? westLog.entries : [];
   const eastRows = Array.isArray(eastLog?.entries) ? eastLog.entries : [];
-  const rawSwappingRows = Array.isArray(options?.swappingRows) ? options.swappingRows : [];
   const rawActionOverviewRows = Array.isArray(options?.actionOverviewRows) ? options.actionOverviewRows : [];
-  const swappingRows = getRequestedTrainDisplayRows(rawSwappingRows, rawSwappingRows.length ? rawSwappingRows.length : 1);
   const actionOverviewRows = rawActionOverviewRows.length ? rawActionOverviewRows : [];
-  const hasSwappingRows = rawSwappingRows.length > 0;
   const hasActionOverviewRows = actionOverviewRows.some((row) => row && !row.isSeparator);
 
   const titleTop = 28;
@@ -16164,21 +16200,16 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
   const tableTop = 108;
   const tableBottomTop = 566;
   const headerHeight = 17;
-  const swapSectionGap = 30;
   const headerFontSize = 6.4;
 
   const westRowCount = Math.max(westRows.length, 1);
   const eastRowCount = Math.max(eastRows.length, 1);
-  const swappingRowCount = Math.max(swappingRows.length, 1);
   const actionOverviewRowCount = Math.max(actionOverviewRows.length, 1);
   const leftAvailableHeight = tableBottomTop - tableTop;
   const leftRowHeight = Math.max(
     8.4,
-    Math.min(14.2, (leftAvailableHeight - headerHeight * 2 - swapSectionGap) / (westRowCount + swappingRowCount))
+    Math.min(14.2, (leftAvailableHeight - headerHeight) / westRowCount)
   );
-  const westTableHeight = headerHeight + westRowCount * leftRowHeight;
-  const swapTitleTop = tableTop + westTableHeight + 14;
-  const swapTableTop = tableTop + westTableHeight + swapSectionGap;
 
   const rightAvailableHeight = tableBottomTop - tableTop;
   const rightRowHeight = Math.max(
@@ -16495,101 +16526,25 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
   };
 
-  const drawRequestedSwappingTable = (rows = [], x, titleTopForTable, tableTopForTable, rowH) => {
-    const activeFontSize = getFontSizeForRowHeight(rowH);
-    const rowCount = Math.max(rows.length, 1);
-    const colWidths = {
-      no: 25,
-      train: 48,
-      tid: 36,
-      note1: 142,
-      note2: 129,
-    };
-    const colX = {
-      no: x,
-      train: x + colWidths.no,
-      tid: x + colWidths.no + colWidths.train,
-      note1: x + colWidths.no + colWidths.train + colWidths.tid,
-      note2: x + colWidths.no + colWidths.train + colWidths.tid + colWidths.note1,
-    };
-    const tableWidth = colWidths.no + colWidths.train + colWidths.tid + colWidths.note1 + colWidths.note2;
-    const tableHeight = headerHeight + rowCount * rowH;
-    const tableY = yFromTop(tableTopForTable, tableHeight);
-
-    ops += pdfText("TRAIN REQUESTED FOR SWAPPING", x, yFromTop(titleTopForTable), {
-      size: 10.4,
-      color: "#000000",
-      font: "F2",
-    });
-    ops += pdfText(`Total: ${hasSwappingRows ? rawSwappingRows.length : 0}`, x, yFromTop(titleTopForTable + 12), {
-      size: 6.5,
-      color: "#000000",
-    });
-
-    ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
-    const headerBottomY = yFromTop(tableTopForTable + headerHeight);
-    ops += line(x, headerBottomY, x + tableWidth, headerBottomY, 0.55);
-
-    [colX.train, colX.tid, colX.note1, colX.note2].forEach((gridX) => {
-      ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
-    });
-
-    const headerTextY = yFromTop(tableTopForTable + 11);
-    drawTextInCell("NO", colX.no + 6, headerTextY, 4, { size: headerFontSize - 0.5, bold: true });
-    drawTextInCell("TRAIN", colX.train + 8, headerTextY, 8, { size: headerFontSize - 0.5, bold: true });
-    drawTextInCell("TID", colX.tid + 8, headerTextY, 5, { size: headerFontSize - 0.5, bold: true });
-    drawTextInCell("NOTE", colX.note1 + 8, headerTextY, 10, { size: headerFontSize - 0.5, bold: true });
-    drawTextInCell("NOTE", colX.note2 + 8, headerTextY, 10, { size: headerFontSize - 0.5, bold: true });
-
-    if (!hasSwappingRows) {
-      const rowY = yFromTop(tableTopForTable + headerHeight, rowH);
-      drawTextInCell("No train requested for swapping", x + 10, rowY + rowH / 2 - 2, 42, {
-        size: activeFontSize,
-        bold: true,
-      });
-    } else {
-      rows.forEach((entry, index) => {
-        const rowTop = tableTopForTable + headerHeight + index * rowH;
-        const rowY = yFromTop(rowTop, rowH);
-        const textY = rowY + rowH / 2 - 2.2;
-        const label = (entry?.label || "").replace(/^T/i, "");
-
-        drawTextInCell(String(index + 1).padStart(2, "0"), colX.no + 6, textY, 4, { size: activeFontSize, bold: false });
-        drawTextInCell(label || "-", colX.train, textY, 6, { size: activeFontSize, bold: true, align: "center", width: colWidths.train });
-        drawTextInCell("", colX.tid, textY, 5, { size: activeFontSize, bold: false, align: "center", width: colWidths.tid });
-        drawTextInCell(entry?.requestType || "-", colX.note1 + 5, textY, 30, { size: Math.max(3.9, activeFontSize - 0.2), bold: false });
-        drawTextInCell(entry?.actionNote || "-", colX.note2 + 5, textY, 28, { size: Math.max(3.9, activeFontSize - 0.2), bold: false });
-      });
-    }
-
-    for (let i = 0; i <= rowCount; i += 1) {
-      const rowLineY = yFromTop(tableTopForTable + headerHeight + i * rowH);
-      ops += line(x, rowLineY, x + tableWidth, rowLineY, 0.38);
-    }
-
-    [x, colX.train, colX.tid, colX.note1, colX.note2, x + tableWidth].forEach((gridX) => {
-      ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
-    });
-    ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
-  };
-
   const drawRequestedActionOverviewTable = (rows = [], x, titleTopForTable, tableTopForTable, rowH) => {
     const activeFontSize = getFontSizeForRowHeight(rowH);
     const displayRows = rows.length ? rows : [{ key: "no-action-overview", empty: true }];
     const rowCount = Math.max(displayRows.length, 1);
     const colWidths = {
-      train: 94,
-      tid: 52,
-      request: 132,
-      action: 102,
+      train: 72,
+      tid: 38,
+      arrival: 72,
+      request: 110,
+      action: 88,
     };
     const colX = {
       train: x,
       tid: x + colWidths.train,
-      request: x + colWidths.train + colWidths.tid,
-      action: x + colWidths.train + colWidths.tid + colWidths.request,
+      arrival: x + colWidths.train + colWidths.tid,
+      request: x + colWidths.train + colWidths.tid + colWidths.arrival,
+      action: x + colWidths.train + colWidths.tid + colWidths.arrival + colWidths.request,
     };
-    const tableWidth = colWidths.train + colWidths.tid + colWidths.request + colWidths.action;
+    const tableWidth = colWidths.train + colWidths.tid + colWidths.arrival + colWidths.request + colWidths.action;
     const tableHeight = headerHeight + rowCount * rowH;
     const tableY = yFromTop(tableTopForTable, tableHeight);
 
@@ -16607,14 +16562,15 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const headerBottomY = yFromTop(tableTopForTable + headerHeight);
     ops += line(x, headerBottomY, x + tableWidth, headerBottomY, 0.55);
 
-    [colX.tid, colX.request, colX.action].forEach((gridX) => {
+    [colX.tid, colX.arrival, colX.request, colX.action].forEach((gridX) => {
       ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
     });
 
     const headerTextY = yFromTop(tableTopForTable + 11);
-    drawTextInCell("TRAINSET NUMBER", colX.train + 5, headerTextY, 17, { size: headerFontSize - 0.5, bold: true });
-    drawTextInCell("TID", colX.tid + 8, headerTextY, 5, { size: headerFontSize - 0.5, bold: true });
-    drawTextInCell("REMARK REQUEST", colX.request + 7, headerTextY, 17, { size: headerFontSize - 0.5, bold: true });
+    drawTextInCell("TRAIN", colX.train + 8, headerTextY, 8, { size: headerFontSize - 0.5, bold: true });
+    drawTextInCell("TID", colX.tid + 7, headerTextY, 5, { size: headerFontSize - 0.5, bold: true });
+    drawTextInCell("ARRIVAL 3A1P2", colX.arrival + 4, headerTextY, 15, { size: headerFontSize - 1.0, bold: true });
+    drawTextInCell("REMARK REQUEST", colX.request + 5, headerTextY, 17, { size: headerFontSize - 0.8, bold: true });
 
     if (!hasActionOverviewRows) {
       const rowY = yFromTop(tableTopForTable + headerHeight, rowH);
@@ -16636,14 +16592,20 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
           align: "center",
           width: colWidths.train,
         });
-        drawTextInCell(entry?.group === "removal" ? (entry?.tid || "") : "", colX.tid, textY, 5, {
+        drawTextInCell(entry?.tid || "", colX.tid, textY, 5, {
           size: activeFontSize,
           bold: false,
           align: "center",
           width: colWidths.tid,
         });
-        drawTextInCell(entry?.requestType || "-", colX.request + 6, textY, 20, {
-          size: Math.max(3.9, activeFontSize - 0.2),
+        drawTextInCell(formatTimetableTimeWithHrs(entry?.arrival3A1P2), colX.arrival, textY, 12, {
+          size: Math.max(3.8, activeFontSize - 0.4),
+          bold: false,
+          align: "center",
+          width: colWidths.arrival,
+        });
+        drawTextInCell(entry?.requestType || "-", colX.request + 4, textY, 18, {
+          size: Math.max(3.7, activeFontSize - 0.4),
           bold: false,
         });
         drawActionStatusInCell(entry, colX.action, rowY, colWidths.action, rowH, textY, activeFontSize);
@@ -16655,7 +16617,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
       ops += line(x, rowLineY, x + tableWidth, rowLineY, 0.38);
     }
 
-    [x, colX.tid, colX.request, colX.action, x + tableWidth].forEach((gridX) => {
+    [x, colX.tid, colX.arrival, colX.request, colX.action, x + tableWidth].forEach((gridX) => {
       ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
     });
     ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
@@ -16668,7 +16630,6 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     columnTitleTop,
     rowHeight: leftRowHeight,
   });
-  drawRequestedSwappingTable(swappingRows, marginX, swapTitleTop, swapTableTop, leftRowHeight);
   drawRemovalColumn(eastLog, rightColumnX, "east", {
     tableTop,
     columnTitleTop,
@@ -16841,6 +16802,7 @@ function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {}, requ
     trainRemState,
     westData,
     eastData,
+    activeTimetable,
   });
   const swappingRows = getLatestSwappingRows();
   const actionOverviewRows = getLatestActionOverviewRows();
