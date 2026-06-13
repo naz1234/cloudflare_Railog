@@ -16954,7 +16954,7 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
   return (
     <div className="rounded-lg border border-[#1a3a56] bg-[#061827] overflow-hidden">
       <div
-        className="flex items-center justify-between gap-2 px-3 py-1.5"
+        className="flex flex-wrap items-center justify-start gap-2 px-3 py-1.5"
         style={{ background: "linear-gradient(90deg,#0d4d75 0%,#0b5f88 55%,#0d4d75 100%)" }}
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -16967,33 +16967,37 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center justify-start gap-1 flex-shrink-0">
           <button
+            type="button"
             onClick={handleDownloadPdf}
             disabled={pdfReady || (!(combinedLogs?.westLog?.entries?.length || combinedLogs?.eastLog?.entries?.length) && !hasEntries)}
-            className="inline-flex h-5 items-center gap-1 rounded-md border px-2 text-[9px] font-normal transition-all hover:-translate-y-0.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black text-cyan-100 transition-all hover:-translate-y-0.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             style={{
-              background: pdfReady ? "rgba(34,197,94,0.18)" : "rgba(6,212,232,0.12)",
-              borderColor: pdfReady ? "rgba(34,197,94,0.45)" : "rgba(34,211,238,0.45)",
+              background: pdfReady ? "rgba(34,197,94,0.18)" : "rgba(6,212,232,0.14)",
+              borderColor: pdfReady ? "rgba(34,197,94,0.48)" : "rgba(34,211,238,0.55)",
               color: pdfReady ? "#86efac" : "#b6f3ff",
               boxShadow: pdfReady ? "0 0 12px rgba(34,197,94,0.16)" : "0 0 12px rgba(34,211,238,0.16)",
             }}
             title="Download one-page PDF: West Depot left, East Depot right"
           >
-            <FileText size={10} />
-            {pdfReady ? "Done" : "Download PDF"}
+            <FileText size={12} />
+            {pdfReady ? "Done" : "PDF"}
           </button>
 
           <button
+            type="button"
             onClick={handleCopy}
             disabled={!hasEntries}
-            className="h-5 px-2 rounded-md border text-[9px] font-normal transition-all disabled:opacity-45 disabled:cursor-not-allowed"
+            className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             style={{
-              background: copied ? "rgba(34,197,94,0.18)" : "rgba(255,255,255,0.08)",
-              borderColor: copied ? "rgba(34,197,94,0.45)" : "rgba(126,184,224,0.28)",
-              color: copied ? "#86efac" : "#9fb7d1",
+              background: copied ? "rgba(34,197,94,0.18)" : "rgba(15,45,74,0.75)",
+              borderColor: copied ? "rgba(34,197,94,0.48)" : "rgba(74,138,181,0.55)",
+              color: copied ? "#86efac" : "#9ccbea",
+              boxShadow: copied ? "0 0 12px rgba(34,197,94,0.16)" : "none",
             }}
           >
+            {copied ? <ClipboardCheck size={12} /> : <Copy size={12} />}
             {copied ? "Copied" : log.copyLabel}
           </button>
         </div>
