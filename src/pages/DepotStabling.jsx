@@ -17524,6 +17524,8 @@ function sectionToPrintableSvg({
   cellPillsBuilder,
   roadPillBuilder,
   includeMaintenancePills = true,
+  pillTextWeight = 800,
+  pillFontSizeOffset = 0,
 }) {
   const width = 1600;
   const margin = 44;
@@ -17637,7 +17639,7 @@ function sectionToPrintableSvg({
         const visibleCount = visiblePills.length;
         const pillGap = visibleCount >= 3 ? 2 : 4;
         const pillHeight = visibleCount >= 3 ? 17 : visibleCount > 1 ? 20 : 24;
-        const pillFontSize = visibleCount >= 3 ? 10.5 : visibleCount > 1 ? 12 : 13;
+        const pillFontSize = (visibleCount >= 3 ? 10.5 : visibleCount > 1 ? 12 : 13) + pillFontSizeOffset;
         const trainFontSize = visibleCount >= 3 ? 23 : visibleCount > 1 ? 27 : 31;
         const bottomPadding = visibleCount >= 3 ? 8 : 12;
         const totalPillHeight = visibleCount * pillHeight + Math.max(0, visibleCount - 1) * pillGap;
@@ -17657,7 +17659,7 @@ function sectionToPrintableSvg({
             stroke: item.stroke || "#000",
             strokeWidth: item.strike ? 2 : 1,
           });
-          centerText(safeLabel, pillX, pillY, pillX + pillWidth, pillY + pillHeight, pillFontSize, 800, "", item.textFill || "#000");
+          centerText(safeLabel, pillX, pillY, pillX + pillWidth, pillY + pillHeight, pillFontSize, pillTextWeight, "", item.textFill || "#000");
           if (item.strike) {
             add(`<line x1="${pillX + 8}" y1="${pillY + pillHeight / 2}" x2="${pillX + pillWidth - 8}" y2="${pillY + pillHeight / 2}" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>`);
           }
@@ -17807,7 +17809,17 @@ Q
 }
 
 async function downloadStablingPicturePdf({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap }) {
-  const svg = sectionToPrintableSvg({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap });
+  const svg = sectionToPrintableSvg({
+    title,
+    blockLabels,
+    blockIndices,
+    roads,
+    data,
+    labelSide,
+    maintenanceMap,
+    pillTextWeight: 400,
+    pillFontSizeOffset: 1,
+  });
   const sizeMatch = svg.match(/width="(\d+)" height="(\d+)"/);
   const imageWidth = sizeMatch ? Number(sizeMatch[1]) : 1600;
   const imageHeight = sizeMatch ? Number(sizeMatch[2]) : 520;
