@@ -16278,6 +16278,86 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     });
   };
 
+  const wrapPdfTextToWidth = (value, maxWidth, size, bold = false) => {
+    const clean = sanitizePdfText(value || "-") || "-";
+    const words = clean.split(/\s+/).filter(Boolean);
+    const lines = [];
+    let currentLine = "";
+
+    const pushLongWord = (word) => {
+      let chunk = "";
+      [...word].forEach((character) => {
+        const candidate = `${chunk}${character}`;
+        if (chunk && getApproxPdfTextWidth(candidate, size, bold) > maxWidth) {
+          lines.push(chunk);
+          chunk = character;
+        } else {
+          chunk = candidate;
+        }
+      });
+      return chunk;
+    };
+
+    words.forEach((word) => {
+      const candidate = currentLine ? `${currentLine} ${word}` : word;
+      if (getApproxPdfTextWidth(candidate, size, bold) <= maxWidth) {
+        currentLine = candidate;
+        return;
+      }
+
+      if (currentLine) {
+        lines.push(currentLine);
+        currentLine = "";
+      }
+
+      if (getApproxPdfTextWidth(word, size, bold) <= maxWidth) {
+        currentLine = word;
+      } else {
+        currentLine = pushLongWord(word);
+      }
+    });
+
+    if (currentLine) lines.push(currentLine);
+    return lines.length ? lines : ["-"];
+  };
+
+  const drawWrappedTextInCell = (value, cellX, rowY, cellWidth, rowHeight, {
+    size = 6.2,
+    minSize = 2.2,
+    bold = false,
+    paddingX = 4,
+    paddingY = 1,
+  } = {}) => {
+    const availableWidth = Math.max(8, cellWidth - paddingX * 2);
+    const availableHeight = Math.max(4, rowHeight - paddingY * 2);
+    let fittedSize = size;
+    let lines = wrapPdfTextToWidth(value, availableWidth, fittedSize, bold);
+    let lineHeight = fittedSize * 1.12;
+
+    while (lines.length * lineHeight > availableHeight && fittedSize > minSize) {
+      fittedSize = Math.max(minSize, fittedSize - 0.15);
+      lines = wrapPdfTextToWidth(value, availableWidth, fittedSize, bold);
+      lineHeight = fittedSize * 1.12;
+    }
+
+    // Preserve the complete remark. For exceptionally long text, continue scaling
+    // just enough to keep every wrapped line inside the existing table row.
+    while (lines.length * lineHeight > availableHeight && fittedSize > 1.6) {
+      fittedSize = Math.max(1.6, fittedSize - 0.1);
+      lines = wrapPdfTextToWidth(value, availableWidth, fittedSize, bold);
+      lineHeight = fittedSize * 1.12;
+    }
+
+    const firstBaseline = rowY + rowHeight / 2 + ((lines.length - 1) * lineHeight) / 2 - fittedSize * 0.35;
+    lines.forEach((lineText, lineIndex) => {
+      ops += pdfText(lineText, cellX + paddingX, firstBaseline - lineIndex * lineHeight, {
+        size: fittedSize,
+        color: "#000000",
+        font: bold ? "F2" : "F1",
+      });
+    });
+  };
+
   const drawCheckIcon = (x, centerY, size = 5.6, color = "#000000") => {
     ops += line(x, centerY - 0.1, x + size * 0.38, centerY - size * 0.42, 0.65, color);
     ops += line(x + size * 0.38, centerY - size * 0.42, x + size, centerY + size * 0.45, 0.65, color);
@@ -16609,9 +16689,12 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
           align: "center",
           width: colWidths.arrival,
         });
-        drawTextInCell(entry?.requestType || "-", colX.request + 4, textY, 18, {
+        drawWrappedTextInCell(entry?.requestType || "-", colX.request, rowY, colWidths.request, rowH, {
           size: Math.max(3.7, activeFontSize - 0.4),
+          minSize: 2.2,
           bold: false,
+          paddingX: 4,
+          paddingY: 1,
         });
         drawActionStatusInCell(entry, colX.action, rowY, colWidths.action, rowH, textY, activeFontSize);
       });
