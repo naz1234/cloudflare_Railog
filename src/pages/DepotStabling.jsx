@@ -4320,6 +4320,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const trainRemEditingRef = useRef(false);
   const trainRemPollingRef = useRef(false);
   const trainRemTrainIdRefs = useRef({});
+  const trainRemTidRefs = useRef({});
   const fullMlTidTrainIdRefs = useRef({});
   const trainRemUndoStackRef = useRef([]);
   const trainRemSmartDirectionRef = useRef({});
@@ -4713,6 +4714,23 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     element.select();
   };
 
+  const setTrainRemTidRef = (depot, rowIndex, element) => {
+    const key = `${depot}-${rowIndex}`;
+    if (element) {
+      trainRemTidRefs.current[key] = element;
+    } else {
+      delete trainRemTidRefs.current[key];
+    }
+  };
+
+  const focusTrainRemTid = (depot, rowIndex) => {
+    const element = trainRemTidRefs.current[`${depot}-${rowIndex}`];
+    if (!element) return;
+
+    element.focus();
+    element.select();
+  };
+
   const setFullMlTidTrainIdRef = (rowIndex, element) => {
     if (element) {
       fullMlTidTrainIdRefs.current[rowIndex] = element;
@@ -4807,6 +4825,31 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     return counts;
   };
 
+  const cleanTrainRemTidInput = (value) =>
+    (value || "").toString().replace(/[^0-9]/g, "").slice(0, 3);
+
+  const getTrainRemTidDuplicateKey = (value) => {
+    const cleanTid = cleanTrainRemTidInput(value);
+    return cleanTid.length === 3 ? cleanTid : "";
+  };
+
+  const getTrainRemTidDuplicateCounts = () => {
+    const counts = {};
+
+    ["west", "east"].forEach((scanDepot) => {
+      const scanPreset = trainRemState.selectedPreset?.[scanDepot] || "9am";
+      const scanRows = normalizeTrainRemRowsForPreset(trainRemState.rows?.[scanDepot], scanDepot, scanPreset);
+
+      scanRows.forEach((scanRow) => {
+        const key = getTrainRemTidDuplicateKey(scanRow.tid);
+        if (!key) return;
+        counts[key] = (counts[key] || 0) + 1;
+      });
+    });
+
+    return counts;
+  };
+
   const getNextTrainRemTrainIdIndex = (rowIndex, rowCount) => {
     const nextIndex = rowIndex + 1;
     return nextIndex >= 0 && nextIndex < rowCount ? nextIndex : null;
@@ -4822,6 +4865,16 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     if (nextIndex === null) return;
 
     window.setTimeout(() => focusTrainRemTrainId(depot, nextIndex), 0);
+  };
+
+  const handleTrainRemTidAutoMove = (depot, rowIndex, rowCount, value) => {
+    if (cleanTrainRemTidInput(value).length < 3) return;
+
+    // TID is exactly 3 digits. After the third digit, move down to the next TID row.
+    const nextIndex = getNextTrainRemTrainIdIndex(rowIndex, rowCount);
+    if (nextIndex === null) return;
+
+    window.setTimeout(() => focusTrainRemTid(depot, nextIndex), 0);
   };
 
   const handleFullMlTidTrainIdAutoMove = (rowIndex, value) => {
@@ -5051,6 +5104,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     const selectedPreset = trainRemState.selectedPreset?.[depot] || "9am";
     const rows = normalizeTrainRemRowsForPreset(trainRemState.rows?.[depot], depot, selectedPreset);
     const duplicateCounts = getTrainRemDuplicateCounts();
+    const duplicateTidCounts = getTrainRemTidDuplicateCounts();
     const pdfActive = Boolean(trainRemPdfStatus?.[depot]);
     const activeTimetableLabel = getTimetableTypeLabel(activeTimetableType);
     const timetablePresetNotice = isTrainRemPresetMismatchWithTimetable(activeTimetableType, selectedPreset)
@@ -5222,6 +5276,19 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   : hasTrainId
                   ? "border-emerald-500/80 bg-emerald-950/35 text-emerald-100 shadow-[0_0_0_1px_rgba(16,185,129,0.18)]"
                   : "border-[#1e4060] bg-[#091828] text-[#e2eaf4]";
+                const cleanTid = cleanTrainRemTidInput(row.tid);
+                const hasTid = cleanTid.length > 0;
+                const tidDuplicateKey = getTrainRemTidDuplicateKey(cleanTid);
+                const isDuplicateTid = Boolean(tidDuplicateKey && duplicateTidCounts[tidDuplicateKey] > 1);
+                const tidInputClass = referenceOnly
+                  ? "border-amber-500/45 bg-amber-950/20 text-amber-100 cursor-default"
+                  : isDuplicateTid
+                  ? "border-red-500/90 bg-red-950/50 text-red-100 shadow-[0_0_0_1px_rgba(248,113,113,0.28),0_0_12px_rgba(248,113,113,0.16)]"
+                  : cleanTid.length === 3
+                  ? "border-emerald-500/80 bg-emerald-950/35 text-emerald-100 shadow-[0_0_0_1px_rgba(16,185,129,0.18)]"
+                  : hasTid
+                  ? "border-amber-500/70 bg-amber-950/25 text-amber-100"
+                  : "border-[#1e4060] bg-[#091828] text-[#c8d8ea]";
 
                 return (
                   <Fragment key={`${depot}-train-rem-${index}`}>
@@ -5250,22 +5317,29 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   </td>
                   <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: filledRowBg }}>
                     <input
+                      ref={(element) => setTrainRemTidRef(depot, index, element)}
                       value={row.tid}
                       onFocus={handleTrainRemOtherFieldFocus}
                       onChange={(e) => {
                         if (!referenceOnly) {
-                          updateTrainRemCell(depot, index, "tid", e.target.value.replace(/[^0-9]/g, ""));
+                          const nextValue = cleanTrainRemTidInput(e.target.value);
+                          updateTrainRemCell(depot, index, "tid", nextValue);
+                          handleTrainRemTidAutoMove(depot, index, rows.length, nextValue);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (!referenceOnly && e.key === "Backspace" && !row.tid && index > 0) {
+                          e.preventDefault();
+                          focusTrainRemTid(depot, index - 1);
                         }
                       }}
                       onBlur={handleTrainRemEditEnd}
                       placeholder="TID"
+                      inputMode="numeric"
+                      maxLength={3}
                       readOnly={referenceOnly}
-                      title={referenceOnly ? "Reference only — excluded from removal log and PDF" : ""}
-                      className={`w-full h-5 rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${
-                        referenceOnly
-                          ? "border-amber-500/45 bg-amber-950/20 text-amber-100 cursor-default"
-                          : "border-[#1e4060] bg-[#091828] text-[#c8d8ea]"
-                      }`}
+                      title={referenceOnly ? "Reference only — excluded from removal log and PDF" : isDuplicateTid ? "Duplicate TID detected" : "Enter exactly 3 digits"}
+                      className={`w-full h-5 rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${tidInputClass}`}
                     />
                   </td>
                   <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: filledRowBg }}>
