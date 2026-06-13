@@ -14721,10 +14721,22 @@ function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, wes
       westRemovalRow: isRemoval ? westRemovalRow : null,
       activeTimetableType,
     });
-    const finalGroup = washShiftAction?.group || group;
-    const actionLabel = washShiftAction?.actionLabel || (isRemoval ? "Removal" : "Need Swapping");
-    const actionSymbol = washShiftAction ? washShiftAction.actionSymbol : (isRemoval ? "✓" : "⇆");
-    const actionStatus = washShiftAction?.actionStatus || `${actionLabel} ${actionSymbol}`;
+    const isEosRemovalTimetable = ["friday", "saturday"].includes(
+      normalizeTimetableType(activeTimetableType)
+    );
+    const resolvedRemovalAction = isRemoval && isEosRemovalTimetable
+      ? {
+          actionLabel: "EOS Removal",
+          actionSymbol: "✓",
+          actionStatus: "EOS Removal ✓",
+          actionType: "eosRemoval",
+          group: "removal",
+        }
+      : washShiftAction;
+    const finalGroup = resolvedRemovalAction?.group || group;
+    const actionLabel = resolvedRemovalAction?.actionLabel || (isRemoval ? "Removal" : "Need Swapping");
+    const actionSymbol = resolvedRemovalAction ? resolvedRemovalAction.actionSymbol : (isRemoval ? "✓" : "⇆");
+    const actionStatus = resolvedRemovalAction?.actionStatus || `${actionLabel} ${actionSymbol}`;
 
     const row = {
       key,
@@ -14734,7 +14746,7 @@ function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, wes
       actionLabel,
       actionSymbol,
       actionStatus,
-      actionType: washShiftAction?.actionType || "",
+      actionType: resolvedRemovalAction?.actionType || "",
       group: finalGroup,
     };
 
