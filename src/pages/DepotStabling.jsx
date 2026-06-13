@@ -755,19 +755,38 @@ function getTrainRemPresetConfig(depot = "west", label = "9am", activeTimetable 
   };
 }
 
-function buildTrainRemRowsFromPresetConfig(depot, label, existingRows = [], activeTimetable = null) {
+function buildTrainRemRowsFromPresetConfig(
+  depot,
+  label,
+  existingRows = [],
+  activeTimetable = null,
+  { preserveManualBlankRows = false } = {}
+) {
   const config = getTrainRemPresetConfig(depot, label, activeTimetable);
   const rows = normalizeTrainRemRows(existingRows, depot);
   const tids = getTrainRemPresetRowTids(depot, label, config.tids);
 
   return rows.map((row, index) => {
-    const tid = tids[index] ? String(tids[index]) : "";
+    const presetTid = tids[index] ? String(tids[index]) : "";
+    const referenceSeparator = isTrainRemReferenceSeparatorIndex(depot, label, index);
     const referenceOnly = isTrainRemReferenceOnlyIndex(depot, label, index);
+    const manualTid = preserveManualBlankRows && !presetTid && !referenceSeparator && !referenceOnly
+      ? normalizeTrainRemTidValue(row.tid)
+      : "";
+    const tid = presetTid || manualTid;
+    const timing = referenceOnly
+      ? ""
+      : presetTid
+        ? config.timeMap?.[presetTid] || row.timing || ""
+        : preserveManualBlankRows && !referenceSeparator
+          ? row.timing || ""
+          : "";
+
     return {
       ...row,
-      trainId: isTrainRemReferenceSeparatorIndex(depot, label, index) ? "" : row.trainId,
+      trainId: referenceSeparator ? "" : row.trainId,
       tid,
-      timing: tid && !referenceOnly ? config.timeMap?.[tid] || "" : "",
+      timing,
       remark: referenceOnly ? "" : row.remark,
     };
   });
@@ -4568,7 +4587,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       ["west", "east"].forEach((depot) => {
         const currentPresetLabel = prev.selectedPreset?.[depot] || "9am";
         const existingRows = normalizeTrainRemRows(prev.rows?.[depot], depot);
-        nextRows[depot] = buildTrainRemRowsFromPresetConfig(depot, currentPresetLabel, existingRows, activeTimetable);
+        nextRows[depot] = buildTrainRemRowsFromPresetConfig(
+          depot,
+          currentPresetLabel,
+          existingRows,
+          activeTimetable,
+          { preserveManualBlankRows: true }
+        );
       });
 
       return {
