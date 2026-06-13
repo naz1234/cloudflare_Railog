@@ -16021,6 +16021,7 @@ function buildTrainRemRemovalLog(trainRemState = {}, depot = "west", maintenance
     ? [
         `Removal from ${config.source} to ${config.depotLabel}: ${entries.length} ${trainWord} completed.`,
         `Trains: ${trainList}.`,
+        "",
         ...entries.map((entry) =>
           entry.tid
             ? `${entry.time} hrs – ${entry.trainId} (TID ${entry.tid}) removed from mainline to ${config.depotLabel}.`
