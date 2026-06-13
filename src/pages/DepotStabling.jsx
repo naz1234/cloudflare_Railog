@@ -16200,6 +16200,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
   const tableTop = 108;
   const tableBottomTop = 566;
   const headerHeight = 17;
+  const actionSectionGap = 30;
   const headerFontSize = 6.4;
 
   const westRowCount = Math.max(westRows.length, 1);
@@ -16214,11 +16215,11 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
   const rightAvailableHeight = tableBottomTop - tableTop;
   const rightRowHeight = Math.max(
     8.4,
-    Math.min(14.2, (rightAvailableHeight - headerHeight * 2 - swapSectionGap) / (eastRowCount + actionOverviewRowCount))
+    Math.min(14.2, (rightAvailableHeight - headerHeight * 2 - actionSectionGap) / (eastRowCount + actionOverviewRowCount))
   );
   const eastTableHeight = headerHeight + eastRowCount * rightRowHeight;
   const actionTitleTop = tableTop + eastTableHeight + 14;
-  const actionTableTop = tableTop + eastTableHeight + swapSectionGap;
+  const actionTableTop = tableTop + eastTableHeight + actionSectionGap;
 
   const rect = (x, y, width, height, { fill = "", stroke = "#000000", strokeWidth = 0.45 } = {}) => {
     const fillCmd = fill ? `${pdfColor(fill)} rg` : "";
@@ -16240,7 +16241,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     font: "F2",
   });
   ops += pdfText(
-    `West: ${westRows.length} ${westRows.length === 1 ? "train" : "trains"}   |   East: ${eastRows.length} ${eastRows.length === 1 ? "train" : "trains"}   |   Requested for swapping: ${rawSwappingRows.length}   |   Request/action: ${rawActionOverviewRows.filter((row) => row && !row.isSeparator).length}`,
+    `West: ${westRows.length} ${westRows.length === 1 ? "train" : "trains"}   |   East: ${eastRows.length} ${eastRows.length === 1 ? "train" : "trains"}   |   Requested train: ${rawActionOverviewRows.filter((row) => row && !row.isSeparator).length}`,
     marginX,
     yFromTop(titleTop + 16),
     {
