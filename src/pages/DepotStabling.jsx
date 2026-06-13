@@ -15512,7 +15512,7 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
   };
 
   return (
-    <div className="mt-3 w-full max-w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[12px] leading-snug text-[#eaf4ff]">
+    <div className="w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[12px] leading-snug text-[#eaf4ff]">
       <div className="mb-1.5 flex w-full items-center justify-end">
         <button
           type="button"
@@ -15686,13 +15686,17 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
         </div>
       </div>
 
-      <div className="w-fit max-w-full">
-        <RequestedTrainActionOverviewTable
-          rows={actionOverviewRows}
-          onManualTidChange={handleManualTidChange}
-        />
+      <div className="flex w-full max-w-full items-start gap-3 overflow-x-auto pb-1">
+        <div className="shrink-0">
+          <RequestedTrainActionOverviewTable
+            rows={actionOverviewRows}
+            onManualTidChange={handleManualTidChange}
+          />
+        </div>
 
-        <RequestedTrainActionSummary rows={actionOverviewRows} requests={requests} />
+        <div className="min-w-[360px] max-w-[520px] flex-1 pt-[35px]">
+          <RequestedTrainActionSummary rows={actionOverviewRows} requests={requests} />
+        </div>
       </div>
     </div>
   );
