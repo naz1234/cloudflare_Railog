@@ -18192,6 +18192,11 @@ function StablingSection({
   const normalizedSearch = searchQuery ? normalizeTrainId(searchQuery) : "";
   const [copiedStabling, setCopiedStabling] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const totalTrains = roads.reduce((total, road) => {
+    const blocks = data[road] || [];
+    return total + blockIndices.filter((bi) => String(blocks[bi]?.trainId || "").trim()).length;
+  }, 0);
+  const displayTitle = `${title} (${totalTrains} ${totalTrains === 1 ? "Train" : "Trains"})`;
 
   const handleDownloadPdf = async () => {
     if (downloadingPdf) return;
@@ -18259,7 +18264,7 @@ function StablingSection({
   return (
     <section className="bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
       <SectionTitle
-        title={title}
+        title={displayTitle}
         action={
           <div className="flex items-center gap-2">
             <button
