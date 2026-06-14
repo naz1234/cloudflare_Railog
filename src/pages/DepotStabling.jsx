@@ -3717,10 +3717,10 @@ function getSweepingSignal(road, sweepTrack) {
   return track === "TK2" ? "S102" : "S101";
 }
 
-function getSweepingClearTime(startTime, road, sweepTrack) {
-  const track = (sweepTrack || "").toString().trim().toUpperCase();
-  if (EAST_ROADS.includes(road) && track === "TK2") return addMinutesToHHMM(startTime, 2);
-  return startTime;
+function getSweepingClearTime(startTime) {
+  // Standardise SW timing with PST: the default end time is six minutes
+  // after the selected start time. The user may still edit the end time.
+  return addMinutesToHHMM(startTime, 6);
 }
 
 function getActiveInsertionEntryForCell(insertionLog = [], road, bi, trainKey = "") {
@@ -3916,25 +3916,53 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 <option value="TK2">TK2</option>
               </select>
             </label>
-            <div className="grid grid-cols-2 gap-1">
-              <label className="text-[8px] font-bold uppercase tracking-wide text-purple-300">
-                Start
+            <div className="w-full rounded-lg border border-purple-500/50 bg-purple-950/20 px-1 py-1">
+              <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap">
+                <span className="shrink-0 text-[10px] font-bold leading-tight text-purple-300">Start :</span>
                 <input
-                  type="time"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={5}
                   value={inserted.time || ""}
-                  onChange={(e) => onSweepUpdate?.(inserted.key, { time: e.target.value })}
-                  className="mt-0.5 h-6 w-full rounded-md border border-purple-500/60 bg-[#10102a] px-0.5 text-center text-[9px] font-bold text-purple-100 outline-none"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    const value = String(inserted.time || "");
+                    const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                    if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                      e.preventDefault();
+                      onSweepUpdate?.(inserted.key, { time: value.slice(0, -2) });
+                    }
+                  }}
+                  onChange={(e) => onSweepUpdate?.(inserted.key, { time: cleanMovementCustomTimeInput(e.target.value) })}
+                  onBlur={(e) => onSweepUpdate?.(inserted.key, { time: normalizeMovementCustomTimeInput(e.target.value) })}
+                  placeholder="00:00"
+                  className="w-[42px] rounded-md border border-purple-500/50 bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800 focus:border-purple-300"
+                  title="Edit Sweep start time. End time updates automatically +6 minutes."
                 />
-              </label>
-              <label className="text-[8px] font-bold uppercase tracking-wide text-purple-300">
-                End
+              </div>
+              <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap pt-0.5">
+                <span className="shrink-0 text-[10px] font-bold leading-tight text-purple-300">End :</span>
                 <input
-                  type="time"
-                  value={inserted.clearTime || inserted.time || ""}
-                  onChange={(e) => onSweepUpdate?.(inserted.key, { clearTime: e.target.value })}
-                  className="mt-0.5 h-6 w-full rounded-md border border-purple-500/60 bg-[#10102a] px-0.5 text-center text-[9px] font-bold text-purple-100 outline-none"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={5}
+                  value={inserted.clearTime || ""}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    const value = String(inserted.clearTime || "");
+                    const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                    if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                      e.preventDefault();
+                      onSweepUpdate?.(inserted.key, { clearTime: value.slice(0, -2) });
+                    }
+                  }}
+                  onChange={(e) => onSweepUpdate?.(inserted.key, { clearTime: cleanMovementCustomTimeInput(e.target.value) })}
+                  onBlur={(e) => onSweepUpdate?.(inserted.key, { clearTime: normalizeMovementCustomTimeInput(e.target.value) })}
+                  placeholder="00:00"
+                  className="w-[42px] rounded-md border border-purple-500/50 bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800 focus:border-purple-300"
+                  title="Edit Sweep end time"
                 />
-              </label>
+              </div>
             </div>
           </div>
         )}
@@ -12872,8 +12900,16 @@ export default function DepotStablingPage() {
 
       const nextTrackRaw = (changes.sweepTrack ?? entry.sweepTrack ?? "TK1").toString().trim().toUpperCase();
       const sweepTrack = ["TK1", "TK2"].includes(nextTrackRaw) ? nextTrackRaw : "TK1";
-      const time = changes.time ?? entry.time ?? formatTime(new Date());
-      const clearTime = changes.clearTime ?? entry.clearTime ?? time;
+      const hasStartChange = Object.prototype.hasOwnProperty.call(changes, "time");
+      const hasEndChange = Object.prototype.hasOwnProperty.call(changes, "clearTime");
+      const time = cleanMovementCustomTimeInput(changes.time ?? entry.time ?? formatTime(new Date()));
+      const isCompleteStartTime = /^\d{2}:\d{2}$/.test(time);
+      const clearTimeSource = hasEndChange
+        ? changes.clearTime
+        : hasStartChange && isCompleteStartTime
+        ? getSweepingClearTime(time)
+        : entry.clearTime ?? getSweepingClearTime(time);
+      const clearTime = cleanMovementCustomTimeInput(clearTimeSource || "");
       const signal = getSweepingSignal(entry.road, sweepTrack);
       const paddedTrainKey = padTrainId(normalizeTrainId(entry.trainKey));
       const text = `${time} hrs – ${paddedTrainKey} sweeping started from ${entry.road} to signal ${signal} at 45 kph. Track confirmed clear at ${clearTime} hrs.`;
