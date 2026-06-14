@@ -218,33 +218,41 @@ function getPrepSectionText(prepLines = [], depotLabel = "") {
 }
 
 
-function TrainLogIcon() {
+function DocumentLogIcon() {
   return (
-    <div className="pst-plain-main-icon" aria-hidden="true">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="4" y="3" width="16" height="14" rx="3" />
-        <path d="M8 17l-2 3" />
-        <path d="M16 17l2 3" />
-        <path d="M8 7h8" />
-        <path d="M8 11h.01" />
-        <path d="M16 11h.01" />
+    <div className="pst-clean-title-icon" aria-hidden="true">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="8" y1="13" x2="16" y2="13" />
+        <line x1="8" y1="17" x2="14" y2="17" />
       </svg>
     </div>
   );
 }
 
-function DepotLogIcon() {
+function CopyIcon({ copied = false }) {
+  return copied ? (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  ) : (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function ClearIcon() {
   return (
-    <div className="pst-plain-depot-icon" aria-hidden="true">
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 21h18" />
-        <path d="M5 21V9l7-4 7 4v12" />
-        <path d="M9 21v-7h6v7" />
-        <path d="M8 11h.01" />
-        <path d="M12 11h.01" />
-        <path d="M16 11h.01" />
-      </svg>
-    </div>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v5" />
+      <path d="M14 11v5" />
+    </svg>
   );
 }
 
@@ -253,10 +261,11 @@ function CopyButton({ text, label, disabled }) {
 
   const handleCopy = async () => {
     if (disabled || !text) return;
+
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
+      window.setTimeout(() => setCopied(false), 1500);
     } catch {
       setCopied(false);
     }
@@ -267,26 +276,29 @@ function CopyButton({ text, label, disabled }) {
       type="button"
       onClick={handleCopy}
       disabled={disabled}
-      className="pst-plain-button"
+      className={copied ? "pst-clean-action pst-clean-action-copied" : "pst-clean-action"}
       title={`Copy ${label}`}
     >
+      <CopyIcon copied={copied} />
       {copied ? "Copied" : label}
     </button>
   );
 }
 
 function ClearDepotButton({ depotLabel, disabled, onClear }) {
-  const [confirm, setConfirm] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   const handleClear = () => {
     if (disabled || !onClear) return;
-    if (!confirm) {
-      setConfirm(true);
-      window.setTimeout(() => setConfirm(false), 2200);
+
+    if (!confirming) {
+      setConfirming(true);
+      window.setTimeout(() => setConfirming(false), 2200);
       return;
     }
+
     onClear();
-    setConfirm(false);
+    setConfirming(false);
   };
 
   return (
@@ -294,117 +306,88 @@ function ClearDepotButton({ depotLabel, disabled, onClear }) {
       type="button"
       onClick={handleClear}
       disabled={disabled}
-      className={confirm ? "pst-plain-button pst-plain-danger" : "pst-plain-button"}
+      className={confirming ? "pst-clean-action pst-clean-action-danger" : "pst-clean-action"}
       title={`Clear ${depotLabel} Depot log`}
     >
-      {confirm ? "Confirm" : "Clear"}
+      <ClearIcon />
+      {confirming ? "Confirm" : "Clear"}
     </button>
   );
 }
 
-function PlainRows({ groups, onRemove }) {
-  return (
-    <div className="pst-plain-lines">
-      {groups.map((group) => (
-        <div className="pst-plain-row" key={group.key}>
-          <span className="pst-plain-row-text">{group.text}</span>
-          {onRemove && group.entries?.length > 0 && (
-            <button
-              type="button"
-              className="pst-plain-remove"
-              onClick={() => group.entries.forEach((entry) => onRemove(entry.key))}
-              title="Remove this log line"
-            >
-              ×
-            </button>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function PlainSection({ title, summary, dcLine, trainLine, groups, emptyText, onRemove }) {
-  if (!groups.length) {
+function SectionTextBlock({ title, text, emptyText }) {
+  if (!text) {
     return (
-      <section className="pst-plain-section">
-        <div className="pst-plain-title">{title}</div>
-        <div className="pst-plain-empty">{emptyText}</div>
-      </section>
+      <div className="pst-clean-empty-section">
+        <div className="pst-clean-section-title">{title}</div>
+        <div className="pst-clean-empty-text">{emptyText}</div>
+      </div>
     );
   }
 
   return (
-    <section className="pst-plain-section">
-      <div className="pst-plain-title">{title}</div>
-      <div className="pst-plain-summary">{summary}</div>
-      {dcLine && <div className="pst-plain-dc-summary">{dcLine}</div>}
-      {trainLine && <div className="pst-plain-train">{trainLine}</div>}
-      <PlainRows groups={groups} onRemove={onRemove} />
-    </section>
-  );
-}
-
-function DepotPlainBlock({ depotLabel, lines = [], totalPSTCount = 0, onRemove, onClearDepot }) {
-  const pstLines = lines.filter(isPSTEntry);
-  const prepLines = lines.filter(isPrepEntry);
-  const groupedPSTLines = buildGroupedPSTLogLines(pstLines);
-  const groupedPrepLines = buildGroupedPrepLogLines(prepLines);
-  const pstTrainList = getUniqueTrainKeys(pstLines, getPSTTrainKey).join(", ");
-  const prepTrainList = getUniqueTrainKeys(prepLines, getPrepTrainKey).join(", ");
-  const pstSummary = pstLines.length
-    ? `PST at ${depotLabel} Depot: Total ${pstLines.length} train${pstLines.length !== 1 ? "s" : ""} completed from ${getPSTStartTime(pstLines[0])} to ${getPSTSummaryEndTime(pstLines)} hrs.`
-    : "";
-  const pstDCSummary = pstLines.length ? getPSTDCSummary(totalPSTCount || pstLines.length) : "";
-
-  const prepSummary = prepLines.length
-    ? `Train Preparation at ${depotLabel} Depot: Total ${prepLines.length} train${prepLines.length !== 1 ? "s" : ""} completed from ${getLogDisplayTime(prepLines[0])} to ${getLogDisplayTime(prepLines[prepLines.length - 1])} hrs.`
-    : "";
-
-  return (
-    <div className="pst-plain-depot">
-      <div className="pst-plain-depot-header">
-        <div className="pst-plain-depot-info">
-          <DepotLogIcon />
-          <div className="pst-plain-depot-text">
-            <div className="pst-plain-depot-title">{depotLabel.toUpperCase()} DEPOT</div>
-            <div className="pst-plain-count">{lines.length} {lines.length === 1 ? "entry" : "entries"}</div>
-          </div>
-        </div>
-        <div className="pst-plain-depot-actions">
-          <CopyButton text={getPSTSectionText(pstLines, depotLabel, totalPSTCount || pstLines.length)} label="PST" disabled={!pstLines.length} />
-          <CopyButton text={getPrepSectionText(prepLines, depotLabel)} label="Train Prep" disabled={!prepLines.length} />
-          <ClearDepotButton depotLabel={depotLabel} disabled={!lines.length} onClear={onClearDepot} />
-        </div>
-      </div>
-
-      <PlainSection
-        title="PST"
-        summary={pstSummary}
-        dcLine={pstDCSummary}
-        trainLine={pstTrainList ? `Train: ${pstTrainList}` : ""}
-        groups={groupedPSTLines}
-        emptyText="No PST entries."
-        onRemove={onRemove}
-      />
-
-      <PlainSection
-        title="Train Prep"
-        summary={prepSummary}
-        trainLine={prepTrainList ? `Train: ${prepTrainList}` : ""}
-        groups={groupedPrepLines}
-        emptyText="No Train Prep entries."
-        onRemove={onRemove}
-      />
+    <div className="pst-clean-text-section">
+      <div className="pst-clean-section-title">{title}</div>
+      <pre className="pst-clean-pre">{text}</pre>
     </div>
   );
 }
 
-export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
+function DepotLogCard({ depotLabel, lines = [], totalPSTCount = 0, onClearDepot }) {
+  const pstLines = lines.filter(isPSTEntry);
+  const prepLines = lines.filter(isPrepEntry);
+  const pstText = getPSTSectionText(pstLines, depotLabel, totalPSTCount || pstLines.length);
+  const prepText = getPrepSectionText(prepLines, depotLabel);
+  const hasEntries = lines.length > 0;
+  const dotColor = depotLabel.toLowerCase() === "west" ? "#d946ef" : "#22d3ee";
+
+  return (
+    <div className="pst-clean-card">
+      <div className="pst-clean-card-header">
+        <div className="pst-clean-card-title-wrap">
+          <span
+            className="pst-clean-dot"
+            style={{ backgroundColor: dotColor, boxShadow: `0 0 10px ${dotColor}` }}
+            aria-hidden="true"
+          />
+          <div className="pst-clean-card-title">
+            {depotLabel.toUpperCase()} DEPOT PST / TRAIN PREP LOG
+          </div>
+        </div>
+
+        <div className="pst-clean-actions">
+          <CopyButton text={pstText} label="Copy PST" disabled={!pstLines.length} />
+          <CopyButton text={prepText} label="Copy Train Prep" disabled={!prepLines.length} />
+          <ClearDepotButton depotLabel={depotLabel} disabled={!hasEntries} onClear={onClearDepot} />
+        </div>
+      </div>
+
+      <div className="pst-clean-card-body">
+        {hasEntries ? (
+          <>
+            <SectionTextBlock title="PST" text={pstText} emptyText="No PST entries." />
+            <SectionTextBlock title="Train Prep" text={prepText} emptyText="No Train Prep entries." />
+          </>
+        ) : (
+          <div className="pst-clean-empty-card">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            <span>No entries for {depotLabel} Depot</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function PSTLogOutput({ logLines, onClearDepot }) {
   const safeLogLines = Array.isArray(logLines) ? logLines : [];
   const westLines = safeLogLines.filter((line) => line.depot === "west");
   const eastLines = safeLogLines.filter((line) => line.depot === "east");
   const totalPSTCount = safeLogLines.filter(isPSTEntry).length;
+
   const scrollMainPageFromLog = (event) => {
     if (event.ctrlKey || event.metaKey) return;
 
@@ -412,10 +395,18 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
     const deltaX = event.deltaX || 0;
     if (!deltaY && !deltaX) return;
 
+    const target = event.currentTarget;
+    const canScrollInside = target.scrollHeight > target.clientHeight + 1;
+    const movingDown = deltaY > 0;
+    const atTop = target.scrollTop <= 0;
+    const atBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - 1;
+
+    if (canScrollInside && !((movingDown && atBottom) || (!movingDown && atTop))) return;
+
     event.preventDefault();
     event.stopPropagation();
 
-    let parent = event.currentTarget?.parentElement;
+    let parent = target.parentElement;
     while (parent) {
       const style = window.getComputedStyle(parent);
       const canScrollY = /(auto|scroll|overlay)/.test(style.overflowY || "");
@@ -436,435 +427,254 @@ export default function PSTLogOutput({ logLines, onRemove, onClearDepot }) {
     if (pageScroller) {
       pageScroller.scrollTop += deltaY;
       pageScroller.scrollLeft += deltaX;
-      return;
     }
-
-    window.scrollBy({ top: deltaY, left: deltaX, behavior: "auto" });
   };
 
   return (
-    <div className="pst-log-shell" onWheel={scrollMainPageFromLog}>
+    <section className="pst-clean-shell" onWheel={scrollMainPageFromLog}>
       <style>{`
-        .pst-log-shell {
+        .pst-clean-shell {
+          width: 100%;
           height: 100%;
           min-height: 0;
           display: flex;
           flex-direction: column;
-          overflow: hidden;
-          border-radius: 16px;
-          border: 1px solid rgba(79, 143, 198, 0.46);
-          background: #061523;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 18px 34px rgba(0,0,0,0.28);
-          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        }
-
-        .pst-plain-header {
-          position: relative;
-          flex: 0 0 auto;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          min-height: 78px;
-          padding: 14px 18px;
-          overflow: hidden;
-          border-bottom: 1px solid rgba(52, 128, 205, 0.58);
-          background:
-            radial-gradient(circle at 14% 0%, rgba(64, 142, 255, 0.28), transparent 32%),
-            linear-gradient(135deg, #081832 0%, #0a2a55 52%, #051325 100%);
-        }
-
-        .pst-plain-header::before,
-        .pst-plain-header::after {
-          content: "";
-          position: absolute;
-          pointer-events: none;
-          border-radius: 999px;
-        }
-
-        .pst-plain-header::before {
-          width: 520px;
-          height: 160px;
-          right: -120px;
-          top: -116px;
-          border: 1px solid rgba(80, 147, 255, 0.34);
-          transform: rotate(-17deg);
-        }
-
-        .pst-plain-header::after {
-          width: 640px;
-          height: 210px;
-          right: -220px;
-          top: -152px;
-          border: 1px solid rgba(39, 112, 245, 0.24);
-          transform: rotate(-17deg);
-        }
-
-        .pst-plain-header-left {
-          position: relative;
-          z-index: 1;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          min-width: 0;
-        }
-
-        .pst-plain-main-icon {
-          flex: 0 0 auto;
-          width: 48px;
-          height: 48px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 14px;
-          color: #ffffff;
-          background: linear-gradient(135deg, #1d5fd1 0%, #0ea5e9 100%);
-          box-shadow: 0 14px 26px rgba(14, 116, 222, 0.34), inset 0 1px 0 rgba(255,255,255,0.22);
-        }
-
-        .pst-plain-main-title {
-          margin: 0;
-          color: #f7fbff;
-          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 14px;
-          line-height: 1.04;
-          font-weight: 850;
-          letter-spacing: -0.03em;
-          text-shadow: 0 2px 14px rgba(0,0,0,0.38);
-        }
-
-        .pst-plain-main-count {
-          margin: 5px 0 0;
-          color: #bdd2ec;
-          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 11px;
-          line-height: 1;
-          font-weight: 650;
-          letter-spacing: 0.01em;
-        }
-
-        .pst-plain-date-pill {
-          position: relative;
-          z-index: 1;
-          display: inline-flex;
-          align-items: center;
-          gap: 7px;
-          flex: 0 0 auto;
-          padding: 8px 10px;
-          border: 1px solid rgba(73, 151, 232, 0.32);
-          border-radius: 999px;
-          background: rgba(5, 17, 34, 0.38);
-          color: #dceeff;
-          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 13px;
-          font-weight: 760;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
-          white-space: nowrap;
-        }
-
-        .pst-log-scroll {
-          flex: 1 1 auto;
-          min-height: 0;
           overflow-y: auto;
-          overscroll-behavior: auto;
-          -webkit-overflow-scrolling: touch;
-          padding: 10px;
-          background: linear-gradient(180deg, rgba(8, 30, 50, 0.9) 0%, rgba(5, 17, 29, 0.98) 100%);
+          padding: 12px;
+          border: 1px solid #2b4f6b;
+          border-radius: 12px;
+          background: linear-gradient(135deg, rgba(12,46,74,0.58) 0%, rgba(7,24,40,0.98) 100%);
+          box-shadow: 0 16px 32px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.04);
           scrollbar-width: thin;
           scrollbar-color: #3c7297 #061523;
         }
 
-        .pst-log-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
-        .pst-log-scroll::-webkit-scrollbar-track { background: #061523; }
-        .pst-log-scroll::-webkit-scrollbar-thumb { background: #3c7297; border-radius: 999px; }
+        .pst-clean-shell::-webkit-scrollbar { width: 8px; height: 8px; }
+        .pst-clean-shell::-webkit-scrollbar-track { background: #061523; }
+        .pst-clean-shell::-webkit-scrollbar-thumb { background: #3c7297; border-radius: 999px; }
 
-        .pst-plain-depot {
-          overflow: hidden;
-          border: 1px solid rgba(48, 91, 126, 0.68);
-          border-radius: 14px;
-          background: #06111d;
-          margin-bottom: 10px;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 10px 24px rgba(0,0,0,0.18);
-        }
-
-        .pst-plain-depot:last-child {
-          margin-bottom: 0;
-        }
-
-        .pst-plain-depot-header {
-          display: flex;
-          align-items: flex-start;
-          justify-content: flex-start;
-          flex-direction: column;
-          gap: 8px;
-          padding: 11px 13px;
-          border-bottom: 1px solid rgba(48, 91, 126, 0.66);
-          background:
-            radial-gradient(circle at 4% 0%, rgba(54, 195, 225, 0.18), transparent 38%),
-            linear-gradient(135deg, rgba(9, 31, 52, 0.98) 0%, rgba(8, 24, 41, 0.96) 100%);
-        }
-
-        .pst-plain-depot-info {
+        .pst-clean-title-row {
+          flex: 0 0 auto;
           display: flex;
           align-items: center;
-          gap: 11px;
+          gap: 8px;
+          margin-bottom: 8px;
+        }
+
+        .pst-clean-title-icon {
+          width: 32px;
+          height: 32px;
+          flex: 0 0 auto;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid #2b4f6b;
+          border-radius: 999px;
+          background: #10263b;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.20);
+        }
+
+        .pst-clean-title {
+          color: #ffffff;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 14px;
+          line-height: 1;
+          font-weight: 900;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
+
+        .pst-clean-subtitle {
+          color: #58a6ff;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+        }
+
+        .pst-clean-cards {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .pst-clean-card {
+          overflow: hidden;
+          border: 1px solid #1a3a56;
+          border-radius: 10px;
+          background: #061827;
+        }
+
+        .pst-clean-card-header {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          flex-wrap: wrap;
+          gap: 7px;
+          padding: 6px 10px;
+          background: linear-gradient(90deg, #0d4d75 0%, #0b5f88 55%, #0d4d75 100%);
+        }
+
+        .pst-clean-card-title-wrap {
+          display: flex;
+          align-items: center;
+          gap: 8px;
           min-width: 0;
         }
 
-        .pst-plain-depot-icon {
+        .pst-clean-dot {
+          width: 6px;
+          height: 6px;
           flex: 0 0 auto;
-          width: 38px;
-          height: 38px;
+          border-radius: 999px;
+        }
+
+        .pst-clean-card-title {
+          color: #ffffff;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 10px;
+          line-height: 1.15;
+          font-weight: 900;
+          letter-spacing: 0.10em;
+          text-transform: uppercase;
+        }
+
+        .pst-clean-actions {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          flex-wrap: wrap;
+          gap: 4px;
+        }
+
+        .pst-clean-action {
+          height: 24px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          border-radius: 999px;
-          color: #ffffff;
-          background: linear-gradient(135deg, #214cdb 0%, #0ea5a5 100%);
-          box-shadow: 0 10px 18px rgba(14, 165, 233, 0.22), inset 0 1px 0 rgba(255,255,255,0.2);
-        }
-
-        .pst-plain-depot-text {
-          min-width: 0;
-        }
-
-        .pst-plain-depot-title-row {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          flex-wrap: wrap;
-        }
-
-        .pst-plain-depot-title {
-          color: #f3f8ff;
-          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 13px;
-          line-height: 1.05;
-          font-weight: 850;
-          letter-spacing: -0.01em;
-        }
-
-        .pst-plain-depot-actions {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: flex-start;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-
-        .pst-plain-depot-title-row .pst-plain-button,
-        .pst-plain-depot-actions .pst-plain-button {
-          height: 29px;
-          padding: 0 10px;
-          font-size: 12px;
-        }
-
-        .pst-plain-count {
-          color: #a5b8cb;
-          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 13px;
-          line-height: 1;
-          margin-top: 5px;
-          font-weight: 650;
-        }
-
-        .pst-plain-actions {
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
           gap: 4px;
-          flex-wrap: wrap;
-        }
-
-        .pst-plain-button {
-          height: 25px;
-          padding: 0 9px;
-          border: 1px solid rgba(91, 134, 169, 0.74);
-          border-radius: 999px;
-          background: linear-gradient(180deg, rgba(17, 44, 72, 0.95), rgba(10, 31, 52, 0.98));
-          color: #c8e6fb;
+          padding: 0 7px;
+          border: 1px solid rgba(74,138,181,0.55);
+          border-radius: 6px;
+          background: rgba(15,45,74,0.75);
+          color: #b5d9ee;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 11px;
-          font-weight: 800;
+          font-size: 9px;
           line-height: 1;
-          cursor: pointer;
+          font-weight: 850;
           white-space: nowrap;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+          cursor: pointer;
+          transition: transform 120ms ease, border-color 120ms ease, color 120ms ease, background 120ms ease;
         }
 
-        .pst-plain-button:hover:not(:disabled) {
-          border-color: #65a7d1;
+        .pst-clean-action:hover:not(:disabled) {
+          transform: translateY(-1px);
+          border-color: rgba(125,190,232,0.72);
           color: #ffffff;
-          background: linear-gradient(180deg, rgba(20, 68, 111, 0.98), rgba(12, 43, 72, 0.98));
+          background: rgba(19,63,100,0.88);
         }
 
-        .pst-plain-button:disabled {
-          opacity: 0.35;
+        .pst-clean-action:disabled {
+          opacity: 0.42;
           cursor: not-allowed;
         }
 
-        .pst-plain-danger {
-          border-color: #ef4444 !important;
-          background: #7f1d1d !important;
-          color: #ffffff !important;
+        .pst-clean-action-copied {
+          border-color: rgba(34,197,94,0.48);
+          background: rgba(34,197,94,0.18);
+          color: #86efac;
+          box-shadow: 0 0 12px rgba(34,197,94,0.16);
         }
 
-        .pst-plain-section {
-          padding: 5px 7px 7px;
-          border-top: 1px solid rgba(35,71,100,0.52);
+        .pst-clean-action-danger {
+          border-color: rgba(248,113,113,0.72);
+          background: rgba(127,29,29,0.90);
+          color: #fecaca;
         }
 
-        .pst-plain-section:first-of-type {
-          border-top: 0;
+        .pst-clean-card-body {
+          min-height: 76px;
+          padding: 8px 10px 9px;
+          border-top: 1px solid #1a3a56;
+          background: #061321;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         }
 
-        .pst-plain-title {
+        .pst-clean-text-section + .pst-clean-text-section,
+        .pst-clean-text-section + .pst-clean-empty-section,
+        .pst-clean-empty-section + .pst-clean-text-section,
+        .pst-clean-empty-section + .pst-clean-empty-section {
+          margin-top: 10px;
+          padding-top: 8px;
+          border-top: 1px solid rgba(43,79,107,0.66);
+        }
+
+        .pst-clean-section-title {
+          margin-bottom: 4px;
           color: #69d2ff;
-          font-size: 11px;
-          line-height: 1.05;
-          font-weight: 900;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          margin-bottom: 4px;
-        }
-
-        .pst-plain-summary,
-        .pst-plain-dc-summary,
-        .pst-plain-train,
-        .pst-plain-row-text,
-        .pst-plain-empty {
-          font-size: 11px;
-          line-height: 1.42;
-          color: #e8f0f7;
-          white-space: pre-wrap;
-          word-break: break-word;
-        }
-
-        .pst-plain-summary {
-          color: #f3f7fb;
-          font-weight: 800;
-          margin-bottom: 1px;
-        }
-
-        .pst-plain-dc-summary {
-          color: #e8f0f7;
-          margin-bottom: 1px;
-        }
-
-        .pst-plain-train {
-          color: #c8d9e7;
-          margin-bottom: 4px;
-        }
-
-        .pst-plain-lines {
-          display: flex;
-          flex-direction: column;
-          gap: 1px;
-        }
-
-        .pst-plain-row {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) 16px;
-          gap: 4px;
-          align-items: start;
-          min-height: 16px;
-        }
-
-        .pst-plain-remove {
-          width: 16px;
-          height: 16px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          border: 0;
-          border-radius: 3px;
-          background: transparent;
-          color: #49677a;
-          font-size: 14px;
+          font-size: 10px;
           line-height: 1;
-          cursor: pointer;
-          opacity: 0;
+          font-weight: 900;
+          letter-spacing: 0.10em;
+          text-transform: uppercase;
         }
 
-        .pst-plain-row:hover .pst-plain-remove {
-          opacity: 1;
+        .pst-clean-pre {
+          margin: 0;
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+          color: #d8e7f7;
+          font-size: 11px;
+          line-height: 1.4;
+          font-weight: 400;
         }
 
-        .pst-plain-remove:hover {
-          color: #ff7b8f;
-          background: rgba(255,123,143,0.10);
-        }
-
-        .pst-plain-empty {
-          color: #637f92;
+        .pst-clean-empty-text {
+          color: #52708a;
+          font-size: 10px;
+          line-height: 1.4;
           font-style: italic;
         }
 
+        .pst-clean-empty-card {
+          min-height: 58px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          color: #315d82;
+          font-size: 10px;
+          font-weight: 500;
+        }
+
         @media (max-width: 640px) {
-          .pst-plain-header {
-            align-items: flex-start;
-            flex-direction: column;
-            min-height: 0;
-            padding: 12px;
-          }
-
-          .pst-plain-date-pill {
-            align-self: flex-start;
-          }
-
-          .pst-plain-main-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-          }
-
-          .pst-plain-depot-header {
-            align-items: flex-start;
-            flex-direction: column;
-          }
-
-          .pst-plain-depot-actions {
-            justify-content: flex-start;
-          }
+          .pst-clean-shell { padding: 9px; }
+          .pst-clean-title-row { align-items: flex-start; flex-wrap: wrap; }
+          .pst-clean-card-header { align-items: flex-start; }
+          .pst-clean-actions { width: 100%; }
         }
       `}</style>
 
-      <header className="pst-plain-header">
-        <div className="pst-plain-header-left">
-          <TrainLogIcon />
-          <div>
-            <p className="pst-plain-main-title">PST / Train Prep Log</p>
-            <p className="pst-plain-main-count">{safeLogLines.length} {safeLogLines.length === 1 ? "entry" : "entries"}</p>
-          </div>
-        </div>
-        <div className="pst-plain-date-pill">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <rect x="3" y="4" width="18" height="18" rx="2" />
-            <path d="M16 2v4" />
-            <path d="M8 2v4" />
-            <path d="M3 10h18" />
-          </svg>
-          {new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
-        </div>
-      </header>
+      <div className="pst-clean-title-row">
+        <DocumentLogIcon />
+        <div className="pst-clean-title">PST / Train Prep Log Output</div>
+        <div className="pst-clean-subtitle">Auto-generated from PST / Train Prep</div>
+      </div>
 
-      <div className="pst-log-scroll">
-        <DepotPlainBlock
+      <div className="pst-clean-cards">
+        <DepotLogCard
           depotLabel="West"
           lines={westLines}
           totalPSTCount={totalPSTCount}
-          onRemove={onRemove}
           onClearDepot={() => onClearDepot?.("west")}
         />
-        <DepotPlainBlock
+        <DepotLogCard
           depotLabel="East"
           lines={eastLines}
           totalPSTCount={totalPSTCount}
-          onRemove={onRemove}
           onClearDepot={() => onClearDepot?.("east")}
         />
       </div>
-    </div>
+    </section>
   );
 }
