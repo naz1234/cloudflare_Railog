@@ -3297,7 +3297,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
         )}
         {key && (
           <div className="flex flex-col gap-1 w-full mt-1">
-            <button onClick={() => onPSTTick(road, bi, key)} className={`w-full text-[9px] font-bold rounded-lg px-1 py-0.5 border transition-all leading-tight ${isPstDone ? "bg-emerald-900/60 border-emerald-600 text-emerald-300" : isPstConfirming ? "bg-amber-900/60 border-amber-600 text-amber-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:border-blue-500 hover:text-blue-300"}`}>
+            <button type="button" onClick={() => onPSTTick(road, bi, key)} className={`w-full text-[9px] font-bold rounded-lg px-1 py-0.5 border transition-all leading-tight ${isPstDone ? "bg-emerald-900/60 border-emerald-600 text-emerald-300" : isPstConfirming ? "bg-amber-900/60 border-amber-600 text-amber-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:border-blue-500 hover:text-blue-300"}`}>
               {isPstDone ? "✓ PST" : isPstConfirming ? "⏳PST" : "PST"}
             </button>
             {isPrepDone && (
@@ -11606,6 +11606,7 @@ export default function DepotStablingPage() {
   const pstLivePendingSaveRef = useRef(false);
   const pstLivePollingRef = useRef(false);
   const pstLiveLocalEditUntilRef = useRef(0);
+  const pstLiveApplyingRemoteRef = useRef(false);
   const pstStateRef = useRef(pstState);
   const prepStateRef = useRef(prepState);
   const pstLogLinesRef = useRef(pstLogLines);
@@ -11686,11 +11687,23 @@ export default function DepotStablingPage() {
     // Prevent an older in-flight sync response or eventual-consistency DB read
     // from overwriting a fresh local PST / Train Prep click.
     if (Date.now() < pstLiveLocalEditUntilRef.current) return;
-    if (localUpdatedMs && (!incomingUpdatedMs || incomingUpdatedMs + 1000 < localUpdatedMs)) return;
+    // Never allow an older remote snapshot to roll a fresh PST click back to normal.
+    // The previous one-second tolerance could accept a stale record created just before the click.
+    if (localUpdatedMs && (!incomingUpdatedMs || incomingUpdatedMs < localUpdatedMs)) return;
 
     if (incomingUpdatedMs) {
       pstLiveRemoteUpdatedAtRef.current = Math.max(pstLiveRemoteUpdatedAtRef.current, incomingUpdatedMs);
+      pstLiveLocalUpdatedAtRef.current = Math.max(pstLiveLocalUpdatedAtRef.current || 0, incomingUpdatedMs);
     }
+
+    // Mark this render as a remote application so the state-change effect does not
+    // immediately write the same remote snapshot back with a new timestamp.
+    pstLiveApplyingRemoteRef.current = true;
+    pstStateRef.current = normalized.pstState;
+    prepStateRef.current = normalized.prepState;
+    pstLogLinesRef.current = normalized.logLines;
+    taNameStateRef.current = normalized.taNameState;
+    pstCompletedByNamesRef.current = normalized.completedByNames;
 
     setPstState(normalized.pstState);
     setPrepState(normalized.prepState);
@@ -11710,6 +11723,8 @@ export default function DepotStablingPage() {
   const savePSTLiveToDb = useCallback(async (state) => {
     const entity = getPSTTrainPrepEntity();
     const payload = buildPSTLivePayload(state);
+    const payloadUpdatedMs = Date.parse(payload.updatedAt || "") || Date.now();
+    pstLiveLocalUpdatedAtRef.current = Math.max(pstLiveLocalUpdatedAtRef.current || 0, payloadUpdatedMs);
 
     savePSTState(
       payload.pstState,
@@ -11766,6 +11781,8 @@ export default function DepotStablingPage() {
 
   const schedulePSTLiveSave = useCallback((state) => {
     const payload = buildPSTLivePayload(state);
+    const payloadUpdatedMs = Date.parse(payload.updatedAt || "") || Date.now();
+    pstLiveLocalUpdatedAtRef.current = Math.max(pstLiveLocalUpdatedAtRef.current || 0, payloadUpdatedMs);
 
     savePSTState(
       payload.pstState,
@@ -11873,6 +11890,14 @@ export default function DepotStablingPage() {
   }, [pstLiveLoaded, pstLiveDbReady, refreshPSTLiveFromDb]);
 
   useEffect(() => {
+    // A remote refresh updates several PST states together. Do not treat that render
+    // as a new local edit, otherwise clients can continuously re-save old snapshots
+    // with newer timestamps and make a first PST click appear to reset.
+    if (pstLiveApplyingRemoteRef.current) {
+      pstLiveApplyingRemoteRef.current = false;
+      return;
+    }
+
     const state = {
       pstState,
       prepState,
@@ -13126,12 +13151,37 @@ export default function DepotStablingPage() {
   const handlePSTTick = (road, bi, trainKey, alarmStatus = null) => {
     markPSTLiveLocalEdit();
     const cellKey = `${road}-${bi}`;
-    const current = pstState[cellKey];
+    const current = pstStateRef.current[cellKey];
+    const logKey = `pst-${cellKey}`;
+
+    const commitPSTCellUpdate = (nextPstState, nextLogLines) => {
+      const updatedAt = new Date().toISOString();
+      const updatedMs = Date.parse(updatedAt) || Date.now();
+      pstLiveLocalUpdatedAtRef.current = Math.max(pstLiveLocalUpdatedAtRef.current || 0, updatedMs);
+      pstStateRef.current = nextPstState;
+      pstLogLinesRef.current = nextLogLines;
+
+      // Save the click locally before React renders or a network request completes.
+      // This makes the first PST click durable even during a live-sync refresh.
+      savePSTState(
+        nextPstState,
+        prepStateRef.current,
+        nextLogLines,
+        taNameStateRef.current,
+        pstCompletedByNamesRef.current,
+        updatedAt
+      );
+
+      setPstState(nextPstState);
+      setPstLogLines(nextLogLines);
+    };
 
     // Completed PST: clicking again removes PST state and its log.
     if (current?.done) {
-      setPstState((prev) => { const n = { ...prev }; delete n[cellKey]; return n; });
-      setPstLogLines((prev) => prev.filter((l) => l.key !== `pst-${cellKey}`));
+      const nextPstState = { ...pstStateRef.current };
+      delete nextPstState[cellKey];
+      const nextLogLines = pstLogLinesRef.current.filter((line) => line.key !== logKey);
+      commitPSTCellUpdate(nextPstState, nextLogLines);
       return;
     }
 
@@ -13145,9 +13195,8 @@ export default function DepotStablingPage() {
       const endTime = addMinutesToHHMM(startTime, 6);
       const finalAlarmStatus = alarmStatus || "no_alarm";
       const line = buildPSTLogLine(startTime, endTime, road, paddedKey, finalAlarmStatus);
-
-      setPstState((prev) => ({
-        ...prev,
+      const nextPstState = {
+        ...pstStateRef.current,
         [cellKey]: {
           done: true,
           confirming: false,
@@ -13156,11 +13205,12 @@ export default function DepotStablingPage() {
           alarmStatus: finalAlarmStatus,
           trainKey: paddedKey,
         },
-      }));
-      setPstLogLines((prev) => sortPSTLogLinesByTime([
-        ...prev.filter((l) => l.key !== `pst-${cellKey}`),
-        { key: `pst-${cellKey}`, text: line, type: "PST", depot, road, trainKey: paddedKey, startTime, endTime, alarmStatus: finalAlarmStatus },
-      ]));
+      };
+      const nextLogLines = sortPSTLogLinesByTime([
+        ...pstLogLinesRef.current.filter((entry) => entry.key !== logKey),
+        { key: logKey, text: line, type: "PST", depot, road, trainKey: paddedKey, startTime, endTime, alarmStatus: finalAlarmStatus },
+      ]);
+      commitPSTCellUpdate(nextPstState, nextLogLines);
       return;
     }
 
@@ -13170,9 +13220,8 @@ export default function DepotStablingPage() {
     const endTime = formatTime(addMinutes(now, 6));
     const finalAlarmStatus = alarmStatus || "no_alarm";
     const line = buildPSTLogLine(startTime, endTime, road, paddedKey, finalAlarmStatus);
-
-    setPstState((prev) => ({
-      ...prev,
+    const nextPstState = {
+      ...pstStateRef.current,
       [cellKey]: {
         done: false,
         confirming: true,
@@ -13181,11 +13230,12 @@ export default function DepotStablingPage() {
         alarmStatus: finalAlarmStatus,
         trainKey: paddedKey,
       },
-    }));
-    setPstLogLines((prev) => sortPSTLogLinesByTime([
-      ...prev.filter((l) => l.key !== `pst-${cellKey}`),
-      { key: `pst-${cellKey}`, text: line, type: "PST", depot, road, trainKey: paddedKey, startTime, endTime, alarmStatus: finalAlarmStatus },
-    ]));
+    };
+    const nextLogLines = sortPSTLogLinesByTime([
+      ...pstLogLinesRef.current.filter((entry) => entry.key !== logKey),
+      { key: logKey, text: line, type: "PST", depot, road, trainKey: paddedKey, startTime, endTime, alarmStatus: finalAlarmStatus },
+    ]);
+    commitPSTCellUpdate(nextPstState, nextLogLines);
   };
 
   const buildTrainPrepLogLine = (time, trainKey, road, taName = "") => {
