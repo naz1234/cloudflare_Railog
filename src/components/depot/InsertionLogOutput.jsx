@@ -36,7 +36,7 @@ function buildNormalInsertionCopyText(lines, depotLabel) {
   const trainList = lines.map((line) => line.trainKey).join(", ");
   const totalLine = `Total of ${lines.length} train${lines.length !== 1 ? "s" : ""}: ${trainList}.`;
 
-  return [header, totalLine, ...lines.map((line) => line.text)].join("\n");
+  return [header, totalLine, "", ...lines.map((line) => line.text)].join("\n");
 }
 
 function buildSweepingCopyText(lines, depotLabel) {
