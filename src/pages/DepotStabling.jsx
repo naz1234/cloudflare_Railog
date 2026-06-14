@@ -3660,8 +3660,14 @@ function getTimetableInsertionRemarkMap(activeTimetable = null, depot = "west") 
   }, {});
 }
 
-function getInsertionRemarkStyle(value) {
+function isSweepRemark(value) {
   const key = (value || "").toString().trim().toUpperCase();
+  return key === "SW" || key === "SWEEP" || key === "SWEEPING";
+}
+
+function getInsertionRemarkStyle(value) {
+  const rawKey = (value || "").toString().trim().toUpperCase();
+  const key = isSweepRemark(rawKey) ? "SW" : rawKey;
 
   // Keep 3K1 / SW / 2W colours active every day.
   if (INSERTION_REMARK_STYLES[key]) return INSERTION_REMARK_STYLES[key];
@@ -3788,7 +3794,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
   const handleInsertClick = () => {
     // SW means Sweep. Create the result immediately using TK1 as the editable default.
-    onInsertionTick(road, bi, key, tidInput, tidRemarkText === "SW" ? "TK1" : "");
+    onInsertionTick(road, bi, key, tidInput, isSweepRemark(tidRemarkText) ? "TK1" : "");
   };
 
   const handleInsertedUndoClick = () => {
@@ -4166,7 +4172,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
   const isFiltered = (block, road, bi) => {
     // Check live TID input typed by user
     const typed = (tidInputs[`${road}-${bi}`] || "").trim().toUpperCase();
-    if (HIDE_REMARKS.some((r) => typed === r)) return true;
+    if (HIDE_REMARKS.some((r) => typed === r) || isSweepRemark(typed)) return true;
     // Check remark stored on the active insertion log entry for this cell.
     // Stale log entries are ignored when the train has already been removed
     // from the stabling cell.
@@ -12844,7 +12850,7 @@ export default function DepotStablingPage() {
     const time = scheduledTime || formatTime(new Date());
 
     // SW means Sweep. Create it immediately with TK1 as the editable default.
-    if (normalizedRemark === "SW") {
+    if (isSweepRemark(normalizedRemark)) {
       const requestedSweepTrack = (sweepTrack || "TK1").toString().trim().toUpperCase();
       const normalizedSweepTrack = ["TK1", "TK2"].includes(requestedSweepTrack) ? requestedSweepTrack : "TK1";
 
@@ -12863,7 +12869,7 @@ export default function DepotStablingPage() {
           trainKey: paddedTrainKey,
           tid: null,
           mainlineTrack,
-          remark: normalizedRemark,
+          remark: "SW",
           sweepTrack: normalizedSweepTrack,
           signal,
           clearTime,
@@ -18181,7 +18187,7 @@ function getInsertionPrintPillStyle(value = "") {
   if (key === "3K1") {
     return { fill: "#bff7f0", stroke: "#0f9f8f", textFill: "#003f39" };
   }
-  if (key === "SW" || key.startsWith("SW ") || key === "2W" || key.startsWith("2W ")) {
+  if (isSweepRemark(key) || key.startsWith("SW ") || key === "2W" || key.startsWith("2W ")) {
     return { fill: "#dfc6ff", stroke: "#8b5cf6", textFill: "#3b1163" };
   }
   return { fill: "#fff176", stroke: "#000", textFill: "#000" };
