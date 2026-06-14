@@ -3905,17 +3905,15 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         {key && inserted?.isSweeping && (
           <div className="w-full rounded-lg border border-purple-500/70 bg-purple-950/35 px-1.5 py-1.5 shadow-[0_0_12px_rgba(168,85,247,0.20)]">
             <div className="mb-1 text-center text-[10px] font-black uppercase tracking-wide text-purple-200">Sweep</div>
-            <label className="mb-1 block text-[8px] font-bold uppercase tracking-wide text-purple-300">
-              Track
-              <select
-                value={inserted.sweepTrack || "TK1"}
-                onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
-                className="mt-0.5 h-6 w-full rounded-md border border-purple-500/60 bg-[#10102a] px-1 text-center text-[10px] font-black text-purple-100 outline-none"
-              >
-                <option value="TK1">TK1</option>
-                <option value="TK2">TK2</option>
-              </select>
-            </label>
+            <select
+              value={inserted.sweepTrack || "TK1"}
+              onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
+              className="mb-1 h-6 w-full rounded-md border border-purple-500/60 bg-[#10102a] px-1 text-center text-[10px] font-black text-purple-100 outline-none"
+              title="Select Sweep track"
+            >
+              <option value="TK1">Track 01</option>
+              <option value="TK2">Track 02</option>
+            </select>
             <div className="w-full rounded-lg border border-purple-500/50 bg-purple-950/20 px-1 py-1">
               <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap">
                 <span className="shrink-0 text-[10px] font-bold leading-tight text-purple-300">Start :</span>
@@ -3987,7 +3985,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             }}
             title="Click to undo"
           >
-            {inserted.isSweeping ? "Undo Sweep" : `✓ ${insertedDisplayTime}`}
+            {inserted.isSweeping ? `✓ ${inserted.time || insertedDisplayTime}` : `✓ ${insertedDisplayTime}`}
           </button>
         )}
       </div>
