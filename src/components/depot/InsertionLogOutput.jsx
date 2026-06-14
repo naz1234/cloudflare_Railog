@@ -81,17 +81,24 @@ async function copyText(text) {
 }
 
 function DepotSection({ label, lines, color, depot, onClearDepot }) {
-  const [depotCopied, setDepotCopied] = useState(false);
+  const [copiedType, setCopiedType] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
+  const normalLines = lines.filter((line) => !isSweepingLine(line));
+  const sweepingLines = lines.filter(isSweepingLine);
+  const normalCopyText = buildNormalInsertionCopyText(normalLines, label);
+  const sweepingCopyText = buildSweepingCopyText(sweepingLines, label);
   const copyTextValue = buildInsertionCopyText(lines, label);
   const isWest = color === "west";
   const accent = isWest ? "#a78bfa" : "#67e8f9";
 
-  const handleCopy = async () => {
+  const handleCopy = async (type) => {
+    const value = type === "sweep" ? sweepingCopyText : normalCopyText;
+    if (!value) return;
+
     try {
-      await copyText(copyTextValue);
-      setDepotCopied(true);
-      setTimeout(() => setDepotCopied(false), 2000);
+      await copyText(value);
+      setCopiedType(type);
+      setTimeout(() => setCopiedType(""), 2000);
     } catch (error) {
       console.error("Insertion log copy failed:", error);
     }
@@ -130,13 +137,24 @@ function DepotSection({ label, lines, color, depot, onClearDepot }) {
         <div className="mt-2 flex flex-wrap items-center justify-start gap-1.5">
           <button
             type="button"
-            onClick={handleCopy}
-            disabled={lines.length === 0}
-            className="flex min-w-[82px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={() => handleCopy("sweep")}
+            disabled={sweepingLines.length === 0}
+            className="flex min-w-[88px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40"
             style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}
           >
-            {depotCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-            {depotCopied ? "Copied" : "Copy"}
+            {copiedType === "sweep" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            {copiedType === "sweep" ? "Copied" : "Sweep Only"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleCopy("insertion")}
+            disabled={normalLines.length === 0}
+            className="flex min-w-[98px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40"
+            style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}
+          >
+            {copiedType === "insertion" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            {copiedType === "insertion" ? "Copied" : "Insertion Only"}
           </button>
 
           {lines.length > 0 && (
@@ -175,21 +193,6 @@ function DepotSection({ label, lines, color, depot, onClearDepot }) {
 export default function InsertionLogOutput({ insertionLog, onClearDepot }) {
   const westLines = insertionLog.filter((line) => line.depot === "west");
   const eastLines = insertionLog.filter((line) => line.depot === "east");
-  const [copied, setCopied] = useState(false);
-
-  const copyAll = async () => {
-    const westText = buildInsertionCopyText(westLines, "West");
-    const eastText = buildInsertionCopyText(eastLines, "East");
-
-    try {
-      await copyText([westText, eastText].filter(Boolean).join("\n\n"));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error("Insertion log copy all failed:", error);
-    }
-  };
-
   return (
     <section className="overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_14px_30px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.05)]">
       <div className="border-b border-[#1a3a56] px-4 py-3" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
@@ -205,18 +208,6 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot }) {
           </div>
         </div>
 
-        {insertionLog.length > 0 && (
-          <div className="mt-2 flex items-center justify-start">
-            <button
-              type="button"
-              onClick={copyAll}
-              className="flex min-w-[82px] items-center justify-center gap-1 rounded-lg border border-blue-400/55 bg-blue-400/10 px-2 py-1 text-[10px] font-bold text-blue-200 transition-all hover:scale-[1.02]"
-            >
-              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-              {copied ? "Copied" : "Copy All"}
-            </button>
-          </div>
-        )}
       </div>
 
       <div className="grid gap-3 p-4">
