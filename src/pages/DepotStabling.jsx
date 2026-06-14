@@ -3724,9 +3724,9 @@ function getSweepingSignal(road, sweepTrack) {
 }
 
 function getSweepingClearTime(startTime) {
-  // Standardise SW timing with PST: the default end time is six minutes
+  // Standardise SW timing with PST: the default end time is two minutes
   // after the selected start time. The user may still edit the end time.
-  return addMinutesToHHMM(startTime, 6);
+  return addMinutesToHHMM(startTime, 2);
 }
 
 function getActiveInsertionEntryForCell(insertionLog = [], road, bi, trainKey = "") {
@@ -3941,7 +3941,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   onBlur={(e) => onSweepUpdate?.(inserted.key, { time: normalizeMovementCustomTimeInput(e.target.value) })}
                   placeholder="00:00"
                   className="w-[42px] rounded-md border border-purple-500/50 bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800 focus:border-purple-300"
-                  title="Edit Sweep start time. End time updates automatically +6 minutes."
+                  title="Edit Sweep start time. End time updates automatically +2 minutes."
                 />
               </div>
               <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap pt-0.5">
