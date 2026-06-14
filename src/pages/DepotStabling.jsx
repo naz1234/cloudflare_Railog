@@ -3739,7 +3739,7 @@ function getActiveInsertionEntryForCell(insertionLog = [], road, bi, trainKey = 
   return entry;
 }
 
-function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange }) {
+function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const maintList = key ? maintenanceMap[key] || [] : [];
@@ -3750,11 +3750,12 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const inserted = getActiveInsertionEntryForCell(insertionLog, road, bi, key);
   const insertedRemarkLabel = inserted?.tid
     ? `TID ${inserted.tid}`
+    : inserted?.isSweeping
+    ? "SWEEP"
     : inserted?.remark
     ? `${inserted.remark}${inserted.sweepTrack ? ` ${inserted.sweepTrack}` : ""}`
     : "";
   const tidRemarkText = (tidInput || "").toString().trim().toUpperCase();
-  const [showSweepChoice, setShowSweepChoice] = useState(false);
   const hasTidRemark = key && !inserted && tidRemarkText !== "";
   const autoTidMatch = tidRemarkText.match(/^(?:TID[:\s-]*)?T?(\d{3})$/i);
   const autoTid = autoTidMatch ? parseInt(autoTidMatch[1], 10) : null;
@@ -3768,7 +3769,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const insertedTidRemarkStyle = insertedTid && typeof getTidAssistRemarkStyle === "function"
     ? getTidAssistRemarkStyle(insertedTid, autoTidDepot)
     : null;
-  const activeTidRemarkStyle = inserted ? insertedTidRemarkStyle : specialTidRemarkStyle;
+  const insertedRemarkStyle = inserted?.remark ? getInsertionRemarkStyle(inserted.remark) : null;
+  const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
   const insertedScheduledTime = insertedTid && typeof getTidScheduledTime === "function"
     ? getTidScheduledTime(insertedTid, autoTidDepot, { allowFallback: false })
     : null;
@@ -3780,33 +3782,17 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const canAutoInsertTid = Boolean(key && !inserted && autoTid !== null && autoScheduledTime);
 
   useEffect(() => {
-    if (tidRemarkText !== "SW" || inserted) setShowSweepChoice(false);
-  }, [tidRemarkText, inserted]);
-
-  useEffect(() => {
     if (!canAutoInsertTid) return;
-    setShowSweepChoice(false);
     onInsertionTick(road, bi, key, tidInput);
   }, [canAutoInsertTid, road, bi, key, tidInput, onInsertionTick]);
 
   const handleInsertClick = () => {
-    if (tidRemarkText === "SW") {
-      setShowSweepChoice(true);
-      return;
-    }
-
-    setShowSweepChoice(false);
-    onInsertionTick(road, bi, key, tidInput);
-  };
-
-  const handleSweepChoice = (sweepTrack) => {
-    setShowSweepChoice(false);
-    onInsertionTick(road, bi, key, tidInput, sweepTrack);
+    // SW means Sweep. Create the result immediately using TK1 as the editable default.
+    onInsertionTick(road, bi, key, tidInput, tidRemarkText === "SW" ? "TK1" : "");
   };
 
   const handleInsertedUndoClick = () => {
     onTidChange?.(road, bi, "");
-    setShowSweepChoice(false);
     onInsertionTick(road, bi, key, tidInput);
   };
 
@@ -3874,7 +3860,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
   return (
     <td className="p-1.5 align-middle" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-      <div className="relative flex flex-col items-center justify-start gap-1 rounded-xl" style={{ minHeight: showSweepChoice ? 118 : 82, padding: "6px 4px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow }}>
+      <div className="relative flex flex-col items-center justify-start gap-1 rounded-xl" style={{ minHeight: inserted?.isSweeping ? 168 : 82, padding: "6px 4px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow }}>
         {key && !inserted && (
           <div className="absolute top-1 right-1.5 opacity-20 pointer-events-none">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={trainColor} strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/></svg>
@@ -3908,7 +3894,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           </span>
         ))}
         {key && !inserted && (<input ref={tidInputRef} type="text" value={tidInput} onChange={(e) => onTidChange(road, bi, e.target.value)} onKeyDown={onTidKeyDown} onFocus={onTidFocus} onPointerDown={onTidFocus} placeholder="TID" className="w-full h-6 px-1 text-center text-[12px] font-semibold rounded-lg outline-none placeholder:text-[#2b4f6b]" style={insTidInputStyle} />)}
-        {key && inserted && insertedRemarkLabel && (
+        {key && inserted && insertedRemarkLabel && !inserted.isSweeping && (
           <span
             className="text-[12px] font-bold"
             style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
@@ -3916,40 +3902,48 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             {insertedRemarkLabel}
           </span>
         )}
-        {key && !inserted && showSweepChoice && (
-          <div className="w-full rounded-lg border border-purple-500/70 bg-purple-950/40 px-1 py-1 shadow-[0_0_12px_rgba(168,85,247,0.24)]">
-            <div className="mb-1 text-center text-[8px] font-black uppercase tracking-wide text-purple-200">Choose SW track</div>
+        {key && inserted?.isSweeping && (
+          <div className="w-full rounded-lg border border-purple-500/70 bg-purple-950/35 px-1.5 py-1.5 shadow-[0_0_12px_rgba(168,85,247,0.20)]">
+            <div className="mb-1 text-center text-[10px] font-black uppercase tracking-wide text-purple-200">Sweep</div>
+            <label className="mb-1 block text-[8px] font-bold uppercase tracking-wide text-purple-300">
+              Track
+              <select
+                value={inserted.sweepTrack || "TK1"}
+                onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
+                className="mt-0.5 h-6 w-full rounded-md border border-purple-500/60 bg-[#10102a] px-1 text-center text-[10px] font-black text-purple-100 outline-none"
+              >
+                <option value="TK1">TK1</option>
+                <option value="TK2">TK2</option>
+              </select>
+            </label>
             <div className="grid grid-cols-2 gap-1">
-              <button
-                type="button"
-                onClick={() => handleSweepChoice("TK1")}
-                className="rounded-md border border-sky-500/75 bg-sky-950/50 px-1 py-0.5 text-[9px] font-black leading-tight text-sky-200 hover:bg-sky-900/70"
-              >
-                TK1
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSweepChoice("TK2")}
-                className="rounded-md border border-fuchsia-500/75 bg-fuchsia-950/50 px-1 py-0.5 text-[9px] font-black leading-tight text-fuchsia-200 hover:bg-fuchsia-900/70"
-              >
-                TK2
-              </button>
+              <label className="text-[8px] font-bold uppercase tracking-wide text-purple-300">
+                Start
+                <input
+                  type="time"
+                  value={inserted.time || ""}
+                  onChange={(e) => onSweepUpdate?.(inserted.key, { time: e.target.value })}
+                  className="mt-0.5 h-6 w-full rounded-md border border-purple-500/60 bg-[#10102a] px-0.5 text-center text-[9px] font-bold text-purple-100 outline-none"
+                />
+              </label>
+              <label className="text-[8px] font-bold uppercase tracking-wide text-purple-300">
+                End
+                <input
+                  type="time"
+                  value={inserted.clearTime || inserted.time || ""}
+                  onChange={(e) => onSweepUpdate?.(inserted.key, { clearTime: e.target.value })}
+                  className="mt-0.5 h-6 w-full rounded-md border border-purple-500/60 bg-[#10102a] px-0.5 text-center text-[9px] font-bold text-purple-100 outline-none"
+                />
+              </label>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowSweepChoice(false)}
-              className="mt-1 w-full rounded-md border border-slate-500/50 bg-slate-950/35 px-1 py-0.5 text-[8px] font-bold text-slate-300 hover:bg-slate-900/60"
-            >
-              Cancel
-            </button>
           </div>
         )}
-        {key && !inserted && !showSweepChoice && isNumericTidRemark && !autoScheduledTime && (
+        {key && !inserted && isNumericTidRemark && !autoScheduledTime && (
           <div className="w-full rounded-lg border border-amber-700/60 bg-amber-950/35 px-1 py-1 text-center text-[9px] font-bold leading-tight text-amber-300" title="This TID is not available in today's insertion schedule">
             No TID time
           </div>
         )}
-        {key && !inserted && !showSweepChoice && !isNumericTidRemark && (<button onClick={handleInsertClick} className={`w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all ${hasTidRemark ? "bg-yellow-950/50 border-yellow-600/60 text-yellow-300 hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300"}`}>{hasTidRemark ? "Insert Remark" : "Insert"}</button>)}
+        {key && !inserted && !isNumericTidRemark && (<button onClick={handleInsertClick} className={`w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all ${hasTidRemark ? "bg-yellow-950/50 border-yellow-600/60 text-yellow-300 hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300"}`}>{hasTidRemark ? "Insert Remark" : "Insert"}</button>)}
         {key && inserted && (
           <button
             onClick={handleInsertedUndoClick}
@@ -3965,7 +3959,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             }}
             title="Click to undo"
           >
-            ✓ {insertedDisplayTime}
+            {inserted.isSweeping ? "Undo Sweep" : `✓ ${insertedDisplayTime}`}
           </button>
         )}
       </div>
@@ -3973,7 +3967,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   );
 }
 
-function InsertionStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange }) {
+function InsertionStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange }) {
   const [hideFiltered, setHideFiltered] = useState(false);
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
@@ -4275,7 +4269,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
                         </td>
                       );
                     }
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value) => handleTidChange(targetRoad, targetBi, value, ri, i)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value) => handleTidChange(targetRoad, targetBi, value, ri, i)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -5580,7 +5574,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   );
 }
 
-function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog, onInsertionTick, onRemoveInsertionLog, onClearInsertionDepot, onClearInsertedTidRemarks, onClearInsertedTrains, tidInputs, onTidChange, getTidScheduledTime, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug, activePg = "pg1", onPgChange, onRefreshPg2, stablingEditable = false, onEditableTrainIdChange }) {
+function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog, onInsertionTick, onSweepUpdate, onRemoveInsertionLog, onClearInsertionDepot, onClearInsertedTidRemarks, onClearInsertedTrains, tidInputs, onTidChange, getTidScheduledTime, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug, activePg = "pg1", onPgChange, onRefreshPg2, stablingEditable = false, onEditableTrainIdChange }) {
   // TID schedule range: earliest first-TID time across both series, latest last-TID time.
   // Series 1xx: 05:25–06:22 | Series 2xx: 05:24–06:21
   // Grey-out in the TID Reference Table only applies while current time is within this window.
@@ -5669,8 +5663,8 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
 
         {/* Stabling sections — centre column */}
         <div className="space-y-5 min-w-0">
-          <InsertionStablingSection title="WEST DEPOT" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditableTrainIdChange?.("west", road, bi, value)} />
-          <InsertionStablingSection title="EAST DEPOT" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditableTrainIdChange?.("east", road, bi, value)} />
+          <InsertionStablingSection title="WEST DEPOT" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onSweepUpdate={onSweepUpdate} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditableTrainIdChange?.("west", road, bi, value)} />
+          <InsertionStablingSection title="EAST DEPOT" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onSweepUpdate={onSweepUpdate} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditableTrainIdChange?.("east", road, bi, value)} />
         </div>
       </div>
 
@@ -12823,11 +12817,10 @@ export default function DepotStablingPage() {
     const scheduledTime = tid ? getTidScheduledTime(tid, depot, { allowFallback: false }) : null;
     const time = scheduledTime || formatTime(new Date());
 
-    // SW is a sweeping movement. Ask the user to choose TK1/TK2 in the cell,
-    // then generate the road-specific signal log instead of normal insertion.
+    // SW means Sweep. Create it immediately with TK1 as the editable default.
     if (normalizedRemark === "SW") {
-      const normalizedSweepTrack = (sweepTrack || "").toString().trim().toUpperCase();
-      if (!["TK1", "TK2"].includes(normalizedSweepTrack)) return prevLog || [];
+      const requestedSweepTrack = (sweepTrack || "TK1").toString().trim().toUpperCase();
+      const normalizedSweepTrack = ["TK1", "TK2"].includes(requestedSweepTrack) ? requestedSweepTrack : "TK1";
 
       const signal = getSweepingSignal(road, normalizedSweepTrack);
       const clearTime = getSweepingClearTime(time, road, normalizedSweepTrack);
@@ -12872,6 +12865,32 @@ export default function DepotStablingPage() {
     markInsertionLiveLocalEdit();
     setPg2InsertionLog((prev) => applyInsertionTickToLog(prev, road, bi, trainKey, remark, sweepTrack));
   }, [applyInsertionTickToLog, markInsertionLiveLocalEdit]);
+
+  const updateSweepEntryInLog = useCallback((prevLog = [], entryKey, changes = {}) => {
+    return sortInsertionLogByTime((prevLog || []).map((entry) => {
+      if (!entry?.isSweeping || entry.key !== entryKey) return entry;
+
+      const nextTrackRaw = (changes.sweepTrack ?? entry.sweepTrack ?? "TK1").toString().trim().toUpperCase();
+      const sweepTrack = ["TK1", "TK2"].includes(nextTrackRaw) ? nextTrackRaw : "TK1";
+      const time = changes.time ?? entry.time ?? formatTime(new Date());
+      const clearTime = changes.clearTime ?? entry.clearTime ?? time;
+      const signal = getSweepingSignal(entry.road, sweepTrack);
+      const paddedTrainKey = padTrainId(normalizeTrainId(entry.trainKey));
+      const text = `${time} hrs – ${paddedTrainKey} sweeping started from ${entry.road} to signal ${signal} at 45 kph. Track confirmed clear at ${clearTime} hrs.`;
+
+      return { ...entry, ...changes, sweepTrack, time, clearTime, signal, text, remark: "SW", isSweeping: true };
+    }));
+  }, []);
+
+  const handleSweepUpdate = useCallback((entryKey, changes) => {
+    markInsertionLiveLocalEdit();
+    setInsertionLog((prev) => updateSweepEntryInLog(prev, entryKey, changes));
+  }, [markInsertionLiveLocalEdit, updateSweepEntryInLog]);
+
+  const handlePg2SweepUpdate = useCallback((entryKey, changes) => {
+    markInsertionLiveLocalEdit();
+    setPg2InsertionLog((prev) => updateSweepEntryInLog(prev, entryKey, changes));
+  }, [markInsertionLiveLocalEdit, updateSweepEntryInLog]);
 
   const clearTidInputForInsertionKey = (key) => {
     const match = (key || "").match(/^ins-(.+)-(\d+)$/);
@@ -13401,6 +13420,7 @@ export default function DepotStablingPage() {
   const activeInsertionLog = activeInsertionPgKey === "pg2" ? pg2InsertionLog : insertionLog;
   const activeInsertionTidInputs = activeInsertionPgKey === "pg2" ? pg2TidInputs : tidInputs;
   const activeInsertionTickHandler = activeInsertionPgKey === "pg2" ? handlePg2InsertionTick : handleInsertionTick;
+  const activeSweepUpdateHandler = activeInsertionPgKey === "pg2" ? handlePg2SweepUpdate : handleSweepUpdate;
   const activeInsertionRemoveHandler = activeInsertionPgKey === "pg2" ? handleRemovePg2InsertionLog : handleRemoveInsertionLog;
   const activeInsertionClearDepotHandler = activeInsertionPgKey === "pg2" ? handleClearPg2InsertionDepot : handleClearInsertionDepot;
   const activeClearInsertedTidRemarksHandler = activeInsertionPgKey === "pg2" ? handleClearPg2InsertedTidRemarks : handleClearInsertedTidRemarks;
@@ -13838,6 +13858,7 @@ export default function DepotStablingPage() {
             maintenanceMap={maintenanceMap}
             insertionLog={activeInsertionLog}
             onInsertionTick={activeInsertionTickHandler}
+            onSweepUpdate={activeSweepUpdateHandler}
             onRemoveInsertionLog={activeInsertionRemoveHandler}
             onClearInsertionDepot={activeInsertionClearDepotHandler}
             onClearInsertedTidRemarks={activeClearInsertedTidRemarksHandler}
