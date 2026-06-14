@@ -80,33 +80,10 @@ async function copyText(text) {
   textarea.remove();
 }
 
-function LogEntryRow({ entry, onRemove }) {
-  return (
-    <div className="group flex items-start gap-2 border-b border-[#12304a]/70 px-3 py-1.5 last:border-b-0">
-      <p className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.25] tracking-[-0.01em] text-[#f4f8ff]">
-        {entry.text}
-      </p>
-      <button
-        type="button"
-        onClick={() => onRemove(entry.key)}
-        title="Delete this log"
-        aria-label="Delete this log"
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-transparent text-red-400 opacity-80 transition-all hover:border-red-500/60 hover:bg-red-950/35 hover:text-red-300 group-hover:opacity-100"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </button>
-    </div>
-  );
-}
-
-function DepotSection({ label, lines, color, depot, onRemove, onClearDepot }) {
+function DepotSection({ label, lines, color, depot, onClearDepot }) {
   const [depotCopied, setDepotCopied] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const copyTextValue = buildInsertionCopyText(lines, label);
-  const normalLines = lines.filter((line) => !isSweepingLine(line));
-  const sweepingLines = lines.filter(isSweepingLine);
-  const normalHeaderLines = buildNormalInsertionCopyText(normalLines, label).split("\n");
-  const sweepingHeader = buildSweepingCopyText(sweepingLines, label).split("\n")[0] || "";
   const isWest = color === "west";
   const accent = isWest ? "#a78bfa" : "#67e8f9";
 
@@ -180,37 +157,22 @@ function DepotSection({ label, lines, color, depot, onRemove, onClearDepot }) {
         </div>
       </div>
 
-      {lines.length === 0 ? (
-        <div className="flex min-h-[92px] items-center justify-center px-3 text-center text-[11px] font-semibold text-[#7eb8e0]">
-          No entries
-        </div>
-      ) : (
-        <div className="bg-[#041727]">
-          {normalLines.length > 0 && (
-            <div>
-              <div className="border-b border-[#1d4869] bg-[#061827] px-3 py-2">
-                <p className="font-mono text-[11px] font-bold leading-[1.25] text-[#f4f8ff]">{normalHeaderLines[0]}</p>
-                <p className="font-mono text-[11px] leading-[1.25] text-[#8ea8c0]">{normalHeaderLines[1]}</p>
-              </div>
-              {normalLines.map((entry) => <LogEntryRow key={entry.key} entry={entry} onRemove={onRemove} />)}
-            </div>
-          )}
-
-          {sweepingLines.length > 0 && (
-            <div className={normalLines.length > 0 ? "border-t border-[#1d4869]" : ""}>
-              <div className="border-b border-[#1d4869] bg-[#061827] px-3 py-2">
-                <p className="font-mono text-[11px] font-bold leading-[1.25] text-[#f4f8ff]">{sweepingHeader}</p>
-              </div>
-              {sweepingLines.map((entry) => <LogEntryRow key={entry.key} entry={entry} onRemove={onRemove} />)}
-            </div>
-          )}
-        </div>
-      )}
+      <div className="min-h-[92px] border-t border-[#1a3a56] bg-[#061321] px-3 py-2">
+        {lines.length === 0 ? (
+          <div className="flex min-h-[76px] items-center justify-center text-center text-[11px] font-semibold text-[#7eb8e0]">
+            No entries
+          </div>
+        ) : (
+          <pre className="whitespace-pre-wrap break-words font-mono text-[11px] font-normal leading-[1.4] text-[#d8e7f7]">
+            {copyTextValue}
+          </pre>
+        )}
+      </div>
     </section>
   );
 }
 
-export default function InsertionLogOutput({ insertionLog, onRemove, onClearDepot }) {
+export default function InsertionLogOutput({ insertionLog, onClearDepot }) {
   const westLines = insertionLog.filter((line) => line.depot === "west");
   const eastLines = insertionLog.filter((line) => line.depot === "east");
   const [copied, setCopied] = useState(false);
@@ -258,8 +220,8 @@ export default function InsertionLogOutput({ insertionLog, onRemove, onClearDepo
       </div>
 
       <div className="grid gap-3 p-4">
-        <DepotSection label="West" lines={westLines} color="west" depot="west" onRemove={onRemove} onClearDepot={onClearDepot} />
-        <DepotSection label="East" lines={eastLines} color="east" depot="east" onRemove={onRemove} onClearDepot={onClearDepot} />
+        <DepotSection label="West" lines={westLines} color="west" depot="west" onClearDepot={onClearDepot} />
+        <DepotSection label="East" lines={eastLines} color="east" depot="east" onClearDepot={onClearDepot} />
       </div>
     </section>
   );
