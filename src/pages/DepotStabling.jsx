@@ -9729,25 +9729,53 @@ function HeaderBookmarkDropdown({
     });
   }, [links, normalizedSearchQuery]);
 
-  useEffect(() => {
-    if (!isOpen) setSearchQuery("");
-  }, [isOpen]);
-
   return (
     <div ref={menuRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all shadow-sm ${
+      <div
+        className={`flex h-8 items-center overflow-hidden rounded-lg border text-xs font-bold shadow-sm transition-all ${
           isOpen
-            ? "bg-cyan-500/15 border-cyan-300/55 text-cyan-100 shadow-cyan-500/10"
-            : "bg-[#071828] border-[#2b6f93] text-cyan-100 hover:bg-cyan-500/10 hover:border-cyan-300/55"
+            ? "border-cyan-300/55 bg-cyan-500/15 text-cyan-100 shadow-cyan-500/10"
+            : "border-[#2b6f93] bg-[#071828] text-cyan-100 hover:border-cyan-300/55"
         }`}
       >
-        <Search className="w-3.5 h-3.5" />
-        Search
-        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-      </button>
+        <div className="relative h-full w-[170px]">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-cyan-200" />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setSearchQuery("");
+                setIsOpen(false);
+              }
+            }}
+            placeholder="Search bookmark"
+            className="h-full w-full bg-transparent pl-8 pr-7 text-[11px] font-bold text-cyan-50 outline-none placeholder:text-cyan-100"
+            aria-label="Search bookmark"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-1.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-md text-[#7eb8e0] transition hover:bg-cyan-500/10 hover:text-white"
+              title="Clear search"
+              aria-label="Clear bookmark search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="flex h-full w-8 items-center justify-center border-l border-[#2b6f93] text-cyan-100 transition hover:bg-cyan-500/10"
+          title={isOpen ? "Close bookmark list" : "Show bookmark list"}
+          aria-label={isOpen ? "Close bookmark list" : "Show bookmark list"}
+        >
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        </button>
+      </div>
 
       {isOpen && (
         <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-[320px] overflow-hidden rounded-2xl border border-[#1f4d6f] bg-[#071828] shadow-2xl shadow-black/50">
@@ -9767,29 +9795,6 @@ function HeaderBookmarkDropdown({
           </div>
 
           <div className="max-h-[330px] overflow-y-auto p-2">
-            <div className="relative mb-2">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#5d94bd]" />
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search saved bookmarks..."
-                className="h-9 w-full rounded-xl border border-[#2b4f6b] bg-[#061827] pl-9 pr-8 text-[11px] font-medium text-white outline-none transition placeholder:text-[#4a8ab5] focus:border-cyan-300/60 focus:bg-[#082036]"
-                aria-label="Search saved bookmarks"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-md text-[#7eb8e0] transition hover:bg-cyan-500/10 hover:text-white"
-                  title="Clear search"
-                  aria-label="Clear bookmark search"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-
             {error && (
               <div className="mb-2 rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-[10px] text-red-100">
                 {error}
