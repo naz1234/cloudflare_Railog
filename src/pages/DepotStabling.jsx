@@ -5078,7 +5078,16 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
       // Keep the file download as the first action in the click handler.
       // Some browsers/PWA views can ignore the download when a state update runs first.
-      downloadCombinedRemovalPdf(westLog, eastLog, { swappingRows, actionOverviewRows });
+      const stackMorningDepots =
+        normalizeTimetableType(activeTimetableType) === "weekday" &&
+        (latestTrainRemState?.selectedPreset?.west || "9am") === "9am" &&
+        (latestTrainRemState?.selectedPreset?.east || "9am") === "9am";
+
+      downloadCombinedRemovalPdf(westLog, eastLog, {
+        swappingRows,
+        actionOverviewRows,
+        stackMorningDepots,
+      });
       setTrainRemPdfStatus((prev) => ({ ...prev, [depot]: true }));
       setTimeout(() => {
         setTrainRemPdfStatus((prev) => ({ ...prev, [depot]: false }));
@@ -16437,8 +16446,11 @@ function buildRemovalPdfBlob(log = {}) {
 
 
 function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
-  // A4 landscape, one page: West at left, East at right.
-  // West removal stays on the left; the single consolidated REQUESTED TRAIN table is placed under East Depot.
+  // A4 landscape, one page.
+  // Weekday + both 9am presets: West and East are stacked on the left,
+  // while REQUESTED TRAIN uses the full right column.
+  // Other presets keep the standard West-left / East-right layout.
+  const stackMorningDepots = Boolean(options?.stackMorningDepots);
   const pageWidth = 841.89;
   const pageHeight = 595.28;
   const marginX = 22;
@@ -16478,6 +16490,24 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
   const eastTableHeight = headerHeight + eastRowCount * rightRowHeight;
   const actionTitleTop = tableTop + eastTableHeight + 14;
   const actionTableTop = tableTop + eastTableHeight + actionSectionGap;
+
+  // Special weekday morning layout: two compact removal tables on the left,
+  // one full-height requested-train table on the right.
+  const stackedInterTableSpace = 44;
+  const stackedRemovalRowHeight = Math.max(
+    8.4,
+    Math.min(
+      15.2,
+      (leftAvailableHeight - headerHeight * 2 - stackedInterTableSpace) / (westRowCount + eastRowCount)
+    )
+  );
+  const stackedWestTableHeight = headerHeight + westRowCount * stackedRemovalRowHeight;
+  const stackedEastTitleTop = tableTop + stackedWestTableHeight + 18;
+  const stackedEastTableTop = stackedEastTitleTop + 26;
+  const stackedActionRowHeight = Math.max(
+    8.4,
+    Math.min(14.2, (rightAvailableHeight - headerHeight) / actionOverviewRowCount)
+  );
 
   const rect = (x, y, width, height, { fill = "", stroke = "#000000", strokeWidth = 0.45 } = {}) => {
     const fillCmd = fill ? `${pdfColor(fill)} rg` : "";
@@ -16863,8 +16893,9 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
   };
 
-  const drawRequestedActionOverviewTable = (rows = [], x, titleTopForTable, tableTopForTable, rowH) => {
+  const drawRequestedActionOverviewTable = (rows = [], x, titleTopForTable, tableTopForTable, rowH, optionsForTable = {}) => {
     const activeFontSize = getFontSizeForRowHeight(rowH);
+    const contentFontBoost = Number(optionsForTable?.contentFontBoost) || 0;
     const displayRows = rows.length ? rows : [{ key: "no-action-overview", empty: true }];
     const rowCount = Math.max(displayRows.length, 1);
     const colWidths = {
@@ -16902,9 +16933,9 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     });
 
     const headerTextY = yFromTop(tableTopForTable + 11);
-    drawTextInCell("TRAIN", colX.train + 8, headerTextY, 8, { size: headerFontSize + 0.5, bold: true });
-    drawTextInCell("TID", colX.tid + 7, headerTextY, 5, { size: headerFontSize + 0.5, bold: true });
-    drawTextInCell("REMARK REQUEST", colX.request + 5, headerTextY, 24, { size: headerFontSize + 0.2, bold: true });
+    drawTextInCell("TRAIN", colX.train + 8, headerTextY, 8, { size: headerFontSize + 0.5 + contentFontBoost, bold: true });
+    drawTextInCell("TID", colX.tid + 7, headerTextY, 5, { size: headerFontSize + 0.5 + contentFontBoost, bold: true });
+    drawTextInCell("REMARK REQUEST", colX.request + 5, headerTextY, 24, { size: headerFontSize + 0.2 + contentFontBoost, bold: true });
 
     if (!hasActionOverviewRows) {
       const rowY = yFromTop(tableTopForTable + headerHeight, rowH);
@@ -16921,19 +16952,19 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
         if (entry?.isSeparator) return;
 
         drawTextInCell(formatRequestedTrainNumber(entry?.trainsetNumber || entry?.key) || "-", colX.train, textY, 8, {
-          size: activeFontSize + 1,
+          size: activeFontSize + 1 + contentFontBoost,
           bold: true,
           align: "center",
           width: colWidths.train,
         });
         drawTextInCell(entry?.tid || "", colX.tid, textY, 5, {
-          size: activeFontSize + 1,
+          size: activeFontSize + 1 + contentFontBoost,
           bold: false,
           align: "center",
           width: colWidths.tid,
         });
         drawWrappedTextInCell(entry?.requestType || "-", colX.request, rowY, colWidths.request, rowH, {
-          size: Math.max(4.7, activeFontSize + 0.6),
+          size: Math.max(4.7, activeFontSize + 0.6 + contentFontBoost),
           minSize: 2.2,
           bold: false,
           paddingX: 4,
@@ -16956,17 +16987,38 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
 
   const rightColumnX = marginX + columnWidth + gutter;
 
-  drawRemovalColumn(westLog, marginX, "west", {
-    tableTop,
-    columnTitleTop,
-    rowHeight: leftRowHeight,
-  });
-  drawRemovalColumn(eastLog, rightColumnX, "east", {
-    tableTop,
-    columnTitleTop,
-    rowHeight: rightRowHeight,
-  });
-  drawRequestedActionOverviewTable(actionOverviewRows, rightColumnX, actionTitleTop, actionTableTop, rightRowHeight);
+  if (stackMorningDepots) {
+    drawRemovalColumn(westLog, marginX, "west", {
+      tableTop,
+      columnTitleTop,
+      rowHeight: stackedRemovalRowHeight,
+    });
+    drawRemovalColumn(eastLog, marginX, "east", {
+      tableTop: stackedEastTableTop,
+      columnTitleTop: stackedEastTitleTop,
+      rowHeight: stackedRemovalRowHeight,
+    });
+    drawRequestedActionOverviewTable(
+      actionOverviewRows,
+      rightColumnX,
+      columnTitleTop,
+      tableTop,
+      stackedActionRowHeight,
+      { contentFontBoost: 2 }
+    );
+  } else {
+    drawRemovalColumn(westLog, marginX, "west", {
+      tableTop,
+      columnTitleTop,
+      rowHeight: leftRowHeight,
+    });
+    drawRemovalColumn(eastLog, rightColumnX, "east", {
+      tableTop,
+      columnTitleTop,
+      rowHeight: rightRowHeight,
+    });
+    drawRequestedActionOverviewTable(actionOverviewRows, rightColumnX, actionTitleTop, actionTableTop, rightRowHeight);
+  }
 
   ops += pdfText("Generated by TrainLog", marginX, 18, {
     size: 6.5,
@@ -17029,6 +17081,7 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
         downloadCombinedRemovalPdf(westLog, eastLog, {
           swappingRows: latestSwappingRows,
           actionOverviewRows: latestActionOverviewRows,
+          stackMorningDepots: Boolean(combinedLogs?.stackMorningDepots),
         });
       } else {
         downloadRemovalPdf(log);
@@ -17142,6 +17195,10 @@ function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {}, requ
   });
   const swappingRows = getLatestSwappingRows();
   const actionOverviewRows = getLatestActionOverviewRows();
+  const stackMorningDepots =
+    normalizeTimetableType(activeTimetableType) === "weekday" &&
+    (trainRemState?.selectedPreset?.west || "9am") === "9am" &&
+    (trainRemState?.selectedPreset?.east || "9am") === "9am";
 
   return (
     <section
@@ -17178,6 +17235,7 @@ function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {}, requ
             actionOverviewRows,
             getSwappingRows: getLatestSwappingRows,
             getActionOverviewRows: getLatestActionOverviewRows,
+            stackMorningDepots,
           }}
         />
         <RemovalDepotLogCard
@@ -17189,6 +17247,7 @@ function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {}, requ
             actionOverviewRows,
             getSwappingRows: getLatestSwappingRows,
             getActionOverviewRows: getLatestActionOverviewRows,
+            stackMorningDepots,
           }}
         />
       </div>
