@@ -15830,18 +15830,33 @@ function Arrival3A1P2Lookup({ activeTimetable = null, activeTimetableType = "wee
 
 function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null }) {
   const displayRows = Array.isArray(rows) ? rows : [];
-  const hasRows = displayRows.some((row) => row && !row.isSeparator);
-  const totalRows = displayRows.filter((row) => row && !row.isSeparator).length;
+  const countableRows = displayRows.filter((row) => row && !row.isSeparator);
+  const hasRows = countableRows.length > 0;
+  const totalRows = countableRows.length;
+  const needSwappingCount = countableRows.filter((row) => {
+    const actionType = (row?.actionType || "").toString();
+    const actionLabel = (row?.actionLabel || "").toString().toLowerCase();
+    return row?.group !== "removal"
+      && actionType !== "earlyShiftRem"
+      && actionType !== "lateShiftRem"
+      && actionType !== "eosRemoval"
+      && (actionLabel.includes("need swapping") || !actionLabel);
+  }).length;
+  const earlyShiftRemovalCount = countableRows.filter((row) => {
+    const actionType = (row?.actionType || "").toString();
+    const actionLabel = (row?.actionLabel || "").toString().toLowerCase();
+    return actionType === "earlyShiftRem" || actionLabel.includes("early shift");
+  }).length;
+  const lateShiftRemovalCount = countableRows.filter((row) => {
+    const actionType = (row?.actionType || "").toString();
+    const actionLabel = (row?.actionLabel || "").toString().toLowerCase();
+    return actionType === "lateShiftRem" || actionLabel.includes("late shift");
+  }).length;
 
   return (
     <div className="flex h-fit self-start flex-col leading-tight">
-      <div className="mb-2.5">
-        <div className="text-[12px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
-          REQUESTED TRAIN:
-        </div>
-        <div className="mt-0.5 text-[10px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
-          Total: {totalRows}
-        </div>
+      <div className="mb-2.5 text-[10px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
+        Requested Train: Total: {totalRows} | Need Swapping: {needSwappingCount} trains | Early Shift Removal to West Depot: {earlyShiftRemovalCount} trains | Late Shift Removal: {lateShiftRemovalCount} trains
       </div>
 
       <div className="w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
