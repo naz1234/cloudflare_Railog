@@ -15709,6 +15709,125 @@ function RequestedActionStatusPill({ item }) {
   );
 }
 
+function Arrival3A1P2Lookup({ activeTimetable = null, activeTimetableType = "weekday", lookupTime = new Date() }) {
+  const [searchTid, setSearchTid] = useState("");
+  const normalizedTid = normalizeTidValue(searchTid);
+  const searched = normalizedTid.length > 0;
+  const arrivalTime = searched
+    ? getTimetableArrival3A1P2Time(activeTimetable, normalizedTid, lookupTime)
+    : "";
+  const found = Boolean(arrivalTime);
+  const timetableLabel = getTimetableTypeLabel(activeTimetableType);
+  const notFound = searched && !found;
+
+  const handleSearchChange = (event) => {
+    const cleaned = (event.target.value || "").replace(/\D/g, "").slice(0, 3);
+    setSearchTid(cleaned);
+  };
+
+  return (
+    <div className="mb-4 w-full max-w-[500px]">
+      <div
+        className="flex items-center gap-2 rounded-xl px-3 py-2 transition-all"
+        style={{
+          background: "#071828",
+          border: found
+            ? "1.5px solid #facc15"
+            : notFound
+              ? "1.5px solid #ef4444"
+              : searchTid
+                ? "1.5px solid #4f8ef7"
+                : "1.5px dashed #1b3a55",
+          boxShadow: found
+            ? "0 0 0 2px rgba(250,204,21,0.10)"
+            : notFound
+              ? "0 0 0 2px rgba(239,68,68,0.10)"
+              : searchTid
+                ? "0 0 0 2px rgba(79,142,247,0.12)"
+                : undefined,
+        }}
+      >
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={found ? "#facc15" : notFound ? "#ef4444" : searchTid ? "#4f8ef7" : "#2a4a64"}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={3}
+          value={searchTid}
+          onChange={handleSearchChange}
+          placeholder="Search TID for Arrival 3A1P2…"
+          className="flex-1 bg-transparent text-sm font-semibold outline-none placeholder:font-normal"
+          style={{
+            color: found ? "#fde68a" : notFound ? "#fca5a5" : searchTid ? "#e2eaf4" : undefined,
+            caretColor: "#4f8ef7",
+            letterSpacing: searchTid ? "0.06em" : undefined,
+          }}
+        />
+        {searchTid && (
+          <button
+            type="button"
+            onClick={() => setSearchTid("")}
+            className="flex h-4 w-4 items-center justify-center rounded-full transition-all hover:bg-[#1a3a56]"
+            style={{ color: "#4a8ab5" }}
+            title="Clear search"
+          >
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {searched && (
+        <div className="mt-2 flex min-h-[22px] flex-wrap items-center gap-2">
+          {found ? (
+            <div
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1"
+              style={{ background: "linear-gradient(135deg,#1a2e10,#0f1f08)", border: "1px solid #4d7c0f" }}
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#a3e635" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="9" />
+                <polyline points="12 7 12 12 15 14" />
+              </svg>
+              <span className="text-[11px] font-bold tracking-wide" style={{ color: "#a3e635" }}>TID {normalizedTid}</span>
+              <span className="text-[10px] font-bold" style={{ color: "#6a9a20" }}>Arrival 3A1P2</span>
+              <span className="text-[11px] font-bold" style={{ color: "#d9f99d" }}>{formatTimetableTimeWithHrs(arrivalTime)}</span>
+            </div>
+          ) : (
+            <div
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1"
+              style={{ background: "rgba(127,29,29,0.35)", border: "1px solid #7f1d1d" }}
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="15" y1="9" x2="9" y2="15" />
+                <line x1="9" y1="9" x2="15" y2="15" />
+              </svg>
+              <span className="text-[11px] font-bold" style={{ color: "#f87171" }}>
+                {activeTimetable
+                  ? `TID ${normalizedTid} not found in ${timetableLabel} timetable`
+                  : `No uploaded ${timetableLabel} timetable found`}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null }) {
   const displayRows = Array.isArray(rows) ? rows : [];
   const hasRows = displayRows.some((row) => row && !row.isSeparator);
@@ -15730,15 +15849,13 @@ function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null
           <colgroup>
             <col style={{ width: 58 }} />
             <col style={{ width: 52 }} />
-            <col style={{ width: 92 }} />
-            <col style={{ width: 176 }} />
+            <col style={{ width: 268 }} />
             <col style={{ width: 122 }} />
           </colgroup>
           <thead>
             <tr className="bg-[#0a2237] text-[#cfe5fb]">
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Trainset number</th>
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">TID</th>
-              <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Arrival 3A1P2</th>
               <th className="border-b border-r border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none">Remark Request</th>
               <th className="border-b border-[#2b4f6b] px-2 py-1 text-center font-semibold leading-none"></th>
             </tr>
@@ -15751,7 +15868,6 @@ function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null
                     <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                     <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                     <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
-                    <td className="border-b border-r border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                     <td className="border-b border-[#193752] px-2 py-1 leading-none">&nbsp;</td>
                   </tr>
                 );
@@ -15760,7 +15876,6 @@ function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null
               const displayTid = [item?.manualTid, item?.autoTid, item?.tid]
                 .map((value) => (value || "").toString().trim())
                 .find(Boolean) || "";
-              const arrival3A1P2 = formatTimetableTimeWithHrs(item?.arrival3A1P2);
               const canEditTid = item?.group !== "removal" && item?.canEditTid && typeof onManualTidChange === "function";
 
               return (
@@ -15781,9 +15896,6 @@ function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null
                       />
                     ) : displayTid}
                   </td>
-                  <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff] whitespace-nowrap">
-                    {arrival3A1P2}
-                  </td>
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-tight text-[#eaf4ff] whitespace-normal break-words">
                     {item.requestType || ""}
                   </td>
@@ -15794,7 +15906,7 @@ function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null
               );
             }) : (
               <tr className="bg-[#081b2d]">
-                <td colSpan={5} className="border-b border-[#193752] px-2 py-2 text-center align-middle leading-none text-[#8fa6bd]">
+                <td colSpan={4} className="border-b border-[#193752] px-2 py-2 text-center align-middle leading-none text-[#8fa6bd]">
                   No requested train action found
                 </td>
               </tr>
@@ -15913,7 +16025,6 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
           requestType: row?.requestTypeWithoutTomorrow || row?.requestType || "",
         }));
 
-  const swappingRowsWithArrival3A1P2 = addArrival3A1P2ToRequestedRows(swappingRows, activeTimetable, arrivalLookupTime);
   const rawActionOverviewRows = getRequestedTrainActionOverviewRows({
     requests,
     trainRemState,
@@ -15922,32 +16033,18 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
     includeTomorrowRequests,
     activeTimetableType,
   });
-  const actionOverviewRows = addArrival3A1P2ToRequestedRows(
-    getRequestedTrainActionOverviewRowsFromSwappingTable({
-      swappingRows: swappingRowsWithArrival3A1P2,
-      actionOverviewRows: rawActionOverviewRows,
-      activeTimetableType,
-    }),
-    activeTimetable,
-    arrivalLookupTime
-  );
-  const activeTimetableLabel = getTimetableTypeLabel(activeTimetableType);
-  const parsedTimetable = getActiveTimetableParsedData(activeTimetable);
-  const arrivalReferenceCount = parsedTimetable?.summary?.reference?.arrival3A1P2 || parsedTimetable?.reference?.arrival3A1P2?.entries?.length || 0;
-  const hasTidWithoutArrival = swappingRowsWithArrival3A1P2.some((row) => row?.tid && !row?.arrival3A1P2);
-  const timetableNotice = activeTimetable
-    ? `Currently timetable ${activeTimetableLabel} is used`
-    : `Currently timetable ${activeTimetableLabel} is used — no uploaded timetable found`;
-  const arrivalNotice = activeTimetable && hasTidWithoutArrival && arrivalReferenceCount === 0
-    ? `No Arrival 3A1P2 data found in ${activeTimetableLabel} timetable`
-    : "";
+  const actionOverviewRows = getRequestedTrainActionOverviewRowsFromSwappingTable({
+    swappingRows,
+    actionOverviewRows: rawActionOverviewRows,
+    activeTimetableType,
+  });
 
   const handleDownloadDocx = () => {
     if (downloadingDocxType) return;
     setDownloadingDocxType("swapping");
 
     try {
-      downloadRequestedTrainsDocx({ swappingRows: swappingRowsWithArrival3A1P2, actionOverviewRows });
+      downloadRequestedTrainsDocx({ swappingRows, actionOverviewRows });
     } catch (error) {
       console.error("Requested trains DOCX export failed:", error);
       alert("Unable to create requested trains DOCX. Please try again.");
@@ -16005,6 +16102,12 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
           </button>
         </div>
       </div>
+
+      <Arrival3A1P2Lookup
+        activeTimetable={activeTimetable}
+        activeTimetableType={activeTimetableType}
+        lookupTime={arrivalLookupTime}
+      />
 
       <div className="flex w-full max-w-full items-start gap-3 overflow-x-auto pb-1">
         <div className="shrink-0">
