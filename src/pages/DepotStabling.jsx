@@ -9743,7 +9743,13 @@ function HeaderBookmarkDropdown({
           <input
             type="search"
             value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            onChange={(event) => {
+              const nextValue = event.target.value;
+              setSearchQuery(nextValue);
+              if (nextValue.trim()) {
+                setIsOpen(true);
+              }
+            }}
             onKeyDown={(event) => {
               if (event.key === "Escape") {
                 setSearchQuery("");
@@ -9757,7 +9763,10 @@ function HeaderBookmarkDropdown({
           {searchQuery && (
             <button
               type="button"
-              onClick={() => setSearchQuery("")}
+              onClick={() => {
+                setSearchQuery("");
+                setIsOpen(false);
+              }}
               className="absolute right-1.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-md text-[#7eb8e0] transition hover:bg-cyan-500/10 hover:text-white"
               title="Clear search"
               aria-label="Clear bookmark search"
