@@ -16925,7 +16925,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     }
   };
 
-  const drawRemarkPills = (entry = {}, cellX, rowY, cellWidth, rowH, fallbackTextY, activeFontSize) => {
+  const drawRemarkPills = (entry = {}, cellX, rowY, cellWidth, rowH, fallbackTextY, activeFontSize, fontOptions = {}) => {
     const pills = Array.isArray(entry?.remarkPills)
       ? entry.remarkPills.filter((pill) => (pill?.text || "").toString().trim())
       : [];
@@ -16943,7 +16943,15 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const gap = visiblePills.length >= 3 ? 2 : 3;
     const pillHeight = Math.max(6.4, Math.min(10.8, rowH - 2.4));
     const pillY = rowY + (rowH - pillHeight) / 2;
-    const basePillFontSize = Math.max(3.8, Math.min(5.8, activeFontSize - 0.55));
+    const requestedPillFontSize = Number(fontOptions?.baseFontSize);
+    const requestedPillMaxSize = Number(fontOptions?.maxFontSize);
+    const pillFontTarget = Number.isFinite(requestedPillFontSize)
+      ? requestedPillFontSize
+      : activeFontSize - 0.55;
+    const pillFontMax = Number.isFinite(requestedPillMaxSize)
+      ? requestedPillMaxSize
+      : 5.8;
+    const basePillFontSize = Math.max(3.8, Math.min(pillFontMax, pillFontTarget));
     const safeLeft = cellX + 4;
     const safeRight = cellX + cellWidth - 4;
     const availableWidth = Math.max(10, safeRight - safeLeft);
@@ -17021,7 +17029,13 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const activeTableTop = optionsForTable.tableTop ?? tableTop;
     const activeColumnTitleTop = optionsForTable.columnTitleTop ?? columnTitleTop;
     const activeRowHeight = optionsForTable.rowHeight ?? rightRowHeight;
-    const activeFontSize = getFontSizeForRowHeight(activeRowHeight);
+    const referenceRowHeight = optionsForTable.fontReferenceRowHeight ?? activeRowHeight;
+    const contentFontBoost = Number(optionsForTable?.contentFontBoost) || 0;
+    const activeFontSize = getFontSizeForRowHeight(referenceRowHeight);
+    const headingFontSize = headerFontSize + 0.5 + contentFontBoost;
+    const remarkHeadingFontSize = headerFontSize + 0.2 + contentFontBoost;
+    const rowContentFontSize = activeFontSize + 1 + contentFontBoost;
+    const remarkContentFontSize = activeFontSize + 0.6 + contentFontBoost;
     const rowCount = Math.max(rows.length, 1);
 
     const colWidths = {
@@ -17043,7 +17057,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const tableY = yFromTop(activeTableTop, tableHeight);
 
     ops += pdfText(title, x, yFromTop(activeColumnTitleTop), {
-      size: 11,
+      size: 10.4,
       color: "#000000",
       font: "F2",
     });
@@ -17057,17 +17071,17 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     });
 
     const headerTextY = yFromTop(activeTableTop + 11);
-    drawTextInCell("NO", colX.no + 7, headerTextY, 4, { size: headerFontSize, bold: true });
-    drawTextInCell("TRAIN", colX.train + 9, headerTextY, 8, { size: headerFontSize, bold: true });
-    drawTextInCell("TID", colX.tid + 10, headerTextY, 5, { size: headerFontSize, bold: true });
-    drawTextInCell("TIME", colX.time + 13, headerTextY, 7, { size: headerFontSize, bold: true });
-    drawTextInCell("REMARK", colX.remark + 8, headerTextY, 10, { size: headerFontSize, bold: true });
+    drawTextInCell("NO", colX.no + 7, headerTextY, 4, { size: headingFontSize, bold: true });
+    drawTextInCell("TRAIN", colX.train + 9, headerTextY, 8, { size: headingFontSize, bold: true });
+    drawTextInCell("TID", colX.tid + 10, headerTextY, 5, { size: headingFontSize, bold: true });
+    drawTextInCell("TIME", colX.time + 13, headerTextY, 7, { size: headingFontSize, bold: true });
+    drawTextInCell("REMARK", colX.remark + 8, headerTextY, 10, { size: remarkHeadingFontSize, bold: true });
 
     if (rows.length === 0) {
       const rowTop = activeTableTop + headerHeight;
       const rowY = yFromTop(rowTop, activeRowHeight);
       drawTextInCell(log?.noEntryText || "No valid removal entries", x + 10, rowY + activeRowHeight / 2 - 2, 46, {
-        size: activeFontSize,
+        size: rowContentFontSize,
         bold: true,
       });
     } else {
@@ -17076,11 +17090,14 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
         const rowY = yFromTop(rowTop, activeRowHeight);
         const textY = rowY + activeRowHeight / 2 - 2.2;
 
-        drawTextInCell(String(index + 1).padStart(2, "0"), colX.no + 8, textY, 4, { size: activeFontSize, bold: false });
-        drawTextInCell(entry.trainId || "-", colX.train, textY, 8, { size: activeFontSize, bold: true, align: "center", width: colWidths.train });
-        drawTextInCell(entry.tid || "-", colX.tid + 8, textY, 6, { size: activeFontSize, bold: false });
-        drawTextInCell(entry.time ? `${entry.time} hrs` : "-", colX.time + 8, textY, 11, { size: activeFontSize, bold: false });
-        drawRemarkPills(entry, colX.remark, rowY, colWidths.remark, activeRowHeight, textY, activeFontSize);
+        drawTextInCell(String(index + 1).padStart(2, "0"), colX.no + 8, textY, 4, { size: rowContentFontSize, bold: false });
+        drawTextInCell(entry.trainId || "-", colX.train, textY, 8, { size: rowContentFontSize, bold: true, align: "center", width: colWidths.train });
+        drawTextInCell(entry.tid || "-", colX.tid + 8, textY, 6, { size: rowContentFontSize, bold: false });
+        drawTextInCell(entry.time ? `${entry.time} hrs` : "-", colX.time + 8, textY, 11, { size: rowContentFontSize, bold: false });
+        drawRemarkPills(entry, colX.remark, rowY, colWidths.remark, activeRowHeight, textY, activeFontSize, {
+          baseFontSize: remarkContentFontSize,
+          maxFontSize: remarkContentFontSize,
+        });
       });
     }
 
@@ -17194,11 +17211,15 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
       tableTop,
       columnTitleTop,
       rowHeight: stackedRemovalRowHeight,
+      fontReferenceRowHeight: stackedActionRowHeight,
+      contentFontBoost: 2,
     });
     drawRemovalColumn(eastLog, marginX, "east", {
       tableTop: stackedEastTableTop,
       columnTitleTop: stackedEastTitleTop,
       rowHeight: stackedRemovalRowHeight,
+      fontReferenceRowHeight: stackedActionRowHeight,
+      contentFontBoost: 2,
     });
     drawRequestedActionOverviewTable(
       actionOverviewRows,
@@ -17213,11 +17234,13 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
       tableTop,
       columnTitleTop,
       rowHeight: leftRowHeight,
+      fontReferenceRowHeight: rightRowHeight,
     });
     drawRemovalColumn(eastLog, rightColumnX, "east", {
       tableTop,
       columnTitleTop,
       rowHeight: rightRowHeight,
+      fontReferenceRowHeight: rightRowHeight,
     });
     drawRequestedActionOverviewTable(actionOverviewRows, rightColumnX, actionTitleTop, actionTableTop, rightRowHeight);
   }
