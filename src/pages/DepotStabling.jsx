@@ -15767,7 +15767,7 @@ function Arrival3A1P2Lookup({ activeTimetable = null, activeTimetableType = "wee
           value={searchTid}
           onChange={handleSearchChange}
           placeholder="Search TID for Arrival 3A1P2…"
-          className="flex-1 bg-transparent text-sm font-semibold outline-none placeholder:font-normal"
+          className="flex-1 bg-transparent text-sm font-semibold outline-none placeholder:text-[13px] placeholder:font-normal"
           style={{
             color: found ? "#fde68a" : notFound ? "#fca5a5" : searchTid ? "#e2eaf4" : undefined,
             caretColor: "#4f8ef7",
@@ -15801,9 +15801,9 @@ function Arrival3A1P2Lookup({ activeTimetable = null, activeTimetableType = "wee
                 <circle cx="12" cy="12" r="9" />
                 <polyline points="12 7 12 12 15 14" />
               </svg>
-              <span className="text-[11px] font-bold tracking-wide" style={{ color: "#a3e635" }}>TID {normalizedTid}</span>
-              <span className="text-[10px] font-bold" style={{ color: "#6a9a20" }}>Arrival 3A1P2</span>
-              <span className="text-[11px] font-bold" style={{ color: "#d9f99d" }}>{formatTimetableTimeWithHrs(arrivalTime)}</span>
+              <span className="text-[13px] font-bold tracking-wide" style={{ color: "#a3e635" }}>TID {normalizedTid}</span>
+              <span className="text-[12px] font-bold" style={{ color: "#6a9a20" }}>Arrival 3A1P2</span>
+              <span className="text-[13px] font-bold" style={{ color: "#d9f99d" }}>{formatTimetableTimeWithHrs(arrivalTime)}</span>
             </div>
           ) : (
             <div
@@ -15815,7 +15815,7 @@ function Arrival3A1P2Lookup({ activeTimetable = null, activeTimetableType = "wee
                 <line x1="15" y1="9" x2="9" y2="15" />
                 <line x1="9" y1="9" x2="15" y2="15" />
               </svg>
-              <span className="text-[11px] font-bold" style={{ color: "#f87171" }}>
+              <span className="text-[13px] font-bold" style={{ color: "#f87171" }}>
                 {activeTimetable
                   ? `TID ${normalizedTid} not found in ${timetableLabel} timetable`
                   : `No uploaded ${timetableLabel} timetable found`}
