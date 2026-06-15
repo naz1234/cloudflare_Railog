@@ -15854,8 +15854,8 @@ function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null
   }).length;
 
   return (
-    <div className="flex h-fit self-start flex-col leading-tight">
-      <div className="mb-2.5 text-[10px] font-normal text-[#d8e7f7] tracking-wide whitespace-nowrap">
+    <div className="flex h-fit w-[500px] max-w-full self-start flex-col leading-tight">
+      <div className="mb-2.5 max-w-full text-[12px] font-normal leading-snug text-[#d8e7f7] tracking-wide whitespace-normal break-words">
         Requested Train: Total: {totalRows} | Need Swapping: {needSwappingCount} trains | Early Shift Removal to West Depot: {earlyShiftRemovalCount} trains | Late Shift Removal: {lateShiftRemovalCount} trains
       </div>
 
@@ -16132,7 +16132,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
           />
         </div>
 
-        <div className="min-w-[360px] max-w-[520px] flex-1 pt-[35px]">
+        <div className="min-w-0 max-w-[520px] flex-1 pt-[35px]">
           <RequestedTrainActionSummary rows={actionOverviewRows} requests={requests} />
         </div>
       </div>
