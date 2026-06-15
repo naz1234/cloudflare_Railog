@@ -15976,7 +15976,7 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
   const summaryLines = buildRequestedActionSummaryLines(summaryRows);
   if (!summaryLines.length) return null;
 
-  const summaryText = summaryLines.join("\n");
+  const summaryText = summaryLines.map((line) => `• ${line}`).join("\n\n");
 
   const handleCopySummary = async () => {
     const ok = await copyTextToClipboard(summaryText);
@@ -16004,9 +16004,13 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
       </div>
       <div>
         {summaryLines.map((line, index) => (
-          <p key={`requested-action-summary-${index}`} className={index > 0 ? "mt-1" : ""}>
-            {line}
-          </p>
+          <div
+            key={`requested-action-summary-${index}`}
+            className={`flex items-start gap-2 ${index > 0 ? "mt-2" : ""}`}
+          >
+            <span className="shrink-0 leading-snug text-[#eaf4ff]">•</span>
+            <p className="m-0 min-w-0">{line}</p>
+          </div>
         ))}
       </div>
     </div>
