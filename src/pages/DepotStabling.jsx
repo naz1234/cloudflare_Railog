@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react"; 
+import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -16730,7 +16730,10 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
 
   // Special weekday morning layout: two compact removal tables on the left,
   // one full-height requested-train table on the right.
-  const stackedInterTableSpace = 44;
+  // Keep the same 20pt title-to-table gap for West, East and Requested Train.
+  // The stacked gap is 18pt between the West table and East title, plus 20pt
+  // between the East title and East table.
+  const stackedInterTableSpace = 38;
   const stackedRemovalRowHeight = Math.max(
     8.4,
     Math.min(
@@ -16740,7 +16743,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
   );
   const stackedWestTableHeight = headerHeight + westRowCount * stackedRemovalRowHeight;
   const stackedEastTitleTop = tableTop + stackedWestTableHeight + 18;
-  const stackedEastTableTop = stackedEastTitleTop + 26;
+  const stackedEastTableTop = stackedEastTitleTop + 20;
   const stackedActionRowHeight = Math.max(
     8.4,
     Math.min(14.2, (rightAvailableHeight - headerHeight) / actionOverviewRowCount)
@@ -16765,7 +16768,8 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     color: "#000000",
     font: "F2",
   });
-  ops += line(marginX, yFromTop(titleTop + 16), pageWidth - marginX, yFromTop(titleTop + 16), 0.5);
+  // Keep the main title clean. Section headings below provide the visual
+  // separation, so the previous full-page rule is intentionally removed.
 
   const getFittedPdfText = (value, maxLength) => truncatePdfText(value || "-", maxLength);
   const getFontSizeForRowHeight = (rowH) => (rowH <= 9.2 ? 4.7 : rowH <= 10.5 ? 5.2 : rowH <= 12 ? 5.8 : rowH <= 13.5 ? 6.4 : 6.8);
@@ -17085,6 +17089,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
   const drawRemovalColumn = (log = {}, x, sideLabel, optionsForTable = {}) => {
     const rows = Array.isArray(log?.entries) ? log.entries : [];
     const title = sideLabel === "west" ? "WEST DEPOT" : "EAST DEPOT";
+    const sectionTitle = `${title} - Total: ${rows.length}`;
     const activeTableTop = optionsForTable.tableTop ?? tableTop;
     const activeColumnTitleTop = optionsForTable.columnTitleTop ?? columnTitleTop;
     const activeRowHeight = optionsForTable.rowHeight ?? rightRowHeight;
@@ -17115,7 +17120,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const tableHeight = headerHeight + rowCount * activeRowHeight;
     const tableY = yFromTop(activeTableTop, tableHeight);
 
-    ops += pdfText(title, x, yFromTop(activeColumnTitleTop), {
+    ops += pdfText(sectionTitle, x, yFromTop(activeColumnTitleTop), {
       size: 10.4,
       color: "#000000",
       font: "F2",
@@ -17192,14 +17197,11 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const tableHeight = headerHeight + rowCount * rowH;
     const tableY = yFromTop(tableTopForTable, tableHeight);
 
-    ops += pdfText("REQUESTED TRAIN:", x, yFromTop(titleTopForTable), {
+    const requestedTrainTotal = rawActionOverviewRows.filter((row) => row && !row.isSeparator).length;
+    ops += pdfText(`REQUESTED TRAIN - Total: ${requestedTrainTotal}`, x, yFromTop(titleTopForTable), {
       size: 10.4,
       color: "#000000",
       font: "F2",
-    });
-    ops += pdfText(`Total: ${rawActionOverviewRows.filter((row) => row && !row.isSeparator).length}`, x, yFromTop(titleTopForTable + 12), {
-      size: 6.5,
-      color: "#000000",
     });
 
     ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
