@@ -5106,10 +5106,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
       // Keep the file download as the first action in the click handler.
       // Some browsers/PWA views can ignore the download when a state update runs first.
-      const stackMorningDepots =
-        normalizeTimetableType(activeTimetableType) === "weekday" &&
-        (latestTrainRemState?.selectedPreset?.west || "9am") === "9am" &&
-        (latestTrainRemState?.selectedPreset?.east || "9am") === "9am";
+      // Keep the PDF arrangement identical for every preset:
+      // West above East on the left, Requested Train on the right.
+      const stackMorningDepots = true;
 
       downloadCombinedRemovalPdf(westLog, eastLog, {
         swappingRows,
@@ -5197,7 +5196,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   color: pdfActive ? "#86efac" : "#b6f3ff",
                   boxShadow: pdfActive ? "0 0 12px rgba(34,197,94,0.16)" : "0 0 12px rgba(34,211,238,0.16)",
                 }}
-                title="Download one-page PDF: West Depot left, East Depot right"
+                title="Download one-page PDF: West and East stacked left, Requested Train right"
               >
                 <FileText size={12} />
                 {pdfActive ? "Done" : "PDF"}
@@ -16685,10 +16684,10 @@ function buildRemovalPdfBlob(log = {}) {
 
 function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
   // A4 landscape, one page.
-  // Weekday + both 9am presets: West and East are stacked on the left,
-  // while REQUESTED TRAIN uses the full right column.
-  // Other presets keep the standard West-left / East-right layout.
-  const stackMorningDepots = Boolean(options?.stackMorningDepots);
+  // Keep every removal preset consistent with the clean 9am arrangement:
+  // West and East are stacked on the left, while REQUESTED TRAIN uses
+  // the full right column with the same table sizing and font treatment.
+  const stackMorningDepots = options?.stackMorningDepots !== false;
   const pageWidth = 841.89;
   const pageHeight = 595.28;
   const marginX = 22;
@@ -17384,7 +17383,7 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
               color: pdfReady ? "#86efac" : "#b6f3ff",
               boxShadow: pdfReady ? "0 0 12px rgba(34,197,94,0.16)" : "0 0 12px rgba(34,211,238,0.16)",
             }}
-            title="Download one-page PDF: West Depot left, East Depot right"
+            title="Download one-page PDF: West and East stacked left, Requested Train right"
           >
             <FileText size={12} />
             {pdfReady ? "Done" : "PDF"}
@@ -17447,10 +17446,9 @@ function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {}, requ
   });
   const swappingRows = getLatestSwappingRows();
   const actionOverviewRows = getLatestActionOverviewRows();
-  const stackMorningDepots =
-    normalizeTimetableType(activeTimetableType) === "weekday" &&
-    (trainRemState?.selectedPreset?.west || "9am") === "9am" &&
-    (trainRemState?.selectedPreset?.east || "9am") === "9am";
+  // Use the same clean PDF layout for 9am, 7pm and 12am:
+  // West table above East on the left, Requested Train on the right.
+  const stackMorningDepots = true;
 
   return (
     <section
