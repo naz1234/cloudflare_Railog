@@ -16677,8 +16677,8 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
   const hasActionOverviewRows = actionOverviewRows.some((row) => row && !row.isSeparator);
 
   const titleTop = 28;
-  const columnTitleTop = 62;
-  const tableTop = 88;
+  const columnTitleTop = 52;
+  const tableTop = 72;
   const tableBottomTop = 566;
   const headerHeight = 17;
   const actionSectionGap = 30;
@@ -16739,16 +16739,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     color: "#000000",
     font: "F2",
   });
-  ops += pdfText(
-    `West: ${westRows.length} ${westRows.length === 1 ? "train" : "trains"}   |   East: ${eastRows.length} ${eastRows.length === 1 ? "train" : "trains"}   |   Requested train: ${rawActionOverviewRows.filter((row) => row && !row.isSeparator).length}`,
-    marginX,
-    yFromTop(titleTop + 16),
-    {
-      size: 7.3,
-      color: "#000000",
-    }
-  );
-  ops += line(marginX, yFromTop(titleTop + 24), pageWidth - marginX, yFromTop(titleTop + 24), 0.5);
+  ops += line(marginX, yFromTop(titleTop + 16), pageWidth - marginX, yFromTop(titleTop + 16), 0.5);
 
   const getFittedPdfText = (value, maxLength) => truncatePdfText(value || "-", maxLength);
   const getFontSizeForRowHeight = (rowH) => (rowH <= 9.2 ? 4.7 : rowH <= 10.5 ? 5.2 : rowH <= 12 ? 5.8 : rowH <= 13.5 ? 6.4 : 6.8);
