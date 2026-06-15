@@ -9717,6 +9717,22 @@ function HeaderBookmarkDropdown({
   onSave,
   onDelete,
 }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const filteredLinks = useMemo(() => {
+    if (!normalizedSearchQuery) return links;
+
+    return links.filter((link) => {
+      const title = String(link?.title || "").toLowerCase();
+      const url = String(link?.url || "").toLowerCase();
+      return title.includes(normalizedSearchQuery) || url.includes(normalizedSearchQuery);
+    });
+  }, [links, normalizedSearchQuery]);
+
+  useEffect(() => {
+    if (!isOpen) setSearchQuery("");
+  }, [isOpen]);
+
   return (
     <div ref={menuRef} className="relative">
       <button
@@ -9728,8 +9744,8 @@ function HeaderBookmarkDropdown({
             : "bg-[#071828] border-[#2b6f93] text-cyan-100 hover:bg-cyan-500/10 hover:border-cyan-300/55"
         }`}
       >
-        <Bookmark className="w-3.5 h-3.5" />
-        Bookmarks
+        <Search className="w-3.5 h-3.5" />
+        Search
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
@@ -9751,6 +9767,29 @@ function HeaderBookmarkDropdown({
           </div>
 
           <div className="max-h-[330px] overflow-y-auto p-2">
+            <div className="relative mb-2">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#5d94bd]" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search saved bookmarks..."
+                className="h-9 w-full rounded-xl border border-[#2b4f6b] bg-[#061827] pl-9 pr-8 text-[11px] font-medium text-white outline-none transition placeholder:text-[#4a8ab5] focus:border-cyan-300/60 focus:bg-[#082036]"
+                aria-label="Search saved bookmarks"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-md text-[#7eb8e0] transition hover:bg-cyan-500/10 hover:text-white"
+                  title="Clear search"
+                  aria-label="Clear bookmark search"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
             {error && (
               <div className="mb-2 rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-[10px] text-red-100">
                 {error}
@@ -9776,9 +9815,14 @@ function HeaderBookmarkDropdown({
               <div className="rounded-xl border border-dashed border-[#2b4f6b] bg-[#082036] px-3 py-4 text-center text-[11px] text-[#7eb8e0]">
                 No bookmark yet. Click <span className="font-bold text-cyan-200">Add</span> to create an external shortcut.
               </div>
+            ) : filteredLinks.length === 0 && editId !== NEW_BOOKMARK_ID ? (
+              <div className="rounded-xl border border-dashed border-[#2b4f6b] bg-[#082036] px-3 py-4 text-center text-[11px] text-[#7eb8e0]">
+                No saved bookmark matches <span className="font-bold text-cyan-200">{searchQuery.trim()}</span>.
+              </div>
             ) : (
               <div className="space-y-1.5">
-                {links.map((link, index) => {
+                {filteredLinks.map((link) => {
+                  const index = links.findIndex((item) => item.id === link.id);
                   const isEditing = editId === link.id;
                   const theme = getBookmarkTheme(link, index);
 
