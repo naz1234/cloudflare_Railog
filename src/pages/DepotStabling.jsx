@@ -14924,6 +14924,20 @@ function sortRequestedActionRows(rows = []) {
   });
 }
 
+function addWashOnlySeparator(rows = [], keyPrefix = "requested-action") {
+  const safeRows = (Array.isArray(rows) ? rows : []).filter(Boolean);
+  const firstWashOnlyIndex = safeRows.findIndex((row) => getRequestedRowWashOnlySortValue(row) === 1);
+
+  // Add a blank row only when single WASH-only requests follow other remarks.
+  if (firstWashOnlyIndex <= 0) return safeRows;
+
+  return [
+    ...safeRows.slice(0, firstWashOnlyIndex),
+    { key: `${keyPrefix}-wash-only-separator`, isSeparator: true, separatorType: "washOnly" },
+    ...safeRows.slice(firstWashOnlyIndex),
+  ];
+}
+
 function mergeRequestedActionRowsByTrain(rows = []) {
   const mergedMap = new Map();
 
@@ -15037,8 +15051,8 @@ function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, wes
 
   const sortRows = (rows = []) => sortRequestedActionRows(mergeRequestedActionRowsByTrain(rows));
 
-  const sortedSwapRows = sortRows(swapRows);
-  const sortedRemovalRows = sortRows(removalRows);
+  const sortedSwapRows = addWashOnlySeparator(sortRows(swapRows), "requested-action-swap");
+  const sortedRemovalRows = addWashOnlySeparator(sortRows(removalRows), "requested-action-removal");
 
   if (sortedSwapRows.length && sortedRemovalRows.length) {
     return [
@@ -15091,13 +15105,19 @@ function getRequestedTrainActionOverviewRowsFromSwappingTable({ swappingRows = [
     };
   });
 
-  const mergedSwapRows = sortRequestedActionRows(mergeRequestedActionRowsByTrain(
-    requestedActionRows.filter((row) => row?.group !== "removal")
-  ));
-  const mergedRemovalRows = sortRequestedActionRows(mergeRequestedActionRowsByTrain([
-    ...removalRows,
-    ...requestedActionRows.filter((row) => row?.group === "removal"),
-  ]));
+  const mergedSwapRows = addWashOnlySeparator(
+    sortRequestedActionRows(mergeRequestedActionRowsByTrain(
+      requestedActionRows.filter((row) => row?.group !== "removal")
+    )),
+    "requested-action-swap"
+  );
+  const mergedRemovalRows = addWashOnlySeparator(
+    sortRequestedActionRows(mergeRequestedActionRowsByTrain([
+      ...removalRows,
+      ...requestedActionRows.filter((row) => row?.group === "removal"),
+    ])),
+    "requested-action-removal"
+  );
 
   if (mergedSwapRows.length && mergedRemovalRows.length) {
     return [
