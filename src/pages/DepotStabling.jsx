@@ -16455,7 +16455,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
 
   const titleTop = 28;
   const columnTitleTop = 62;
-  const tableTop = 108;
+  const tableTop = 88;
   const tableBottomTop = 566;
   const headerHeight = 17;
   const actionSectionGap = 30;
@@ -16785,7 +16785,6 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
 
   const drawRemovalColumn = (log = {}, x, sideLabel, optionsForTable = {}) => {
     const rows = Array.isArray(log?.entries) ? log.entries : [];
-    const source = log?.source || "Mainline";
     const title = sideLabel === "west" ? "WEST DEPOT" : "EAST DEPOT";
     const activeTableTop = optionsForTable.tableTop ?? tableTop;
     const activeColumnTitleTop = optionsForTable.columnTitleTop ?? columnTitleTop;
@@ -16816,11 +16815,6 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
       color: "#000000",
       font: "F2",
     });
-    ops += pdfText(`Source: ${source} | Total: ${rows.length}`, x, yFromTop(activeColumnTitleTop + 14), {
-      size: 6.8,
-      color: "#000000",
-    });
-
     ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
 
     const headerBottomY = yFromTop(activeTableTop + headerHeight);
