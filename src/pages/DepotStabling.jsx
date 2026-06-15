@@ -16909,7 +16909,16 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     return { fill: "#ef4444", stroke: "#b91c1c", text: "#ffffff", icon: "#ffffff" };
   };
 
-  const drawActionStatusInCell = (entry = {}, cellX, rowY, cellWidth, rowH, textY, activeFontSize) => {
+  const drawActionStatusInCell = (
+    entry = {},
+    cellX,
+    rowY,
+    cellWidth,
+    rowH,
+    textY,
+    activeFontSize,
+    fontOptions = {}
+  ) => {
     const group = entry?.group === "removal" ? "removal" : "swap";
     const label = entry?.actionLabel || (group === "removal" ? "Removal" : "Need Swapping");
     const cleanLabel = sanitizePdfText(label);
@@ -16917,22 +16926,46 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const actionSymbol = (entry?.actionSymbol || "").toString().trim();
     const symbolToDraw = hasExplicitActionSymbol ? actionSymbol : (group === "removal" ? "✓" : "⇆");
     const colors = getPdfActionStatusColors(entry);
-    const pillHeight = Math.max(7.0, Math.min(rowH - 1.0, 10.8));
+
+    // Match the REQUESTED TRAIN action pill height and text scale to the
+    // West/East depot remark pills. Longer action labels are reduced only
+    // when needed to stay inside the action column.
+    const pillHeight = Math.max(6.4, Math.min(10.8, rowH - 2.4));
     const pillY = rowY + (rowH - pillHeight) / 2;
-    const labelSize = Math.max(4.2, Math.min(6.0, activeFontSize + 0.45));
-    const cleanLabelWidth = getApproxPdfTextWidth(cleanLabel, labelSize, false);
-    const symbolWidth = symbolToDraw ? (symbolToDraw === "⇆" ? Math.max(7.8, pillHeight * 1.05) : Math.max(4.4, pillHeight * 0.55)) : 0;
-    const pillWidth = Math.min(cellWidth - 6, Math.max(54, cleanLabelWidth + symbolWidth + 18));
-    const pillX = cellX + Math.max(3, (cellWidth - pillWidth) / 2);
+    const requestedPillFontSize = Number(fontOptions?.baseFontSize);
+    const requestedPillMaxSize = Number(fontOptions?.maxFontSize);
+    const pillFontTarget = Number.isFinite(requestedPillFontSize)
+      ? requestedPillFontSize
+      : activeFontSize + 0.6;
+    const pillFontMax = Number.isFinite(requestedPillMaxSize)
+      ? requestedPillMaxSize
+      : pillFontTarget;
+    let labelSize = Math.max(3.8, Math.min(pillFontMax, pillFontTarget));
+    const symbolWidth = symbolToDraw
+      ? (symbolToDraw === "⇆" ? Math.max(7.8, pillHeight * 1.05) : Math.max(4.4, pillHeight * 0.55))
+      : 0;
+    const maxContentWidth = Math.max(30, cellWidth - 18);
+    let cleanLabelWidth = getApproxPdfTextWidth(cleanLabel, labelSize, true);
+
+    while (cleanLabelWidth + (symbolToDraw ? symbolWidth + 4 : 0) > maxContentWidth && labelSize > 3.2) {
+      labelSize -= 0.15;
+      cleanLabelWidth = getApproxPdfTextWidth(cleanLabel, labelSize, true);
+    }
+
+    const pillWidth = Math.min(
+      cellWidth - 8,
+      Math.max(54, cleanLabelWidth + (symbolToDraw ? symbolWidth + 4 : 0) + 16)
+    );
+    const pillX = cellX + Math.max(4, (cellWidth - pillWidth) / 2);
     const centerY = rowY + rowH / 2;
     const contentWidth = cleanLabelWidth + (symbolToDraw ? symbolWidth + 4 : 0);
-    const textX = pillX + Math.max(6, (pillWidth - contentWidth) / 2);
+    const textX = pillX + Math.max(5, (pillWidth - contentWidth) / 2);
     const pillTextY = centerY - labelSize * 0.36;
 
     ops += pdfRoundedRect(pillX, pillY, pillWidth, pillHeight, pillHeight / 2, {
       fill: colors.fill,
       stroke: colors.stroke,
-      strokeWidth: 0.45,
+      strokeWidth: 0.35,
     });
 
     ops += pdfText(cleanLabel, textX, pillTextY, {
@@ -17215,7 +17248,20 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
           paddingX: 4,
           paddingY: 1,
         });
-        drawActionStatusInCell(entry, colX.action, rowY, colWidths.action, rowH, textY, activeFontSize);
+        const actionPillFontSize = activeFontSize + 0.6 + contentFontBoost;
+        drawActionStatusInCell(
+          entry,
+          colX.action,
+          rowY,
+          colWidths.action,
+          rowH,
+          textY,
+          activeFontSize,
+          {
+            baseFontSize: actionPillFontSize,
+            maxFontSize: actionPillFontSize,
+          }
+        );
       });
     }
 
