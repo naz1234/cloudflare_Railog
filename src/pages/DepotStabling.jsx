@@ -15726,7 +15726,7 @@ function Arrival3A1P2Lookup({ activeTimetable = null, activeTimetableType = "wee
   };
 
   return (
-    <div className="mb-4 w-full max-w-[500px]">
+    <div className="mb-3 w-full">
       <div
         className="flex items-center gap-2 rounded-xl px-3 py-2 transition-all"
         style={{
