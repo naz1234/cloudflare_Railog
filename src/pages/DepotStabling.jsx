@@ -2031,7 +2031,9 @@ function isWashOnlyRequestedRemark(value = "") {
 }
 
 function getWashOnlyShiftRemovalAction({ tid = "", requestType = "", westRemovalRow = null, activeTimetableType = "weekday" } = {}) {
-  if (!isWashOnlyRequestedRemark(requestType)) return null;
+  // Actual timetable removal rows must use their shift label regardless of the
+  // request remark. Washing-only rules still apply to the 9am reference rows.
+  if (!westRemovalRow && !isWashOnlyRequestedRemark(requestType)) return null;
 
   const tidKey = normalizeTrainRemTidValue(tid || westRemovalRow?.tid || "");
   if (!tidKey) return null;
@@ -2040,7 +2042,9 @@ function getWashOnlyShiftRemovalAction({ tid = "", requestType = "", westRemoval
   const isEarlyShiftRemoval = Boolean(
     westRemovalRow?.isWest9amRealRemoval || TRAIN_REM_WEST_9AM_REAL_TID_SET.has(tidKey)
   );
-  const isLateShiftRemoval = TRAIN_REM_WASH_LATE_SHIFT_TID_SET.has(tidKey);
+  const isLateShiftRemoval = Boolean(
+    westRemovalRow?.selectedPreset === "7pm" || TRAIN_REM_WASH_LATE_SHIFT_TID_SET.has(tidKey)
+  );
 
   if (isFridayOrSaturdayTimetable && (isEarlyShiftRemoval || isLateShiftRemoval)) {
     return {
