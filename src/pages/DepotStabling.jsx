@@ -16908,9 +16908,9 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     });
 
     const headerTextY = yFromTop(tableTopForTable + 11);
-    drawTextInCell("TRAIN", colX.train + 8, headerTextY, 8, { size: headerFontSize - 0.5, bold: true });
-    drawTextInCell("TID", colX.tid + 7, headerTextY, 5, { size: headerFontSize - 0.5, bold: true });
-    drawTextInCell("REMARK REQUEST", colX.request + 5, headerTextY, 24, { size: headerFontSize - 0.8, bold: true });
+    drawTextInCell("TRAIN", colX.train + 8, headerTextY, 8, { size: headerFontSize + 0.5, bold: true });
+    drawTextInCell("TID", colX.tid + 7, headerTextY, 5, { size: headerFontSize + 0.5, bold: true });
+    drawTextInCell("REMARK REQUEST", colX.request + 5, headerTextY, 24, { size: headerFontSize + 0.2, bold: true });
 
     if (!hasActionOverviewRows) {
       const rowY = yFromTop(tableTopForTable + headerHeight, rowH);
@@ -16927,19 +16927,19 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
         if (entry?.isSeparator) return;
 
         drawTextInCell(formatRequestedTrainNumber(entry?.trainsetNumber || entry?.key) || "-", colX.train, textY, 8, {
-          size: activeFontSize,
+          size: activeFontSize + 1,
           bold: true,
           align: "center",
           width: colWidths.train,
         });
         drawTextInCell(entry?.tid || "", colX.tid, textY, 5, {
-          size: activeFontSize,
+          size: activeFontSize + 1,
           bold: false,
           align: "center",
           width: colWidths.tid,
         });
         drawWrappedTextInCell(entry?.requestType || "-", colX.request, rowY, colWidths.request, rowH, {
-          size: Math.max(3.7, activeFontSize - 0.4),
+          size: Math.max(4.7, activeFontSize + 0.6),
           minSize: 2.2,
           bold: false,
           paddingX: 4,
