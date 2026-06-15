@@ -15828,10 +15828,9 @@ function Arrival3A1P2Lookup({ activeTimetable = null, activeTimetableType = "wee
   );
 }
 
-function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null }) {
+function getRequestedTrainActionCounts(rows = []) {
   const displayRows = Array.isArray(rows) ? rows : [];
   const countableRows = displayRows.filter((row) => row && !row.isSeparator);
-  const hasRows = countableRows.length > 0;
   const totalRows = countableRows.length;
   const needSwappingCount = countableRows.filter((row) => {
     const actionType = (row?.actionType || "").toString();
@@ -15853,12 +15852,26 @@ function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null
     return actionType === "lateShiftRem" || actionLabel.includes("late shift");
   }).length;
 
+  return { totalRows, needSwappingCount, earlyShiftRemovalCount, lateShiftRemovalCount };
+}
+
+function RequestedTrainActionOverviewSummary({ rows = [] }) {
+  const { totalRows, needSwappingCount, earlyShiftRemovalCount, lateShiftRemovalCount } = getRequestedTrainActionCounts(rows);
+
+  return (
+    <div className="mb-2.5 w-full overflow-x-auto text-[12px] font-normal leading-snug tracking-wide text-[#d8e7f7] whitespace-nowrap">
+      Requested Train: Total: {totalRows} | Need Swapping: {needSwappingCount} trains | Early Shift Removal to West Depot: {earlyShiftRemovalCount} trains | Late Shift Removal: {lateShiftRemovalCount} trains
+    </div>
+  );
+}
+
+function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null }) {
+  const displayRows = Array.isArray(rows) ? rows : [];
+  const countableRows = displayRows.filter((row) => row && !row.isSeparator);
+  const hasRows = countableRows.length > 0;
+
   return (
     <div className="flex h-fit w-[500px] max-w-full self-start flex-col leading-tight">
-      <div className="mb-2.5 max-w-full text-[12px] font-normal leading-snug text-[#d8e7f7] tracking-wide whitespace-normal break-words">
-        Requested Train: Total: {totalRows} | Need Swapping: {needSwappingCount} trains | Early Shift Removal to West Depot: {earlyShiftRemovalCount} trains | Late Shift Removal: {lateShiftRemovalCount} trains
-      </div>
-
       <div className="w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
         <table className="table-fixed text-[11px] leading-none" style={{ width: 500, maxWidth: "100%" }}>
           <colgroup>
@@ -16124,6 +16137,8 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
         lookupTime={arrivalLookupTime}
       />
 
+      <RequestedTrainActionOverviewSummary rows={actionOverviewRows} />
+
       <div className="flex w-full max-w-full items-start gap-3 overflow-x-auto pb-1">
         <div className="shrink-0">
           <RequestedTrainActionOverviewTable
@@ -16132,7 +16147,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
           />
         </div>
 
-        <div className="min-w-0 max-w-[520px] flex-1 pt-[35px]">
+        <div className="min-w-0 max-w-[520px] flex-1">
           <RequestedTrainActionSummary rows={actionOverviewRows} requests={requests} />
         </div>
       </div>
