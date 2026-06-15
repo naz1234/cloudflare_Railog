@@ -15722,7 +15722,7 @@ function RequestedActionStatusPill({ item }) {
     : (group === "removal" ? "✓" : "⇆");
 
   return (
-    <span className={`inline-flex min-w-[104px] items-center justify-center rounded-full border px-2 py-[3px] text-[12px] font-normal leading-none whitespace-nowrap ${getRequestedActionPillStyle(item)}`}>
+    <span className={`inline-flex min-w-[116px] items-center justify-center rounded-full border px-2.5 py-[3px] text-[12px] font-normal leading-none whitespace-nowrap ${getRequestedActionPillStyle(item)}`}>
       <span>{label}</span>
       {symbol && <span className="ml-1 font-normal">{symbol}</span>}
     </span>
@@ -15879,7 +15879,7 @@ function RequestedTrainActionOverviewSummary({ rows = [] }) {
   const { totalRows, needSwappingCount, earlyShiftRemovalCount, lateShiftRemovalCount } = getRequestedTrainActionCounts(rows);
 
   return (
-    <div className="mb-2.5 w-full overflow-x-auto text-[12px] font-normal leading-snug tracking-wide text-[#d8e7f7] whitespace-nowrap">
+    <div className="mb-2.5 w-full overflow-hidden text-[12px] font-normal leading-snug tracking-tight text-[#d8e7f7] whitespace-nowrap">
       Requested Train: Total: {totalRows} | Need Swapping: {needSwappingCount} trains | Early Shift Removal to West Depot: {earlyShiftRemovalCount} trains | Late Shift Removal: {lateShiftRemovalCount} trains
     </div>
   );
@@ -15895,10 +15895,10 @@ function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null
       <div className="w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
         <table className="table-fixed text-[13px] leading-none" style={{ width: 500, maxWidth: "100%" }}>
           <colgroup>
-            <col style={{ width: 58 }} />
-            <col style={{ width: 52 }} />
-            <col style={{ width: 268 }} />
-            <col style={{ width: 122 }} />
+            <col style={{ width: 54 }} />
+            <col style={{ width: 48 }} />
+            <col style={{ width: 258 }} />
+            <col style={{ width: 140 }} />
           </colgroup>
           <thead>
             <tr className="bg-[#0a2237] text-[#cfe5fb]">
