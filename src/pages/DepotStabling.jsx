@@ -15358,16 +15358,15 @@ function buildRequestedTrainsDocx({ swappingRows = [], actionOverviewRows = [] }
     const safeRows = displayRows.filter((row) => row && !row.isSeparator);
     if (!safeRows.length) return "";
 
-    const widths = [850, 650, 1050, 1700, 1300];
+    const widths = [900, 700, 2400, 1550];
     const tableRows = [
-      requestedDocxRow(["Trainset number", "TID", "Arrival 3A1P2", "Remark Request", ""], { header: true, widths }),
+      requestedDocxRow(["Trainset number", "TID", "Remark Request", ""], { header: true, widths }),
       ...displayRows.map((row) => {
-        if (row?.isSeparator) return requestedDocxRow(["", "", "", "", ""], { widths });
+        if (row?.isSeparator) return requestedDocxRow(["", "", "", ""], { widths });
 
         return requestedDocxRow([
           formatRequestedTrainNumber(row.trainsetNumber || row.key),
           row.tid || "",
-          formatTimetableTimeWithHrs(row.arrival3A1P2),
           row.requestType || "",
           row.actionStatus || "",
         ], { widths });
@@ -16877,18 +16876,16 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const colWidths = {
       train: 72,
       tid: 38,
-      arrival: 72,
-      request: 110,
-      action: 88,
+      request: 170,
+      action: 100,
     };
     const colX = {
       train: x,
       tid: x + colWidths.train,
-      arrival: x + colWidths.train + colWidths.tid,
-      request: x + colWidths.train + colWidths.tid + colWidths.arrival,
-      action: x + colWidths.train + colWidths.tid + colWidths.arrival + colWidths.request,
+      request: x + colWidths.train + colWidths.tid,
+      action: x + colWidths.train + colWidths.tid + colWidths.request,
     };
-    const tableWidth = colWidths.train + colWidths.tid + colWidths.arrival + colWidths.request + colWidths.action;
+    const tableWidth = colWidths.train + colWidths.tid + colWidths.request + colWidths.action;
     const tableHeight = headerHeight + rowCount * rowH;
     const tableY = yFromTop(tableTopForTable, tableHeight);
 
@@ -16906,15 +16903,14 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     const headerBottomY = yFromTop(tableTopForTable + headerHeight);
     ops += line(x, headerBottomY, x + tableWidth, headerBottomY, 0.55);
 
-    [colX.tid, colX.arrival, colX.request, colX.action].forEach((gridX) => {
+    [colX.tid, colX.request, colX.action].forEach((gridX) => {
       ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
     });
 
     const headerTextY = yFromTop(tableTopForTable + 11);
     drawTextInCell("TRAIN", colX.train + 8, headerTextY, 8, { size: headerFontSize - 0.5, bold: true });
     drawTextInCell("TID", colX.tid + 7, headerTextY, 5, { size: headerFontSize - 0.5, bold: true });
-    drawTextInCell("ARRIVAL 3A1P2", colX.arrival + 4, headerTextY, 15, { size: headerFontSize - 1.0, bold: true });
-    drawTextInCell("REMARK REQUEST", colX.request + 5, headerTextY, 17, { size: headerFontSize - 0.8, bold: true });
+    drawTextInCell("REMARK REQUEST", colX.request + 5, headerTextY, 24, { size: headerFontSize - 0.8, bold: true });
 
     if (!hasActionOverviewRows) {
       const rowY = yFromTop(tableTopForTable + headerHeight, rowH);
@@ -16942,12 +16938,6 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
           align: "center",
           width: colWidths.tid,
         });
-        drawTextInCell(formatTimetableTimeWithHrs(entry?.arrival3A1P2), colX.arrival, textY, 12, {
-          size: Math.max(3.8, activeFontSize - 0.4),
-          bold: false,
-          align: "center",
-          width: colWidths.arrival,
-        });
         drawWrappedTextInCell(entry?.requestType || "-", colX.request, rowY, colWidths.request, rowH, {
           size: Math.max(3.7, activeFontSize - 0.4),
           minSize: 2.2,
@@ -16964,7 +16954,7 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
       ops += line(x, rowLineY, x + tableWidth, rowLineY, 0.38);
     }
 
-    [x, colX.tid, colX.arrival, colX.request, colX.action, x + tableWidth].forEach((gridX) => {
+    [x, colX.tid, colX.request, colX.action, x + tableWidth].forEach((gridX) => {
       ops += line(gridX, tableY, gridX, tableY + tableHeight, 0.35);
     });
     ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
