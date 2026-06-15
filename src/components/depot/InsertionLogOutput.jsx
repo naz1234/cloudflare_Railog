@@ -45,7 +45,7 @@ function buildSweepingCopyText(lines, depotLabel) {
   const trainList = formatSentenceList(lines.map((line) => line.trainKey));
   const signalList = formatSentenceList(lines.map(getSweepSignal));
   const destinationText = signalList ? ` to ${signalList}` : "";
-  const header = `Insertion train ${trainList} from ${depotName}${destinationText}.`;
+  const header = `Sweeping train ${trainList} from ${depotName}${destinationText}.`;
 
   return [header, "", ...lines.map((line) => line.text)].join("\n");
 }
