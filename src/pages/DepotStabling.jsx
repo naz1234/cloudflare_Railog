@@ -15722,7 +15722,7 @@ function RequestedActionStatusPill({ item }) {
     : (group === "removal" ? "✓" : "⇆");
 
   return (
-    <span className={`inline-flex min-w-[104px] items-center justify-center rounded-full border px-2 py-[3px] text-[10px] font-normal leading-none whitespace-nowrap ${getRequestedActionPillStyle(item)}`}>
+    <span className={`inline-flex min-w-[104px] items-center justify-center rounded-full border px-2 py-[3px] text-[12px] font-normal leading-none whitespace-nowrap ${getRequestedActionPillStyle(item)}`}>
       <span>{label}</span>
       {symbol && <span className="ml-1 font-normal">{symbol}</span>}
     </span>
@@ -15893,7 +15893,7 @@ function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null
   return (
     <div className="flex h-fit w-[500px] max-w-full self-start flex-col leading-tight">
       <div className="w-fit max-w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071828]">
-        <table className="table-fixed text-[11px] leading-none" style={{ width: 500, maxWidth: "100%" }}>
+        <table className="table-fixed text-[13px] leading-none" style={{ width: 500, maxWidth: "100%" }}>
           <colgroup>
             <col style={{ width: 58 }} />
             <col style={{ width: 52 }} />
@@ -15940,7 +15940,7 @@ function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null
                         maxLength={3}
                         placeholder="--"
                         title={item.manualTid ? "Enter TID manually" : (displayTid ? "Matched TID from train removal/reference row" : "Enter TID manually")}
-                        className="h-[19px] w-[46px] bg-transparent px-1 py-0 text-center text-[11px] font-normal leading-none tracking-wide text-[#eef7ff] outline-none placeholder:text-[#8fa6bd] focus:text-sky-200"
+                        className="h-[21px] w-[46px] bg-transparent px-1 py-0 text-center text-[13px] font-normal leading-none tracking-wide text-[#eef7ff] outline-none placeholder:text-[#8fa6bd] focus:text-sky-200"
                       />
                     ) : displayTid}
                   </td>
