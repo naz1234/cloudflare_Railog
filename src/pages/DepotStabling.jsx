@@ -2030,6 +2030,34 @@ function isWashOnlyRequestedRemark(value = "") {
   return getRequestedWashOnlySortValue(value) === 1;
 }
 
+function getEosRemovalAction({ westRemovalRow = null, activeTimetableType = "weekday" } = {}) {
+  const normalizedType = normalizeTimetableType(activeTimetableType);
+  const isFridayOrSaturdayTimetable = ["friday", "saturday"].includes(normalizedType);
+
+  // On a weekday, only a confirmed row in the 12am preset is an EOS removal.
+  // A blank TID (for example a train entered without a timetable match) keeps
+  // the normal Removal ✓ label until the EOS match is confirmed.
+  const selectedPreset = (westRemovalRow?.selectedPreset || "").toString().trim();
+  const tidKey = normalizeTrainRemTidValue(westRemovalRow?.tid || "");
+  const timingMinutes = excelTimeToMinutes(westRemovalRow?.timing || "");
+  const isWeekdayEosRemoval = Boolean(
+    normalizedType === "weekday"
+      && selectedPreset === "12am"
+      && tidKey
+      && (timingMinutes === null || timingMinutes < 180)
+  );
+
+  if (!isFridayOrSaturdayTimetable && !isWeekdayEosRemoval) return null;
+
+  return {
+    actionLabel: "EOS Removal",
+    actionSymbol: "✓",
+    actionStatus: "EOS Removal ✓",
+    actionType: "eosRemoval",
+    group: "removal",
+  };
+}
+
 function getWashOnlyShiftRemovalAction({ tid = "", requestType = "", westRemovalRow = null, activeTimetableType = "weekday" } = {}) {
   // Actual timetable removal rows must use their shift label regardless of the
   // request remark. Washing-only rules still apply to the 9am reference rows.
@@ -15016,18 +15044,13 @@ function getRequestedTrainActionOverviewRows({ requests = [], trainRemState, wes
       westRemovalRow: isRemoval ? westRemovalRow : null,
       activeTimetableType,
     });
-    const isEosRemovalTimetable = ["friday", "saturday"].includes(
-      normalizeTimetableType(activeTimetableType)
-    );
-    const resolvedRemovalAction = isRemoval && isEosRemovalTimetable
-      ? {
-          actionLabel: "EOS Removal",
-          actionSymbol: "✓",
-          actionStatus: "EOS Removal ✓",
-          actionType: "eosRemoval",
-          group: "removal",
-        }
-      : washShiftAction;
+    const eosRemovalAction = isRemoval
+      ? getEosRemovalAction({
+          westRemovalRow,
+          activeTimetableType,
+        })
+      : null;
+    const resolvedRemovalAction = eosRemovalAction || washShiftAction;
     const finalGroup = resolvedRemovalAction?.group || group;
     const actionLabel = resolvedRemovalAction?.actionLabel || (isRemoval ? "Removal" : "Need Swapping");
     const actionSymbol = resolvedRemovalAction ? resolvedRemovalAction.actionSymbol : (isRemoval ? "✓" : "⇆");
