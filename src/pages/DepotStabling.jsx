@@ -5486,7 +5486,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       onBlur={() => handleTrainRemTrainIdBlur(depot, index)}
                       placeholder="ID"
                       title={referenceOnly ? rowStatusTitle : isDuplicateTrainId ? "Duplicate Train ID detected" : ""}
-                      className={`w-full h-5 rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${trainIdInputClass}`}
+                      className={`w-full ${referenceOnly ? "h-[19px]" : "h-5"} rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${trainIdInputClass}`}
                     />
                   </td>
                   <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: filledRowBg }}>
@@ -5513,7 +5513,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       maxLength={3}
                       readOnly={referenceOnly}
                       title={referenceOnly ? rowStatusTitle : isDuplicateTid ? "Duplicate TID detected" : "Enter exactly 3 digits"}
-                      className={`w-full h-5 rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${tidInputClass}`}
+                      className={`w-full ${referenceOnly ? "h-[19px]" : "h-5"} rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${tidInputClass}`}
                     />
                   </td>
                   <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: filledRowBg }}>
@@ -5529,7 +5529,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       placeholder={referenceDisplayOnly ? "REF" : referenceOnly ? "" : "00:00"}
                       readOnly={referenceOnly}
                       title={referenceOnly ? rowStatusTitle : ""}
-                      className={`w-full h-5 rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${
+                      className={`w-full ${referenceOnly ? "h-[19px]" : "h-5"} rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${
                         isWest9amRemoval
                           ? "border-emerald-400/70 bg-emerald-950/35 text-emerald-100 cursor-default"
                           : isEast9amRemoval
@@ -5554,7 +5554,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       title={referenceOnly ? rowStatusTitle : requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
                       placeholder={referenceOnly ? "" : "Remark"}
                       style={requestRemarkStyle}
-                      className={`w-full h-5 rounded-md border px-1.5 text-[11px] ${referenceOnly ? "font-normal" : "font-semibold"} outline-none placeholder:text-[#2b4f6b] ${
+                      className={`w-full ${referenceOnly ? "h-[19px]" : "h-5"} rounded-md border px-1.5 text-[11px] ${referenceOnly ? "font-normal" : "font-semibold"} outline-none placeholder:text-[#2b4f6b] ${
                         requestRemark || referenceOnly
                           ? "cursor-default"
                           : "border-[#1e4060] bg-[#091828] text-[#c8d8ea] focus:border-[#4f8ef7]"
