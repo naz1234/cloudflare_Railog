@@ -678,7 +678,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       {hasWorkshopRequests && (
         <div className="border-b border-[#1a3a56]">
           <div className="flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Workshop Train</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Keyword "workshop"</span>
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
@@ -810,7 +810,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       <div className="overflow-visible">
         {(hasWorkshopRequests || hasAlreadyAtStablingOrWorkshopRequests) && (
           <div className="flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Other Request Type</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Pending Request</span>
             <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{regularRequests.length}</span>
           </div>
         )}
