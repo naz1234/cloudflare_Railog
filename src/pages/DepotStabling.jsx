@@ -5395,7 +5395,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       <td
                         colSpan={4}
                         className="border-b border-[#1f3c55] px-2 py-1 text-left text-[9.5px] font-normal text-amber-100"
-                        style={{ backgroundColor: index === TRAIN_REM_WEST_9AM_REAL_ROW_COUNT ? "#2a2110" : "#071828" }}
+                        style={{ backgroundColor: "#071828" }}
                       >
                       </td>
                     </tr>
@@ -5424,45 +5424,30 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   duplicateCounts[duplicateKey] > 1 &&
                   !shouldIgnoreFocusedPartialDuplicate(depot, index, row.trainId)
                 );
+                // Keep the combined 9am reference table visually consistent with the
+                // cleaner 7pm preset. Removal/reference logic still runs in the
+                // background, but it no longer colours the whole row or every field.
                 const filledRowBg = isDuplicateTrainId
                   ? "#2a0b13"
-                  : isWest9amRemoval
-                    ? (hasTrainId ? "#0a3329" : "#09271f")
-                    : isEast9amRemoval
-                      ? (hasTrainId ? "#0a2a42" : "#091f33")
-                      : referenceDisplayOnly
-                        ? (hasTrainId ? "#1f2615" : "#121d18")
-                        : hasTrainId
-                          ? "#082a25"
-                          : "#071828";
+                  : hasTrainId
+                    ? "#082a25"
+                    : "#071828";
                 const trainIdInputClass = isDuplicateTrainId
                   ? "border-red-500/90 bg-red-950/50 text-red-100 shadow-[0_0_0_1px_rgba(248,113,113,0.28),0_0_12px_rgba(248,113,113,0.16)]"
-                  : isWest9amRemoval
-                    ? "border-emerald-400/80 bg-emerald-950/40 text-emerald-100 shadow-[0_0_0_1px_rgba(52,211,153,0.18)]"
-                    : isEast9amRemoval
-                      ? "border-sky-400/80 bg-sky-950/40 text-sky-100 shadow-[0_0_0_1px_rgba(56,189,248,0.18)]"
-                      : referenceDisplayOnly
-                        ? "border-amber-500/45 bg-amber-950/20 text-amber-100"
-                        : hasTrainId
-                          ? "border-emerald-500/80 bg-emerald-950/35 text-emerald-100 shadow-[0_0_0_1px_rgba(16,185,129,0.18)]"
-                          : "border-[#1e4060] bg-[#091828] text-[#e2eaf4]";
+                  : hasTrainId
+                    ? "border-emerald-500/80 bg-emerald-950/35 text-emerald-100 shadow-[0_0_0_1px_rgba(16,185,129,0.18)]"
+                    : "border-[#1e4060] bg-[#091828] text-[#e2eaf4]";
                 const cleanTid = cleanTrainRemTidInput(row.tid);
                 const hasTid = cleanTid.length > 0;
                 const tidDuplicateKey = getTrainRemTidDuplicateKey(cleanTid);
                 const isDuplicateTid = Boolean(tidDuplicateKey && duplicateTidCounts[tidDuplicateKey] > 1);
-                const tidInputClass = referenceOnly
-                  ? isWest9amRemoval
-                    ? "border-emerald-400/80 bg-emerald-950/40 text-emerald-100 cursor-default"
-                    : isEast9amRemoval
-                      ? "border-sky-400/80 bg-sky-950/40 text-sky-100 cursor-default"
-                      : "border-amber-500/45 bg-amber-950/20 text-amber-100 cursor-default"
-                  : isDuplicateTid
+                const tidInputClass = isDuplicateTid
                   ? "border-red-500/90 bg-red-950/50 text-red-100 shadow-[0_0_0_1px_rgba(248,113,113,0.28),0_0_12px_rgba(248,113,113,0.16)]"
                   : cleanTid.length === 3
-                  ? "border-emerald-500/80 bg-emerald-950/35 text-emerald-100 shadow-[0_0_0_1px_rgba(16,185,129,0.18)]"
+                  ? `border-emerald-500/80 bg-emerald-950/35 text-emerald-100 shadow-[0_0_0_1px_rgba(16,185,129,0.18)]${referenceOnly ? " cursor-default" : ""}`
                   : hasTid
-                  ? "border-amber-500/70 bg-amber-950/25 text-amber-100"
-                  : "border-[#1e4060] bg-[#091828] text-[#c8d8ea]";
+                  ? `border-amber-500/70 bg-amber-950/25 text-amber-100${referenceOnly ? " cursor-default" : ""}`
+                  : `border-[#1e4060] bg-[#091828] text-[#c8d8ea]${referenceOnly ? " cursor-default" : ""}`;
 
                 return (
                   <Fragment key={`${depot}-train-rem-${index}`}>
@@ -5526,18 +5511,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                         }
                       }}
                       onBlur={handleTrainRemEditEnd}
-                      placeholder={referenceDisplayOnly ? "REF" : referenceOnly ? "" : "00:00"}
+                      placeholder={referenceOnly ? "" : "00:00"}
                       readOnly={referenceOnly}
                       title={referenceOnly ? rowStatusTitle : ""}
-                      className={`w-full ${referenceOnly ? "h-[19px]" : "h-5"} rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${
-                        isWest9amRemoval
-                          ? "border-emerald-400/70 bg-emerald-950/35 text-emerald-100 cursor-default"
-                          : isEast9amRemoval
-                            ? "border-sky-400/70 bg-sky-950/35 text-sky-100 cursor-default"
-                            : referenceDisplayOnly
-                              ? "border-amber-500/35 bg-[#121d18] text-amber-100 cursor-default placeholder:text-amber-700/70"
-                              : "border-[#1e4060] bg-[#071828] text-[#7eb8e0]"
-                      }`}
+                      className={`w-full ${referenceOnly ? "h-[19px]" : "h-5"} rounded-md border border-[#1e4060] bg-[#071828] px-1 text-center text-[11px] ${referenceOnly ? "font-normal cursor-default" : "font-bold"} text-[#7eb8e0] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]`}
                     />
                   </td>
                   <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: filledRowBg }}>
@@ -5556,16 +5533,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       style={requestRemarkStyle}
                       className={`w-full ${referenceOnly ? "h-[19px]" : "h-5"} rounded-md border px-1.5 text-[11px] ${referenceOnly ? "font-normal" : "font-semibold"} outline-none placeholder:text-[#2b4f6b] ${
                         requestRemark || referenceOnly
-                          ? "cursor-default"
+                          ? "cursor-default border-[#1e4060] bg-[#091828] text-[#c8d8ea]"
                           : "border-[#1e4060] bg-[#091828] text-[#c8d8ea] focus:border-[#4f8ef7]"
-                      } ${
-                        isWest9amRemoval
-                          ? "border-emerald-400/70 bg-emerald-950/35 text-emerald-100"
-                          : isEast9amRemoval
-                            ? "border-sky-400/70 bg-sky-950/35 text-sky-100"
-                            : referenceDisplayOnly
-                              ? "border-amber-500/35 bg-[#121d18] text-amber-100 placeholder:text-amber-700/70"
-                              : ""
                       }`}
                     />
                   </td>
