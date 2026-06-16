@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Trash2, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check } from "lucide-react";
+import { Plus, Trash2, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X } from "lucide-react";
 
 const MIN_VISIBLE_REQUEST_ROWS = 40;
 
@@ -96,6 +96,17 @@ function RequestCrossBubble({ message }) {
     <span className="request-cross-bubble pointer-events-none absolute left-[38px] top-1/2 z-[80] -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150">
       <span className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-b border-l border-slate-200 bg-white" />
       <span className="relative z-10">{message}</span>
+    </span>
+  );
+}
+
+function DeleteRequestIcon() {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-red-300/90 bg-[#ef3340] shadow-[0_0_8px_rgba(239,51,64,0.65)] transition-all group-hover/delete:scale-105 group-hover/delete:bg-[#ff4050]"
+    >
+      <X className="h-3 w-3 stroke-[3.5] text-white" />
     </span>
   );
 }
@@ -704,7 +715,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               <tr className="border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
                 <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">ID</th>
                 <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">Type</th>
-                <th className="w-4" />
+                <th className="w-7" />
               </tr>
             </thead>
             <tbody>
@@ -739,7 +750,14 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                       <RequestCrossLine show={crossedOut} />
                     </td>
                     <td className="relative pr-1 py-0.5 text-center">
-                      <button onClick={() => onRemove(req.id)} className="relative z-30 text-[#3a5a7a] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
+                      <button
+                        onClick={() => onRemove(req.id)}
+                        className="group/delete relative z-30 inline-flex h-[20px] w-[20px] items-center justify-center"
+                        aria-label={`Delete ${req.trainId}`}
+                        title="Delete request"
+                      >
+                        <DeleteRequestIcon />
+                      </button>
                       <RequestCrossLine show={crossedOut} />
                     </td>
                   </tr>
@@ -790,10 +808,11 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => onRemove(req.id)}
-                          className="relative z-30 inline-flex h-[18px] w-[16px] items-center justify-center text-[#3a5a7a] transition-colors hover:text-red-400"
-                          aria-label={`Remove ${req.trainId}`}
+                          className="group/delete relative z-30 inline-flex h-[20px] w-[20px] items-center justify-center"
+                          aria-label={`Delete ${req.trainId}`}
+                          title="Delete request"
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <DeleteRequestIcon />
                         </button>
                         <AlreadyStatusIcon message={statusMessage} />
                       </div>
@@ -819,7 +838,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             <tr className="border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
               <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">ID</th>
               <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">Type</th>
-              <th className="w-4" />
+              <th className="w-7" />
             </tr>
           </thead>
           <tbody>
@@ -861,7 +880,14 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                     <RequestCrossLine show={crossedOut} />
                   </td>
                   <td className="relative pr-1 py-0.5 text-center">
-                    <button onClick={() => onRemove(req.id)} className="relative z-30 text-[#3a5a7a] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
+                    <button
+                        onClick={() => onRemove(req.id)}
+                        className="group/delete relative z-30 inline-flex h-[20px] w-[20px] items-center justify-center"
+                        aria-label={`Delete ${req.trainId}`}
+                        title="Delete request"
+                      >
+                        <DeleteRequestIcon />
+                      </button>
                     <RequestCrossLine show={crossedOut} />
                   </td>
                 </tr>
