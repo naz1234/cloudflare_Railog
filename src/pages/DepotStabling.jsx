@@ -1992,41 +1992,6 @@ const TRAIN_REM_WASH_LATE_SHIFT_TIDS = [
   201, 203, 205, 213, 215, 217, 219,
 ];
 const TRAIN_REM_WASH_NEED_SWAP_TIDS = [207, 209, 211];
-const FULL_ML_TID_ROW_COUNT = 40;
-const FULL_ML_TID_PRESETS = [
-  {
-    label: "Preset 1",
-    tids: [
-      101,102,103,104,105,106,107,108,109,110,
-      111,112,113,114,115,116,117,118,119,120,
-      201,202,203,204,205,206,207,208,209,210,
-      211,212,213,214,215,216,217,218,219,220,
-    ],
-  },
-  {
-    label: "Preset 2",
-    tids: [
-      101,103,105,107,109,111,113,115,117,119,
-      121,122,123,124,125,126,127,128,129,130,
-      201,203,205,207,209,211,213,215,217,219,
-      221,222,223,224,225,226,227,228,229,230,
-    ],
-  },
-  {
-    label: "Preset 3",
-    tids: [
-      101,103,105,107,109,111,113,115,117,119,
-      201,203,205,207,209,211,213,215,217,219,
-    ],
-  },
-  {
-    label: "Preset 4",
-    tids: [
-      121,122,123,124,125,126,127,128,129,130,
-      221,222,223,224,225,226,227,228,229,230,
-    ],
-  },
-];
 const TRAIN_REM_WEST_9AM_PRIORITY_TIDS = new Set(TRAIN_REM_WEST_9AM_REFERENCE_TIDS.map((tid) => String(tid)));
 const TRAIN_REM_WEST_9AM_REAL_TID_SET = new Set(TRAIN_REM_WEST_9AM_REAL_TIDS.map((tid) => String(tid)));
 const TRAIN_REM_WASH_LATE_SHIFT_TID_SET = new Set(TRAIN_REM_WASH_LATE_SHIFT_TIDS.map((tid) => String(tid)));
@@ -2221,142 +2186,6 @@ function emptyTrainRemRows(count) {
   }));
 }
 
-function emptyFullMlTidRows(count = FULL_ML_TID_ROW_COUNT) {
-  return Array.from({ length: count }, () => ({
-    trainId: "",
-    tid: "",
-  }));
-}
-
-function cleanFullMlTrainIdInput(value = "") {
-  // Full ML TID uses plain 2-digit Train ID only (01, 02, 10).
-  // If old saved data contains T01/T1, strip the T and keep the number only.
-  return (value || "").toString().replace(/[^0-9]/g, "").slice(0, 2);
-}
-
-function normalizeFullMlTidRows(rows) {
-  const source = Array.isArray(rows) ? rows : [];
-
-  return Array.from({ length: FULL_ML_TID_ROW_COUNT }, (_, i) => ({
-    trainId: cleanFullMlTrainIdInput(source[i]?.trainId || ""),
-    tid: (source[i]?.tid || "").toString().replace(/[^0-9]/g, ""),
-  }));
-}
-
-function getFullMlTidActivePresetLabel(rows = []) {
-  const currentTids = normalizeFullMlTidRows(rows).map((row) => (row.tid || "").toString().replace(/[^0-9]/g, ""));
-
-  for (const preset of FULL_ML_TID_PRESETS) {
-    const presetTids = (preset?.tids || []).map((tid) => String(tid));
-    const presetRowsMatch = presetTids.every((tid, index) => currentTids[index] === tid);
-    const remainingRowsClear = currentTids.slice(presetTids.length).every((tid) => !tid);
-
-    if (presetRowsMatch && remainingRowsClear) {
-      return preset.label;
-    }
-  }
-
-  return "";
-}
-
-function normalizeFullMlTrainId(value = "") {
-  return cleanFullMlTrainIdInput(value);
-}
-
-function buildFullMlTidMap(rows = []) {
-  const map = {};
-
-  normalizeFullMlTidRows(rows).forEach((row) => {
-    const tid = (row.tid || "").toString().replace(/[^0-9]/g, "");
-    const trainId = normalizeFullMlTrainId(row.trainId);
-
-    if (tid && trainId && !map[tid]) {
-      map[tid] = trainId;
-    }
-  });
-
-  return map;
-}
-
-function buildFullMlTrainTidMap(rows = []) {
-  const map = {};
-
-  normalizeFullMlTidRows(rows).forEach((row) => {
-    const tid = (row.tid || "").toString().replace(/[^0-9]/g, "");
-    const trainKey = normalizeTrainId(row.trainId);
-
-    if (tid && trainKey && !map[trainKey]) {
-      map[trainKey] = tid;
-    }
-  });
-
-  return map;
-}
-
-function getFullMlTidForTrain(fullMlTidRows = [], trainKey = "") {
-  const normalizedTrainKey = normalizeTrainId(trainKey);
-  if (!normalizedTrainKey) return "";
-
-  return buildFullMlTrainTidMap(fullMlTidRows)[normalizedTrainKey] || "";
-}
-
-function applyFullMlTidMatchesToTrainRemRows(rowsByDepot = {}, fullMlTidRows = []) {
-  const tidMap = buildFullMlTidMap(fullMlTidRows);
-  const nextRows = {};
-
-  ["west", "east"].forEach((depot) => {
-    nextRows[depot] = normalizeTrainRemRows(rowsByDepot?.[depot], depot).map((row) => {
-      const tid = (row.tid || "").toString().replace(/[^0-9]/g, "");
-      const matchedTrainId = tid ? tidMap[tid] : "";
-
-      if (!matchedTrainId || (normalizeFullMlTrainId(row.trainId) === matchedTrainId && (row.trainId || "").toString() === matchedTrainId)) return row;
-
-      return {
-        ...row,
-        trainId: matchedTrainId,
-        remark: "",
-      };
-    });
-  });
-
-  return nextRows;
-}
-
-function getFullMlTidAutoClearInfo(fullMlTidRows = []) {
-  const activeRows = normalizeFullMlTidRows(fullMlTidRows)
-    .map((row, index) => ({
-      index,
-      trainId: normalizeFullMlTrainId(row.trainId),
-      tid: (row.tid || "").toString().replace(/[^0-9]/g, ""),
-    }))
-    .filter((row) => row.tid);
-
-  const filledRows = activeRows.filter((row) => row.trainId);
-
-  return {
-    activeCount: activeRows.length,
-    filledCount: filledRows.length,
-    isComplete: activeRows.length > 0 && filledRows.length === activeRows.length,
-    signature: activeRows.map((row) => `${row.index}:${row.tid}:${row.trainId}`).join("|"),
-  };
-}
-
-function formatFullMlTidCountdown(seconds = 0) {
-  const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
-  const minutes = Math.floor(safeSeconds / 60);
-  const secs = safeSeconds % 60;
-
-  return `${minutes}:${secs.toString().padStart(2, "0")}`;
-}
-
-function normalizeFullMlTidAutoClearMeta(meta = {}) {
-  const signature = (meta?.signature || "").toString();
-  const rawEndsAt = Number(meta?.endsAt || 0);
-  const endsAt = Number.isFinite(rawEndsAt) && rawEndsAt > 0 ? rawEndsAt : null;
-
-  return { signature, endsAt };
-}
-
 function getTrainRemTimestampValue(value) {
   const time = Date.parse((value || "").toString());
   return Number.isFinite(time) ? time : 0;
@@ -2423,58 +2252,6 @@ function getLatestTrainRemRecordsByDepot(records = []) {
   });
 
   return latestByDepot;
-}
-
-function emptyFullMlTidAutoClearMeta() {
-  return { signature: "", endsAt: null };
-}
-
-function isSameFullMlTidAutoClearMeta(a = {}, b = {}) {
-  const left = normalizeFullMlTidAutoClearMeta(a);
-  const right = normalizeFullMlTidAutoClearMeta(b);
-
-  return left.signature === right.signature && left.endsAt === right.endsAt;
-}
-
-function clearAutoMatchedTrainRemRows(rowsByDepot = {}, fullMlTidRows = []) {
-  const activeMap = {};
-
-  normalizeFullMlTidRows(fullMlTidRows).forEach((row) => {
-    const tid = (row.tid || "").toString().replace(/[^0-9]/g, "");
-    const trainId = normalizeFullMlTrainId(row.trainId);
-    if (tid && trainId && !activeMap[tid]) activeMap[tid] = trainId;
-  });
-
-  const nextRows = {};
-
-  ["west", "east"].forEach((depot) => {
-    nextRows[depot] = normalizeTrainRemRows(rowsByDepot?.[depot], depot).map((row) => {
-      const tid = (row.tid || "").toString().replace(/[^0-9]/g, "");
-      const matchedTrainId = tid ? activeMap[tid] : "";
-
-      if (!matchedTrainId || normalizeFullMlTrainId(row.trainId) !== matchedTrainId) return row;
-
-      return {
-        ...row,
-        trainId: "",
-        remark: "",
-      };
-    });
-  });
-
-  return nextRows;
-}
-
-function clearFullMlTidTrainIdsFromState(state = {}) {
-  const clearedFullRows = normalizeFullMlTidRows(state.fullMlTidRows).map((row) => ({
-    ...row,
-    trainId: "",
-  }));
-
-  return {
-    ...state,
-    fullMlTidRows: clearedFullRows,
-  };
 }
 
 function normalizeTrainRemRows(rows, depot) {
@@ -2595,8 +2372,6 @@ function buildDefaultTrainRemState() {
       west: buildTrainRemRowsFromPreset("west", "9am"),
       east: buildTrainRemRowsFromPreset("east", "9am"),
     },
-    fullMlTidRows: emptyFullMlTidRows(),
-    fullMlTidAutoClear: emptyFullMlTidAutoClearMeta(),
     updatedAt: "",
   };
 }
@@ -2615,8 +2390,6 @@ function loadTrainRemState() {
         west: normalizeTrainRemRowsForPreset(parsed?.rows?.west, "west", parsed?.selectedPreset?.west || "9am"),
         east: normalizeTrainRemRowsForPreset(parsed?.rows?.east, "east", parsed?.selectedPreset?.east || "9am"),
       },
-      fullMlTidRows: normalizeFullMlTidRows(parsed?.fullMlTidRows),
-      fullMlTidAutoClear: normalizeFullMlTidAutoClearMeta(parsed?.fullMlTidAutoClear),
       updatedAt: (parsed?.updatedAt || parsed?.updated_date || parsed?.updatedDate || "").toString(),
     });
   } catch {
@@ -2654,17 +2427,11 @@ function isTrainRemEntityReady(entity = getTrainRemEntity()) {
 
 function buildTrainRemDepotPayload(state = {}, depot = "west") {
   const safeDepot = depot === "east" ? "east" : "west";
-  const autoClearMeta = normalizeFullMlTidAutoClearMeta(state.fullMlTidAutoClear);
-
   return {
     depot: safeDepot,
     key: safeDepot,
     selectedPreset: state.selectedPreset?.[safeDepot] || "9am",
     rows: normalizeTrainRemRowsForPreset(state.rows?.[safeDepot], safeDepot, state.selectedPreset?.[safeDepot] || "9am"),
-    fullMlTidRows: normalizeFullMlTidRows(state.fullMlTidRows),
-    fullMlTidAutoClear: autoClearMeta,
-    fullMlTidAutoClearSignature: autoClearMeta.signature,
-    fullMlTidAutoClearEndsAt: autoClearMeta.endsAt || null,
     updatedAt: state.updatedAt || new Date().toISOString(),
   };
 }
@@ -2675,8 +2442,6 @@ function buildTrainRemStateFromRecords(records = []) {
   const state = {
     selectedPreset: { ...fallback.selectedPreset },
     rows: { ...fallback.rows },
-    fullMlTidRows: emptyFullMlTidRows(),
-    fullMlTidAutoClear: emptyFullMlTidAutoClearMeta(),
     updatedAt: "",
   };
 
@@ -2692,22 +2457,6 @@ function buildTrainRemStateFromRecords(records = []) {
     state.selectedPreset[depot] = rec.selectedPreset || fallback.selectedPreset[depot];
     state.rows[depot] = normalizeTrainRemRowsForPreset(rec.rows, depot, state.selectedPreset[depot]);
 
-    const fullRows = normalizeFullMlTidRows(rec.fullMlTidRows);
-    if (fullRows.some((row) => row.trainId || row.tid)) {
-      state.fullMlTidRows = fullRows;
-    }
-
-    const fullMlTidAutoClear = normalizeFullMlTidAutoClearMeta({
-      signature: rec?.fullMlTidAutoClearSignature || rec?.fullMlTidAutoClear?.signature,
-      endsAt: rec?.fullMlTidAutoClearEndsAt || rec?.fullMlTidAutoClear?.endsAt,
-    });
-
-    if (fullMlTidAutoClear.signature && fullMlTidAutoClear.endsAt) {
-      const currentAutoClear = normalizeFullMlTidAutoClearMeta(state.fullMlTidAutoClear);
-      if (!currentAutoClear.endsAt || fullMlTidAutoClear.endsAt > currentAutoClear.endsAt) {
-        state.fullMlTidAutoClear = fullMlTidAutoClear;
-      }
-    }
 
     const recordUpdatedAt = (rec?.updatedAt || rec?.updated_date || rec?.updatedDate || "").toString();
     if (getTrainRemTimestampValue(recordUpdatedAt) >= getTrainRemStateTimestamp(state)) {
@@ -4437,7 +4186,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const trainRemPollingRef = useRef(false);
   const trainRemTrainIdRefs = useRef({});
   const trainRemTidRefs = useRef({});
-  const fullMlTidTrainIdRefs = useRef({});
   const trainRemUndoStackRef = useRef([]);
   const trainRemSmartDirectionRef = useRef({});
   const trainRemLastFocusedIndexRef = useRef({});
@@ -4549,13 +4297,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       }
 
       const { state, map } = buildTrainRemStateFromRecords(records || []);
-      const dbAutoClearMeta = normalizeFullMlTidAutoClearMeta(state.fullMlTidAutoClear);
       const localState = loadTrainRemState();
-      const localAutoClearMeta = normalizeFullMlTidAutoClearMeta(localState.fullMlTidAutoClear);
-
-      if (!dbAutoClearMeta.signature && localAutoClearMeta.signature && localAutoClearMeta.endsAt) {
-        state.fullMlTidAutoClear = localAutoClearMeta;
-      }
 
       if (isTrainRemLocalStateNewer(localState, state)) {
         trainRemMapRef.current = map;
@@ -4847,26 +4589,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     element.select();
   };
 
-  const setFullMlTidTrainIdRef = (rowIndex, element) => {
-    if (element) {
-      fullMlTidTrainIdRefs.current[rowIndex] = element;
-    } else {
-      delete fullMlTidTrainIdRefs.current[rowIndex];
-    }
-  };
-
-  const focusFullMlTidTrainId = (rowIndex) => {
-    const element = fullMlTidTrainIdRefs.current[rowIndex];
-    if (!element) return;
-
-    element.focus();
-    element.select();
-  };
-
-  const handleFullMlTidTrainIdFocus = () => {
-    handleTrainRemOtherFieldFocus();
-  };
-
   const handleTrainRemTrainIdFocus = (depot, rowIndex, rowCount) => {
     handleTrainRemEditStart();
 
@@ -4999,16 +4721,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     window.setTimeout(() => focusTrainRemTid(depot, nextIndex), 0);
   };
 
-  const handleFullMlTidTrainIdAutoMove = (rowIndex, value) => {
-    const digitCount = cleanFullMlTrainIdInput(value).length;
-    if (digitCount < 2) return;
-
-    const nextIndex = rowIndex + 1;
-    if (nextIndex >= FULL_ML_TID_ROW_COUNT) return;
-
-    window.setTimeout(() => focusFullMlTidTrainId(nextIndex), 0);
-  };
-
   const applyPreset = (depot, label) => {
     updateTrainRemState((prev) => {
       const existingRows = normalizeTrainRemRows(prev.rows?.[depot], depot);
@@ -5064,59 +4776,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         },
       };
     });
-  };
-
-  const updateFullMlTidCell = (rowIndex, field, value) => {
-    updateTrainRemState((prev) => {
-      const fullMlTidRows = normalizeFullMlTidRows(prev.fullMlTidRows);
-      const nextRows = [...fullMlTidRows];
-      nextRows[rowIndex] = {
-        ...nextRows[rowIndex],
-        [field]: field === "tid"
-          ? value.replace(/[^0-9]/g, "")
-          : cleanFullMlTrainIdInput(value),
-      };
-
-      const normalizedFullRows = normalizeFullMlTidRows(nextRows);
-
-      return {
-        ...prev,
-        fullMlTidRows: normalizedFullRows,
-      };
-    });
-  };
-
-  const clearFullMlTidRows = () => {
-    updateTrainRemState((prev) => ({
-      ...prev,
-      fullMlTidRows: emptyFullMlTidRows(),
-    }));
-  };
-
-  const applyFullMlTidPreset = (preset) => {
-    const tids = Array.isArray(preset?.tids) ? preset.tids : [];
-
-    updateTrainRemState((prev) => {
-      const existingRows = normalizeFullMlTidRows(prev.fullMlTidRows);
-      const nextRows = existingRows.map((row, index) => ({
-        ...row,
-        tid: tids[index] ? String(tids[index]) : "",
-      }));
-      const normalizedFullRows = normalizeFullMlTidRows(nextRows);
-
-      return {
-        ...prev,
-        fullMlTidRows: normalizedFullRows,
-      };
-    });
-  };
-
-  const matchFullMlTidToTrainRemoval = () => {
-    updateTrainRemState((prev) => mergeTrainRemCombinedMorningReferenceState({
-      ...prev,
-      fullMlTidAutoClear: emptyFullMlTidAutoClearMeta(),
-      rows: applyFullMlTidMatchesToTrainRemRows(prev.rows, prev.fullMlTidRows),
-    }));
   };
 
   const clearDepotTrainRem = (depot) => {
@@ -5553,153 +5212,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     );
   };
 
-  const renderFullMlTidTable = () => {
-    const rows = normalizeFullMlTidRows(trainRemState.fullMlTidRows);
-    const tidMap = buildFullMlTidMap(rows);
-    const matchedTidCount = new Set(
-      ["west", "east"]
-        .flatMap((depot) => normalizeTrainRemRows(trainRemState.rows?.[depot], depot))
-        .map((row) => {
-          const tid = (row.tid || "").toString().replace(/[^0-9]/g, "");
-          const matchedTrainId = tid ? tidMap[tid] : "";
-          const currentTrainId = normalizeFullMlTrainId(row.trainId);
-          return tid && matchedTrainId && currentTrainId === matchedTrainId ? tid : "";
-        })
-        .filter(Boolean)
-    ).size;
-    const activeFullMlTidPresetLabel = getFullMlTidActivePresetLabel(rows);
-
-    return (
-      <div className="rounded-xl border border-[#2b4f6b] bg-[#071828] overflow-hidden shadow-md">
-        <div className="px-2 py-2 border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <div className="text-[10px] font-black text-white uppercase tracking-widest">Full ML TID</div>
-            </div>
-
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <div className="rounded-md border border-emerald-500/40 bg-emerald-950/25 px-1.5 py-0.5 text-[8px] font-black text-emerald-200 whitespace-nowrap">
-                {matchedTidCount} matched
-              </div>
-
-              <button
-                type="button"
-                onClick={clearFullMlTidRows}
-                className="h-6 rounded-md border border-[#2b4f6b] bg-[#10263b] px-1.5 text-[10px] font-black text-[#7eb8e0] transition-colors hover:border-red-600/60 hover:bg-red-950/30 hover:text-red-300"
-                title="Clear Full ML TID list only"
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-2 grid grid-cols-4 gap-1">
-            {FULL_ML_TID_PRESETS.map((preset) => {
-              const presetLines = preset.label.split(/\s+/).filter(Boolean);
-              const active = activeFullMlTidPresetLabel === preset.label;
-
-              return (
-                <button
-                  key={preset.label}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => applyFullMlTidPreset(preset)}
-                  className={`min-h-[30px] rounded-md border px-1 py-1 text-[9px] font-black leading-[10px] transition-colors ${
-                    active
-                      ? "border-amber-300/80 bg-amber-500/20 text-amber-50 shadow-[0_0_12px_rgba(251,191,36,0.35)] ring-1 ring-amber-300/40"
-                      : "border-cyan-500/35 bg-cyan-950/25 text-cyan-100 hover:border-cyan-300/70 hover:bg-cyan-900/40"
-                  }`}
-                  title={`${preset.label} - fill ${preset.tids.length} TID rows`}
-                >
-                  <span className="flex flex-col items-center justify-center gap-0.5 whitespace-normal text-center">
-                    {presetLines.map((line, lineIndex) => (
-                      <span key={`${preset.label}-line-${lineIndex}`} className="block">
-                        {line}
-                      </span>
-                    ))}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="overflow-visible">
-          <table className="w-full border-separate border-spacing-0 table-fixed text-[12px]">
-            <thead>
-              <tr>
-                <th className="h-4 px-1 text-left text-[9.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "50%" }}>Train ID</th>
-                <th className="h-4 px-1 text-left text-[9.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "50%" }}>TID</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, index) => {
-                const hasData = Boolean((row.trainId || "").toString().trim() || (row.tid || "").toString().trim());
-                const matchedTrainId = row.tid ? tidMap[row.tid] : "";
-                const rowBg = matchedTrainId ? "#082a25" : hasData ? "#08223b" : "#071828";
-                const trainIdValue = (row.trainId || "").toString();
-
-                return (
-                  <tr key={`full-ml-tid-${index}`}>
-                    <td className="border-b border-[#10263b] px-1 py-0" style={{ backgroundColor: rowBg }}>
-                      <input
-                        ref={(element) => setFullMlTidTrainIdRef(index, element)}
-                        value={trainIdValue}
-                        onFocus={handleFullMlTidTrainIdFocus}
-                        onChange={(e) => {
-                          const nextValue = cleanFullMlTrainIdInput(e.target.value);
-                          updateFullMlTidCell(index, "trainId", nextValue);
-                          handleFullMlTidTrainIdAutoMove(index, nextValue);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Backspace" && !row.trainId && index > 0) {
-                            e.preventDefault();
-                            focusFullMlTidTrainId(index - 1);
-                          }
-                        }}
-                        onBlur={handleTrainRemEditEnd}
-                        placeholder="ID"
-                        inputMode="numeric"
-                        className="h-4 w-full rounded border border-[#1e4060] bg-[#091828] px-1 text-center text-[11px] font-bold text-[#e2eaf4] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]"
-                      />
-                    </td>
-                    <td className="border-b border-[#10263b] px-1 py-0" style={{ backgroundColor: rowBg }}>
-                      <input
-                        value={row.tid}
-                        onFocus={handleTrainRemOtherFieldFocus}
-                        onChange={(e) => updateFullMlTidCell(index, "tid", e.target.value)}
-                        onBlur={handleTrainRemEditEnd}
-                        placeholder="TID"
-                        className="h-4 w-full rounded border border-[#1e4060] bg-[#091828] px-1 text-center text-[11px] font-bold text-[#c8d8ea] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]"
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-              <tr>
-                <td colSpan={2} className="px-1 py-1 bg-[#071828]">
-                  <div className="flex h-7 items-center justify-between gap-2 rounded-lg border border-[#1e4060] bg-[#091828] px-2 text-[#7eb8e0]">
-                    <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Manual match only</span>
-                    <button
-                      type="button"
-                      onClick={matchFullMlTidToTrainRemoval}
-                      className="h-5 rounded-md border border-emerald-500/50 bg-emerald-950/35 px-2 text-[10px] font-black uppercase tracking-widest text-emerald-100 transition-colors hover:border-emerald-300 hover:bg-emerald-900/45"
-                      title="Click to match Full ML TID Train ID with Train Rem rows"
-                    >
-                      Match
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <section className="w-[560px] flex-shrink-0 rounded-xl border border-[#2b4f6b] bg-[#0b1f33] p-2 shadow-md">
+    <section className="w-[318px] flex-shrink-0 rounded-xl border border-[#2b4f6b] bg-[#0b1f33] p-2 shadow-md">
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center flex-shrink-0">
@@ -5727,13 +5241,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         </div>
       )}
 
-      <div className="grid grid-cols-[300px_1fr] items-start gap-2">
-        <div className="space-y-1.5">
-          {renderDepotTable("west", "West Depot", "")}
-          {!isTrainRemWest9amPreset("west", trainRemState.selectedPreset?.west || "9am") && renderDepotTable("east", "East Depot", "")}
-        </div>
-
-        {renderFullMlTidTable()}
+      <div className="space-y-1.5">
+        {renderDepotTable("west", "West Depot", "")}
+        {!isTrainRemWest9amPreset("west", trainRemState.selectedPreset?.west || "9am") && renderDepotTable("east", "East Depot", "")}
       </div>
     </section>
   );
@@ -15524,8 +15034,8 @@ function applyManualTidToRequestedRows(rows = [], manualTidByTrain = {}) {
     return {
       ...row,
       key: row?.key || key,
-      // Do not auto-match from Full ML TID. West 9am washing-reference rows are
-      // allowed because the user manually enters the train ID there for wash planning.
+      // Use only manually entered TID values. West 9am washing-reference rows
+      // remain available because the user enters the train ID there for wash planning.
       autoTid: referenceTid,
       manualTid,
       tid: manualTid || referenceTid || "",

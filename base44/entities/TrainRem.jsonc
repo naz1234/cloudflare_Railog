@@ -42,41 +42,6 @@
         ]
       }
     },
-    "fullMlTidRows": {
-      "type": "array",
-      "description": "40-row master Mainline TID matching list used to auto-fill Train Rem West/East Train ID by TID",
-      "items": {
-        "type": "object",
-        "properties": {
-          "trainId": {
-            "type": "string"
-          },
-          "tid": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "fullMlTidAutoClear": {
-      "type": "object",
-      "description": "Saved countdown metadata for Full ML TID Train ID auto-clear timer",
-      "properties": {
-        "signature": {
-          "type": "string"
-        },
-        "endsAt": {
-          "type": "number"
-        }
-      }
-    },
-    "fullMlTidAutoClearSignature": {
-      "type": "string",
-      "description": "Signature of active Full ML TID auto-clear countdown"
-    },
-    "fullMlTidAutoClearEndsAt": {
-      "type": "number",
-      "description": "Epoch milliseconds when the active Full ML TID Train ID auto-clear countdown ends"
-    },
     "updatedAt": {
       "type": "string",
       "description": "Last Train Rem client-side save timestamp used to prevent older duplicate records from overwriting the latest Train ID inputs"
