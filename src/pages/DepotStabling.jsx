@@ -5153,46 +5153,71 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 {timetablePresetNotice}
               </div>
             )}
-            <div className="flex items-center gap-1">
-              {TID_PRESETS[depot].slice(0, 3).map((preset) => {
-                const active = selectedPreset === preset.label;
-                return (
-                  <button
-                    key={preset.label}
-                    onClick={() => applyPreset(depot, preset.label)}
-                    className={`h-5 rounded-md text-[11px] font-normal border transition-all ${
-                      active
-                        ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
-                        : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
-                    }`}
-                    style={{ width: "13%" }}
-                  >
-                    {preset.label}
-                  </button>
-                );
-              })}
-            </div>
 
-            <div className="flex items-center gap-1">
-              {TID_PRESETS[depot].slice(3).map((preset) => {
-                const active = selectedPreset === preset.label;
-                return (
-                  <button
-                    key={preset.label}
-                    onClick={() => applyPreset(depot, preset.label)}
-                    className={`h-5 rounded-md text-[11px] font-normal border transition-all ${
-                      active
-                        ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
-                        : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
-                    }`}
-                    style={{ width: "13%" }}
-                  >
-                    {preset.label}
-                  </button>
-                );
-              })}
-            </div>
+            <div className="relative space-y-1">
+              <div className="flex items-center gap-1">
+                {TID_PRESETS[depot].slice(0, 3).map((preset) => {
+                  const active = selectedPreset === preset.label;
+                  return (
+                    <button
+                      key={preset.label}
+                      onClick={() => applyPreset(depot, preset.label)}
+                      className={`h-5 rounded-md text-[11px] font-normal border transition-all ${
+                        active
+                          ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
+                          : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
+                      }`}
+                      style={{ width: "13%" }}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
 
+              <div className="flex items-center gap-1">
+                {TID_PRESETS[depot].slice(3).map((preset) => {
+                  const active = selectedPreset === preset.label;
+                  return (
+                    <button
+                      key={preset.label}
+                      onClick={() => applyPreset(depot, preset.label)}
+                      className={`h-5 rounded-md text-[11px] font-normal border transition-all ${
+                        active
+                          ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
+                          : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
+                      }`}
+                      style={{ width: "13%" }}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {depot === "west" && (
+                <div className="absolute right-0 top-0 flex max-w-[168px] flex-wrap justify-end gap-1">
+                  <span
+                    className="inline-flex h-5 items-center rounded-md border border-[#8B5CF6] bg-[#2d1b55] px-1.5 text-[8px] font-normal leading-none text-[#ede9fe] whitespace-nowrap"
+                    title="West Depot removal"
+                  >
+                    West Rem
+                  </span>
+                  <span
+                    className="inline-flex h-5 items-center rounded-md border border-lime-400/95 bg-lime-950/55 px-1.5 text-[8px] font-normal leading-none text-lime-100 whitespace-nowrap"
+                    title="East Depot removal"
+                  >
+                    East Rem
+                  </span>
+                  <span
+                    className="inline-flex h-5 items-center rounded-md border border-emerald-500/80 bg-emerald-950/35 px-1.5 text-[8px] font-normal leading-none text-emerald-100 whitespace-nowrap"
+                    title="Off Peak reference TID"
+                  >
+                    Off Peak
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
