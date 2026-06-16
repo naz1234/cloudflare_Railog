@@ -3692,9 +3692,16 @@ function getTimetableInsertionRemarkMap(activeTimetable = null, depot = "west") 
   }, {});
 }
 
+function getSweepTrackFromRemark(value) {
+  const key = (value || "").toString().trim().toUpperCase();
+  if (key === "SW2") return "TK2";
+  if (key === "SW1") return "TK1";
+  return "";
+}
+
 function isSweepRemark(value) {
   const key = (value || "").toString().trim().toUpperCase();
-  return key === "SW" || key === "SWEEP" || key === "SWEEPING";
+  return key === "SW" || key === "SW1" || key === "SW2" || key === "SWEEP" || key === "SWEEPING";
 }
 
 function getInsertionRemarkStyle(value) {
@@ -3825,8 +3832,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   }, [canAutoInsertTid, road, bi, key, tidInput, onInsertionTick]);
 
   const handleInsertClick = () => {
-    // SW means Sweep. Create the result immediately using TK1 as the editable default.
-    onInsertionTick(road, bi, key, tidInput, isSweepRemark(tidRemarkText) ? "TK1" : "");
+    // SW / SW1 / SW2 mean Sweep. SW1 selects Track 01 and SW2 selects Track 02.
+    const sweepTrack = getSweepTrackFromRemark(tidRemarkText) || (isSweepRemark(tidRemarkText) ? "TK1" : "");
+    onInsertionTick(road, bi, key, tidInput, sweepTrack);
   };
 
   const handleInsertedUndoClick = () => {
@@ -12947,9 +12955,10 @@ export default function DepotStablingPage() {
     const scheduledTime = tid ? getTidScheduledTime(tid, depot, { allowFallback: false }) : null;
     const time = scheduledTime || formatTime(new Date());
 
-    // SW means Sweep. Create it immediately with TK1 as the editable default.
+    // SW / SW1 / SW2 mean Sweep. SW1 defaults to Track 01 and SW2 to Track 02.
     if (isSweepRemark(normalizedRemark)) {
-      const requestedSweepTrack = (sweepTrack || "TK1").toString().trim().toUpperCase();
+      const remarkSweepTrack = getSweepTrackFromRemark(normalizedRemark);
+      const requestedSweepTrack = (sweepTrack || remarkSweepTrack || "TK1").toString().trim().toUpperCase();
       const normalizedSweepTrack = ["TK1", "TK2"].includes(requestedSweepTrack) ? requestedSweepTrack : "TK1";
 
       const signal = getSweepingSignal(road, normalizedSweepTrack);
