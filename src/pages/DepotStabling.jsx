@@ -14869,6 +14869,7 @@ function buildRequestedActionSummaryLines(rows = []) {
   const morningPmGroups = new Map();
   const cm = createRequestedSummaryBucket();
   const tlc = createRequestedSummaryBucket();
+  const deepCleaning = createRequestedSummaryBucket();
   let cmActivityLabel = "RST CM";
 
   (Array.isArray(rows) ? rows : []).forEach((row) => {
@@ -14879,11 +14880,17 @@ function buildRequestedActionSummaryLines(rows = []) {
     if (!normalized) return;
 
     const tokens = normalized.split(" ").filter(Boolean);
+    const hasDeepCleaning = /(^| )DEEP CLEAN(?:ING)?( |$)/.test(normalized);
     const hasInbound = tokens.includes("INBOUND") || normalized.includes("G TO C");
     const hasPm = tokens.includes("PM");
     const hasCm = tokens.includes("CM");
     const hasTlc = tokens.includes("TLC");
     const isTomorrowPm = hasTomorrowRequestToken(requestType) || tokens.includes("MORNING");
+
+    if (hasDeepCleaning) {
+      appendRequestedSummaryTrain(deepCleaning, row);
+      return;
+    }
 
     if (hasInbound) appendRequestedSummaryTrain(inbound, row);
     if (hasPm) {
@@ -14900,7 +14907,12 @@ function buildRequestedActionSummaryLines(rows = []) {
   });
 
   const lines = [];
+  const deepCleaningList = joinRequestedSummaryTrainList(deepCleaning.trains);
   const inboundList = joinRequestedSummaryTrainList(inbound.trains);
+
+  if (deepCleaningList) {
+    lines.push(`${deepCleaningList} performed Deep Cleaning.`);
+  }
 
   if (inboundList) {
     const verb = inbound.trains.length === 1 ? "was" : "were";
