@@ -5378,6 +5378,16 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               {rows.map((row, index) => {
                 const referenceSeparator = isTrainRemReferenceSeparatorIndex(depot, selectedPreset, index);
                 const referenceOnly = isTrainRemReferenceOnlyIndex(depot, selectedPreset, index);
+                const west9amScheduleMatch = referenceOnly
+                  ? getTrainRem9amScheduleMatch(activeTimetable, "west", row.tid)
+                  : null;
+                const east9amScheduleMatch = referenceOnly
+                  ? getTrainRem9amScheduleMatch(activeTimetable, "east", row.tid)
+                  : null;
+                const real9amScheduleMatch = west9amScheduleMatch || east9amScheduleMatch;
+                const isWest9amRemoval = Boolean(west9amScheduleMatch);
+                const isEast9amRemoval = Boolean(east9amScheduleMatch);
+                const referenceDisplayOnly = referenceOnly && !real9amScheduleMatch;
 
                 if (referenceSeparator) {
                   return (
@@ -5398,7 +5408,20 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 const requestRemarkStyle = requestRemark
                   ? getTrainRemRequestRemarkStyle(trainRemRequestItems[0], requestRemark)
                   : undefined;
-                const remarkValue = requestRemark || row.remark;
+                const scheduledRemovalLabel = isWest9amRemoval
+                  ? "West Removal"
+                  : isEast9amRemoval
+                    ? "East Removal"
+                    : "";
+                const remarkValue = requestRemark || scheduledRemovalLabel || row.remark;
+                const displayTimingValue = real9amScheduleMatch?.timing || row.timing;
+                const rowStatusTitle = isWest9amRemoval
+                  ? "West Depot 9am removal detected from the active timetable"
+                  : isEast9amRemoval
+                    ? "East Depot 9am removal detected from the active timetable"
+                    : referenceDisplayOnly
+                      ? "Reference only — excluded from removal log and PDF"
+                      : "";
                 const hasTrainId = (row.trainId || "").toString().trim() !== "";
                 const duplicateKey = getTrainRemDuplicateKey(row.trainId);
                 const isDuplicateTrainId = Boolean(
@@ -5406,18 +5429,38 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   duplicateCounts[duplicateKey] > 1 &&
                   !shouldIgnoreFocusedPartialDuplicate(depot, index, row.trainId)
                 );
-                const filledRowBg = referenceOnly ? (hasTrainId ? "#1f2615" : "#121d18") : isDuplicateTrainId ? "#2a0b13" : hasTrainId ? "#082a25" : "#071828";
+                const filledRowBg = isDuplicateTrainId
+                  ? "#2a0b13"
+                  : isWest9amRemoval
+                    ? (hasTrainId ? "#0a3329" : "#09271f")
+                    : isEast9amRemoval
+                      ? (hasTrainId ? "#0a2a42" : "#091f33")
+                      : referenceDisplayOnly
+                        ? (hasTrainId ? "#1f2615" : "#121d18")
+                        : hasTrainId
+                          ? "#082a25"
+                          : "#071828";
                 const trainIdInputClass = isDuplicateTrainId
                   ? "border-red-500/90 bg-red-950/50 text-red-100 shadow-[0_0_0_1px_rgba(248,113,113,0.28),0_0_12px_rgba(248,113,113,0.16)]"
-                  : hasTrainId
-                  ? "border-emerald-500/80 bg-emerald-950/35 text-emerald-100 shadow-[0_0_0_1px_rgba(16,185,129,0.18)]"
-                  : "border-[#1e4060] bg-[#091828] text-[#e2eaf4]";
+                  : isWest9amRemoval
+                    ? "border-emerald-400/80 bg-emerald-950/40 text-emerald-100 shadow-[0_0_0_1px_rgba(52,211,153,0.18)]"
+                    : isEast9amRemoval
+                      ? "border-sky-400/80 bg-sky-950/40 text-sky-100 shadow-[0_0_0_1px_rgba(56,189,248,0.18)]"
+                      : referenceDisplayOnly
+                        ? "border-amber-500/45 bg-amber-950/20 text-amber-100"
+                        : hasTrainId
+                          ? "border-emerald-500/80 bg-emerald-950/35 text-emerald-100 shadow-[0_0_0_1px_rgba(16,185,129,0.18)]"
+                          : "border-[#1e4060] bg-[#091828] text-[#e2eaf4]";
                 const cleanTid = cleanTrainRemTidInput(row.tid);
                 const hasTid = cleanTid.length > 0;
                 const tidDuplicateKey = getTrainRemTidDuplicateKey(cleanTid);
                 const isDuplicateTid = Boolean(tidDuplicateKey && duplicateTidCounts[tidDuplicateKey] > 1);
                 const tidInputClass = referenceOnly
-                  ? "border-amber-500/45 bg-amber-950/20 text-amber-100 cursor-default"
+                  ? isWest9amRemoval
+                    ? "border-emerald-400/80 bg-emerald-950/40 text-emerald-100 cursor-default"
+                    : isEast9amRemoval
+                      ? "border-sky-400/80 bg-sky-950/40 text-sky-100 cursor-default"
+                      : "border-amber-500/45 bg-amber-950/20 text-amber-100 cursor-default"
                   : isDuplicateTid
                   ? "border-red-500/90 bg-red-950/50 text-red-100 shadow-[0_0_0_1px_rgba(248,113,113,0.28),0_0_12px_rgba(248,113,113,0.16)]"
                   : cleanTid.length === 3
@@ -5447,7 +5490,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       }}
                       onBlur={() => handleTrainRemTrainIdBlur(depot, index)}
                       placeholder="ID"
-                      title={referenceOnly ? (hasTrainId ? "Removal depot and timing are detected from the active timetable" : "TID reference row") : isDuplicateTrainId ? "Duplicate Train ID detected" : ""}
+                      title={referenceOnly ? rowStatusTitle : isDuplicateTrainId ? "Duplicate Train ID detected" : ""}
                       className={`w-full h-5 rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${trainIdInputClass}`}
                     />
                   </td>
@@ -5474,13 +5517,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       inputMode="numeric"
                       maxLength={3}
                       readOnly={referenceOnly}
-                      title={referenceOnly ? (hasTrainId ? "Removal depot and timing are detected from the active timetable" : "TID reference row") : isDuplicateTid ? "Duplicate TID detected" : "Enter exactly 3 digits"}
+                      title={referenceOnly ? rowStatusTitle : isDuplicateTid ? "Duplicate TID detected" : "Enter exactly 3 digits"}
                       className={`w-full h-5 rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${tidInputClass}`}
                     />
                   </td>
                   <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: filledRowBg }}>
                     <input
-                      value={row.timing}
+                      value={displayTimingValue}
                       onFocus={handleTrainRemOtherFieldFocus}
                       onChange={(e) => {
                         if (!referenceOnly) {
@@ -5488,13 +5531,17 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                         }
                       }}
                       onBlur={handleTrainRemEditEnd}
-                      placeholder={referenceOnly ? "REF" : "00:00"}
+                      placeholder={referenceDisplayOnly ? "REF" : referenceOnly ? "" : "00:00"}
                       readOnly={referenceOnly}
-                      title={referenceOnly ? (hasTrainId ? "Timing is detected from the active timetable" : "TID reference row") : ""}
+                      title={referenceOnly ? rowStatusTitle : ""}
                       className={`w-full h-5 rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${
-                        referenceOnly
-                          ? "border-amber-500/35 bg-[#121d18] text-amber-100 cursor-default placeholder:text-amber-700/70"
-                          : "border-[#1e4060] bg-[#071828] text-[#7eb8e0]"
+                        isWest9amRemoval
+                          ? "border-emerald-400/70 bg-emerald-950/35 text-emerald-100 cursor-default"
+                          : isEast9amRemoval
+                            ? "border-sky-400/70 bg-sky-950/35 text-sky-100 cursor-default"
+                            : referenceDisplayOnly
+                              ? "border-amber-500/35 bg-[#121d18] text-amber-100 cursor-default placeholder:text-amber-700/70"
+                              : "border-[#1e4060] bg-[#071828] text-[#7eb8e0]"
                       }`}
                     />
                   </td>
@@ -5509,14 +5556,22 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       }}
                       onBlur={handleTrainRemEditEnd}
                       readOnly={Boolean(requestRemark) || referenceOnly}
-                      title={referenceOnly ? (hasTrainId ? "Removal details are detected from the active timetable" : "TID reference row") : requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
-                      placeholder={referenceOnly ? "" : "Remark"}
+                      title={referenceOnly ? rowStatusTitle : requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
+                      placeholder={referenceDisplayOnly ? "Reference only" : referenceOnly ? "" : "Remark"}
                       style={requestRemarkStyle}
                       className={`w-full h-5 rounded-md border px-1.5 text-[11px] ${referenceOnly ? "font-normal" : "font-semibold"} outline-none placeholder:text-[#2b4f6b] ${
                         requestRemark || referenceOnly
                           ? "cursor-default"
                           : "border-[#1e4060] bg-[#091828] text-[#c8d8ea] focus:border-[#4f8ef7]"
-                      } ${referenceOnly ? "border-amber-500/35 bg-[#121d18] text-amber-100 placeholder:text-amber-700/70" : ""}`}
+                      } ${
+                        isWest9amRemoval
+                          ? "border-emerald-400/70 bg-emerald-950/35 text-emerald-100"
+                          : isEast9amRemoval
+                            ? "border-sky-400/70 bg-sky-950/35 text-sky-100"
+                            : referenceDisplayOnly
+                              ? "border-amber-500/35 bg-[#121d18] text-amber-100 placeholder:text-amber-700/70"
+                              : ""
+                      }`}
                     />
                   </td>
                     </tr>
