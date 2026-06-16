@@ -47,4 +47,12 @@
     opacity: 1;
     transform: translateY(-50%) scale(1);
   }
+
+
+  .already-status-trigger:hover .already-status-bubble,
+  .already-status-trigger:focus .already-status-bubble,
+  .already-status-trigger:focus-within .already-status-bubble {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
 }

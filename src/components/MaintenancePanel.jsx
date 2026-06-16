@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Trash2, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck } from "lucide-react";
+import { Plus, Trash2, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check } from "lucide-react";
 
 const MIN_VISIBLE_REQUEST_ROWS = 40;
 
@@ -96,6 +96,26 @@ function RequestCrossBubble({ message }) {
     <span className="request-cross-bubble pointer-events-none absolute left-[38px] top-1/2 z-[80] -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150">
       <span className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-b border-l border-slate-200 bg-white" />
       <span className="relative z-10">{message}</span>
+    </span>
+  );
+}
+
+function AlreadyStatusIcon({ message }) {
+  if (!message) return null;
+
+  return (
+    <span
+      className="already-status-trigger relative z-40 inline-flex shrink-0 items-center justify-center"
+      tabIndex={0}
+      aria-label={message}
+    >
+      <span className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-emerald-300/80 bg-[#58c96b] shadow-[0_0_8px_rgba(88,201,107,0.55)]">
+        <Check className="h-3 w-3 stroke-[3.5] text-white" />
+      </span>
+      <span className="already-status-bubble pointer-events-none absolute right-[25px] top-1/2 z-[90] -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150">
+        <span className="absolute -right-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-r border-t border-slate-200 bg-white" />
+        <span className="relative z-10">{message}</span>
+      </span>
     </span>
   );
 }
@@ -484,6 +504,25 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     return "";
   };
 
+
+  const getAlreadyStatusMessage = (crossOutInfo) => {
+    if (crossOutInfo.reason === "STABLING") {
+      const locationText = (crossOutInfo.locationText || "")
+        .replace(/\b(?:West|East) Depot\s*/gi, "")
+        .trim();
+
+      return locationText
+        ? `Train already at ${locationText}`
+        : "Train already in main stabling";
+    }
+
+    if (crossOutInfo.reason === "WORKSHOP") {
+      return "Train already in WORKSHOP";
+    }
+
+    return "";
+  };
+
   const isAlreadyAtStablingOrWorkshopRequest = (req) =>
     !isWorkshopRequest(req) && Boolean(getCrossOutInfo(req).reason);
 
@@ -724,7 +763,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               <tr className="border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
                 <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">ID</th>
                 <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">Type</th>
-                <th className="w-4" />
+                <th className="w-12" />
               </tr>
             </thead>
             <tbody>
@@ -732,30 +771,32 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 const displayLabel = displayType(req);
                 const crossOutInfo = getCrossOutInfo(req);
                 const crossOutReason = crossOutInfo.reason;
-                const requestPillStyle = {
-                  ...getRequestPillStyle(displayLabel, displayLabel),
-                  opacity: 0.58,
-                };
-                const crossOutMessage = getCrossOutMessage(req, crossOutInfo);
+                const requestPillStyle = getRequestPillStyle(displayLabel, displayLabel);
+                const statusMessage = getAlreadyStatusMessage(crossOutInfo);
 
                 return (
                   <tr
                     key={`already-${crossOutReason}-${req.id || req._tempId}`}
                     className="group h-[24px] border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors"
-                    aria-label={crossOutMessage || undefined}
+                    aria-label={statusMessage || undefined}
                   >
-                    <td className="request-cross-trigger relative px-0.5 py-0.5 text-center">
+                    <td className="relative px-0.5 py-0.5 text-center">
                       <span className="inline-flex min-w-[34px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none" style={requestPillStyle}>{req.trainId}</span>
-                      <RequestCrossLine show />
-                      <RequestCrossBubble message={crossOutMessage} />
                     </td>
-                    <td className="request-cross-trigger relative px-0.5 py-0.5 text-center">
+                    <td className="relative px-0.5 py-0.5 text-center">
                       <span className="inline-flex max-w-[105px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none truncate" style={requestPillStyle}>{displayLabel}</span>
-                      <RequestCrossLine show />
                     </td>
                     <td className="relative pr-1 py-0.5 text-center">
-                      <button onClick={() => onRemove(req.id)} className="relative z-30 text-[#3a5a7a] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
-                      <RequestCrossLine show />
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => onRemove(req.id)}
+                          className="relative z-30 inline-flex h-[18px] w-[16px] items-center justify-center text-[#3a5a7a] transition-colors hover:text-red-400"
+                          aria-label={`Remove ${req.trainId}`}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                        <AlreadyStatusIcon message={statusMessage} />
+                      </div>
                     </td>
                   </tr>
                 );
