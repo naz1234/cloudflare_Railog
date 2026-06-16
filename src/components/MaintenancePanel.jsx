@@ -111,8 +111,10 @@ function DeleteRequestIcon() {
   );
 }
 
-function AlreadyStatusIcon({ message }) {
+function AlreadyStatusIcon({ message, reason }) {
   if (!message) return null;
+
+  const isWorkshop = reason === "WORKSHOP";
 
   return (
     <span
@@ -120,7 +122,13 @@ function AlreadyStatusIcon({ message }) {
       tabIndex={0}
       aria-label={message}
     >
-      <span className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-emerald-300/80 bg-[#58c96b] shadow-[0_0_8px_rgba(88,201,107,0.55)]">
+      <span
+        className={`inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border ${
+          isWorkshop
+            ? "border-[#fbbf24] bg-[#fbbf24] shadow-[0_0_8px_rgba(251,191,36,0.6)]"
+            : "border-emerald-300/80 bg-[#58c96b] shadow-[0_0_8px_rgba(88,201,107,0.55)]"
+        }`}
+      >
         <Check className="h-3 w-3 stroke-[3.5] text-white" />
       </span>
       <span className="already-status-bubble pointer-events-none absolute right-[25px] top-1/2 z-[90] -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150">
@@ -814,7 +822,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                         >
                           <DeleteRequestIcon />
                         </button>
-                        <AlreadyStatusIcon message={statusMessage} />
+                        <AlreadyStatusIcon message={statusMessage} reason={crossOutReason} />
                       </div>
                     </td>
                   </tr>
