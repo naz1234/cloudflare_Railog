@@ -5160,7 +5160,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   <button
                     key={preset.label}
                     onClick={() => applyPreset(depot, preset.label)}
-                    className={`h-5 rounded-md text-[11px] font-black border transition-all ${
+                    className={`h-5 rounded-md text-[11px] font-normal border transition-all ${
                       active
                         ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
                         : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
@@ -5180,7 +5180,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   <button
                     key={preset.label}
                     onClick={() => applyPreset(depot, preset.label)}
-                    className={`h-5 rounded-md text-[11px] font-black border transition-all ${
+                    className={`h-5 rounded-md text-[11px] font-normal border transition-all ${
                       active
                         ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
                         : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
@@ -5200,10 +5200,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
           <table className="w-full border-separate border-spacing-0 table-fixed text-[12px]">
             <thead>
               <tr>
-                <th className="h-5 px-1 text-left text-[9.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "2%" }}>Train ID</th>
-                <th className="h-5 px-1 text-left text-[9.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "2%" }}>TID</th>
-                <th className="h-5 px-1 text-left text-[9.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "2%" }}>Timing</th>
-                <th className="h-5 px-1 text-left text-[9.5px] font-black uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "5%" }}>Remark</th>
+                <th className="h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "2%" }}>Train ID</th>
+                <th className="h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "2%" }}>TID</th>
+                <th className="h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "2%" }}>Timing</th>
+                <th className="h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "5%" }}>Remark</th>
               </tr>
             </thead>
             <tbody>
@@ -5395,8 +5395,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
             </svg>
           </div>
           <div className="min-w-0">
-            <h2 className="text-[11px] font-black text-white tracking-widest uppercase leading-none">Train Rem</h2>
-            <p className="text-[8px] font-semibold text-[#7eb8e0] mt-0.5">Train removal timing entry</p>
+            <h2 className="text-[11px] font-normal text-white tracking-widest uppercase leading-none">REMOVAL SUMMARY</h2>
           </div>
         </div>
         <div className={`px-1.5 py-0.5 rounded-md border text-[7px] font-black whitespace-nowrap ${syncStatusClass}`}>
