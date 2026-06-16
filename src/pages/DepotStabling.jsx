@@ -5750,7 +5750,7 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex w-fit items-center rounded-full border border-[#2b4f6b] bg-[#071828] p-1 text-[10px] font-black shadow-inner shadow-black/20">
+        <div className="inline-flex w-fit items-center rounded-full border border-[#2b4f6b] bg-[#071828] p-1 text-[10px] font-normal shadow-inner shadow-black/20">
           {(["pg1", "pg2"]).map((pg) => {
             const selected = normalizeInsertionPg(activePg) === pg;
             return (
@@ -5770,7 +5770,7 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
         <button
           type="button"
           onClick={onRefreshPg2}
-          className="group flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
+          className="group flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-normal transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
           style={MAIN_STABLING_BUTTON_BLUE}
           title="Refresh PG2 back to the current default PG1 stabling"
         >
