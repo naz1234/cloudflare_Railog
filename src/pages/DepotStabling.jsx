@@ -5408,12 +5408,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 const requestRemarkStyle = requestRemark
                   ? getTrainRemRequestRemarkStyle(trainRemRequestItems[0], requestRemark)
                   : undefined;
-                const scheduledRemovalLabel = isWest9amRemoval
-                  ? "West Removal"
-                  : isEast9amRemoval
-                    ? "East Removal"
-                    : "";
-                const remarkValue = requestRemark || scheduledRemovalLabel || row.remark;
+                const remarkValue = requestRemark || (referenceOnly ? "" : row.remark);
                 const displayTimingValue = real9amScheduleMatch?.timing || row.timing;
                 const rowStatusTitle = isWest9amRemoval
                   ? "West Depot 9am removal detected from the active timetable"
@@ -5557,7 +5552,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       onBlur={handleTrainRemEditEnd}
                       readOnly={Boolean(requestRemark) || referenceOnly}
                       title={referenceOnly ? rowStatusTitle : requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
-                      placeholder={referenceDisplayOnly ? "Reference only" : referenceOnly ? "" : "Remark"}
+                      placeholder={referenceOnly ? "" : "Remark"}
                       style={requestRemarkStyle}
                       className={`w-full h-5 rounded-md border px-1.5 text-[11px] ${referenceOnly ? "font-normal" : "font-semibold"} outline-none placeholder:text-[#2b4f6b] ${
                         requestRemark || referenceOnly
