@@ -15430,11 +15430,8 @@ function saveRequestedTrainManualTidMap(map = {}) {
 }
 
 function loadRequestedTrainIncludeTomorrowSwaps() {
-  try {
-    return localStorage.getItem("requestedTrainIncludeTomorrowSwaps") === "true";
-  } catch {
-    return false;
-  }
+  // TMRW / TOMORROW / MRNING / MORNING requests are always included.
+  return true;
 }
 
 function getRemovalPdfSwappingRows({ requests = [], trainRemState = {}, westData = {}, eastData = {}, activeTimetable = null } = {}) {
@@ -16163,15 +16160,9 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
 function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceMap = {}, westData = {}, eastData = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
   const [downloadingDocxType, setDownloadingDocxType] = useState(null);
   const [arrivalLookupTime, setArrivalLookupTime] = useState(() => new Date());
-  const [includeTomorrowRequests, setIncludeTomorrowRequests] = useState(loadRequestedTrainIncludeTomorrowSwaps);
+  const includeTomorrowRequests = true;
 
   const [manualTidByTrain, setManualTidByTrain] = useState(loadRequestedTrainManualTidMap);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("requestedTrainIncludeTomorrowSwaps", includeTomorrowRequests ? "true" : "false");
-    } catch {}
-  }, [includeTomorrowRequests]);
 
   useEffect(() => {
     saveRequestedTrainManualTidMap(manualTidByTrain);
@@ -16211,7 +16202,6 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
     }),
     manualTidByTrain
   );
-  const hiddenTomorrowSwapCount = allSwappingRows.filter((row) => row?.hideWhenTomorrowExcluded).length;
   const swappingRows = includeTomorrowRequests
     ? allSwappingRows
     : allSwappingRows
@@ -16265,24 +16255,6 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <label
-            className="flex h-6 items-center gap-1.5 rounded-[10px] border border-[#2b4f6b] bg-[#071828] px-2 text-[10px] font-bold text-[#cfe5fb] shadow-sm select-none"
-            title="Include or hide TMRW / TOMORROW / MRNING / MORNING requests from the swapping table"
-          >
-            <input
-              type="checkbox"
-              checked={includeTomorrowRequests}
-              onChange={(event) => setIncludeTomorrowRequests(event.target.checked)}
-              className="h-3 w-3 accent-sky-400"
-            />
-            Include TMRW / Morning
-            {!includeTomorrowRequests && hiddenTomorrowSwapCount > 0 && (
-              <span className="rounded-full border border-sky-300/30 bg-sky-500/10 px-1.5 py-0.5 text-[9px] font-bold text-sky-100">
-                {hiddenTomorrowSwapCount} hidden
-              </span>
-            )}
-          </label>
-
           <button
             onClick={handleDownloadDocx}
             disabled={Boolean(downloadingDocxType)}
