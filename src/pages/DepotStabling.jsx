@@ -5082,9 +5082,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     return (
       <div className="rounded-xl border border-[#2b4f6b] bg-[#071828] overflow-hidden shadow-md">
         <div className="px-2 py-2 border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-          <div className="relative flex items-start justify-end gap-2">
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center">
-              <div className="text-[9px] font-normal text-white uppercase tracking-widest">{title}</div>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <div className="text-[10px] font-normal text-white uppercase tracking-widest">{title}</div>
               {subtitle && <div className="mt-0.5 text-[7px] font-normal text-[#7eb8e0]">{subtitle}</div>}
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
