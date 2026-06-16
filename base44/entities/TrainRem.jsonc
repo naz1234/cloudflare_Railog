@@ -45,6 +45,37 @@
     "updatedAt": {
       "type": "string",
       "description": "Last Train Rem client-side save timestamp used to prevent older duplicate records from overwriting the latest Train ID inputs"
+    },
+    "presetRows": {
+      "type": "object",
+      "description": "Saved Train Rem row sets for each preset so switching 9am, 7pm, 12am, Fri, Sat or PH restores the exact previous entries.",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "rowId": {
+              "type": "string",
+              "description": "Stable row ID used by the app to update the same row instead of creating stale/duplicate row data"
+            },
+            "trainId": {
+              "type": "string"
+            },
+            "tid": {
+              "type": "string"
+            },
+            "timing": {
+              "type": "string"
+            },
+            "remark": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "rowId"
+          ]
+        }
+      }
     }
   },
   "required": [

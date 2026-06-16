@@ -2158,6 +2158,8 @@ const TID_PRESETS = {
   ],
 };
 
+const TRAIN_REM_PRESET_LABELS = ["9am", "7pm", "12am", "Fri", "Sat", "PH"];
+
 const TID_TIME_MAP = {
   west: {
     "9am":  { 212:"08:59",214:"09:05",216:"09:11",218:"09:17",220:"09:23",102:"09:29",104:"09:35",106:"09:41",108:"09:47",110:"09:53" },
@@ -2207,7 +2209,15 @@ function getTrainRemRecordTimestamp(record = {}) {
 
 function getTrainRemRecordFilledTrainIdCount(record = {}) {
   const depot = record?.depot === "east" ? "east" : record?.depot === "west" ? "west" : null;
-  const rows = depot ? normalizeTrainRemRows(record?.rows, depot) : Array.isArray(record?.rows) ? record.rows : [];
+  if (!depot) {
+    const rows = Array.isArray(record?.rows) ? record.rows : [];
+    return rows.filter((row) => normalizeTrainId(row?.trainId || "")).length;
+  }
+
+  const presetRows = record?.presetRows && typeof record.presetRows === "object"
+    ? Object.values(record.presetRows).flatMap((rows) => Array.isArray(rows) ? rows : [])
+    : [];
+  const rows = presetRows.length ? presetRows : normalizeTrainRemRows(record?.rows, depot);
 
   return rows.filter((row) => normalizeTrainId(row?.trainId || "")).length;
 }
@@ -2285,13 +2295,82 @@ function normalizeTrainRemRowsForPreset(rows, depot, label = "9am") {
   });
 }
 
-function mergeTrainRemCombinedMorningReferenceState(state = {}) {
-  const westPreset = state?.selectedPreset?.west || "9am";
-  const eastPreset = state?.selectedPreset?.east || "9am";
-  if (!isTrainRemWest9amPreset("west", westPreset) || eastPreset !== "9am") return state;
+function buildDefaultTrainRemPresetRows(depot = "west") {
+  const safeDepot = depot === "east" ? "east" : "west";
 
-  const westRows = normalizeTrainRemRowsForPreset(state?.rows?.west, "west", "9am");
-  const eastRowsByTid = indexTrainRemRowsByTid(normalizeTrainRemRows(state?.rows?.east, "east"));
+  return Object.fromEntries(
+    TRAIN_REM_PRESET_LABELS.map((label) => [
+      label,
+      normalizeTrainRemRowsForPreset(buildTrainRemRowsFromPreset(safeDepot, label), safeDepot, label),
+    ])
+  );
+}
+
+function normalizeTrainRemPresetRows(presetRows = {}, depot = "west") {
+  const safeDepot = depot === "east" ? "east" : "west";
+  const source = presetRows && typeof presetRows === "object" ? presetRows : {};
+  const defaults = buildDefaultTrainRemPresetRows(safeDepot);
+
+  return Object.fromEntries(
+    TRAIN_REM_PRESET_LABELS.map((label) => [
+      label,
+      Array.isArray(source?.[label])
+        ? normalizeTrainRemRowsForPreset(source[label], safeDepot, label)
+        : defaults[label],
+    ])
+  );
+}
+
+function syncTrainRemActiveRowsToPresetCache(state = {}) {
+  const selectedPreset = {
+    west: state?.selectedPreset?.west || "9am",
+    east: state?.selectedPreset?.east || "9am",
+  };
+  const rows = {
+    west: normalizeTrainRemRowsForPreset(state?.rows?.west, "west", selectedPreset.west),
+    east: normalizeTrainRemRowsForPreset(state?.rows?.east, "east", selectedPreset.east),
+  };
+  const presetRows = {
+    west: normalizeTrainRemPresetRows(state?.presetRows?.west, "west"),
+    east: normalizeTrainRemPresetRows(state?.presetRows?.east, "east"),
+  };
+
+  presetRows.west[selectedPreset.west] = rows.west;
+  presetRows.east[selectedPreset.east] = rows.east;
+
+  return {
+    ...state,
+    selectedPreset,
+    rows,
+    presetRows,
+  };
+}
+
+function getTrainRemCachedPresetRows(state = {}, depot = "west", label = "9am") {
+  const safeDepot = depot === "east" ? "east" : "west";
+  const safeLabel = TRAIN_REM_PRESET_LABELS.includes(label) ? label : "9am";
+  const currentLabel = state?.selectedPreset?.[safeDepot] || "9am";
+
+  if (currentLabel === safeLabel && Array.isArray(state?.rows?.[safeDepot])) {
+    return normalizeTrainRemRowsForPreset(state.rows[safeDepot], safeDepot, safeLabel);
+  }
+
+  const cachedRows = state?.presetRows?.[safeDepot]?.[safeLabel];
+  if (Array.isArray(cachedRows)) {
+    return normalizeTrainRemRowsForPreset(cachedRows, safeDepot, safeLabel);
+  }
+
+  return normalizeTrainRemRowsForPreset(buildTrainRemRowsFromPreset(safeDepot, safeLabel), safeDepot, safeLabel);
+}
+
+function mergeTrainRemCombinedMorningReferenceState(state = {}) {
+  const syncedState = syncTrainRemActiveRowsToPresetCache(state);
+  const westPreset = syncedState?.selectedPreset?.west || "9am";
+  const eastPreset = syncedState?.selectedPreset?.east || "9am";
+  if (!isTrainRemWest9amPreset("west", westPreset) || eastPreset !== "9am") return syncedState;
+
+  const westRows = normalizeTrainRemRowsForPreset(syncedState?.rows?.west, "west", "9am");
+  const eastRowsByTid = indexTrainRemRowsByTid(normalizeTrainRemRows(syncedState?.rows?.east, "east"));
   const mergedWestRows = westRows.map((row) => {
     if (normalizeTrainId(row?.trainId || "")) return row;
     const eastRow = eastRowsByTid.get(normalizeTrainRemTidValue(row?.tid || ""));
@@ -2304,16 +2383,26 @@ function mergeTrainRemCombinedMorningReferenceState(state = {}) {
       remark: "",
     };
   });
+  const clearedEast9amRows = buildTrainRemRowsFromPreset("east", "9am");
 
   return {
-    ...state,
+    ...syncedState,
     rows: {
-      ...state.rows,
+      ...syncedState.rows,
       west: mergedWestRows,
-      // East 9am is now represented by the combined West 9am reference table.
-      // Clear its old Train IDs after migration so deleted West reference values
-      // cannot be restored from hidden legacy East rows on the next reload.
-      east: buildTrainRemRowsFromPreset("east", "9am"),
+      // East 9am is represented by the combined West 9am reference table.
+      east: clearedEast9amRows,
+    },
+    presetRows: {
+      ...syncedState.presetRows,
+      west: {
+        ...syncedState.presetRows.west,
+        "9am": mergedWestRows,
+      },
+      east: {
+        ...syncedState.presetRows.east,
+        "9am": clearedEast9amRows,
+      },
     },
   };
 }
@@ -2366,12 +2455,18 @@ function buildTrainRemRowsFromPreset(depot, label, existingRows = []) {
 }
 
 function buildDefaultTrainRemState() {
+  const presetRows = {
+    west: buildDefaultTrainRemPresetRows("west"),
+    east: buildDefaultTrainRemPresetRows("east"),
+  };
+
   return {
     selectedPreset: { west: "9am", east: "9am" },
     rows: {
-      west: buildTrainRemRowsFromPreset("west", "9am"),
-      east: buildTrainRemRowsFromPreset("east", "9am"),
+      west: presetRows.west["9am"],
+      east: presetRows.east["9am"],
     },
+    presetRows,
     updatedAt: "",
   };
 }
@@ -2381,24 +2476,42 @@ function loadTrainRemState() {
     const raw = localStorage.getItem(TRAIN_REM_STORAGE_KEY);
     if (!raw) return buildDefaultTrainRemState();
     const parsed = JSON.parse(raw);
-    return mergeTrainRemCombinedMorningReferenceState({
-      selectedPreset: {
-        west: parsed?.selectedPreset?.west || "9am",
-        east: parsed?.selectedPreset?.east || "9am",
-      },
+    const selectedPreset = {
+      west: parsed?.selectedPreset?.west || "9am",
+      east: parsed?.selectedPreset?.east || "9am",
+    };
+    const presetRows = {
+      west: normalizeTrainRemPresetRows(parsed?.presetRows?.west, "west"),
+      east: normalizeTrainRemPresetRows(parsed?.presetRows?.east, "east"),
+    };
+    const state = {
+      selectedPreset,
       rows: {
-        west: normalizeTrainRemRowsForPreset(parsed?.rows?.west, "west", parsed?.selectedPreset?.west || "9am"),
-        east: normalizeTrainRemRowsForPreset(parsed?.rows?.east, "east", parsed?.selectedPreset?.east || "9am"),
+        west: normalizeTrainRemRowsForPreset(
+          Array.isArray(parsed?.rows?.west) ? parsed.rows.west : presetRows.west[selectedPreset.west],
+          "west",
+          selectedPreset.west
+        ),
+        east: normalizeTrainRemRowsForPreset(
+          Array.isArray(parsed?.rows?.east) ? parsed.rows.east : presetRows.east[selectedPreset.east],
+          "east",
+          selectedPreset.east
+        ),
       },
+      presetRows,
       updatedAt: (parsed?.updatedAt || parsed?.updated_date || parsed?.updatedDate || "").toString(),
-    });
+    };
+
+    return mergeTrainRemCombinedMorningReferenceState(state);
   } catch {
     return buildDefaultTrainRemState();
   }
 }
 
 function saveTrainRemState(state) {
-  try { localStorage.setItem(TRAIN_REM_STORAGE_KEY, JSON.stringify(state)); } catch {}
+  try {
+    localStorage.setItem(TRAIN_REM_STORAGE_KEY, JSON.stringify(syncTrainRemActiveRowsToPresetCache(state)));
+  } catch {}
 }
 function cloneTrainRemState(state) {
   try {
@@ -2427,12 +2540,16 @@ function isTrainRemEntityReady(entity = getTrainRemEntity()) {
 
 function buildTrainRemDepotPayload(state = {}, depot = "west") {
   const safeDepot = depot === "east" ? "east" : "west";
+  const syncedState = syncTrainRemActiveRowsToPresetCache(state);
+  const selectedPreset = syncedState.selectedPreset?.[safeDepot] || "9am";
+
   return {
     depot: safeDepot,
     key: safeDepot,
-    selectedPreset: state.selectedPreset?.[safeDepot] || "9am",
-    rows: normalizeTrainRemRowsForPreset(state.rows?.[safeDepot], safeDepot, state.selectedPreset?.[safeDepot] || "9am"),
-    updatedAt: state.updatedAt || new Date().toISOString(),
+    selectedPreset,
+    rows: normalizeTrainRemRowsForPreset(syncedState.rows?.[safeDepot], safeDepot, selectedPreset),
+    presetRows: normalizeTrainRemPresetRows(syncedState.presetRows?.[safeDepot], safeDepot),
+    updatedAt: syncedState.updatedAt || new Date().toISOString(),
   };
 }
 
@@ -2442,6 +2559,10 @@ function buildTrainRemStateFromRecords(records = []) {
   const state = {
     selectedPreset: { ...fallback.selectedPreset },
     rows: { ...fallback.rows },
+    presetRows: {
+      west: normalizeTrainRemPresetRows(fallback.presetRows.west, "west"),
+      east: normalizeTrainRemPresetRows(fallback.presetRows.east, "east"),
+    },
     updatedAt: "",
   };
 
@@ -2454,9 +2575,15 @@ function buildTrainRemStateFromRecords(records = []) {
 
     if (rec.id) map[depot] = rec.id;
 
-    state.selectedPreset[depot] = rec.selectedPreset || fallback.selectedPreset[depot];
-    state.rows[depot] = normalizeTrainRemRowsForPreset(rec.rows, depot, state.selectedPreset[depot]);
-
+    const selectedPreset = rec.selectedPreset || fallback.selectedPreset[depot];
+    state.selectedPreset[depot] = selectedPreset;
+    state.presetRows[depot] = normalizeTrainRemPresetRows(rec?.presetRows, depot);
+    state.rows[depot] = normalizeTrainRemRowsForPreset(
+      Array.isArray(rec?.rows) ? rec.rows : state.presetRows[depot][selectedPreset],
+      depot,
+      selectedPreset
+    );
+    state.presetRows[depot][selectedPreset] = state.rows[depot];
 
     const recordUpdatedAt = (rec?.updatedAt || rec?.updated_date || rec?.updatedDate || "").toString();
     if (getTrainRemTimestampValue(recordUpdatedAt) >= getTrainRemStateTimestamp(state)) {
@@ -4422,7 +4549,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
   const updateTrainRemState = useCallback((updater) => {
     const prev = trainRemStateRef.current;
-    const nextStateBase = typeof updater === "function" ? updater(prev) : updater;
+    const updatedState = typeof updater === "function" ? updater(prev) : updater;
+    const nextStateBase = syncTrainRemActiveRowsToPresetCache(updatedState);
 
     if (isSameTrainRemState(prev, nextStateBase)) return;
 
@@ -4503,10 +4631,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
       if (!changed) return prev;
 
-      const nextState = {
+      const nextState = syncTrainRemActiveRowsToPresetCache({
         ...prev,
         rows: nextRows,
-      };
+      });
 
       scheduleTrainRemSave(nextState);
       return nextState;
@@ -4723,16 +4851,33 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
   const applyPreset = (depot, label) => {
     updateTrainRemState((prev) => {
-      const existingRows = normalizeTrainRemRows(prev.rows?.[depot], depot);
+      // Save the currently displayed preset before changing tabs, then restore
+      // the exact rows previously entered for the newly selected preset.
+      const syncedPrev = syncTrainRemActiveRowsToPresetCache(prev);
+      const cachedTargetRows = getTrainRemCachedPresetRows(syncedPrev, depot, label);
+      const restoredRows = buildTrainRemRowsFromPresetConfig(
+        depot,
+        label,
+        cachedTargetRows,
+        activeTimetable,
+        { preserveManualBlankRows: true }
+      );
       const nextState = {
-        ...prev,
+        ...syncedPrev,
         selectedPreset: {
-          ...prev.selectedPreset,
+          ...syncedPrev.selectedPreset,
           [depot]: label,
         },
         rows: {
-          ...prev.rows,
-          [depot]: buildTrainRemRowsFromPresetConfig(depot, label, existingRows, activeTimetable),
+          ...syncedPrev.rows,
+          [depot]: restoredRows,
+        },
+        presetRows: {
+          ...syncedPrev.presetRows,
+          [depot]: {
+            ...syncedPrev.presetRows?.[depot],
+            [label]: restoredRows,
+          },
         },
       };
 
