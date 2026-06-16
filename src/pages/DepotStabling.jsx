@@ -17158,9 +17158,10 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
         drawTextInCell(entry.trainId || "-", colX.train, textY, 8, { size: rowContentFontSize, bold: true, align: "center", width: colWidths.train });
         drawTextInCell(entry.tid || "-", colX.tid + 8, textY, 6, { size: rowContentFontSize, bold: false });
         drawTextInCell(entry.time ? `${entry.time} hrs` : "-", colX.time + 8, textY, 11, { size: rowContentFontSize, bold: false });
+        const depotRemarkPillFontSize = Math.max(3.8, remarkContentFontSize - 1);
         drawRemarkPills(entry, colX.remark, rowY, colWidths.remark, activeRowHeight, textY, activeFontSize, {
-          baseFontSize: remarkContentFontSize,
-          maxFontSize: remarkContentFontSize,
+          baseFontSize: depotRemarkPillFontSize,
+          maxFontSize: depotRemarkPillFontSize,
         });
       });
     }
