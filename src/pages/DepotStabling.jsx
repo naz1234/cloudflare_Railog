@@ -5446,7 +5446,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   : cleanTid.length === 3
                   ? isEast9amRemoval
                     ? `border-lime-400/95 bg-lime-950/55 text-lime-100 shadow-[0_0_0_1px_rgba(163,230,53,0.34),0_0_8px_rgba(163,230,53,0.10)]${referenceOnly ? " cursor-default" : ""}`
-                    : `border-emerald-500/80 bg-emerald-950/35 text-emerald-100 shadow-[0_0_0_1px_rgba(16,185,129,0.18)]${referenceOnly ? " cursor-default" : ""}`
+                    : isWest9amRemoval
+                      ? `border-[#14B8A6] bg-[#0b3734] text-[#99f6e4] shadow-[0_0_0_1px_rgba(20,184,166,0.36),0_0_8px_rgba(20,184,166,0.12)]${referenceOnly ? " cursor-default" : ""}`
+                      : `border-emerald-500/80 bg-emerald-950/35 text-emerald-100 shadow-[0_0_0_1px_rgba(16,185,129,0.18)]${referenceOnly ? " cursor-default" : ""}`
                   : hasTid
                   ? `border-amber-500/70 bg-amber-950/25 text-amber-100${referenceOnly ? " cursor-default" : ""}`
                   : `border-[#1e4060] bg-[#091828] text-[#c8d8ea]${referenceOnly ? " cursor-default" : ""}`;
