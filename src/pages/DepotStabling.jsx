@@ -1980,7 +1980,6 @@ const TRAIN_REM_WEST_DEFAULT_VISIBLE_ROW_COUNT = 32;
 const TRAIN_REM_WEST_9AM_REAL_ROW_COUNT = 0;
 const TRAIN_REM_WEST_9AM_REFERENCE_SEPARATOR_COUNT = 0;
 const TRAIN_REM_WEST_9AM_REFERENCE_START_INDEX = 0;
-const TRAIN_REM_WEST_9AM_REFERENCE_NOTE = "Full TID reference — West/East 9am removal is detected automatically from the active timetable.";
 const TRAIN_REM_WEST_9AM_REFERENCE_TIDS = [
   101, 102, 103, 104, 105, 106, 107, 108, 109, 110,
   111, 112, 113, 114, 115, 116, 117, 118, 119, 120,
@@ -5362,11 +5361,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               })}
             </div>
 
-            {isTrainRemWest9amPreset(depot, selectedPreset) && (
-              <div className="rounded-md border border-amber-500/45 bg-[#2a2110] px-2 py-1 text-[9px] font-normal leading-tight text-amber-100">
-                {TRAIN_REM_WEST_9AM_REFERENCE_NOTE}
-              </div>
-            )}
           </div>
         </div>
 
@@ -5393,7 +5387,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                         className="border-b border-[#1f3c55] px-2 py-1 text-left text-[9.5px] font-normal text-amber-100"
                         style={{ backgroundColor: index === TRAIN_REM_WEST_9AM_REAL_ROW_COUNT ? "#2a2110" : "#071828" }}
                       >
-                        {index === TRAIN_REM_WEST_9AM_REAL_ROW_COUNT ? TRAIN_REM_WEST_9AM_REFERENCE_NOTE : ""}
                       </td>
                     </tr>
                   );
@@ -5454,7 +5447,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       }}
                       onBlur={() => handleTrainRemTrainIdBlur(depot, index)}
                       placeholder="ID"
-                      title={referenceOnly ? "Reference only — excluded from removal log and PDF" : isDuplicateTrainId ? "Duplicate Train ID detected" : ""}
+                      title={referenceOnly ? (hasTrainId ? "Removal depot and timing are detected from the active timetable" : "TID reference row") : isDuplicateTrainId ? "Duplicate Train ID detected" : ""}
                       className={`w-full h-5 rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${trainIdInputClass}`}
                     />
                   </td>
@@ -5481,7 +5474,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       inputMode="numeric"
                       maxLength={3}
                       readOnly={referenceOnly}
-                      title={referenceOnly ? "Reference only — excluded from removal log and PDF" : isDuplicateTid ? "Duplicate TID detected" : "Enter exactly 3 digits"}
+                      title={referenceOnly ? (hasTrainId ? "Removal depot and timing are detected from the active timetable" : "TID reference row") : isDuplicateTid ? "Duplicate TID detected" : "Enter exactly 3 digits"}
                       className={`w-full h-5 rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${tidInputClass}`}
                     />
                   </td>
@@ -5497,7 +5490,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       onBlur={handleTrainRemEditEnd}
                       placeholder={referenceOnly ? "REF" : "00:00"}
                       readOnly={referenceOnly}
-                      title={referenceOnly ? "Reference only — timing disabled so it will not export" : ""}
+                      title={referenceOnly ? (hasTrainId ? "Timing is detected from the active timetable" : "TID reference row") : ""}
                       className={`w-full h-5 rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${
                         referenceOnly
                           ? "border-amber-500/35 bg-[#121d18] text-amber-100 cursor-default placeholder:text-amber-700/70"
@@ -5516,8 +5509,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       }}
                       onBlur={handleTrainRemEditEnd}
                       readOnly={Boolean(requestRemark) || referenceOnly}
-                      title={referenceOnly ? "Reference only — excluded from removal log and PDF" : requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
-                      placeholder={referenceOnly ? "Reference only" : "Remark"}
+                      title={referenceOnly ? (hasTrainId ? "Removal details are detected from the active timetable" : "TID reference row") : requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
+                      placeholder={referenceOnly ? "" : "Remark"}
                       style={requestRemarkStyle}
                       className={`w-full h-5 rounded-md border px-1.5 text-[11px] ${referenceOnly ? "font-normal" : "font-semibold"} outline-none placeholder:text-[#2b4f6b] ${
                         requestRemark || referenceOnly
