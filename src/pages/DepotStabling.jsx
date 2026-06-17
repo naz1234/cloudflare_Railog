@@ -4323,6 +4323,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const [trainRemPdfStatus, setTrainRemPdfStatus] = useState({ west: false, east: false });
   const [trainRemUndoCount, setTrainRemUndoCount] = useState(0);
   const [eastDepotCopyStatus, setEastDepotCopyStatus] = useState("");
+  const [trainRemSortMode, setTrainRemSortMode] = useState({ west: "tid", east: "tid" });
 
   const trainRemStateRef = useRef(trainRemState);
 
@@ -4855,23 +4856,27 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     return nextIndex >= 0 && nextIndex < rowCount ? nextIndex : null;
   };
 
-  const handleTrainRemTrainIdAutoMove = (depot, rowIndex, rowCount, value) => {
+  const handleTrainRemTrainIdAutoMove = (depot, rowIndex, rowCount, value, nextVisibleRowIndex = undefined) => {
     const digitCount = (value || "").toString().replace(/[^0-9]/g, "").length;
     if (digitCount < 2) return;
 
-    // After 2 digits, always move downward only.
-    // The bottom row stays focused because there is no row below.
-    const nextIndex = getNextTrainRemTrainIdIndex(rowIndex, rowCount);
+    // When colour sorting is active, move to the next row as displayed.
+    // Otherwise keep the normal sequential TID order.
+    const nextIndex = nextVisibleRowIndex !== undefined
+      ? nextVisibleRowIndex
+      : getNextTrainRemTrainIdIndex(rowIndex, rowCount);
     if (nextIndex === null) return;
 
     window.setTimeout(() => focusTrainRemTrainId(depot, nextIndex), 0);
   };
 
-  const handleTrainRemTidAutoMove = (depot, rowIndex, rowCount, value) => {
+  const handleTrainRemTidAutoMove = (depot, rowIndex, rowCount, value, nextVisibleRowIndex = undefined) => {
     if (cleanTrainRemTidInput(value).length < 3) return;
 
-    // TID is exactly 3 digits. After the third digit, move down to the next TID row.
-    const nextIndex = getNextTrainRemTrainIdIndex(rowIndex, rowCount);
+    // TID is exactly 3 digits. After the third digit, move to the next displayed row.
+    const nextIndex = nextVisibleRowIndex !== undefined
+      ? nextVisibleRowIndex
+      : getNextTrainRemTrainIdIndex(rowIndex, rowCount);
     if (nextIndex === null) return;
 
     window.setTimeout(() => focusTrainRemTid(depot, nextIndex), 0);
@@ -5071,6 +5076,20 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     const rows = depot === "west" && !isTrainRemCombinedReferencePreset(depot, selectedPreset)
       ? normalizedRows.slice(0, TRAIN_REM_WEST_DEFAULT_VISIBLE_ROW_COUNT)
       : normalizedRows;
+    const rowEntries = rows.map((row, sourceIndex) => ({ row, sourceIndex }));
+    const canSortByRemovalColor = isTrainRemCombinedReferencePreset(depot, selectedPreset);
+    const activeSortMode = canSortByRemovalColor ? (trainRemSortMode?.[depot] || "tid") : "tid";
+    const getRemovalColorSortGroup = (row) => {
+      if (getTrainRemScheduleMatch(activeTimetable, "west", selectedPreset, row?.tid)) return 0;
+      if (getTrainRemScheduleMatch(activeTimetable, "east", selectedPreset, row?.tid)) return 1;
+      return 2;
+    };
+    const displayRowEntries = activeSortMode === "color"
+      ? [...rowEntries].sort((a, b) => {
+          const groupDifference = getRemovalColorSortGroup(a.row) - getRemovalColorSortGroup(b.row);
+          return groupDifference || a.sourceIndex - b.sourceIndex;
+        })
+      : rowEntries;
     const duplicateCounts = getTrainRemDuplicateCounts();
     const duplicateTidCounts = getTrainRemTidDuplicateCounts();
     const pdfActive = Boolean(trainRemPdfStatus?.[depot]);
@@ -5172,6 +5191,36 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   </button>
                 );
               })}
+
+              {canSortByRemovalColor && (
+                <div className="ml-auto inline-flex h-5 items-center rounded-md border border-[#2b4f6b] bg-[#081c2d] p-0.5">
+                  <span className="px-1 text-[8px] font-normal uppercase tracking-wide text-[#5f8fb2]">Sort</span>
+                  <button
+                    type="button"
+                    onClick={() => setTrainRemSortMode((prev) => ({ ...prev, [depot]: "tid" }))}
+                    className={`h-4 rounded px-1.5 text-[8px] font-normal transition-colors ${
+                      activeSortMode === "tid"
+                        ? "bg-[#1d4ed8] text-white"
+                        : "text-[#7eb8e0] hover:bg-[#102f4a] hover:text-white"
+                    }`}
+                    title="Sort by TID (current order)"
+                  >
+                    TID
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTrainRemSortMode((prev) => ({ ...prev, [depot]: "color" }))}
+                    className={`h-4 rounded px-1.5 text-[8px] font-normal transition-colors ${
+                      activeSortMode === "color"
+                        ? "bg-[#1d4ed8] text-white"
+                        : "text-[#7eb8e0] hover:bg-[#102f4a] hover:text-white"
+                    }`}
+                    title="Sort by West Rem, East Rem, then Off Peak colour"
+                  >
+                    Color
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-1">
@@ -5208,7 +5257,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, index) => {
+              {displayRowEntries.map(({ row, sourceIndex: index }, displayIndex) => {
+                const previousVisibleRowIndex = displayIndex > 0
+                  ? displayRowEntries[displayIndex - 1].sourceIndex
+                  : null;
+                const nextVisibleRowIndex = displayIndex < displayRowEntries.length - 1
+                  ? displayRowEntries[displayIndex + 1].sourceIndex
+                  : null;
                 const referenceSeparator = isTrainRemReferenceSeparatorIndex(depot, selectedPreset, index);
                 const referenceOnly = isTrainRemReferenceOnlyIndex(depot, selectedPreset, index);
                 const westReferenceScheduleMatch = referenceOnly
@@ -5297,12 +5352,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       onChange={(e) => {
                         const nextValue = e.target.value;
                         updateTrainRemCell(depot, index, "trainId", nextValue);
-                        handleTrainRemTrainIdAutoMove(depot, index, rows.length, nextValue);
+                        handleTrainRemTrainIdAutoMove(depot, index, rows.length, nextValue, nextVisibleRowIndex);
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === "Backspace" && !row.trainId && index > 0) {
+                        if (e.key === "Backspace" && !row.trainId && previousVisibleRowIndex !== null) {
                           e.preventDefault();
-                          focusTrainRemTrainId(depot, index - 1);
+                          focusTrainRemTrainId(depot, previousVisibleRowIndex);
                         }
                       }}
                       onBlur={() => handleTrainRemTrainIdBlur(depot, index)}
@@ -5320,13 +5375,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                         if (!referenceOnly) {
                           const nextValue = cleanTrainRemTidInput(e.target.value);
                           updateTrainRemCell(depot, index, "tid", nextValue);
-                          handleTrainRemTidAutoMove(depot, index, rows.length, nextValue);
+                          handleTrainRemTidAutoMove(depot, index, rows.length, nextValue, nextVisibleRowIndex);
                         }
                       }}
                       onKeyDown={(e) => {
-                        if (!referenceOnly && e.key === "Backspace" && !row.tid && index > 0) {
+                        if (!referenceOnly && e.key === "Backspace" && !row.tid && previousVisibleRowIndex !== null) {
                           e.preventDefault();
-                          focusTrainRemTid(depot, index - 1);
+                          focusTrainRemTid(depot, previousVisibleRowIndex);
                         }
                       }}
                       onBlur={handleTrainRemEditEnd}
