@@ -5236,7 +5236,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
               {canSortByRemovalColor && (
                 <div className="ml-auto inline-flex h-5 items-center rounded-md border border-[#2b4f6b] bg-[#081c2d] p-0.5">
-                  <span className="px-1 text-[10px] font-normal uppercase tracking-wide text-[#5f8fb2]">Sort</span>
+                  <span className="px-1 text-[10px] font-normal uppercase tracking-wide text-[#5f8fb2]">SORT :</span>
                   <button
                     type="button"
                     onClick={() => updateTrainRemSortMode(depot, "tid")}
@@ -5259,7 +5259,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     }`}
                     title="Sort by West Rem, East Rem, then Off Peak colour"
                   >
-                    Color
+                    COLOR
                   </button>
                 </div>
               )}
