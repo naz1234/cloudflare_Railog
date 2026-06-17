@@ -17416,9 +17416,14 @@ function renderPdfOperationsToCanvas(ops = "", pageSize = {}, resolutionScale = 
 
       const [, fontName, fontSize, red, green, blue, x, y, rawText] = textMatch;
       ctx.save();
-      ctx.setTransform(scale, 0, 0, scale, 0, 0);
+      // Text coordinates and font size are converted to output pixels here.
+      // Use an identity transform so the resolution scale is applied exactly once.
+      // The previous canvas scale plus pre-scaled text values enlarged and displaced
+      // every label, causing the PNG layout to overlap even though the PDF was correct.
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = pdfCanvasRgb(red, green, blue);
       ctx.font = `${fontName === "F2" ? "700" : "400"} ${Number(fontSize) * scale}px Arial, Helvetica, sans-serif`;
+      ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
       ctx.fillText(
         unescapePdfCanvasText(rawText),
