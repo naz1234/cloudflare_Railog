@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Save, CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Download, Search, ArrowUp, ArrowDown, Check } from "lucide-react";
+import { Save, CheckCircle2, FileSpreadsheet, FileText, Image as ImageIcon, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Download, Search, ArrowUp, ArrowDown, Check } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
@@ -4339,6 +4339,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const [trainRemDebug, setTrainRemDebug] = useState("");
   const [trainRemFocusedTrainIdCell, setTrainRemFocusedTrainIdCell] = useState(null);
   const [trainRemPdfStatus, setTrainRemPdfStatus] = useState({ west: false, east: false });
+  const [trainRemPngStatus, setTrainRemPngStatus] = useState({ west: false, east: false });
   const [trainRemUndoCount, setTrainRemUndoCount] = useState(0);
   const [eastDepotCopyStatus, setEastDepotCopyStatus] = useState("");
 
@@ -5067,6 +5068,49 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     }
   };
 
+  const handleTrainRemPngDownload = (depot, event = null) => {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+
+    if (trainRemPngStatus?.[depot]) return;
+
+    try {
+      const latestTrainRemState = trainRemStateRef.current || trainRemState;
+      const westLog = buildTrainRemRemovalLog(latestTrainRemState, "west", maintenanceMap, activeTimetable);
+      const eastLog = buildTrainRemRemovalLog(latestTrainRemState, "east", maintenanceMap, activeTimetable);
+      const latestEastData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
+      const swappingRows = getRemovalPdfSwappingRows({
+        requests,
+        trainRemState: latestTrainRemState,
+        westData,
+        eastData: latestEastData,
+        activeTimetable,
+      });
+      const actionOverviewRows = getRemovalPdfActionOverviewRows({
+        requests,
+        trainRemState: latestTrainRemState,
+        westData,
+        eastData: latestEastData,
+        activeTimetable,
+        activeTimetableType,
+      });
+
+      downloadCombinedRemovalPng(westLog, eastLog, {
+        swappingRows,
+        actionOverviewRows,
+        stackMorningDepots: true,
+      });
+      setTrainRemPngStatus((prev) => ({ ...prev, [depot]: true }));
+      setTimeout(() => {
+        setTrainRemPngStatus((prev) => ({ ...prev, [depot]: false }));
+      }, 700);
+    } catch (error) {
+      console.error("Train Rem PNG export failed:", error);
+      alert("Unable to create removal PNG. Please try again.");
+      setTrainRemPngStatus((prev) => ({ ...prev, [depot]: false }));
+    }
+  };
+
   const flashEastDepotCopyStatus = (status) => {
     setEastDepotCopyStatus(status);
 
@@ -5133,6 +5177,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     const duplicateCounts = getTrainRemDuplicateCounts();
     const duplicateTidCounts = getTrainRemTidDuplicateCounts();
     const pdfActive = Boolean(trainRemPdfStatus?.[depot]);
+    const pngActive = Boolean(trainRemPngStatus?.[depot]);
     const activeTimetableLabel = getTimetableTypeLabel(activeTimetableType);
     const timetablePresetNotice = isTrainRemPresetMismatchWithTimetable(activeTimetableType, selectedPreset)
       ? `Currently timetable ${activeTimetableLabel} is used`
@@ -5162,6 +5207,22 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               >
                 <FileText size={12} />
                 {pdfActive ? "Done" : "PDF"}
+              </button>
+
+              <button
+                type="button"
+                onClick={(event) => handleTrainRemPngDownload(depot, event)}
+                className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5"
+                style={{
+                  background: pngActive ? "rgba(34,197,94,0.18)" : "rgba(14,165,233,0.14)",
+                  borderColor: pngActive ? "rgba(34,197,94,0.48)" : "rgba(56,189,248,0.55)",
+                  color: pngActive ? "#86efac" : "#bae6fd",
+                  boxShadow: pngActive ? "0 0 12px rgba(34,197,94,0.16)" : "0 0 12px rgba(56,189,248,0.14)",
+                }}
+                title="Download the same removal summary layout as a PNG picture"
+              >
+                <ImageIcon size={12} />
+                {pngActive ? "Done" : "PNG"}
               </button>
 
               {depot === "east" && (
@@ -5195,7 +5256,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 title={trainRemUndoCount > 0 ? "Undo last Train Rem change" : "No Train Rem changes to undo"}
               >
                 <Undo2 size={12} />
-                Undo
+                UND
               </button>
 
               <button
@@ -5204,7 +5265,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 title={`Clear ${title}`}
               >
                 <Trash2 size={12} />
-                Clear
+                CLR
               </button>
             </div>
           </div>
@@ -16667,7 +16728,7 @@ function buildRemovalPdfBlob(log = {}) {
 }
 
 
-function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
+function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
   // A4 landscape, one page.
   // Keep every removal preset consistent with the clean 9am arrangement:
   // West and East are stacked on the left, while REQUESTED TRAIN uses
@@ -17310,8 +17371,150 @@ function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
     color: "#000000",
   });
 
+  return { ops, pageSize };
+}
+
+function buildCombinedRemovalPdfBlob(westLog = {}, eastLog = {}, options = {}) {
+  const { ops, pageSize } = buildCombinedRemovalPdfPage(westLog, eastLog, options);
   const pdf = buildPdfDocument([ops], pageSize);
   return new Blob([pdf], { type: "application/pdf" });
+}
+
+function pdfCanvasRgb(red = 0, green = 0, blue = 0) {
+  const clamp = (value) => Math.max(0, Math.min(255, Math.round((Number(value) || 0) * 255)));
+  return `rgb(${clamp(red)}, ${clamp(green)}, ${clamp(blue)})`;
+}
+
+function unescapePdfCanvasText(value = "") {
+  return String(value || "").replace(/\\([\\()])/g, "$1");
+}
+
+function renderPdfOperationsToCanvas(ops = "", pageSize = {}, resolutionScale = 2) {
+  const pageWidth = Number(pageSize?.width) || 841.89;
+  const pageHeight = Number(pageSize?.height) || 595.28;
+  const scale = Math.max(1, Number(resolutionScale) || 2);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(pageWidth * scale);
+  canvas.height = Math.round(pageHeight * scale);
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas is not supported by this browser.");
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.setTransform(scale, 0, 0, -scale, 0, pageHeight * scale);
+  ctx.lineCap = "butt";
+  ctx.lineJoin = "miter";
+
+  const numberToken = /^-?(?:\d+\.?\d*|\.\d+)$/;
+  const lines = String(ops || "").split(/\n+/).map((line) => line.trim()).filter(Boolean);
+
+  lines.forEach((line) => {
+    if (line.startsWith("BT ")) {
+      const textMatch = line.match(/^BT \/(F[12]) ([0-9.]+) Tf ([0-9.]+) ([0-9.]+) ([0-9.]+) rg (-?[0-9.]+) (-?[0-9.]+) Td \((.*)\) Tj ET$/);
+      if (!textMatch) return;
+
+      const [, fontName, fontSize, red, green, blue, x, y, rawText] = textMatch;
+      ctx.save();
+      ctx.setTransform(scale, 0, 0, scale, 0, 0);
+      ctx.fillStyle = pdfCanvasRgb(red, green, blue);
+      ctx.font = `${fontName === "F2" ? "700" : "400"} ${Number(fontSize) * scale}px Arial, Helvetica, sans-serif`;
+      ctx.textBaseline = "alphabetic";
+      ctx.fillText(
+        unescapePdfCanvasText(rawText),
+        Number(x) * scale,
+        (pageHeight - Number(y)) * scale
+      );
+      ctx.restore();
+      return;
+    }
+
+    const tokens = line.split(/\s+/);
+    const stack = [];
+
+    tokens.forEach((token) => {
+      if (numberToken.test(token)) {
+        stack.push(Number(token));
+        return;
+      }
+
+      const popNumbers = (count) => stack.splice(Math.max(0, stack.length - count), count);
+
+      switch (token) {
+        case "q":
+          ctx.save();
+          ctx.beginPath();
+          break;
+        case "Q":
+          ctx.restore();
+          break;
+        case "rg": {
+          const [red, green, blue] = popNumbers(3);
+          ctx.fillStyle = pdfCanvasRgb(red, green, blue);
+          break;
+        }
+        case "RG": {
+          const [red, green, blue] = popNumbers(3);
+          ctx.strokeStyle = pdfCanvasRgb(red, green, blue);
+          break;
+        }
+        case "w": {
+          const [width] = popNumbers(1);
+          ctx.lineWidth = Number(width) || 0.35;
+          break;
+        }
+        case "m": {
+          const [x, y] = popNumbers(2);
+          ctx.moveTo(x, y);
+          break;
+        }
+        case "l": {
+          const [x, y] = popNumbers(2);
+          ctx.lineTo(x, y);
+          break;
+        }
+        case "c": {
+          const [x1, y1, x2, y2, x3, y3] = popNumbers(6);
+          ctx.bezierCurveTo(x1, y1, x2, y2, x3, y3);
+          break;
+        }
+        case "re": {
+          const [x, y, width, height] = popNumbers(4);
+          ctx.rect(x, y, width, height);
+          break;
+        }
+        case "h":
+          ctx.closePath();
+          break;
+        case "f":
+          ctx.fill();
+          break;
+        case "S":
+          ctx.stroke();
+          break;
+        case "B":
+          ctx.fill();
+          ctx.stroke();
+          break;
+        default:
+          break;
+      }
+    });
+  });
+
+  return canvas;
+}
+
+function downloadCombinedRemovalPng(westLog = {}, eastLog = {}, options = {}) {
+  const dateStamp = new Date().toISOString().slice(0, 10);
+  const { ops, pageSize } = buildCombinedRemovalPdfPage(westLog, eastLog, options);
+  const canvas = renderPdfOperationsToCanvas(ops, pageSize, 2);
+  const link = document.createElement("a");
+  link.href = canvas.toDataURL("image/png");
+  link.download = `west-east-depot-removal-${dateStamp}.png`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 function downloadClientBlob(blob, filename) {
