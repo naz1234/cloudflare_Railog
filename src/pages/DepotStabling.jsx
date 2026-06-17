@@ -5111,7 +5111,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               <button
                 type="button"
                 onClick={(event) => handleTrainRemPdfDownload(depot, event)}
-                className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black text-cyan-100 transition-all hover:-translate-y-0.5"
+                className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5"
                 style={{
                   background: pdfActive ? "rgba(34,197,94,0.18)" : "rgba(6,212,232,0.14)",
                   borderColor: pdfActive ? "rgba(34,197,94,0.48)" : "rgba(34,211,238,0.55)",
@@ -5146,7 +5146,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 type="button"
                 onClick={handleTrainRemUndo}
                 disabled={trainRemUndoCount === 0}
-                className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0"
+                className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0"
                 style={{
                   background: "rgba(15,45,74,0.75)",
                   borderColor: "rgba(74,138,181,0.55)",
@@ -5160,7 +5160,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
               <button
                 onClick={() => clearDepotTrainRem(depot)}
-                className="inline-flex h-6 items-center gap-1 rounded-md border border-[#2b4f6b] bg-[#10263b] px-1.5 text-[9px] font-black text-[#7eb8e0] transition-colors hover:border-red-600/60 hover:bg-red-950/30 hover:text-red-300"
+                className="inline-flex h-6 items-center gap-1 rounded-md border border-[#2b4f6b] bg-[#10263b] px-1.5 text-[10px] font-normal text-[#7eb8e0] transition-colors hover:border-red-600/60 hover:bg-red-950/30 hover:text-red-300"
                 title={`Clear ${title}`}
               >
                 <Trash2 size={12} />
