@@ -5168,10 +5168,25 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       if (getTrainRemScheduleMatch(activeTimetable, "east", selectedPreset, row?.tid)) return 1;
       return 2;
     };
+    const west9amLocationOrder = new Map(
+      [212, 214, 216, 218, 220, 102, 104, 106, 108, 110]
+        .map((tid, orderIndex) => [String(tid), orderIndex])
+    );
     const displayRowEntries = activeSortMode === "color"
       ? [...rowEntries].sort((a, b) => {
-          const groupDifference = getRemovalColorSortGroup(a.row) - getRemovalColorSortGroup(b.row);
-          return groupDifference || a.sourceIndex - b.sourceIndex;
+          const aGroup = getRemovalColorSortGroup(a.row);
+          const bGroup = getRemovalColorSortGroup(b.row);
+          const groupDifference = aGroup - bGroup;
+          if (groupDifference) return groupDifference;
+
+          if (selectedPreset === "9am" && aGroup === 0) {
+            const aOrder = west9amLocationOrder.get(cleanTrainRemTidInput(a.row?.tid));
+            const bOrder = west9amLocationOrder.get(cleanTrainRemTidInput(b.row?.tid));
+            const priorityDifference = (aOrder ?? Number.MAX_SAFE_INTEGER) - (bOrder ?? Number.MAX_SAFE_INTEGER);
+            if (priorityDifference) return priorityDifference;
+          }
+
+          return a.sourceIndex - b.sourceIndex;
         })
       : rowEntries;
     const duplicateCounts = getTrainRemDuplicateCounts();
@@ -5367,6 +5382,16 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 const nextVisibleRowIndex = displayIndex < displayRowEntries.length - 1
                   ? displayRowEntries[displayIndex + 1].sourceIndex
                   : null;
+                const currentLocationGroup = activeSortMode === "color"
+                  ? getRemovalColorSortGroup(row)
+                  : null;
+                const previousLocationGroup = activeSortMode === "color" && displayIndex > 0
+                  ? getRemovalColorSortGroup(displayRowEntries[displayIndex - 1].row)
+                  : null;
+                const showLocationGroupSpacer = selectedPreset === "9am"
+                  && activeSortMode === "color"
+                  && (currentLocationGroup === 1 || currentLocationGroup === 2)
+                  && currentLocationGroup !== previousLocationGroup;
                 const referenceSeparator = isTrainRemReferenceSeparatorIndex(depot, selectedPreset, index);
                 const referenceOnly = isTrainRemReferenceOnlyIndex(depot, selectedPreset, index);
                 const westReferenceScheduleMatch = referenceOnly
@@ -5446,6 +5471,14 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
                 return (
                   <Fragment key={`${depot}-train-rem-${index}`}>
+                    {showLocationGroupSpacer && (
+                      <tr aria-hidden="true">
+                        <td
+                          colSpan={4}
+                          className="h-3 border-b border-[#1f3c55] bg-[#071828] p-0"
+                        />
+                      </tr>
+                    )}
                     <tr>
                   <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: filledRowBg }}>
                     <input
