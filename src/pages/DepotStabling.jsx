@@ -5168,10 +5168,18 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       if (getTrainRemScheduleMatch(activeTimetable, "east", selectedPreset, row?.tid)) return 1;
       return 2;
     };
+    const getTimingSortValue = (row) => {
+      const match = String(row?.timing || "").match(/^(\d{1,2}):(\d{2})/);
+      if (!match) return Number.POSITIVE_INFINITY;
+      return Number(match[1]) * 60 + Number(match[2]);
+    };
     const displayRowEntries = activeSortMode === "color"
       ? [...rowEntries].sort((a, b) => {
           const groupDifference = getRemovalColorSortGroup(a.row) - getRemovalColorSortGroup(b.row);
-          return groupDifference || a.sourceIndex - b.sourceIndex;
+          if (groupDifference) return groupDifference;
+
+          const timingDifference = getTimingSortValue(a.row) - getTimingSortValue(b.row);
+          return timingDifference || a.sourceIndex - b.sourceIndex;
         })
       : rowEntries;
     const duplicateCounts = getTrainRemDuplicateCounts();
@@ -5318,7 +5326,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                         ? "bg-[#1d4ed8] text-white"
                         : "text-[#7eb8e0] hover:bg-[#102f4a] hover:text-white"
                     }`}
-                    title="Sort by West Rem, East Rem, then Off Peak location"
+                    title="Sort by West Rem, East Rem, then Off Peak; time ascending within each location"
                   >
                     Location
                   </button>
