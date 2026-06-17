@@ -4341,6 +4341,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const [trainRemPdfStatus, setTrainRemPdfStatus] = useState({ west: false, east: false });
   const [trainRemPngStatus, setTrainRemPngStatus] = useState({ west: false, east: false });
   const [trainRemUndoCount, setTrainRemUndoCount] = useState(0);
+  const [westDepotCopyStatus, setWestDepotCopyStatus] = useState("");
   const [eastDepotCopyStatus, setEastDepotCopyStatus] = useState("");
 
   const trainRemStateRef = useRef(trainRemState);
@@ -4364,10 +4365,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const trainRemSmartDirectionRef = useRef({});
   const trainRemLastFocusedIndexRef = useRef({});
   const trainRemFocusedTrainIdCellRef = useRef(null);
+  const westDepotCopyTimerRef = useRef(null);
   const eastDepotCopyTimerRef = useRef(null);
 
   useEffect(() => {
     return () => {
+      if (westDepotCopyTimerRef.current) clearTimeout(westDepotCopyTimerRef.current);
       if (eastDepotCopyTimerRef.current) clearTimeout(eastDepotCopyTimerRef.current);
     };
   }, []);
@@ -5124,6 +5127,40 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     }, 1600);
   };
 
+  const flashWestDepotCopyStatus = (status) => {
+    setWestDepotCopyStatus(status);
+
+    if (westDepotCopyTimerRef.current) {
+      clearTimeout(westDepotCopyTimerRef.current);
+    }
+
+    westDepotCopyTimerRef.current = setTimeout(() => {
+      setWestDepotCopyStatus("");
+      westDepotCopyTimerRef.current = null;
+    }, 1600);
+  };
+
+  const handleCopyWestDepotTrainList = async () => {
+    const latestState = trainRemStateRef.current || trainRemState;
+    const removalTrainIds = getTrainRemRemovalEntries(latestState, "west", maintenanceMap, activeTimetable)
+      .map((entry) => padTrainId(normalizeTrainId(entry.trainId)))
+      .filter(Boolean);
+    const stablingTrainIds = collectStablingTrainIds(westData, WEST_ROADS);
+    const combinedTrainIds = Array.from(new Set([...removalTrainIds, ...stablingTrainIds]));
+
+    if (combinedTrainIds.length === 0) {
+      flashWestDepotCopyStatus("empty");
+      return;
+    }
+
+    const text = [`West Depot Train (Total ${combinedTrainIds.length} trains)`, ...combinedTrainIds.map(formatTrainNumberOnly)]
+      .filter(Boolean)
+      .join("\n");
+
+    const ok = await copyTextToClipboard(text);
+    flashWestDepotCopyStatus(ok ? "copied" : "failed");
+  };
+
   const handleCopyEastDepotTrainList = async () => {
     const latestState = trainRemStateRef.current || trainRemState;
     const removalTrainIds = getTrainRemRemovalEntries(latestState, "east", maintenanceMap, activeTimetable)
@@ -5149,6 +5186,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     if (eastDepotCopyStatus === "copied") return "Copied";
     if (eastDepotCopyStatus === "empty") return "No Train";
     if (eastDepotCopyStatus === "failed") return "Failed";
+    return "Copy";
+  };
+
+  const getWestDepotCopyLabel = () => {
+    if (westDepotCopyStatus === "copied") return "Copied";
+    if (westDepotCopyStatus === "empty") return "No Train";
+    if (westDepotCopyStatus === "failed") return "Failed";
     return "Copy";
   };
 
@@ -5244,23 +5288,33 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 {pngActive ? "Done" : "PNG"}
               </button>
 
-              {depot === "east" && (
-                <button
-                  type="button"
-                  onClick={handleCopyEastDepotTrainList}
-                  className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5"
-                  style={{
-                    background: eastDepotCopyStatus === "copied" ? "rgba(34,197,94,0.18)" : "rgba(15,45,74,0.75)",
-                    borderColor: eastDepotCopyStatus === "copied" ? "rgba(34,197,94,0.48)" : "rgba(74,138,181,0.55)",
-                    color: eastDepotCopyStatus === "copied" ? "#86efac" : eastDepotCopyStatus === "empty" ? "#fbbf24" : "#9ccbea",
-                    boxShadow: eastDepotCopyStatus === "copied" ? "0 0 12px rgba(34,197,94,0.16)" : "none",
-                  }}
-                  title="Copy East Depot removal Train ID list together with main East Depot stabling Train ID list"
-                >
-                  {eastDepotCopyStatus === "copied" ? <ClipboardCheck size={12} /> : <Copy size={12} />}
-                  {getEastDepotCopyLabel()}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={depot === "west" ? handleCopyWestDepotTrainList : handleCopyEastDepotTrainList}
+                className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5"
+                style={{
+                  background: (depot === "west" ? westDepotCopyStatus : eastDepotCopyStatus) === "copied"
+                    ? "rgba(34,197,94,0.18)"
+                    : "rgba(15,45,74,0.75)",
+                  borderColor: (depot === "west" ? westDepotCopyStatus : eastDepotCopyStatus) === "copied"
+                    ? "rgba(34,197,94,0.48)"
+                    : "rgba(74,138,181,0.55)",
+                  color: (depot === "west" ? westDepotCopyStatus : eastDepotCopyStatus) === "copied"
+                    ? "#86efac"
+                    : (depot === "west" ? westDepotCopyStatus : eastDepotCopyStatus) === "empty"
+                      ? "#fbbf24"
+                      : "#9ccbea",
+                  boxShadow: (depot === "west" ? westDepotCopyStatus : eastDepotCopyStatus) === "copied"
+                    ? "0 0 12px rgba(34,197,94,0.16)"
+                    : "none",
+                }}
+                title={`Copy ${title} removal Train ID list together with main ${title} stabling Train ID list`}
+              >
+                {(depot === "west" ? westDepotCopyStatus : eastDepotCopyStatus) === "copied"
+                  ? <ClipboardCheck size={12} />
+                  : <Copy size={12} />}
+                {depot === "west" ? getWestDepotCopyLabel() : getEastDepotCopyLabel()}
+              </button>
 
               <button
                 type="button"
