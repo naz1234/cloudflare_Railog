@@ -16346,6 +16346,40 @@ function getTrainRemRemovalRemarkItems(row = {}, maintenanceMap = {}) {
   return items;
 }
 
+function getRequestedRemarkPillItems(value = "") {
+  const seen = new Set();
+
+  return splitRequestedActionRemarks(value)
+    .filter((remark) => {
+      const key = normalizeRequestIdentity(remark);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 3)
+    .map((remark) => {
+      const knownStyle = getKnownMaintenanceStyle(remark);
+      const customStyle = knownStyle ? null : getCustomRequestStyle(remark);
+      const fill =
+        getRemovalRemarkFillColor(remark, null) ||
+        knownStyle?.badgeBg ||
+        customStyle?.badgeBg ||
+        "#ffffff";
+      const stroke =
+        knownStyle?.badgeBorder ||
+        getTrainRemNoteOverrideColor(remark) ||
+        customStyle?.badgeBorder ||
+        fill ||
+        "#000000";
+
+      return {
+        text: remark,
+        fill,
+        stroke,
+      };
+    });
+}
+
 function getRemovalRemarkFillColor(remark = "", requestItem = null) {
   const noteOverrideColor = getTrainRemNoteOverrideColor(remark);
   if (noteOverrideColor) return noteOverrideColor;
@@ -17327,13 +17361,20 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
           align: "center",
           width: colWidths.tid,
         });
-        drawWrappedTextInCell(entry?.requestType || "-", colX.request, rowY, colWidths.request, rowH, {
-          size: Math.max(4.7, activeFontSize + 0.6 + contentFontBoost),
-          minSize: 2.2,
-          bold: false,
-          paddingX: 4,
-          paddingY: 1,
-        });
+        const requestedRemarkPillFontSize = Math.max(3.8, activeFontSize - 0.4 + contentFontBoost);
+        drawRemarkPills(
+          { remarkPills: getRequestedRemarkPillItems(entry?.requestType || "") },
+          colX.request,
+          rowY,
+          colWidths.request,
+          rowH,
+          textY,
+          activeFontSize,
+          {
+            baseFontSize: requestedRemarkPillFontSize,
+            maxFontSize: requestedRemarkPillFontSize,
+          }
+        );
         const actionPillFontSize = activeFontSize + 0.6 + contentFontBoost;
         drawActionStatusInCell(
           entry,
