@@ -2348,6 +2348,7 @@ function syncTrainRemActiveRowsToPresetCache(state = {}) {
     west: state?.selectedPreset?.west || "9am",
     east: state?.selectedPreset?.east || "9am",
   };
+  const sortMode = normalizeTrainRemSortModes(state?.sortMode);
   const rows = {
     west: normalizeTrainRemRowsForPreset(state?.rows?.west, "west", selectedPreset.west),
     east: normalizeTrainRemRowsForPreset(state?.rows?.east, "east", selectedPreset.east),
@@ -2363,6 +2364,7 @@ function syncTrainRemActiveRowsToPresetCache(state = {}) {
   return {
     ...state,
     selectedPreset,
+    sortMode,
     rows,
     presetRows,
   };
@@ -2482,6 +2484,17 @@ function buildTrainRemRowsFromPreset(depot, label, existingRows = []) {
   });
 }
 
+function normalizeTrainRemSortMode(value = "tid") {
+  return value === "color" ? "color" : "tid";
+}
+
+function normalizeTrainRemSortModes(sortMode = {}) {
+  return {
+    west: normalizeTrainRemSortMode(sortMode?.west),
+    east: normalizeTrainRemSortMode(sortMode?.east),
+  };
+}
+
 function buildDefaultTrainRemState() {
   const presetRows = {
     west: buildDefaultTrainRemPresetRows("west"),
@@ -2490,6 +2503,7 @@ function buildDefaultTrainRemState() {
 
   return {
     selectedPreset: { west: "9am", east: "9am" },
+    sortMode: { west: "tid", east: "tid" },
     rows: {
       west: presetRows.west["9am"],
       east: presetRows.east["9am"],
@@ -2514,6 +2528,7 @@ function loadTrainRemState() {
     };
     const state = {
       selectedPreset,
+      sortMode: normalizeTrainRemSortModes(parsed?.sortMode),
       rows: {
         west: normalizeTrainRemRowsForPreset(
           Array.isArray(parsed?.rows?.west) ? parsed.rows.west : presetRows.west[selectedPreset.west],
@@ -2575,6 +2590,7 @@ function buildTrainRemDepotPayload(state = {}, depot = "west") {
     depot: safeDepot,
     key: safeDepot,
     selectedPreset,
+    sortMode: normalizeTrainRemSortMode(syncedState.sortMode?.[safeDepot]),
     rows: normalizeTrainRemRowsForPreset(syncedState.rows?.[safeDepot], safeDepot, selectedPreset),
     presetRows: normalizeTrainRemPresetRows(syncedState.presetRows?.[safeDepot], safeDepot),
     updatedAt: syncedState.updatedAt || new Date().toISOString(),
@@ -2586,6 +2602,7 @@ function buildTrainRemStateFromRecords(records = []) {
   const map = {};
   const state = {
     selectedPreset: { ...fallback.selectedPreset },
+    sortMode: { ...fallback.sortMode },
     rows: { ...fallback.rows },
     presetRows: {
       west: normalizeTrainRemPresetRows(fallback.presetRows.west, "west"),
@@ -2605,6 +2622,7 @@ function buildTrainRemStateFromRecords(records = []) {
 
     const selectedPreset = rec.selectedPreset || fallback.selectedPreset[depot];
     state.selectedPreset[depot] = selectedPreset;
+    state.sortMode[depot] = normalizeTrainRemSortMode(rec?.sortMode);
     state.presetRows[depot] = normalizeTrainRemPresetRows(rec?.presetRows, depot);
     state.rows[depot] = normalizeTrainRemRowsForPreset(
       Array.isArray(rec?.rows) ? rec.rows : state.presetRows[depot][selectedPreset],
@@ -4323,7 +4341,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const [trainRemPdfStatus, setTrainRemPdfStatus] = useState({ west: false, east: false });
   const [trainRemUndoCount, setTrainRemUndoCount] = useState(0);
   const [eastDepotCopyStatus, setEastDepotCopyStatus] = useState("");
-  const [trainRemSortMode, setTrainRemSortMode] = useState({ west: "tid", east: "tid" });
 
   const trainRemStateRef = useRef(trainRemState);
 
@@ -4588,6 +4605,27 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     trainRemUndoStackRef.current = nextUndoStack;
     trainRemStateRef.current = nextState;
     setTrainRemUndoCount(nextUndoStack.length);
+    setTrainRemState(nextState);
+    scheduleTrainRemSave(nextState);
+  }, [scheduleTrainRemSave]);
+
+  const updateTrainRemSortMode = useCallback((depot, mode) => {
+    const safeDepot = depot === "east" ? "east" : "west";
+    const safeMode = normalizeTrainRemSortMode(mode);
+    const prev = trainRemStateRef.current;
+    const currentSortModes = normalizeTrainRemSortModes(prev?.sortMode);
+
+    if (currentSortModes[safeDepot] === safeMode) return;
+
+    const nextState = stampTrainRemState(syncTrainRemActiveRowsToPresetCache({
+      ...prev,
+      sortMode: {
+        ...currentSortModes,
+        [safeDepot]: safeMode,
+      },
+    }));
+
+    trainRemStateRef.current = nextState;
     setTrainRemState(nextState);
     scheduleTrainRemSave(nextState);
   }, [scheduleTrainRemSave]);
@@ -5078,7 +5116,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       : normalizedRows;
     const rowEntries = rows.map((row, sourceIndex) => ({ row, sourceIndex }));
     const canSortByRemovalColor = isTrainRemCombinedReferencePreset(depot, selectedPreset);
-    const activeSortMode = canSortByRemovalColor ? (trainRemSortMode?.[depot] || "tid") : "tid";
+    const activeSortMode = canSortByRemovalColor
+      ? normalizeTrainRemSortMode(trainRemState.sortMode?.[depot])
+      : "tid";
     const getRemovalColorSortGroup = (row) => {
       if (getTrainRemScheduleMatch(activeTimetable, "west", selectedPreset, row?.tid)) return 0;
       if (getTrainRemScheduleMatch(activeTimetable, "east", selectedPreset, row?.tid)) return 1;
@@ -5199,7 +5239,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   <span className="px-1 text-[10px] font-normal uppercase tracking-wide text-[#5f8fb2]">Sort</span>
                   <button
                     type="button"
-                    onClick={() => setTrainRemSortMode((prev) => ({ ...prev, [depot]: "tid" }))}
+                    onClick={() => updateTrainRemSortMode(depot, "tid")}
                     className={`h-4 rounded px-1.5 text-[10px] font-normal transition-colors ${
                       activeSortMode === "tid"
                         ? "bg-[#1d4ed8] text-white"
@@ -5211,7 +5251,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   </button>
                   <button
                     type="button"
-                    onClick={() => setTrainRemSortMode((prev) => ({ ...prev, [depot]: "color" }))}
+                    onClick={() => updateTrainRemSortMode(depot, "color")}
                     className={`h-4 rounded px-1.5 text-[10px] font-normal transition-colors ${
                       activeSortMode === "color"
                         ? "bg-[#1d4ed8] text-white"
