@@ -5257,9 +5257,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                         ? "bg-[#1d4ed8] text-white"
                         : "text-[#7eb8e0] hover:bg-[#102f4a] hover:text-white"
                     }`}
-                    title="Sort by West Rem, East Rem, then Off Peak colour"
+                    title="Sort by West Rem, East Rem, then Off Peak location"
                   >
-                    COLOR
+                    Location
                   </button>
                 </div>
               )}
