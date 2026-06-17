@@ -1977,6 +1977,8 @@ const TRAIN_REM_SYNC_INTERVAL_MS = 5000;
 const TRAIN_REM_UNDO_LIMIT = 30;
 const TRAIN_REM_ROW_COUNTS = { west: 40, east: 14 };
 const TRAIN_REM_WEST_DEFAULT_VISIBLE_ROW_COUNT = 32;
+const TRAIN_REM_WEST_COMPACT_PRESET_LABELS = new Set(["12am", "Fri", "Sat", "PH"]);
+const TRAIN_REM_WEST_COMPACT_EMPTY_ROW_COUNT = 5;
 const TRAIN_REM_WEST_9AM_REAL_ROW_COUNT = 0;
 const TRAIN_REM_WEST_9AM_REFERENCE_SEPARATOR_COUNT = 0;
 const TRAIN_REM_WEST_9AM_REFERENCE_START_INDEX = 0;
@@ -2295,6 +2297,32 @@ function normalizeTrainRemRows(rows, depot) {
     timing: source[i]?.timing || "",
     remark: source[i]?.remark || "",
   }));
+}
+
+function getTrainRemWestVisibleRows(rows = [], selectedPreset = "9am", presetTidCount = 0) {
+  const sourceRows = Array.isArray(rows) ? rows : [];
+
+  if (!TRAIN_REM_WEST_COMPACT_PRESET_LABELS.has(selectedPreset)) {
+    return sourceRows.slice(0, TRAIN_REM_WEST_DEFAULT_VISIBLE_ROW_COUNT);
+  }
+
+  const scheduledRowCount = Math.max(0, Number(presetTidCount) || 0);
+  let lastUsedRowIndex = scheduledRowCount - 1;
+
+  sourceRows.forEach((row, index) => {
+    const hasContent = [row?.trainId, row?.tid, row?.timing, row?.remark]
+      .some((value) => String(value || "").trim());
+
+    if (hasContent) lastUsedRowIndex = index;
+  });
+
+  const usedRowCount = Math.max(scheduledRowCount, lastUsedRowIndex + 1);
+  const visibleRowCount = Math.min(
+    sourceRows.length,
+    usedRowCount + TRAIN_REM_WEST_COMPACT_EMPTY_ROW_COUNT
+  );
+
+  return sourceRows.slice(0, visibleRowCount);
 }
 
 function normalizeTrainRemRowsForPreset(rows, depot, label = "9am") {
@@ -5155,8 +5183,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const renderDepotTable = (depot, title, subtitle) => {
     const selectedPreset = trainRemState.selectedPreset?.[depot] || "9am";
     const normalizedRows = normalizeTrainRemRowsForPreset(trainRemState.rows?.[depot], depot, selectedPreset);
+    const selectedPresetTidCount = getTrainRemPresetRowTids(
+      depot,
+      selectedPreset,
+      getTrainRemPresetConfig(depot, selectedPreset, activeTimetable)?.tids || []
+    ).length;
     const rows = depot === "west" && !isTrainRemCombinedReferencePreset(depot, selectedPreset)
-      ? normalizedRows.slice(0, TRAIN_REM_WEST_DEFAULT_VISIBLE_ROW_COUNT)
+      ? getTrainRemWestVisibleRows(normalizedRows, selectedPreset, selectedPresetTidCount)
       : normalizedRows;
     const rowEntries = rows.map((row, sourceIndex) => ({ row, sourceIndex }));
     const canSortByRemovalColor = isTrainRemCombinedReferencePreset(depot, selectedPreset);
