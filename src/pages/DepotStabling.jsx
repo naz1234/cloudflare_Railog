@@ -5607,8 +5607,14 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       readOnly={Boolean(requestRemark) || referenceOnly}
                       title={referenceOnly ? rowStatusTitle : requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
                       placeholder={referenceOnly ? "" : "Remark"}
-                      style={requestRemarkStyle}
-                      className={`w-full ${referenceOnly ? "h-[19px]" : "h-5"} rounded-md border px-1.5 text-[11px] ${referenceOnly ? "font-normal" : "font-semibold"} outline-none placeholder:text-[#2b4f6b] ${
+                      style={{
+                        ...(requestRemarkStyle || {}),
+                        width: "108px",
+                        maxWidth: "100%",
+                        margin: "0 auto",
+                        display: "block",
+                      }}
+                      className={`${referenceOnly ? "h-[19px]" : "h-5"} rounded-md border px-1.5 text-[11px] ${referenceOnly ? "font-normal" : "font-semibold"} outline-none placeholder:text-[#2b4f6b] ${
                         requestRemark || referenceOnly
                           ? "cursor-default border-[#1e4060] bg-[#091828] text-[#c8d8ea]"
                           : "border-[#1e4060] bg-[#091828] text-[#c8d8ea] focus:border-[#4f8ef7]"
