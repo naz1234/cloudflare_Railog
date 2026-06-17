@@ -5160,8 +5160,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
               <button
                 onClick={() => clearDepotTrainRem(depot)}
-                className="px-1.5 py-0.5 rounded-md text-[9px] font-black border border-[#2b4f6b] bg-[#10263b] text-[#7eb8e0] hover:bg-red-950/30 hover:border-red-600/60 hover:text-red-300 transition-colors"
+                className="inline-flex h-6 items-center gap-1 rounded-md border border-[#2b4f6b] bg-[#10263b] px-1.5 text-[9px] font-black text-[#7eb8e0] transition-colors hover:border-red-600/60 hover:bg-red-950/30 hover:text-red-300"
+                title={`Clear ${title}`}
               >
+                <Trash2 size={12} />
                 Clear
               </button>
             </div>
