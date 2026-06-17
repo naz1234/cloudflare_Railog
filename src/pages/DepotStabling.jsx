@@ -5277,36 +5277,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 {pngActive ? "Done" : "PNG"}
               </button>
 
-              {depot === "east" && (
-                <button
-                  type="button"
-                  onClick={handleCopyEastDepotTrainList}
-                  className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5"
-                  style={{
-                    background: eastDepotCopyStatus === "copied"
-                      ? "rgba(34,197,94,0.18)"
-                      : "rgba(15,45,74,0.75)",
-                    borderColor: eastDepotCopyStatus === "copied"
-                      ? "rgba(34,197,94,0.48)"
-                      : "rgba(74,138,181,0.55)",
-                    color: eastDepotCopyStatus === "copied"
-                      ? "#86efac"
-                      : eastDepotCopyStatus === "empty"
-                        ? "#fbbf24"
-                        : "#9ccbea",
-                    boxShadow: eastDepotCopyStatus === "copied"
-                      ? "0 0 12px rgba(34,197,94,0.16)"
-                      : "none",
-                  }}
-                  title={`Copy ${title} removal Train ID list together with main ${title} stabling Train ID list`}
-                >
-                  {eastDepotCopyStatus === "copied"
-                    ? <ClipboardCheck size={12} />
-                    : <Copy size={12} />}
-                  {getEastDepotCopyLabel()}
-                </button>
-              )}
-
               <button
                 type="button"
                 onClick={handleTrainRemUndo}
@@ -5408,6 +5378,36 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   </button>
                 );
               })}
+
+              {depot === "east" && (
+                <button
+                  type="button"
+                  onClick={handleCopyEastDepotTrainList}
+                  className="ml-auto inline-flex h-5 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5"
+                  style={{
+                    background: eastDepotCopyStatus === "copied"
+                      ? "rgba(34,197,94,0.18)"
+                      : "rgba(15,45,74,0.75)",
+                    borderColor: eastDepotCopyStatus === "copied"
+                      ? "rgba(34,197,94,0.48)"
+                      : "rgba(74,138,181,0.55)",
+                    color: eastDepotCopyStatus === "copied"
+                      ? "#86efac"
+                      : eastDepotCopyStatus === "empty"
+                        ? "#fbbf24"
+                        : "#9ccbea",
+                    boxShadow: eastDepotCopyStatus === "copied"
+                      ? "0 0 12px rgba(34,197,94,0.16)"
+                      : "none",
+                  }}
+                  title={`Copy ${title} removal Train ID list together with main ${title} stabling Train ID list`}
+                >
+                  {eastDepotCopyStatus === "copied"
+                    ? <ClipboardCheck size={11} />
+                    : <Copy size={11} />}
+                  {getEastDepotCopyLabel()}
+                </button>
+              )}
             </div>
 
           </div>
