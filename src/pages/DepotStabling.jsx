@@ -5168,8 +5168,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       if (getTrainRemScheduleMatch(activeTimetable, "east", selectedPreset, row?.tid)) return 1;
       return 2;
     };
-    const west9amLocationOrder = new Map(
-      [212, 214, 216, 218, 220, 102, 104, 106, 108, 110]
+    const westLocationOrderByPreset = {
+      "9am": [212, 214, 216, 218, 220, 102, 104, 106, 108, 110],
+      "7pm": [213, 215, 217, 219, 101, 103, 105, 107, 109, 111, 113, 115, 117, 119, 201, 203, 205],
+    };
+    const westLocationOrder = new Map(
+      (westLocationOrderByPreset[selectedPreset] || [])
         .map((tid, orderIndex) => [String(tid), orderIndex])
     );
     const displayRowEntries = activeSortMode === "color"
@@ -5179,9 +5183,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
           const groupDifference = aGroup - bGroup;
           if (groupDifference) return groupDifference;
 
-          if (selectedPreset === "9am" && aGroup === 0) {
-            const aOrder = west9amLocationOrder.get(cleanTrainRemTidInput(a.row?.tid));
-            const bOrder = west9amLocationOrder.get(cleanTrainRemTidInput(b.row?.tid));
+          if ((selectedPreset === "9am" || selectedPreset === "7pm") && aGroup === 0) {
+            const aOrder = westLocationOrder.get(cleanTrainRemTidInput(a.row?.tid));
+            const bOrder = westLocationOrder.get(cleanTrainRemTidInput(b.row?.tid));
             const priorityDifference = (aOrder ?? Number.MAX_SAFE_INTEGER) - (bOrder ?? Number.MAX_SAFE_INTEGER);
             if (priorityDifference) return priorityDifference;
           }
@@ -5388,7 +5392,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 const previousLocationGroup = activeSortMode === "color" && displayIndex > 0
                   ? getRemovalColorSortGroup(displayRowEntries[displayIndex - 1].row)
                   : null;
-                const showLocationGroupSpacer = selectedPreset === "9am"
+                const showLocationGroupSpacer = (selectedPreset === "9am" || selectedPreset === "7pm")
                   && activeSortMode === "color"
                   && (currentLocationGroup === 1 || currentLocationGroup === 2)
                   && currentLocationGroup !== previousLocationGroup;
