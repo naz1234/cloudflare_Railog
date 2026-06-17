@@ -5078,6 +5078,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     const timetablePresetNotice = isTrainRemPresetMismatchWithTimetable(activeTimetableType, selectedPreset)
       ? `Currently timetable ${activeTimetableLabel} is used`
       : "";
+    const showRemovalLegend = depot === "west" && (selectedPreset === "9am" || selectedPreset === "7pm");
 
     return (
       <div className="rounded-xl border border-[#2b4f6b] bg-[#071828] overflow-hidden shadow-md">
@@ -5379,6 +5380,50 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 );
               })}
             </tbody>
+            {showRemovalLegend && (
+              <tfoot>
+                <tr>
+                  <td colSpan={4} className="border-t border-[#1a3a56] bg-[#081c2d] px-2 py-1.5">
+                    <div className="flex flex-col items-start gap-1">
+                      <div className="flex items-center gap-1">
+                        <span
+                          className="rounded-md px-1.5 py-0.5 text-[10px] font-normal leading-none"
+                          style={{
+                            border: "1px solid #8B5CF6",
+                            backgroundColor: "#2d1b55",
+                            color: "#ede9fe",
+                          }}
+                        >
+                          West Rem
+                        </span>
+                        <span
+                          className="rounded-md px-1.5 py-0.5 text-[10px] font-normal leading-none"
+                          style={{
+                            border: "1px solid rgba(16,185,129,0.8)",
+                            backgroundColor: "#022c22",
+                            color: "#d1fae5",
+                          }}
+                        >
+                          Off Peak
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <span
+                          className="rounded-md px-1.5 py-0.5 text-[10px] font-normal leading-none"
+                          style={{
+                            border: "1px solid rgba(163,230,53,0.95)",
+                            backgroundColor: "#1a2e05",
+                            color: "#ecfccb",
+                          }}
+                        >
+                          East Rem
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
       </div>
