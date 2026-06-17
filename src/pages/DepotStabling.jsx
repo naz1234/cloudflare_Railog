@@ -5194,11 +5194,11 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
               {canSortByRemovalColor && (
                 <div className="ml-auto inline-flex h-5 items-center rounded-md border border-[#2b4f6b] bg-[#081c2d] p-0.5">
-                  <span className="px-1 text-[8px] font-normal uppercase tracking-wide text-[#5f8fb2]">Sort</span>
+                  <span className="px-1 text-[10px] font-normal uppercase tracking-wide text-[#5f8fb2]">Sort</span>
                   <button
                     type="button"
                     onClick={() => setTrainRemSortMode((prev) => ({ ...prev, [depot]: "tid" }))}
-                    className={`h-4 rounded px-1.5 text-[8px] font-normal transition-colors ${
+                    className={`h-4 rounded px-1.5 text-[10px] font-normal transition-colors ${
                       activeSortMode === "tid"
                         ? "bg-[#1d4ed8] text-white"
                         : "text-[#7eb8e0] hover:bg-[#102f4a] hover:text-white"
@@ -5210,7 +5210,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   <button
                     type="button"
                     onClick={() => setTrainRemSortMode((prev) => ({ ...prev, [depot]: "color" }))}
-                    className={`h-4 rounded px-1.5 text-[8px] font-normal transition-colors ${
+                    className={`h-4 rounded px-1.5 text-[10px] font-normal transition-colors ${
                       activeSortMode === "color"
                         ? "bg-[#1d4ed8] text-white"
                         : "text-[#7eb8e0] hover:bg-[#102f4a] hover:text-white"
