@@ -26,7 +26,7 @@ const TIMETABLE_TYPES = [
 
 const ACTIVE_TIMETABLE_TYPE_KEY = "activeTimetableType_v1";
 const LOCAL_TIMETABLE_RECORDS_KEY = "storedTimetableRecords_v1";
-const TIMETABLE_PARSE_VERSION = 4;
+const TIMETABLE_PARSE_VERSION = 5;
 
 function normalizeTimetableType(value = "") {
   const clean = String(value || "").toLowerCase().replace(/[^a-z]/g, "");
@@ -286,7 +286,10 @@ function isEastRemovalRemark(value = "") {
   return (
     (remarkHasAll(value, ["EAST", "DEPOT", "REMOVAL"]) && !remarkHasAll(value, ["WEST", "DEPOT"])) ||
     remarkHasAll(value, ["REMOVAL", "ED"]) ||
-    remarkHasAll(value, ["3A1", "PF2", "REMOVAL", "ED"])
+    remarkHasAll(value, ["3A1", "PF2", "REMOVAL", "ED"]) ||
+    // Friday manual rows such as T202/T203 use "WD REMOVAL / MANUAL"
+    // in the Arrival 3K1P1 reason column. That column represents removal to East Depot.
+    remarkHasAll(value, ["WD", "REMOVAL", "MANUAL"])
   );
 }
 
