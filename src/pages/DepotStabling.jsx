@@ -3954,7 +3954,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             {item.badgeText || item.displayType}
           </span>
         ))}
-        {key && !inserted && (<input ref={tidInputRef} type="text" value={tidInput} onChange={(e) => onTidChange(road, bi, e.target.value)} onKeyDown={onTidKeyDown} onFocus={onTidFocus} onPointerDown={onTidFocus} placeholder="TID" className="w-full h-6 px-1 text-center text-[11px] font-semibold rounded-lg outline-none placeholder:text-[#2b4f6b]" style={insTidInputStyle} />)}
+        {key && !inserted && (<input ref={tidInputRef} type="text" value={tidInput} onChange={(e) => onTidChange(road, bi, e.target.value)} onKeyDown={onTidKeyDown} onFocus={onTidFocus} onPointerDown={onTidFocus} placeholder="TID" className="w-full h-[20px] px-1 text-center text-[11px] font-semibold rounded-lg outline-none placeholder:text-[#2b4f6b]" style={insTidInputStyle} />)}
         {key && inserted && insertedRemarkLabel && !inserted.isSweeping && (
           <span
             className="text-[11px] font-bold"
