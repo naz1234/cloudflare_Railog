@@ -4014,12 +4014,15 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             </div>
           </div>
         )}
-        {key && !inserted && isNumericTidRemark && !autoScheduledTime && (
-          <div className="w-full rounded-lg border border-amber-700/60 bg-amber-950/35 px-1 py-1 text-center text-[9px] font-bold leading-tight text-amber-300" title="This TID is not available in today's insertion schedule">
-            No TID time
-          </div>
+        {key && !inserted && !canAutoInsertTid && (
+          <button
+            onClick={handleInsertClick}
+            className={`w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all ${hasTidRemark ? "bg-yellow-950/50 border-yellow-600/60 text-yellow-300 hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300"}`}
+            title={isNumericTidRemark && !autoScheduledTime ? "No scheduled time today. Insert using the current time, then edit it if required." : undefined}
+          >
+            {isNumericTidRemark && !autoScheduledTime ? "Insert TID" : hasTidRemark ? "Insert Remark" : "Insert"}
+          </button>
         )}
-        {key && !inserted && !isNumericTidRemark && (<button onClick={handleInsertClick} className={`w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all ${hasTidRemark ? "bg-yellow-950/50 border-yellow-600/60 text-yellow-300 hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300"}`}>{hasTidRemark ? "Insert Remark" : "Insert"}</button>)}
         {key && inserted && !inserted.isSweeping && (
           <div className="flex w-full items-center gap-1">
             <div
