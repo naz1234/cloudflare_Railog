@@ -4056,7 +4056,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
                 }}
                 placeholder="00:00"
-                className="min-w-0 w-full bg-transparent px-0 text-center text-[11px] font-bold leading-none outline-none placeholder:opacity-40"
+                className="min-w-0 w-full bg-transparent px-0 text-center text-[12px] font-bold leading-none outline-none placeholder:opacity-40"
                 style={{ color: "inherit" }}
                 title="Edit actual insertion time (24-hour HH:MM)"
               />
