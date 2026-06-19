@@ -3272,7 +3272,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   if (isPstDone) { trainColor = "#4ade80"; }
   else if (isPstConfirming) { trainColor = "#facc15"; }
   else if (isPrepDone) { trainColor = "#93c5fd"; }
-  const displayVal = key ? key.replace(/^T/, "") : "";
+  const displayVal = formatTrainNumberOnly(val);
   const pstCardBg = isPstDone
     ? "linear-gradient(135deg,#0d2b1e,#082015)"
     : isPstConfirming
@@ -3861,7 +3861,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   else if (inserted) { trainColor = "#4ade80"; }
   else if (hasTidRemark) { trainColor = "#facc15"; }
 
-  const displayVal = key ? key.replace(/^T/, "") : "";
+  const displayVal = formatTrainNumberOnly(val);
 
   // Maintenance/request remarks already show their own coloured pill.
   // Keep the stabling card border/background neutral so the pill is the only request colour.
