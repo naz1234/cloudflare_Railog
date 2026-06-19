@@ -3284,7 +3284,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
     : key
     ? "linear-gradient(135deg,#0f2d4a,#081e32)"
     : "none";
-  const pstCardBorder = isPstDone ? "1px solid #059669" : isPstConfirming ? "1px solid #ca8a04" : isPrepDone ? "1px solid #22c55e" : isPrepStarted ? "1px solid #ca8a04" : key ? "1px solid #1e4d72" : "1.5px dashed #1b3a55";
+  const pstCardBorder = isPstDone ? "1px solid #059669" : isPstConfirming ? "1px solid #ca8a04" : isPrepDone ? "1px solid #3b82f6" : isPrepStarted ? "1px solid #ca8a04" : key ? "1px solid #1e4d72" : "1.5px dashed #1b3a55";
   const pstRowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
   return (
     <td className="p-1.5 align-top" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: pstRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
@@ -3337,8 +3337,8 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
               {isPstDone ? "✓ PST" : isPstConfirming ? "⏳PST" : "PST"}
             </button>
             {isPrepDone && (
-              <div className="w-full rounded-lg border border-green-600/70 bg-green-100/70 px-1 py-1">
-                <div className="mb-0.5 text-center text-[8px] font-black uppercase tracking-wide text-green-900">PREP Done :</div>
+              <div className="w-full rounded-lg border border-blue-500/60 bg-blue-950/30 px-1 py-1">
+                <div className="mb-0.5 text-center text-[8px] font-black uppercase tracking-wide text-blue-300">PREP Done :</div>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -3356,7 +3356,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
                   onChange={(e) => onPrepCompletionTimeChange?.(road, bi, key, cleanMovementCustomTimeInput(e.target.value))}
                   onBlur={(e) => onPrepCompletionTimeChange?.(road, bi, key, normalizeMovementCustomTimeInput(e.target.value))}
                   placeholder="00:00"
-                  className="w-full rounded-md border border-green-600/60 bg-green-50 px-1 py-0.5 text-center text-[10px] font-normal leading-tight text-green-950 outline-none placeholder:text-green-700 focus:border-green-700"
+                  className="w-full rounded-md border border-blue-500/50 bg-[#071828] px-1 py-0.5 text-center text-[10px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700 focus:border-blue-300"
                   title="Edit Train Prep completion time"
                 />
               </div>
