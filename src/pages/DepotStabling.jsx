@@ -3791,6 +3791,7 @@ function getActiveInsertionEntryForCell(insertionLog = [], road, bi, trainKey = 
 function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
+  const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
   const maintList = key ? maintenanceMap[key] || [] : [];
   const primaryMaint = maintList[0] || null;
   const isWestBottomRightCorner = labelSide === "left" && isLast && isLastBlock;
@@ -3924,7 +3925,12 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         {stablingEditable ? (
           <input
             type="text"
-            value={val}
+            value={isTrainIdEditing ? val : (key ? formatTrainNumberOnly(val) : val)}
+            onFocus={(e) => {
+              setIsTrainIdEditing(true);
+              requestAnimationFrame(() => e.currentTarget.select());
+            }}
+            onBlur={() => setIsTrainIdEditing(false)}
             onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
             placeholder="Train ID"
             className="w-full h-6 rounded-lg border px-1 text-center text-[13px] font-black uppercase outline-none placeholder:text-[#2b4f6b]"
