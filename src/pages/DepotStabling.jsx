@@ -18927,6 +18927,10 @@ function buildInsertionPrintPillItems({ road, bi, block, tidInputs = {}, inserti
   const trainKey = normalizeTrainId(block?.trainId || "");
   const logEntry = getActiveInsertionEntryForCell(insertionLog, road, bi, trainKey);
   const liveInput = (tidInputs[cellKey] || "").toString().trim();
+  const depot = getInsertionPrintDepotFromRoad(road);
+  const getActiveTimetableTime = (tid) => String(
+    getTidScheduledTime?.(tid, depot, { allowFallback: false }) || ""
+  ).trim();
   // Only print insertion-specific remarks/TIDs.
   // Do not read block.extraRemark here because main stabling remarks can contain
   // old numeric values; those numbers were being mistaken as TID entries in PNG export.
@@ -18954,10 +18958,20 @@ function buildInsertionPrintPillItems({ road, bi, block, tidInputs = {}, inserti
 
   if (logEntry?.tid !== null && logEntry?.tid !== undefined) {
     const tid = Number(logEntry.tid);
-    // PNG must show an actual saved insertion time only. Never fall back to a
-    // weekday/reference timetable here, because an unscheduled Friday TID may
-    // simply be a remark and would otherwise receive an incorrect time.
-    const time = String(logEntry.time || "").trim();
+    const activeTimetableTime = getActiveTimetableTime(tid);
+
+    // A numeric entry is only a true TID in PNG when it exists in the active
+    // timetable. Otherwise keep it as a normal remark pill without the "TID"
+    // prefix and without any timing.
+    if (!activeTimetableTime) {
+      const remarkLabel = String(logEntry.remark || logEntry.tid || "").replace(/^TID[:\s-]*/i, "").trim();
+      return remarkLabel
+        ? [{ label: remarkLabel, ...getInsertionPrintPillStyle(remarkLabel) }]
+        : [];
+    }
+
+    // For a matched TID, prefer the user's saved editable actual time.
+    const time = String(logEntry.time || activeTimetableTime).trim();
     return buildTidAndTimePills(tid, time);
   }
 
@@ -18966,10 +18980,20 @@ function buildInsertionPrintPillItems({ road, bi, block, tidInputs = {}, inserti
 
   const tidMatch = rawValue.match(/^(?:tid[:\s-]*)?t?(\d{1,3})$/i);
   if (tidMatch) {
-    const tid = Number(tidMatch[1]);
-    // A numeric value that has not produced an insertion log is only a TID
-    // remark. Print the TID without inventing a timetable time.
-    return buildTidAndTimePills(tid);
+    const rawTid = tidMatch[1];
+    const tid = Number(rawTid);
+    const activeTimetableTime = getActiveTimetableTime(tid);
+
+    // Only an exact match in the active timetable is printed as TID + timing.
+    // Unmatched numbers are plain remark pills, e.g. "111" or "112".
+    if (activeTimetableTime) {
+      return buildTidAndTimePills(tid, activeTimetableTime);
+    }
+
+    return [{
+      label: rawTid,
+      ...getInsertionPrintPillStyle(rawTid),
+    }];
   }
 
   const remark = rawValue.toUpperCase();
