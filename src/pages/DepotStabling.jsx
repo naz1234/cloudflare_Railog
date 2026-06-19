@@ -3904,7 +3904,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   if (expired) {
     return (
       <td className="p-1.5 align-middle" title="Elapsed TID hidden manually" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-        <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl select-none" style={{ minHeight: 82, padding: "6px 4px", background: insCardBg, border: insCardBorder, opacity: 0.55 }}>
+        <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl select-none" style={{ minHeight: 90, padding: "7px 5px", background: insCardBg, border: insCardBorder, opacity: 0.55 }}>
           <div className="w-full text-center font-black leading-none" style={{ fontSize: 14, color: "#3a5068" }}>{displayVal || "—"}</div>
           {insertedRemarkLabel && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
           <span className="text-[9px] font-semibold" style={{ color: "#3a5068" }}>✓ {insertedDisplayTime}</span>
@@ -3916,7 +3916,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
   return (
     <td className="p-1.5 align-middle" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-      <div className="relative flex flex-col items-center justify-start gap-1 rounded-xl" style={{ minHeight: inserted?.isSweeping ? 168 : 82, padding: "6px 4px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow }}>
+      <div className="relative flex flex-col items-center justify-start gap-1 rounded-xl" style={{ minHeight: inserted?.isSweeping ? 168 : 90, padding: "7px 5px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow }}>
         {key && !inserted && (
           <div className="absolute top-1 right-1.5 opacity-20 pointer-events-none">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={trainColor} strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/></svg>
@@ -4028,7 +4028,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         {key && !inserted && !canAutoInsertTid && (
           <button
             onClick={handleInsertClick}
-            className={`w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all ${hasTidRemark ? "bg-yellow-950/50 border-yellow-600/60 text-yellow-300 hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300"}`}
+            className={`w-full text-[9px] font-bold rounded-lg px-1 py-0.5 border transition-all leading-tight ${hasTidRemark ? "bg-yellow-950/50 border-yellow-600/60 text-yellow-300 hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300"}`}
           >
             {hasTidRemark ? "Insert Remark" : "Insert"}
           </button>
@@ -4048,7 +4048,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               }}
               title="Edit actual insertion time"
             >
-              <span className="shrink-0 text-[11px] font-black">✓</span>
+              <span className="shrink-0 text-[10px] font-black">✓</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -4069,7 +4069,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
                 }}
                 placeholder="00:00"
-                className="min-w-0 w-full bg-transparent px-0 text-center text-[12px] font-bold leading-none outline-none placeholder:opacity-40"
+                className="min-w-0 w-full bg-transparent px-0 text-center text-[10px] font-bold leading-none outline-none placeholder:opacity-40"
                 style={{ color: "inherit" }}
                 title="Edit actual insertion time (24-hour HH:MM)"
               />
@@ -4088,7 +4088,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         {key && inserted?.isSweeping && (
           <button
             onClick={handleInsertedUndoClick}
-            className="w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all hover:bg-red-950/40 hover:border-red-700 hover:text-red-400"
+            className="w-full text-[9px] font-bold rounded-lg px-1 py-0.5 border transition-all leading-tight hover:bg-red-950/40 hover:border-red-700 hover:text-red-400"
             style={{
               backgroundColor: "rgba(88, 28, 135, 0.35)",
               borderColor: "#a855f7",
