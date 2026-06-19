@@ -3271,14 +3271,14 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   const isPrepDone = prep?.done;
   if (isPstDone) { trainColor = "#4ade80"; }
   else if (isPstConfirming) { trainColor = "#facc15"; }
-  else if (isPrepDone) { trainColor = "#14532d"; }
+  else if (isPrepDone) { trainColor = "#93c5fd"; }
   const displayVal = key ? key.replace(/^T/, "") : "";
   const pstCardBg = isPstDone
     ? "linear-gradient(135deg,#0d2b1e,#082015)"
     : isPstConfirming
     ? "linear-gradient(135deg,#1f2b0d,#082015)"
     : isPrepDone
-    ? "#86efac"
+    ? "linear-gradient(135deg,#0d1f2e,#081525)"
     : isPrepStarted
     ? "linear-gradient(135deg,#1f1c0a,#151205)"
     : key
