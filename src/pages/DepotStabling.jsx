@@ -1712,6 +1712,7 @@ const SIDEBAR_COLLAPSED_KEY = "depotSidebarCollapsed_v1";
 const SIDEBAR_AUTO_HIDE_MS = 3000;
 const ADM_SESSION_KEY = "admAdminUnlocked_v1";
 const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
+const ODO_SESSION_KEY = "odoReadingUnlocked_v1";
 const ADM_LOGIN_ID = "admin";
 const ADM_LOGIN_PASSWORD = "921016";
 const ADMIN_NOTES_STORAGE_KEY = "admModernNotes_v1";
@@ -11201,6 +11202,15 @@ export default function DepotStablingPage() {
       return false;
     }
   });
+  const [odoCredentials, setOdoCredentials] = useState({ id: "", password: "" });
+  const [odoError, setOdoError] = useState("");
+  const [isOdoUnlocked, setIsOdoUnlocked] = useState(() => {
+    try {
+      return sessionStorage.getItem(ODO_SESSION_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
   const [adminNotes, setAdminNotes] = useState(() => loadAdminNotes());
   const [adminSearch, setAdminSearch] = useState("");
   const [alarmSearch, setAlarmSearch] = useState("");
@@ -11416,6 +11426,31 @@ export default function DepotStablingPage() {
     setAlarmError("");
     setAlarmSearch("");
     try { sessionStorage.removeItem(ALM_SESSION_KEY); } catch {}
+  }, []);
+
+  const handleOdoLogin = useCallback((event) => {
+    event.preventDefault();
+    const loginId = String(odoCredentials.id || "").trim();
+    const loginPassword = String(odoCredentials.password || "");
+
+    if (loginId === ADM_LOGIN_ID && loginPassword === ADM_LOGIN_PASSWORD) {
+      setIsOdoUnlocked(true);
+      setOdoError("");
+      setOdoCredentials({ id: "", password: "" });
+      try { sessionStorage.setItem(ODO_SESSION_KEY, "true"); } catch {}
+      return;
+    }
+
+    setIsOdoUnlocked(false);
+    setOdoError("Invalid admin ID or password.");
+    try { sessionStorage.removeItem(ODO_SESSION_KEY); } catch {}
+  }, [odoCredentials]);
+
+  const handleOdoLogout = useCallback(() => {
+    setIsOdoUnlocked(false);
+    setOdoCredentials({ id: "", password: "" });
+    setOdoError("");
+    try { sessionStorage.removeItem(ODO_SESSION_KEY); } catch {}
   }, []);
 
   const loadAdminNotesLive = useCallback(async () => {
@@ -13881,17 +13916,6 @@ export default function DepotStablingPage() {
               ),
             },
             {
-              key: "odo",
-              label: "ODO Reading",
-              code: "ODO",
-              to: "/odo-reading",
-              icon: (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                </svg>
-              ),
-            },
-            {
               key: "possession",
               label: "Possession Log",
               code: "PSS",
@@ -13899,6 +13923,17 @@ export default function DepotStablingPage() {
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/>
+                </svg>
+              ),
+            },
+            {
+              key: "odo",
+              label: "ODO Reading",
+              code: "ODO",
+              to: "/odo-reading",
+              icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                 </svg>
               ),
             },
@@ -13929,7 +13964,7 @@ export default function DepotStablingPage() {
             },
           ].map(({ key, label, code, to }) => {
             const isActive = activeTab === key;
-            const bottomShortcutClass = key === "alarm" ? " mt-auto" : "";
+            const bottomShortcutClass = key === "odo" ? " mt-auto" : "";
             const navClass = isSidebarCollapsed
               ? `flex items-center justify-center px-1 py-2.5 text-xs font-normal transition-all text-left w-full${bottomShortcutClass} ${
                   isActive
@@ -14156,7 +14191,96 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "odo" && (
-          <OdoReading />
+          isOdoUnlocked ? (
+            <div className="w-full px-2 pb-10 pt-6">
+              <div className="mb-3 w-full max-w-[968px] rounded-[24px] border border-[#1d4869] bg-[#061827]/90 p-3 shadow-[0_18px_55px_rgba(0,0,0,0.25)]">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[10px] font-semibold tracking-[0.16em] text-[#bceaff]">
+                    ODO
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Restricted access</p>
+                    <h2 className="truncate text-[17px] font-normal leading-tight text-white">ODO Reading</h2>
+                    <p className="mt-0.5 text-[10px] font-semibold text-[#8ea8c0]">
+                      Admin session unlocked for this browser tab.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleOdoLogout}
+                    className="rounded-2xl border border-[#2b4f6b] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-[0.98]"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+
+              <OdoReading />
+            </div>
+          ) : (
+            <div className="w-full px-2 pb-10 pt-6">
+              <div className="mx-auto w-full max-w-[620px]">
+                <div className="mx-auto w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[#23506f]/80 bg-[#061827]/95 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur">
+                  <div className="relative border-b border-[#1a3a56]/80 bg-gradient-to-br from-[#0d3455] via-[#08223a] to-[#061827] px-5 py-5">
+                    <div className="absolute right-5 top-5 h-10 w-10 rounded-full border border-[#4f8ef7]/25 bg-[#4f8ef7]/10 blur-[1px]" />
+                    <div className="relative flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#4f8ef7]/40 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.22em] text-[#bceaff] shadow-[0_0_22px_rgba(79,142,247,0.18)]">
+                        ODO
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-normal uppercase tracking-[0.24em] text-[#6db6e8]">Admin access</p>
+                        <h2 className="mt-1 text-[18px] font-semibold text-white">ODO Login</h2>
+                      </div>
+                    </div>
+                    <p className="relative mt-4 text-[11px] leading-relaxed text-[#8dc7ed]">
+                      Enter admin ID and password to unlock this page.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleOdoLogin} className="px-5 py-5">
+                    <label className="block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                      ID
+                      <input
+                        value={odoCredentials.id}
+                        onChange={(event) => {
+                          setOdoCredentials((prev) => ({ ...prev, id: event.target.value }));
+                          setOdoError("");
+                        }}
+                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
+                        autoComplete="username"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                      />
+                    </label>
+                    <label className="mt-4 block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                      Password
+                      <input
+                        type="password"
+                        value={odoCredentials.password}
+                        onChange={(event) => {
+                          setOdoCredentials((prev) => ({ ...prev, password: event.target.value }));
+                          setOdoError("");
+                        }}
+                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
+                        autoComplete="current-password"
+                      />
+                    </label>
+                    {odoError && (
+                      <p className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-[11px] font-normal text-red-200">
+                        {odoError}
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      className="mt-5 flex h-10 w-full items-center justify-center rounded-xl border border-[#4f8ef7]/60 bg-[#1b5f93] text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(79,142,247,0.22)] transition hover:bg-[#2476b4] active:scale-[0.99]"
+                    >
+                      Login
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )
         )}
 
         {activeTab === "pst" && (
