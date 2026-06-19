@@ -18954,8 +18954,10 @@ function buildInsertionPrintPillItems({ road, bi, block, tidInputs = {}, inserti
 
   if (logEntry?.tid !== null && logEntry?.tid !== undefined) {
     const tid = Number(logEntry.tid);
-    const depot = getInsertionPrintDepotFromRoad(road);
-    const time = logEntry.time || getTidScheduledTime?.(tid, depot) || "";
+    // PNG must show an actual saved insertion time only. Never fall back to a
+    // weekday/reference timetable here, because an unscheduled Friday TID may
+    // simply be a remark and would otherwise receive an incorrect time.
+    const time = String(logEntry.time || "").trim();
     return buildTidAndTimePills(tid, time);
   }
 
@@ -18965,9 +18967,9 @@ function buildInsertionPrintPillItems({ road, bi, block, tidInputs = {}, inserti
   const tidMatch = rawValue.match(/^(?:tid[:\s-]*)?t?(\d{1,3})$/i);
   if (tidMatch) {
     const tid = Number(tidMatch[1]);
-    const depot = getInsertionPrintDepotFromRoad(road);
-    const time = getTidScheduledTime?.(tid, depot) || "";
-    return buildTidAndTimePills(tid, time);
+    // A numeric value that has not produced an insertion log is only a TID
+    // remark. Print the TID without inventing a timetable time.
+    return buildTidAndTimePills(tid);
   }
 
   const remark = rawValue.toUpperCase();
