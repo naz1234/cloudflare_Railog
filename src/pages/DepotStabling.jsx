@@ -3796,13 +3796,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const isEastBottomLeftCorner = labelSide === "right" && isLast && isFirstBlock;
   const cellKey = `${road}-${bi}`;
   const inserted = getActiveInsertionEntryForCell(insertionLog, road, bi, key);
-  const insertedRemarkLabel = inserted?.tid
-    ? `TID ${inserted.tid}`
-    : inserted?.isSweeping
-    ? "SWEEP"
-    : inserted?.remark
-    ? `${inserted.remark}${inserted.sweepTrack ? ` ${inserted.sweepTrack}` : ""}`
-    : "";
   const tidRemarkText = (tidInput || "").toString().trim().toUpperCase();
   const hasTidRemark = key && !inserted && tidRemarkText !== "";
   const autoTidMatch = tidRemarkText.match(/^(?:TID[:\s-]*)?T?(\d{3})$/i);
@@ -3811,23 +3804,34 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const specialTidRemarkStyle = hasTidRemark
     ? (typeof getTidAssistRemarkStyle === "function" ? getTidAssistRemarkStyle(tidRemarkText, autoTidDepot) : null) || getInsertionRemarkStyle(tidRemarkText)
     : null;
-  const insertedTid = inserted?.tid !== null && inserted?.tid !== undefined
+  const parsedInsertedTid = inserted?.tid !== null && inserted?.tid !== undefined
     ? parseInt(String(inserted.tid).replace(/\D/g, ""), 10)
     : null;
+  const insertedScheduledTime = parsedInsertedTid && typeof getTidScheduledTime === "function"
+    ? getTidScheduledTime(parsedInsertedTid, autoTidDepot, { allowFallback: false })
+    : null;
+  // A numeric value is a real TID only when it exists in the currently active timetable.
+  // Older saved unmatched TIDs are displayed as normal numeric remarks.
+  const insertedTid = insertedScheduledTime ? parsedInsertedTid : null;
+  const insertedRemarkLabel = insertedTid
+    ? `TID ${insertedTid}`
+    : inserted?.isSweeping
+    ? "SWEEP"
+    : inserted?.remark
+    ? `${inserted.remark}${inserted.sweepTrack ? ` ${inserted.sweepTrack}` : ""}`
+    : parsedInsertedTid
+    ? String(parsedInsertedTid)
+    : "";
   const insertedTidRemarkStyle = insertedTid && typeof getTidAssistRemarkStyle === "function"
     ? getTidAssistRemarkStyle(insertedTid, autoTidDepot)
     : null;
   const insertedRemarkStyle = inserted?.remark ? getInsertionRemarkStyle(inserted.remark) : null;
   const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
-  const insertedScheduledTime = insertedTid && typeof getTidScheduledTime === "function"
-    ? getTidScheduledTime(insertedTid, autoTidDepot, { allowFallback: false })
-    : null;
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
   const autoScheduledTime = autoTid !== null && typeof getTidScheduledTime === "function"
     ? getTidScheduledTime(autoTid, autoTidDepot, { allowFallback: false })
     : null;
-  const isNumericTidRemark = autoTid !== null;
   const canAutoInsertTid = Boolean(key && !inserted && autoTid !== null && autoScheduledTime);
 
   useEffect(() => {
@@ -4018,9 +4022,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           <button
             onClick={handleInsertClick}
             className={`w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all ${hasTidRemark ? "bg-yellow-950/50 border-yellow-600/60 text-yellow-300 hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300"}`}
-            title={isNumericTidRemark && !autoScheduledTime ? "No scheduled time today. Insert using the current time, then edit it if required." : undefined}
           >
-            {isNumericTidRemark && !autoScheduledTime ? "Insert TID" : hasTidRemark ? "Insert Remark" : "Insert"}
+            {hasTidRemark ? "Insert Remark" : "Insert"}
           </button>
         )}
         {key && inserted && !inserted.isSweeping && (
@@ -13026,16 +13029,19 @@ export default function DepotStablingPage() {
     const paddedTrainKey = padTrainId(normalizeTrainId(trainKey));
     if (!paddedTrainKey) return prevLog || [];
 
-    // Parse remark: plain number, "TID N", "TID: N" or "T121" => TID.
-    // Anything else (e.g. "3K1" / "SW") stays as a destination/remark label.
+    // A numeric remark becomes a TID only when it exists in the currently active timetable.
+    // Unmatched values such as 555 remain normal remarks and never receive a TID label.
     const tidStr = remark && remark.toString().trim();
     const normalizedRemark = (tidStr || "").toUpperCase();
     const tidMatch = tidStr ? tidStr.match(/^(?:tid[:\s-]*)?t?(\d{1,3})$/i) : null;
-    const tid = tidMatch ? parseInt(tidMatch[1], 10) : null;
-
-    // Insertion Log timing follows the TID schedule for the actual day:
-    // weekday / friday / saturday. If the TID is not found, fallback to current clock time.
-    const scheduledTime = tid ? getTidScheduledTime(tid, depot, { allowFallback: false }) : null;
+    const candidateTid = tidMatch ? parseInt(tidMatch[1], 10) : null;
+    const scheduledTime = candidateTid
+      ? getTidScheduledTime(candidateTid, depot, { allowFallback: false })
+      : null;
+    const tid = scheduledTime ? candidateTid : null;
+    const displayRemark = candidateTid && !scheduledTime
+      ? tidMatch[1]
+      : tidStr || "";
     const time = scheduledTime || formatTime(new Date());
 
     // SW / SW1 / SW2 mean Sweep. SW1 defaults to Track 01 and SW2 to Track 02.
@@ -13069,12 +13075,12 @@ export default function DepotStablingPage() {
     }
 
     // Parenthetical: TID number > remark label > nothing
-    const tidPart = tid !== null ? ` (TID ${tid})` : tidStr ? ` (${tidStr})` : "";
+    const tidPart = tid !== null ? ` (TID ${tid})` : displayRemark ? ` (${displayRemark})` : "";
     const line = `${time} hrs – ${paddedTrainKey}${tidPart} inserted from ${road} to mainline track ${mainlineTrack}.`;
 
     return sortInsertionLogByTime([
       ...(prevLog || []).filter((l) => l.key !== logKey),
-      { key: logKey, text: line, time, depot, road, trainKey: paddedTrainKey, tid, mainlineTrack, remark: tidStr || "" },
+      { key: logKey, text: line, time, depot, road, trainKey: paddedTrainKey, tid, mainlineTrack, remark: displayRemark },
     ]);
   }, [getTidScheduledTime]);
 
