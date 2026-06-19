@@ -3338,7 +3338,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
             </button>
             {isPrepDone && (
               <div className="w-full rounded-lg border border-blue-500/60 bg-blue-950/30 px-1 py-1">
-                <div className="mb-0.5 text-center text-[8px] font-black uppercase tracking-wide text-blue-300">PREP Done :</div>
+                <div className="mb-0.5 text-center text-[8px] font-normal uppercase tracking-wide text-blue-300">PREP Done :</div>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -3365,7 +3365,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
               <input value={taName} onChange={(e) => onTaNameChange(road, bi, e.target.value)} onClick={(e) => e.stopPropagation()} placeholder="TA name (optional)" className="w-full text-[11px] rounded-lg border border-blue-600/60 bg-blue-950/30 px-1 py-0.5 outline-none text-blue-200 placeholder:text-blue-700" />
             )}
             <button onClick={() => onPrepTick(road, bi, key, taName)} className={`w-full text-[9px] font-bold rounded-lg px-1 py-0.5 border transition-all leading-tight ${isPrepDone ? "bg-green-200 border-green-500 text-green-900" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:border-indigo-500 hover:text-indigo-300"}`}>
-              {isPrepDone ? "✓ Prep" : "Train Prep"}
+              {isPrepDone ? "✓ PREP COMP." : "Train Prep"}
             </button>
           </div>
         )}
