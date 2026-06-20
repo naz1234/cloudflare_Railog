@@ -588,6 +588,58 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
           >
             {formatDate(now)}
           </div>
+          <div
+            style={{
+              display: "flex",
+              gap: 3,
+              padding: 2,
+              marginTop: 5,
+              borderRadius: 10,
+              background: "rgba(6, 24, 39, 0.60)",
+              border: "1px solid rgba(125, 184, 224, 0.14)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+            }}
+          >
+            {["east", "west"].map((depotKey) => {
+              const config = DEPOT_SOUND_CONFIG[depotKey];
+              const enabled = Boolean(soundSettings?.[depotKey]);
+
+              return (
+                <button
+                  key={depotKey}
+                  type="button"
+                  onClick={() => onToggleDepotSound(depotKey)}
+                  style={{
+                    border: "1px solid",
+                    borderColor: enabled
+                      ? soundReady
+                        ? `${config.readyColor}99`
+                        : "rgba(251, 191, 36, 0.62)"
+                      : "rgba(125, 184, 224, 0.20)",
+                    background: enabled
+                      ? soundReady
+                        ? `linear-gradient(135deg, ${config.glow}, rgba(6, 24, 39, 0.76))`
+                        : "linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(120, 53, 15, 0.24))"
+                      : "linear-gradient(180deg, rgba(10, 30, 46, 0.95), rgba(7, 24, 40, 0.95))",
+                    color: enabled ? (soundReady ? config.readyColor : "#fde68a") : "#9fb8cb",
+                    fontSize: 8,
+                    fontWeight: 400,
+                    padding: "4px 6px",
+                    borderRadius: 7,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    boxShadow: enabled && soundReady ? `0 0 16px ${config.glow}` : "none",
+                    transition: "all 160ms ease",
+                  }}
+                  title={enabled ? `Click to turn off ${config.label} time sound` : `Click to enable ${config.label} time sound`}
+                >
+                  {config.label} Sound {enabled ? "ON" : "OFF"}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -683,57 +735,7 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
         })}
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: 4,
-          padding: 2,
-          borderRadius: 10,
-          background: "rgba(6, 24, 39, 0.60)",
-          border: "1px solid rgba(125, 184, 224, 0.14)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
-        }}
-      >
-        {["east", "west"].map((depotKey) => {
-          const config = DEPOT_SOUND_CONFIG[depotKey];
-          const enabled = Boolean(soundSettings?.[depotKey]);
 
-          return (
-            <button
-              key={depotKey}
-              type="button"
-              onClick={() => onToggleDepotSound(depotKey)}
-              style={{
-                border: "1px solid",
-                borderColor: enabled
-                  ? soundReady
-                    ? `${config.readyColor}99`
-                    : "rgba(251, 191, 36, 0.62)"
-                  : "rgba(125, 184, 224, 0.20)",
-                background: enabled
-                  ? soundReady
-                    ? `linear-gradient(135deg, ${config.glow}, rgba(6, 24, 39, 0.76))`
-                    : "linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(120, 53, 15, 0.24))"
-                  : "linear-gradient(180deg, rgba(10, 30, 46, 0.95), rgba(7, 24, 40, 0.95))",
-                color: enabled ? (soundReady ? config.readyColor : "#fde68a") : "#9fb8cb",
-                fontSize: 9,
-                fontWeight: 400,
-                padding: "6px 8px",
-                borderRadius: 8,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                boxShadow: enabled && soundReady ? `0 0 16px ${config.glow}` : "none",
-                transition: "all 160ms ease",
-              }}
-              title={enabled ? `Click to turn off ${config.label} time sound` : `Click to enable ${config.label} time sound`}
-            >
-              {config.label} Sound {enabled ? "ON" : "OFF"}
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }
@@ -939,7 +941,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
             <tr>
               <th
                 style={{
-                  width: isWeekday ? "60%" : "68%",
+                  width: isWeekday ? "55%" : "68%",
                   padding: "6px 5px",
                   textAlign: "center",
                   color: accent.text,
@@ -958,7 +960,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               </th>
               <th
                 style={{
-                  width: isWeekday ? "40%" : "32%",
+                  width: isWeekday ? "45%" : "32%",
                   padding: "6px 5px",
                   textAlign: "center",
                   color: accent.text,
