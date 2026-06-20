@@ -4161,7 +4161,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 onClick={handleInsertClick}
                 className={`h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-colors ${hasTidRemark ? "bg-[#211d0c] border-[#8f7118] text-yellow-200 hover:border-emerald-600 hover:text-emerald-200" : "bg-[#0a1c2d] border-[#315671] text-[#9ab2c6] hover:border-[#4f8fbf] hover:text-white"}`}
               >
-                {hasTidRemark ? "Insert Remark" : "Insert"}
+                Insert
               </button>
             )}
             {inserted && !inserted.isSweeping && (
