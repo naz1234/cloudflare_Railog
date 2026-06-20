@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 const PST_LOG_STYLE_STORAGE_KEY = "pstLogOutputStyle_v1";
 const ELOG_1 = "elog1";
@@ -207,18 +207,18 @@ function getUniqueTrainKeys(lines = [], extractor) {
   return keys;
 }
 
-function getPSTDCSummary(totalCount = 0) {
+function getPSTDCSummary(totalCount = 0, depotLabel = "") {
   if (!totalCount) return "";
-  return `DC checked and confirmed that PST was performed and updated for ${totalCount} train${totalCount !== 1 ? "s" : ""} at West and East Depot.`;
+  return `DC checked and confirmed that PST was performed and updated for ${totalCount} train${totalCount !== 1 ? "s" : ""} at ${depotLabel} Depot.`;
 }
 
-function getPSTSectionText(pstLines = [], depotLabel = "", totalPSTCount = pstLines.length) {
+function getPSTSectionText(pstLines = [], depotLabel = "") {
   if (!pstLines.length) return "";
   const groupedLines = buildGroupedPSTLogLines(pstLines);
   const trainList = getUniqueTrainKeys(pstLines, getPSTTrainKey).join(", ");
   return [
     `PST at ${depotLabel} Depot: Total ${pstLines.length} train${pstLines.length !== 1 ? "s" : ""} completed from ${getPSTStartTime(pstLines[0])} to ${getPSTSummaryEndTime(pstLines)} hrs.`,
-    getPSTDCSummary(totalPSTCount),
+    getPSTDCSummary(pstLines.length, depotLabel),
     trainList ? `Train: ${trainList}` : "",
     "",
     ...groupedLines.map((group) => group.text),
@@ -262,7 +262,7 @@ function getELogLocationTitle(location = "") {
   return normalized.replace(/^(WD|ED)-/, "").replace(/-/g, " ") || "LOCATION NOT SET";
 }
 
-function buildELog2Text(pstLines = []) {
+function buildELog2Text(pstLines = [], depotLabel = "") {
   if (!pstLines.length) return "";
 
   const locationGroups = [];
@@ -296,7 +296,7 @@ function buildELog2Text(pstLines = []) {
 
   const noteBlock = [
     'Note: DC checked train status - HVAC enabled, Maximum Speed "None", CC - localized/operational.',
-    `DC's checked PST completed successfully for both West and East Depot trains. Total trains ${totalTrains}.`,
+    `DC's checked PST completed successfully for ${depotLabel || "the selected"} Depot trains. Total trains ${totalTrains}.`,
   ].join("\n");
 
   return [...sections, noteBlock].join("\n\n");
@@ -417,17 +417,23 @@ function SectionTextBlock({ title, text, emptyText }) {
   );
 }
 
-function DepotLogCard({ depotLabel, lines = [], totalPSTCount = 0, onClearDepot, showPST = true }) {
+function DepotLogCard({ depotLabel, lines = [], onClearDepot, logStyle = ELOG_1 }) {
   const pstLines = lines.filter(isPSTEntry);
   const prepLines = lines.filter(isPrepEntry);
-  const pstText = showPST ? getPSTSectionText(pstLines, depotLabel, totalPSTCount || pstLines.length) : "";
+  const pstText = logStyle === ELOG_2
+    ? buildELog2Text(pstLines, depotLabel)
+    : getPSTSectionText(pstLines, depotLabel);
   const prepText = getPrepSectionText(prepLines, depotLabel);
   const hasEntries = lines.length > 0;
   const dotColor = depotLabel.toLowerCase() === "west" ? "#d946ef" : "#22d3ee";
+  const cardClassName = logStyle === ELOG_2 ? "pst-clean-card pst-elog2-card" : "pst-clean-card";
+  const headerClassName = logStyle === ELOG_2
+    ? "pst-clean-card-header pst-elog2-card-header"
+    : "pst-clean-card-header";
 
   return (
-    <div className="pst-clean-card">
-      <div className="pst-clean-card-header">
+    <div className={cardClassName}>
+      <div className={headerClassName}>
         <div className="pst-clean-card-title-wrap">
           <span
             className="pst-clean-dot"
@@ -440,7 +446,7 @@ function DepotLogCard({ depotLabel, lines = [], totalPSTCount = 0, onClearDepot,
         </div>
 
         <div className="pst-clean-actions">
-          {showPST && <CopyButton text={pstText} label="Copy PST" disabled={!pstLines.length} />}
+          <CopyButton text={pstText} label="Copy PST" disabled={!pstLines.length} />
           <CopyButton text={prepText} label="Copy Train Prep" disabled={!prepLines.length} />
           <ClearDepotButton depotLabel={depotLabel} disabled={!hasEntries} onClear={onClearDepot} />
         </div>
@@ -449,7 +455,7 @@ function DepotLogCard({ depotLabel, lines = [], totalPSTCount = 0, onClearDepot,
       <div className="pst-clean-card-body">
         {hasEntries ? (
           <>
-            {showPST && <SectionTextBlock title="PST" text={pstText} emptyText="No PST entries." />}
+            <SectionTextBlock title="PST" text={pstText} emptyText="No PST entries." />
             <SectionTextBlock title="Train Prep" text={prepText} emptyText="No Train Prep entries." />
           </>
         ) : (
@@ -479,31 +485,10 @@ function ELogStyleButton({ active, children, onClick }) {
   );
 }
 
-function ELog2Card({ text, count }) {
-  return (
-    <div className="pst-clean-card pst-elog2-card">
-      <div className="pst-clean-card-header pst-elog2-card-header">
-        <div className="pst-clean-card-title-wrap">
-          <span className="pst-clean-dot" style={{ backgroundColor: "#fbbf24", boxShadow: "0 0 10px #fbbf24" }} aria-hidden="true" />
-          <div className="pst-clean-card-title">COMBINED WEST & EAST DEPOT PST — ELOG-2</div>
-        </div>
-        <div className="pst-clean-actions">
-          <CopyButton text={text} label="Copy PST" disabled={!count} />
-        </div>
-      </div>
-      <div className="pst-clean-card-body">
-        <SectionTextBlock title={`PST (${count})`} text={text} emptyText="No PST entries." />
-      </div>
-    </div>
-  );
-}
-
 export default function PSTLogOutput({ logLines, onClearDepot }) {
   const safeLogLines = Array.isArray(logLines) ? logLines : [];
   const westLines = safeLogLines.filter((line) => line.depot === "west");
   const eastLines = safeLogLines.filter((line) => line.depot === "east");
-  const allPSTLines = safeLogLines.filter(isPSTEntry);
-  const totalPSTCount = allPSTLines.length;
   const [logStyle, setLogStyle] = useState(() => {
     try {
       return localStorage.getItem(PST_LOG_STYLE_STORAGE_KEY) === ELOG_2 ? ELOG_2 : ELOG_1;
@@ -519,8 +504,6 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
       // Local storage may be unavailable in private browsing. The selector still works for this session.
     }
   }, [logStyle]);
-
-  const eLog2Text = useMemo(() => buildELog2Text(allPSTLines), [allPSTLines]);
 
   const scrollMainPageFromLog = (event) => {
     if (event.ctrlKey || event.metaKey) return;
@@ -611,9 +594,17 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
 
         .pst-clean-title-copy {
           min-width: 0;
+          flex: 1 1 auto;
           display: flex;
           flex-direction: column;
           gap: 2px;
+        }
+
+        .pst-clean-heading-line {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
         }
 
         .pst-clean-title {
@@ -634,8 +625,9 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
         }
 
         .pst-elog-style-picker {
-          margin-left: auto;
+          margin-left: 0;
           display: inline-flex;
+          flex: 0 0 auto;
           align-items: center;
           gap: 3px;
           padding: 3px;
@@ -839,47 +831,44 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
 
         @media (max-width: 640px) {
           .pst-clean-shell { padding: 9px; }
-          .pst-clean-title-row { align-items: flex-start; }
+          .pst-clean-title-row { align-items: center; }
           .pst-clean-card-header { align-items: flex-start; }
           .pst-clean-actions { width: 100%; }
-          .pst-elog-style-picker { width: 100%; margin-left: 0; }
-          .pst-elog-style-button { flex: 1; }
+          .pst-elog-style-picker { width: auto; margin-left: 0; }
+          .pst-elog-style-button { flex: 0 0 auto; }
         }
       `}</style>
 
       <div className="pst-clean-title-row">
         <DocumentLogIcon />
         <div className="pst-clean-title-copy">
-          <div className="pst-clean-title">PST / Train Prep Log Output</div>
+          <div className="pst-clean-heading-line">
+            <div className="pst-clean-title">PST / Train Prep Log Output</div>
+            <div className="pst-elog-style-picker" aria-label="PST log style">
+              <ELogStyleButton active={logStyle === ELOG_1} onClick={() => setLogStyle(ELOG_1)}>
+                ELOG-1
+              </ELogStyleButton>
+              <ELogStyleButton active={logStyle === ELOG_2} onClick={() => setLogStyle(ELOG_2)}>
+                ELOG-2
+              </ELogStyleButton>
+            </div>
+          </div>
           <div className="pst-clean-subtitle">Auto-generated from PST / Train Prep</div>
-        </div>
-
-        <div className="pst-elog-style-picker" aria-label="PST log style">
-          <ELogStyleButton active={logStyle === ELOG_1} onClick={() => setLogStyle(ELOG_1)}>
-            ELOG-1
-          </ELogStyleButton>
-          <ELogStyleButton active={logStyle === ELOG_2} onClick={() => setLogStyle(ELOG_2)}>
-            ELOG-2
-          </ELogStyleButton>
         </div>
       </div>
 
       <div className="pst-clean-cards">
-        {logStyle === ELOG_2 && <ELog2Card text={eLog2Text} count={totalPSTCount} />}
-
         <DepotLogCard
           depotLabel="West"
           lines={westLines}
-          totalPSTCount={totalPSTCount}
           onClearDepot={() => onClearDepot?.("west")}
-          showPST={logStyle === ELOG_1}
+          logStyle={logStyle}
         />
         <DepotLogCard
           depotLabel="East"
           lines={eastLines}
-          totalPSTCount={totalPSTCount}
           onClearDepot={() => onClearDepot?.("east")}
-          showPST={logStyle === ELOG_1}
+          logStyle={logStyle}
         />
       </div>
     </section>
