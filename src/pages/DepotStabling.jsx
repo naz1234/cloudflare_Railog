@@ -4141,24 +4141,24 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     type="text"
                     inputMode="numeric"
                     maxLength={3}
-                    value={String(insertedTid)}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.currentTarget.select();
-                    }}
+                    value={String(tidInput || insertedTid)}
+                    onClick={(e) => e.stopPropagation()}
                     onChange={(e) => {
                       const nextTid = e.target.value.replace(/\D/g, "").slice(0, 3);
                       onTidChange?.(road, bi, nextTid);
 
-                      // Editing a completed TID acts as undo. The remaining
-                      // digits return to the normal TID input for correction.
-                      if (nextTid !== String(insertedTid)) {
+                      // Allow partial editing (101 → 10 → 1) without undoing.
+                      // Undo only when the TID is fully cleared. If the user
+                      // completes a different 3-digit value, remove the old
+                      // insertion so the normal active-timetable auto-match can
+                      // immediately apply the replacement TID when valid.
+                      if (!nextTid || (/^\d{3}$/.test(nextTid) && nextTid !== String(insertedTid))) {
                         onInsertionTick(road, bi, key, tidInput);
                       }
                     }}
                     className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none"
-                    title="Edit or backspace the TID to undo insertion"
-                    aria-label={`Inserted TID ${insertedTid}. Edit or backspace to undo insertion.`}
+                    title="Edit the TID. Clear all digits to undo insertion."
+                    aria-label={`Inserted TID ${insertedTid}. Clear all digits to undo insertion.`}
                   />
 
                   <span className="font-normal text-blue-300">Time :</span>
