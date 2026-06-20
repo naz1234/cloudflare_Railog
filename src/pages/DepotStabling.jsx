@@ -6,7 +6,7 @@ import { Save, CheckCircle2, FileSpreadsheet, FileText, Image as ImageIcon, Load
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
-import TIDReferenceTable from "../components/TIDReferenceTable";
+import TIDReferenceTable, { getTidReferenceRemark } from "../components/TIDReferenceTable";
 import PSTLogOutput from "../components/depot/PSTLogOutput";
 import InsertionLogOutput from "../components/depot/InsertionLogOutput";
 
@@ -3632,20 +3632,9 @@ const INSERTION_ASSIST_REMARK_STYLES = {
   },
 };
 
-const WEEKDAY_INSERTION_ASSIST_REMARKS = {
-  west: {
-    101: "Late Rem", 102: "Early Rem", 103: "Late Rem", 104: "Early Rem", 105: "Late Rem",
-    106: "Early Rem", 107: "Late Rem", 108: "Early Rem", 109: "Late Rem", 110: "Early Rem",
-    111: "Late Rem", 112: "ED", 113: "Late Rem", 114: "ED", 115: "Late Rem",
-    116: "ED", 117: "Late Rem", 118: "ED", 119: "Late Rem", 120: "ED",
-  },
-  east: {
-    201: "Late Rem", 202: "ED", 203: "Late Rem", 204: "ED", 205: "Late Rem",
-    206: "ED", 207: "ED (7pm)", 208: "ED", 209: "ED (7pm)", 210: "ED",
-    211: "ED (7pm)", 212: "Early Rem", 213: "Late Rem", 214: "Early Rem", 215: "Late Rem",
-    216: "Early Rem", 217: "Late Rem", 218: "Early Rem", 219: "Late Rem", 220: "Early Rem",
-  },
-};
+function getBuiltinInsertionAssistRemark(dayKey = "weekday", depot = "west", tid = "") {
+  return getTidReferenceRemark(dayKey, depot, tid);
+}
 
 function isFridayOrSaturday(date = new Date()) {
   const day = date.getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
@@ -3670,13 +3659,6 @@ function normalizeInsertionAssistRemark(value = "") {
 function getInsertionAssistRemarkStyle(remark = "") {
   const normalized = normalizeInsertionAssistRemark(remark);
   return normalized ? INSERTION_ASSIST_REMARK_STYLES[normalized] || null : null;
-}
-
-function getBuiltinInsertionAssistRemark(dayKey = "weekday", depot = "west", tid = "") {
-  if (normalizeTimetableType(dayKey) !== "weekday") return "";
-  const depotKey = normalizeDepotKey(depot);
-  const cleanTid = Number(String(tid || "").replace(/\D/g, ""));
-  return WEEKDAY_INSERTION_ASSIST_REMARKS[depotKey]?.[cleanTid] || "";
 }
 
 function getTimetableInsertionRemarkMap(activeTimetable = null, depot = "west") {
@@ -3994,7 +3976,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
   return (
     <td className="p-2 align-middle" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-      <div className="relative flex h-full flex-col items-center justify-start gap-2 rounded-xl" style={{ minHeight: Math.max(inserted?.isSweeping ? 178 : isInsertionDone ? (insertedTid ? 148 : 132) : 98, rowCardMinHeight), height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow }}>
+      <div className="relative flex h-full flex-col items-center justify-start gap-2 rounded-xl" style={{ minHeight: Math.max(inserted?.isSweeping ? 178 : isInsertionDone ? (insertedTid ? 158 : 132) : 98, rowCardMinHeight), height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow }}>
         <div className="flex w-full flex-col items-center gap-2">
           {stablingEditable ? (
             <input
@@ -4134,15 +4116,15 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             )}
             {inserted && !inserted.isSweeping && (
               <>
-                <div className="w-full rounded-lg border border-blue-500/60 bg-blue-950/30 px-1.5 py-1.5">
+                <div className="w-full overflow-hidden rounded-lg border border-blue-500/60 bg-blue-950/30">
                   {insertedTid && (
-                    <div className="flex min-h-5 items-center justify-between gap-1 border-b border-blue-500/20 pb-1 text-[10px] leading-tight">
+                    <div className="grid min-h-[19px] grid-cols-[27px_minmax(0,1fr)] items-center gap-1 border-b border-blue-500/20 px-1.5 text-[9px] leading-none">
                       <span className="font-semibold text-blue-300">TID :</span>
-                      <span className="font-bold text-blue-100">{insertedTid}</span>
+                      <span className="justify-self-end font-bold text-blue-100">{insertedTid}</span>
                     </div>
                   )}
-                  <div className={`flex min-h-5 items-center gap-1 ${insertedTid ? "border-b border-blue-500/20 py-1" : "flex-col"}`}>
-                    <span className={`${insertedTid ? "shrink-0 text-[10px] font-semibold normal-case" : "mb-0.5 text-center text-[9px] font-normal uppercase tracking-wide"} text-blue-300`}>
+                  <div className={`${insertedTid ? "grid min-h-[22px] grid-cols-[27px_minmax(0,1fr)] items-center gap-1 border-b border-blue-500/20 px-1.5" : "flex min-h-10 flex-col items-center justify-center gap-0.5 px-1.5 py-1"}`}>
+                    <span className={`${insertedTid ? "text-[9px] font-semibold normal-case" : "text-center text-[9px] font-normal uppercase tracking-wide"} text-blue-300`}>
                       {insertedTid ? "Time :" : "INSERT TIME:"}
                     </span>
                     <input
@@ -4165,18 +4147,19 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
                       }}
                       placeholder="00:00"
-                      className={`${insertedTid ? "ml-auto w-[52px]" : "w-full"} rounded-md border border-blue-500/50 bg-[#071828] px-1 py-0.5 text-center text-[10px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700 focus:border-blue-300`}
+                      className={`${insertedTid ? "h-[18px] w-[47px] justify-self-end" : "w-full"} rounded-md border border-blue-500/50 bg-[#071828] px-0.5 text-center text-[9px] font-normal leading-none text-blue-100 outline-none placeholder:text-blue-700 focus:border-blue-300`}
                       title="Edit insertion completion time"
                     />
                   </div>
-                  {insertedTid && insertedTidAssistRemark && (
-                    <div className="flex min-h-5 items-center justify-between gap-1 pt-1 text-[10px] leading-tight">
+                  {insertedTid && (
+                    <div className="grid min-h-[21px] grid-cols-[27px_minmax(0,1fr)] items-center gap-1 px-1.5 text-[9px] leading-none">
                       <span className="font-semibold text-blue-300">Rem :</span>
                       <span
-                        className="max-w-[76px] text-right font-bold"
+                        className="min-w-0 justify-self-end whitespace-nowrap text-right font-bold"
                         style={{ color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
+                        title={insertedTidAssistRemark || "No reference remark"}
                       >
-                        {insertedTidAssistRemark}
+                        {insertedTidAssistRemark || "—"}
                       </span>
                     </div>
                   )}
@@ -4184,7 +4167,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 <button
                   type="button"
                   onClick={handleInsertedUndoClick}
-                  className="w-full rounded-lg border border-green-500 bg-green-200 px-1 py-0.5 text-[9px] font-bold leading-tight text-green-900 transition-all hover:bg-green-100"
+                  className="min-h-5 w-full rounded-lg border border-green-500 bg-green-200 px-1 py-1 text-[9px] font-bold leading-none text-green-900 transition-all hover:bg-green-100"
                   title="Click to undo insertion"
                   aria-label="Undo insertion"
                 >
@@ -4480,7 +4463,15 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
                 const rowTrainKey = normalizeTrainId(rowBlock?.trainId || "");
                 const rowMaintenanceCount = rowTrainKey ? (maintenanceMap[rowTrainKey] || []).length : 0;
                 const rowEntry = getActiveInsertionEntryForCell(insertionLog, road, blockIndex, rowTrainKey);
-                const baseHeight = rowEntry?.isSweeping ? 178 : rowEntry ? 132 : 98;
+                const rowEntryTid = rowEntry?.tid !== null && rowEntry?.tid !== undefined
+                  ? Number(String(rowEntry.tid).replace(/\D/g, ""))
+                  : null;
+                const rowEntryDepot = WEST_ROADS.includes(road) ? "west" : "east";
+                const rowHasValidTid = Boolean(
+                  rowEntryTid && typeof getTidScheduledTime === "function" &&
+                  getTidScheduledTime(rowEntryTid, rowEntryDepot, { allowFallback: false })
+                );
+                const baseHeight = rowEntry?.isSweeping ? 178 : rowEntry ? (rowHasValidTid ? 158 : 132) : 98;
                 const maintenanceHeight = rowMaintenanceCount > 0 ? 8 + (rowMaintenanceCount * 20) : 0;
                 return Math.max(maxHeight, baseHeight + maintenanceHeight);
               }, 98);

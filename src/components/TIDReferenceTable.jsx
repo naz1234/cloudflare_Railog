@@ -179,6 +179,25 @@ function buildFallbackRemarkMap(typeKey = "weekday", depot = "west") {
   );
 }
 
+// Shared lookup so the insertion card and this reference table always use
+// the same built-in TID assistance remark mapping.
+export function getTidReferenceRemark(timetableType = "weekday", depot = "west", tid = "") {
+  const typeKey = normalizeTimetableTypeKey(timetableType);
+  if (typeKey !== "weekday") return "";
+
+  const depotKey = depot === "east" ? "east" : "west";
+  const oppositeDepotKey = depotKey === "west" ? "east" : "west";
+  const cleanTid = Number(String(tid || "").replace(/\D/g, ""));
+  if (!cleanTid) return "";
+
+  const tidKey = String(cleanTid);
+  return (
+    buildFallbackRemarkMap(typeKey, depotKey)[tidKey] ||
+    buildFallbackRemarkMap(typeKey, oppositeDepotKey)[tidKey] ||
+    ""
+  );
+}
+
 function buildDepotRowsFromUploadedTimetable(activeTimetable = null, depot = "west", typeKey = "weekday") {
   const parsed = getParsedTimetable(activeTimetable);
   const depotKey = depot === "east" ? "east" : "west";
