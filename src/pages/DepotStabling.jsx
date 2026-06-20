@@ -4087,10 +4087,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 value={inserted.sweepTrack || "TK1"}
                 onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
                 className="h-5 w-full appearance-none border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-purple-100 outline-none"
+                style={{ colorScheme: "dark" }}
                 title="Select Sweep track"
               >
-                <option value="TK1">Track 01</option>
-                <option value="TK2">Track 02</option>
+                <option value="TK1" style={{ backgroundColor: "#071828", color: "#e9d5ff" }}>Track 01</option>
+                <option value="TK2" style={{ backgroundColor: "#071828", color: "#e9d5ff" }}>Track 02</option>
               </select>
               <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 gap-y-1">
                 <span className="font-normal text-purple-300">Start :</span>
