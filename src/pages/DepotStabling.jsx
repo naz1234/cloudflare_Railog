@@ -4531,19 +4531,19 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
         }
       />
       <div className="overflow-x-auto rounded-xl border" style={{ borderColor: INSERTION_PANEL_COLORS.gridLine }}>
-        <table className="border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 940, maxWidth: 940, width: 940 }}>
+        <table className="border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 880, maxWidth: 880, width: 880 }}>
           <thead>
             <tr>
-              {labelSide === "left" && <th className="w-[72px]" style={{ background: INSERTION_PANEL_COLORS.header, border: "none", borderBottom: `1px solid ${INSERTION_PANEL_COLORS.gridLine}` }} />}
+              {labelSide === "left" && <th className="w-[68px]" style={{ background: INSERTION_PANEL_COLORS.header, border: "none", borderBottom: `1px solid ${INSERTION_PANEL_COLORS.gridLine}` }} />}
               {blockLabels.map((label, i) => {
                 const isLastBlock = i === blockLabels.length - 1;
                 return (
-                  <th key={label} className="h-10 text-center text-[10px] font-black tracking-[0.13em] uppercase" style={{ width: 124, minWidth: 124, maxWidth: 124, background: INSERTION_PANEL_COLORS.header, color: INSERTION_PANEL_COLORS.headerText, borderLeft: i > 0 ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderTopLeftRadius: labelSide === "left" && i === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && isLastBlock ? 12 : undefined }}>
+                  <th key={label} className="h-10 text-center text-[10px] font-black tracking-[0.13em] uppercase" style={{ width: 116, minWidth: 116, maxWidth: 116, background: INSERTION_PANEL_COLORS.header, color: INSERTION_PANEL_COLORS.headerText, borderLeft: i > 0 ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderTopLeftRadius: labelSide === "left" && i === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && isLastBlock ? 12 : undefined }}>
                     {label}
                   </th>
                 );
               })}
-              {labelSide === "right" && <th className="w-[72px]" style={{ background: INSERTION_PANEL_COLORS.header, border: "none", borderBottom: `1px solid ${INSERTION_PANEL_COLORS.gridLine}` }} />}
+              {labelSide === "right" && <th className="w-[68px]" style={{ background: INSERTION_PANEL_COLORS.header, border: "none", borderBottom: `1px solid ${INSERTION_PANEL_COLORS.gridLine}` }} />}
             </tr>
           </thead>
           <tbody>
@@ -4580,7 +4580,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
                 return Math.max(maxHeight, baseHeight + maintenanceHeight);
               }, 98);
               const labelCell = (
-                <td className="text-center align-middle text-[12px] font-black tracking-tight uppercase" style={{ background: INSERTION_PANEL_COLORS.header, color: "#d6e7f4", borderTop: ri === 0 ? "none" : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderBottom: rowLine, borderRight: labelSide === "left" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderLeft: labelSide === "right" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, whiteSpace: "nowrap", width: 72, minWidth: 72, letterSpacing: "0.025em", borderTopLeftRadius: labelSide === "left" && ri === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && ri === 0 ? 12 : undefined, borderBottomLeftRadius: labelSide === "left" && ri === roads.length - 1 ? 12 : undefined, borderBottomRightRadius: labelSide === "right" && ri === roads.length - 1 ? 12 : undefined }}>
+                <td className="text-center align-middle text-[12px] font-black tracking-tight uppercase" style={{ background: INSERTION_PANEL_COLORS.header, color: "#d6e7f4", borderTop: ri === 0 ? "none" : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderBottom: rowLine, borderRight: labelSide === "left" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderLeft: labelSide === "right" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, whiteSpace: "nowrap", width: 68, minWidth: 68, letterSpacing: "0.025em", borderTopLeftRadius: labelSide === "left" && ri === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && ri === 0 ? 12 : undefined, borderBottomLeftRadius: labelSide === "left" && ri === roads.length - 1 ? 12 : undefined, borderBottomRightRadius: labelSide === "right" && ri === roads.length - 1 ? 12 : undefined }}>
                   <div className="flex flex-col items-center justify-center gap-1 leading-none">
                     <span>{road}</span>
                     {insertionRoadPill && (
