@@ -12985,6 +12985,13 @@ export default function DepotStablingPage() {
     east: getTimetableInsertionRemarkMap(activeTimetable, "east"),
   }), [activeTimetable]);
 
+  // When an uploaded timetable exists for the selected type, it is the only
+  // source of valid insertion TIDs. Built-in schedules are used only when no
+  // uploaded timetable is available.
+  const hasActiveUploadedTimetable = Boolean(
+    activeTimetable && getActiveTimetableParsedData(activeTimetable)
+  );
+
   const getDayScheduleKey = () => {
     const selectedType = normalizeTimetableType(selectedTimetableType);
     if (["weekday", "friday", "saturday"].includes(selectedType)) return selectedType;
@@ -13006,12 +13013,13 @@ export default function DepotStablingPage() {
     const uploadedRemark =
       activeInsertionRemarkMaps?.[depotKey]?.[cleanTid] ||
       activeInsertionRemarkMaps?.[oppositeDepotKey]?.[cleanTid];
-    const fallbackRemark =
-      getBuiltinInsertionAssistRemark(dayKey, depotKey, cleanTid) ||
-      getBuiltinInsertionAssistRemark(dayKey, oppositeDepotKey, cleanTid);
+    const fallbackRemark = hasActiveUploadedTimetable
+      ? ""
+      : getBuiltinInsertionAssistRemark(dayKey, depotKey, cleanTid) ||
+        getBuiltinInsertionAssistRemark(dayKey, oppositeDepotKey, cleanTid);
 
     return getInsertionAssistRemarkStyle(uploadedRemark || fallbackRemark) || specialStyle;
-  }, [activeInsertionRemarkMaps, selectedTimetableType]);
+  }, [activeInsertionRemarkMaps, selectedTimetableType, hasActiveUploadedTimetable]);
 
   const getTidScheduledTime = (tid, depot, options = {}) => {
     const { allowFallback = true } = options || {};
@@ -13030,7 +13038,12 @@ export default function DepotStablingPage() {
 
     if (uploadedTime) return uploadedTime;
 
-    // Then fall back to the built-in schedule for the selected timetable type.
+    // Do not merge hardcoded TIDs into an active uploaded timetable. An
+    // unmatched number remains a normal remark and must not auto-insert.
+    if (hasActiveUploadedTimetable) return null;
+
+    // No uploaded timetable is available, so use the built-in schedule for
+    // the selected timetable type as an offline/default fallback.
     const sameDayTime =
       TID_TIME_MAPS[dayKey]?.[depotKey]?.[cleanTid] ||
       TID_TIME_MAPS[dayKey]?.[oppositeDepotKey]?.[cleanTid];
