@@ -3986,187 +3986,206 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   return (
     <td className="p-2 align-middle" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
       <div className="relative flex h-full flex-col items-center justify-start gap-2 rounded-xl" style={{ minHeight: Math.max(inserted?.isSweeping ? 178 : 98, rowCardMinHeight), height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow }}>
-        {stablingEditable ? (
-          <input
-            type="text"
-            value={isTrainIdEditing ? val : (key ? formatTrainNumberOnly(val) : val)}
-            onFocus={(e) => {
-              setIsTrainIdEditing(true);
-              requestAnimationFrame(() => e.currentTarget.select());
-            }}
-            onBlur={() => setIsTrainIdEditing(false)}
-            onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
-            placeholder="Train ID"
-            className="h-7 w-full border-0 border-b px-1.5 text-center text-[15px] font-black uppercase outline-none placeholder:text-[#47637a]"
-            style={{
-              borderBottomColor: key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine,
-              backgroundColor: "transparent",
-              color: key ? trainColor : "#6f899f",
-              letterSpacing: key ? "0.04em" : undefined,
-              borderRadius: 0,
-            }}
-          />
-        ) : (
-          <div className="w-full text-center font-black leading-none" style={{ fontSize: key ? 18 : 13, color: key ? trainColor : "#587187", letterSpacing: key ? "0.04em" : undefined }}>{displayVal || "—"}</div>
-        )}
-        {maintList.length > 0 && (
-          <div className="flex w-full flex-col items-center gap-1.5">
-            {maintList.map((item) => (
-              <span
-                key={`${item.displayType}-${item.badgeText || ""}`}
-                className="inline-flex min-w-[92px] w-fit max-w-full items-center justify-center rounded-full px-2 py-0.5 text-center text-[10px] font-normal leading-none whitespace-nowrap"
-                style={getRequestPillStyle(item, { showSuppressedStyle: false })}
-                title={item.badgeText || item.displayType}
-              >
-                {item.badgeText || item.displayType}
-              </span>
-            ))}
-          </div>
-        )}
-        {key && !inserted && (<input ref={tidInputRef} type="text" value={tidInput} onChange={(e) => onTidChange(road, bi, e.target.value)} onKeyDown={onTidKeyDown} onFocus={onTidFocus} onPointerDown={onTidFocus} placeholder="TID" className="h-6 w-full px-1.5 text-center text-[11px] font-semibold outline-none placeholder:text-[#47637a]" style={insTidInputStyle} />)}
-        {key && inserted && insertedRemarkLabel && !inserted.isSweeping && (
-          <span
-            className="text-[11px] font-bold"
-            style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
-          >
-            {insertedRemarkLabel}
-          </span>
-        )}
-        {key && inserted?.isSweeping && (
-          <div className="w-full rounded-lg border border-purple-500/55 bg-[#17162f] px-1.5 py-1.5">
-            <div className="mb-1 text-center text-[10px] font-black uppercase tracking-wide text-purple-200">Sweep</div>
-            <select
-              value={inserted.sweepTrack || "TK1"}
-              onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
-              className="mb-1 h-6 w-full rounded-md border border-purple-500/50 bg-[#101628] px-1 text-center text-[10px] font-black text-purple-100 outline-none"
-              title="Select Sweep track"
-            >
-              <option value="TK1">Track 01</option>
-              <option value="TK2">Track 02</option>
-            </select>
-            <div className="w-full rounded-lg border border-purple-500/40 bg-[#101628] px-1 py-1">
-              <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap">
-                <span className="shrink-0 text-[10px] font-bold leading-tight text-purple-300">Start :</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={5}
-                  value={inserted.time || ""}
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => {
-                    const value = String(inserted.time || "");
-                    const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-                    if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                      e.preventDefault();
-                      onSweepUpdate?.(inserted.key, { time: value.slice(0, -2) });
-                    }
-                  }}
-                  onChange={(e) => onSweepUpdate?.(inserted.key, { time: cleanMovementCustomTimeInput(e.target.value) })}
-                  onBlur={(e) => onSweepUpdate?.(inserted.key, { time: normalizeMovementCustomTimeInput(e.target.value) })}
-                  placeholder="00:00"
-                  className="w-[42px] rounded-md border border-purple-500/50 bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800 focus:border-purple-300"
-                  title="Edit Sweep start time. End time updates automatically +2 minutes."
-                />
-              </div>
-              <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap pt-0.5">
-                <span className="shrink-0 text-[10px] font-bold leading-tight text-purple-300">End :</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={5}
-                  value={inserted.clearTime || ""}
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => {
-                    const value = String(inserted.clearTime || "");
-                    const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-                    if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                      e.preventDefault();
-                      onSweepUpdate?.(inserted.key, { clearTime: value.slice(0, -2) });
-                    }
-                  }}
-                  onChange={(e) => onSweepUpdate?.(inserted.key, { clearTime: cleanMovementCustomTimeInput(e.target.value) })}
-                  onBlur={(e) => onSweepUpdate?.(inserted.key, { clearTime: normalizeMovementCustomTimeInput(e.target.value) })}
-                  placeholder="00:00"
-                  className="w-[42px] rounded-md border border-purple-500/50 bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800 focus:border-purple-300"
-                  title="Edit Sweep end time"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-        {key && !inserted && !canAutoInsertTid && (
-          <button
-            onClick={handleInsertClick}
-            className={`h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-colors ${hasTidRemark ? "bg-[#211d0c] border-[#8f7118] text-yellow-200 hover:border-emerald-600 hover:text-emerald-200" : "bg-[#0a1c2d] border-[#315671] text-[#9ab2c6] hover:border-[#4f8fbf] hover:text-white"}`}
-          >
-            {hasTidRemark ? "Insert Remark" : "Insert"}
-          </button>
-        )}
-        {key && inserted && !inserted.isSweeping && (
-          <div className="flex w-full items-center gap-1">
-            <div
-              className="flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg border px-1 py-0.5"
-              style={activeTidRemarkStyle ? {
-                backgroundColor: activeTidRemarkStyle.bg,
-                borderColor: activeTidRemarkStyle.border,
-                color: activeTidRemarkStyle.color,
-              } : {
-                backgroundColor: "rgba(6, 78, 59, 0.5)",
-                borderColor: "#059669",
-                color: "#6ee7b7",
+        <div className="flex w-full flex-col items-center gap-2">
+          {stablingEditable ? (
+            <input
+              type="text"
+              value={isTrainIdEditing ? val : (key ? formatTrainNumberOnly(val) : val)}
+              onFocus={(e) => {
+                setIsTrainIdEditing(true);
+                requestAnimationFrame(() => e.currentTarget.select());
               }}
-              title="Edit actual insertion time"
-            >
-              <span className="shrink-0 text-[11px] font-black">✓</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={5}
-                value={insertedDisplayTime}
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => {
-                  const value = String(insertedDisplayTime || "");
-                  const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-                  if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                    e.preventDefault();
-                    onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
-                  }
-                }}
-                onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
-                onBlur={(e) => {
-                  const normalized = normalizeMovementCustomTimeInput(e.target.value);
-                  onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
-                }}
-                placeholder="00:00"
-                className="min-w-0 w-full bg-transparent px-0 text-center text-[12px] font-bold leading-none outline-none placeholder:opacity-40"
-                style={{ color: "inherit" }}
-                title="Edit actual insertion time (24-hour HH:MM)"
-              />
+              onBlur={() => setIsTrainIdEditing(false)}
+              onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
+              placeholder="Train ID"
+              className="h-7 w-full border-0 border-b px-1.5 text-center text-[15px] font-black uppercase outline-none placeholder:text-[#47637a]"
+              style={{
+                borderBottomColor: key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine,
+                backgroundColor: "transparent",
+                color: key ? trainColor : "#6f899f",
+                letterSpacing: key ? "0.04em" : undefined,
+                borderRadius: 0,
+              }}
+            />
+          ) : (
+            <div className="w-full text-center font-black leading-none" style={{ fontSize: key ? 18 : 13, color: key ? trainColor : "#587187", letterSpacing: key ? "0.04em" : undefined }}>{displayVal || "—"}</div>
+          )}
+          {maintList.length > 0 && (
+            <div className="flex w-full flex-col items-center gap-1.5">
+              {maintList.map((item) => (
+                <span
+                  key={`${item.displayType}-${item.badgeText || ""}`}
+                  className="inline-flex min-w-[92px] w-fit max-w-full items-center justify-center rounded-full px-2 py-0.5 text-center text-[10px] font-normal leading-none whitespace-nowrap"
+                  style={getRequestPillStyle(item, { showSuppressedStyle: false })}
+                  title={item.badgeText || item.displayType}
+                >
+                  {item.badgeText || item.displayType}
+                </span>
+              ))}
             </div>
-            <button
-              type="button"
-              onClick={handleInsertedUndoClick}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-red-700/70 bg-red-950/30 text-[13px] font-black text-red-300 transition-colors hover:border-red-400 hover:bg-red-900/45 hover:text-white"
-              title="Undo insertion"
-              aria-label="Undo insertion"
+          )}
+          {key && inserted && insertedRemarkLabel && !inserted.isSweeping && (
+            <span
+              className="text-[11px] font-bold"
+              style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
             >
-              ↶
-            </button>
+              {insertedRemarkLabel}
+            </span>
+          )}
+          {key && inserted?.isSweeping && (
+            <div className="w-full rounded-lg border border-purple-500/55 bg-[#17162f] px-1.5 py-1.5">
+              <div className="mb-1 text-center text-[10px] font-black uppercase tracking-wide text-purple-200">Sweep</div>
+              <select
+                value={inserted.sweepTrack || "TK1"}
+                onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
+                className="mb-1 h-6 w-full rounded-md border border-purple-500/50 bg-[#101628] px-1 text-center text-[10px] font-black text-purple-100 outline-none"
+                title="Select Sweep track"
+              >
+                <option value="TK1">Track 01</option>
+                <option value="TK2">Track 02</option>
+              </select>
+              <div className="w-full rounded-lg border border-purple-500/40 bg-[#101628] px-1 py-1">
+                <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap">
+                  <span className="shrink-0 text-[10px] font-bold leading-tight text-purple-300">Start :</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={5}
+                    value={inserted.time || ""}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      const value = String(inserted.time || "");
+                      const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                      if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                        e.preventDefault();
+                        onSweepUpdate?.(inserted.key, { time: value.slice(0, -2) });
+                      }
+                    }}
+                    onChange={(e) => onSweepUpdate?.(inserted.key, { time: cleanMovementCustomTimeInput(e.target.value) })}
+                    onBlur={(e) => onSweepUpdate?.(inserted.key, { time: normalizeMovementCustomTimeInput(e.target.value) })}
+                    placeholder="00:00"
+                    className="w-[42px] rounded-md border border-purple-500/50 bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800 focus:border-purple-300"
+                    title="Edit Sweep start time. End time updates automatically +2 minutes."
+                  />
+                </div>
+                <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap pt-0.5">
+                  <span className="shrink-0 text-[10px] font-bold leading-tight text-purple-300">End :</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={5}
+                    value={inserted.clearTime || ""}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      const value = String(inserted.clearTime || "");
+                      const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                      if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                        e.preventDefault();
+                        onSweepUpdate?.(inserted.key, { clearTime: value.slice(0, -2) });
+                      }
+                    }}
+                    onChange={(e) => onSweepUpdate?.(inserted.key, { clearTime: cleanMovementCustomTimeInput(e.target.value) })}
+                    onBlur={(e) => onSweepUpdate?.(inserted.key, { clearTime: normalizeMovementCustomTimeInput(e.target.value) })}
+                    placeholder="00:00"
+                    className="w-[42px] rounded-md border border-purple-500/50 bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800 focus:border-purple-300"
+                    title="Edit Sweep end time"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        {key && (
+          <div className="mt-auto flex w-full flex-col items-center gap-2">
+            {!inserted && (
+              <input
+                ref={tidInputRef}
+                type="text"
+                value={tidInput}
+                onChange={(e) => onTidChange(road, bi, e.target.value)}
+                onKeyDown={onTidKeyDown}
+                onFocus={onTidFocus}
+                onPointerDown={onTidFocus}
+                placeholder="TID"
+                className="h-6 w-full px-1.5 text-center text-[11px] font-semibold outline-none placeholder:text-[#47637a]"
+                style={insTidInputStyle}
+              />
+            )}
+            {!inserted && !canAutoInsertTid && (
+              <button
+                onClick={handleInsertClick}
+                className={`h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-colors ${hasTidRemark ? "bg-[#211d0c] border-[#8f7118] text-yellow-200 hover:border-emerald-600 hover:text-emerald-200" : "bg-[#0a1c2d] border-[#315671] text-[#9ab2c6] hover:border-[#4f8fbf] hover:text-white"}`}
+              >
+                {hasTidRemark ? "Insert Remark" : "Insert"}
+              </button>
+            )}
+            {inserted && !inserted.isSweeping && (
+              <div className="flex w-full items-center gap-1">
+                <div
+                  className="flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg border px-1 py-0.5"
+                  style={activeTidRemarkStyle ? {
+                    backgroundColor: activeTidRemarkStyle.bg,
+                    borderColor: activeTidRemarkStyle.border,
+                    color: activeTidRemarkStyle.color,
+                  } : {
+                    backgroundColor: "rgba(6, 78, 59, 0.5)",
+                    borderColor: "#059669",
+                    color: "#6ee7b7",
+                  }}
+                  title="Edit actual insertion time"
+                >
+                  <span className="shrink-0 text-[11px] font-black">✓</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={5}
+                    value={insertedDisplayTime}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      const value = String(insertedDisplayTime || "");
+                      const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                      if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                        e.preventDefault();
+                        onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
+                      }
+                    }}
+                    onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
+                    onBlur={(e) => {
+                      const normalized = normalizeMovementCustomTimeInput(e.target.value);
+                      onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
+                    }}
+                    placeholder="00:00"
+                    className="min-w-0 w-full bg-transparent px-0 text-center text-[12px] font-bold leading-none outline-none placeholder:opacity-40"
+                    style={{ color: "inherit" }}
+                    title="Edit actual insertion time (24-hour HH:MM)"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleInsertedUndoClick}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-red-700/70 bg-red-950/30 text-[13px] font-black text-red-300 transition-colors hover:border-red-400 hover:bg-red-900/45 hover:text-white"
+                  title="Undo insertion"
+                  aria-label="Undo insertion"
+                >
+                  ↶
+                </button>
+              </div>
+            )}
+            {inserted?.isSweeping && (
+              <button
+                onClick={handleInsertedUndoClick}
+                className="h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-colors hover:border-red-500 hover:text-red-200"
+                style={{
+                  backgroundColor: "rgba(88, 28, 135, 0.35)",
+                  borderColor: "#a855f7",
+                  color: "#e9d5ff",
+                }}
+                title="Click to undo sweep"
+              >
+                {`✓ ${inserted.time || insertedDisplayTime}`}
+              </button>
+            )}
           </div>
-        )}
-        {key && inserted?.isSweeping && (
-          <button
-            onClick={handleInsertedUndoClick}
-            className="h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-colors hover:border-red-500 hover:text-red-200"
-            style={{
-              backgroundColor: "rgba(88, 28, 135, 0.35)",
-              borderColor: "#a855f7",
-              color: "#e9d5ff",
-            }}
-            title="Click to undo sweep"
-          >
-            {`✓ ${inserted.time || insertedDisplayTime}`}
-          </button>
         )}
       </div>
     </td>
