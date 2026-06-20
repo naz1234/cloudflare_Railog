@@ -3904,6 +3904,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
+  const isInsertionDone = Boolean(inserted && !inserted.isSweeping);
   const autoScheduledTime = autoTid !== null && typeof getTidScheduledTime === "function"
     ? getTidScheduledTime(autoTid, autoTidDepot, { allowFallback: false })
     : null;
@@ -3930,6 +3931,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
   let trainColor = "#e2eaf4";
   if (expired) { trainColor = "#3a5068"; }
+  else if (isInsertionDone) { trainColor = "#93c5fd"; }
   else if (activeTidRemarkStyle) { trainColor = activeTidRemarkStyle.color; }
   else if (inserted) { trainColor = "#4ade80"; }
   else if (hasTidRemark) { trainColor = "#facc15"; }
@@ -3940,22 +3942,26 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   // Keep the stabling card border/background neutral so the pill is the only request colour.
   const insCardBg = expired
     ? "#07131e"
-    : inserted
-      ? "#0b2730"
-      : key
-        ? INSERTION_PANEL_COLORS.card
-        : "rgba(7, 24, 39, 0.38)";
+    : isInsertionDone
+      ? "linear-gradient(135deg,#0d1f2e,#081525)"
+      : inserted
+        ? "#0b2730"
+        : key
+          ? INSERTION_PANEL_COLORS.card
+          : "rgba(7, 24, 39, 0.38)";
   const insCardBorder = expired
     ? "1px solid #1e3547"
-    : activeTidRemarkStyle
-      ? `1px solid ${activeTidRemarkStyle.border}`
-      : inserted
-        ? "1px solid #17825f"
-        : hasTidRemark
-          ? "1px solid #9a7416"
-          : key
-            ? `1px solid ${INSERTION_PANEL_COLORS.cardBorder}`
-            : `1px dashed ${INSERTION_PANEL_COLORS.emptyBorder}`;
+    : isInsertionDone
+      ? "1px solid #3b82f6"
+      : activeTidRemarkStyle
+        ? `1px solid ${activeTidRemarkStyle.border}`
+        : inserted
+          ? "1px solid #17825f"
+          : hasTidRemark
+            ? "1px solid #9a7416"
+            : key
+              ? `1px solid ${INSERTION_PANEL_COLORS.cardBorder}`
+              : `1px dashed ${INSERTION_PANEL_COLORS.emptyBorder}`;
   const insCardGlow = key && !expired
     ? "0 4px 12px rgba(0,0,0,0.12)"
     : undefined;
@@ -3985,7 +3991,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
   return (
     <td className="p-2 align-middle" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-      <div className="relative flex h-full flex-col items-center justify-start gap-2 rounded-xl" style={{ minHeight: Math.max(inserted?.isSweeping ? 178 : 98, rowCardMinHeight), height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow }}>
+      <div className="relative flex h-full flex-col items-center justify-start gap-2 rounded-xl" style={{ minHeight: Math.max(inserted?.isSweeping ? 178 : isInsertionDone ? 156 : 98, rowCardMinHeight), height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow }}>
         <div className="flex w-full flex-col items-center gap-2">
           {stablingEditable ? (
             <input
@@ -4120,21 +4126,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               </button>
             )}
             {inserted && !inserted.isSweeping && (
-              <div className="flex w-full items-center gap-1">
-                <div
-                  className="flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg border px-1 py-0.5"
-                  style={activeTidRemarkStyle ? {
-                    backgroundColor: activeTidRemarkStyle.bg,
-                    borderColor: activeTidRemarkStyle.border,
-                    color: activeTidRemarkStyle.color,
-                  } : {
-                    backgroundColor: "rgba(6, 78, 59, 0.5)",
-                    borderColor: "#059669",
-                    color: "#6ee7b7",
-                  }}
-                  title="Edit actual insertion time"
-                >
-                  <span className="shrink-0 text-[11px] font-black">✓</span>
+              <>
+                <div className="w-full rounded-lg border border-blue-500/60 bg-blue-950/30 px-1 py-1">
+                  <div className="mb-0.5 text-center text-[9px] font-normal uppercase tracking-wide text-blue-300">INSERT Done :</div>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -4155,21 +4149,20 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
                     }}
                     placeholder="00:00"
-                    className="min-w-0 w-full bg-transparent px-0 text-center text-[12px] font-bold leading-none outline-none placeholder:opacity-40"
-                    style={{ color: "inherit" }}
-                    title="Edit actual insertion time (24-hour HH:MM)"
+                    className="w-full rounded-md border border-blue-500/50 bg-[#071828] px-1 py-0.5 text-center text-[10px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700 focus:border-blue-300"
+                    title="Edit insertion completion time"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={handleInsertedUndoClick}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-red-700/70 bg-red-950/30 text-[13px] font-black text-red-300 transition-colors hover:border-red-400 hover:bg-red-900/45 hover:text-white"
-                  title="Undo insertion"
+                  className="w-full rounded-lg border border-green-500 bg-green-200 px-1 py-0.5 text-[9px] font-bold leading-tight text-green-900 transition-all hover:bg-green-100"
+                  title="Click to undo insertion"
                   aria-label="Undo insertion"
                 >
-                  ↶
+                  ✓ INSERT COMP.
                 </button>
-              </div>
+              </>
             )}
             {inserted?.isSweeping && (
               <button
@@ -4480,7 +4473,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
                 const rowTrainKey = normalizeTrainId(rowBlock?.trainId || "");
                 const rowMaintenanceCount = rowTrainKey ? (maintenanceMap[rowTrainKey] || []).length : 0;
                 const rowEntry = getActiveInsertionEntryForCell(insertionLog, road, blockIndex, rowTrainKey);
-                const baseHeight = rowEntry?.isSweeping ? 178 : 98;
+                const baseHeight = rowEntry?.isSweeping ? 178 : rowEntry ? 156 : 98;
                 const maintenanceHeight = rowMaintenanceCount > 0 ? 8 + (rowMaintenanceCount * 20) : 0;
                 return Math.max(maxHeight, baseHeight + maintenanceHeight);
               }, 98);
