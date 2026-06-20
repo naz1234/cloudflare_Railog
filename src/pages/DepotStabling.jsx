@@ -3802,6 +3802,8 @@ const INSERTION_PANEL_COLORS = {
   muted: "#8aa4ba",
 };
 
+const INSERTION_AMBER_RIBBON_HEIGHT = 24;
+
 const INSERTION_ACTION_BUTTON_COMMON = {
   height: 38,
   minHeight: 38,
@@ -3909,6 +3911,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     ? getTidScheduledTime(autoTid, autoTidDepot, { allowFallback: false })
     : null;
   const canAutoInsertTid = Boolean(key && !inserted && autoTid !== null && autoScheduledTime);
+  const liveMatchedTid = Boolean(!inserted && autoTid !== null && autoScheduledTime);
+  const showAmberRibbon = Boolean(key && (hasTidRemark || (inserted && insertedRemarkLabel)));
+  const amberRibbonLabel = insertedTid || liveMatchedTid ? "INSERTION TID" : "INSERTION REMARK";
+  const cardBaseMinHeight = inserted?.isSweeping ? 178 : isInsertionDone ? 132 : 98;
+  const cardRibbonHeight = showAmberRibbon ? INSERTION_AMBER_RIBBON_HEIGHT : 0;
 
   useEffect(() => {
     if (!canAutoInsertTid) return;
@@ -3991,7 +3998,40 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
   return (
     <td className="p-2 align-middle" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-      <div className="relative flex h-full flex-col items-center justify-start gap-2 rounded-xl" style={{ minHeight: Math.max(inserted?.isSweeping ? 178 : isInsertionDone ? 132 : 98, rowCardMinHeight), height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow }}>
+      <div
+        className="relative flex h-full flex-col items-center justify-start gap-2 overflow-hidden rounded-xl"
+        style={{
+          minHeight: Math.max(cardBaseMinHeight + cardRibbonHeight, rowCardMinHeight),
+          height: "100%",
+          padding: `${showAmberRibbon ? INSERTION_AMBER_RIBBON_HEIGHT + 9 : 9}px 7px 9px`,
+          background: insCardBg,
+          border: insCardBorder,
+          boxShadow: insCardGlow,
+        }}
+      >
+        {showAmberRibbon && (
+          <div
+            className="absolute inset-x-0 top-0 z-[1] flex items-center justify-center gap-1.5 select-none"
+            style={{
+              height: INSERTION_AMBER_RIBBON_HEIGHT,
+              background: "linear-gradient(180deg, #ffc83d 0%, #f2a900 100%)",
+              borderBottom: "1px solid #ffcf55",
+              color: "#191105",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.55), 0 2px 7px rgba(242,169,0,0.26)",
+            }}
+            title={amberRibbonLabel}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="5" y="3" width="14" height="14" rx="3" />
+              <path d="M8 7h8" />
+              <path d="M8 11h8" />
+              <path d="M8 17l-2 4" />
+              <path d="M16 17l2 4" />
+              <path d="M8 21h8" />
+            </svg>
+            <span className="text-[9px] font-black tracking-[0.08em]">{amberRibbonLabel}</span>
+          </div>
+        )}
         <div className="flex w-full flex-col items-center gap-2">
           {stablingEditable ? (
             <input
@@ -4037,7 +4077,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           {key && inserted && insertedRemarkLabel && !inserted.isSweeping && (
             <span
               className="text-[12px] font-bold"
-              style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
+              style={{ color: showAmberRibbon ? "#f4f8fc" : activeTidRemarkStyle?.color || "#4ade80" }}
             >
               {insertedRemarkLabel}
             </span>
@@ -4458,7 +4498,18 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
                 const rowEntry = getActiveInsertionEntryForCell(insertionLog, road, blockIndex, rowTrainKey);
                 const baseHeight = rowEntry?.isSweeping ? 178 : rowEntry ? 132 : 98;
                 const maintenanceHeight = rowMaintenanceCount > 0 ? 8 + (rowMaintenanceCount * 20) : 0;
-                return Math.max(maxHeight, baseHeight + maintenanceHeight);
+                const liveTidOrRemark = (tidInputs[`${road}-${blockIndex}`] || "").toString().trim();
+                const insertedTidOrRemark = Boolean(
+                  rowEntry && (
+                    rowEntry.tid !== null && rowEntry.tid !== undefined
+                    || (rowEntry.remark || "").toString().trim() !== ""
+                    || rowEntry.isSweeping
+                  )
+                );
+                const ribbonHeight = rowTrainKey && (liveTidOrRemark || insertedTidOrRemark)
+                  ? INSERTION_AMBER_RIBBON_HEIGHT
+                  : 0;
+                return Math.max(maxHeight, baseHeight + maintenanceHeight + ribbonHeight);
               }, 98);
               const labelCell = (
                 <td className="text-center align-middle text-[12px] font-black tracking-tight uppercase" style={{ background: INSERTION_PANEL_COLORS.header, color: "#d6e7f4", borderTop: ri === 0 ? "none" : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderBottom: rowLine, borderRight: labelSide === "left" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderLeft: labelSide === "right" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, whiteSpace: "nowrap", width: 72, minWidth: 72, letterSpacing: "0.025em", borderTopLeftRadius: labelSide === "left" && ri === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && ri === 0 ? 12 : undefined, borderBottomLeftRadius: labelSide === "left" && ri === roads.length - 1 ? 12 : undefined, borderBottomRightRadius: labelSide === "right" && ri === roads.length - 1 ? 12 : undefined }}>
