@@ -3788,75 +3788,6 @@ function getActiveInsertionEntryForCell(insertionLog = [], road, bi, trainKey = 
   return entry;
 }
 
-const INSERTION_PANEL_COLORS = {
-  shell: "#071827",
-  shellBorder: "#24445f",
-  grid: "#081a2b",
-  gridLine: "#203d55",
-  header: "#0b253c",
-  headerText: "#75b8e6",
-  card: "#0c2236",
-  cardBorder: "#315671",
-  emptyBorder: "#38556d",
-  text: "#f4f8fc",
-  muted: "#8aa4ba",
-};
-
-const INSERTION_ACTION_BUTTON_COMMON = {
-  minHeight: 36,
-  borderRadius: 12,
-  letterSpacing: "0.01em",
-  boxShadow: "none",
-  textShadow: "none",
-};
-
-const INSERTION_ACTION_BUTTON_BLUE = {
-  ...INSERTION_ACTION_BUTTON_COMMON,
-  background: "#0b2945",
-  borderColor: "#2f7fc0",
-  color: "#e5f2ff",
-};
-
-const INSERTION_ACTION_BUTTON_PRIMARY = {
-  ...INSERTION_ACTION_BUTTON_COMMON,
-  background: "#124f86",
-  borderColor: "#60a9e6",
-  color: "#ffffff",
-};
-
-const INSERTION_ACTION_BUTTON_DANGER = {
-  ...INSERTION_ACTION_BUTTON_COMMON,
-  background: "#4a1720",
-  borderColor: "#df4d5d",
-  color: "#ffe9ec",
-};
-
-function InsertionSectionTitle({ title, action = null }) {
-  return (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-      <div className="flex min-w-0 items-center gap-3">
-        <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border"
-          style={{
-            background: "#0b253c",
-            borderColor: "#315671",
-            color: "#e7f2fb",
-          }}
-        >
-          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-            <polyline points="9 22 9 12 15 12 15 22" />
-          </svg>
-        </div>
-        <h2 className="truncate text-[21px] font-black uppercase leading-none tracking-wide text-white">
-          {title}
-        </h2>
-      </div>
-      {action && <div className="flex flex-wrap items-center justify-end gap-2">{action}</div>}
-    </div>
-  );
-}
-
 function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
@@ -3936,38 +3867,44 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   // Maintenance/request remarks already show their own coloured pill.
   // Keep the stabling card border/background neutral so the pill is the only request colour.
   const insCardBg = expired
-    ? "#07131e"
-    : inserted
-      ? "#0b2730"
-      : key
-        ? INSERTION_PANEL_COLORS.card
-        : "rgba(7, 24, 39, 0.38)";
-  const insCardBorder = expired
-    ? "1px solid #1e3547"
-    : activeTidRemarkStyle
-      ? `1px solid ${activeTidRemarkStyle.border}`
+    ? "linear-gradient(135deg,#071218,#050d14)"
+    : activeTidRemarkStyle?.cardBg || activeTidRemarkStyle?.bg
+      ? activeTidRemarkStyle.cardBg || activeTidRemarkStyle.bg
       : inserted
-        ? "1px solid #17825f"
+        ? "linear-gradient(135deg,#0d2b1e,#082015)"
         : hasTidRemark
-          ? "1px solid #9a7416"
+          ? "linear-gradient(135deg,#1f1c0a,#151205)"
           : key
-            ? `1px solid ${INSERTION_PANEL_COLORS.cardBorder}`
-            : `1px dashed ${INSERTION_PANEL_COLORS.emptyBorder}`;
-  const insCardGlow = key && !expired
-    ? "0 5px 14px rgba(0,0,0,0.16)"
+            ? "linear-gradient(135deg,#0f2d4a,#081e32)"
+            : "none";
+  const insCardBorder = expired
+    ? "1px solid #1a3040"
+    : activeTidRemarkStyle
+      ? `1.5px solid ${activeTidRemarkStyle.border}`
+      : inserted
+        ? "1.5px solid #059669"
+        : hasTidRemark
+          ? "1.5px solid #ca8a04"
+          : key
+            ? "1px solid #1e4d72"
+            : "1.5px dashed #1b3a55";
+  const insCardGlow = activeTidRemarkStyle && !expired
+    ? activeTidRemarkStyle.shadow
+    : key && !expired
+    ? "0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)"
     : undefined;
   const insTidInputStyle = {
-    border: specialTidRemarkStyle ? `1px solid ${specialTidRemarkStyle.border}` : hasTidRemark ? "1px solid #9a7416" : "1px solid #294b65",
-    backgroundColor: specialTidRemarkStyle ? specialTidRemarkStyle.bg : hasTidRemark ? "#1c1a0c" : "#091b2d",
-    color: specialTidRemarkStyle ? specialTidRemarkStyle.color : hasTidRemark ? "#fde68a" : "#d4e2ee",
-    boxShadow: "none",
+    border: specialTidRemarkStyle ? `1px solid ${specialTidRemarkStyle.border}` : hasTidRemark ? "1px solid #ca8a04" : "1px solid #1e4060",
+    backgroundColor: specialTidRemarkStyle ? specialTidRemarkStyle.bg : hasTidRemark ? "#1f1c0a" : "#091828",
+    color: specialTidRemarkStyle ? specialTidRemarkStyle.color : hasTidRemark ? "#fde68a" : "#c8d8ea",
+    boxShadow: specialTidRemarkStyle ? specialTidRemarkStyle.shadow : undefined,
   };
-  const insRowLine = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
+  const insRowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
 
   if (expired) {
     return (
-      <td className="p-1.5 align-middle" title="Elapsed TID hidden manually" style={{ backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-        <div className="flex flex-col items-center justify-center gap-1 rounded-xl select-none" style={{ minHeight: 96, padding: "8px 6px", background: insCardBg, border: insCardBorder, opacity: 0.55 }}>
+      <td className="p-1.5 align-middle" title="Elapsed TID hidden manually" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
+        <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl select-none" style={{ minHeight: 82, padding: "6px 4px", background: insCardBg, border: insCardBorder, opacity: 0.55 }}>
           <div className="w-full text-center font-black leading-none" style={{ fontSize: 14, color: "#3a5068" }}>{displayVal || "—"}</div>
           {insertedRemarkLabel && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
           <span className="text-[9px] font-semibold" style={{ color: "#3a5068" }}>✓ {insertedDisplayTime}</span>
@@ -3978,8 +3915,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   }
 
   return (
-    <td className="p-1.5 align-middle" style={{ backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-      <div className="relative flex flex-col items-center justify-start gap-1.5 rounded-xl" style={{ minHeight: inserted?.isSweeping ? 174 : 96, padding: "8px 6px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow }}>
+    <td className="p-1.5 align-middle" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
+      <div className="relative flex flex-col items-center justify-start gap-1 rounded-xl" style={{ minHeight: inserted?.isSweeping ? 168 : 82, padding: "6px 4px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow }}>
+        {key && !inserted && (
+          <div className="absolute top-1 right-1.5 opacity-20 pointer-events-none">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={trainColor} strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/></svg>
+          </div>
+        )}
         {stablingEditable ? (
           <input
             type="text"
@@ -3991,16 +3933,16 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             onBlur={() => setIsTrainIdEditing(false)}
             onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
             placeholder="Train ID"
-            className="h-7 w-full rounded-lg border px-1.5 text-center text-[15px] font-black uppercase outline-none placeholder:text-[#47637a]"
+            className="w-full h-6 rounded-lg border px-1 text-center text-[13px] font-black uppercase outline-none placeholder:text-[#2b4f6b]"
             style={{
-              borderColor: key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine,
-              backgroundColor: key ? "#0a1e31" : INSERTION_PANEL_COLORS.grid,
-              color: key ? trainColor : "#6f899f",
-              letterSpacing: key ? "0.04em" : undefined,
+              borderColor: key ? "#1e4d72" : "#1a3a56",
+              backgroundColor: key ? "#081e32" : "#071828",
+              color: key ? trainColor : "#4a6f8c",
+              letterSpacing: key ? "0.05em" : undefined,
             }}
           />
         ) : (
-          <div className="w-full text-center font-black leading-none" style={{ fontSize: key ? 18 : 13, color: key ? trainColor : "#587187", letterSpacing: key ? "0.04em" : undefined }}>{displayVal || "—"}</div>
+          <div className="w-full text-center font-black leading-none" style={{ fontSize: key ? 15 : 12, color: key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}>{displayVal || "—"}</div>
         )}
         {maintList.map((item) => (
           <span
@@ -4012,7 +3954,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             {item.badgeText || item.displayType}
           </span>
         ))}
-        {key && !inserted && (<input ref={tidInputRef} type="text" value={tidInput} onChange={(e) => onTidChange(road, bi, e.target.value)} onKeyDown={onTidKeyDown} onFocus={onTidFocus} onPointerDown={onTidFocus} placeholder="TID" className="w-full h-6 px-1.5 text-center text-[11px] font-semibold rounded-lg outline-none placeholder:text-[#47637a]" style={insTidInputStyle} />)}
+        {key && !inserted && (<input ref={tidInputRef} type="text" value={tidInput} onChange={(e) => onTidChange(road, bi, e.target.value)} onKeyDown={onTidKeyDown} onFocus={onTidFocus} onPointerDown={onTidFocus} placeholder="TID" className="w-full h-[20px] px-1 text-center text-[11px] font-semibold rounded-lg outline-none placeholder:text-[#2b4f6b]" style={insTidInputStyle} />)}
         {key && inserted && insertedRemarkLabel && !inserted.isSweeping && (
           <span
             className="text-[11px] font-bold"
@@ -4022,18 +3964,18 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           </span>
         )}
         {key && inserted?.isSweeping && (
-          <div className="w-full rounded-lg border border-purple-500/55 bg-[#17162f] px-1.5 py-1.5">
+          <div className="w-full rounded-lg border border-purple-500/70 bg-purple-950/35 px-1.5 py-1.5 shadow-[0_0_12px_rgba(168,85,247,0.20)]">
             <div className="mb-1 text-center text-[10px] font-black uppercase tracking-wide text-purple-200">Sweep</div>
             <select
               value={inserted.sweepTrack || "TK1"}
               onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
-              className="mb-1 h-6 w-full rounded-md border border-purple-500/50 bg-[#101628] px-1 text-center text-[10px] font-black text-purple-100 outline-none"
+              className="mb-1 h-6 w-full rounded-md border border-purple-500/60 bg-[#10102a] px-1 text-center text-[10px] font-black text-purple-100 outline-none"
               title="Select Sweep track"
             >
               <option value="TK1">Track 01</option>
               <option value="TK2">Track 02</option>
             </select>
-            <div className="w-full rounded-lg border border-purple-500/40 bg-[#101628] px-1 py-1">
+            <div className="w-full rounded-lg border border-purple-500/50 bg-purple-950/20 px-1 py-1">
               <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap">
                 <span className="shrink-0 text-[10px] font-bold leading-tight text-purple-300">Start :</span>
                 <input
@@ -4086,7 +4028,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         {key && !inserted && !canAutoInsertTid && (
           <button
             onClick={handleInsertClick}
-            className={`h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-colors ${hasTidRemark ? "bg-[#211d0c] border-[#8f7118] text-yellow-200 hover:border-emerald-600 hover:text-emerald-200" : "bg-[#0a1c2d] border-[#315671] text-[#9ab2c6] hover:border-[#4f8fbf] hover:text-white"}`}
+            className={`w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all ${hasTidRemark ? "bg-yellow-950/50 border-yellow-600/60 text-yellow-300 hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:bg-emerald-900/40 hover:border-emerald-600 hover:text-emerald-300"}`}
           >
             {hasTidRemark ? "Insert Remark" : "Insert"}
           </button>
@@ -4135,7 +4077,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             <button
               type="button"
               onClick={handleInsertedUndoClick}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-red-700/70 bg-red-950/30 text-[13px] font-black text-red-300 transition-colors hover:border-red-400 hover:bg-red-900/45 hover:text-white"
+              className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-lg border border-red-800/70 bg-red-950/35 text-[13px] font-black text-red-400 transition-all hover:border-red-500 hover:bg-red-900/55 hover:text-red-200"
               title="Undo insertion"
               aria-label="Undo insertion"
             >
@@ -4146,7 +4088,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         {key && inserted?.isSweeping && (
           <button
             onClick={handleInsertedUndoClick}
-            className="h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-colors hover:border-red-500 hover:text-red-200"
+            className="w-full text-[12px] font-bold rounded-lg px-1 py-0.5 border transition-all hover:bg-red-950/40 hover:border-red-700 hover:text-red-400"
             style={{
               backgroundColor: "rgba(88, 28, 135, 0.35)",
               borderColor: "#a855f7",
@@ -4349,25 +4291,16 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
     return false;
   };
   return (
-    <section
-      className="rounded-2xl border px-4 py-4"
-      style={{
-        width: "fit-content",
-        maxWidth: "fit-content",
-        background: INSERTION_PANEL_COLORS.shell,
-        borderColor: INSERTION_PANEL_COLORS.shellBorder,
-        boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
-      }}
-    >
-      <InsertionSectionTitle
+    <section className="bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
+      <SectionTitle
         title={title}
         action={
           <div className="flex items-center gap-2">
             <button
               onClick={handleDownloadPng}
               disabled={downloadingPng}
-              className="flex items-center gap-2 rounded-xl border px-3.5 py-2 text-[11px] font-semibold transition-colors hover:bg-[#123554] disabled:cursor-not-allowed disabled:opacity-45"
-              style={INSERTION_ACTION_BUTTON_BLUE}
+              className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
+              style={MAIN_STABLING_BUTTON_BLUE}
               title="Download PNG picture with insertion TID, timing and 3K1/SW pills"
             >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -4379,8 +4312,8 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
         </button>
             <button
               onClick={() => setHideFiltered((v) => !v)}
-              className="flex items-center gap-2 rounded-xl border px-3.5 py-2 text-[11px] font-semibold transition-colors hover:bg-[#123554]"
-              style={hideFiltered ? INSERTION_ACTION_BUTTON_PRIMARY : INSERTION_ACTION_BUTTON_BLUE}
+              className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
+              style={hideFiltered ? MAIN_STABLING_BUTTON_PRIMARY : MAIN_STABLING_BUTTON_BLUE}
             >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             {hideFiltered
@@ -4392,8 +4325,8 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
             <button
               onClick={handleClearAllTid}
               disabled={!hasTidRemarks && !hasInsertedTrains}
-              className="flex items-center gap-2 rounded-xl border px-3.5 py-2 text-[11px] font-semibold transition-colors hover:bg-[#641f2b] disabled:cursor-not-allowed disabled:opacity-45"
-              style={INSERTION_ACTION_BUTTON_DANGER}
+              className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
+              style={MAIN_STABLING_BUTTON_DANGER}
               title="Clear all TID inputs, remarks and inserted TID status for this depot"
             >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -4408,8 +4341,8 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
             <button
               onClick={() => setHideElapsedTid((v) => !v)}
               disabled={elapsedTidCount === 0}
-              className="flex items-center gap-2 rounded-xl border px-3.5 py-2 text-[11px] font-semibold transition-colors hover:bg-[#123554] disabled:cursor-not-allowed disabled:opacity-45"
-              style={hideElapsedTid ? INSERTION_ACTION_BUTTON_PRIMARY : INSERTION_ACTION_BUTTON_BLUE}
+              className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
+              style={hideElapsedTid ? MAIN_STABLING_BUTTON_PRIMARY : MAIN_STABLING_BUTTON_BLUE}
               title="Manually hide inserted TIDs where the scheduled time has elapsed"
             >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -4422,32 +4355,32 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
           </div>
         }
       />
-      <div className="overflow-x-auto rounded-xl border" style={{ borderColor: INSERTION_PANEL_COLORS.gridLine }}>
-        <table className="border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 940, maxWidth: 940, width: 940 }}>
+      <div className="overflow-x-auto rounded-xl">
+        <table className="border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 912, maxWidth: 912, width: 912 }}>
           <thead>
             <tr>
-              {labelSide === "left" && <th className="w-[72px]" style={{ background: INSERTION_PANEL_COLORS.header, border: "none", borderBottom: `1px solid ${INSERTION_PANEL_COLORS.gridLine}` }} />}
+              {labelSide === "left" && <th className="w-[72px]" style={{ background: "transparent", border: "none" }} />}
               {blockLabels.map((label, i) => {
                 const isLastBlock = i === blockLabels.length - 1;
                 return (
-                  <th key={label} className="h-10 text-center text-[10px] font-black tracking-[0.13em] uppercase" style={{ width: 124, minWidth: 124, maxWidth: 124, background: INSERTION_PANEL_COLORS.header, color: INSERTION_PANEL_COLORS.headerText, borderLeft: i > 0 ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderTopLeftRadius: labelSide === "left" && i === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && isLastBlock ? 12 : undefined }}>
+                  <th key={label} className="h-8 text-center text-[9px] font-black tracking-widest uppercase" style={{ width: 120, minWidth: 120, maxWidth: 120, background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", color: "#4a8ab5", borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined, borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: "2px solid #1a3a56", borderTopLeftRadius: labelSide === "left" && i === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && isLastBlock ? 12 : undefined }}>
                     {label}
                   </th>
                 );
               })}
-              {labelSide === "right" && <th className="w-[72px]" style={{ background: INSERTION_PANEL_COLORS.header, border: "none", borderBottom: `1px solid ${INSERTION_PANEL_COLORS.gridLine}` }} />}
+              {labelSide === "right" && <th className="w-[72px]" style={{ background: "transparent", border: "none" }} />}
             </tr>
           </thead>
           <tbody>
             {roads.map((road, ri) => {
-              const rowLine = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
+              const rowLine = ri === roads.length - 1 ? "1px solid #1a3a56" : "2px solid #1a3a56";
               const insertionRoadPill = INSERTION_ROAD_PILLS[road];
               const labelCell = (
-                <td className="text-center align-middle text-[12px] font-black tracking-tight uppercase" style={{ background: INSERTION_PANEL_COLORS.header, color: "#d6e7f4", borderTop: ri === 0 ? "none" : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderBottom: rowLine, borderRight: labelSide === "left" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderLeft: labelSide === "right" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, whiteSpace: "nowrap", width: 72, minWidth: 72, letterSpacing: "0.025em", borderTopLeftRadius: labelSide === "left" && ri === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && ri === 0 ? 12 : undefined, borderBottomLeftRadius: labelSide === "left" && ri === roads.length - 1 ? 12 : undefined, borderBottomRightRadius: labelSide === "right" && ri === roads.length - 1 ? 12 : undefined }}>
+                <td className="text-center align-middle font-black text-[11px] tracking-tight uppercase" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", color: "#7eb8e0", borderTop: ri === 0 ? "none" : "1px solid rgba(255,255,255,0.06)", borderBottom: rowLine, borderRight: labelSide === "left" ? "1px solid rgba(126,184,224,0.15)" : "1px solid #1a3a56", borderLeft: labelSide === "right" ? "1px solid rgba(126,184,224,0.15)" : undefined, whiteSpace: "nowrap", width: 72, minWidth: 72, letterSpacing: "0.05em", borderTopLeftRadius: labelSide === "left" && ri === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && ri === 0 ? 12 : undefined, borderBottomLeftRadius: labelSide === "left" && ri === roads.length - 1 ? 12 : undefined, borderBottomRightRadius: labelSide === "right" && ri === roads.length - 1 ? 12 : undefined }}>
                   <div className="flex flex-col items-center justify-center gap-1 leading-none">
                     <span>{road}</span>
                     {insertionRoadPill && (
-                      <span className="rounded-full border border-amber-400/80 bg-amber-950/25 px-2.5 py-1 text-[9px] font-black leading-none text-amber-200">
+                      <span className="rounded-full border-2 border-amber-400/95 bg-transparent px-2.5 py-0.5 text-[9px] font-black leading-none text-amber-300 shadow-[0_0_9px_rgba(245,158,11,0.45)]">
                         {insertionRoadPill}
                       </span>
                     )}
@@ -4461,14 +4394,14 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
                     const block = data[road]?.[bi];
                     const isLastBlock = i === blockIndices.length - 1;
                     const isLastRow = ri === roads.length - 1;
-                    const borderBottom = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
+                    const borderBottom = isLastRow ? "1px solid #1a3a56" : "2px solid #1a3a56";
                     const borderBottomRightRadius = labelSide === "left" && isLastRow && isLastBlock ? 12 : undefined;
                     const borderBottomLeftRadius = labelSide === "right" && isLastRow && i === 0 ? 12 : undefined;
                     if (hideFiltered && isFiltered(block, road, bi)) {
                       return (
-                        <td key={bi} className="p-1.5 align-middle" style={{ backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom, borderBottomRightRadius, borderBottomLeftRadius }}>
-                          <div className="flex items-center justify-center rounded-xl" style={{ minHeight: 96, border: `1px dashed ${INSERTION_PANEL_COLORS.emptyBorder}`, background: "rgba(7,24,39,0.38)" }}>
-                            <span className="text-[9px] font-black text-[#587187] tracking-widest uppercase">{(block?.extraRemark || "").trim()}</span>
+                        <td key={bi} className="p-1.5 align-middle" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom, borderBottomRightRadius, borderBottomLeftRadius }}>
+                          <div className="flex items-center justify-center rounded-xl" style={{ minHeight: 82, border: "1.5px dashed #1a3050" }}>
+                            <span className="text-[9px] font-black text-[#2a4464] tracking-widest uppercase">{(block?.extraRemark || "").trim()}</span>
                           </div>
                         </td>
                       );
