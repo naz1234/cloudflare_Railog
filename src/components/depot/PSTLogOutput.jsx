@@ -842,12 +842,8 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
           .pst-clean-title-row { align-items: flex-start; }
           .pst-clean-card-header { align-items: flex-start; }
           .pst-clean-actions { width: 100%; }
-          .pst-elog-style-picker {
-            width: auto;
-            margin-left: auto;
-            align-self: flex-end;
-          }
-          .pst-elog-style-button { flex: 0 0 auto; }
+          .pst-elog-style-picker { width: 100%; margin-left: 0; }
+          .pst-elog-style-button { flex: 1; }
         }
       `}</style>
 
