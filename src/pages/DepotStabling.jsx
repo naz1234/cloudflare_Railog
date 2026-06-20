@@ -3886,6 +3886,12 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     ? getTidAssistRemarkStyle(insertedTid, autoTidDepot)
     : null;
   const insertedRemarkStyle = inserted?.remark ? getInsertionRemarkStyle(inserted.remark) : null;
+  const isInserted3K1 = Boolean(
+    inserted &&
+    !inserted.isSweeping &&
+    !insertedTid &&
+    String(inserted.remark || "").trim().toUpperCase() === "3K1"
+  );
   const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
@@ -3979,7 +3985,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
       <div
         className={`relative flex h-full flex-col items-center justify-start rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
         style={{
-          minHeight: Math.max(inserted?.isSweeping ? 178 : isInsertionDone ? (insertedTid ? 112 : 124) : 98, rowCardMinHeight),
+          minHeight: Math.max(inserted?.isSweeping ? 178 : isInsertionDone ? ((insertedTid || isInserted3K1) ? 112 : 124) : 98, rowCardMinHeight),
           height: "100%",
           padding: isInsertionDone ? "7px 5px" : "9px 7px",
           background: insCardBg,
@@ -4038,13 +4044,32 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               ))}
             </div>
           )}
-          {key && inserted && insertedRemarkLabel && !inserted.isSweeping && !insertedTid && (
+          {key && inserted && insertedRemarkLabel && !inserted.isSweeping && !insertedTid && !isInserted3K1 && (
             <span
-              className="text-[12px] font-bold"
+              className="text-[12px] font-normal"
               style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
             >
               {insertedRemarkLabel}
             </span>
+          )}
+          {key && isInserted3K1 && (
+            <input
+              type="text"
+              maxLength={3}
+              value={String(tidInput || inserted.remark || "3K1").toUpperCase()}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                const nextRemark = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
+                onTidChange?.(road, bi, nextRemark);
+                // Match the active-TID edit behaviour: partial backspacing is
+                // allowed and the insertion is undone only after 3K1 is fully cleared.
+                if (!nextRemark) onInsertionTick(road, bi, key, tidInput);
+              }}
+              className="w-full border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none"
+              style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
+              title="Edit 3K1. Clear all characters to undo insertion."
+              aria-label="Inserted remark 3K1. Clear all characters to undo insertion."
+            />
           )}
           {key && inserted?.isSweeping && (
             <div className="w-full rounded-lg border border-purple-500/55 bg-[#17162f] px-1.5 py-1.5">
@@ -4194,6 +4219,33 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   >
                     {insertedTidAssistRemark || "—"}
                   </span>
+                </div>
+              ) : isInserted3K1 ? (
+                <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                  <span className="font-normal text-blue-300">Time :</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={5}
+                    value={insertedDisplayTime}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      const value = String(insertedDisplayTime || "");
+                      const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                      if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                        e.preventDefault();
+                        onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
+                      }
+                    }}
+                    onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
+                    onBlur={(e) => {
+                      const normalized = normalizeMovementCustomTimeInput(e.target.value);
+                      onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
+                    }}
+                    placeholder="00:00"
+                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                    title="Edit insertion completion time"
+                  />
                 </div>
               ) : (
                 <>
