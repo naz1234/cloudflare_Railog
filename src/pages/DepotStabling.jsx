@@ -4135,7 +4135,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             )}
             {inserted && !inserted.isSweeping && (
               insertedTid ? (
-                <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[11px] font-normal leading-tight">
+                <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
                   <span className="font-normal text-blue-300">TID :</span>
                   <input
                     type="text"
@@ -4156,7 +4156,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onInsertionTick(road, bi, key, tidInput);
                       }
                     }}
-                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[11px] font-normal leading-tight text-blue-100 outline-none"
+                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none"
                     title="Edit or backspace the TID to undo insertion"
                     aria-label={`Inserted TID ${insertedTid}. Edit or backspace to undo insertion.`}
                   />
@@ -4182,13 +4182,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
                     }}
                     placeholder="00:00"
-                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[11px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
                     title="Edit insertion completion time"
                   />
 
                   <span className="font-normal text-blue-300">Rem :</span>
                   <span
-                    className="min-w-0 text-right text-[11px] font-normal leading-tight"
+                    className="min-w-0 text-right text-[12px] font-normal leading-tight"
                     style={{ color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
                     title={insertedTidAssistRemark || "No reference remark"}
                   >
