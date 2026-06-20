@@ -3602,6 +3602,7 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     border: "#22c55e",
     color: "#bbf7d0",
     shadow: "0 0 12px rgba(34, 197, 94, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
+    ribbonLabel: "Early Rem",
     ribbonBg: "linear-gradient(180deg, #86efac 0%, #22c55e 100%)",
     ribbonBorder: "#86efac",
     ribbonColor: "#052e16",
@@ -3615,6 +3616,7 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     border: "#facc15",
     color: "#fde68a",
     shadow: "0 0 12px rgba(250, 204, 21, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
+    ribbonLabel: "Late Rem",
     ribbonBg: "linear-gradient(180deg, #fde68a 0%, #facc15 100%)",
     ribbonBorder: "#fde68a",
     ribbonColor: "#3a2600",
@@ -3628,6 +3630,7 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     border: "#f472b6",
     color: "#fbcfe8",
     shadow: "0 0 12px rgba(244, 114, 182, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
+    ribbonLabel: "ED (7pm)",
     ribbonBg: "linear-gradient(180deg, #fbcfe8 0%, #f472b6 100%)",
     ribbonBorder: "#fbcfe8",
     ribbonColor: "#4a0d2c",
@@ -3641,6 +3644,7 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     border: "#f87171",
     color: "#fecaca",
     shadow: "0 0 12px rgba(248, 113, 113, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
+    ribbonLabel: "ED Rem",
     ribbonBg: "linear-gradient(180deg, #fecaca 0%, #f87171 100%)",
     ribbonBorder: "#fecaca",
     ribbonColor: "#450a0a",
@@ -3929,16 +3933,24 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const canAutoInsertTid = Boolean(key && !inserted && autoTid !== null && autoScheduledTime);
   const liveMatchedTid = Boolean(!inserted && autoTid !== null && autoScheduledTime);
   const showAmberRibbon = Boolean(key && (hasTidRemark || (inserted && insertedRemarkLabel)));
-  const amberRibbonLabel = insertedTid
-    ? `TID ${insertedTid}`
-    : liveMatchedTid
-    ? `TID ${autoTid}`
-    : insertedRemarkLabel || tidRemarkText;
-  // Only a valid Weekday timetable TID inherits the TID Reference Table colour.
+  // Only a valid Weekday timetable TID inherits the TID Reference Table colour
+  // and replaces the TID number on the ribbon with its removal category.
   // Unmatched numeric/text remarks, Friday TIDs and Saturday TIDs remain amber.
   const tidReferenceRibbonStyle = (insertedTid || liveMatchedTid) && activeTidRemarkStyle?.ribbonBg
     ? activeTidRemarkStyle
     : null;
+  const matchedTidLabel = insertedTid
+    ? `TID ${insertedTid}`
+    : liveMatchedTid
+    ? `TID ${autoTid}`
+    : "";
+  const amberRibbonLabel = tidReferenceRibbonStyle?.ribbonLabel
+    || matchedTidLabel
+    || insertedRemarkLabel
+    || tidRemarkText;
+  // When the Weekday ribbon shows Early/Late/ED category, keep the actual TID
+  // visible inside the card below the train/request area.
+  const tidLabelInsideCard = tidReferenceRibbonStyle ? matchedTidLabel : "";
   const cardBaseMinHeight = inserted?.isSweeping ? 178 : isInsertionDone ? 132 : 98;
   const cardRibbonHeight = showAmberRibbon ? INSERTION_AMBER_RIBBON_HEIGHT : 0;
 
@@ -4090,6 +4102,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </span>
               ))}
             </div>
+          )}
+          {key && tidLabelInsideCard && (
+            <span
+              className="text-[12px] font-bold"
+              style={{ color: "#f8fafc" }}
+            >
+              {tidLabelInsideCard}
+            </span>
           )}
           {key && inserted && insertedRemarkLabel && !inserted.isSweeping && !insertedTid && !showAmberRibbon && (
             <span
