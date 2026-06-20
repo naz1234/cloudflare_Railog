@@ -645,9 +645,9 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
           background: transparent;
           color: #6f9ab8;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 10px;
+          font-size: 11px;
           line-height: 1;
-          font-weight: 850;
+          font-weight: 400;
           letter-spacing: 0.04em;
           cursor: pointer;
           transition: 120ms ease;
