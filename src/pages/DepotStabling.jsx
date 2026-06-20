@@ -3917,7 +3917,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     ? `TID ${insertedTid}`
     : liveMatchedTid
     ? `TID ${autoTid}`
-    : "INSERTION REMARK";
+    : insertedRemarkLabel || tidRemarkText;
   const cardBaseMinHeight = inserted?.isSweeping ? 178 : isInsertionDone ? 132 : 98;
   const cardRibbonHeight = showAmberRibbon ? INSERTION_AMBER_RIBBON_HEIGHT : 0;
 
@@ -4025,7 +4025,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             }}
             title={amberRibbonLabel}
           >
-            <span className="text-[10px] font-black tracking-[0.08em]">{amberRibbonLabel}</span>
+            <span className="max-w-full truncate px-1 text-[10px] font-black tracking-[0.08em]">{amberRibbonLabel}</span>
           </div>
         )}
         <div className="flex w-full flex-col items-center gap-2">
@@ -4070,10 +4070,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               ))}
             </div>
           )}
-          {key && inserted && insertedRemarkLabel && !inserted.isSweeping && !insertedTid && (
+          {key && inserted && insertedRemarkLabel && !inserted.isSweeping && !insertedTid && !showAmberRibbon && (
             <span
               className="text-[12px] font-bold"
-              style={{ color: showAmberRibbon ? "#f4f8fc" : activeTidRemarkStyle?.color || "#4ade80" }}
+              style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
             >
               {insertedRemarkLabel}
             </span>
