@@ -3976,8 +3976,18 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
   return (
     <td className="p-2 align-middle" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-      <div className="relative flex h-full flex-col items-center justify-start gap-2 rounded-xl" style={{ minHeight: Math.max(inserted?.isSweeping ? 178 : isInsertionDone ? (insertedTid ? 158 : 132) : 98, rowCardMinHeight), height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow }}>
-        <div className="flex w-full flex-col items-center gap-2">
+      <div
+        className={`relative flex h-full flex-col items-center justify-start rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
+        style={{
+          minHeight: Math.max(inserted?.isSweeping ? 178 : isInsertionDone ? (insertedTid ? 140 : 124) : 98, rowCardMinHeight),
+          height: "100%",
+          padding: isInsertionDone ? "7px 5px" : "9px 7px",
+          background: insCardBg,
+          border: insCardBorder,
+          boxShadow: insCardGlow,
+        }}
+      >
+        <div className={`flex w-full flex-col items-center ${isInsertionDone ? "gap-1" : "gap-2"}`}>
           {stablingEditable ? (
             <input
               type="text"
@@ -3999,7 +4009,16 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               }}
             />
           ) : (
-            <div className="w-full text-center font-black leading-none" style={{ fontSize: key ? 18 : 13, color: key ? trainColor : "#587187", letterSpacing: key ? "0.04em" : undefined }}>{displayVal || "—"}</div>
+            <div
+              className="w-full text-center font-black leading-none"
+              style={{
+                fontSize: key ? (isInsertionDone ? 15 : 18) : 13,
+                color: key ? trainColor : "#587187",
+                letterSpacing: key ? (isInsertionDone ? "0.05em" : "0.04em") : undefined,
+              }}
+            >
+              {displayVal || "—"}
+            </div>
           )}
           {rowMaintenanceSlotHeight > 0 && (
             <div
@@ -4091,7 +4110,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           )}
         </div>
         {key && (
-          <div className="mt-auto flex w-full flex-col items-center gap-2">
+          <div className={`mt-auto flex w-full flex-col items-center ${isInsertionDone ? "gap-1" : "gap-2"}`}>
             {!inserted && (
               <input
                 ref={tidInputRef}
@@ -4116,16 +4135,18 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             )}
             {inserted && !inserted.isSweeping && (
               <>
-                <div className="w-full overflow-hidden rounded-lg border border-blue-500/60 bg-blue-950/30">
+                <div className="w-full rounded-lg border border-blue-500/60 bg-blue-950/30 px-1 py-1">
                   {insertedTid && (
-                    <div className="grid min-h-[19px] grid-cols-[27px_minmax(0,1fr)] items-center gap-1 border-b border-blue-500/20 px-1.5 text-[9px] leading-none">
-                      <span className="font-semibold text-blue-300">TID :</span>
-                      <span className="justify-self-end font-bold text-blue-100">{insertedTid}</span>
+                    <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap">
+                      <span className="shrink-0 text-[10px] font-bold leading-tight text-blue-300">TID :</span>
+                      <span className="min-w-[36px] rounded-md border border-blue-500/50 bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight text-blue-100">
+                        {insertedTid}
+                      </span>
                     </div>
                   )}
-                  <div className={`${insertedTid ? "grid min-h-[22px] grid-cols-[27px_minmax(0,1fr)] items-center gap-1 border-b border-blue-500/20 px-1.5" : "flex min-h-10 flex-col items-center justify-center gap-0.5 px-1.5 py-1"}`}>
-                    <span className={`${insertedTid ? "text-[9px] font-semibold normal-case" : "text-center text-[9px] font-normal uppercase tracking-wide"} text-blue-300`}>
-                      {insertedTid ? "Time :" : "INSERT TIME:"}
+                  <div className={`flex w-full items-center justify-center gap-0.5 whitespace-nowrap ${insertedTid ? "pt-0.5" : ""}`}>
+                    <span className="shrink-0 text-[10px] font-bold leading-tight text-blue-300">
+                      {insertedTid ? "Time :" : "INSERT TIME :"}
                     </span>
                     <input
                       type="text"
@@ -4147,15 +4168,15 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
                       }}
                       placeholder="00:00"
-                      className={`${insertedTid ? "h-[18px] w-[47px] justify-self-end" : "w-full"} rounded-md border border-blue-500/50 bg-[#071828] px-0.5 text-center text-[9px] font-normal leading-none text-blue-100 outline-none placeholder:text-blue-700 focus:border-blue-300`}
+                      className={`${insertedTid ? "w-[36px]" : "w-full"} rounded-md border border-blue-500/50 bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700 focus:border-blue-300`}
                       title="Edit insertion completion time"
                     />
                   </div>
                   {insertedTid && (
-                    <div className="grid min-h-[21px] grid-cols-[27px_minmax(0,1fr)] items-center gap-1 px-1.5 text-[9px] leading-none">
-                      <span className="font-semibold text-blue-300">Rem :</span>
+                    <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap pt-0.5">
+                      <span className="shrink-0 text-[10px] font-bold leading-tight text-blue-300">Rem :</span>
                       <span
-                        className="min-w-0 justify-self-end whitespace-nowrap text-right font-bold"
+                        className="min-w-[36px] rounded-md border border-blue-500/50 bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight"
                         style={{ color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
                         title={insertedTidAssistRemark || "No reference remark"}
                       >
@@ -4167,7 +4188,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 <button
                   type="button"
                   onClick={handleInsertedUndoClick}
-                  className="min-h-5 w-full rounded-lg border border-green-500 bg-green-200 px-1 py-1 text-[9px] font-bold leading-none text-green-900 transition-all hover:bg-green-100"
+                  className="w-full rounded-lg border border-green-500 bg-green-200 px-1 py-0.5 text-[9px] font-bold leading-tight text-green-900 transition-all hover:bg-green-100"
                   title="Click to undo insertion"
                   aria-label="Undo insertion"
                 >
