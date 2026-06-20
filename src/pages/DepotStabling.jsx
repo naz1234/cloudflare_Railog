@@ -4168,29 +4168,15 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               insertedTid ? (
                 <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
                   <span className="font-normal text-blue-300">TID :</span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={3}
-                    value={String(tidInput || insertedTid)}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => {
-                      const nextTid = e.target.value.replace(/\D/g, "").slice(0, 3);
-                      onTidChange?.(road, bi, nextTid);
-
-                      // Allow partial editing (101 → 10 → 1) without undoing.
-                      // Undo only when the TID is fully cleared. If the user
-                      // completes a different 3-digit value, remove the old
-                      // insertion so the normal active-timetable auto-match can
-                      // immediately apply the replacement TID when valid.
-                      if (!nextTid || (/^\d{3}$/.test(nextTid) && nextTid !== String(insertedTid))) {
-                        onInsertionTick(road, bi, key, tidInput);
-                      }
-                    }}
-                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none"
-                    title="Edit the TID. Clear all digits to undo insertion."
-                    aria-label={`Inserted TID ${insertedTid}. Clear all digits to undo insertion.`}
-                  />
+                  <button
+                    type="button"
+                    onClick={handleInsertedUndoClick}
+                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none transition-colors hover:text-red-200 focus-visible:text-red-200"
+                    title={`Click TID ${insertedTid} to undo insertion`}
+                    aria-label={`Undo insertion for TID ${insertedTid}`}
+                  >
+                    {insertedTid}
+                  </button>
 
                   <span className="font-normal text-blue-300">Time :</span>
                   <input
