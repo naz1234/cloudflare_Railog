@@ -3913,7 +3913,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const canAutoInsertTid = Boolean(key && !inserted && autoTid !== null && autoScheduledTime);
   const liveMatchedTid = Boolean(!inserted && autoTid !== null && autoScheduledTime);
   const showAmberRibbon = Boolean(key && (hasTidRemark || (inserted && insertedRemarkLabel)));
-  const amberRibbonLabel = insertedTid || liveMatchedTid ? "INSERTION TID" : "INSERTION REMARK";
+  const amberRibbonLabel = insertedTid
+    ? `TID ${insertedTid}`
+    : liveMatchedTid
+    ? `TID ${autoTid}`
+    : "INSERTION REMARK";
   const cardBaseMinHeight = inserted?.isSweeping ? 178 : isInsertionDone ? 132 : 98;
   const cardRibbonHeight = showAmberRibbon ? INSERTION_AMBER_RIBBON_HEIGHT : 0;
 
@@ -4074,7 +4078,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               ))}
             </div>
           )}
-          {key && inserted && insertedRemarkLabel && !inserted.isSweeping && (
+          {key && inserted && insertedRemarkLabel && !inserted.isSweeping && !insertedTid && (
             <span
               className="text-[12px] font-bold"
               style={{ color: showAmberRibbon ? "#f4f8fc" : activeTidRemarkStyle?.color || "#4ade80" }}
