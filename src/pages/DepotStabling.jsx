@@ -4036,7 +4036,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           )}
           {key && inserted && insertedRemarkLabel && !inserted.isSweeping && (
             <span
-              className="text-[11px] font-bold"
+              className="text-[12px] font-bold"
               style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
             >
               {insertedRemarkLabel}
