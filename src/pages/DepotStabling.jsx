@@ -3979,7 +3979,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
       <div
         className={`relative flex h-full flex-col items-center justify-start rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
         style={{
-          minHeight: Math.max(inserted?.isSweeping ? 178 : isInsertionDone ? (insertedTid ? 140 : 124) : 98, rowCardMinHeight),
+          minHeight: Math.max(inserted?.isSweeping ? 178 : isInsertionDone ? (insertedTid ? 112 : 124) : 98, rowCardMinHeight),
           height: "100%",
           padding: isInsertionDone ? "7px 5px" : "9px 7px",
           background: insCardBg,
@@ -4134,67 +4134,108 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               </button>
             )}
             {inserted && !inserted.isSweeping && (
-              <>
-                <div className="w-full rounded-lg border border-blue-500/60 bg-blue-950/30 px-1 py-1">
-                  {insertedTid && (
-                    <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap">
-                      <span className="shrink-0 text-[10px] font-bold leading-tight text-blue-300">TID :</span>
-                      <span className="min-w-[36px] rounded-md border border-blue-500/50 bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight text-blue-100">
-                        {insertedTid}
-                      </span>
-                    </div>
-                  )}
-                  <div className={`flex w-full items-center justify-center gap-0.5 whitespace-nowrap ${insertedTid ? "pt-0.5" : ""}`}>
-                    <span className="shrink-0 text-[10px] font-bold leading-tight text-blue-300">
-                      {insertedTid ? "Time :" : "INSERT TIME :"}
-                    </span>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={5}
-                      value={insertedDisplayTime}
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => {
-                        const value = String(insertedDisplayTime || "");
-                        const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-                        if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                          e.preventDefault();
-                          onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
-                        }
-                      }}
-                      onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
-                      onBlur={(e) => {
-                        const normalized = normalizeMovementCustomTimeInput(e.target.value);
-                        onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
-                      }}
-                      placeholder="00:00"
-                      className={`${insertedTid ? "w-[36px]" : "w-full"} rounded-md border border-blue-500/50 bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700 focus:border-blue-300`}
-                      title="Edit insertion completion time"
-                    />
-                  </div>
-                  {insertedTid && (
-                    <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap pt-0.5">
-                      <span className="shrink-0 text-[10px] font-bold leading-tight text-blue-300">Rem :</span>
-                      <span
-                        className="min-w-[36px] rounded-md border border-blue-500/50 bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight"
-                        style={{ color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
-                        title={insertedTidAssistRemark || "No reference remark"}
-                      >
-                        {insertedTidAssistRemark || "—"}
-                      </span>
-                    </div>
-                  )}
+              insertedTid ? (
+                <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[10px] leading-tight">
+                  <span className="font-bold text-blue-300">TID :</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={3}
+                    value={String(insertedTid)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.currentTarget.select();
+                    }}
+                    onChange={(e) => {
+                      const nextTid = e.target.value.replace(/\D/g, "").slice(0, 3);
+                      onTidChange?.(road, bi, nextTid);
+
+                      // Editing a completed TID acts as undo. The remaining
+                      // digits return to the normal TID input for correction.
+                      if (nextTid !== String(insertedTid)) {
+                        onInsertionTick(road, bi, key, tidInput);
+                      }
+                    }}
+                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[10px] font-semibold leading-tight text-blue-100 outline-none"
+                    title="Edit or backspace the TID to undo insertion"
+                    aria-label={`Inserted TID ${insertedTid}. Edit or backspace to undo insertion.`}
+                  />
+
+                  <span className="font-bold text-blue-300">Time :</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={5}
+                    value={insertedDisplayTime}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      const value = String(insertedDisplayTime || "");
+                      const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                      if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                        e.preventDefault();
+                        onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
+                      }
+                    }}
+                    onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
+                    onBlur={(e) => {
+                      const normalized = normalizeMovementCustomTimeInput(e.target.value);
+                      onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
+                    }}
+                    placeholder="00:00"
+                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[10px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                    title="Edit insertion completion time"
+                  />
+
+                  <span className="font-bold text-blue-300">Rem :</span>
+                  <span
+                    className="min-w-0 text-right text-[10px] font-normal leading-tight"
+                    style={{ color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
+                    title={insertedTidAssistRemark || "No reference remark"}
+                  >
+                    {insertedTidAssistRemark || "—"}
+                  </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleInsertedUndoClick}
-                  className="w-full rounded-lg border border-green-500 bg-green-200 px-1 py-0.5 text-[9px] font-bold leading-tight text-green-900 transition-all hover:bg-green-100"
-                  title="Click to undo insertion"
-                  aria-label="Undo insertion"
-                >
-                  ✓ INSERT COMP.
-                </button>
-              </>
+              ) : (
+                <>
+                  <div className="w-full rounded-lg border border-blue-500/60 bg-blue-950/30 px-1 py-1">
+                    <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap">
+                      <span className="shrink-0 text-[10px] font-bold leading-tight text-blue-300">INSERT TIME :</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={5}
+                        value={insertedDisplayTime}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          const value = String(insertedDisplayTime || "");
+                          const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                          if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                            e.preventDefault();
+                            onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
+                          }
+                        }}
+                        onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
+                        onBlur={(e) => {
+                          const normalized = normalizeMovementCustomTimeInput(e.target.value);
+                          onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
+                        }}
+                        placeholder="00:00"
+                        className="w-full rounded-md border border-blue-500/50 bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700 focus:border-blue-300"
+                        title="Edit insertion completion time"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleInsertedUndoClick}
+                    className="w-full rounded-lg border border-green-500 bg-green-200 px-1 py-0.5 text-[9px] font-bold leading-tight text-green-900 transition-all hover:bg-green-100"
+                    title="Click to undo insertion"
+                    aria-label="Undo insertion"
+                  >
+                    ✓ INSERT COMP.
+                  </button>
+                </>
+              )
             )}
             {inserted?.isSweeping && (
               <button
@@ -4492,7 +4533,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
                   rowEntryTid && typeof getTidScheduledTime === "function" &&
                   getTidScheduledTime(rowEntryTid, rowEntryDepot, { allowFallback: false })
                 );
-                const baseHeight = rowEntry?.isSweeping ? 178 : rowEntry ? (rowHasValidTid ? 158 : 132) : 98;
+                const baseHeight = rowEntry?.isSweeping ? 178 : rowEntry ? (rowHasValidTid ? 112 : 132) : 98;
                 const maintenanceHeight = rowMaintenanceCount > 0 ? 8 + (rowMaintenanceCount * 20) : 0;
                 return Math.max(maxHeight, baseHeight + maintenanceHeight);
               }, 98);
