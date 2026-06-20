@@ -4015,7 +4015,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
       >
         {showAmberRibbon && (
           <div
-            className="absolute inset-x-0 top-0 z-[1] flex items-center justify-center gap-1.5 select-none"
+            className="absolute inset-x-0 top-0 z-[1] flex items-center justify-center select-none"
             style={{
               height: INSERTION_AMBER_RIBBON_HEIGHT,
               background: "linear-gradient(180deg, #ffc83d 0%, #f2a900 100%)",
@@ -4025,15 +4025,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             }}
             title={amberRibbonLabel}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <rect x="5" y="3" width="14" height="14" rx="3" />
-              <path d="M8 7h8" />
-              <path d="M8 11h8" />
-              <path d="M8 17l-2 4" />
-              <path d="M16 17l2 4" />
-              <path d="M8 21h8" />
-            </svg>
-            <span className="text-[9px] font-black tracking-[0.08em]">{amberRibbonLabel}</span>
+            <span className="text-[10px] font-black tracking-[0.08em]">{amberRibbonLabel}</span>
           </div>
         )}
         <div className="flex w-full flex-col items-center gap-2">
