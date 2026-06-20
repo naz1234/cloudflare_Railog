@@ -3862,7 +3862,7 @@ function InsertionSectionTitle({ title, action = null }) {
   );
 }
 
-function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98 }) {
+function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0 }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
@@ -4016,8 +4016,12 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           ) : (
             <div className="w-full text-center font-black leading-none" style={{ fontSize: key ? 18 : 13, color: key ? trainColor : "#587187", letterSpacing: key ? "0.04em" : undefined }}>{displayVal || "—"}</div>
           )}
-          {maintList.length > 0 && (
-            <div className="flex w-full flex-col items-center gap-1.5">
+          {rowMaintenanceSlotHeight > 0 && (
+            <div
+              className="flex w-full shrink-0 flex-col items-center justify-start gap-1.5"
+              style={{ height: rowMaintenanceSlotHeight, minHeight: rowMaintenanceSlotHeight }}
+              aria-hidden={maintList.length === 0 ? "true" : undefined}
+            >
               {maintList.map((item) => (
                 <span
                   key={`${item.displayType}-${item.badgeText || ""}`}
@@ -4186,10 +4190,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 }
 
 function InsertionStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange }) {
-  const [hideFiltered, setHideFiltered] = useState(false);
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
-  const HIDE_REMARKS = ["3K1", "SW", "2W"];
 
   useEffect(() => {
     saveInsertionHideElapsedTid(title, roads, hideElapsedTid);
@@ -4355,22 +4357,6 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
     onClearInsertedTrains?.(roads, blockIndices);
     setHideElapsedTid(false);
   };
-  const isFiltered = (block, road, bi) => {
-    // Check live TID input typed by user
-    const typed = (tidInputs[`${road}-${bi}`] || "").trim().toUpperCase();
-    if (HIDE_REMARKS.some((r) => typed === r) || isSweepRemark(typed)) return true;
-    // Check remark stored on the active insertion log entry for this cell.
-    // Stale log entries are ignored when the train has already been removed
-    // from the stabling cell.
-    const trainKey = normalizeTrainId(block?.trainId || "");
-    const logEntry = getActiveInsertionEntryForCell(insertionLog, road, bi, trainKey);
-    const logRemark = (logEntry?.remark || "").trim().toUpperCase();
-    if (HIDE_REMARKS.some((r) => logRemark === r)) return true;
-    // Check stabling extraRemark
-    const extraRemark = (block?.extraRemark || "").trim().toUpperCase();
-    if (HIDE_REMARKS.some((r) => extraRemark === r)) return true;
-    return false;
-  };
   return (
     <section
       className="rounded-2xl border px-4 py-4"
@@ -4401,18 +4387,6 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
           {downloadingPng ? "Preparing..." : "Download PNG"}
         </button>
             <button
-              onClick={() => setHideFiltered((v) => !v)}
-              className="flex items-center justify-center gap-2 rounded-xl border text-[11px] font-bold transition-colors hover:bg-[#123554]"
-              style={hideFiltered ? INSERTION_ACTION_BUTTON_PRIMARY : INSERTION_ACTION_BUTTON_BLUE}
-            >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            {hideFiltered
-              ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>
-              : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}
-          </svg>
-          {hideFiltered ? "Show 3K1 / SW" : "Hide 3K1 / SW"}
-        </button>
-            <button
               onClick={handleClearAllTid}
               disabled={!hasTidRemarks && !hasInsertedTrains}
               className="flex items-center justify-center gap-2 rounded-xl border text-[11px] font-bold transition-colors hover:bg-[#641f2b] disabled:cursor-not-allowed disabled:opacity-45"
@@ -4426,7 +4400,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
             <path d="M10 11v5" />
             <path d="M14 11v5" />
           </svg>
-          Clear All TID
+          Clear All
         </button>
             <button
               onClick={() => setHideElapsedTid((v) => !v)}
@@ -4466,8 +4440,17 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
               const rowLine = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
               const insertionRoadPill = INSERTION_ROAD_PILLS[road];
               // Keep every card within the same stabling road at one uniform height.
-              // The tallest content requirement in that road (remarks or Sweep controls)
-              // becomes the minimum height for all train and empty cards in the row.
+              // Also reserve one shared maintenance-pill area across the row so a card
+              // with a request pill does not push its TID/remark text lower than the others.
+              const rowMaxMaintenanceCount = blockIndices.reduce((maxCount, blockIndex) => {
+                const rowBlock = data[road]?.[blockIndex];
+                const rowTrainKey = normalizeTrainId(rowBlock?.trainId || "");
+                const rowMaintenanceCount = rowTrainKey ? (maintenanceMap[rowTrainKey] || []).length : 0;
+                return Math.max(maxCount, rowMaintenanceCount);
+              }, 0);
+              const rowMaintenanceSlotHeight = rowMaxMaintenanceCount > 0
+                ? 16 + ((rowMaxMaintenanceCount - 1) * 22)
+                : 0;
               const rowCardMinHeight = blockIndices.reduce((maxHeight, blockIndex) => {
                 const rowBlock = data[road]?.[blockIndex];
                 const rowTrainKey = normalizeTrainId(rowBlock?.trainId || "");
@@ -4499,16 +4482,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
                     const borderBottom = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
                     const borderBottomRightRadius = labelSide === "left" && isLastRow && isLastBlock ? 12 : undefined;
                     const borderBottomLeftRadius = labelSide === "right" && isLastRow && i === 0 ? 12 : undefined;
-                    if (hideFiltered && isFiltered(block, road, bi)) {
-                      return (
-                        <td key={bi} className="p-2 align-middle" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom, borderBottomRightRadius, borderBottomLeftRadius }}>
-                          <div className="flex h-full items-center justify-center rounded-xl" style={{ minHeight: rowCardMinHeight, height: "100%", border: `1px dashed ${INSERTION_PANEL_COLORS.emptyBorder}`, background: "rgba(7,24,39,0.30)" }}>
-                            <span className="text-[9px] font-black text-[#587187] tracking-widest uppercase">{(block?.extraRemark || "").trim()}</span>
-                          </div>
-                        </td>
-                      );
-                    }
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value) => handleTidChange(targetRoad, targetBi, value, ri, i)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value) => handleTidChange(targetRoad, targetBi, value, ri, i)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
