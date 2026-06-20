@@ -3602,11 +3602,6 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     border: "#22c55e",
     color: "#bbf7d0",
     shadow: "0 0 12px rgba(34, 197, 94, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
-    ribbonLabel: "Early Rem",
-    ribbonBg: "linear-gradient(180deg, #86efac 0%, #22c55e 100%)",
-    ribbonBorder: "#86efac",
-    ribbonColor: "#052e16",
-    ribbonShadow: "inset 0 1px 0 rgba(255,255,255,0.58), 0 2px 7px rgba(34,197,94,0.30)",
   },
   "Late Rem": {
     // Match the TID Reference Table colour transparency.
@@ -3616,11 +3611,6 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     border: "#facc15",
     color: "#fde68a",
     shadow: "0 0 12px rgba(250, 204, 21, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
-    ribbonLabel: "Late Rem",
-    ribbonBg: "linear-gradient(180deg, #fde68a 0%, #facc15 100%)",
-    ribbonBorder: "#fde68a",
-    ribbonColor: "#3a2600",
-    ribbonShadow: "inset 0 1px 0 rgba(255,255,255,0.58), 0 2px 7px rgba(250,204,21,0.30)",
   },
   "ED (7pm)": {
     // Match the TID Reference Table colour transparency.
@@ -3630,11 +3620,6 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     border: "#f472b6",
     color: "#fbcfe8",
     shadow: "0 0 12px rgba(244, 114, 182, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
-    ribbonLabel: "ED (7pm)",
-    ribbonBg: "linear-gradient(180deg, #fbcfe8 0%, #f472b6 100%)",
-    ribbonBorder: "#fbcfe8",
-    ribbonColor: "#4a0d2c",
-    ribbonShadow: "inset 0 1px 0 rgba(255,255,255,0.58), 0 2px 7px rgba(244,114,182,0.30)",
   },
   ED: {
     // Match the TID Reference Table colour transparency.
@@ -3644,11 +3629,6 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     border: "#f87171",
     color: "#fecaca",
     shadow: "0 0 12px rgba(248, 113, 113, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
-    ribbonLabel: "ED Rem",
-    ribbonBg: "linear-gradient(180deg, #fecaca 0%, #f87171 100%)",
-    ribbonBorder: "#fecaca",
-    ribbonColor: "#450a0a",
-    ribbonShadow: "inset 0 1px 0 rgba(255,255,255,0.58), 0 2px 7px rgba(248,113,113,0.30)",
   },
 };
 
@@ -3822,8 +3802,6 @@ const INSERTION_PANEL_COLORS = {
   muted: "#8aa4ba",
 };
 
-const INSERTION_AMBER_RIBBON_HEIGHT = 24;
-
 const INSERTION_ACTION_BUTTON_COMMON = {
   height: 38,
   minHeight: 38,
@@ -3931,28 +3909,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     ? getTidScheduledTime(autoTid, autoTidDepot, { allowFallback: false })
     : null;
   const canAutoInsertTid = Boolean(key && !inserted && autoTid !== null && autoScheduledTime);
-  const liveMatchedTid = Boolean(!inserted && autoTid !== null && autoScheduledTime);
-  const showAmberRibbon = Boolean(key && (hasTidRemark || (inserted && insertedRemarkLabel)));
-  // Only a valid Weekday timetable TID inherits the TID Reference Table colour
-  // and replaces the TID number on the ribbon with its removal category.
-  // Unmatched numeric/text remarks, Friday TIDs and Saturday TIDs remain amber.
-  const tidReferenceRibbonStyle = (insertedTid || liveMatchedTid) && activeTidRemarkStyle?.ribbonBg
-    ? activeTidRemarkStyle
-    : null;
-  const matchedTidLabel = insertedTid
-    ? `TID ${insertedTid}`
-    : liveMatchedTid
-    ? `TID ${autoTid}`
-    : "";
-  const amberRibbonLabel = tidReferenceRibbonStyle?.ribbonLabel
-    || matchedTidLabel
-    || insertedRemarkLabel
-    || tidRemarkText;
-  // When the Weekday ribbon shows Early/Late/ED category, keep the actual TID
-  // visible inside the card below the train/request area.
-  const tidLabelInsideCard = tidReferenceRibbonStyle ? matchedTidLabel : "";
-  const cardBaseMinHeight = inserted?.isSweeping ? 178 : isInsertionDone ? 132 : 98;
-  const cardRibbonHeight = showAmberRibbon ? INSERTION_AMBER_RIBBON_HEIGHT : 0;
 
   useEffect(() => {
     if (!canAutoInsertTid) return;
@@ -4035,32 +3991,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
   return (
     <td className="p-2 align-middle" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-      <div
-        className="relative flex h-full flex-col items-center justify-start gap-2 overflow-hidden rounded-xl"
-        style={{
-          minHeight: Math.max(cardBaseMinHeight + cardRibbonHeight, rowCardMinHeight),
-          height: "100%",
-          padding: `${showAmberRibbon ? INSERTION_AMBER_RIBBON_HEIGHT + 9 : 9}px 7px 9px`,
-          background: insCardBg,
-          border: insCardBorder,
-          boxShadow: insCardGlow,
-        }}
-      >
-        {showAmberRibbon && (
-          <div
-            className="absolute inset-x-0 top-0 z-[1] flex items-center justify-center select-none"
-            style={{
-              height: INSERTION_AMBER_RIBBON_HEIGHT,
-              background: tidReferenceRibbonStyle?.ribbonBg || "linear-gradient(180deg, #ffc83d 0%, #f2a900 100%)",
-              borderBottom: `1px solid ${tidReferenceRibbonStyle?.ribbonBorder || "#ffcf55"}`,
-              color: tidReferenceRibbonStyle?.ribbonColor || "#191105",
-              boxShadow: tidReferenceRibbonStyle?.ribbonShadow || "inset 0 1px 0 rgba(255,255,255,0.55), 0 2px 7px rgba(242,169,0,0.26)",
-            }}
-            title={amberRibbonLabel}
-          >
-            <span className="max-w-full truncate px-1 text-[10px] font-black tracking-[0.08em]">{amberRibbonLabel}</span>
-          </div>
-        )}
+      <div className="relative flex h-full flex-col items-center justify-start gap-2 rounded-xl" style={{ minHeight: Math.max(inserted?.isSweeping ? 178 : isInsertionDone ? 132 : 98, rowCardMinHeight), height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow }}>
         <div className="flex w-full flex-col items-center gap-2">
           {stablingEditable ? (
             <input
@@ -4103,15 +4034,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               ))}
             </div>
           )}
-          {key && tidLabelInsideCard && (
-            <span
-              className="text-[12px] font-bold"
-              style={{ color: "#f8fafc" }}
-            >
-              {tidLabelInsideCard}
-            </span>
-          )}
-          {key && inserted && insertedRemarkLabel && !inserted.isSweeping && !insertedTid && !showAmberRibbon && (
+          {key && inserted && insertedRemarkLabel && !inserted.isSweeping && (
             <span
               className="text-[12px] font-bold"
               style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
@@ -4535,18 +4458,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
                 const rowEntry = getActiveInsertionEntryForCell(insertionLog, road, blockIndex, rowTrainKey);
                 const baseHeight = rowEntry?.isSweeping ? 178 : rowEntry ? 132 : 98;
                 const maintenanceHeight = rowMaintenanceCount > 0 ? 8 + (rowMaintenanceCount * 20) : 0;
-                const liveTidOrRemark = (tidInputs[`${road}-${blockIndex}`] || "").toString().trim();
-                const insertedTidOrRemark = Boolean(
-                  rowEntry && (
-                    rowEntry.tid !== null && rowEntry.tid !== undefined
-                    || (rowEntry.remark || "").toString().trim() !== ""
-                    || rowEntry.isSweeping
-                  )
-                );
-                const ribbonHeight = rowTrainKey && (liveTidOrRemark || insertedTidOrRemark)
-                  ? INSERTION_AMBER_RIBBON_HEIGHT
-                  : 0;
-                return Math.max(maxHeight, baseHeight + maintenanceHeight + ribbonHeight);
+                return Math.max(maxHeight, baseHeight + maintenanceHeight);
               }, 98);
               const labelCell = (
                 <td className="text-center align-middle text-[12px] font-black tracking-tight uppercase" style={{ background: INSERTION_PANEL_COLORS.header, color: "#d6e7f4", borderTop: ri === 0 ? "none" : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderBottom: rowLine, borderRight: labelSide === "left" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderLeft: labelSide === "right" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, whiteSpace: "nowrap", width: 72, minWidth: 72, letterSpacing: "0.025em", borderTopLeftRadius: labelSide === "left" && ri === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && ri === 0 ? 12 : undefined, borderBottomLeftRadius: labelSide === "left" && ri === roads.length - 1 ? 12 : undefined, borderBottomRightRadius: labelSide === "right" && ri === roads.length - 1 ? 12 : undefined }}>
@@ -13096,10 +13008,6 @@ export default function DepotStablingPage() {
     if (!cleanTid) return specialStyle;
 
     const dayKey = getDayScheduleKey();
-    // TID Reference Table ribbon colours apply to Weekday only.
-    // Friday and Saturday TIDs keep the standard amber ribbon.
-    if (dayKey !== "weekday") return specialStyle;
-
     const depotKey = normalizeDepotKey(depot);
     const oppositeDepotKey = depotKey === "west" ? "east" : "west";
     const uploadedRemark =
