@@ -4211,14 +4211,15 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     title="Edit insertion completion time"
                   />
 
-                  <span className="font-normal text-blue-300">Rem :</span>
-                  <span
-                    className="min-w-0 text-right text-[12px] font-normal leading-tight"
-                    style={{ color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
-                    title={insertedTidAssistRemark || "No reference remark"}
-                  >
-                    {insertedTidAssistRemark || "—"}
-                  </span>
+                  {insertedTidAssistRemark && (
+                    <span
+                      className="col-span-2 min-w-0 text-center text-[12px] font-normal leading-tight"
+                      style={{ color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
+                      title={insertedTidAssistRemark}
+                    >
+                      {insertedTidAssistRemark}
+                    </span>
+                  )}
                 </div>
               ) : isInserted3K1 ? (
                 <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
