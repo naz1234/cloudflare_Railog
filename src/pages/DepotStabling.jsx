@@ -4128,7 +4128,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             {inserted && !inserted.isSweeping && (
               <>
                 <div className="w-full rounded-lg border border-blue-500/60 bg-blue-950/30 px-1 py-1">
-                  <div className="mb-0.5 text-center text-[9px] font-normal uppercase tracking-wide text-blue-300">INSERT Done :</div>
+                  <div className="mb-0.5 text-center text-[9px] font-normal uppercase tracking-wide text-blue-300">INSERT TIME:</div>
                   <input
                     type="text"
                     inputMode="numeric"
