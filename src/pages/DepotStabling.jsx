@@ -4074,7 +4074,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
                 onInsertionRemarkUpdate?.(inserted.key, nextRemark);
               }}
-              className="w-full border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none"
+              className={`w-full border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none ${maintList.length > 0 ? "mt-1" : ""}`}
               style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
               title="Edit the remark. Clear all characters to undo insertion."
               aria-label={`Inserted remark ${insertedPlainRemark}. Clear all characters to undo insertion.`}
