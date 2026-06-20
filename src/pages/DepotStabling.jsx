@@ -3844,7 +3844,7 @@ function InsertionSectionTitle({ title, action = null }) {
   );
 }
 
-function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0 }) {
+function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0 }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
@@ -3886,12 +3886,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     ? getTidAssistRemarkStyle(insertedTid, autoTidDepot)
     : null;
   const insertedRemarkStyle = inserted?.remark ? getInsertionRemarkStyle(inserted.remark) : null;
-  const isInserted3K1 = Boolean(
-    inserted &&
-    !inserted.isSweeping &&
-    !insertedTid &&
-    String(inserted.remark || "").trim().toUpperCase() === "3K1"
-  );
+  const insertedPlainRemark = inserted && !inserted.isSweeping && !insertedTid
+    ? String(inserted.remark ?? parsedInsertedTid ?? "").trim()
+    : "";
+  const hasInsertedPlainRemark = Boolean(insertedPlainRemark);
   const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
@@ -3985,7 +3983,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
       <div
         className={`relative flex h-full flex-col items-center justify-start rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
         style={{
-          minHeight: Math.max(inserted?.isSweeping ? 178 : isInsertionDone ? ((insertedTid || isInserted3K1) ? 112 : 124) : 98, rowCardMinHeight),
+          minHeight: Math.max(inserted?.isSweeping ? 178 : isInsertionDone ? ((insertedTid || hasInsertedPlainRemark) ? 112 : 124) : 98, rowCardMinHeight),
           height: "100%",
           padding: isInsertionDone ? "7px 5px" : "9px 7px",
           background: insCardBg,
@@ -4044,31 +4042,42 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               ))}
             </div>
           )}
-          {key && inserted && insertedRemarkLabel && !inserted.isSweeping && !insertedTid && !isInserted3K1 && (
-            <span
-              className="text-[12px] font-normal"
-              style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
-            >
-              {insertedRemarkLabel}
-            </span>
-          )}
-          {key && isInserted3K1 && (
+          {key && hasInsertedPlainRemark && (
             <input
               type="text"
-              maxLength={3}
-              value={String(tidInput || inserted.remark || "3K1").toUpperCase()}
+              maxLength={40}
+              value={String(tidInput || insertedPlainRemark)}
               onClick={(e) => e.stopPropagation()}
               onChange={(e) => {
-                const nextRemark = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
+                const nextRemark = e.target.value.slice(0, 40);
                 onTidChange?.(road, bi, nextRemark);
-                // Match the active-TID edit behaviour: partial backspacing is
-                // allowed and the insertion is undone only after 3K1 is fully cleared.
-                if (!nextRemark) onInsertionTick(road, bi, key, tidInput);
+
+                // Let the user edit a normal remark freely. The completed
+                // insertion is undone only after the entire remark is cleared.
+                if (!nextRemark.trim()) {
+                  onInsertionTick(road, bi, key, tidInput);
+                  return;
+                }
+
+                // If the edited value becomes a valid active-timetable TID,
+                // remove the old remark entry so the standard TID auto-match
+                // can immediately apply it on the next render.
+                const nextTidMatch = nextRemark.trim().match(/^(?:TID[:\s-]*)?T?(\d{3})$/i);
+                const nextTid = nextTidMatch ? parseInt(nextTidMatch[1], 10) : null;
+                const nextScheduledTime = nextTid && typeof getTidScheduledTime === "function"
+                  ? getTidScheduledTime(nextTid, autoTidDepot, { allowFallback: false })
+                  : null;
+                if (nextScheduledTime || isSweepRemark(nextRemark.trim().toUpperCase())) {
+                  onInsertionTick(road, bi, key, tidInput);
+                  return;
+                }
+
+                onInsertionRemarkUpdate?.(inserted.key, nextRemark);
               }}
               className="w-full border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none"
               style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
-              title="Edit 3K1. Clear all characters to undo insertion."
-              aria-label="Inserted remark 3K1. Clear all characters to undo insertion."
+              title="Edit the remark. Clear all characters to undo insertion."
+              aria-label={`Inserted remark ${insertedPlainRemark}. Clear all characters to undo insertion.`}
             />
           )}
           {key && inserted?.isSweeping && (
@@ -4221,7 +4230,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     </span>
                   )}
                 </div>
-              ) : isInserted3K1 ? (
+              ) : hasInsertedPlainRemark ? (
                 <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
                   <span className="font-normal text-blue-300">Time :</span>
                   <input
@@ -4311,7 +4320,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   );
 }
 
-function InsertionStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange }) {
+function InsertionStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange }) {
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
 
@@ -4612,7 +4621,7 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
                     const borderBottom = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
                     const borderBottomRightRadius = labelSide === "left" && isLastRow && isLastBlock ? 12 : undefined;
                     const borderBottomLeftRadius = labelSide === "right" && isLastRow && i === 0 ? 12 : undefined;
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value) => handleTidChange(targetRoad, targetBi, value, ri, i)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value) => handleTidChange(targetRoad, targetBi, value, ri, i)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -5973,7 +5982,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   );
 }
 
-function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onSweepUpdate, onRemoveInsertionLog, onClearInsertionDepot, onClearInsertedTidRemarks, onClearInsertedTrains, tidInputs, onTidChange, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug, activePg = "pg1", onPgChange, onRefreshPg2, stablingEditable = false, onEditableTrainIdChange }) {
+function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, onRemoveInsertionLog, onClearInsertionDepot, onClearInsertedTidRemarks, onClearInsertedTrains, tidInputs, onTidChange, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug, activePg = "pg1", onPgChange, onRefreshPg2, stablingEditable = false, onEditableTrainIdChange }) {
   // TID schedule range: earliest first-TID time across both series, latest last-TID time.
   // Series 1xx: 05:25–06:22 | Series 2xx: 05:24–06:21
   // Grey-out in the TID Reference Table only applies while current time is within this window.
@@ -6042,8 +6051,8 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
 
         {/* Stabling sections — centre column */}
         <div className="space-y-5 min-w-0">
-          <InsertionStablingSection title="WEST DEPOT" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onSweepUpdate={onSweepUpdate} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditableTrainIdChange?.("west", road, bi, value)} />
-          <InsertionStablingSection title="EAST DEPOT" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onSweepUpdate={onSweepUpdate} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditableTrainIdChange?.("east", road, bi, value)} />
+          <InsertionStablingSection title="WEST DEPOT" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onSweepUpdate={onSweepUpdate} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditableTrainIdChange?.("west", road, bi, value)} />
+          <InsertionStablingSection title="EAST DEPOT" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onSweepUpdate={onSweepUpdate} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditableTrainIdChange?.("east", road, bi, value)} />
         </div>
       </div>
 
@@ -13399,6 +13408,34 @@ export default function DepotStablingPage() {
     setPg2InsertionLog((prev) => updateInsertionEntryTimeInLog(prev, entryKey, nextValue));
   }, [markInsertionLiveLocalEdit, updateInsertionEntryTimeInLog]);
 
+  const updateInsertionEntryRemarkInLog = useCallback((prevLog = [], entryKey, nextValue = "") => {
+    const remark = String(nextValue || "").slice(0, 40);
+
+    return sortInsertionLogByTime((prevLog || []).map((entry) => {
+      if (!entry || entry.isSweeping || entry.key !== entryKey || entry.tid !== null && entry.tid !== undefined) return entry;
+
+      const depot = entry.depot || getDepotFromRoad(entry.road || "");
+      const mainlineTrack = entry.mainlineTrack || (depot === "west" ? 1 : 2);
+      const trainKey = entry.trainKey || "";
+      const road = entry.road || "";
+      const time = entry.time || formatTime(new Date());
+      const tidPart = remark.trim() ? ` (${remark.trim()})` : "";
+      const text = `${time} hrs – ${trainKey}${tidPart} inserted from ${road} to mainline track ${mainlineTrack}.`;
+
+      return { ...entry, remark, text };
+    }));
+  }, []);
+
+  const handleInsertionRemarkUpdate = useCallback((entryKey, nextValue) => {
+    markInsertionLiveLocalEdit();
+    setInsertionLog((prev) => updateInsertionEntryRemarkInLog(prev, entryKey, nextValue));
+  }, [markInsertionLiveLocalEdit, updateInsertionEntryRemarkInLog]);
+
+  const handlePg2InsertionRemarkUpdate = useCallback((entryKey, nextValue) => {
+    markInsertionLiveLocalEdit();
+    setPg2InsertionLog((prev) => updateInsertionEntryRemarkInLog(prev, entryKey, nextValue));
+  }, [markInsertionLiveLocalEdit, updateInsertionEntryRemarkInLog]);
+
   const updateSweepEntryInLog = useCallback((prevLog = [], entryKey, changes = {}) => {
     return sortInsertionLogByTime((prevLog || []).map((entry) => {
       if (!entry?.isSweeping || entry.key !== entryKey) return entry;
@@ -13962,6 +13999,7 @@ export default function DepotStablingPage() {
   const activeInsertionTidInputs = activeInsertionPgKey === "pg2" ? pg2TidInputs : tidInputs;
   const activeInsertionTickHandler = activeInsertionPgKey === "pg2" ? handlePg2InsertionTick : handleInsertionTick;
   const activeInsertionTimeUpdateHandler = activeInsertionPgKey === "pg2" ? handlePg2InsertionTimeUpdate : handleInsertionTimeUpdate;
+  const activeInsertionRemarkUpdateHandler = activeInsertionPgKey === "pg2" ? handlePg2InsertionRemarkUpdate : handleInsertionRemarkUpdate;
   const activeSweepUpdateHandler = activeInsertionPgKey === "pg2" ? handlePg2SweepUpdate : handleSweepUpdate;
   const activeInsertionRemoveHandler = activeInsertionPgKey === "pg2" ? handleRemovePg2InsertionLog : handleRemoveInsertionLog;
   const activeInsertionClearDepotHandler = activeInsertionPgKey === "pg2" ? handleClearPg2InsertionDepot : handleClearInsertionDepot;
@@ -14401,6 +14439,7 @@ export default function DepotStablingPage() {
             insertionLog={activeInsertionLog}
             onInsertionTick={activeInsertionTickHandler}
             onInsertionTimeUpdate={activeInsertionTimeUpdateHandler}
+            onInsertionRemarkUpdate={activeInsertionRemarkUpdateHandler}
             onSweepUpdate={activeSweepUpdateHandler}
             onRemoveInsertionLog={activeInsertionRemoveHandler}
             onClearInsertionDepot={activeInsertionClearDepotHandler}
