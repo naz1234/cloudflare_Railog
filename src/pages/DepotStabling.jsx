@@ -3632,13 +3632,13 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     shadow: "0 0 12px rgba(250, 204, 21, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
   "ED (7pm)": {
-    // Match the TID Reference Table colour transparency.
+    // Match the TID Reference Table violet colour transparency.
     // Table row uses 20% fading to 7%; pill fill uses 18%.
-    bg: "rgba(244, 114, 182, 0.18)",
-    cardBg: "linear-gradient(135deg, rgba(244, 114, 182, 0.20) 0%, rgba(244, 114, 182, 0.07) 100%)",
-    border: "#f472b6",
-    color: "#fbcfe8",
-    shadow: "0 0 12px rgba(244, 114, 182, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
+    bg: "rgba(139, 92, 246, 0.18)",
+    cardBg: "linear-gradient(135deg, rgba(139, 92, 246, 0.20) 0%, rgba(139, 92, 246, 0.07) 100%)",
+    border: "#8b5cf6",
+    color: "#ddd6fe",
+    shadow: "0 0 12px rgba(139, 92, 246, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
   ED: {
     // Match the TID Reference Table colour transparency.
