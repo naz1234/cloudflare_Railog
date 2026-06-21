@@ -4359,7 +4359,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   <button
                     type="button"
                     onClick={handleInsertedUndoClick}
-                    className="w-full rounded-lg border border-green-500 bg-green-200 px-1 py-0.5 text-[9px] font-bold leading-tight text-green-900 transition-all hover:bg-green-100"
+                    className="w-full rounded-lg border border-blue-400 bg-blue-500 px-1 py-0.5 text-[9px] font-bold leading-tight text-white transition-all hover:bg-blue-400"
                     title="Click to undo insertion"
                     aria-label="Undo insertion"
                   >
