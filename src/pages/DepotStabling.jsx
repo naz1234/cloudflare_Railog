@@ -4248,8 +4248,21 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
                   {insertedTidAssistRemark && (
                     <span
-                      className={`col-span-2 min-w-0 text-center ${useLargerWeekdayAssistRemark ? "text-[13px]" : "text-[12px]"} font-normal leading-tight`}
-                      style={{ color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
+                      className={`col-span-2 min-w-0 justify-self-center text-center font-normal leading-tight ${
+                        useLargerWeekdayAssistRemark
+                          ? "inline-flex max-w-full items-center justify-center rounded-full border px-2 py-[1px] text-[13px]"
+                          : "text-[12px]"
+                      }`}
+                      style={useLargerWeekdayAssistRemark
+                        ? {
+                            color: insertedTidRemarkStyle?.color || "#bfdbfe",
+                            background: insertedTidRemarkStyle?.bg || "rgba(59, 130, 246, 0.16)",
+                            borderColor: insertedTidRemarkStyle?.border || "#60a5fa",
+                            boxShadow: insertedTidRemarkStyle?.shadow || "none",
+                            lineHeight: "16px",
+                            whiteSpace: "nowrap",
+                          }
+                        : { color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
                       title={insertedTidAssistRemark}
                     >
                       {insertedTidAssistRemark}
