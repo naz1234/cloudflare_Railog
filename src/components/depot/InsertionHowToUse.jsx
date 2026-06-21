@@ -81,7 +81,7 @@ export default function InsertionHowToUse() {
         .insertion-help-title {
           color: #ffffff;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 14px;
+          font-size: 16px;
           line-height: 1.1;
           font-weight: 900;
           letter-spacing: 0.10em;
@@ -92,7 +92,7 @@ export default function InsertionHowToUse() {
           margin-top: 3px;
           color: #8bbbd6;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 10px;
+          font-size: 12px;
           line-height: 1.35;
           font-weight: 500;
         }
@@ -127,7 +127,7 @@ export default function InsertionHowToUse() {
           background: rgba(15,45,74,0.76);
           color: #9ed9f7;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 9px;
+          font-size: 11px;
           line-height: 1;
           font-weight: 900;
         }
@@ -136,7 +136,7 @@ export default function InsertionHowToUse() {
           margin-bottom: 3px;
           color: #e8f6ff;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 11px;
+          font-size: 13px;
           line-height: 1.2;
           font-weight: 850;
         }
@@ -144,7 +144,7 @@ export default function InsertionHowToUse() {
         .insertion-help-step-text {
           color: #9fc0d5;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 10px;
+          font-size: 12px;
           line-height: 1.48;
           font-weight: 500;
         }
@@ -157,7 +157,7 @@ export default function InsertionHowToUse() {
           background: rgba(20,83,45,0.18);
           color: #bbf7d0;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 10px;
+          font-size: 12px;
           line-height: 1.45;
           font-weight: 700;
         }
