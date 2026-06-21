@@ -4056,7 +4056,15 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           )}
           {key && inserted?.isSweeping && (
             <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
-              <div className="w-full text-center text-[12px] font-normal text-purple-200">Sweep</div>
+              <button
+                type="button"
+                onClick={handleInsertedUndoClick}
+                className="w-full border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-purple-200 outline-none transition-colors hover:text-red-200 focus-visible:text-red-200"
+                title="Click Sweep to undo sweeping"
+                aria-label="Undo sweeping"
+              >
+                Sweep
+              </button>
               <select
                 value={inserted.sweepTrack || "TK1"}
                 onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
@@ -4255,17 +4263,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </button>
                 </>
               )
-            )}
-            {inserted?.isSweeping && (
-              <button
-                type="button"
-                onClick={handleInsertedUndoClick}
-                className="w-full border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-purple-200 transition-colors hover:text-red-200"
-                title="Click to undo sweep"
-                aria-label="Undo sweep"
-              >
-                {`✓ ${inserted.time || insertedDisplayTime}`}
-              </button>
             )}
           </div>
         )}
