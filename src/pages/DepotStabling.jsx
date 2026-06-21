@@ -17774,7 +17774,12 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
       ? Math.max(28, (availableWidth - gap * (visiblePills.length - 1)) / visiblePills.length)
       : availableWidth;
 
-    const getSafeTextWidth = (value, size, bold = true) => sanitizePdfText(value || "").length * size * (bold ? 0.82 : 0.58);
+    // Use the same Helvetica width estimate as the rest of the PDF renderer.
+    // The previous 0.82 bold multiplier was overly conservative and forced
+    // longer requested remarks (for example, Inbound and APU TEST Not FIT)
+    // to shrink much more than necessary inside two-pill rows.
+    const getSafeTextWidth = (value, size, bold = true) =>
+      sanitizePdfText(value || "").length * size * (bold ? 0.66 : 0.54);
 
     const fitLabelForPill = (value, pillWidth) => {
       const clean = sanitizePdfText(value || "-");
