@@ -4043,42 +4043,16 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             </div>
           )}
           {key && hasInsertedPlainRemark && (
-            <input
-              type="text"
-              maxLength={40}
-              value={String(tidInput || insertedPlainRemark)}
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => {
-                const nextRemark = e.target.value.slice(0, 40);
-                onTidChange?.(road, bi, nextRemark);
-
-                // Let the user edit a normal remark freely. The completed
-                // insertion is undone only after the entire remark is cleared.
-                if (!nextRemark.trim()) {
-                  onInsertionTick(road, bi, key, tidInput);
-                  return;
-                }
-
-                // If the edited value becomes a valid active-timetable TID,
-                // remove the old remark entry so the standard TID auto-match
-                // can immediately apply it on the next render.
-                const nextTidMatch = nextRemark.trim().match(/^(?:TID[:\s-]*)?T?(\d{3})$/i);
-                const nextTid = nextTidMatch ? parseInt(nextTidMatch[1], 10) : null;
-                const nextScheduledTime = nextTid && typeof getTidScheduledTime === "function"
-                  ? getTidScheduledTime(nextTid, autoTidDepot, { allowFallback: false })
-                  : null;
-                if (nextScheduledTime || isSweepRemark(nextRemark.trim().toUpperCase())) {
-                  onInsertionTick(road, bi, key, tidInput);
-                  return;
-                }
-
-                onInsertionRemarkUpdate?.(inserted.key, nextRemark);
-              }}
-              className={`w-full border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none ${maintList.length > 0 ? "mt-1" : ""}`}
+            <button
+              type="button"
+              onClick={handleInsertedUndoClick}
+              className={`w-full border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none transition-colors hover:text-red-200 focus-visible:text-red-200 ${maintList.length > 0 ? "mt-1" : ""}`}
               style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
-              title="Edit the remark. Clear all characters to undo insertion."
-              aria-label={`Inserted remark ${insertedPlainRemark}. Clear all characters to undo insertion.`}
-            />
+              title={`Click ${insertedPlainRemark} to undo insertion`}
+              aria-label={`Undo insertion for remark ${insertedPlainRemark}`}
+            >
+              {insertedPlainRemark}
+            </button>
           )}
           {key && inserted?.isSweeping && (
             <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
