@@ -3906,6 +3906,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
+  const [suppressAutoInsert, setSuppressAutoInsert] = useState(false);
   const maintList = key ? maintenanceMap[key] || [] : [];
   const isWestBottomRightCorner = labelSide === "left" && isLast && isLastBlock;
   const isEastBottomLeftCorner = labelSide === "right" && isLast && isFirstBlock;
@@ -3958,7 +3959,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const autoScheduledTime = autoTid !== null && typeof getTidScheduledTime === "function"
     ? getTidScheduledTime(autoTid, autoTidDepot, { allowFallback: false })
     : null;
-  const canAutoInsertTid = Boolean(key && !inserted && autoTid !== null && autoScheduledTime);
+  const canAutoInsertTid = Boolean(key && !inserted && !suppressAutoInsert && autoTid !== null && autoScheduledTime);
 
   useEffect(() => {
     if (!canAutoInsertTid) return;
@@ -3968,12 +3969,32 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const handleInsertClick = () => {
     // SW / SW1 / SW2 mean Sweep. SW1 selects Track 01 and SW2 selects Track 02.
     const sweepTrack = getSweepTrackFromRemark(tidRemarkText) || (isSweepRemark(tidRemarkText) ? "TK1" : "");
+    setSuppressAutoInsert(false);
     onInsertionTick(road, bi, key, tidInput, sweepTrack);
   };
 
   const handleInsertedUndoClick = () => {
-    onTidChange?.(road, bi, "");
-    onInsertionTick(road, bi, key, tidInput);
+    // Undo removes only the completed insertion state. Keep the user's last
+    // TID / remark in the input so it can be corrected and inserted again.
+    // Older synced entries may not have their original input saved, so restore
+    // the best available value from the insertion entry as a fallback.
+    const currentInput = String(tidInput || "");
+    const restoredInput = currentInput.trim()
+      ? currentInput
+      : String(
+          inserted?.inputValue ??
+          (inserted?.isSweeping
+            ? (inserted?.sweepTrack === "TK2" ? "SW2" : "SW")
+            : insertedTid ?? inserted?.remark ?? "")
+        );
+
+    // Prevent a restored valid TID from being auto-inserted again immediately.
+    // Auto insertion becomes active again as soon as the user edits the field.
+    setSuppressAutoInsert(true);
+    if (restoredInput !== currentInput) {
+      onTidChange?.(road, bi, restoredInput);
+    }
+    onInsertionTick(road, bi, key, restoredInput);
   };
 
   // Elapsed inserted trains are hidden only after user clicks "Hide elapsed TID".
@@ -4190,7 +4211,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 ref={tidInputRef}
                 type="text"
                 value={tidInput}
-                onChange={(e) => onTidChange(road, bi, e.target.value)}
+                onChange={(e) => {
+                  setSuppressAutoInsert(false);
+                  onTidChange(road, bi, e.target.value);
+                }}
                 onKeyDown={onTidKeyDown}
                 onFocus={onTidFocus}
                 onPointerDown={onTidFocus}
@@ -4247,26 +4271,33 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   />
 
                   {insertedTidAssistRemark && (
-                    <span
-                      className={`col-span-2 min-w-0 justify-self-center text-center font-normal leading-tight ${
-                        useLargerWeekdayAssistRemark
-                          ? "inline-flex max-w-full items-center justify-center rounded-full border px-2 py-[1px] text-[13px]"
-                          : "text-[12px]"
-                      }`}
-                      style={useLargerWeekdayAssistRemark
-                        ? {
-                            color: insertedTidRemarkStyle?.color || "#bfdbfe",
-                            background: insertedTidRemarkStyle?.bg || "rgba(59, 130, 246, 0.16)",
-                            borderColor: insertedTidRemarkStyle?.border || "#60a5fa",
-                            boxShadow: insertedTidRemarkStyle?.shadow || "none",
-                            lineHeight: "16px",
-                            whiteSpace: "nowrap",
-                          }
-                        : { color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
-                      title={insertedTidAssistRemark}
-                    >
-                      {insertedTidAssistRemark}
-                    </span>
+                    useLargerWeekdayAssistRemark ? (
+                      <button
+                        type="button"
+                        onClick={handleInsertedUndoClick}
+                        className="col-span-2 inline-flex min-w-0 max-w-full items-center justify-center justify-self-center rounded-full border px-2 py-[1px] text-center text-[13px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                        style={{
+                          color: insertedTidRemarkStyle?.color || "#bfdbfe",
+                          background: insertedTidRemarkStyle?.bg || "rgba(59, 130, 246, 0.16)",
+                          borderColor: insertedTidRemarkStyle?.border || "#60a5fa",
+                          boxShadow: insertedTidRemarkStyle?.shadow || "none",
+                          lineHeight: "16px",
+                          whiteSpace: "nowrap",
+                        }}
+                        title={`Click ${insertedTidAssistRemark} to undo insertion`}
+                        aria-label={`Undo insertion for ${insertedTidAssistRemark}`}
+                      >
+                        {insertedTidAssistRemark}
+                      </button>
+                    ) : (
+                      <span
+                        className="col-span-2 min-w-0 justify-self-center text-center text-[12px] font-normal leading-tight"
+                        style={{ color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
+                        title={insertedTidAssistRemark}
+                      >
+                        {insertedTidAssistRemark}
+                      </span>
+                    )
                   )}
                 </div>
               ) : hasInsertedPlainRemark ? (
@@ -13372,6 +13403,7 @@ export default function DepotStablingPage() {
           tid: null,
           mainlineTrack,
           remark: "SW",
+          inputValue: tidStr || (normalizedSweepTrack === "TK2" ? "SW2" : "SW"),
           sweepTrack: normalizedSweepTrack,
           signal,
           clearTime,
@@ -13386,7 +13418,7 @@ export default function DepotStablingPage() {
 
     return sortInsertionLogByTime([
       ...(prevLog || []).filter((l) => l.key !== logKey),
-      { key: logKey, text: line, time, depot, road, trainKey: paddedTrainKey, tid, mainlineTrack, remark: displayRemark },
+      { key: logKey, text: line, time, depot, road, trainKey: paddedTrainKey, tid, mainlineTrack, remark: displayRemark, inputValue: tidStr || "" },
     ]);
   }, [getTidScheduledTime]);
 
@@ -13444,7 +13476,7 @@ export default function DepotStablingPage() {
       const tidPart = remark.trim() ? ` (${remark.trim()})` : "";
       const text = `${time} hrs – ${trainKey}${tidPart} inserted from ${road} to mainline track ${mainlineTrack}.`;
 
-      return { ...entry, remark, text };
+      return { ...entry, remark, inputValue: remark, text };
     }));
   }, []);
 
