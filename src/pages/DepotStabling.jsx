@@ -1845,19 +1845,37 @@ function cloneInsertionStablingState(westData = {}, eastData = {}) {
   };
 }
 
+function normalizeInsertionPgByDepot(value = {}) {
+  if (typeof value === "string") {
+    const migratedPg = normalizeInsertionPg(value);
+    return { west: migratedPg, east: migratedPg };
+  }
+
+  return {
+    west: normalizeInsertionPg(value?.west),
+    east: normalizeInsertionPg(value?.east),
+  };
+}
+
 function loadInsertionActivePg() {
   try {
-    if (typeof localStorage === "undefined") return "pg1";
-    return normalizeInsertionPg(localStorage.getItem(INSERTION_ACTIVE_PG_KEY));
+    if (typeof localStorage === "undefined") return { west: "pg1", east: "pg1" };
+    const raw = localStorage.getItem(INSERTION_ACTIVE_PG_KEY);
+    if (!raw) return { west: "pg1", east: "pg1" };
+
+    // Migrate the previous single PG value so existing users keep the same view.
+    if (raw === "pg1" || raw === "pg2") return normalizeInsertionPgByDepot(raw);
+
+    return normalizeInsertionPgByDepot(JSON.parse(raw));
   } catch {
-    return "pg1";
+    return { west: "pg1", east: "pg1" };
   }
 }
 
-function saveInsertionActivePg(value = "pg1") {
+function saveInsertionActivePg(value = {}) {
   try {
     if (typeof localStorage === "undefined") return;
-    localStorage.setItem(INSERTION_ACTIVE_PG_KEY, normalizeInsertionPg(value));
+    localStorage.setItem(INSERTION_ACTIVE_PG_KEY, JSON.stringify(normalizeInsertionPgByDepot(value)));
   } catch {}
 }
 
@@ -3818,10 +3836,10 @@ const INSERTION_ACTION_BUTTON_DANGER = {
   color: "#ffe9ec",
 };
 
-function InsertionSectionTitle({ title, action = null }) {
+function InsertionSectionTitle({ title, leftAction = null, action = null }) {
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-      <div className="flex min-w-0 items-center gap-3">
+      <div className="flex min-w-0 flex-wrap items-center justify-start gap-3">
         <div
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border"
           style={{
@@ -3838,8 +3856,48 @@ function InsertionSectionTitle({ title, action = null }) {
         <h2 className="truncate text-[21px] font-black uppercase leading-none tracking-wide text-white">
           {title}
         </h2>
+        {leftAction && <div className="flex flex-wrap items-center justify-start gap-2">{leftAction}</div>}
       </div>
       {action && <div className="flex flex-wrap items-center justify-end gap-2">{action}</div>}
+    </div>
+  );
+}
+
+function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2 }) {
+  return (
+    <div className="flex flex-wrap items-center justify-start gap-2">
+      <div className="inline-flex w-fit items-center rounded-full border border-[#2b4f6b] bg-[#071828] p-1 text-[10px] font-normal shadow-inner shadow-black/20">
+        {(["pg1", "pg2"]).map((pg) => {
+          const selected = normalizeInsertionPg(activePg) === pg;
+          return (
+            <button
+              key={pg}
+              type="button"
+              onClick={() => onPgChange?.(pg)}
+              className="rounded-full px-3 py-1 transition-all"
+              style={selected ? MAIN_STABLING_BUTTON_PRIMARY : { color: "#7eb8e0", background: "transparent" }}
+              title={pg === "pg1" ? "PG1 default stabling" : "PG2 editable stabling"}
+            >
+              {pg.toUpperCase()}
+            </button>
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        onClick={onRefreshPg2}
+        className="group flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-normal transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
+        style={MAIN_STABLING_BUTTON_BLUE}
+        title="Refresh only this depot's PG2 from its current PG1 stabling"
+      >
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 12a9 9 0 0 1-15.5 6.2" />
+          <path d="M3 12A9 9 0 0 1 18.5 5.8" />
+          <path d="M18 2v4h4" />
+          <path d="M6 22v-4H2" />
+        </svg>
+        Refresh PG2
+      </button>
     </div>
   );
 }
@@ -4253,11 +4311,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   <button
                     type="button"
                     onClick={handleInsertedUndoClick}
-                    className="w-full border-0 bg-transparent p-0 text-center text-[10px] font-normal leading-tight text-green-300 transition-colors hover:text-green-100"
+                    className="w-full rounded-lg border border-green-500 bg-green-200 px-1 py-0.5 text-[9px] font-bold leading-tight text-green-900 transition-all hover:bg-green-100"
                     title="Click to undo insertion"
                     aria-label="Undo insertion"
                   >
-                    ✓ INSERT COMP.
+                    INSERT COMP.
                   </button>
                 </>
               )
@@ -4269,7 +4327,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   );
 }
 
-function InsertionStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange }) {
+function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, stablingEditable = false, onEditableTrainIdChange }) {
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
 
@@ -4450,6 +4508,13 @@ function InsertionStablingSection({ title, blockLabels, blockIndices, roads, dat
     >
       <InsertionSectionTitle
         title={title}
+        leftAction={
+          <InsertionPgHeaderControls
+            activePg={activePg}
+            onPgChange={onPgChange}
+            onRefreshPg2={onRefreshPg2}
+          />
+        }
         action={
           <div className="flex items-center gap-2">
             <button
@@ -5931,7 +5996,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   );
 }
 
-function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, onRemoveInsertionLog, onClearInsertionDepot, onClearInsertedTidRemarks, onClearInsertedTrains, tidInputs, onTidChange, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug, activePg = "pg1", onPgChange, onRefreshPg2, stablingEditable = false, onEditableTrainIdChange }) {
+function InsertionTabContent({ westSection, eastSection, maintenanceMap, insertionLog, onClearInsertionDepot, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug }) {
   // TID schedule range: earliest first-TID time across both series, latest last-TID time.
   // Series 1xx: 05:25–06:22 | Series 2xx: 05:24–06:21
   // Grey-out in the TID Reference Table only applies while current time is within this window.
@@ -5942,42 +6007,10 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex w-fit items-center rounded-full border border-[#2b4f6b] bg-[#071828] p-1 text-[10px] font-normal shadow-inner shadow-black/20">
-          {(["pg1", "pg2"]).map((pg) => {
-            const selected = normalizeInsertionPg(activePg) === pg;
-            return (
-              <button
-                key={pg}
-                type="button"
-                onClick={() => onPgChange?.(pg)}
-                className="rounded-full px-3 py-1 transition-all"
-                style={selected ? MAIN_STABLING_BUTTON_PRIMARY : { color: "#7eb8e0", background: "transparent" }}
-                title={pg === "pg1" ? "PG1 default stabling" : "PG2 editable stabling"}
-              >
-                {pg.toUpperCase()}
-              </button>
-            );
-          })}
-        </div>
-        <button
-          type="button"
-          onClick={onRefreshPg2}
-          className="group flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-normal transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
-          style={MAIN_STABLING_BUTTON_BLUE}
-          title="Refresh PG2 back to the current default PG1 stabling"
-        >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12a9 9 0 0 1-15.5 6.2" />
-            <path d="M3 12A9 9 0 0 1 18.5 5.8" />
-            <path d="M18 2v4h4" />
-            <path d="M6 22v-4H2" />
-          </svg>
-          Refresh PG2
-        </button>
         <div className="flex min-w-[280px] max-w-[620px] items-center gap-2 rounded-xl border border-sky-500/25 bg-gradient-to-r from-[#0a2440]/90 to-[#071827]/90 px-3 py-1.5 text-[11px] font-normal leading-snug text-[#e5eef8] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
           <span className="shrink-0 text-[12px] font-black text-sky-400">PG2 Editable Train ID</span>
           <span>
-            Go to <span className="text-yellow-300">PG2</span> if a train ID needs to be changed or removed from STB. No need to edit it from the main page.
+            Select <span className="text-yellow-300">PG2</span> beside the relevant depot header to change or remove its Train ID. Each depot is controlled separately.
           </span>
         </div>
         <div className={`inline-flex w-fit items-center rounded-full border px-3 py-1 text-[11px] font-bold ${insertionLiveStatusClass || "border-slate-600/50 bg-slate-950/40 text-slate-300"}`}>
@@ -6000,13 +6033,35 @@ function InsertionTabContent({ westData, eastData, maintenanceMap, insertionLog,
 
         {/* Stabling sections — centre column */}
         <div className="space-y-5 min-w-0">
-          <InsertionStablingSection title="WEST DEPOT" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onSweepUpdate={onSweepUpdate} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditableTrainIdChange?.("west", road, bi, value)} />
-          <InsertionStablingSection title="EAST DEPOT" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onSweepUpdate={onSweepUpdate} tidInputs={tidInputs} onTidChange={onTidChange} onClearInsertedTidRemarks={onClearInsertedTidRemarks} onClearInsertedTrains={onClearInsertedTrains} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} stablingEditable={stablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditableTrainIdChange?.("east", road, bi, value)} />
+          <InsertionStablingSection
+            title="WEST DEPOT"
+            blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]}
+            blockIndices={[6,5,4,3,2,1,0]}
+            roads={WEST_ROADS}
+            labelSide="left"
+            maintenanceMap={maintenanceMap}
+            getTidScheduledTime={getTidScheduledTime}
+            getTidAssistRemark={getTidAssistRemark}
+            getTidAssistRemarkStyle={getTidAssistRemarkStyle}
+            {...westSection}
+          />
+          <InsertionStablingSection
+            title="EAST DEPOT"
+            blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]}
+            blockIndices={[0,1,2,3,4,5,6]}
+            roads={EAST_ROADS}
+            labelSide="right"
+            maintenanceMap={maintenanceMap}
+            getTidScheduledTime={getTidScheduledTime}
+            getTidAssistRemark={getTidAssistRemark}
+            getTidAssistRemarkStyle={getTidAssistRemarkStyle}
+            {...eastSection}
+          />
         </div>
       </div>
 
       {/* Insertion log — full width below stabling tables */}
-      <InsertionLogOutput insertionLog={sortInsertionLogByTime(insertionLog)} onRemove={onRemoveInsertionLog} onClearDepot={onClearInsertionDepot} />
+      <InsertionLogOutput insertionLog={sortInsertionLogByTime(insertionLog)} onClearDepot={onClearInsertionDepot} />
     </div>
   );
 }
@@ -13628,12 +13683,34 @@ export default function DepotStablingPage() {
     });
   }, [markInsertionLiveLocalEdit]);
 
-  const handleRefreshPg2FromDefault = useCallback(() => {
+  const handleRefreshPg2FromDefault = useCallback((depot) => {
     markInsertionLiveLocalEdit();
-    setPg2Stabling(cloneInsertionStablingState(westDataRef.current, eastDataRef.current));
-    setPg2InsertionLog([]);
-    setPg2TidInputs({});
-    setActiveInsertionPg("pg2");
+    const normalizedDepot = normalizeDepotKey(depot);
+    const targetRoads = normalizedDepot === "west" ? WEST_ROADS : EAST_ROADS;
+
+    // Refresh only the selected depot. The other depot's PG2 layout and work stay untouched.
+    setPg2Stabling((prev) => {
+      const next = cloneInsertionStablingState(prev?.westData || {}, prev?.eastData || {});
+      if (normalizedDepot === "west") {
+        next.westData = normalizeStablingDepotData(westDataRef.current, WEST_ROADS);
+      } else {
+        next.eastData = normalizeStablingDepotData(eastDataRef.current, EAST_ROADS);
+      }
+      return next;
+    });
+
+    setPg2InsertionLog((prev) => prev.filter((entry) => entry?.depot !== normalizedDepot));
+    setPg2TidInputs((prev) => {
+      const next = { ...prev };
+      targetRoads.forEach((road) => {
+        for (let bi = 0; bi < 7; bi += 1) delete next[`${road}-${bi}`];
+      });
+      return next;
+    });
+    setActiveInsertionPg((prev) => ({
+      ...normalizeInsertionPgByDepot(prev),
+      [normalizedDepot]: "pg2",
+    }));
   }, [markInsertionLiveLocalEdit]);
 
   const getDepotFromRoad = (road) => WEST_ROADS.includes(road) ? "west" : "east";
@@ -13941,20 +14018,65 @@ export default function DepotStablingPage() {
   const westStablingKeys = getWestStablingKeys(westData);
   const westStablingLocations = getWestStablingLocations(westData);
   const maintenanceMap = buildMaintenanceMap(requests, westStablingKeys);
-  const activeInsertionPgKey = normalizeInsertionPg(activeInsertionPg);
-  const activeInsertionWestData = activeInsertionPgKey === "pg2" ? pg2Stabling.westData : westData;
-  const activeInsertionEastData = activeInsertionPgKey === "pg2" ? pg2Stabling.eastData : eastData;
-  const activeInsertionLog = activeInsertionPgKey === "pg2" ? pg2InsertionLog : insertionLog;
-  const activeInsertionTidInputs = activeInsertionPgKey === "pg2" ? pg2TidInputs : tidInputs;
-  const activeInsertionTickHandler = activeInsertionPgKey === "pg2" ? handlePg2InsertionTick : handleInsertionTick;
-  const activeInsertionTimeUpdateHandler = activeInsertionPgKey === "pg2" ? handlePg2InsertionTimeUpdate : handleInsertionTimeUpdate;
-  const activeInsertionRemarkUpdateHandler = activeInsertionPgKey === "pg2" ? handlePg2InsertionRemarkUpdate : handleInsertionRemarkUpdate;
-  const activeSweepUpdateHandler = activeInsertionPgKey === "pg2" ? handlePg2SweepUpdate : handleSweepUpdate;
-  const activeInsertionRemoveHandler = activeInsertionPgKey === "pg2" ? handleRemovePg2InsertionLog : handleRemoveInsertionLog;
-  const activeInsertionClearDepotHandler = activeInsertionPgKey === "pg2" ? handleClearPg2InsertionDepot : handleClearInsertionDepot;
-  const activeClearInsertedTidRemarksHandler = activeInsertionPgKey === "pg2" ? handleClearPg2InsertedTidRemarks : handleClearInsertedTidRemarks;
-  const activeClearInsertedTrainsHandler = activeInsertionPgKey === "pg2" ? handleClearPg2InsertedTrains : handleClearInsertedTrains;
-  const activeTidChangeHandler = activeInsertionPgKey === "pg2" ? handlePg2TidChange : handleTidChange;
+  const activeInsertionPgByDepot = normalizeInsertionPgByDepot(activeInsertionPg);
+  const westInsertionPg = activeInsertionPgByDepot.west;
+  const eastInsertionPg = activeInsertionPgByDepot.east;
+
+  const getInsertionEntriesForDepot = (log = [], depot = "west") => (Array.isArray(log) ? log : []).filter((entry) => {
+    const entryDepot = entry?.depot || getDepotFromRoad(entry?.road || "");
+    return entryDepot === depot;
+  });
+
+  const westInsertionSourceLog = westInsertionPg === "pg2" ? pg2InsertionLog : insertionLog;
+  const eastInsertionSourceLog = eastInsertionPg === "pg2" ? pg2InsertionLog : insertionLog;
+  const activeInsertionLog = sortInsertionLogByTime([
+    ...getInsertionEntriesForDepot(westInsertionSourceLog, "west"),
+    ...getInsertionEntriesForDepot(eastInsertionSourceLog, "east"),
+  ]);
+
+  const updateActiveInsertionPgForDepot = (depot, pg) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    setActiveInsertionPg((prev) => ({
+      ...normalizeInsertionPgByDepot(prev),
+      [normalizedDepot]: normalizeInsertionPg(pg),
+    }));
+  };
+
+  const buildInsertionSectionConfig = (depot, pg) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    const isPg2 = normalizeInsertionPg(pg) === "pg2";
+    const isWest = normalizedDepot === "west";
+
+    return {
+      activePg: normalizeInsertionPg(pg),
+      onPgChange: (nextPg) => updateActiveInsertionPgForDepot(normalizedDepot, nextPg),
+      onRefreshPg2: () => handleRefreshPg2FromDefault(normalizedDepot),
+      data: isPg2
+        ? (isWest ? pg2Stabling.westData : pg2Stabling.eastData)
+        : (isWest ? westData : eastData),
+      insertionLog: isPg2 ? pg2InsertionLog : insertionLog,
+      onInsertionTick: isPg2 ? handlePg2InsertionTick : handleInsertionTick,
+      onInsertionTimeUpdate: isPg2 ? handlePg2InsertionTimeUpdate : handleInsertionTimeUpdate,
+      onInsertionRemarkUpdate: isPg2 ? handlePg2InsertionRemarkUpdate : handleInsertionRemarkUpdate,
+      onSweepUpdate: isPg2 ? handlePg2SweepUpdate : handleSweepUpdate,
+      tidInputs: isPg2 ? pg2TidInputs : tidInputs,
+      onTidChange: isPg2 ? handlePg2TidChange : handleTidChange,
+      onClearInsertedTidRemarks: isPg2 ? handleClearPg2InsertedTidRemarks : handleClearInsertedTidRemarks,
+      onClearInsertedTrains: isPg2 ? handleClearPg2InsertedTrains : handleClearInsertedTrains,
+      stablingEditable: isPg2,
+      onEditableTrainIdChange: (road, bi, value) => handlePg2TrainIdChange(normalizedDepot, road, bi, value),
+    };
+  };
+
+  const westInsertionSection = buildInsertionSectionConfig("west", westInsertionPg);
+  const eastInsertionSection = buildInsertionSectionConfig("east", eastInsertionPg);
+
+  const handleActiveInsertionClearDepot = (depot) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    const activePg = normalizedDepot === "west" ? westInsertionPg : eastInsertionPg;
+    if (activePg === "pg2") handleClearPg2InsertionDepot(normalizedDepot);
+    else handleClearInsertionDepot(normalizedDepot);
+  };
 
   if (!loaded) {
     return (
@@ -14382,20 +14504,11 @@ export default function DepotStablingPage() {
 
         {activeTab === "insertion" && (
           <InsertionTabContent
-            westData={activeInsertionWestData}
-            eastData={activeInsertionEastData}
+            westSection={westInsertionSection}
+            eastSection={eastInsertionSection}
             maintenanceMap={maintenanceMap}
             insertionLog={activeInsertionLog}
-            onInsertionTick={activeInsertionTickHandler}
-            onInsertionTimeUpdate={activeInsertionTimeUpdateHandler}
-            onInsertionRemarkUpdate={activeInsertionRemarkUpdateHandler}
-            onSweepUpdate={activeSweepUpdateHandler}
-            onRemoveInsertionLog={activeInsertionRemoveHandler}
-            onClearInsertionDepot={activeInsertionClearDepotHandler}
-            onClearInsertedTidRemarks={activeClearInsertedTidRemarksHandler}
-            onClearInsertedTrains={activeClearInsertedTrainsHandler}
-            tidInputs={activeInsertionTidInputs}
-            onTidChange={activeTidChangeHandler}
+            onClearInsertionDepot={handleActiveInsertionClearDepot}
             getTidScheduledTime={getTidScheduledTime}
             getTidAssistRemark={getTidAssistRemark}
             getTidAssistRemarkStyle={getTidAssistRemarkStyle}
@@ -14404,11 +14517,6 @@ export default function DepotStablingPage() {
             insertionLiveStatusText={insertionLiveStatusText}
             insertionLiveStatusClass={insertionLiveStatusClass}
             insertionLiveDebug={insertionLiveDebug}
-            activePg={activeInsertionPgKey}
-            onPgChange={setActiveInsertionPg}
-            onRefreshPg2={handleRefreshPg2FromDefault}
-            stablingEditable={activeInsertionPgKey === "pg2"}
-            onEditableTrainIdChange={handlePg2TrainIdChange}
           />
         )}
 
