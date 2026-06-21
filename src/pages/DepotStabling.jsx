@@ -6075,7 +6075,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
       {/* Top row: TID Reference Table (left) + Stabling sections (centre) */}
       <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto 1fr" }}>
         {/* TID Reference Tables — left column */}
-        <div className="sticky top-16">
+        <div className="self-start">
           <TIDReferenceTable withinSchedule={withinTIDSchedule} activeTimetable={activeTimetable} activeTimetableType={activeTimetableType} />
         </div>
 
