@@ -4050,7 +4050,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
   if (expired) {
     return (
-      <td className="p-2 align-middle" title="Elapsed TID hidden manually" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
+      <td className="p-1.5 align-middle" title="Elapsed TID hidden manually" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
         <div className="flex h-full flex-col items-center justify-center gap-1 rounded-xl select-none" style={{ minHeight: rowCardMinHeight, height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, opacity: 0.55 }}>
           <div className="w-full text-center font-black leading-none" style={{ fontSize: 14, color: "#3a5068" }}>{displayVal || "—"}</div>
           {insertedRemarkLabel && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
@@ -4062,13 +4062,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   }
 
   return (
-    <td className="p-2 align-middle" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
+    <td className="p-1.5 align-middle" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
       <div
         className={`relative flex h-full flex-col items-center justify-start rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
         style={{
-          minHeight: Math.max(inserted?.isSweeping ? 136 : isInsertionDone ? ((insertedTid || hasInsertedPlainRemark) ? 112 : 124) : 98, rowCardMinHeight),
+          minHeight: Math.max(inserted?.isSweeping ? 132 : isInsertionDone ? ((insertedTid || hasInsertedPlainRemark) ? 100 : 112) : 98, rowCardMinHeight),
           height: "100%",
-          padding: isInsertionDone ? "7px 5px" : "9px 7px",
+          padding: isInsertionDone ? "6px 5px" : "8px 7px",
           background: insCardBg,
           border: insCardBorder,
           boxShadow: insCardGlow,
@@ -4644,10 +4644,12 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
               const rowMaintenanceSlotHeight = rowMaxMaintenanceCount > 0
                 ? 16 + ((rowMaxMaintenanceCount - 1) * 22)
                 : 0;
-              const rowCardMinHeight = blockIndices.reduce((maxHeight, blockIndex) => {
+              // The maintenance slot is already reserved evenly for every card in the row.
+              // Add it only once; the previous calculation counted extra maintenance height again,
+              // which made completed TID rows noticeably taller than their visible content.
+              const rowBaseMinHeight = blockIndices.reduce((maxHeight, blockIndex) => {
                 const rowBlock = data[road]?.[blockIndex];
                 const rowTrainKey = normalizeTrainId(rowBlock?.trainId || "");
-                const rowMaintenanceCount = rowTrainKey ? (maintenanceMap[rowTrainKey] || []).length : 0;
                 const rowEntry = getActiveInsertionEntryForCell(insertionLog, road, blockIndex, rowTrainKey);
                 const rowEntryTid = rowEntry?.tid !== null && rowEntry?.tid !== undefined
                   ? Number(String(rowEntry.tid).replace(/\D/g, ""))
@@ -4657,10 +4659,10 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
                   rowEntryTid && typeof getTidScheduledTime === "function" &&
                   getTidScheduledTime(rowEntryTid, rowEntryDepot, { allowFallback: false })
                 );
-                const baseHeight = rowEntry?.isSweeping ? 178 : rowEntry ? (rowHasValidTid ? 112 : 132) : 98;
-                const maintenanceHeight = rowMaintenanceCount > 0 ? 8 + (rowMaintenanceCount * 20) : 0;
-                return Math.max(maxHeight, baseHeight + maintenanceHeight);
+                const baseHeight = rowEntry?.isSweeping ? 168 : rowEntry ? (rowHasValidTid ? 100 : 120) : 98;
+                return Math.max(maxHeight, baseHeight);
               }, 98);
+              const rowCardMinHeight = rowBaseMinHeight + rowMaintenanceSlotHeight;
               const labelCell = (
                 <td className="text-center align-middle text-[12px] font-black tracking-tight uppercase" style={{ background: INSERTION_PANEL_COLORS.header, color: "#d6e7f4", borderTop: ri === 0 ? "none" : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderBottom: rowLine, borderRight: labelSide === "left" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderLeft: labelSide === "right" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, whiteSpace: "nowrap", width: 68, minWidth: 68, letterSpacing: "0.025em", borderTopLeftRadius: labelSide === "left" && ri === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && ri === 0 ? 12 : undefined, borderBottomLeftRadius: labelSide === "left" && ri === roads.length - 1 ? 12 : undefined, borderBottomRightRadius: labelSide === "right" && ri === roads.length - 1 ? 12 : undefined }}>
                   <div className="flex flex-col items-center justify-center gap-1 leading-none">
