@@ -951,7 +951,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
             <tr>
               <th
                 style={{
-                  width: isWeekday ? "55%" : "68%",
+                  width: isWeekday ? "60%" : "68%",
                   padding: "6px 5px",
                   textAlign: "center",
                   color: accent.text,
@@ -970,7 +970,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               </th>
               <th
                 style={{
-                  width: isWeekday ? "45%" : "32%",
+                  width: isWeekday ? "40%" : "32%",
                   padding: "6px 5px",
                   textAlign: "center",
                   color: accent.text,
