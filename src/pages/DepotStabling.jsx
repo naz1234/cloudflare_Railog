@@ -9,6 +9,7 @@ import OdoReading from "../components/OdoReading";
 import TIDReferenceTable, { getTidReferenceRemark } from "../components/TIDReferenceTable";
 import PSTLogOutput from "../components/depot/PSTLogOutput";
 import InsertionLogOutput from "../components/depot/InsertionLogOutput";
+import InsertionHowToUse from "../components/depot/InsertionHowToUse";
 
 const DEFAULT_BOOKMARK_LINKS = [
   { title: "Outlook", url: "https://outlook.office.com", sortOrder: 0 },
@@ -6111,6 +6112,9 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
 
       {/* Insertion log — full width below stabling tables */}
       <InsertionLogOutput insertionLog={sortInsertionLogByTime(insertionLog)} onClearDepot={onClearInsertionDepot} />
+
+      {/* Beginner guide — full width below the log output */}
+      <InsertionHowToUse />
     </div>
   );
 }
