@@ -20,7 +20,7 @@ const steps = [
     detailTitle: "Why this must be checked first",
     details: [
       "Look at the active timetable shown in the TID Reference Table. Confirm that it matches the current operating day: Weekday, Friday, Saturday or Public Holiday.",
-      "The active timetable decides which 3-digit TIDs are recognised, the scheduled insertion time, and any Weekday assistance remark such as Early Rem, Late Rem, ED or ED (7pm).",
+      "The active timetable decides which 3-digit TIDs are recognised, the scheduled insertion time, and any Weekday assistance remark such as WD (9am), WD (7pm), ED (9am) or ED (7pm).",
       "A 3-digit number that is not found in the active timetable is not treated as a timetable TID. It remains a manual remark and must be completed with the Insert button.",
       "Do not begin bulk entry when the wrong timetable is active. Correct the timetable first so the timing and TID matching are accurate.",
     ],

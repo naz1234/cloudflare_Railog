@@ -3680,6 +3680,16 @@ function getInsertionAssistRemarkStyle(remark = "") {
   return normalized ? INSERTION_ASSIST_REMARK_STYLES[normalized] || null : null;
 }
 
+function getInsertionAssistRemarkDisplayLabel(remark = "") {
+  const normalized = normalizeInsertionAssistRemark(remark) || String(remark || "").trim();
+
+  if (normalized === "Late Rem") return "WD (7pm)";
+  if (normalized === "Early Rem") return "WD (9am)";
+  if (normalized === "ED") return "ED (9am)";
+
+  return normalized;
+}
+
 function getTimetableInsertionRemarkMap(activeTimetable = null, depot = "west") {
   const parsed = getActiveTimetableParsedData(activeTimetable);
   const depotKey = normalizeDepotKey(depot);
@@ -3945,6 +3955,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const insertedTidRemarkStyle = insertedTid && typeof getTidAssistRemarkStyle === "function"
     ? getTidAssistRemarkStyle(insertedTid, autoTidDepot)
     : null;
+  const insertedTidAssistDisplayRemark = getInsertionAssistRemarkDisplayLabel(insertedTidAssistRemark);
   const useLargerWeekdayAssistRemark = Boolean(
     isWeekdayActive && ["Early Rem", "Late Rem", "ED", "ED (7pm)"].includes(insertedTidAssistRemark)
   );
@@ -4285,18 +4296,18 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                           lineHeight: "16px",
                           whiteSpace: "nowrap",
                         }}
-                        title={`Click ${insertedTidAssistRemark} to undo insertion`}
-                        aria-label={`Undo insertion for ${insertedTidAssistRemark}`}
+                        title={`Click ${insertedTidAssistDisplayRemark} to undo insertion`}
+                        aria-label={`Undo insertion for ${insertedTidAssistDisplayRemark}`}
                       >
-                        {insertedTidAssistRemark}
+                        {insertedTidAssistDisplayRemark}
                       </button>
                     ) : (
                       <span
                         className="col-span-2 min-w-0 justify-self-center text-center text-[12px] font-normal leading-tight"
                         style={{ color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
-                        title={insertedTidAssistRemark}
+                        title={insertedTidAssistDisplayRemark}
                       >
-                        {insertedTidAssistRemark}
+                        {insertedTidAssistDisplayRemark}
                       </span>
                     )
                   )}
