@@ -4074,7 +4074,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           boxShadow: insCardGlow,
         }}
       >
-        <div className={`flex w-full flex-col items-center ${isInsertionDone ? "gap-1" : "gap-2"}`}>
+        <div className={`flex w-full flex-col items-center ${hasInsertedPlainRemark ? "flex-1 gap-0" : (isInsertionDone ? "gap-1" : "gap-2")}`}>
           {stablingEditable ? (
             <input
               type="text"
@@ -4129,8 +4129,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             <button
               type="button"
               onClick={handleInsertedUndoClick}
-              className={`inline-flex w-full items-center justify-center self-stretch border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none transition-colors hover:text-red-200 focus-visible:text-red-200 ${maintList.length > 0 ? "mt-1" : "mt-[3px]"}`}
-              style={{ color: activeTidRemarkStyle?.color || "#4ade80", textAlign: "center" }}
+              className={`inline-flex w-full flex-1 items-center justify-center self-stretch border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none transition-colors hover:text-red-200 focus-visible:text-red-200 ${maintList.length > 0 ? "mt-1" : "mt-[3px]"}`}
+              style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
               title={`Click ${insertedPlainRemark} to undo insertion`}
               aria-label={`Undo insertion for remark ${insertedPlainRemark}`}
             >
