@@ -6066,18 +6066,6 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex min-w-[280px] max-w-[620px] items-center gap-2 rounded-xl border border-sky-500/25 bg-gradient-to-r from-[#0a2440]/90 to-[#071827]/90 px-3 py-1.5 text-[11px] font-normal leading-snug text-[#e5eef8] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-          <span className="shrink-0 text-[12px] font-black text-sky-400">PG2 Editable Train ID</span>
-          <span>
-            Select <span className="text-yellow-300">PG2</span> beside the relevant depot header to change or remove its Train ID. Each depot is controlled separately.
-          </span>
-        </div>
-        <div className={`inline-flex w-fit items-center rounded-full border px-3 py-1 text-[11px] font-bold ${insertionLiveStatusClass || "border-slate-600/50 bg-slate-950/40 text-slate-300"}`}>
-          {insertionLiveStatusText || "Insertion Local only"}
-        </div>
-      </div>
-
       {insertionLiveDebug && (
         <div className="w-fit rounded-xl border border-amber-600/40 bg-amber-950/25 px-3 py-2 text-[11px] text-amber-200">
           {insertionLiveDebug}
