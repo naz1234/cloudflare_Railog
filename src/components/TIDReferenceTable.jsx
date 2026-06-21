@@ -284,6 +284,16 @@ function getDefaultScheduleKey() {
   return getTodayScheduleKey(new Date());
 }
 
+function getDisplayAssistRemark(remark = "") {
+  const normalized = normalizeAssistRemark(remark) || String(remark || "").trim();
+
+  if (normalized === "Late Rem") return "WD (7pm)";
+  if (normalized === "Early Rem") return "WD (9am)";
+  if (normalized === "ED") return "ED (9am)";
+
+  return normalized;
+}
+
 function getRemarkStyle(remark) {
   const normalized = normalizeAssistRemark(remark) || String(remark || "").trim();
 
@@ -1056,7 +1066,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {remark}
+                          {getDisplayAssistRemark(remark)}
                         </span>
                       )}
                     </div>
