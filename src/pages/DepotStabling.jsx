@@ -4066,7 +4066,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
       <div
         className={`relative flex h-full flex-col items-center justify-start rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
         style={{
-          minHeight: Math.max(inserted?.isSweeping ? 132 : isInsertionDone ? ((insertedTid || hasInsertedPlainRemark) ? 100 : 112) : 98, rowCardMinHeight),
+          minHeight: Math.max(inserted?.isSweeping ? 132 : isInsertionDone ? ((insertedTid || hasInsertedPlainRemark) ? 100 : 104) : 98, rowCardMinHeight),
           height: "100%",
           padding: isInsertionDone ? "6px 5px" : "8px 7px",
           background: insCardBg,
@@ -4659,7 +4659,17 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
                   rowEntryTid && typeof getTidScheduledTime === "function" &&
                   getTidScheduledTime(rowEntryTid, rowEntryDepot, { allowFallback: false })
                 );
-                const baseHeight = rowEntry?.isSweeping ? 168 : rowEntry ? (rowHasValidTid ? 100 : 120) : 98;
+                const rowHasPlainRemark = Boolean(
+                  rowEntry &&
+                  !rowEntry.isSweeping &&
+                  !rowHasValidTid &&
+                  String(rowEntry.remark ?? rowEntryTid ?? "").trim()
+                );
+                const baseHeight = rowEntry?.isSweeping
+                  ? 168
+                  : rowEntry
+                    ? (rowHasValidTid ? 100 : rowHasPlainRemark ? 120 : 104)
+                    : 98;
                 return Math.max(maxHeight, baseHeight);
               }, 98);
               const rowCardMinHeight = rowBaseMinHeight + rowMaintenanceSlotHeight;
