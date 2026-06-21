@@ -4224,38 +4224,36 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               ) : (
                 <>
-                  <div className="w-full rounded-lg border border-blue-500/60 bg-blue-950/30 px-1 py-1">
-                    <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap">
-                      <span className="shrink-0 text-[10px] font-bold leading-tight text-blue-300">INSERT TIME :</span>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={5}
-                        value={insertedDisplayTime}
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => {
-                          const value = String(insertedDisplayTime || "");
-                          const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-                          if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                            e.preventDefault();
-                            onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
-                          }
-                        }}
-                        onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
-                        onBlur={(e) => {
-                          const normalized = normalizeMovementCustomTimeInput(e.target.value);
-                          onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
-                        }}
-                        placeholder="00:00"
-                        className="w-full rounded-md border border-blue-500/50 bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700 focus:border-blue-300"
-                        title="Edit insertion completion time"
-                      />
-                    </div>
+                  <div className="flex w-full items-center justify-center gap-1 whitespace-nowrap px-1 text-[12px] font-normal leading-tight">
+                    <span className="shrink-0 text-blue-300">TIME :</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      value={insertedDisplayTime}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => {
+                        const value = String(insertedDisplayTime || "");
+                        const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                        if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                          e.preventDefault();
+                          onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
+                        }
+                      }}
+                      onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
+                      onBlur={(e) => {
+                        const normalized = normalizeMovementCustomTimeInput(e.target.value);
+                        onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
+                      }}
+                      placeholder="00:00"
+                      className="w-[42px] border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                      title="Edit insertion completion time"
+                    />
                   </div>
                   <button
                     type="button"
                     onClick={handleInsertedUndoClick}
-                    className="w-full rounded-lg border border-green-500 bg-green-200 px-1 py-0.5 text-[9px] font-bold leading-tight text-green-900 transition-all hover:bg-green-100"
+                    className="w-full border-0 bg-transparent p-0 text-center text-[10px] font-normal leading-tight text-green-300 transition-colors hover:text-green-100"
                     title="Click to undo insertion"
                     aria-label="Undo insertion"
                   >
