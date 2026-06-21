@@ -4003,7 +4003,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               onBlur={() => setIsTrainIdEditing(false)}
               onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
               placeholder="Train ID"
-              className="h-7 w-full border-0 border-b px-1.5 text-center text-[15px] font-black uppercase outline-none placeholder:text-[#47637a]"
+              className="h-7 w-full border-0 border-b px-1.5 text-center text-[15px] font-black uppercase outline-none placeholder:text-[10px] placeholder:text-[#47637a]"
               style={{
                 borderBottomColor: key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine,
                 backgroundColor: "transparent",
