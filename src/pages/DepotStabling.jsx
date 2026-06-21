@@ -4110,7 +4110,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           {rowMaintenanceSlotHeight > 0 && (
             <div
               className="flex w-full shrink-0 flex-col items-center justify-start gap-1.5"
-              style={{ height: rowMaintenanceSlotHeight, minHeight: rowMaintenanceSlotHeight }}
+              style={{ height: rowMaintenanceSlotHeight, minHeight: rowMaintenanceSlotHeight, marginTop: 3 }}
               aria-hidden={maintList.length === 0 ? "true" : undefined}
             >
               {maintList.map((item) => (
@@ -4129,8 +4129,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             <button
               type="button"
               onClick={handleInsertedUndoClick}
-              className={`w-full border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none transition-colors hover:text-red-200 focus-visible:text-red-200 ${maintList.length > 0 ? "mt-1" : ""}`}
-              style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
+              className={`inline-flex w-full items-center justify-center self-stretch border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none transition-colors hover:text-red-200 focus-visible:text-red-200 ${maintList.length > 0 ? "mt-1" : "mt-[3px]"}`}
+              style={{ color: activeTidRemarkStyle?.color || "#4ade80", textAlign: "center" }}
               title={`Click ${insertedPlainRemark} to undo insertion`}
               aria-label={`Undo insertion for remark ${insertedPlainRemark}`}
             >
