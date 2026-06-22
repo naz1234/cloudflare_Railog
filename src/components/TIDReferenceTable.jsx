@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { Check } from "lucide-react";
 
 const WEEKDAY_EAST_ROWS = [
   { tid: 201, remark: "Late Rem", time: "05:24" },
@@ -836,7 +837,7 @@ function ScheduleWarningBanner({ selectedLabel, todayLabel, onSwitchToToday }) {
   );
 }
 
-function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedule, isScheduleOverride, onTidDragStart, activeDragKey = "" }) {
+function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedule, isScheduleOverride, onTidDragStart, activeDragKey = "", usedTidKeys = new Set() }) {
   const accent = DEPOT_ACCENTS[depotType];
   const activeIndex = getActiveIndex(rows, nowMinutes);
   const isWeekday = dayLabel === "Weekday";
@@ -1009,6 +1010,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               const isHovered = hoveredRowKey === rowDragKey && !isDraggingSource;
               const isRaised = isHovered || isDraggingSource;
               const interactionColor = remark ? remarkStyle.sideColor : accent.accent;
+              const isUsed = Boolean(isWeekday && remark && usedTidKeys.has(String(tid)));
 
               const commonCellStyle = {
                 padding: isWeekday ? "3px 6px" : "1px 6px",
@@ -1025,7 +1027,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               return (
                 <tr
                   key={tid}
-                  title={`Hold and drag TID ${tid} to a train card`}
+                  title={isUsed ? `TID ${tid} label is already used in stabling. Hold and drag to use it again.` : `Hold and drag TID ${tid} to a train card`}
                   onMouseEnter={() => setHoveredRowKey(rowDragKey)}
                   onMouseLeave={() => setHoveredRowKey((currentKey) => currentKey === rowDragKey ? "" : currentKey)}
                   onPointerDown={(event) => {
@@ -1099,6 +1101,27 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                         whiteSpace: "nowrap",
                       }}
                     >
+                      {isUsed && (
+                        <span
+                          aria-label={`TID ${tid} label already used in stabling`}
+                          title={`TID ${tid} label already used in stabling`}
+                          style={{
+                            display: "inline-flex",
+                            width: 18,
+                            height: 18,
+                            flex: "0 0 18px",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            borderRadius: 999,
+                            border: "1px solid rgba(110, 231, 183, 0.80)",
+                            background: "#58c96b",
+                            boxShadow: "0 0 8px rgba(88, 201, 107, 0.55)",
+                          }}
+                        >
+                          <Check size={12} strokeWidth={3.5} color="#ffffff" />
+                        </span>
+                      )}
+
                       <span
                         style={{
                           color: isActive ? "#ffffff" : "#e0f2fe",
@@ -1166,7 +1189,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
   );
 }
 
-export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday", onTidDragStart, activeDragKey = "" }) {
+export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday", onTidDragStart, activeDragKey = "", usedTidKeys = [] }) {
   const [now, setNow] = useState(new Date());
   const [soundSettings, setSoundSettings] = useState(loadTidSoundSettings);
   const [soundReady, setSoundReady] = useState(false);
@@ -1184,6 +1207,10 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
   const isScheduleOverride = scheduleKey !== todayScheduleKey;
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const isWeekday = scheduleKey === "weekday";
+  const usedTidKeySet = useMemo(
+    () => new Set((Array.isArray(usedTidKeys) ? usedTidKeys : Array.from(usedTidKeys || [])).map((tid) => String(tid))),
+    [usedTidKeys]
+  );
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 10000);
@@ -1307,6 +1334,7 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
             isScheduleOverride={isScheduleOverride}
             onTidDragStart={onTidDragStart}
             activeDragKey={activeDragKey}
+            usedTidKeys={usedTidKeySet}
           />
 
           <DepotCard
@@ -1319,6 +1347,7 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
             isScheduleOverride={isScheduleOverride}
             onTidDragStart={onTidDragStart}
             activeDragKey={activeDragKey}
+            usedTidKeys={usedTidKeySet}
           />
         </div>
       ) : (
@@ -1333,6 +1362,7 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
             isScheduleOverride={isScheduleOverride}
             onTidDragStart={onTidDragStart}
             activeDragKey={activeDragKey}
+            usedTidKeys={usedTidKeySet}
           />
 
           <DepotCard
@@ -1345,6 +1375,7 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
             isScheduleOverride={isScheduleOverride}
             onTidDragStart={onTidDragStart}
             activeDragKey={activeDragKey}
+            usedTidKeys={usedTidKeySet}
           />
         </>
       )}

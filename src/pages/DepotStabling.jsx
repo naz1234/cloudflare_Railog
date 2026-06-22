@@ -6207,6 +6207,51 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
   }, [tidDragState, tidDragPoint.x, tidDragPoint.y, resolveTidDropTarget]);
 
   const dragRemarkStyle = getInsertionAssistRemarkStyle(tidDragState?.remark || "");
+  const isWeekdayActiveTimetable = normalizeTimetableType(activeTimetableType) === "weekday";
+  const usedInsertionAssistTidKeys = useMemo(() => {
+    if (!isWeekdayActiveTimetable) return [];
+
+    const usedKeys = new Set();
+    const assistRemarks = new Set(["Early Rem", "Late Rem", "ED", "ED (7pm)"]);
+
+    const collectUsedTids = (section = {}, roads = [], depot = "west") => {
+      const sectionData = section?.data || {};
+      const sectionLog = Array.isArray(section?.insertionLog) ? section.insertionLog : [];
+
+      roads.forEach((road) => {
+        const blocks = Array.isArray(sectionData?.[road]) ? sectionData[road] : [];
+
+        blocks.forEach((block, bi) => {
+          const trainKey = normalizeTrainId(block?.trainId || "");
+          if (!trainKey) return;
+
+          const entry = getActiveInsertionEntryForCell(sectionLog, road, bi, trainKey);
+          const tid = entry?.tid !== null && entry?.tid !== undefined
+            ? Number(String(entry.tid).replace(/\D/g, ""))
+            : 0;
+          if (!tid) return;
+
+          const assistRemark = typeof getTidAssistRemark === "function"
+            ? getTidAssistRemark(tid, depot)
+            : "";
+
+          if (assistRemarks.has(assistRemark)) usedKeys.add(String(tid));
+        });
+      });
+    };
+
+    collectUsedTids(westSection, WEST_ROADS, "west");
+    collectUsedTids(eastSection, EAST_ROADS, "east");
+
+    return Array.from(usedKeys);
+  }, [
+    isWeekdayActiveTimetable,
+    westSection?.data,
+    westSection?.insertionLog,
+    eastSection?.data,
+    eastSection?.insertionLog,
+    getTidAssistRemark,
+  ]);
 
   // TID schedule range: earliest first-TID time across both series, latest last-TID time.
   // Series 1xx: 05:25–06:22 | Series 2xx: 05:24–06:21
@@ -6268,7 +6313,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
       <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto 1fr" }}>
         {/* TID Reference Tables — left column */}
         <div className="self-start">
-          <TIDReferenceTable withinSchedule={withinTIDSchedule} activeTimetable={activeTimetable} activeTimetableType={activeTimetableType} onTidDragStart={handleTidDragStart} activeDragKey={tidDragState?.sourceKey || ""} />
+          <TIDReferenceTable withinSchedule={withinTIDSchedule} activeTimetable={activeTimetable} activeTimetableType={activeTimetableType} onTidDragStart={handleTidDragStart} activeDragKey={tidDragState?.sourceKey || ""} usedTidKeys={usedInsertionAssistTidKeys} />
         </div>
 
         {/* Stabling sections — centre column */}
