@@ -836,7 +836,7 @@ function ScheduleWarningBanner({ selectedLabel, todayLabel, onSwitchToToday }) {
   );
 }
 
-function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedule, isScheduleOverride }) {
+function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedule, isScheduleOverride, onTidDragStart, activeDragKey = "" }) {
   const accent = DEPOT_ACCENTS[depotType];
   const activeIndex = getActiveIndex(rows, nowMinutes);
   const isWeekday = dayLabel === "Weekday";
@@ -1012,8 +1012,40 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                 transition: "all 180ms ease",
               };
 
+              const rowDragKey = `${depotType}:${tid}`;
+              const isDraggingSource = activeDragKey === rowDragKey;
+
               return (
-                <tr key={tid}>
+                <tr
+                  key={tid}
+                  title={`Hold and drag TID ${tid} to a train card`}
+                  onPointerDown={(event) => {
+                    if (event.button !== undefined && event.button !== 0) return;
+                    event.preventDefault();
+                    try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch {}
+                    onTidDragStart?.({
+                      tid,
+                      remark: remark || "",
+                      displayRemark: getDisplayAssistRemark(remark || ""),
+                      time,
+                      depotType,
+                      sourceKey: rowDragKey,
+                      pointerId: event.pointerId,
+                      clientX: event.clientX,
+                      clientY: event.clientY,
+                    });
+                  }}
+                  style={{
+                    cursor: isDraggingSource ? "grabbing" : "grab",
+                    touchAction: "none",
+                    userSelect: "none",
+                    transform: isDraggingSource ? "scale(1.018) translateY(-1px)" : "none",
+                    filter: isDraggingSource ? "brightness(1.16)" : "none",
+                    position: "relative",
+                    zIndex: isDraggingSource ? 5 : 1,
+                    transition: "transform 140ms ease, filter 140ms ease",
+                  }}
+                >
                   <td
                     style={{
                       ...commonCellStyle,
@@ -1096,7 +1128,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
   );
 }
 
-export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday" }) {
+export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday", onTidDragStart, activeDragKey = "" }) {
   const [now, setNow] = useState(new Date());
   const [soundSettings, setSoundSettings] = useState(loadTidSoundSettings);
   const [soundReady, setSoundReady] = useState(false);
@@ -1235,6 +1267,8 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
             nowMinutes={nowMinutes}
             withinSchedule={withinSchedule}
             isScheduleOverride={isScheduleOverride}
+            onTidDragStart={onTidDragStart}
+            activeDragKey={activeDragKey}
           />
 
           <DepotCard
@@ -1245,6 +1279,8 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
             nowMinutes={nowMinutes}
             withinSchedule={withinSchedule}
             isScheduleOverride={isScheduleOverride}
+            onTidDragStart={onTidDragStart}
+            activeDragKey={activeDragKey}
           />
         </div>
       ) : (
@@ -1257,6 +1293,8 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
             nowMinutes={nowMinutes}
             withinSchedule={withinSchedule}
             isScheduleOverride={isScheduleOverride}
+            onTidDragStart={onTidDragStart}
+            activeDragKey={activeDragKey}
           />
 
           <DepotCard
@@ -1267,6 +1305,8 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
             nowMinutes={nowMinutes}
             withinSchedule={withinSchedule}
             isScheduleOverride={isScheduleOverride}
+            onTidDragStart={onTidDragStart}
+            activeDragKey={activeDragKey}
           />
         </>
       )}

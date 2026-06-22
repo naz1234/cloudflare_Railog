@@ -3913,11 +3913,13 @@ function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2 
   );
 }
 
-function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0 }) {
+function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0, tidDropRequest = null, onTidDropApplied, isTidDragActive = false, isTidDropHovered = false }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
   const [suppressAutoInsert, setSuppressAutoInsert] = useState(false);
+  const localTidInputRef = useRef(null);
+  const appliedTidDropRef = useRef("");
   const maintList = key ? maintenanceMap[key] || [] : [];
   const isWestBottomRightCorner = labelSide === "left" && isLast && isLastBlock;
   const isEastBottomLeftCorner = labelSide === "right" && isLast && isFirstBlock;
@@ -3972,11 +3974,28 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     ? getTidScheduledTime(autoTid, autoTidDepot, { allowFallback: false })
     : null;
   const canAutoInsertTid = Boolean(key && !inserted && !suppressAutoInsert && autoTid !== null && autoScheduledTime);
+  const isTidDropEligible = Boolean(key && !inserted);
 
   useEffect(() => {
     if (!canAutoInsertTid) return;
     onInsertionTick(road, bi, key, tidInput);
   }, [canAutoInsertTid, road, bi, key, tidInput, onInsertionTick]);
+
+  useEffect(() => {
+    if (!tidDropRequest?.id || !isTidDropEligible) return;
+    if (appliedTidDropRef.current === tidDropRequest.id) return;
+
+    appliedTidDropRef.current = tidDropRequest.id;
+    setSuppressAutoInsert(true);
+    onTidChange?.(road, bi, String(tidDropRequest.tid || ""), { source: "drop" });
+
+    requestAnimationFrame(() => {
+      localTidInputRef.current?.focus?.();
+      localTidInputRef.current?.select?.();
+    });
+
+    onTidDropApplied?.(tidDropRequest.id);
+  }, [tidDropRequest, isTidDropEligible, onTidChange, road, bi, onTidDropApplied]);
 
   const handleInsertClick = () => {
     // SW / SW1 / SW2 mean Sweep. SW1 selects Track 01 and SW2 selects Track 02.
@@ -4075,6 +4094,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   return (
     <td className="p-1.5 align-middle" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
       <div
+        data-insertion-drop-target="true"
+        data-insertion-drop-eligible={isTidDropEligible ? "true" : "false"}
+        data-insertion-drop-depot={autoTidDepot}
+        data-insertion-drop-road={road}
+        data-insertion-drop-bi={bi}
         className={`relative flex h-full flex-col items-center justify-start rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
         style={{
           minHeight: Math.max(inserted?.isSweeping ? 132 : isInsertionDone ? ((insertedTid || hasInsertedPlainRemark) ? 100 : 104) : 98, rowCardMinHeight),
@@ -4082,7 +4106,19 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           padding: isInsertionDone ? "6px 5px" : "8px 7px",
           background: insCardBg,
           border: insCardBorder,
-          boxShadow: insCardGlow,
+          outline: isTidDropHovered
+            ? "2px solid #38bdf8"
+            : isTidDragActive && isTidDropEligible
+              ? "1px dashed rgba(125, 211, 252, 0.78)"
+              : "none",
+          outlineOffset: -3,
+          transform: isTidDropHovered ? "translateY(-3px) scale(1.025)" : isTidDragActive && isTidDropEligible ? "translateY(-1px) scale(1.008)" : "none",
+          boxShadow: isTidDropHovered
+            ? "0 12px 28px rgba(14, 165, 233, 0.34), 0 0 0 3px rgba(56, 189, 248, 0.12)"
+            : isTidDragActive && isTidDropEligible
+              ? "0 8px 20px rgba(14, 165, 233, 0.16)"
+              : insCardGlow,
+          transition: "transform 140ms ease, outline-color 140ms ease, box-shadow 140ms ease",
         }}
       >
         <div className={`flex w-full flex-col items-center ${hasInsertedPlainRemark ? "flex-1 gap-0" : (isInsertionDone ? "gap-1" : "gap-2")}`}>
@@ -4220,7 +4256,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           <div className={`mt-auto flex w-full flex-col items-center ${isInsertionDone ? "gap-1" : "gap-2"}`}>
             {!inserted && (
               <input
-                ref={tidInputRef}
+                ref={(element) => {
+                  localTidInputRef.current = element;
+                  tidInputRef?.(element);
+                }}
                 type="text"
                 value={tidInput}
                 onChange={(e) => {
@@ -4386,9 +4425,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   );
 }
 
-function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, stablingEditable = false, onEditableTrainIdChange }) {
+function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied }) {
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
+  const sectionDepot = roads.some((road) => WEST_ROADS.includes(road)) ? "west" : "east";
 
   useEffect(() => {
     saveInsertionHideElapsedTid(title, roads, hideElapsedTid);
@@ -4493,12 +4533,16 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
     return null;
   }, [roads.length, blockIndices.length]);
 
-  const handleTidChange = (road, bi, value, roadIdx, colIdx) => {
+  const handleTidChange = (road, bi, value, roadIdx, colIdx, options = {}) => {
     const cellKey = `${road}-${bi}`;
     const previousValue = (tidInputs[cellKey] || "").toString().trim();
     const nextValue = (value || "").toString().trim();
 
     onTidChange(road, bi, value);
+
+    // A drag-and-drop fill should stay on the selected train card and wait for
+    // the user to click Insert. Do not auto-advance keyboard focus.
+    if (options?.source === "drop") return;
 
     // Auto move only after a fresh 3-digit numeric TID remark is filled.
     // It moves horizontally first, then drops to the next road at Block 1 / Block 7.
@@ -4706,7 +4750,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
                     const borderBottom = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
                     const borderBottomRightRadius = labelSide === "left" && isLastRow && isLastBlock ? 12 : undefined;
                     const borderBottomLeftRadius = labelSide === "right" && isLastRow && i === 0 ? 12 : undefined;
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value) => handleTidChange(targetRoad, targetBi, value, ri, i)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -6068,6 +6112,101 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 }
 
 function InsertionTabContent({ westSection, eastSection, maintenanceMap, insertionLog, onClearInsertionDepot, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug }) {
+  const [tidDragState, setTidDragState] = useState(null);
+  const [tidDragPoint, setTidDragPoint] = useState({ x: 0, y: 0 });
+  const [tidDragHover, setTidDragHover] = useState(null);
+  const [tidDropRequest, setTidDropRequest] = useState(null);
+  const tidDropSequenceRef = useRef(0);
+
+  const resolveTidDropTarget = useCallback((clientX, clientY) => {
+    if (typeof document === "undefined") return null;
+    const element = document.elementFromPoint(clientX, clientY);
+    const target = element?.closest?.('[data-insertion-drop-target="true"]');
+    if (!(target instanceof HTMLElement) || target.dataset.insertionDropEligible !== "true") return null;
+
+    const depot = target.dataset.insertionDropDepot === "east" ? "east" : "west";
+    const road = String(target.dataset.insertionDropRoad || "");
+    const bi = Number(target.dataset.insertionDropBi);
+    if (!road || !Number.isFinite(bi)) return null;
+
+    return { depot, road, bi };
+  }, []);
+
+  const handleTidDragStart = useCallback((payload) => {
+    if (!payload?.tid) return;
+    setTidDragState(payload);
+    setTidDragPoint({ x: Number(payload.clientX || 0), y: Number(payload.clientY || 0) });
+    setTidDragHover(null);
+  }, []);
+
+  const handleTidDropApplied = useCallback((requestId) => {
+    setTidDropRequest((current) => current?.id === requestId ? null : current);
+  }, []);
+
+  useEffect(() => {
+    if (!tidDragState) return undefined;
+
+    const previousCursor = document.body.style.cursor;
+    const previousUserSelect = document.body.style.userSelect;
+    document.body.style.cursor = "grabbing";
+    document.body.style.userSelect = "none";
+
+    const handlePointerMove = (event) => {
+      if (tidDragState.pointerId !== undefined && event.pointerId !== tidDragState.pointerId) return;
+      event.preventDefault();
+      const point = { x: event.clientX, y: event.clientY };
+      setTidDragPoint(point);
+      setTidDragHover(resolveTidDropTarget(point.x, point.y));
+    };
+
+    const finishDrag = (event, shouldDrop) => {
+      if (tidDragState.pointerId !== undefined && event?.pointerId !== undefined && event.pointerId !== tidDragState.pointerId) return;
+      const point = {
+        x: Number(event?.clientX ?? tidDragPoint.x),
+        y: Number(event?.clientY ?? tidDragPoint.y),
+      };
+      const target = shouldDrop ? resolveTidDropTarget(point.x, point.y) : null;
+
+      if (target) {
+        tidDropSequenceRef.current += 1;
+        setTidDropRequest({
+          id: `tid-drop-${Date.now()}-${tidDropSequenceRef.current}`,
+          tid: tidDragState.tid,
+          remark: tidDragState.remark || "",
+          displayRemark: tidDragState.displayRemark || "",
+          time: tidDragState.time || "",
+          ...target,
+        });
+      }
+
+      setTidDragState(null);
+      setTidDragHover(null);
+    };
+
+    const handlePointerUp = (event) => finishDrag(event, true);
+    const handlePointerCancel = (event) => finishDrag(event, false);
+    const handleWindowBlur = () => {
+      setTidDragState(null);
+      setTidDragHover(null);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove, { passive: false });
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerCancel);
+    window.addEventListener("blur", handleWindowBlur);
+
+    return () => {
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousUserSelect;
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerCancel);
+      window.removeEventListener("blur", handleWindowBlur);
+    };
+  }, [tidDragState, tidDragPoint.x, tidDragPoint.y, resolveTidDropTarget]);
+
+  const dragRemarkStyle = getInsertionAssistRemarkStyle(tidDragState?.remark || "");
+
   // TID schedule range: earliest first-TID time across both series, latest last-TID time.
   // Series 1xx: 05:25–06:22 | Series 2xx: 05:24–06:21
   // Grey-out in the TID Reference Table only applies while current time is within this window.
@@ -6077,6 +6216,47 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
 
   return (
     <div className="flex flex-col gap-5">
+      <style>{`
+        @keyframes insertionTidDragLift {
+          from { opacity: 0; transform: translateY(5px) scale(0.94) rotate(-1deg); }
+          to { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+        }
+      `}</style>
+
+      {tidDragState && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: "fixed",
+            left: tidDragPoint.x + 16,
+            top: tidDragPoint.y + 14,
+            zIndex: 10000,
+            pointerEvents: "none",
+            minWidth: 118,
+            padding: "8px 10px",
+            borderRadius: 12,
+            background: dragRemarkStyle?.cardBg || "linear-gradient(135deg, rgba(14, 165, 233, 0.26), rgba(37, 99, 235, 0.18))",
+            border: `1px solid ${dragRemarkStyle?.border || "#38bdf8"}`,
+            boxShadow: tidDragHover
+              ? "0 18px 38px rgba(14, 165, 233, 0.38), 0 0 0 3px rgba(56, 189, 248, 0.16)"
+              : "0 16px 34px rgba(0, 0, 0, 0.42)",
+            color: dragRemarkStyle?.color || "#e0f2fe",
+            animation: "insertionTidDragLift 150ms ease-out",
+            transform: tidDragHover ? "scale(1.04)" : "scale(1)",
+            transition: "transform 120ms ease, box-shadow 120ms ease",
+          }}
+        >
+          <div className="text-[13px] font-semibold tracking-wide">TID {tidDragState.tid}</div>
+          <div className="mt-0.5 flex items-center justify-between gap-3 text-[10px] font-normal">
+            <span>{tidDragState.displayRemark || "Insertion"}</span>
+            <span>{tidDragState.time}</span>
+          </div>
+          <div className="mt-1 text-[8px] uppercase tracking-[0.12em]" style={{ color: tidDragHover ? "#bae6fd" : "#9fb8cb" }}>
+            {tidDragHover ? "Release to fill card" : "Drag to a train card"}
+          </div>
+        </div>
+      )}
+
       {insertionLiveDebug && (
         <div className="w-fit rounded-xl border border-amber-600/40 bg-amber-950/25 px-3 py-2 text-[11px] text-amber-200">
           {insertionLiveDebug}
@@ -6087,7 +6267,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
       <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto 1fr" }}>
         {/* TID Reference Tables — left column */}
         <div className="self-start">
-          <TIDReferenceTable withinSchedule={withinTIDSchedule} activeTimetable={activeTimetable} activeTimetableType={activeTimetableType} />
+          <TIDReferenceTable withinSchedule={withinTIDSchedule} activeTimetable={activeTimetable} activeTimetableType={activeTimetableType} onTidDragStart={handleTidDragStart} activeDragKey={tidDragState?.sourceKey || ""} />
         </div>
 
         {/* Stabling sections — centre column */}
@@ -6103,6 +6283,10 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
             getTidAssistRemark={getTidAssistRemark}
             getTidAssistRemarkStyle={getTidAssistRemarkStyle}
             isWeekdayActive={normalizeTimetableType(activeTimetableType) === "weekday"}
+            tidDragState={tidDragState}
+            tidDragHover={tidDragHover}
+            tidDropRequest={tidDropRequest}
+            onTidDropApplied={handleTidDropApplied}
             {...westSection}
           />
           <InsertionStablingSection
@@ -6116,6 +6300,10 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
             getTidAssistRemark={getTidAssistRemark}
             getTidAssistRemarkStyle={getTidAssistRemarkStyle}
             isWeekdayActive={normalizeTimetableType(activeTimetableType) === "weekday"}
+            tidDragState={tidDragState}
+            tidDragHover={tidDragHover}
+            tidDropRequest={tidDropRequest}
+            onTidDropApplied={handleTidDropApplied}
             {...eastSection}
           />
         </div>
