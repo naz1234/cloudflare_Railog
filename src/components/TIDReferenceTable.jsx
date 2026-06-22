@@ -841,6 +841,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
   const activeIndex = getActiveIndex(rows, nowMinutes);
   const isWeekday = dayLabel === "Weekday";
   const displayDayLabel = isScheduleOverride ? `${dayLabel} Override` : dayLabel;
+  const [hoveredRowKey, setHoveredRowKey] = useState("");
 
   return (
     <div
@@ -1014,11 +1015,14 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
 
               const rowDragKey = `${depotType}:${tid}`;
               const isDraggingSource = activeDragKey === rowDragKey;
+              const isHovered = hoveredRowKey === rowDragKey && !isDraggingSource;
 
               return (
                 <tr
                   key={tid}
                   title={`Hold and drag TID ${tid} to a train card`}
+                  onMouseEnter={() => setHoveredRowKey(rowDragKey)}
+                  onMouseLeave={() => setHoveredRowKey((currentKey) => currentKey === rowDragKey ? "" : currentKey)}
                   onPointerDown={(event) => {
                     if (event.button !== undefined && event.button !== 0) return;
                     event.preventDefault();
@@ -1039,11 +1043,20 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                     cursor: isDraggingSource ? "grabbing" : "grab",
                     touchAction: "none",
                     userSelect: "none",
-                    transform: isDraggingSource ? "scale(1.018) translateY(-1px)" : "none",
-                    filter: isDraggingSource ? "brightness(1.16)" : "none",
+                    transform: isDraggingSource
+                      ? "scale(1.018) translateY(-2px)"
+                      : isHovered
+                        ? "scale(1.01) translateY(-2px)"
+                        : "none",
+                    filter: isDraggingSource
+                      ? "brightness(1.16)"
+                      : isHovered
+                        ? "brightness(1.08)"
+                        : "none",
                     position: "relative",
-                    zIndex: isDraggingSource ? 5 : 1,
-                    transition: "transform 140ms ease, filter 140ms ease",
+                    zIndex: isDraggingSource ? 5 : isHovered ? 3 : 1,
+                    transition: "transform 160ms ease, filter 160ms ease",
+                    willChange: "transform, filter",
                   }}
                 >
                   <td
