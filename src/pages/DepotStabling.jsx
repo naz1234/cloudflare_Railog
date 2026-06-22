@@ -4327,7 +4327,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       <button
                         type="button"
                         onClick={handleInsertedUndoClick}
-                        className="col-span-2 inline-flex min-w-0 max-w-full items-center justify-center justify-self-center rounded-full border px-2 py-[1px] text-center text-[13px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                        className="col-span-2 inline-flex min-w-0 max-w-full items-center justify-center justify-self-center rounded-full border px-2 py-[1px] text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
                         style={{
                           color: insertedTidRemarkStyle?.color || "#bfdbfe",
                           background: insertedTidRemarkStyle?.bg || "rgba(59, 130, 246, 0.16)",
