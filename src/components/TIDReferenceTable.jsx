@@ -837,7 +837,7 @@ function ScheduleWarningBanner({ selectedLabel, todayLabel, onSwitchToToday }) {
   );
 }
 
-function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedule, isScheduleOverride, onTidDragStart, activeDragKey = "", usedTidKeys = new Set() }) {
+function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedule, isScheduleOverride, onTidDragStart, activeDragKey = "", usedTidKeys = new Set(), duplicateTidKeys = new Set() }) {
   const accent = DEPOT_ACCENTS[depotType];
   const activeIndex = getActiveIndex(rows, nowMinutes);
   const isWeekday = dayLabel === "Weekday";
@@ -1011,6 +1011,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               const isRaised = isHovered || isDraggingSource;
               const interactionColor = remark ? remarkStyle.sideColor : accent.accent;
               const isUsed = Boolean(isWeekday && remark && usedTidKeys.has(String(tid)));
+              const isDuplicate = Boolean(isUsed && duplicateTidKeys.has(String(tid)));
 
               const commonCellStyle = {
                 padding: isWeekday ? "3px 6px" : "1px 6px",
@@ -1027,7 +1028,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               return (
                 <tr
                   key={tid}
-                  title={isUsed ? `TID ${tid} label is already used in stabling. Hold and drag to use it again.` : `Hold and drag TID ${tid} to a train card`}
+                  title={isDuplicate ? `TID ${tid} is used on more than one stabling card.` : isUsed ? `TID ${tid} label is already used in stabling. Hold and drag to use it again.` : `Hold and drag TID ${tid} to a train card`}
                   onMouseEnter={() => setHoveredRowKey(rowDragKey)}
                   onMouseLeave={() => setHoveredRowKey((currentKey) => currentKey === rowDragKey ? "" : currentKey)}
                   onPointerDown={(event) => {
@@ -1103,8 +1104,8 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                     >
                       {isUsed && (
                         <span
-                          aria-label={`TID ${tid} label already used in stabling`}
-                          title={`TID ${tid} label already used in stabling`}
+                          aria-label={isDuplicate ? `TID ${tid} is duplicated in stabling` : `TID ${tid} label already used in stabling`}
+                          title={isDuplicate ? `TID ${tid} is duplicated in stabling` : `TID ${tid} label already used in stabling`}
                           style={{
                             display: "inline-flex",
                             width: 18,
@@ -1113,9 +1114,13 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                             alignItems: "center",
                             justifyContent: "center",
                             borderRadius: 999,
-                            border: "1px solid rgba(110, 231, 183, 0.80)",
-                            background: "#58c96b",
-                            boxShadow: "0 0 8px rgba(88, 201, 107, 0.55)",
+                            border: isDuplicate
+                              ? "1px solid rgba(253, 186, 116, 0.92)"
+                              : "1px solid rgba(110, 231, 183, 0.80)",
+                            background: isDuplicate ? "#f59e0b" : "#58c96b",
+                            boxShadow: isDuplicate
+                              ? "0 0 9px rgba(245, 158, 11, 0.68)"
+                              : "0 0 8px rgba(88, 201, 107, 0.55)",
                           }}
                         >
                           <Check size={12} strokeWidth={3.5} color="#ffffff" />
@@ -1189,7 +1194,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
   );
 }
 
-export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday", onTidDragStart, activeDragKey = "", usedTidKeys = [] }) {
+export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday", onTidDragStart, activeDragKey = "", usedTidKeys = [], duplicateTidKeys = [] }) {
   const [now, setNow] = useState(new Date());
   const [soundSettings, setSoundSettings] = useState(loadTidSoundSettings);
   const [soundReady, setSoundReady] = useState(false);
@@ -1210,6 +1215,10 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
   const usedTidKeySet = useMemo(
     () => new Set((Array.isArray(usedTidKeys) ? usedTidKeys : Array.from(usedTidKeys || [])).map((tid) => String(tid))),
     [usedTidKeys]
+  );
+  const duplicateTidKeySet = useMemo(
+    () => new Set((Array.isArray(duplicateTidKeys) ? duplicateTidKeys : Array.from(duplicateTidKeys || [])).map((tid) => String(tid))),
+    [duplicateTidKeys]
   );
 
   useEffect(() => {
@@ -1335,6 +1344,7 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
             onTidDragStart={onTidDragStart}
             activeDragKey={activeDragKey}
             usedTidKeys={usedTidKeySet}
+            duplicateTidKeys={duplicateTidKeySet}
           />
 
           <DepotCard
@@ -1348,6 +1358,7 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
             onTidDragStart={onTidDragStart}
             activeDragKey={activeDragKey}
             usedTidKeys={usedTidKeySet}
+            duplicateTidKeys={duplicateTidKeySet}
           />
         </div>
       ) : (
@@ -1363,6 +1374,7 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
             onTidDragStart={onTidDragStart}
             activeDragKey={activeDragKey}
             usedTidKeys={usedTidKeySet}
+            duplicateTidKeys={duplicateTidKeySet}
           />
 
           <DepotCard
@@ -1376,6 +1388,7 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
             onTidDragStart={onTidDragStart}
             activeDragKey={activeDragKey}
             usedTidKeys={usedTidKeySet}
+            duplicateTidKeys={duplicateTidKeySet}
           />
         </>
       )}

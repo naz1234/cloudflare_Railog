@@ -6208,10 +6208,12 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
 
   const dragRemarkStyle = getInsertionAssistRemarkStyle(tidDragState?.remark || "");
   const isWeekdayActiveTimetable = normalizeTimetableType(activeTimetableType) === "weekday";
-  const usedInsertionAssistTidKeys = useMemo(() => {
-    if (!isWeekdayActiveTimetable) return [];
+  const insertionAssistTidUsage = useMemo(() => {
+    if (!isWeekdayActiveTimetable) {
+      return { usedTidKeys: [], duplicateTidKeys: [] };
+    }
 
-    const usedKeys = new Set();
+    const usageCounts = new Map();
     const assistRemarks = new Set(["Early Rem", "Late Rem", "ED", "ED (7pm)"]);
 
     const collectUsedTids = (section = {}, roads = [], depot = "west") => {
@@ -6235,7 +6237,10 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
             ? getTidAssistRemark(tid, depot)
             : "";
 
-          if (assistRemarks.has(assistRemark)) usedKeys.add(String(tid));
+          if (assistRemarks.has(assistRemark)) {
+            const key = String(tid);
+            usageCounts.set(key, (usageCounts.get(key) || 0) + 1);
+          }
         });
       });
     };
@@ -6243,7 +6248,12 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
     collectUsedTids(westSection, WEST_ROADS, "west");
     collectUsedTids(eastSection, EAST_ROADS, "east");
 
-    return Array.from(usedKeys);
+    return {
+      usedTidKeys: Array.from(usageCounts.keys()),
+      duplicateTidKeys: Array.from(usageCounts.entries())
+        .filter(([, count]) => count > 1)
+        .map(([tid]) => tid),
+    };
   }, [
     isWeekdayActiveTimetable,
     westSection?.data,
@@ -6313,7 +6323,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
       <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto 1fr" }}>
         {/* TID Reference Tables — left column */}
         <div className="self-start">
-          <TIDReferenceTable withinSchedule={withinTIDSchedule} activeTimetable={activeTimetable} activeTimetableType={activeTimetableType} onTidDragStart={handleTidDragStart} activeDragKey={tidDragState?.sourceKey || ""} usedTidKeys={usedInsertionAssistTidKeys} />
+          <TIDReferenceTable withinSchedule={withinTIDSchedule} activeTimetable={activeTimetable} activeTimetableType={activeTimetableType} onTidDragStart={handleTidDragStart} activeDragKey={tidDragState?.sourceKey || ""} usedTidKeys={insertionAssistTidUsage.usedTidKeys} duplicateTidKeys={insertionAssistTidUsage.duplicateTidKeys} />
         </div>
 
         {/* Stabling sections — centre column */}
