@@ -3913,7 +3913,7 @@ function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2 
   );
 }
 
-function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0, tidDropRequest = null, onTidDropApplied, isTidDragActive = false, isTidDropHovered = false }) {
+function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0, tidDropRequest = null, onTidDropApplied, isTidDragActive = false, isTidDropHovered = false }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
@@ -3970,6 +3970,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
   const isInsertionDone = Boolean(inserted && !inserted.isSweeping);
+  const isDuplicateInsertedTid = Boolean(
+    isWeekdayActive &&
+    insertedTid &&
+    duplicateTidKeys?.has?.(String(insertedTid))
+  );
   const autoScheduledTime = autoTid !== null && typeof getTidScheduledTime === "function"
     ? getTidScheduledTime(autoTid, autoTidDepot, { allowFallback: false })
     : null;
@@ -4054,8 +4059,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           : "rgba(7, 24, 39, 0.38)";
   const insCardBorder = expired
     ? "1px solid #1e3547"
-    : isInsertionDone
-      ? "1px solid #3b82f6"
+    : isDuplicateInsertedTid
+      ? "2px solid #f59e0b"
+      : isInsertionDone
+        ? "1px solid #3b82f6"
       : activeTidRemarkStyle
         ? `1px solid ${activeTidRemarkStyle.border}`
         : inserted
@@ -4065,9 +4072,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             : key
               ? `1px solid ${INSERTION_PANEL_COLORS.cardBorder}`
               : `1px dashed ${INSERTION_PANEL_COLORS.emptyBorder}`;
-  const insCardGlow = key && !expired
-    ? "0 4px 12px rgba(0,0,0,0.12)"
-    : undefined;
+  const insCardGlow = isDuplicateInsertedTid
+    ? "0 0 0 2px rgba(245, 158, 11, 0.18), 0 0 18px rgba(245, 158, 11, 0.58), 0 8px 22px rgba(0, 0, 0, 0.24)"
+    : key && !expired
+      ? "0 4px 12px rgba(0,0,0,0.12)"
+      : undefined;
   const tidDividerColor = specialTidRemarkStyle?.border || (hasTidRemark ? "#9a7416" : "#27475d");
   const insTidInputStyle = {
     border: "none",
@@ -4426,7 +4435,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   );
 }
 
-function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied }) {
+function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied }) {
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
   const sectionDepot = roads.some((road) => WEST_ROADS.includes(road)) ? "west" : "east";
@@ -4751,7 +4760,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
                     const borderBottom = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
                     const borderBottomRightRadius = labelSide === "left" && isLastRow && isLastBlock ? 12 : undefined;
                     const borderBottomLeftRadius = labelSide === "right" && isLastRow && i === 0 ? 12 : undefined;
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -6262,6 +6271,10 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
     eastSection?.insertionLog,
     getTidAssistRemark,
   ]);
+  const insertionAssistDuplicateTidKeySet = useMemo(
+    () => new Set(insertionAssistTidUsage.duplicateTidKeys.map((tid) => String(tid))),
+    [insertionAssistTidUsage.duplicateTidKeys]
+  );
 
   // TID schedule range: earliest first-TID time across both series, latest last-TID time.
   // Series 1xx: 05:25–06:22 | Series 2xx: 05:24–06:21
@@ -6339,6 +6352,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
             getTidAssistRemark={getTidAssistRemark}
             getTidAssistRemarkStyle={getTidAssistRemarkStyle}
             isWeekdayActive={normalizeTimetableType(activeTimetableType) === "weekday"}
+            duplicateTidKeys={insertionAssistDuplicateTidKeySet}
             tidDragState={tidDragState}
             tidDragHover={tidDragHover}
             tidDropRequest={tidDropRequest}
@@ -6356,6 +6370,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
             getTidAssistRemark={getTidAssistRemark}
             getTidAssistRemarkStyle={getTidAssistRemarkStyle}
             isWeekdayActive={normalizeTimetableType(activeTimetableType) === "weekday"}
+            duplicateTidKeys={insertionAssistDuplicateTidKeySet}
             tidDragState={tidDragState}
             tidDragHover={tidDragHover}
             tidDropRequest={tidDropRequest}
