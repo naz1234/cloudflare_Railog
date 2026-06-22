@@ -1320,8 +1320,8 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
           padding: "6px 8px",
           borderRadius: 10,
           color: "#bae6fd",
-          fontSize: 9,
-          lineHeight: "12px",
+          fontSize: 12,
+          lineHeight: "15px",
           fontWeight: 400,
           letterSpacing: "0.03em",
           textAlign: "center",
@@ -1329,8 +1329,8 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
           border: "1px dashed rgba(125, 211, 252, 0.28)",
         }}
       >
-        <span aria-hidden="true" style={{ fontSize: 12, lineHeight: 1 }}>↕</span>
-        <span>Drag and drop a TID row onto a train card to auto insert.</span>
+        <span aria-hidden="true" style={{ fontSize: 15, lineHeight: 1 }}>↕</span>
+        <span>Drag and drop a TID row onto a train card.</span>
       </div>
     </div>
   );
