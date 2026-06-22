@@ -3986,16 +3986,17 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     if (appliedTidDropRef.current === tidDropRequest.id) return;
 
     appliedTidDropRef.current = tidDropRequest.id;
+    const droppedTid = String(tidDropRequest.tid || "");
+
+    // Drag-and-drop is a complete insertion action: save the selected TID in
+    // the card and immediately create the insertion entry using its timetable time.
+    // Keep automatic input detection suppressed during this state update so the
+    // same dropped TID cannot be inserted twice by the normal typing effect.
     setSuppressAutoInsert(true);
-    onTidChange?.(road, bi, String(tidDropRequest.tid || ""), { source: "drop" });
-
-    requestAnimationFrame(() => {
-      localTidInputRef.current?.focus?.();
-      localTidInputRef.current?.select?.();
-    });
-
+    onTidChange?.(road, bi, droppedTid, { source: "drop" });
+    onInsertionTick?.(road, bi, key, droppedTid);
     onTidDropApplied?.(tidDropRequest.id);
-  }, [tidDropRequest, isTidDropEligible, onTidChange, road, bi, onTidDropApplied]);
+  }, [tidDropRequest, isTidDropEligible, onTidChange, onInsertionTick, road, bi, key, onTidDropApplied]);
 
   const handleInsertClick = () => {
     // SW / SW1 / SW2 mean Sweep. SW1 selects Track 01 and SW2 selects Track 02.
@@ -4540,8 +4541,8 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
 
     onTidChange(road, bi, value);
 
-    // A drag-and-drop fill should stay on the selected train card and wait for
-    // the user to click Insert. Do not auto-advance keyboard focus.
+    // Drag-and-drop completes insertion immediately. Do not auto-advance
+    // keyboard focus after the dropped TID is saved into the selected card.
     if (options?.source === "drop") return;
 
     // Auto move only after a fresh 3-digit numeric TID remark is filled.
@@ -6252,7 +6253,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
             <span>{tidDragState.time}</span>
           </div>
           <div className="mt-1 text-[8px] uppercase tracking-[0.12em]" style={{ color: tidDragHover ? "#bae6fd" : "#9fb8cb" }}>
-            {tidDragHover ? "Release to fill card" : "Drag to a train card"}
+            {tidDragHover ? "Release to auto insert" : "Drag to a train card"}
           </div>
         </div>
       )}
