@@ -1004,18 +1004,23 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                     ? "rgba(8, 32, 52, 0.58)"
                     : "rgba(6, 24, 39, 0.68)";
 
+              const rowDragKey = `${depotType}:${tid}`;
+              const isDraggingSource = activeDragKey === rowDragKey;
+              const isHovered = hoveredRowKey === rowDragKey && !isDraggingSource;
+              const isRaised = isHovered || isDraggingSource;
+              const interactionColor = remark ? remarkStyle.sideColor : accent.accent;
+
               const commonCellStyle = {
                 padding: isWeekday ? "3px 6px" : "1px 6px",
                 textAlign: "center",
                 background: rowBackground,
                 borderBottom: idx === rows.length - 1 ? "none" : "1px solid rgba(125, 184, 224, 0.13)",
                 opacity: isPast && !isActive ? 0.46 : 1,
+                boxShadow: isRaised
+                  ? `inset 0 1px 0 ${interactionColor}, inset 0 -1px 0 ${interactionColor}, inset 0 0 13px color-mix(in srgb, ${interactionColor} 22%, transparent)`
+                  : "none",
                 transition: "all 180ms ease",
               };
-
-              const rowDragKey = `${depotType}:${tid}`;
-              const isDraggingSource = activeDragKey === rowDragKey;
-              const isHovered = hoveredRowKey === rowDragKey && !isDraggingSource;
 
               return (
                 <tr
@@ -1044,28 +1049,43 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                     touchAction: "none",
                     userSelect: "none",
                     transform: isDraggingSource
-                      ? "scale(1.018) translateY(-2px)"
+                      ? "scale(1.026) translateY(-4px)"
                       : isHovered
-                        ? "scale(1.01) translateY(-2px)"
+                        ? "scale(1.018) translateY(-3px)"
                         : "none",
                     filter: isDraggingSource
-                      ? "brightness(1.16)"
+                      ? `brightness(1.20) drop-shadow(0 0 10px ${interactionColor})`
                       : isHovered
-                        ? "brightness(1.08)"
+                        ? `brightness(1.14) drop-shadow(0 0 8px ${interactionColor})`
+                        : "none",
+                    outline: isRaised ? `1px solid ${interactionColor}` : "1px solid transparent",
+                    outlineOffset: -1,
+                    boxShadow: isDraggingSource
+                      ? `0 0 0 1px ${interactionColor}, 0 0 22px color-mix(in srgb, ${interactionColor} 72%, transparent), 0 10px 22px rgba(0,0,0,0.36)`
+                      : isHovered
+                        ? `0 0 0 1px ${interactionColor}, 0 0 17px color-mix(in srgb, ${interactionColor} 62%, transparent), 0 8px 18px rgba(0,0,0,0.30)`
                         : "none",
                     position: "relative",
-                    zIndex: isDraggingSource ? 5 : isHovered ? 3 : 1,
-                    transition: "transform 160ms ease, filter 160ms ease",
-                    willChange: "transform, filter",
+                    zIndex: isDraggingSource ? 6 : isHovered ? 4 : 1,
+                    transition: "transform 170ms ease, filter 170ms ease, box-shadow 170ms ease, outline-color 170ms ease",
+                    willChange: "transform, filter, box-shadow",
                   }}
                 >
                   <td
                     style={{
                       ...commonCellStyle,
                       textAlign: isWeekday ? "left" : "center",
-                      borderLeft: isActive ? `3px solid ${accent.accent}` : `3px solid ${remark ? remarkStyle.sideColor : "transparent"}`,
+                      borderLeft: isRaised
+                        ? `2px solid ${interactionColor}`
+                        : isActive
+                          ? `3px solid ${accent.accent}`
+                          : `3px solid ${remark ? remarkStyle.sideColor : "transparent"}`,
                       borderRight: "1px solid rgba(125, 184, 224, 0.10)",
-                      boxShadow: isActive ? `inset 10px 0 20px ${accent.glow}` : "none",
+                      boxShadow: isRaised
+                        ? `${commonCellStyle.boxShadow}, inset 8px 0 16px color-mix(in srgb, ${interactionColor} 24%, transparent)`
+                        : isActive
+                          ? `inset 10px 0 20px ${accent.glow}`
+                          : "none",
                     }}
                   >
                     <div
@@ -1126,7 +1146,12 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                       fontWeight: 400,
                       letterSpacing: "0.06em",
                       fontVariantNumeric: "tabular-nums",
-                      textShadow: isActive ? `0 0 14px ${accent.glow}` : "none",
+                      textShadow: isRaised
+                        ? `0 0 10px ${interactionColor}`
+                        : isActive
+                          ? `0 0 14px ${accent.glow}`
+                          : "none",
+                      borderRight: isRaised ? `2px solid ${interactionColor}` : "none",
                     }}
                   >
                     {time}
