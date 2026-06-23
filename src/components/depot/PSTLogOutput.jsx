@@ -181,13 +181,13 @@ function buildGroupedPSTLogLines(pstLines = []) {
   return groups.map((group) => {
     const trainList = formatTrainList(group.trainKeys);
     const locationText = group.location ? ` at ${group.location}` : "";
-    const completedText = group.endTime ? ` from ${group.startTime} to ${group.endTime} hrs` : "";
+    const completedText = group.endTime ? ` and completed at ${group.endTime} hrs` : "";
     const alarmText = group.alarmText ? ` ${group.alarmText}` : "";
 
     return {
       ...group,
       time: group.startTime,
-      text: `${group.startTime} hrs – ${trainList} PST completed${locationText}${completedText}.${alarmText}`,
+      text: `${group.startTime} hrs – ${trainList} PST started${locationText}${completedText}.${alarmText}`,
     };
   });
 }
