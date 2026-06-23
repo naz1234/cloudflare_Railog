@@ -206,21 +206,27 @@ function getUniqueTrainKeys(lines = [], extractor) {
   return keys;
 }
 
-function getPSTDCSummary(totalCount = 0, depotLabel = "") {
-  if (!totalCount) return "";
-  return `DC checked and confirmed that PST was performed and updated for ${totalCount} train${totalCount !== 1 ? "s" : ""} at ${depotLabel} Depot.`;
+function formatTrainCount(totalCount = 0) {
+  return `${totalCount} train${totalCount !== 1 ? "s" : ""}`;
 }
 
-function getPSTSectionText(pstLines = [], depotLabel = "") {
+function buildPSTNoteBlock(westTotal = 0, eastTotal = 0) {
+  return [
+    "Note: DC checked the train status and confirmed that the HVAC was enabled, Maximum Speed was set to “None,” and CC was localized and operational.",
+    `DC checked and confirmed that PST was completed successfully for ${formatTrainCount(westTotal)} at West Depot.`,
+    `DC cross-checked and confirmed that PST was completed successfully for ${formatTrainCount(eastTotal)} at East Depot.`,
+  ].join("\n");
+}
+
+function getPSTSectionText(pstLines = [], depotLabel = "", westTotal = 0, eastTotal = 0) {
   if (!pstLines.length) return "";
   const groupedLines = buildGroupedPSTLogLines(pstLines);
-  const trainList = getUniqueTrainKeys(pstLines, getPSTTrainKey).join(", ");
   return [
-    `PST at ${depotLabel} Depot: Total ${pstLines.length} train${pstLines.length !== 1 ? "s" : ""} completed from ${getPSTStartTime(pstLines[0])} to ${getPSTSummaryEndTime(pstLines)} hrs.`,
-    getPSTDCSummary(pstLines.length, depotLabel),
-    trainList ? `Train: ${trainList}` : "",
+    `PST at ${depotLabel} Depot: A total of ${formatTrainCount(pstLines.length)} completed PST from ${getPSTStartTime(pstLines[0])} to ${getPSTSummaryEndTime(pstLines)} hrs.`,
     "",
     ...groupedLines.map((group) => group.text),
+    "",
+    buildPSTNoteBlock(westTotal, eastTotal),
   ]
     .filter((line) => line !== null && line !== undefined)
     .join("\n")
@@ -416,12 +422,12 @@ function SectionTextBlock({ title, text, emptyText }) {
   );
 }
 
-function DepotLogCard({ depotLabel, lines = [], onClearDepot, logStyle = ELOG_1 }) {
+function DepotLogCard({ depotLabel, lines = [], onClearDepot, logStyle = ELOG_1, westPSTTotal = 0, eastPSTTotal = 0 }) {
   const pstLines = lines.filter(isPSTEntry);
   const prepLines = lines.filter(isPrepEntry);
   const pstText = logStyle === ELOG_2
     ? buildELog2Text(pstLines, depotLabel)
-    : getPSTSectionText(pstLines, depotLabel);
+    : getPSTSectionText(pstLines, depotLabel, westPSTTotal, eastPSTTotal);
   const prepText = getPrepSectionText(prepLines, depotLabel);
   const hasEntries = lines.length > 0;
   const dotColor = depotLabel.toLowerCase() === "west" ? "#d946ef" : "#22d3ee";
@@ -488,6 +494,8 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
   const safeLogLines = Array.isArray(logLines) ? logLines : [];
   const westLines = safeLogLines.filter((line) => line.depot === "west");
   const eastLines = safeLogLines.filter((line) => line.depot === "east");
+  const westPSTTotal = westLines.filter(isPSTEntry).length;
+  const eastPSTTotal = eastLines.filter(isPSTEntry).length;
   const [logStyle, setLogStyle] = useState(() => {
     try {
       return localStorage.getItem(PST_LOG_STYLE_STORAGE_KEY) === ELOG_2 ? ELOG_2 : ELOG_1;
@@ -862,12 +870,16 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
           lines={westLines}
           onClearDepot={() => onClearDepot?.("west")}
           logStyle={logStyle}
+          westPSTTotal={westPSTTotal}
+          eastPSTTotal={eastPSTTotal}
         />
         <DepotLogCard
           depotLabel="East"
           lines={eastLines}
           onClearDepot={() => onClearDepot?.("east")}
           logStyle={logStyle}
+          westPSTTotal={westPSTTotal}
+          eastPSTTotal={eastPSTTotal}
         />
       </div>
     </section>
