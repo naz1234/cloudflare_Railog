@@ -139,10 +139,9 @@ function getPSTTrainKey(entry = {}) {
 function getPSTAlarmText(entry = {}) {
   const status = (entry.alarmStatus || "").toString().trim().toLowerCase();
   if (status === "alarm") return "Alarm reported.";
-  if (status === "no_alarm" || status === "no alarm") return "No alarm reported.";
 
   const text = (entry.text || "").toString();
-  if (/No\s+alarm\s+reported\.?/i.test(text)) return "No alarm reported.";
+  if (/No\s+alarm\s+reported\.?/i.test(text)) return "";
   if (/Alarm\s+reported\.?/i.test(text)) return "Alarm reported.";
   return "";
 }
