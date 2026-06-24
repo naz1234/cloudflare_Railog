@@ -115,10 +115,10 @@ const steps = [
       "Scroll to the West Depot and East Depot log output above this guide after completing the required train entries.",
       "Check the Train IDs, TIDs, times, depot direction, stabling information and sweeping details before copying.",
       "Use Insertion Only when the report should contain normal insertion entries without sweeping lines.",
-      "Use Sweep Only when the report should contain only sweeping activity.",
+      "Use Sweep + 3K1 only when the report should contain sweeping activity together with entries using the 3K1 remark. The 3K1 entries are excluded from Insertion Only.",
       "When a time or entry is corrected on a train card, review the generated output again before pasting it into the operational log.",
     ],
-    example: "Example: For the normal insertion report, select Insertion Only. For track-clear sweeping activity, select Sweep Only.",
+    example: "Example: For the normal insertion report, select Insertion Only. For sweeping activity together with 3K1 insertion entries, select Sweep + 3K1 only.",
     result: "Expected result: only the required, reviewed report is copied and ready to paste into the official log.",
   },
 ];

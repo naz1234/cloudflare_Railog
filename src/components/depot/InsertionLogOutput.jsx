@@ -16,6 +16,15 @@ function isSweepingLine(line = {}) {
   return Boolean(line?.isSweeping);
 }
 
+function is3K1InsertionLine(line = {}) {
+  if (isSweepingLine(line)) return false;
+  const value = String(line?.remark || line?.inputValue || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+  return value === "3K1" || value === "3K1INSERTION";
+}
+
 function getSweepSignal(line = {}) {
   const savedSignal = String(line?.signal || "").trim();
   if (savedSignal) return savedSignal;
@@ -45,9 +54,50 @@ function buildSweepingCopyText(lines, depotLabel) {
   const trainList = formatSentenceList(lines.map((line) => line.trainKey));
   const signalList = formatSentenceList(lines.map(getSweepSignal));
   const destinationText = signalList ? ` to ${signalList}` : "";
-  const header = `Sweeping train ${trainList} from ${depotName}${destinationText}.`;
+  const header = `Sweeping train ${trainList} from ${depotName}${destinationText}:`;
 
   return [header, "", ...lines.map((line) => line.text)].join("\n");
+}
+
+function getEntryTime(line = {}) {
+  const savedTime = String(line?.time || "").trim();
+  if (savedTime) return savedTime;
+  return String(line?.text || "").match(/^(\d{1,2}:\d{2})\s+hrs/i)?.[1] || "";
+}
+
+function get3K1InsertionEntryText(line = {}, depotLabel) {
+  const time = getEntryTime(line);
+  const trainKey = String(line?.trainKey || "").trim();
+  const road = String(line?.road || "").trim();
+  const mainlineTrack = line?.mainlineTrack || (depotLabel === "West" ? 1 : 2);
+  const taName = String(line?.taName || "").trim();
+  const taSuffix = taName ? ` TA ${taName} onboard.` : "";
+
+  if (!time || !trainKey || !road) {
+    const fallback = String(line?.text || "").trim();
+    if (!fallback) return "";
+    const withoutRemark = fallback.replace(/\s*\(3K1(?:\s+Insertion)?\)/i, "");
+    return withoutRemark.replace(/\.(\s+TA\s+.+\s+onboard\.)?$/i, (_, suffix = "") => ` for 3K1 insertion.${suffix || ""}`);
+  }
+
+  return `${time} hrs – ${trainKey} inserted from ${road} to mainline track ${mainlineTrack} for 3K1 insertion.${taSuffix}`;
+}
+
+function build3K1InsertionCopyText(lines, depotLabel) {
+  if (lines.length === 0) return "";
+
+  const depotName = depotLabel === "West" ? "West Depot" : "East Depot";
+  const header = `Insertion from ${depotName} for 3K1 Insertion:`;
+  const entryLines = lines.map((line) => get3K1InsertionEntryText(line, depotLabel)).filter(Boolean);
+
+  return [header, "", ...entryLines].join("\n");
+}
+
+function buildSweepAnd3K1CopyText(sweepingLines, threeK1Lines, depotLabel) {
+  return [
+    buildSweepingCopyText(sweepingLines, depotLabel),
+    build3K1InsertionCopyText(threeK1Lines, depotLabel),
+  ].filter(Boolean).join("\n\n");
 }
 
 async function copyText(text) {
@@ -189,10 +239,11 @@ function SectionTextBlock({ title, text, emptyText }) {
 }
 
 function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot }) {
-  const normalLines = lines.filter((line) => !isSweepingLine(line));
   const sweepingLines = lines.filter(isSweepingLine);
+  const threeK1Lines = lines.filter(is3K1InsertionLine);
+  const normalLines = lines.filter((line) => !isSweepingLine(line) && !is3K1InsertionLine(line));
   const normalText = buildNormalInsertionCopyText(normalLines, depotLabel);
-  const sweepingText = buildSweepingCopyText(sweepingLines, depotLabel);
+  const sweepAnd3K1Text = buildSweepAnd3K1CopyText(sweepingLines, threeK1Lines, depotLabel);
   const hasEntries = lines.length > 0;
   const dotColor = depotLabel.toLowerCase() === "west" ? "#d946ef" : "#22d3ee";
 
@@ -211,7 +262,7 @@ function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot }) {
         </div>
 
         <div className="insertion-clean-actions">
-          <CopyButton text={sweepingText} label="Sweep Only" disabled={!sweepingLines.length} />
+          <CopyButton text={sweepAnd3K1Text} label="Sweep + 3K1 only" disabled={!sweepAnd3K1Text} />
           <CopyButton text={normalText} label="Insertion Only" disabled={!normalLines.length} />
           <ClearDepotButton
             depotLabel={depotLabel}
@@ -225,7 +276,7 @@ function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot }) {
         {hasEntries ? (
           <>
             <SectionTextBlock title="Insertion" text={normalText} emptyText="No insertion entries." />
-            <SectionTextBlock title="Sweep" text={sweepingText} emptyText="No Sweep entries." />
+            <SectionTextBlock title="Sweep + 3K1" text={sweepAnd3K1Text} emptyText="No Sweep or 3K1 entries." />
           </>
         ) : (
           <div className="insertion-clean-empty-card">
