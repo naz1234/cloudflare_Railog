@@ -338,6 +338,7 @@ export default function OvertimeTracker() {
       month,
       count: monthRecords.length,
       rdotCount: monthRecords.filter((record) => record.type === "RDOT").length,
+      extensionCount: monthRecords.filter((record) => record.type === "EXTENSION").length,
       hours: roundOne(monthRecords.reduce((total, record) => total + Number(record.hours || 0), 0)),
       noteCount: monthNotes.length,
     };
@@ -615,7 +616,10 @@ export default function OvertimeTracker() {
                 }`}
               >
                 <p className={`text-[13px] font-semibold ${active ? "text-white" : "text-[#bceaff]"}`}>{summary.month.slice(0, 3).toUpperCase()}</p>
-                <p className="mt-1 text-[19px] font-normal text-white">{summary.rdotCount} <span className="text-[11px] uppercase tracking-wide text-[#7eb8e0]">RDOT</span></p>
+                <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                  <p className="text-[19px] font-normal text-white">{summary.rdotCount} <span className="text-[11px] uppercase tracking-wide text-[#7eb8e0]">RDOT</span></p>
+                  <p className="text-[19px] font-normal text-white">{summary.extensionCount} <span className="text-[11px] uppercase tracking-wide text-[#7eb8e0]">EXT</span></p>
+                </div>
                 <p className="mt-0.5 text-[12px] text-[#8dc7ed]">{summary.hours.toFixed(1)} hrs · {summary.count} record{summary.count === 1 ? "" : "s"}</p>
                 <p className="mt-0.5 text-[11px] text-[#6db6e8]">{summary.noteCount} monthly note{summary.noteCount === 1 ? "" : "s"}</p>
               </button>
