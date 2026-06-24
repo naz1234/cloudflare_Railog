@@ -4,11 +4,11 @@
   "properties": {
     "date": {
       "type": "string",
-      "description": "Overtime duty date in YYYY-MM-DD format"
+      "description": "Extension or RDOT duty date in YYYY-MM-DD format"
     },
     "type": {
       "type": "string",
-      "enum": ["RDOT", "OT"]
+      "enum": ["RDOT", "EXTENSION"]
     },
     "startTime": {
       "type": "string"

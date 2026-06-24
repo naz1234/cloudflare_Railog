@@ -9,6 +9,34 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
+const TIMING_OPTIONS = {
+  EXTENSION: [
+    { startTime: "07:30", endTime: "19:00" },
+    { startTime: "19:00", endTime: "07:30" },
+    { startTime: "15:30", endTime: "23:30" },
+    { startTime: "03:00", endTime: "15:30" },
+    { startTime: "23:30", endTime: "11:00" },
+    { startTime: "11:00", endTime: "23:30" },
+  ],
+  RDOT: [
+    { startTime: "07:00", endTime: "15:30" },
+    { startTime: "15:00", endTime: "23:30" },
+    { startTime: "23:00", endTime: "07:30" },
+  ],
+};
+
+function getDefaultTiming(type = "RDOT") {
+  return TIMING_OPTIONS[type]?.[0] || TIMING_OPTIONS.RDOT[0];
+}
+
+function getTimingValue(startTime, endTime) {
+  return `${startTime}|${endTime}`;
+}
+
+function getTimingLabel(startTime, endTime) {
+  return `${startTime} – ${endTime}`;
+}
+
 function getLocalDateValue(date = new Date()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -40,22 +68,25 @@ function calculateOvertimeHours(startTime, endTime, type = "RDOT") {
 }
 
 function createRecordDraft(date = getLocalDateValue()) {
+  const timing = getDefaultTiming("RDOT");
   return {
     date,
     type: "RDOT",
-    startTime: "19:00",
-    endTime: "07:00",
+    startTime: timing.startTime,
+    endTime: timing.endTime,
     remark: "",
   };
 }
 
 function normalizeRecord(record = {}) {
-  const type = String(record.type || "RDOT").toUpperCase() === "OT" ? "OT" : "RDOT";
+  const rawType = String(record.type || "RDOT").toUpperCase();
+  const type = rawType === "OT" || rawType === "EXTENSION" ? "EXTENSION" : "RDOT";
   const date = /^\d{4}-\d{2}-\d{2}$/.test(String(record.date || ""))
     ? String(record.date)
     : getLocalDateValue();
-  const startTime = /^\d{2}:\d{2}$/.test(String(record.startTime || "")) ? String(record.startTime) : "19:00";
-  const endTime = /^\d{2}:\d{2}$/.test(String(record.endTime || "")) ? String(record.endTime) : "07:00";
+  const defaultTiming = getDefaultTiming(type);
+  const startTime = /^\d{2}:\d{2}$/.test(String(record.startTime || "")) ? String(record.startTime) : defaultTiming.startTime;
+  const endTime = /^\d{2}:\d{2}$/.test(String(record.endTime || "")) ? String(record.endTime) : defaultTiming.endTime;
 
   return {
     id: String(record.id || `ovt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`),
@@ -249,6 +280,11 @@ export default function OvertimeTracker() {
   const draftHours = useMemo(
     () => calculateOvertimeHours(draft.startTime, draft.endTime, draft.type),
     [draft.startTime, draft.endTime, draft.type]
+  );
+  const draftTimingOptions = TIMING_OPTIONS[draft.type] || TIMING_OPTIONS.RDOT;
+  const draftTimingValue = getTimingValue(draft.startTime, draft.endTime);
+  const draftTimingIsPreset = draftTimingOptions.some(
+    (option) => getTimingValue(option.startTime, option.endTime) === draftTimingValue
   );
 
   const recordsForYear = useMemo(
@@ -470,7 +506,7 @@ export default function OvertimeTracker() {
 
   const exportCsv = () => {
     const rows = [
-      ["Date", "Month", "Type", "Start", "End", "Overtime Hours", "Remark"],
+      ["Date", "Month", "Type", "Start", "End", "Recorded Hours", "Remark"],
       ...recordsForYear
         .slice()
         .sort((a, b) => a.date.localeCompare(b.date))
@@ -489,7 +525,7 @@ export default function OvertimeTracker() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `overtime-${selectedYear}.csv`;
+    link.download = `extension-rdot-${selectedYear}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -500,8 +536,8 @@ export default function OvertimeTracker() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Yearly overview</p>
-            <h3 className="mt-1 text-[17px] font-normal text-white">Monthly Overtime Record</h3>
-            <p className="mt-1 text-[11px] text-[#8dc7ed]">Record every RDOT or normal overtime entry from January to December.</p>
+            <h3 className="mt-1 text-[17px] font-normal text-white">Monthly Extension & RDOT Record</h3>
+            <p className="mt-1 text-[11px] text-[#8dc7ed]">Record every Extension or RDOT entry from January to December.</p>
             <p className={`mt-1 text-[9px] font-semibold ${syncStatus === "Cloud saved" ? "text-emerald-300" : "text-amber-300"}`}>{syncStatus}</p>
           </div>
           <select
@@ -559,7 +595,7 @@ export default function OvertimeTracker() {
             <p className="mt-1 text-[20px] font-normal text-white">{annualRdotCount}</p>
           </div>
           <div className="rounded-2xl border border-[#1d4869] bg-[#071d30] px-4 py-3">
-            <p className="text-[9px] uppercase tracking-[0.18em] text-[#6db6e8]">Annual OT hours</p>
+            <p className="text-[9px] uppercase tracking-[0.18em] text-[#6db6e8]">Annual recorded hours</p>
             <p className="mt-1 text-[20px] font-normal text-white">{annualHours.toFixed(1)}</p>
           </div>
         </div>
@@ -582,7 +618,7 @@ export default function OvertimeTracker() {
           )}
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-[1fr_1fr_1.6fr_0.8fr]">
           <label className="col-span-2 block sm:col-span-1">
             <span className="text-[9px] font-normal uppercase tracking-wide text-[#7eb8e0]">Date</span>
             <input
@@ -597,32 +633,45 @@ export default function OvertimeTracker() {
             <span className="text-[9px] font-normal uppercase tracking-wide text-[#7eb8e0]">Type</span>
             <select
               value={draft.type}
-              onChange={(event) => setDraft((current) => ({ ...current, type: event.target.value }))}
+              onChange={(event) => {
+                const type = event.target.value;
+                const timing = getDefaultTiming(type);
+                setDraft((current) => ({
+                  ...current,
+                  type,
+                  startTime: timing.startTime,
+                  endTime: timing.endTime,
+                }));
+              }}
               className="mt-1.5 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-2.5 text-[12px] font-semibold text-[#061827] outline-none focus:border-[#4f8ef7]"
             >
               <option value="RDOT">RDOT</option>
-              <option value="OT">OT</option>
+              <option value="EXTENSION">Extension</option>
             </select>
           </label>
-          <label className="block">
-            <span className="text-[9px] font-normal uppercase tracking-wide text-[#7eb8e0]">Start</span>
-            <input
-              type="time"
-              value={draft.startTime}
-              onChange={(event) => setDraft((current) => ({ ...current, startTime: event.target.value }))}
+          <label className="col-span-2 block sm:col-span-1">
+            <span className="text-[9px] font-normal uppercase tracking-wide text-[#7eb8e0]">Timing</span>
+            <select
+              value={draftTimingValue}
+              onChange={(event) => {
+                const [startTime, endTime] = event.target.value.split("|");
+                setDraft((current) => ({ ...current, startTime, endTime }));
+              }}
               required
-              className="mt-1.5 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-2.5 text-[12px] font-normal text-[#061827] outline-none focus:border-[#4f8ef7]"
-            />
-          </label>
-          <label className="block">
-            <span className="text-[9px] font-normal uppercase tracking-wide text-[#7eb8e0]">End</span>
-            <input
-              type="time"
-              value={draft.endTime}
-              onChange={(event) => setDraft((current) => ({ ...current, endTime: event.target.value }))}
-              required
-              className="mt-1.5 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-2.5 text-[12px] font-normal text-[#061827] outline-none focus:border-[#4f8ef7]"
-            />
+              className="mt-1.5 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-2.5 text-[12px] font-semibold text-[#061827] outline-none focus:border-[#4f8ef7]"
+            >
+              {!draftTimingIsPreset && (
+                <option value={draftTimingValue}>{getTimingLabel(draft.startTime, draft.endTime)} (previous)</option>
+              )}
+              {draftTimingOptions.map((option) => (
+                <option
+                  key={getTimingValue(option.startTime, option.endTime)}
+                  value={getTimingValue(option.startTime, option.endTime)}
+                >
+                  {getTimingLabel(option.startTime, option.endTime)}
+                </option>
+              ))}
+            </select>
           </label>
           <div>
             <span className="text-[9px] font-normal uppercase tracking-wide text-[#7eb8e0]">Hours</span>
@@ -644,7 +693,7 @@ export default function OvertimeTracker() {
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <p className="text-[10px] leading-relaxed text-[#7eb8e0]">
-            RDOT uses the full shift duration. OT deducts 8.5 normal working hours.
+            RDOT uses the full selected shift duration. Extension deducts 8.5 normal working hours.
           </p>
           <button
             type="submit"
@@ -666,7 +715,7 @@ export default function OvertimeTracker() {
             <div className="min-w-0">
               <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Monthly notes</p>
               <h3 className="mt-0.5 truncate text-[15px] font-normal text-white">{MONTHS[selectedMonth]} {selectedYear}</h3>
-              <p className="mt-0.5 text-[9px] text-[#7eb8e0]">Separate from OT/RDOT records and not included in overtime totals.</p>
+              <p className="mt-0.5 text-[9px] text-[#7eb8e0]">Separate from Extension/RDOT records and not included in recorded-hour totals.</p>
             </div>
           </div>
           <p className={`text-[9px] font-semibold ${noteSyncStatus === "Cloud saved" ? "text-emerald-300" : "text-amber-300"}`}>
@@ -694,7 +743,7 @@ export default function OvertimeTracker() {
               <input
                 value={noteDraft.note}
                 onChange={(event) => setNoteDraft((current) => ({ ...current, note: event.target.value }))}
-                placeholder="Example: Submit January OT form before 5 February"
+                placeholder="Example: Submit January Extension/RDOT form before 5 February"
                 required
                 className="mt-1.5 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[12px] font-normal text-[#061827] outline-none placeholder:text-[#70839a] focus:border-[#4f8ef7]"
               />
@@ -775,17 +824,17 @@ export default function OvertimeTracker() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-[#4f8ef7]/25 bg-[#0f2d4a] text-[#8dc7ed]">
               <Plus className="h-5 w-5" />
             </div>
-            <p className="mt-3 text-[12px] text-[#8dc7ed]">No overtime recorded for this month.</p>
+            <p className="mt-3 text-[12px] text-[#8dc7ed]">No Extension or RDOT recorded for this month.</p>
           </div>
         ) : (
           <div className="divide-y divide-[#163952]">
             {visibleRecords.map((record) => (
               <div key={record.id} className="flex items-center gap-3 px-4 py-3 transition hover:bg-[#0a2238]">
-                <div className={`flex h-10 w-12 shrink-0 items-center justify-center rounded-xl border text-[10px] font-semibold ${record.type === "RDOT"
+                <div className={`flex h-10 w-20 shrink-0 items-center justify-center rounded-xl border px-2 text-[9px] font-semibold ${record.type === "RDOT"
                   ? "border-violet-400/30 bg-violet-500/10 text-violet-200"
                   : "border-amber-400/30 bg-amber-500/10 text-amber-200"
                 }`}>
-                  {record.type}
+                  {record.type === "EXTENSION" ? "Extension" : record.type}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -802,7 +851,7 @@ export default function OvertimeTracker() {
                   type="button"
                   onClick={() => handleEdit(record)}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#2b4f6b] text-[#8dc7ed] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white"
-                  aria-label="Edit overtime record"
+                  aria-label="Edit Extension or RDOT record"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
@@ -810,7 +859,7 @@ export default function OvertimeTracker() {
                   type="button"
                   onClick={() => handleDelete(record.id)}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-400/20 text-red-300 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-100"
-                  aria-label="Delete overtime record"
+                  aria-label="Delete Extension or RDOT record"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
