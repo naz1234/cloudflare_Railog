@@ -18,6 +18,7 @@ const ENTITY_NAMES = [
   'AdminNote',
   'InboundOutboundMovement',
   'OvertimeRecord',
+  'OvertimeMonthlyNote',
 ];
 
 async function apiRequest(path, options = {}) {

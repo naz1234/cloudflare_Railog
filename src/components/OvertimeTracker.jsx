@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Download, Loader2, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { Download, Loader2, NotebookPen, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const OVERTIME_STORAGE_KEY = "ovtOvertimeRecords_v1";
+const OVERTIME_NOTE_STORAGE_KEY = "ovtMonthlyNotes_v1";
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -85,6 +86,43 @@ function saveRecords(records) {
   } catch {}
 }
 
+function createNoteDraft(date = getLocalDateValue()) {
+  return {
+    date,
+    note: "",
+  };
+}
+
+function normalizeNote(note = {}) {
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(note.date || ""))
+    ? String(note.date)
+    : getLocalDateValue();
+
+  return {
+    id: String(note.id || `ovt-note-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`),
+    date,
+    note: String(note.note || "").trim(),
+    createdAt: note.createdAt || new Date().toISOString(),
+    updatedAt: note.updatedAt || note.createdAt || new Date().toISOString(),
+  };
+}
+
+function loadNotes() {
+  try {
+    const raw = localStorage.getItem(OVERTIME_NOTE_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.map(normalizeNote).filter((item) => item.note) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveNotes(notes) {
+  try {
+    localStorage.setItem(OVERTIME_NOTE_STORAGE_KEY, JSON.stringify(notes));
+  } catch {}
+}
+
 function formatDate(dateValue) {
   const [year, month, day] = String(dateValue || "").split("-").map(Number);
   if (!year || !month || !day) return dateValue;
@@ -103,21 +141,34 @@ function escapeCsv(value) {
 export default function OvertimeTracker() {
   const today = useMemo(() => new Date(), []);
   const [records, setRecords] = useState(() => loadRecords());
+  const [notes, setNotes] = useState(() => loadNotes());
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const [draft, setDraft] = useState(() => createRecordDraft());
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [noteDraft, setNoteDraft] = useState(() => createNoteDraft());
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [noteSaving, setNoteSaving] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Local cache ready");
+  const [noteSyncStatus, setNoteSyncStatus] = useState("Local cache ready");
 
   const overtimeEntity = base44?.entities?.OvertimeRecord || null;
+  const overtimeNoteEntity = base44?.entities?.OvertimeMonthlyNote || null;
   const cloudReady = Boolean(
     overtimeEntity?.list && overtimeEntity?.create && overtimeEntity?.update && overtimeEntity?.delete
+  );
+  const noteCloudReady = Boolean(
+    overtimeNoteEntity?.list && overtimeNoteEntity?.create && overtimeNoteEntity?.update && overtimeNoteEntity?.delete
   );
 
   useEffect(() => {
     saveRecords(records);
   }, [records]);
+
+  useEffect(() => {
+    saveNotes(notes);
+  }, [notes]);
 
   useEffect(() => {
     let cancelled = false;
@@ -155,6 +206,46 @@ export default function OvertimeTracker() {
     return () => { cancelled = true; };
   }, [cloudReady, overtimeEntity]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCloudNotes = async () => {
+      if (!noteCloudReady) {
+        setNoteSyncStatus("Local cache only");
+        return;
+      }
+
+      setNoteSyncStatus("Syncing...");
+      try {
+        const remoteNotes = await overtimeNoteEntity.list("-date");
+        if (cancelled) return;
+
+        const normalizedRemote = Array.isArray(remoteNotes)
+          ? remoteNotes.map(normalizeNote).filter((item) => item.note)
+          : [];
+        const localNotes = loadNotes();
+
+        if (!normalizedRemote.length && localNotes.length && overtimeNoteEntity.bulkCreate) {
+          const uploaded = await overtimeNoteEntity.bulkCreate(localNotes.map(({ id, ...note }) => note));
+          if (cancelled) return;
+          const normalizedUploaded = Array.isArray(uploaded)
+            ? uploaded.map(normalizeNote).filter((item) => item.note)
+            : localNotes;
+          setNotes(normalizedUploaded);
+        } else {
+          setNotes(normalizedRemote);
+        }
+        setNoteSyncStatus("Cloud saved");
+      } catch (error) {
+        console.error("Overtime monthly note cloud load failed:", error);
+        if (!cancelled) setNoteSyncStatus("Local cache only");
+      }
+    };
+
+    loadCloudNotes();
+    return () => { cancelled = true; };
+  }, [noteCloudReady, overtimeNoteEntity]);
+
   const draftHours = useMemo(
     () => calculateOvertimeHours(draft.startTime, draft.endTime, draft.type),
     [draft.startTime, draft.endTime, draft.type]
@@ -165,20 +256,32 @@ export default function OvertimeTracker() {
     [records, selectedYear]
   );
 
+  const notesForYear = useMemo(
+    () => notes.filter((note) => Number(note.date.slice(0, 4)) === selectedYear),
+    [notes, selectedYear]
+  );
+
   const monthSummaries = useMemo(() => MONTHS.map((month, monthIndex) => {
     const monthRecords = recordsForYear.filter((record) => Number(record.date.slice(5, 7)) === monthIndex + 1);
+    const monthNotes = notesForYear.filter((note) => Number(note.date.slice(5, 7)) === monthIndex + 1);
     return {
       month,
       count: monthRecords.length,
       rdotCount: monthRecords.filter((record) => record.type === "RDOT").length,
       hours: roundOne(monthRecords.reduce((total, record) => total + Number(record.hours || 0), 0)),
+      noteCount: monthNotes.length,
     };
-  }), [recordsForYear]);
+  }), [notesForYear, recordsForYear]);
 
   const visibleRecords = useMemo(() => recordsForYear
     .filter((record) => Number(record.date.slice(5, 7)) === selectedMonth + 1)
     .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)),
   [recordsForYear, selectedMonth]);
+
+  const visibleNotes = useMemo(() => notesForYear
+    .filter((note) => Number(note.date.slice(5, 7)) === selectedMonth + 1)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)),
+  [notesForYear, selectedMonth]);
 
   const annualHours = useMemo(
     () => roundOne(recordsForYear.reduce((total, record) => total + Number(record.hours || 0), 0)),
@@ -193,12 +296,18 @@ export default function OvertimeTracker() {
     const currentYear = today.getFullYear();
     const years = new Set([currentYear + 1, currentYear, currentYear - 1, currentYear - 2, currentYear - 3, selectedYear]);
     records.forEach((record) => years.add(Number(record.date.slice(0, 4))));
+    notes.forEach((note) => years.add(Number(note.date.slice(0, 4))));
     return Array.from(years).filter(Number.isFinite).sort((a, b) => b - a);
-  }, [records, selectedYear, today]);
+  }, [notes, records, selectedYear, today]);
 
   const resetDraft = (date = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-01`) => {
     setDraft(createRecordDraft(date));
     setEditingId(null);
+  };
+
+  const resetNoteDraft = (date = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-01`) => {
+    setNoteDraft(createNoteDraft(date));
+    setEditingNoteId(null);
   };
 
   const handleSave = async (event) => {
@@ -282,6 +391,83 @@ export default function OvertimeTracker() {
     }
   };
 
+  const handleNoteSave = async (event) => {
+    event.preventDefault();
+    const cleanNote = String(noteDraft.note || "").trim();
+    if (!noteDraft.date || !cleanNote || noteSaving) return;
+
+    const now = new Date().toISOString();
+    const existing = editingNoteId ? notes.find((note) => note.id === editingNoteId) : null;
+    const payload = normalizeNote({
+      ...(existing || {}),
+      ...noteDraft,
+      note: cleanNote,
+      id: editingNoteId || `ovt-note-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+    });
+
+    setNoteSaving(true);
+    try {
+      let savedNote = payload;
+      if (noteCloudReady) {
+        const { id, ...cloudPayload } = payload;
+        if (editingNoteId && !String(editingNoteId).startsWith("ovt-note-")) {
+          savedNote = normalizeNote(await overtimeNoteEntity.update(editingNoteId, cloudPayload));
+        } else {
+          savedNote = normalizeNote(await overtimeNoteEntity.create(cloudPayload));
+        }
+        setNoteSyncStatus("Cloud saved");
+      } else {
+        setNoteSyncStatus("Local cache only");
+      }
+
+      setNotes((current) => {
+        if (editingNoteId) {
+          return current.map((note) => note.id === editingNoteId ? savedNote : note);
+        }
+        return [...current, savedNote];
+      });
+
+      const [year, month] = noteDraft.date.split("-").map(Number);
+      setSelectedYear(year);
+      setSelectedMonth(month - 1);
+      resetNoteDraft(noteDraft.date);
+    } catch (error) {
+      console.error("Overtime monthly note save failed:", error);
+      setNoteSyncStatus("Local cache only");
+      setNotes((current) => {
+        if (editingNoteId) return current.map((note) => note.id === editingNoteId ? payload : note);
+        return [...current, payload];
+      });
+      resetNoteDraft(noteDraft.date);
+    } finally {
+      setNoteSaving(false);
+    }
+  };
+
+  const handleNoteEdit = (note) => {
+    setEditingNoteId(note.id);
+    setNoteDraft({ date: note.date, note: note.note });
+  };
+
+  const handleNoteDelete = async (id) => {
+    const removedNote = notes.find((note) => note.id === id);
+    setNotes((current) => current.filter((note) => note.id !== id));
+    if (editingNoteId === id) resetNoteDraft();
+
+    if (noteCloudReady && !String(id).startsWith("ovt-note-")) {
+      try {
+        await overtimeNoteEntity.delete(id);
+        setNoteSyncStatus("Cloud saved");
+      } catch (error) {
+        console.error("Overtime monthly note delete failed:", error);
+        if (removedNote) setNotes((current) => [...current, removedNote]);
+        setNoteSyncStatus("Delete not synced");
+      }
+    }
+  };
+
   const exportCsv = () => {
     const rows = [
       ["Date", "Month", "Type", "Start", "End", "Overtime Hours", "Remark"],
@@ -324,6 +510,7 @@ export default function OvertimeTracker() {
               const year = Number(event.target.value);
               setSelectedYear(year);
               if (!editingId) resetDraft(`${year}-${String(selectedMonth + 1).padStart(2, "0")}-01`);
+              resetNoteDraft(`${year}-${String(selectedMonth + 1).padStart(2, "0")}-01`);
             }}
             className="h-10 rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[12px] font-semibold text-[#061827] outline-none focus:border-[#4f8ef7]"
             aria-label="Overtime year"
@@ -350,6 +537,7 @@ export default function OvertimeTracker() {
                 onClick={() => {
                   setSelectedMonth(monthIndex);
                   if (!editingId) resetDraft(`${selectedYear}-${String(monthIndex + 1).padStart(2, "0")}-01`);
+                  resetNoteDraft(`${selectedYear}-${String(monthIndex + 1).padStart(2, "0")}-01`);
                 }}
                 className={`rounded-2xl border px-3 py-3 text-left transition ${active
                   ? "border-[#69b9ef] bg-[#123b5d] shadow-[0_0_20px_rgba(79,142,247,0.18)]"
@@ -359,6 +547,7 @@ export default function OvertimeTracker() {
                 <p className={`text-[11px] font-semibold ${active ? "text-white" : "text-[#bceaff]"}`}>{summary.month.slice(0, 3)}</p>
                 <p className="mt-1 text-[17px] font-normal text-white">{summary.rdotCount} <span className="text-[9px] uppercase tracking-wide text-[#7eb8e0]">RDOT</span></p>
                 <p className="mt-0.5 text-[10px] text-[#8dc7ed]">{summary.hours.toFixed(1)} hrs · {summary.count} record{summary.count === 1 ? "" : "s"}</p>
+                <p className="mt-0.5 text-[9px] text-[#6db6e8]">{summary.noteCount} monthly note{summary.noteCount === 1 ? "" : "s"}</p>
               </button>
             );
           })}
@@ -467,6 +656,108 @@ export default function OvertimeTracker() {
           </button>
         </div>
       </form>
+
+      <section className="overflow-hidden rounded-[24px] border border-[#1d4869] bg-[#061827]/90 shadow-[0_18px_55px_rgba(0,0,0,0.22)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1a3a56] px-4 py-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-500/10 text-cyan-200">
+              <NotebookPen className="h-4.5 w-4.5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Monthly notes</p>
+              <h3 className="mt-0.5 truncate text-[15px] font-normal text-white">{MONTHS[selectedMonth]} {selectedYear}</h3>
+              <p className="mt-0.5 text-[9px] text-[#7eb8e0]">Separate from OT/RDOT records and not included in overtime totals.</p>
+            </div>
+          </div>
+          <p className={`text-[9px] font-semibold ${noteSyncStatus === "Cloud saved" ? "text-emerald-300" : "text-amber-300"}`}>
+            {noteSyncStatus}
+          </p>
+        </div>
+
+        <form onSubmit={handleNoteSave} className="border-b border-[#163952] p-4">
+          <div className="grid gap-3 sm:grid-cols-[170px_1fr_auto] sm:items-end">
+            <label className="block">
+              <span className="text-[9px] font-normal uppercase tracking-wide text-[#7eb8e0]">Note date</span>
+              <input
+                type="date"
+                value={noteDraft.date}
+                min={`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-01`}
+                max={`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-${String(new Date(selectedYear, selectedMonth + 1, 0).getDate()).padStart(2, "0")}`}
+                onChange={(event) => setNoteDraft((current) => ({ ...current, date: event.target.value }))}
+                required
+                className="mt-1.5 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-2.5 text-[12px] font-normal text-[#061827] outline-none focus:border-[#4f8ef7]"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-[9px] font-normal uppercase tracking-wide text-[#7eb8e0]">Note</span>
+              <input
+                value={noteDraft.note}
+                onChange={(event) => setNoteDraft((current) => ({ ...current, note: event.target.value }))}
+                placeholder="Example: Submit January OT form before 5 February"
+                required
+                className="mt-1.5 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[12px] font-normal text-[#061827] outline-none placeholder:text-[#70839a] focus:border-[#4f8ef7]"
+              />
+            </label>
+
+            <div className="flex gap-2">
+              {editingNoteId && (
+                <button
+                  type="button"
+                  onClick={() => resetNoteDraft()}
+                  className="flex h-10 items-center gap-1.5 rounded-xl border border-[#2b4f6b] px-3 text-[10px] font-semibold text-[#bceaff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a]"
+                >
+                  <X className="h-3.5 w-3.5" /> Cancel
+                </button>
+              )}
+              <button
+                type="submit"
+                disabled={noteSaving || !String(noteDraft.note || "").trim()}
+                className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-cyan-400/40 bg-cyan-700/40 px-4 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-50 transition hover:bg-cyan-700/60 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {noteSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingNoteId ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                {noteSaving ? "Saving" : editingNoteId ? "Update note" : "Add note"}
+              </button>
+            </div>
+          </div>
+        </form>
+
+        {!visibleNotes.length ? (
+          <div className="px-5 py-8 text-center">
+            <p className="text-[11px] text-[#8dc7ed]">No monthly notes added yet.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-[#163952]">
+            {visibleNotes.map((note) => (
+              <div key={note.id} className="flex items-start gap-3 px-4 py-3 transition hover:bg-[#0a2238]">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/10 text-cyan-200">
+                  <NotebookPen className="h-3.5 w-3.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold text-white">{formatDate(note.date)}</p>
+                  <p className="mt-1 whitespace-pre-wrap break-words text-[11px] leading-relaxed text-[#bceaff]">{note.note}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleNoteEdit(note)}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#2b4f6b] text-[#8dc7ed] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white"
+                  aria-label="Edit monthly note"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleNoteDelete(note.id)}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-400/20 text-red-300 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-100"
+                  aria-label="Delete monthly note"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="overflow-hidden rounded-[24px] border border-[#1d4869] bg-[#061827]/90 shadow-[0_18px_55px_rgba(0,0,0,0.22)]">
         <div className="flex items-center justify-between border-b border-[#1a3a56] px-4 py-3">
