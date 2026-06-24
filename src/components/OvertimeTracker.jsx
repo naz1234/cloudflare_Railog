@@ -698,8 +698,8 @@ export default function OvertimeTracker() {
                   </div>
                 </div>
 
-                <p className="mt-3 text-[10px] text-[#acbbcf]">
-                  {summary.hours.toFixed(1)} hrs <span className="mx-1.5 text-[#68819b]">•</span> {summary.count} record{summary.count === 1 ? "" : "s"}
+                <p className="mt-3 text-[12px] text-[#acbbcf]">
+                  Total Hour : {summary.hours.toFixed(1)} hrs
                 </p>
                 <p className="mt-1.5 text-[10px] text-[#acbbcf]">
                   {summary.noteCount} monthly note{summary.noteCount === 1 ? "" : "s"}
