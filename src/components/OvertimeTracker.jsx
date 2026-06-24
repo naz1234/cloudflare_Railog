@@ -912,17 +912,17 @@ export default function OvertimeTracker() {
             </div>
 
             <label className="mt-3 block">
-              <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Remark (optional)</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Remark (optional)</span>
               <input
                 value={draft.remark}
                 onChange={(event) => setDraft((current) => ({ ...current, remark: event.target.value }))}
                 placeholder="Example: Night shift / replacement duty"
-                className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-normal text-[#eff5fc] outline-none placeholder:text-[#8295ad] focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
+                className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[13px] font-normal text-[#eff5fc] outline-none placeholder:text-[#8295ad] focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
               />
             </label>
 
             <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[10px] leading-relaxed text-[#9babc0]">
+              <p className="text-[11px] leading-relaxed text-[#9babc0]">
                 RDOT uses the full selected shift duration. Extension deducts {draft.dayType === "RAMADAN" ? "6 Ramadhan working hours" : "8.5 normal working hours"}.
               </p>
               <div className="flex gap-2">
