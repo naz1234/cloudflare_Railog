@@ -354,6 +354,24 @@ export default function OvertimeTracker() {
     .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)),
   [notesForYear, selectedMonth]);
 
+  const visibleEntries = useMemo(() => [
+    ...visibleRecords.map((record) => ({
+      key: `record-${record.id}`,
+      kind: "record",
+      date: record.date,
+      createdAt: record.createdAt,
+      item: record,
+    })),
+    ...visibleNotes.map((note) => ({
+      key: `note-${note.id}`,
+      kind: "note",
+      date: note.date,
+      createdAt: note.createdAt,
+      item: note,
+    })),
+  ].sort((a, b) => b.date.localeCompare(a.date) || String(b.createdAt || "").localeCompare(String(a.createdAt || ""))),
+  [visibleNotes, visibleRecords]);
+
   const annualHours = useMemo(
     () => roundOne(recordsForYear.reduce((total, record) => total + Number(record.hours || 0), 0)),
     [recordsForYear]
@@ -680,224 +698,215 @@ export default function OvertimeTracker() {
         </div>
       </section>
 
-      <form onSubmit={handleSave} className="rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(50,80,123,0.13),transparent_35%),linear-gradient(145deg,rgba(8,27,45,0.98),rgba(5,20,35,0.98))] p-4 shadow-[0_16px_45px_rgba(0,0,0,0.24)] sm:p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#55708d] bg-[#0e2943] text-[#c6d7eb]">
-              <FilePlus2 className="h-4 w-4" strokeWidth={1.8} />
-            </div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.20em] text-[#afbed2]">{editingId ? "Edit record" : "New record"}</p>
-              <p className="mt-0.5 text-[10px] text-[#9eb0c6]">Log a new RDOT or Extension entry.</p>
-            </div>
+      <section className="rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(50,80,123,0.13),transparent_35%),linear-gradient(145deg,rgba(8,27,45,0.98),rgba(5,20,35,0.98))] p-4 shadow-[0_16px_45px_rgba(0,0,0,0.24)] sm:p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#55708d] bg-[#0e2943] text-[#c6d7eb]">
+            <FilePlus2 className="h-4 w-4" strokeWidth={1.8} />
           </div>
-          {editingId && (
-            <button
-              type="button"
-              onClick={() => resetDraft()}
-              className="flex h-9 items-center gap-1.5 rounded-xl border border-[#294660] bg-[#0b2137] px-3 text-[10px] font-semibold text-[#c9d8e9] transition hover:border-[#607fa5] hover:bg-[#102b46]"
-            >
-              <X className="h-3.5 w-3.5" /> Cancel
-            </button>
-          )}
-        </div>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.1fr_1fr_1.1fr_.8fr]">
-          <label className="block">
-            <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Date</span>
-            <input
-              type="date"
-              value={draft.date}
-              onChange={(event) => setDraft((current) => ({ ...current, date: event.target.value }))}
-              required
-              className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-medium text-[#eff5fc] outline-none transition focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
-              style={{ colorScheme: "dark" }}
-            />
-          </label>
-
-          <label className="block">
-            <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Type</span>
-            <select
-              value={draft.type}
-              onChange={(event) => {
-                const type = event.target.value;
-                const timing = getDefaultTiming(type);
-                setDraft((current) => ({
-                  ...current,
-                  type,
-                  startTime: timing.startTime,
-                  endTime: timing.endTime,
-                }));
-              }}
-              className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-medium text-[#eff5fc] outline-none transition focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
-              style={{ colorScheme: "dark" }}
-            >
-              <option value="RDOT">RDOT</option>
-              <option value="EXTENSION">Extension</option>
-            </select>
-          </label>
-
-          <label className="block">
-            <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Time</span>
-            <select
-              value={draftTimingValue}
-              onChange={(event) => {
-                const [startTime, endTime] = event.target.value.split("|");
-                setDraft((current) => ({ ...current, startTime, endTime }));
-              }}
-              required
-              className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-medium text-[#eff5fc] outline-none transition focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
-              style={{ colorScheme: "dark" }}
-            >
-              {!draftTimingIsPreset && (
-                <option value={draftTimingValue}>{getTimingLabel(draft.startTime, draft.endTime)} (previous)</option>
-              )}
-              {draftTimingOptions.map((option, index) => {
-                const timingValue = getTimingValue(option.startTime, option.endTime);
-                const showPairSeparator = draft.type === "EXTENSION" && (index === 2 || index === 4);
-                return (
-                  <Fragment key={timingValue}>
-                    {showPairSeparator && <option disabled value={`separator-${index}`}>──────────────</option>}
-                    <option value={timingValue}>{getTimingLabel(option.startTime, option.endTime)}</option>
-                  </Fragment>
-                );
-              })}
-            </select>
-          </label>
-
           <div>
-            <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Hours</span>
-            <div className="mt-1.5 flex h-10 items-center justify-center rounded-xl border border-emerald-400/45 bg-emerald-500/10 text-[15px] font-semibold text-emerald-300 shadow-[inset_0_0_18px_rgba(16,185,129,0.04)]">
-              {draftHours.toFixed(1)}
-            </div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.20em] text-[#afbed2]">
+              {editingNoteId ? "Edit monthly note" : editingId ? "Edit duty record" : "New record"}
+            </p>
+            <p className="mt-0.5 text-[10px] text-[#9eb0c6]">
+              Add a duty record or a separate monthly note below.
+            </p>
           </div>
         </div>
 
-        <label className="mt-4 block">
-          <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Remark (optional)</span>
-          <input
-            value={draft.remark}
-            onChange={(event) => setDraft((current) => ({ ...current, remark: event.target.value }))}
-            placeholder="Example: Night shift / replacement duty"
-            className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-normal text-[#eff5fc] outline-none placeholder:text-[#8295ad] focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
-          />
-        </label>
-
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[10px] leading-relaxed text-[#9babc0]">
-            RDOT uses the full selected shift duration. Extension deducts 8.5 normal working hours.
-          </p>
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#7179ff]/70 bg-[linear-gradient(135deg,#5a55ed,#465ee9)] px-4 text-[12px] font-semibold text-white shadow-[0_8px_20px_rgba(72,78,220,0.24)] transition hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId ? <Save className="h-4 w-4" /> : <Plus className="h-5 w-5" />}
-            {saving ? "Saving" : editingId ? "Update Record" : "Add Record"}
-          </button>
-        </div>
-      </form>
-
-      <section className="overflow-hidden rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(50,80,123,0.13),transparent_35%),linear-gradient(145deg,rgba(8,27,45,0.98),rgba(5,20,35,0.98))] shadow-[0_16px_45px_rgba(0,0,0,0.24)]">
-        <div className="flex flex-wrap items-start justify-between gap-3 px-4 pb-2.5 pt-4 sm:px-5 sm:pt-5">
-          <div className="flex min-w-0 items-start gap-3">
-            <MessageSquareText className="mt-0.5 h-6 w-6 shrink-0 text-[#61baff]" strokeWidth={1.8} />
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.20em] text-[#afbed2]">Monthly notes</p>
-              <p className="mt-0.5 text-[10px] text-[#9eb0c6]">Save notes for the selected month.</p>
-              <p className={`mt-1 text-[9px] font-semibold ${noteSyncStatus === "Live cloud" ? "text-emerald-300" : "text-amber-300"}`}>{noteSyncStatus}</p>
+        <div className="mt-4 rounded-[16px] border border-[#294862] bg-[#081f34]/65 p-3.5 sm:p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-violet-400/25 bg-violet-500/10 text-violet-200">
+                <Clock3 className="h-4 w-4" strokeWidth={1.8} />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#e2e9f4]">RDOT / Extension record</p>
+                <p className="mt-0.5 text-[9px] text-[#97a9bf]">Duty entry used for counts and recorded hours.</p>
+              </div>
             </div>
+            <span className="rounded-full border border-violet-400/25 bg-violet-500/10 px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-violet-200">
+              Counts hours
+            </span>
           </div>
-          <p className="rounded-full border border-[#243f59] bg-[#0e2740] px-3 py-1.5 text-[10px] font-medium text-[#d6e2f0]">
-            {MONTHS[selectedMonth]} {selectedYear}
-          </p>
-        </div>
 
-        <form onSubmit={handleNoteSave} className="px-4 pb-3 pt-1.5 sm:px-5 sm:pb-4">
-          <div className="grid gap-2.5 lg:grid-cols-[180px_1fr_auto] lg:items-end">
-            <label className="block">
-              <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Date</span>
-              <input
-                type="date"
-                value={noteDraft.date}
-                min={`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-01`}
-                max={`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-${String(new Date(selectedYear, selectedMonth + 1, 0).getDate()).padStart(2, "0")}`}
-                onChange={(event) => setNoteDraft((current) => ({ ...current, date: event.target.value }))}
-                required
-                className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-medium text-[#eff5fc] outline-none focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
-                style={{ colorScheme: "dark" }}
-              />
-            </label>
+          <form onSubmit={handleSave}>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.1fr_1fr_1.1fr_.8fr]">
+              <label className="block">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Date</span>
+                <input
+                  type="date"
+                  value={draft.date}
+                  onChange={(event) => setDraft((current) => ({ ...current, date: event.target.value }))}
+                  required
+                  className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-medium text-[#eff5fc] outline-none transition focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
+                  style={{ colorScheme: "dark" }}
+                />
+              </label>
 
-            <label className="block">
-              <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Note</span>
+              <label className="block">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Type</span>
+                <select
+                  value={draft.type}
+                  onChange={(event) => {
+                    const type = event.target.value;
+                    const timing = getDefaultTiming(type);
+                    setDraft((current) => ({
+                      ...current,
+                      type,
+                      startTime: timing.startTime,
+                      endTime: timing.endTime,
+                    }));
+                  }}
+                  className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-medium text-[#eff5fc] outline-none transition focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
+                  style={{ colorScheme: "dark" }}
+                >
+                  <option value="RDOT">RDOT</option>
+                  <option value="EXTENSION">Extension</option>
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Time</span>
+                <select
+                  value={draftTimingValue}
+                  onChange={(event) => {
+                    const [startTime, endTime] = event.target.value.split("|");
+                    setDraft((current) => ({ ...current, startTime, endTime }));
+                  }}
+                  required
+                  className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-medium text-[#eff5fc] outline-none transition focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
+                  style={{ colorScheme: "dark" }}
+                >
+                  {!draftTimingIsPreset && (
+                    <option value={draftTimingValue}>{getTimingLabel(draft.startTime, draft.endTime)} (previous)</option>
+                  )}
+                  {draftTimingOptions.map((option, index) => {
+                    const timingValue = getTimingValue(option.startTime, option.endTime);
+                    const showPairSeparator = draft.type === "EXTENSION" && (index === 2 || index === 4);
+                    return (
+                      <Fragment key={timingValue}>
+                        {showPairSeparator && <option disabled value={`separator-${index}`}>──────────────</option>}
+                        <option value={timingValue}>{getTimingLabel(option.startTime, option.endTime)}</option>
+                      </Fragment>
+                    );
+                  })}
+                </select>
+              </label>
+
+              <div>
+                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Hours</span>
+                <div className="mt-1.5 flex h-10 items-center justify-center rounded-xl border border-emerald-400/45 bg-emerald-500/10 text-[15px] font-semibold text-emerald-300 shadow-[inset_0_0_18px_rgba(16,185,129,0.04)]">
+                  {draftHours.toFixed(1)}
+                </div>
+              </div>
+            </div>
+
+            <label className="mt-3 block">
+              <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Remark (optional)</span>
               <input
-                value={noteDraft.note}
-                onChange={(event) => setNoteDraft((current) => ({ ...current, note: event.target.value }))}
-                placeholder="Example: Submit January Extension/RDOT form before 5 February"
-                required
+                value={draft.remark}
+                onChange={(event) => setDraft((current) => ({ ...current, remark: event.target.value }))}
+                placeholder="Example: Night shift / replacement duty"
                 className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-normal text-[#eff5fc] outline-none placeholder:text-[#8295ad] focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
               />
             </label>
 
-            <div className="flex gap-2">
-              {editingNoteId && (
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[10px] leading-relaxed text-[#9babc0]">
+                RDOT uses the full selected shift duration. Extension deducts 8.5 normal working hours.
+              </p>
+              <div className="flex gap-2">
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={() => resetDraft()}
+                    className="flex h-10 items-center gap-1.5 rounded-xl border border-[#294660] bg-[#0b2137] px-3 text-[10px] font-semibold text-[#c9d8e9] transition hover:border-[#607fa5] hover:bg-[#102b46]"
+                  >
+                    <X className="h-3.5 w-3.5" /> Cancel
+                  </button>
+                )}
                 <button
-                  type="button"
-                  onClick={() => resetNoteDraft()}
-                  className="flex h-10 items-center gap-1.5 rounded-xl border border-[#294660] bg-[#0b2137] px-3 text-[10px] font-semibold text-[#c9d8e9] transition hover:border-[#607fa5] hover:bg-[#102b46]"
+                  type="submit"
+                  disabled={saving}
+                  className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#7179ff]/70 bg-[linear-gradient(135deg,#5a55ed,#465ee9)] px-4 text-[12px] font-semibold text-white shadow-[0_8px_20px_rgba(72,78,220,0.24)] transition hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <X className="h-3.5 w-3.5" /> Cancel
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId ? <Save className="h-4 w-4" /> : <Plus className="h-5 w-5" />}
+                  {saving ? "Saving" : editingId ? "Update Duty Record" : "Add Duty Record"}
                 </button>
-              )}
-              <button
-                type="submit"
-                disabled={noteSaving || !String(noteDraft.note || "").trim()}
-                className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#294660] bg-[#0d2740] px-4 text-[10px] font-medium text-[#dce8f7] transition hover:border-[#5776a0] hover:bg-[#12324f] disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {noteSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingNoteId ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                {noteSaving ? "Saving" : editingNoteId ? "Update Note" : "Add Note"}
-              </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div className="mt-3 rounded-[16px] border border-cyan-400/20 bg-cyan-500/[0.035] p-3.5 sm:p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-cyan-400/25 bg-cyan-500/10 text-cyan-200">
+                <MessageSquareText className="h-4 w-4" strokeWidth={1.8} />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#e2e9f4]">Monthly note</p>
+                <p className="mt-0.5 text-[9px] text-[#97a9bf]">General dated note only. It does not add RDOT, EXT or hours.</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-cyan-400/25 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-cyan-200">
+                Note only · no hours
+              </span>
+              <span className={`text-[9px] font-semibold ${noteSyncStatus === "Live cloud" ? "text-emerald-300" : "text-amber-300"}`}>
+                {noteSyncStatus}
+              </span>
             </div>
           </div>
-        </form>
 
-        <div className="border-t border-[#1a354e] px-4 py-2.5 sm:px-5">
-          {!visibleNotes.length ? (
-            <div className="py-5 text-center">
-              <p className="text-[11px] text-[#91a4bb]">No monthly notes added yet.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {visibleNotes.map((note) => (
-                <div key={note.id} className="flex items-center gap-2.5 rounded-xl border border-[#203d58] bg-[#0a2238]/70 px-3 py-2.5 transition hover:border-[#345d80] hover:bg-[#0c2943]">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-400/15 bg-emerald-500/10 text-emerald-300">
-                    <MessageSquareText className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-semibold text-[#f1f5fb]">{formatDate(note.date)}</p>
-                    <p className="mt-1 whitespace-pre-wrap break-words text-[11px] leading-relaxed text-[#b5c2d3]">{note.note}</p>
-                  </div>
+          <form onSubmit={handleNoteSave} className="mt-3">
+            <div className="grid gap-2.5 lg:grid-cols-[180px_1fr_auto] lg:items-end">
+              <label className="block">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Note date</span>
+                <input
+                  type="date"
+                  value={noteDraft.date}
+                  min={`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-01`}
+                  max={`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-${String(new Date(selectedYear, selectedMonth + 1, 0).getDate()).padStart(2, "0")}`}
+                  onChange={(event) => setNoteDraft((current) => ({ ...current, date: event.target.value }))}
+                  required
+                  className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-medium text-[#eff5fc] outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/15"
+                  style={{ colorScheme: "dark" }}
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Monthly note text</span>
+                <input
+                  value={noteDraft.note}
+                  onChange={(event) => setNoteDraft((current) => ({ ...current, note: event.target.value }))}
+                  placeholder="Example: DCC did not change take to night"
+                  required
+                  className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-normal text-[#eff5fc] outline-none placeholder:text-[#8295ad] focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/15"
+                />
+              </label>
+
+              <div className="flex gap-2">
+                {editingNoteId && (
                   <button
                     type="button"
-                    onClick={() => handleNoteEdit(note)}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#294660] text-[#afbed2] transition hover:border-[#5d7ea5] hover:bg-[#12314e] hover:text-white"
-                    aria-label="Edit monthly note"
+                    onClick={() => resetNoteDraft()}
+                    className="flex h-10 items-center gap-1.5 rounded-xl border border-[#294660] bg-[#0b2137] px-3 text-[10px] font-semibold text-[#c9d8e9] transition hover:border-[#607fa5] hover:bg-[#102b46]"
                   >
-                    <Pencil className="h-3.5 w-3.5" />
+                    <X className="h-3.5 w-3.5" /> Cancel
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => handleNoteDelete(note.id)}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-red-400/20 text-red-300 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-100"
-                    aria-label="Delete monthly note"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
+                )}
+                <button
+                  type="submit"
+                  disabled={noteSaving || !String(noteDraft.note || "").trim()}
+                  className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 text-[10px] font-semibold text-cyan-100 transition hover:border-cyan-300/55 hover:bg-cyan-500/15 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {noteSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingNoteId ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                  {noteSaving ? "Saving" : editingNoteId ? "Update Monthly Note" : "Add Monthly Note"}
+                </button>
+              </div>
             </div>
-          )}
+          </form>
         </div>
       </section>
 
@@ -908,60 +917,101 @@ export default function OvertimeTracker() {
               <ListChecks className="h-4.5 w-4.5" strokeWidth={1.8} />
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.20em] text-[#afbed2]">Records</p>
-              <p className="mt-0.5 text-[10px] text-[#9eb0c6]">View all RDOT and Extension entries.</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.20em] text-[#afbed2]">Records &amp; notes</p>
+              <p className="mt-0.5 text-[10px] text-[#9eb0c6]">RDOT and EXT count hours. NOTE is information only.</p>
             </div>
           </div>
           <p className="rounded-full border border-[#203b55] bg-[#0d2740] px-3 py-1.5 text-[10px] font-medium text-[#d3dfed]">
-            <span className="text-emerald-300">{visibleRecords.length}</span> entr{visibleRecords.length === 1 ? "y" : "ies"}
+            <span className="text-emerald-300">{visibleEntries.length}</span> entr{visibleEntries.length === 1 ? "y" : "ies"}
           </p>
         </div>
 
         <div className="px-4 pb-3 pt-1.5 sm:px-5 sm:pb-4">
-          {!visibleRecords.length ? (
+          {!visibleEntries.length ? (
             <div className="rounded-2xl border border-dashed border-[#294660] px-5 py-9 text-center">
               <Plus className="mx-auto h-5 w-5 text-[#8196ad]" />
-              <p className="mt-3 text-[12px] text-[#91a4bb]">No Extension or RDOT recorded for this month.</p>
+              <p className="mt-3 text-[12px] text-[#91a4bb]">No duty records or monthly notes for this month.</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {visibleRecords.map((record) => (
-                <div key={record.id} className="flex flex-wrap items-center gap-2.5 rounded-xl border border-[#203d58] bg-[#0a2238]/70 px-3 py-2.5 transition hover:border-[#345d80] hover:bg-[#0c2943] sm:flex-nowrap">
-                  <div className={`flex h-9 w-[68px] shrink-0 items-center justify-center rounded-lg border px-2 text-[10px] font-semibold ${record.type === "RDOT"
-                    ? "border-[#5b56c8]/50 bg-[#252459]/55 text-[#8f94ff]"
-                    : "border-amber-400/30 bg-amber-500/10 text-amber-200"
-                  }`}>
-                    {record.type === "EXTENSION" ? "EXT" : record.type}
-                  </div>
-                  <div className="min-w-[180px] flex-1">
-                    <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-                      <p className="text-[12px] font-semibold text-[#f1f5fb]">{formatDate(record.date)}</p>
-                      <span className="text-[11px] text-[#79a9d2]">{record.startTime} – {record.endTime}</span>
+              {visibleEntries.map((entry) => {
+                if (entry.kind === "note") {
+                  const note = entry.item;
+                  return (
+                    <div key={entry.key} className="flex flex-wrap items-center gap-2.5 rounded-xl border border-cyan-400/20 bg-cyan-500/[0.035] px-3 py-2.5 transition hover:border-cyan-300/35 hover:bg-cyan-500/[0.06] sm:flex-nowrap">
+                      <div className="flex h-9 w-[68px] shrink-0 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-2 text-[10px] font-semibold text-cyan-200">
+                        NOTE
+                      </div>
+                      <div className="min-w-[180px] flex-1">
+                        <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+                          <p className="text-[12px] font-semibold text-[#f1f5fb]">{formatDate(note.date)}</p>
+                          <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-cyan-300">Monthly note</span>
+                        </div>
+                        <p className="mt-1 whitespace-pre-wrap break-words text-[11px] leading-relaxed text-[#b5c2d3]">{note.note}</p>
+                      </div>
+                      <div className="ml-auto min-w-[74px] shrink-0 border-r border-[#294660] pr-4 text-right">
+                        <MessageSquareText className="ml-auto h-4 w-4 text-cyan-300" />
+                        <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-cyan-200">No hours</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleNoteEdit(note)}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#294660] text-[#afbed2] transition hover:border-cyan-300/50 hover:bg-cyan-500/10 hover:text-white"
+                        aria-label="Edit monthly note"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleNoteDelete(note.id)}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-red-400/20 text-red-300 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-100"
+                        aria-label="Delete monthly note"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </div>
-                    {record.remark && <p className="mt-1 truncate text-[11px] text-[#b5c2d3]">{record.remark}</p>}
+                  );
+                }
+
+                const record = entry.item;
+                return (
+                  <div key={entry.key} className="flex flex-wrap items-center gap-2.5 rounded-xl border border-[#203d58] bg-[#0a2238]/70 px-3 py-2.5 transition hover:border-[#345d80] hover:bg-[#0c2943] sm:flex-nowrap">
+                    <div className={`flex h-9 w-[68px] shrink-0 items-center justify-center rounded-lg border px-2 text-[10px] font-semibold ${record.type === "RDOT"
+                      ? "border-[#5b56c8]/50 bg-[#252459]/55 text-[#8f94ff]"
+                      : "border-amber-400/30 bg-amber-500/10 text-amber-200"
+                    }`}>
+                      {record.type === "EXTENSION" ? "EXT" : record.type}
+                    </div>
+                    <div className="min-w-[180px] flex-1">
+                      <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+                        <p className="text-[12px] font-semibold text-[#f1f5fb]">{formatDate(record.date)}</p>
+                        <span className="text-[11px] text-[#79a9d2]">{record.startTime} – {record.endTime}</span>
+                      </div>
+                      {record.remark && <p className="mt-1 truncate text-[11px] text-[#b5c2d3]">{record.remark}</p>}
+                    </div>
+                    <div className="ml-auto min-w-[74px] shrink-0 border-r border-[#294660] pr-4 text-right">
+                      <p className="text-[16px] font-semibold leading-none text-emerald-300">{Number(record.hours).toFixed(1)}</p>
+                      <p className="mt-1 text-[8px] uppercase tracking-[0.12em] text-[#8ea1b8]">Hours</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(record)}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#294660] text-[#afbed2] transition hover:border-[#5d7ea5] hover:bg-[#12314e] hover:text-white"
+                      aria-label="Edit Extension or RDOT record"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(record.id)}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-red-400/20 text-red-300 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-100"
+                      aria-label="Delete Extension or RDOT record"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
-                  <div className="ml-auto min-w-[74px] shrink-0 border-r border-[#294660] pr-4 text-right">
-                    <p className="text-[16px] font-semibold leading-none text-emerald-300">{Number(record.hours).toFixed(1)}</p>
-                    <p className="mt-1 text-[8px] uppercase tracking-[0.12em] text-[#8ea1b8]">Hours</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(record)}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#294660] text-[#afbed2] transition hover:border-[#5d7ea5] hover:bg-[#12314e] hover:text-white"
-                    aria-label="Edit Extension or RDOT record"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(record.id)}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-red-400/20 text-red-300 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-100"
-                    aria-label="Delete Extension or RDOT record"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
