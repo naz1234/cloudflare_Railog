@@ -857,6 +857,7 @@ export default function OvertimeTracker() {
 
   return (
     <div className="space-y-3 sm:space-y-4">
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
       <section className="overflow-hidden rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_85%_5%,rgba(43,93,141,0.18),transparent_32%),linear-gradient(145deg,rgba(9,29,48,0.98),rgba(5,20,35,0.98))] p-4 shadow-[0_18px_52px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
@@ -976,6 +977,163 @@ export default function OvertimeTracker() {
           </div>
         </div>
       </section>
+
+        <aside className="rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(42,115,104,0.13),transparent_38%),linear-gradient(145deg,rgba(8,27,45,0.99),rgba(5,20,35,0.99))] p-3.5 shadow-[0_16px_45px_rgba(0,0,0,0.24)] lg:sticky lg:top-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-400/25 bg-emerald-500/10 text-emerald-200">
+                <Calculator className="h-4 w-4" strokeWidth={1.8} />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#c7d6e8]">Allowance check</p>
+                <p className="mt-0.5 text-[9px] leading-relaxed text-[#91a5bd]">
+                  Uses {MONTHS[selectedMonth].slice(0, 3)} {selectedYear} recorded hours.
+                </p>
+              </div>
+            </div>
+            <span className="shrink-0 rounded-full border border-[#2b506d] bg-[#0d2943] px-2 py-1 text-[8px] font-semibold text-[#bcd1e8]">
+              {MONTHS[salaryPeriod.monthIndex].slice(0, 3)} Salary
+            </span>
+          </div>
+
+          <form onSubmit={handleAllowanceSave} className="mt-3 space-y-2.5">
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Basic salary</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={allowanceDraft.basicSalary}
+                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, basicSalary: event.target.value }))}
+                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary + laundry</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={allowanceDraft.salaryWithLaundry}
+                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, salaryWithLaundry: event.target.value }))}
+                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+                />
+              </label>
+            </div>
+
+            <label className="block">
+              <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary actually received</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={allowanceDraft.salaryReceived}
+                onChange={(event) => setAllowanceDraft((current) => ({ ...current, salaryReceived: event.target.value }))}
+                placeholder={`Enter ${MONTHS[salaryPeriod.monthIndex]} salary`}
+                className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+              />
+            </label>
+
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Night days</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={allowanceDraft.nightDays}
+                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, nightDays: event.target.value }))}
+                  placeholder="0"
+                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Night allowance</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={allowanceDraft.nightAllowance}
+                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, nightAllowance: event.target.value }))}
+                  placeholder="0.00"
+                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+                />
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              disabled={allowanceSaving}
+              className="flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 text-[10px] font-semibold text-emerald-100 transition hover:border-emerald-300/55 hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {allowanceSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              {allowanceSaving ? "Saving" : "Save Allowance Check"}
+            </button>
+          </form>
+
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
+              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Recorded hours</p>
+              <p className="mt-1 text-[16px] font-semibold text-white">{allowanceResult.overtimeHours.toFixed(1)}</p>
+            </div>
+            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
+              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Expected OT</p>
+              <p className="mt-1 text-[13px] font-semibold text-[#8ed8ff]">SAR {formatMoney(allowanceResult.expectedOvertime)}</p>
+            </div>
+            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
+              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Allowance received</p>
+              <p className="mt-1 text-[13px] font-semibold text-[#dce8f7]">
+                {allowanceResult.hasSalaryReceived ? `SAR ${formatMoney(allowanceResult.totalAllowanceReceived)}` : "Waiting"}
+              </p>
+            </div>
+            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
+              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Remaining OT</p>
+              <p className="mt-1 text-[13px] font-semibold text-[#dce8f7]">
+                {allowanceResult.hasSalaryReceived ? `SAR ${formatMoney(allowanceResult.remainingForOvertime)}` : "Waiting"}
+              </p>
+            </div>
+          </div>
+
+          <div className={`mt-2.5 rounded-xl border p-3 ${allowanceResult.status === "EXTRA"
+            ? "border-emerald-400/30 bg-emerald-500/10"
+            : allowanceResult.status === "SHORT"
+              ? "border-red-400/30 bg-red-500/10"
+              : allowanceResult.status === "CORRECT"
+                ? "border-sky-400/30 bg-sky-500/10"
+                : "border-[#294862] bg-[#0a2238]/75"
+          }`}>
+            <div className="flex items-center gap-2">
+              <Banknote className={`h-4 w-4 ${allowanceResult.status === "EXTRA"
+                ? "text-emerald-300"
+                : allowanceResult.status === "SHORT"
+                  ? "text-red-300"
+                  : allowanceResult.status === "CORRECT"
+                    ? "text-sky-300"
+                    : "text-[#91a5bd]"
+              }`} />
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#dce8f7]">
+                {allowanceResult.status === "WAITING" ? "Waiting for salary input" : `Allowance ${allowanceResult.status.toLowerCase()}`}
+              </p>
+            </div>
+            {allowanceResult.hasSalaryReceived && (
+              <p className="mt-2 text-[15px] font-semibold text-white">
+                {allowanceResult.status === "CORRECT" ? "Correct amount" : `SAR ${formatMoney(allowanceResult.difference)}`}
+              </p>
+            )}
+            <p className="mt-2 text-[9px] leading-relaxed text-[#9db0c6]">
+              {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} salary checks {MONTHS[selectedMonth]} night and overtime allowances.
+            </p>
+            <p className="mt-1 text-[8px] leading-relaxed text-[#7f94ad]">
+              OT formula: Basic salary ÷ 192 × 1.5 × recorded hours.
+            </p>
+          </div>
+
+          <p className={`mt-2 text-center text-[8px] ${allowanceSyncStatus === "Cloud saved" ? "text-emerald-300" : "text-amber-300"}`}>
+            {allowanceSyncStatus}
+          </p>
+        </aside>
+      </div>
 
       <section className="rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(50,80,123,0.13),transparent_35%),linear-gradient(145deg,rgba(8,27,45,0.98),rgba(5,20,35,0.98))] p-4 shadow-[0_16px_45px_rgba(0,0,0,0.24)] sm:p-5">
         <div className="flex items-start gap-3">
@@ -1259,7 +1417,6 @@ export default function OvertimeTracker() {
         </div>
       </section>
 
-      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
       <section className="overflow-hidden rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(50,80,123,0.13),transparent_35%),linear-gradient(145deg,rgba(8,27,45,0.98),rgba(5,20,35,0.98))] shadow-[0_16px_45px_rgba(0,0,0,0.24)]">
         <div className="flex items-start justify-between gap-3 px-4 pb-2.5 pt-4 sm:px-5 sm:pt-5">
           <div className="flex items-start gap-3">
@@ -1372,163 +1529,6 @@ export default function OvertimeTracker() {
           )}
         </div>
       </section>
-
-        <aside className="rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(42,115,104,0.13),transparent_38%),linear-gradient(145deg,rgba(8,27,45,0.99),rgba(5,20,35,0.99))] p-3.5 shadow-[0_16px_45px_rgba(0,0,0,0.24)] lg:sticky lg:top-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-start gap-2.5">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-400/25 bg-emerald-500/10 text-emerald-200">
-                <Calculator className="h-4 w-4" strokeWidth={1.8} />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#c7d6e8]">Allowance check</p>
-                <p className="mt-0.5 text-[9px] leading-relaxed text-[#91a5bd]">
-                  Uses {MONTHS[selectedMonth].slice(0, 3)} {selectedYear} recorded hours.
-                </p>
-              </div>
-            </div>
-            <span className="shrink-0 rounded-full border border-[#2b506d] bg-[#0d2943] px-2 py-1 text-[8px] font-semibold text-[#bcd1e8]">
-              {MONTHS[salaryPeriod.monthIndex].slice(0, 3)} Salary
-            </span>
-          </div>
-
-          <form onSubmit={handleAllowanceSave} className="mt-3 space-y-2.5">
-            <div className="grid grid-cols-2 gap-2">
-              <label className="block">
-                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Basic salary</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={allowanceDraft.basicSalary}
-                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, basicSalary: event.target.value }))}
-                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
-                />
-              </label>
-              <label className="block">
-                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary + laundry</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={allowanceDraft.salaryWithLaundry}
-                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, salaryWithLaundry: event.target.value }))}
-                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
-                />
-              </label>
-            </div>
-
-            <label className="block">
-              <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary actually received</span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={allowanceDraft.salaryReceived}
-                onChange={(event) => setAllowanceDraft((current) => ({ ...current, salaryReceived: event.target.value }))}
-                placeholder={`Enter ${MONTHS[salaryPeriod.monthIndex]} salary`}
-                className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
-              />
-            </label>
-
-            <div className="grid grid-cols-2 gap-2">
-              <label className="block">
-                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Night days</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={allowanceDraft.nightDays}
-                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, nightDays: event.target.value }))}
-                  placeholder="0"
-                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
-                />
-              </label>
-              <label className="block">
-                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Night allowance</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={allowanceDraft.nightAllowance}
-                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, nightAllowance: event.target.value }))}
-                  placeholder="0.00"
-                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
-                />
-              </label>
-            </div>
-
-            <button
-              type="submit"
-              disabled={allowanceSaving}
-              className="flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 text-[10px] font-semibold text-emerald-100 transition hover:border-emerald-300/55 hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {allowanceSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-              {allowanceSaving ? "Saving" : "Save Allowance Check"}
-            </button>
-          </form>
-
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
-              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Recorded hours</p>
-              <p className="mt-1 text-[16px] font-semibold text-white">{allowanceResult.overtimeHours.toFixed(1)}</p>
-            </div>
-            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
-              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Expected OT</p>
-              <p className="mt-1 text-[13px] font-semibold text-[#8ed8ff]">SAR {formatMoney(allowanceResult.expectedOvertime)}</p>
-            </div>
-            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
-              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Allowance received</p>
-              <p className="mt-1 text-[13px] font-semibold text-[#dce8f7]">
-                {allowanceResult.hasSalaryReceived ? `SAR ${formatMoney(allowanceResult.totalAllowanceReceived)}` : "Waiting"}
-              </p>
-            </div>
-            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
-              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Remaining OT</p>
-              <p className="mt-1 text-[13px] font-semibold text-[#dce8f7]">
-                {allowanceResult.hasSalaryReceived ? `SAR ${formatMoney(allowanceResult.remainingForOvertime)}` : "Waiting"}
-              </p>
-            </div>
-          </div>
-
-          <div className={`mt-2.5 rounded-xl border p-3 ${allowanceResult.status === "EXTRA"
-            ? "border-emerald-400/30 bg-emerald-500/10"
-            : allowanceResult.status === "SHORT"
-              ? "border-red-400/30 bg-red-500/10"
-              : allowanceResult.status === "CORRECT"
-                ? "border-sky-400/30 bg-sky-500/10"
-                : "border-[#294862] bg-[#0a2238]/75"
-          }`}>
-            <div className="flex items-center gap-2">
-              <Banknote className={`h-4 w-4 ${allowanceResult.status === "EXTRA"
-                ? "text-emerald-300"
-                : allowanceResult.status === "SHORT"
-                  ? "text-red-300"
-                  : allowanceResult.status === "CORRECT"
-                    ? "text-sky-300"
-                    : "text-[#91a5bd]"
-              }`} />
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#dce8f7]">
-                {allowanceResult.status === "WAITING" ? "Waiting for salary input" : `Allowance ${allowanceResult.status.toLowerCase()}`}
-              </p>
-            </div>
-            {allowanceResult.hasSalaryReceived && (
-              <p className="mt-2 text-[15px] font-semibold text-white">
-                {allowanceResult.status === "CORRECT" ? "Correct amount" : `SAR ${formatMoney(allowanceResult.difference)}`}
-              </p>
-            )}
-            <p className="mt-2 text-[9px] leading-relaxed text-[#9db0c6]">
-              {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} salary checks {MONTHS[selectedMonth]} night and overtime allowances.
-            </p>
-            <p className="mt-1 text-[8px] leading-relaxed text-[#7f94ad]">
-              OT formula: Basic salary ÷ 192 × 1.5 × recorded hours.
-            </p>
-          </div>
-
-          <p className={`mt-2 text-center text-[8px] ${allowanceSyncStatus === "Cloud saved" ? "text-emerald-300" : "text-amber-300"}`}>
-            {allowanceSyncStatus}
-          </p>
-        </aside>
-      </div>
     </div>
   );
 }
