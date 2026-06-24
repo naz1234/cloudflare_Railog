@@ -6187,7 +6187,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   );
 }
 
-function InsertionTabContent({ westSection, eastSection, maintenanceMap, insertionLog, onClearInsertionDepot, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug }) {
+function InsertionTabContent({ westSection, eastSection, maintenanceMap, insertionLog, onClearInsertionDepot, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug, eastInsertionTimeOffsetMinutes = 0, onEastInsertionTimeOffsetChange }) {
   const [tidDragState, setTidDragState] = useState(null);
   const [tidDragPoint, setTidDragPoint] = useState({ x: 0, y: 0 });
   const [tidDragHover, setTidDragHover] = useState(null);
@@ -6411,7 +6411,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
             usedTidKeys={insertionAssistTidUsage.usedTidKeys}
             duplicateTidKeys={insertionAssistTidUsage.duplicateTidKeys}
             eastTimeOffsetMinutes={eastInsertionTimeOffsetMinutes}
-            onEastTimeOffsetChange={setEastInsertionTimeOffsetMinutes}
+            onEastTimeOffsetChange={onEastInsertionTimeOffsetChange}
           />
         </div>
 
@@ -15002,6 +15002,8 @@ export default function DepotStablingPage() {
             insertionLiveStatusText={insertionLiveStatusText}
             insertionLiveStatusClass={insertionLiveStatusClass}
             insertionLiveDebug={insertionLiveDebug}
+            eastInsertionTimeOffsetMinutes={eastInsertionTimeOffsetMinutes}
+            onEastInsertionTimeOffsetChange={setEastInsertionTimeOffsetMinutes}
           />
         )}
 
