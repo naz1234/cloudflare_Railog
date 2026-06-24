@@ -15467,7 +15467,7 @@ export default function DepotStablingPage() {
 
         {activeTab === "overtime" && (
           <div className="w-full px-2 pb-8 pt-4 sm:px-4">
-            <div className="mx-auto w-full max-w-[960px]">
+            <div className="mx-auto w-full max-w-[1320px]">
               {!isOvertimeUnlocked ? (
                 <div className="mx-auto w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[#23506f]/80 bg-[#061827]/95 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur">
                   <div className="relative border-b border-[#1a3a56]/80 bg-gradient-to-br from-[#0d3455] via-[#08223a] to-[#061827] px-5 py-5">

@@ -856,9 +856,8 @@ export default function OvertimeTracker() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-4">
-      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
-      <section className="overflow-hidden rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_85%_5%,rgba(43,93,141,0.18),transparent_32%),linear-gradient(145deg,rgba(9,29,48,0.98),rgba(5,20,35,0.98))] p-4 shadow-[0_18px_52px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:p-5">
+    <div className="grid gap-3 lg:grid-cols-[minmax(0,1.28fr)_minmax(360px,0.92fr)]">
+      <section className="h-full min-w-0 overflow-hidden rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_85%_5%,rgba(43,93,141,0.18),transparent_32%),linear-gradient(145deg,rgba(9,29,48,0.98),rgba(5,20,35,0.98))] p-4 shadow-[0_18px_52px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2.5">
@@ -978,7 +977,7 @@ export default function OvertimeTracker() {
         </div>
       </section>
 
-        <aside className="rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(42,115,104,0.13),transparent_38%),linear-gradient(145deg,rgba(8,27,45,0.99),rgba(5,20,35,0.99))] p-3.5 shadow-[0_16px_45px_rgba(0,0,0,0.24)] lg:sticky lg:top-3">
+      <aside className="h-full min-w-0 rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(42,115,104,0.13),transparent_38%),linear-gradient(145deg,rgba(8,27,45,0.99),rgba(5,20,35,0.99))] p-3.5 shadow-[0_16px_45px_rgba(0,0,0,0.24)]">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-start gap-2.5">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-400/25 bg-emerald-500/10 text-emerald-200">
@@ -1132,10 +1131,9 @@ export default function OvertimeTracker() {
           <p className={`mt-2 text-center text-[8px] ${allowanceSyncStatus === "Cloud saved" ? "text-emerald-300" : "text-amber-300"}`}>
             {allowanceSyncStatus}
           </p>
-        </aside>
-      </div>
+      </aside>
 
-      <section className="rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(50,80,123,0.13),transparent_35%),linear-gradient(145deg,rgba(8,27,45,0.98),rgba(5,20,35,0.98))] p-4 shadow-[0_16px_45px_rgba(0,0,0,0.24)] sm:p-5">
+      <section className="h-full min-w-0 rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(50,80,123,0.13),transparent_35%),linear-gradient(145deg,rgba(8,27,45,0.98),rgba(5,20,35,0.98))] p-4 shadow-[0_16px_45px_rgba(0,0,0,0.24)] sm:p-5">
         <div className="flex items-start gap-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#55708d] bg-[#0e2943] text-[#c6d7eb]">
             <FilePlus2 className="h-4 w-4" strokeWidth={1.8} />
@@ -1417,7 +1415,7 @@ export default function OvertimeTracker() {
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(50,80,123,0.13),transparent_35%),linear-gradient(145deg,rgba(8,27,45,0.98),rgba(5,20,35,0.98))] shadow-[0_16px_45px_rgba(0,0,0,0.24)]">
+      <section className="h-full min-w-0 overflow-hidden rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(50,80,123,0.13),transparent_35%),linear-gradient(145deg,rgba(8,27,45,0.98),rgba(5,20,35,0.98))] shadow-[0_16px_45px_rgba(0,0,0,0.24)]">
         <div className="flex items-start justify-between gap-3 px-4 pb-2.5 pt-4 sm:px-5 sm:pt-5">
           <div className="flex items-start gap-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#55708d] bg-[#0e2943] text-[#c6d7eb]">
