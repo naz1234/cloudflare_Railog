@@ -1731,6 +1731,7 @@ const SIDEBAR_COLLAPSED_KEY = "depotSidebarCollapsed_v1";
 const SIDEBAR_AUTO_HIDE_MS = 3000;
 const ADM_SESSION_KEY = "admAdminUnlocked_v1";
 const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
+const OT_SESSION_KEY = "otOvertimeUnlocked_v1";
 const ODO_SESSION_KEY = "odoReadingUnlocked_v1";
 const ADM_LOGIN_ID = "admin";
 const ADM_LOGIN_PASSWORD = "921016";
@@ -11806,6 +11807,7 @@ export default function DepotStablingPage() {
     if (path === "/odo-reading") return "odo";
     if (path === "/possession") return "possession";
     if (path === "/alarm") return "alarm";
+    if (path === "/overtime" || path === "/ot") return "overtime";
     if (path === "/admin" || path === "/adm") return "admin";
     return "stabling";
   };
@@ -11824,6 +11826,15 @@ export default function DepotStablingPage() {
   const [isAlarmUnlocked, setIsAlarmUnlocked] = useState(() => {
     try {
       return sessionStorage.getItem(ALM_SESSION_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [overtimeCredentials, setOvertimeCredentials] = useState({ id: "", password: "" });
+  const [overtimeError, setOvertimeError] = useState("");
+  const [isOvertimeUnlocked, setIsOvertimeUnlocked] = useState(() => {
+    try {
+      return sessionStorage.getItem(OT_SESSION_KEY) === "true";
     } catch {
       return false;
     }
@@ -12052,6 +12063,31 @@ export default function DepotStablingPage() {
     setAlarmError("");
     setAlarmSearch("");
     try { sessionStorage.removeItem(ALM_SESSION_KEY); } catch {}
+  }, []);
+
+  const handleOvertimeLogin = useCallback((event) => {
+    event.preventDefault();
+    const loginId = String(overtimeCredentials.id || "").trim();
+    const loginPassword = String(overtimeCredentials.password || "");
+
+    if (loginId === ADM_LOGIN_ID && loginPassword === ADM_LOGIN_PASSWORD) {
+      setIsOvertimeUnlocked(true);
+      setOvertimeError("");
+      setOvertimeCredentials({ id: "", password: "" });
+      try { sessionStorage.setItem(OT_SESSION_KEY, "true"); } catch {}
+      return;
+    }
+
+    setIsOvertimeUnlocked(false);
+    setOvertimeError("Invalid admin ID or password.");
+    try { sessionStorage.removeItem(OT_SESSION_KEY); } catch {}
+  }, [overtimeCredentials]);
+
+  const handleOvertimeLogout = useCallback(() => {
+    setIsOvertimeUnlocked(false);
+    setOvertimeCredentials({ id: "", password: "" });
+    setOvertimeError("");
+    try { sessionStorage.removeItem(OT_SESSION_KEY); } catch {}
   }, []);
 
   const handleOdoLogin = useCallback((event) => {
@@ -14785,6 +14821,19 @@ export default function DepotStablingPage() {
               ),
             },
             {
+              key: "overtime",
+              label: "Overtime",
+              code: "OT",
+              to: "/overtime",
+              icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9"/>
+                  <path d="M12 7v5l3 2"/>
+                  <path d="M8 2h8"/>
+                </svg>
+              ),
+            },
+            {
               key: "admin",
               label: "Admin",
               code: "ADM",
@@ -15240,6 +15289,105 @@ export default function DepotStablingPage() {
               </div>
             </div>
           )
+        )}
+
+        {activeTab === "overtime" && (
+          <div className="w-full px-2 pb-10 pt-6">
+            <div className="mx-auto w-full max-w-[760px]">
+              {!isOvertimeUnlocked ? (
+                <div className="mx-auto w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[#23506f]/80 bg-[#061827]/95 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur">
+                  <div className="relative border-b border-[#1a3a56]/80 bg-gradient-to-br from-[#0d3455] via-[#08223a] to-[#061827] px-5 py-5">
+                    <div className="absolute right-5 top-5 h-10 w-10 rounded-full border border-[#4f8ef7]/25 bg-[#4f8ef7]/10 blur-[1px]" />
+                    <div className="relative flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#4f8ef7]/40 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.22em] text-[#bceaff] shadow-[0_0_22px_rgba(79,142,247,0.18)]">
+                        OT
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-normal uppercase tracking-[0.24em] text-[#6db6e8]">Admin access</p>
+                        <h2 className="mt-1 text-[18px] font-semibold text-white">Overtime Login</h2>
+                      </div>
+                    </div>
+                    <p className="relative mt-4 text-[11px] leading-relaxed text-[#8dc7ed]">
+                      Enter the Admin ID and password to unlock the Overtime page.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleOvertimeLogin} className="px-5 py-5">
+                    <label className="block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                      ID
+                      <input
+                        value={overtimeCredentials.id}
+                        onChange={(event) => {
+                          setOvertimeCredentials((prev) => ({ ...prev, id: event.target.value }));
+                          setOvertimeError("");
+                        }}
+                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
+                        autoComplete="username"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                      />
+                    </label>
+                    <label className="mt-4 block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                      Password
+                      <input
+                        type="password"
+                        value={overtimeCredentials.password}
+                        onChange={(event) => {
+                          setOvertimeCredentials((prev) => ({ ...prev, password: event.target.value }));
+                          setOvertimeError("");
+                        }}
+                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
+                        autoComplete="current-password"
+                      />
+                    </label>
+                    {overtimeError && (
+                      <p className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-[11px] font-normal text-red-200">
+                        {overtimeError}
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      className="mt-5 flex h-10 w-full items-center justify-center rounded-xl border border-[#4f8ef7]/60 bg-[#1b5f93] text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(79,142,247,0.22)] transition hover:bg-[#2476b4] active:scale-[0.99]"
+                    >
+                      Login
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="rounded-[24px] border border-[#1d4869] bg-[#061827]/90 p-4 shadow-[0_18px_55px_rgba(0,0,0,0.25)]">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.16em] text-[#bceaff]">
+                        OT
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Overtime</p>
+                        <h2 className="truncate text-[18px] font-normal leading-tight text-white">Overtime</h2>
+                        <p className="mt-0.5 text-[10px] font-semibold text-emerald-300">Admin session unlocked for this browser tab.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleOvertimeLogout}
+                        className="rounded-2xl border border-[#2b4f6b] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-[0.98]"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#1d4869] bg-[#0a2238]/80 px-6 py-12 text-center shadow-[0_18px_55px_rgba(0,0,0,0.2)]">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#4f8ef7]/30 bg-[#0f2d4a] text-[14px] font-semibold tracking-[0.2em] text-[#bceaff]">
+                      OT
+                    </div>
+                    <h3 className="mt-4 text-[18px] font-normal text-white">Overtime page ready</h3>
+                    <p className="mx-auto mt-2 max-w-[440px] text-[12px] leading-relaxed text-[#8dc7ed]">
+                      This protected workspace is ready for the Overtime form and records.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         {activeTab === "admin" && (
