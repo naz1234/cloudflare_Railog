@@ -7,6 +7,8 @@ const OVERTIME_STORAGE_KEY = "ovtOvertimeRecords_v1";
 const OVERTIME_NOTE_STORAGE_KEY = "ovtMonthlyNotes_v1";
 const ALLOWANCE_STORAGE_KEY = "ovtAllowanceChecks_v1";
 const NOTE_LIVE_REFRESH_MS = 5000;
+const ALLOWANCE_LIVE_REFRESH_MS = 5000;
+const ALLOWANCE_AUTOSAVE_DELAY_MS = 800;
 const DEFAULT_BASIC_SALARY = 15000;
 const DEFAULT_SALARY_WITH_LAUNDRY = 15100;
 const MONTHS = [
@@ -252,6 +254,42 @@ function saveAllowanceChecks(checks) {
   } catch {}
 }
 
+function getAllowancePeriodKey(check = {}) {
+  return `${Number(check.workYear || check.work_year) || 0}-${Number(check.workMonth || check.work_month) || 0}`;
+}
+
+function getAllowanceUpdatedTime(check = {}) {
+  const value = Date.parse(check.updatedAt || check.updated_date || check.createdAt || check.created_date || 0);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function dedupeAllowanceChecks(checks = []) {
+  const byPeriod = new Map();
+
+  (Array.isArray(checks) ? checks : []).map(normalizeAllowanceCheck).forEach((check) => {
+    const key = getAllowancePeriodKey(check);
+    const current = byPeriod.get(key);
+    if (!current || getAllowanceUpdatedTime(check) >= getAllowanceUpdatedTime(current)) {
+      byPeriod.set(key, check);
+    }
+  });
+
+  return Array.from(byPeriod.values());
+}
+
+function upsertAllowanceCheck(checks = [], nextCheck = {}) {
+  const normalized = normalizeAllowanceCheck(nextCheck);
+  const key = getAllowancePeriodKey(normalized);
+  const withoutPeriod = (Array.isArray(checks) ? checks : []).filter((check) => getAllowancePeriodKey(check) !== key);
+  return [...withoutPeriod, normalized];
+}
+
+function getLatestAllowanceCheck(checks = [], workYear, workMonth) {
+  return (Array.isArray(checks) ? checks : [])
+    .filter((check) => Number(check.workYear) === Number(workYear) && Number(check.workMonth) === Number(workMonth))
+    .sort((left, right) => getAllowanceUpdatedTime(right) - getAllowanceUpdatedTime(left))[0] || null;
+}
+
 function parseAmount(value) {
   const amount = Number(String(value ?? "").replace(/,/g, ""));
   return Number.isFinite(amount) ? amount : 0;
@@ -296,8 +334,13 @@ export default function OvertimeTracker() {
   const [noteSyncStatus, setNoteSyncStatus] = useState("Local cache ready");
   const [allowanceDraft, setAllowanceDraft] = useState(() => createAllowanceDraft(today.getFullYear(), today.getMonth()));
   const [allowanceSaving, setAllowanceSaving] = useState(false);
+  const [allowanceDirty, setAllowanceDirty] = useState(false);
   const [allowanceSyncStatus, setAllowanceSyncStatus] = useState("Local cache ready");
   const noteSyncInProgressRef = useRef(false);
+  const allowanceSyncInProgressRef = useRef(false);
+  const allowanceDirtyRef = useRef(false);
+  const allowanceDraftRef = useRef(allowanceDraft);
+  const allowanceChecksRef = useRef(allowanceChecks);
 
   const overtimeEntity = base44?.entities?.OvertimeRecord || null;
   const overtimeNoteEntity = base44?.entities?.OvertimeMonthlyNote || null;
@@ -321,8 +364,18 @@ export default function OvertimeTracker() {
   }, [notes]);
 
   useEffect(() => {
-    saveAllowanceChecks(allowanceChecks);
+    const compactChecks = dedupeAllowanceChecks(allowanceChecks);
+    allowanceChecksRef.current = compactChecks;
+    saveAllowanceChecks(compactChecks);
   }, [allowanceChecks]);
+
+  useEffect(() => {
+    allowanceDraftRef.current = allowanceDraft;
+  }, [allowanceDraft]);
+
+  useEffect(() => {
+    allowanceDirtyRef.current = allowanceDirty;
+  }, [allowanceDirty]);
 
   useEffect(() => {
     let cancelled = false;
@@ -360,39 +413,80 @@ export default function OvertimeTracker() {
     return () => { cancelled = true; };
   }, [cloudReady, overtimeEntity]);
 
-  useEffect(() => {
-    let cancelled = false;
+  const refreshCloudAllowanceChecks = useCallback(async ({ migrateLocal = false, silent = false } = {}) => {
+    if (!allowanceCloudReady || allowanceSyncInProgressRef.current) return;
+    if (silent && allowanceDirtyRef.current) return;
 
-    const loadCloudAllowanceChecks = async () => {
-      if (!allowanceCloudReady) {
-        setAllowanceSyncStatus("Local cache only");
-        return;
-      }
+    allowanceSyncInProgressRef.current = true;
+    if (!silent) setAllowanceSyncStatus("Syncing...");
 
-      setAllowanceSyncStatus("Syncing...");
-      try {
-        const remoteChecks = await allowanceEntity.list("-updatedAt");
-        if (cancelled) return;
-        const normalizedRemote = Array.isArray(remoteChecks) ? remoteChecks.map(normalizeAllowanceCheck) : [];
-        const localChecks = loadAllowanceChecks();
+    try {
+      let remoteChecks = await allowanceEntity.list("-updatedAt");
+      let normalizedRemote = dedupeAllowanceChecks(remoteChecks);
 
-        if (!normalizedRemote.length && localChecks.length && allowanceEntity.bulkCreate) {
-          const uploaded = await allowanceEntity.bulkCreate(localChecks.map(({ id, ...check }) => check));
-          if (cancelled) return;
-          setAllowanceChecks(Array.isArray(uploaded) ? uploaded.map(normalizeAllowanceCheck) : localChecks);
-        } else {
-          setAllowanceChecks(normalizedRemote);
+      if (migrateLocal) {
+        const localChecks = dedupeAllowanceChecks(loadAllowanceChecks());
+
+        for (const localCheck of localChecks) {
+          const remoteMatch = getLatestAllowanceCheck(
+            normalizedRemote,
+            localCheck.workYear,
+            localCheck.workMonth
+          );
+          const localIsNewer = getAllowanceUpdatedTime(localCheck) > getAllowanceUpdatedTime(remoteMatch || {});
+          const { id: _localId, ...cloudPayload } = localCheck;
+
+          if (!remoteMatch) {
+            const created = normalizeAllowanceCheck(await allowanceEntity.create(cloudPayload));
+            normalizedRemote = upsertAllowanceCheck(normalizedRemote, created);
+          } else if (localIsNewer) {
+            const updated = normalizeAllowanceCheck(await allowanceEntity.update(remoteMatch.id, cloudPayload));
+            normalizedRemote = upsertAllowanceCheck(normalizedRemote, updated);
+          }
         }
-        setAllowanceSyncStatus("Cloud saved");
-      } catch (error) {
-        console.error("Overtime allowance check cloud load failed:", error);
-        if (!cancelled) setAllowanceSyncStatus("Local cache only");
+
+        remoteChecks = await allowanceEntity.list("-updatedAt");
+        normalizedRemote = dedupeAllowanceChecks(remoteChecks);
       }
+
+      if (!allowanceDirtyRef.current) {
+        setAllowanceChecks(normalizedRemote);
+      }
+      setAllowanceSyncStatus("Live cloud");
+    } catch (error) {
+      console.error("Overtime allowance check live sync failed:", error);
+      setAllowanceSyncStatus("Local saved");
+    } finally {
+      allowanceSyncInProgressRef.current = false;
+    }
+  }, [allowanceCloudReady, allowanceEntity]);
+
+  useEffect(() => {
+    if (!allowanceCloudReady) {
+      setAllowanceSyncStatus("Local saved");
+      return undefined;
+    }
+
+    refreshCloudAllowanceChecks({ migrateLocal: true });
+
+    const intervalId = window.setInterval(() => {
+      refreshCloudAllowanceChecks({ migrateLocal: true, silent: true });
+    }, ALLOWANCE_LIVE_REFRESH_MS);
+
+    const handleFocus = () => refreshCloudAllowanceChecks({ migrateLocal: true, silent: true });
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") handleFocus();
     };
 
-    loadCloudAllowanceChecks();
-    return () => { cancelled = true; };
-  }, [allowanceCloudReady, allowanceEntity]);
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [allowanceCloudReady, refreshCloudAllowanceChecks]);
 
   const refreshCloudNotes = useCallback(async ({ migrateLocal = false, silent = false } = {}) => {
     if (!noteCloudReady || noteSyncInProgressRef.current) return;
@@ -495,12 +589,14 @@ export default function OvertimeTracker() {
     };
   }), [notesForYear, recordsForYear]);
 
-  const activeAllowanceCheck = useMemo(() => allowanceChecks.find((check) => (
-    Number(check.workYear) === selectedYear
-    && Number(check.workMonth) === selectedMonth + 1
-  )) || null, [allowanceChecks, selectedMonth, selectedYear]);
+  const activeAllowanceCheck = useMemo(
+    () => getLatestAllowanceCheck(allowanceChecks, selectedYear, selectedMonth + 1),
+    [allowanceChecks, selectedMonth, selectedYear]
+  );
 
   useEffect(() => {
+    if (allowanceDirty) return;
+
     setAllowanceDraft(activeAllowanceCheck
       ? {
           workYear: activeAllowanceCheck.workYear,
@@ -512,7 +608,7 @@ export default function OvertimeTracker() {
           nightAllowance: activeAllowanceCheck.nightAllowance,
         }
       : createAllowanceDraft(selectedYear, selectedMonth));
-  }, [activeAllowanceCheck?.id, activeAllowanceCheck?.updatedAt, selectedMonth, selectedYear]);
+  }, [activeAllowanceCheck?.id, activeAllowanceCheck?.updatedAt, allowanceDirty, selectedMonth, selectedYear]);
 
   const selectedMonthSummary = monthSummaries[selectedMonth] || { hours: 0 };
   const salaryPeriod = useMemo(
@@ -762,71 +858,145 @@ export default function OvertimeTracker() {
     }
   };
 
-  const handleAllowanceSave = async (event) => {
-    event.preventDefault();
-    if (allowanceSaving) return;
+  const saveAllowanceDraft = useCallback(async (draftSnapshot, { manual = false } = {}) => {
+    if (allowanceSyncInProgressRef.current) {
+      window.setTimeout(() => {
+        if (allowanceDirtyRef.current || manual) {
+          void saveAllowanceDraft(draftSnapshot, { manual });
+        }
+      }, 350);
+      return;
+    }
 
+    const workYear = Number(draftSnapshot.workYear) || selectedYear;
+    const workMonth = Number(draftSnapshot.workMonth) || (selectedMonth + 1);
+    const salaryPeriodForDraft = getNextMonthPeriod(workYear, workMonth - 1);
     const now = new Date().toISOString();
-    const existing = allowanceChecks.find((check) => (
-      Number(check.workYear) === selectedYear
-      && Number(check.workMonth) === selectedMonth + 1
-    ));
+    const existingLocal = getLatestAllowanceCheck(allowanceChecksRef.current, workYear, workMonth);
     const payload = normalizeAllowanceCheck({
-      ...(existing || {}),
-      ...allowanceDraft,
-      id: existing?.id || `ovt-allowance-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      ...(existingLocal || {}),
+      ...draftSnapshot,
+      id: existingLocal?.id || `ovt-allowance-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      workYear,
+      workMonth,
+      salaryYear: salaryPeriodForDraft.year,
+      salaryMonth: salaryPeriodForDraft.monthIndex + 1,
+      createdAt: existingLocal?.createdAt || now,
+      updatedAt: now,
+    });
+
+    const snapshotSignature = JSON.stringify({
+      workYear,
+      workMonth,
+      basicSalary: payload.basicSalary,
+      salaryWithLaundry: payload.salaryWithLaundry,
+      salaryReceived: payload.salaryReceived,
+      nightDays: payload.nightDays,
+      nightAllowance: payload.nightAllowance,
+    });
+
+    setAllowanceChecks((current) => upsertAllowanceCheck(current, payload));
+    allowanceChecksRef.current = upsertAllowanceCheck(allowanceChecksRef.current, payload);
+    allowanceSyncInProgressRef.current = true;
+    if (manual) setAllowanceSaving(true);
+    setAllowanceSyncStatus(allowanceCloudReady ? "Saving live..." : "Local saved");
+
+    try {
+      let savedCheck = payload;
+
+      if (allowanceCloudReady) {
+        const remoteMatches = await allowanceEntity.filter({ workYear, workMonth });
+        const remoteExisting = getLatestAllowanceCheck(remoteMatches, workYear, workMonth);
+        const { id: _id, ...cloudPayload } = payload;
+
+        if (remoteExisting?.id) {
+          savedCheck = normalizeAllowanceCheck(await allowanceEntity.update(remoteExisting.id, cloudPayload));
+        } else {
+          savedCheck = normalizeAllowanceCheck(await allowanceEntity.create(cloudPayload));
+        }
+
+        setAllowanceChecks((current) => upsertAllowanceCheck(current, savedCheck));
+        allowanceChecksRef.current = upsertAllowanceCheck(allowanceChecksRef.current, savedCheck);
+        setAllowanceSyncStatus("Live cloud");
+      }
+
+      const currentDraft = allowanceDraftRef.current;
+      const currentSignature = JSON.stringify({
+        workYear: Number(currentDraft.workYear) || selectedYear,
+        workMonth: Number(currentDraft.workMonth) || (selectedMonth + 1),
+        basicSalary: String(currentDraft.basicSalary ?? ""),
+        salaryWithLaundry: String(currentDraft.salaryWithLaundry ?? ""),
+        salaryReceived: String(currentDraft.salaryReceived ?? ""),
+        nightDays: String(currentDraft.nightDays ?? ""),
+        nightAllowance: String(currentDraft.nightAllowance ?? ""),
+      });
+
+      if (currentSignature === snapshotSignature) {
+        setAllowanceDirty(false);
+        allowanceDirtyRef.current = false;
+      }
+    } catch (error) {
+      console.error("Overtime allowance check live save failed:", error);
+      setAllowanceSyncStatus("Local saved");
+      setAllowanceDirty(false);
+      allowanceDirtyRef.current = false;
+    } finally {
+      allowanceSyncInProgressRef.current = false;
+      if (manual) setAllowanceSaving(false);
+    }
+  }, [allowanceCloudReady, allowanceEntity, selectedMonth, selectedYear]);
+
+  const handleAllowanceFieldChange = useCallback((field, value) => {
+    const now = new Date().toISOString();
+    const nextDraft = {
+      ...allowanceDraftRef.current,
+      [field]: value,
       workYear: selectedYear,
       workMonth: selectedMonth + 1,
-      salaryYear: salaryPeriod.year,
-      salaryMonth: salaryPeriod.monthIndex + 1,
+    };
+    const existing = getLatestAllowanceCheck(allowanceChecksRef.current, selectedYear, selectedMonth + 1);
+    const localCheck = normalizeAllowanceCheck({
+      ...(existing || {}),
+      ...nextDraft,
+      id: existing?.id || `ovt-allowance-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       createdAt: existing?.createdAt || now,
       updatedAt: now,
     });
 
-    setAllowanceSaving(true);
-    try {
-      let savedCheck = payload;
-      if (allowanceCloudReady) {
-        const { id, ...cloudPayload } = payload;
-        if (existing && !String(existing.id).startsWith("ovt-allowance-")) {
-          savedCheck = normalizeAllowanceCheck(await allowanceEntity.update(existing.id, cloudPayload));
-        } else {
-          savedCheck = normalizeAllowanceCheck(await allowanceEntity.create(cloudPayload));
-        }
-        setAllowanceSyncStatus("Cloud saved");
-      } else {
-        setAllowanceSyncStatus("Local cache only");
-      }
+    allowanceDraftRef.current = nextDraft;
+    allowanceChecksRef.current = upsertAllowanceCheck(allowanceChecksRef.current, localCheck);
+    saveAllowanceChecks(allowanceChecksRef.current);
+    allowanceDirtyRef.current = true;
+    setAllowanceDraft(nextDraft);
+    setAllowanceChecks((current) => upsertAllowanceCheck(current, localCheck));
+    setAllowanceDirty(true);
+    setAllowanceSyncStatus(allowanceCloudReady ? "Saving live..." : "Local saved");
+  }, [allowanceCloudReady, selectedMonth, selectedYear]);
 
-      setAllowanceChecks((current) => {
-        const found = current.some((check) => (
-          Number(check.workYear) === selectedYear
-          && Number(check.workMonth) === selectedMonth + 1
-        ));
-        if (!found) return [...current, savedCheck];
-        return current.map((check) => (
-          Number(check.workYear) === selectedYear
-          && Number(check.workMonth) === selectedMonth + 1
-        ) ? savedCheck : check);
-      });
-    } catch (error) {
-      console.error("Overtime allowance check save failed:", error);
-      setAllowanceSyncStatus("Local cache only");
-      setAllowanceChecks((current) => {
-        const found = current.some((check) => (
-          Number(check.workYear) === selectedYear
-          && Number(check.workMonth) === selectedMonth + 1
-        ));
-        if (!found) return [...current, payload];
-        return current.map((check) => (
-          Number(check.workYear) === selectedYear
-          && Number(check.workMonth) === selectedMonth + 1
-        ) ? payload : check);
-      });
-    } finally {
-      setAllowanceSaving(false);
-    }
+  useEffect(() => {
+    if (!allowanceDirty) return undefined;
+
+    const snapshot = { ...allowanceDraft };
+    const timeoutId = window.setTimeout(() => {
+      saveAllowanceDraft(snapshot);
+    }, ALLOWANCE_AUTOSAVE_DELAY_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [allowanceDirty, allowanceDraft, saveAllowanceDraft]);
+
+  const handleAllowanceSave = async (event) => {
+    event.preventDefault();
+    if (allowanceSaving) return;
+    await saveAllowanceDraft({ ...allowanceDraftRef.current }, { manual: true });
   };
+
+  const flushAllowanceBeforePeriodChange = useCallback(() => {
+    if (!allowanceDirtyRef.current) return;
+    const snapshot = { ...allowanceDraftRef.current };
+    setAllowanceDirty(false);
+    allowanceDirtyRef.current = false;
+    void saveAllowanceDraft(snapshot);
+  }, [saveAllowanceDraft]);
 
   const exportCsv = () => {
     const rows = [
@@ -881,6 +1051,7 @@ export default function OvertimeTracker() {
               value={selectedYear}
               onChange={(event) => {
                 const year = Number(event.target.value);
+                flushAllowanceBeforePeriodChange();
                 setSelectedYear(year);
                 if (!editingId) resetDraft(`${year}-${String(selectedMonth + 1).padStart(2, "0")}-01`);
                 resetNoteDraft(`${year}-${String(selectedMonth + 1).padStart(2, "0")}-01`);
@@ -911,6 +1082,7 @@ export default function OvertimeTracker() {
                 type="button"
                 aria-pressed={active}
                 onClick={() => {
+                  flushAllowanceBeforePeriodChange();
                   setSelectedMonth(monthIndex);
                   if (!editingId) resetDraft(`${selectedYear}-${String(monthIndex + 1).padStart(2, "0")}-01`);
                   resetNoteDraft(`${selectedYear}-${String(monthIndex + 1).padStart(2, "0")}-01`);
@@ -1004,7 +1176,7 @@ export default function OvertimeTracker() {
                   min="0"
                   step="0.01"
                   value={allowanceDraft.basicSalary}
-                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, basicSalary: event.target.value }))}
+                  onChange={(event) => handleAllowanceFieldChange("basicSalary", event.target.value)}
                   className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
                 />
               </label>
@@ -1015,7 +1187,7 @@ export default function OvertimeTracker() {
                   min="0"
                   step="0.01"
                   value={allowanceDraft.salaryWithLaundry}
-                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, salaryWithLaundry: event.target.value }))}
+                  onChange={(event) => handleAllowanceFieldChange("salaryWithLaundry", event.target.value)}
                   className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
                 />
               </label>
@@ -1028,7 +1200,7 @@ export default function OvertimeTracker() {
                 min="0"
                 step="0.01"
                 value={allowanceDraft.salaryReceived}
-                onChange={(event) => setAllowanceDraft((current) => ({ ...current, salaryReceived: event.target.value }))}
+                onChange={(event) => handleAllowanceFieldChange("salaryReceived", event.target.value)}
                 placeholder={`Enter ${MONTHS[salaryPeriod.monthIndex]} salary`}
                 className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
               />
@@ -1042,7 +1214,7 @@ export default function OvertimeTracker() {
                   min="0"
                   step="1"
                   value={allowanceDraft.nightDays}
-                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, nightDays: event.target.value }))}
+                  onChange={(event) => handleAllowanceFieldChange("nightDays", event.target.value)}
                   placeholder="0"
                   className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
                 />
@@ -1054,7 +1226,7 @@ export default function OvertimeTracker() {
                   min="0"
                   step="0.01"
                   value={allowanceDraft.nightAllowance}
-                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, nightAllowance: event.target.value }))}
+                  onChange={(event) => handleAllowanceFieldChange("nightAllowance", event.target.value)}
                   placeholder="0.00"
                   className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
                 />
@@ -1067,7 +1239,7 @@ export default function OvertimeTracker() {
               className="flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 text-[10px] font-semibold text-emerald-100 transition hover:border-emerald-300/55 hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {allowanceSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-              {allowanceSaving ? "Saving" : "Save Allowance Check"}
+              {allowanceSaving ? "Saving" : "Save Now"}
             </button>
           </form>
 
@@ -1128,7 +1300,12 @@ export default function OvertimeTracker() {
             </p>
           </div>
 
-          <p className={`mt-2 text-center text-[8px] ${allowanceSyncStatus === "Cloud saved" ? "text-emerald-300" : "text-amber-300"}`}>
+          <p className={`mt-2 text-center text-[8px] ${allowanceSyncStatus === "Live cloud"
+            ? "text-emerald-300"
+            : allowanceSyncStatus === "Saving live..."
+              ? "text-sky-300"
+              : "text-amber-300"
+          }`}>
             {allowanceSyncStatus}
           </p>
       </aside>
