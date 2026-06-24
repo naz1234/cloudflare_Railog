@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Trash2, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X } from "lucide-react";
+import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X } from "lucide-react";
 
 const MIN_VISIBLE_REQUEST_ROWS = 40;
 

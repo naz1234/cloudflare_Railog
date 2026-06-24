@@ -27,7 +27,25 @@ const TIMETABLE_TYPES = [
 
 const ACTIVE_TIMETABLE_TYPE_KEY = "activeTimetableType_v1";
 const LOCAL_TIMETABLE_RECORDS_KEY = "storedTimetableRecords_v1";
+const EAST_INSERTION_TIME_OFFSET_KEY = "eastInsertionTimeOffsetMinutes_v1";
 const TIMETABLE_PARSE_VERSION = 5;
+
+function normalizeEastInsertionTimeOffset(value) {
+  return Number(value) === 3 ? 3 : 0;
+}
+
+function loadEastInsertionTimeOffset() {
+  try {
+    const stored = localStorage.getItem(EAST_INSERTION_TIME_OFFSET_KEY);
+    return stored === null ? 3 : normalizeEastInsertionTimeOffset(stored);
+  } catch {
+    return 3;
+  }
+}
+
+function saveEastInsertionTimeOffset(value) {
+  try { localStorage.setItem(EAST_INSERTION_TIME_OFFSET_KEY, String(normalizeEastInsertionTimeOffset(value))); } catch {}
+}
 
 function normalizeTimetableType(value = "") {
   const clean = String(value || "").toLowerCase().replace(/[^a-z]/g, "");
@@ -6327,8 +6345,8 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
   // TID schedule range: earliest first-TID time across both series, latest last-TID time.
   // Series 1xx: 05:25–06:22 | Series 2xx: 05:24–06:21
   // Grey-out in the TID Reference Table only applies while current time is within this window.
-  const TID_SCHEDULE_FIRST = "05:24"; // earliest TID time (TID 201)
-  const TID_SCHEDULE_LAST  = "06:22"; // latest TID time  (TID 120)
+  const TID_SCHEDULE_FIRST = eastInsertionTimeOffsetMinutes === 3 ? "05:25" : "05:24";
+  const TID_SCHEDULE_LAST = eastInsertionTimeOffsetMinutes === 3 ? "06:24" : "06:22";
   const withinTIDSchedule = isWithinTIDSchedule(TID_SCHEDULE_FIRST, TID_SCHEDULE_LAST);
 
   return (
@@ -6384,7 +6402,17 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
       <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto 1fr" }}>
         {/* TID Reference Tables — left column */}
         <div className="self-start">
-          <TIDReferenceTable withinSchedule={withinTIDSchedule} activeTimetable={activeTimetable} activeTimetableType={activeTimetableType} onTidDragStart={handleTidDragStart} activeDragKey={tidDragState?.sourceKey || ""} usedTidKeys={insertionAssistTidUsage.usedTidKeys} duplicateTidKeys={insertionAssistTidUsage.duplicateTidKeys} />
+          <TIDReferenceTable
+            withinSchedule={withinTIDSchedule}
+            activeTimetable={activeTimetable}
+            activeTimetableType={activeTimetableType}
+            onTidDragStart={handleTidDragStart}
+            activeDragKey={tidDragState?.sourceKey || ""}
+            usedTidKeys={insertionAssistTidUsage.usedTidKeys}
+            duplicateTidKeys={insertionAssistTidUsage.duplicateTidKeys}
+            eastTimeOffsetMinutes={eastInsertionTimeOffsetMinutes}
+            onEastTimeOffsetChange={setEastInsertionTimeOffsetMinutes}
+          />
         </div>
 
         {/* Stabling sections — centre column */}
@@ -11754,6 +11782,7 @@ export default function DepotStablingPage() {
   const [pg2Stabling, setPg2Stabling] = useState(() => loadInsertionPg2Stabling(westData, eastData));
   const [pg2InsertionLog, setPg2InsertionLog] = useState(() => loadInsertionPg2Log());
   const [pg2TidInputs, setPg2TidInputs] = useState(() => loadInsertionPg2TidInputs());
+  const [eastInsertionTimeOffsetMinutes, setEastInsertionTimeOffsetMinutes] = useState(() => loadEastInsertionTimeOffset());
   const [insertionLiveLoaded, setInsertionLiveLoaded] = useState(false);
   const [insertionLiveSyncing, setInsertionLiveSyncing] = useState(false);
   const [insertionLiveLastSynced, setInsertionLiveLastSynced] = useState(null);
@@ -11767,6 +11796,7 @@ export default function DepotStablingPage() {
   useEffect(() => { saveInsertionPg2Stabling(pg2Stabling); }, [pg2Stabling]);
   useEffect(() => { saveInsertionPg2Log(pg2InsertionLog); }, [pg2InsertionLog]);
   useEffect(() => { saveInsertionPg2TidInputs(pg2TidInputs); }, [pg2TidInputs]);
+  useEffect(() => { saveEastInsertionTimeOffset(eastInsertionTimeOffsetMinutes); }, [eastInsertionTimeOffsetMinutes]);
 
   const getTabFromPath = (path) => {
     if (path === "/train-washing") return "washing";
@@ -13561,11 +13591,16 @@ export default function DepotStablingPage() {
     // Uploaded timetable selected in the header is the first source of truth.
     // West insertion uses Departure 3A1P1 minus 00:04:30.
     // East insertion uses Departure 3K1P2 minus 00:05:22.
-    const uploadedTime =
-      activeInsertionTimeMaps?.[depotKey]?.[cleanTid] ||
-      activeInsertionTimeMaps?.[oppositeDepotKey]?.[cleanTid];
+    const applySelectedTimeOffset = (time, sourceDepot) => (
+      sourceDepot === "east"
+        ? addMinutesToHHMM(time, normalizeEastInsertionTimeOffset(eastInsertionTimeOffsetMinutes))
+        : time
+    );
+    const uploadedSameDepotTime = activeInsertionTimeMaps?.[depotKey]?.[cleanTid];
+    const uploadedOppositeDepotTime = activeInsertionTimeMaps?.[oppositeDepotKey]?.[cleanTid];
 
-    if (uploadedTime) return uploadedTime;
+    if (uploadedSameDepotTime) return applySelectedTimeOffset(uploadedSameDepotTime, depotKey);
+    if (uploadedOppositeDepotTime) return applySelectedTimeOffset(uploadedOppositeDepotTime, oppositeDepotKey);
 
     // Do not merge hardcoded TIDs into an active uploaded timetable. An
     // unmatched number remains a normal remark and must not auto-insert.
@@ -13573,11 +13608,11 @@ export default function DepotStablingPage() {
 
     // No uploaded timetable is available, so use the built-in schedule for
     // the selected timetable type as an offline/default fallback.
-    const sameDayTime =
-      TID_TIME_MAPS[dayKey]?.[depotKey]?.[cleanTid] ||
-      TID_TIME_MAPS[dayKey]?.[oppositeDepotKey]?.[cleanTid];
+    const sameDayDepotTime = TID_TIME_MAPS[dayKey]?.[depotKey]?.[cleanTid];
+    const sameDayOppositeTime = TID_TIME_MAPS[dayKey]?.[oppositeDepotKey]?.[cleanTid];
 
-    if (sameDayTime) return sameDayTime;
+    if (sameDayDepotTime) return applySelectedTimeOffset(sameDayDepotTime, depotKey);
+    if (sameDayOppositeTime) return applySelectedTimeOffset(sameDayOppositeTime, oppositeDepotKey);
     if (!allowFallback) return null;
 
     // PNG export can be prepared while viewing / typing TIDs from a different schedule day.
@@ -13585,11 +13620,11 @@ export default function DepotStablingPage() {
     const fallbackDayOrder = ["weekday", "friday", "saturday"].filter((key) => key !== dayKey);
 
     for (const fallbackDay of fallbackDayOrder) {
-      const fallbackTime =
-        TID_TIME_MAPS[fallbackDay]?.[depotKey]?.[cleanTid] ||
-        TID_TIME_MAPS[fallbackDay]?.[oppositeDepotKey]?.[cleanTid];
+      const fallbackDepotTime = TID_TIME_MAPS[fallbackDay]?.[depotKey]?.[cleanTid];
+      const fallbackOppositeTime = TID_TIME_MAPS[fallbackDay]?.[oppositeDepotKey]?.[cleanTid];
 
-      if (fallbackTime) return fallbackTime;
+      if (fallbackDepotTime) return applySelectedTimeOffset(fallbackDepotTime, depotKey);
+      if (fallbackOppositeTime) return applySelectedTimeOffset(fallbackOppositeTime, oppositeDepotKey);
     }
 
     return null;
@@ -13648,7 +13683,7 @@ export default function DepotStablingPage() {
       markInsertionLiveLocalEdit();
       setInsertionLog(sortInsertionLogByTime(nextLog));
     }
-  }, [activeTimetable?.id, selectedTimetableType, insertionLiveLoaded, insertionLog]);
+  }, [activeTimetable?.id, selectedTimetableType, eastInsertionTimeOffsetMinutes, insertionLiveLoaded, insertionLog]);
 
   useEffect(() => {
     if (!pg2InsertionLog.length) return;
@@ -13679,7 +13714,7 @@ export default function DepotStablingPage() {
       markInsertionLiveLocalEdit();
       setPg2InsertionLog(sortInsertionLogByTime(nextLog));
     }
-  }, [activeTimetable?.id, selectedTimetableType, insertionLiveLoaded, pg2InsertionLog]);
+  }, [activeTimetable?.id, selectedTimetableType, eastInsertionTimeOffsetMinutes, insertionLiveLoaded, pg2InsertionLog]);
 
   const applyInsertionTickToLog = useCallback((prevLog = [], road, bi, trainKey, remark = "", sweepTrack = "") => {
     const cellKey = `${road}-${bi}`;

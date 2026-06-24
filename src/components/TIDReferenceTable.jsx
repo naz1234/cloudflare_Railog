@@ -352,6 +352,16 @@ function toMinutes(timeStr) {
   return h * 60 + m;
 }
 
+function addMinutesToTime(timeStr = "", minutesToAdd = 0) {
+  const match = String(timeStr || "").trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return timeStr;
+
+  const totalMinutes = ((Number(match[1]) * 60) + Number(match[2]) + Number(minutesToAdd || 0) + 1440) % 1440;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
 const TID_SOUND_ENABLED_KEY = "insertionTidSoundEnabled_v1";
 const TID_SOUND_SETTINGS_KEY = "insertionTidSoundSettings_v2";
 const DEFAULT_TID_SOUND_SETTINGS = { east: false, west: false };
@@ -837,7 +847,7 @@ function ScheduleWarningBanner({ selectedLabel, todayLabel, onSwitchToToday }) {
   );
 }
 
-function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedule, isScheduleOverride, onTidDragStart, activeDragKey = "", usedTidKeys = new Set(), duplicateTidKeys = new Set() }) {
+function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedule, isScheduleOverride, onTidDragStart, activeDragKey = "", usedTidKeys = new Set(), duplicateTidKeys = new Set(), timeOffsetMinutes = 0, onTimeOffsetChange }) {
   const accent = DEPOT_ACCENTS[depotType];
   const activeIndex = getActiveIndex(rows, nowMinutes);
   const isWeekday = dayLabel === "Weekday";
@@ -984,9 +994,46 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                   borderBottom: "1px solid rgba(125, 184, 224, 0.16)",
                 }}
               >
-                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                  <TimerIcon size={10} /> TIME
-                </span>
+                {depotType === "east" ? (
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 4,
+                      cursor: "pointer",
+                    }}
+                    title="Choose the East Depot insertion timing: original timetable time or an additional 3 minutes"
+                  >
+                    <TimerIcon size={10} />
+                    <select
+                      value={Number(timeOffsetMinutes) === 3 ? 3 : 0}
+                      onChange={(event) => onTimeOffsetChange?.(Number(event.target.value) === 3 ? 3 : 0)}
+                      onClick={(event) => event.stopPropagation()}
+                      style={{
+                        border: "none",
+                        outline: "none",
+                        padding: 0,
+                        margin: 0,
+                        color: accent.text,
+                        background: "transparent",
+                        font: "inherit",
+                        fontWeight: 400,
+                        letterSpacing: "0.09em",
+                        textTransform: "uppercase",
+                        cursor: "pointer",
+                      }}
+                      aria-label="East Depot insertion time adjustment"
+                    >
+                      <option value={0} style={{ color: "#0f172a", background: "#ffffff" }}>TIME</option>
+                      <option value={3} style={{ color: "#0f172a", background: "#ffffff" }}>TIME +3</option>
+                    </select>
+                  </label>
+                ) : (
+                  <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                    <TimerIcon size={10} /> TIME
+                  </span>
+                )}
               </th>
             </tr>
           </thead>
@@ -1194,17 +1241,32 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
   );
 }
 
-export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday", onTidDragStart, activeDragKey = "", usedTidKeys = [], duplicateTidKeys = [] }) {
+export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday", onTidDragStart, activeDragKey = "", usedTidKeys = [], duplicateTidKeys = [], eastTimeOffsetMinutes = 0, onEastTimeOffsetChange }) {
   const [now, setNow] = useState(new Date());
   const [soundSettings, setSoundSettings] = useState(loadTidSoundSettings);
   const [soundReady, setSoundReady] = useState(false);
   const audioContextRef = useRef(null);
   const lastSoundKeyRef = useRef("");
   const selectedScheduleKey = normalizeTimetableTypeKey(activeTimetableType);
-  const schedules = useMemo(
+  const baseSchedules = useMemo(
     () => buildSchedules(activeTimetable, selectedScheduleKey),
     [activeTimetable, selectedScheduleKey]
   );
+  const schedules = useMemo(() => {
+    const offset = Number(eastTimeOffsetMinutes) === 3 ? 3 : 0;
+    if (!offset) return baseSchedules;
+
+    return Object.fromEntries(Object.entries(baseSchedules).map(([key, schedule]) => [
+      key,
+      {
+        ...schedule,
+        east: (schedule?.east || []).map((row) => ({
+          ...row,
+          time: addMinutesToTime(row.time, offset),
+        })),
+      },
+    ]));
+  }, [baseSchedules, eastTimeOffsetMinutes]);
   const [scheduleKey, setScheduleKey] = useState(() => selectedScheduleKey || getDefaultScheduleKey());
   const activeSchedule = schedules[scheduleKey] || schedules[selectedScheduleKey] || schedules[getDefaultScheduleKey()] || schedules.weekday;
   const todayScheduleKey = getTodayScheduleKey(now);
@@ -1345,6 +1407,8 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
             activeDragKey={activeDragKey}
             usedTidKeys={usedTidKeySet}
             duplicateTidKeys={duplicateTidKeySet}
+            timeOffsetMinutes={eastTimeOffsetMinutes}
+            onTimeOffsetChange={onEastTimeOffsetChange}
           />
 
           <DepotCard
@@ -1389,6 +1453,8 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
             activeDragKey={activeDragKey}
             usedTidKeys={usedTidKeySet}
             duplicateTidKeys={duplicateTidKeySet}
+            timeOffsetMinutes={eastTimeOffsetMinutes}
+            onTimeOffsetChange={onEastTimeOffsetChange}
           />
         </>
       )}
