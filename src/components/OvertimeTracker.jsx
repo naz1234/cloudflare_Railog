@@ -10,7 +10,7 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-const TIMING_OPTIONS = {
+const NORMAL_TIMING_OPTIONS = {
   EXTENSION: [
     { startTime: "07:00", endTime: "19:00" },
     { startTime: "19:00", endTime: "07:00" },
@@ -26,8 +26,33 @@ const TIMING_OPTIONS = {
   ],
 };
 
-function getDefaultTiming(type = "RDOT") {
-  return TIMING_OPTIONS[type]?.[0] || TIMING_OPTIONS.RDOT[0];
+const RAMADAN_TIMING_OPTIONS = {
+  EXTENSION: [
+    { startTime: "07:00", endTime: "15:30" },
+    { startTime: "15:00", endTime: "23:30" },
+    { startTime: "23:00", endTime: "07:30" },
+  ],
+  RDOT: [
+    { startTime: "07:00", endTime: "15:30" },
+    { startTime: "15:00", endTime: "23:30" },
+    { startTime: "23:00", endTime: "07:30" },
+  ],
+};
+
+function normalizeDayType(value = "NORMAL") {
+  const normalized = String(value || "NORMAL").toUpperCase();
+  return normalized === "RAMADAN" || normalized === "RAMADHAN" ? "RAMADAN" : "NORMAL";
+}
+
+function getTimingOptions(dayType = "NORMAL", type = "RDOT") {
+  const options = normalizeDayType(dayType) === "RAMADAN"
+    ? RAMADAN_TIMING_OPTIONS
+    : NORMAL_TIMING_OPTIONS;
+  return options[type] || options.RDOT;
+}
+
+function getDefaultTiming(type = "RDOT", dayType = "NORMAL") {
+  return getTimingOptions(dayType, type)[0];
 }
 
 function getTimingValue(startTime, endTime) {
@@ -55,7 +80,7 @@ function getMinutes(time = "") {
   return (hours * 60) + minutes;
 }
 
-function calculateOvertimeHours(startTime, endTime, type = "RDOT") {
+function calculateOvertimeHours(startTime, endTime, type = "RDOT", dayType = "NORMAL") {
   const startMinutes = getMinutes(startTime);
   const endMinutes = getMinutes(endTime);
   if (startMinutes === null || endMinutes === null) return 0;
@@ -65,13 +90,16 @@ function calculateOvertimeHours(startTime, endTime, type = "RDOT") {
 
   const durationHours = durationMinutes / 60;
   if (String(type).toUpperCase() === "RDOT") return roundOne(durationHours);
-  return roundOne(Math.max(0, durationHours - 8.5));
+  const baseHours = normalizeDayType(dayType) === "RAMADAN" ? 6 : 8.5;
+  return roundOne(Math.max(0, durationHours - baseHours));
 }
 
 function createRecordDraft(date = getLocalDateValue()) {
-  const timing = getDefaultTiming("RDOT");
+  const dayType = "NORMAL";
+  const timing = getDefaultTiming("RDOT", dayType);
   return {
     date,
+    dayType,
     type: "RDOT",
     startTime: timing.startTime,
     endTime: timing.endTime,
@@ -85,17 +113,19 @@ function normalizeRecord(record = {}) {
   const date = /^\d{4}-\d{2}-\d{2}$/.test(String(record.date || ""))
     ? String(record.date)
     : getLocalDateValue();
-  const defaultTiming = getDefaultTiming(type);
+  const dayType = normalizeDayType(record.dayType || record.day_type);
+  const defaultTiming = getDefaultTiming(type, dayType);
   const startTime = /^\d{2}:\d{2}$/.test(String(record.startTime || "")) ? String(record.startTime) : defaultTiming.startTime;
   const endTime = /^\d{2}:\d{2}$/.test(String(record.endTime || "")) ? String(record.endTime) : defaultTiming.endTime;
 
   return {
     id: String(record.id || `ovt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`),
     date,
+    dayType,
     type,
     startTime,
     endTime,
-    hours: calculateOvertimeHours(startTime, endTime, type),
+    hours: calculateOvertimeHours(startTime, endTime, type, dayType),
     remark: String(record.remark || ""),
     createdAt: record.createdAt || new Date().toISOString(),
     updatedAt: record.updatedAt || record.createdAt || new Date().toISOString(),
@@ -312,10 +342,10 @@ export default function OvertimeTracker() {
   }, [noteCloudReady, refreshCloudNotes]);
 
   const draftHours = useMemo(
-    () => calculateOvertimeHours(draft.startTime, draft.endTime, draft.type),
-    [draft.startTime, draft.endTime, draft.type]
+    () => calculateOvertimeHours(draft.startTime, draft.endTime, draft.type, draft.dayType),
+    [draft.startTime, draft.endTime, draft.type, draft.dayType]
   );
-  const draftTimingOptions = TIMING_OPTIONS[draft.type] || TIMING_OPTIONS.RDOT;
+  const draftTimingOptions = getTimingOptions(draft.dayType, draft.type);
   const draftTimingValue = getTimingValue(draft.startTime, draft.endTime);
   const draftTimingIsPreset = draftTimingOptions.some(
     (option) => getTimingValue(option.startTime, option.endTime) === draftTimingValue
@@ -456,6 +486,7 @@ export default function OvertimeTracker() {
     setEditingId(record.id);
     setDraft({
       date: record.date,
+      dayType: record.dayType,
       type: record.type,
       startTime: record.startTime,
       endTime: record.endTime,
@@ -559,13 +590,14 @@ export default function OvertimeTracker() {
 
   const exportCsv = () => {
     const rows = [
-      ["Date", "Month", "Type", "Start", "End", "Recorded Hours", "Remark"],
+      ["Date", "Month", "Day Type", "Type", "Start", "End", "Recorded Hours", "Remark"],
       ...recordsForYear
         .slice()
         .sort((a, b) => a.date.localeCompare(b.date))
         .map((record) => [
           record.date,
           MONTHS[Number(record.date.slice(5, 7)) - 1],
+          record.dayType === "RAMADAN" ? "Ramadhan" : "Normal Day",
           record.type,
           record.startTime,
           record.endTime,
@@ -730,7 +762,7 @@ export default function OvertimeTracker() {
           </div>
 
           <form onSubmit={handleSave}>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.1fr_1fr_1.1fr_.8fr]">
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.05fr_1fr_.9fr_1.1fr_.7fr]">
               <label className="block">
                 <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Date</span>
                 <input
@@ -744,12 +776,34 @@ export default function OvertimeTracker() {
               </label>
 
               <label className="block">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Day Type</span>
+                <select
+                  value={draft.dayType}
+                  onChange={(event) => {
+                    const dayType = event.target.value;
+                    const timing = getDefaultTiming(draft.type, dayType);
+                    setDraft((current) => ({
+                      ...current,
+                      dayType,
+                      startTime: timing.startTime,
+                      endTime: timing.endTime,
+                    }));
+                  }}
+                  className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-medium text-[#eff5fc] outline-none transition focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
+                  style={{ colorScheme: "dark" }}
+                >
+                  <option value="NORMAL">Normal Day</option>
+                  <option value="RAMADAN">Ramadhan</option>
+                </select>
+              </label>
+
+              <label className="block">
                 <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Type</span>
                 <select
                   value={draft.type}
                   onChange={(event) => {
                     const type = event.target.value;
-                    const timing = getDefaultTiming(type);
+                    const timing = getDefaultTiming(type, draft.dayType);
                     setDraft((current) => ({
                       ...current,
                       type,
@@ -782,7 +836,7 @@ export default function OvertimeTracker() {
                   )}
                   {draftTimingOptions.map((option, index) => {
                     const timingValue = getTimingValue(option.startTime, option.endTime);
-                    const showPairSeparator = draft.type === "EXTENSION" && (index === 2 || index === 4);
+                    const showPairSeparator = draft.dayType === "NORMAL" && draft.type === "EXTENSION" && (index === 2 || index === 4);
                     return (
                       <Fragment key={timingValue}>
                         {showPairSeparator && <option disabled value={`separator-${index}`}>──────────────</option>}
@@ -813,7 +867,7 @@ export default function OvertimeTracker() {
 
             <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-[10px] leading-relaxed text-[#9babc0]">
-                RDOT uses the full selected shift duration. Extension deducts 8.5 normal working hours.
+                RDOT uses the full selected shift duration. Extension deducts {draft.dayType === "RAMADAN" ? "6 Ramadhan working hours" : "8.5 normal working hours"}.
               </p>
               <div className="flex gap-2">
                 {editingId && (
@@ -986,6 +1040,12 @@ export default function OvertimeTracker() {
                       <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
                         <p className="text-[12px] font-semibold text-[#f1f5fb]">{formatDate(record.date)}</p>
                         <span className="text-[11px] text-[#79a9d2]">{record.startTime} – {record.endTime}</span>
+                        <span className={`rounded-full border px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.10em] ${record.dayType === "RAMADAN"
+                          ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-200"
+                          : "border-sky-400/20 bg-sky-500/[0.08] text-sky-200"
+                        }`}>
+                          {record.dayType === "RAMADAN" ? "Ramadhan" : "Normal"}
+                        </span>
                       </div>
                       {record.remark && <p className="mt-1 truncate text-[11px] text-[#b5c2d3]">{record.remark}</p>}
                     </div>
