@@ -39,6 +39,48 @@ export const ROSTER_NAME_ALIASES = {
   "AZMATHULLAH, R.": "EFC Rahmah",
 };
 
+const ROSTER_TEMPLATE_NAMES = [
+  "Abesamis, J.",
+  "Ramos, A.",
+  "AlShahrani, F.",
+  "Devilla, R.",
+  "AlHashyan, A.",
+  "AlAnazi, A.",
+  "Alied, A.",
+  "Alomar, S.",
+  "Madrio, M.",
+  "Bin Sharil, S.",
+  "Tiwari, P.",
+  "Taufeek, W.",
+  "Salik, U.",
+  "Felemban, A.",
+  "Injapuri, J.",
+  "Baja, M.",
+  "Guevarra, D.",
+  "AlMuhanna, A.",
+  "Rosli, K.",
+  "Dela Cruz, D.",
+  "Villacorta, K.",
+  "Bin Jaafar, M.",
+  "Romero, M.",
+  "Enriquez, R.",
+  "AlHajri, H.",
+  "Alawaji, B.",
+  "AlAqeeli, A.",
+  "Shahbal, A.",
+  "Lopez, A.",
+  "Farooq, Q.",
+  "Kalu, A.",
+  "Alsaegh, A.",
+  "Azmathullah, R.",
+  "Alawaji, B.",
+  "Almuqbel, A.",
+  "AlAmir, A.",
+  "AlShahrani, A.",
+  "Alnakhli, A.",
+  "Alotaibi, Y.",
+];
+
 const MONTHS = {
   jan: 1,
   january: 1,
@@ -110,6 +152,25 @@ function canonicalPersonName(value = "") {
 export function preferredRosterName(rawName = "") {
   const key = canonicalPersonName(rawName);
   return ROSTER_NAME_ALIASES[key] || compactSpaces(rawName);
+}
+
+export function ensureRosterNames(parsedRoster) {
+  if (!parsedRoster?.people?.length) return parsedRoster;
+
+  const useTemplateFallback = parsedRoster.people.length === ROSTER_TEMPLATE_NAMES.length;
+  let changed = false;
+  const people = parsedRoster.people.map((person, index) => {
+    const currentRawName = compactSpaces(person.rawName || "");
+    const currentDisplayName = compactSpaces(person.displayName || "");
+    const fallbackRawName = useTemplateFallback ? ROSTER_TEMPLATE_NAMES[index] : "";
+    const rawName = currentRawName || fallbackRawName;
+    const displayName = currentDisplayName || preferredRosterName(rawName);
+
+    if (rawName !== currentRawName || displayName !== currentDisplayName) changed = true;
+    return { ...person, rawName, displayName };
+  });
+
+  return changed ? { ...parsedRoster, people } : parsedRoster;
 }
 
 function inferYear(fileName = "", fallbackYear = new Date().getFullYear()) {
@@ -401,8 +462,8 @@ export async function parseRosterPdf(arrayBuffer, fileName = "roster.pdf", pdfjs
   const roles = [...new Set(allPeople.map((person) => person.rosterRole).filter(Boolean))]
     .sort((a, b) => ROSTER_ROLE_ORDER.indexOf(a) - ROSTER_ROLE_ORDER.indexOf(b));
 
-  return {
-    version: 1,
+  return ensureRosterNames({
+    version: 2,
     parsedAt: new Date().toISOString(),
     fileName,
     year,
@@ -411,7 +472,7 @@ export async function parseRosterPdf(arrayBuffer, fileName = "roster.pdf", pdfjs
     roles,
     people: allPeople,
     warnings,
-  };
+  });
 }
 
 export function getRosterEntryRole(person, day) {
@@ -440,7 +501,8 @@ export function queryRoster(parsedRoster, { day, role = "ALL", includeRest = fal
       if (shiftDelta) return shiftDelta;
       const roleDelta = ROSTER_ROLE_ORDER.indexOf(getRosterEntryRole(a.person, day)) - ROSTER_ROLE_ORDER.indexOf(getRosterEntryRole(b.person, day));
       if (roleDelta) return roleDelta;
-      return a.person.displayName.localeCompare(b.person.displayName);
+      return String(a.person.displayName || a.person.rawName || a.person.rosterCode || "")
+        .localeCompare(String(b.person.displayName || b.person.rawName || b.person.rosterCode || ""));
     });
 }
 

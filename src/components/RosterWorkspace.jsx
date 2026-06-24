@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import {
   ROSTER_ROLE_ORDER,
+  ensureRosterNames,
   formatRosterDate,
   getRosterEntryRole,
   parseRosterPdf,
@@ -156,7 +157,7 @@ function ActionButton({ children, icon: Icon, onClick, disabled = false, primary
       title={title}
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl border px-3.5 text-[11px] font-bold transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 ${className}`}
+      className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-3.5 text-[14px] font-bold transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 ${className}`}
     >
       {Icon ? <Icon className="h-4 w-4" /> : null}
       {children}
@@ -184,19 +185,23 @@ function EmptyRoster({ onUpload }) {
 
 function ControllerRow({ person, entry, day }) {
   const role = getRosterEntryRole(person, day);
+  const controllerName = person.displayName || person.rawName || person.name || "Controller name unavailable";
+  const originalName = person.rawName && person.rawName !== controllerName
+    ? person.rawName
+    : person.rosterCode || "";
   const time = entry.timeStart && entry.timeEnd ? `${entry.timeStart}–${entry.timeEnd}` : entry.dutyCode || entry.raw;
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-white/5 bg-[#091d2d] px-3 py-2.5 transition-colors hover:border-[#315671] hover:bg-[#0b2235]">
+    <div className="grid min-h-[66px] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl border border-white/5 bg-[#091d2d] px-4 py-3 transition-colors hover:border-[#315671] hover:bg-[#0b2235]">
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="truncate text-[12px] font-extrabold text-white">{person.displayName}</span>
-          <span className={`rounded-md border px-1.5 py-0.5 text-[8px] font-black tracking-wide ${roleBadgeClass(role)}`}>{role}</span>
+        <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+          <span className="min-w-0 max-w-full truncate text-[15px] font-extrabold leading-5 text-white">{controllerName}</span>
+          <span className={`shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-black tracking-wide ${roleBadgeClass(role)}`}>{role}</span>
         </div>
-        <div className="mt-1 truncate text-[9px] text-[#66859a]">{person.rawName || person.rosterCode}</div>
+        <div className="mt-1 truncate text-[12px] leading-4 text-[#7899ae]">{originalName}</div>
       </div>
-      <div className="text-right">
-        <div className="text-[11px] font-bold tabular-nums text-[#dceaf4]">{time || "—"}</div>
-        <div className="mt-0.5 text-[8px] uppercase tracking-wide text-[#658398]">{entry.dutyCode || entry.shiftLabel}</div>
+      <div className="shrink-0 text-right">
+        <div className="text-[14px] font-bold tabular-nums text-[#e7f3fb]">{time || "—"}</div>
+        <div className="mt-1 text-[11px] uppercase tracking-wide text-[#7897aa]">{entry.dutyCode || entry.shiftLabel}</div>
       </div>
     </div>
   );
@@ -207,14 +212,14 @@ function ShiftGroup({ shiftKey, rows, day }) {
   const label = shiftKey === "extension" && rows.length === 1 ? rows[0].entry.shiftLabel : style.label;
   return (
     <section className={`overflow-hidden rounded-2xl border bg-[#071827] ${style.border}`}>
-      <header className="flex items-center justify-between border-b border-white/5 px-3.5 py-3">
+      <header className="flex items-center justify-between border-b border-white/5 px-4 py-3.5">
         <div className="flex items-center gap-2">
           <span className={`h-2 w-2 rounded-full ${style.dot}`} />
-          <h4 className="text-[11px] font-black uppercase tracking-[0.13em] text-white">{label}</h4>
+          <h4 className="text-[14px] font-black uppercase tracking-[0.13em] text-white">{label}</h4>
         </div>
-        <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black ${style.badge}`}>{rows.length}</span>
+        <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-black ${style.badge}`}>{rows.length}</span>
       </header>
-      <div className="space-y-2 p-2.5">
+      <div className="space-y-2.5 p-3">
         {rows.map(({ person, entry }) => <ControllerRow key={`${person.id}-${day}`} person={person} entry={entry} day={day} />)}
       </div>
     </section>
@@ -268,7 +273,8 @@ export default function RosterWorkspace() {
     loadSavedRoster()
       .then((saved) => {
         if (!active || !saved) return;
-        setRecord(saved);
+        const repairedParsed = ensureRosterNames(saved.parsed);
+        setRecord({ ...saved, parsed: repairedParsed });
         const now = new Date();
         const preferredDay = saved.parsed?.year === now.getFullYear() && saved.parsed?.month === now.getMonth() + 1
           ? now.getDate()
@@ -515,40 +521,40 @@ export default function RosterWorkspace() {
               <section className="rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
                 <div className="grid gap-3 md:grid-cols-[1fr_0.8fr_1.25fr_auto]">
                   <label className="block">
-                    <span className="mb-1.5 block text-[8px] font-black uppercase tracking-[0.12em] text-[#7293a9]">Date</span>
+                    <span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Date</span>
                     <select
                       value={selectedDay}
                       onChange={(event) => setSelectedDay(Number(event.target.value))}
-                      className="h-10 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[10px] font-semibold text-white outline-none focus:border-sky-400/60"
+                      className="h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[13px] font-semibold text-white outline-none focus:border-sky-400/60"
                     >
                       {parsed.days.map((day) => <option key={day} value={day}>{formatRosterDate(parsed, day)}</option>)}
                     </select>
                   </label>
                   <label className="block">
-                    <span className="mb-1.5 block text-[8px] font-black uppercase tracking-[0.12em] text-[#7293a9]">Controller Type</span>
+                    <span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Controller Type</span>
                     <select
                       value={role}
                       onChange={(event) => setRole(event.target.value)}
-                      className="h-10 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[10px] font-semibold text-white outline-none focus:border-sky-400/60"
+                      className="h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[13px] font-semibold text-white outline-none focus:border-sky-400/60"
                     >
                       <option value="ALL">All Controllers</option>
                       {ROSTER_ROLE_ORDER.filter((item) => parsed.roles.includes(item)).map((item) => <option key={item} value={item}>{item}</option>)}
                     </select>
                   </label>
                   <label className="block">
-                    <span className="mb-1.5 block text-[8px] font-black uppercase tracking-[0.12em] text-[#7293a9]">Search Name / Duty</span>
+                    <span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Search Name / Duty</span>
                     <div className="relative">
                       <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#55778d]" />
                       <input
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
                         placeholder="Search controller…"
-                        className="h-10 w-full rounded-xl border border-[#2b506a] bg-[#061522] pl-9 pr-3 text-[10px] text-white outline-none focus:border-sky-400/60 placeholder:text-[#456277]"
+                        className="h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] pl-9 pr-3 text-[13px] text-white outline-none focus:border-sky-400/60 placeholder:text-[#456277]"
                       />
                     </div>
                   </label>
                   <div className="flex items-end">
-                    <label className="flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[9px] font-semibold text-[#adc4d3]">
+                    <label className="flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[12px] font-semibold text-[#c4d8e5]">
                       <input type="checkbox" checked={includeRest} onChange={(event) => setIncludeRest(event.target.checked)} className="accent-sky-500" />
                       Show rest/leave
                     </label>
@@ -558,8 +564,8 @@ export default function RosterWorkspace() {
 
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#294b63] bg-[linear-gradient(90deg,#0a253a,#071827)] px-3.5 py-3">
                 <div>
-                  <div className="text-[12px] font-extrabold text-white">{currentDateLabel}</div>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[9px] text-[#7897aa]">
+                  <div className="text-[15px] font-extrabold text-white">{currentDateLabel}</div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-[#8eabbc]">
                     <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" /> {workingCount} working</span>
                     <span>·</span>
                     <span>{role === "ALL" ? "All controller types" : `${role} only`}</span>
