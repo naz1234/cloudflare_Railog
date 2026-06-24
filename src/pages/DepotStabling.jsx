@@ -10,6 +10,7 @@ import TIDReferenceTable, { getTidReferenceRemark } from "../components/TIDRefer
 import PSTLogOutput from "../components/depot/PSTLogOutput";
 import InsertionLogOutput from "../components/depot/InsertionLogOutput";
 import InsertionHowToUse from "../components/depot/InsertionHowToUse";
+import OvertimeTracker from "../components/OvertimeTracker";
 
 const DEFAULT_BOOKMARK_LINKS = [
   { title: "Outlook", url: "https://outlook.office.com", sortOrder: 0 },
@@ -15548,15 +15549,7 @@ export default function DepotStablingPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-[24px] border border-[#1d4869] bg-[#0a2238]/80 px-6 py-12 text-center shadow-[0_18px_55px_rgba(0,0,0,0.2)]">
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#4f8ef7]/30 bg-[#0f2d4a] text-[14px] font-semibold tracking-[0.2em] text-[#bceaff]">
-                      OVT
-                    </div>
-                    <h3 className="mt-4 text-[18px] font-normal text-white">Overtime page ready</h3>
-                    <p className="mx-auto mt-2 max-w-[440px] text-[12px] leading-relaxed text-[#8dc7ed]">
-                      This protected workspace is ready for the Overtime form and records.
-                    </p>
-                  </div>
+                  <OvertimeTracker />
                 </div>
               )}
             </div>

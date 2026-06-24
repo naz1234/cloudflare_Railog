@@ -1,0 +1,33 @@
+{
+  "name": "OvertimeRecord",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "description": "Overtime duty date in YYYY-MM-DD format"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["RDOT", "OT"]
+    },
+    "startTime": {
+      "type": "string"
+    },
+    "endTime": {
+      "type": "string"
+    },
+    "hours": {
+      "type": "number"
+    },
+    "remark": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string"
+    },
+    "updatedAt": {
+      "type": "string"
+    }
+  },
+  "required": ["date", "type", "startTime", "endTime", "hours"]
+}

@@ -17,6 +17,7 @@ const ENTITY_NAMES = [
   'TimetableFile',
   'AdminNote',
   'InboundOutboundMovement',
+  'OvertimeRecord',
 ];
 
 async function apiRequest(path, options = {}) {

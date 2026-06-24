@@ -12,6 +12,7 @@ const ALLOWED_ENTITIES = new Set([
   'TimetableFile',
   'AdminNote',
   'InboundOutboundMovement',
+  'OvertimeRecord',
 ]);
 
 const jsonHeaders = {
