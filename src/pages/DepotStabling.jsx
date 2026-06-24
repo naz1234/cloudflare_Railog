@@ -5522,9 +5522,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
     try {
       const latestTrainRemState = trainRemStateRef.current || trainRemState;
-      const westLog = buildTrainRemRemovalLog(latestTrainRemState, "west", maintenanceMap, activeTimetable);
-      const eastLog = buildTrainRemRemovalLog(latestTrainRemState, "east", maintenanceMap, activeTimetable);
       const latestEastData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
+      const westLog = buildTrainRemRemovalLog(latestTrainRemState, "west", maintenanceMap, activeTimetable, westData);
+      const eastLog = buildTrainRemRemovalLog(latestTrainRemState, "east", maintenanceMap, activeTimetable, latestEastData);
       const swappingRows = getRemovalPdfSwappingRows({
         requests,
         trainRemState: latestTrainRemState,
@@ -5571,9 +5571,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
     try {
       const latestTrainRemState = trainRemStateRef.current || trainRemState;
-      const westLog = buildTrainRemRemovalLog(latestTrainRemState, "west", maintenanceMap, activeTimetable);
-      const eastLog = buildTrainRemRemovalLog(latestTrainRemState, "east", maintenanceMap, activeTimetable);
       const latestEastData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
+      const westLog = buildTrainRemRemovalLog(latestTrainRemState, "west", maintenanceMap, activeTimetable, westData);
+      const eastLog = buildTrainRemRemovalLog(latestTrainRemState, "east", maintenanceMap, activeTimetable, latestEastData);
       const swappingRows = getRemovalPdfSwappingRows({
         requests,
         trainRemState: latestTrainRemState,
@@ -17445,7 +17445,29 @@ function getRemovalRemarkFillColor(remark = "", requestItem = null) {
   );
 }
 
-function getTrainRemRemovalEntries(trainRemState = {}, depot = "west", maintenanceMap = {}, activeTimetable = null) {
+function getTrainStablingBlockNumber(stablingData = {}, trainKey = "") {
+  const key = normalizeTrainId(trainKey);
+  if (!key) return null;
+
+  for (const blocks of Object.values(stablingData || {})) {
+    const blockIndex = (blocks || []).findIndex((block) => normalizeTrainId(block?.trainId) === key);
+    if (blockIndex >= 0) return blockIndex + 1;
+  }
+
+  return null;
+}
+
+function adjustRemovalOutputTimeForDestinationBlock(time = "", stablingData = {}, trainKey = "") {
+  const cleanTime = cleanRemovalTime(time);
+  if (!cleanTime) return cleanTime;
+
+  const destinationBlock = getTrainStablingBlockNumber(stablingData, trainKey);
+  return destinationBlock === 6 || destinationBlock === 7
+    ? addMinutesToHHMM(cleanTime, 1)
+    : cleanTime;
+}
+
+function getTrainRemRemovalEntries(trainRemState = {}, depot = "west", maintenanceMap = {}, activeTimetable = null, stablingData = {}) {
   const selectedPreset = trainRemState?.selectedPreset?.[depot] || "9am";
   const westSelectedPreset = trainRemState?.selectedPreset?.west || "9am";
   const useCombinedReference = isTrainRemCombinedReferencePreset("west", westSelectedPreset);
@@ -17469,6 +17491,10 @@ function getTrainRemRemovalEntries(trainRemState = {}, depot = "west", maintenan
 
       const key = normalizeTrainId(row?.trainId);
       if (!key || !time) return null;
+
+      // Removal output only: trains assigned to destination Block 6 or Block 7
+      // require one additional minute. Keep the saved timetable/input time unchanged.
+      time = adjustRemovalOutputTimeForDestinationBlock(time, stablingData, key);
 
       const requestItem = getTrainRemRemovalRequestItem(row, maintenanceMap);
       const remarkPills = getTrainRemRemovalRemarkItems(row, maintenanceMap);
@@ -17498,7 +17524,7 @@ function getTrainRemRemovalEntries(trainRemState = {}, depot = "west", maintenan
     .map(({ sortMinutes, originalIndex, ...entry }) => entry);
 }
 
-function buildTrainRemRemovalLog(trainRemState = {}, depot = "west", maintenanceMap = {}, activeTimetable = null) {
+function buildTrainRemRemovalLog(trainRemState = {}, depot = "west", maintenanceMap = {}, activeTimetable = null, stablingData = {}) {
   const config = depot === "east"
     ? {
         depot,
@@ -17519,7 +17545,7 @@ function buildTrainRemRemovalLog(trainRemState = {}, depot = "west", maintenance
         copyLabel: "Copy West Log",
       };
 
-  const entries = getTrainRemRemovalEntries(trainRemState, config.depot, maintenanceMap, activeTimetable);
+  const entries = getTrainRemRemovalEntries(trainRemState, config.depot, maintenanceMap, activeTimetable, stablingData);
   const trainWord = entries.length === 1 ? "train" : "trains";
   const trainList = formatTrainList(entries.map((entry) => entry.trainId));
 
@@ -18781,8 +18807,8 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
 }
 
 function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {}, requests = [], westData = {}, eastData = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
-  const westLog = buildTrainRemRemovalLog(trainRemState, "west", maintenanceMap, activeTimetable);
-  const eastLog = buildTrainRemRemovalLog(trainRemState, "east", maintenanceMap, activeTimetable);
+  const westLog = buildTrainRemRemovalLog(trainRemState, "west", maintenanceMap, activeTimetable, westData);
+  const eastLog = buildTrainRemRemovalLog(trainRemState, "east", maintenanceMap, activeTimetable, eastData);
   const getLatestSwappingRows = () => getRemovalPdfSwappingRows({
     requests,
     trainRemState,
