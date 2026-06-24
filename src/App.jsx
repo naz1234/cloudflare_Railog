@@ -46,7 +46,10 @@ const AuthenticatedApp = () => {
       <Route path="/possession" element={<DepotStabling />} />
       <Route path="/alarm" element={<DepotStabling />} />
       <Route path="/overtime" element={<DepotStabling />} />
+      <Route path="/ovt" element={<DepotStabling />} />
       <Route path="/ot" element={<DepotStabling />} />
+      <Route path="/roster" element={<DepotStabling />} />
+      <Route path="/ros" element={<DepotStabling />} />
       <Route path="/admin" element={<DepotStabling />} />
       <Route path="/adm" element={<DepotStabling />} />
       {/* Add your page Route elements here */}

@@ -1731,7 +1731,8 @@ const SIDEBAR_COLLAPSED_KEY = "depotSidebarCollapsed_v1";
 const SIDEBAR_AUTO_HIDE_MS = 3000;
 const ADM_SESSION_KEY = "admAdminUnlocked_v1";
 const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
-const OT_SESSION_KEY = "otOvertimeUnlocked_v1";
+const OVT_SESSION_KEY = "ovtOvertimeUnlocked_v1";
+const ROS_SESSION_KEY = "rosRosterUnlocked_v1";
 const ODO_SESSION_KEY = "odoReadingUnlocked_v1";
 const ADM_LOGIN_ID = "admin";
 const ADM_LOGIN_PASSWORD = "921016";
@@ -11807,7 +11808,8 @@ export default function DepotStablingPage() {
     if (path === "/odo-reading") return "odo";
     if (path === "/possession") return "possession";
     if (path === "/alarm") return "alarm";
-    if (path === "/overtime" || path === "/ot") return "overtime";
+    if (path === "/overtime" || path === "/ovt" || path === "/ot") return "overtime";
+    if (path === "/roster" || path === "/ros") return "roster";
     if (path === "/admin" || path === "/adm") return "admin";
     return "stabling";
   };
@@ -11834,7 +11836,16 @@ export default function DepotStablingPage() {
   const [overtimeError, setOvertimeError] = useState("");
   const [isOvertimeUnlocked, setIsOvertimeUnlocked] = useState(() => {
     try {
-      return sessionStorage.getItem(OT_SESSION_KEY) === "true";
+      return sessionStorage.getItem(OVT_SESSION_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [rosterCredentials, setRosterCredentials] = useState({ id: "", password: "" });
+  const [rosterError, setRosterError] = useState("");
+  const [isRosterUnlocked, setIsRosterUnlocked] = useState(() => {
+    try {
+      return sessionStorage.getItem(ROS_SESSION_KEY) === "true";
     } catch {
       return false;
     }
@@ -12074,20 +12085,45 @@ export default function DepotStablingPage() {
       setIsOvertimeUnlocked(true);
       setOvertimeError("");
       setOvertimeCredentials({ id: "", password: "" });
-      try { sessionStorage.setItem(OT_SESSION_KEY, "true"); } catch {}
+      try { sessionStorage.setItem(OVT_SESSION_KEY, "true"); } catch {}
       return;
     }
 
     setIsOvertimeUnlocked(false);
     setOvertimeError("Invalid admin ID or password.");
-    try { sessionStorage.removeItem(OT_SESSION_KEY); } catch {}
+    try { sessionStorage.removeItem(OVT_SESSION_KEY); } catch {}
   }, [overtimeCredentials]);
 
   const handleOvertimeLogout = useCallback(() => {
     setIsOvertimeUnlocked(false);
     setOvertimeCredentials({ id: "", password: "" });
     setOvertimeError("");
-    try { sessionStorage.removeItem(OT_SESSION_KEY); } catch {}
+    try { sessionStorage.removeItem(OVT_SESSION_KEY); } catch {}
+  }, []);
+
+  const handleRosterLogin = useCallback((event) => {
+    event.preventDefault();
+    const loginId = String(rosterCredentials.id || "").trim();
+    const loginPassword = String(rosterCredentials.password || "");
+
+    if (loginId === ADM_LOGIN_ID && loginPassword === ADM_LOGIN_PASSWORD) {
+      setIsRosterUnlocked(true);
+      setRosterError("");
+      setRosterCredentials({ id: "", password: "" });
+      try { sessionStorage.setItem(ROS_SESSION_KEY, "true"); } catch {}
+      return;
+    }
+
+    setIsRosterUnlocked(false);
+    setRosterError("Invalid admin ID or password.");
+    try { sessionStorage.removeItem(ROS_SESSION_KEY); } catch {}
+  }, [rosterCredentials]);
+
+  const handleRosterLogout = useCallback(() => {
+    setIsRosterUnlocked(false);
+    setRosterCredentials({ id: "", password: "" });
+    setRosterError("");
+    try { sessionStorage.removeItem(ROS_SESSION_KEY); } catch {}
   }, []);
 
   const handleOdoLogin = useCallback((event) => {
@@ -14823,13 +14859,26 @@ export default function DepotStablingPage() {
             {
               key: "overtime",
               label: "Overtime",
-              code: "OT",
+              code: "OVT",
               to: "/overtime",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="9"/>
                   <path d="M12 7v5l3 2"/>
                   <path d="M8 2h8"/>
+                </svg>
+              ),
+            },
+            {
+              key: "roster",
+              label: "Roster",
+              code: "ROS",
+              to: "/roster",
+              icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="17" rx="2"/>
+                  <path d="M8 2v4M16 2v4M3 9h18"/>
+                  <path d="M8 13h3M13 13h3M8 17h3M13 17h3"/>
                 </svg>
               ),
             },
@@ -15300,7 +15349,7 @@ export default function DepotStablingPage() {
                     <div className="absolute right-5 top-5 h-10 w-10 rounded-full border border-[#4f8ef7]/25 bg-[#4f8ef7]/10 blur-[1px]" />
                     <div className="relative flex items-center gap-3">
                       <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#4f8ef7]/40 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.22em] text-[#bceaff] shadow-[0_0_22px_rgba(79,142,247,0.18)]">
-                        OT
+                        OVT
                       </div>
                       <div>
                         <p className="text-[10px] font-normal uppercase tracking-[0.24em] text-[#6db6e8]">Admin access</p>
@@ -15358,7 +15407,7 @@ export default function DepotStablingPage() {
                   <div className="rounded-[24px] border border-[#1d4869] bg-[#061827]/90 p-4 shadow-[0_18px_55px_rgba(0,0,0,0.25)]">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.16em] text-[#bceaff]">
-                        OT
+                        OVT
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Overtime</p>
@@ -15377,11 +15426,110 @@ export default function DepotStablingPage() {
 
                   <div className="rounded-[24px] border border-[#1d4869] bg-[#0a2238]/80 px-6 py-12 text-center shadow-[0_18px_55px_rgba(0,0,0,0.2)]">
                     <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#4f8ef7]/30 bg-[#0f2d4a] text-[14px] font-semibold tracking-[0.2em] text-[#bceaff]">
-                      OT
+                      OVT
                     </div>
                     <h3 className="mt-4 text-[18px] font-normal text-white">Overtime page ready</h3>
                     <p className="mx-auto mt-2 max-w-[440px] text-[12px] leading-relaxed text-[#8dc7ed]">
                       This protected workspace is ready for the Overtime form and records.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "roster" && (
+          <div className="w-full px-2 pb-10 pt-6">
+            <div className="mx-auto w-full max-w-[760px]">
+              {!isRosterUnlocked ? (
+                <div className="mx-auto w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[#23506f]/80 bg-[#061827]/95 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur">
+                  <div className="relative border-b border-[#1a3a56]/80 bg-gradient-to-br from-[#0d3455] via-[#08223a] to-[#061827] px-5 py-5">
+                    <div className="absolute right-5 top-5 h-10 w-10 rounded-full border border-[#4f8ef7]/25 bg-[#4f8ef7]/10 blur-[1px]" />
+                    <div className="relative flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#4f8ef7]/40 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.16em] text-[#bceaff] shadow-[0_0_22px_rgba(79,142,247,0.18)]">
+                        ROS
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-normal uppercase tracking-[0.24em] text-[#6db6e8]">Admin access</p>
+                        <h2 className="mt-1 text-[18px] font-semibold text-white">Roster Login</h2>
+                      </div>
+                    </div>
+                    <p className="relative mt-4 text-[11px] leading-relaxed text-[#8dc7ed]">
+                      Enter the Admin ID and password to unlock the Roster page.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleRosterLogin} className="px-5 py-5">
+                    <label className="block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                      ID
+                      <input
+                        value={rosterCredentials.id}
+                        onChange={(event) => {
+                          setRosterCredentials((prev) => ({ ...prev, id: event.target.value }));
+                          setRosterError("");
+                        }}
+                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
+                        autoComplete="username"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                      />
+                    </label>
+                    <label className="mt-4 block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                      Password
+                      <input
+                        type="password"
+                        value={rosterCredentials.password}
+                        onChange={(event) => {
+                          setRosterCredentials((prev) => ({ ...prev, password: event.target.value }));
+                          setRosterError("");
+                        }}
+                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
+                        autoComplete="current-password"
+                      />
+                    </label>
+                    {rosterError && (
+                      <p className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-[11px] font-normal text-red-200">
+                        {rosterError}
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      className="mt-5 flex h-10 w-full items-center justify-center rounded-xl border border-[#4f8ef7]/60 bg-[#1b5f93] text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(79,142,247,0.22)] transition hover:bg-[#2476b4] active:scale-[0.99]"
+                    >
+                      Login
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="rounded-[24px] border border-[#1d4869] bg-[#061827]/90 p-4 shadow-[0_18px_55px_rgba(0,0,0,0.25)]">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.12em] text-[#bceaff]">
+                        ROS
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Roster</p>
+                        <h2 className="truncate text-[18px] font-normal leading-tight text-white">Roster</h2>
+                        <p className="mt-0.5 text-[10px] font-semibold text-emerald-300">Admin session unlocked for this browser tab.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRosterLogout}
+                        className="rounded-2xl border border-[#2b4f6b] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-[0.98]"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#1d4869] bg-[#0a2238]/80 px-6 py-12 text-center shadow-[0_18px_55px_rgba(0,0,0,0.2)]">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#4f8ef7]/30 bg-[#0f2d4a] text-[14px] font-semibold tracking-[0.14em] text-[#bceaff]">
+                      ROS
+                    </div>
+                    <h3 className="mt-4 text-[18px] font-normal text-white">Roster page ready</h3>
+                    <p className="mx-auto mt-2 max-w-[440px] text-[12px] leading-relaxed text-[#8dc7ed]">
+                      This protected workspace is ready for the Roster form and records.
                     </p>
                   </div>
                 </div>
