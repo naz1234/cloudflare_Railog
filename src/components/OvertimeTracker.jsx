@@ -377,12 +377,12 @@ export default function OvertimeTracker() {
 
   const visibleRecords = useMemo(() => recordsForYear
     .filter((record) => Number(record.date.slice(5, 7)) === selectedMonth + 1)
-    .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)),
+    .sort((a, b) => a.date.localeCompare(b.date) || String(a.createdAt || "").localeCompare(String(b.createdAt || ""))),
   [recordsForYear, selectedMonth]);
 
   const visibleNotes = useMemo(() => notesForYear
     .filter((note) => Number(note.date.slice(5, 7)) === selectedMonth + 1)
-    .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)),
+    .sort((a, b) => a.date.localeCompare(b.date) || String(a.createdAt || "").localeCompare(String(b.createdAt || ""))),
   [notesForYear, selectedMonth]);
 
   const visibleEntries = useMemo(() => [
@@ -400,7 +400,7 @@ export default function OvertimeTracker() {
       createdAt: note.createdAt,
       item: note,
     })),
-  ].sort((a, b) => b.date.localeCompare(a.date) || String(b.createdAt || "").localeCompare(String(a.createdAt || ""))),
+  ].sort((a, b) => a.date.localeCompare(b.date) || String(a.createdAt || "").localeCompare(String(b.createdAt || ""))),
   [visibleNotes, visibleRecords]);
 
   const annualHours = useMemo(
