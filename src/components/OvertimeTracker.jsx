@@ -614,10 +614,10 @@ export default function OvertimeTracker() {
                   : "border-[#1d4869] bg-[#071d30] hover:border-[#376c90] hover:bg-[#0b2942]"
                 }`}
               >
-                <p className={`text-[11px] font-semibold ${active ? "text-white" : "text-[#bceaff]"}`}>{summary.month.slice(0, 3)}</p>
-                <p className="mt-1 text-[17px] font-normal text-white">{summary.rdotCount} <span className="text-[9px] uppercase tracking-wide text-[#7eb8e0]">RDOT</span></p>
-                <p className="mt-0.5 text-[10px] text-[#8dc7ed]">{summary.hours.toFixed(1)} hrs · {summary.count} record{summary.count === 1 ? "" : "s"}</p>
-                <p className="mt-0.5 text-[9px] text-[#6db6e8]">{summary.noteCount} monthly note{summary.noteCount === 1 ? "" : "s"}</p>
+                <p className={`text-[13px] font-semibold ${active ? "text-white" : "text-[#bceaff]"}`}>{summary.month.slice(0, 3).toUpperCase()}</p>
+                <p className="mt-1 text-[19px] font-normal text-white">{summary.rdotCount} <span className="text-[11px] uppercase tracking-wide text-[#7eb8e0]">RDOT</span></p>
+                <p className="mt-0.5 text-[12px] text-[#8dc7ed]">{summary.hours.toFixed(1)} hrs · {summary.count} record{summary.count === 1 ? "" : "s"}</p>
+                <p className="mt-0.5 text-[11px] text-[#6db6e8]">{summary.noteCount} monthly note{summary.noteCount === 1 ? "" : "s"}</p>
               </button>
             );
           })}
