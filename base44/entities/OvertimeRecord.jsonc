@@ -8,24 +8,19 @@
     },
     "type": {
       "type": "string",
-      "enum": ["OT", "RDOT"],
-      "description": "Normal overtime or rest-day overtime"
+      "enum": ["RDOT", "OT"]
     },
     "startTime": {
-      "type": "string",
-      "description": "Duty start time in HH:mm format"
+      "type": "string"
     },
     "endTime": {
-      "type": "string",
-      "description": "Duty end time in HH:mm format"
+      "type": "string"
     },
     "hours": {
-      "type": "number",
-      "description": "Recorded overtime hours"
+      "type": "number"
     },
     "remark": {
-      "type": "string",
-      "description": "Optional note for the overtime duty"
+      "type": "string"
     },
     "createdAt": {
       "type": "string"
