@@ -781,12 +781,9 @@ export default function OvertimeTracker() {
                 <Select
                   value={draft.dayType}
                   onValueChange={(dayType) => {
-                    const timing = getDefaultTiming(draft.type, dayType);
                     setDraft((current) => ({
                       ...current,
                       dayType,
-                      startTime: timing.startTime,
-                      endTime: timing.endTime,
                     }));
                   }}
                 >
@@ -822,12 +819,9 @@ export default function OvertimeTracker() {
                   value={draft.type}
                   onChange={(event) => {
                     const type = event.target.value;
-                    const timing = getDefaultTiming(type, draft.dayType);
                     setDraft((current) => ({
                       ...current,
                       type,
-                      startTime: timing.startTime,
-                      endTime: timing.endTime,
                     }));
                   }}
                   className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-medium text-[#eff5fc] outline-none transition focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
