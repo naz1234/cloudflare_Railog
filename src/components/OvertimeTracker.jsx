@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Download, Loader2, NotebookPen, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
@@ -12,12 +12,12 @@ const MONTHS = [
 
 const TIMING_OPTIONS = {
   EXTENSION: [
-    { startTime: "07:30", endTime: "19:00" },
-    { startTime: "19:00", endTime: "07:30" },
-    { startTime: "15:30", endTime: "23:30" },
-    { startTime: "03:00", endTime: "15:30" },
-    { startTime: "23:30", endTime: "11:00" },
-    { startTime: "11:00", endTime: "23:30" },
+    { startTime: "07:00", endTime: "19:00" },
+    { startTime: "19:00", endTime: "07:00" },
+    { startTime: "15:00", endTime: "23:00" },
+    { startTime: "03:00", endTime: "15:00" },
+    { startTime: "23:00", endTime: "11:00" },
+    { startTime: "11:00", endTime: "23:00" },
   ],
   RDOT: [
     { startTime: "07:00", endTime: "15:30" },
@@ -697,14 +697,21 @@ export default function OvertimeTracker() {
               {!draftTimingIsPreset && (
                 <option value={draftTimingValue}>{getTimingLabel(draft.startTime, draft.endTime)} (previous)</option>
               )}
-              {draftTimingOptions.map((option) => (
-                <option
-                  key={getTimingValue(option.startTime, option.endTime)}
-                  value={getTimingValue(option.startTime, option.endTime)}
-                >
-                  {getTimingLabel(option.startTime, option.endTime)}
-                </option>
-              ))}
+              {draftTimingOptions.map((option, index) => {
+                const timingValue = getTimingValue(option.startTime, option.endTime);
+                const showPairSeparator = draft.type === "EXTENSION" && (index === 2 || index === 4);
+
+                return (
+                  <Fragment key={timingValue}>
+                    {showPairSeparator && (
+                      <option disabled value={`separator-${index}`}>──────────────</option>
+                    )}
+                    <option value={timingValue}>
+                      {getTimingLabel(option.startTime, option.endTime)}
+                    </option>
+                  </Fragment>
+                );
+              })}
             </select>
           </label>
           <div>
