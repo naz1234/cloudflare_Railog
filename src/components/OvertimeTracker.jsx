@@ -676,34 +676,41 @@ export default function OvertimeTracker() {
                   if (!editingId) resetDraft(`${selectedYear}-${String(monthIndex + 1).padStart(2, "0")}-01`);
                   resetNoteDraft(`${selectedYear}-${String(monthIndex + 1).padStart(2, "0")}-01`);
                 }}
-                className={`min-h-[118px] rounded-[16px] border p-3 text-left transition duration-200 ${active
-                  ? "border-[#646cff] bg-[linear-gradient(145deg,rgba(40,56,99,0.72),rgba(11,31,51,0.94))] shadow-[0_0_0_1px_rgba(100,108,255,0.32),0_14px_34px_rgba(20,32,95,0.24)]"
-                  : "border-[#203d58] bg-[linear-gradient(145deg,rgba(10,31,51,0.82),rgba(6,23,39,0.90))] hover:-translate-y-0.5 hover:border-[#365d80] hover:bg-[#0b2942]"
+                className={`min-h-[126px] rounded-[15px] border px-3 py-2.5 text-left transition duration-200 ${active
+                  ? "border-[#755cff] bg-[radial-gradient(circle_at_25%_10%,rgba(99,74,255,0.18),transparent_42%),linear-gradient(145deg,rgba(26,42,73,0.96),rgba(8,27,46,0.98))] shadow-[0_0_0_1px_rgba(117,92,255,0.30),0_10px_26px_rgba(37,26,110,0.22)]"
+                  : "border-[#25445f] bg-[linear-gradient(145deg,rgba(10,31,51,0.88),rgba(6,23,39,0.94))] hover:-translate-y-0.5 hover:border-[#3e6788] hover:bg-[#0b2942]"
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <CalendarDays className={`h-3.5 w-3.5 ${active ? "text-[#91a8ff]" : "text-[#9fb1c8]"}`} strokeWidth={1.8} />
+                  <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] ${active
+                    ? "bg-[#5b4bd6]/45 text-[#d5d2ff]"
+                    : "bg-[#123859] text-[#8dc7f4]"
+                  }`}>
+                    <CalendarDays className="h-3.5 w-3.5" strokeWidth={1.9} />
+                  </span>
                   <p className="text-[12px] font-semibold text-[#f4f7fc]">{summary.month.slice(0, 3).toUpperCase()}</p>
                 </div>
 
-                <div className="mt-3 flex items-center">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-[20px] font-medium leading-none text-white">{summary.rdotCount}</span>
-                    <span className="text-[10px] text-[#aebbd0]">RDOT</span>
+                <div className="mt-2.5 grid grid-cols-[1fr_auto_1fr] items-center">
+                  <div className="text-center">
+                    <span className="block text-[21px] font-medium leading-none text-white">{summary.rdotCount}</span>
+                    <span className="mt-1 block text-[9px] font-medium text-[#aebbd0]">RDOT</span>
                   </div>
-                  <div className="mx-3 h-6 w-px bg-[#34516c]" />
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-[20px] font-medium leading-none text-white">{summary.extensionCount}</span>
-                    <span className="text-[10px] text-[#aebbd0]">EXT</span>
+                  <div className={`mx-2 h-9 w-px ${active ? "bg-[#695dde]/70" : "bg-[#3a566f]"}`} />
+                  <div className="text-center">
+                    <span className="block text-[21px] font-medium leading-none text-white">{summary.extensionCount}</span>
+                    <span className="mt-1 block text-[9px] font-medium text-[#aebbd0]">EXT</span>
                   </div>
                 </div>
 
-                <p className="mt-3 text-[12px] text-[#acbbcf]">
-                  Total Hour : {summary.hours.toFixed(1)} hrs
-                </p>
-                <p className="mt-1.5 text-[10px] text-[#acbbcf]">
-                  {summary.noteCount} monthly note{summary.noteCount === 1 ? "" : "s"}
-                </p>
+                <div className="mt-2.5 border-t border-[#284761]/70 pt-2">
+                  <p className={`text-[12px] font-medium ${active ? "text-[#b5a8ff]" : "text-[#c2cfdf]"}`}>
+                    Total Hour : {summary.hours.toFixed(1)} hrs
+                  </p>
+                  <p className={`mt-1 text-[10px] ${active ? "text-[#a88cff]" : "text-[#9eb0c5]"}`}>
+                    {summary.noteCount} monthly note{summary.noteCount === 1 ? "" : "s"}
+                  </p>
+                </div>
               </button>
             );
           })}
