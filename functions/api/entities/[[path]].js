@@ -14,6 +14,7 @@ const ALLOWED_ENTITIES = new Set([
   'InboundOutboundMovement',
   'OvertimeRecord',
   'OvertimeMonthlyNote',
+  'OvertimeAllowanceCheck',
 ]);
 
 const jsonHeaders = {

@@ -1,11 +1,14 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays, Clock3, Download, FilePlus2, ListChecks, Loader2, MessageSquareText, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { Banknote, Calculator, CalendarDays, Clock3, Download, FilePlus2, ListChecks, Loader2, MessageSquareText, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const OVERTIME_STORAGE_KEY = "ovtOvertimeRecords_v1";
 const OVERTIME_NOTE_STORAGE_KEY = "ovtMonthlyNotes_v1";
+const ALLOWANCE_STORAGE_KEY = "ovtAllowanceChecks_v1";
 const NOTE_LIVE_REFRESH_MS = 5000;
+const DEFAULT_BASIC_SALARY = 15000;
+const DEFAULT_SALARY_WITH_LAUNDRY = 15100;
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -190,6 +193,77 @@ function getNoteFingerprint(note = {}) {
   return [note.date, note.note, note.createdAt].map((value) => String(value || "")).join("|");
 }
 
+function getNextMonthPeriod(workYear, workMonthIndex) {
+  const date = new Date(Number(workYear), Number(workMonthIndex) + 1, 1);
+  return {
+    year: date.getFullYear(),
+    monthIndex: date.getMonth(),
+  };
+}
+
+function createAllowanceDraft(workYear, workMonthIndex) {
+  return {
+    workYear: Number(workYear),
+    workMonth: Number(workMonthIndex) + 1,
+    basicSalary: String(DEFAULT_BASIC_SALARY),
+    salaryWithLaundry: String(DEFAULT_SALARY_WITH_LAUNDRY),
+    salaryReceived: "",
+    nightDays: "",
+    nightAllowance: "",
+  };
+}
+
+function normalizeAllowanceCheck(check = {}) {
+  const now = new Date();
+  const workYear = Number(check.workYear || check.work_year) || now.getFullYear();
+  const rawMonth = Number(check.workMonth || check.work_month) || (now.getMonth() + 1);
+  const workMonth = Math.min(12, Math.max(1, rawMonth));
+  const salaryPeriod = getNextMonthPeriod(workYear, workMonth - 1);
+
+  return {
+    id: String(check.id || `ovt-allowance-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`),
+    workYear,
+    workMonth,
+    salaryYear: Number(check.salaryYear || check.salary_year) || salaryPeriod.year,
+    salaryMonth: Number(check.salaryMonth || check.salary_month) || (salaryPeriod.monthIndex + 1),
+    basicSalary: String(check.basicSalary ?? check.basic_salary ?? DEFAULT_BASIC_SALARY),
+    salaryWithLaundry: String(check.salaryWithLaundry ?? check.salary_with_laundry ?? DEFAULT_SALARY_WITH_LAUNDRY),
+    salaryReceived: String(check.salaryReceived ?? check.salary_received ?? ""),
+    nightDays: String(check.nightDays ?? check.night_days ?? ""),
+    nightAllowance: String(check.nightAllowance ?? check.night_allowance ?? ""),
+    createdAt: check.createdAt || new Date().toISOString(),
+    updatedAt: check.updatedAt || check.createdAt || new Date().toISOString(),
+  };
+}
+
+function loadAllowanceChecks() {
+  try {
+    const raw = localStorage.getItem(ALLOWANCE_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.map(normalizeAllowanceCheck) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveAllowanceChecks(checks) {
+  try {
+    localStorage.setItem(ALLOWANCE_STORAGE_KEY, JSON.stringify(checks));
+  } catch {}
+}
+
+function parseAmount(value) {
+  const amount = Number(String(value ?? "").replace(/,/g, ""));
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function formatMoney(value) {
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+}
+
 function formatDate(dateValue) {
   const [year, month, day] = String(dateValue || "").split("-").map(Number);
   if (!year || !month || !day) return dateValue;
@@ -209,6 +283,7 @@ export default function OvertimeTracker() {
   const today = useMemo(() => new Date(), []);
   const [records, setRecords] = useState(() => loadRecords());
   const [notes, setNotes] = useState(() => loadNotes());
+  const [allowanceChecks, setAllowanceChecks] = useState(() => loadAllowanceChecks());
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const [draft, setDraft] = useState(() => createRecordDraft());
@@ -219,15 +294,22 @@ export default function OvertimeTracker() {
   const [noteSaving, setNoteSaving] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Local cache ready");
   const [noteSyncStatus, setNoteSyncStatus] = useState("Local cache ready");
+  const [allowanceDraft, setAllowanceDraft] = useState(() => createAllowanceDraft(today.getFullYear(), today.getMonth()));
+  const [allowanceSaving, setAllowanceSaving] = useState(false);
+  const [allowanceSyncStatus, setAllowanceSyncStatus] = useState("Local cache ready");
   const noteSyncInProgressRef = useRef(false);
 
   const overtimeEntity = base44?.entities?.OvertimeRecord || null;
   const overtimeNoteEntity = base44?.entities?.OvertimeMonthlyNote || null;
+  const allowanceEntity = base44?.entities?.OvertimeAllowanceCheck || null;
   const cloudReady = Boolean(
     overtimeEntity?.list && overtimeEntity?.create && overtimeEntity?.update && overtimeEntity?.delete
   );
   const noteCloudReady = Boolean(
     overtimeNoteEntity?.list && overtimeNoteEntity?.create && overtimeNoteEntity?.update && overtimeNoteEntity?.delete
+  );
+  const allowanceCloudReady = Boolean(
+    allowanceEntity?.list && allowanceEntity?.create && allowanceEntity?.update && allowanceEntity?.delete
   );
 
   useEffect(() => {
@@ -237,6 +319,10 @@ export default function OvertimeTracker() {
   useEffect(() => {
     saveNotes(notes);
   }, [notes]);
+
+  useEffect(() => {
+    saveAllowanceChecks(allowanceChecks);
+  }, [allowanceChecks]);
 
   useEffect(() => {
     let cancelled = false;
@@ -273,6 +359,40 @@ export default function OvertimeTracker() {
     loadCloudRecords();
     return () => { cancelled = true; };
   }, [cloudReady, overtimeEntity]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCloudAllowanceChecks = async () => {
+      if (!allowanceCloudReady) {
+        setAllowanceSyncStatus("Local cache only");
+        return;
+      }
+
+      setAllowanceSyncStatus("Syncing...");
+      try {
+        const remoteChecks = await allowanceEntity.list("-updatedAt");
+        if (cancelled) return;
+        const normalizedRemote = Array.isArray(remoteChecks) ? remoteChecks.map(normalizeAllowanceCheck) : [];
+        const localChecks = loadAllowanceChecks();
+
+        if (!normalizedRemote.length && localChecks.length && allowanceEntity.bulkCreate) {
+          const uploaded = await allowanceEntity.bulkCreate(localChecks.map(({ id, ...check }) => check));
+          if (cancelled) return;
+          setAllowanceChecks(Array.isArray(uploaded) ? uploaded.map(normalizeAllowanceCheck) : localChecks);
+        } else {
+          setAllowanceChecks(normalizedRemote);
+        }
+        setAllowanceSyncStatus("Cloud saved");
+      } catch (error) {
+        console.error("Overtime allowance check cloud load failed:", error);
+        if (!cancelled) setAllowanceSyncStatus("Local cache only");
+      }
+    };
+
+    loadCloudAllowanceChecks();
+    return () => { cancelled = true; };
+  }, [allowanceCloudReady, allowanceEntity]);
 
   const refreshCloudNotes = useCallback(async ({ migrateLocal = false, silent = false } = {}) => {
     if (!noteCloudReady || noteSyncInProgressRef.current) return;
@@ -374,6 +494,59 @@ export default function OvertimeTracker() {
       noteCount: monthNotes.length,
     };
   }), [notesForYear, recordsForYear]);
+
+  const activeAllowanceCheck = useMemo(() => allowanceChecks.find((check) => (
+    Number(check.workYear) === selectedYear
+    && Number(check.workMonth) === selectedMonth + 1
+  )) || null, [allowanceChecks, selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    setAllowanceDraft(activeAllowanceCheck
+      ? {
+          workYear: activeAllowanceCheck.workYear,
+          workMonth: activeAllowanceCheck.workMonth,
+          basicSalary: activeAllowanceCheck.basicSalary,
+          salaryWithLaundry: activeAllowanceCheck.salaryWithLaundry,
+          salaryReceived: activeAllowanceCheck.salaryReceived,
+          nightDays: activeAllowanceCheck.nightDays,
+          nightAllowance: activeAllowanceCheck.nightAllowance,
+        }
+      : createAllowanceDraft(selectedYear, selectedMonth));
+  }, [activeAllowanceCheck?.id, activeAllowanceCheck?.updatedAt, selectedMonth, selectedYear]);
+
+  const selectedMonthSummary = monthSummaries[selectedMonth] || { hours: 0 };
+  const salaryPeriod = useMemo(
+    () => getNextMonthPeriod(selectedYear, selectedMonth),
+    [selectedMonth, selectedYear]
+  );
+  const allowanceResult = useMemo(() => {
+    const basicSalary = parseAmount(allowanceDraft.basicSalary);
+    const salaryWithLaundry = parseAmount(allowanceDraft.salaryWithLaundry);
+    const salaryReceived = parseAmount(allowanceDraft.salaryReceived);
+    const nightAllowance = parseAmount(allowanceDraft.nightAllowance);
+    const overtimeHours = Number(selectedMonthSummary.hours || 0);
+    const expectedOvertime = basicSalary > 0 ? (basicSalary / 192 * 1.5) * overtimeHours : 0;
+    const totalAllowanceReceived = salaryReceived - salaryWithLaundry;
+    const remainingForOvertime = totalAllowanceReceived - nightAllowance;
+    const difference = remainingForOvertime - expectedOvertime;
+    const hasSalaryReceived = String(allowanceDraft.salaryReceived || "").trim() !== "" && salaryReceived > 0;
+    let status = "WAITING";
+    if (hasSalaryReceived) {
+      if (Math.abs(difference) < 0.005) status = "CORRECT";
+      else if (difference > 0) status = "EXTRA";
+      else status = "SHORT";
+    }
+
+    return {
+      overtimeHours,
+      expectedOvertime,
+      totalAllowanceReceived,
+      remainingForOvertime,
+      difference: Math.abs(difference),
+      status,
+      hasSalaryReceived,
+    };
+  }, [allowanceDraft, selectedMonthSummary.hours]);
 
   const visibleRecords = useMemo(() => recordsForYear
     .filter((record) => Number(record.date.slice(5, 7)) === selectedMonth + 1)
@@ -586,6 +759,72 @@ export default function OvertimeTracker() {
         if (removedNote) setNotes((current) => [...current, removedNote]);
         setNoteSyncStatus("Delete not synced");
       }
+    }
+  };
+
+  const handleAllowanceSave = async (event) => {
+    event.preventDefault();
+    if (allowanceSaving) return;
+
+    const now = new Date().toISOString();
+    const existing = allowanceChecks.find((check) => (
+      Number(check.workYear) === selectedYear
+      && Number(check.workMonth) === selectedMonth + 1
+    ));
+    const payload = normalizeAllowanceCheck({
+      ...(existing || {}),
+      ...allowanceDraft,
+      id: existing?.id || `ovt-allowance-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      workYear: selectedYear,
+      workMonth: selectedMonth + 1,
+      salaryYear: salaryPeriod.year,
+      salaryMonth: salaryPeriod.monthIndex + 1,
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+    });
+
+    setAllowanceSaving(true);
+    try {
+      let savedCheck = payload;
+      if (allowanceCloudReady) {
+        const { id, ...cloudPayload } = payload;
+        if (existing && !String(existing.id).startsWith("ovt-allowance-")) {
+          savedCheck = normalizeAllowanceCheck(await allowanceEntity.update(existing.id, cloudPayload));
+        } else {
+          savedCheck = normalizeAllowanceCheck(await allowanceEntity.create(cloudPayload));
+        }
+        setAllowanceSyncStatus("Cloud saved");
+      } else {
+        setAllowanceSyncStatus("Local cache only");
+      }
+
+      setAllowanceChecks((current) => {
+        const found = current.some((check) => (
+          Number(check.workYear) === selectedYear
+          && Number(check.workMonth) === selectedMonth + 1
+        ));
+        if (!found) return [...current, savedCheck];
+        return current.map((check) => (
+          Number(check.workYear) === selectedYear
+          && Number(check.workMonth) === selectedMonth + 1
+        ) ? savedCheck : check);
+      });
+    } catch (error) {
+      console.error("Overtime allowance check save failed:", error);
+      setAllowanceSyncStatus("Local cache only");
+      setAllowanceChecks((current) => {
+        const found = current.some((check) => (
+          Number(check.workYear) === selectedYear
+          && Number(check.workMonth) === selectedMonth + 1
+        ));
+        if (!found) return [...current, payload];
+        return current.map((check) => (
+          Number(check.workYear) === selectedYear
+          && Number(check.workMonth) === selectedMonth + 1
+        ) ? payload : check);
+      });
+    } finally {
+      setAllowanceSaving(false);
     }
   };
 
@@ -1020,6 +1259,7 @@ export default function OvertimeTracker() {
         </div>
       </section>
 
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
       <section className="overflow-hidden rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(50,80,123,0.13),transparent_35%),linear-gradient(145deg,rgba(8,27,45,0.98),rgba(5,20,35,0.98))] shadow-[0_16px_45px_rgba(0,0,0,0.24)]">
         <div className="flex items-start justify-between gap-3 px-4 pb-2.5 pt-4 sm:px-5 sm:pt-5">
           <div className="flex items-start gap-3">
@@ -1132,6 +1372,163 @@ export default function OvertimeTracker() {
           )}
         </div>
       </section>
+
+        <aside className="rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(42,115,104,0.13),transparent_38%),linear-gradient(145deg,rgba(8,27,45,0.99),rgba(5,20,35,0.99))] p-3.5 shadow-[0_16px_45px_rgba(0,0,0,0.24)] lg:sticky lg:top-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-400/25 bg-emerald-500/10 text-emerald-200">
+                <Calculator className="h-4 w-4" strokeWidth={1.8} />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#c7d6e8]">Allowance check</p>
+                <p className="mt-0.5 text-[9px] leading-relaxed text-[#91a5bd]">
+                  Uses {MONTHS[selectedMonth].slice(0, 3)} {selectedYear} recorded hours.
+                </p>
+              </div>
+            </div>
+            <span className="shrink-0 rounded-full border border-[#2b506d] bg-[#0d2943] px-2 py-1 text-[8px] font-semibold text-[#bcd1e8]">
+              {MONTHS[salaryPeriod.monthIndex].slice(0, 3)} Salary
+            </span>
+          </div>
+
+          <form onSubmit={handleAllowanceSave} className="mt-3 space-y-2.5">
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Basic salary</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={allowanceDraft.basicSalary}
+                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, basicSalary: event.target.value }))}
+                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary + laundry</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={allowanceDraft.salaryWithLaundry}
+                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, salaryWithLaundry: event.target.value }))}
+                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+                />
+              </label>
+            </div>
+
+            <label className="block">
+              <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary actually received</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={allowanceDraft.salaryReceived}
+                onChange={(event) => setAllowanceDraft((current) => ({ ...current, salaryReceived: event.target.value }))}
+                placeholder={`Enter ${MONTHS[salaryPeriod.monthIndex]} salary`}
+                className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+              />
+            </label>
+
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Night days</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={allowanceDraft.nightDays}
+                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, nightDays: event.target.value }))}
+                  placeholder="0"
+                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Night allowance</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={allowanceDraft.nightAllowance}
+                  onChange={(event) => setAllowanceDraft((current) => ({ ...current, nightAllowance: event.target.value }))}
+                  placeholder="0.00"
+                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+                />
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              disabled={allowanceSaving}
+              className="flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 text-[10px] font-semibold text-emerald-100 transition hover:border-emerald-300/55 hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {allowanceSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              {allowanceSaving ? "Saving" : "Save Allowance Check"}
+            </button>
+          </form>
+
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
+              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Recorded hours</p>
+              <p className="mt-1 text-[16px] font-semibold text-white">{allowanceResult.overtimeHours.toFixed(1)}</p>
+            </div>
+            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
+              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Expected OT</p>
+              <p className="mt-1 text-[13px] font-semibold text-[#8ed8ff]">SAR {formatMoney(allowanceResult.expectedOvertime)}</p>
+            </div>
+            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
+              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Allowance received</p>
+              <p className="mt-1 text-[13px] font-semibold text-[#dce8f7]">
+                {allowanceResult.hasSalaryReceived ? `SAR ${formatMoney(allowanceResult.totalAllowanceReceived)}` : "Waiting"}
+              </p>
+            </div>
+            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
+              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Remaining OT</p>
+              <p className="mt-1 text-[13px] font-semibold text-[#dce8f7]">
+                {allowanceResult.hasSalaryReceived ? `SAR ${formatMoney(allowanceResult.remainingForOvertime)}` : "Waiting"}
+              </p>
+            </div>
+          </div>
+
+          <div className={`mt-2.5 rounded-xl border p-3 ${allowanceResult.status === "EXTRA"
+            ? "border-emerald-400/30 bg-emerald-500/10"
+            : allowanceResult.status === "SHORT"
+              ? "border-red-400/30 bg-red-500/10"
+              : allowanceResult.status === "CORRECT"
+                ? "border-sky-400/30 bg-sky-500/10"
+                : "border-[#294862] bg-[#0a2238]/75"
+          }`}>
+            <div className="flex items-center gap-2">
+              <Banknote className={`h-4 w-4 ${allowanceResult.status === "EXTRA"
+                ? "text-emerald-300"
+                : allowanceResult.status === "SHORT"
+                  ? "text-red-300"
+                  : allowanceResult.status === "CORRECT"
+                    ? "text-sky-300"
+                    : "text-[#91a5bd]"
+              }`} />
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#dce8f7]">
+                {allowanceResult.status === "WAITING" ? "Waiting for salary input" : `Allowance ${allowanceResult.status.toLowerCase()}`}
+              </p>
+            </div>
+            {allowanceResult.hasSalaryReceived && (
+              <p className="mt-2 text-[15px] font-semibold text-white">
+                {allowanceResult.status === "CORRECT" ? "Correct amount" : `SAR ${formatMoney(allowanceResult.difference)}`}
+              </p>
+            )}
+            <p className="mt-2 text-[9px] leading-relaxed text-[#9db0c6]">
+              {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} salary checks {MONTHS[selectedMonth]} night and overtime allowances.
+            </p>
+            <p className="mt-1 text-[8px] leading-relaxed text-[#7f94ad]">
+              OT formula: Basic salary ÷ 192 × 1.5 × recorded hours.
+            </p>
+          </div>
+
+          <p className={`mt-2 text-center text-[8px] ${allowanceSyncStatus === "Cloud saved" ? "text-emerald-300" : "text-amber-300"}`}>
+            {allowanceSyncStatus}
+          </p>
+        </aside>
+      </div>
     </div>
   );
 }
