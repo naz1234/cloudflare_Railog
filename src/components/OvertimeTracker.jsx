@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Download, Loader2, NotebookPen, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const OVERTIME_STORAGE_KEY = "ovtOvertimeRecords_v1";
 const OVERTIME_NOTE_STORAGE_KEY = "ovtMonthlyNotes_v1";
+const NOTE_LIVE_REFRESH_MS = 5000;
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -154,6 +155,10 @@ function saveNotes(notes) {
   } catch {}
 }
 
+function getNoteFingerprint(note = {}) {
+  return [note.date, note.note, note.createdAt].map((value) => String(value || "")).join("|");
+}
+
 function formatDate(dateValue) {
   const [year, month, day] = String(dateValue || "").split("-").map(Number);
   if (!year || !month || !day) return dateValue;
@@ -183,6 +188,7 @@ export default function OvertimeTracker() {
   const [noteSaving, setNoteSaving] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Local cache ready");
   const [noteSyncStatus, setNoteSyncStatus] = useState("Local cache ready");
+  const noteSyncInProgressRef = useRef(false);
 
   const overtimeEntity = base44?.entities?.OvertimeRecord || null;
   const overtimeNoteEntity = base44?.entities?.OvertimeMonthlyNote || null;
@@ -237,45 +243,73 @@ export default function OvertimeTracker() {
     return () => { cancelled = true; };
   }, [cloudReady, overtimeEntity]);
 
-  useEffect(() => {
-    let cancelled = false;
+  const refreshCloudNotes = useCallback(async ({ migrateLocal = false, silent = false } = {}) => {
+    if (!noteCloudReady || noteSyncInProgressRef.current) return;
 
-    const loadCloudNotes = async () => {
-      if (!noteCloudReady) {
-        setNoteSyncStatus("Local cache only");
-        return;
-      }
+    noteSyncInProgressRef.current = true;
+    if (!silent) setNoteSyncStatus("Syncing...");
 
-      setNoteSyncStatus("Syncing...");
-      try {
-        const remoteNotes = await overtimeNoteEntity.list("-date");
-        if (cancelled) return;
+    try {
+      let remoteNotes = await overtimeNoteEntity.list("-date");
+      let normalizedRemote = Array.isArray(remoteNotes)
+        ? remoteNotes.map(normalizeNote).filter((item) => item.note)
+        : [];
 
-        const normalizedRemote = Array.isArray(remoteNotes)
-          ? remoteNotes.map(normalizeNote).filter((item) => item.note)
-          : [];
+      if (migrateLocal && overtimeNoteEntity.bulkCreate) {
         const localNotes = loadNotes();
+        const remoteFingerprints = new Set(normalizedRemote.map(getNoteFingerprint));
+        const localToUpload = !normalizedRemote.length
+          ? localNotes
+          : localNotes.filter((note) => (
+            String(note.id).startsWith("ovt-note-")
+            && !remoteFingerprints.has(getNoteFingerprint(note))
+          ));
 
-        if (!normalizedRemote.length && localNotes.length && overtimeNoteEntity.bulkCreate) {
-          const uploaded = await overtimeNoteEntity.bulkCreate(localNotes.map(({ id, ...note }) => note));
-          if (cancelled) return;
-          const normalizedUploaded = Array.isArray(uploaded)
-            ? uploaded.map(normalizeNote).filter((item) => item.note)
-            : localNotes;
-          setNotes(normalizedUploaded);
-        } else {
-          setNotes(normalizedRemote);
+        if (localToUpload.length) {
+          await overtimeNoteEntity.bulkCreate(localToUpload.map(({ id, ...note }) => note));
+          remoteNotes = await overtimeNoteEntity.list("-date");
+          normalizedRemote = Array.isArray(remoteNotes)
+            ? remoteNotes.map(normalizeNote).filter((item) => item.note)
+            : normalizedRemote;
         }
-        setNoteSyncStatus("Cloud saved");
-      } catch (error) {
-        console.error("Overtime monthly note cloud load failed:", error);
-        if (!cancelled) setNoteSyncStatus("Local cache only");
       }
+
+      setNotes(normalizedRemote);
+      setNoteSyncStatus("Live cloud");
+    } catch (error) {
+      console.error("Overtime monthly note live sync failed:", error);
+      setNoteSyncStatus("Local cache only");
+    } finally {
+      noteSyncInProgressRef.current = false;
+    }
+  }, [noteCloudReady, overtimeNoteEntity]);
+
+  useEffect(() => {
+    if (!noteCloudReady) {
+      setNoteSyncStatus("Local cache only");
+      return undefined;
+    }
+
+    refreshCloudNotes({ migrateLocal: true });
+
+    const intervalId = window.setInterval(() => {
+      refreshCloudNotes({ migrateLocal: true, silent: true });
+    }, NOTE_LIVE_REFRESH_MS);
+
+    const handleFocus = () => refreshCloudNotes({ migrateLocal: true, silent: true });
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") handleFocus();
     };
 
-    loadCloudNotes();
-    return () => { cancelled = true; };
-  }, [noteCloudReady, overtimeNoteEntity]);
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [noteCloudReady, refreshCloudNotes]);
 
   const draftHours = useMemo(
     () => calculateOvertimeHours(draft.startTime, draft.endTime, draft.type),
@@ -453,7 +487,7 @@ export default function OvertimeTracker() {
         } else {
           savedNote = normalizeNote(await overtimeNoteEntity.create(cloudPayload));
         }
-        setNoteSyncStatus("Cloud saved");
+        setNoteSyncStatus("Live cloud");
       } else {
         setNoteSyncStatus("Local cache only");
       }
@@ -495,7 +529,7 @@ export default function OvertimeTracker() {
     if (noteCloudReady && !String(id).startsWith("ovt-note-")) {
       try {
         await overtimeNoteEntity.delete(id);
-        setNoteSyncStatus("Cloud saved");
+        setNoteSyncStatus("Live cloud");
       } catch (error) {
         console.error("Overtime monthly note delete failed:", error);
         if (removedNote) setNotes((current) => [...current, removedNote]);
@@ -715,10 +749,10 @@ export default function OvertimeTracker() {
             <div className="min-w-0">
               <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Monthly notes</p>
               <h3 className="mt-0.5 truncate text-[15px] font-normal text-white">{MONTHS[selectedMonth]} {selectedYear}</h3>
-              <p className="mt-0.5 text-[9px] text-[#7eb8e0]">Separate from Extension/RDOT records and not included in recorded-hour totals.</p>
+              <p className="mt-0.5 text-[9px] text-[#7eb8e0]">Saved to Cloudflare D1 and refreshed automatically across devices every 5 seconds.</p>
             </div>
           </div>
-          <p className={`text-[9px] font-semibold ${noteSyncStatus === "Cloud saved" ? "text-emerald-300" : "text-amber-300"}`}>
+          <p className={`text-[9px] font-semibold ${noteSyncStatus === "Live cloud" ? "text-emerald-300" : "text-amber-300"}`}>
             {noteSyncStatus}
           </p>
         </div>

@@ -13,6 +13,7 @@ const ALLOWED_ENTITIES = new Set([
   'AdminNote',
   'InboundOutboundMovement',
   'OvertimeRecord',
+  'OvertimeMonthlyNote',
 ]);
 
 const jsonHeaders = {
@@ -20,6 +21,8 @@ const jsonHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Cache-Control': 'no-store, no-cache, must-revalidate',
+  Pragma: 'no-cache',
 };
 
 function json(data, status = 200) {

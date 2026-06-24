@@ -25,6 +25,7 @@ async function apiRequest(path, options = {}) {
   const { method = 'GET', body } = options;
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
+    cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
