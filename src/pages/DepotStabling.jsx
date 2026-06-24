@@ -15166,7 +15166,7 @@ export default function DepotStablingPage() {
                   <button
                     type="button"
                     onClick={handleOdoLogout}
-                    className="rounded-2xl border border-[#2b4f6b] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-[0.98]"
+                    className="rounded-xl border border-[#2b4f6b] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-[0.98]"
                   >
                     Logout
                   </button>
@@ -15466,8 +15466,8 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "overtime" && (
-          <div className="w-full px-2 pb-10 pt-6 sm:px-4">
-            <div className="mx-auto w-full max-w-[1120px]">
+          <div className="w-full px-2 pb-8 pt-4 sm:px-4">
+            <div className="mx-auto w-full max-w-[960px]">
               {!isOvertimeUnlocked ? (
                 <div className="mx-auto w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[#23506f]/80 bg-[#061827]/95 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur">
                   <div className="relative border-b border-[#1a3a56]/80 bg-gradient-to-br from-[#0d3455] via-[#08223a] to-[#061827] px-5 py-5">
@@ -15528,15 +15528,15 @@ export default function DepotStablingPage() {
                   </form>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="rounded-[24px] border border-[#1d4869] bg-[#061827]/90 p-4 shadow-[0_18px_55px_rgba(0,0,0,0.25)]">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.16em] text-[#bceaff]">
+                <div className="space-y-3">
+                  <div className="rounded-[20px] border border-[#1d4869] bg-[#061827]/90 p-3 shadow-[0_14px_42px_rgba(0,0,0,0.22)]">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[10px] font-semibold tracking-[0.14em] text-[#bceaff]">
                         OVT
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Overtime</p>
-                        <h2 className="truncate text-[18px] font-normal leading-tight text-white">Overtime</h2>
+                        <h2 className="truncate text-[16px] font-normal leading-tight text-white">Overtime</h2>
                         <p className="mt-0.5 text-[10px] font-semibold text-emerald-300">Admin session unlocked for this browser tab.</p>
                       </div>
                       <button
