@@ -11,6 +11,7 @@ import PSTLogOutput from "../components/depot/PSTLogOutput";
 import InsertionLogOutput from "../components/depot/InsertionLogOutput";
 import InsertionHowToUse from "../components/depot/InsertionHowToUse";
 import OvertimeTracker from "../components/OvertimeTracker";
+import RosterWorkspace from "../components/RosterWorkspace";
 
 const DEFAULT_BOOKMARK_LINKS = [
   { title: "Outlook", url: "https://outlook.office.com", sortOrder: 0 },
@@ -15558,7 +15559,7 @@ export default function DepotStablingPage() {
 
         {activeTab === "roster" && (
           <div className="w-full px-2 pb-10 pt-6">
-            <div className="mx-auto w-full max-w-[760px]">
+            <div className="mx-auto w-full max-w-[1320px]">
               {!isRosterUnlocked ? (
                 <div className="mx-auto w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[#23506f]/80 bg-[#061827]/95 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur">
                   <div className="relative border-b border-[#1a3a56]/80 bg-gradient-to-br from-[#0d3455] via-[#08223a] to-[#061827] px-5 py-5">
@@ -15640,15 +15641,7 @@ export default function DepotStablingPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-[24px] border border-[#1d4869] bg-[#0a2238]/80 px-6 py-12 text-center shadow-[0_18px_55px_rgba(0,0,0,0.2)]">
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#4f8ef7]/30 bg-[#0f2d4a] text-[14px] font-semibold tracking-[0.14em] text-[#bceaff]">
-                      ROS
-                    </div>
-                    <h3 className="mt-4 text-[18px] font-normal text-white">Roster page ready</h3>
-                    <p className="mx-auto mt-2 max-w-[440px] text-[12px] leading-relaxed text-[#8dc7ed]">
-                      This protected workspace is ready for the Roster form and records.
-                    </p>
-                  </div>
+                  <RosterWorkspace />
                 </div>
               )}
             </div>
