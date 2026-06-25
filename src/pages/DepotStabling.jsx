@@ -18404,6 +18404,12 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
     ? requestedSummaryRows.reduce((total, row) => total + row.rowHeight, 0) + 6
     : 0;
 
+  // A second aligned count line is shown above the Requested Train table.
+  // Reserve extra vertical space so the two counts and grouped summary never overlap.
+  const requestedCountLineGap = 12;
+  const requestedCountExtraHeight = 14;
+  const requestedSummaryTopOffset = 24;
+
   const titleTop = 28;
   const columnTitleTop = 52;
   const tableTop = 72;
@@ -18421,14 +18427,14 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
     Math.min(14.2, (leftAvailableHeight - headerHeight) / westRowCount)
   );
 
-  const rightAvailableHeight = tableBottomTop - tableTop - requestedSummaryBlockHeight;
+  const rightAvailableHeight = tableBottomTop - tableTop - requestedCountExtraHeight - requestedSummaryBlockHeight;
   const rightRowHeight = Math.max(
     8.4,
     Math.min(14.2, (rightAvailableHeight - headerHeight * 2 - actionSectionGap) / (eastRowCount + actionOverviewRowCount))
   );
   const eastTableHeight = headerHeight + eastRowCount * rightRowHeight;
   const actionTitleTop = tableTop + eastTableHeight + 14;
-  const actionTableTop = tableTop + eastTableHeight + actionSectionGap + requestedSummaryBlockHeight;
+  const actionTableTop = tableTop + eastTableHeight + actionSectionGap + requestedCountExtraHeight + requestedSummaryBlockHeight;
 
   // Special weekday morning layout: two compact removal tables on the left,
   // one full-height requested-train table on the right.
@@ -18446,7 +18452,7 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
   const stackedWestTableHeight = headerHeight + westRowCount * stackedRemovalRowHeight;
   const stackedEastTitleTop = tableTop + stackedWestTableHeight + 18;
   const stackedEastTableTop = stackedEastTitleTop + 20;
-  const stackedActionTableTop = tableTop + requestedSummaryBlockHeight;
+  const stackedActionTableTop = tableTop + requestedCountExtraHeight + requestedSummaryBlockHeight;
   const stackedActionAvailableHeight = tableBottomTop - stackedActionTableTop;
   const stackedActionRowHeight = Math.max(
     8.4,
@@ -18962,14 +18968,42 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
     const tableHeight = headerHeight + rowCount * rowH;
     const tableY = yFromTop(tableTopForTable, tableHeight);
 
-    const requestedTrainTotal = rawActionOverviewRows.filter((row) => row && !row.isSeparator).length;
-    ops += pdfText(`REQUESTED TRAIN - Total: ${requestedTrainTotal}`, x, yFromTop(titleTopForTable), {
-      size: 10.4,
-      color: "#000000",
-      font: "F2",
-    });
+    const countableRequestedRows = rawActionOverviewRows.filter((row) => row && !row.isSeparator);
+    const requestedTrainTotal = countableRequestedRows.filter((row) => {
+      const remarks = splitRequestedActionRemarks(row?.requestType || "");
+      return remarks.some((remark) => !isWashRequestedActionRemark(remark));
+    }).length;
+    const pendingWashingTotal = countableRequestedRows.filter((row) => {
+      const remarks = splitRequestedActionRemarks(row?.requestType || "");
+      return remarks.some((remark) => isWashRequestedActionRemark(remark));
+    }).length;
 
-    drawRequestedTrainSummary(x, titleTopForTable + 10, tableWidth);
+    // Keep both hyphens and both Total values on shared vertical guides.
+    const countLabelFontSize = 10.4;
+    const countHyphenX = x + 116;
+    const countTotalX = countHyphenX + 12;
+    const drawAlignedCountLine = (label, total, top) => {
+      ops += pdfText(label, x, yFromTop(top), {
+        size: countLabelFontSize,
+        color: "#000000",
+        font: "F2",
+      });
+      ops += pdfText("-", countHyphenX, yFromTop(top), {
+        size: countLabelFontSize,
+        color: "#000000",
+        font: "F2",
+      });
+      ops += pdfText(`Total: ${total}`, countTotalX, yFromTop(top), {
+        size: countLabelFontSize,
+        color: "#000000",
+        font: "F2",
+      });
+    };
+
+    drawAlignedCountLine("REQUESTED TRAIN", requestedTrainTotal, titleTopForTable);
+    drawAlignedCountLine("PENDING WASHING", pendingWashingTotal, titleTopForTable + requestedCountLineGap);
+
+    drawRequestedTrainSummary(x, titleTopForTable + requestedSummaryTopOffset, tableWidth);
 
     ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
     const headerBottomY = yFromTop(tableTopForTable + headerHeight);
