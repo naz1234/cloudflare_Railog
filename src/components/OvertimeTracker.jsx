@@ -814,8 +814,8 @@ export default function OvertimeTracker() {
     () => getHighestMonthlyPerformance(monthNightTotals),
     [monthNightTotals]
   );
-  const highestRdotExtension = useMemo(
-    () => getHighestMonthlyPerformance(monthSummaries.map((summary) => summary.rdotCount + summary.extensionCount)),
+  const highestExtensionOnly = useMemo(
+    () => getHighestMonthlyPerformance(monthSummaries.map((summary) => summary.extensionCount)),
     [monthSummaries]
   );
   const highestRdotOnly = useMemo(
@@ -1362,13 +1362,13 @@ export default function OvertimeTracker() {
               <ListChecks className="h-7 w-7" strokeWidth={1.8} />
             </div>
             <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Highest performed RDOT + EXT</p>
-              <p className="mt-1 text-[17px] font-medium leading-none text-white">Total {highestRdotExtension.total}</p>
+              <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Highest performed EXT only</p>
+              <p className="mt-1 text-[17px] font-medium leading-none text-white">Total {highestExtensionOnly.total}</p>
               <p
                 className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[#9fb2c9]"
-                title={highestRdotExtension.fullMonthLabel}
+                title={highestExtensionOnly.fullMonthLabel}
               >
-                {highestRdotExtension.total > 0 ? `at ${highestRdotExtension.monthLabel}` : highestRdotExtension.monthLabel}
+                {highestExtensionOnly.total > 0 ? `at ${highestExtensionOnly.monthLabel}` : highestExtensionOnly.monthLabel}
               </p>
             </div>
           </div>
