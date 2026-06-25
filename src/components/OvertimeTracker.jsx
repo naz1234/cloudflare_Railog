@@ -1459,8 +1459,8 @@ export default function OvertimeTracker() {
           </label>
         </div>
 
-        <label className="mt-2.5 block rounded-[16px] border border-[#31506b] bg-[linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#a9bad0]">
+        <label className="mt-2.5 block rounded-[16px] border border-emerald-400/35 bg-[radial-gradient(circle_at_8%_0%,rgba(16,185,129,0.18),transparent_52%),linear-gradient(145deg,rgba(7,52,48,0.94),rgba(6,27,40,0.98))] p-3 shadow-[0_10px_26px_rgba(5,150,105,0.10),inset_0_1px_0_rgba(255,255,255,0.035)]">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200">
             Salary received in {MONTHS[salaryPeriod.monthIndex]}
           </span>
           <div className="relative mt-2">
