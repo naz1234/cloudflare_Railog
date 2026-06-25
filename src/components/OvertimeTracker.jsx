@@ -1240,46 +1240,54 @@ export default function OvertimeTracker() {
                 : allowanceStatus === "EXTRA"
                   ? "Allowance amount is extra"
                   : "";
+            const monthCardClass = allowanceStatus === "CORRECT"
+              ? `border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] ${active
+                ? "shadow-[0_0_0_1px_rgba(85,215,170,0.24),0_0_22px_rgba(38,199,129,0.18),0_12px_30px_rgba(0,0,0,0.22)]"
+                : "shadow-[0_10px_28px_rgba(38,199,129,0.10)] hover:-translate-y-0.5 hover:border-[#418577] hover:shadow-[0_14px_32px_rgba(38,199,129,0.14)]"}`
+              : allowanceStatus === "WAITING"
+                ? active
+                  ? "border-[#8169ff] bg-[radial-gradient(circle_at_20%_0%,rgba(117,92,255,0.24),transparent_42%),linear-gradient(145deg,rgba(26,43,76,0.98),rgba(8,27,47,0.99))] shadow-[0_0_0_1px_rgba(129,105,255,0.30),0_0_22px_rgba(89,62,255,0.22),0_12px_30px_rgba(0,0,0,0.22)]"
+                  : "border-[#294b66] bg-[linear-gradient(145deg,rgba(12,35,57,0.94),rgba(6,23,39,0.98))] shadow-[0_10px_28px_rgba(0,0,0,0.16)] hover:-translate-y-0.5 hover:border-[#467493] hover:bg-[#0c2a44] hover:shadow-[0_14px_32px_rgba(0,0,0,0.24)]"
+                : `border-[#7d3f4a] bg-[radial-gradient(circle_at_10%_20%,rgba(248,113,113,0.16),transparent_50%),linear-gradient(145deg,rgba(58,20,29,0.95),rgba(18,17,30,0.98))] ${active
+                  ? "shadow-[0_0_0_1px_rgba(248,113,113,0.22),0_0_22px_rgba(185,28,28,0.18),0_12px_30px_rgba(0,0,0,0.22)]"
+                  : "shadow-[0_10px_28px_rgba(185,28,28,0.11)] hover:-translate-y-0.5 hover:border-[#9a4c59] hover:shadow-[0_14px_32px_rgba(185,28,28,0.15)]"}`;
+            const monthIconClass = allowanceStatus === "CORRECT"
+              ? "border border-[#55d7aa]/25 bg-[#1dbd79]/10 text-[#76d5ae] shadow-[0_0_14px_rgba(38,199,129,0.12)]"
+              : allowanceStatus === "WAITING"
+                ? active
+                  ? "bg-[#5b4bd6]/45 text-[#d5d2ff]"
+                  : "bg-[#123859] text-[#8dc7f4]"
+                : "border border-red-300/20 bg-red-500/10 text-red-200 shadow-[0_0_14px_rgba(239,68,68,0.12)]";
+            const monthDividerClass = allowanceStatus === "CORRECT"
+              ? "bg-[#3f776b]/70"
+              : allowanceStatus === "WAITING"
+                ? active ? "bg-[#695dde]/70" : "bg-[#3a566f]"
+                : "bg-[#7b4650]/70";
+            const monthRuleClass = allowanceStatus === "CORRECT"
+              ? "border-[#315f56]/70"
+              : allowanceStatus === "WAITING"
+                ? "border-[#284761]/70"
+                : "border-[#70404a]/70";
             return (
                 <button
                 key={summary.month}
                 type="button"
                 aria-pressed={active}
+                title={allowanceStatusLabel || undefined}
                 onClick={() => {
                   flushAllowanceBeforePeriodChange();
                   setSelectedMonth(monthIndex);
                   if (!editingId) resetDraft(`${selectedYear}-${String(monthIndex + 1).padStart(2, "0")}-01`);
                   resetNoteDraft(`${selectedYear}-${String(monthIndex + 1).padStart(2, "0")}-01`);
                 }}
-                className={`min-h-[128px] rounded-[18px] border px-3 py-2.5 text-left shadow-[0_10px_28px_rgba(0,0,0,0.16)] transition duration-200 ${active
-                  ? "border-[#8169ff] bg-[radial-gradient(circle_at_20%_0%,rgba(117,92,255,0.24),transparent_42%),linear-gradient(145deg,rgba(26,43,76,0.98),rgba(8,27,47,0.99))] shadow-[0_0_0_1px_rgba(129,105,255,0.30),0_0_22px_rgba(89,62,255,0.22),0_12px_30px_rgba(0,0,0,0.22)]"
-                  : "border-[#294b66] bg-[linear-gradient(145deg,rgba(12,35,57,0.94),rgba(6,23,39,0.98))] hover:-translate-y-0.5 hover:border-[#467493] hover:bg-[#0c2a44] hover:shadow-[0_14px_32px_rgba(0,0,0,0.24)]"
-                }`}
+                className={`min-h-[128px] rounded-[18px] border px-3 py-2.5 text-left transition duration-200 ${monthCardClass}`}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] ${active
-                      ? "bg-[#5b4bd6]/45 text-[#d5d2ff]"
-                      : "bg-[#123859] text-[#8dc7f4]"
-                    }`}>
-                      <CalendarDays className="h-3.5 w-3.5" strokeWidth={1.9} />
-                    </span>
-                    <p className="text-[12px] font-semibold text-[#f4f7fc]">{summary.month.slice(0, 3).toUpperCase()}</p>
-                  </div>
-                  {allowanceStatus !== "WAITING" && (
-                    <span
-                      className={`inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border ${allowanceStatus === "CORRECT"
-                        ? "border-emerald-300/80 bg-[#58c96b] shadow-[0_0_8px_rgba(88,201,107,0.55)]"
-                        : "border-red-300/90 bg-[#941c24] shadow-[0_0_8px_rgba(148,28,36,0.65)]"
-                      }`}
-                      title={allowanceStatusLabel}
-                      aria-label={allowanceStatusLabel}
-                    >
-                      {allowanceStatus === "CORRECT"
-                        ? <Check className="h-3 w-3 stroke-[3.5] text-white" />
-                        : <X className="h-3 w-3 stroke-[3.5] text-white" />}
-                    </span>
-                  )}
+                <div className="flex items-center gap-2.5">
+                  <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] ${monthIconClass}`}>
+                    <CalendarDays className="h-3.5 w-3.5" strokeWidth={1.9} />
+                  </span>
+                  <p className="text-[12px] font-semibold text-[#f4f7fc]">{summary.month.slice(0, 3).toUpperCase()}</p>
+                  {allowanceStatus !== "WAITING" && <span className="sr-only">{allowanceStatusLabel}</span>}
                 </div>
 
                 <div className="mt-2.5 grid grid-cols-[1fr_auto_1fr] items-center">
@@ -1287,14 +1295,14 @@ export default function OvertimeTracker() {
                     <span className="block text-[21px] font-medium leading-none text-white">{summary.rdotCount}</span>
                     <span className="mt-1 block text-[9px] font-medium text-[#aebbd0]">RDOT</span>
                   </div>
-                  <div className={`mx-2 h-9 w-px ${active ? "bg-[#695dde]/70" : "bg-[#3a566f]"}`} />
+                  <div className={`mx-2 h-9 w-px ${monthDividerClass}`} />
                   <div className="text-center">
                     <span className="block text-[21px] font-medium leading-none text-white">{summary.extensionCount}</span>
                     <span className="mt-1 block text-[9px] font-medium text-[#aebbd0]">EXT</span>
                   </div>
                 </div>
 
-                <div className="mt-2.5 border-t border-[#284761]/70 pt-2 text-[13px] font-medium text-white">
+                <div className={`mt-2.5 border-t pt-2 text-[13px] font-medium text-white ${monthRuleClass}`}>
                   <p className="grid grid-cols-[74px_8px_1fr] items-baseline">
                     <span>Total Hour</span>
                     <span>:</span>
