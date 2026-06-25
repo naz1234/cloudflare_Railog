@@ -6967,6 +6967,7 @@ function TrainMovementContent() {
       timingMode: "now",
       customTime: "",
       depot: "west",
+      tid: "",
       swapReason: "",
       replacedBy: "",
       notes: "",
@@ -7536,6 +7537,10 @@ function TrainMovementContent() {
 
     const replacement = normalizeMovementTrain(current.replacedBy);
     const reason = (current.swapReason || "").trim();
+    if (!/^\d{3}$/.test(tid)) {
+      alert("Please enter the 3-digit TID of the train being removed.");
+      return null;
+    }
     if (!replacement) {
       alert("Please enter the replacement train.");
       return null;
@@ -7546,10 +7551,10 @@ function TrainMovementContent() {
     }
 
     return {
-      text: `${time} hrs – ${train} removed from mainline to ${selectedDepotLabel} stabling due to ${reason}. Replaced by ${replacement}.`,
+      text: `${time} hrs – ${train} (${tid}) removed from mainline to ${selectedDepotLabel} stabling due to ${reason}. Replaced by ${replacement}.`,
       time,
       train,
-      tid: "",
+      tid,
       road: "",
       replacement,
       reason,
@@ -7574,7 +7579,8 @@ function TrainMovementContent() {
       return `${time} hrs – ${train}${tidPart} removed from mainline to ${selectedDepotLabel}.`;
     }
 
-    return `${time} hrs – ${train} removed from mainline to ${selectedDepotLabel} stabling due to ${(current.swapReason || "").trim()}. Replaced by ${normalizeMovementTrain(current.replacedBy) || "T30"}.`;
+    const swappingTid = /^\d{3}$/.test(tid) ? tid : "111";
+    return `${time} hrs – ${train} (${swappingTid}) removed from mainline to ${selectedDepotLabel} stabling due to ${(current.swapReason || "").trim()}. Replaced by ${normalizeMovementTrain(current.replacedBy) || "T30"}.`;
   };
 
   const addMovementLog = (operation) => {
@@ -7924,6 +7930,7 @@ function TrainMovementContent() {
         <>
           <span>{time} hrs – </span>
           <span style={{ color: trainColor }}>{train}</span>
+          {tid ? <span style={{ color: tidColor }}> ({tid})</span> : null}
           <span> </span>
           <span style={{ color: removedColor }}>removed</span>
           <span> from mainline to </span>
@@ -8265,7 +8272,8 @@ function TrainMovementContent() {
     const glowInputBoxClass = "flex h-8 items-center gap-1.5 rounded-lg border border-[#2f7bc4] bg-[#061827] px-2 shadow-[0_0_12px_rgba(79,142,247,0.25),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_16px_rgba(79,142,247,0.42),inset_0_1px_0_rgba(255,255,255,0.08)]";
     const trainReady = Boolean(normalizeMovementTrain(current.trainId)) && isMovementFlowFieldSettled(operation, "trainId");
     const timingReady = trainReady && isMovementTimeReady(current) && isMovementFlowFieldSettled(operation, "customTime");
-    const depotReady = timingReady && Boolean(current.depot);
+    const swappingTidReady = isSwapping && timingReady && /^\d{3}$/.test(String(current.tid || ""));
+    const depotReady = (isSwapping ? swappingTidReady : timingReady) && Boolean(current.depot);
     const roadReady = !isInsertion || (depotReady && Boolean(current.road || selectedRoads[0]));
     const reasonReady = isSwapping && depotReady && Boolean(String(current.swapReason || "").trim()) && isMovementFlowFieldSettled(operation, "swapReason");
     const replacementReady = isSwapping && reasonReady && Boolean(normalizeMovementTrain(current.replacedBy)) && isMovementFlowFieldSettled(operation, "replacedBy");
@@ -8323,6 +8331,21 @@ function TrainMovementContent() {
       />
     );
 
+    const swappingTidInput = () => (
+      <input
+        type="text"
+        inputMode="numeric"
+        maxLength={3}
+        value={current.tid}
+        onFocus={() => focusFlowInput(getMovementFlowInputKey(operation, "tid"))}
+        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+        onChange={(e) => updateMovementFlowTextField(operation, "tid", e.target.value.replace(/\D/g, "").slice(0, 3))}
+        onBlur={() => blurFlowInput(getMovementFlowInputKey(operation, "tid"))}
+        placeholder="3 digits, e.g. 111"
+        className={inputClass}
+      />
+    );
+
     const reasonInput = () => (
       <input
         value={current.swapReason}
@@ -8351,10 +8374,20 @@ function TrainMovementContent() {
     );
 
     const steps = [
-      { key: "trainId", label: "Train ID", visible: true, complete: trainReady, render: trainInput },
-      { key: "timing", label: "Timing", visible: trainReady, complete: timingReady, render: () => renderMovementTimeFlowInput(operation) },
-      { key: "depot", label: "Depot", visible: timingReady, complete: depotReady, render: depotInput },
+      { key: "trainId", label: isSwapping ? "Train ID will be removed" : "Train ID", visible: true, complete: trainReady, render: trainInput },
+      { key: "timing", label: isSwapping ? "Timing removal" : "Timing", visible: trainReady, complete: timingReady, render: () => renderMovementTimeFlowInput(operation) },
     ];
+
+    if (isSwapping) {
+      steps.push(
+        { key: "tid", label: "TID", visible: timingReady, complete: swappingTidReady, render: swappingTidInput },
+        { key: "depot", label: "Depot", visible: swappingTidReady, complete: depotReady, render: depotInput },
+        { key: "swapReason", label: "Reason Swap", visible: depotReady, complete: reasonReady, render: reasonInput },
+        { key: "replacedBy", label: "Replaced By Train", visible: reasonReady, complete: replacementReady, render: replacementInput }
+      );
+    } else {
+      steps.push({ key: "depot", label: "Depot", visible: timingReady, complete: depotReady, render: depotInput });
+    }
 
     if (isInsertion) {
       steps.push(
@@ -8365,13 +8398,6 @@ function TrainMovementContent() {
 
     if (isRemoval) {
       steps.push({ key: "tid", label: "TID Optional", visible: depotReady, optional: true, complete: Boolean(String(current.tid || "").trim()), render: tidInput });
-    }
-
-    if (isSwapping) {
-      steps.push(
-        { key: "swapReason", label: "Reason Swap", visible: depotReady, complete: reasonReady, render: reasonInput },
-        { key: "replacedBy", label: "Replaced By Train", visible: reasonReady, complete: replacementReady, render: replacementInput }
-      );
     }
 
     const visibleSteps = steps.filter((step) => step.visible);
@@ -8445,11 +8471,13 @@ function TrainMovementContent() {
         style={{ borderColor: `${accent}42`, background: "linear-gradient(180deg,#061827 0%,#041727 100%)" }}
       >
         <div className="border-b px-3 py-2" style={{ borderColor: `${accent}30`, backgroundColor: `${accent}0d` }}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-white">{meta.title} Automatic Flow</p>
-              <p className="text-[10px] font-semibold text-[#8ea8c0]">Next pill appears immediately while typing continues.</p>
-            </div>
+          <div className={`flex flex-wrap items-center gap-2 ${isSwapping ? "justify-end" : "justify-between"}`}>
+            {!isSwapping && (
+              <div>
+                <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-white">{meta.title} Automatic Flow</p>
+                <p className="text-[10px] font-semibold text-[#8ea8c0]">Next pill appears immediately while typing continues.</p>
+              </div>
+            )}
             <button
               type="button"
               onClick={() => resetMovementFlow(operation)}
