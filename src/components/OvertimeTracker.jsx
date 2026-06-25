@@ -1941,25 +1941,25 @@ export default function OvertimeTracker() {
                 if (entry.kind === "note") {
                   const note = entry.item;
                   return (
-                    <div key={entry.key} className="flex flex-wrap items-center gap-2 rounded-[13px] border border-cyan-400/20 bg-[linear-gradient(145deg,rgba(7,38,55,0.78),rgba(7,29,47,0.86))] px-2.5 py-2 shadow-[0_6px_16px_rgba(0,0,0,0.10)] transition hover:border-cyan-300/35 hover:bg-cyan-500/[0.06] sm:flex-nowrap">
-                      <div className="flex h-8 w-[58px] shrink-0 items-center justify-center rounded-[9px] border border-cyan-400/30 bg-cyan-500/10 px-2 text-[10px] font-semibold text-cyan-200">
+                    <div key={entry.key} className="flex flex-wrap items-center gap-2 rounded-[13px] border border-[#2f6659] bg-[radial-gradient(circle_at_8%_20%,rgba(50,218,151,0.11),transparent_46%),linear-gradient(145deg,rgba(11,40,43,0.92),rgba(6,23,39,0.98))] px-2.5 py-2 shadow-[0_6px_18px_rgba(38,199,129,0.08)] transition hover:border-[#55d7aa]/50 hover:shadow-[0_8px_20px_rgba(38,199,129,0.12)] sm:flex-nowrap">
+                      <div className="flex h-8 w-[58px] shrink-0 items-center justify-center rounded-[9px] border border-[#55d7aa]/35 bg-[#1dbd79]/10 px-2 text-[10px] font-semibold text-[#76d5ae] shadow-[0_0_14px_rgba(38,199,129,0.10)]">
                         NOTE
                       </div>
                       <div className="min-w-[150px] flex-1">
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
                           <p className="text-[12px] font-semibold text-[#f1f5fb]">{formatDate(note.date)}</p>
-                          <span className="text-[9px] font-semibold uppercase tracking-[0.11em] text-cyan-300">Monthly note</span>
+                          <span className="text-[9px] font-semibold uppercase tracking-[0.11em] text-[#76d5ae]">Monthly note</span>
                         </div>
                         <p className="mt-0.5 line-clamp-2 whitespace-pre-wrap break-words text-[11px] leading-[1.35] text-[#b5c2d3]">{note.note}</p>
                       </div>
-                      <div className="ml-auto min-w-[62px] shrink-0 border-r border-[#294660] pr-3 text-right">
-                        <MessageSquareText className="ml-auto h-3.5 w-3.5 text-cyan-300" />
-                        <p className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.11em] text-cyan-200">No hours</p>
+                      <div className="ml-auto min-w-[62px] shrink-0 border-r border-[#2f6659]/75 pr-3 text-right">
+                        <MessageSquareText className="ml-auto h-3.5 w-3.5 text-[#76d5ae]" />
+                        <p className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.11em] text-[#76d5ae]">No hours</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleNoteEdit(note)}
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#31516d] text-[#afbed2] transition hover:border-cyan-300/50 hover:bg-cyan-500/10 hover:text-white"
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#315d55] text-[#afbed2] transition hover:border-[#55d7aa]/55 hover:bg-[#1dbd79]/10 hover:text-[#dffaf0]"
                         aria-label="Edit monthly note"
                       >
                         <Pencil className="h-3 w-3" />
