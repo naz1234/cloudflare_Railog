@@ -18317,6 +18317,77 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
   const actionOverviewRows = rawActionOverviewRows.length ? rawActionOverviewRows : [];
   const hasActionOverviewRows = actionOverviewRows.some((row) => row && !row.isSeparator);
 
+  const formatRequestedSummaryTrainList = (values = []) => {
+    const trains = [...new Set((values || []).filter(Boolean))];
+    if (trains.length === 0) return "-";
+    if (trains.length === 1) return trains[0];
+    if (trains.length === 2) return `${trains[0]} and ${trains[1]}`;
+    return `${trains.slice(0, -1).join(", ")} and ${trains[trains.length - 1]}`;
+  };
+
+  const requestedSummaryGroups = (() => {
+    const groups = new Map();
+
+    actionOverviewRows.forEach((row) => {
+      if (!row || row.isSeparator) return;
+
+      const trainNumber = formatRequestedTrainNumber(row?.trainsetNumber || row?.key);
+      const trainLabel = trainNumber ? `T${String(trainNumber).padStart(2, "0")}` : "";
+      if (!trainLabel) return;
+
+      splitRequestedActionRemarks(row?.requestType || "")
+        .filter((remark) => !isWashRequestedActionRemark(remark))
+        .forEach((remark) => {
+          const identity = normalizeRequestIdentity(remark);
+          if (!identity) return;
+
+          if (!groups.has(identity)) {
+            const pillStyle = getRequestedRemarkPillItems(remark)?.[0] || {};
+            groups.set(identity, {
+              key: identity,
+              label: remark,
+              fill: pillStyle.fill || "#ffffff",
+              stroke: pillStyle.stroke || "#000000",
+              trains: [],
+              firstIndex: groups.size,
+            });
+          }
+
+          const group = groups.get(identity);
+          if (!group.trains.includes(trainLabel)) group.trains.push(trainLabel);
+        });
+    });
+
+    const getSummaryPriority = (label = "") => {
+      const text = normalizeRequestIdentity(label);
+      if (text.includes("DEEP CLEAN")) return 10;
+      if (text.includes("INBOUND")) return 20;
+      if (/\bPM\b/.test(text)) return 30;
+      return 40;
+    };
+
+    return [...groups.values()]
+      .sort((a, b) => (getSummaryPriority(a.label) - getSummaryPriority(b.label)) || (a.firstIndex - b.firstIndex))
+      .map((group) => ({
+        ...group,
+        trainText: formatRequestedSummaryTrainList(group.trains),
+      }));
+  })();
+
+  const requestedSummaryRows = requestedSummaryGroups.map((group) => {
+    const estimatedPillWidth = Math.min(118, Math.max(52, sanitizePdfText(group.label).length * 4.2 + 16));
+    const estimatedTrainWidth = sanitizePdfText(group.trainText).length * 3.55;
+    const availableTrainWidth = Math.max(120, columnWidth - estimatedPillWidth - 24);
+    const lineCount = Math.max(1, Math.ceil(estimatedTrainWidth / availableTrainWidth));
+    return {
+      ...group,
+      rowHeight: Math.max(13, lineCount * 7.2 + 4),
+    };
+  });
+  const requestedSummaryBlockHeight = requestedSummaryRows.length
+    ? requestedSummaryRows.reduce((total, row) => total + row.rowHeight, 0) + 5
+    : 0;
+
   const titleTop = 28;
   const columnTitleTop = 52;
   const tableTop = 72;
@@ -18334,14 +18405,14 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
     Math.min(14.2, (leftAvailableHeight - headerHeight) / westRowCount)
   );
 
-  const rightAvailableHeight = tableBottomTop - tableTop;
+  const rightAvailableHeight = tableBottomTop - tableTop - requestedSummaryBlockHeight;
   const rightRowHeight = Math.max(
     8.4,
     Math.min(14.2, (rightAvailableHeight - headerHeight * 2 - actionSectionGap) / (eastRowCount + actionOverviewRowCount))
   );
   const eastTableHeight = headerHeight + eastRowCount * rightRowHeight;
   const actionTitleTop = tableTop + eastTableHeight + 14;
-  const actionTableTop = tableTop + eastTableHeight + actionSectionGap;
+  const actionTableTop = tableTop + eastTableHeight + actionSectionGap + requestedSummaryBlockHeight;
 
   // Special weekday morning layout: two compact removal tables on the left,
   // one full-height requested-train table on the right.
@@ -18359,9 +18430,11 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
   const stackedWestTableHeight = headerHeight + westRowCount * stackedRemovalRowHeight;
   const stackedEastTitleTop = tableTop + stackedWestTableHeight + 18;
   const stackedEastTableTop = stackedEastTitleTop + 20;
+  const stackedActionTableTop = tableTop + requestedSummaryBlockHeight;
+  const stackedActionAvailableHeight = tableBottomTop - stackedActionTableTop;
   const stackedActionRowHeight = Math.max(
     8.4,
-    Math.min(14.2, (rightAvailableHeight - headerHeight) / actionOverviewRowCount)
+    Math.min(14.2, (stackedActionAvailableHeight - headerHeight) / actionOverviewRowCount)
   );
 
   const rect = (x, y, width, height, { fill = "", stroke = "#000000", strokeWidth = 0.45 } = {}) => {
@@ -18797,6 +18870,58 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
     ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
   };
 
+  const drawRequestedTrainSummary = (x, summaryTop, tableWidth) => {
+    if (!requestedSummaryRows.length) return;
+
+    let currentTop = summaryTop;
+    requestedSummaryRows.forEach((group) => {
+      const rowHeight = group.rowHeight;
+      const rowY = yFromTop(currentTop, rowHeight);
+      const pillHeight = 10.5;
+      const pillY = rowY + rowHeight - pillHeight - Math.max(1.2, (rowHeight - pillHeight) / 2);
+      const labelSize = 5.8;
+      const cleanLabel = sanitizePdfText(group.label || "-");
+      const labelWidth = getApproxPdfTextWidth(cleanLabel, labelSize, true);
+      const pillWidth = Math.min(118, Math.max(52, labelWidth + 16));
+      const pillX = x;
+
+      ops += pdfRoundedRect(pillX, pillY, pillWidth, pillHeight, pillHeight / 2, {
+        fill: group.fill || "#ffffff",
+        stroke: group.stroke || "#000000",
+        strokeWidth: 0.35,
+      });
+      ops += pdfText(cleanLabel, pillX + Math.max(5, (pillWidth - labelWidth) / 2), pillY + 3.1, {
+        size: labelSize,
+        color: "#000000",
+        font: "F2",
+      });
+
+      const separatorX = pillX + pillWidth + 5;
+      ops += pdfText(":", separatorX, pillY + 3.1, {
+        size: 6.2,
+        color: "#000000",
+        font: "F2",
+      });
+
+      const trainTextX = separatorX + 7;
+      const trainTextWidth = Math.max(40, tableWidth - (trainTextX - x));
+      const trainFontSize = 6.2;
+      const trainLines = wrapPdfTextToWidth(group.trainText, trainTextWidth, trainFontSize, true);
+      const lineHeight = 7.1;
+      const firstBaseline = rowY + rowHeight / 2 + ((trainLines.length - 1) * lineHeight) / 2 - trainFontSize * 0.34;
+
+      trainLines.forEach((lineText, lineIndex) => {
+        ops += pdfText(lineText, trainTextX, firstBaseline - lineIndex * lineHeight, {
+          size: trainFontSize,
+          color: "#000000",
+          font: "F2",
+        });
+      });
+
+      currentTop += rowHeight;
+    });
+  };
+
   const drawRequestedActionOverviewTable = (rows = [], x, titleTopForTable, tableTopForTable, rowH, optionsForTable = {}) => {
     const activeFontSize = getFontSizeForRowHeight(rowH);
     const contentFontBoost = Number(optionsForTable?.contentFontBoost) || 0;
@@ -18824,6 +18949,8 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
       color: "#000000",
       font: "F2",
     });
+
+    drawRequestedTrainSummary(x, titleTopForTable + 10, tableWidth);
 
     ops += rect(x, tableY, tableWidth, tableHeight, { fill: "", stroke: "#000000", strokeWidth: 0.65 });
     const headerBottomY = yFromTop(tableTopForTable + headerHeight);
@@ -18927,7 +19054,7 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
       actionOverviewRows,
       rightColumnX,
       columnTitleTop,
-      tableTop,
+      stackedActionTableTop,
       stackedActionRowHeight,
       { contentFontBoost: 2 }
     );

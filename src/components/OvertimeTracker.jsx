@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Banknote, Calculator, CalendarDays, Clock3, Download, FilePlus2, ListChecks, Loader2, MessageSquareText, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { Banknote, Calculator, CalendarDays, Check, Clock3, Download, FilePlus2, ListChecks, Loader2, MessageSquareText, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -1190,11 +1190,6 @@ export default function OvertimeTracker() {
                 : allowanceStatus === "EXTRA"
                   ? "Allowance amount is extra"
                   : "";
-            const allowanceStatusStyle = allowanceStatus === "CORRECT"
-              ? "border-[#22c55e] bg-[#22c55e]/25 text-[#dcfce7] shadow-[0_0_8px_rgba(34,197,94,0.22)]"
-              : allowanceStatus === "SHORT"
-                ? "border-[#ef4444] bg-[#ef4444]/22 text-[#ffe4e6] shadow-[0_0_8px_rgba(239,68,68,0.22)]"
-                : "border-[#f59e0b] bg-[#f59e0b]/22 text-[#fef3c7] shadow-[0_0_8px_rgba(245,158,11,0.22)]";
             return (
               <button
                 key={summary.month}
@@ -1223,11 +1218,16 @@ export default function OvertimeTracker() {
                   </div>
                   {allowanceStatus !== "WAITING" && (
                     <span
-                      className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full border px-1.5 text-[13px] font-normal leading-none ${allowanceStatusStyle}`}
+                      className={`inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border ${allowanceStatus === "CORRECT"
+                        ? "border-emerald-300/80 bg-[#58c96b] shadow-[0_0_8px_rgba(88,201,107,0.55)]"
+                        : "border-red-300/90 bg-[#941c24] shadow-[0_0_8px_rgba(148,28,36,0.65)]"
+                      }`}
                       title={allowanceStatusLabel}
                       aria-label={allowanceStatusLabel}
                     >
-                      {allowanceStatus === "CORRECT" ? "✓" : "×"}
+                      {allowanceStatus === "CORRECT"
+                        ? <Check className="h-3 w-3 stroke-[3.5] text-white" />
+                        : <X className="h-3 w-3 stroke-[3.5] text-white" />}
                     </span>
                   )}
                 </div>
