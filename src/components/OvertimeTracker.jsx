@@ -1183,19 +1183,22 @@ export default function OvertimeTracker() {
 
   return (
     <div className="grid gap-3 lg:grid-cols-[minmax(0,1.28fr)_minmax(360px,0.92fr)]">
-      <section className="h-full min-w-0 overflow-hidden rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_85%_5%,rgba(43,93,141,0.18),transparent_32%),linear-gradient(145deg,rgba(9,29,48,0.98),rgba(5,20,35,0.98))] p-4 shadow-[0_18px_52px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2.5">
-              <CalendarDays className="h-4 w-4 text-[#68b9f1]" strokeWidth={1.8} />
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#b8c9df]">Yearly overview</p>
+      <div className="min-w-0 space-y-4">
+        <section className="min-w-0 overflow-hidden rounded-[24px] border border-[#2b4c68] bg-[radial-gradient(circle_at_8%_0%,rgba(66,135,255,0.13),transparent_32%),radial-gradient(circle_at_92%_0%,rgba(111,80,255,0.13),transparent_30%),linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_22px_60px_rgba(0,0,0,0.32)] backdrop-blur-xl sm:p-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="flex min-w-0 items-center gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-[#5d7cff]/35 bg-[linear-gradient(145deg,#2e9df1,#6752f4)] text-white shadow-[0_8px_24px_rgba(71,97,255,0.30)]">
+                <CalendarDays className="h-5 w-5" strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#afc0d7]">Yearly overview</p>
+                <h3 className="mt-1.5 truncate text-[19px] font-semibold leading-tight text-[#f5f8ff] sm:text-[21px]">
+                  Monthly Extension &amp; RDOT Record
+                </h3>
+              </div>
             </div>
-            <h3 className="mt-2.5 text-[19px] font-semibold leading-tight text-[#f5f8ff] sm:text-[21px]">
-              Monthly Extension &amp; RDOT Record
-            </h3>
-          </div>
 
-          <div className="flex shrink-0 items-center gap-2.5">
+            <div className="flex shrink-0 items-center gap-2.5">
             <select
               value={selectedYear}
               onChange={(event) => handleYearChange(event.target.value)}
@@ -1222,11 +1225,11 @@ export default function OvertimeTracker() {
             >
               <Download className="h-3.5 w-3.5" /> Export
             </button>
+            </div>
           </div>
-        </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
-          {monthSummaries.map((summary, monthIndex) => {
+          <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
+            {monthSummaries.map((summary, monthIndex) => {
             const active = selectedMonth === monthIndex;
             const allowanceStatus = active ? allowanceResult.status : monthAllowanceStatuses[monthIndex];
             const totalNights = active ? allowanceResult.nightDays : monthNightTotals[monthIndex];
@@ -1238,7 +1241,7 @@ export default function OvertimeTracker() {
                   ? "Allowance amount is extra"
                   : "";
             return (
-              <button
+                <button
                 key={summary.month}
                 type="button"
                 aria-pressed={active}
@@ -1248,9 +1251,9 @@ export default function OvertimeTracker() {
                   if (!editingId) resetDraft(`${selectedYear}-${String(monthIndex + 1).padStart(2, "0")}-01`);
                   resetNoteDraft(`${selectedYear}-${String(monthIndex + 1).padStart(2, "0")}-01`);
                 }}
-                className={`min-h-[126px] rounded-[15px] border px-3 py-2.5 text-left transition duration-200 ${active
-                  ? "border-[#755cff] bg-[radial-gradient(circle_at_25%_10%,rgba(99,74,255,0.18),transparent_42%),linear-gradient(145deg,rgba(26,42,73,0.96),rgba(8,27,46,0.98))] shadow-[0_0_0_1px_rgba(117,92,255,0.30),0_10px_26px_rgba(37,26,110,0.22)]"
-                  : "border-[#25445f] bg-[linear-gradient(145deg,rgba(10,31,51,0.88),rgba(6,23,39,0.94))] hover:-translate-y-0.5 hover:border-[#3e6788] hover:bg-[#0b2942]"
+                className={`min-h-[128px] rounded-[18px] border px-3 py-2.5 text-left shadow-[0_10px_28px_rgba(0,0,0,0.16)] transition duration-200 ${active
+                  ? "border-[#8169ff] bg-[radial-gradient(circle_at_20%_0%,rgba(117,92,255,0.24),transparent_42%),linear-gradient(145deg,rgba(26,43,76,0.98),rgba(8,27,47,0.99))] shadow-[0_0_0_1px_rgba(129,105,255,0.30),0_0_22px_rgba(89,62,255,0.22),0_12px_30px_rgba(0,0,0,0.22)]"
+                  : "border-[#294b66] bg-[linear-gradient(145deg,rgba(12,35,57,0.94),rgba(6,23,39,0.98))] hover:-translate-y-0.5 hover:border-[#467493] hover:bg-[#0c2a44] hover:shadow-[0_14px_32px_rgba(0,0,0,0.24)]"
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -1303,93 +1306,106 @@ export default function OvertimeTracker() {
                     <span>{totalNights}</span>
                   </p>
                 </div>
-              </button>
+                </button>
             );
-          })}
-        </div>
+            })}
+          </div>
+        </section>
 
-        <div className="mt-3 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
-          <div className="flex min-h-[72px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#66b9f5]">
-              <Clock3 className="h-7 w-7" strokeWidth={1.8} />
+        <section className="min-w-0 overflow-hidden rounded-[24px] border border-[#274660] bg-[radial-gradient(circle_at_0%_100%,rgba(37,117,181,0.12),transparent_38%),radial-gradient(circle_at_100%_0%,rgba(92,64,195,0.11),transparent_34%),linear-gradient(145deg,rgba(8,28,47,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_18px_52px_rgba(0,0,0,0.26)] sm:p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#92a9c3]">Annual summary</p>
+              <h4 className="mt-1 text-[15px] font-semibold text-[#eef5ff]">Performance overview</h4>
             </div>
-            <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#afbed2]">Annual total RDOT</p>
-              <p className="mt-1 text-[21px] font-medium leading-none text-white">{annualRdotCount}</p>
-            </div>
+            <span className="rounded-full border border-[#345671] bg-[#0c2943]/85 px-3 py-1 text-[10px] font-semibold text-[#c4d6ea] shadow-inner shadow-black/20">
+              {selectedYear}
+            </span>
           </div>
 
-          <div className="flex min-h-[72px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#9d91ff]">
-              <Clock3 className="h-7 w-7" strokeWidth={1.8} />
+          <div className="mt-4 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="flex min-h-[82px] items-center gap-3.5 rounded-[18px] border border-[#265779] bg-[radial-gradient(circle_at_10%_20%,rgba(41,144,255,0.12),transparent_50%),linear-gradient(145deg,rgba(10,35,58,0.96),rgba(6,23,39,0.98))] px-4 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#49a9ee]/35 bg-[#168ee4]/12 text-[#66b9f5] shadow-[0_0_18px_rgba(58,160,235,0.15)]">
+                <Clock3 className="h-6 w-6" strokeWidth={1.8} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#afbed2]">Annual total RDOT</p>
+                <p className="mt-1.5 text-[22px] font-semibold leading-none text-white">{annualRdotCount}</p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#afbed2]">Annual total Extension</p>
-              <p className="mt-1 text-[21px] font-medium leading-none text-white">{annualExtensionCount}</p>
-            </div>
-          </div>
 
-          <div className="flex min-h-[72px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#aabedb]">
-              <Clock3 className="h-7 w-7" strokeWidth={1.8} />
+            <div className="flex min-h-[82px] items-center gap-3.5 rounded-[18px] border border-[#4d447e] bg-[radial-gradient(circle_at_10%_20%,rgba(133,91,255,0.14),transparent_50%),linear-gradient(145deg,rgba(20,30,61,0.96),rgba(7,22,40,0.98))] px-4 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#9b85ff]/35 bg-[#7865ff]/12 text-[#a99cff] shadow-[0_0_18px_rgba(126,91,255,0.16)]">
+                <Clock3 className="h-6 w-6" strokeWidth={1.8} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#afbed2]">Annual total Extension</p>
+                <p className="mt-1.5 text-[22px] font-semibold leading-none text-white">{annualExtensionCount}</p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="max-w-[190px] text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">
-                Annual total hours for RDOT + EXT
-              </p>
-              <p className="mt-1 text-[21px] font-medium leading-none text-white">{annualHours.toFixed(1)}</p>
-            </div>
-          </div>
 
-          <div className="flex min-h-[72px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#e9bd6c]">
-              <CalendarDays className="h-7 w-7" strokeWidth={1.8} />
+            <div className="flex min-h-[82px] items-center gap-3.5 rounded-[18px] border border-[#315f6b] bg-[radial-gradient(circle_at_10%_20%,rgba(55,213,187,0.12),transparent_50%),linear-gradient(145deg,rgba(9,37,53,0.96),rgba(6,23,39,0.98))] px-4 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#54d6c6]/35 bg-[#20bba8]/10 text-[#76ddd0] shadow-[0_0_18px_rgba(55,201,184,0.14)]">
+                <Clock3 className="h-6 w-6" strokeWidth={1.8} />
+              </div>
+              <div className="min-w-0">
+                <p className="max-w-[190px] text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">
+                  Annual total hours for RDOT + EXT
+                </p>
+                <p className="mt-1.5 text-[22px] font-semibold leading-none text-white">{annualHours.toFixed(1)}</p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Highest performed night shift</p>
-              <p className="mt-1 text-[17px] font-medium leading-none text-white">Total {highestNightShift.total}</p>
-              <p
-                className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[#9fb2c9]"
-                title={highestNightShift.fullMonthLabel}
-              >
-                {highestNightShift.total > 0 ? `at ${highestNightShift.monthLabel}` : highestNightShift.monthLabel}
-              </p>
-            </div>
-          </div>
 
-          <div className="flex min-h-[72px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#76d5ae]">
-              <ListChecks className="h-7 w-7" strokeWidth={1.8} />
+            <div className="flex min-h-[82px] items-center gap-3.5 rounded-[18px] border border-[#66552d] bg-[radial-gradient(circle_at_10%_20%,rgba(255,187,52,0.13),transparent_50%),linear-gradient(145deg,rgba(42,35,24,0.92),rgba(7,23,39,0.98))] px-4 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#f2be58]/35 bg-[#d99616]/10 text-[#f1bf61] shadow-[0_0_18px_rgba(226,161,38,0.14)]">
+                <CalendarDays className="h-6 w-6" strokeWidth={1.8} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Highest performed night shift</p>
+                <p className="mt-1.5 text-[17px] font-semibold leading-none text-white">Total {highestNightShift.total}</p>
+                <p
+                  className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[#9fb2c9]"
+                  title={highestNightShift.fullMonthLabel}
+                >
+                  {highestNightShift.total > 0 ? `at ${highestNightShift.monthLabel}` : highestNightShift.monthLabel}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Highest performed EXT only</p>
-              <p className="mt-1 text-[17px] font-medium leading-none text-white">Total {highestExtensionOnly.total}</p>
-              <p
-                className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[#9fb2c9]"
-                title={highestExtensionOnly.fullMonthLabel}
-              >
-                {highestExtensionOnly.total > 0 ? `at ${highestExtensionOnly.monthLabel}` : highestExtensionOnly.monthLabel}
-              </p>
-            </div>
-          </div>
 
-          <div className="flex min-h-[72px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3 sm:col-span-2 xl:col-span-1">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#70c7f3]">
-              <ListChecks className="h-7 w-7" strokeWidth={1.8} />
+            <div className="flex min-h-[82px] items-center gap-3.5 rounded-[18px] border border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] px-4 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#55d7aa]/35 bg-[#1dbd79]/10 text-[#76d5ae] shadow-[0_0_18px_rgba(38,199,129,0.14)]">
+                <ListChecks className="h-6 w-6" strokeWidth={1.8} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Highest performed EXT only</p>
+                <p className="mt-1.5 text-[17px] font-semibold leading-none text-white">Total {highestExtensionOnly.total}</p>
+                <p
+                  className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[#9fb2c9]"
+                  title={highestExtensionOnly.fullMonthLabel}
+                >
+                  {highestExtensionOnly.total > 0 ? `at ${highestExtensionOnly.monthLabel}` : highestExtensionOnly.monthLabel}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Highest performed RDOT only</p>
-              <p className="mt-1 text-[17px] font-medium leading-none text-white">Total {highestRdotOnly.total}</p>
-              <p
-                className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[#9fb2c9]"
-                title={highestRdotOnly.fullMonthLabel}
-              >
-                {highestRdotOnly.total > 0 ? `at ${highestRdotOnly.monthLabel}` : highestRdotOnly.monthLabel}
-              </p>
+
+            <div className="flex min-h-[82px] items-center gap-3.5 rounded-[18px] border border-[#315d78] bg-[radial-gradient(circle_at_10%_20%,rgba(54,167,244,0.13),transparent_50%),linear-gradient(145deg,rgba(10,36,58,0.95),rgba(6,23,39,0.98))] px-4 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)] sm:col-span-2 xl:col-span-1">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#5ab6ef]/35 bg-[#2499e3]/10 text-[#70c7f3] shadow-[0_0_18px_rgba(46,157,226,0.14)]">
+                <ListChecks className="h-6 w-6" strokeWidth={1.8} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Highest performed RDOT only</p>
+                <p className="mt-1.5 text-[17px] font-semibold leading-none text-white">Total {highestRdotOnly.total}</p>
+                <p
+                  className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[#9fb2c9]"
+                  title={highestRdotOnly.fullMonthLabel}
+                >
+                  {highestRdotOnly.total > 0 ? `at ${highestRdotOnly.monthLabel}` : highestRdotOnly.monthLabel}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <aside className="h-full min-w-0 rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(42,115,104,0.13),transparent_38%),linear-gradient(145deg,rgba(8,27,45,0.99),rgba(5,20,35,0.99))] p-3.5 shadow-[0_16px_45px_rgba(0,0,0,0.24)]">
           <div className="flex items-start justify-between gap-2">
