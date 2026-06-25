@@ -1491,7 +1491,7 @@ export default function OvertimeTracker() {
           <div className={`mt-2.5 rounded-xl border p-3 transition ${allowanceResult.status === "EXTRA"
             ? "border-emerald-400/30 bg-emerald-500/10"
             : allowanceResult.status === "SHORT"
-              ? "border-red-400/30 bg-red-500/10"
+              ? "border-red-400/70 bg-[linear-gradient(135deg,rgba(254,226,226,0.96),rgba(252,165,165,0.88))] shadow-[0_0_0_1px_rgba(248,113,113,0.12),0_0_8px_rgba(239,68,68,0.20)]"
               : allowanceResult.status === "CORRECT"
                 ? "border-emerald-400/70 bg-[linear-gradient(135deg,rgba(209,250,229,0.96),rgba(167,243,208,0.88))] shadow-[0_0_0_1px_rgba(52,211,153,0.10),0_0_8px_rgba(16,185,129,0.18)]"
                 : "border-[#294862] bg-[#0a2238]/75"
@@ -1500,24 +1500,44 @@ export default function OvertimeTracker() {
               <Banknote className={`h-4 w-4 ${allowanceResult.status === "EXTRA"
                 ? "text-emerald-300"
                 : allowanceResult.status === "SHORT"
-                  ? "text-red-300"
+                  ? "text-[#4a0b0b]"
                   : allowanceResult.status === "CORRECT"
                     ? "text-[#07131f]"
                     : "text-[#91a5bd]"
               }`} />
-              <p className={`text-[12px] font-semibold uppercase tracking-[0.12em] ${allowanceResult.status === "CORRECT" ? "text-[#07131f]" : "text-[#dce8f7]"}`}>
+              <p className={`text-[12px] font-semibold uppercase tracking-[0.12em] ${allowanceResult.status === "CORRECT"
+                ? "text-[#07131f]"
+                : allowanceResult.status === "SHORT"
+                  ? "text-[#4a0b0b]"
+                  : "text-[#dce8f7]"
+              }`}>
                 {allowanceResult.status === "WAITING" ? "Waiting for salary input" : `Allowance ${allowanceResult.status.toLowerCase()}`}
               </p>
             </div>
             {allowanceResult.hasSalaryReceived && (
-              <p className={`mt-2 text-[17px] font-semibold ${allowanceResult.status === "CORRECT" ? "text-[#07131f]" : "text-white"}`}>
+              <p className={`mt-2 text-[17px] font-semibold ${allowanceResult.status === "CORRECT"
+                ? "text-[#07131f]"
+                : allowanceResult.status === "SHORT"
+                  ? "text-[#4a0b0b]"
+                  : "text-white"
+              }`}>
                 {allowanceResult.status === "CORRECT" ? "Correct amount" : `⃁ ${formatMoney(allowanceResult.difference)}`}
               </p>
             )}
-            <p className={`mt-2 text-[11px] leading-relaxed ${allowanceResult.status === "CORRECT" ? "text-[#1f3b34]" : "text-[#9db0c6]"}`}>
+            <p className={`mt-2 text-[11px] leading-relaxed ${allowanceResult.status === "CORRECT"
+              ? "text-[#1f3b34]"
+              : allowanceResult.status === "SHORT"
+                ? "text-[#5f1a1a]"
+                : "text-[#9db0c6]"
+            }`}>
               {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} salary checks {MONTHS[selectedMonth]} night and overtime allowances.
             </p>
-            <p className={`mt-1 text-[10px] leading-relaxed ${allowanceResult.status === "CORRECT" ? "text-[#33564c]" : "text-[#7f94ad]"}`}>
+            <p className={`mt-1 text-[10px] leading-relaxed ${allowanceResult.status === "CORRECT"
+              ? "text-[#33564c]"
+              : allowanceResult.status === "SHORT"
+                ? "text-[#7a2b2b]"
+                : "text-[#7f94ad]"
+            }`}>
               Night allowance: ⃁45 × night days. Remaining OT: received salary − (salary + laundry) − night allowance.
             </p>
           </div>
