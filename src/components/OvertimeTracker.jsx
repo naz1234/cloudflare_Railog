@@ -13,6 +13,7 @@ const ALLOWANCE_LIVE_REFRESH_MS = 5000;
 const ALLOWANCE_AUTOSAVE_DELAY_MS = 800;
 const DEFAULT_BASIC_SALARY = 15000;
 const DEFAULT_SALARY_WITH_LAUNDRY = 15100;
+const NIGHT_ALLOWANCE_RATE = 45;
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -213,8 +214,13 @@ function createAllowanceDraft(workYear, workMonthIndex) {
     salaryWithLaundry: String(DEFAULT_SALARY_WITH_LAUNDRY),
     salaryReceived: "",
     nightDays: "",
-    nightAllowance: "",
+    nightAllowance: "0",
   };
+}
+
+function calculateNightAllowance(nightDays) {
+  const days = Math.max(0, Math.trunc(parseAmount(nightDays)));
+  return days * NIGHT_ALLOWANCE_RATE;
 }
 
 function normalizeAllowanceCheck(check = {}) {
@@ -223,6 +229,7 @@ function normalizeAllowanceCheck(check = {}) {
   const rawMonth = Number(check.workMonth || check.work_month) || (now.getMonth() + 1);
   const workMonth = Math.min(12, Math.max(1, rawMonth));
   const salaryPeriod = getNextMonthPeriod(workYear, workMonth - 1);
+  const nightDays = String(check.nightDays ?? check.night_days ?? "");
 
   return {
     id: String(check.id || `ovt-allowance-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`),
@@ -233,8 +240,8 @@ function normalizeAllowanceCheck(check = {}) {
     basicSalary: String(check.basicSalary ?? check.basic_salary ?? DEFAULT_BASIC_SALARY),
     salaryWithLaundry: String(check.salaryWithLaundry ?? check.salary_with_laundry ?? DEFAULT_SALARY_WITH_LAUNDRY),
     salaryReceived: String(check.salaryReceived ?? check.salary_received ?? ""),
-    nightDays: String(check.nightDays ?? check.night_days ?? ""),
-    nightAllowance: String(check.nightAllowance ?? check.night_allowance ?? ""),
+    nightDays,
+    nightAllowance: String(calculateNightAllowance(nightDays)),
     createdAt: check.createdAt || new Date().toISOString(),
     updatedAt: check.updatedAt || check.createdAt || new Date().toISOString(),
   };
@@ -358,7 +365,6 @@ export default function OvertimeTracker() {
   const [syncStatus, setSyncStatus] = useState("Local cache ready");
   const [noteSyncStatus, setNoteSyncStatus] = useState("Local cache ready");
   const [allowanceDraft, setAllowanceDraft] = useState(() => createAllowanceDraft(today.getFullYear(), today.getMonth()));
-  const [allowanceSaving, setAllowanceSaving] = useState(false);
   const [allowanceDirty, setAllowanceDirty] = useState(false);
   const [allowanceSyncStatus, setAllowanceSyncStatus] = useState("Local cache ready");
   const noteSyncInProgressRef = useRef(false);
@@ -656,7 +662,8 @@ export default function OvertimeTracker() {
     const basicSalary = parseAmount(allowanceDraft.basicSalary);
     const salaryWithLaundry = parseAmount(allowanceDraft.salaryWithLaundry);
     const salaryReceived = parseAmount(allowanceDraft.salaryReceived);
-    const nightAllowance = parseAmount(allowanceDraft.nightAllowance);
+    const nightDays = Math.max(0, Math.trunc(parseAmount(allowanceDraft.nightDays)));
+    const nightAllowance = calculateNightAllowance(nightDays);
     const overtimeHours = Number(selectedMonthSummary.hours || 0);
     const expectedOvertime = basicSalary > 0 ? (basicSalary / 192 * 1.5) * overtimeHours : 0;
     const totalAllowanceReceived = salaryReceived - salaryWithLaundry;
@@ -674,6 +681,8 @@ export default function OvertimeTracker() {
       overtimeHours,
       expectedOvertime,
       totalAllowanceReceived,
+      nightDays,
+      nightAllowance,
       remainingForOvertime,
       difference: Math.abs(difference),
       status,
@@ -909,24 +918,28 @@ export default function OvertimeTracker() {
     }
   };
 
-  const saveAllowanceDraft = useCallback(async (draftSnapshot, { manual = false } = {}) => {
+  const saveAllowanceDraft = useCallback(async (draftSnapshot) => {
     if (allowanceSyncInProgressRef.current) {
       window.setTimeout(() => {
-        if (allowanceDirtyRef.current || manual) {
-          void saveAllowanceDraft(draftSnapshot, { manual });
+        if (allowanceDirtyRef.current) {
+          void saveAllowanceDraft(draftSnapshot);
         }
       }, 350);
       return;
     }
 
-    const workYear = Number(draftSnapshot.workYear) || selectedYear;
-    const workMonth = Number(draftSnapshot.workMonth) || (selectedMonth + 1);
+    const normalizedDraftSnapshot = {
+      ...draftSnapshot,
+      nightAllowance: String(calculateNightAllowance(draftSnapshot.nightDays)),
+    };
+    const workYear = Number(normalizedDraftSnapshot.workYear) || selectedYear;
+    const workMonth = Number(normalizedDraftSnapshot.workMonth) || (selectedMonth + 1);
     const salaryPeriodForDraft = getNextMonthPeriod(workYear, workMonth - 1);
     const now = new Date().toISOString();
     const existingLocal = getLatestAllowanceCheck(allowanceChecksRef.current, workYear, workMonth);
     const payload = normalizeAllowanceCheck({
       ...(existingLocal || {}),
-      ...draftSnapshot,
+      ...normalizedDraftSnapshot,
       id: existingLocal?.id || `ovt-allowance-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       workYear,
       workMonth,
@@ -949,7 +962,6 @@ export default function OvertimeTracker() {
     setAllowanceChecks((current) => upsertAllowanceCheck(current, payload));
     allowanceChecksRef.current = upsertAllowanceCheck(allowanceChecksRef.current, payload);
     allowanceSyncInProgressRef.current = true;
-    if (manual) setAllowanceSaving(true);
     setAllowanceSyncStatus(allowanceCloudReady ? "Saving live..." : "Local saved");
 
     try {
@@ -979,7 +991,7 @@ export default function OvertimeTracker() {
         salaryWithLaundry: String(currentDraft.salaryWithLaundry ?? ""),
         salaryReceived: String(currentDraft.salaryReceived ?? ""),
         nightDays: String(currentDraft.nightDays ?? ""),
-        nightAllowance: String(currentDraft.nightAllowance ?? ""),
+        nightAllowance: String(calculateNightAllowance(currentDraft.nightDays)),
       });
 
       if (currentSignature === snapshotSignature) {
@@ -993,17 +1005,20 @@ export default function OvertimeTracker() {
       allowanceDirtyRef.current = false;
     } finally {
       allowanceSyncInProgressRef.current = false;
-      if (manual) setAllowanceSaving(false);
     }
   }, [allowanceCloudReady, allowanceEntity, selectedMonth, selectedYear]);
 
   const handleAllowanceFieldChange = useCallback((field, value) => {
     const now = new Date().toISOString();
-    const nextDraft = {
+    const nextDraftBase = {
       ...allowanceDraftRef.current,
       [field]: value,
       workYear: selectedYear,
       workMonth: selectedMonth + 1,
+    };
+    const nextDraft = {
+      ...nextDraftBase,
+      nightAllowance: String(calculateNightAllowance(nextDraftBase.nightDays)),
     };
     const existing = getLatestAllowanceCheck(allowanceChecksRef.current, selectedYear, selectedMonth + 1);
     const localCheck = normalizeAllowanceCheck({
@@ -1034,12 +1049,6 @@ export default function OvertimeTracker() {
 
     return () => window.clearTimeout(timeoutId);
   }, [allowanceDirty, allowanceDraft, saveAllowanceDraft]);
-
-  const handleAllowanceSave = async (event) => {
-    event.preventDefault();
-    if (allowanceSaving) return;
-    await saveAllowanceDraft({ ...allowanceDraftRef.current }, { manual: true });
-  };
 
   const flushAllowanceBeforePeriodChange = useCallback(() => {
     if (!allowanceDirtyRef.current) return;
@@ -1214,7 +1223,7 @@ export default function OvertimeTracker() {
             </span>
           </div>
 
-          <form onSubmit={handleAllowanceSave} className="mt-3 space-y-2.5">
+          <div className="mt-3 space-y-2.5">
             <div className="grid grid-cols-2 gap-2">
               <label className="block">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Basic salary</span>
@@ -1253,42 +1262,22 @@ export default function OvertimeTracker() {
               />
             </label>
 
-            <div className="grid grid-cols-2 gap-2">
-              <label className="block">
+            <label className="block">
+              <div className="flex items-center justify-between gap-3">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Night days</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={allowanceDraft.nightDays}
-                  onChange={(event) => handleAllowanceFieldChange("nightDays", event.target.value)}
-                  placeholder="0"
-                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
-                />
-              </label>
-              <label className="block">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Night allowance</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={allowanceDraft.nightAllowance}
-                  onChange={(event) => handleAllowanceFieldChange("nightAllowance", event.target.value)}
-                  placeholder="0.00"
-                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
-                />
-              </label>
-            </div>
-
-            <button
-              type="submit"
-              disabled={allowanceSaving}
-              className="flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 text-[12px] font-semibold text-emerald-100 transition hover:border-emerald-300/55 hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {allowanceSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-              {allowanceSaving ? "Saving" : "Save Now"}
-            </button>
-          </form>
+                <span className="text-[10px] font-medium text-emerald-200">Fixed rate: ⃁ {formatMoney(NIGHT_ALLOWANCE_RATE)} per night</span>
+              </div>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={allowanceDraft.nightDays}
+                onChange={(event) => handleAllowanceFieldChange("nightDays", event.target.value)}
+                placeholder="0"
+                className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+              />
+            </label>
+          </div>
 
           <div className="mt-3 grid grid-cols-2 gap-2">
             <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
@@ -1299,16 +1288,20 @@ export default function OvertimeTracker() {
               <p className="text-[10px] uppercase tracking-[0.10em] text-[#8fa4bc]">Expected OT</p>
               <p className="mt-1 text-[15px] font-semibold text-[#8ed8ff]">SAR {formatMoney(allowanceResult.expectedOvertime)}</p>
             </div>
-            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
-              <p className="text-[10px] uppercase tracking-[0.10em] text-[#8fa4bc]">Allowance received</p>
+            <div className="col-span-2 rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
+              <p className="text-[10px] uppercase tracking-[0.10em] text-[#8fa4bc]">
+                Night Allowance Should Receive ({allowanceResult.nightDays} {allowanceResult.nightDays === 1 ? "Day" : "Days"})
+              </p>
               <p className="mt-1 text-[15px] font-semibold text-[#dce8f7]">
-                {allowanceResult.hasSalaryReceived ? `SAR ${formatMoney(allowanceResult.totalAllowanceReceived)}` : "Waiting"}
+                ⃁ {formatMoney(allowanceResult.nightAllowance)}
               </p>
             </div>
-            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
-              <p className="text-[10px] uppercase tracking-[0.10em] text-[#8fa4bc]">Remaining OT</p>
+            <div className="col-span-2 rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
+              <p className="text-[10px] uppercase leading-relaxed tracking-[0.10em] text-[#8fa4bc]">
+                Remaining for Overtime (after deduct Night + Laundry allowance)
+              </p>
               <p className="mt-1 text-[15px] font-semibold text-[#dce8f7]">
-                {allowanceResult.hasSalaryReceived ? `SAR ${formatMoney(allowanceResult.remainingForOvertime)}` : "Waiting"}
+                {allowanceResult.hasSalaryReceived ? `⃁ ${formatMoney(allowanceResult.remainingForOvertime)}` : "Waiting"}
               </p>
             </div>
           </div>
@@ -1336,14 +1329,14 @@ export default function OvertimeTracker() {
             </div>
             {allowanceResult.hasSalaryReceived && (
               <p className="mt-2 text-[17px] font-semibold text-white">
-                {allowanceResult.status === "CORRECT" ? "Correct amount" : `SAR ${formatMoney(allowanceResult.difference)}`}
+                {allowanceResult.status === "CORRECT" ? "Correct amount" : `⃁ ${formatMoney(allowanceResult.difference)}`}
               </p>
             )}
             <p className="mt-2 text-[11px] leading-relaxed text-[#9db0c6]">
               {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} salary checks {MONTHS[selectedMonth]} night and overtime allowances.
             </p>
             <p className="mt-1 text-[10px] leading-relaxed text-[#7f94ad]">
-              OT formula: Basic salary ÷ 192 × 1.5 × recorded hours.
+              Night allowance: ⃁45 × night days. Remaining OT: received salary − (salary + laundry) − night allowance.
             </p>
           </div>
 
