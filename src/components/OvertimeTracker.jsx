@@ -1558,18 +1558,18 @@ export default function OvertimeTracker() {
         <div className={`mt-2.5 rounded-[18px] border p-3.5 transition ${allowanceResult.status === "EXTRA"
           ? "border-emerald-400/35 bg-[radial-gradient(circle_at_0%_0%,rgba(16,185,129,0.20),transparent_48%),linear-gradient(145deg,rgba(5,63,55,0.88),rgba(6,34,45,0.98))] shadow-[0_10px_28px_rgba(5,150,105,0.12)]"
           : allowanceResult.status === "SHORT"
-            ? "border-red-400/80 bg-[linear-gradient(135deg,rgba(254,226,226,0.98),rgba(252,165,165,0.90))] shadow-[0_0_0_1px_rgba(248,113,113,0.16),0_0_14px_rgba(239,68,68,0.24)]"
+            ? "border-[#7d3f4a] bg-[radial-gradient(circle_at_10%_20%,rgba(248,113,113,0.16),transparent_50%),linear-gradient(145deg,rgba(58,20,29,0.95),rgba(18,17,30,0.98))] shadow-[0_10px_28px_rgba(185,28,28,0.14)]"
             : allowanceResult.status === "CORRECT"
-              ? "border-emerald-400/80 bg-[linear-gradient(135deg,rgba(220,252,231,0.98),rgba(167,243,208,0.92))] shadow-[0_0_0_1px_rgba(52,211,153,0.12),0_0_14px_rgba(16,185,129,0.22)]"
+              ? "border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] shadow-[0_10px_28px_rgba(38,199,129,0.14)]"
               : "border-[#31506b] bg-[linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))]"
         }`}>
           <div className="flex items-start gap-3">
-            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border ${allowanceResult.status === "EXTRA"
+            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border ${allowanceResult.status === "EXTRA"
               ? "border-emerald-300/35 bg-emerald-500/20 text-emerald-100"
               : allowanceResult.status === "SHORT"
-                ? "border-red-700/20 bg-red-700/10 text-[#4a0b0b]"
+                ? "border-red-300/35 bg-red-500/10 text-red-200 shadow-[0_0_18px_rgba(239,68,68,0.14)]"
                 : allowanceResult.status === "CORRECT"
-                  ? "border-emerald-700/20 bg-emerald-700/15 text-[#064e3b]"
+                  ? "border-[#55d7aa]/35 bg-[#1dbd79]/10 text-[#76d5ae] shadow-[0_0_18px_rgba(38,199,129,0.14)]"
                   : "border-[#3c5871] bg-[#102b46] text-[#91a5bd]"
             }`}>
               {allowanceResult.status === "CORRECT" || allowanceResult.status === "EXTRA"
@@ -1578,35 +1578,35 @@ export default function OvertimeTracker() {
             </span>
             <div className="min-w-0 flex-1">
               <p className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${allowanceResult.status === "CORRECT"
-                ? "text-[#064e3b]"
+                ? "text-[#76d5ae]"
                 : allowanceResult.status === "SHORT"
-                  ? "text-[#4a0b0b]"
+                  ? "text-red-300"
                   : "text-[#e7f1fb]"
               }`}>
                 {allowanceResult.status === "WAITING" ? "Waiting for salary input" : `Allowance ${allowanceResult.status.toLowerCase()}`}
               </p>
               {allowanceResult.hasSalaryReceived && (
                 <p className={`mt-1.5 text-[18px] font-semibold ${allowanceResult.status === "CORRECT"
-                  ? "text-[#07131f]"
+                  ? "text-white"
                   : allowanceResult.status === "SHORT"
-                    ? "text-[#4a0b0b]"
+                    ? "text-red-100"
                     : "text-white"
                 }`}>
                   {allowanceResult.status === "CORRECT" ? "Correct amount" : `SAR ${formatMoney(allowanceResult.difference)}`}
                 </p>
               )}
               <p className={`mt-1.5 text-[10px] leading-relaxed ${allowanceResult.status === "CORRECT"
-                ? "text-[#1f4b3e]"
+                ? "text-[#b9cec4]"
                 : allowanceResult.status === "SHORT"
-                  ? "text-[#681f1f]"
+                  ? "text-[#e8b6be]"
                   : "text-[#a4b6ca]"
               }`}>
                 {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} salary checks {MONTHS[selectedMonth]} night and overtime allowances.
               </p>
               <p className={`mt-1 text-[9px] leading-relaxed ${allowanceResult.status === "CORRECT"
-                ? "text-[#356052]"
+                ? "text-[#88a99b]"
                 : allowanceResult.status === "SHORT"
-                  ? "text-[#7a2b2b]"
+                  ? "text-[#c88b94]"
                   : "text-[#8298b0]"
               }`}>
                 Night allowance: {allowanceResult.nightDays} night days × SAR {formatMoney(NIGHT_ALLOWANCE_RATE)} = SAR {formatMoney(allowanceResult.nightAllowance)}. Remaining OT: received salary − (salary + laundry) − night allowance.
