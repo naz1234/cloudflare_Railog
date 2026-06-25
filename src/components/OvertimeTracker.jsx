@@ -1426,10 +1426,10 @@ export default function OvertimeTracker() {
             <FilePlus2 className="h-4 w-4" strokeWidth={1.8} />
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.20em] text-[#afbed2]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.20em] text-[#afbed2]">
               {editingNoteId ? "Edit monthly note" : editingId ? "Edit duty record" : "New record"}
             </p>
-            <p className="mt-0.5 text-[10px] text-[#9eb0c6]">
+            <p className="mt-0.5 text-[11px] text-[#9eb0c6]">
               Add a duty record or a separate monthly note below.
             </p>
           </div>
@@ -1442,11 +1442,11 @@ export default function OvertimeTracker() {
                 <Clock3 className="h-4 w-4" strokeWidth={1.8} />
               </div>
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#e2e9f4]">RDOT / Extension record</p>
-                <p className="mt-0.5 text-[9px] text-[#97a9bf]">Duty entry used for counts and recorded hours.</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#e2e9f4]">RDOT / Extension record</p>
+                <p className="mt-0.5 text-[10px] text-[#97a9bf]">Duty entry used for counts and recorded hours.</p>
               </div>
             </div>
-            <span className="rounded-full border border-violet-400/25 bg-violet-500/10 px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-violet-200">
+            <span className="rounded-full border border-violet-400/25 bg-violet-500/10 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-violet-200">
               Counts hours
             </span>
           </div>
@@ -1454,19 +1454,19 @@ export default function OvertimeTracker() {
           <form onSubmit={handleSave}>
             <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.05fr_1fr_.9fr_1.1fr_.7fr]">
               <label className="block">
-                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Date</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Date</span>
                 <input
                   type="date"
                   value={draft.date}
                   onChange={(event) => setDraft((current) => ({ ...current, date: event.target.value }))}
                   required
-                  className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-medium text-[#eff5fc] outline-none transition focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
+                  className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[13px] font-medium text-[#eff5fc] outline-none transition focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
                   style={{ colorScheme: "dark" }}
                 />
               </label>
 
               <label className="block">
-                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Day Type</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Day Type</span>
                 <Select
                   value={draft.dayType}
                   onValueChange={(dayType) => {
@@ -1477,7 +1477,7 @@ export default function OvertimeTracker() {
                   }}
                 >
                   <SelectTrigger
-                    className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-medium text-[#eff5fc] shadow-none outline-none transition duration-150 hover:border-[#5579a0] hover:bg-[#15324f] focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/25 data-[state=open]:border-[#777eff] data-[state=open]:bg-[#15324f] data-[state=open]:ring-2 data-[state=open]:ring-[#646cff]/25 [&>svg]:text-[#9fb2c9] [&>svg]:opacity-100"
+                    className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[13px] font-medium text-[#eff5fc] shadow-none outline-none transition duration-150 hover:border-[#5579a0] hover:bg-[#15324f] focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/25 data-[state=open]:border-[#777eff] data-[state=open]:bg-[#15324f] data-[state=open]:ring-2 data-[state=open]:ring-[#646cff]/25 [&>svg]:text-[#9fb2c9] [&>svg]:opacity-100"
                     aria-label="Day Type"
                   >
                     <SelectValue placeholder="Select day type" />
@@ -1488,13 +1488,13 @@ export default function OvertimeTracker() {
                   >
                     <SelectItem
                       value="NORMAL"
-                      className="cursor-pointer rounded-lg px-3 py-2.5 text-[12px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
+                      className="cursor-pointer rounded-lg px-3 py-2.5 text-[13px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
                     >
                       Normal Day
                     </SelectItem>
                     <SelectItem
                       value="RAMADAN"
-                      className="cursor-pointer rounded-lg px-3 py-2.5 text-[12px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
+                      className="cursor-pointer rounded-lg px-3 py-2.5 text-[13px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
                     >
                       Ramadhan
                     </SelectItem>
@@ -1503,7 +1503,7 @@ export default function OvertimeTracker() {
               </label>
 
               <label className="block">
-                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Type</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Type</span>
                 <Select
                   value={draft.type}
                   onValueChange={(type) => {
@@ -1514,7 +1514,7 @@ export default function OvertimeTracker() {
                   }}
                 >
                   <SelectTrigger
-                    className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-medium text-[#eff5fc] shadow-none outline-none transition duration-150 hover:border-[#5579a0] hover:bg-[#15324f] focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/25 data-[state=open]:border-[#777eff] data-[state=open]:bg-[#15324f] data-[state=open]:ring-2 data-[state=open]:ring-[#646cff]/25 [&>svg]:text-[#9fb2c9] [&>svg]:opacity-100"
+                    className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[13px] font-medium text-[#eff5fc] shadow-none outline-none transition duration-150 hover:border-[#5579a0] hover:bg-[#15324f] focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/25 data-[state=open]:border-[#777eff] data-[state=open]:bg-[#15324f] data-[state=open]:ring-2 data-[state=open]:ring-[#646cff]/25 [&>svg]:text-[#9fb2c9] [&>svg]:opacity-100"
                     aria-label="Type"
                   >
                     <SelectValue placeholder="Select type" />
@@ -1525,13 +1525,13 @@ export default function OvertimeTracker() {
                   >
                     <SelectItem
                       value="RDOT"
-                      className="cursor-pointer rounded-lg px-3 py-2.5 text-[12px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
+                      className="cursor-pointer rounded-lg px-3 py-2.5 text-[13px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
                     >
                       RDOT
                     </SelectItem>
                     <SelectItem
                       value="EXTENSION"
-                      className="cursor-pointer rounded-lg px-3 py-2.5 text-[12px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
+                      className="cursor-pointer rounded-lg px-3 py-2.5 text-[13px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
                     >
                       Extension
                     </SelectItem>
@@ -1540,7 +1540,7 @@ export default function OvertimeTracker() {
               </label>
 
               <label className="block">
-                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Time</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Time</span>
                 <Select
                   value={draftTimingValue}
                   onValueChange={(timingValue) => {
@@ -1549,7 +1549,7 @@ export default function OvertimeTracker() {
                   }}
                 >
                   <SelectTrigger
-                    className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-medium text-[#eff5fc] shadow-none outline-none transition duration-150 hover:border-[#5579a0] hover:bg-[#15324f] focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/25 data-[state=open]:border-[#777eff] data-[state=open]:bg-[#15324f] data-[state=open]:ring-2 data-[state=open]:ring-[#646cff]/25 [&>svg]:text-[#9fb2c9] [&>svg]:opacity-100"
+                    className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[13px] font-medium text-[#eff5fc] shadow-none outline-none transition duration-150 hover:border-[#5579a0] hover:bg-[#15324f] focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/25 data-[state=open]:border-[#777eff] data-[state=open]:bg-[#15324f] data-[state=open]:ring-2 data-[state=open]:ring-[#646cff]/25 [&>svg]:text-[#9fb2c9] [&>svg]:opacity-100"
                     aria-label="Time"
                   >
                     <SelectValue placeholder="Select time" />
@@ -1561,7 +1561,7 @@ export default function OvertimeTracker() {
                     {!draftTimingIsPreset && (
                       <SelectItem
                         value={draftTimingValue}
-                        className="cursor-pointer rounded-lg px-3 py-2.5 text-[12px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
+                        className="cursor-pointer rounded-lg px-3 py-2.5 text-[13px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
                       >
                         {getTimingLabel(draft.startTime, draft.endTime)} (previous)
                       </SelectItem>
@@ -1574,7 +1574,7 @@ export default function OvertimeTracker() {
                           {showPairSeparator && <SelectSeparator className="mx-2 my-1.5 bg-[#2d4a65]" />}
                           <SelectItem
                             value={timingValue}
-                            className="cursor-pointer rounded-lg px-3 py-2.5 text-[12px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
+                            className="cursor-pointer rounded-lg px-3 py-2.5 text-[13px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
                           >
                             {getTimingLabel(option.startTime, option.endTime)}
                           </SelectItem>
@@ -1586,25 +1586,25 @@ export default function OvertimeTracker() {
               </label>
 
               <div>
-                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Hours</span>
-                <div className="mt-1.5 flex h-10 items-center justify-center rounded-xl border border-emerald-400/45 bg-emerald-500/10 text-[15px] font-semibold text-emerald-300 shadow-[inset_0_0_18px_rgba(16,185,129,0.04)]">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Hours</span>
+                <div className="mt-1.5 flex h-10 items-center justify-center rounded-xl border border-emerald-400/45 bg-emerald-500/10 text-[16px] font-semibold text-emerald-300 shadow-[inset_0_0_18px_rgba(16,185,129,0.04)]">
                   {draftHours.toFixed(1)}
                 </div>
               </div>
             </div>
 
             <label className="mt-3 block">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Remark (optional)</span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Remark (optional)</span>
               <input
                 value={draft.remark}
                 onChange={(event) => setDraft((current) => ({ ...current, remark: event.target.value }))}
                 placeholder="Example: Night shift / replacement duty"
-                className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[13px] font-normal text-[#eff5fc] outline-none placeholder:text-[#8295ad] focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
+                className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[14px] font-normal text-[#eff5fc] outline-none placeholder:text-[#8295ad] focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/20"
               />
             </label>
 
             <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[11px] leading-relaxed text-[#9babc0]">
+              <p className="text-[12px] leading-relaxed text-[#9babc0]">
                 RDOT uses the full selected shift duration. Extension deducts {draft.dayType === "RAMADAN" ? "6 Ramadhan working hours" : "8.5 normal working hours"}.
               </p>
               <div className="flex gap-2">
@@ -1612,7 +1612,7 @@ export default function OvertimeTracker() {
                   <button
                     type="button"
                     onClick={() => resetDraft()}
-                    className="flex h-10 items-center gap-1.5 rounded-xl border border-[#294660] bg-[#0b2137] px-3 text-[10px] font-semibold text-[#c9d8e9] transition hover:border-[#607fa5] hover:bg-[#102b46]"
+                    className="flex h-10 items-center gap-1.5 rounded-xl border border-[#294660] bg-[#0b2137] px-3 text-[11px] font-semibold text-[#c9d8e9] transition hover:border-[#607fa5] hover:bg-[#102b46]"
                   >
                     <X className="h-3.5 w-3.5" /> Cancel
                   </button>
@@ -1620,7 +1620,7 @@ export default function OvertimeTracker() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#7179ff]/70 bg-[linear-gradient(135deg,#5a55ed,#465ee9)] px-4 text-[12px] font-semibold text-white shadow-[0_8px_20px_rgba(72,78,220,0.24)] transition hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#7179ff]/70 bg-[linear-gradient(135deg,#5a55ed,#465ee9)] px-4 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(72,78,220,0.24)] transition hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId ? <Save className="h-4 w-4" /> : <Plus className="h-5 w-5" />}
                   {saving ? "Saving" : editingId ? "Update Duty Record" : "Add Duty Record"}
@@ -1637,15 +1637,15 @@ export default function OvertimeTracker() {
                 <MessageSquareText className="h-4 w-4" strokeWidth={1.8} />
               </div>
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#e2e9f4]">Monthly note</p>
-                <p className="mt-0.5 text-[9px] text-[#97a9bf]">General dated note only. It does not add RDOT, EXT or hours.</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#e2e9f4]">Monthly note</p>
+                <p className="mt-0.5 text-[10px] text-[#97a9bf]">General dated note only. It does not add RDOT, EXT or hours.</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-cyan-400/25 bg-cyan-500/10 px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-cyan-200">
+              <span className="rounded-full border border-cyan-400/25 bg-cyan-500/10 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-cyan-200">
                 Note only · no hours
               </span>
-              <span className={`text-[9px] font-semibold ${noteSyncStatus === "Live cloud" ? "text-emerald-300" : "text-amber-300"}`}>
+              <span className={`text-[10px] font-semibold ${noteSyncStatus === "Live cloud" ? "text-emerald-300" : "text-amber-300"}`}>
                 {noteSyncStatus}
               </span>
             </div>
@@ -1654,7 +1654,7 @@ export default function OvertimeTracker() {
           <form onSubmit={handleNoteSave} className="mt-3">
             <div className="grid gap-2.5 lg:grid-cols-[180px_1fr_auto] lg:items-end">
               <label className="block">
-                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Note date</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Note date</span>
                 <input
                   type="date"
                   value={noteDraft.date}
@@ -1662,19 +1662,19 @@ export default function OvertimeTracker() {
                   max={`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-${String(new Date(selectedYear, selectedMonth + 1, 0).getDate()).padStart(2, "0")}`}
                   onChange={(event) => setNoteDraft((current) => ({ ...current, date: event.target.value }))}
                   required
-                  className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-medium text-[#eff5fc] outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/15"
+                  className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[13px] font-medium text-[#eff5fc] outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/15"
                   style={{ colorScheme: "dark" }}
                 />
               </label>
 
               <label className="block">
-                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Monthly note text</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Monthly note text</span>
                 <input
                   value={noteDraft.note}
                   onChange={(event) => setNoteDraft((current) => ({ ...current, note: event.target.value }))}
                   placeholder="Example: DCC did not change take to night"
                   required
-                  className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[12px] font-normal text-[#eff5fc] outline-none placeholder:text-[#8295ad] focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/15"
+                  className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[13px] font-normal text-[#eff5fc] outline-none placeholder:text-[#8295ad] focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/15"
                 />
               </label>
 
@@ -1683,7 +1683,7 @@ export default function OvertimeTracker() {
                   <button
                     type="button"
                     onClick={() => resetNoteDraft()}
-                    className="flex h-10 items-center gap-1.5 rounded-xl border border-[#294660] bg-[#0b2137] px-3 text-[10px] font-semibold text-[#c9d8e9] transition hover:border-[#607fa5] hover:bg-[#102b46]"
+                    className="flex h-10 items-center gap-1.5 rounded-xl border border-[#294660] bg-[#0b2137] px-3 text-[11px] font-semibold text-[#c9d8e9] transition hover:border-[#607fa5] hover:bg-[#102b46]"
                   >
                     <X className="h-3.5 w-3.5" /> Cancel
                   </button>
@@ -1691,7 +1691,7 @@ export default function OvertimeTracker() {
                 <button
                   type="submit"
                   disabled={noteSaving || !String(noteDraft.note || "").trim()}
-                  className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 text-[10px] font-semibold text-cyan-100 transition hover:border-cyan-300/55 hover:bg-cyan-500/15 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 text-[11px] font-semibold text-cyan-100 transition hover:border-cyan-300/55 hover:bg-cyan-500/15 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {noteSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingNoteId ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                   {noteSaving ? "Saving" : editingNoteId ? "Update Monthly Note" : "Add Monthly Note"}
@@ -1709,11 +1709,11 @@ export default function OvertimeTracker() {
               <ListChecks className="h-4.5 w-4.5" strokeWidth={1.8} />
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.20em] text-[#afbed2]">Records &amp; notes</p>
-              <p className="mt-0.5 text-[10px] text-[#9eb0c6]">RDOT and EXT count hours. NOTE is information only.</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.20em] text-[#afbed2]">Records &amp; notes</p>
+              <p className="mt-0.5 text-[11px] text-[#9eb0c6]">RDOT and EXT count hours. NOTE is information only.</p>
             </div>
           </div>
-          <p className="rounded-full border border-[#203b55] bg-[#0d2740] px-3 py-1.5 text-[10px] font-medium text-[#d3dfed]">
+          <p className="rounded-full border border-[#203b55] bg-[#0d2740] px-3 py-1.5 text-[11px] font-medium text-[#d3dfed]">
             <span className="text-emerald-300">{visibleEntries.length}</span> entr{visibleEntries.length === 1 ? "y" : "ies"}
           </p>
         </div>
@@ -1722,7 +1722,7 @@ export default function OvertimeTracker() {
           {!visibleEntries.length ? (
             <div className="rounded-2xl border border-dashed border-[#294660] px-5 py-9 text-center">
               <Plus className="mx-auto h-5 w-5 text-[#8196ad]" />
-              <p className="mt-3 text-[12px] text-[#91a4bb]">No duty records or monthly notes for this month.</p>
+              <p className="mt-3 text-[13px] text-[#91a4bb]">No duty records or monthly notes for this month.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -1731,19 +1731,19 @@ export default function OvertimeTracker() {
                   const note = entry.item;
                   return (
                     <div key={entry.key} className="flex flex-wrap items-center gap-2.5 rounded-xl border border-cyan-400/20 bg-cyan-500/[0.035] px-3 py-2.5 transition hover:border-cyan-300/35 hover:bg-cyan-500/[0.06] sm:flex-nowrap">
-                      <div className="flex h-9 w-[68px] shrink-0 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-2 text-[10px] font-semibold text-cyan-200">
+                      <div className="flex h-9 w-[68px] shrink-0 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-2 text-[11px] font-semibold text-cyan-200">
                         NOTE
                       </div>
                       <div className="min-w-[180px] flex-1">
                         <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-                          <p className="text-[12px] font-semibold text-[#f1f5fb]">{formatDate(note.date)}</p>
-                          <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-cyan-300">Monthly note</span>
+                          <p className="text-[13px] font-semibold text-[#f1f5fb]">{formatDate(note.date)}</p>
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-300">Monthly note</span>
                         </div>
-                        <p className="mt-1 whitespace-pre-wrap break-words text-[11px] leading-relaxed text-[#b5c2d3]">{note.note}</p>
+                        <p className="mt-1 whitespace-pre-wrap break-words text-[12px] leading-relaxed text-[#b5c2d3]">{note.note}</p>
                       </div>
                       <div className="ml-auto min-w-[74px] shrink-0 border-r border-[#294660] pr-4 text-right">
                         <MessageSquareText className="ml-auto h-4 w-4 text-cyan-300" />
-                        <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-cyan-200">No hours</p>
+                        <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-cyan-200">No hours</p>
                       </div>
                       <button
                         type="button"
@@ -1768,7 +1768,7 @@ export default function OvertimeTracker() {
                 const record = entry.item;
                 return (
                   <div key={entry.key} className="flex flex-wrap items-center gap-2.5 rounded-xl border border-[#203d58] bg-[#0a2238]/70 px-3 py-2.5 transition hover:border-[#345d80] hover:bg-[#0c2943] sm:flex-nowrap">
-                    <div className={`flex h-9 w-[68px] shrink-0 items-center justify-center rounded-lg border px-2 text-[10px] font-semibold ${record.type === "RDOT"
+                    <div className={`flex h-9 w-[68px] shrink-0 items-center justify-center rounded-lg border px-2 text-[11px] font-semibold ${record.type === "RDOT"
                       ? "border-[#5b56c8]/50 bg-[#252459]/55 text-[#8f94ff]"
                       : "border-amber-400/30 bg-amber-500/10 text-amber-200"
                     }`}>
@@ -1776,20 +1776,20 @@ export default function OvertimeTracker() {
                     </div>
                     <div className="min-w-[180px] flex-1">
                       <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-                        <p className="text-[12px] font-semibold text-[#f1f5fb]">{formatDate(record.date)}</p>
-                        <span className="text-[11px] text-[#79a9d2]">{record.startTime} – {record.endTime}</span>
-                        <span className={`rounded-full border px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.10em] ${record.dayType === "RAMADAN"
+                        <p className="text-[13px] font-semibold text-[#f1f5fb]">{formatDate(record.date)}</p>
+                        <span className="text-[12px] text-[#79a9d2]">{record.startTime} – {record.endTime}</span>
+                        <span className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.10em] ${record.dayType === "RAMADAN"
                           ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-200"
                           : "border-sky-400/20 bg-sky-500/[0.08] text-sky-200"
                         }`}>
                           {record.dayType === "RAMADAN" ? "Ramadhan" : "Normal"}
                         </span>
                       </div>
-                      {record.remark && <p className="mt-1 truncate text-[11px] text-[#b5c2d3]">{record.remark}</p>}
+                      {record.remark && <p className="mt-1 truncate text-[12px] text-[#b5c2d3]">{record.remark}</p>}
                     </div>
                     <div className="ml-auto min-w-[74px] shrink-0 border-r border-[#294660] pr-4 text-right">
-                      <p className="text-[16px] font-semibold leading-none text-emerald-300">{Number(record.hours).toFixed(1)}</p>
-                      <p className="mt-1 text-[8px] uppercase tracking-[0.12em] text-[#8ea1b8]">Hours</p>
+                      <p className="text-[17px] font-semibold leading-none text-emerald-300">{Number(record.hours).toFixed(1)}</p>
+                      <p className="mt-1 text-[9px] uppercase tracking-[0.12em] text-[#8ea1b8]">Hours</p>
                     </div>
                     <button
                       type="button"
