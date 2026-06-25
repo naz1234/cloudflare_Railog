@@ -18379,7 +18379,7 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
   // two points larger than the previous compact summary for PDF readability.
   const requestedSummaryLabelFontSize = 7.8;
   const requestedSummarySeparatorFontSize = 8.2;
-  const requestedSummaryTrainFontSize = 8.2;
+  const requestedSummaryTrainFontSize = 9.2;
   const requestedSummaryPillHeight = 13.5;
   const requestedSummaryPillWidth = requestedSummaryGroups.length
     ? Math.min(
