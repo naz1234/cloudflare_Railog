@@ -1434,7 +1434,7 @@ export default function OvertimeTracker() {
             </div>
 
             <label className="block">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary received in July</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary received in {MONTHS[salaryPeriod.monthIndex]}</span>
               <input
                 type="text"
                 inputMode="decimal"
