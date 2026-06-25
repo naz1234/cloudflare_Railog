@@ -1289,7 +1289,7 @@ export default function OvertimeTracker() {
                 value={formatAmountInput(allowanceDraft.salaryReceived)}
                 onChange={(event) => handleAllowanceFieldChange("salaryReceived", sanitizeDecimalInput(event.target.value))}
                 placeholder={`Enter ${MONTHS[salaryPeriod.monthIndex]} salary`}
-                className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+                className="mt-1 h-9 w-full rounded-lg border border-emerald-400/55 bg-emerald-500/10 px-2.5 text-[13px] font-semibold text-[#f4fffb] shadow-[0_0_0_1px_rgba(52,211,153,0.10),0_0_18px_rgba(16,185,129,0.18),inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition placeholder:text-emerald-100/45 hover:border-emerald-300/70 hover:bg-emerald-500/15 focus:border-emerald-300 focus:bg-emerald-500/15 focus:ring-2 focus:ring-emerald-400/25"
               />
             </label>
 
