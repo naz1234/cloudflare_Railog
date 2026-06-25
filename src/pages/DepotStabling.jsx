@@ -8486,26 +8486,12 @@ function TrainMovementContent() {
         className="overflow-hidden rounded-xl border shadow-[0_14px_28px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.05)]"
         style={{ borderColor: `${accent}42`, background: "linear-gradient(180deg,#061827 0%,#041727 100%)" }}
       >
-        <div className="border-b px-3 py-2" style={{ borderColor: `${accent}30`, backgroundColor: `${accent}0d` }}>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => resetMovementFlow(operation)}
-              className="rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] shadow-[0_0_14px_rgba(239,68,68,0.38),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.03]"
-              style={{ borderColor: "rgba(248,113,113,0.85)", backgroundColor: "rgba(127,29,29,0.36)", color: "#fecaca" }}
-              title={`Reset ${meta.title} Flow`}
-            >
-              Reset
-            </button>
-          </div>
-        </div>
-
         <div className="grid gap-3 p-3">
           {renderMovementFlowRows(visibleSteps)}
 
           <div className="rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2">
-            <div className="mb-1 flex items-center justify-start gap-2">
-              <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
+            <div className="mb-1 flex flex-wrap items-center justify-start gap-1.5">
+              <p className="mr-0.5 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
               <button
                 type="button"
                 onClick={() => copyMovementPreview(operation)}
@@ -8514,22 +8500,30 @@ function TrainMovementContent() {
                 <MovementIcon type="copy" color="currentColor" />
                 {getCopyFeedbackLabel(`preview-${operation}`, "Copy")}
               </button>
+              <button
+                type="button"
+                onClick={() => addMovementLog(operation)}
+                disabled={!requiredReady}
+                className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-white transition-all enabled:hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-35"
+                style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
+                title={requiredReady ? `Add ${meta.title} Log` : "Complete all required fields first"}
+              >
+                <span className="text-[11px] leading-none">+</span> Add to Log
+              </button>
+              <button
+                type="button"
+                onClick={() => resetMovementFlow(operation)}
+                className="inline-flex items-center rounded-md border px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] transition-all hover:scale-[1.03]"
+                style={{ borderColor: "rgba(248,113,113,0.75)", backgroundColor: "rgba(127,29,29,0.30)", color: "#fecaca" }}
+                title={`Reset ${meta.title} Flow`}
+              >
+                Reset
+              </button>
             </div>
             <p className="overflow-x-auto whitespace-nowrap font-mono text-[12px] font-medium leading-snug text-[#c8d8ea]">
               {buildMovementPreview(operation)}
             </p>
           </div>
-
-          {requiredReady && (
-            <button
-              type="button"
-              onClick={() => addMovementLog(operation)}
-              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[12px] font-medium text-white shadow-[0_0_16px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01]"
-              style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
-            >
-              <span className="text-[12px] leading-none">+</span> {meta.buttonLabel}
-            </button>
-          )}
         </div>
       </section>
     );
