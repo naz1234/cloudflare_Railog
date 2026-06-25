@@ -1289,7 +1289,7 @@ export default function OvertimeTracker() {
                 value={formatAmountInput(allowanceDraft.salaryReceived)}
                 onChange={(event) => handleAllowanceFieldChange("salaryReceived", sanitizeDecimalInput(event.target.value))}
                 placeholder={`Enter ${MONTHS[salaryPeriod.monthIndex]} salary`}
-                className="mt-1 h-9 w-full rounded-lg border border-emerald-400/55 bg-emerald-500/10 px-2.5 text-[13px] font-semibold text-[#f4fffb] shadow-[0_0_0_1px_rgba(52,211,153,0.10),0_0_18px_rgba(16,185,129,0.18),inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition placeholder:text-emerald-100/45 hover:border-emerald-300/70 hover:bg-emerald-500/15 focus:border-emerald-300 focus:bg-emerald-500/15 focus:ring-2 focus:ring-emerald-400/25"
+                className="mt-1 h-9 w-full rounded-lg border-2 border-emerald-300/95 bg-[linear-gradient(135deg,rgba(16,185,129,0.24),rgba(6,78,59,0.42))] px-2.5 text-[13px] font-semibold text-white shadow-[0_0_5px_rgba(110,231,183,0.95),0_0_16px_rgba(16,185,129,0.78),0_0_34px_rgba(5,150,105,0.48),inset_0_0_16px_rgba(52,211,153,0.12)] ring-1 ring-emerald-200/70 outline-none transition placeholder:text-emerald-50/65 hover:border-emerald-200 hover:bg-[linear-gradient(135deg,rgba(16,185,129,0.30),rgba(6,95,70,0.48))] hover:shadow-[0_0_7px_rgba(167,243,208,1),0_0_22px_rgba(16,185,129,0.90),0_0_40px_rgba(5,150,105,0.58)] focus:border-emerald-100 focus:bg-[linear-gradient(135deg,rgba(16,185,129,0.34),rgba(6,95,70,0.52))] focus:shadow-[0_0_8px_rgba(209,250,229,1),0_0_26px_rgba(16,185,129,0.95),0_0_46px_rgba(5,150,105,0.65)] focus:ring-2 focus:ring-emerald-200/90"
               />
             </label>
 
