@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, Sele
 const OVERTIME_STORAGE_KEY = "ovtOvertimeRecords_v1";
 const OVERTIME_NOTE_STORAGE_KEY = "ovtMonthlyNotes_v1";
 const ALLOWANCE_STORAGE_KEY = "ovtAllowanceChecks_v1";
+const SELECTED_YEAR_STORAGE_KEY = "ovtSelectedYear_v1";
+const EXTRA_YEARS_STORAGE_KEY = "ovtExtraYears_v1";
 const NOTE_LIVE_REFRESH_MS = 5000;
 const ALLOWANCE_LIVE_REFRESH_MS = 5000;
 const ALLOWANCE_AUTOSAVE_DELAY_MS = 800;
@@ -254,6 +256,28 @@ function saveAllowanceChecks(checks) {
   } catch {}
 }
 
+function loadSelectedYear(fallbackYear) {
+  try {
+    const savedYear = Number(localStorage.getItem(SELECTED_YEAR_STORAGE_KEY));
+    return Number.isInteger(savedYear) && savedYear >= 2000 && savedYear <= 2200
+      ? savedYear
+      : fallbackYear;
+  } catch {
+    return fallbackYear;
+  }
+}
+
+function loadExtraYears() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(EXTRA_YEARS_STORAGE_KEY) || "[]");
+    return Array.isArray(parsed)
+      ? parsed.map(Number).filter((year) => Number.isInteger(year) && year >= 2000 && year <= 2200)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 function getAllowancePeriodKey(check = {}) {
   return `${Number(check.workYear || check.work_year) || 0}-${Number(check.workMonth || check.work_month) || 0}`;
 }
@@ -322,7 +346,8 @@ export default function OvertimeTracker() {
   const [records, setRecords] = useState(() => loadRecords());
   const [notes, setNotes] = useState(() => loadNotes());
   const [allowanceChecks, setAllowanceChecks] = useState(() => loadAllowanceChecks());
-  const [selectedYear, setSelectedYear] = useState(today.getFullYear());
+  const [selectedYear, setSelectedYear] = useState(() => loadSelectedYear(today.getFullYear()));
+  const [extraYears, setExtraYears] = useState(() => loadExtraYears());
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const [draft, setDraft] = useState(() => createRecordDraft());
   const [editingId, setEditingId] = useState(null);
@@ -362,6 +387,18 @@ export default function OvertimeTracker() {
   useEffect(() => {
     saveNotes(notes);
   }, [notes]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SELECTED_YEAR_STORAGE_KEY, String(selectedYear));
+    } catch {}
+  }, [selectedYear]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(EXTRA_YEARS_STORAGE_KEY, JSON.stringify(extraYears));
+    } catch {}
+  }, [extraYears]);
 
   useEffect(() => {
     const compactChecks = dedupeAllowanceChecks(allowanceChecks);
@@ -683,11 +720,25 @@ export default function OvertimeTracker() {
 
   const availableYears = useMemo(() => {
     const currentYear = today.getFullYear();
-    const years = new Set([currentYear + 1, currentYear, currentYear - 1, currentYear - 2, currentYear - 3, selectedYear]);
+    const years = new Set([currentYear + 1, currentYear, currentYear - 1, currentYear - 2, currentYear - 3, selectedYear, ...extraYears]);
     records.forEach((record) => years.add(Number(record.date.slice(0, 4))));
     notes.forEach((note) => years.add(Number(note.date.slice(0, 4))));
     return Array.from(years).filter(Number.isFinite).sort((a, b) => b - a);
-  }, [notes, records, selectedYear, today]);
+  }, [extraYears, notes, records, selectedYear, today]);
+
+  const handleYearChange = (nextYear) => {
+    const year = Number(nextYear);
+    if (!Number.isInteger(year)) return;
+    flushAllowanceBeforePeriodChange();
+    setSelectedYear(year);
+    setExtraYears((current) => current.includes(year) ? current : [...current, year]);
+    if (!editingId) resetDraft(`${year}-${String(selectedMonth + 1).padStart(2, "0")}-01`);
+    resetNoteDraft(`${year}-${String(selectedMonth + 1).padStart(2, "0")}-01`);
+  };
+
+  const handleAddNextYear = () => {
+    handleYearChange(selectedYear + 1);
+  };
 
   const resetDraft = (date = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-01`) => {
     setDraft(createRecordDraft(date));
@@ -1037,31 +1088,27 @@ export default function OvertimeTracker() {
             <h3 className="mt-2.5 text-[19px] font-semibold leading-tight text-[#f5f8ff] sm:text-[21px]">
               Monthly Extension &amp; RDOT Record
             </h3>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-[#afbed2]">
-              Record every Extension or RDOT entry from January to December.
-            </p>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px]">
-              <span className="font-medium text-emerald-300">Learn more</span>
-              <span className={syncStatus === "Cloud saved" ? "text-emerald-300/90" : "text-amber-300"}>{syncStatus}</span>
-            </div>
           </div>
 
           <div className="flex shrink-0 items-center gap-2.5">
             <select
               value={selectedYear}
-              onChange={(event) => {
-                const year = Number(event.target.value);
-                flushAllowanceBeforePeriodChange();
-                setSelectedYear(year);
-                if (!editingId) resetDraft(`${year}-${String(selectedMonth + 1).padStart(2, "0")}-01`);
-                resetNoteDraft(`${year}-${String(selectedMonth + 1).padStart(2, "0")}-01`);
-              }}
+              onChange={(event) => handleYearChange(event.target.value)}
               className="h-10 min-w-[92px] rounded-xl border border-[#294660] bg-[#0b2137] px-3 text-[12px] font-semibold text-[#eef5ff] outline-none transition focus:border-[#6a72ff] focus:ring-2 focus:ring-[#6a72ff]/20"
               aria-label="Overtime year"
               style={{ colorScheme: "dark" }}
             >
               {availableYears.map((year) => <option key={year} value={year}>{year}</option>)}
             </select>
+            <button
+              type="button"
+              onClick={handleAddNextYear}
+              className="flex h-10 items-center gap-1.5 rounded-xl border border-[#294660] bg-[#0b2137] px-3 text-[11px] font-medium text-[#dce8f7] transition hover:border-[#5776a0] hover:bg-[#102b46]"
+              title={`Add and open ${selectedYear + 1}`}
+              aria-label={`Add year ${selectedYear + 1}`}
+            >
+              <Plus className="h-3.5 w-3.5" /> Year
+            </button>
             <button
               type="button"
               onClick={exportCsv}
