@@ -818,6 +818,10 @@ export default function OvertimeTracker() {
     () => getHighestMonthlyPerformance(monthSummaries.map((summary) => summary.rdotCount + summary.extensionCount)),
     [monthSummaries]
   );
+  const highestRdotOnly = useMemo(
+    () => getHighestMonthlyPerformance(monthSummaries.map((summary) => summary.rdotCount)),
+    [monthSummaries]
+  );
 
   const availableYears = useMemo(() => {
     const currentYear = today.getFullYear();
@@ -1353,7 +1357,7 @@ export default function OvertimeTracker() {
             </div>
           </div>
 
-          <div className="flex min-h-[72px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3 sm:col-span-2 xl:col-span-1">
+          <div className="flex min-h-[72px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#76d5ae]">
               <ListChecks className="h-7 w-7" strokeWidth={1.8} />
             </div>
@@ -1365,6 +1369,22 @@ export default function OvertimeTracker() {
                 title={highestRdotExtension.fullMonthLabel}
               >
                 {highestRdotExtension.total > 0 ? `at ${highestRdotExtension.monthLabel}` : highestRdotExtension.monthLabel}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex min-h-[72px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3 sm:col-span-2 xl:col-span-1">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#70c7f3]">
+              <ListChecks className="h-7 w-7" strokeWidth={1.8} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Highest performed RDOT only</p>
+              <p className="mt-1 text-[17px] font-medium leading-none text-white">Total {highestRdotOnly.total}</p>
+              <p
+                className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[#9fb2c9]"
+                title={highestRdotOnly.fullMonthLabel}
+              >
+                {highestRdotOnly.total > 0 ? `at ${highestRdotOnly.monthLabel}` : highestRdotOnly.monthLabel}
               </p>
             </div>
           </div>
@@ -1414,7 +1434,7 @@ export default function OvertimeTracker() {
             </div>
 
             <label className="block">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary actually received</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary received in July</span>
               <input
                 type="text"
                 inputMode="decimal"
