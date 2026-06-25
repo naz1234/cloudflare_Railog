@@ -326,6 +326,40 @@ function parseAmount(value) {
   return Number.isFinite(amount) ? amount : 0;
 }
 
+function sanitizeDecimalInput(value, maximumDecimals = 2) {
+  const cleaned = String(value ?? "")
+    .replace(/,/g, "")
+    .replace(/[^\d.]/g, "");
+  if (!cleaned) return "";
+
+  const decimalIndex = cleaned.indexOf(".");
+  const wholeRaw = (decimalIndex >= 0 ? cleaned.slice(0, decimalIndex) : cleaned).replace(/\./g, "");
+  const decimalRaw = decimalIndex >= 0
+    ? cleaned.slice(decimalIndex + 1).replace(/\./g, "").slice(0, maximumDecimals)
+    : "";
+  const whole = wholeRaw.replace(/^0+(?=\d)/, "");
+
+  return decimalIndex >= 0 ? `${whole || "0"}.${decimalRaw}` : whole;
+}
+
+function sanitizeIntegerInput(value) {
+  return String(value ?? "")
+    .replace(/\D/g, "")
+    .replace(/^0+(?=\d)/, "");
+}
+
+function formatAmountInput(value) {
+  const normalized = String(value ?? "").replace(/,/g, "");
+  if (!normalized) return "";
+
+  const hasDecimal = normalized.includes(".");
+  const [wholeRaw, decimal = ""] = normalized.split(".");
+  const wholeDigits = String(wholeRaw || "0").replace(/\D/g, "") || "0";
+  const formattedWhole = wholeDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  return hasDecimal ? `${formattedWhole}.${decimal}` : formattedWhole;
+}
+
 function formatMoney(value) {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
@@ -1228,22 +1262,20 @@ export default function OvertimeTracker() {
               <label className="block">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Basic salary</span>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={allowanceDraft.basicSalary}
-                  onChange={(event) => handleAllowanceFieldChange("basicSalary", event.target.value)}
+                  onChange={(event) => handleAllowanceFieldChange("basicSalary", sanitizeDecimalInput(event.target.value))}
                   className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
                 />
               </label>
               <label className="block">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary + laundry</span>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={allowanceDraft.salaryWithLaundry}
-                  onChange={(event) => handleAllowanceFieldChange("salaryWithLaundry", event.target.value)}
+                  onChange={(event) => handleAllowanceFieldChange("salaryWithLaundry", sanitizeDecimalInput(event.target.value))}
                   className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
                 />
               </label>
@@ -1252,11 +1284,10 @@ export default function OvertimeTracker() {
             <label className="block">
               <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary actually received</span>
               <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={allowanceDraft.salaryReceived}
-                onChange={(event) => handleAllowanceFieldChange("salaryReceived", event.target.value)}
+                type="text"
+                inputMode="decimal"
+                value={formatAmountInput(allowanceDraft.salaryReceived)}
+                onChange={(event) => handleAllowanceFieldChange("salaryReceived", sanitizeDecimalInput(event.target.value))}
                 placeholder={`Enter ${MONTHS[salaryPeriod.monthIndex]} salary`}
                 className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
               />
@@ -1268,11 +1299,10 @@ export default function OvertimeTracker() {
                 <span className="text-[10px] font-medium text-emerald-200">Fixed rate: ⃁ {formatMoney(NIGHT_ALLOWANCE_RATE)} per night</span>
               </div>
               <input
-                type="number"
-                min="0"
-                step="1"
+                type="text"
+                inputMode="numeric"
                 value={allowanceDraft.nightDays}
-                onChange={(event) => handleAllowanceFieldChange("nightDays", event.target.value)}
+                onChange={(event) => handleAllowanceFieldChange("nightDays", sanitizeIntegerInput(event.target.value))}
                 placeholder="0"
                 className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
               />
