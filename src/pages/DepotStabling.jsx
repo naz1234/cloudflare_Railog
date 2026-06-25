@@ -7069,6 +7069,7 @@ function TrainMovementContent() {
   const [focusedFlowInput, setFocusedFlowInput] = useState("");
   const [flowSettledInputs, setFlowSettledInputs] = useState({});
   const flowInputSettleTimerRef = useRef({});
+  const movementAutoFocusTimerRef = useRef({});
   const movementScrollRestoreRef = useRef(null);
   const [tp1LiveLoaded, setTp1LiveLoaded] = useState(false);
   const [tp1LiveSyncing, setTp1LiveSyncing] = useState(false);
@@ -7323,6 +7324,7 @@ function TrainMovementContent() {
   useEffect(() => {
     return () => {
       Object.values(copyFeedbackTimerRef.current || {}).forEach((timer) => clearTimeout(timer));
+      Object.values(movementAutoFocusTimerRef.current || {}).forEach((timer) => clearTimeout(timer));
       if (tp1LiveAutoSaveTimerRef.current) clearTimeout(tp1LiveAutoSaveTimerRef.current);
     };
   }, []);
@@ -7369,6 +7371,49 @@ function TrainMovementContent() {
   const getTp1FlowInputKey = (field) => `tp1:${field}`;
   const isFlowInputFocused = (key) => focusedFlowInput === key;
   const focusFlowInput = (key) => setFocusedFlowInput(key);
+  const focusNextMovementControl = (operation, field) => {
+    if (typeof document === "undefined" || !operation || !field) return;
+
+    const timerKey = `${operation}:${field}`;
+    if (movementAutoFocusTimerRef.current[timerKey]) {
+      clearTimeout(movementAutoFocusTimerRef.current[timerKey]);
+    }
+
+    const tryFocus = (remainingAttempts = 8) => {
+      const target = document.querySelector(`[data-movement-flow-control="${operation}:${field}"]`);
+      if ((!target || target.disabled) && remainingAttempts > 0) {
+        movementAutoFocusTimerRef.current[timerKey] = window.setTimeout(() => tryFocus(remainingAttempts - 1), 50);
+        return;
+      }
+
+      delete movementAutoFocusTimerRef.current[timerKey];
+      if (!target || target.disabled) return;
+
+      try {
+        target.focus({ preventScroll: true });
+      } catch {
+        target.focus();
+      }
+
+      target.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+    };
+
+    movementAutoFocusTimerRef.current[timerKey] = window.setTimeout(() => tryFocus(), 40);
+  };
+  const getNextMovementFocusField = (operation, completedField) => {
+    if (completedField === "trainId") return "customTime";
+    if (completedField === "customTime") return operation === "swapping" ? "tid" : "tid";
+    if (completedField === "tid") return operation === "swapping" ? "swapReason" : "add";
+    if (completedField === "depot") return operation === "swapping" ? "swapReason" : "tid";
+    if (completedField === "road") return "tid";
+    if (completedField === "swapReason") return "replacedBy";
+    if (completedField === "replacedBy") return "add";
+    return "";
+  };
+  const moveToNextMovementControl = (operation, completedField) => {
+    const nextField = getNextMovementFocusField(operation, completedField);
+    if (nextField) focusNextMovementControl(operation, nextField);
+  };
   const markFlowInputSettledNow = (key) => {
     if (flowInputSettleTimerRef.current[key]) {
       clearTimeout(flowInputSettleTimerRef.current[key]);
@@ -7619,6 +7664,7 @@ function TrainMovementContent() {
         notes: "",
       },
     }));
+    focusNextMovementControl(operation, "trainId");
   };
 
   const removeMovementLog = (id) => {
@@ -7973,8 +8019,12 @@ function TrainMovementContent() {
     return (
       <button
         type="button"
-        onClick={() => updateMovementForm(operation, "depot", depot)}
-        className="flex h-8 items-center justify-between rounded-lg border px-2 py-1 text-left transition-all"
+        data-movement-flow-control={`${operation}:depot`}
+        onClick={() => {
+          updateMovementForm(operation, "depot", depot);
+          moveToNextMovementControl(operation, "depot");
+        }}
+        className="flex h-8 items-center justify-between rounded-lg border px-2 py-1 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7ab7ff]/70"
         style={{
           background: active ? `linear-gradient(135deg, ${accent}38, #081e32 82%)` : "#061827",
           borderColor: active ? accent : "#1e4060",
@@ -8230,6 +8280,7 @@ function TrainMovementContent() {
       ...prev,
       [operation]: createDefaultMovementForms()[operation],
     }));
+    focusNextMovementControl(operation, "trainId");
   };
 
   const isMovementTimeReady = (current = {}) => {
@@ -8247,12 +8298,16 @@ function TrainMovementContent() {
           inputMode="numeric"
           maxLength={5}
           value={current.customTime}
+          data-movement-flow-control={`${operation}:customTime`}
           onFocus={() => focusFlowInput(fieldKey)}
           onKeyDown={(e) => {
             const value = String(current.customTime || "");
             const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
             if (e.key === "Enter") {
+              const normalized = normalizeMovementCustomTimeInput(value);
+              updateMovementForm(operation, "customTime", normalized);
               e.currentTarget.blur();
+              if (isCompleteMovementTimeInput(normalized)) moveToNextMovementControl(operation, "customTime");
               return;
             }
             if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
@@ -8261,8 +8316,10 @@ function TrainMovementContent() {
             }
           }}
           onChange={(e) => {
-            updateMovementForm(operation, "customTime", cleanMovementCustomTimeInput(e.target.value));
+            const nextValue = cleanMovementCustomTimeInput(e.target.value);
+            updateMovementForm(operation, "customTime", nextValue);
             scheduleFlowInputSettled(fieldKey);
+            if (isCompleteMovementTimeInput(nextValue)) moveToNextMovementControl(operation, "customTime");
           }}
           onBlur={(e) => {
             updateMovementForm(operation, "customTime", normalizeMovementCustomTimeInput(e.target.value));
@@ -8300,9 +8357,21 @@ function TrainMovementContent() {
         <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
         <input
           value={current.trainId}
+          inputMode="numeric"
+          maxLength={2}
+          data-movement-flow-control={`${operation}:trainId`}
           onFocus={() => focusFlowInput(getMovementFlowInputKey(operation, "trainId"))}
-          onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-          onChange={(e) => updateMovementFlowTextField(operation, "trainId", e.target.value.replace(/\D/g, ""))}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+              if (normalizeMovementTrain(current.trainId)) moveToNextMovementControl(operation, "trainId");
+            }
+          }}
+          onChange={(e) => {
+            const nextValue = e.target.value.replace(/\D/g, "").slice(0, 2);
+            updateMovementFlowTextField(operation, "trainId", nextValue);
+            if (nextValue.length === 2) moveToNextMovementControl(operation, "trainId");
+          }}
           onBlur={() => blurFlowInput(getMovementFlowInputKey(operation, "trainId"))}
           placeholder="25"
           className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
@@ -8325,8 +8394,12 @@ function TrainMovementContent() {
             <button
               key={road}
               type="button"
-              onClick={() => updateMovementForm(operation, "road", road)}
-              className={`rounded-lg border px-2 py-1.5 text-[12px] font-medium transition-all ${active ? "border-blue-400 bg-blue-600/30 text-white" : "border-[#1e4060] bg-[#061827] text-[#7eb8e0] hover:border-[#4f8ef7] hover:text-white"}`}
+              data-movement-flow-control={`${operation}:road`}
+              onClick={() => {
+                updateMovementForm(operation, "road", road);
+                moveToNextMovementControl(operation, "road");
+              }}
+              className={`rounded-lg border px-2 py-1.5 text-[12px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7ab7ff]/70 ${active ? "border-blue-400 bg-blue-600/30 text-white" : "border-[#1e4060] bg-[#061827] text-[#7eb8e0] hover:border-[#4f8ef7] hover:text-white"}`}
             >
               {road}
             </button>
@@ -8338,9 +8411,21 @@ function TrainMovementContent() {
     const tidInput = () => (
       <input
         value={current.tid}
+        inputMode="numeric"
+        maxLength={3}
+        data-movement-flow-control={`${operation}:tid`}
         onFocus={() => focusFlowInput(getMovementFlowInputKey(operation, "tid"))}
-        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-        onChange={(e) => updateMovementFlowTextField(operation, "tid", e.target.value.replace(/\D/g, ""))}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.currentTarget.blur();
+            moveToNextMovementControl(operation, "tid");
+          }
+        }}
+        onChange={(e) => {
+          const nextValue = e.target.value.replace(/\D/g, "").slice(0, 3);
+          updateMovementFlowTextField(operation, "tid", nextValue);
+          if (nextValue.length === 3) moveToNextMovementControl(operation, "tid");
+        }}
         onBlur={() => blurFlowInput(getMovementFlowInputKey(operation, "tid"))}
         placeholder="Optional, e.g. 101"
         className={inputClass}
@@ -8353,9 +8438,19 @@ function TrainMovementContent() {
         inputMode="numeric"
         maxLength={3}
         value={current.tid}
+        data-movement-flow-control={`${operation}:tid`}
         onFocus={() => focusFlowInput(getMovementFlowInputKey(operation, "tid"))}
-        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-        onChange={(e) => updateMovementFlowTextField(operation, "tid", e.target.value.replace(/\D/g, "").slice(0, 3))}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.currentTarget.blur();
+            if (/^\d{3}$/.test(String(current.tid || ""))) moveToNextMovementControl(operation, "tid");
+          }
+        }}
+        onChange={(e) => {
+          const nextValue = e.target.value.replace(/\D/g, "").slice(0, 3);
+          updateMovementFlowTextField(operation, "tid", nextValue);
+          if (nextValue.length === 3) moveToNextMovementControl(operation, "tid");
+        }}
         onBlur={() => blurFlowInput(getMovementFlowInputKey(operation, "tid"))}
         placeholder="3 digits, e.g. 111"
         className={inputClass}
@@ -8365,8 +8460,14 @@ function TrainMovementContent() {
     const reasonInput = () => (
       <input
         value={current.swapReason}
+        data-movement-flow-control={`${operation}:swapReason`}
         onFocus={() => focusFlowInput(getMovementFlowInputKey(operation, "swapReason"))}
-        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.currentTarget.blur();
+            if (String(current.swapReason || "").trim()) moveToNextMovementControl(operation, "swapReason");
+          }
+        }}
         onChange={(e) => updateMovementFlowTextField(operation, "swapReason", e.target.value)}
         onBlur={() => blurFlowInput(getMovementFlowInputKey(operation, "swapReason"))}
         placeholder="e.g. RST PM"
@@ -8379,9 +8480,21 @@ function TrainMovementContent() {
         <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
         <input
           value={current.replacedBy}
+          inputMode="numeric"
+          maxLength={2}
+          data-movement-flow-control={`${operation}:replacedBy`}
           onFocus={() => focusFlowInput(getMovementFlowInputKey(operation, "replacedBy"))}
-          onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-          onChange={(e) => updateMovementFlowTextField(operation, "replacedBy", e.target.value.replace(/\D/g, ""))}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+              if (normalizeMovementTrain(current.replacedBy)) moveToNextMovementControl(operation, "replacedBy");
+            }
+          }}
+          onChange={(e) => {
+            const nextValue = e.target.value.replace(/\D/g, "").slice(0, 2);
+            updateMovementFlowTextField(operation, "replacedBy", nextValue);
+            if (nextValue.length === 2) moveToNextMovementControl(operation, "replacedBy");
+          }}
           onBlur={() => blurFlowInput(getMovementFlowInputKey(operation, "replacedBy"))}
           placeholder="30"
           className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
@@ -8421,7 +8534,7 @@ function TrainMovementContent() {
     const renderMovementFlowStepCard = (step, index) => (
       <div
         key={step.key}
-        className="rounded-xl border p-2 transition-all"
+        className="rounded-xl border p-2 transition-all focus-within:ring-2 focus-within:ring-[#7ab7ff]/45"
         style={{
           borderColor: step.complete ? `${accent}70` : "#1e4060",
           background: step.complete ? `linear-gradient(135deg, ${accent}14, #061827 82%)` : "#061827",
@@ -8502,9 +8615,10 @@ function TrainMovementContent() {
               </button>
               <button
                 type="button"
+                data-movement-flow-control={`${operation}:add`}
                 onClick={() => addMovementLog(operation)}
                 disabled={!requiredReady}
-                className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-white transition-all enabled:hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-35"
+                className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-white transition-all enabled:hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-35"
                 style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
                 title={requiredReady ? `Add ${meta.title} Log` : "Complete all required fields first"}
               >
