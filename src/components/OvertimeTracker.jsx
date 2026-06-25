@@ -1314,7 +1314,7 @@ export default function OvertimeTracker() {
               <Clock3 className="h-7 w-7" strokeWidth={1.8} />
             </div>
             <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#afbed2]">Annual RDOT</p>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#afbed2]">Annual total RDOT</p>
               <p className="mt-1 text-[21px] font-medium leading-none text-white">{annualRdotCount}</p>
             </div>
           </div>
@@ -1324,7 +1324,7 @@ export default function OvertimeTracker() {
               <Clock3 className="h-7 w-7" strokeWidth={1.8} />
             </div>
             <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#afbed2]">Annual Extension</p>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#afbed2]">Annual total Extension</p>
               <p className="mt-1 text-[21px] font-medium leading-none text-white">{annualExtensionCount}</p>
             </div>
           </div>
@@ -1335,7 +1335,7 @@ export default function OvertimeTracker() {
             </div>
             <div className="min-w-0">
               <p className="max-w-[190px] text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">
-                Annual recorded hours for RDOT + EXT
+                Annual total hours for RDOT + EXT
               </p>
               <p className="mt-1 text-[21px] font-medium leading-none text-white">{annualHours.toFixed(1)}</p>
             </div>
