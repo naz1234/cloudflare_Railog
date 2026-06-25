@@ -7787,7 +7787,7 @@ function TrainMovementContent() {
 
     if (!preview) {
       const missing = [];
-      if (!train) missing.push("Train Set");
+      if (!train) missing.push(movementType === "manual" ? "Train Set going to workshop" : "Train Set");
       if (!tp1Form.planStatus) missing.push("Plan / Unplanned");
       if (!isCompleteMovementTimeInput(tp1Form.trAtTp1)) missing.push("TR at TP1 (HH:MM)");
       if (!tp1Form.shunterName) missing.push("Shunter Name");
@@ -7795,8 +7795,8 @@ function TrainMovementContent() {
       if (movementType === "automatic" && !tp1Form.automaticStablingRoad) missing.push("Stabling");
       if (movementType === "automatic" && !isCompleteMovementTimeInput(tp1Form.trainPrepCompletedTime)) missing.push("Train Prep Completed (HH:MM)");
       if (movementType === "automatic" && !isCompleteMovementTimeInput(tp1Form.pstPerformedTime)) missing.push("PST Performed (HH:MM)");
-      if (movementType === "manual" && !isCompleteMovementTimeInput(tp1Form.fromTp1)) missing.push("From TP1 (HH:MM)");
-      if (movementType === "manual" && !isCompleteMovementTimeInput(tp1Form.toManual)) missing.push("to Manual (HH:MM)");
+      if (movementType === "manual" && !isCompleteMovementTimeInput(tp1Form.fromTp1)) missing.push("Time start moving from TP1 (HH:MM)");
+      if (movementType === "manual" && !isCompleteMovementTimeInput(tp1Form.toManual)) missing.push("Time arrival to Manual Area (HH:MM)");
 
       if (missing.length) {
         alert(`Please complete: ${missing.join(", ")}.`);
@@ -9056,7 +9056,7 @@ function TrainMovementContent() {
     const manualFlowSteps = [
       {
         key: "trainSet",
-        label: "Train Set",
+        label: "Train Set going to workshop",
         visible: true,
         complete: manualTrainSetReady,
         render: () => (
@@ -9120,14 +9120,14 @@ function TrainMovementContent() {
       },
       {
         key: "fromTp1",
-        label: "From TP1",
+        label: "Time start moving from TP1",
         visible: manualShunterReady,
         complete: manualFromTp1Ready,
         render: () => renderTp1TimeInput("fromTp1"),
       },
       {
         key: "toManual",
-        label: "to Manual",
+        label: "Time arrival to Manual Area",
         visible: manualFromTp1Ready,
         complete: manualToManualReady,
         render: () => renderTp1TimeInput("toManual"),
