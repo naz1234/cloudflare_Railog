@@ -1470,7 +1470,7 @@ export default function OvertimeTracker() {
               value={formatAmountInput(allowanceDraft.salaryReceived)}
               onChange={(event) => handleAllowanceFieldChange("salaryReceived", sanitizeDecimalInput(event.target.value))}
               placeholder={`Enter ${MONTHS[salaryPeriod.monthIndex]} salary`}
-              className="h-11 w-full rounded-[12px] border border-emerald-400/75 bg-[linear-gradient(135deg,rgba(220,252,231,0.98),rgba(167,243,208,0.92))] px-3 pr-11 text-[15px] font-bold text-[#07131f] caret-[#07131f] shadow-[0_0_0_1px_rgba(52,211,153,0.12),0_0_14px_rgba(16,185,129,0.20)] outline-none transition placeholder:text-[#44534f]/65 hover:border-emerald-300 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-400/20"
+              className="h-11 w-full rounded-[12px] border border-emerald-400/75 bg-[linear-gradient(135deg,rgba(220,252,231,0.98),rgba(167,243,208,0.92))] px-3 pr-11 text-[15px] font-normal text-[#07131f] caret-[#07131f] shadow-[0_0_0_1px_rgba(52,211,153,0.12),0_0_14px_rgba(16,185,129,0.20)] outline-none transition placeholder:text-[#44534f]/65 hover:border-emerald-300 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-400/20"
             />
             {allowanceResult.hasSalaryReceived && (
               <span className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-emerald-600 text-white shadow-[0_5px_14px_rgba(5,150,105,0.28)]">
