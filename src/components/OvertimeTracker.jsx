@@ -1115,10 +1115,10 @@ export default function OvertimeTracker() {
                 </div>
 
                 <div className="mt-2.5 border-t border-[#284761]/70 pt-2">
-                  <p className={`text-[12px] font-medium ${active ? "text-[#b5a8ff]" : "text-[#c2cfdf]"}`}>
+                  <p className="text-[13px] font-medium text-white">
                     Total Hour : {summary.hours.toFixed(1)} hrs
                   </p>
-                  <p className={`mt-1 text-[10px] ${active ? "text-[#a88cff]" : "text-[#9eb0c5]"}`}>
+                  <p className="mt-1 text-[11px] text-white">
                     {summary.noteCount} monthly note{summary.noteCount === 1 ? "" : "s"}
                   </p>
                 </div>
