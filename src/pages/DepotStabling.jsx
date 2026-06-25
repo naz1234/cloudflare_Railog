@@ -7661,6 +7661,12 @@ function TrainMovementContent() {
     }
   };
 
+  const copyMovementPreview = async (operation) => {
+    const feedbackKey = `preview-${operation}`;
+    await copyTextToClipboard(buildMovementPreview(operation));
+    showCopyFeedback(feedbackKey, "copied");
+  };
+
   const copyDepotLogs = async (depot, operation = null) => {
     const feedbackKey = `${depot}-${operation || "all"}`;
     const lines = entries
@@ -8185,7 +8191,17 @@ function TrainMovementContent() {
             </label>
 
             <div className="col-span-2 self-stretch rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2 lg:col-span-12">
-              <p className="mb-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
+              <div className="mb-1 flex items-center justify-start gap-2">
+                <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
+                <button
+                  type="button"
+                  onClick={() => copyMovementPreview(operation)}
+                  className="inline-flex items-center gap-1 rounded-md border border-[#2f6084] bg-[#0a2236] px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-[#9fd3f6] transition-all hover:border-[#58a6ff] hover:text-white"
+                >
+                  <MovementIcon type="copy" color="currentColor" />
+                  {getCopyFeedbackLabel(`preview-${operation}`, "Copy")}
+                </button>
+              </div>
               <p className="overflow-x-auto whitespace-nowrap font-mono text-[12px] font-medium leading-snug text-[#c8d8ea]">
                 {buildMovementPreview(operation)}
               </p>
@@ -8488,7 +8504,17 @@ function TrainMovementContent() {
           {renderMovementFlowRows(visibleSteps)}
 
           <div className="rounded-lg border border-[#1e4060] bg-[#061827] px-3 py-2">
-            <p className="mb-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
+            <div className="mb-1 flex items-center justify-start gap-2">
+              <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
+              <button
+                type="button"
+                onClick={() => copyMovementPreview(operation)}
+                className="inline-flex items-center gap-1 rounded-md border border-[#2f6084] bg-[#0a2236] px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-[#9fd3f6] transition-all hover:border-[#58a6ff] hover:text-white"
+              >
+                <MovementIcon type="copy" color="currentColor" />
+                {getCopyFeedbackLabel(`preview-${operation}`, "Copy")}
+              </button>
+            </div>
             <p className="overflow-x-auto whitespace-nowrap font-mono text-[12px] font-medium leading-snug text-[#c8d8ea]">
               {buildMovementPreview(operation)}
             </p>
