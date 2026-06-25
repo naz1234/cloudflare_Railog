@@ -1156,13 +1156,13 @@ export default function OvertimeTracker() {
                 <Calculator className="h-4 w-4" strokeWidth={1.8} />
               </div>
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#c7d6e8]">Allowance check</p>
-                <p className="mt-0.5 text-[9px] leading-relaxed text-[#91a5bd]">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#c7d6e8]">Allowance check</p>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-[#91a5bd]">
                   Uses {MONTHS[selectedMonth].slice(0, 3)} {selectedYear} recorded hours.
                 </p>
               </div>
             </div>
-            <span className="shrink-0 rounded-full border border-[#2b506d] bg-[#0d2943] px-2 py-1 text-[8px] font-semibold text-[#bcd1e8]">
+            <span className="shrink-0 rounded-full border border-[#2b506d] bg-[#0d2943] px-2 py-1 text-[10px] font-semibold text-[#bcd1e8]">
               {MONTHS[salaryPeriod.monthIndex].slice(0, 3)} Salary
             </span>
           </div>
@@ -1170,31 +1170,31 @@ export default function OvertimeTracker() {
           <form onSubmit={handleAllowanceSave} className="mt-3 space-y-2.5">
             <div className="grid grid-cols-2 gap-2">
               <label className="block">
-                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Basic salary</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Basic salary</span>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={allowanceDraft.basicSalary}
                   onChange={(event) => handleAllowanceFieldChange("basicSalary", event.target.value)}
-                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
                 />
               </label>
               <label className="block">
-                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary + laundry</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary + laundry</span>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={allowanceDraft.salaryWithLaundry}
                   onChange={(event) => handleAllowanceFieldChange("salaryWithLaundry", event.target.value)}
-                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
                 />
               </label>
             </div>
 
             <label className="block">
-              <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary actually received</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary actually received</span>
               <input
                 type="number"
                 min="0"
@@ -1202,13 +1202,13 @@ export default function OvertimeTracker() {
                 value={allowanceDraft.salaryReceived}
                 onChange={(event) => handleAllowanceFieldChange("salaryReceived", event.target.value)}
                 placeholder={`Enter ${MONTHS[salaryPeriod.monthIndex]} salary`}
-                className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+                className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
               />
             </label>
 
             <div className="grid grid-cols-2 gap-2">
               <label className="block">
-                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Night days</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Night days</span>
                 <input
                   type="number"
                   min="0"
@@ -1216,11 +1216,11 @@ export default function OvertimeTracker() {
                   value={allowanceDraft.nightDays}
                   onChange={(event) => handleAllowanceFieldChange("nightDays", event.target.value)}
                   placeholder="0"
-                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
                 />
               </label>
               <label className="block">
-                <span className="text-[8px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Night allowance</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Night allowance</span>
                 <input
                   type="number"
                   min="0"
@@ -1228,7 +1228,7 @@ export default function OvertimeTracker() {
                   value={allowanceDraft.nightAllowance}
                   onChange={(event) => handleAllowanceFieldChange("nightAllowance", event.target.value)}
                   placeholder="0.00"
-                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[11px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
+                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
                 />
               </label>
             </div>
@@ -1236,7 +1236,7 @@ export default function OvertimeTracker() {
             <button
               type="submit"
               disabled={allowanceSaving}
-              className="flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 text-[10px] font-semibold text-emerald-100 transition hover:border-emerald-300/55 hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 text-[12px] font-semibold text-emerald-100 transition hover:border-emerald-300/55 hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {allowanceSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
               {allowanceSaving ? "Saving" : "Save Now"}
@@ -1245,22 +1245,22 @@ export default function OvertimeTracker() {
 
           <div className="mt-3 grid grid-cols-2 gap-2">
             <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
-              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Recorded hours</p>
-              <p className="mt-1 text-[16px] font-semibold text-white">{allowanceResult.overtimeHours.toFixed(1)}</p>
+              <p className="text-[10px] uppercase tracking-[0.10em] text-[#8fa4bc]">Recorded hours</p>
+              <p className="mt-1 text-[18px] font-semibold text-white">{allowanceResult.overtimeHours.toFixed(1)}</p>
             </div>
             <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
-              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Expected OT</p>
-              <p className="mt-1 text-[13px] font-semibold text-[#8ed8ff]">SAR {formatMoney(allowanceResult.expectedOvertime)}</p>
+              <p className="text-[10px] uppercase tracking-[0.10em] text-[#8fa4bc]">Expected OT</p>
+              <p className="mt-1 text-[15px] font-semibold text-[#8ed8ff]">SAR {formatMoney(allowanceResult.expectedOvertime)}</p>
             </div>
             <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
-              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Allowance received</p>
-              <p className="mt-1 text-[13px] font-semibold text-[#dce8f7]">
+              <p className="text-[10px] uppercase tracking-[0.10em] text-[#8fa4bc]">Allowance received</p>
+              <p className="mt-1 text-[15px] font-semibold text-[#dce8f7]">
                 {allowanceResult.hasSalaryReceived ? `SAR ${formatMoney(allowanceResult.totalAllowanceReceived)}` : "Waiting"}
               </p>
             </div>
             <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
-              <p className="text-[8px] uppercase tracking-[0.10em] text-[#8fa4bc]">Remaining OT</p>
-              <p className="mt-1 text-[13px] font-semibold text-[#dce8f7]">
+              <p className="text-[10px] uppercase tracking-[0.10em] text-[#8fa4bc]">Remaining OT</p>
+              <p className="mt-1 text-[15px] font-semibold text-[#dce8f7]">
                 {allowanceResult.hasSalaryReceived ? `SAR ${formatMoney(allowanceResult.remainingForOvertime)}` : "Waiting"}
               </p>
             </div>
@@ -1283,24 +1283,24 @@ export default function OvertimeTracker() {
                     ? "text-sky-300"
                     : "text-[#91a5bd]"
               }`} />
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#dce8f7]">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[#dce8f7]">
                 {allowanceResult.status === "WAITING" ? "Waiting for salary input" : `Allowance ${allowanceResult.status.toLowerCase()}`}
               </p>
             </div>
             {allowanceResult.hasSalaryReceived && (
-              <p className="mt-2 text-[15px] font-semibold text-white">
+              <p className="mt-2 text-[17px] font-semibold text-white">
                 {allowanceResult.status === "CORRECT" ? "Correct amount" : `SAR ${formatMoney(allowanceResult.difference)}`}
               </p>
             )}
-            <p className="mt-2 text-[9px] leading-relaxed text-[#9db0c6]">
+            <p className="mt-2 text-[11px] leading-relaxed text-[#9db0c6]">
               {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} salary checks {MONTHS[selectedMonth]} night and overtime allowances.
             </p>
-            <p className="mt-1 text-[8px] leading-relaxed text-[#7f94ad]">
+            <p className="mt-1 text-[10px] leading-relaxed text-[#7f94ad]">
               OT formula: Basic salary ÷ 192 × 1.5 × recorded hours.
             </p>
           </div>
 
-          <p className={`mt-2 text-center text-[8px] ${allowanceSyncStatus === "Live cloud"
+          <p className={`mt-2 text-center text-[10px] ${allowanceSyncStatus === "Live cloud"
             ? "text-emerald-300"
             : allowanceSyncStatus === "Saving live..."
               ? "text-sky-300"
