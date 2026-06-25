@@ -325,6 +325,40 @@ function getLatestAllowanceCheck(checks = [], workYear, workMonth) {
     .sort((left, right) => getAllowanceUpdatedTime(right) - getAllowanceUpdatedTime(left))[0] || null;
 }
 
+function calculateAllowanceResult(values = {}, overtimeHoursValue = 0) {
+  const basicSalary = parseAmount(values.basicSalary);
+  const salaryWithLaundry = parseAmount(values.salaryWithLaundry);
+  const salaryReceived = parseAmount(values.salaryReceived);
+  const nightDays = Math.max(0, Math.trunc(parseAmount(values.nightDays)));
+  const nightAllowance = calculateNightAllowance(nightDays);
+  const overtimeHours = Number(overtimeHoursValue || 0);
+  const expectedOvertime = roundCurrency(
+    basicSalary > 0 ? (basicSalary / 192 * 1.5) * overtimeHours : 0
+  );
+  const totalAllowanceReceived = roundCurrency(salaryReceived - salaryWithLaundry);
+  const remainingForOvertime = roundCurrency(totalAllowanceReceived - nightAllowance);
+  const differenceValue = roundCurrency(remainingForOvertime - expectedOvertime);
+  const hasSalaryReceived = String(values.salaryReceived || "").trim() !== "" && salaryReceived > 0;
+  let status = "WAITING";
+  if (hasSalaryReceived) {
+    if (differenceValue === 0) status = "CORRECT";
+    else if (differenceValue > 0) status = "EXTRA";
+    else status = "SHORT";
+  }
+
+  return {
+    overtimeHours,
+    expectedOvertime,
+    totalAllowanceReceived,
+    nightDays,
+    nightAllowance,
+    remainingForOvertime,
+    difference: Math.abs(differenceValue),
+    status,
+    hasSalaryReceived,
+  };
+}
+
 function parseAmount(value) {
   const amount = Number(String(value ?? "").replace(/,/g, ""));
   return Number.isFinite(amount) ? amount : 0;
@@ -696,39 +730,15 @@ export default function OvertimeTracker() {
     () => getNextMonthPeriod(selectedYear, selectedMonth),
     [selectedMonth, selectedYear]
   );
-  const allowanceResult = useMemo(() => {
-    const basicSalary = parseAmount(allowanceDraft.basicSalary);
-    const salaryWithLaundry = parseAmount(allowanceDraft.salaryWithLaundry);
-    const salaryReceived = parseAmount(allowanceDraft.salaryReceived);
-    const nightDays = Math.max(0, Math.trunc(parseAmount(allowanceDraft.nightDays)));
-    const nightAllowance = calculateNightAllowance(nightDays);
-    const overtimeHours = Number(selectedMonthSummary.hours || 0);
-    const expectedOvertime = roundCurrency(
-      basicSalary > 0 ? (basicSalary / 192 * 1.5) * overtimeHours : 0
-    );
-    const totalAllowanceReceived = roundCurrency(salaryReceived - salaryWithLaundry);
-    const remainingForOvertime = roundCurrency(totalAllowanceReceived - nightAllowance);
-    const difference = roundCurrency(remainingForOvertime - expectedOvertime);
-    const hasSalaryReceived = String(allowanceDraft.salaryReceived || "").trim() !== "" && salaryReceived > 0;
-    let status = "WAITING";
-    if (hasSalaryReceived) {
-      if (difference === 0) status = "CORRECT";
-      else if (difference > 0) status = "EXTRA";
-      else status = "SHORT";
-    }
+  const allowanceResult = useMemo(
+    () => calculateAllowanceResult(allowanceDraft, selectedMonthSummary.hours),
+    [allowanceDraft, selectedMonthSummary.hours]
+  );
 
-    return {
-      overtimeHours,
-      expectedOvertime,
-      totalAllowanceReceived,
-      nightDays,
-      nightAllowance,
-      remainingForOvertime,
-      difference: Math.abs(difference),
-      status,
-      hasSalaryReceived,
-    };
-  }, [allowanceDraft, selectedMonthSummary.hours]);
+  const monthAllowanceStatuses = useMemo(() => MONTHS.map((_, monthIndex) => {
+    const savedCheck = getLatestAllowanceCheck(allowanceChecks, selectedYear, monthIndex + 1);
+    return calculateAllowanceResult(savedCheck || {}, monthSummaries[monthIndex]?.hours || 0).status;
+  }), [allowanceChecks, monthSummaries, selectedYear]);
 
   const visibleRecords = useMemo(() => recordsForYear
     .filter((record) => Number(record.date.slice(5, 7)) === selectedMonth + 1)
@@ -1172,6 +1182,19 @@ export default function OvertimeTracker() {
         <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
           {monthSummaries.map((summary, monthIndex) => {
             const active = selectedMonth === monthIndex;
+            const allowanceStatus = active ? allowanceResult.status : monthAllowanceStatuses[monthIndex];
+            const allowanceStatusLabel = allowanceStatus === "CORRECT"
+              ? "Correct allowance amount"
+              : allowanceStatus === "SHORT"
+                ? "Allowance amount is short"
+                : allowanceStatus === "EXTRA"
+                  ? "Allowance amount is extra"
+                  : "";
+            const allowanceStatusStyle = allowanceStatus === "CORRECT"
+              ? "border-[#22c55e] bg-[#22c55e]/25 text-[#dcfce7] shadow-[0_0_8px_rgba(34,197,94,0.22)]"
+              : allowanceStatus === "SHORT"
+                ? "border-[#ef4444] bg-[#ef4444]/22 text-[#ffe4e6] shadow-[0_0_8px_rgba(239,68,68,0.22)]"
+                : "border-[#f59e0b] bg-[#f59e0b]/22 text-[#fef3c7] shadow-[0_0_8px_rgba(245,158,11,0.22)]";
             return (
               <button
                 key={summary.month}
@@ -1188,14 +1211,25 @@ export default function OvertimeTracker() {
                   : "border-[#25445f] bg-[linear-gradient(145deg,rgba(10,31,51,0.88),rgba(6,23,39,0.94))] hover:-translate-y-0.5 hover:border-[#3e6788] hover:bg-[#0b2942]"
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] ${active
-                    ? "bg-[#5b4bd6]/45 text-[#d5d2ff]"
-                    : "bg-[#123859] text-[#8dc7f4]"
-                  }`}>
-                    <CalendarDays className="h-3.5 w-3.5" strokeWidth={1.9} />
-                  </span>
-                  <p className="text-[12px] font-semibold text-[#f4f7fc]">{summary.month.slice(0, 3).toUpperCase()}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] ${active
+                      ? "bg-[#5b4bd6]/45 text-[#d5d2ff]"
+                      : "bg-[#123859] text-[#8dc7f4]"
+                    }`}>
+                      <CalendarDays className="h-3.5 w-3.5" strokeWidth={1.9} />
+                    </span>
+                    <p className="text-[12px] font-semibold text-[#f4f7fc]">{summary.month.slice(0, 3).toUpperCase()}</p>
+                  </div>
+                  {allowanceStatus !== "WAITING" && (
+                    <span
+                      className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full border px-1.5 text-[13px] font-normal leading-none ${allowanceStatusStyle}`}
+                      title={allowanceStatusLabel}
+                      aria-label={allowanceStatusLabel}
+                    >
+                      {allowanceStatus === "CORRECT" ? "✓" : "×"}
+                    </span>
+                  )}
                 </div>
 
                 <div className="mt-2.5 grid grid-cols-[1fr_auto_1fr] items-center">
