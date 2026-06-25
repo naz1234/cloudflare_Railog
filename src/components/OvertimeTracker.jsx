@@ -1407,165 +1407,228 @@ export default function OvertimeTracker() {
         </section>
       </div>
 
-      <aside className="h-full min-w-0 rounded-[20px] border border-[#28455f] bg-[radial-gradient(circle_at_90%_0%,rgba(42,115,104,0.13),transparent_38%),linear-gradient(145deg,rgba(8,27,45,0.99),rgba(5,20,35,0.99))] p-3.5 shadow-[0_16px_45px_rgba(0,0,0,0.24)]">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-start gap-2.5">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-400/25 bg-emerald-500/10 text-emerald-200">
-                <Calculator className="h-4 w-4" strokeWidth={1.8} />
-              </div>
-              <div>
-                <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#c7d6e8]">Allowance check</p>
-                <p className="mt-0.5 text-[11px] leading-relaxed text-[#91a5bd]">
-                  Uses {MONTHS[selectedMonth].slice(0, 3)} {selectedYear} recorded hours.
-                </p>
-              </div>
+      <aside className="min-w-0 self-start overflow-hidden rounded-[24px] border border-[#315574] bg-[radial-gradient(circle_at_12%_0%,rgba(16,185,129,0.14),transparent_34%),radial-gradient(circle_at_92%_8%,rgba(45,145,255,0.10),transparent_32%),linear-gradient(145deg,rgba(8,29,48,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_20px_55px_rgba(0,0,0,0.28)] sm:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-emerald-400/30 bg-[linear-gradient(145deg,rgba(16,185,129,0.28),rgba(5,73,65,0.72))] text-emerald-200 shadow-[0_8px_24px_rgba(16,185,129,0.18)]">
+              <Calculator className="h-5 w-5" strokeWidth={1.9} />
             </div>
-            <span className="shrink-0 rounded-full border border-[#2b506d] bg-[#0d2943] px-2 py-1 text-[10px] font-semibold text-[#bcd1e8]">
-              {MONTHS[salaryPeriod.monthIndex].slice(0, 3)} Salary
+            <div className="min-w-0">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.20em] text-[#eef5fc]">Allowance check</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-[#9fb1c8]">
+                Uses {MONTHS[selectedMonth].slice(0, 3)} {selectedYear} recorded hours.
+              </p>
+            </div>
+          </div>
+          <span className="shrink-0 rounded-full border border-emerald-400/25 bg-emerald-500/[0.08] px-2.5 py-1 text-[10px] font-semibold text-emerald-200 shadow-[inset_0_0_12px_rgba(16,185,129,0.05)]">
+            {MONTHS[salaryPeriod.monthIndex].slice(0, 3)} Salary
+          </span>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-2.5">
+          <label className="rounded-[16px] border border-[#31506b] bg-[linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
+            <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#a9bad0]">
+              <span className="flex h-7 w-7 items-center justify-center rounded-[9px] border border-emerald-400/20 bg-emerald-500/[0.08] text-emerald-200">
+                <Banknote className="h-3.5 w-3.5" strokeWidth={1.9} />
+              </span>
+              Basic salary
+            </span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={allowanceDraft.basicSalary}
+              onChange={(event) => handleAllowanceFieldChange("basicSalary", sanitizeDecimalInput(event.target.value))}
+              className="mt-2 h-10 w-full rounded-[11px] border border-[#35536e] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none transition hover:border-[#456681] focus:border-emerald-400/65 focus:ring-2 focus:ring-emerald-400/15"
+            />
+          </label>
+
+          <label className="rounded-[16px] border border-[#31506b] bg-[linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
+            <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#a9bad0]">
+              <span className="flex h-7 w-7 items-center justify-center rounded-[9px] border border-sky-400/20 bg-sky-500/[0.08] text-sky-200">
+                <ListChecks className="h-3.5 w-3.5" strokeWidth={1.9} />
+              </span>
+              Salary + laundry
+            </span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={allowanceDraft.salaryWithLaundry}
+              onChange={(event) => handleAllowanceFieldChange("salaryWithLaundry", sanitizeDecimalInput(event.target.value))}
+              className="mt-2 h-10 w-full rounded-[11px] border border-[#35536e] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none transition hover:border-[#456681] focus:border-emerald-400/65 focus:ring-2 focus:ring-emerald-400/15"
+            />
+          </label>
+        </div>
+
+        <label className="mt-2.5 block rounded-[16px] border border-[#31506b] bg-[linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#a9bad0]">
+            Salary received in {MONTHS[salaryPeriod.monthIndex]}
+          </span>
+          <div className="relative mt-2">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={formatAmountInput(allowanceDraft.salaryReceived)}
+              onChange={(event) => handleAllowanceFieldChange("salaryReceived", sanitizeDecimalInput(event.target.value))}
+              placeholder={`Enter ${MONTHS[salaryPeriod.monthIndex]} salary`}
+              className="h-11 w-full rounded-[12px] border border-emerald-400/75 bg-[linear-gradient(135deg,rgba(220,252,231,0.98),rgba(167,243,208,0.92))] px-3 pr-11 text-[15px] font-bold text-[#07131f] caret-[#07131f] shadow-[0_0_0_1px_rgba(52,211,153,0.12),0_0_14px_rgba(16,185,129,0.20)] outline-none transition placeholder:text-[#44534f]/65 hover:border-emerald-300 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-400/20"
+            />
+            {allowanceResult.hasSalaryReceived && (
+              <span className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-emerald-600 text-white shadow-[0_5px_14px_rgba(5,150,105,0.28)]">
+                <Check className="h-4 w-4" strokeWidth={2.4} />
+              </span>
+            )}
+          </div>
+        </label>
+
+        <label className="mt-2.5 block rounded-[16px] border border-[#31506b] bg-[linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#a9bad0]">
+              <span className="flex h-7 w-7 items-center justify-center rounded-[9px] border border-violet-400/25 bg-violet-500/[0.10] text-violet-200">
+                <CalendarDays className="h-3.5 w-3.5" strokeWidth={1.9} />
+              </span>
+              Night days
+            </span>
+            <span className="rounded-full border border-emerald-400/20 bg-emerald-500/[0.07] px-2 py-1 text-[9px] font-medium text-[#b8c9db]">
+              Fixed rate: <span className="font-semibold text-emerald-300">SAR {formatMoney(NIGHT_ALLOWANCE_RATE)}</span> / night
             </span>
           </div>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={allowanceDraft.nightDays}
+            onChange={(event) => handleAllowanceFieldChange("nightDays", sanitizeIntegerInput(event.target.value))}
+            placeholder="0"
+            className="mt-2 h-10 w-full rounded-[11px] border border-[#35536e] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none placeholder:text-[#70859e] transition hover:border-[#456681] focus:border-emerald-400/65 focus:ring-2 focus:ring-emerald-400/15"
+          />
+        </label>
 
-          <div className="mt-3 space-y-2.5">
-            <div className="grid grid-cols-2 gap-2">
-              <label className="block">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Basic salary</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={allowanceDraft.basicSalary}
-                  onChange={(event) => handleAllowanceFieldChange("basicSalary", sanitizeDecimalInput(event.target.value))}
-                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
-                />
-              </label>
-              <label className="block">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary + laundry</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={allowanceDraft.salaryWithLaundry}
-                  onChange={(event) => handleAllowanceFieldChange("salaryWithLaundry", sanitizeDecimalInput(event.target.value))}
-                  className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
-                />
-              </label>
-            </div>
-
-            <label className="block">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Salary received in {MONTHS[salaryPeriod.monthIndex]}</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={formatAmountInput(allowanceDraft.salaryReceived)}
-                onChange={(event) => handleAllowanceFieldChange("salaryReceived", sanitizeDecimalInput(event.target.value))}
-                placeholder={`Enter ${MONTHS[salaryPeriod.monthIndex]} salary`}
-                className="mt-1 h-9 w-full rounded-lg border border-emerald-400/70 bg-[linear-gradient(135deg,rgba(209,250,229,0.96),rgba(167,243,208,0.88))] px-2.5 text-[13px] font-semibold text-[#07131f] caret-[#07131f] shadow-[0_0_0_1px_rgba(52,211,153,0.10),0_0_8px_rgba(16,185,129,0.18)] outline-none transition placeholder:text-[#34434d]/75 hover:border-emerald-300/80 hover:shadow-[0_0_0_1px_rgba(52,211,153,0.14),0_0_10px_rgba(16,185,129,0.22)] focus:border-emerald-300 focus:shadow-[0_0_0_1px_rgba(110,231,183,0.18),0_0_12px_rgba(16,185,129,0.26)] focus:ring-2 focus:ring-emerald-400/15"
-              />
-            </label>
-
-            <label className="block">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-[#92a7bf]">Night days</span>
-                <span className="text-[10px] font-medium text-emerald-200">Fixed rate: ⃁ {formatMoney(NIGHT_ALLOWANCE_RATE)} per night</span>
-              </div>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={allowanceDraft.nightDays}
-                onChange={(event) => handleAllowanceFieldChange("nightDays", sanitizeIntegerInput(event.target.value))}
-                placeholder="0"
-                className="mt-1 h-9 w-full rounded-lg border border-[#294660] bg-[#102840] px-2.5 text-[13px] font-medium text-[#eff5fc] outline-none placeholder:text-[#70859e] focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/15"
-              />
-            </label>
-          </div>
-
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
-              <p className="text-[10px] uppercase tracking-[0.10em] text-[#8fa4bc]">Recorded hours</p>
-              <p className="mt-1 text-[18px] font-semibold text-white">{allowanceResult.overtimeHours.toFixed(1)}</p>
-            </div>
-            <div className="rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
-              <p className="text-[10px] uppercase tracking-[0.10em] text-[#8fa4bc]">Expected OT</p>
-              <p className="mt-1 text-[15px] font-semibold text-[#8ed8ff]">SAR {formatMoney(allowanceResult.expectedOvertime)}</p>
-            </div>
-            <div className="col-span-2 rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
-              <p className="text-[10px] uppercase tracking-[0.10em] text-[#8fa4bc]">
-                Night Allowance Should Receive ({allowanceResult.nightDays} {allowanceResult.nightDays === 1 ? "Day" : "Days"})
-              </p>
-              <p className="mt-1 text-[15px] font-semibold text-[#dce8f7]">
-                ⃁ {formatMoney(allowanceResult.nightAllowance)}
-              </p>
-            </div>
-            <div className="col-span-2 rounded-xl border border-[#294862] bg-[#0a2238]/75 p-2.5">
-              <p className="text-[10px] uppercase leading-relaxed tracking-[0.10em] text-[#8fa4bc]">
-                Remaining for Overtime (after deduct Night + Laundry allowance)
-              </p>
-              <p className="mt-1 text-[15px] font-semibold text-[#dce8f7]">
-                {allowanceResult.hasSalaryReceived ? `⃁ ${formatMoney(allowanceResult.remainingForOvertime)}` : "Waiting"}
-              </p>
+        <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+          <div className="flex min-h-[88px] items-center gap-3 rounded-[16px] border border-[#31506b] bg-[radial-gradient(circle_at_12%_20%,rgba(45,145,255,0.13),transparent_48%),linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-sky-400/25 bg-sky-500/[0.10] text-sky-200 shadow-[0_0_16px_rgba(56,189,248,0.10)]">
+              <Clock3 className="h-5 w-5" strokeWidth={1.9} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#a9bad0]">Recorded hours</p>
+              <p className="mt-1.5 text-[20px] font-semibold leading-none text-white">{allowanceResult.overtimeHours.toFixed(1)}</p>
+              <p className="mt-1 text-[9px] uppercase tracking-[0.12em] text-[#88a0b9]">Hours</p>
             </div>
           </div>
 
-          <div className={`mt-2.5 rounded-xl border p-3 transition ${allowanceResult.status === "EXTRA"
-            ? "border-emerald-400/30 bg-emerald-500/10"
-            : allowanceResult.status === "SHORT"
-              ? "border-red-400/70 bg-[linear-gradient(135deg,rgba(254,226,226,0.96),rgba(252,165,165,0.88))] shadow-[0_0_0_1px_rgba(248,113,113,0.12),0_0_8px_rgba(239,68,68,0.20)]"
-              : allowanceResult.status === "CORRECT"
-                ? "border-emerald-400/70 bg-[linear-gradient(135deg,rgba(209,250,229,0.96),rgba(167,243,208,0.88))] shadow-[0_0_0_1px_rgba(52,211,153,0.10),0_0_8px_rgba(16,185,129,0.18)]"
-                : "border-[#294862] bg-[#0a2238]/75"
-          }`}>
-            <div className="flex items-center gap-2">
-              <Banknote className={`h-4 w-4 ${allowanceResult.status === "EXTRA"
-                ? "text-emerald-300"
+          <div className="flex min-h-[88px] items-center gap-3 rounded-[16px] border border-[#395170] bg-[radial-gradient(circle_at_12%_20%,rgba(139,92,246,0.14),transparent_48%),linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-violet-400/25 bg-violet-500/[0.10] text-violet-200 shadow-[0_0_16px_rgba(139,92,246,0.10)]">
+              <Calculator className="h-5 w-5" strokeWidth={1.9} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#a9bad0]">Expected OT</p>
+              <p className="mt-1.5 truncate text-[15px] font-semibold leading-none text-[#7dd3fc]" title={`SAR ${formatMoney(allowanceResult.expectedOvertime)}`}>
+                SAR {formatMoney(allowanceResult.expectedOvertime)}
+              </p>
+              <p className="mt-1 text-[9px] uppercase tracking-[0.12em] text-[#88a0b9]">Amount</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-2.5 flex items-center gap-3 rounded-[16px] border border-[#31506b] bg-[radial-gradient(circle_at_8%_35%,rgba(45,145,255,0.12),transparent_42%),linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-sky-400/25 bg-sky-500/[0.10] text-sky-200">
+            <CalendarDays className="h-5 w-5" strokeWidth={1.9} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[9px] font-semibold uppercase leading-relaxed tracking-[0.12em] text-[#a9bad0]">
+              Night allowance should receive ({allowanceResult.nightDays} {allowanceResult.nightDays === 1 ? "day" : "days"})
+            </p>
+            <p className="mt-1 text-[16px] font-semibold text-[#e6f1fc]">SAR {formatMoney(allowanceResult.nightAllowance)}</p>
+          </div>
+        </div>
+
+        <div className="mt-2.5 flex items-center gap-3 rounded-[16px] border border-[#3d4e73] bg-[radial-gradient(circle_at_8%_35%,rgba(139,92,246,0.13),transparent_42%),linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-violet-400/25 bg-violet-500/[0.10] text-violet-200">
+            <Banknote className="h-5 w-5" strokeWidth={1.9} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[9px] font-semibold uppercase leading-relaxed tracking-[0.12em] text-[#a9bad0]">
+              Remaining for overtime
+            </p>
+            <p className="text-[9px] leading-relaxed text-[#7f95ad]">After deduct night + laundry allowance</p>
+            <p className="mt-1 text-[16px] font-semibold text-[#7dd3fc]">
+              {allowanceResult.hasSalaryReceived ? `SAR ${formatMoney(allowanceResult.remainingForOvertime)}` : "Waiting"}
+            </p>
+          </div>
+        </div>
+
+        <div className={`mt-2.5 rounded-[18px] border p-3.5 transition ${allowanceResult.status === "EXTRA"
+          ? "border-emerald-400/35 bg-[radial-gradient(circle_at_0%_0%,rgba(16,185,129,0.20),transparent_48%),linear-gradient(145deg,rgba(5,63,55,0.88),rgba(6,34,45,0.98))] shadow-[0_10px_28px_rgba(5,150,105,0.12)]"
+          : allowanceResult.status === "SHORT"
+            ? "border-red-400/80 bg-[linear-gradient(135deg,rgba(254,226,226,0.98),rgba(252,165,165,0.90))] shadow-[0_0_0_1px_rgba(248,113,113,0.16),0_0_14px_rgba(239,68,68,0.24)]"
+            : allowanceResult.status === "CORRECT"
+              ? "border-emerald-400/80 bg-[linear-gradient(135deg,rgba(220,252,231,0.98),rgba(167,243,208,0.92))] shadow-[0_0_0_1px_rgba(52,211,153,0.12),0_0_14px_rgba(16,185,129,0.22)]"
+              : "border-[#31506b] bg-[linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))]"
+        }`}>
+          <div className="flex items-start gap-3">
+            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border ${allowanceResult.status === "EXTRA"
+              ? "border-emerald-300/35 bg-emerald-500/20 text-emerald-100"
+              : allowanceResult.status === "SHORT"
+                ? "border-red-700/20 bg-red-700/10 text-[#4a0b0b]"
+                : allowanceResult.status === "CORRECT"
+                  ? "border-emerald-700/20 bg-emerald-700/15 text-[#064e3b]"
+                  : "border-[#3c5871] bg-[#102b46] text-[#91a5bd]"
+            }`}>
+              {allowanceResult.status === "CORRECT" || allowanceResult.status === "EXTRA"
+                ? <Check className="h-5 w-5" strokeWidth={2.3} />
+                : <Banknote className="h-5 w-5" strokeWidth={1.9} />}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${allowanceResult.status === "CORRECT"
+                ? "text-[#064e3b]"
                 : allowanceResult.status === "SHORT"
                   ? "text-[#4a0b0b]"
-                  : allowanceResult.status === "CORRECT"
-                    ? "text-[#07131f]"
-                    : "text-[#91a5bd]"
-              }`} />
-              <p className={`text-[12px] font-semibold uppercase tracking-[0.12em] ${allowanceResult.status === "CORRECT"
-                ? "text-[#07131f]"
-                : allowanceResult.status === "SHORT"
-                  ? "text-[#4a0b0b]"
-                  : "text-[#dce8f7]"
+                  : "text-[#e7f1fb]"
               }`}>
                 {allowanceResult.status === "WAITING" ? "Waiting for salary input" : `Allowance ${allowanceResult.status.toLowerCase()}`}
               </p>
-            </div>
-            {allowanceResult.hasSalaryReceived && (
-              <p className={`mt-2 text-[17px] font-semibold ${allowanceResult.status === "CORRECT"
-                ? "text-[#07131f]"
+              {allowanceResult.hasSalaryReceived && (
+                <p className={`mt-1.5 text-[18px] font-semibold ${allowanceResult.status === "CORRECT"
+                  ? "text-[#07131f]"
+                  : allowanceResult.status === "SHORT"
+                    ? "text-[#4a0b0b]"
+                    : "text-white"
+                }`}>
+                  {allowanceResult.status === "CORRECT" ? "Correct amount" : `SAR ${formatMoney(allowanceResult.difference)}`}
+                </p>
+              )}
+              <p className={`mt-1.5 text-[10px] leading-relaxed ${allowanceResult.status === "CORRECT"
+                ? "text-[#1f4b3e]"
                 : allowanceResult.status === "SHORT"
-                  ? "text-[#4a0b0b]"
-                  : "text-white"
+                  ? "text-[#681f1f]"
+                  : "text-[#a4b6ca]"
               }`}>
-                {allowanceResult.status === "CORRECT" ? "Correct amount" : `⃁ ${formatMoney(allowanceResult.difference)}`}
+                {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} salary checks {MONTHS[selectedMonth]} night and overtime allowances.
               </p>
-            )}
-            <p className={`mt-2 text-[11px] leading-relaxed ${allowanceResult.status === "CORRECT"
-              ? "text-[#1f3b34]"
-              : allowanceResult.status === "SHORT"
-                ? "text-[#5f1a1a]"
-                : "text-[#9db0c6]"
-            }`}>
-              {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} salary checks {MONTHS[selectedMonth]} night and overtime allowances.
-            </p>
-            <p className={`mt-1 text-[10px] leading-relaxed ${allowanceResult.status === "CORRECT"
-              ? "text-[#33564c]"
-              : allowanceResult.status === "SHORT"
-                ? "text-[#7a2b2b]"
-                : "text-[#7f94ad]"
-            }`}>
-              Night allowance: ⃁45 × night days. Remaining OT: received salary − (salary + laundry) − night allowance.
-            </p>
+              <p className={`mt-1 text-[9px] leading-relaxed ${allowanceResult.status === "CORRECT"
+                ? "text-[#356052]"
+                : allowanceResult.status === "SHORT"
+                  ? "text-[#7a2b2b]"
+                  : "text-[#8298b0]"
+              }`}>
+                Night allowance: {allowanceResult.nightDays} night days × SAR {formatMoney(NIGHT_ALLOWANCE_RATE)} = SAR {formatMoney(allowanceResult.nightAllowance)}. Remaining OT: received salary − (salary + laundry) − night allowance.
+              </p>
+            </div>
           </div>
+        </div>
 
-          <p className={`mt-2 text-center text-[10px] ${allowanceSyncStatus === "Live cloud"
-            ? "text-emerald-300"
+        <p className={`mt-2.5 flex items-center justify-center gap-1.5 text-center text-[10px] ${allowanceSyncStatus === "Live cloud"
+          ? "text-emerald-300"
+          : allowanceSyncStatus === "Saving live..."
+            ? "text-sky-300"
+            : "text-amber-300"
+        }`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${allowanceSyncStatus === "Live cloud"
+            ? "bg-emerald-400 shadow-[0_0_9px_rgba(52,211,153,0.75)]"
             : allowanceSyncStatus === "Saving live..."
-              ? "text-sky-300"
-              : "text-amber-300"
-          }`}>
-            {allowanceSyncStatus}
-          </p>
+              ? "bg-sky-400"
+              : "bg-amber-400"
+          }`} />
+          {allowanceSyncStatus}
+        </p>
       </aside>
 
       <section className="h-full min-w-0 overflow-hidden rounded-[24px] border border-[#315574] bg-[radial-gradient(circle_at_8%_0%,rgba(45,145,255,0.14),transparent_34%),radial-gradient(circle_at_92%_4%,rgba(112,77,255,0.13),transparent_32%),linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_20px_55px_rgba(0,0,0,0.30)] sm:p-5">
