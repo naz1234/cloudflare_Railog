@@ -3260,28 +3260,28 @@ function getStablingRequestVisual(item = null) {
   const visuals = {
     critical: {
       accent: "#fb5b63",
-      gradient: "linear-gradient(145deg,rgba(239,68,68,0.30) 0%,rgba(98,20,32,0.28) 43%,rgba(7,24,40,0.60) 100%)",
-      glow: "0 12px 28px rgba(0,0,0,0.34),0 0 18px rgba(239,68,68,0.24),inset 0 1px 0 rgba(255,255,255,0.22),inset 0 -1px 0 rgba(255,255,255,0.04)",
+      gradient: "linear-gradient(135deg,rgba(239,68,68,0.26) 0%,#2a0c16 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(239,68,68,0.16),0 0 14px rgba(239,68,68,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
     },
     sr: {
       accent: "#fb923c",
-      gradient: "linear-gradient(145deg,rgba(249,115,22,0.30) 0%,rgba(105,50,12,0.28) 43%,rgba(7,24,40,0.60) 100%)",
-      glow: "0 12px 28px rgba(0,0,0,0.34),0 0 18px rgba(249,115,22,0.23),inset 0 1px 0 rgba(255,255,255,0.22),inset 0 -1px 0 rgba(255,255,255,0.04)",
+      gradient: "linear-gradient(135deg,rgba(249,115,22,0.25) 0%,#2b1708 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(249,115,22,0.16),0 0 14px rgba(249,115,22,0.27),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
     },
     pm: {
       accent: "#d879ff",
-      gradient: "linear-gradient(145deg,rgba(168,85,247,0.32) 0%,rgba(75,32,121,0.28) 43%,rgba(7,24,40,0.60) 100%)",
-      glow: "0 12px 28px rgba(0,0,0,0.34),0 0 19px rgba(168,85,247,0.26),inset 0 1px 0 rgba(255,255,255,0.22),inset 0 -1px 0 rgba(255,255,255,0.04)",
+      gradient: "linear-gradient(135deg,rgba(168,85,247,0.28) 0%,#21103b 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(168,85,247,0.17),0 0 14px rgba(168,85,247,0.30),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
     },
     ta: {
       accent: "#2ee6b7",
-      gradient: "linear-gradient(145deg,rgba(16,185,129,0.30) 0%,rgba(4,93,73,0.27) 43%,rgba(7,24,40,0.60) 100%)",
-      glow: "0 12px 28px rgba(0,0,0,0.34),0 0 18px rgba(16,185,129,0.24),inset 0 1px 0 rgba(255,255,255,0.22),inset 0 -1px 0 rgba(255,255,255,0.04)",
+      gradient: "linear-gradient(135deg,rgba(16,185,129,0.25) 0%,#062a23 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(16,185,129,0.16),0 0 14px rgba(16,185,129,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
     },
     wash: {
       accent: "#4de3ff",
-      gradient: "linear-gradient(145deg,rgba(34,211,238,0.30) 0%,rgba(8,94,111,0.26) 43%,rgba(7,24,40,0.60) 100%)",
-      glow: "0 12px 28px rgba(0,0,0,0.34),0 0 18px rgba(34,211,238,0.24),inset 0 1px 0 rgba(255,255,255,0.22),inset 0 -1px 0 rgba(255,255,255,0.04)",
+      gradient: "linear-gradient(135deg,rgba(34,211,238,0.24) 0%,#062937 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(34,211,238,0.16),0 0 14px rgba(34,211,238,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
     },
   };
 
@@ -3289,8 +3289,8 @@ function getStablingRequestVisual(item = null) {
 
   return {
     accent: fallbackAccent,
-    gradient: `linear-gradient(145deg,${hexToRgba(fallbackAccent, 0.30)} 0%,rgba(19,53,83,0.30) 43%,rgba(7,24,40,0.60) 100%)`,
-    glow: `0 12px 28px rgba(0,0,0,0.34),0 0 18px ${hexToRgba(fallbackAccent, 0.24)},inset 0 1px 0 rgba(255,255,255,0.22),inset 0 -1px 0 rgba(255,255,255,0.04)`,
+    gradient: `linear-gradient(135deg,${hexToRgba(fallbackAccent, 0.24)} 0%,#10243a 48%,#071828 100%)`,
+    glow: `0 0 0 1px ${hexToRgba(fallbackAccent, 0.16)},0 0 14px ${hexToRgba(fallbackAccent, 0.28)},0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)`,
   };
 }
 
@@ -20764,26 +20764,7 @@ function StablingSection({
   const notFound = searched && !found;
 
   return (
-    <section
-      className="relative overflow-hidden rounded-2xl border px-5 py-4"
-      style={{
-        width: "fit-content",
-        maxWidth: "fit-content",
-        isolation: "isolate",
-        background: "linear-gradient(145deg,rgba(15,48,76,0.72) 0%,rgba(7,25,42,0.86) 52%,rgba(5,19,33,0.94) 100%)",
-        borderColor: "rgba(126,184,224,0.30)",
-        boxShadow: "0 24px 55px rgba(0,0,0,0.38),inset 0 1px 0 rgba(255,255,255,0.10),inset 0 -1px 0 rgba(255,255,255,0.03)",
-        backdropFilter: "blur(22px) saturate(135%)",
-        WebkitBackdropFilter: "blur(22px) saturate(135%)",
-      }}
-    >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background: "radial-gradient(circle at 9% 6%,rgba(52,154,255,0.20),transparent 30%),radial-gradient(circle at 88% 8%,rgba(39,212,255,0.13),transparent 27%),radial-gradient(circle at 52% 105%,rgba(49,96,180,0.12),transparent 38%)",
-        }}
-      />
+    <section className="bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
       <SectionTitle
         title={displayTitle}
         action={
@@ -20824,17 +20805,9 @@ function StablingSection({
         <div
           className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all"
           style={{
-            background: "linear-gradient(135deg,rgba(18,51,78,0.50),rgba(5,20,35,0.48))",
-            border: found ? "1.5px solid #facc15" : notFound ? "1.5px solid #ef4444" : sectionSearch ? "1.5px solid #4f8ef7" : "1px solid rgba(126,184,224,0.22)",
-            boxShadow: found
-              ? "0 0 0 2px rgba(250,204,21,0.10),inset 0 1px 0 rgba(255,255,255,0.08)"
-              : notFound
-              ? "0 0 0 2px rgba(239,68,68,0.10),inset 0 1px 0 rgba(255,255,255,0.08)"
-              : sectionSearch
-              ? "0 0 0 2px rgba(79,142,247,0.12),0 8px 22px rgba(0,0,0,0.18),inset 0 1px 0 rgba(255,255,255,0.10)"
-              : "0 8px 22px rgba(0,0,0,0.16),inset 0 1px 0 rgba(255,255,255,0.08)",
-            backdropFilter: "blur(14px) saturate(135%)",
-            WebkitBackdropFilter: "blur(14px) saturate(135%)",
+            background: "#071828",
+            border: found ? "1.5px solid #facc15" : notFound ? "1.5px solid #ef4444" : sectionSearch ? "1.5px solid #4f8ef7" : "1.5px dashed #1b3a55",
+            boxShadow: found ? "0 0 0 2px rgba(250,204,21,0.10)" : notFound ? "0 0 0 2px rgba(239,68,68,0.10)" : sectionSearch ? "0 0 0 2px rgba(79,142,247,0.12)" : undefined,
           }}
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={found ? "#facc15" : notFound ? "#ef4444" : sectionSearch ? "#4f8ef7" : "#2a4a64"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -20892,16 +20865,7 @@ function StablingSection({
         )}
       </div>
 
-      <div
-        className="overflow-x-auto rounded-xl border"
-        style={{
-          borderColor: "rgba(126,184,224,0.18)",
-          background: "linear-gradient(145deg,rgba(8,31,51,0.52),rgba(4,18,31,0.68))",
-          boxShadow: "0 16px 38px rgba(0,0,0,0.28),inset 0 1px 0 rgba(255,255,255,0.06)",
-          backdropFilter: "blur(16px) saturate(130%)",
-          WebkitBackdropFilter: "blur(16px) saturate(130%)",
-        }}
-      >
+      <div className="overflow-x-auto rounded-xl">
         <table className="border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 912, maxWidth: 912, width: 912 }}>
           <thead>
             <tr>
@@ -20917,12 +20881,11 @@ function StablingSection({
                       width: 120,
                       minWidth: 120,
                       maxWidth: 120,
-                      background: "linear-gradient(180deg,rgba(25,69,103,0.58) 0%,rgba(8,29,49,0.42) 100%)",
-                      color: "#73b9e9",
-                      borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.07)" : undefined,
-                      borderRight: labelSide === "left" && isLastBlock ? "1px solid rgba(126,184,224,0.16)" : undefined,
-                      borderBottom: "1px solid rgba(126,184,224,0.18)",
-                      textShadow: "0 0 10px rgba(79,142,247,0.35)",
+                      background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)",
+                      color: "#4a8ab5",
+                      borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined,
+                      borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined,
+                      borderBottom: "2px solid #1a3a56",
                       borderTopLeftRadius: labelSide === "left" && i === 0 ? 12 : undefined,
                       borderTopRightRadius: labelSide === "right" && isLastBlock ? 12 : undefined,
                     }}
@@ -20972,16 +20935,7 @@ function StablingSection({
 function SectionTitle({ title, small = false, action = null }) {
   return (
     <div className="flex items-center gap-2 mb-2">
-      <div
-        className="w-8 h-8 rounded-full border flex items-center justify-center flex-shrink-0"
-        style={{
-          background: "linear-gradient(145deg,rgba(31,83,126,0.62),rgba(8,27,46,0.54))",
-          borderColor: "rgba(94,176,255,0.42)",
-          boxShadow: "0 8px 20px rgba(0,0,0,0.28),0 0 18px rgba(47,137,255,0.20),inset 0 1px 0 rgba(255,255,255,0.16)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-        }}
-      >
+      <div className="w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
         <svg
           width="19"
           height="19"
@@ -21001,7 +20955,6 @@ function SectionTitle({ title, small = false, action = null }) {
         className={`leading-none font-black text-white tracking-widest uppercase flex-1 ${
           small ? "text-sm" : "text-base"
         }`}
-        style={{ textShadow: "0 0 14px rgba(111,188,255,0.22)" }}
       >
         {title}
       </h2>
@@ -21044,9 +20997,7 @@ function RoadRow({
   isLast,
   searchHighlight = "",
 }) {
-  const rowLine = isLast
-    ? "1px solid rgba(126,184,224,0.14)"
-    : "1px solid rgba(126,184,224,0.12)";
+  const rowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
 
   const labelCell = (
     <RoadLabelCell
@@ -21098,14 +21049,14 @@ function RoadRow({
 
         // Train card styling
         const cardGrad = isFlashing
-          ? "linear-gradient(145deg,rgba(179,35,35,0.78),rgba(92,15,15,0.62))"
+          ? "linear-gradient(135deg,#7f1d1d,#5c0f0f)"
           : isDup
-          ? "linear-gradient(145deg,rgba(92,18,18,0.72),rgba(26,5,5,0.62))"
+          ? "linear-gradient(135deg,#2d0a0a,#1a0505)"
           : key && primaryMaint
           ? primaryVisual.gradient
           : key
-          ? "linear-gradient(145deg,rgba(31,83,126,0.54) 0%,rgba(12,44,72,0.40) 45%,rgba(4,20,35,0.58) 100%)"
-          : "linear-gradient(145deg,rgba(28,67,98,0.18),rgba(5,22,37,0.24))";
+          ? "linear-gradient(135deg,#0f2d4a,#081e32)"
+          : "none";
         const cardBorder = isSearchMatch
           ? "2px solid #facc15"
           : isFlashing || isDup
@@ -21113,48 +21064,39 @@ function RoadRow({
           : key && primaryMaint
           ? `1.5px solid ${requestAccent}`
           : key
-          ? "1px solid rgba(104,184,238,0.45)"
-          : "1px dashed rgba(100,160,202,0.30)";
+          ? "1px solid #1e4d72"
+          : "1.5px dashed #1b3a55";
         const cardGlow = isSearchMatch
-          ? "0 0 0 3px rgba(250,204,21,0.18),0 12px 28px rgba(0,0,0,0.34),inset 0 1px 0 rgba(255,255,255,0.22)"
+          ? "0 0 0 3px rgba(250,204,21,0.18), 0 2px 8px rgba(0,0,0,0.45)"
           : key && primaryMaint && !isFlashing && !isDup
           ? primaryVisual.glow
           : key && !isFlashing && !isDup
-          ? "0 12px 28px rgba(0,0,0,0.34),0 0 16px rgba(52,142,216,0.12),inset 0 1px 0 rgba(255,255,255,0.22),inset 0 -1px 0 rgba(255,255,255,0.04)"
-          : "inset 0 1px 0 rgba(255,255,255,0.07)";
+          ? "0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)"
+          : undefined;
 
         return (
           <td
             key={bi}
             className="p-1.5 align-middle"
             style={{
-              background: "rgba(3,17,29,0.28)",
-              borderLeft: "1px solid rgba(126,184,224,0.10)",
-              borderRight: labelSide === "left" && isLastBlock ? "1px solid rgba(126,184,224,0.12)" : undefined,
+              backgroundColor: "#071828",
+              borderLeft: "1px solid #1a3a56",
+              borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined,
               borderBottom: rowLine,
               borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined,
               borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined,
             }}
           >
             <div
-              className="relative flex flex-col items-center justify-center gap-1 overflow-hidden rounded-xl transition-all duration-200 hover:-translate-y-[1px] hover:brightness-110"
+              className="relative flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-150"
               style={{
                 minHeight: 76,
                 padding: "7px 4px",
                 background: cardGrad,
                 border: cardBorder,
                 boxShadow: cardGlow,
-                backdropFilter: "blur(16px) saturate(145%)",
-                WebkitBackdropFilter: "blur(16px) saturate(145%)",
               }}
             >
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0"
-                style={{
-                  background: "linear-gradient(155deg,rgba(255,255,255,0.13) 0%,rgba(255,255,255,0.035) 28%,transparent 54%),radial-gradient(circle at 82% 8%,rgba(174,226,255,0.13),transparent 34%)",
-                }}
-              />
               <input
                 ref={(el) => { cellRefs.current[`${depot}-${roadIndex}-${i}`] = el; }}
                 type="text"
@@ -21170,19 +21112,13 @@ function RoadRow({
                   onCellKeyDown(e, depot, roadIndex, i, totalRows, blockIndices.length);
                 }}
                 placeholder="—"
-                className="relative z-[1] w-full text-center font-black outline-none bg-transparent leading-none"
-                style={{
-                  fontSize: key ? 17 : 13,
-                  color: isFlashing ? "#fecaca" : isDup ? "#f87171" : key ? trainColor : "#385a74",
-                  letterSpacing: key ? "0.05em" : undefined,
-                  textShadow: key ? `0 0 12px ${hexToRgba(isFlashing || isDup ? "#f87171" : trainColor, 0.24)}` : undefined,
-                }}
+                className="w-full text-center font-black outline-none bg-transparent leading-none"
+                style={{ fontSize: key ? 17 : 13, color: isFlashing ? "#fecaca" : isDup ? "#f87171" : key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}
               />
 
               {key && (
                 <div
                   aria-hidden="true"
-                  className="relative z-[1]"
                   style={{
                     width: "calc(100% - 16px)",
                     height: 1,
@@ -21198,14 +21134,14 @@ function RoadRow({
 
               {isFlashing || isDup ? (
                 <span
-                  className="relative z-[1] block w-full truncate text-center text-[10px] font-bold leading-tight"
+                  className="block w-full truncate text-center text-[10px] font-bold leading-tight"
                   style={{ color: "#f87171" }}
                   title="Duplicate train ID"
                 >
                   {isFlashing ? "DUPLICATE!" : "DUPLICATE"}
                 </span>
               ) : maintList.length > 0 ? (
-                <div className="relative z-[1] flex w-full flex-col items-center gap-0.5 px-1">
+                <div className="flex w-full flex-col items-center gap-0.5 px-1">
                   {maintList.map((item) => {
                     const itemVisual = getStablingRequestVisual(item);
                     const label = item.badgeText || item.displayType || item.typeKey || "Request";
@@ -21222,7 +21158,7 @@ function RoadRow({
                   })}
                 </div>
               ) : key ? (
-                <span className="relative z-[1] block w-full text-center text-[10px] font-medium leading-tight" style={{ color: "#6f91aa" }}>—</span>
+                <span className="block w-full text-center text-[10px] font-medium leading-tight" style={{ color: "#5f7f99" }}>—</span>
               ) : null}
             </div>
           </td>
@@ -21240,18 +21176,16 @@ function RoadLabelCell({ label, labelSide, isFirst, isLast, rowLine }) {
     <td
       className="text-center align-middle font-black text-[11px] tracking-tight uppercase"
       style={{
-        background: "linear-gradient(180deg,rgba(26,72,108,0.58) 0%,rgba(7,28,47,0.44) 100%)",
-        color: "#8bc9f3",
+        background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)",
+        color: "#7eb8e0",
         borderTop: isFirst ? "none" : "1px solid rgba(255,255,255,0.06)",
         borderBottom: rowLine,
-        borderRight: labelSide === "left" ? "1px solid rgba(126,184,224,0.15)" : "1px solid rgba(126,184,224,0.14)",
+        borderRight: labelSide === "left" ? "1px solid rgba(126,184,224,0.15)" : "1px solid #1a3a56",
         borderLeft: labelSide === "right" ? "1px solid rgba(126,184,224,0.15)" : undefined,
         whiteSpace: "nowrap",
         width: 72,
         minWidth: 72,
         letterSpacing: "0.05em",
-        textShadow: "0 0 10px rgba(79,142,247,0.32)",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
         borderTopLeftRadius: labelSide === "left" && isFirst ? 12 : undefined,
         borderTopRightRadius: labelSide === "right" && isFirst ? 12 : undefined,
         borderBottomLeftRadius: labelSide === "left" && isLast ? 12 : undefined,
