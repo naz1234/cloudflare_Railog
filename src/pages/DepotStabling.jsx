@@ -8471,13 +8471,7 @@ function TrainMovementContent() {
         style={{ borderColor: `${accent}42`, background: "linear-gradient(180deg,#061827 0%,#041727 100%)" }}
       >
         <div className="border-b px-3 py-2" style={{ borderColor: `${accent}30`, backgroundColor: `${accent}0d` }}>
-          <div className={`flex flex-wrap items-center gap-2 ${isSwapping ? "justify-end" : "justify-between"}`}>
-            {!isSwapping && (
-              <div>
-                <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-white">{meta.title} Automatic Flow</p>
-                <p className="text-[10px] font-semibold text-[#8ea8c0]">Next pill appears immediately while typing continues.</p>
-              </div>
-            )}
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
               onClick={() => resetMovementFlow(operation)}
