@@ -2202,6 +2202,25 @@ function getTrainRemScheduleMatch(activeTimetable = null, depot = "west", label 
   };
 }
 
+// PDF/PNG removal timing must come only from the timetable file that is
+// currently active in the header. Unlike getTrainRemScheduleMatch, this helper
+// never uses the built-in fallback schedule or a timing cached in the row.
+function getActiveTimetableRemovalScheduleMatch(activeTimetable = null, depot = "west", label = "9am", tid = "") {
+  const tidKey = normalizeTrainRemTidValue(tid);
+  if (!tidKey) return null;
+
+  const preset = getTimetableRemovalPreset(activeTimetable, depot, label);
+  const timing = cleanRemovalTime(preset?.timeMap?.[tidKey] || "");
+  if (!timing) return null;
+
+  return {
+    depot: depot === "east" ? "east" : "west",
+    tid: tidKey,
+    timing,
+    source: "active-timetable",
+  };
+}
+
 function getTrainRem9amScheduleMatch(activeTimetable = null, depot = "west", tid = "") {
   return getTrainRemScheduleMatch(activeTimetable, depot, "9am", tid);
 }
@@ -17914,6 +17933,7 @@ function getTrainRemRemovalEntries(trainRemState = {}, depot = "west", maintenan
   const selectedPreset = trainRemState?.selectedPreset?.[depot] || "9am";
   const westSelectedPreset = trainRemState?.selectedPreset?.west || "9am";
   const useCombinedReference = isTrainRemCombinedReferencePreset("west", westSelectedPreset);
+  const activePresetLabel = useCombinedReference ? westSelectedPreset : selectedPreset;
 
   const sourceRows = useCombinedReference
     ? normalizeTrainRemRowsForPreset(trainRemState?.rows?.west, "west", westSelectedPreset)
@@ -17921,23 +17941,36 @@ function getTrainRemRemovalEntries(trainRemState = {}, depot = "west", maintenan
 
   return sourceRows
     .map((row, index) => {
-      let tid = normalizeTrainRemTidValue(row?.tid || "");
+      const tid = normalizeTrainRemTidValue(row?.tid || "");
       let time = cleanRemovalTime(row?.timing);
+      const activeScheduleMatch = getActiveTimetableRemovalScheduleMatch(
+        activeTimetable,
+        depot,
+        activePresetLabel,
+        tid
+      );
+      let pdfTime = cleanRemovalTime(activeScheduleMatch?.timing || "");
 
       if (useCombinedReference) {
         const scheduleMatch = getTrainRemScheduleMatch(activeTimetable, depot, westSelectedPreset, tid);
-        if (!scheduleMatch) return null;
-        time = cleanRemovalTime(scheduleMatch.timing);
+        if (!scheduleMatch && !activeScheduleMatch) return null;
+        time = cleanRemovalTime(scheduleMatch?.timing || activeScheduleMatch?.timing || "");
       } else if (isTrainRemReferenceOnlyIndex(depot, selectedPreset, index)) {
         return null;
       }
 
       const key = normalizeTrainId(row?.trainId);
-      if (!key || !time) return null;
+      if (!key || (!time && !pdfTime)) return null;
+
+      // Keep the operational text output compatible, but allow a row whose only
+      // valid time comes from the currently active timetable.
+      if (!time) time = pdfTime;
 
       // Removal output only: trains assigned to destination Block 6 or Block 7
-      // require one additional minute. Keep the saved timetable/input time unchanged.
+      // require one additional minute. Both values start from their own source;
+      // importantly, pdfTime never falls back to row timing or built-in schedules.
       time = adjustRemovalOutputTimeForDestinationBlock(time, stablingData, key);
+      pdfTime = adjustRemovalOutputTimeForDestinationBlock(pdfTime, stablingData, key);
 
       const requestItem = getTrainRemRemovalRequestItem(row, maintenanceMap);
       const remarkPills = getTrainRemRemovalRemarkItems(row, maintenanceMap);
@@ -17947,6 +17980,9 @@ function getTrainRemRemovalEntries(trainRemState = {}, depot = "west", maintenan
         trainId: padTrainId(key),
         tid,
         time,
+        // PDF and PNG exports use only this strict active-timetable value.
+        // An empty value intentionally renders as "-" when no active match exists.
+        pdfTime,
         remark,
         remarkPills,
         remarkFill: getRemovalRemarkFillColor(remark, requestItem),
@@ -18010,6 +18046,27 @@ function buildTrainRemRemovalLog(trainRemState = {}, depot = "west", maintenance
     entries,
     text: lines.join("\n"),
   };
+}
+
+function getRemovalPdfTime(entry = {}) {
+  const hasStrictPdfTime = Object.prototype.hasOwnProperty.call(entry || {}, "pdfTime");
+  return cleanRemovalTime(hasStrictPdfTime ? entry?.pdfTime : entry?.time);
+}
+
+function sortRemovalEntriesForPdf(entries = []) {
+  return [...(Array.isArray(entries) ? entries : [])].sort((a, b) => {
+    const aTime = getRemovalPdfTime(a);
+    const bTime = getRemovalPdfTime(b);
+    const aMinutes = aTime ? getRemovalTimeMinutes(aTime) : Number.POSITIVE_INFINITY;
+    const bMinutes = bTime ? getRemovalTimeMinutes(bTime) : Number.POSITIVE_INFINITY;
+
+    if (aMinutes !== bMinutes) return aMinutes - bMinutes;
+
+    return String(a?.trainId || "").localeCompare(String(b?.trainId || ""), undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  });
 }
 
 function copyTextToClipboard(text = "") {
@@ -18149,7 +18206,7 @@ function buildRemovalPdfBlob(log = {}) {
   const pageWidth = 595.28;
   const pageHeight = 841.89;
   const marginX = 30;
-  const rows = Array.isArray(log.entries) ? log.entries : [];
+  const rows = sortRemovalEntriesForPdf(log.entries);
   const title = log.depotLabel ? `${log.depotLabel} Removal` : "Depot Removal";
   const contentWidth = pageWidth - marginX * 2;
   const pages = [];
@@ -18274,7 +18331,7 @@ function buildRemovalPdfBlob(log = {}) {
       color: "#000000",
       font: "F2",
     });
-    ops += pdfText(truncatePdfText(entry.time ? `${entry.time} hrs` : "-", 12), col.time, fieldY + 4, {
+    ops += pdfText(truncatePdfText(getRemovalPdfTime(entry) ? `${getRemovalPdfTime(entry)} hrs` : "-", 12), col.time, fieldY + 4, {
       size: fontSize,
       color: "#000000",
       font: "F2",
@@ -18311,8 +18368,8 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
   const pageSize = { width: pageWidth, height: pageHeight };
   const yFromTop = (top, height = 0) => pageHeight - top - height;
 
-  const westRows = Array.isArray(westLog?.entries) ? westLog.entries : [];
-  const eastRows = Array.isArray(eastLog?.entries) ? eastLog.entries : [];
+  const westRows = sortRemovalEntriesForPdf(westLog?.entries);
+  const eastRows = sortRemovalEntriesForPdf(eastLog?.entries);
   const rawActionOverviewRows = Array.isArray(options?.actionOverviewRows) ? options.actionOverviewRows : [];
   const actionOverviewRows = rawActionOverviewRows.length ? rawActionOverviewRows : [];
   const hasActionOverviewRows = actionOverviewRows.some((row) => row && !row.isSeparator);
@@ -18872,7 +18929,7 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
         drawTextInCell(String(index + 1).padStart(2, "0"), colX.no + 8, textY, 4, { size: rowContentFontSize, bold: false });
         drawTextInCell(entry.trainId || "-", colX.train, textY, 8, { size: rowContentFontSize, bold: true, align: "center", width: colWidths.train });
         drawTextInCell(entry.tid || "-", colX.tid + 8, textY, 6, { size: rowContentFontSize, bold: false });
-        drawTextInCell(entry.time ? `${entry.time} hrs` : "-", colX.time + 8, textY, 11, { size: rowContentFontSize, bold: false });
+        drawTextInCell(getRemovalPdfTime(entry) ? `${getRemovalPdfTime(entry)} hrs` : "-", colX.time + 8, textY, 11, { size: rowContentFontSize, bold: false });
         const depotRemarkPillFontSize = Math.max(3.8, remarkContentFontSize - 1);
         drawRemarkPills(entry, colX.remark, rowY, colWidths.remark, activeRowHeight, textY, activeFontSize, {
           baseFontSize: depotRemarkPillFontSize,
