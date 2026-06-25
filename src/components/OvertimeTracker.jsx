@@ -87,6 +87,31 @@ function roundCurrency(value) {
   return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 }
 
+function getHighestMonthlyPerformance(values = []) {
+  const normalizedValues = MONTHS.map((_, index) => Math.max(0, Number(values[index] || 0)));
+  const total = Math.max(0, ...normalizedValues);
+
+  if (total <= 0) {
+    return {
+      total: 0,
+      monthLabel: "No record",
+      fullMonthLabel: "No record",
+    };
+  }
+
+  const matchingMonths = normalizedValues
+    .map((value, index) => value === total ? MONTHS[index].slice(0, 3).toUpperCase() : null)
+    .filter(Boolean);
+
+  return {
+    total,
+    monthLabel: matchingMonths.length <= 2
+      ? matchingMonths.join(" & ")
+      : `${matchingMonths[0]} +${matchingMonths.length - 1}`,
+    fullMonthLabel: matchingMonths.join(", "),
+  };
+}
+
 function getMinutes(time = "") {
   const [hours, minutes] = String(time).split(":").map(Number);
   if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
@@ -781,6 +806,18 @@ export default function OvertimeTracker() {
     () => recordsForYear.filter((record) => record.type === "RDOT").length,
     [recordsForYear]
   );
+  const annualExtensionCount = useMemo(
+    () => recordsForYear.filter((record) => record.type === "EXTENSION").length,
+    [recordsForYear]
+  );
+  const highestNightShift = useMemo(
+    () => getHighestMonthlyPerformance(monthNightTotals),
+    [monthNightTotals]
+  );
+  const highestRdotExtension = useMemo(
+    () => getHighestMonthlyPerformance(monthSummaries.map((summary) => summary.rdotCount + summary.extensionCount)),
+    [monthSummaries]
+  );
 
   const availableYears = useMemo(() => {
     const currentYear = today.getFullYear();
@@ -1267,23 +1304,68 @@ export default function OvertimeTracker() {
           })}
         </div>
 
-        <div className="mt-3 grid gap-2.5 md:grid-cols-2">
-          <div className="flex min-h-[66px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3">
+        <div className="mt-3 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="flex min-h-[72px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#66b9f5]">
               <Clock3 className="h-7 w-7" strokeWidth={1.8} />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#afbed2]">Annual RDOT</p>
               <p className="mt-1 text-[21px] font-medium leading-none text-white">{annualRdotCount}</p>
             </div>
           </div>
-          <div className="flex min-h-[66px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3">
+
+          <div className="flex min-h-[72px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#9d91ff]">
+              <Clock3 className="h-7 w-7" strokeWidth={1.8} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#afbed2]">Annual Extension</p>
+              <p className="mt-1 text-[21px] font-medium leading-none text-white">{annualExtensionCount}</p>
+            </div>
+          </div>
+
+          <div className="flex min-h-[72px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#aabedb]">
               <Clock3 className="h-7 w-7" strokeWidth={1.8} />
             </div>
-            <div>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#afbed2]">Annual recorded hours</p>
+            <div className="min-w-0">
+              <p className="max-w-[190px] text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">
+                Annual recorded hours for RDOT + EXT
+              </p>
               <p className="mt-1 text-[21px] font-medium leading-none text-white">{annualHours.toFixed(1)}</p>
+            </div>
+          </div>
+
+          <div className="flex min-h-[72px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#e9bd6c]">
+              <CalendarDays className="h-7 w-7" strokeWidth={1.8} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Highest performed night shift</p>
+              <p className="mt-1 text-[17px] font-medium leading-none text-white">Total {highestNightShift.total}</p>
+              <p
+                className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[#9fb2c9]"
+                title={highestNightShift.fullMonthLabel}
+              >
+                {highestNightShift.total > 0 ? `at ${highestNightShift.monthLabel}` : highestNightShift.monthLabel}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex min-h-[72px] items-center gap-3.5 rounded-[16px] border border-[#203d58] bg-[linear-gradient(145deg,rgba(9,29,49,0.82),rgba(6,22,38,0.92))] px-4 py-3 sm:col-span-2 xl:col-span-1">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#76d5ae]">
+              <ListChecks className="h-7 w-7" strokeWidth={1.8} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Highest performed RDOT + EXT</p>
+              <p className="mt-1 text-[17px] font-medium leading-none text-white">Total {highestRdotExtension.total}</p>
+              <p
+                className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[#9fb2c9]"
+                title={highestRdotExtension.fullMonthLabel}
+              >
+                {highestRdotExtension.total > 0 ? `at ${highestRdotExtension.monthLabel}` : highestRdotExtension.monthLabel}
+              </p>
             </div>
           </div>
         </div>
