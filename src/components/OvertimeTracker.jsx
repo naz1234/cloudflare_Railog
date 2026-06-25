@@ -740,6 +740,11 @@ export default function OvertimeTracker() {
     return calculateAllowanceResult(savedCheck || {}, monthSummaries[monthIndex]?.hours || 0).status;
   }), [allowanceChecks, monthSummaries, selectedYear]);
 
+  const monthNightTotals = useMemo(() => MONTHS.map((_, monthIndex) => {
+    const savedCheck = getLatestAllowanceCheck(allowanceChecks, selectedYear, monthIndex + 1);
+    return Math.max(0, Math.trunc(parseAmount(savedCheck?.nightDays)));
+  }), [allowanceChecks, selectedYear]);
+
   const visibleRecords = useMemo(() => recordsForYear
     .filter((record) => Number(record.date.slice(5, 7)) === selectedMonth + 1)
     .sort((a, b) => a.date.localeCompare(b.date) || String(a.createdAt || "").localeCompare(String(b.createdAt || ""))),
@@ -1183,6 +1188,7 @@ export default function OvertimeTracker() {
           {monthSummaries.map((summary, monthIndex) => {
             const active = selectedMonth === monthIndex;
             const allowanceStatus = active ? allowanceResult.status : monthAllowanceStatuses[monthIndex];
+            const totalNights = active ? allowanceResult.nightDays : monthNightTotals[monthIndex];
             const allowanceStatusLabel = allowanceStatus === "CORRECT"
               ? "Correct allowance amount"
               : allowanceStatus === "SHORT"
@@ -1244,12 +1250,16 @@ export default function OvertimeTracker() {
                   </div>
                 </div>
 
-                <div className="mt-2.5 border-t border-[#284761]/70 pt-2">
-                  <p className="text-[13px] font-medium text-white">
-                    Total Hour : {summary.hours.toFixed(1)} hrs
+                <div className="mt-2.5 border-t border-[#284761]/70 pt-2 text-[13px] font-medium text-white">
+                  <p className="grid grid-cols-[74px_8px_1fr] items-baseline">
+                    <span>Total Hour</span>
+                    <span>:</span>
+                    <span>{summary.hours.toFixed(1)} hrs</span>
                   </p>
-                  <p className="mt-1 text-[11px] text-white">
-                    {summary.noteCount} monthly note{summary.noteCount === 1 ? "" : "s"}
+                  <p className="mt-1 grid grid-cols-[74px_8px_1fr] items-baseline">
+                    <span>Total Night</span>
+                    <span>:</span>
+                    <span>{totalNights}</span>
                   </p>
                 </div>
               </button>
