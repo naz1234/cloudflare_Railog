@@ -3229,6 +3229,71 @@ function getRequestGlow(item) {
   return `0 0 0 1px ${hexToRgba(accent, 0.16)}, 0 0 14px ${hexToRgba(accent, 0.28)}, 0 2px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06)`;
 }
 
+function getStablingRequestCategory(item = null) {
+  const label = normalizeRequestIdentity(
+    item?.badgeText || item?.remark || item?.displayType || item?.typeKey || ""
+  );
+
+  if (!label) return "normal";
+  if (label.includes("UNFIT") || label.includes("NOT FIT") || label.includes("INBOUND")) return "critical";
+  if (label.includes("RST CM") || label === "SR" || label.startsWith("SR ") || label.includes("CORRECTIVE")) return "sr";
+  if (label.includes("RST PM") || label === "PM" || label.startsWith("PM ") || label.includes("PREVENTIVE")) return "pm";
+  if (label === "W TA" || label.includes("TA REQUIRED") || label.includes("WITH TA")) return "ta";
+  if (label.includes("WASH")) return "wash";
+  return "custom";
+}
+
+function getStablingRequestPriority(item = null) {
+  const category = getStablingRequestCategory(item);
+  return { critical: 0, sr: 1, pm: 2, ta: 3, wash: 4, custom: 5, normal: 6 }[category] ?? 6;
+}
+
+function getPrimaryStablingRequest(items = []) {
+  if (!Array.isArray(items) || items.length === 0) return null;
+  return [...items].sort((a, b) => getStablingRequestPriority(a) - getStablingRequestPriority(b))[0] || null;
+}
+
+function getStablingRequestVisual(item = null) {
+  const category = getStablingRequestCategory(item);
+  const fallbackAccent = getRequestAccent(item);
+
+  const visuals = {
+    critical: {
+      accent: "#fb5b63",
+      gradient: "linear-gradient(135deg,rgba(239,68,68,0.26) 0%,#2a0c16 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(239,68,68,0.16),0 0 14px rgba(239,68,68,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+    },
+    sr: {
+      accent: "#fb923c",
+      gradient: "linear-gradient(135deg,rgba(249,115,22,0.25) 0%,#2b1708 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(249,115,22,0.16),0 0 14px rgba(249,115,22,0.27),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+    },
+    pm: {
+      accent: "#d879ff",
+      gradient: "linear-gradient(135deg,rgba(168,85,247,0.28) 0%,#21103b 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(168,85,247,0.17),0 0 14px rgba(168,85,247,0.30),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+    },
+    ta: {
+      accent: "#2ee6b7",
+      gradient: "linear-gradient(135deg,rgba(16,185,129,0.25) 0%,#062a23 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(16,185,129,0.16),0 0 14px rgba(16,185,129,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+    },
+    wash: {
+      accent: "#4de3ff",
+      gradient: "linear-gradient(135deg,rgba(34,211,238,0.24) 0%,#062937 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(34,211,238,0.16),0 0 14px rgba(34,211,238,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+    },
+  };
+
+  if (visuals[category]) return visuals[category];
+
+  return {
+    accent: fallbackAccent,
+    gradient: `linear-gradient(135deg,${hexToRgba(fallbackAccent, 0.24)} 0%,#10243a 48%,#071828 100%)`,
+    glow: `0 0 0 1px ${hexToRgba(fallbackAccent, 0.16)},0 0 14px ${hexToRgba(fallbackAccent, 0.28)},0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)`,
+  };
+}
+
 function getRequestPillStyle(item, options = {}) {
   const accent = getRequestAccent(item);
   const showSuppressedStyle = options.showSuppressedStyle !== false;
@@ -20952,7 +21017,8 @@ function RoadRow({
         const val = blocks[bi]?.trainId || "";
         const key = normalizeTrainId(val);
         const maintList = key ? maintenanceMap[key] || [] : [];
-        const primaryMaint = maintList[0] || null;
+        const primaryMaint = getPrimaryStablingRequest(maintList);
+        const primaryVisual = primaryMaint ? getStablingRequestVisual(primaryMaint) : null;
         const isDup = key && duplicates.has(key);
         const cellFlashKey = `${depot}-${label}-${bi}`;
         const isFlashing = flashingCells && flashingCells.has(cellFlashKey);
@@ -20967,7 +21033,7 @@ function RoadRow({
 
         let cellBg = "#10263b";
         let trainColor = "#e2eaf4";
-        const requestAccent = primaryMaint ? getRequestAccent(primaryMaint) : "#4f8ef7";
+        const requestAccent = primaryVisual?.accent || "#4f8ef7";
 
         if (isFlashing) {
           cellBg = "#7f1d1d";
@@ -20987,7 +21053,7 @@ function RoadRow({
           : isDup
           ? "linear-gradient(135deg,#2d0a0a,#1a0505)"
           : key && primaryMaint
-          ? getRequestCardGradient(primaryMaint)
+          ? primaryVisual.gradient
           : key
           ? "linear-gradient(135deg,#0f2d4a,#081e32)"
           : "none";
@@ -21003,7 +21069,7 @@ function RoadRow({
         const cardGlow = isSearchMatch
           ? "0 0 0 3px rgba(250,204,21,0.18), 0 2px 8px rgba(0,0,0,0.45)"
           : key && primaryMaint && !isFlashing && !isDup
-          ? getRequestGlow(primaryMaint)
+          ? primaryVisual.glow
           : key && !isFlashing && !isDup
           ? "0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)"
           : undefined;
@@ -21024,18 +21090,13 @@ function RoadRow({
             <div
               className="relative flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-150"
               style={{
-                minHeight: 64,
-                padding: "6px 4px",
+                minHeight: 76,
+                padding: "7px 4px",
                 background: cardGrad,
                 border: cardBorder,
                 boxShadow: cardGlow,
               }}
             >
-              {key && !isFlashing && !isDup && (
-                <div className="absolute top-1 right-1.5 opacity-25 pointer-events-none">
-                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={trainColor} strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/></svg>
-                </div>
-              )}
               <input
                 ref={(el) => { cellRefs.current[`${depot}-${roadIndex}-${i}`] = el; }}
                 type="text"
@@ -21052,24 +21113,53 @@ function RoadRow({
                 }}
                 placeholder="—"
                 className="w-full text-center font-black outline-none bg-transparent leading-none"
-                style={{ fontSize: key ? 16 : 13, color: isFlashing ? "#fecaca" : isDup ? "#f87171" : key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}
+                style={{ fontSize: key ? 17 : 13, color: isFlashing ? "#fecaca" : isDup ? "#f87171" : key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}
               />
-              {isFlashing ? (
-                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black whitespace-nowrap" style={{ background: "rgba(239,68,68,0.25)", color: "#fca5a5", border: "1px solid #ef4444" }}>DUP!</span>
-              ) : isDup ? (
-                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black whitespace-nowrap" style={{ background: "rgba(239,68,68,0.2)", color: "#f87171", border: "1px solid #ef4444" }}>DUP</span>
-              ) : (
-                maintList.map((item) => (
-                  <span
-                    key={`${key}-${item.displayType}-${item.badgeText || ""}`}
-                    className="inline-flex min-w-[92px] w-fit max-w-full items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-normal leading-none whitespace-nowrap text-center"
-                    style={getRequestPillStyle(item, { showSuppressedStyle: false })}
-                    title={item.badgeText || item.displayType}
-                  >
-                    {item.badgeText || item.displayType}
-                  </span>
-                ))
+
+              {key && (
+                <div
+                  aria-hidden="true"
+                  style={{
+                    width: "calc(100% - 16px)",
+                    height: 1,
+                    margin: "2px 0 1px",
+                    background: isFlashing || isDup
+                      ? "rgba(248,113,113,0.72)"
+                      : primaryMaint
+                      ? hexToRgba(requestAccent, 0.72)
+                      : "rgba(126,184,224,0.42)",
+                  }}
+                />
               )}
+
+              {isFlashing || isDup ? (
+                <span
+                  className="block w-full truncate text-center text-[10px] font-bold leading-tight"
+                  style={{ color: "#f87171" }}
+                  title="Duplicate train ID"
+                >
+                  {isFlashing ? "DUPLICATE!" : "DUPLICATE"}
+                </span>
+              ) : maintList.length > 0 ? (
+                <div className="flex w-full flex-col items-center gap-0.5 px-1">
+                  {maintList.map((item) => {
+                    const itemVisual = getStablingRequestVisual(item);
+                    const label = item.badgeText || item.displayType || item.typeKey || "Request";
+                    return (
+                      <span
+                        key={`${key}-${item.displayType}-${item.badgeText || ""}`}
+                        className="block w-full truncate text-center text-[10px] font-medium leading-tight"
+                        style={{ color: itemVisual.accent }}
+                        title={label}
+                      >
+                        {label}
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : key ? (
+                <span className="block w-full text-center text-[10px] font-medium leading-tight" style={{ color: "#5f7f99" }}>—</span>
+              ) : null}
             </div>
           </td>
         );
