@@ -840,12 +840,12 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                         style={requestCardStyle.card}
                       >
                         <span
-                          className="flex h-[14px] items-center justify-center border-r text-[12px] font-bold leading-none"
+                          className="flex h-[14px] items-center justify-center border-r text-[12px] font-normal leading-none"
                           style={{ borderColor: requestCardStyle.divider }}
                         >
                           {req.trainId}
                         </span>
-                        <span className="min-w-0 truncate px-2 text-left text-[12px] font-semibold leading-none">
+                        <span className="min-w-0 truncate px-2 text-left text-[12px] font-normal leading-none">
                           {displayLabel}
                         </span>
                         <div className="flex items-center justify-end gap-1 pr-1">
