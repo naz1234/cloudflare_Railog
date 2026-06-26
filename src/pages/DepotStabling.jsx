@@ -9314,9 +9314,6 @@ function TrainMovementContent() {
               >
                 Reset
               </button>
-              <span className="rounded-md border px-2 py-0.5 text-[9px] font-bold" style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}12` }}>
-                {isAutomatic ? "Automatic" : "Manual"}
-              </span>
             </div>
             <pre className="max-h-44 overflow-auto whitespace-pre-wrap font-mono text-[12px] font-medium leading-[1.35] text-[#c8d8ea]">{buildTp1MovementText({ preview: true })}</pre>
           </div>
