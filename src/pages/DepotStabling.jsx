@@ -19749,6 +19749,33 @@ const MAIN_STABLING_BUTTON_BLUE = {
   textShadow: "0 0 8px rgba(191,219,254,0.55)",
 };
 
+const MAIN_STABLING_BUTTON_COPY = {
+  ...MAIN_STABLING_BUTTON_COMMON,
+  background: "linear-gradient(135deg, rgba(4,47,40,0.96) 0%, rgba(5,78,61,0.90) 50%, rgba(3,35,32,0.98) 100%)",
+  borderColor: "rgba(16,185,129,0.94)",
+  color: "#6ee7b7",
+  boxShadow: "0 0 0 1px rgba(16,185,129,0.18), 0 0 14px rgba(16,185,129,0.34), 0 0 25px rgba(5,150,105,0.20), inset 0 1px 0 rgba(209,250,229,0.12)",
+  textShadow: "0 0 8px rgba(110,231,183,0.44)",
+};
+
+const MAIN_STABLING_BUTTON_PDF = {
+  ...MAIN_STABLING_BUTTON_COMMON,
+  background: "linear-gradient(135deg, rgba(7,39,67,0.96) 0%, rgba(8,72,113,0.90) 50%, rgba(5,30,52,0.98) 100%)",
+  borderColor: "rgba(56,189,248,0.94)",
+  color: "#7dd3fc",
+  boxShadow: "0 0 0 1px rgba(56,189,248,0.18), 0 0 14px rgba(14,165,233,0.36), 0 0 25px rgba(2,132,199,0.20), inset 0 1px 0 rgba(224,242,254,0.12)",
+  textShadow: "0 0 8px rgba(125,211,252,0.44)",
+};
+
+const MAIN_STABLING_BUTTON_CLEAR = {
+  ...MAIN_STABLING_BUTTON_COMMON,
+  background: "linear-gradient(135deg, rgba(64,17,27,0.96) 0%, rgba(102,24,39,0.90) 50%, rgba(48,12,21,0.98) 100%)",
+  borderColor: "rgba(244,63,94,0.94)",
+  color: "#fb7185",
+  boxShadow: "0 0 0 1px rgba(244,63,94,0.18), 0 0 14px rgba(244,63,94,0.34), 0 0 25px rgba(225,29,72,0.20), inset 0 1px 0 rgba(255,228,230,0.11)",
+  textShadow: "0 0 8px rgba(251,113,133,0.44)",
+};
+
 const MAIN_STABLING_BUTTON_PRIMARY = {
   ...MAIN_STABLING_BUTTON_COMMON,
   background: "linear-gradient(135deg, #0f63ff 0%, #1d8bff 52%, #0757df 100%)",
@@ -19797,7 +19824,7 @@ function ClearAllStablingButton({ onClearAll }) {
     <button
       onClick={handleClick}
       className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
-      style={confirming ? MAIN_STABLING_BUTTON_DANGER : MAIN_STABLING_BUTTON_BLUE}
+      style={confirming ? MAIN_STABLING_BUTTON_DANGER : MAIN_STABLING_BUTTON_CLEAR}
     >
       {!confirming && (
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -20929,7 +20956,7 @@ function StablingSection({
             <button
               onClick={handleCopyStabling}
               className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
-              style={copiedStabling ? MAIN_STABLING_BUTTON_SUCCESS : MAIN_STABLING_BUTTON_BLUE}
+              style={copiedStabling ? MAIN_STABLING_BUTTON_SUCCESS : MAIN_STABLING_BUTTON_COPY}
             >
               {copiedStabling ? (
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -20942,7 +20969,7 @@ function StablingSection({
               onClick={handleDownloadPdf}
               disabled={downloadingPdf}
               className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
-              style={MAIN_STABLING_BUTTON_BLUE}
+              style={MAIN_STABLING_BUTTON_PDF}
               title="Download PDF print version with colour-coded remark pills"
             >
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
