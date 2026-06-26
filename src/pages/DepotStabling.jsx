@@ -7899,6 +7899,11 @@ function TrainMovementContent() {
     setTp1Entries([]);
   };
 
+  const copyTp1MovementPreview = async () => {
+    await copyTextToClipboard(buildTp1MovementText({ preview: true }));
+    showCopyFeedback("tp1-preview", "copied");
+  };
+
   const copyTp1MovementLogs = async () => {
     const lines = sortTp1MovementEntries(tp1Entries).map((entry) => sortTp1MovementTextLinesByTime(entry.text));
     if (lines.length === 0) {
@@ -9162,6 +9167,9 @@ function TrainMovementContent() {
     ];
 
     const visibleManualFlowSteps = manualFlowSteps.filter((step) => step.visible);
+    const tp1RequiredReady = isAutomatic
+      ? automaticPstReady
+      : manualToManualReady;
 
     const renderTp1FlowStepCard = (step, index) => (
       <div
@@ -9224,27 +9232,16 @@ function TrainMovementContent() {
       </div>
     );
 
-    const renderTp1ZigZagFlowCard = ({ title, subtitle, steps, onReset, resetTitle }) => (
+    const renderTp1ZigZagFlowCard = ({ title, subtitle, steps }) => (
       <div className="rounded-xl border border-[#1e4060] bg-[#031827] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-[12px] font-black uppercase tracking-[0.12em] text-white">{title}</p>
             <p className="text-[10px] font-semibold text-[#8ea8c0]">{subtitle}</p>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="rounded-full border px-2 py-0.5 text-[9px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}16`, color: accent }}>
-              L ↔ R
-            </span>
-            <button
-              type="button"
-              onClick={onReset}
-              className="rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] shadow-[0_0_14px_rgba(239,68,68,0.38),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.03]"
-              style={{ borderColor: "rgba(248,113,113,0.85)", backgroundColor: "rgba(127,29,29,0.36)", color: "#fecaca" }}
-              title={resetTitle}
-            >
-              Reset
-            </button>
-          </div>
+          <span className="rounded-full border px-2 py-0.5 text-[9px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}16`, color: accent }}>
+            L ↔ R
+          </span>
         </div>
 
         {renderTp1FlowRows(steps)}
@@ -9292,35 +9289,49 @@ function TrainMovementContent() {
                 title: "Automatic Flow",
                 subtitle: "Compact flow. Next pill appears immediately while typing continues.",
                 steps: visibleAutomaticFlowSteps,
-                onReset: resetTp1AutomaticFlow,
-                resetTitle: "Reset Automatic Flow",
               })
             : renderTp1ZigZagFlowCard({
                 title: "Manual Flow",
                 subtitle: "Compact flow. Next pill appears immediately while typing continues.",
                 steps: visibleManualFlowSteps,
-                onReset: resetTp1ManualFlow,
-                resetTitle: "Reset Manual Flow",
               })}
 
           <div className="rounded-xl border border-[#1e4060] bg-[#041727] p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
-              <span className="rounded-md border px-2 py-1 text-[10px] font-bold" style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}12` }}>
+            <div className="mb-2 flex flex-wrap items-center justify-start gap-1.5">
+              <p className="mr-0.5 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
+              <button
+                type="button"
+                onClick={copyTp1MovementPreview}
+                className="inline-flex items-center gap-1 rounded-md border border-[#2f6084] bg-[#0a2236] px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-[#9fd3f6] transition-all hover:border-[#58a6ff] hover:text-white"
+              >
+                <MovementIcon type="copy" color="currentColor" />
+                {getCopyFeedbackLabel("tp1-preview", "Copy")}
+              </button>
+              <button
+                type="button"
+                onClick={addTp1MovementLog}
+                disabled={!tp1RequiredReady}
+                className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-white transition-all enabled:hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-35"
+                style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
+                title={tp1RequiredReady ? "Add Inbound / Outbound Movement Log" : "Complete all required fields first"}
+              >
+                <span className="text-[11px] leading-none">+</span> Add to Log
+              </button>
+              <button
+                type="button"
+                onClick={isAutomatic ? resetTp1AutomaticFlow : resetTp1ManualFlow}
+                className="inline-flex items-center rounded-md border px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] transition-all hover:scale-[1.03]"
+                style={{ borderColor: "rgba(248,113,113,0.75)", backgroundColor: "rgba(127,29,29,0.30)", color: "#fecaca" }}
+                title={isAutomatic ? "Reset Automatic Flow" : "Reset Manual Flow"}
+              >
+                Reset
+              </button>
+              <span className="rounded-md border px-2 py-0.5 text-[9px] font-bold" style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}12` }}>
                 {isAutomatic ? "Automatic" : "Manual"}
               </span>
             </div>
             <pre className="max-h-44 overflow-auto whitespace-pre-wrap font-mono text-[12px] font-medium leading-[1.35] text-[#c8d8ea]">{buildTp1MovementText({ preview: true })}</pre>
           </div>
-
-          <button
-            type="button"
-            onClick={addTp1MovementLog}
-            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-[12px] font-medium text-white shadow-[0_0_16px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.01]"
-            style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
-          >
-            <span className="text-[12px] leading-none">+</span> Add Inbound / Outbound Movement Log
-          </button>
 
           <section className="overflow-hidden rounded-xl border border-[#1e4060] bg-[#03111d]">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#12304a] px-3 py-2">
