@@ -6106,18 +6106,25 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   (displayTimingValue || "").toString().trim() ||
                   (remarkValue || "").toString().trim()
                 );
+                const hasDuplicateValue = isDuplicateTrainId || isDuplicateTid;
                 const rowCardVisual = getTrainRemRowCardVisual(
-                  trainRemRequestItems[0],
-                  remarkValue,
+                  null,
+                  "",
                   {
                     hasContent: hasRowContent,
-                    isDuplicate: isDuplicateTrainId || isDuplicateTid,
+                    isDuplicate: hasDuplicateValue,
                   }
                 );
+                const remarkCardVisual = (remarkValue || "").toString().trim() && !hasDuplicateValue
+                  ? getTrainRemRowCardVisual(trainRemRequestItems[0], remarkValue, {
+                      hasContent: true,
+                      isDuplicate: false,
+                    })
+                  : null;
                 const trainIdTextColor = isDuplicateTrainId
                   ? "#fecaca"
                   : hasTrainId
-                    ? rowCardVisual.accent
+                    ? "#c5d8ea"
                     : "#466681";
                 const tidTextColor = isDuplicateTid
                   ? "#fecaca"
@@ -6129,9 +6136,17 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 const timingTextColor = (displayTimingValue || "").toString().trim()
                   ? "#c5d8ea"
                   : "#58758f";
-                const remarkTextColor = (remarkValue || "").toString().trim()
-                  ? rowCardVisual.accent
-                  : "#58758f";
+                const remarkTextColor = hasDuplicateValue
+                  ? "#fecaca"
+                  : (remarkValue || "").toString().trim()
+                    ? remarkCardVisual?.accent || "#c5d8ea"
+                    : "#58758f";
+                const remarkCellBackground = remarkCardVisual
+                  ? `linear-gradient(90deg,${hexToRgba(remarkCardVisual.accent, 0.11)} 0%,${hexToRgba(remarkCardVisual.accent, 0.20)} 100%)`
+                  : "transparent";
+                const remarkCellBoxShadow = remarkCardVisual
+                  ? `inset 2px 0 0 ${hexToRgba(remarkCardVisual.accent, 0.82)}`
+                  : "none";
 
                 return (
                   <Fragment key={`${depot}-train-rem-${index}`}>
@@ -6231,8 +6246,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                             readOnly={Boolean(requestRemark) || referenceOnly}
                             title={referenceOnly ? rowStatusTitle : requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
                             placeholder={referenceOnly ? "" : "Remark"}
-                            className={`h-full min-w-0 border-0 bg-transparent px-1.5 text-left text-[11px] font-normal outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${requestRemark || referenceOnly ? "cursor-default" : ""}`}
-                            style={{ color: remarkTextColor }}
+                            className={`h-full min-w-0 border-0 px-1.5 text-left text-[11px] font-normal outline-none placeholder:text-[#36536c] focus:brightness-110 ${requestRemark || referenceOnly ? "cursor-default" : ""}`}
+                            style={{
+                              color: remarkTextColor,
+                              background: remarkCellBackground,
+                              boxShadow: remarkCellBoxShadow,
+                            }}
                           />
                         </div>
                       </td>
