@@ -228,6 +228,77 @@ function getRequestCardStyle(typeKey, displayLabel = "") {
   };
 }
 
+// Mirrors the request-card visual language used inside the West and East
+// main stabling tables. Keep this local so only the compact
+// "Already at Stabling / Workshop" rows change appearance.
+function getMainStablingRequestCategory(value = "") {
+  const label = normalizeRequestIdentity(value);
+
+  if (!label) return "custom";
+  if (label.includes("UNFIT") || label.includes("NOT FIT") || label.includes("INBOUND")) return "critical";
+  if (label.includes("RST CM") || label === "SR" || label.startsWith("SR ") || label.includes("CORRECTIVE")) return "sr";
+  if (label.includes("RST PM") || label === "PM" || label.startsWith("PM ") || label.includes("PREVENTIVE")) return "pm";
+  if (label === "W TA" || label.includes("TA REQUIRED") || label.includes("WITH TA")) return "ta";
+  if (label.includes("WASH")) return "wash";
+  return "custom";
+}
+
+function rgbaFromHex(hex = "#4f8ef7", alpha = 1) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function getMainStablingCompactCardStyle(typeKey, displayLabel = "") {
+  const styleKey = getKnownRequestColorKey(typeKey || displayLabel);
+  const configuredColor = REQUEST_COLORS[styleKey];
+  const fallbackAccent = configuredColor?.bg || getCustomRequestColor(displayLabel || typeKey);
+  const category = getMainStablingRequestCategory(displayLabel || typeKey);
+
+  const visuals = {
+    critical: {
+      accent: "#fb5b63",
+      gradient: "linear-gradient(135deg,rgba(239,68,68,0.26) 0%,#2a0c16 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(239,68,68,0.16),0 0 14px rgba(239,68,68,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+    },
+    sr: {
+      accent: "#fb923c",
+      gradient: "linear-gradient(135deg,rgba(249,115,22,0.25) 0%,#2b1708 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(249,115,22,0.16),0 0 14px rgba(249,115,22,0.27),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+    },
+    pm: {
+      accent: "#d879ff",
+      gradient: "linear-gradient(135deg,rgba(168,85,247,0.28) 0%,#21103b 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(168,85,247,0.17),0 0 14px rgba(168,85,247,0.30),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+    },
+    ta: {
+      accent: "#2ee6b7",
+      gradient: "linear-gradient(135deg,rgba(16,185,129,0.25) 0%,#062a23 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(16,185,129,0.16),0 0 14px rgba(16,185,129,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+    },
+    wash: {
+      accent: "#4de3ff",
+      gradient: "linear-gradient(135deg,rgba(34,211,238,0.24) 0%,#062937 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(34,211,238,0.16),0 0 14px rgba(34,211,238,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+    },
+  };
+
+  const visual = visuals[category] || {
+    accent: fallbackAccent,
+    gradient: `linear-gradient(135deg,${rgbaFromHex(fallbackAccent, 0.24)} 0%,#10243a 48%,#071828 100%)`,
+    glow: `0 0 0 1px ${rgbaFromHex(fallbackAccent, 0.16)},0 0 14px ${rgbaFromHex(fallbackAccent, 0.28)},0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)`,
+  };
+
+  return {
+    accent: visual.accent,
+    card: {
+      background: visual.gradient,
+      border: `1.5px solid ${visual.accent}`,
+      boxShadow: visual.glow,
+    },
+    divider: rgbaFromHex(visual.accent, 0.72),
+  };
+}
+
 function getColumnValue(row, possibleNames) {
   const keys = Object.keys(row || {});
   const matchedKey = keys.find((key) =>
@@ -834,7 +905,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 const displayLabel = displayType(req);
                 const crossOutInfo = getCrossOutInfo(req);
                 const crossOutReason = crossOutInfo.reason;
-                const requestCardStyle = getRequestCardStyle(displayLabel, displayLabel);
+                const requestCardStyle = getMainStablingCompactCardStyle(displayLabel, displayLabel);
                 const statusMessage = getAlreadyStatusMessage(crossOutInfo);
 
                 return (
@@ -845,16 +916,19 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   >
                     <td colSpan={3} className="h-[24px] p-[2px]">
                       <div
-                        className="grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_44px] items-center overflow-visible rounded-[6px] text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-110"
+                        className="grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_44px] items-center overflow-visible rounded-[6px] transition-[filter,box-shadow] duration-150 group-hover:brightness-110"
                         style={requestCardStyle.card}
                       >
                         <span
                           className="flex h-[14px] items-center justify-center border-r text-[12px] font-normal leading-none"
-                          style={{ borderColor: requestCardStyle.divider }}
+                          style={{ borderColor: requestCardStyle.divider, color: requestCardStyle.accent }}
                         >
                           {req.trainId}
                         </span>
-                        <span className="min-w-0 truncate px-2 text-left text-[12px] font-normal leading-none">
+                        <span
+                          className="min-w-0 truncate px-2 text-left text-[12px] font-normal leading-none"
+                          style={{ color: requestCardStyle.accent }}
+                        >
                           {displayLabel}
                         </span>
                         <div className="flex items-center justify-end gap-1 pr-1">
