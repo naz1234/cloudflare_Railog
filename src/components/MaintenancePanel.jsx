@@ -104,9 +104,9 @@ function DeleteRequestIcon() {
   return (
     <span
       aria-hidden="true"
-      className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-red-300/90 bg-[#941c24] shadow-[0_0_8px_rgba(148,28,36,0.65)] transition-all group-hover/delete:scale-105 group-hover/delete:bg-[#c92a35]"
+      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-red-300/85 bg-[#941c24] shadow-[0_0_6px_rgba(148,28,36,0.5)] transition-all group-hover/delete:scale-105 group-hover/delete:bg-[#c92a35]"
     >
-      <X className="h-3 w-3 stroke-[3.5] text-white" />
+      <X className="h-2.5 w-2.5 stroke-[3.5] text-white" />
     </span>
   );
 }
@@ -123,13 +123,13 @@ function AlreadyStatusIcon({ message, reason }) {
       aria-label={message}
     >
       <span
-        className={`inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border ${
+        className={`inline-flex h-4 w-4 items-center justify-center rounded-full border ${
           isWorkshop
-            ? "border-[#fbbf24] bg-[#fbbf24] shadow-[0_0_8px_rgba(251,191,36,0.6)]"
-            : "border-emerald-300/80 bg-[#58c96b] shadow-[0_0_8px_rgba(88,201,107,0.55)]"
+            ? "border-[#fbbf24] bg-[#fbbf24] shadow-[0_0_6px_rgba(251,191,36,0.46)]"
+            : "border-emerald-300/80 bg-[#58c96b] shadow-[0_0_6px_rgba(88,201,107,0.42)]"
         }`}
       >
-        <Check className="h-3 w-3 stroke-[3.5] text-white" />
+        <Check className="h-2.5 w-2.5 stroke-[3.5] text-white" />
       </span>
       <span className="already-status-bubble pointer-events-none absolute right-[25px] top-1/2 z-[90] -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150">
         <span className="absolute -right-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-r border-t border-slate-200 bg-white" />
@@ -258,34 +258,34 @@ function getMainStablingCompactCardStyle(typeKey, displayLabel = "") {
     critical: {
       accent: "#fb5b63",
       gradient: "linear-gradient(135deg,rgba(239,68,68,0.26) 0%,#2a0c16 48%,#071828 100%)",
-      glow: "0 0 0 1px rgba(239,68,68,0.16),0 0 14px rgba(239,68,68,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+      glow: "0 0 0 1px rgba(239,68,68,0.12),0 0 10px rgba(239,68,68,0.21),0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.05)",
     },
     sr: {
       accent: "#fb923c",
       gradient: "linear-gradient(135deg,rgba(249,115,22,0.25) 0%,#2b1708 48%,#071828 100%)",
-      glow: "0 0 0 1px rgba(249,115,22,0.16),0 0 14px rgba(249,115,22,0.27),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+      glow: "0 0 0 1px rgba(249,115,22,0.12),0 0 10px rgba(249,115,22,0.21),0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.05)",
     },
     pm: {
       accent: "#d879ff",
-      gradient: "linear-gradient(135deg,rgba(168,85,247,0.28) 0%,#21103b 48%,#071828 100%)",
-      glow: "0 0 0 1px rgba(168,85,247,0.17),0 0 14px rgba(168,85,247,0.30),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+      gradient: "linear-gradient(135deg,rgba(168,85,247,0.24) 0%,#21103b 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(168,85,247,0.12),0 0 10px rgba(168,85,247,0.22),0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.05)",
     },
     ta: {
       accent: "#2ee6b7",
       gradient: "linear-gradient(135deg,rgba(16,185,129,0.25) 0%,#062a23 48%,#071828 100%)",
-      glow: "0 0 0 1px rgba(16,185,129,0.16),0 0 14px rgba(16,185,129,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+      glow: "0 0 0 1px rgba(16,185,129,0.12),0 0 10px rgba(16,185,129,0.21),0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.05)",
     },
     wash: {
       accent: "#4de3ff",
       gradient: "linear-gradient(135deg,rgba(34,211,238,0.24) 0%,#062937 48%,#071828 100%)",
-      glow: "0 0 0 1px rgba(34,211,238,0.16),0 0 14px rgba(34,211,238,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+      glow: "0 0 0 1px rgba(34,211,238,0.12),0 0 10px rgba(34,211,238,0.22),0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.05)",
     },
   };
 
   const visual = visuals[category] || {
     accent: fallbackAccent,
-    gradient: `linear-gradient(135deg,${rgbaFromHex(fallbackAccent, 0.24)} 0%,#10243a 48%,#071828 100%)`,
-    glow: `0 0 0 1px ${rgbaFromHex(fallbackAccent, 0.16)},0 0 14px ${rgbaFromHex(fallbackAccent, 0.28)},0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)`,
+    gradient: `linear-gradient(135deg,${rgbaFromHex(fallbackAccent, 0.22)} 0%,#10243a 48%,#071828 100%)`,
+    glow: `0 0 0 1px ${rgbaFromHex(fallbackAccent, 0.12)},0 0 10px ${rgbaFromHex(fallbackAccent, 0.21)},0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.05)`,
   };
 
   return {
@@ -688,8 +688,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const visibleRequestRowCount = Math.max(regularRequests.length, 1);
   const emptyRequestRowCount = Math.max(0, MIN_VISIBLE_REQUEST_ROWS - visibleRequestRowCount);
 
-  const inputCls = "w-full border border-[#1e4060] rounded-full px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] bg-[#091828] text-[#c8d8ea] transition-all placeholder:text-[#2b4f6b]";
-  const labelCls = "block text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-widest mb-1";
+  const inputCls = "w-full border border-[#1e4060] rounded-full px-3 py-[5px] text-xs outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] bg-[#091828] text-[#c8d8ea] transition-all placeholder:text-[#2b4f6b]";
+  const labelCls = "block text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-widest mb-0.5";
 
   return (
     <div className="relative overflow-visible bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shadow-md">
@@ -713,8 +713,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       </div>
 
       {/* Input Form */}
-      <div className="p-3 space-y-2.5 border-b border-[#1a3a56]">
-        <div className="rounded-xl border border-[#1e4060] bg-[#071e33] p-2.5 shadow-inner">
+      <div className="border-b border-[#1a3a56] p-2.5 space-y-2">
+        <div className="rounded-xl border border-[#1e4060] bg-[#071e33] p-2 shadow-inner">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">
@@ -726,7 +726,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               </p>
             </div>
 
-            <label className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[#2b4f6b] bg-[#10263b] px-2.5 py-1.5 text-[10px] font-bold text-[#c8d8ea] transition-all hover:bg-[#1a3a5c] active:scale-[0.98]">
+            <label className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[#2b4f6b] bg-[#10263b] px-2.5 py-1 text-[10px] font-bold text-[#c8d8ea] transition-all hover:bg-[#1a3a5c] active:scale-[0.98]">
               <Upload className="w-3 h-3" />
               Excel
               <input
@@ -787,7 +787,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         </div>
         {error && <p className="text-[10px] text-red-400 bg-red-950/40 border border-red-800/60 rounded-lg px-2.5 py-1.5">{error}</p>}
         <button onClick={handleAdd}
-          className="w-full bg-[#1a3a5c] hover:bg-[#1e4d72] border border-[#2b4f6b] active:scale-[0.98] text-[#c8d8ea] font-bold py-2 text-xs rounded-full transition-all flex items-center justify-center gap-1.5 mt-1">
+          className="mt-0.5 flex w-full items-center justify-center gap-1.5 rounded-full border border-[#2b4f6b] bg-[#1a3a5c] py-1.5 text-xs font-bold text-[#c8d8ea] transition-all hover:bg-[#1e4d72] active:scale-[0.98]">
           <Plus className="w-3.5 h-3.5" /> Add Request
         </button>
       </div>
@@ -850,7 +850,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   >
                     <td colSpan={3} className="h-[24px] p-[2px]">
                       <div
-                        className="request-cross-trigger relative grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-[6px] text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-110"
+                        className="request-cross-trigger relative grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-[6px] text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
                         style={workshopCardStyle}
                       >
                         <span
@@ -865,10 +865,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                         >
                           {displayLabel}
                         </span>
-                        <div className="flex items-center justify-end pr-1">
+                        <div className="flex items-center justify-end pr-1.5">
                           <button
                             onClick={() => onRemove(req.id)}
-                            className="group/delete relative z-30 inline-flex h-[18px] w-[18px] items-center justify-center"
+                            className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center"
                             aria-label={`Delete ${req.trainId}`}
                             title="Delete request"
                           >
@@ -919,7 +919,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   >
                     <td colSpan={3} className="h-[24px] p-[2px]">
                       <div
-                        className="grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_44px] items-center overflow-visible rounded-[6px] transition-[filter,box-shadow] duration-150 group-hover:brightness-110"
+                        className="grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_44px] items-center overflow-visible rounded-[6px] transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
                         style={requestCardStyle.card}
                       >
                         <span
@@ -934,10 +934,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                         >
                           {displayLabel}
                         </span>
-                        <div className="flex items-center justify-end gap-1 pr-1">
+                        <div className="flex items-center justify-end gap-1 pr-1.5">
                           <button
                             onClick={() => onRemove(req.id)}
-                            className="group/delete relative z-30 inline-flex h-[18px] w-[18px] items-center justify-center"
+                            className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center"
                             aria-label={`Delete ${req.trainId}`}
                             title="Delete request"
                           >
@@ -1003,7 +1003,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 >
                   <td colSpan={3} className="h-[24px] p-[2px]">
                     <div
-                      className="request-cross-trigger relative grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-[6px] text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-110"
+                      className="request-cross-trigger relative grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-[6px] text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
                       style={regularCardStyle}
                     >
                       <span
@@ -1018,10 +1018,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                       >
                         {displayLabel}
                       </span>
-                      <div className="flex items-center justify-end pr-1">
+                      <div className="flex items-center justify-end pr-1.5">
                         <button
                           onClick={() => onRemove(req.id)}
-                          className="group/delete relative z-30 inline-flex h-[18px] w-[18px] items-center justify-center"
+                          className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center"
                           aria-label={`Delete ${req.trainId}`}
                           title="Delete request"
                         >
