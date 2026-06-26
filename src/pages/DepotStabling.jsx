@@ -6139,7 +6139,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 const remarkTextColor = hasDuplicateValue
                   ? "#fecaca"
                   : (remarkValue || "").toString().trim()
-                    ? remarkCardVisual?.accent || "#c5d8ea"
+                    ? "#ffffff"
                     : "#58758f";
                 const remarkCellBackground = remarkCardVisual
                   ? `linear-gradient(90deg,${hexToRgba(remarkCardVisual.accent, 0.11)} 0%,${hexToRgba(remarkCardVisual.accent, 0.20)} 100%)`
