@@ -6685,6 +6685,7 @@ function normalizeTp1ExcelRoad(road = "") {
   const clean = String(road || "").trim();
   if (!clean) return "Automatic Area";
   if (/automatic\s+area/i.test(clean)) return "Automatic Area";
+  if (/^test\s*track$/i.test(clean)) return "Test Track";
   return clean.replace(/[\u2012\u2013\u2014\u2212]/g, "-").replace(/\s+/g, "").toUpperCase();
 }
 
@@ -6830,8 +6831,11 @@ function formatTp1NextWashForLog(value) {
 
 
 function formatTp1RoadForLog(road = "") {
-  const clean = String(road || "").trim().toUpperCase();
-  if (!clean) return "";
+  const raw = String(road || "").trim();
+  if (!raw) return "";
+  if (/^test\s*track$/i.test(raw)) return "Test Track";
+
+  const clean = raw.toUpperCase();
   return clean.replace(/^(WD|ED)[\s\u2013-]*(ST\d+)/i, (_, depot, stabling) => `${depot.toUpperCase()}\u2013${stabling.toUpperCase()}`);
 }
 
@@ -7042,6 +7046,7 @@ function TrainMovementContent() {
     "WD-ST14",
     "WD-ST13",
     "WD-ST12",
+    "Test Track",
   ];
 
   const [clockText, setClockText] = useState(() => formatTime(new Date()));
@@ -7787,14 +7792,14 @@ function TrainMovementContent() {
 
     if (!preview) {
       const missing = [];
-      if (!train) missing.push(movementType === "manual" ? "Train Set going to workshop" : "Train Set");
+      if (!train) missing.push(movementType === "manual" ? "Train Set going to workshop" : "Train Set (from workshop)");
       if (!tp1Form.planStatus) missing.push("Plan / Unplanned");
-      if (!isCompleteMovementTimeInput(tp1Form.trAtTp1)) missing.push("TR at TP1 (HH:MM)");
+      if (!isCompleteMovementTimeInput(tp1Form.trAtTp1)) missing.push(movementType === "automatic" ? "Time arrival at TP1 (HH:MM)" : "TR at TP1 (HH:MM)");
       if (!tp1Form.shunterName) missing.push("Shunter Name");
-      if (movementType === "automatic" && !isCompleteMovementTimeInput(tp1Form.trLocalized)) missing.push("TR Localized (HH:MM)");
-      if (movementType === "automatic" && !tp1Form.automaticStablingRoad) missing.push("Stabling");
-      if (movementType === "automatic" && !isCompleteMovementTimeInput(tp1Form.trainPrepCompletedTime)) missing.push("Train Prep Completed (HH:MM)");
-      if (movementType === "automatic" && !isCompleteMovementTimeInput(tp1Form.pstPerformedTime)) missing.push("PST Performed (HH:MM)");
+      if (movementType === "automatic" && !isCompleteMovementTimeInput(tp1Form.trLocalized)) missing.push("Time Train Localized (HH:MM)");
+      if (movementType === "automatic" && !tp1Form.automaticStablingRoad) missing.push("Parking location");
+      if (movementType === "automatic" && !isCompleteMovementTimeInput(tp1Form.trainPrepCompletedTime)) missing.push("Time Train Prep Completed (HH:MM)");
+      if (movementType === "automatic" && !isCompleteMovementTimeInput(tp1Form.pstPerformedTime)) missing.push("Time PST Performed (HH:MM)");
       if (movementType === "manual" && !isCompleteMovementTimeInput(tp1Form.fromTp1)) missing.push("Time start moving from TP1 (HH:MM)");
       if (movementType === "manual" && !isCompleteMovementTimeInput(tp1Form.toManual)) missing.push("Time arrival to Manual Area (HH:MM)");
 
@@ -8898,7 +8903,7 @@ function TrainMovementContent() {
     const automaticFlowSteps = [
       {
         key: "trainSet",
-        label: "Train Set",
+        label: "Train Set (from workshop)",
         visible: true,
         complete: automaticTrainSetReady,
         render: () => (
@@ -8937,7 +8942,7 @@ function TrainMovementContent() {
       },
       {
         key: "trAtTp1",
-        label: "TR at TP1",
+        label: "Time arrival at TP1",
         visible: automaticPlanReady,
         complete: automaticTrAtTp1Ready,
         render: () => renderTp1TimeInput("trAtTp1"),
@@ -8962,14 +8967,14 @@ function TrainMovementContent() {
       },
       {
         key: "trLocalized",
-        label: "TR Localized",
+        label: "Time Train Localized",
         visible: automaticShunterReady,
         complete: automaticTrLocalizedReady,
         render: () => renderTp1TimeInput("trLocalized"),
       },
       {
         key: "automaticStablingRoad",
-        label: "Stabling",
+        label: "Parking location",
         visible: automaticTrLocalizedReady,
         complete: automaticStablingReady,
         render: () => (
@@ -8978,7 +8983,7 @@ function TrainMovementContent() {
             onChange={(e) => updateTp1MovementForm("automaticStablingRoad", e.target.value)}
             className={inputClass}
           >
-            <option value="">Select STB</option>
+            <option value="">Select location</option>
             {TP1_AUTOMATIC_STABLING_OPTIONS.map((road) => (
               <option key={road} value={road}>{road}</option>
             ))}
@@ -8987,21 +8992,21 @@ function TrainMovementContent() {
       },
       {
         key: "trainPrepCompletedTime",
-        label: "Train Prep Completed",
+        label: "Time Train Prep Completed",
         visible: automaticStablingReady,
         complete: automaticTrainPrepReady,
         render: () => renderTp1TimeInput("trainPrepCompletedTime"),
       },
       {
         key: "pstPerformedTime",
-        label: "PST Performed",
+        label: "Time PST Performed",
         visible: automaticTrainPrepReady,
         complete: automaticPstReady,
         render: () => renderTp1TimeInput("pstPerformedTime"),
       },
       {
         key: "completedByDc",
-        label: "Completed By DC",
+        label: "PST Performed by DC",
         visible: automaticPstReady,
         complete: automaticCompletedDcReady,
         render: () => (
@@ -9278,7 +9283,7 @@ function TrainMovementContent() {
 
         <div className="grid gap-3 p-4">
           <div className="grid grid-cols-2 gap-2">
-            {renderTypeButton("automatic", "Automatic Area", "Fill TR Localized", "#22c55e")}
+            {renderTypeButton("automatic", "Automatic Area", "Fill Time Train Localized", "#22c55e")}
             {renderTypeButton("manual", "Manual Area", "Fill From TP1 + to Manual", "#f59e0b")}
           </div>
 
