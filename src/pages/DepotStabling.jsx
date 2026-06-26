@@ -6245,7 +6245,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                             onBlur={handleTrainRemEditEnd}
                             readOnly={Boolean(requestRemark) || referenceOnly}
                             title={referenceOnly ? rowStatusTitle : requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
-                            placeholder={referenceOnly ? "" : "Remark"}
+                            placeholder="Remark"
                             className={`h-full min-w-0 border-0 px-1.5 text-left text-[11px] font-normal outline-none placeholder:text-[#36536c] focus:brightness-110 ${requestRemark || referenceOnly ? "cursor-default" : ""}`}
                             style={{
                               color: remarkTextColor,
