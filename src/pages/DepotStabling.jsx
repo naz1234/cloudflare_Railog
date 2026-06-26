@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Save, CheckCircle2, FileSpreadsheet, FileText, Image as ImageIcon, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Download, Search, ArrowUp, ArrowDown, Check } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, FileText, Image as ImageIcon, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Download, Search, ArrowUp, ArrowDown, Check } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
@@ -13633,13 +13633,16 @@ export default function DepotStablingPage() {
 
   const scheduleAutoSave = useCallback(
     (west, east) => {
+      // Keep the newest edit available immediately after a browser refresh,
+      // while the existing debounced D1 live save continues in the background.
+      markStablingLocalEdit(west, east);
       pendingSaveRef.current = true;
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
       autoSaveTimer.current = setTimeout(() => {
         saveToDb(west, east);
       }, 1500);
     },
-    [saveToDb]
+    [markStablingLocalEdit, saveToDb]
   );
 
   const handleStablingEditStart = useCallback(() => {
@@ -14868,12 +14871,6 @@ export default function DepotStablingPage() {
     setRequests([]);
   };
 
-  const handleSave = () => {
-    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    pendingSaveRef.current = false;
-    saveToDb(westData, eastData);
-  };
-
   const duplicates = getDuplicates(westData, eastData);
   const westStablingKeys = getWestStablingKeys(westData);
   const westStablingLocations = getWestStablingLocations(westData);
@@ -14992,20 +14989,6 @@ export default function DepotStablingPage() {
             />
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all disabled:opacity-60 bg-[#1a3a5c] hover:bg-[#0f2d4a] border border-[#2b4f6b] text-white shadow-sm"
-            >
-              {saved ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
-              {saving ? "Saving..." : saved ? "Saved!" : "Save"}
-            </button>
-            <div className="flex w-[178px] flex-none items-center gap-2 bg-[#071828] border border-[#1a3a56] px-3 py-1.5 rounded-lg">
-              <div className={`w-1.5 h-1.5 flex-none rounded-full ${syncError ? "bg-red-400" : syncing ? "bg-amber-400 animate-pulse" : "bg-emerald-400 animate-pulse"}`} />
-              <span className="min-w-0 truncate whitespace-nowrap text-[10px] text-[#7eb8e0]">
-                {syncError ? "Live sync issue" : syncing ? "Updating..." : lastSynced ? `Live sync on • Last synced ${formatTime(lastSynced)}` : "Live sync on"}
-              </span>
-            </div>
             <div className="flex items-center gap-2 bg-[#071828] border border-[#1a3a56] px-3 py-1.5 rounded-lg">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               <span className="text-[10px] text-[#7eb8e0]">{new Date().toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}</span>
