@@ -229,8 +229,8 @@ function getRequestCardStyle(typeKey, displayLabel = "") {
 }
 
 // Mirrors the request-card visual language used inside the West and East
-// main stabling tables. Keep this local so only the compact
-// "Already at Stabling / Workshop" rows change appearance.
+// main stabling tables. Shared by Workshop, Already-at-Stabling/Workshop,
+// and Pending Request compact rows so every request section stays consistent.
 function getMainStablingRequestCategory(value = "") {
   const label = normalizeRequestIdentity(value);
 
@@ -831,7 +831,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 const crossOutInfo = getCrossOutInfo(req);
                 const crossOutReason = crossOutInfo.reason;
                 const crossedOut = Boolean(crossOutReason);
-                const requestCardStyle = getRequestCardStyle(displayLabel, displayLabel);
+                const requestCardStyle = getMainStablingCompactCardStyle(displayLabel, displayLabel);
                 const workshopCardStyle = {
                   ...requestCardStyle.card,
                   ...(crossedOut
@@ -855,11 +855,14 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                       >
                         <span
                           className="flex h-[14px] items-center justify-center border-r text-[12px] font-normal leading-none"
-                          style={{ borderColor: requestCardStyle.divider }}
+                          style={{ borderColor: requestCardStyle.divider, color: requestCardStyle.accent }}
                         >
                           {req.trainId}
                         </span>
-                        <span className="min-w-0 truncate px-2 text-left text-[12px] font-normal leading-none">
+                        <span
+                          className="min-w-0 truncate px-2 text-left text-[12px] font-normal leading-none"
+                          style={{ color: requestCardStyle.accent }}
+                        >
                           {displayLabel}
                         </span>
                         <div className="flex items-center justify-end pr-1">
@@ -982,7 +985,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               const crossOutInfo = getCrossOutInfo(req);
               const crossOutReason = crossOutInfo.reason;
               const crossedOut = Boolean(crossOutReason);
-              const requestCardStyle = getRequestCardStyle(typeKey, displayLabel);
+              const requestCardStyle = getMainStablingCompactCardStyle(typeKey, displayLabel);
               const regularCardStyle = {
                 ...requestCardStyle.card,
                 ...(crossedOut
@@ -1005,11 +1008,14 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                     >
                       <span
                         className="flex h-[14px] items-center justify-center border-r text-[12px] font-normal leading-none"
-                        style={{ borderColor: requestCardStyle.divider }}
+                        style={{ borderColor: requestCardStyle.divider, color: requestCardStyle.accent }}
                       >
                         {req.trainId}
                       </span>
-                      <span className="min-w-0 truncate px-2 text-left text-[12px] font-normal leading-none">
+                      <span
+                        className="min-w-0 truncate px-2 text-left text-[12px] font-normal leading-none"
+                        style={{ color: requestCardStyle.accent }}
+                      >
                         {displayLabel}
                       </span>
                       <div className="flex items-center justify-end pr-1">
