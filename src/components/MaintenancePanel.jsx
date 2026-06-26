@@ -220,11 +220,11 @@ function getRequestCardStyle(typeKey, displayLabel = "") {
   return {
     accent,
     card: {
-      background: `radial-gradient(circle at 8% 35%, rgba(${r},${g},${b},0.28), transparent 48%), linear-gradient(145deg, rgba(${r},${g},${b},0.20), rgba(6,23,39,0.98))`,
-      border: `1px solid rgba(${r},${g},${b},0.62)`,
-      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.045), 0 0 10px rgba(${r},${g},${b},0.18)`,
+      background: `radial-gradient(circle at 8% 35%, rgba(${r},${g},${b},0.38), transparent 50%), linear-gradient(145deg, rgba(${r},${g},${b},0.29), rgba(7,27,45,0.94))`,
+      border: `1px solid rgba(${r},${g},${b},0.76)`,
+      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.07), 0 0 10px rgba(${r},${g},${b},0.26)`,
     },
-    divider: `rgba(${r},${g},${b},0.45)`,
+    divider: `rgba(${r},${g},${b},0.58)`,
   };
 }
 
