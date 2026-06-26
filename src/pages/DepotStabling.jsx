@@ -5837,6 +5837,18 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
           return a.sourceIndex - b.sourceIndex;
         })
       : rowEntries;
+    const tidDepotGroupTransitionByDisplayIndex = [];
+    let previousTidDepotGroup = null;
+    displayRowEntries.forEach(({ row }, displayIndex) => {
+      const currentGroup = getRemovalColorSortGroup(row);
+      tidDepotGroupTransitionByDisplayIndex[displayIndex] = {
+        currentGroup,
+        previousGroup: previousTidDepotGroup,
+      };
+      if (currentGroup === 0 || currentGroup === 1) {
+        previousTidDepotGroup = currentGroup;
+      }
+    });
     const duplicateCounts = getTrainRemDuplicateCounts();
     const duplicateTidCounts = getTrainRemTidDuplicateCounts();
     const pdfActive = Boolean(trainRemPdfStatus?.[depot]);
@@ -6051,6 +6063,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   && activeSortMode === "color"
                   && (currentLocationGroup === 1 || currentLocationGroup === 2)
                   && currentLocationGroup !== previousLocationGroup;
+                const tidDepotGroupTransition = tidDepotGroupTransitionByDisplayIndex[displayIndex] || {};
+                const showTidDepotGroupSpacer = (selectedPreset === "9am" || selectedPreset === "7pm")
+                  && activeSortMode === "tid"
+                  && (tidDepotGroupTransition.currentGroup === 0 || tidDepotGroupTransition.currentGroup === 1)
+                  && tidDepotGroupTransition.previousGroup !== null
+                  && tidDepotGroupTransition.currentGroup !== tidDepotGroupTransition.previousGroup;
                 const referenceSeparator = isTrainRemReferenceSeparatorIndex(depot, selectedPreset, index);
                 const referenceOnly = isTrainRemReferenceOnlyIndex(depot, selectedPreset, index);
                 const westReferenceScheduleMatch = referenceOnly
@@ -6135,7 +6153,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
                 return (
                   <Fragment key={`${depot}-train-rem-${index}`}>
-                    {showLocationGroupSpacer && (
+                    {(showLocationGroupSpacer || showTidDepotGroupSpacer) && (
                       <tr aria-hidden="true">
                         <td
                           colSpan={4}
