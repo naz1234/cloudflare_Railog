@@ -9232,13 +9232,9 @@ function TrainMovementContent() {
       </div>
     );
 
-    const renderTp1ZigZagFlowCard = ({ title, subtitle, steps }) => (
+    const renderTp1ZigZagFlowCard = ({ steps }) => (
       <div className="rounded-xl border border-[#1e4060] bg-[#031827] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <p className="text-[12px] font-black uppercase tracking-[0.12em] text-white">{title}</p>
-            <p className="text-[10px] font-semibold text-[#8ea8c0]">{subtitle}</p>
-          </div>
+        <div className="mb-2 flex justify-end">
           <span className="rounded-full border px-2 py-0.5 text-[9px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}16`, color: accent }}>
             L ↔ R
           </span>
@@ -9285,16 +9281,8 @@ function TrainMovementContent() {
           </div>
 
           {isAutomatic
-            ? renderTp1ZigZagFlowCard({
-                title: "Automatic Flow",
-                subtitle: "Compact flow. Next pill appears immediately while typing continues.",
-                steps: visibleAutomaticFlowSteps,
-              })
-            : renderTp1ZigZagFlowCard({
-                title: "Manual Flow",
-                subtitle: "Compact flow. Next pill appears immediately while typing continues.",
-                steps: visibleManualFlowSteps,
-              })}
+            ? renderTp1ZigZagFlowCard({ steps: visibleAutomaticFlowSteps })
+            : renderTp1ZigZagFlowCard({ steps: visibleManualFlowSteps })}
 
           <div className="rounded-xl border border-[#1e4060] bg-[#041727] p-3">
             <div className="mb-2 flex flex-wrap items-center justify-start gap-1.5">
