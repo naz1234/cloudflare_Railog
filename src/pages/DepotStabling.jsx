@@ -3350,6 +3350,62 @@ function getTrainRemRequestRemarkStyle(requestItem = null, label = "") {
   };
 }
 
+function getTrainRemRowCardVisual(requestItem = null, label = "", options = {}) {
+  const cleanLabel = (label || "").toString().trim();
+  const hasContent = Boolean(options.hasContent);
+  const isDuplicate = Boolean(options.isDuplicate);
+
+  if (isDuplicate) {
+    return {
+      accent: "#fb5b63",
+      background: "linear-gradient(90deg,rgba(239,68,68,0.24) 0%,rgba(74,12,24,0.72) 52%,rgba(7,24,40,0.96) 100%)",
+      borderColor: "rgba(248,113,113,0.92)",
+      boxShadow: "0 0 0 1px rgba(248,113,113,0.16),0 0 8px rgba(239,68,68,0.18),inset 0 1px 0 rgba(255,255,255,0.04)",
+    };
+  }
+
+  if (!cleanLabel) {
+    return {
+      accent: hasContent ? "#8aa9c3" : "#58758f",
+      background: hasContent
+        ? "linear-gradient(90deg,rgba(30,64,96,0.36) 0%,rgba(9,29,47,0.92) 48%,rgba(7,24,40,0.98) 100%)"
+        : "linear-gradient(90deg,rgba(15,45,70,0.28) 0%,rgba(7,24,40,0.96) 100%)",
+      borderColor: hasContent ? "rgba(74,138,181,0.58)" : "rgba(43,79,107,0.76)",
+      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.025)",
+    };
+  }
+
+  const normalized = normalizeRequestIdentity(cleanLabel);
+  let visualLabel = cleanLabel;
+
+  if (normalized.includes("DEEP CLEAN") || normalized.includes("CORRECTIVE") || normalized === "SR" || normalized.startsWith("SR ")) {
+    visualLabel = "RST CM";
+  } else if (normalized.includes("INBOUND") || normalized.includes("UNFIT") || normalized.includes("NOT FIT")) {
+    visualLabel = "INBOUND";
+  } else if (normalized.includes("WASH")) {
+    visualLabel = "WASH";
+  } else if (normalized === "PM" || normalized.startsWith("PM ") || normalized.includes("RST PM") || normalized.includes("PREVENTIVE")) {
+    visualLabel = "RST PM";
+  }
+
+  const visual = getStablingRequestVisual({
+    ...(requestItem || {}),
+    badgeText: visualLabel,
+    remark: visualLabel,
+    displayType: visualLabel,
+  });
+  const fallbackStyle = getTrainRemRequestRemarkStyle(requestItem, cleanLabel);
+  const accent = visual?.accent || fallbackStyle?.color || "#4f8ef7";
+  const background = visual?.gradient || `linear-gradient(90deg,${hexToRgba(accent, 0.20)} 0%,#10243a 48%,#071828 100%)`;
+
+  return {
+    accent,
+    background,
+    borderColor: hexToRgba(accent, 0.84),
+    boxShadow: `0 0 0 1px ${hexToRgba(accent, 0.10)},0 0 8px ${hexToRgba(accent, 0.15)},inset 0 1px 0 rgba(255,255,255,0.04)`,
+  };
+}
+
 // ── PST / Train Prep Components ──────────────────────────────────────────────
 
 function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taName, onTaNameChange }) {
@@ -5789,7 +5845,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     const timetablePresetNotice = isTrainRemPresetMismatchWithTimetable(activeTimetableType, selectedPreset)
       ? `Currently timetable ${activeTimetableLabel} is used`
       : "";
-    const showRemovalLegend = depot === "west" && (selectedPreset === "9am" || selectedPreset === "7pm");
 
     return (
       <div className="rounded-xl border border-[#2b4f6b] bg-[#071828] overflow-hidden shadow-md">
@@ -6025,9 +6080,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 const trainRemRequestKey = normalizeTrainId(row.trainId);
                 const trainRemRequestItems = trainRemRequestKey ? maintenanceMap?.[trainRemRequestKey] || [] : [];
                 const requestRemark = getRequestRemarkForTrain(row.trainId);
-                const requestRemarkStyle = requestRemark
-                  ? getTrainRemRequestRemarkStyle(trainRemRequestItems[0], requestRemark)
-                  : undefined;
                 const remarkValue = requestRemark || (referenceOnly ? "" : row.remark);
                 const displayTimingValue = realReferenceScheduleMatch?.timing || row.timing;
                 const rowStatusTitle = isWestReferenceRemoval
@@ -6044,34 +6096,42 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   duplicateCounts[duplicateKey] > 1 &&
                   !shouldIgnoreFocusedPartialDuplicate(depot, index, row.trainId)
                 );
-                // Keep the combined 9am/7pm reference tables visually consistent.
-                // Removal/reference logic still runs in the
-                // background, but it no longer colours the whole row or every field.
-                const filledRowBg = isDuplicateTrainId
-                  ? "#2a0b13"
-                  : hasTrainId
-                    ? "#082a25"
-                    : "#071828";
-                const trainIdInputClass = isDuplicateTrainId
-                  ? "border-red-500/90 bg-red-950/50 text-red-100 shadow-[0_0_0_1px_rgba(248,113,113,0.28),0_0_12px_rgba(248,113,113,0.16)]"
-                  : hasTrainId
-                    ? "border-emerald-500/80 bg-emerald-950/35 text-emerald-100 shadow-[0_0_0_1px_rgba(16,185,129,0.18)]"
-                    : "border-[#1e4060] bg-[#091828] text-[#e2eaf4]";
                 const cleanTid = cleanTrainRemTidInput(row.tid);
                 const hasTid = cleanTid.length > 0;
                 const tidDuplicateKey = getTrainRemTidDuplicateKey(cleanTid);
                 const isDuplicateTid = Boolean(tidDuplicateKey && duplicateTidCounts[tidDuplicateKey] > 1);
-                const tidInputClass = isDuplicateTid
-                  ? "border-red-500/90 bg-red-950/50 text-red-100 shadow-[0_0_0_1px_rgba(248,113,113,0.28),0_0_12px_rgba(248,113,113,0.16)]"
+                const hasRowContent = Boolean(
+                  hasTrainId ||
+                  hasTid ||
+                  (displayTimingValue || "").toString().trim() ||
+                  (remarkValue || "").toString().trim()
+                );
+                const rowCardVisual = getTrainRemRowCardVisual(
+                  trainRemRequestItems[0],
+                  remarkValue,
+                  {
+                    hasContent: hasRowContent,
+                    isDuplicate: isDuplicateTrainId || isDuplicateTid,
+                  }
+                );
+                const trainIdTextColor = isDuplicateTrainId
+                  ? "#fecaca"
+                  : hasTrainId
+                    ? rowCardVisual.accent
+                    : "#466681";
+                const tidTextColor = isDuplicateTid
+                  ? "#fecaca"
                   : cleanTid.length === 3
-                  ? isEastReferenceRemoval
-                    ? `border-lime-400/95 bg-lime-950/55 text-lime-100 shadow-[0_0_0_1px_rgba(163,230,53,0.34),0_0_8px_rgba(163,230,53,0.10)]${referenceOnly ? " cursor-default" : ""}`
-                    : isWestReferenceRemoval
-                      ? `border-[#8B5CF6] bg-[#2d1b55] text-[#ede9fe] shadow-[0_0_0_1px_rgba(139,92,246,0.38),0_0_8px_rgba(139,92,246,0.14)]${referenceOnly ? " cursor-default" : ""}`
-                      : `border-emerald-500/80 bg-emerald-950/35 text-emerald-100 shadow-[0_0_0_1px_rgba(16,185,129,0.18)]${referenceOnly ? " cursor-default" : ""}`
-                  : hasTid
-                  ? `border-amber-500/70 bg-amber-950/25 text-amber-100${referenceOnly ? " cursor-default" : ""}`
-                  : `border-[#1e4060] bg-[#091828] text-[#c8d8ea]${referenceOnly ? " cursor-default" : ""}`;
+                    ? "#dbeafe"
+                    : hasTid
+                      ? "#fbbf24"
+                      : "#466681";
+                const timingTextColor = (displayTimingValue || "").toString().trim()
+                  ? "#c5d8ea"
+                  : "#58758f";
+                const remarkTextColor = (remarkValue || "").toString().trim()
+                  ? rowCardVisual.accent
+                  : "#58758f";
 
                 return (
                   <Fragment key={`${depot}-train-rem-${index}`}>
@@ -6084,137 +6144,103 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       </tr>
                     )}
                     <tr>
-                  <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: filledRowBg }}>
-                    <input
-                      ref={(element) => setTrainRemTrainIdRef(depot, index, element)}
-                      value={row.trainId}
-                      onFocus={() => handleTrainRemTrainIdFocus(depot, index, rows.length)}
-                      onChange={(e) => {
-                        const nextValue = e.target.value;
-                        updateTrainRemCell(depot, index, "trainId", nextValue);
-                        handleTrainRemTrainIdAutoMove(depot, index, rows.length, nextValue, nextVisibleRowIndex);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Backspace" && !row.trainId && previousVisibleRowIndex !== null) {
-                          e.preventDefault();
-                          focusTrainRemTrainId(depot, previousVisibleRowIndex);
-                        }
-                      }}
-                      onBlur={() => handleTrainRemTrainIdBlur(depot, index)}
-                      placeholder="ID"
-                      title={referenceOnly ? rowStatusTitle : isDuplicateTrainId ? "Duplicate Train ID detected" : ""}
-                      className={`w-full ${referenceOnly ? "h-[19px]" : "h-5"} rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${trainIdInputClass}`}
-                    />
-                  </td>
-                  <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: filledRowBg }}>
-                    <input
-                      ref={(element) => setTrainRemTidRef(depot, index, element)}
-                      value={row.tid}
-                      onFocus={handleTrainRemOtherFieldFocus}
-                      onChange={(e) => {
-                        if (!referenceOnly) {
-                          const nextValue = cleanTrainRemTidInput(e.target.value);
-                          updateTrainRemCell(depot, index, "tid", nextValue);
-                          handleTrainRemTidAutoMove(depot, index, rows.length, nextValue, nextVisibleRowIndex);
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (!referenceOnly && e.key === "Backspace" && !row.tid && previousVisibleRowIndex !== null) {
-                          e.preventDefault();
-                          focusTrainRemTid(depot, previousVisibleRowIndex);
-                        }
-                      }}
-                      onBlur={handleTrainRemEditEnd}
-                      placeholder="TID"
-                      inputMode="numeric"
-                      maxLength={3}
-                      readOnly={referenceOnly}
-                      title={referenceOnly ? rowStatusTitle : isDuplicateTid ? "Duplicate TID detected" : "Enter exactly 3 digits"}
-                      className={`w-full ${referenceOnly ? "h-[19px]" : "h-5"} rounded-md border px-1 text-center text-[11px] ${referenceOnly ? "font-normal" : "font-bold"} outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7] ${tidInputClass}`}
-                    />
-                  </td>
-                  <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: filledRowBg }}>
-                    <input
-                      value={displayTimingValue}
-                      onFocus={handleTrainRemOtherFieldFocus}
-                      onChange={(e) => {
-                        if (!referenceOnly) {
-                          updateTrainRemCell(depot, index, "timing", e.target.value);
-                        }
-                      }}
-                      onBlur={handleTrainRemEditEnd}
-                      placeholder={referenceOnly ? "" : "00:00"}
-                      readOnly={referenceOnly}
-                      title={referenceOnly ? rowStatusTitle : ""}
-                      className={`w-full ${referenceOnly ? "h-[19px]" : "h-5"} rounded-md border border-[#1e4060] bg-[#071828] px-1 text-center text-[11px] ${referenceOnly ? "font-normal cursor-default" : "font-bold"} text-[#7eb8e0] outline-none placeholder:text-[#2b4f6b] focus:border-[#4f8ef7]`}
-                    />
-                  </td>
-                  <td className="border-b border-[#10263b] px-1 py-0.5" style={{ backgroundColor: filledRowBg }}>
-                    <input
-                      value={remarkValue}
-                      onFocus={handleTrainRemOtherFieldFocus}
-                      onChange={(e) => {
-                        if (!requestRemark && !referenceOnly) {
-                          updateTrainRemCell(depot, index, "remark", e.target.value);
-                        }
-                      }}
-                      onBlur={handleTrainRemEditEnd}
-                      readOnly={Boolean(requestRemark) || referenceOnly}
-                      title={referenceOnly ? rowStatusTitle : requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
-                      placeholder={referenceOnly ? "" : "Remark"}
-                      style={requestRemarkStyle}
-                      className={`w-full ${referenceOnly ? "h-[19px]" : "h-5"} rounded-md border px-1.5 text-[11px] ${referenceOnly ? "font-normal" : "font-semibold"} outline-none placeholder:text-[#2b4f6b] ${
-                        requestRemark || referenceOnly
-                          ? "cursor-default border-[#1e4060] bg-[#091828] text-[#c8d8ea]"
-                          : "border-[#1e4060] bg-[#091828] text-[#c8d8ea] focus:border-[#4f8ef7]"
-                      }`}
-                    />
-                  </td>
+                      <td colSpan={4} className="bg-[#071828] px-1 py-[1px]">
+                        <div
+                          className="grid h-[22px] items-center overflow-hidden rounded-md border transition-[border-color,background,box-shadow] duration-150"
+                          style={{
+                            gridTemplateColumns: "18% 18% 22% 42%",
+                            background: rowCardVisual.background,
+                            borderColor: rowCardVisual.borderColor,
+                            boxShadow: rowCardVisual.boxShadow,
+                          }}
+                        >
+                          <input
+                            ref={(element) => setTrainRemTrainIdRef(depot, index, element)}
+                            value={row.trainId}
+                            onFocus={() => handleTrainRemTrainIdFocus(depot, index, rows.length)}
+                            onChange={(e) => {
+                              const nextValue = e.target.value;
+                              updateTrainRemCell(depot, index, "trainId", nextValue);
+                              handleTrainRemTrainIdAutoMove(depot, index, rows.length, nextValue, nextVisibleRowIndex);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Backspace" && !row.trainId && previousVisibleRowIndex !== null) {
+                                e.preventDefault();
+                                focusTrainRemTrainId(depot, previousVisibleRowIndex);
+                              }
+                            }}
+                            onBlur={() => handleTrainRemTrainIdBlur(depot, index)}
+                            placeholder="ID"
+                            title={referenceOnly ? rowStatusTitle : isDuplicateTrainId ? "Duplicate Train ID detected" : ""}
+                            className={`h-full min-w-0 border-0 bg-transparent px-1 text-center text-[11px] font-normal outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${referenceOnly ? "cursor-default" : ""}`}
+                            style={{ color: trainIdTextColor }}
+                          />
+
+                          <input
+                            ref={(element) => setTrainRemTidRef(depot, index, element)}
+                            value={row.tid}
+                            onFocus={handleTrainRemOtherFieldFocus}
+                            onChange={(e) => {
+                              if (!referenceOnly) {
+                                const nextValue = cleanTrainRemTidInput(e.target.value);
+                                updateTrainRemCell(depot, index, "tid", nextValue);
+                                handleTrainRemTidAutoMove(depot, index, rows.length, nextValue, nextVisibleRowIndex);
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if (!referenceOnly && e.key === "Backspace" && !row.tid && previousVisibleRowIndex !== null) {
+                                e.preventDefault();
+                                focusTrainRemTid(depot, previousVisibleRowIndex);
+                              }
+                            }}
+                            onBlur={handleTrainRemEditEnd}
+                            placeholder="TID"
+                            inputMode="numeric"
+                            maxLength={3}
+                            readOnly={referenceOnly}
+                            title={referenceOnly ? rowStatusTitle : isDuplicateTid ? "Duplicate TID detected" : "Enter exactly 3 digits"}
+                            className={`h-full min-w-0 border-0 bg-transparent px-1 text-center text-[11px] font-normal outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${referenceOnly ? "cursor-default" : ""}`}
+                            style={{ color: tidTextColor }}
+                          />
+
+                          <input
+                            value={displayTimingValue}
+                            onFocus={handleTrainRemOtherFieldFocus}
+                            onChange={(e) => {
+                              if (!referenceOnly) {
+                                updateTrainRemCell(depot, index, "timing", e.target.value);
+                              }
+                            }}
+                            onBlur={handleTrainRemEditEnd}
+                            placeholder={referenceOnly ? "" : "00:00"}
+                            readOnly={referenceOnly}
+                            title={referenceOnly ? rowStatusTitle : ""}
+                            className={`h-full min-w-0 border-0 bg-transparent px-1 text-center text-[11px] font-normal outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${referenceOnly ? "cursor-default" : ""}`}
+                            style={{ color: timingTextColor }}
+                          />
+
+                          <input
+                            value={remarkValue}
+                            onFocus={handleTrainRemOtherFieldFocus}
+                            onChange={(e) => {
+                              if (!requestRemark && !referenceOnly) {
+                                updateTrainRemCell(depot, index, "remark", e.target.value);
+                              }
+                            }}
+                            onBlur={handleTrainRemEditEnd}
+                            readOnly={Boolean(requestRemark) || referenceOnly}
+                            title={referenceOnly ? rowStatusTitle : requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
+                            placeholder={referenceOnly ? "" : "Remark"}
+                            className={`h-full min-w-0 border-0 bg-transparent px-1.5 text-left text-[11px] font-normal outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${requestRemark || referenceOnly ? "cursor-default" : ""}`}
+                            style={{ color: remarkTextColor }}
+                          />
+                        </div>
+                      </td>
                     </tr>
                   </Fragment>
                 );
               })}
             </tbody>
-            {showRemovalLegend && (
-              <tfoot>
-                <tr>
-                  <td colSpan={4} className="border-t border-[#1a3a56] bg-[#081c2d] px-2 py-1.5">
-                    <div className="flex items-center gap-1">
-                      <span
-                        className="rounded-md px-1.5 py-0.5 text-[12px] font-normal leading-none"
-                        style={{
-                          border: "1px solid #8B5CF6",
-                          backgroundColor: "#2d1b55",
-                          color: "#ede9fe",
-                        }}
-                      >
-                        West Rem
-                      </span>
-                      <span
-                        className="rounded-md px-1.5 py-0.5 text-[12px] font-normal leading-none"
-                        style={{
-                          border: "1px solid rgba(16,185,129,0.8)",
-                          backgroundColor: "#022c22",
-                          color: "#d1fae5",
-                        }}
-                      >
-                        Off Peak
-                      </span>
-                      <span
-                        className="rounded-md px-1.5 py-0.5 text-[12px] font-normal leading-none"
-                        style={{
-                          border: "1px solid rgba(163,230,53,0.95)",
-                          backgroundColor: "#1a2e05",
-                          color: "#ecfccb",
-                        }}
-                      >
-                        East Rem
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              </tfoot>
-            )}
           </table>
         </div>
       </div>
