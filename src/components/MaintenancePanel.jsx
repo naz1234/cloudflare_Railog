@@ -200,6 +200,34 @@ function getRequestPillStyle(typeKey, displayLabel = "") {
   };
 }
 
+function hexToRgb(hex = "") {
+  const clean = String(hex).replace("#", "").trim();
+  if (!/^[0-9a-f]{6}$/i.test(clean)) return { r: 74, g: 138, b: 181 };
+
+  return {
+    r: Number.parseInt(clean.slice(0, 2), 16),
+    g: Number.parseInt(clean.slice(2, 4), 16),
+    b: Number.parseInt(clean.slice(4, 6), 16),
+  };
+}
+
+function getRequestCardStyle(typeKey, displayLabel = "") {
+  const styleKey = getKnownRequestColorKey(typeKey || displayLabel);
+  const color = REQUEST_COLORS[styleKey];
+  const accent = color?.bg || getCustomRequestColor(displayLabel || typeKey);
+  const { r, g, b } = hexToRgb(accent);
+
+  return {
+    accent,
+    card: {
+      background: `radial-gradient(circle at 8% 35%, rgba(${r},${g},${b},0.28), transparent 48%), linear-gradient(145deg, rgba(${r},${g},${b},0.20), rgba(6,23,39,0.98))`,
+      border: `1px solid rgba(${r},${g},${b},0.62)`,
+      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.045), 0 0 10px rgba(${r},${g},${b},0.18)`,
+    },
+    divider: `rgba(${r},${g},${b},0.45)`,
+  };
+}
+
 function getColumnValue(row, possibleNames) {
   const keys = Object.keys(row || {});
   const matchedKey = keys.find((key) =>
@@ -797,32 +825,40 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 const displayLabel = displayType(req);
                 const crossOutInfo = getCrossOutInfo(req);
                 const crossOutReason = crossOutInfo.reason;
-                const requestPillStyle = getRequestPillStyle(displayLabel, displayLabel);
+                const requestCardStyle = getRequestCardStyle(displayLabel, displayLabel);
                 const statusMessage = getAlreadyStatusMessage(crossOutInfo);
 
                 return (
                   <tr
                     key={`already-${crossOutReason}-${req.id || req._tempId}`}
-                    className="group h-[24px] border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors"
+                    className="group h-[24px]"
                     aria-label={statusMessage || undefined}
                   >
-                    <td className="relative px-0.5 py-0.5 text-center">
-                      <span className="inline-flex min-w-[34px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none" style={requestPillStyle}>{req.trainId}</span>
-                    </td>
-                    <td className="relative px-0.5 py-0.5 text-center">
-                      <span className="inline-flex max-w-[105px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none truncate" style={requestPillStyle}>{displayLabel}</span>
-                    </td>
-                    <td className="relative pr-1 py-0.5 text-center">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => onRemove(req.id)}
-                          className="group/delete relative z-30 inline-flex h-[20px] w-[20px] items-center justify-center"
-                          aria-label={`Delete ${req.trainId}`}
-                          title="Delete request"
+                    <td colSpan={3} className="h-[24px] p-[2px]">
+                      <div
+                        className="grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_44px] items-center overflow-visible rounded-[6px] text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-110"
+                        style={requestCardStyle.card}
+                      >
+                        <span
+                          className="flex h-[14px] items-center justify-center border-r text-[12px] font-bold leading-none"
+                          style={{ borderColor: requestCardStyle.divider }}
                         >
-                          <DeleteRequestIcon />
-                        </button>
-                        <AlreadyStatusIcon message={statusMessage} reason={crossOutReason} />
+                          {req.trainId}
+                        </span>
+                        <span className="min-w-0 truncate px-2 text-left text-[12px] font-semibold leading-none">
+                          {displayLabel}
+                        </span>
+                        <div className="flex items-center justify-end gap-1 pr-1">
+                          <button
+                            onClick={() => onRemove(req.id)}
+                            className="group/delete relative z-30 inline-flex h-[18px] w-[18px] items-center justify-center"
+                            aria-label={`Delete ${req.trainId}`}
+                            title="Delete request"
+                          >
+                            <DeleteRequestIcon />
+                          </button>
+                          <AlreadyStatusIcon message={statusMessage} reason={crossOutReason} />
+                        </div>
                       </div>
                     </td>
                   </tr>
