@@ -855,13 +855,13 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                       >
                         <span
                           className="flex h-[14px] items-center justify-center border-r text-[12px] font-normal leading-none"
-                          style={{ borderColor: requestCardStyle.divider, color: requestCardStyle.accent }}
+                          style={{ borderColor: requestCardStyle.divider, color: "#ffffff" }}
                         >
                           {req.trainId}
                         </span>
                         <span
                           className="min-w-0 truncate px-2 text-left text-[12px] font-normal leading-none"
-                          style={{ color: requestCardStyle.accent }}
+                          style={{ color: "#ffffff" }}
                         >
                           {displayLabel}
                         </span>
@@ -924,13 +924,13 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                       >
                         <span
                           className="flex h-[14px] items-center justify-center border-r text-[12px] font-normal leading-none"
-                          style={{ borderColor: requestCardStyle.divider, color: requestCardStyle.accent }}
+                          style={{ borderColor: requestCardStyle.divider, color: "#ffffff" }}
                         >
                           {req.trainId}
                         </span>
                         <span
                           className="min-w-0 truncate px-2 text-left text-[12px] font-normal leading-none"
-                          style={{ color: requestCardStyle.accent }}
+                          style={{ color: "#ffffff" }}
                         >
                           {displayLabel}
                         </span>
@@ -1008,13 +1008,13 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                     >
                       <span
                         className="flex h-[14px] items-center justify-center border-r text-[12px] font-normal leading-none"
-                        style={{ borderColor: requestCardStyle.divider, color: requestCardStyle.accent }}
+                        style={{ borderColor: requestCardStyle.divider, color: "#ffffff" }}
                       >
                         {req.trainId}
                       </span>
                       <span
                         className="min-w-0 truncate px-2 text-left text-[12px] font-normal leading-none"
-                        style={{ color: requestCardStyle.accent }}
+                        style={{ color: "#ffffff" }}
                       >
                         {displayLabel}
                       </span>
