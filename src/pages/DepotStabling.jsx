@@ -14956,7 +14956,7 @@ export default function DepotStablingPage() {
   className="h-10 w-auto object-contain" 
 />
               <div className="w-px h-6 bg-[#1a3a56]" />
-              <span className="text-sm font-bold text-white tracking-tight">L3 Depot Controller Template</span>
+              <span className="text-sm font-bold text-white tracking-tight">L3 DC Template</span>
             </div>
             
             <HeaderBookmarkDropdown
