@@ -19740,67 +19740,63 @@ const MAIN_STABLING_BUTTON_COMMON = {
   WebkitBackdropFilter: "blur(10px)",
 };
 
+// Main stabling actions use the same subtle dark-card colour language as the
+// Overtime page summary/status cards: soft radial tint, dark gradient,
+// restrained border and glow instead of a bright filled button.
 const MAIN_STABLING_BUTTON_BLUE = {
   ...MAIN_STABLING_BUTTON_COMMON,
-  background: "linear-gradient(135deg, rgba(9,42,76,0.94) 0%, rgba(10,65,122,0.88) 48%, rgba(7,26,46,0.96) 100%)",
-  borderColor: "rgba(70,160,255,0.92)",
-  color: "#dff0ff",
-  boxShadow: "0 0 0 1px rgba(50,150,255,0.20), 0 0 16px rgba(37,99,235,0.42), 0 0 28px rgba(14,165,233,0.24), inset 0 1px 0 rgba(255,255,255,0.16)",
-  textShadow: "0 0 8px rgba(191,219,254,0.55)",
+  background: "radial-gradient(circle at 10% 20%, rgba(54,167,244,0.13), transparent 50%), linear-gradient(145deg, rgba(10,36,58,0.95), rgba(6,23,39,0.98))",
+  borderColor: "#315d78",
+  color: "#70c7f3",
+  boxShadow: "0 10px 28px rgba(46,157,226,0.14)",
 };
 
 const MAIN_STABLING_BUTTON_COPY = {
   ...MAIN_STABLING_BUTTON_COMMON,
-  background: "linear-gradient(135deg, rgba(4,47,40,0.96) 0%, rgba(5,78,61,0.90) 50%, rgba(3,35,32,0.98) 100%)",
-  borderColor: "rgba(16,185,129,0.94)",
-  color: "#6ee7b7",
-  boxShadow: "0 0 0 1px rgba(16,185,129,0.18), 0 0 14px rgba(16,185,129,0.34), 0 0 25px rgba(5,150,105,0.20), inset 0 1px 0 rgba(209,250,229,0.12)",
-  textShadow: "0 0 8px rgba(110,231,183,0.44)",
+  background: "radial-gradient(circle at 10% 20%, rgba(50,218,151,0.13), transparent 50%), linear-gradient(145deg, rgba(11,40,43,0.94), rgba(6,23,39,0.98))",
+  borderColor: "#2f6659",
+  color: "#76d5ae",
+  boxShadow: "0 10px 28px rgba(38,199,129,0.14)",
 };
 
 const MAIN_STABLING_BUTTON_PDF = {
   ...MAIN_STABLING_BUTTON_COMMON,
-  background: "linear-gradient(135deg, rgba(7,39,67,0.96) 0%, rgba(8,72,113,0.90) 50%, rgba(5,30,52,0.98) 100%)",
-  borderColor: "rgba(56,189,248,0.94)",
-  color: "#7dd3fc",
-  boxShadow: "0 0 0 1px rgba(56,189,248,0.18), 0 0 14px rgba(14,165,233,0.36), 0 0 25px rgba(2,132,199,0.20), inset 0 1px 0 rgba(224,242,254,0.12)",
-  textShadow: "0 0 8px rgba(125,211,252,0.44)",
+  background: "radial-gradient(circle at 10% 20%, rgba(54,167,244,0.13), transparent 50%), linear-gradient(145deg, rgba(10,36,58,0.95), rgba(6,23,39,0.98))",
+  borderColor: "#315d78",
+  color: "#70c7f3",
+  boxShadow: "0 10px 28px rgba(46,157,226,0.14)",
 };
 
 const MAIN_STABLING_BUTTON_CLEAR = {
   ...MAIN_STABLING_BUTTON_COMMON,
-  background: "linear-gradient(135deg, rgba(64,17,27,0.96) 0%, rgba(102,24,39,0.90) 50%, rgba(48,12,21,0.98) 100%)",
-  borderColor: "rgba(244,63,94,0.94)",
-  color: "#fb7185",
-  boxShadow: "0 0 0 1px rgba(244,63,94,0.18), 0 0 14px rgba(244,63,94,0.34), 0 0 25px rgba(225,29,72,0.20), inset 0 1px 0 rgba(255,228,230,0.11)",
-  textShadow: "0 0 8px rgba(251,113,133,0.44)",
+  background: "radial-gradient(circle at 10% 20%, rgba(248,113,113,0.16), transparent 50%), linear-gradient(145deg, rgba(58,20,29,0.95), rgba(18,17,30,0.98))",
+  borderColor: "#7d3f4a",
+  color: "#fca5a5",
+  boxShadow: "0 10px 28px rgba(185,28,28,0.14)",
 };
 
 const MAIN_STABLING_BUTTON_PRIMARY = {
   ...MAIN_STABLING_BUTTON_COMMON,
-  background: "linear-gradient(135deg, #0f63ff 0%, #1d8bff 52%, #0757df 100%)",
-  borderColor: "rgba(148,202,255,0.98)",
-  color: "#ffffff",
-  boxShadow: "0 0 0 1px rgba(147,197,253,0.34), 0 0 18px rgba(37,99,235,0.72), 0 0 34px rgba(14,165,233,0.46), inset 0 1px 0 rgba(255,255,255,0.24)",
-  textShadow: "0 0 10px rgba(255,255,255,0.52)",
+  background: "radial-gradient(circle at 10% 20%, rgba(54,167,244,0.18), transparent 50%), linear-gradient(145deg, rgba(12,48,77,0.98), rgba(7,28,48,0.99))",
+  borderColor: "#3f7da6",
+  color: "#dff2ff",
+  boxShadow: "0 10px 28px rgba(46,157,226,0.20)",
 };
 
 const MAIN_STABLING_BUTTON_SUCCESS = {
   ...MAIN_STABLING_BUTTON_COMMON,
-  background: "linear-gradient(135deg, #059669 0%, #16a34a 55%, #047857 100%)",
-  borderColor: "rgba(134,239,172,0.95)",
-  color: "#ffffff",
-  boxShadow: "0 0 0 1px rgba(74,222,128,0.28), 0 0 18px rgba(34,197,94,0.58), 0 0 30px rgba(16,185,129,0.32), inset 0 1px 0 rgba(255,255,255,0.20)",
-  textShadow: "0 0 8px rgba(220,252,231,0.50)",
+  background: "radial-gradient(circle at 10% 20%, rgba(50,218,151,0.16), transparent 50%), linear-gradient(145deg, rgba(11,40,43,0.96), rgba(6,23,39,0.99))",
+  borderColor: "#3b806d",
+  color: "#a7f3d0",
+  boxShadow: "0 10px 28px rgba(38,199,129,0.18)",
 };
 
 const MAIN_STABLING_BUTTON_DANGER = {
   ...MAIN_STABLING_BUTTON_COMMON,
-  background: "linear-gradient(135deg, #991b1b 0%, #dc2626 55%, #7f1d1d 100%)",
-  borderColor: "rgba(252,165,165,0.95)",
-  color: "#ffffff",
-  boxShadow: "0 0 0 1px rgba(248,113,113,0.32), 0 0 18px rgba(239,68,68,0.62), 0 0 30px rgba(220,38,38,0.36), inset 0 1px 0 rgba(255,255,255,0.18)",
-  textShadow: "0 0 8px rgba(254,226,226,0.50)",
+  background: "radial-gradient(circle at 10% 20%, rgba(248,113,113,0.22), transparent 50%), linear-gradient(145deg, rgba(72,22,32,0.98), rgba(22,17,29,0.99))",
+  borderColor: "#9a4b59",
+  color: "#fecaca",
+  boxShadow: "0 10px 28px rgba(185,28,28,0.22)",
 };
 
 function ClearAllStablingButton({ onClearAll }) {
