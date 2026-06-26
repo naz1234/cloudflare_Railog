@@ -760,8 +760,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 const crossOutInfo = getCrossOutInfo(req);
                 const crossOutReason = crossOutInfo.reason;
                 const crossedOut = Boolean(crossOutReason);
-                const requestPillStyle = {
-                  ...getRequestPillStyle(displayLabel, displayLabel),
+                const requestCardStyle = getRequestCardStyle(displayLabel, displayLabel);
+                const workshopCardStyle = {
+                  ...requestCardStyle.card,
                   ...(crossedOut
                     ? {
                         opacity: 0.58,
@@ -773,28 +774,36 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 return (
                   <tr
                     key={`workshop-${req.id || req._tempId}`}
-                    className="group h-[24px] border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors"
+                    className="group h-[24px]"
                     aria-label={crossOutMessage || undefined}
                   >
-                    <td className="request-cross-trigger relative px-0.5 py-0.5 text-center">
-                      <span className="inline-flex min-w-[34px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none" style={requestPillStyle}>{req.trainId}</span>
-                      <RequestCrossLine show={crossedOut} />
-                      <RequestCrossBubble message={crossOutMessage} />
-                    </td>
-                    <td className="request-cross-trigger relative px-0.5 py-0.5 text-center">
-                      <span className="inline-flex max-w-[105px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none truncate" style={requestPillStyle}>{displayLabel}</span>
-                      <RequestCrossLine show={crossedOut} />
-                    </td>
-                    <td className="relative pr-1 py-0.5 text-center">
-                      <button
-                        onClick={() => onRemove(req.id)}
-                        className="group/delete relative z-30 inline-flex h-[20px] w-[20px] items-center justify-center"
-                        aria-label={`Delete ${req.trainId}`}
-                        title="Delete request"
+                    <td colSpan={3} className="h-[24px] p-[2px]">
+                      <div
+                        className="request-cross-trigger relative grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-[6px] text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-110"
+                        style={workshopCardStyle}
                       >
-                        <DeleteRequestIcon />
-                      </button>
-                      <RequestCrossLine show={crossedOut} />
+                        <span
+                          className="flex h-[14px] items-center justify-center border-r text-[12px] font-normal leading-none"
+                          style={{ borderColor: requestCardStyle.divider }}
+                        >
+                          {req.trainId}
+                        </span>
+                        <span className="min-w-0 truncate px-2 text-left text-[12px] font-normal leading-none">
+                          {displayLabel}
+                        </span>
+                        <div className="flex items-center justify-end pr-1">
+                          <button
+                            onClick={() => onRemove(req.id)}
+                            className="group/delete relative z-30 inline-flex h-[18px] w-[18px] items-center justify-center"
+                            aria-label={`Delete ${req.trainId}`}
+                            title="Delete request"
+                          >
+                            <DeleteRequestIcon />
+                          </button>
+                        </div>
+                        <RequestCrossLine show={crossedOut} />
+                        <RequestCrossBubble message={crossOutMessage} />
+                      </div>
                     </td>
                   </tr>
                 );
@@ -899,8 +908,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               const crossOutInfo = getCrossOutInfo(req);
               const crossOutReason = crossOutInfo.reason;
               const crossedOut = Boolean(crossOutReason);
-              const requestPillStyle = {
-                ...getRequestPillStyle(typeKey, displayLabel),
+              const requestCardStyle = getRequestCardStyle(typeKey, displayLabel);
+              const regularCardStyle = {
+                ...requestCardStyle.card,
                 ...(crossedOut
                   ? {
                       opacity: 0.58,
@@ -911,28 +921,36 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               return (
                 <tr
                   key={req.id || req._tempId}
-                  className="group h-[24px] border-b border-[#0f2040] last:border-0 hover:bg-[#0f2040]/50 transition-colors"
+                  className="group h-[24px]"
                   aria-label={crossOutMessage || undefined}
                 >
-                  <td className="request-cross-trigger relative px-0.5 py-0.5 text-center">
-                    <span className="inline-flex min-w-[34px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none" style={requestPillStyle}>{req.trainId}</span>
-                    <RequestCrossLine show={crossedOut} />
-                    <RequestCrossBubble message={crossOutMessage} />
-                  </td>
-                  <td className="request-cross-trigger relative px-0.5 py-0.5 text-center">
-                    <span className="inline-flex max-w-[105px] items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold leading-none truncate" style={requestPillStyle}>{displayLabel}</span>
-                    <RequestCrossLine show={crossedOut} />
-                  </td>
-                  <td className="relative pr-1 py-0.5 text-center">
-                    <button
-                        onClick={() => onRemove(req.id)}
-                        className="group/delete relative z-30 inline-flex h-[20px] w-[20px] items-center justify-center"
-                        aria-label={`Delete ${req.trainId}`}
-                        title="Delete request"
+                  <td colSpan={3} className="h-[24px] p-[2px]">
+                    <div
+                      className="request-cross-trigger relative grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-[6px] text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-110"
+                      style={regularCardStyle}
+                    >
+                      <span
+                        className="flex h-[14px] items-center justify-center border-r text-[12px] font-normal leading-none"
+                        style={{ borderColor: requestCardStyle.divider }}
                       >
-                        <DeleteRequestIcon />
-                      </button>
-                    <RequestCrossLine show={crossedOut} />
+                        {req.trainId}
+                      </span>
+                      <span className="min-w-0 truncate px-2 text-left text-[12px] font-normal leading-none">
+                        {displayLabel}
+                      </span>
+                      <div className="flex items-center justify-end pr-1">
+                        <button
+                          onClick={() => onRemove(req.id)}
+                          className="group/delete relative z-30 inline-flex h-[18px] w-[18px] items-center justify-center"
+                          aria-label={`Delete ${req.trainId}`}
+                          title="Delete request"
+                        >
+                          <DeleteRequestIcon />
+                        </button>
+                      </div>
+                      <RequestCrossLine show={crossedOut} />
+                      <RequestCrossBubble message={crossOutMessage} />
+                    </div>
                   </td>
                 </tr>
               );
