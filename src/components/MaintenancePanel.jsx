@@ -860,7 +860,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                           {req.trainId}
                         </span>
                         <span
-                          className="min-w-0 truncate px-2 text-left text-[12px] font-normal leading-none"
+                          className="min-w-0 truncate px-2 text-left text-[11px] font-normal leading-none"
                           style={{ color: "#ffffff" }}
                         >
                           {displayLabel}
@@ -929,7 +929,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                           {req.trainId}
                         </span>
                         <span
-                          className="min-w-0 truncate px-2 text-left text-[12px] font-normal leading-none"
+                          className="min-w-0 truncate px-2 text-left text-[11px] font-normal leading-none"
                           style={{ color: "#ffffff" }}
                         >
                           {displayLabel}
@@ -1013,7 +1013,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                         {req.trainId}
                       </span>
                       <span
-                        className="min-w-0 truncate px-2 text-left text-[12px] font-normal leading-none"
+                        className="min-w-0 truncate px-2 text-left text-[11px] font-normal leading-none"
                         style={{ color: "#ffffff" }}
                       >
                         {displayLabel}
