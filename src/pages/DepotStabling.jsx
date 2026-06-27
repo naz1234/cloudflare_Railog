@@ -2550,6 +2550,39 @@ function collectStablingTrainIds(data = {}, roads = []) {
   return trainIds;
 }
 
+function collectTrainRemTrainIdsForDepotCopy(
+  trainRemState = {},
+  depot = "east",
+  activeTimetable = null
+) {
+  const selectedPreset = trainRemState?.selectedPreset?.[depot] || "9am";
+  const westSelectedPreset = trainRemState?.selectedPreset?.west || "9am";
+  const useCombinedReference = isTrainRemCombinedReferencePreset("west", westSelectedPreset);
+  const sourceRows = useCombinedReference
+    ? normalizeTrainRemRowsForPreset(trainRemState?.rows?.west, "west", westSelectedPreset)
+    : normalizeTrainRemRowsForPreset(trainRemState?.rows?.[depot], depot, selectedPreset);
+  const seen = new Set();
+  const trainIds = [];
+
+  sourceRows.forEach((row, index) => {
+    const tid = normalizeTrainRemTidValue(row?.tid || "");
+
+    if (useCombinedReference) {
+      if (!getTrainRemScheduleMatch(activeTimetable, depot, westSelectedPreset, tid)) return;
+    } else if (isTrainRemReferenceOnlyIndex(depot, selectedPreset, index)) {
+      return;
+    }
+
+    const trainKey = padTrainId(normalizeTrainId(row?.trainId || ""));
+    if (!trainKey || seen.has(trainKey)) return;
+
+    seen.add(trainKey);
+    trainIds.push(trainKey);
+  });
+
+  return trainIds;
+}
+
 function buildTrainRemRowsFromPreset(depot, label, existingRows = []) {
   const preset = TID_PRESETS[depot].find((item) => item.label === label);
   const tids = getTrainRemPresetRowTids(depot, label, preset?.tids || []);
@@ -5786,10 +5819,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
   const handleCopyEastDepotTrainList = async () => {
     const latestState = trainRemStateRef.current || trainRemState;
-    const removalTrainIds = getTrainRemRemovalEntries(latestState, "east", maintenanceMap, activeTimetable)
-      .map((entry) => padTrainId(normalizeTrainId(entry.trainId)))
-      .filter(Boolean);
-    const stablingTrainIds = collectStablingTrainIds(eastStablingData, EAST_ROADS);
+    const removalTrainIds = collectTrainRemTrainIdsForDepotCopy(latestState, "east", activeTimetable);
+    const latestEastStablingData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
+    const stablingTrainIds = collectStablingTrainIds(latestEastStablingData, EAST_ROADS);
     const combinedTrainIds = Array.from(new Set([...removalTrainIds, ...stablingTrainIds]));
 
     if (combinedTrainIds.length === 0) {
