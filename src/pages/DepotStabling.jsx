@@ -20326,18 +20326,12 @@ function buildPSTExportRows(logLines = [], completedBy = "", depotFilter = "") {
   const todayText = formatExcelExportDate(new Date());
   const safeLogLines = Array.isArray(logLines) ? logLines : [];
   const normalizedDepot = depotFilter === "west" || depotFilter === "east" ? depotFilter : "";
-  const depotLabel = normalizedDepot === "west" ? "West Depot" : normalizedDepot === "east" ? "East Depot" : "";
-
   const matchesDepot = (entry) => !normalizedDepot || getPSTDepotFromEntry(entry) === normalizedDepot;
   const pstLogs = safeLogLines.filter((entry) => entry?.type === "PST" && matchesDepot(entry));
   const prepLogs = safeLogLines.filter((entry) => entry?.type === "Prep" && matchesDepot(entry));
 
   const latestPSTByTrain = buildLatestPSTExcelMap(pstLogs);
   const latestPrepByTrain = buildLatestPSTExcelMap(prepLogs);
-
-  const completedPSTEntries = Array.from(latestPSTByTrain.values());
-  const westCount = completedPSTEntries.filter((entry) => getPSTDepotFromEntry(entry) === "west").length;
-  const eastCount = completedPSTEntries.filter((entry) => getPSTDepotFromEntry(entry) === "east").length;
 
   const rows = [
     ["Date", "Version Sheet", "TRAIN Number", "Start Time", "Location", "Passenger Service Test", "Awake Status", "PST Completion Time", "PST Completed by", "Train Preparation Completion Time", "Train Preparation Completed By"],
@@ -20364,11 +20358,9 @@ function buildPSTExportRows(logLines = [], completedBy = "", depotFilter = "") {
     ]);
   }
 
-  const totalText = normalizedDepot
-    ? `Total PST completed PASS is ${completedPSTEntries.length}. (${depotLabel})`
-    : `Total PST completed PASS is ${completedPSTEntries.length}. (West Depot ${westCount} and East Depot ${eastCount})`;
-
-  rows.push([totalText, "", "", "", "", "", "", "", "", "", ""]);
+  // Keep row 50 as a standard blank row. The PST Excel export no longer
+  // includes or merges a completed-PASS summary row.
+  rows.push(["", "", "", "", "", "", "", "", "", "", ""]);
 
   return rows;
 }
@@ -20405,8 +20397,7 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = ""
   const buildRL3RowStyles = (rows) => rows.map((_, index) => {
     if (index === 0) return 1;      // black header
     if (index === 1) return 2;      // orange separator
-    if (index === rows.length - 1) return 4; // total row
-    return 3;                       // body
+    return 3;                       // body / normal blank rows
   });
   const formRowStyles = formRows.map((_, index) => index === 1 ? 1 : 3);
 
@@ -20416,7 +20407,6 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = ""
     rowHeights: rows.map((_, index) => index === 0 ? 16 : 15),
     colWidths: [13, 16, 18.28515625, 14, 14, 22, 21.42578125, 24.42578125, 20.85546875, 38, 38],
     dimension: "A1:K50",
-    merges: ["A50:K50"],
   });
 
   const formXml = buildExcelWorksheetXml({
