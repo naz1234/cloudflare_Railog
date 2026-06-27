@@ -537,6 +537,7 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
 
   return (
     <div
+      className="theme-insertion-reference-header"
       style={{
         width: "100%",
         boxSizing: "border-box",
@@ -610,6 +611,7 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
             {formatDate(now)}
           </div>
           <div
+            className="theme-insertion-reference-control theme-insertion-reference-sound-control"
             style={{
               display: "flex",
               gap: 3,
@@ -630,6 +632,7 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
                   key={depotKey}
                   type="button"
                   onClick={() => onToggleDepotSound(depotKey)}
+                  className={`theme-insertion-reference-sound-button ${enabled ? "is-enabled" : ""} ${soundReady ? "is-ready" : ""}`}
                   style={{
                     border: "1px solid",
                     borderColor: enabled
@@ -679,6 +682,7 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
       </div>
 
       <div
+        className="theme-insertion-reference-control theme-insertion-reference-schedule-control"
         style={{
           display: "flex",
           gap: 3,
@@ -698,6 +702,7 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
               key={key}
               type="button"
               onClick={() => setScheduleKey(key)}
+              className={`theme-insertion-reference-tab ${isActive ? "is-active" : ""} ${isWrongActiveTab ? "is-warning" : ""}`}
               style={{
                 position: "relative",
                 border: "1px solid",
@@ -856,6 +861,8 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
 
   return (
     <div
+      className="theme-insertion-reference-depot"
+      data-depot={depotType}
       style={{
         width: "100%",
         boxSizing: "border-box",
@@ -868,6 +875,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
       }}
     >
       <div
+        className="theme-insertion-reference-depot-header"
         style={{
           display: "flex",
           alignItems: "center",
@@ -948,6 +956,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
 
       <div style={{ padding: 7 }}>
         <table
+          className="theme-insertion-reference-table"
           style={{
             width: "100%",
             tableLayout: "fixed",
@@ -962,6 +971,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
           <thead>
             <tr>
               <th
+                className="theme-insertion-reference-table-header"
                 style={{
                   width: isWeekday ? "60%" : "68%",
                   padding: "6px 5px",
@@ -981,6 +991,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                 </span>
               </th>
               <th
+                className="theme-insertion-reference-table-header"
                 style={{
                   width: isWeekday ? "40%" : "32%",
                   padding: "6px 5px",
@@ -1075,6 +1086,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               return (
                 <tr
                   key={tid}
+                  className={`theme-insertion-reference-row ${isActive ? "is-active" : ""} ${remark ? "has-remark" : ""} ${isPast ? "is-past" : ""} ${isRaised ? "is-raised" : ""}`}
                   title={isDuplicate ? `TID ${tid} is used on more than one stabling card.` : isUsed ? `TID ${tid} label is already used in stabling. Hold and drag to use it again.` : `Hold and drag TID ${tid} to a train card`}
                   onMouseEnter={() => setHoveredRowKey(rowDragKey)}
                   onMouseLeave={() => setHoveredRowKey((currentKey) => currentKey === rowDragKey ? "" : currentKey)}
@@ -1122,6 +1134,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                   }}
                 >
                   <td
+                    className="theme-insertion-reference-row-cell theme-insertion-reference-tid-cell"
                     style={{
                       ...commonCellStyle,
                       textAlign: isWeekday ? "left" : "center",
@@ -1213,6 +1226,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                   </td>
 
                   <td
+                    className="theme-insertion-reference-row-cell theme-insertion-reference-time-cell"
                     style={{
                       ...commonCellStyle,
                       color: isActive ? accent.accent : "#dbeafe",
@@ -1348,6 +1362,7 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
 
   return (
     <div
+      className="theme-insertion-reference"
       style={{
         width: isWeekday ? "clamp(500px, 48vw, 620px)" : isScheduleOverride ? "clamp(300px, 32vw, 430px)" : "clamp(240px, 25vw, 300px)",
         maxWidth: "100%",
@@ -1460,6 +1475,7 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
       )}
 
       <div
+        className="theme-insertion-reference-help"
         style={{
           display: "flex",
           alignItems: "center",

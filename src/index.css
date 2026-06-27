@@ -418,3 +418,303 @@ html[data-app-theme="light"] .theme-train-rem-row-card input::placeholder {
   color: #000000 !important;
   opacity: 0.48;
 }
+
+/* Insertion workspace light-mode cleanup.
+   Dark mode keeps the original navy design; these rules only override the
+   remaining inline dark surfaces while the saved light theme is active. */
+html[data-app-theme="light"] .theme-insertion-section {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-title-icon {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #8eb9e8 !important;
+  color: #000000 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-title {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-pg-switch {
+  background: #edf3f8 !important;
+  border-color: #aebdcc !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-pg-button {
+  background: transparent !important;
+  color: #000000 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-pg-button.is-selected {
+  background: linear-gradient(145deg, #dbeafe, #bfdbfe) !important;
+  border-color: #78aeda !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.14) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-refresh-button {
+  background: linear-gradient(145deg, #f0f9ff, #dbeafe) !important;
+  border-color: #8eb9e8 !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 5px rgba(37, 99, 235, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-action {
+  color: #000000 !important;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-download {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #78aeda !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-clear {
+  background: linear-gradient(145deg, #fff1f2, #fee2e2) !important;
+  border-color: #e9a0aa !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-hide {
+  background: linear-gradient(145deg, #f8fafc, #e2e8f0) !important;
+  border-color: #9fb0c0 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-hide.is-active {
+  background: linear-gradient(145deg, #ecfdf5, #d1fae5) !important;
+  border-color: #86c9a7 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-table-wrap,
+html[data-app-theme="light"] .theme-insertion-table {
+  background: #ffffff !important;
+  border-color: #b7c4d1 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-table-header,
+html[data-app-theme="light"] .theme-insertion-road-label {
+  background: linear-gradient(180deg, #f8fafc 0%, #e7edf4 100%) !important;
+  background-image: linear-gradient(180deg, #f8fafc 0%, #e7edf4 100%) !important;
+  border-color: #b7c4d1 !important;
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-grid-cell {
+  background: #edf3f8 !important;
+  background-color: #edf3f8 !important;
+  border-color: #c2ced9 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-card {
+  background: linear-gradient(145deg, #ffffff 0%, #edf4f8 100%) !important;
+  background-image: linear-gradient(145deg, #ffffff 0%, #edf4f8 100%) !important;
+  border-color: #9fb2c2 !important;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-card.is-empty {
+  background: #f3f6f9 !important;
+  background-image: none !important;
+  border-color: #aebdcc !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-card.has-input:not(.is-inserted) {
+  background: linear-gradient(145deg, #fffdf0, #fef3c7) !important;
+  border-color: #d6ae35 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-card.is-inserted {
+  background: linear-gradient(145deg, #f5f3ff, #ede9fe) !important;
+  border-color: #a78bfa !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-card.is-complete {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #60a5fa !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-card.is-duplicate {
+  background: linear-gradient(145deg, #fffbeb, #fef3c7) !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.12), 0 3px 10px rgba(245, 158, 11, 0.14) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-card.is-expired {
+  background: #e5eaf0 !important;
+  border-color: #aeb8c3 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-card :is(input, button, span, div) {
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-tid-input {
+  background: transparent !important;
+  color: #000000 !important;
+  border-bottom-color: #93a4b5 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-tid-input::placeholder {
+  color: #000000 !important;
+  opacity: 0.45;
+}
+
+html[data-app-theme="light"] .theme-insertion-insert-button {
+  background: linear-gradient(145deg, #ffffff, #edf3f8) !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-insert-button.has-input {
+  background: linear-gradient(145deg, #fffdf0, #fef3c7) !important;
+  border-color: #d6ae35 !important;
+}
+
+/* Insertion TID reference cards shown at the left of the insertion page. */
+html[data-app-theme="light"] .theme-insertion-reference {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-header {
+  background: linear-gradient(145deg, #f8fafc, #e7edf4) !important;
+  background-image: linear-gradient(145deg, #f8fafc, #e7edf4) !important;
+  border-color: #b7c4d1 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.07) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-control {
+  background: #edf3f8 !important;
+  border-color: #aebdcc !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-sound-button {
+  background: #ffffff !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-sound-button.is-enabled {
+  background: linear-gradient(145deg, #fff7ed, #ffedd5) !important;
+  border-color: #f0b66c !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-sound-button.is-enabled.is-ready {
+  background: linear-gradient(145deg, #ecfdf5, #d1fae5) !important;
+  border-color: #86c9a7 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-tab {
+  background: #ffffff !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-tab.is-active {
+  background: linear-gradient(145deg, #dbeafe, #bfdbfe) !important;
+  border-color: #78aeda !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.14) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-tab.is-warning {
+  background: linear-gradient(145deg, #fff7ed, #ffedd5) !important;
+  border-color: #f59e0b !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-depot {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-depot[data-depot="west"] {
+  border-color: #8eb9e8 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-depot[data-depot="east"] {
+  border-color: #c4a7e7 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-depot-header {
+  background: #edf3f8 !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-depot[data-depot="west"] .theme-insertion-reference-depot-header {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-depot[data-depot="east"] .theme-insertion-reference-depot-header {
+  background: linear-gradient(145deg, #faf5ff, #f3e8ff) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-table {
+  background: #ffffff !important;
+  border-color: #b7c4d1 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-table-header {
+  background: linear-gradient(180deg, #f8fafc 0%, #e7edf4 100%) !important;
+  background-image: linear-gradient(180deg, #f8fafc 0%, #e7edf4 100%) !important;
+  border-color: #b7c4d1 !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-row-cell {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #c8d2dc !important;
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-row:nth-child(even) .theme-insertion-reference-row-cell {
+  background: #f3f6f9 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-row.has-remark .theme-insertion-reference-row-cell {
+  background: #f8fafc !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-depot[data-depot="west"] .theme-insertion-reference-row.is-active .theme-insertion-reference-row-cell {
+  background: #dbeafe !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-depot[data-depot="east"] .theme-insertion-reference-row.is-active .theme-insertion-reference-row-cell {
+  background: #f3e8ff !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-row.is-raised .theme-insertion-reference-row-cell {
+  filter: brightness(0.99);
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-help {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+  color: #000000 !important;
+}
