@@ -1294,3 +1294,69 @@ html[data-app-theme="light"] .theme-train-movement-page pre {
 html[data-app-theme="light"] .theme-train-movement-page svg {
   color: #000000 !important;
 }
+
+/* PST live status / completed-by / Excel export footer light-mode cleanup. */
+html[data-app-theme="light"] .theme-pst-live-panel {
+  background: linear-gradient(145deg, #ffffff 0%, #eef3f7 100%) !important;
+  background-image: linear-gradient(145deg, #ffffff 0%, #eef3f7 100%) !important;
+  border-color: #aebdcc !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.10), inset 0 1px 0 #ffffff !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-pst-live-panel :is(
+  div, span, label, button, input
+) {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-pst-live-panel > div:first-child,
+html[data-app-theme="light"] .theme-pst-live-panel > div:last-child {
+  border-color: #b7c4d1 !important;
+}
+
+html[data-app-theme="light"] .theme-pst-live-panel input {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-pst-live-panel input::placeholder {
+  color: #000000 !important;
+  opacity: 0.45;
+}
+
+html[data-app-theme="light"] .theme-pst-live-panel svg {
+  color: #000000 !important;
+  stroke: currentColor !important;
+}
+
+html[data-app-theme="light"] .theme-pst-live-panel .theme-pst-excel-button {
+  color: #000000 !important;
+  box-shadow: 0 1px 5px rgba(15, 23, 42, 0.09) !important;
+}
+
+html[data-app-theme="light"] .theme-pst-live-panel .theme-pst-excel-west {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  background-image: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #78aeda !important;
+}
+
+html[data-app-theme="light"] .theme-pst-live-panel .theme-pst-excel-east {
+  background: linear-gradient(145deg, #faf5ff, #ede9fe) !important;
+  background-image: linear-gradient(145deg, #faf5ff, #ede9fe) !important;
+  border-color: #b794e8 !important;
+}
+
+html[data-app-theme="light"] .theme-pst-live-panel .theme-pst-excel-combined {
+  background: linear-gradient(145deg, #f0fdfa, #ccfbf1) !important;
+  background-image: linear-gradient(145deg, #f0fdfa, #ccfbf1) !important;
+  border-color: #69c8bb !important;
+}
+
+html[data-app-theme="light"] .theme-pst-live-panel .theme-pst-excel-button:hover:not(:disabled) {
+  filter: brightness(0.98);
+}
