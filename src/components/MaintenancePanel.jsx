@@ -850,8 +850,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   >
                     <td colSpan={3} className="h-[24px] p-[2px]">
                       <div
-                        className="request-cross-trigger relative grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-[6px] text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
-                        style={workshopCardStyle}
+                        className="theme-maintenance-request-card request-cross-trigger relative grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-[6px] text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
+                        style={{ ...workshopCardStyle, "--maintenance-request-accent": requestCardStyle.accent }}
                       >
                         <span
                           className="flex h-[14px] items-center justify-center border-r text-[12px] font-normal leading-none"
@@ -919,8 +919,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   >
                     <td colSpan={3} className="h-[24px] p-[2px]">
                       <div
-                        className="grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_44px] items-center overflow-visible rounded-[6px] transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
-                        style={requestCardStyle.card}
+                        className="theme-maintenance-request-card grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_44px] items-center overflow-visible rounded-[6px] transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
+                        style={{ ...requestCardStyle.card, "--maintenance-request-accent": requestCardStyle.accent }}
                       >
                         <span
                           className="flex h-[14px] items-center justify-center border-r text-[12px] font-normal leading-none"
@@ -1003,8 +1003,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 >
                   <td colSpan={3} className="h-[24px] p-[2px]">
                     <div
-                      className="request-cross-trigger relative grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-[6px] text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
-                      style={regularCardStyle}
+                      className="theme-maintenance-request-card request-cross-trigger relative grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-[6px] text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
+                      style={{ ...regularCardStyle, "--maintenance-request-accent": requestCardStyle.accent }}
                     >
                       <span
                         className="flex h-[14px] items-center justify-center border-r text-[12px] font-normal leading-none"

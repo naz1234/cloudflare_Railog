@@ -338,6 +338,24 @@ html[data-app-theme="light"] .theme-maintenance-panel :is(
   background-image: none !important;
 }
 
+
+/* Maintenance request rows use bright colour-tinted cards in light mode.
+   The dark gradients remain untouched in the current dark theme. */
+html[data-app-theme="light"] .theme-maintenance-request-card {
+  background: color-mix(in srgb, var(--maintenance-request-accent, #4f8ef7) 28%, #ffffff) !important;
+  background-image: none !important;
+  border-color: color-mix(in srgb, var(--maintenance-request-accent, #4f8ef7) 78%, #94a3b8) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 1px 4px color-mix(in srgb, var(--maintenance-request-accent, #4f8ef7) 20%, transparent) !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-request-card > span {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
 html[data-app-theme="light"] .theme-train-rem-header button {
   background: #f8fafc !important;
   background-image: none !important;
