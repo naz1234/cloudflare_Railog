@@ -3595,7 +3595,7 @@ function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, lab
   const sectionDepotLabel = title?.toUpperCase().includes("EAST") ? "East Depot" : "West Depot";
 
   return (
-    <section className="bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
+    <section className="theme-stabling-section bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex min-w-0 items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
@@ -3632,14 +3632,14 @@ function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, lab
         )}
       </div>
       <div className="overflow-x-auto rounded-xl">
-        <table className="border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 912, maxWidth: 912, width: 912 }}>
+        <table className="theme-stabling-table border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 912, maxWidth: 912, width: 912 }}>
           <thead>
             <tr>
               {labelSide === "left" && <th className="w-[72px]" style={{ background: "transparent", border: "none" }} />}
               {blockLabels.map((label, i) => {
                 const isLastBlock = i === blockLabels.length - 1;
                 return (
-                  <th key={label} className="h-8 text-center text-[9px] font-black tracking-widest uppercase" style={{ width: 120, minWidth: 120, maxWidth: 120, background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", color: "#4a8ab5", borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined, borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: "2px solid #1a3a56", borderTopLeftRadius: labelSide === "left" && i === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && isLastBlock ? 12 : undefined }}>
+                  <th key={label} className="theme-stabling-block-header h-8 text-center text-[9px] font-black tracking-widest uppercase" style={{ width: 120, minWidth: 120, maxWidth: 120, background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", color: "#4a8ab5", borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined, borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: "2px solid #1a3a56", borderTopLeftRadius: labelSide === "left" && i === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && isLastBlock ? 12 : undefined }}>
                     {label}
                   </th>
                 );
@@ -3651,7 +3651,7 @@ function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, lab
             {roads.map((road, ri) => {
               const rowLine = ri === roads.length - 1 ? "1px solid #1a3a56" : "2px solid #1a3a56";
               const labelCell = (
-                <td className="text-center align-middle font-black text-[11px] tracking-tight uppercase" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", color: "#7eb8e0", borderTop: ri === 0 ? "none" : "1px solid rgba(255,255,255,0.06)", borderBottom: rowLine, borderRight: labelSide === "left" ? "1px solid rgba(126,184,224,0.15)" : "1px solid #1a3a56", borderLeft: labelSide === "right" ? "1px solid rgba(126,184,224,0.15)" : undefined, whiteSpace: "nowrap", width: 72, minWidth: 72, letterSpacing: "0.05em", borderTopLeftRadius: labelSide === "left" && ri === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && ri === 0 ? 12 : undefined, borderBottomLeftRadius: labelSide === "left" && ri === roads.length - 1 ? 12 : undefined, borderBottomRightRadius: labelSide === "right" && ri === roads.length - 1 ? 12 : undefined }}>{road}</td>
+                <td className="theme-stabling-road-label text-center align-middle font-black text-[11px] tracking-tight uppercase" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", color: "#7eb8e0", borderTop: ri === 0 ? "none" : "1px solid rgba(255,255,255,0.06)", borderBottom: rowLine, borderRight: labelSide === "left" ? "1px solid rgba(126,184,224,0.15)" : "1px solid #1a3a56", borderLeft: labelSide === "right" ? "1px solid rgba(126,184,224,0.15)" : undefined, whiteSpace: "nowrap", width: 72, minWidth: 72, letterSpacing: "0.05em", borderTopLeftRadius: labelSide === "left" && ri === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && ri === 0 ? 12 : undefined, borderBottomLeftRadius: labelSide === "left" && ri === roads.length - 1 ? 12 : undefined, borderBottomRightRadius: labelSide === "right" && ri === roads.length - 1 ? 12 : undefined }}>{road}</td>
               );
               return (
                 <tr key={road}>
@@ -4278,7 +4278,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
   if (expired) {
     return (
-      <td className="p-1.5 align-middle" title="Elapsed TID hidden manually" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
+      <td className="theme-stabling-grid-cell p-1.5 align-middle" title="Elapsed TID hidden manually" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
         <div className="flex h-full flex-col items-center justify-center gap-1 rounded-xl select-none" style={{ minHeight: rowCardMinHeight, height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, opacity: 0.55 }}>
           <div className="w-full text-center font-black leading-none" style={{ fontSize: 14, color: "#3a5068" }}>{displayVal || "—"}</div>
           {insertedRemarkLabel && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
@@ -4290,7 +4290,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   }
 
   return (
-    <td className="p-1.5 align-middle" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
+    <td className="theme-stabling-grid-cell p-1.5 align-middle" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
       <div
         data-insertion-drop-target="true"
         data-insertion-drop-eligible={isTidDropEligible ? "true" : "false"}
@@ -5869,8 +5869,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       : "";
 
     return (
-      <div className="rounded-xl border border-[#2b4f6b] bg-[#071828] overflow-hidden shadow-md">
-        <div className="px-2 py-2 border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+      <div className="theme-train-rem-depot-card rounded-xl border border-[#2b4f6b] bg-[#071828] overflow-hidden shadow-md">
+        <div className="theme-train-rem-header px-2 py-2 border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
           <div className="flex items-start justify-between gap-2">
             <div>
               <div className="text-[10px] font-normal text-white uppercase tracking-widest">{title}</div>
@@ -6046,13 +6046,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         </div>
 
         <div className="overflow-hidden">
-          <table className="w-full border-separate border-spacing-0 table-fixed text-[12px]">
+          <table className="theme-train-rem-table w-full border-separate border-spacing-0 table-fixed text-[12px]">
             <thead>
               <tr>
-                <th className="h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "2%" }}>Train ID</th>
-                <th className="h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "2%" }}>TID</th>
-                <th className="h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "2%" }}>Timing</th>
-                <th className="h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "5%" }}>Remark</th>
+                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "2%" }}>Train ID</th>
+                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "2%" }}>TID</th>
+                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "2%" }}>Timing</th>
+                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "5%" }}>Remark</th>
               </tr>
             </thead>
             <tbody>
@@ -6091,7 +6091,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     <tr key={`${depot}-train-rem-reference-note-${index}`}>
                       <td
                         colSpan={4}
-                        className="border-b border-[#1f3c55] px-2 py-1 text-left text-[9.5px] font-normal text-amber-100"
+                        className="theme-train-rem-table-cell border-b border-[#1f3c55] px-2 py-1 text-left text-[9.5px] font-normal text-amber-100"
                         style={{ backgroundColor: "#071828" }}
                       >
                       </td>
@@ -6176,14 +6176,14 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       <tr aria-hidden="true">
                         <td
                           colSpan={4}
-                          className="h-3 border-b border-[#1f3c55] bg-[#071828] p-0"
+                          className="theme-train-rem-table-cell h-3 border-b border-[#1f3c55] bg-[#071828] p-0"
                         />
                       </tr>
                     )}
                     <tr>
-                      <td colSpan={4} className="bg-[#071828] px-1 py-[1px]">
+                      <td colSpan={4} className="theme-train-rem-table-cell bg-[#071828] px-1 py-[1px]">
                         <div
-                          className="grid h-[22px] items-center overflow-hidden rounded-md border transition-[border-color,background,box-shadow] duration-150"
+                          className={`theme-train-rem-row-card grid h-[22px] items-center overflow-hidden rounded-md border transition-[border-color,background,box-shadow] duration-150 ${hasDuplicateValue ? "is-duplicate" : ""}`}
                           style={{
                             gridTemplateColumns: "18% 18% 22% 42%",
                             background: rowCardVisual.background,
@@ -6289,7 +6289,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   };
 
   return (
-    <section className="w-[314px] flex-shrink-0 rounded-xl border border-[#2b4f6b] bg-[#0b1f33] p-2 shadow-md">
+    <section className="theme-train-rem-panel w-[314px] flex-shrink-0 rounded-xl border border-[#2b4f6b] bg-[#0b1f33] p-2 shadow-md">
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center flex-shrink-0">
@@ -19885,7 +19885,7 @@ function ClearAllStablingButton({ onClearAll }) {
   return (
     <button
       onClick={handleClick}
-      className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
+      className="theme-light-control theme-light-clear group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
       style={confirming ? MAIN_STABLING_BUTTON_DANGER : MAIN_STABLING_BUTTON_CLEAR}
     >
       {!confirming && (
@@ -21010,14 +21010,14 @@ function StablingSection({
   const notFound = searched && !found;
 
   return (
-    <section className="bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
+    <section className="theme-stabling-section bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
       <SectionTitle
         title={displayTitle}
         action={
           <div className="flex items-center gap-2">
             <button
               onClick={handleCopyStabling}
-              className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
+              className="theme-light-control theme-light-copy group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
               style={copiedStabling ? MAIN_STABLING_BUTTON_SUCCESS : MAIN_STABLING_BUTTON_COPY}
             >
               {copiedStabling ? (
@@ -21030,7 +21030,7 @@ function StablingSection({
             <button
               onClick={handleDownloadPdf}
               disabled={downloadingPdf}
-              className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
+              className="theme-light-control theme-light-pdf group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
               style={MAIN_STABLING_BUTTON_PDF}
               title="Download PDF print version with colour-coded remark pills"
             >
@@ -21049,7 +21049,7 @@ function StablingSection({
       {/* Search Box */}
       <div className="mb-3" style={{ width: 912 }}>
         <div
-          className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all"
+          className="theme-stabling-search flex items-center gap-2 px-3 py-2 rounded-xl transition-all"
           style={{
             background: "#071828",
             border: found ? "1.5px solid #facc15" : notFound ? "1.5px solid #ef4444" : sectionSearch ? "1.5px solid #4f8ef7" : "1.5px dashed #1b3a55",
@@ -21112,7 +21112,7 @@ function StablingSection({
       </div>
 
       <div className="overflow-x-auto rounded-xl">
-        <table className="border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 912, maxWidth: 912, width: 912 }}>
+        <table className="theme-stabling-table border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 912, maxWidth: 912, width: 912 }}>
           <thead>
             <tr>
               {labelSide === "left" && <EmptyCornerCell />}
@@ -21122,7 +21122,7 @@ function StablingSection({
                 return (
                   <th
                     key={label}
-                    className="h-8 text-center text-[9px] font-black tracking-widest uppercase"
+                    className="theme-stabling-block-header h-8 text-center text-[9px] font-black tracking-widest uppercase"
                     style={{
                       width: 120,
                       minWidth: 120,
@@ -21323,7 +21323,7 @@ function RoadRow({
         return (
           <td
             key={bi}
-            className="p-1.5 align-middle"
+            className="theme-stabling-grid-cell p-1.5 align-middle"
             style={{
               backgroundColor: "#071828",
               borderLeft: "1px solid #1a3a56",
@@ -21334,10 +21334,11 @@ function RoadRow({
             }}
           >
             <div
-              className="relative flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-150"
+              className={`theme-stabling-train-card relative flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-150 ${primaryMaint ? "has-request" : ""} ${isDup ? "is-duplicate" : ""} ${isFlashing ? "is-flashing" : ""} ${key ? "has-train" : "is-empty"}`}
               style={{
                 minHeight: 76,
                 padding: "7px 4px",
+                "--theme-accent": requestAccent,
                 background: cardGrad,
                 border: cardBorder,
                 boxShadow: cardGlow,
@@ -21420,7 +21421,7 @@ function RoadRow({
 function RoadLabelCell({ label, labelSide, isFirst, isLast, rowLine }) {
   return (
     <td
-      className="text-center align-middle font-black text-[11px] tracking-tight uppercase"
+      className="theme-stabling-road-label text-center align-middle font-black text-[11px] tracking-tight uppercase"
       style={{
         background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)",
         color: "#7eb8e0",

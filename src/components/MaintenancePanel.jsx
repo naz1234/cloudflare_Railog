@@ -692,9 +692,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const labelCls = "block text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-widest mb-0.5";
 
   return (
-    <div className="relative overflow-visible bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shadow-md">
+    <div className="theme-maintenance-panel relative overflow-visible bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shadow-md">
       {/* Header */}
-      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[#1a3a56] rounded-t-xl" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+      <div className="theme-maintenance-header flex items-center gap-2.5 px-4 py-3 border-b border-[#1a3a56] rounded-t-xl" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
         <div className="w-6 h-6 rounded-md bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center">
           <Wrench className="w-3.5 h-3.5 text-[#4f8ef7]" />
         </div>
@@ -795,7 +795,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       {/* Workshop Requests */}
       {hasWorkshopRequests && (
         <div className="border-b border-[#1a3a56]">
-          <div className="flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+          <div className="theme-maintenance-subheader flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
             <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Keyword "workshop"</span>
             <div className="flex items-center gap-1.5">
               <button
@@ -819,7 +819,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
           <table className="w-full border-collapse text-xs">
             <thead>
-              <tr className="border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+              <tr className="theme-maintenance-subheader border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
                 <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">ID</th>
                 <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">Type</th>
                 <th className="w-7" />
@@ -890,14 +890,14 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       {/* Already at Stabling / Workshop Requests */}
       {hasAlreadyAtStablingOrWorkshopRequests && (
         <div className="border-b border-[#1a3a56]">
-          <div className="flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+          <div className="theme-maintenance-subheader flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
             <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Already at Stabling / Workshop</span>
             <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{alreadyAtStablingOrWorkshopRequests.length}</span>
           </div>
 
           <table className="w-full border-collapse text-xs">
             <thead>
-              <tr className="border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+              <tr className="theme-maintenance-subheader border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
                 <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">ID</th>
                 <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">Type</th>
                 <th className="w-12" />
@@ -958,14 +958,14 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       {/* Requests List */}
       <div className="overflow-visible">
         {(hasWorkshopRequests || hasAlreadyAtStablingOrWorkshopRequests) && (
-          <div className="flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+          <div className="theme-maintenance-subheader flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
             <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Pending Request</span>
             <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{regularRequests.length}</span>
           </div>
         )}
         <table className="w-full border-collapse text-xs">
           <thead>
-            <tr className="border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+            <tr className="theme-maintenance-subheader border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
               <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">ID</th>
               <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">Type</th>
               <th className="w-7" />
