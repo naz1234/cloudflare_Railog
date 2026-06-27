@@ -1180,3 +1180,117 @@ html[data-app-theme="light"] .pst-clean-action-danger {
   border-color: #e9a0aa !important;
   color: #000000 !important;
 }
+
+
+/* Train Movement + Inbound / Outbound light-mode cleanup.
+   The current dark design remains unchanged; these rules only apply when the
+   saved application theme is light. */
+html[data-app-theme="light"] .theme-train-movement-page {
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page :is(
+  h1, h2, h3, h4, h5, h6,
+  p, span, label, pre, div,
+  button, input, select, textarea, option
+) {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page :is(input, select, textarea) {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page :is(input, textarea)::placeholder {
+  color: #000000 !important;
+  opacity: 0.45;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page section {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #aebdcc !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page :is(
+  [class*="bg-[#071e33]"],
+  [class*="bg-[#061827]"],
+  [class*="bg-[#041727]"],
+  [class*="bg-[#031827]"],
+  [class*="bg-[#03111d]"],
+  [class*="bg-[#0a2236]"],
+  [class*="bg-[#0a2238]"]
+) {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page > section > div:first-child,
+html[data-app-theme="light"] .theme-train-movement-page section > div:first-child[style*="background"] {
+  background: linear-gradient(180deg, #f8fafc 0%, #e7edf4 100%) !important;
+  background-image: linear-gradient(180deg, #f8fafc 0%, #e7edf4 100%) !important;
+  border-color: #b7c4d1 !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page div.rounded-xl[style*="background"] {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #aebdcc !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.07) !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page button[style] {
+  background: linear-gradient(145deg, #ffffff, #e7edf4) !important;
+  background-image: linear-gradient(145deg, #ffffff, #e7edf4) !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.07) !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page button:disabled {
+  background: #edf1f5 !important;
+  color: #000000 !important;
+  opacity: 0.55;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page :is(
+  [class*="border-[#1e4060]"],
+  [class*="border-[#12304a]"],
+  [class*="border-[#1a3a56]"],
+  [class*="border-[#2b4f6b]"],
+  [class*="border-[#2f6084]"]
+) {
+  border-color: #b7c4d1 !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page :is(
+  [class*="border-b"][class*="border-[#12304a]"],
+  [class*="border-b"][class*="border-[#1a3a56]"]
+) {
+  background: #f7f9fb !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page [class*="bg-blue-600/30"] {
+  background: #dbeafe !important;
+  border-color: #78aeda !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page [class*="bg-red-950/35"] {
+  background: #fee2e2 !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page pre {
+  background: transparent !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page svg {
+  color: #000000 !important;
+}
