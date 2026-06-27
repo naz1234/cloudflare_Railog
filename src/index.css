@@ -1924,3 +1924,450 @@ html[data-app-theme="light"] .theme-maintenance-delete-icon svg * {
   color: #ffffff !important;
   stroke: #ffffff !important;
 }
+
+/* --------------------------------------------------------------------------
+   Insertion stabling glassmorphism — dark mode only
+   Light mode keeps its existing clean white design above.
+   -------------------------------------------------------------------------- */
+html[data-app-theme="dark"] .theme-insertion-section {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, rgba(18, 20, 48, 0.84), rgba(5, 8, 22, 0.92)) !important;
+  border-color: rgba(157, 135, 255, 0.28) !important;
+  box-shadow:
+    0 26px 68px rgba(1, 4, 18, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.42) !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-section::before {
+  content: "";
+  position: absolute;
+  inset: -80px;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 7% 10%, rgba(77, 91, 255, 0.54) 0, rgba(77, 91, 255, 0.19) 17%, transparent 38%),
+    radial-gradient(circle at 92% 13%, rgba(168, 85, 247, 0.48) 0, rgba(168, 85, 247, 0.16) 18%, transparent 39%),
+    radial-gradient(circle at 34% 92%, rgba(14, 165, 233, 0.42) 0, rgba(14, 165, 233, 0.13) 17%, transparent 38%),
+    radial-gradient(circle at 73% 86%, rgba(16, 185, 129, 0.29) 0, rgba(16, 185, 129, 0.09) 15%, transparent 34%),
+    radial-gradient(circle at 55% 5%, rgba(245, 158, 11, 0.18) 0, transparent 28%);
+  filter: blur(18px) saturate(135%);
+  transform: scale(1.05);
+}
+
+html[data-app-theme="dark"] .theme-insertion-section::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.025), transparent 35%, rgba(255, 255, 255, 0.014) 68%, transparent),
+    radial-gradient(circle at 50% -20%, rgba(255, 255, 255, 0.10), transparent 42%);
+}
+
+html[data-app-theme="dark"] .theme-insertion-section > * {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-app-theme="dark"] .theme-insertion-header {
+  min-height: 66px;
+  padding: 12px 14px;
+  border: 1px solid rgba(199, 181, 255, 0.28);
+  border-radius: 18px;
+  background:
+    linear-gradient(110deg, rgba(99, 102, 241, 0.20), rgba(139, 92, 246, 0.12) 62%, rgba(168, 85, 247, 0.18)),
+    rgba(20, 22, 50, 0.52);
+  box-shadow:
+    0 18px 42px rgba(7, 8, 24, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.19),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+
+html[data-app-theme="dark"] .theme-insertion-title-icon {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(99, 102, 241, 0.12)) !important;
+  border-color: rgba(199, 210, 254, 0.34) !important;
+  color: #eef2ff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 9px 22px rgba(49, 46, 129, 0.24) !important;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+
+html[data-app-theme="dark"] .theme-insertion-title {
+  color: #f8fafc !important;
+  text-shadow: 0 0 22px rgba(165, 180, 252, 0.34);
+}
+
+html[data-app-theme="dark"] .theme-insertion-pg-switch {
+  border-radius: 12px !important;
+  padding: 3px !important;
+  background: rgba(7, 9, 24, 0.54) !important;
+  border-color: rgba(165, 180, 252, 0.22) !important;
+  box-shadow:
+    inset 0 1px 4px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+html[data-app-theme="dark"] .theme-insertion-pg-button {
+  min-width: 50px;
+  border-radius: 9px !important;
+  color: rgba(203, 213, 225, 0.55) !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-pg-button.is-selected {
+  background:
+    linear-gradient(145deg, rgba(99, 102, 241, 0.34), rgba(67, 56, 202, 0.20)) !important;
+  border: 1px solid rgba(129, 140, 248, 0.50) !important;
+  color: #c7d2fe !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 0 18px rgba(79, 70, 229, 0.24) !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-refresh-button,
+html[data-app-theme="dark"] .theme-insertion-action {
+  border-radius: 10px !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.035)),
+    rgba(10, 13, 31, 0.56) !important;
+  border-color: rgba(165, 180, 252, 0.24) !important;
+  color: #cbd5e1 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 8px 18px rgba(2, 6, 23, 0.22) !important;
+  backdrop-filter: blur(14px) saturate(145%);
+  -webkit-backdrop-filter: blur(14px) saturate(145%);
+}
+
+html[data-app-theme="dark"] .theme-insertion-refresh-button:hover,
+html[data-app-theme="dark"] .theme-insertion-action:hover:not(:disabled) {
+  border-color: rgba(196, 181, 253, 0.50) !important;
+  color: #ffffff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 10px 24px rgba(67, 56, 202, 0.22) !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-download {
+  border-color: rgba(96, 165, 250, 0.40) !important;
+  color: #bfdbfe !important;
+  background:
+    linear-gradient(145deg, rgba(59, 130, 246, 0.18), rgba(14, 165, 233, 0.06)),
+    rgba(8, 18, 40, 0.58) !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-clear {
+  border-color: rgba(251, 113, 133, 0.40) !important;
+  color: #fda4af !important;
+  background:
+    linear-gradient(145deg, rgba(244, 63, 94, 0.18), rgba(225, 29, 72, 0.06)),
+    rgba(34, 11, 27, 0.58) !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-hide {
+  border-color: rgba(167, 139, 250, 0.38) !important;
+  color: #c4b5fd !important;
+  background:
+    linear-gradient(145deg, rgba(139, 92, 246, 0.18), rgba(99, 102, 241, 0.06)),
+    rgba(18, 13, 42, 0.58) !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-hide.is-active {
+  border-color: rgba(129, 140, 248, 0.58) !important;
+  color: #eef2ff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 0 22px rgba(99, 102, 241, 0.22) !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-table-wrap {
+  position: relative;
+  overflow: auto;
+  border-radius: 18px !important;
+  background: rgba(5, 7, 20, 0.40) !important;
+  border-color: rgba(148, 163, 255, 0.24) !important;
+  box-shadow:
+    0 22px 54px rgba(2, 4, 16, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.32) !important;
+  backdrop-filter: blur(20px) saturate(135%);
+  -webkit-backdrop-filter: blur(20px) saturate(135%);
+}
+
+html[data-app-theme="dark"] .theme-insertion-table {
+  background: transparent !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-table-header,
+html[data-app-theme="dark"] .theme-insertion-road-label {
+  background:
+    linear-gradient(180deg, rgba(36, 38, 76, 0.36), rgba(8, 10, 27, 0.30)) !important;
+  border-color: rgba(148, 163, 255, 0.15) !important;
+  color: rgba(203, 213, 225, 0.44) !important;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.34);
+}
+
+html[data-app-theme="dark"] .theme-insertion-road-label {
+  color: rgba(148, 163, 184, 0.58) !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-grid-cell {
+  background:
+    linear-gradient(145deg, rgba(19, 22, 48, 0.24), rgba(5, 7, 19, 0.22)) !important;
+  border-color: rgba(148, 163, 255, 0.13) !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-card {
+  --insertion-card-accent: rgba(148, 163, 255, 0.34);
+  --insertion-card-tint: rgba(99, 102, 241, 0.14);
+  --insertion-card-tint-soft: rgba(56, 189, 248, 0.08);
+  --insertion-card-accent-text: #e2e8f0;
+  --insertion-card-glow: rgba(79, 70, 229, 0.14);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.055) 30%, rgba(7, 9, 24, 0.62) 100%),
+    radial-gradient(circle at 14% 8%, var(--insertion-card-tint) 0%, transparent 62%),
+    radial-gradient(circle at 92% 104%, var(--insertion-card-tint-soft) 0%, transparent 58%) !important;
+  border: 1px solid var(--insertion-card-accent) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 1px 0 0 rgba(255, 255, 255, 0.055),
+    inset -1px 0 0 rgba(0, 0, 0, 0.20),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.34),
+    0 13px 28px rgba(1, 4, 17, 0.28),
+    0 0 18px var(--insertion-card-glow) !important;
+  backdrop-filter: blur(18px) saturate(155%);
+  -webkit-backdrop-filter: blur(18px) saturate(155%);
+}
+
+html[data-app-theme="dark"] .theme-insertion-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 58%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.065) 20%, transparent 60%);
+  opacity: 0.62;
+}
+
+html[data-app-theme="dark"] .theme-insertion-card::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.055), transparent 11%, transparent 89%, rgba(255, 255, 255, 0.025));
+}
+
+html[data-app-theme="dark"] .theme-insertion-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-app-theme="dark"] .theme-insertion-card.is-empty {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.012)),
+    rgba(7, 9, 24, 0.22) !important;
+  border: 1px dashed rgba(148, 163, 184, 0.20) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.025),
+    0 8px 22px rgba(1, 4, 17, 0.10) !important;
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+}
+
+html[data-app-theme="dark"] .theme-insertion-card.is-empty::before {
+  opacity: 0.20;
+}
+
+html[data-app-theme="dark"] .theme-insertion-card.is-duplicate {
+  border: 2px solid rgba(251, 191, 36, 0.84) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 0 0 2px rgba(245, 158, 11, 0.12),
+    0 0 24px rgba(245, 158, 11, 0.42),
+    0 14px 28px rgba(1, 4, 17, 0.30) !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-card.is-expired {
+  background: rgba(7, 9, 21, 0.42) !important;
+  border-color: rgba(100, 116, 139, 0.22) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025) !important;
+  filter: grayscale(0.35);
+}
+
+html[data-app-theme="dark"] .theme-insertion-card:hover:not(.is-empty):not(.is-expired) {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 1px 0 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.32),
+    0 17px 34px rgba(1, 4, 17, 0.34),
+    0 0 24px var(--insertion-card-glow) !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-train-id {
+  color: #f8fafc !important;
+  font-size: 27px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.025em !important;
+  line-height: 1 !important;
+  text-align: left !important;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+  text-shadow: 0 2px 14px rgba(255, 255, 255, 0.10), 0 2px 12px rgba(0, 0, 0, 0.34);
+}
+
+html[data-app-theme="dark"] .theme-insertion-card.is-empty .theme-insertion-train-id {
+  color: rgba(148, 163, 184, 0.20) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-align: center !important;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+
+html[data-app-theme="dark"] .theme-insertion-card.has-maintenance-request .theme-insertion-train-id {
+  margin-top: 14px;
+}
+
+html[data-app-theme="dark"] .theme-insertion-maintenance-slot {
+  position: absolute !important;
+  top: 7px;
+  left: 8px;
+  right: 8px;
+  z-index: 3 !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin-top: 0 !important;
+  align-items: flex-start !important;
+  gap: 3px !important;
+  pointer-events: none;
+}
+
+html[data-app-theme="dark"] .theme-insertion-maintenance-item {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  padding: 3px 7px !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  background: rgba(7, 9, 24, 0.36) !important;
+  color: #e2e8f0 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.18) !important;
+  backdrop-filter: blur(12px) saturate(145%);
+  -webkit-backdrop-filter: blur(12px) saturate(145%);
+}
+
+html[data-app-theme="dark"] .theme-insertion-maintenance-item.is-wash {
+  position: relative;
+  justify-content: flex-start !important;
+  padding: 0 0 0 10px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #5ee7b2 !important;
+  box-shadow: none !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.40);
+}
+
+html[data-app-theme="dark"] .theme-insertion-maintenance-item.is-wash::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: #34d399;
+  box-shadow:
+    0 0 5px rgba(52, 211, 153, 0.95),
+    0 0 11px rgba(16, 185, 129, 0.70);
+  transform: translateY(-50%);
+}
+
+html[data-app-theme="dark"] .theme-insertion-meta-grid {
+  color: #f8fafc;
+}
+
+html[data-app-theme="dark"] .theme-insertion-meta-label {
+  color: rgba(203, 213, 225, 0.48) !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.03em;
+}
+
+html[data-app-theme="dark"] .theme-insertion-meta-value {
+  color: #f1f5f9 !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 8px rgba(255, 255, 255, 0.08);
+}
+
+html[data-app-theme="dark"] .theme-insertion-meta-value::placeholder {
+  color: rgba(148, 163, 184, 0.48) !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-assist-pill {
+  min-height: 19px;
+  padding: 2px 10px !important;
+  border: 1px solid var(--insertion-card-accent) !important;
+  border-radius: 7px !important;
+  background:
+    linear-gradient(145deg, var(--insertion-card-tint), rgba(7, 9, 24, 0.30)) !important;
+  color: var(--insertion-card-accent-text) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 0 14px var(--insertion-card-glow) !important;
+  backdrop-filter: blur(11px) saturate(145%);
+  -webkit-backdrop-filter: blur(11px) saturate(145%);
+}
+
+html[data-app-theme="dark"] .theme-insertion-tid-input {
+  color: #e2e8f0 !important;
+  border-bottom-color: rgba(203, 213, 225, 0.22) !important;
+  text-shadow: 0 1px 8px rgba(255, 255, 255, 0.06);
+}
+
+html[data-app-theme="dark"] .theme-insertion-tid-input::placeholder {
+  color: rgba(148, 163, 184, 0.38) !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-insert-button {
+  border-color: rgba(165, 180, 252, 0.28) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.025)),
+    rgba(7, 9, 24, 0.38) !important;
+  color: #cbd5e1 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
+  backdrop-filter: blur(11px);
+  -webkit-backdrop-filter: blur(11px);
+}
+
+html[data-app-theme="dark"] .theme-insertion-insert-button.has-input {
+  border-color: var(--insertion-card-accent) !important;
+  color: var(--insertion-card-accent-text) !important;
+  background:
+    linear-gradient(145deg, var(--insertion-card-tint), rgba(7, 9, 24, 0.32)) !important;
+  box-shadow: 0 0 14px var(--insertion-card-glow) !important;
+}

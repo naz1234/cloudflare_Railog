@@ -3856,6 +3856,87 @@ function getInsertionAssistRemarkDisplayLabel(remark = "") {
   return normalized;
 }
 
+function getInsertionGlassTone({ assistRemark = "", manualRemark = "", inserted = false } = {}) {
+  const assist = normalizeInsertionAssistRemark(assistRemark);
+  const manual = String(manualRemark || "").trim().toUpperCase();
+
+  if (assist === "Early Rem") {
+    return {
+      accent: "rgba(96, 165, 250, 0.72)",
+      tint: "rgba(59, 130, 246, 0.24)",
+      tintSoft: "rgba(14, 165, 233, 0.13)",
+      text: "#bfdbfe",
+      glow: "rgba(37, 99, 235, 0.24)",
+    };
+  }
+
+  if (assist === "Late Rem") {
+    return {
+      accent: "rgba(250, 204, 21, 0.70)",
+      tint: "rgba(245, 158, 11, 0.24)",
+      tintSoft: "rgba(250, 204, 21, 0.12)",
+      text: "#fde68a",
+      glow: "rgba(245, 158, 11, 0.22)",
+    };
+  }
+
+  if (assist === "ED") {
+    return {
+      accent: "rgba(251, 113, 133, 0.72)",
+      tint: "rgba(244, 63, 94, 0.24)",
+      tintSoft: "rgba(248, 113, 113, 0.12)",
+      text: "#fecdd3",
+      glow: "rgba(225, 29, 72, 0.22)",
+    };
+  }
+
+  if (assist === "ED (7pm)") {
+    return {
+      accent: "rgba(167, 139, 250, 0.72)",
+      tint: "rgba(139, 92, 246, 0.24)",
+      tintSoft: "rgba(192, 132, 252, 0.12)",
+      text: "#ddd6fe",
+      glow: "rgba(124, 58, 237, 0.22)",
+    };
+  }
+
+  if (manual === "3K1") {
+    return {
+      accent: "rgba(45, 212, 191, 0.72)",
+      tint: "rgba(13, 148, 136, 0.24)",
+      tintSoft: "rgba(16, 185, 129, 0.12)",
+      text: "#ccfbf1",
+      glow: "rgba(13, 148, 136, 0.22)",
+    };
+  }
+
+  if (["SW", "SW1", "SW2", "SWEEP", "SWEEPING", "2W"].includes(manual)) {
+    return {
+      accent: "rgba(192, 132, 252, 0.72)",
+      tint: "rgba(147, 51, 234, 0.24)",
+      tintSoft: "rgba(168, 85, 247, 0.12)",
+      text: "#f3e8ff",
+      glow: "rgba(126, 34, 206, 0.22)",
+    };
+  }
+
+  return inserted
+    ? {
+        accent: "rgba(125, 211, 252, 0.68)",
+        tint: "rgba(14, 165, 233, 0.20)",
+        tintSoft: "rgba(99, 102, 241, 0.12)",
+        text: "#dbeafe",
+        glow: "rgba(14, 165, 233, 0.20)",
+      }
+    : {
+        accent: "rgba(148, 163, 255, 0.34)",
+        tint: "rgba(99, 102, 241, 0.14)",
+        tintSoft: "rgba(56, 189, 248, 0.08)",
+        text: "#e2e8f0",
+        glow: "rgba(79, 70, 229, 0.14)",
+      };
+}
+
 function getTimetableInsertionRemarkMap(activeTimetable = null, depot = "west") {
   const parsed = getActiveTimetableParsedData(activeTimetable);
   const depotKey = normalizeDepotKey(depot);
@@ -4037,7 +4118,7 @@ const INSERTION_ACTION_BUTTON_DANGER = {
 
 function InsertionSectionTitle({ title, leftAction = null, action = null }) {
   return (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="theme-insertion-header mb-4 flex flex-wrap items-center justify-between gap-3">
       <div className="flex min-w-0 flex-wrap items-center justify-start gap-3">
         <div
           className="theme-insertion-title-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border"
@@ -4155,6 +4236,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     : "";
   const hasInsertedPlainRemark = Boolean(insertedPlainRemark);
   const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
+  const previewTidAssistRemark = autoTid && typeof getTidAssistRemark === "function"
+    ? getTidAssistRemark(autoTid, autoTidDepot)
+    : normalizeInsertionAssistRemark(tidRemarkText);
+  const insertionGlassTone = getInsertionGlassTone({
+    assistRemark: insertedTidAssistRemark || previewTidAssistRemark,
+    manualRemark: inserted?.isSweeping ? "SW" : inserted?.remark || tidRemarkText,
+    inserted: Boolean(inserted),
+  });
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
   const isInsertionDone = Boolean(inserted && !inserted.isSweeping);
@@ -4297,8 +4386,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         data-insertion-drop-depot={autoTidDepot}
         data-insertion-drop-road={road}
         data-insertion-drop-bi={bi}
-        className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} relative flex h-full flex-col items-center justify-start rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
+        className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${maintList.length > 0 ? "has-maintenance-request" : ""} relative flex h-full flex-col items-center justify-start rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
         style={{
+          "--insertion-card-accent": insertionGlassTone.accent,
+          "--insertion-card-tint": insertionGlassTone.tint,
+          "--insertion-card-tint-soft": insertionGlassTone.tintSoft,
+          "--insertion-card-accent-text": insertionGlassTone.text,
+          "--insertion-card-glow": insertionGlassTone.glow,
           minHeight: Math.max(inserted?.isSweeping ? 158 : isInsertionDone ? ((insertedTid || hasInsertedPlainRemark) ? 126 : 130) : 98, rowCardMinHeight),
           height: "100%",
           padding: isInsertionDone ? "6px 5px" : "8px 7px",
@@ -4310,7 +4404,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               ? "1px dashed rgba(125, 211, 252, 0.78)"
               : "none",
           outlineOffset: -3,
-          transform: isTidDropHovered ? "translateY(-3px) scale(1.025)" : isTidDragActive && isTidDropEligible ? "translateY(-1px) scale(1.008)" : "none",
+          transform: isTidDropHovered ? "translateY(-3px) scale(1.025)" : isTidDragActive && isTidDropEligible ? "translateY(-1px) scale(1.008)" : undefined,
           boxShadow: isTidDropHovered
             ? "0 12px 28px rgba(14, 165, 233, 0.34), 0 0 0 3px rgba(56, 189, 248, 0.12)"
             : isTidDragActive && isTidDropEligible
@@ -4319,7 +4413,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           transition: "transform 140ms ease, outline-color 140ms ease, box-shadow 140ms ease",
         }}
       >
-        <div className={`flex w-full flex-col items-center ${hasInsertedPlainRemark ? "flex-1 gap-0" : (isInsertionDone ? "gap-1" : "gap-2")}`}>
+        <div className={`theme-insertion-card-content flex w-full flex-col items-center ${hasInsertedPlainRemark ? "flex-1 gap-0" : (isInsertionDone ? "gap-1" : "gap-2")}`}>
           {stablingEditable ? (
             <input
               type="text"
@@ -4331,7 +4425,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               onBlur={() => setIsTrainIdEditing(false)}
               onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
               placeholder="Train ID"
-              className="h-7 w-full border-0 border-b px-1.5 text-center text-[15px] font-black uppercase outline-none placeholder:text-[10px] placeholder:text-[#47637a]"
+              className="theme-insertion-train-id h-7 w-full border-0 border-b px-1.5 text-center text-[15px] font-black uppercase outline-none placeholder:text-[10px] placeholder:text-[#47637a]"
               style={{
                 borderBottomColor: key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine,
                 backgroundColor: "transparent",
@@ -4342,7 +4436,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             />
           ) : (
             <div
-              className="w-full text-center font-black leading-none"
+              className="theme-insertion-train-id w-full text-center font-black leading-none"
               style={{
                 fontSize: key ? (isInsertionDone ? 15 : 18) : 13,
                 color: key ? trainColor : "#587187",
@@ -4354,20 +4448,24 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           )}
           {rowMaintenanceSlotHeight > 0 && (
             <div
-              className="flex w-full shrink-0 flex-col items-center justify-start gap-1.5"
+              className="theme-insertion-maintenance-slot flex w-full shrink-0 flex-col items-center justify-start gap-1.5"
               style={{ height: rowMaintenanceSlotHeight, minHeight: rowMaintenanceSlotHeight, marginTop: 3 }}
               aria-hidden={maintList.length === 0 ? "true" : undefined}
             >
-              {maintList.map((item) => (
-                <span
-                  key={`${item.displayType}-${item.badgeText || ""}`}
-                  className="inline-flex min-w-[92px] w-fit max-w-full items-center justify-center rounded-full px-2 py-0.5 text-center text-[10px] font-normal leading-none whitespace-nowrap"
-                  style={getRequestPillStyle(item, { showSuppressedStyle: false })}
-                  title={item.badgeText || item.displayType}
-                >
-                  {item.badgeText || item.displayType}
-                </span>
-              ))}
+              {maintList.map((item) => {
+                const maintenanceLabel = item.badgeText || item.displayType || "";
+                const isWashMaintenance = /\bwash\b/i.test(maintenanceLabel);
+                return (
+                  <span
+                    key={`${item.displayType}-${item.badgeText || ""}`}
+                    className={`theme-insertion-maintenance-item ${isWashMaintenance ? "is-wash" : ""} inline-flex min-w-[92px] w-fit max-w-full items-center justify-center rounded-full px-2 py-0.5 text-center text-[10px] font-normal leading-none whitespace-nowrap`}
+                    style={getRequestPillStyle(item, { showSuppressedStyle: false })}
+                    title={maintenanceLabel}
+                  >
+                    {maintenanceLabel}
+                  </span>
+                );
+              })}
             </div>
           )}
           {key && hasInsertedPlainRemark && (
@@ -4462,7 +4560,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           )}
         </div>
         {key && (
-          <div className={`mt-auto flex w-full flex-col items-center ${isInsertionDone ? "gap-1" : "gap-2"}`}>
+          <div className={`theme-insertion-card-footer mt-auto flex w-full flex-col items-center ${isInsertionDone ? "gap-1" : "gap-2"}`}>
             {!inserted && (
               <input
                 ref={(element) => {
@@ -4494,19 +4592,19 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             {inserted && !inserted.isSweeping && (
               <>
                 {insertedTid ? (
-                <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
-                  <span className="font-normal text-blue-300">TID :</span>
+                <div className="theme-insertion-meta-grid grid w-full grid-cols-[auto_1fr] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                  <span className="theme-insertion-meta-label font-normal text-blue-300">TID :</span>
                   <button
                     type="button"
                     onClick={handleInsertedUndoClick}
-                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none transition-colors hover:text-red-200 focus-visible:text-red-200"
+                    className="theme-insertion-meta-value min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none transition-colors hover:text-red-200 focus-visible:text-red-200"
                     title={`Click TID ${insertedTid} to undo insertion`}
                     aria-label={`Undo insertion for TID ${insertedTid}`}
                   >
                     {insertedTid}
                   </button>
 
-                  <span className="font-normal text-blue-300">Time :</span>
+                  <span className="theme-insertion-meta-label font-normal text-blue-300">Time :</span>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -4527,7 +4625,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
                     }}
                     placeholder="00:00"
-                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                    className="theme-insertion-meta-value min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
                     title="Edit insertion completion time"
                   />
 
@@ -4536,7 +4634,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       <button
                         type="button"
                         onClick={handleInsertedUndoClick}
-                        className="col-span-2 inline-flex min-w-0 max-w-full items-center justify-center justify-self-center rounded-full border px-2 py-[1px] text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                        className="theme-insertion-assist-pill col-span-2 inline-flex min-w-0 max-w-full items-center justify-center justify-self-center rounded-full border px-2 py-[1px] text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
                         style={{
                           color: insertedTidRemarkStyle?.color || "#bfdbfe",
                           background: insertedTidRemarkStyle?.bg || "rgba(59, 130, 246, 0.16)",
@@ -4552,7 +4650,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       </button>
                     ) : (
                       <span
-                        className="col-span-2 min-w-0 justify-self-center text-center text-[12px] font-normal leading-tight"
+                        className="theme-insertion-assist-pill col-span-2 min-w-0 justify-self-center text-center text-[12px] font-normal leading-tight"
                         style={{ color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
                         title={insertedTidAssistDisplayRemark}
                       >
@@ -4562,8 +4660,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   )}
                 </div>
               ) : hasInsertedPlainRemark ? (
-                <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
-                  <span className="font-normal text-blue-300">Time :</span>
+                <div className="theme-insertion-meta-grid grid w-full grid-cols-[auto_1fr] items-center gap-x-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                  <span className="theme-insertion-meta-label font-normal text-blue-300">Time :</span>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -4584,14 +4682,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                     }}
                     placeholder="00:00"
-                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                    className="theme-insertion-meta-value min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
                     title="Edit insertion completion time"
                   />
                 </div>
               ) : (
                 <>
-                  <div className="flex w-full items-center justify-center gap-1 whitespace-nowrap px-1 text-[12px] font-normal leading-tight">
-                    <span className="shrink-0 text-blue-300">TIME :</span>
+                  <div className="theme-insertion-meta-grid flex w-full items-center justify-center gap-1 whitespace-nowrap px-1 text-[12px] font-normal leading-tight">
+                    <span className="theme-insertion-meta-label shrink-0 text-blue-300">TIME :</span>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -4612,7 +4710,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                       }}
                       placeholder="00:00"
-                      className="w-[42px] border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                      className="theme-insertion-meta-value w-[42px] border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
                       title="Edit insertion completion time"
                     />
                   </div>
@@ -4627,8 +4725,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </button>
                 </>
                 )}
-                <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
-                  <span className="font-normal text-blue-300">TA :</span>
+                <div className="theme-insertion-meta-grid grid w-full grid-cols-[auto_1fr] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
+                  <span className="theme-insertion-meta-label font-normal text-blue-300">TA :</span>
                   <input
                     type="text"
                     maxLength={40}
@@ -4636,7 +4734,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
                     placeholder="Optional"
-                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                    className="theme-insertion-meta-value min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
                     title="Optional TA name for the insertion output"
                   />
                 </div>
