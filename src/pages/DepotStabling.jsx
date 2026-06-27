@@ -3472,21 +3472,21 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   const pstCardBorder = isPstDone ? "1px solid #059669" : isPstConfirming ? "1px solid #ca8a04" : isPrepDone ? "1px solid #3b82f6" : isPrepStarted ? "1px solid #ca8a04" : key ? "1px solid #1e4d72" : "1.5px dashed #1b3a55";
   const pstRowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
   return (
-    <td className="p-1.5 align-top" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: pstRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-      <div className="relative flex flex-col items-center justify-start gap-1 rounded-xl" style={{ minHeight: isPrepDone ? 156 : (isPstDone || isPstConfirming) ? 128 : pstEstimateTime ? 102 : 90, padding: "7px 5px", background: pstCardBg, border: pstCardBorder, boxShadow: key ? "0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)" : undefined }}>
+    <td className="theme-pst-grid-cell p-1.5 align-top" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: pstRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
+      <div className={`theme-pst-card relative flex flex-col items-center justify-start gap-1 rounded-xl ${!key ? "is-empty" : isPstDone ? "is-pst-done" : isPstConfirming ? "is-pst-confirming" : isPrepDone ? "is-prep-done" : "is-normal"}`} style={{ minHeight: isPrepDone ? 156 : (isPstDone || isPstConfirming) ? 128 : pstEstimateTime ? 102 : 90, padding: "7px 5px", background: pstCardBg, border: pstCardBorder, boxShadow: key ? "0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)" : undefined }}>
         {key && (
           <div className="absolute top-1 right-1.5 opacity-20 pointer-events-none">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={trainColor} strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/></svg>
           </div>
         )}
-        <div className="w-full text-center font-black leading-none" style={{ fontSize: key ? 15 : 12, color: key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}>
+        <div className="theme-pst-train-number w-full text-center font-black leading-none" style={{ fontSize: key ? 15 : 12, color: key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}>
           {displayVal || "—"}
         </div>
         {/* PST / Train Prep cells intentionally hide Maintenance Request type / remark pills. */}
         {key && (isPstDone || isPstConfirming) && (
-          <div className={`w-full rounded-lg border px-1 py-1 ${isPstConfirming ? "border-amber-500/60 bg-amber-950/25" : "border-emerald-500/60 bg-emerald-950/30"}`}>
+          <div className={`theme-pst-time-panel w-full rounded-lg border px-1 py-1 ${isPstConfirming ? "is-confirming border-amber-500/60 bg-amber-950/25" : "is-done border-emerald-500/60 bg-emerald-950/30"}`}>
             <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap">
-              <span className={`shrink-0 text-[10px] font-bold leading-tight ${isPstConfirming ? "text-amber-300" : "text-emerald-300"}`}>Start :</span>
+              <span className={`theme-pst-time-label shrink-0 text-[10px] font-bold leading-tight ${isPstConfirming ? "text-amber-300" : "text-emerald-300"}`}>Start :</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -3504,13 +3504,13 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
                 onChange={(e) => onPSTStartTimeChange?.(road, bi, key, cleanMovementCustomTimeInput(e.target.value))}
                 onBlur={(e) => onPSTStartTimeChange?.(road, bi, key, normalizeMovementCustomTimeInput(e.target.value))}
                 placeholder="00:00"
-                className={`w-[36px] rounded-md border bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight outline-none ${isPstConfirming ? "border-amber-500/50 text-amber-100 placeholder:text-amber-700 focus:border-amber-300" : "border-emerald-500/50 text-emerald-100 placeholder:text-emerald-700 focus:border-emerald-300"}`}
+                className={`theme-pst-time-input w-[36px] rounded-md border bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight outline-none ${isPstConfirming ? "border-amber-500/50 text-amber-100 placeholder:text-amber-700 focus:border-amber-300" : "border-emerald-500/50 text-emerald-100 placeholder:text-emerald-700 focus:border-emerald-300"}`}
                 title="Edit PST start time. Completion time updates automatically +6 minutes."
               />
             </div>
             <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap pt-0.5">
-              <span className={`shrink-0 text-[10px] font-bold leading-tight ${isPstConfirming ? "text-amber-300" : "text-emerald-300"}`}>End :</span>
-              <span className={`min-w-[36px] rounded-md border bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight ${isPstConfirming ? "border-amber-500/50 text-amber-100" : "border-emerald-500/50 text-emerald-100"}`}>
+              <span className={`theme-pst-time-label shrink-0 text-[10px] font-bold leading-tight ${isPstConfirming ? "text-amber-300" : "text-emerald-300"}`}>End :</span>
+              <span className={`theme-pst-time-value min-w-[36px] rounded-md border bg-[#071828] px-0.5 py-0.5 text-center text-[10px] font-normal leading-tight ${isPstConfirming ? "border-amber-500/50 text-amber-100" : "border-emerald-500/50 text-emerald-100"}`}>
                 {pstEstimateTime || "--:--"}
               </span>
             </div>
@@ -3518,12 +3518,12 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
         )}
         {key && (
           <div className="flex flex-col gap-1 w-full mt-1">
-            <button type="button" onClick={() => onPSTTick(road, bi, key)} className={`w-full text-[9px] font-bold rounded-lg px-1 py-0.5 border transition-all leading-tight ${isPstDone ? "bg-emerald-900/60 border-emerald-600 text-emerald-300" : isPstConfirming ? "bg-amber-900/60 border-amber-600 text-amber-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:border-blue-500 hover:text-blue-300"}`}>
+            <button type="button" onClick={() => onPSTTick(road, bi, key)} className={`theme-pst-action-button ${isPstDone ? "is-done" : isPstConfirming ? "is-confirming" : "is-idle"} w-full text-[9px] font-bold rounded-lg px-1 py-0.5 border transition-all leading-tight ${isPstDone ? "bg-emerald-900/60 border-emerald-600 text-emerald-300" : isPstConfirming ? "bg-amber-900/60 border-amber-600 text-amber-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:border-blue-500 hover:text-blue-300"}`}>
               {isPstDone ? "✓ PST" : isPstConfirming ? "⏳PST" : "PST"}
             </button>
             {isPrepDone && (
-              <div className="w-full rounded-lg border border-blue-500/60 bg-blue-950/30 px-1 py-1">
-                <div className="mb-0.5 text-center text-[9px] font-normal uppercase tracking-wide text-blue-300">PREP Done :</div>
+              <div className="theme-pst-prep-panel w-full rounded-lg border border-blue-500/60 bg-blue-950/30 px-1 py-1">
+                <div className="theme-pst-prep-label mb-0.5 text-center text-[9px] font-normal uppercase tracking-wide text-blue-300">PREP Done :</div>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -3541,15 +3541,15 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
                   onChange={(e) => onPrepCompletionTimeChange?.(road, bi, key, cleanMovementCustomTimeInput(e.target.value))}
                   onBlur={(e) => onPrepCompletionTimeChange?.(road, bi, key, normalizeMovementCustomTimeInput(e.target.value))}
                   placeholder="00:00"
-                  className="w-full rounded-md border border-blue-500/50 bg-[#071828] px-1 py-0.5 text-center text-[10px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700 focus:border-blue-300"
+                  className="theme-pst-prep-input w-full rounded-md border border-blue-500/50 bg-[#071828] px-1 py-0.5 text-center text-[10px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700 focus:border-blue-300"
                   title="Edit Train Prep completion time"
                 />
               </div>
             )}
             {!isPrepDone && (
-              <input value={taName} onChange={(e) => onTaNameChange(road, bi, e.target.value)} onClick={(e) => e.stopPropagation()} placeholder="TA name (optional)" className="w-full text-[11px] rounded-lg border border-blue-600/60 bg-blue-950/30 px-1 py-0.5 outline-none text-blue-200 placeholder:text-blue-700" />
+              <input value={taName} onChange={(e) => onTaNameChange(road, bi, e.target.value)} onClick={(e) => e.stopPropagation()} placeholder="TA name (optional)" className="theme-pst-ta-input w-full text-[11px] rounded-lg border border-blue-600/60 bg-blue-950/30 px-1 py-0.5 outline-none text-blue-200 placeholder:text-blue-700" />
             )}
-            <button onClick={() => onPrepTick(road, bi, key, taName)} className={`w-full text-[9px] font-bold rounded-lg px-1 py-0.5 border transition-all leading-tight ${isPrepDone ? "bg-green-200 border-green-500 text-green-900" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:border-indigo-500 hover:text-indigo-300"}`}>
+            <button onClick={() => onPrepTick(road, bi, key, taName)} className={`theme-pst-prep-button ${isPrepDone ? "is-done" : "is-idle"} w-full text-[9px] font-bold rounded-lg px-1 py-0.5 border transition-all leading-tight ${isPrepDone ? "bg-green-200 border-green-500 text-green-900" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:border-indigo-500 hover:text-indigo-300"}`}>
               {isPrepDone ? "✓ PREP COMP." : "Train Prep"}
             </button>
           </div>
@@ -3595,13 +3595,13 @@ function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, lab
   const sectionDepotLabel = title?.toUpperCase().includes("EAST") ? "East Depot" : "West Depot";
 
   return (
-    <section className="theme-stabling-section bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
+    <section className="theme-stabling-section theme-pst-section bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
+          <div className="theme-pst-title-icon w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
           </div>
-          <h2 className="text-base leading-none font-black text-white tracking-widest uppercase whitespace-nowrap">{title}</h2>
+          <h2 className="theme-pst-title text-base leading-none font-black text-white tracking-widest uppercase whitespace-nowrap">{title}</h2>
         </div>
 
         {hasClearControls && (
@@ -3611,7 +3611,7 @@ function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, lab
                 type="button"
                 onClick={() => handleSectionClear("pst")}
                 disabled={pstClearCount === 0}
-                className={`${clearButtonBase} ${confirmClearAction === "pst" ? "border-red-500 bg-red-600 text-white" : "border-emerald-500/50 bg-emerald-950/35 text-emerald-300 hover:border-emerald-400 hover:bg-emerald-900/50"}`}
+                className={`theme-pst-clear-button is-pst ${confirmClearAction === "pst" ? "is-confirming" : ""} ${clearButtonBase} ${confirmClearAction === "pst" ? "border-red-500 bg-red-600 text-white" : "border-emerald-500/50 bg-emerald-950/35 text-emerald-300 hover:border-emerald-400 hover:bg-emerald-900/50"}`}
                 title={`Clear ${sectionDepotLabel} PST status only`}
               >
                 {confirmClearAction === "pst" ? "Confirm PST?" : "Clear PST"}
@@ -3622,7 +3622,7 @@ function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, lab
                 type="button"
                 onClick={() => handleSectionClear("prep")}
                 disabled={prepClearCount === 0}
-                className={`${clearButtonBase} ${confirmClearAction === "prep" ? "border-red-500 bg-red-600 text-white" : "border-blue-500/50 bg-blue-950/35 text-blue-300 hover:border-blue-400 hover:bg-blue-900/50"}`}
+                className={`theme-pst-clear-button is-prep ${confirmClearAction === "prep" ? "is-confirming" : ""} ${clearButtonBase} ${confirmClearAction === "prep" ? "border-red-500 bg-red-600 text-white" : "border-blue-500/50 bg-blue-950/35 text-blue-300 hover:border-blue-400 hover:bg-blue-900/50"}`}
                 title={`Clear ${sectionDepotLabel} Train Prep status only`}
               >
                 {confirmClearAction === "prep" ? "Confirm Prep?" : "Clear Train Prep"}

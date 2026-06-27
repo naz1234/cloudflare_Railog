@@ -901,3 +901,282 @@ html[data-app-theme="light"] .insertion-help-rule {
   background: #ecfdf5 !important;
   border-color: #86c9a7 !important;
 }
+
+/* PST / Train Prep workspace and log-output light-mode cleanup.
+   Dark mode keeps the existing navy design. */
+html[data-app-theme="light"] .theme-pst-section {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09) !important;
+}
+
+html[data-app-theme="light"] .theme-pst-title-icon {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #8eb9e8 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-pst-title {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-pst-clear-button {
+  color: #000000 !important;
+  box-shadow: 0 1px 5px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-pst-clear-button.is-pst:not(.is-confirming) {
+  background: linear-gradient(145deg, #ecfdf5, #d1fae5) !important;
+  border-color: #86c9a7 !important;
+}
+
+html[data-app-theme="light"] .theme-pst-clear-button.is-prep:not(.is-confirming) {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #8eb9e8 !important;
+}
+
+html[data-app-theme="light"] .theme-pst-clear-button.is-confirming {
+  background: linear-gradient(145deg, #fff1f2, #fee2e2) !important;
+  border-color: #ef4444 !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-pst-grid-cell {
+  background: #edf3f8 !important;
+  background-color: #edf3f8 !important;
+  border-color: #c2ced9 !important;
+}
+
+html[data-app-theme="light"] .theme-pst-card {
+  background: linear-gradient(145deg, #ffffff 0%, #edf4f8 100%) !important;
+  background-image: linear-gradient(145deg, #ffffff 0%, #edf4f8 100%) !important;
+  border-color: #9fb2c2 !important;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08), inset 0 1px 0 #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-pst-card.is-empty {
+  background: #f3f6f9 !important;
+  background-image: none !important;
+  border: 1.5px dashed #aebdcc !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-pst-card.is-pst-done {
+  background: linear-gradient(145deg, #f0fdf4, #dcfce7) !important;
+  background-image: linear-gradient(145deg, #f0fdf4, #dcfce7) !important;
+  border-color: #22a664 !important;
+}
+
+html[data-app-theme="light"] .theme-pst-card.is-pst-confirming {
+  background: linear-gradient(145deg, #fffbeb, #fef3c7) !important;
+  background-image: linear-gradient(145deg, #fffbeb, #fef3c7) !important;
+  border-color: #d8a20b !important;
+}
+
+html[data-app-theme="light"] .theme-pst-card.is-prep-done {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  background-image: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #4f8ef7 !important;
+}
+
+html[data-app-theme="light"] .theme-pst-train-number,
+html[data-app-theme="light"] .theme-pst-time-label,
+html[data-app-theme="light"] .theme-pst-prep-label,
+html[data-app-theme="light"] .theme-pst-section button,
+html[data-app-theme="light"] .theme-pst-section input,
+html[data-app-theme="light"] .theme-pst-section span,
+html[data-app-theme="light"] .theme-pst-section div {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-pst-time-panel {
+  background: #ffffff !important;
+  background-image: none !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-pst-time-panel.is-done {
+  border-color: #62b98b !important;
+}
+
+html[data-app-theme="light"] .theme-pst-time-panel.is-confirming {
+  border-color: #d8a20b !important;
+}
+
+html[data-app-theme="light"] :is(
+  .theme-pst-time-input,
+  .theme-pst-time-value,
+  .theme-pst-prep-input,
+  .theme-pst-ta-input
+) {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] :is(
+  .theme-pst-time-input,
+  .theme-pst-prep-input,
+  .theme-pst-ta-input
+)::placeholder {
+  color: #000000 !important;
+  opacity: 0.45;
+}
+
+html[data-app-theme="light"] .theme-pst-action-button,
+html[data-app-theme="light"] .theme-pst-prep-button {
+  color: #000000 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.07) !important;
+}
+
+html[data-app-theme="light"] .theme-pst-action-button.is-idle,
+html[data-app-theme="light"] .theme-pst-prep-button.is-idle {
+  background: linear-gradient(145deg, #ffffff, #e7edf4) !important;
+  border-color: #9fb0c0 !important;
+}
+
+html[data-app-theme="light"] .theme-pst-action-button.is-done,
+html[data-app-theme="light"] .theme-pst-prep-button.is-done {
+  background: linear-gradient(145deg, #ecfdf5, #d1fae5) !important;
+  border-color: #62b98b !important;
+}
+
+html[data-app-theme="light"] .theme-pst-action-button.is-confirming {
+  background: linear-gradient(145deg, #fffbeb, #fef3c7) !important;
+  border-color: #d8a20b !important;
+}
+
+html[data-app-theme="light"] .theme-pst-prep-panel {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #8eb9e8 !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+}
+
+/* PST / Train Prep log output */
+html[data-app-theme="light"] .pst-clean-shell {
+  background: linear-gradient(145deg, #ffffff 0%, #eef3f7 100%) !important;
+  background-image: linear-gradient(145deg, #ffffff 0%, #eef3f7 100%) !important;
+  border-color: #aebdcc !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09), inset 0 1px 0 #ffffff !important;
+  scrollbar-color: #9fb0c0 #eef3f7 !important;
+}
+
+html[data-app-theme="light"] .pst-clean-shell::-webkit-scrollbar-track {
+  background: #eef3f7 !important;
+}
+
+html[data-app-theme="light"] .pst-clean-shell::-webkit-scrollbar-thumb {
+  background: #9fb0c0 !important;
+}
+
+html[data-app-theme="light"] .pst-clean-title-icon {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #8eb9e8 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] :is(
+  .pst-clean-title,
+  .pst-clean-subtitle,
+  .pst-clean-card-title,
+  .pst-clean-section-title,
+  .pst-clean-pre,
+  .pst-clean-empty-text,
+  .pst-clean-empty-card,
+  .pst-elog-style-button
+) {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .pst-elog-style-picker {
+  background: #edf3f8 !important;
+  border-color: #aebdcc !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .pst-elog-style-button {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .pst-elog-style-button:hover {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .pst-elog-style-button-active {
+  background: linear-gradient(145deg, #dbeafe, #bfdbfe) !important;
+  background-image: linear-gradient(145deg, #dbeafe, #bfdbfe) !important;
+  border-color: #4f8ef7 !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 5px rgba(37, 99, 235, 0.14) !important;
+}
+
+html[data-app-theme="light"] .pst-clean-card {
+  background: #ffffff !important;
+  border-color: #aebdcc !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.07) !important;
+}
+
+html[data-app-theme="light"] .pst-clean-card-header {
+  background: linear-gradient(90deg, #eaf4fb 0%, #dcecf7 55%, #eaf4fb 100%) !important;
+  background-image: linear-gradient(90deg, #eaf4fb 0%, #dcecf7 55%, #eaf4fb 100%) !important;
+  border-color: #aebdcc !important;
+}
+
+html[data-app-theme="light"] .pst-elog2-card {
+  border-color: #d8b75f !important;
+}
+
+html[data-app-theme="light"] .pst-elog2-card-header {
+  background: linear-gradient(90deg, #fff9e8 0%, #ffefbd 55%, #fff9e8 100%) !important;
+  background-image: linear-gradient(90deg, #fff9e8 0%, #ffefbd 55%, #fff9e8 100%) !important;
+}
+
+html[data-app-theme="light"] .pst-clean-card-body {
+  background: #ffffff !important;
+  border-top-color: #c4ced8 !important;
+}
+
+html[data-app-theme="light"] :is(
+  .pst-clean-text-section + .pst-clean-text-section,
+  .pst-clean-text-section + .pst-clean-empty-section,
+  .pst-clean-empty-section + .pst-clean-text-section,
+  .pst-clean-empty-section + .pst-clean-empty-section
+) {
+  border-top-color: #c8d2dc !important;
+}
+
+html[data-app-theme="light"] .pst-clean-action {
+  background: linear-gradient(145deg, #ffffff, #e7edf4) !important;
+  background-image: linear-gradient(145deg, #ffffff, #e7edf4) !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.07) !important;
+}
+
+html[data-app-theme="light"] .pst-clean-action:hover:not(:disabled) {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #78aeda !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .pst-clean-action-copied {
+  background: linear-gradient(145deg, #ecfdf5, #d1fae5) !important;
+  border-color: #86c9a7 !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .pst-clean-action-danger {
+  background: linear-gradient(145deg, #fff1f2, #fee2e2) !important;
+  border-color: #e9a0aa !important;
+  color: #000000 !important;
+}
