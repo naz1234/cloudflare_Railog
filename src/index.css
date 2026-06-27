@@ -1894,3 +1894,10 @@ html[data-app-theme="light"] .theme-insertion-reference-depot-chip.is-override {
   border-color: #f0b66c !important;
   color: #000000 !important;
 }
+
+/* Light mode only: make Maintenance request type text match the larger stabling remarks. */
+html[data-app-theme="light"] .theme-maintenance-request-type {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #000000 !important;
+}
