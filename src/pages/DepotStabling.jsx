@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { CheckCircle2, FileSpreadsheet, FileText, Image as ImageIcon, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Download, Search, ArrowUp, ArrowDown, Check } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, FileText, Image as ImageIcon, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Download, Search, ArrowUp, ArrowDown, Check, Sun, Moon } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
@@ -31,6 +31,28 @@ const ACTIVE_TIMETABLE_TYPE_KEY = "activeTimetableType_v1";
 const LOCAL_TIMETABLE_RECORDS_KEY = "storedTimetableRecords_v1";
 const EAST_INSERTION_TIME_OFFSET_KEY = "eastInsertionTimeOffsetMinutes_v1";
 const TIMETABLE_PARSE_VERSION = 5;
+const APP_THEME_KEY = "l3DcTheme_v1";
+
+function normalizeAppTheme(value = "") {
+  return String(value || "").toLowerCase() === "light" ? "light" : "dark";
+}
+
+function applyAppTheme(value = "dark") {
+  const theme = normalizeAppTheme(value);
+  if (typeof document !== "undefined") {
+    document.documentElement.dataset.appTheme = theme;
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.style.colorScheme = theme;
+  }
+  try { localStorage.setItem(APP_THEME_KEY, theme); } catch {}
+  return theme;
+}
+
+function loadAppTheme() {
+  let theme = "dark";
+  try { theme = normalizeAppTheme(localStorage.getItem(APP_THEME_KEY)); } catch {}
+  return applyAppTheme(theme);
+}
 
 function normalizeEastInsertionTimeOffset(value) {
   return Number(value) === 3 ? 3 : 0;
@@ -12025,6 +12047,7 @@ function AlarmContent({ search = "" }) {
 
 
 export default function DepotStablingPage() {
+  const [appTheme, setAppTheme] = useState(() => loadAppTheme());
   const [westData, setWestData] = useState(() => loadLocalStablingState().westData);
   const [eastData, setEastData] = useState(() => loadLocalStablingState().eastData);
   const [requests, setRequests] = useState([]);
@@ -12062,6 +12085,10 @@ export default function DepotStablingPage() {
   const [insertionLiveDbReady, setInsertionLiveDbReady] = useState(() => isInsertionLiveEntityReady());
   const [insertionLiveDebug, setInsertionLiveDebug] = useState("");
   const [flashingCells, setFlashingCells] = useState(new Set());
+
+  useEffect(() => {
+    applyAppTheme(appTheme);
+  }, [appTheme]);
 
   useEffect(() => { saveTidInputs(tidInputs); }, [tidInputs]);
   useEffect(() => { saveInsertionActivePg(activeInsertionPg); }, [activeInsertionPg]);
@@ -14945,8 +14972,8 @@ export default function DepotStablingPage() {
   }
 
   return (
-    <div className="min-h-screen font-inter bg-[#071828]">
-      <header className="h-[56px] sticky top-0 z-20" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", borderBottom: "1px solid #1a3a56" }}>
+    <div className="app-shell min-h-screen font-inter bg-[#071828]">
+      <header className="app-top-header h-[56px] sticky top-0 z-20" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", borderBottom: "1px solid #1a3a56" }}>
         <div className="w-full px-4 h-full flex items-center justify-start gap-6">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
@@ -14993,6 +15020,17 @@ export default function DepotStablingPage() {
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               <span className="text-[10px] text-[#7eb8e0]">{new Date().toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}</span>
             </div>
+            <button
+              type="button"
+              onClick={() => setAppTheme((current) => (current === "dark" ? "light" : "dark"))}
+              title={`Switch to ${appTheme === "dark" ? "light" : "dark"} mode`}
+              aria-label={`Switch to ${appTheme === "dark" ? "light" : "dark"} mode`}
+              aria-pressed={appTheme === "light"}
+              className="theme-toggle flex h-8 items-center gap-1.5 rounded-lg border border-[#2b4f6b] bg-[#071828] px-2.5 text-[10px] font-semibold text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-95"
+            >
+              {appTheme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+              <span>{appTheme === "dark" ? "Light" : "Dark"}</span>
+            </button>
           </div>
 
           <div className="ml-auto flex items-center gap-2">
@@ -15030,7 +15068,7 @@ export default function DepotStablingPage() {
 
         {/* Left Sidebar Tab Navigation */}
         <aside
-          className={`${isSidebarCollapsed ? "w-[58px] px-2" : "w-[200px] px-3"} flex-shrink-0 sticky top-[56px] h-[calc(100vh-56px)] flex flex-col pt-4 gap-1 z-10 transition-all duration-300 ease-in-out`}
+          className={`app-sidebar ${isSidebarCollapsed ? "w-[58px] px-2" : "w-[200px] px-3"} flex-shrink-0 sticky top-[56px] h-[calc(100vh-56px)] flex flex-col pt-4 gap-1 z-10 transition-all duration-300 ease-in-out`}
           style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", borderRight: "1px solid #1a3a56" }}
         >
           <div className={`mb-2 flex items-center ${isSidebarCollapsed ? "justify-center px-0" : "justify-between px-2"}`}>
