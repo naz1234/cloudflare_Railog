@@ -17622,7 +17622,7 @@ function Arrival3A1P2Lookup({ activeTimetable = null, activeTimetableType = "wee
   return (
     <div className="mb-3 w-full">
       <div
-        className="flex items-center gap-2 rounded-xl px-3 py-2 transition-all"
+        className="theme-train-rem-search flex items-center gap-2 rounded-xl px-3 py-2 transition-all"
         style={{
           background: "#071828",
           border: found
@@ -17992,7 +17992,7 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
           <button
             onClick={handleDownloadDocx}
             disabled={Boolean(downloadingDocxType)}
-            className="group flex items-center gap-1.5 h-6 px-2.5 rounded-[10px] border text-[10px] font-bold transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
+            className="theme-light-control theme-light-docx group flex items-center gap-1.5 h-6 px-2.5 rounded-[10px] border text-[10px] font-bold transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
             style={{ ...MAIN_STABLING_BUTTON_BLUE, minHeight: 24, borderRadius: 10 }}
             title="Download REQUESTED TRAIN table as DOCX"
           >

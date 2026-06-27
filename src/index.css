@@ -313,6 +313,14 @@ html[data-app-theme="light"] .theme-light-pdf {
   border-color: #8eb9e8 !important;
 }
 
+html[data-app-theme="light"] .theme-light-docx {
+  background: linear-gradient(145deg, #edf7ff 0%, #cfe7ff 100%) !important;
+  background-image: linear-gradient(145deg, #edf7ff 0%, #cfe7ff 100%) !important;
+  border-color: #78aeda !important;
+  color: #000000 !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12) !important;
+}
+
 html[data-app-theme="light"] .theme-light-clear {
   background: linear-gradient(145deg, #fff1f2, #fee2e2) !important;
   border-color: #e9a0aa !important;
@@ -366,6 +374,22 @@ html[data-app-theme="light"] .theme-train-rem-header button {
 
 html[data-app-theme="light"] .theme-train-rem-header button:disabled {
   background: #e8edf2 !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-search {
+  background: #ffffff !important;
+  background-image: none !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-search input {
+  background: transparent !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-search input::placeholder {
+  color: #000000 !important;
+  opacity: 0.48;
 }
 
 html[data-app-theme="light"] .theme-train-rem-table-header,
