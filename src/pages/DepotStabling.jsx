@@ -20201,7 +20201,7 @@ function excelRowXml(values, rowNumber, styleId, height = 15) {
   return `<row r="${rowNumber}" ht="${height}" customHeight="1">${cells}</row>`;
 }
 
-function buildExcelWorksheetXml({ rows, rowStyles = [], rowHeights = [], colWidths = [], dimension, merges = [] }) {
+function buildExcelWorksheetXml({ rows, rowStyles = [], rowHeights = [], colWidths = [], dimension, merges = [], defaultRowHeight = 12.75 }) {
   const cols = colWidths.length
     ? `<cols>${colWidths.map((width, index) => `<col min="${index + 1}" max="${index + 1}" width="${width}" customWidth="1"/>`).join("")}</cols>`
     : "";
@@ -20221,7 +20221,7 @@ function buildExcelWorksheetXml({ rows, rowStyles = [], rowHeights = [], colWidt
       <selection pane="bottomLeft"/>
     </sheetView>
   </sheetViews>
-  <sheetFormatPr defaultRowHeight="15"/>
+  <sheetFormatPr defaultRowHeight="${defaultRowHeight}"/>
   ${cols}
   <sheetData>${sheetRows}</sheetData>
   ${mergeXml}
@@ -20322,7 +20322,7 @@ function buildLatestPSTExcelMap(entries = []) {
   return latestByTrain;
 }
 
-function buildPSTExportRows(logLines = [], completedBy = "", depotFilter = "") {
+function buildPSTExportRows(logLines = [], completedBy = "", depotFilter = "", includeTrailingBlankRow = true) {
   const todayText = formatExcelExportDate(new Date());
   const safeLogLines = Array.isArray(logLines) ? logLines : [];
   const normalizedDepot = depotFilter === "west" || depotFilter === "east" ? depotFilter : "";
@@ -20358,9 +20358,12 @@ function buildPSTExportRows(logLines = [], completedBy = "", depotFilter = "") {
     ]);
   }
 
-  // Keep row 50 as a standard blank row. The PST Excel export no longer
-  // includes or merges a completed-PASS summary row.
-  rows.push(["", "", "", "", "", "", "", "", "", "", ""]);
+  // The individual depot sheets keep one formatted blank row at row 50.
+  // The combined WEST + EAST sheet ends at row 49 so the following rows are
+  // normal, unformatted Excel rows, matching the approved objective workbook.
+  if (includeTrailingBlankRow) {
+    rows.push(["", "", "", "", "", "", "", "", "", "", ""]);
+  }
 
   return rows;
 }
@@ -20389,9 +20392,9 @@ function buildPSTFormRows() {
 
 function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = "") {
   const normalizedDepot = depotFilter === "west" || depotFilter === "east" ? depotFilter : "";
-  const combinedRl3Rows = buildPSTExportRows(logLines, completedBy, "");
-  const westRl3Rows = buildPSTExportRows(logLines, completedBy, "west");
-  const eastRl3Rows = buildPSTExportRows(logLines, completedBy, "east");
+  const combinedRl3Rows = buildPSTExportRows(logLines, completedBy, "", false);
+  const westRl3Rows = buildPSTExportRows(logLines, completedBy, "west", true);
+  const eastRl3Rows = buildPSTExportRows(logLines, completedBy, "east", true);
   const formRows = buildPSTFormRows();
 
   const buildRL3RowStyles = (rows) => rows.map((_, index) => {
@@ -20404,9 +20407,10 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = ""
   const buildRL3WorksheetXml = (rows) => buildExcelWorksheetXml({
     rows,
     rowStyles: buildRL3RowStyles(rows),
-    rowHeights: rows.map((_, index) => index === 0 ? 16 : 15),
+    rowHeights: rows.map((_, index) => index === 0 ? 15.95 : 15),
     colWidths: [13, 16, 18.28515625, 14, 14, 22, 21.42578125, 24.42578125, 20.85546875, 38, 38],
-    dimension: "A1:K50",
+    dimension: `A1:K${rows.length}`,
+    defaultRowHeight: 12.75,
   });
 
   const formXml = buildExcelWorksheetXml({
@@ -20415,6 +20419,7 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = ""
     rowHeights: formRows.map((_, index) => index === 1 ? 18 : 15),
     colWidths: [4, 13, 22, 22, 22, 15],
     dimension: "A1:F50",
+    defaultRowHeight: 12.75,
   });
 
   const packageRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -20424,18 +20429,16 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = ""
 
   const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <fonts count="3">
+  <fonts count="2">
     <font><sz val="10"/><name val="Arial"/></font>
     <font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>
-    <font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>
   </fonts>
-  <fills count="6">
+  <fills count="5">
     <fill><patternFill patternType="none"/></fill>
     <fill><patternFill patternType="gray125"/></fill>
     <fill><patternFill patternType="solid"><fgColor rgb="FF000000"/><bgColor indexed="64"/></patternFill></fill>
     <fill><patternFill patternType="solid"><fgColor rgb="FFFF9900"/><bgColor indexed="64"/></patternFill></fill>
     <fill><patternFill patternType="solid"><fgColor rgb="FFEDEDED"/><bgColor indexed="64"/></patternFill></fill>
-    <fill><patternFill patternType="solid"><fgColor rgb="FF333333"/><bgColor indexed="64"/></patternFill></fill>
   </fills>
   <borders count="2">
     <border><left/><right/><top/><bottom/><diagonal/></border>
@@ -20448,12 +20451,11 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = ""
     </border>
   </borders>
   <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-  <cellXfs count="5">
+  <cellXfs count="4">
     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
     <xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
     <xf numFmtId="0" fontId="0" fillId="3" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
     <xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
-    <xf numFmtId="0" fontId="2" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
   </cellXfs>
   <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
