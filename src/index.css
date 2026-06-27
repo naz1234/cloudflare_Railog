@@ -718,3 +718,186 @@ html[data-app-theme="light"] .theme-insertion-reference-help {
   border-color: #93c5fd !important;
   color: #000000 !important;
 }
+
+/* Insertion log output and beginner guide light-mode cleanup.
+   These component-level panels keep their original navy appearance in dark mode. */
+html[data-app-theme="light"] .insertion-clean-shell {
+  background: linear-gradient(145deg, #ffffff 0%, #eef3f7 100%) !important;
+  border-color: #aebdcc !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09), inset 0 1px 0 #ffffff !important;
+  scrollbar-color: #9fb0c0 #eef3f7 !important;
+}
+
+html[data-app-theme="light"] .insertion-clean-shell::-webkit-scrollbar-track {
+  background: #eef3f7 !important;
+}
+
+html[data-app-theme="light"] .insertion-clean-shell::-webkit-scrollbar-thumb {
+  background: #9fb0c0 !important;
+}
+
+html[data-app-theme="light"] .insertion-clean-title-icon {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #8eb9e8 !important;
+  color: #000000 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] :is(
+  .insertion-clean-title,
+  .insertion-clean-subtitle,
+  .insertion-clean-card-title,
+  .insertion-clean-section-title,
+  .insertion-clean-pre,
+  .insertion-clean-empty-section,
+  .insertion-clean-empty-text,
+  .insertion-clean-empty-card
+) {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .insertion-clean-card {
+  background: #ffffff !important;
+  border-color: #aebdcc !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.07) !important;
+}
+
+html[data-app-theme="light"] .insertion-clean-card-header {
+  background: linear-gradient(90deg, #eaf4fb 0%, #dcecf7 55%, #eaf4fb 100%) !important;
+  background-image: linear-gradient(90deg, #eaf4fb 0%, #dcecf7 55%, #eaf4fb 100%) !important;
+  border-color: #aebdcc !important;
+}
+
+html[data-app-theme="light"] .insertion-clean-card-body {
+  background: #ffffff !important;
+  border-top-color: #c4ced8 !important;
+}
+
+html[data-app-theme="light"] :is(
+  .insertion-clean-text-section + .insertion-clean-text-section,
+  .insertion-clean-text-section + .insertion-clean-empty-section,
+  .insertion-clean-empty-section + .insertion-clean-text-section,
+  .insertion-clean-empty-section + .insertion-clean-empty-section
+) {
+  border-top-color: #c8d2dc !important;
+}
+
+html[data-app-theme="light"] .insertion-clean-action {
+  background: linear-gradient(145deg, #ffffff, #e7edf4) !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.07) !important;
+}
+
+html[data-app-theme="light"] .insertion-clean-action:hover:not(:disabled) {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #78aeda !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .insertion-clean-action-copied {
+  background: linear-gradient(145deg, #ecfdf5, #d1fae5) !important;
+  border-color: #86c9a7 !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 5px rgba(34, 197, 94, 0.12) !important;
+}
+
+html[data-app-theme="light"] .insertion-clean-action-danger {
+  background: linear-gradient(145deg, #fff1f2, #fee2e2) !important;
+  border-color: #e9a0aa !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .insertion-help-shell {
+  background: linear-gradient(145deg, #ffffff 0%, #eef3f7 100%) !important;
+  border-color: #aebdcc !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09), inset 0 1px 0 #ffffff !important;
+}
+
+html[data-app-theme="light"] .insertion-help-icon {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #8eb9e8 !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] :is(
+  .insertion-help-title,
+  .insertion-help-subtitle,
+  .insertion-help-step-title,
+  .insertion-help-step-text,
+  .insertion-help-open-hint,
+  .insertion-help-detail-title,
+  .insertion-help-detail-line,
+  .insertion-help-detail-index,
+  .insertion-help-example,
+  .insertion-help-result,
+  .insertion-help-rule,
+  .insertion-help-rule strong
+) {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .insertion-help-step {
+  background: #ffffff !important;
+  border-color: #aebdcc !important;
+  box-shadow: 0 1px 5px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .insertion-help-step:hover,
+html[data-app-theme="light"] .insertion-help-step.is-open {
+  background: #f1f7fb !important;
+  border-color: #78aeda !important;
+}
+
+html[data-app-theme="light"] .insertion-help-step.is-open {
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-app-theme="light"] .insertion-help-trigger {
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .insertion-help-step-number {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #8eb9e8 !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .insertion-help-open-hint {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+}
+
+html[data-app-theme="light"] .insertion-help-chevron {
+  background: #edf3f8 !important;
+  border-color: #aebdcc !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .insertion-help-step.is-open .insertion-help-chevron {
+  background: #dbeafe !important;
+  border-color: #78aeda !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .insertion-help-details-inner {
+  background: #f8fafc !important;
+  border-top-color: #c8d2dc !important;
+}
+
+html[data-app-theme="light"] .insertion-help-detail-index {
+  background: #dbeafe !important;
+}
+
+html[data-app-theme="light"] .insertion-help-example {
+  background: #fff7ed !important;
+  border-color: #f0b66c !important;
+}
+
+html[data-app-theme="light"] .insertion-help-result,
+html[data-app-theme="light"] .insertion-help-rule {
+  background: #ecfdf5 !important;
+  border-color: #86c9a7 !important;
+}
