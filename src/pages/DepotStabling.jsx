@@ -1755,7 +1755,6 @@ const SIDEBAR_COLLAPSED_KEY = "depotSidebarCollapsed_v1";
 const SIDEBAR_AUTO_HIDE_MS = 3000;
 const ADM_SESSION_KEY = "admAdminUnlocked_v1";
 const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
-const PSS_SESSION_KEY = "pssPossessionUnlocked_v1";
 const OVT_SESSION_KEY = "ovtOvertimeUnlocked_v1";
 const ROS_SESSION_KEY = "rosRosterUnlocked_v1";
 const ODO_SESSION_KEY = "odoReadingUnlocked_v1";
@@ -12227,15 +12226,6 @@ export default function DepotStablingPage() {
       return false;
     }
   });
-  const [possessionCredentials, setPossessionCredentials] = useState({ id: "", password: "" });
-  const [possessionError, setPossessionError] = useState("");
-  const [isPossessionUnlocked, setIsPossessionUnlocked] = useState(() => {
-    try {
-      return sessionStorage.getItem(PSS_SESSION_KEY) === "true";
-    } catch {
-      return false;
-    }
-  });
   const [overtimeCredentials, setOvertimeCredentials] = useState({ id: "", password: "" });
   const [overtimeError, setOvertimeError] = useState("");
   const [isOvertimeUnlocked, setIsOvertimeUnlocked] = useState(() => {
@@ -12478,31 +12468,6 @@ export default function DepotStablingPage() {
     setAlarmError("");
     setAlarmSearch("");
     try { sessionStorage.removeItem(ALM_SESSION_KEY); } catch {}
-  }, []);
-
-  const handlePossessionLogin = useCallback((event) => {
-    event.preventDefault();
-    const loginId = String(possessionCredentials.id || "").trim();
-    const loginPassword = String(possessionCredentials.password || "");
-
-    if (loginId === ADM_LOGIN_ID && loginPassword === ADM_LOGIN_PASSWORD) {
-      setIsPossessionUnlocked(true);
-      setPossessionError("");
-      setPossessionCredentials({ id: "", password: "" });
-      try { sessionStorage.setItem(PSS_SESSION_KEY, "true"); } catch {}
-      return;
-    }
-
-    setIsPossessionUnlocked(false);
-    setPossessionError("Invalid admin ID or password.");
-    try { sessionStorage.removeItem(PSS_SESSION_KEY); } catch {}
-  }, [possessionCredentials]);
-
-  const handlePossessionLogout = useCallback(() => {
-    setIsPossessionUnlocked(false);
-    setPossessionCredentials({ id: "", password: "" });
-    setPossessionError("");
-    try { sessionStorage.removeItem(PSS_SESSION_KEY); } catch {}
   }, []);
 
   const handleOvertimeLogin = useCallback((event) => {
@@ -15251,7 +15216,7 @@ export default function DepotStablingPage() {
               to: "/possession",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/>
+                  <rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h4"/>
                 </svg>
               ),
             },
@@ -15319,14 +15284,13 @@ export default function DepotStablingPage() {
             },
           ].map(({ key, label, code, to }) => {
             const isActive = activeTab === key;
-            const bottomShortcutClass = key === "possession" ? " mt-auto" : "";
             const navClass = isSidebarCollapsed
-              ? `flex items-center justify-center px-1 py-2.5 text-xs font-normal transition-all text-left w-full${bottomShortcutClass} ${
+              ? `flex items-center justify-center px-1 py-2.5 text-xs font-normal transition-all text-left w-full ${
                   isActive
                     ? "text-white"
                     : "text-[#7eb8e0] hover:text-white"
                 }`
-              : `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full${bottomShortcutClass} ${
+              : `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full ${
                   isActive
                     ? "bg-[#1a3a5c] text-white shadow-sm border border-[#2b4f6b]"
                     : "text-[#7eb8e0] hover:text-white hover:bg-[#0f2d4a]"
@@ -15655,96 +15619,9 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "possession" && (
-          isPossessionUnlocked ? (
-            <div className="w-full px-2 pb-10 pt-6">
-              <div className="mb-3 w-full rounded-[24px] border border-[#1d4869] bg-[#061827]/90 p-3 shadow-[0_18px_55px_rgba(0,0,0,0.25)]">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[10px] font-semibold tracking-[0.16em] text-[#bceaff]">
-                    PSS
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Restricted access</p>
-                    <h2 className="truncate text-[17px] font-normal leading-tight text-white">Possession Log</h2>
-                    <p className="mt-0.5 text-[10px] font-semibold text-[#8ea8c0]">
-                      Admin session unlocked for this browser tab.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handlePossessionLogout}
-                    className="rounded-2xl border border-[#2b4f6b] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-[0.98]"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
-
-              <PossessionTabContent />
-            </div>
-          ) : (
-            <div className="w-full px-2 pb-10 pt-6">
-              <div className="mx-auto w-full max-w-[620px]">
-                <div className="mx-auto w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[#23506f]/80 bg-[#061827]/95 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur">
-                  <div className="relative border-b border-[#1a3a56]/80 bg-gradient-to-br from-[#0d3455] via-[#08223a] to-[#061827] px-5 py-5">
-                    <div className="absolute right-5 top-5 h-10 w-10 rounded-full border border-[#4f8ef7]/25 bg-[#4f8ef7]/10 blur-[1px]" />
-                    <div className="relative flex items-center gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#4f8ef7]/40 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.18em] text-[#bceaff] shadow-[0_0_22px_rgba(79,142,247,0.18)]">
-                        PSS
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-normal uppercase tracking-[0.24em] text-[#6db6e8]">Admin access</p>
-                        <h2 className="mt-1 text-[18px] font-semibold text-white">Possession Login</h2>
-                      </div>
-                    </div>
-                    <p className="relative mt-4 text-[11px] leading-relaxed text-[#8dc7ed]">
-                      Enter the Admin ID and password to unlock the Possession Log page.
-                    </p>
-                  </div>
-
-                  <form onSubmit={handlePossessionLogin} className="px-5 py-5">
-                    <label className="block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
-                      ID
-                      <input
-                        value={possessionCredentials.id}
-                        onChange={(event) => {
-                          setPossessionCredentials((prev) => ({ ...prev, id: event.target.value }));
-                          setPossessionError("");
-                        }}
-                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
-                        autoComplete="username"
-                        autoCapitalize="none"
-                        autoCorrect="off"
-                      />
-                    </label>
-                    <label className="mt-4 block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
-                      Password
-                      <input
-                        type="password"
-                        value={possessionCredentials.password}
-                        onChange={(event) => {
-                          setPossessionCredentials((prev) => ({ ...prev, password: event.target.value }));
-                          setPossessionError("");
-                        }}
-                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
-                        autoComplete="current-password"
-                      />
-                    </label>
-                    {possessionError && (
-                      <p className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-[11px] font-normal text-red-200">
-                        {possessionError}
-                      </p>
-                    )}
-                    <button
-                      type="submit"
-                      className="mt-5 flex h-10 w-full items-center justify-center rounded-xl border border-[#4f8ef7]/60 bg-[#1b5f93] text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(79,142,247,0.22)] transition hover:bg-[#2476b4] active:scale-[0.99]"
-                    >
-                      Login
-                    </button>
-                  </form>
-                </div>
-              </div>
-            </div>
-          )
+          <div className="w-full px-2 pb-10 pt-6">
+            <PossessionTabContent />
+          </div>
         )}
 
         {activeTab === "alarm" && (
