@@ -1755,7 +1755,6 @@ const SIDEBAR_COLLAPSED_KEY = "depotSidebarCollapsed_v1";
 const SIDEBAR_AUTO_HIDE_MS = 3000;
 const ADM_SESSION_KEY = "admAdminUnlocked_v1";
 const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
-const PSS_SESSION_KEY = "pssPossessionUnlocked_v1";
 const OVT_SESSION_KEY = "ovtOvertimeUnlocked_v1";
 const ROS_SESSION_KEY = "rosRosterUnlocked_v1";
 const ODO_SESSION_KEY = "odoReadingUnlocked_v1";
@@ -10065,6 +10064,148 @@ const possessionCardCls = "bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shado
 const possessionHeaderCls = "border-b border-[#1a3a56] px-4 py-3 flex items-center justify-between";
 const possessionHeaderStyle = { background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" };
 
+const POSSESSION_LIVE_SYNC_INTERVAL_MS = 5000;
+const POSSESSION_LIVE_SAVE_DEBOUNCE_MS = 650;
+const POSSESSION_LIVE_LOCAL_EDIT_HOLD_MS = 12000;
+
+function getPossessionLiveEntity() {
+  return base44?.entities?.PossessionLive || null;
+}
+
+function isPossessionLiveEntityReady(entity = getPossessionLiveEntity()) {
+  return Boolean(entity && typeof entity.filter === "function" && typeof entity.create === "function" && typeof entity.update === "function");
+}
+
+function getPossessionRecordUpdatedMs(record = {}) {
+  const parsed = Date.parse(record?.updatedAt || record?.updated_date || record?.createdAt || record?.created_date || "");
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function pickLatestPossessionRecord(records = []) {
+  return [...(Array.isArray(records) ? records : [])].sort((a, b) => getPossessionRecordUpdatedMs(b) - getPossessionRecordUpdatedMs(a))[0] || null;
+}
+
+function usePossessionLiveState(stateKey, state, setState, normalizeState = (value) => value) {
+  const stateRef = useRef(state);
+  const normalizeRef = useRef(normalizeState);
+  const recordIdRef = useRef(null);
+  const loadedRef = useRef(false);
+  const lastSyncedJsonRef = useRef("");
+  const lastRemoteUpdatedRef = useRef(0);
+  const localEditUntilRef = useRef(0);
+  const saveTimerRef = useRef(null);
+
+  stateRef.current = state;
+  normalizeRef.current = normalizeState;
+
+  useEffect(() => {
+    let active = true;
+    let intervalId = null;
+    const entity = getPossessionLiveEntity();
+
+    const applyRecord = (record) => {
+      if (!active || !record) return;
+      const normalized = normalizeRef.current(record.data);
+      const serialized = JSON.stringify(normalized);
+      recordIdRef.current = record.id || recordIdRef.current;
+      lastSyncedJsonRef.current = serialized;
+      lastRemoteUpdatedRef.current = Math.max(lastRemoteUpdatedRef.current, getPossessionRecordUpdatedMs(record));
+      setState(normalized);
+    };
+
+    const fetchRemote = async (initial = false) => {
+      if (!isPossessionLiveEntityReady(entity)) {
+        loadedRef.current = true;
+        if (!lastSyncedJsonRef.current) lastSyncedJsonRef.current = JSON.stringify(stateRef.current);
+        return;
+      }
+
+      try {
+        const records = await entity.filter({ stateKey });
+        if (!active) return;
+        const record = pickLatestPossessionRecord(records);
+
+        if (!record) {
+          if (!initial) return;
+          const now = new Date().toISOString();
+          const current = normalizeRef.current(stateRef.current);
+          const created = await entity.create({ stateKey, data: current, updatedAt: now });
+          if (!active) return;
+          recordIdRef.current = created?.id || null;
+          lastSyncedJsonRef.current = JSON.stringify(current);
+          lastRemoteUpdatedRef.current = getPossessionRecordUpdatedMs(created) || Date.parse(now);
+          return;
+        }
+
+        const remoteUpdated = getPossessionRecordUpdatedMs(record);
+        if (initial || (remoteUpdated > lastRemoteUpdatedRef.current && Date.now() >= localEditUntilRef.current)) {
+          applyRecord(record);
+        }
+      } catch (error) {
+        console.warn(`Possession live load failed for ${stateKey}:`, error);
+        if (!lastSyncedJsonRef.current) lastSyncedJsonRef.current = JSON.stringify(stateRef.current);
+      } finally {
+        if (initial) loadedRef.current = true;
+      }
+    };
+
+    fetchRemote(true);
+    intervalId = window.setInterval(() => fetchRemote(false), POSSESSION_LIVE_SYNC_INTERVAL_MS);
+
+    return () => {
+      active = false;
+      if (intervalId) window.clearInterval(intervalId);
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    };
+  }, [setState, stateKey]);
+
+  useEffect(() => {
+    if (!loadedRef.current) return undefined;
+    const normalized = normalizeRef.current(state);
+    const serialized = JSON.stringify(normalized);
+    if (serialized === lastSyncedJsonRef.current) return undefined;
+
+    localEditUntilRef.current = Date.now() + POSSESSION_LIVE_LOCAL_EDIT_HOLD_MS;
+    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+
+    saveTimerRef.current = window.setTimeout(async () => {
+      const entity = getPossessionLiveEntity();
+      if (!isPossessionLiveEntityReady(entity)) return;
+
+      const current = normalizeRef.current(stateRef.current);
+      const currentJson = JSON.stringify(current);
+      const now = new Date().toISOString();
+
+      try {
+        let recordId = recordIdRef.current;
+        if (!recordId) {
+          const records = await entity.filter({ stateKey });
+          const existing = pickLatestPossessionRecord(records);
+          recordId = existing?.id || null;
+          if (existing) {
+            recordIdRef.current = recordId;
+            lastRemoteUpdatedRef.current = Math.max(lastRemoteUpdatedRef.current, getPossessionRecordUpdatedMs(existing));
+          }
+        }
+
+        const savedRecord = recordId
+          ? await entity.update(recordId, { stateKey, data: current, updatedAt: now })
+          : await entity.create({ stateKey, data: current, updatedAt: now });
+
+        recordIdRef.current = savedRecord?.id || recordId || recordIdRef.current;
+        lastSyncedJsonRef.current = currentJson;
+        lastRemoteUpdatedRef.current = getPossessionRecordUpdatedMs(savedRecord) || Date.parse(now);
+      } catch (error) {
+        console.warn(`Possession live save failed for ${stateKey}:`, error);
+      }
+    }, POSSESSION_LIVE_SAVE_DEBOUNCE_MS);
+
+    return () => {
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    };
+  }, [state, stateKey]);
+}
+
 // ── Section 1: Possession Log ─────────────────────────────────────────────────
 const POSSESSION_LOG_KEY = "possessionLog_v2";
 
@@ -10158,6 +10299,14 @@ function PossessionLog() {
     catch { return [defaultEntry()]; }
   });
   useEffect(() => { localStorage.setItem(POSSESSION_LOG_KEY, JSON.stringify(entries)); }, [entries]);
+  usePossessionLiveState(
+    "possession-log",
+    entries,
+    setEntries,
+    (value) => Array.isArray(value) && value.length > 0
+      ? value.map((entry) => ({ ...defaultEntry(), ...(entry || {}) }))
+      : [defaultEntry()]
+  );
   const updateEntry = (i, val) => setEntries((prev) => prev.map((e, idx) => idx === i ? val : e));
   const addEntry = () => setEntries((prev) => [...prev, defaultEntry()]);
   const removeEntry = (i) => setEntries((prev) => prev.filter((_, idx) => idx !== i));
@@ -10222,6 +10371,7 @@ function generateSCOutput(f) {
 function SCSecurityMessage() {
   const [form, setForm] = useState(() => { try { return { ...defaultSC, ...JSON.parse(localStorage.getItem(POSSESSION_SC_KEY) || "{}") }; } catch { return defaultSC; } });
   useEffect(() => { localStorage.setItem(POSSESSION_SC_KEY, JSON.stringify(form)); }, [form]);
+  usePossessionLiveState("possession-security-message", form, setForm, (value) => ({ ...defaultSC, ...(value || {}) }));
   const set = (field) => (val) => setForm((p) => ({ ...p, [field]: val }));
   const clear = () => { setForm(defaultSC); localStorage.removeItem(POSSESSION_SC_KEY); };
   const output = generateSCOutput(form);
@@ -10370,6 +10520,7 @@ function EPAFLog() {
   });
 
   useEffect(() => { localStorage.setItem(POSSESSION_EPAF_KEY, JSON.stringify(form)); }, [form]);
+  usePossessionLiveState("possession-epaf", form, setForm, (value) => ({ ...defaultEPAF, ...(value || {}) }));
 
   const set = (field) => (val) => setForm((p) => ({ ...p, [field]: val }));
   const clear = () => { setForm(defaultEPAF); localStorage.removeItem(POSSESSION_EPAF_KEY); };
@@ -10510,9 +10661,24 @@ function SweepingLog() {
     }
   });
   const [added, setAdded] = useState(false);
+  const sweepingLiveState = useMemo(() => ({ form, logEntries }), [form, logEntries]);
+  const setSweepingLiveState = useCallback((value) => {
+    const next = value || {};
+    setForm({ ...defaultSweep, ...(next.form || {}) });
+    setLogEntries(Array.isArray(next.logEntries) ? next.logEntries : []);
+  }, []);
 
   useEffect(() => { localStorage.setItem(POSSESSION_SWEEP_KEY, JSON.stringify(form)); }, [form]);
   useEffect(() => { localStorage.setItem(POSSESSION_SWEEP_ENTRIES_KEY, JSON.stringify(logEntries)); }, [logEntries]);
+  usePossessionLiveState(
+    "possession-sweeping",
+    sweepingLiveState,
+    setSweepingLiveState,
+    (value) => ({
+      form: { ...defaultSweep, ...(value?.form || {}) },
+      logEntries: Array.isArray(value?.logEntries) ? value.logEntries : [],
+    })
+  );
 
   const set = (field) => (val) => setForm((p) => ({ ...p, [field]: val }));
   const clear = () => { setForm(defaultSweep); localStorage.removeItem(POSSESSION_SWEEP_KEY); };
@@ -12129,15 +12295,6 @@ export default function DepotStablingPage() {
       return false;
     }
   });
-  const [possessionCredentials, setPossessionCredentials] = useState({ id: "", password: "" });
-  const [possessionError, setPossessionError] = useState("");
-  const [isPossessionUnlocked, setIsPossessionUnlocked] = useState(() => {
-    try {
-      return sessionStorage.getItem(PSS_SESSION_KEY) === "true";
-    } catch {
-      return false;
-    }
-  });
   const [overtimeCredentials, setOvertimeCredentials] = useState({ id: "", password: "" });
   const [overtimeError, setOvertimeError] = useState("");
   const [isOvertimeUnlocked, setIsOvertimeUnlocked] = useState(() => {
@@ -12380,31 +12537,6 @@ export default function DepotStablingPage() {
     setAlarmError("");
     setAlarmSearch("");
     try { sessionStorage.removeItem(ALM_SESSION_KEY); } catch {}
-  }, []);
-
-  const handlePossessionLogin = useCallback((event) => {
-    event.preventDefault();
-    const loginId = String(possessionCredentials.id || "").trim();
-    const loginPassword = String(possessionCredentials.password || "");
-
-    if (loginId === ADM_LOGIN_ID && loginPassword === ADM_LOGIN_PASSWORD) {
-      setIsPossessionUnlocked(true);
-      setPossessionError("");
-      setPossessionCredentials({ id: "", password: "" });
-      try { sessionStorage.setItem(PSS_SESSION_KEY, "true"); } catch {}
-      return;
-    }
-
-    setIsPossessionUnlocked(false);
-    setPossessionError("Invalid admin ID or password.");
-    try { sessionStorage.removeItem(PSS_SESSION_KEY); } catch {}
-  }, [possessionCredentials]);
-
-  const handlePossessionLogout = useCallback(() => {
-    setIsPossessionUnlocked(false);
-    setPossessionCredentials({ id: "", password: "" });
-    setPossessionError("");
-    try { sessionStorage.removeItem(PSS_SESSION_KEY); } catch {}
   }, []);
 
   const handleOvertimeLogin = useCallback((event) => {
@@ -15221,7 +15353,7 @@ export default function DepotStablingPage() {
             },
           ].map(({ key, label, code, to }) => {
             const isActive = activeTab === key;
-            const bottomShortcutClass = key === "possession" ? " mt-auto" : "";
+            const bottomShortcutClass = key === "odo" ? " mt-auto" : "";
             const navClass = isSidebarCollapsed
               ? `flex items-center justify-center px-1 py-2.5 text-xs font-normal transition-all text-left w-full${bottomShortcutClass} ${
                   isActive
@@ -15557,96 +15689,28 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "possession" && (
-          isPossessionUnlocked ? (
-            <div className="w-full px-2 pb-10 pt-6">
-              <div className="mb-3 w-full rounded-[24px] border border-[#1d4869] bg-[#061827]/90 p-3 shadow-[0_18px_55px_rgba(0,0,0,0.25)]">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[10px] font-semibold tracking-[0.16em] text-[#bceaff]">
-                    PSS
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Restricted access</p>
-                    <h2 className="truncate text-[17px] font-normal leading-tight text-white">Possession Log</h2>
-                    <p className="mt-0.5 text-[10px] font-semibold text-[#8ea8c0]">
-                      Admin session unlocked for this browser tab.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handlePossessionLogout}
-                    className="rounded-2xl border border-[#2b4f6b] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-[0.98]"
-                  >
-                    Logout
-                  </button>
+          <div className="w-full px-2 pb-10 pt-6">
+            <div className="mb-3 w-full rounded-[24px] border border-[#1d4869] bg-[#061827]/90 p-3 shadow-[0_18px_55px_rgba(0,0,0,0.25)]">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[10px] font-semibold tracking-[0.16em] text-[#bceaff]">
+                  PSS
                 </div>
-              </div>
-
-              <PossessionTabContent />
-            </div>
-          ) : (
-            <div className="w-full px-2 pb-10 pt-6">
-              <div className="mx-auto w-full max-w-[620px]">
-                <div className="mx-auto w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[#23506f]/80 bg-[#061827]/95 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur">
-                  <div className="relative border-b border-[#1a3a56]/80 bg-gradient-to-br from-[#0d3455] via-[#08223a] to-[#061827] px-5 py-5">
-                    <div className="absolute right-5 top-5 h-10 w-10 rounded-full border border-[#4f8ef7]/25 bg-[#4f8ef7]/10 blur-[1px]" />
-                    <div className="relative flex items-center gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#4f8ef7]/40 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.18em] text-[#bceaff] shadow-[0_0_22px_rgba(79,142,247,0.18)]">
-                        PSS
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-normal uppercase tracking-[0.24em] text-[#6db6e8]">Admin access</p>
-                        <h2 className="mt-1 text-[18px] font-semibold text-white">Possession Login</h2>
-                      </div>
-                    </div>
-                    <p className="relative mt-4 text-[11px] leading-relaxed text-[#8dc7ed]">
-                      Enter the Admin ID and password to unlock the Possession Log page.
-                    </p>
-                  </div>
-
-                  <form onSubmit={handlePossessionLogin} className="px-5 py-5">
-                    <label className="block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
-                      ID
-                      <input
-                        value={possessionCredentials.id}
-                        onChange={(event) => {
-                          setPossessionCredentials((prev) => ({ ...prev, id: event.target.value }));
-                          setPossessionError("");
-                        }}
-                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
-                        autoComplete="username"
-                        autoCapitalize="none"
-                        autoCorrect="off"
-                      />
-                    </label>
-                    <label className="mt-4 block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
-                      Password
-                      <input
-                        type="password"
-                        value={possessionCredentials.password}
-                        onChange={(event) => {
-                          setPossessionCredentials((prev) => ({ ...prev, password: event.target.value }));
-                          setPossessionError("");
-                        }}
-                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
-                        autoComplete="current-password"
-                      />
-                    </label>
-                    {possessionError && (
-                      <p className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-[11px] font-normal text-red-200">
-                        {possessionError}
-                      </p>
-                    )}
-                    <button
-                      type="submit"
-                      className="mt-5 flex h-10 w-full items-center justify-center rounded-xl border border-[#4f8ef7]/60 bg-[#1b5f93] text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(79,142,247,0.22)] transition hover:bg-[#2476b4] active:scale-[0.99]"
-                    >
-                      Login
-                    </button>
-                  </form>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Live shared page</p>
+                  <h2 className="truncate text-[17px] font-normal leading-tight text-white">Possession Log</h2>
+                  <p className="mt-0.5 text-[10px] font-semibold text-[#8ea8c0]">
+                    No password required. Changes auto-save to Cloudflare D1 and sync across laptops.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.85)]" />
+                  Live sync
                 </div>
               </div>
             </div>
-          )
+
+            <PossessionTabContent />
+          </div>
         )}
 
         {activeTab === "alarm" && (

@@ -11,6 +11,7 @@ const ENTITY_NAMES = [
   'rawTrainRem',
   'InsertionLive',
   'PSTTrainPrep',
+  'PossessionLive',
   'RemovalListRow',
   'MainlineTrainRow',
   'BookmarkLink',

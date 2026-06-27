@@ -6,6 +6,7 @@ const ALLOWED_ENTITIES = new Set([
   'rawTrainRem',
   'InsertionLive',
   'PSTTrainPrep',
+  'PossessionLive',
   'RemovalListRow',
   'MainlineTrainRow',
   'BookmarkLink',
