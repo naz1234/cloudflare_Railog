@@ -1607,3 +1607,235 @@ html[data-app-theme="light"] .theme-wash-docx-export span[class*="bg-cyan-950"] 
   background: #ecfeff !important;
   border-color: #67c7d1 !important;
 }
+
+/* Overtime page light-mode cleanup.
+   Dark mode keeps the original navy/gradient design. */
+html[data-app-theme="light"] .theme-overtime-page {
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page :is(
+  h1, h2, h3, h4, h5, h6, p, span, label, button, input, textarea, select, option, div, th, td
+) {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+/* Convert the Overtime page's dark gradient surfaces into light cards. */
+html[data-app-theme="light"] .theme-overtime-page :is(
+  [class*="bg-[radial-gradient"],
+  [class*="bg-[linear-gradient(145deg,rgba"],
+  [class*="bg-[linear-gradient(145deg,rgba"]
+) {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Main page panels. */
+html[data-app-theme="light"] .theme-overtime-page > div > section,
+html[data-app-theme="light"] .theme-overtime-page > aside,
+html[data-app-theme="light"] .theme-overtime-page > section {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+  box-shadow: 0 9px 26px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Inputs, selects and common action buttons. */
+html[data-app-theme="light"] .theme-overtime-page :is(input, textarea, select) {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+  color-scheme: light !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page :is(input, textarea)::placeholder {
+  color: #000000 !important;
+  opacity: 0.48;
+}
+
+html[data-app-theme="light"] .theme-overtime-page :is(
+  button[class*="bg-[#0b2137]"],
+  button[class*="bg-[#0c2943]"],
+  button[class*="bg-[#102840]"],
+  button[class*="bg-[#102b46]"],
+  button[class*="bg-[#12314e]"]
+) {
+  background: linear-gradient(145deg, #f8fafc, #e7edf4) !important;
+  background-image: linear-gradient(145deg, #f8fafc, #e7edf4) !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page button[class*="bg-[linear-gradient(135deg,#6757f2,#465ee9)]"] {
+  background: linear-gradient(145deg, #dbeafe, #bfdbfe) !important;
+  background-image: linear-gradient(145deg, #dbeafe, #bfdbfe) !important;
+  border-color: #78aeda !important;
+  color: #000000 !important;
+  box-shadow: 0 2px 7px rgba(37, 99, 235, 0.12) !important;
+}
+
+/* Keep the top icon badges visible but light. */
+html[data-app-theme="light"] .theme-overtime-page :is(
+  [class*="bg-[linear-gradient(145deg,#2e9df1,#6752f4)]"],
+  [class*="bg-[linear-gradient(145deg,#2697e9,#6b4ff3)]"],
+  [class*="bg-[linear-gradient(145deg,#17678f,#16456f)]"]
+) {
+  background: linear-gradient(145deg, #dbeafe, #ddd6fe) !important;
+  background-image: linear-gradient(145deg, #dbeafe, #ddd6fe) !important;
+  border-color: #9bb6d5 !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.10) !important;
+}
+
+/* Monthly cards: neutral, active, correct and short/extra statuses. */
+html[data-app-theme="light"] .theme-overtime-page button[class*="border-[#294b66]"] {
+  background: linear-gradient(145deg, #ffffff, #f1f5f9) !important;
+  background-image: linear-gradient(145deg, #ffffff, #f1f5f9) !important;
+  border-color: #aebdcc !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page button[class*="border-[#8169ff]"] {
+  background: linear-gradient(145deg, #eef2ff, #e0e7ff) !important;
+  background-image: linear-gradient(145deg, #eef2ff, #e0e7ff) !important;
+  border-color: #8b83df !important;
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.15), 0 6px 18px rgba(99, 102, 241, 0.12) !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page button[class*="border-[#2f6659]"] {
+  background: linear-gradient(145deg, #f0fdf4, #dcfce7) !important;
+  background-image: linear-gradient(145deg, #f0fdf4, #dcfce7) !important;
+  border-color: #86c9a7 !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page button[class*="border-[#7d3f4a]"] {
+  background: linear-gradient(145deg, #fff1f2, #fee2e2) !important;
+  background-image: linear-gradient(145deg, #fff1f2, #fee2e2) !important;
+  border-color: #e39aa5 !important;
+}
+
+/* Month icon chips and dividers. */
+html[data-app-theme="light"] .theme-overtime-page :is(
+  [class*="bg-[#123859]"],
+  [class*="bg-[#5b4bd6]"],
+  [class*="bg-[#1dbd79]"],
+  [class*="bg-[#252459]"],
+  [class*="bg-[#303b78]"]
+) {
+  background: #eef2ff !important;
+  background-image: none !important;
+  border-color: #aeb7dd !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page :is(
+  [class*="bg-[#3a566f]"],
+  [class*="bg-[#3f776b]"],
+  [class*="bg-[#695dde]"],
+  [class*="bg-[#7b4650]"],
+  [class*="bg-[#2d4a65]"]
+) {
+  background: #cbd5e1 !important;
+  background-image: none !important;
+}
+
+/* Annual overview cards retain a soft category tint. */
+html[data-app-theme="light"] .theme-overtime-page div[class*="border-[#265779]"] {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  background-image: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #8eb9e8 !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page div[class*="border-[#4d447e]"] {
+  background: linear-gradient(145deg, #f5f3ff, #ede9fe) !important;
+  background-image: linear-gradient(145deg, #f5f3ff, #ede9fe) !important;
+  border-color: #b1a5df !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page div[class*="border-[#315f6b]"] {
+  background: linear-gradient(145deg, #ecfeff, #cffafe) !important;
+  background-image: linear-gradient(145deg, #ecfeff, #cffafe) !important;
+  border-color: #78c9d0 !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page div[class*="border-[#66552d]"] {
+  background: linear-gradient(145deg, #fffbeb, #fef3c7) !important;
+  background-image: linear-gradient(145deg, #fffbeb, #fef3c7) !important;
+  border-color: #d9bd73 !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page div[class*="border-[#2f6659]"] {
+  background: linear-gradient(145deg, #f0fdf4, #dcfce7) !important;
+  background-image: linear-gradient(145deg, #f0fdf4, #dcfce7) !important;
+  border-color: #86c9a7 !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page div[class*="border-[#315d78]"] {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  background-image: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #8eb9e8 !important;
+}
+
+/* Allowance-check fields and result cards. */
+html[data-app-theme="light"] .theme-overtime-page aside :is(
+  [class*="bg-[#0b2238]"],
+  [class*="bg-[#102840]"],
+  [class*="bg-[#0b2942]"],
+  [class*="bg-[#0c2943]"]
+) {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #aebdcc !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page aside [class*="border-emerald"] {
+  background: linear-gradient(145deg, #f0fdf4, #dcfce7) !important;
+  background-image: linear-gradient(145deg, #f0fdf4, #dcfce7) !important;
+  border-color: #86c9a7 !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page aside [class*="border-red"] {
+  background: linear-gradient(145deg, #fff1f2, #fee2e2) !important;
+  background-image: linear-gradient(145deg, #fff1f2, #fee2e2) !important;
+  border-color: #e39aa5 !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page aside [class*="border-amber"] {
+  background: linear-gradient(145deg, #fffbeb, #fef3c7) !important;
+  background-image: linear-gradient(145deg, #fffbeb, #fef3c7) !important;
+  border-color: #d9bd73 !important;
+}
+
+/* Record form, monthly note and records list. */
+html[data-app-theme="light"] .theme-overtime-page form,
+html[data-app-theme="light"] .theme-overtime-page section[class*="h-full"] {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page div[class*="border-[#274b67]"] {
+  background: #f8fafc !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page div[class*="border-[#2f6659]"] {
+  box-shadow: 0 2px 7px rgba(22, 163, 74, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page :is(
+  [class*="border-dashed"],
+  [class*="border-[#294660]"]
+) {
+  border-color: #aebdcc !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page svg {
+  color: #000000 !important;
+  stroke: currentColor !important;
+}

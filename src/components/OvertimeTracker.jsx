@@ -1182,7 +1182,7 @@ export default function OvertimeTracker() {
   };
 
   return (
-    <div className="grid gap-3 lg:grid-cols-[minmax(0,1.28fr)_minmax(360px,0.92fr)]">
+    <div className="theme-overtime-page grid gap-3 lg:grid-cols-[minmax(0,1.28fr)_minmax(360px,0.92fr)]">
       <div className="min-w-0 space-y-4">
         <section className="min-w-0 overflow-hidden rounded-[24px] border border-[#2b4c68] bg-[radial-gradient(circle_at_8%_0%,rgba(66,135,255,0.13),transparent_32%),radial-gradient(circle_at_92%_0%,rgba(111,80,255,0.13),transparent_30%),linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_22px_60px_rgba(0,0,0,0.32)] backdrop-blur-xl sm:p-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
