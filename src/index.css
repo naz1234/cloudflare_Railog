@@ -1901,3 +1901,21 @@ html[data-app-theme="light"] .theme-maintenance-request-type {
   font-weight: 600 !important;
   color: #000000 !important;
 }
+
+
+/* Light mode only: soften the Maintenance delete/red mark slightly. */
+html[data-app-theme="light"] .theme-maintenance-delete-icon {
+  background: #c85f67 !important;
+  border-color: #e7a0a5 !important;
+  box-shadow: 0 0 4px rgba(200, 95, 103, 0.26) !important;
+}
+
+html[data-app-theme="light"] .group\/delete:hover .theme-maintenance-delete-icon {
+  background: #b94f58 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-delete-icon svg,
+html[data-app-theme="light"] .theme-maintenance-delete-icon svg * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}

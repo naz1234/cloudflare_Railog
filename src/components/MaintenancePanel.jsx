@@ -104,7 +104,7 @@ function DeleteRequestIcon() {
   return (
     <span
       aria-hidden="true"
-      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-red-300/85 bg-[#941c24] shadow-[0_0_6px_rgba(148,28,36,0.5)] transition-all group-hover/delete:scale-105 group-hover/delete:bg-[#c92a35]"
+      className="theme-maintenance-delete-icon inline-flex h-4 w-4 items-center justify-center rounded-full border border-red-300/85 bg-[#941c24] shadow-[0_0_6px_rgba(148,28,36,0.5)] transition-all group-hover/delete:scale-105 group-hover/delete:bg-[#c92a35]"
     >
       <X className="h-2.5 w-2.5 stroke-[3.5] text-white" />
     </span>
