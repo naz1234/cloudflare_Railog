@@ -735,6 +735,7 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
               <span style={{ display: "block" }}>{schedule.label}</span>
               {isWrongActiveTab && (
                 <span
+                  className="theme-insertion-reference-override-badge"
                   style={{
                     position: "absolute",
                     left: "50%",
@@ -769,6 +770,7 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
 function ScheduleWarningBanner({ selectedLabel, todayLabel, onSwitchToToday }) {
   return (
     <div
+      className="theme-insertion-reference-warning"
       style={{
         display: "flex",
         alignItems: "center",
@@ -785,6 +787,7 @@ function ScheduleWarningBanner({ selectedLabel, todayLabel, onSwitchToToday }) {
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
         <div
+          className="theme-insertion-reference-warning-icon"
           style={{
             width: 34,
             height: 34,
@@ -810,9 +813,10 @@ function ScheduleWarningBanner({ selectedLabel, todayLabel, onSwitchToToday }) {
               letterSpacing: "0.02em",
             }}
           >
-            ⚠ Viewing <span style={{ color: "#fbbf24" }}>{selectedLabel.toUpperCase()}</span> schedule while today is <span style={{ color: "#fbbf24" }}>{todayLabel.toUpperCase()}</span>
+            ⚠ Viewing <span className="theme-insertion-reference-warning-emphasis" style={{ color: "#fbbf24" }}>{selectedLabel.toUpperCase()}</span> schedule while today is <span className="theme-insertion-reference-warning-emphasis" style={{ color: "#fbbf24" }}>{todayLabel.toUpperCase()}</span>
           </div>
           <div
+            className="theme-insertion-reference-warning-subtitle"
             style={{
               marginTop: 2,
               fontSize: 9,
@@ -829,6 +833,7 @@ function ScheduleWarningBanner({ selectedLabel, todayLabel, onSwitchToToday }) {
       <button
         type="button"
         onClick={onSwitchToToday}
+        className="theme-insertion-reference-warning-button"
         style={{
           flexShrink: 0,
           border: "1px solid rgba(253, 186, 116, 0.80)",
@@ -937,6 +942,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
         </div>
 
         <div
+          className={`theme-insertion-reference-depot-chip ${isScheduleOverride ? "is-override" : ""}`}
           style={{
             color: isScheduleOverride ? "#fbbf24" : accent.accent,
             fontSize: 8,

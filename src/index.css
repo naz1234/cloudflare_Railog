@@ -1839,3 +1839,52 @@ html[data-app-theme="light"] .theme-overtime-page svg {
   color: #000000 !important;
   stroke: currentColor !important;
 }
+
+/* Schedule-override warning and badges on the insertion TID reference panel. */
+html[data-app-theme="light"] .theme-insertion-reference-warning {
+  background: linear-gradient(145deg, #fff7ed 0%, #fee2e2 100%) !important;
+  background-image: linear-gradient(145deg, #fff7ed 0%, #fee2e2 100%) !important;
+  border-color: #f0a5a5 !important;
+  box-shadow: 0 4px 14px rgba(153, 27, 27, 0.10), inset 0 1px 0 #ffffff !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-warning-icon {
+  background: #ffffff !important;
+  border-color: #e7a2a2 !important;
+  color: #b91c1c !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-warning-emphasis {
+  color: #9a3412 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-warning-subtitle {
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-warning-button {
+  background: linear-gradient(145deg, #ffffff 0%, #ffedd5 100%) !important;
+  background-image: linear-gradient(145deg, #ffffff 0%, #ffedd5 100%) !important;
+  border-color: #f0a05a !important;
+  color: #000000 !important;
+  box-shadow: 0 2px 7px rgba(154, 52, 18, 0.12) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-warning-button:hover {
+  background: linear-gradient(145deg, #fffaf5 0%, #fed7aa 100%) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-override-badge {
+  background: linear-gradient(180deg, #fff7ed 0%, #fed7aa 100%) !important;
+  border-color: #f0a05a !important;
+  color: #000000 !important;
+  box-shadow: 0 2px 6px rgba(154, 52, 18, 0.12) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-depot-chip.is-override {
+  background: #fff7ed !important;
+  border-color: #f0b66c !important;
+  color: #000000 !important;
+}
