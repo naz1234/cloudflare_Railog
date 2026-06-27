@@ -1755,6 +1755,7 @@ const SIDEBAR_COLLAPSED_KEY = "depotSidebarCollapsed_v1";
 const SIDEBAR_AUTO_HIDE_MS = 3000;
 const ADM_SESSION_KEY = "admAdminUnlocked_v1";
 const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
+const PSS_SESSION_KEY = "pssPossessionUnlocked_v1";
 const OVT_SESSION_KEY = "ovtOvertimeUnlocked_v1";
 const ROS_SESSION_KEY = "rosRosterUnlocked_v1";
 const ODO_SESSION_KEY = "odoReadingUnlocked_v1";
@@ -3855,87 +3856,6 @@ function getInsertionAssistRemarkDisplayLabel(remark = "") {
   return normalized;
 }
 
-function getInsertionGlassTone({ assistRemark = "", manualRemark = "", inserted = false } = {}) {
-  const assist = normalizeInsertionAssistRemark(assistRemark);
-  const manual = String(manualRemark || "").trim().toUpperCase();
-
-  if (assist === "Early Rem") {
-    return {
-      accent: "rgba(96, 165, 250, 0.72)",
-      tint: "rgba(59, 130, 246, 0.24)",
-      tintSoft: "rgba(14, 165, 233, 0.13)",
-      text: "#bfdbfe",
-      glow: "rgba(37, 99, 235, 0.24)",
-    };
-  }
-
-  if (assist === "Late Rem") {
-    return {
-      accent: "rgba(250, 204, 21, 0.70)",
-      tint: "rgba(245, 158, 11, 0.24)",
-      tintSoft: "rgba(250, 204, 21, 0.12)",
-      text: "#fde68a",
-      glow: "rgba(245, 158, 11, 0.22)",
-    };
-  }
-
-  if (assist === "ED") {
-    return {
-      accent: "rgba(251, 113, 133, 0.72)",
-      tint: "rgba(244, 63, 94, 0.24)",
-      tintSoft: "rgba(248, 113, 113, 0.12)",
-      text: "#fecdd3",
-      glow: "rgba(225, 29, 72, 0.22)",
-    };
-  }
-
-  if (assist === "ED (7pm)") {
-    return {
-      accent: "rgba(167, 139, 250, 0.72)",
-      tint: "rgba(139, 92, 246, 0.24)",
-      tintSoft: "rgba(192, 132, 252, 0.12)",
-      text: "#ddd6fe",
-      glow: "rgba(124, 58, 237, 0.22)",
-    };
-  }
-
-  if (manual === "3K1") {
-    return {
-      accent: "rgba(45, 212, 191, 0.72)",
-      tint: "rgba(13, 148, 136, 0.24)",
-      tintSoft: "rgba(16, 185, 129, 0.12)",
-      text: "#ccfbf1",
-      glow: "rgba(13, 148, 136, 0.22)",
-    };
-  }
-
-  if (["SW", "SW1", "SW2", "SWEEP", "SWEEPING", "2W"].includes(manual)) {
-    return {
-      accent: "rgba(192, 132, 252, 0.72)",
-      tint: "rgba(147, 51, 234, 0.24)",
-      tintSoft: "rgba(168, 85, 247, 0.12)",
-      text: "#f3e8ff",
-      glow: "rgba(126, 34, 206, 0.22)",
-    };
-  }
-
-  return inserted
-    ? {
-        accent: "rgba(125, 211, 252, 0.68)",
-        tint: "rgba(14, 165, 233, 0.20)",
-        tintSoft: "rgba(99, 102, 241, 0.12)",
-        text: "#dbeafe",
-        glow: "rgba(14, 165, 233, 0.20)",
-      }
-    : {
-        accent: "rgba(148, 163, 255, 0.34)",
-        tint: "rgba(99, 102, 241, 0.14)",
-        tintSoft: "rgba(56, 189, 248, 0.08)",
-        text: "#e2e8f0",
-        glow: "rgba(79, 70, 229, 0.14)",
-      };
-}
-
 function getTimetableInsertionRemarkMap(activeTimetable = null, depot = "west") {
   const parsed = getActiveTimetableParsedData(activeTimetable);
   const depotKey = normalizeDepotKey(depot);
@@ -4117,7 +4037,7 @@ const INSERTION_ACTION_BUTTON_DANGER = {
 
 function InsertionSectionTitle({ title, leftAction = null, action = null }) {
   return (
-    <div className="theme-insertion-header mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
       <div className="flex min-w-0 flex-wrap items-center justify-start gap-3">
         <div
           className="theme-insertion-title-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border"
@@ -4235,14 +4155,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     : "";
   const hasInsertedPlainRemark = Boolean(insertedPlainRemark);
   const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
-  const previewTidAssistRemark = autoTid && typeof getTidAssistRemark === "function"
-    ? getTidAssistRemark(autoTid, autoTidDepot)
-    : normalizeInsertionAssistRemark(tidRemarkText);
-  const insertionGlassTone = getInsertionGlassTone({
-    assistRemark: insertedTidAssistRemark || previewTidAssistRemark,
-    manualRemark: inserted?.isSweeping ? "SW" : inserted?.remark || tidRemarkText,
-    inserted: Boolean(inserted),
-  });
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
   const isInsertionDone = Boolean(inserted && !inserted.isSweeping);
@@ -4385,13 +4297,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         data-insertion-drop-depot={autoTidDepot}
         data-insertion-drop-road={road}
         data-insertion-drop-bi={bi}
-        className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${maintList.length > 0 ? "has-maintenance-request" : ""} relative flex h-full flex-col items-center justify-start rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
+        className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} relative flex h-full flex-col items-center justify-start rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
         style={{
-          "--insertion-card-accent": insertionGlassTone.accent,
-          "--insertion-card-tint": insertionGlassTone.tint,
-          "--insertion-card-tint-soft": insertionGlassTone.tintSoft,
-          "--insertion-card-accent-text": insertionGlassTone.text,
-          "--insertion-card-glow": insertionGlassTone.glow,
           minHeight: Math.max(inserted?.isSweeping ? 158 : isInsertionDone ? ((insertedTid || hasInsertedPlainRemark) ? 126 : 130) : 98, rowCardMinHeight),
           height: "100%",
           padding: isInsertionDone ? "6px 5px" : "8px 7px",
@@ -4403,7 +4310,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               ? "1px dashed rgba(125, 211, 252, 0.78)"
               : "none",
           outlineOffset: -3,
-          transform: isTidDropHovered ? "translateY(-3px) scale(1.025)" : isTidDragActive && isTidDropEligible ? "translateY(-1px) scale(1.008)" : undefined,
+          transform: isTidDropHovered ? "translateY(-3px) scale(1.025)" : isTidDragActive && isTidDropEligible ? "translateY(-1px) scale(1.008)" : "none",
           boxShadow: isTidDropHovered
             ? "0 12px 28px rgba(14, 165, 233, 0.34), 0 0 0 3px rgba(56, 189, 248, 0.12)"
             : isTidDragActive && isTidDropEligible
@@ -4412,7 +4319,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           transition: "transform 140ms ease, outline-color 140ms ease, box-shadow 140ms ease",
         }}
       >
-        <div className={`theme-insertion-card-content flex w-full flex-col items-center ${hasInsertedPlainRemark ? "flex-1 gap-0" : (isInsertionDone ? "gap-1" : "gap-2")}`}>
+        <div className={`flex w-full flex-col items-center ${hasInsertedPlainRemark ? "flex-1 gap-0" : (isInsertionDone ? "gap-1" : "gap-2")}`}>
           {stablingEditable ? (
             <input
               type="text"
@@ -4424,7 +4331,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               onBlur={() => setIsTrainIdEditing(false)}
               onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
               placeholder="Train ID"
-              className="theme-insertion-train-id h-7 w-full border-0 border-b px-1.5 text-center text-[15px] font-black uppercase outline-none placeholder:text-[10px] placeholder:text-[#47637a]"
+              className="h-7 w-full border-0 border-b px-1.5 text-center text-[15px] font-black uppercase outline-none placeholder:text-[10px] placeholder:text-[#47637a]"
               style={{
                 borderBottomColor: key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine,
                 backgroundColor: "transparent",
@@ -4435,7 +4342,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             />
           ) : (
             <div
-              className="theme-insertion-train-id w-full text-center font-black leading-none"
+              className="w-full text-center font-black leading-none"
               style={{
                 fontSize: key ? (isInsertionDone ? 15 : 18) : 13,
                 color: key ? trainColor : "#587187",
@@ -4447,24 +4354,20 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           )}
           {rowMaintenanceSlotHeight > 0 && (
             <div
-              className="theme-insertion-maintenance-slot flex w-full shrink-0 flex-col items-center justify-start gap-1.5"
+              className="flex w-full shrink-0 flex-col items-center justify-start gap-1.5"
               style={{ height: rowMaintenanceSlotHeight, minHeight: rowMaintenanceSlotHeight, marginTop: 3 }}
               aria-hidden={maintList.length === 0 ? "true" : undefined}
             >
-              {maintList.map((item) => {
-                const maintenanceLabel = item.badgeText || item.displayType || "";
-                const isWashMaintenance = /\bwash\b/i.test(maintenanceLabel);
-                return (
-                  <span
-                    key={`${item.displayType}-${item.badgeText || ""}`}
-                    className={`theme-insertion-maintenance-item ${isWashMaintenance ? "is-wash" : ""} inline-flex min-w-[92px] w-fit max-w-full items-center justify-center rounded-full px-2 py-0.5 text-center text-[10px] font-normal leading-none whitespace-nowrap`}
-                    style={getRequestPillStyle(item, { showSuppressedStyle: false })}
-                    title={maintenanceLabel}
-                  >
-                    {maintenanceLabel}
-                  </span>
-                );
-              })}
+              {maintList.map((item) => (
+                <span
+                  key={`${item.displayType}-${item.badgeText || ""}`}
+                  className="inline-flex min-w-[92px] w-fit max-w-full items-center justify-center rounded-full px-2 py-0.5 text-center text-[10px] font-normal leading-none whitespace-nowrap"
+                  style={getRequestPillStyle(item, { showSuppressedStyle: false })}
+                  title={item.badgeText || item.displayType}
+                >
+                  {item.badgeText || item.displayType}
+                </span>
+              ))}
             </div>
           )}
           {key && hasInsertedPlainRemark && (
@@ -4559,7 +4462,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           )}
         </div>
         {key && (
-          <div className={`theme-insertion-card-footer mt-auto flex w-full flex-col items-center ${isInsertionDone ? "gap-1" : "gap-2"}`}>
+          <div className={`mt-auto flex w-full flex-col items-center ${isInsertionDone ? "gap-1" : "gap-2"}`}>
             {!inserted && (
               <input
                 ref={(element) => {
@@ -4591,19 +4494,19 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             {inserted && !inserted.isSweeping && (
               <>
                 {insertedTid ? (
-                <div className="theme-insertion-meta-grid grid w-full grid-cols-[auto_1fr] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
-                  <span className="theme-insertion-meta-label font-normal text-blue-300">TID :</span>
+                <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                  <span className="font-normal text-blue-300">TID :</span>
                   <button
                     type="button"
                     onClick={handleInsertedUndoClick}
-                    className="theme-insertion-meta-value min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none transition-colors hover:text-red-200 focus-visible:text-red-200"
+                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none transition-colors hover:text-red-200 focus-visible:text-red-200"
                     title={`Click TID ${insertedTid} to undo insertion`}
                     aria-label={`Undo insertion for TID ${insertedTid}`}
                   >
                     {insertedTid}
                   </button>
 
-                  <span className="theme-insertion-meta-label font-normal text-blue-300">Time :</span>
+                  <span className="font-normal text-blue-300">Time :</span>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -4624,7 +4527,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
                     }}
                     placeholder="00:00"
-                    className="theme-insertion-meta-value min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
                     title="Edit insertion completion time"
                   />
 
@@ -4633,7 +4536,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       <button
                         type="button"
                         onClick={handleInsertedUndoClick}
-                        className="theme-insertion-assist-pill col-span-2 inline-flex min-w-0 max-w-full items-center justify-center justify-self-center rounded-full border px-2 py-[1px] text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                        className="col-span-2 inline-flex min-w-0 max-w-full items-center justify-center justify-self-center rounded-full border px-2 py-[1px] text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
                         style={{
                           color: insertedTidRemarkStyle?.color || "#bfdbfe",
                           background: insertedTidRemarkStyle?.bg || "rgba(59, 130, 246, 0.16)",
@@ -4649,7 +4552,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       </button>
                     ) : (
                       <span
-                        className="theme-insertion-assist-pill col-span-2 min-w-0 justify-self-center text-center text-[12px] font-normal leading-tight"
+                        className="col-span-2 min-w-0 justify-self-center text-center text-[12px] font-normal leading-tight"
                         style={{ color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
                         title={insertedTidAssistDisplayRemark}
                       >
@@ -4659,8 +4562,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   )}
                 </div>
               ) : hasInsertedPlainRemark ? (
-                <div className="theme-insertion-meta-grid grid w-full grid-cols-[auto_1fr] items-center gap-x-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
-                  <span className="theme-insertion-meta-label font-normal text-blue-300">Time :</span>
+                <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                  <span className="font-normal text-blue-300">Time :</span>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -4681,14 +4584,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                     }}
                     placeholder="00:00"
-                    className="theme-insertion-meta-value min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
                     title="Edit insertion completion time"
                   />
                 </div>
               ) : (
                 <>
-                  <div className="theme-insertion-meta-grid flex w-full items-center justify-center gap-1 whitespace-nowrap px-1 text-[12px] font-normal leading-tight">
-                    <span className="theme-insertion-meta-label shrink-0 text-blue-300">TIME :</span>
+                  <div className="flex w-full items-center justify-center gap-1 whitespace-nowrap px-1 text-[12px] font-normal leading-tight">
+                    <span className="shrink-0 text-blue-300">TIME :</span>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -4709,7 +4612,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                       }}
                       placeholder="00:00"
-                      className="theme-insertion-meta-value w-[42px] border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                      className="w-[42px] border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
                       title="Edit insertion completion time"
                     />
                   </div>
@@ -4724,8 +4627,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </button>
                 </>
                 )}
-                <div className="theme-insertion-meta-grid grid w-full grid-cols-[auto_1fr] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
-                  <span className="theme-insertion-meta-label font-normal text-blue-300">TA :</span>
+                <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
+                  <span className="font-normal text-blue-300">TA :</span>
                   <input
                     type="text"
                     maxLength={40}
@@ -4733,7 +4636,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
                     placeholder="Optional"
-                    className="theme-insertion-meta-value min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
                     title="Optional TA name for the insertion output"
                   />
                 </div>
@@ -12226,6 +12129,15 @@ export default function DepotStablingPage() {
       return false;
     }
   });
+  const [possessionCredentials, setPossessionCredentials] = useState({ id: "", password: "" });
+  const [possessionError, setPossessionError] = useState("");
+  const [isPossessionUnlocked, setIsPossessionUnlocked] = useState(() => {
+    try {
+      return sessionStorage.getItem(PSS_SESSION_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
   const [overtimeCredentials, setOvertimeCredentials] = useState({ id: "", password: "" });
   const [overtimeError, setOvertimeError] = useState("");
   const [isOvertimeUnlocked, setIsOvertimeUnlocked] = useState(() => {
@@ -12468,6 +12380,31 @@ export default function DepotStablingPage() {
     setAlarmError("");
     setAlarmSearch("");
     try { sessionStorage.removeItem(ALM_SESSION_KEY); } catch {}
+  }, []);
+
+  const handlePossessionLogin = useCallback((event) => {
+    event.preventDefault();
+    const loginId = String(possessionCredentials.id || "").trim();
+    const loginPassword = String(possessionCredentials.password || "");
+
+    if (loginId === ADM_LOGIN_ID && loginPassword === ADM_LOGIN_PASSWORD) {
+      setIsPossessionUnlocked(true);
+      setPossessionError("");
+      setPossessionCredentials({ id: "", password: "" });
+      try { sessionStorage.setItem(PSS_SESSION_KEY, "true"); } catch {}
+      return;
+    }
+
+    setIsPossessionUnlocked(false);
+    setPossessionError("Invalid admin ID or password.");
+    try { sessionStorage.removeItem(PSS_SESSION_KEY); } catch {}
+  }, [possessionCredentials]);
+
+  const handlePossessionLogout = useCallback(() => {
+    setIsPossessionUnlocked(false);
+    setPossessionCredentials({ id: "", password: "" });
+    setPossessionError("");
+    try { sessionStorage.removeItem(PSS_SESSION_KEY); } catch {}
   }, []);
 
   const handleOvertimeLogin = useCallback((event) => {
@@ -15216,7 +15153,7 @@ export default function DepotStablingPage() {
               to: "/possession",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h4"/>
+                  <rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/>
                 </svg>
               ),
             },
@@ -15284,13 +15221,14 @@ export default function DepotStablingPage() {
             },
           ].map(({ key, label, code, to }) => {
             const isActive = activeTab === key;
+            const bottomShortcutClass = key === "possession" ? " mt-auto" : "";
             const navClass = isSidebarCollapsed
-              ? `flex items-center justify-center px-1 py-2.5 text-xs font-normal transition-all text-left w-full ${
+              ? `flex items-center justify-center px-1 py-2.5 text-xs font-normal transition-all text-left w-full${bottomShortcutClass} ${
                   isActive
                     ? "text-white"
                     : "text-[#7eb8e0] hover:text-white"
                 }`
-              : `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full ${
+              : `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all text-left w-full${bottomShortcutClass} ${
                   isActive
                     ? "bg-[#1a3a5c] text-white shadow-sm border border-[#2b4f6b]"
                     : "text-[#7eb8e0] hover:text-white hover:bg-[#0f2d4a]"
@@ -15619,9 +15557,96 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "possession" && (
-          <div className="w-full px-2 pb-10 pt-6">
-            <PossessionTabContent />
-          </div>
+          isPossessionUnlocked ? (
+            <div className="w-full px-2 pb-10 pt-6">
+              <div className="mb-3 w-full rounded-[24px] border border-[#1d4869] bg-[#061827]/90 p-3 shadow-[0_18px_55px_rgba(0,0,0,0.25)]">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[10px] font-semibold tracking-[0.16em] text-[#bceaff]">
+                    PSS
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Restricted access</p>
+                    <h2 className="truncate text-[17px] font-normal leading-tight text-white">Possession Log</h2>
+                    <p className="mt-0.5 text-[10px] font-semibold text-[#8ea8c0]">
+                      Admin session unlocked for this browser tab.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handlePossessionLogout}
+                    className="rounded-2xl border border-[#2b4f6b] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8bd5ff] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-[0.98]"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+
+              <PossessionTabContent />
+            </div>
+          ) : (
+            <div className="w-full px-2 pb-10 pt-6">
+              <div className="mx-auto w-full max-w-[620px]">
+                <div className="mx-auto w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[#23506f]/80 bg-[#061827]/95 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur">
+                  <div className="relative border-b border-[#1a3a56]/80 bg-gradient-to-br from-[#0d3455] via-[#08223a] to-[#061827] px-5 py-5">
+                    <div className="absolute right-5 top-5 h-10 w-10 rounded-full border border-[#4f8ef7]/25 bg-[#4f8ef7]/10 blur-[1px]" />
+                    <div className="relative flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#4f8ef7]/40 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.18em] text-[#bceaff] shadow-[0_0_22px_rgba(79,142,247,0.18)]">
+                        PSS
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-normal uppercase tracking-[0.24em] text-[#6db6e8]">Admin access</p>
+                        <h2 className="mt-1 text-[18px] font-semibold text-white">Possession Login</h2>
+                      </div>
+                    </div>
+                    <p className="relative mt-4 text-[11px] leading-relaxed text-[#8dc7ed]">
+                      Enter the Admin ID and password to unlock the Possession Log page.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handlePossessionLogin} className="px-5 py-5">
+                    <label className="block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                      ID
+                      <input
+                        value={possessionCredentials.id}
+                        onChange={(event) => {
+                          setPossessionCredentials((prev) => ({ ...prev, id: event.target.value }));
+                          setPossessionError("");
+                        }}
+                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
+                        autoComplete="username"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                      />
+                    </label>
+                    <label className="mt-4 block text-[10px] font-normal uppercase tracking-wide text-[#7eb8e0]">
+                      Password
+                      <input
+                        type="password"
+                        value={possessionCredentials.password}
+                        onChange={(event) => {
+                          setPossessionCredentials((prev) => ({ ...prev, password: event.target.value }));
+                          setPossessionError("");
+                        }}
+                        className="mt-2 h-10 w-full rounded-xl border border-[#2b4f6b] bg-[#eef5ff] px-3 text-[13px] font-normal text-[#061827] outline-none transition focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/25"
+                        autoComplete="current-password"
+                      />
+                    </label>
+                    {possessionError && (
+                      <p className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-[11px] font-normal text-red-200">
+                        {possessionError}
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      className="mt-5 flex h-10 w-full items-center justify-center rounded-xl border border-[#4f8ef7]/60 bg-[#1b5f93] text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(79,142,247,0.22)] transition hover:bg-[#2476b4] active:scale-[0.99]"
+                    >
+                      Login
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )
         )}
 
         {activeTab === "alarm" && (
