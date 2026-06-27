@@ -1498,7 +1498,7 @@ function TrainWashingDocxExport() {
   };
 
   return (
-    <div className="w-full rounded-2xl border border-[#2b4f6b] bg-[#071828] p-5 text-slate-100 shadow-xl">
+    <div className="theme-wash-docx-export w-full rounded-2xl border border-[#2b4f6b] bg-[#071828] p-5 text-slate-100 shadow-xl">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="mb-1 flex items-center gap-2">

@@ -229,10 +229,10 @@ export default function TrainWashing() {
 
 
   return (
-    <div className="space-y-5">
+    <div className="theme-train-washing-page space-y-5">
       {/* Excel Upload Window */}
-      <div className="bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-md overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#1a3a56] flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+      <div className="theme-washing-panel bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-md overflow-hidden">
+        <div className="theme-washing-header theme-washing-header-blue px-5 py-4 border-b border-[#1a3a56] flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center">
               <Droplets className="w-4 h-4 text-[#4f8ef7]" />
@@ -256,7 +256,7 @@ export default function TrainWashing() {
           )}
         </div>
 
-        <div className={`mx-5 my-4 rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-3 py-8 ${dragging ? "border-[#4f8ef7] bg-[#0f2d4a]" : "border-[#1e3a56] bg-[#071828] hover:border-[#2b4f6b] hover:bg-[#0a1e2e]"}`}
+        <div className={`theme-washing-upload-zone mx-5 my-4 rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-3 py-8 ${dragging ? "is-dragging border-[#4f8ef7] bg-[#0f2d4a]" : "border-[#1e3a56] bg-[#071828] hover:border-[#2b4f6b] hover:bg-[#0a1e2e]"}`}
           onClick={() => fileInputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
@@ -271,8 +271,8 @@ export default function TrainWashing() {
 
       {/* Excel Log Output */}
       {excelSessions.length > 0 && excelSessions.map((session, si) => (
-        <div key={`excel-${si}`} className="bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-md overflow-hidden">
-          <div className="px-5 py-3 border-b border-[#1a3a56] flex items-center justify-between" style={session.headerStyle}>
+        <div key={`excel-${si}`} className="theme-washing-panel theme-washing-log-panel bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-md overflow-hidden">
+          <div className="theme-washing-header theme-washing-session-header px-5 py-3 border-b border-[#1a3a56] flex items-center justify-between" data-session={si + 1} style={session.headerStyle}>
             <div className="flex items-center gap-2.5">
               <span className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-black text-white">{si + 1}</span>
               <span className="text-xs font-black text-white tracking-widest uppercase">{session.label}</span>
@@ -282,12 +282,12 @@ export default function TrainWashing() {
               <CopyBtn text={sessionText(session)} />
             </div>
           </div>
-          <div className="px-5 py-4 space-y-1">
+          <div className="theme-washing-log-body px-5 py-4 space-y-1">
             {session.records.map((r, i) => (
               <p key={i} className="font-mono text-xs text-[#c8d8ea] leading-relaxed">{buildLine(r)}</p>
             ))}
           </div>
-          <div className="px-5 py-3 border-t border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+          <div className="theme-washing-log-total px-5 py-3 border-t border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
             <p className="font-mono text-xs font-bold text-[#7eb8e0]">Total: {session.records.length} trains washed at the automatic wash plant.</p>
           </div>
         </div>
@@ -300,8 +300,8 @@ export default function TrainWashing() {
       )}
 
       {/* Manual Entry + Manual Log Output Window */}
-      <div className="bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-md overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#1a3a56] flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0a2e1e 0%,#061f14 100%)" }}>
+      <div className="theme-washing-panel theme-washing-manual-panel bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-md overflow-hidden">
+        <div className="theme-washing-header theme-washing-header-green px-5 py-4 border-b border-[#1a3a56] flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0a2e1e 0%,#061f14 100%)" }}>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-[#0b2419] border border-emerald-700/50 flex items-center justify-center">
               <PlusCircle className="w-4 h-4 text-emerald-300" />
@@ -323,7 +323,7 @@ export default function TrainWashing() {
         </div>
 
         <form onSubmit={addManualWash} className="p-5">
-          <div className="rounded-xl border border-emerald-700/40 bg-[#071828] p-4">
+          <div className="theme-washing-manual-form rounded-xl border border-emerald-700/40 bg-[#071828] p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
               <div className="flex-1">
                 <label className="block text-[10px] font-black uppercase tracking-widest text-emerald-300/80 mb-1.5">Train ID</label>
@@ -336,7 +336,7 @@ export default function TrainWashing() {
               </div>
               <div className="flex-[1.25] min-w-[240px]">
                 <label className="block text-[10px] font-black uppercase tracking-widest text-emerald-300/80 mb-1.5">Start Washing Time</label>
-                <div className="flex h-10 w-full items-center overflow-hidden rounded-lg border border-[#1e3a56] bg-[#0a1e2e] shadow-[0_0_14px_rgba(16,185,129,0.10),inset_0_1px_0_rgba(255,255,255,0.04)] focus-within:border-emerald-400">
+                <div className="theme-washing-time-control flex h-10 w-full items-center overflow-hidden rounded-lg border border-[#1e3a56] bg-[#0a1e2e] shadow-[0_0_14px_rgba(16,185,129,0.10),inset_0_1px_0_rgba(255,255,255,0.04)] focus-within:border-emerald-400">
                   <div className="flex h-full w-9 shrink-0 items-center justify-center text-white">
                     <Clock className="w-4 h-4 text-[#c8d8ea]" />
                   </div>
@@ -410,7 +410,7 @@ export default function TrainWashing() {
 
         {manualRecords.length > 0 && (
           <div className="border-t border-emerald-800/50">
-            <div className="px-5 py-3 flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0a2e1e 0%,#061f14 100%)" }}>
+            <div className="theme-washing-header theme-washing-header-green px-5 py-3 flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0a2e1e 0%,#061f14 100%)" }}>
               <div className="flex items-center gap-2.5">
                 <span className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-black text-white">1</span>
                 <span className="text-xs font-black text-white tracking-widest uppercase">Manual Washing Log</span>
@@ -418,9 +418,9 @@ export default function TrainWashing() {
               <span className="text-[10px] font-bold px-2.5 py-1 rounded-full text-emerald-300 bg-emerald-900/40 border border-emerald-700/50">{manualRecords.length} trains</span>
             </div>
 
-            <div className="px-4 py-2 space-y-1 bg-[#071828]">
+            <div className="theme-washing-log-body px-4 py-2 space-y-1 bg-[#071828]">
               {manualRecords.map((record) => (
-                <div key={record.id} className="flex items-center gap-2 rounded-md border border-emerald-900/40 bg-[#0a1e2e] px-3 py-1">
+                <div key={record.id} className="theme-washing-log-row flex items-center gap-2 rounded-md border border-emerald-900/40 bg-[#0a1e2e] px-3 py-1">
                   <p className="min-w-0 flex-1 font-mono text-xs text-[#c8d8ea] leading-snug">{buildLine(record)}</p>
                   <CopyBtn text={buildLine(record)} compact />
                   <button
@@ -436,7 +436,7 @@ export default function TrainWashing() {
               ))}
             </div>
 
-            <div className="px-5 py-3 border-t border-emerald-800/50" style={{ background: "linear-gradient(180deg,#0a2e1e 0%,#061f14 100%)" }}>
+            <div className="theme-washing-log-total theme-washing-log-total-green px-5 py-3 border-t border-emerald-800/50" style={{ background: "linear-gradient(180deg,#0a2e1e 0%,#061f14 100%)" }}>
               <p className="font-mono text-xs font-bold text-emerald-300">Total: {manualRecords.length} trains washed at the automatic wash plant.</p>
             </div>
           </div>

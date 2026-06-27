@@ -1376,3 +1376,234 @@ html[data-app-theme="light"] .theme-train-movement-page .movement-flow-step-labe
   border-color: #9fb0c0 !important;
   color: #000000 !important;
 }
+
+/* Train Washing workspace light-mode cleanup.
+   Dark mode keeps the original navy and emerald design. */
+html[data-app-theme="light"] .theme-train-washing-page,
+html[data-app-theme="light"] .theme-wash-docx-export {
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-train-washing-page :is(
+  h1, h2, h3, h4, p, span, label, button, input, div
+),
+html[data-app-theme="light"] .theme-wash-docx-export :is(
+  h1, h2, h3, h4, p, span, label, button, input, div, th, td
+) {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-washing-panel,
+html[data-app-theme="light"] .theme-wash-docx-export {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+  box-shadow: 0 9px 24px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-washing-header {
+  border-color: #b7c4d1 !important;
+  box-shadow: inset 0 -1px 0 rgba(148, 163, 184, 0.18) !important;
+}
+
+html[data-app-theme="light"] .theme-washing-header-blue,
+html[data-app-theme="light"] .theme-washing-session-header[data-session="1"] {
+  background: linear-gradient(180deg, #edf7ff 0%, #dcecf8 100%) !important;
+  background-image: linear-gradient(180deg, #edf7ff 0%, #dcecf8 100%) !important;
+}
+
+html[data-app-theme="light"] .theme-washing-header-green,
+html[data-app-theme="light"] .theme-washing-session-header[data-session="2"] {
+  background: linear-gradient(180deg, #effcf5 0%, #d9f3e5 100%) !important;
+  background-image: linear-gradient(180deg, #effcf5 0%, #d9f3e5 100%) !important;
+}
+
+html[data-app-theme="light"] .theme-washing-header > div > div:first-child,
+html[data-app-theme="light"] .theme-washing-upload-zone > div:first-child {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #9fb0c0 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.07) !important;
+}
+
+html[data-app-theme="light"] .theme-washing-upload-zone {
+  background: #fbfdff !important;
+  background-image: none !important;
+  border-color: #9fb7ce !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-app-theme="light"] .theme-washing-upload-zone:hover,
+html[data-app-theme="light"] .theme-washing-upload-zone.is-dragging {
+  background: #eff6ff !important;
+  border-color: #4f8ef7 !important;
+}
+
+html[data-app-theme="light"] .theme-train-washing-page :is(input, select, textarea),
+html[data-app-theme="light"] .theme-wash-docx-export :is(input, select, textarea) {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-train-washing-page :is(input, textarea)::placeholder,
+html[data-app-theme="light"] .theme-wash-docx-export :is(input, textarea)::placeholder {
+  color: #000000 !important;
+  opacity: 0.48;
+}
+
+html[data-app-theme="light"] .theme-washing-manual-form {
+  background: #f8fdf9 !important;
+  background-image: none !important;
+  border-color: #94c8aa !important;
+  box-shadow: inset 0 1px 0 #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-washing-time-control {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #9fb0c0 !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-washing-time-control > div[class*="w-px"] {
+  background: #c8d2dc !important;
+}
+
+html[data-app-theme="light"] .theme-washing-time-control button {
+  background: transparent !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-time-control button[class*="bg-emerald-900"] {
+  background: #d1fae5 !important;
+  border-color: #86c9a7 !important;
+}
+
+html[data-app-theme="light"] .theme-train-washing-page button {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-train-washing-page button[class*="border-[#1e3a56]"] {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  background-image: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #8eb9e8 !important;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-train-washing-page button[class*="border-emerald"] {
+  background: linear-gradient(145deg, #ecfdf5, #d1fae5) !important;
+  background-image: linear-gradient(145deg, #ecfdf5, #d1fae5) !important;
+  border-color: #86c9a7 !important;
+}
+
+html[data-app-theme="light"] .theme-train-washing-page button[class*="border-red"] {
+  background: linear-gradient(145deg, #fff1f2, #fee2e2) !important;
+  background-image: linear-gradient(145deg, #fff1f2, #fee2e2) !important;
+  border-color: #e9a0aa !important;
+}
+
+html[data-app-theme="light"] .theme-train-washing-page span[class*="bg-emerald-900"],
+html[data-app-theme="light"] .theme-train-washing-page span[class*="bg-sky-900"] {
+  background: #ffffff !important;
+  border-color: #9fb0c0 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-log-body {
+  background: #ffffff !important;
+  background-image: none !important;
+}
+
+html[data-app-theme="light"] .theme-washing-log-row {
+  background: #f8fafc !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-log-total {
+  background: linear-gradient(180deg, #edf7ff 0%, #dcecf8 100%) !important;
+  background-image: linear-gradient(180deg, #edf7ff 0%, #dcecf8 100%) !important;
+  border-color: #b7c4d1 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-log-total-green {
+  background: linear-gradient(180deg, #effcf5 0%, #d9f3e5 100%) !important;
+  background-image: linear-gradient(180deg, #effcf5 0%, #d9f3e5 100%) !important;
+}
+
+html[data-app-theme="light"] .theme-train-washing-page svg,
+html[data-app-theme="light"] .theme-wash-docx-export svg {
+  color: #000000 !important;
+  stroke: currentColor !important;
+}
+
+/* Train Washing DOCX export cards, status and preview table. */
+html[data-app-theme="light"] .theme-wash-docx-export > div:first-child > div:first-child > div:first-child > div:first-child {
+  background: linear-gradient(145deg, #ecfeff, #cffafe) !important;
+  background-image: linear-gradient(145deg, #ecfeff, #cffafe) !important;
+  border-color: #67c7d1 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-wash-docx-export label[class*="border-cyan"] {
+  background: linear-gradient(145deg, #ecfeff, #cffafe) !important;
+  background-image: linear-gradient(145deg, #ecfeff, #cffafe) !important;
+  border-color: #67c7d1 !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 5px rgba(8, 145, 178, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-wash-docx-export button[class*="border-blue"] {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  background-image: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #78aeda !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 5px rgba(37, 99, 235, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-wash-docx-export button[class*="border-red"] {
+  background: linear-gradient(145deg, #fff1f2, #fee2e2) !important;
+  background-image: linear-gradient(145deg, #fff1f2, #fee2e2) !important;
+  border-color: #e9a0aa !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-wash-docx-export > div:nth-child(2) > div,
+html[data-app-theme="light"] .theme-wash-docx-export > div:nth-child(3),
+html[data-app-theme="light"] .theme-wash-docx-export .space-y-5 > div {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-wash-docx-export .space-y-5 > div > div:first-child,
+html[data-app-theme="light"] .theme-wash-docx-export thead {
+  background: linear-gradient(180deg, #f8fafc 0%, #e7edf4 100%) !important;
+  background-image: linear-gradient(180deg, #f8fafc 0%, #e7edf4 100%) !important;
+  border-color: #b7c4d1 !important;
+}
+
+html[data-app-theme="light"] .theme-wash-docx-export tbody tr:nth-child(odd) {
+  background: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-wash-docx-export tbody tr:nth-child(even) {
+  background: #f3f6f9 !important;
+}
+
+html[data-app-theme="light"] .theme-wash-docx-export th,
+html[data-app-theme="light"] .theme-wash-docx-export td {
+  background: transparent !important;
+  border-color: #c8d2dc !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-wash-docx-export span[class*="bg-cyan-950"] {
+  background: #ecfeff !important;
+  border-color: #67c7d1 !important;
+}
