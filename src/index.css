@@ -1360,3 +1360,19 @@ html[data-app-theme="light"] .theme-pst-live-panel .theme-pst-excel-combined {
 html[data-app-theme="light"] .theme-pst-live-panel .theme-pst-excel-button:hover:not(:disabled) {
   filter: brightness(0.98);
 }
+
+
+/* Inbound / Outbound flow: remove the last dark NEXT label in light mode. */
+html[data-app-theme="light"] .theme-train-movement-page .movement-flow-step-label-next {
+  background: #f8fafc !important;
+  background-image: none !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .movement-flow-step-label-next .movement-flow-step-number {
+  background: #ffffff !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+}
