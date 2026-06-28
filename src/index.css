@@ -3089,7 +3089,7 @@ html[data-app-theme="light"] .theme-roster-staff-result-block.is-comparison {
 
 .theme-roster-shift-grid {
   width: 100%;
-  min-width: 888px;
+  min-width: 850px;
 }
 
 .theme-roster-horizontal-shift-cell,
@@ -3304,7 +3304,7 @@ html[data-app-theme="light"] .theme-roster-leave-row {
   }
 
   .theme-roster-shift-grid {
-    min-width: 900px;
+    min-width: 850px;
   }
 }
 

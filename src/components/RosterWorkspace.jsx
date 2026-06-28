@@ -291,8 +291,8 @@ function ShiftGroup({ shiftKey, rows, day }) {
 
   return (
     <section className={`theme-roster-shift-group theme-roster-horizontal-shift is-${shiftKey} overflow-hidden rounded-[18px] border bg-[#071827] ${style.border}`}>
-      <div className="theme-roster-shift-grid grid grid-cols-[180px_repeat(6,minmax(118px,1fr))]">
-        <div className="theme-roster-horizontal-shift-cell flex min-h-[118px] flex-col items-center justify-center border-r border-white/10 px-4 py-4 text-center">
+      <div className="theme-roster-shift-grid grid grid-cols-[142px_repeat(6,minmax(118px,1fr))]">
+        <div className="theme-roster-horizontal-shift-cell flex min-h-[118px] flex-col items-center justify-center border-r border-white/10 px-2.5 py-4 text-center">
           <h4 className="theme-roster-horizontal-shift-title text-[13px] font-black uppercase leading-[1.15] tracking-[0.06em] text-white">{label}</h4>
           <div className="theme-roster-horizontal-times mt-3 flex flex-col items-center gap-1.5 text-[11px] font-semibold tabular-nums text-[#9bb7c9]">
             {timeLabels.length
