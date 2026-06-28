@@ -2365,10 +2365,6 @@ html[data-app-theme="light"] .theme-roster-horizontal-times {
   color: #475569 !important;
 }
 
-.theme-roster-time-label {
-  color: #7f96aa;
-}
-
 .theme-roster-time-pill {
   border-color: rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.04);
@@ -2409,10 +2405,6 @@ html[data-app-theme="light"] .theme-roster-horizontal-times {
 .theme-roster-shift-group.is-rest .theme-roster-time-pill {
   border-color: rgba(148, 163, 184, 0.34);
   background: rgba(148, 163, 184, 0.10);
-}
-
-html[data-app-theme="light"] .theme-roster-time-label {
-  color: #64748b !important;
 }
 
 html[data-app-theme="light"] .theme-roster-time-pill {
