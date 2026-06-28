@@ -4,6 +4,18 @@ const TIME_RANGE_RE = /(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/;
 
 export const ROSTER_ROLE_ORDER = ["DM", "TCC", "TC", "DC", "EFC", "SC"];
 
+const EXCLUDED_ROSTER_PERSONNEL = [
+  { personnelId: "1000351", canonicalName: "ARAB, A." },
+];
+
+function isExcludedRosterPerson(rawName = "", personnelId = "") {
+  const normalizedName = canonicalPersonName(rawName);
+  const normalizedId = String(personnelId || "").trim();
+  return EXCLUDED_ROSTER_PERSONNEL.some((person) => (
+    normalizedId === person.personnelId || normalizedName === person.canonicalName
+  ));
+}
+
 export const ROSTER_NAME_ALIASES = {
   "ABESAMIS, J.": "DM Jhoana",
   "RAMOS, A.": "DM Allan",
@@ -430,6 +442,11 @@ function parsePageItems(items, pageNumber, fileName, pdfjsLib) {
         : prefixItem[rowAxis] + 42;
       const rowItems = items.filter((item) => item[rowAxis] >= rowLow && item[rowAxis] < rowHigh);
       const rawName = extractNameFromRow(rowItems, prefixItem, dateAxis, dateCenters);
+      const personnelId = rowItems
+        .map((item) => compactSpaces(item.text))
+        .find((token) => /^\d{7}$/.test(token)) || "";
+      if (isExcludedRosterPerson(rawName, personnelId)) return;
+
       const fallbackRole = roleFromPrefix(prefixItem.text);
       const entries = {};
 
@@ -465,6 +482,7 @@ function parsePageItems(items, pageNumber, fileName, pdfjsLib) {
         id: `${pageNumber}-${headerIndex}-${personIndex}-${canonicalPersonName(rawName) || prefixItem.text}`,
         pageNumber,
         rosterCode: prefixItem.text,
+        personnelId,
         rosterRole: fallbackRole,
         rawName,
         displayName: preferredRosterName(rawName),
@@ -521,7 +539,7 @@ export async function parseRosterPdf(arrayBuffer, fileName = "roster.pdf", pdfjs
     .sort((a, b) => ROSTER_ROLE_ORDER.indexOf(a) - ROSTER_ROLE_ORDER.indexOf(b));
 
   return ensureRosterNames({
-    version: 5,
+    version: 6,
     parsedAt: new Date().toISOString(),
     fileName,
     year: firstDate?.year || year,

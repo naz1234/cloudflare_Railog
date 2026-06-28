@@ -521,7 +521,7 @@ export default function RosterWorkspace() {
     let active = true;
     const target = record;
     const parsedVersion = Number(target?.parsed?.version || 0);
-    if (!target?.versionKey || !target.fileBlob || parsedVersion >= 5) return undefined;
+    if (!target?.versionKey || !target.fileBlob || parsedVersion >= 6) return undefined;
     if (upgradedVersionsRef.current.has(target.versionKey)) return undefined;
     upgradedVersionsRef.current.add(target.versionKey);
 
