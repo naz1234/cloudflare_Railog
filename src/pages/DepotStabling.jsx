@@ -15404,7 +15404,7 @@ export default function DepotStablingPage() {
 
         {/* Main Content */}
         <main ref={mainContentScrollRef} className="flex-1 min-w-0 overflow-auto">
-        <div className="max-w-[1700px] mx-auto px-5 py-5">
+        <div className={`max-w-[1700px] mx-auto px-5 ${activeTab === "roster" ? "pt-1 pb-5" : "py-5"}`}> 
 
   {activeTab === "stabling" && (
   <div
@@ -15909,7 +15909,7 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "roster" && (
-          <div className="w-full px-2 pb-10 pt-2">
+          <div className="w-full px-2 pb-10 pt-0">
             <div className="mx-auto w-full max-w-[1680px]">
               <RosterWorkspace />
             </div>
