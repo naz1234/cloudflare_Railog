@@ -257,6 +257,7 @@ function getSpecialLeaveType(entry) {
     .trim();
   if (/^TOIL\b/.test(code)) return "TOIL";
   if (/^(?:CF\s+)?AL\b/.test(code)) return "AL";
+  if (/^WR\b/.test(code)) return "RD";
   return "";
 }
 
@@ -331,7 +332,7 @@ function ShiftGroup({ shiftKey, rows, day }) {
 }
 
 function SpecialLeaveTable({ rows, day }) {
-  const leaveGroups = ["TOIL", "AL"]
+  const leaveGroups = ["TOIL", "AL", "RD"]
     .map((leaveType) => ({
       leaveType,
       rows: rows.filter(({ entry }) => getSpecialLeaveType(entry) === leaveType),
@@ -344,8 +345,8 @@ function SpecialLeaveTable({ rows, day }) {
     <section className="theme-roster-leave-table overflow-hidden rounded-2xl border border-rose-400/25 bg-[#071827]">
       <div className="theme-roster-leave-table-header flex items-center justify-between border-b border-white/10 px-4 py-3">
         <div>
-          <div className="text-[13px] font-black uppercase tracking-[0.12em] text-white">TOIL / AL</div>
-          <div className="mt-1 text-[10px] text-[#7897aa]">Personnel on time off in lieu or annual leave</div>
+          <div className="text-[13px] font-black uppercase tracking-[0.12em] text-white">TOIL / AL / RD</div>
+          <div className="mt-1 text-[10px] text-[#7897aa]">Personnel on time off in lieu, annual leave, or rest day</div>
         </div>
         <span className="rounded-full border border-rose-300/30 bg-rose-400/10 px-2.5 py-0.5 text-[11px] font-black text-rose-100">{rows.length}</span>
       </div>
@@ -412,8 +413,8 @@ function buildCopyText(parsed, day, rows, specialLeaveRows = []) {
     lines.push("");
   });
   if (specialLeaveRows.length) {
-    lines.push("TOIL / AL");
-    ["TOIL", "AL"].forEach((leaveType) => {
+    lines.push("TOIL / AL / RD");
+    ["TOIL", "AL", "RD"].forEach((leaveType) => {
       const leaveRows = specialLeaveRows.filter(({ entry }) => getSpecialLeaveType(entry) === leaveType);
       if (!leaveRows.length) return;
       lines.push(leaveType);
@@ -483,7 +484,6 @@ export default function RosterWorkspace() {
   const [selectedDate, setSelectedDate] = useState(() => localDateInputValue());
   const [role, setRole] = useState("ALL");
   const [search, setSearch] = useState("");
-  const [includeRest, setIncludeRest] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Connecting to Cloudflare D1…");
 
   const record = useMemo(
@@ -597,7 +597,6 @@ export default function RosterWorkspace() {
     setSelectedDate(localDateInputValue());
     setRole("ALL");
     setSearch("");
-    setIncludeRest(false);
   }, [record?.versionKey]);
 
   useEffect(() => {
@@ -649,9 +648,9 @@ export default function RosterWorkspace() {
     dateKey: typeof selectedDateRef === "string" ? selectedDateRef : null,
     day: typeof selectedDateRef === "number" ? selectedDateRef : null,
     role,
-    includeRest,
+    includeRest: false,
     search,
-  }), [parsed, selectedDateRef, role, includeRest, search]);
+  }), [parsed, selectedDateRef, role, search]);
 
   const allDateRows = useMemo(() => queryRoster(parsed, {
     dateKey: typeof selectedDateRef === "string" ? selectedDateRef : null,
@@ -671,7 +670,6 @@ export default function RosterWorkspace() {
   );
   const groupedRows = useMemo(() => groupRows(regularRows), [regularRows]);
   const workingCount = regularRows.filter(({ entry }) => entry.isWorking).length;
-  const otherRestCount = regularRows.filter(({ entry }) => entry.isRest).length;
   const currentDateLabel = formatInputDate(selectedDate);
   const rosterCoverageLabel = formatRosterCoverage(parsed);
 
@@ -976,7 +974,7 @@ export default function RosterWorkspace() {
                 </div>
 
                 <section className="theme-roster-filter-panel rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
-                  <div className="grid gap-3 md:grid-cols-[1fr_0.8fr_1.25fr_auto]">
+                  <div className="grid gap-3 md:grid-cols-[1fr_0.8fr_1.25fr]">
                     <label className="block">
                       <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Date</span>
                       <input
@@ -1009,12 +1007,6 @@ export default function RosterWorkspace() {
                         />
                       </div>
                     </label>
-                    <div className="flex items-end">
-                      <label className="theme-roster-checkbox flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[11px] font-semibold text-[#c4d8e5]">
-                        <input type="checkbox" checked={includeRest} onChange={(event) => setIncludeRest(event.target.checked)} className="accent-sky-500" />
-                        Show rest/leave
-                      </label>
-                    </div>
                   </div>
                 </section>
 
@@ -1039,8 +1031,7 @@ export default function RosterWorkspace() {
                       <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" /> {workingCount} working</span>
                       <span>·</span>
                       <span>{role === "ALL" ? "All controller types" : `${role} only`}</span>
-                      {specialLeaveRows.length ? <><span>·</span><span>{specialLeaveRows.length} TOIL/AL</span></> : null}
-                      {includeRest && otherRestCount ? <><span>·</span><span>{otherRestCount} other rest/leave</span></> : null}
+                      {specialLeaveRows.length ? <><span>·</span><span>{specialLeaveRows.length} TOIL/AL/RD</span></> : null}
                     </div>
                   </div>
                   <ActionButton icon={ClipboardCopy} onClick={handleCopy} disabled={!dateExists || (!regularRows.length && !specialLeaveRows.length)}>Copy Result</ActionButton>
@@ -1061,7 +1052,7 @@ export default function RosterWorkspace() {
                   <div className="theme-roster-empty-result rounded-2xl border border-dashed border-[#315671] bg-[#081b2a] px-5 py-10 text-center">
                     <Users className="mx-auto h-7 w-7 text-[#52758d]" />
                     <div className="mt-3 text-[11px] font-bold text-[#bdd1de]">No matching controller found</div>
-                    <div className="mt-1 text-[9px] text-[#58778c]">Change the controller type, search, or rest/leave filter.</div>
+                    <div className="mt-1 text-[9px] text-[#58778c]">Change the controller type or search.</div>
                   </div>
                 )}
               </div>

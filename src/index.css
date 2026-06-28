@@ -2461,7 +2461,7 @@ html[data-app-theme="light"] .theme-roster-horizontal-empty {
   color: #94a3b8 !important;
 }
 
-/* Roster dedicated TOIL / AL table. */
+/* Roster dedicated TOIL / AL / RD table. */
 .theme-roster-leave-table {
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
 }
@@ -2501,6 +2501,12 @@ html[data-app-theme="light"] .theme-roster-horizontal-empty {
   color: #fbcfe8;
   border-color: rgba(244, 114, 182, 0.38);
   background: rgba(244, 114, 182, 0.12);
+}
+
+.theme-roster-leave-type.is-rd span {
+  color: #bfdbfe;
+  border-color: rgba(96, 165, 250, 0.38);
+  background: rgba(96, 165, 250, 0.12);
 }
 
 .theme-roster-leave-cell {
@@ -2551,6 +2557,12 @@ html[data-app-theme="light"] .theme-roster-leave-type.is-al span {
   color: #9d174d !important;
   border-color: #f9a8d4 !important;
   background: #fce7f3 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-type.is-rd span {
+  color: #1d4ed8 !important;
+  border-color: #93c5fd !important;
+  background: #dbeafe !important;
 }
 
 html[data-app-theme="light"] .theme-roster-leave-cell {
