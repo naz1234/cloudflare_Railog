@@ -701,30 +701,36 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
               </div>
 
               <div className="theme-roster-schedule-scroll max-h-[620px] overflow-y-auto p-3">
-                <div className="theme-roster-schedule-list space-y-2">
+                <div className="theme-roster-schedule-list space-y-1.5">
                   {result.rows.map((row) => {
                     const date = parseDateInputValue(row.dateKey)?.date;
-                    const dayLabel = date ? new Intl.DateTimeFormat("en-GB", { day: "2-digit" }).format(date) : "--";
-                    const monthLabel = date ? new Intl.DateTimeFormat("en-GB", { month: "short" }).format(date).toUpperCase() : "---";
-                    const weekdayLabel = date ? new Intl.DateTimeFormat("en-GB", { weekday: "short" }).format(date).toUpperCase() : "---";
+                    const dateLabel = date
+                      ? new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(date)
+                      : row.dateKey;
                     const time = row.status.isWorking && row.entry?.timeStart && row.entry?.timeEnd
                       ? `${row.entry.timeStart}–${row.entry.timeEnd}`
                       : "";
                     return (
-                      <div key={row.dateKey} className={`theme-roster-schedule-item ${scheduleStatusClass(row.status.tone)} grid grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-2.5 py-2.5`}>
-                        <div className="theme-roster-schedule-date flex h-11 w-[52px] shrink-0 flex-col items-center justify-center rounded-lg border">
-                          <div className="text-[12px] font-black leading-none tabular-nums">{dayLabel}</div>
-                          <div className="mt-1 text-[8px] font-black tracking-[0.12em]">{monthLabel}</div>
+                      <div key={row.dateKey} className={`theme-roster-schedule-item ${scheduleStatusClass(row.status.tone)} flex min-h-[38px] items-center gap-2 rounded-xl border px-2.5 py-1.5`}>
+                        <div className="theme-roster-schedule-date inline-flex h-7 min-w-[58px] shrink-0 items-center justify-center rounded-full border px-2 text-[10px] font-black tabular-nums">
+                          {dateLabel}
                         </div>
-                        <div className="min-w-0">
-                          <div className="flex min-w-0 items-center gap-2">
-                            <span className="theme-roster-schedule-dot h-1.5 w-1.5 shrink-0 rounded-full" />
-                            <span className="truncate text-[11px] font-extrabold leading-4">{row.status.label}</span>
-                          </div>
-                          <div className="mt-1 text-[8px] font-bold tracking-[0.12em] opacity-60">{weekdayLabel}</div>
-                        </div>
-                        <div className="theme-roster-schedule-time shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-black tabular-nums">
-                          {time || (row.status.isWorking ? "Time not set" : row.status.label)}
+                        <span className="theme-roster-schedule-separator shrink-0 text-[10px] font-black opacity-45">:</span>
+                        <div className="flex min-w-0 flex-1 items-center gap-2 whitespace-nowrap">
+                          <span className="theme-roster-schedule-dot h-1.5 w-1.5 shrink-0 rounded-full" />
+                          {time ? (
+                            <>
+                              <span className="truncate text-[10px] font-extrabold leading-4">{row.status.label}</span>
+                              <span className="theme-roster-schedule-comma shrink-0 opacity-45">,</span>
+                              <span className="theme-roster-schedule-time shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-black tabular-nums">
+                                {time}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="theme-roster-schedule-time is-status shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-black">
+                              {row.status.label}
+                            </span>
+                          )}
                         </div>
                       </div>
                     );
@@ -1092,7 +1098,7 @@ export default function RosterWorkspace() {
         onChange={(event) => processFile(event.target.files?.[0])}
       />
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
       <section className="theme-roster-shell min-w-0 overflow-hidden rounded-2xl border border-[#294b63] bg-[#071827] shadow-[0_16px_36px_rgba(0,0,0,0.18)]">
         <div className="theme-roster-topbar flex flex-wrap items-center justify-between gap-4 border-b border-[#1a3b52] bg-[linear-gradient(135deg,#0b2a43_0%,#071827_70%)] px-4 py-4">
           <div className="flex min-w-0 items-center gap-3">
