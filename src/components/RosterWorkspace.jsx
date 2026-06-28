@@ -95,6 +95,35 @@ function dateTimeLabel(value) {
   }).format(date);
 }
 
+function localDateInputValue(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateInputValue(value = "") {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() + 1 !== month || date.getDate() !== day) return null;
+  return { year, month, day, date };
+}
+
+function formatInputDate(value, locale = "en-GB") {
+  const parsedDate = parseDateInputValue(value);
+  if (!parsedDate) return "Select a date";
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(parsedDate.date);
+}
+
 function roleBadgeClass(role) {
   const classes = {
     DM: "border-violet-400/35 bg-violet-400/10 text-violet-200",
@@ -309,7 +338,7 @@ export default function RosterWorkspace() {
   const [editingRemarkId, setEditingRemarkId] = useState("");
   const [editingRemark, setEditingRemark] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState("");
-  const [selectedDay, setSelectedDay] = useState(1);
+  const [selectedDate, setSelectedDate] = useState(() => localDateInputValue());
   const [role, setRole] = useState("ALL");
   const [search, setSearch] = useState("");
   const [includeRest, setIncludeRest] = useState(false);
@@ -423,15 +452,19 @@ export default function RosterWorkspace() {
 
   useEffect(() => {
     if (!parsed) return;
-    const now = new Date();
-    const preferredDay = parsed.year === now.getFullYear() && parsed.month === now.getMonth() + 1
-      ? now.getDate()
-      : parsed.days?.[0] || 1;
-    setSelectedDay(parsed.days?.includes(preferredDay) ? preferredDay : parsed.days?.[0] || 1);
+    setSelectedDate(localDateInputValue());
     setRole("ALL");
     setSearch("");
     setIncludeRest(false);
   }, [record?.versionKey]);
+
+  const selectedDateParts = useMemo(() => parseDateInputValue(selectedDate), [selectedDate]);
+  const selectedDay = useMemo(() => {
+    if (!parsed || !selectedDateParts) return null;
+    if (Number(parsed.year) !== selectedDateParts.year || Number(parsed.month) !== selectedDateParts.month) return null;
+    return parsed.days?.some((day) => Number(day) === selectedDateParts.day) ? selectedDateParts.day : null;
+  }, [parsed, selectedDateParts]);
+  const dateExists = selectedDay !== null;
 
   const rows = useMemo(() => queryRoster(parsed, {
     day: selectedDay,
@@ -442,7 +475,10 @@ export default function RosterWorkspace() {
 
   const groupedRows = useMemo(() => groupRows(rows), [rows]);
   const workingCount = rows.filter(({ entry }) => entry.isWorking).length;
-  const currentDateLabel = parsed ? formatRosterDate(parsed, selectedDay) : "";
+  const currentDateLabel = formatInputDate(selectedDate);
+  const rosterMonthLabel = parsed
+    ? new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(new Date(parsed.year, (parsed.month || 1) - 1, 1))
+    : "";
 
   const processFile = async (file) => {
     setError("");
@@ -748,13 +784,12 @@ export default function RosterWorkspace() {
                   <div className="grid gap-3 md:grid-cols-[1fr_0.8fr_1.25fr_auto]">
                     <label className="block">
                       <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Date</span>
-                      <select
-                        value={selectedDay}
-                        onChange={(event) => setSelectedDay(Number(event.target.value))}
-                        className="h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none focus:border-sky-400/60"
-                      >
-                        {parsed.days.map((day) => <option key={day} value={day}>{formatRosterDate(parsed, day)}</option>)}
-                      </select>
+                      <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(event) => setSelectedDate(event.target.value)}
+                        className={`h-11 w-full rounded-xl border bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none [color-scheme:dark] ${dateExists ? "border-[#2b506a] focus:border-sky-400/60" : "border-rose-400/70 focus:border-rose-300"}`}
+                      />
                     </label>
                     <label className="block">
                       <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Controller Type</span>
@@ -788,6 +823,20 @@ export default function RosterWorkspace() {
                   </div>
                 </section>
 
+                {!selectedDateParts ? (
+                  <div className="flex items-center gap-2 rounded-xl border border-amber-400/35 bg-amber-400/10 px-3 py-2.5 text-[10px] font-semibold text-amber-100">
+                    <AlertCircle className="h-4 w-4 shrink-0" /> Enter a valid date to view the roster.
+                  </div>
+                ) : !dateExists ? (
+                  <div className="flex items-start gap-2 rounded-xl border border-rose-400/35 bg-rose-500/10 px-3 py-2.5 text-rose-100">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <div>
+                      <div className="text-[10px] font-bold">{currentDateLabel} does not exist in this roster.</div>
+                      <div className="mt-0.5 text-[9px] text-rose-200/75">This uploaded roster contains dates for {rosterMonthLabel}. Enter another date or select a different roster version.</div>
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#294b63] bg-[linear-gradient(90deg,#0a253a,#071827)] px-3.5 py-3">
                   <div>
                     <div className="text-[14px] font-extrabold text-white">{currentDateLabel}</div>
@@ -798,10 +847,16 @@ export default function RosterWorkspace() {
                       {includeRest ? <><span>·</span><span>{rows.length - workingCount} rest/leave shown</span></> : null}
                     </div>
                   </div>
-                  <ActionButton icon={ClipboardCopy} onClick={handleCopy} disabled={!rows.length}>Copy Result</ActionButton>
+                  <ActionButton icon={ClipboardCopy} onClick={handleCopy} disabled={!dateExists || !rows.length}>Copy Result</ActionButton>
                 </div>
 
-                {groupedRows.length ? (
+                {!dateExists ? (
+                  <div className="rounded-2xl border border-dashed border-rose-400/30 bg-rose-500/[0.04] px-5 py-10 text-center">
+                    <CalendarDays className="mx-auto h-7 w-7 text-rose-300/70" />
+                    <div className="mt-3 text-[11px] font-bold text-rose-100">Date not available in this roster</div>
+                    <div className="mt-1 text-[9px] text-rose-200/65">Enter a date included in {rosterMonthLabel} or select another roster version.</div>
+                  </div>
+                ) : groupedRows.length ? (
                   <div className="grid gap-3 xl:grid-cols-2">
                     {groupedRows.map((group) => <ShiftGroup key={group.shiftKey} {...group} day={selectedDay} />)}
                   </div>
@@ -809,7 +864,7 @@ export default function RosterWorkspace() {
                   <div className="rounded-2xl border border-dashed border-[#315671] bg-[#081b2a] px-5 py-10 text-center">
                     <Users className="mx-auto h-7 w-7 text-[#52758d]" />
                     <div className="mt-3 text-[11px] font-bold text-[#bdd1de]">No matching controller found</div>
-                    <div className="mt-1 text-[9px] text-[#58778c]">Change the date, role, search, or rest/leave filter.</div>
+                    <div className="mt-1 text-[9px] text-[#58778c]">Change the controller type, search, or rest/leave filter.</div>
                   </div>
                 )}
               </div>
