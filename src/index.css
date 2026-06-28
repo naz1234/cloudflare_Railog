@@ -2941,3 +2941,23 @@ html[data-app-theme="light"] .theme-roster-schedule-separator,
 html[data-app-theme="light"] .theme-roster-schedule-comma {
   color: #64748b !important;
 }
+
+
+/* Staff schedule auto-search and comparison output. */
+.theme-roster-staff-result-block.is-comparison {
+  border-color: rgba(167, 139, 250, 0.24);
+}
+
+.theme-roster-compare-pill {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+html[data-app-theme="light"] .theme-roster-staff-result-block.is-comparison {
+  border-color: #ddd6fe !important;
+}
+
+html[data-app-theme="light"] .theme-roster-compare-pill {
+  border-color: #c4b5fd !important;
+  background: #f5f3ff !important;
+  color: #6d28d9 !important;
+}

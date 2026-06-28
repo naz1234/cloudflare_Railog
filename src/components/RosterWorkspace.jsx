@@ -512,11 +512,11 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
     [...(parsed?.people || [])].sort((a, b) => String(a.displayName || a.rawName || "").localeCompare(String(b.displayName || b.rawName || "")))
   ), [parsed]);
   const [staffId, setStaffId] = useState("");
+  const [compareStaffId, setCompareStaffId] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [submitted, setSubmitted] = useState(null);
-  const [panelError, setPanelError] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState("");
+  const [copyError, setCopyError] = useState("");
 
   useEffect(() => {
     const today = localDateInputValue();
@@ -524,52 +524,45 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
     const fromIndex = Math.max(0, rosterDates.indexOf(defaultFrom));
     const defaultTo = rosterDates[Math.min(fromIndex + 5, Math.max(0, rosterDates.length - 1))] || defaultFrom;
     setStaffId("");
+    setCompareStaffId("");
     setFromDate(defaultFrom);
     setToDate(defaultTo);
-    setSubmitted(null);
-    setPanelError("");
-    setCopied(false);
+    setCopiedKey("");
+    setCopyError("");
   }, [rosterKey, rosterDates.join("|")]);
 
-  const result = useMemo(() => {
-    if (!submitted || !parsed) return null;
-    const person = people.find((item) => item.id === submitted.staffId);
+  const rangeError = useMemo(() => {
+    if (!parsed) return "";
+    const from = parseDateInputValue(fromDate);
+    const to = parseDateInputValue(toDate);
+    if (!from || !to) return "Enter a valid From and To date.";
+    if (from.date > to.date) return "The From date cannot be after the To date.";
+    if (!rosterDates.length || fromDate < rosterDates[0] || toDate > rosterDates[rosterDates.length - 1]) {
+      return `Choose a date range within ${formatRosterCoverage(parsed)}.`;
+    }
+    return "";
+  }, [parsed, fromDate, toDate, rosterDates]);
+
+  const buildResult = (selectedStaffId) => {
+    if (!selectedStaffId || !parsed || rangeError) return null;
+    const person = people.find((item) => item.id === selectedStaffId);
     if (!person) return null;
     const rosterDateSet = new Set(rosterDates);
-    const rows = rosterRangeDates(submitted.fromDate, submitted.toDate).map((dateKey) => {
+    const rows = rosterRangeDates(fromDate, toDate).map((dateKey) => {
       const entry = rosterDateSet.has(dateKey) ? rosterEntryForDate(person, dateKey) : null;
       return { dateKey, entry, status: scheduleEntryStatus(entry) };
     });
-    return { person, rows };
-  }, [submitted, parsed, people, rosterDates]);
-
-  const showSchedule = () => {
-    setCopied(false);
-    if (!staffId) {
-      setPanelError("Select a staff member first.");
-      setSubmitted(null);
-      return;
-    }
-    const from = parseDateInputValue(fromDate);
-    const to = parseDateInputValue(toDate);
-    if (!from || !to) {
-      setPanelError("Enter a valid From and To date.");
-      setSubmitted(null);
-      return;
-    }
-    if (from.date > to.date) {
-      setPanelError("The From date cannot be after the To date.");
-      setSubmitted(null);
-      return;
-    }
-    if (!rosterDates.length || fromDate < rosterDates[0] || toDate > rosterDates[rosterDates.length - 1]) {
-      setPanelError(`Choose a date range within ${formatRosterCoverage(parsed)}.`);
-      setSubmitted(null);
-      return;
-    }
-    setPanelError("");
-    setSubmitted({ staffId, fromDate, toDate });
+    return { person, rows, fromDate, toDate };
   };
+
+  const primaryResult = useMemo(
+    () => buildResult(staffId),
+    [staffId, parsed, rangeError, people, rosterDates, fromDate, toDate],
+  );
+  const compareResult = useMemo(
+    () => buildResult(compareStaffId),
+    [compareStaffId, parsed, rangeError, people, rosterDates, fromDate, toDate],
+  );
 
   const scheduleLine = ({ dateKey, entry, status }) => {
     const date = parseDateInputValue(dateKey)?.date;
@@ -584,17 +577,98 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
     return `${dateLabel}: ${status.label}`;
   };
 
-  const copySchedule = async () => {
+  const copySchedule = async (result, resultKey) => {
     if (!result) return;
     const title = `${result.person.displayName || result.person.rawName} — ${result.rows.length}-Day Schedule`;
     const lines = [title, ...result.rows.map(scheduleLine)];
     try {
       await navigator.clipboard.writeText(lines.join("\n"));
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
+      setCopyError("");
+      setCopiedKey(resultKey);
+      window.setTimeout(() => setCopiedKey(""), 1800);
     } catch {
-      setPanelError("Unable to copy the staff schedule.");
+      setCopyError("Unable to copy the staff schedule.");
     }
+  };
+
+  const renderScheduleResult = (result, resultKey, comparison = false) => {
+    if (!result) return null;
+    const start = parseDateInputValue(result.fromDate)?.date;
+    const end = parseDateInputValue(result.toDate)?.date;
+    return (
+      <div className={`theme-roster-staff-result-block ${comparison ? "is-comparison border-t border-[#1d4058]" : ""}`}>
+        <div className="theme-roster-staff-result-head border-b border-[#1d4058] px-4 py-3.5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="theme-roster-staff-avatar flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-sky-300/25 bg-sky-400/10 text-sky-100">
+                <Users className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className="truncate text-[13px] font-extrabold leading-5 text-white">
+                    {result.person.displayName || result.person.rawName}
+                  </div>
+                  {comparison ? (
+                    <span className="theme-roster-compare-pill shrink-0 rounded-full border border-violet-300/30 bg-violet-400/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-wide text-violet-100">Compare</span>
+                  ) : null}
+                </div>
+                <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[9px] font-semibold text-[#7897aa]">
+                  <span>{result.rows.length}-Day Schedule</span>
+                  <span className="opacity-50">•</span>
+                  <span>{start ? new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(start) : ""} – {end ? new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(end) : ""}</span>
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => copySchedule(result, resultKey)}
+              className="theme-roster-copy-schedule inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#315671] bg-[#0a253b] px-2.5 text-[9px] font-bold text-[#d9eaf7] hover:bg-[#0e304c]"
+            >
+              {copiedKey === resultKey ? <Check className="h-3.5 w-3.5" /> : <ClipboardCopy className="h-3.5 w-3.5" />}
+              {copiedKey === resultKey ? "Copied" : "Copy"}
+            </button>
+          </div>
+        </div>
+
+        <div className="theme-roster-schedule-scroll max-h-[430px] overflow-y-auto p-3">
+          <div className="theme-roster-schedule-list space-y-1.5">
+            {result.rows.map((row) => {
+              const date = parseDateInputValue(row.dateKey)?.date;
+              const dateLabel = date
+                ? new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(date)
+                : row.dateKey;
+              const time = row.status.isWorking && row.entry?.timeStart && row.entry?.timeEnd
+                ? `${row.entry.timeStart}–${row.entry.timeEnd}`
+                : "";
+              return (
+                <div key={row.dateKey} className={`theme-roster-schedule-item ${scheduleStatusClass(row.status.tone)} flex min-h-[38px] items-center gap-2 rounded-xl border px-2.5 py-1.5`}>
+                  <div className="theme-roster-schedule-date inline-flex h-7 min-w-[58px] shrink-0 items-center justify-center rounded-full border px-2 text-[10px] font-black tabular-nums">
+                    {dateLabel}
+                  </div>
+                  <span className="theme-roster-schedule-separator shrink-0 text-[10px] font-black opacity-45">:</span>
+                  <div className="flex min-w-0 flex-1 items-center gap-2 whitespace-nowrap">
+                    <span className="theme-roster-schedule-dot h-1.5 w-1.5 shrink-0 rounded-full" />
+                    {time ? (
+                      <>
+                        <span className="truncate text-[10px] font-extrabold leading-4">{row.status.label}</span>
+                        <span className="theme-roster-schedule-comma shrink-0 opacity-45">,</span>
+                        <span className="theme-roster-schedule-time shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-black tabular-nums">
+                          {time}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="theme-roster-schedule-time is-status shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-black">
+                        {row.status.label}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -607,7 +681,7 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
             </div>
             <div>
               <h3 className="text-[12px] font-black uppercase tracking-[0.12em] text-white">Staff Schedule</h3>
-              <p className="mt-0.5 text-[10px] text-[#7897aa]">Choose staff and date range.</p>
+              <p className="mt-0.5 text-[10px] text-[#7897aa]">Updates automatically when staff or dates change.</p>
             </div>
           </div>
         </header>
@@ -617,7 +691,13 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
             <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">Staff Name</span>
             <select
               value={staffId}
-              onChange={(event) => { setStaffId(event.target.value); setPanelError(""); }}
+              onChange={(event) => {
+                const nextStaffId = event.target.value;
+                setStaffId(nextStaffId);
+                if (nextStaffId && nextStaffId === compareStaffId) setCompareStaffId("");
+                setCopiedKey("");
+                setCopyError("");
+              }}
               disabled={!parsed}
               className="theme-roster-control h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none focus:border-sky-400/60 disabled:opacity-50"
             >
@@ -629,115 +709,67 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
           </label>
 
           <label className="block">
-            <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">From Date</span>
-            <input
-              type="date"
-              value={fromDate}
-              min={rosterDates[0] || undefined}
-              max={rosterDates[rosterDates.length - 1] || undefined}
-              onChange={(event) => { setFromDate(event.target.value); setPanelError(""); }}
-              disabled={!parsed}
-              className="theme-roster-control h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[11px] font-semibold text-white outline-none [color-scheme:dark] focus:border-sky-400/60 disabled:opacity-50"
-            />
+            <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">Compare Staff <span className="font-semibold normal-case tracking-normal text-[#58778c]">(optional)</span></span>
+            <select
+              value={compareStaffId}
+              onChange={(event) => { setCompareStaffId(event.target.value); setCopiedKey(""); setCopyError(""); }}
+              disabled={!parsed || !staffId}
+              className="theme-roster-control h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none focus:border-violet-400/60 disabled:opacity-50"
+            >
+              <option value="">No comparison</option>
+              {people.filter((person) => person.id !== staffId).map((person) => (
+                <option key={person.id} value={person.id}>{person.displayName || person.rawName}</option>
+              ))}
+            </select>
           </label>
 
-          <label className="block">
-            <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">To Date</span>
-            <input
-              type="date"
-              value={toDate}
-              min={rosterDates[0] || undefined}
-              max={rosterDates[rosterDates.length - 1] || undefined}
-              onChange={(event) => { setToDate(event.target.value); setPanelError(""); }}
-              disabled={!parsed}
-              className="theme-roster-control h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[11px] font-semibold text-white outline-none [color-scheme:dark] focus:border-sky-400/60 disabled:opacity-50"
-            />
-          </label>
+          <div className="grid grid-cols-2 gap-2.5">
+            <label className="block min-w-0">
+              <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">From Date</span>
+              <input
+                type="date"
+                value={fromDate}
+                min={rosterDates[0] || undefined}
+                max={rosterDates[rosterDates.length - 1] || undefined}
+                onChange={(event) => { setFromDate(event.target.value); setCopiedKey(""); setCopyError(""); }}
+                disabled={!parsed}
+                className="theme-roster-control h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[10px] font-semibold text-white outline-none [color-scheme:dark] focus:border-sky-400/60 disabled:opacity-50"
+              />
+            </label>
 
-          <ActionButton icon={Search} primary onClick={showSchedule} disabled={!parsed}>Show Schedule</ActionButton>
+            <label className="block min-w-0">
+              <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">To Date</span>
+              <input
+                type="date"
+                value={toDate}
+                min={rosterDates[0] || undefined}
+                max={rosterDates[rosterDates.length - 1] || undefined}
+                onChange={(event) => { setToDate(event.target.value); setCopiedKey(""); setCopyError(""); }}
+                disabled={!parsed}
+                className="theme-roster-control h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[10px] font-semibold text-white outline-none [color-scheme:dark] focus:border-sky-400/60 disabled:opacity-50"
+              />
+            </label>
+          </div>
 
-          {panelError ? (
+          {rangeError || copyError ? (
             <div className="theme-roster-staff-error flex items-start gap-2 rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2.5 text-[10px] font-semibold text-rose-100">
-              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {panelError}
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {rangeError || copyError}
             </div>
           ) : null}
         </div>
 
         <div className="theme-roster-staff-output border-t border-[#1d4058]">
-          {!result ? (
-            <div className="theme-roster-staff-empty flex min-h-[170px] flex-col items-center justify-center px-4 py-8 text-center">
+          {!staffId ? (
+            <div className="theme-roster-staff-empty flex min-h-[150px] flex-col items-center justify-center px-4 py-8 text-center">
               <Users className="h-6 w-6 text-[#52758d]" />
               <div className="mt-2 text-[11px] font-bold text-[#bdd1de]">Schedule output</div>
-              <div className="mt-1 text-[9px] leading-4 text-[#58778c]">Select staff, From date and To date.</div>
+              <div className="mt-1 text-[9px] leading-4 text-[#58778c]">Select a staff member. The schedule appears automatically.</div>
             </div>
-          ) : (
-            <div>
-              <div className="theme-roster-staff-result-head border-b border-[#1d4058] px-4 py-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="theme-roster-staff-avatar flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-sky-300/25 bg-sky-400/10 text-sky-100">
-                      <Users className="h-[18px] w-[18px]" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="truncate text-[13px] font-extrabold leading-5 text-white">
-                        {result.person.displayName || result.person.rawName}
-                      </div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[9px] font-semibold text-[#7897aa]">
-                        <span>{result.rows.length}-Day Schedule</span>
-                        <span className="opacity-50">•</span>
-                        <span>{new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(parseDateInputValue(submitted.fromDate).date)} – {new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(parseDateInputValue(submitted.toDate).date)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={copySchedule}
-                    className="theme-roster-copy-schedule inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#315671] bg-[#0a253b] px-2.5 text-[9px] font-bold text-[#d9eaf7] hover:bg-[#0e304c]"
-                  >
-                    {copied ? <Check className="h-3.5 w-3.5" /> : <ClipboardCopy className="h-3.5 w-3.5" />}
-                    {copied ? "Copied" : "Copy"}
-                  </button>
-                </div>
-              </div>
-
-              <div className="theme-roster-schedule-scroll max-h-[620px] overflow-y-auto p-3">
-                <div className="theme-roster-schedule-list space-y-1.5">
-                  {result.rows.map((row) => {
-                    const date = parseDateInputValue(row.dateKey)?.date;
-                    const dateLabel = date
-                      ? new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(date)
-                      : row.dateKey;
-                    const time = row.status.isWorking && row.entry?.timeStart && row.entry?.timeEnd
-                      ? `${row.entry.timeStart}–${row.entry.timeEnd}`
-                      : "";
-                    return (
-                      <div key={row.dateKey} className={`theme-roster-schedule-item ${scheduleStatusClass(row.status.tone)} flex min-h-[38px] items-center gap-2 rounded-xl border px-2.5 py-1.5`}>
-                        <div className="theme-roster-schedule-date inline-flex h-7 min-w-[58px] shrink-0 items-center justify-center rounded-full border px-2 text-[10px] font-black tabular-nums">
-                          {dateLabel}
-                        </div>
-                        <span className="theme-roster-schedule-separator shrink-0 text-[10px] font-black opacity-45">:</span>
-                        <div className="flex min-w-0 flex-1 items-center gap-2 whitespace-nowrap">
-                          <span className="theme-roster-schedule-dot h-1.5 w-1.5 shrink-0 rounded-full" />
-                          {time ? (
-                            <>
-                              <span className="truncate text-[10px] font-extrabold leading-4">{row.status.label}</span>
-                              <span className="theme-roster-schedule-comma shrink-0 opacity-45">,</span>
-                              <span className="theme-roster-schedule-time shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-black tabular-nums">
-                                {time}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="theme-roster-schedule-time is-status shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-black">
-                              {row.status.label}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+          ) : rangeError ? null : (
+            <>
+              {renderScheduleResult(primaryResult, "primary")}
+              {renderScheduleResult(compareResult, "compare", true)}
+            </>
           )}
         </div>
       </section>
