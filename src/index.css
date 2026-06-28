@@ -3033,39 +3033,63 @@ html[data-app-theme="light"] .theme-roster-staff-result-block.is-comparison {
 .theme-roster-result-header {
   position: relative;
   overflow: hidden;
+  min-height: 92px;
+  padding: 16px 20px !important;
   background:
-    radial-gradient(circle at 8% 0%, rgba(59, 130, 246, 0.14), transparent 34%),
-    linear-gradient(135deg, rgba(10, 35, 58, 0.98), rgba(5, 20, 35, 0.99)) !important;
-  border-color: rgba(72, 112, 146, 0.58) !important;
+    radial-gradient(circle at 11% -20%, rgba(55, 125, 222, 0.18), transparent 40%),
+    linear-gradient(135deg, rgba(8, 30, 52, 0.99), rgba(3, 17, 31, 0.995)) !important;
+  border-color: rgba(72, 111, 159, 0.60) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.045),
-    0 12px 30px rgba(0, 0, 0, 0.18) !important;
+    0 14px 34px rgba(0, 0, 0, 0.20) !important;
 }
 
 .theme-roster-result-icon {
-  background: linear-gradient(145deg, rgba(35, 105, 173, 0.28), rgba(25, 57, 105, 0.22)) !important;
-  border-color: rgba(96, 165, 250, 0.38) !important;
+  width: 54px !important;
+  height: 54px !important;
+  border-radius: 16px !important;
+  background: linear-gradient(145deg, rgba(30, 94, 179, 0.28), rgba(11, 39, 86, 0.30)) !important;
+  border-color: rgba(90, 153, 242, 0.40) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 0 22px rgba(59, 130, 246, 0.12);
+    0 0 24px rgba(59, 130, 246, 0.14);
+}
+
+.theme-roster-result-icon svg {
+  width: 25px;
+  height: 25px;
 }
 
 .theme-roster-meta-dot {
   color: #3b82f6;
 }
 
-.theme-roster-shift-group {
+.theme-roster-daily-board {
+  overflow-x: auto;
+  border-color: rgba(50, 82, 119, 0.66) !important;
   background:
-    radial-gradient(circle at 0% 50%, rgba(40, 99, 148, 0.08), transparent 34%),
-    linear-gradient(145deg, rgba(6, 24, 39, 0.99), rgba(5, 20, 34, 0.99)) !important;
-  border-color: rgba(56, 88, 116, 0.72) !important;
+    radial-gradient(circle at 100% 0%, rgba(21, 73, 130, 0.08), transparent 31%),
+    linear-gradient(145deg, rgba(5, 22, 38, 0.99), rgba(3, 16, 29, 0.995));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.035),
-    0 9px 24px rgba(0, 0, 0, 0.13) !important;
+    0 16px 38px rgba(0, 0, 0, 0.20);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(80, 125, 166, 0.48) transparent;
+}
+
+.theme-roster-shift-group {
+  background:
+    radial-gradient(circle at 0% 50%, rgba(34, 93, 145, 0.075), transparent 35%),
+    linear-gradient(145deg, rgba(6, 25, 42, 0.995), rgba(4, 18, 32, 0.995)) !important;
+  border-color: rgba(68, 101, 133, 0.66) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 8px 22px rgba(0, 0, 0, 0.15) !important;
 }
 
 .theme-roster-shift-grid {
   width: 100%;
+  min-width: 888px;
 }
 
 .theme-roster-horizontal-shift-cell,
@@ -3074,38 +3098,23 @@ html[data-app-theme="light"] .theme-roster-staff-result-block.is-comparison {
 }
 
 .theme-roster-horizontal-shift-cell {
-  background: rgba(8, 28, 46, 0.56);
-}
-
-.theme-roster-shift-group.is-early .theme-roster-horizontal-shift-cell {
-  background: linear-gradient(145deg, rgba(53, 43, 10, 0.24), rgba(8, 28, 46, 0.56));
-}
-
-.theme-roster-shift-group.is-late .theme-roster-horizontal-shift-cell {
-  background: linear-gradient(145deg, rgba(5, 48, 70, 0.28), rgba(8, 28, 46, 0.56));
-}
-
-.theme-roster-shift-group.is-night .theme-roster-horizontal-shift-cell {
-  background: linear-gradient(145deg, rgba(30, 34, 87, 0.28), rgba(8, 28, 46, 0.56));
-}
-
-.theme-roster-shift-group.is-other .theme-roster-horizontal-shift-cell {
-  background: linear-gradient(145deg, rgba(46, 57, 69, 0.20), rgba(8, 28, 46, 0.56));
+  background: linear-gradient(145deg, rgba(8, 30, 50, 0.82), rgba(5, 21, 36, 0.84)) !important;
 }
 
 .theme-roster-horizontal-role-cell {
-  background: rgba(5, 22, 36, 0.40);
-}
-
-.theme-roster-shift-dot {
-  box-shadow: 0 0 12px currentColor;
+  background: rgba(4, 19, 33, 0.34);
 }
 
 .theme-roster-horizontal-shift-title {
-  max-width: 94px;
+  max-width: none;
+  font-size: 13px !important;
+  letter-spacing: 0.055em !important;
 }
 
 .theme-roster-role-badge {
+  min-width: 58px;
+  justify-content: center;
+  font-size: 10px !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
@@ -3118,6 +3127,7 @@ html[data-app-theme="light"] .theme-roster-staff-result-block.is-comparison {
 
 .theme-roster-name-pill {
   background: rgba(12, 31, 49, 0.88) !important;
+  color: #f8fafc !important;
   min-height: 26px;
   justify-content: center;
   box-shadow:
@@ -3125,13 +3135,34 @@ html[data-app-theme="light"] .theme-roster-staff-result-block.is-comparison {
     0 3px 9px rgba(0, 0, 0, 0.11) !important;
 }
 
+.theme-roster-horizontal-role-cell .theme-roster-name-pill {
+  width: 100%;
+  max-width: 132px;
+}
+
+.theme-roster-name-pill.is-dm { border-color: rgba(168, 85, 247, 0.50) !important; }
+.theme-roster-name-pill.is-tcc { border-color: rgba(34, 211, 238, 0.48) !important; }
+.theme-roster-name-pill.is-tc { border-color: rgba(59, 130, 246, 0.50) !important; }
+.theme-roster-name-pill.is-dc { border-color: rgba(34, 197, 94, 0.50) !important; }
+.theme-roster-name-pill.is-efc { border-color: rgba(245, 158, 11, 0.52) !important; }
+.theme-roster-name-pill.is-sc { border-color: rgba(236, 72, 153, 0.52) !important; }
+
 .theme-roster-time-pill {
   min-height: 26px;
   font-weight: 700;
+  min-width: 118px;
+  justify-content: center;
+  border-color: rgba(59, 130, 246, 0.42) !important;
+  background: rgba(37, 99, 235, 0.10) !important;
+  color: #b8d7ff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 0 15px rgba(37, 99, 235, 0.08) !important;
 }
 
 .theme-roster-leave-table {
-  border-color: rgba(190, 68, 142, 0.52) !important;
+  min-width: 888px;
+  border-color: rgba(188, 55, 139, 0.58) !important;
   background:
     radial-gradient(circle at 10% 0%, rgba(190, 24, 93, 0.09), transparent 38%),
     linear-gradient(145deg, rgba(7, 24, 39, 0.99), rgba(5, 20, 34, 0.99)) !important;
@@ -3141,8 +3172,15 @@ html[data-app-theme="light"] .theme-roster-staff-result-block.is-comparison {
 }
 
 .theme-roster-leave-table-header {
-  background: linear-gradient(90deg, rgba(129, 30, 84, 0.72), rgba(42, 29, 92, 0.55), rgba(7, 36, 63, 0.72)) !important;
+  min-height: 54px;
+  background: linear-gradient(90deg, rgba(135, 31, 86, 0.76), rgba(48, 30, 97, 0.58), rgba(6, 36, 66, 0.80)) !important;
   border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.theme-roster-leave-header-icon {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 0 14px rgba(244, 114, 182, 0.12);
 }
 
 .theme-roster-leave-total {
@@ -3165,16 +3203,29 @@ html[data-app-theme="light"] .theme-roster-staff-result-block.is-comparison {
   background: transparent !important;
 }
 
-.theme-roster-leave-type span {
-  min-width: 54px;
-  justify-content: center;
-  text-align: center;
+.theme-roster-leave-icon {
+  min-width: 32px;
+  background: rgba(112, 51, 162, 0.16) !important;
+  border-color: rgba(192, 132, 252, 0.34) !important;
+  color: #c084fc !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.055);
+}
+
+.theme-roster-leave-label {
+  color: #f8fafc !important;
+  letter-spacing: 0.035em;
 }
 
 html[data-app-theme="light"] .theme-roster-result-header {
   background: linear-gradient(135deg, #f7fbff, #eef6ff) !important;
   border-color: #b7c9d8 !important;
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-daily-board {
+  background: #f8fbff !important;
+  border-color: #bfd0df !important;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.065) !important;
 }
 
 html[data-app-theme="light"] .theme-roster-result-icon {
@@ -3199,9 +3250,21 @@ html[data-app-theme="light"] .theme-roster-horizontal-role-cell {
   background: #ffffff !important;
 }
 
+html[data-app-theme="light"] .theme-roster-horizontal-shift-cell {
+  background: #f4f8fc !important;
+}
+
 html[data-app-theme="light"] .theme-roster-name-pill {
   background: #ffffff !important;
+  color: #0f172a !important;
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.055) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-time-pill {
+  border-color: #93c5fd !important;
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  box-shadow: none !important;
 }
 
 html[data-app-theme="light"] .theme-roster-leave-table {
@@ -3213,6 +3276,18 @@ html[data-app-theme="light"] .theme-roster-leave-table {
 html[data-app-theme="light"] .theme-roster-leave-table-header {
   background: linear-gradient(90deg, #ffe9f3, #f3edff, #eaf5ff) !important;
   border-color: #e7c4d6 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-header-icon,
+html[data-app-theme="light"] .theme-roster-leave-icon {
+  background: #f5f3ff !important;
+  border-color: #c4b5fd !important;
+  color: #7c3aed !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-label {
+  color: #0f172a !important;
 }
 
 html[data-app-theme="light"] .theme-roster-leave-list {
