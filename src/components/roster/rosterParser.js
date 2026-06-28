@@ -21,6 +21,7 @@ export const ROSTER_NAME_ALIASES = {
   "RAMOS, A.": "DM Allan",
   "ALSHAHRANI, F.": "DM Faisal",
   "DEVILLA, R.": "DM Rea",
+  "REYES, J.": "DM Jho",
   "ALHASHYAN, A.": "TCC AlHasyn",
   "ALANAZI, A.": "TCC Alanazi",
   "ALIED, A.": "TCC Asim",
@@ -38,6 +39,7 @@ export const ROSTER_NAME_ALIASES = {
   "INJAPURI, J.": "TC Jeevan",
   "BAJA, M.": "TC Mike",
   "GUEVARRA, D.": "TC Dennis",
+  "ALMUHANNA, A.": "TC Abdullah",
   "SALIK, U.": "TC/DC Usama",
   "ALHAJRI, H.": "DC Hadeel",
   "SHAHBAL, A.": "DC Ashwag",
@@ -45,6 +47,9 @@ export const ROSTER_NAME_ALIASES = {
   "ALAWAJI, B.": "DC Bandar",
   "DELA CRUZ, D.": "DC Diana",
   "ENRIQUEZ, R.": "DC Roy",
+  "VILLACORTA, K.": "DC Kristine",
+  "ROSLI, K.": "DC Naim",
+  "BIN JAAFAR, M.": "DC Nazif",
   "LOPEZ, A.": "EFC Arnold",
   "FAROOQ, Q.": "EFC Qamar",
   "KALU, A.": "EFC Ali Kalu",
@@ -543,7 +548,7 @@ export async function parseRosterPdf(arrayBuffer, fileName = "roster.pdf", pdfjs
     .sort((a, b) => ROSTER_ROLE_ORDER.indexOf(a) - ROSTER_ROLE_ORDER.indexOf(b));
 
   return ensureRosterNames({
-    version: 7,
+    version: 8,
     parsedAt: new Date().toISOString(),
     fileName,
     year: firstDate?.year || year,

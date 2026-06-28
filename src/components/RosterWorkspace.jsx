@@ -602,7 +602,7 @@ export default function RosterWorkspace() {
     let active = true;
     const target = record;
     const parsedVersion = Number(target?.parsed?.version || 0);
-    if (!target?.versionKey || !target.fileBlob || parsedVersion >= 7) return undefined;
+    if (!target?.versionKey || !target.fileBlob || parsedVersion >= 8) return undefined;
     if (upgradedVersionsRef.current.has(target.versionKey)) return undefined;
     upgradedVersionsRef.current.add(target.versionKey);
 
@@ -619,7 +619,7 @@ export default function RosterWorkspace() {
         )));
         setRecords(nextRecords);
         recordsRef.current = nextRecords;
-        setNotice("Roster updated to remove excluded personnel and stale shift times.");
+        setNotice("Roster names updated to the latest preferred display names.");
         if (updated.cloudSynced === false && updated.syncError) setError(updated.syncError);
       } catch (upgradeError) {
         if (active) setError(upgradeError.message || "Unable to update this saved roster format. Re-upload the original PDF.");
