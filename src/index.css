@@ -2962,30 +2962,25 @@ html[data-app-theme="light"] .theme-roster-compare-pill {
   color: #6d28d9 !important;
 }
 
-/* Multiple staff comparison: comparison schedules flow to the right. */
+/* Multiple staff comparison: expand the side window for every added column. */
 .theme-roster-staff-results-row {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(125, 170, 199, 0.42) transparent;
-  scroll-snap-type: x proximity;
+  width: max-content;
+  min-width: 100%;
+  overflow: visible;
 }
 
-.theme-roster-staff-results-row::-webkit-scrollbar {
-  height: 8px;
-}
-
-.theme-roster-staff-results-row::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.theme-roster-staff-results-row::-webkit-scrollbar-thumb {
-  border: 2px solid transparent;
-  border-radius: 999px;
-  background: rgba(125, 170, 199, 0.34);
-  background-clip: padding-box;
+.theme-roster-staff-schedule,
+.theme-roster-staff-schedule > section {
+  width: max-content;
+  min-width: 420px;
+  max-width: none;
+  overflow: visible;
 }
 
 .theme-roster-staff-result-column {
-  scroll-snap-align: start;
+  flex: 0 0 310px;
+  width: 310px;
+  min-width: 310px;
 }
 
 .theme-roster-staff-result-column > .theme-roster-staff-result-block {
