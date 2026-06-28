@@ -1,5 +1,5 @@
 const DATE_TOKEN_RE = /^\d{2}\.\d{2}\.$/;
-const PREFIX_RE = /^L3(?:\d+)?-DEP-(DM|TCC|TC|DC|EFC|SC)\s*\d*$/i;
+const PREFIX_RE = /^L3-DEP-(DM|TCC|TC|DC|EFC|SC)\s*\d*$/i;
 const TIME_RANGE_RE = /(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/;
 
 export const ROSTER_ROLE_ORDER = ["DM", "TCC", "TC", "DC", "EFC", "SC"];
@@ -240,7 +240,7 @@ function shiftFromTimes(start, end, dutyCode = "") {
 }
 
 function roleFromPrefix(prefix = "") {
-  const match = prefix.match(/L3(?:\d+)?-DEP-(DM|TCC|TC|DC|EFC|SC)/i);
+  const match = prefix.match(/^L3-DEP-(DM|TCC|TC|DC|EFC|SC)\b/i);
   return match ? match[1].toUpperCase() : "OTHER";
 }
 
@@ -373,7 +373,7 @@ function parsePageItems(items, pageNumber, fileName, pdfjsLib) {
     .filter((group) => group.length >= 20)
     .sort((a, b) => median(a.map((item) => item[rowAxis])) - median(b.map((item) => item[rowAxis])));
 
-  const prefixItems = items.filter((item) => /^L3(?:\d+)?-DEP-(DM|TCC|TC|DC|EFC|SC)/i.test(item.text));
+  const prefixItems = items.filter((item) => /^L3-DEP-(DM|TCC|TC|DC|EFC|SC)\b/i.test(item.text));
   const people = [];
   const detectedDates = [];
 
@@ -503,7 +503,7 @@ export async function parseRosterPdf(arrayBuffer, fileName = "roster.pdf", pdfjs
     .sort((a, b) => ROSTER_ROLE_ORDER.indexOf(a) - ROSTER_ROLE_ORDER.indexOf(b));
 
   return ensureRosterNames({
-    version: 3,
+    version: 4,
     parsedAt: new Date().toISOString(),
     fileName,
     year: firstDate?.year || year,
