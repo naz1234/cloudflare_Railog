@@ -672,29 +672,63 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
             </div>
           ) : (
             <div>
-              <div className="theme-roster-staff-result-head flex items-start justify-between gap-3 border-b border-[#1d4058] px-4 py-3.5">
-                <div className="min-w-0">
-                  <div className="text-[12px] font-extrabold leading-5 text-white">
-                    {result.person.displayName || result.person.rawName} — {result.rows.length}-Day Schedule
+              <div className="theme-roster-staff-result-head border-b border-[#1d4058] px-4 py-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="theme-roster-staff-avatar flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-sky-300/25 bg-sky-400/10 text-sky-100">
+                      <Users className="h-[18px] w-[18px]" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="truncate text-[13px] font-extrabold leading-5 text-white">
+                        {result.person.displayName || result.person.rawName}
+                      </div>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[9px] font-semibold text-[#7897aa]">
+                        <span>{result.rows.length}-Day Schedule</span>
+                        <span className="opacity-50">•</span>
+                        <span>{new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(parseDateInputValue(submitted.fromDate).date)} – {new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(parseDateInputValue(submitted.toDate).date)}</span>
+                      </div>
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={copySchedule}
+                    className="theme-roster-copy-schedule inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#315671] bg-[#0a253b] px-2.5 text-[9px] font-bold text-[#d9eaf7] hover:bg-[#0e304c]"
+                  >
+                    {copied ? <Check className="h-3.5 w-3.5" /> : <ClipboardCopy className="h-3.5 w-3.5" />}
+                    {copied ? "Copied" : "Copy"}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={copySchedule}
-                  className="theme-roster-copy-schedule inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#315671] bg-[#0a253b] px-2.5 text-[9px] font-bold text-[#d9eaf7] hover:bg-[#0e304c]"
-                >
-                  {copied ? <Check className="h-3.5 w-3.5" /> : <ClipboardCopy className="h-3.5 w-3.5" />}
-                  {copied ? "Copied" : "Copy"}
-                </button>
               </div>
 
-              <div className="max-h-[620px] overflow-y-auto px-4 py-3.5">
-                <div className="space-y-2">
-                  {result.rows.map((row) => (
-                    <div key={row.dateKey} className="theme-roster-schedule-line whitespace-nowrap text-[11px] font-semibold leading-5 text-[#dcecf7]">
-                      {scheduleLine(row)}
-                    </div>
-                  ))}
+              <div className="theme-roster-schedule-scroll max-h-[620px] overflow-y-auto p-3">
+                <div className="theme-roster-schedule-list space-y-2">
+                  {result.rows.map((row) => {
+                    const date = parseDateInputValue(row.dateKey)?.date;
+                    const dayLabel = date ? new Intl.DateTimeFormat("en-GB", { day: "2-digit" }).format(date) : "--";
+                    const monthLabel = date ? new Intl.DateTimeFormat("en-GB", { month: "short" }).format(date).toUpperCase() : "---";
+                    const weekdayLabel = date ? new Intl.DateTimeFormat("en-GB", { weekday: "short" }).format(date).toUpperCase() : "---";
+                    const time = row.status.isWorking && row.entry?.timeStart && row.entry?.timeEnd
+                      ? `${row.entry.timeStart}–${row.entry.timeEnd}`
+                      : "";
+                    return (
+                      <div key={row.dateKey} className={`theme-roster-schedule-item ${scheduleStatusClass(row.status.tone)} grid grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-2.5 py-2.5`}>
+                        <div className="theme-roster-schedule-date flex h-11 w-[52px] shrink-0 flex-col items-center justify-center rounded-lg border">
+                          <div className="text-[12px] font-black leading-none tabular-nums">{dayLabel}</div>
+                          <div className="mt-1 text-[8px] font-black tracking-[0.12em]">{monthLabel}</div>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="theme-roster-schedule-dot h-1.5 w-1.5 shrink-0 rounded-full" />
+                            <span className="truncate text-[11px] font-extrabold leading-4">{row.status.label}</span>
+                          </div>
+                          <div className="mt-1 text-[8px] font-bold tracking-[0.12em] opacity-60">{weekdayLabel}</div>
+                        </div>
+                        <div className="theme-roster-schedule-time shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-black tabular-nums">
+                          {time || (row.status.isWorking ? "Time not set" : row.status.label)}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -1208,7 +1242,7 @@ export default function RosterWorkspace() {
                 <div className="theme-roster-selected-file flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#23465f] bg-[#091d2e] px-3.5 py-3">
                   <div className="flex min-w-0 items-center gap-3">
                     <div className="theme-roster-file-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#315671] bg-[#0b2940] text-[#bfe3fa]">
-                      <FileText className="h-4.5 w-4.5" />
+                      <FileText className="h-[18px] w-[18px]" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">

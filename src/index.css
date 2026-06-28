@@ -2759,3 +2759,149 @@ html[data-app-theme="light"] .theme-roster-schedule-line {
   color: #0f172a !important;
   border-bottom-color: #e2e8f0 !important;
 }
+
+
+/* Modern Staff Schedule output cards. */
+.theme-roster-staff-avatar {
+  background: linear-gradient(145deg, rgba(56, 189, 248, 0.18), rgba(99, 102, 241, 0.12));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 20px rgba(14, 116, 144, 0.12);
+}
+
+.theme-roster-schedule-scroll {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(56, 189, 248, 0.06), transparent 34%),
+    linear-gradient(180deg, rgba(5, 19, 31, 0.44), rgba(4, 16, 27, 0.72));
+}
+
+.theme-roster-schedule-item {
+  position: relative;
+  overflow: hidden;
+  color: #eaf4fb;
+  border-color: rgba(91, 124, 147, 0.34);
+  background: linear-gradient(135deg, rgba(11, 37, 57, 0.94), rgba(6, 24, 39, 0.98));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035), 0 8px 20px rgba(0, 0, 0, 0.10);
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.theme-roster-schedule-item::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: #64748b;
+}
+
+.theme-roster-schedule-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(125, 170, 199, 0.54);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 12px 24px rgba(0,0,0,0.16);
+}
+
+.theme-roster-schedule-date {
+  color: #dcecf7;
+  border-color: rgba(113, 146, 168, 0.30);
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.theme-roster-schedule-time {
+  color: #dcecf7;
+  border-color: rgba(113, 146, 168, 0.30);
+  background: rgba(255,255,255,0.045);
+}
+
+.theme-roster-schedule-dot {
+  background: #94a3b8;
+  box-shadow: 0 0 10px rgba(148, 163, 184, 0.42);
+}
+
+.theme-roster-schedule-item.is-early::before,
+.theme-roster-schedule-item.is-early .theme-roster-schedule-dot { background: #fbbf24; }
+.theme-roster-schedule-item.is-early .theme-roster-schedule-dot { box-shadow: 0 0 10px rgba(251,191,36,0.58); }
+.theme-roster-schedule-item.is-early .theme-roster-schedule-date,
+.theme-roster-schedule-item.is-early .theme-roster-schedule-time { border-color: rgba(251,191,36,0.34); background: rgba(251,191,36,0.09); color: #fef3c7; }
+
+.theme-roster-schedule-item.is-late::before,
+.theme-roster-schedule-item.is-late .theme-roster-schedule-dot { background: #38bdf8; }
+.theme-roster-schedule-item.is-late .theme-roster-schedule-dot { box-shadow: 0 0 10px rgba(56,189,248,0.58); }
+.theme-roster-schedule-item.is-late .theme-roster-schedule-date,
+.theme-roster-schedule-item.is-late .theme-roster-schedule-time { border-color: rgba(56,189,248,0.34); background: rgba(56,189,248,0.09); color: #d9f3ff; }
+
+.theme-roster-schedule-item.is-night::before,
+.theme-roster-schedule-item.is-night .theme-roster-schedule-dot,
+.theme-roster-schedule-item.is-extension::before,
+.theme-roster-schedule-item.is-extension .theme-roster-schedule-dot { background: #818cf8; }
+.theme-roster-schedule-item.is-night .theme-roster-schedule-dot,
+.theme-roster-schedule-item.is-extension .theme-roster-schedule-dot { box-shadow: 0 0 10px rgba(129,140,248,0.58); }
+.theme-roster-schedule-item.is-night .theme-roster-schedule-date,
+.theme-roster-schedule-item.is-night .theme-roster-schedule-time,
+.theme-roster-schedule-item.is-extension .theme-roster-schedule-date,
+.theme-roster-schedule-item.is-extension .theme-roster-schedule-time { border-color: rgba(129,140,248,0.36); background: rgba(129,140,248,0.10); color: #e0e7ff; }
+
+.theme-roster-schedule-item.is-training::before,
+.theme-roster-schedule-item.is-training .theme-roster-schedule-dot { background: #2dd4bf; }
+.theme-roster-schedule-item.is-training .theme-roster-schedule-dot { box-shadow: 0 0 10px rgba(45,212,191,0.55); }
+.theme-roster-schedule-item.is-training .theme-roster-schedule-date,
+.theme-roster-schedule-item.is-training .theme-roster-schedule-time { border-color: rgba(45,212,191,0.34); background: rgba(45,212,191,0.09); color: #ccfbf1; }
+
+.theme-roster-schedule-item.is-toil::before,
+.theme-roster-schedule-item.is-toil .theme-roster-schedule-dot { background: #f59e0b; }
+.theme-roster-schedule-item.is-toil .theme-roster-schedule-date,
+.theme-roster-schedule-item.is-toil .theme-roster-schedule-time { border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.10); color: #fef3c7; }
+
+.theme-roster-schedule-item.is-al::before,
+.theme-roster-schedule-item.is-al .theme-roster-schedule-dot { background: #f472b6; }
+.theme-roster-schedule-item.is-al .theme-roster-schedule-date,
+.theme-roster-schedule-item.is-al .theme-roster-schedule-time { border-color: rgba(244,114,182,0.35); background: rgba(244,114,182,0.10); color: #fce7f3; }
+
+.theme-roster-schedule-item.is-rd::before,
+.theme-roster-schedule-item.is-rd .theme-roster-schedule-dot { background: #60a5fa; }
+.theme-roster-schedule-item.is-rd .theme-roster-schedule-date,
+.theme-roster-schedule-item.is-rd .theme-roster-schedule-time { border-color: rgba(96,165,250,0.35); background: rgba(96,165,250,0.10); color: #dbeafe; }
+
+html[data-app-theme="light"] .theme-roster-staff-avatar {
+  border-color: #bae6fd !important;
+  background: linear-gradient(145deg, #eef9ff, #eef2ff) !important;
+  color: #0369a1 !important;
+  box-shadow: 0 8px 20px rgba(14,116,144,0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-schedule-scroll {
+  background: linear-gradient(180deg, #f8fbfe, #f4f8fb) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-schedule-item {
+  color: #0f172a !important;
+  border-color: #d7e1ea !important;
+  background: #ffffff !important;
+  box-shadow: 0 5px 14px rgba(15,23,42,0.045) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-schedule-item:hover {
+  border-color: #b9cad8 !important;
+  box-shadow: 0 9px 20px rgba(15,23,42,0.07) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-schedule-date,
+html[data-app-theme="light"] .theme-roster-schedule-time {
+  color: #334155 !important;
+  border-color: #d7e1ea !important;
+  background: #f8fafc !important;
+}
+
+html[data-app-theme="light"] .theme-roster-schedule-item.is-early .theme-roster-schedule-date,
+html[data-app-theme="light"] .theme-roster-schedule-item.is-early .theme-roster-schedule-time { border-color: #f6c453 !important; background: #fff8df !important; color: #92400e !important; }
+html[data-app-theme="light"] .theme-roster-schedule-item.is-late .theme-roster-schedule-date,
+html[data-app-theme="light"] .theme-roster-schedule-item.is-late .theme-roster-schedule-time { border-color: #7dd3fc !important; background: #eaf8ff !important; color: #075985 !important; }
+html[data-app-theme="light"] .theme-roster-schedule-item.is-night .theme-roster-schedule-date,
+html[data-app-theme="light"] .theme-roster-schedule-item.is-night .theme-roster-schedule-time,
+html[data-app-theme="light"] .theme-roster-schedule-item.is-extension .theme-roster-schedule-date,
+html[data-app-theme="light"] .theme-roster-schedule-item.is-extension .theme-roster-schedule-time { border-color: #a5b4fc !important; background: #f0f2ff !important; color: #3730a3 !important; }
+html[data-app-theme="light"] .theme-roster-schedule-item.is-training .theme-roster-schedule-date,
+html[data-app-theme="light"] .theme-roster-schedule-item.is-training .theme-roster-schedule-time { border-color: #5eead4 !important; background: #e8fffa !important; color: #115e59 !important; }
+html[data-app-theme="light"] .theme-roster-schedule-item.is-toil .theme-roster-schedule-date,
+html[data-app-theme="light"] .theme-roster-schedule-item.is-toil .theme-roster-schedule-time { border-color: #f6c453 !important; background: #fff8df !important; color: #92400e !important; }
+html[data-app-theme="light"] .theme-roster-schedule-item.is-al .theme-roster-schedule-date,
+html[data-app-theme="light"] .theme-roster-schedule-item.is-al .theme-roster-schedule-time { border-color: #f9a8d4 !important; background: #fdf0f8 !important; color: #9d174d !important; }
+html[data-app-theme="light"] .theme-roster-schedule-item.is-rd .theme-roster-schedule-date,
+html[data-app-theme="light"] .theme-roster-schedule-item.is-rd .theme-roster-schedule-time { border-color: #93c5fd !important; background: #eaf3ff !important; color: #1d4ed8 !important; }
