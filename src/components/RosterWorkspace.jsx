@@ -664,7 +664,7 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
           </div>
         </div>
 
-        <div className="theme-roster-schedule-scroll max-h-[430px] overflow-y-auto p-3">
+        <div className="theme-roster-schedule-scroll p-3">
           <div className="theme-roster-schedule-list space-y-1.5">
             {result.rows.map((row) => {
               const date = parseDateInputValue(row.dateKey)?.date;
