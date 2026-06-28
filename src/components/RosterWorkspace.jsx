@@ -274,7 +274,7 @@ function HorizontalPersonPill({ person, entry, day }) {
   return (
     <span
       title={time ? `${controllerName} · ${time}` : controllerName}
-      className={`theme-roster-role-badge theme-roster-name-pill is-${String(role).toLowerCase()} inline-flex max-w-full items-center rounded-lg border px-2.5 py-1 text-[11px] font-semibold leading-4 ${roleBadgeClass(role)}`}
+      className={`theme-roster-name-pill is-${String(role).toLowerCase()} inline-flex max-w-full items-center px-1 py-0.5 text-[11px] font-semibold leading-4`}
     >
       <span className="truncate">{controllerName}</span>
     </span>

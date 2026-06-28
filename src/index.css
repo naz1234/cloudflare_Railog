@@ -3136,26 +3136,21 @@ html[data-app-theme="light"] .theme-roster-staff-result-block.is-comparison {
 .theme-roster-role-badge.is-sc { box-shadow: 0 0 14px rgba(232, 121, 249, 0.12), inset 0 1px 0 rgba(255,255,255,.08); }
 
 .theme-roster-name-pill {
-  background: rgba(12, 31, 49, 0.88) !important;
-  color: #f8fafc !important;
-  min-height: 26px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: auto;
   justify-content: center;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.045),
-    0 3px 9px rgba(0, 0, 0, 0.11) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #f8fafc !important;
+  box-shadow: none !important;
 }
 
 .theme-roster-horizontal-role-cell .theme-roster-name-pill {
-  width: 100%;
-  max-width: 132px;
+  width: auto;
+  max-width: 100%;
 }
-
-.theme-roster-name-pill.is-dm { border-color: rgba(168, 85, 247, 0.50) !important; }
-.theme-roster-name-pill.is-tcc { border-color: rgba(34, 211, 238, 0.48) !important; }
-.theme-roster-name-pill.is-tc { border-color: rgba(59, 130, 246, 0.50) !important; }
-.theme-roster-name-pill.is-dc { border-color: rgba(34, 197, 94, 0.50) !important; }
-.theme-roster-name-pill.is-efc { border-color: rgba(245, 158, 11, 0.52) !important; }
-.theme-roster-name-pill.is-sc { border-color: rgba(236, 72, 153, 0.52) !important; }
 
 .theme-roster-time-pill {
   min-height: 26px;
@@ -3265,9 +3260,10 @@ html[data-app-theme="light"] .theme-roster-horizontal-shift-cell {
 }
 
 html[data-app-theme="light"] .theme-roster-name-pill {
-  background: #ffffff !important;
+  border: 0 !important;
+  background: transparent !important;
   color: #0f172a !important;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.055) !important;
+  box-shadow: none !important;
 }
 
 html[data-app-theme="light"] .theme-roster-time-pill {
@@ -3369,8 +3365,8 @@ html[data-app-theme="light"] .theme-roster-leave-row {
 }
 
 .theme-roster-horizontal-role-cell .theme-roster-name-pill {
-  width: 100%;
-  max-width: 138px;
+  width: auto;
+  max-width: 100%;
 }
 
 html[data-app-theme="light"] .theme-roster-role-heading.is-dm { color: #7c3aed !important; }
