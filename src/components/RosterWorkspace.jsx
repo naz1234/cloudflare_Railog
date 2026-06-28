@@ -285,10 +285,16 @@ function ShiftGroup({ shiftKey, rows, day }) {
               <span className={`h-2 w-2 rounded-full ${style.dot}`} />
               <h4 className="theme-roster-horizontal-shift-title text-[13px] font-black uppercase tracking-[0.1em] text-white">{label}</h4>
             </div>
-            <div className="theme-roster-horizontal-times mt-2 space-y-0.5 text-[11px] font-semibold tabular-nums text-[#9bb7c9]">
-              {timeLabels.length ? timeLabels.map((time) => <div key={time}>{time}</div>) : <div>—</div>}
+            <div className="theme-roster-time-label mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-[#7897aa]">Working time</div>
+            <div className="theme-roster-horizontal-times mt-2 flex flex-col gap-1.5 text-[11px] font-semibold tabular-nums text-[#9bb7c9]">
+              {timeLabels.length
+                ? timeLabels.map((time) => (
+                  <div key={time} className="theme-roster-time-pill inline-flex w-fit items-center rounded-full border px-2.5 py-1">
+                    {time}
+                  </div>
+                ))
+                : <div className="theme-roster-time-pill is-empty inline-flex w-fit items-center rounded-full border px-2.5 py-1">—</div>}
             </div>
-            <span className={`theme-roster-shift-count mt-2 w-fit rounded-full border px-2.5 py-0.5 text-[11px] font-black ${style.badge}`}>{rows.length}</span>
           </div>
 
           {HORIZONTAL_ROLE_ORDER.map((role) => {

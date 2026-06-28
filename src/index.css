@@ -2365,6 +2365,94 @@ html[data-app-theme="light"] .theme-roster-horizontal-times {
   color: #475569 !important;
 }
 
+.theme-roster-time-label {
+  color: #7f96aa;
+}
+
+.theme-roster-time-pill {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: #eef6ff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.theme-roster-time-pill.is-empty {
+  color: #8ca4b7;
+}
+
+.theme-roster-shift-group.is-early .theme-roster-time-pill {
+  border-color: rgba(251, 191, 36, 0.34);
+  background: rgba(251, 191, 36, 0.10);
+}
+
+.theme-roster-shift-group.is-late .theme-roster-time-pill {
+  border-color: rgba(56, 189, 248, 0.34);
+  background: rgba(56, 189, 248, 0.10);
+}
+
+.theme-roster-shift-group.is-night .theme-roster-time-pill {
+  border-color: rgba(129, 140, 248, 0.34);
+  background: rgba(129, 140, 248, 0.12);
+}
+
+.theme-roster-shift-group.is-extension .theme-roster-time-pill {
+  border-color: rgba(251, 146, 60, 0.34);
+  background: rgba(251, 146, 60, 0.10);
+}
+
+.theme-roster-shift-group.is-training .theme-roster-time-pill {
+  border-color: rgba(45, 212, 191, 0.34);
+  background: rgba(45, 212, 191, 0.10);
+}
+
+.theme-roster-shift-group.is-other .theme-roster-time-pill,
+.theme-roster-shift-group.is-rest .theme-roster-time-pill {
+  border-color: rgba(148, 163, 184, 0.34);
+  background: rgba(148, 163, 184, 0.10);
+}
+
+html[data-app-theme="light"] .theme-roster-time-label {
+  color: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-roster-time-pill {
+  border-color: #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-early .theme-roster-time-pill {
+  border-color: #fcd34d !important;
+  background: #fff7d6 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-late .theme-roster-time-pill {
+  border-color: #93c5fd !important;
+  background: #e0f2fe !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-night .theme-roster-time-pill {
+  border-color: #a5b4fc !important;
+  background: #e8edff !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-extension .theme-roster-time-pill {
+  border-color: #fdba74 !important;
+  background: #ffedd5 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-training .theme-roster-time-pill {
+  border-color: #5eead4 !important;
+  background: #dcfce7 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-other .theme-roster-time-pill,
+html[data-app-theme="light"] .theme-roster-shift-group.is-rest .theme-roster-time-pill {
+  border-color: #cbd5e1 !important;
+  background: #f8fafc !important;
+}
+
 html[data-app-theme="light"] .theme-roster-horizontal-role-cell {
   background: #ffffff !important;
 }
