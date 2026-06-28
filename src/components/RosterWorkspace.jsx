@@ -248,44 +248,67 @@ function EmptyRoster({ onUpload }) {
   );
 }
 
-function ControllerRow({ person, entry, day }) {
+const HORIZONTAL_ROLE_ORDER = ["DM", "TCC", "TC", "DC", "EFC", "SC"];
+
+function HorizontalPersonPill({ person, entry, day }) {
   const role = getRosterEntryRole(person, day);
   const controllerName = person.displayName || person.rawName || person.name || "Controller name unavailable";
-  const originalName = person.rawName && person.rawName !== controllerName
-    ? person.rawName
-    : person.rosterCode || "";
-  const time = entry.timeStart && entry.timeEnd ? `${entry.timeStart}–${entry.timeEnd}` : entry.dutyCode || entry.raw;
+  const time = entry.timeStart && entry.timeEnd
+    ? `${entry.timeStart}–${entry.timeEnd}`
+    : entry.dutyCode || entry.raw || "";
+
   return (
-    <div className="theme-roster-controller-row grid min-h-[66px] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl border border-white/5 bg-[#091d2d] px-4 py-3 transition-colors hover:border-[#315671] hover:bg-[#0b2235]">
-      <div className="min-w-0">
-        <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-          <span className="min-w-0 max-w-full truncate text-[14px] font-extrabold leading-5 text-white">{controllerName}</span>
-          <span className={`theme-roster-role-badge is-${String(role).toLowerCase()} shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-black tracking-wide ${roleBadgeClass(role)}`}>{role}</span>
-        </div>
-        <div className="mt-1 truncate text-[11px] leading-4 text-[#7899ae]">{originalName}</div>
-      </div>
-      <div className="shrink-0 text-right">
-        <div className="text-[13px] font-bold tabular-nums text-[#e7f3fb]">{time || "—"}</div>
-        <div className="mt-1 text-[10px] uppercase tracking-wide text-[#7897aa]">{entry.dutyCode || entry.shiftLabel}</div>
-      </div>
-    </div>
+    <span
+      title={time ? `${controllerName} · ${time}` : controllerName}
+      className={`theme-roster-role-badge theme-roster-name-pill is-${String(role).toLowerCase()} inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-[11px] font-bold leading-4 ${roleBadgeClass(role)}`}
+    >
+      <span className="truncate">{controllerName}</span>
+    </span>
   );
 }
 
 function ShiftGroup({ shiftKey, rows, day }) {
   const style = SHIFT_STYLES[shiftKey] || SHIFT_STYLES.other;
   const label = shiftKey === "extension" && rows.length === 1 ? rows[0].entry.shiftLabel : style.label;
+  const timeLabels = [...new Set(rows.map(({ entry }) => (
+    entry.timeStart && entry.timeEnd
+      ? `${entry.timeStart}–${entry.timeEnd}`
+      : entry.dutyCode || entry.shiftLabel || ""
+  )).filter(Boolean))];
+
   return (
-    <section className={`theme-roster-shift-group is-${shiftKey} overflow-hidden rounded-2xl border bg-[#071827] ${style.border}`}>
-      <header className="theme-roster-shift-header flex items-center justify-between border-b border-white/5 px-4 py-3.5">
-        <div className="flex items-center gap-2">
-          <span className={`h-2 w-2 rounded-full ${style.dot}`} />
-          <h4 className="text-[13px] font-black uppercase tracking-[0.13em] text-white">{label}</h4>
+    <section className={`theme-roster-shift-group theme-roster-horizontal-shift is-${shiftKey} overflow-hidden rounded-2xl border bg-[#071827] ${style.border}`}>
+      <div className="overflow-x-auto">
+        <div className="grid min-w-[820px] grid-cols-[130px_repeat(6,minmax(115px,1fr))]">
+          <div className="theme-roster-horizontal-shift-cell flex min-h-[112px] flex-col justify-center border-r border-white/10 px-4 py-3.5">
+            <div className="flex items-center gap-2">
+              <span className={`h-2 w-2 rounded-full ${style.dot}`} />
+              <h4 className="theme-roster-horizontal-shift-title text-[13px] font-black uppercase tracking-[0.1em] text-white">{label}</h4>
+            </div>
+            <div className="theme-roster-horizontal-times mt-2 space-y-0.5 text-[11px] font-semibold tabular-nums text-[#9bb7c9]">
+              {timeLabels.length ? timeLabels.map((time) => <div key={time}>{time}</div>) : <div>—</div>}
+            </div>
+            <span className={`theme-roster-shift-count mt-2 w-fit rounded-full border px-2.5 py-0.5 text-[11px] font-black ${style.badge}`}>{rows.length}</span>
+          </div>
+
+          {HORIZONTAL_ROLE_ORDER.map((role) => {
+            const roleRows = rows.filter(({ person }) => getRosterEntryRole(person, day) === role);
+            return (
+              <div key={role} className="theme-roster-horizontal-role-cell min-w-0 border-r border-white/10 px-3 py-3 last:border-r-0">
+                <div className={`theme-roster-role-badge is-${role.toLowerCase()} mb-2 inline-flex rounded-md border px-2 py-0.5 text-[10px] font-black tracking-wide ${roleBadgeClass(role)}`}>
+                  {role}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {roleRows.length
+                    ? roleRows.map(({ person, entry }) => (
+                      <HorizontalPersonPill key={`${person.id}-${day}-${entry.dutyCode || entry.shiftKey}`} person={person} entry={entry} day={day} />
+                    ))
+                    : <span className="theme-roster-horizontal-empty text-[11px] text-[#55758b]">—</span>}
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <span className={`theme-roster-shift-count rounded-full border px-2.5 py-0.5 text-[11px] font-black ${style.badge}`}>{rows.length}</span>
-      </header>
-      <div className="space-y-2.5 p-3">
-        {rows.map(({ person, entry }) => <ControllerRow key={`${person.id}-${day}`} person={person} entry={entry} day={day} />)}
       </div>
     </section>
   );
@@ -923,7 +946,7 @@ export default function RosterWorkspace() {
                     <div className="mt-1 text-[9px] text-rose-200/65">Enter a date included in {rosterCoverageLabel} or select another roster version.</div>
                   </div>
                 ) : groupedRows.length ? (
-                  <div className="grid gap-3 xl:grid-cols-2">
+                  <div className="space-y-3">
                     {groupedRows.map((group) => <ShiftGroup key={group.shiftKey} {...group} day={selectedDateRef} />)}
                   </div>
                 ) : (

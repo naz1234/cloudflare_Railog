@@ -2329,3 +2329,46 @@ html[data-app-theme="light"] .theme-roster-page :is(
 ) {
   color: #64748b !important;
 }
+
+/* Roster horizontal shift/role output. */
+.theme-roster-horizontal-shift-cell,
+.theme-roster-horizontal-role-cell {
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+.theme-roster-name-pill {
+  min-width: 0;
+  max-width: 100%;
+}
+
+html[data-app-theme="light"] .theme-roster-horizontal-shift-cell,
+html[data-app-theme="light"] .theme-roster-horizontal-role-cell {
+  border-color: #d5dee7 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-horizontal-shift-cell {
+  background: #f8fafc !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-early .theme-roster-horizontal-shift-cell { background: #fffbeb !important; }
+html[data-app-theme="light"] .theme-roster-shift-group.is-late .theme-roster-horizontal-shift-cell { background: #f0f9ff !important; }
+html[data-app-theme="light"] .theme-roster-shift-group.is-night .theme-roster-horizontal-shift-cell { background: #eef2ff !important; }
+html[data-app-theme="light"] .theme-roster-shift-group.is-extension .theme-roster-horizontal-shift-cell { background: #fff7ed !important; }
+html[data-app-theme="light"] .theme-roster-shift-group.is-training .theme-roster-horizontal-shift-cell { background: #f0fdfa !important; }
+html[data-app-theme="light"] .theme-roster-shift-group.is-rest .theme-roster-horizontal-shift-cell { background: #fff1f2 !important; }
+
+html[data-app-theme="light"] .theme-roster-horizontal-shift-title {
+  color: #0f172a !important;
+}
+
+html[data-app-theme="light"] .theme-roster-horizontal-times {
+  color: #475569 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-horizontal-role-cell {
+  background: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-roster-horizontal-empty {
+  color: #94a3b8 !important;
+}
