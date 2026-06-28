@@ -170,9 +170,13 @@ export function preferredRosterName(rawName = "") {
 export function ensureRosterNames(parsedRoster) {
   if (!parsedRoster?.people?.length) return parsedRoster;
 
-  const useTemplateFallback = parsedRoster.people.length === ROSTER_TEMPLATE_NAMES.length;
-  let changed = false;
-  const people = parsedRoster.people.map((person, index) => {
+  const sourcePeople = parsedRoster.people.filter((person) => !isExcludedRosterPerson(
+    person.rawName || person.name || person.displayName || "",
+    person.personnelId || "",
+  ));
+  const useTemplateFallback = sourcePeople.length === ROSTER_TEMPLATE_NAMES.length;
+  let changed = sourcePeople.length !== parsedRoster.people.length;
+  const people = sourcePeople.map((person, index) => {
     const currentRawName = compactSpaces(person.rawName || "");
     const currentDisplayName = compactSpaces(person.displayName || "");
     const fallbackRawName = useTemplateFallback ? ROSTER_TEMPLATE_NAMES[index] : "";
@@ -539,7 +543,7 @@ export async function parseRosterPdf(arrayBuffer, fileName = "roster.pdf", pdfjs
     .sort((a, b) => ROSTER_ROLE_ORDER.indexOf(a) - ROSTER_ROLE_ORDER.indexOf(b));
 
   return ensureRosterNames({
-    version: 6,
+    version: 7,
     parsedAt: new Date().toISOString(),
     fileName,
     year: firstDate?.year || year,
@@ -565,6 +569,10 @@ export function queryRoster(parsedRoster, { dateKey = null, day = null, role = "
   const query = compactSpaces(search).toLowerCase();
 
   return parsedRoster.people
+    .filter((person) => !isExcludedRosterPerson(
+      person.rawName || person.name || person.displayName || "",
+      person.personnelId || "",
+    ))
     .map((person) => ({ person, entry: entryForDate(person, dateRef) }))
     .filter(({ entry }) => entry)
     .filter(({ entry }) => includeRest || entry.isWorking)
