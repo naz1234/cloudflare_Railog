@@ -679,8 +679,8 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
         </header>
 
         <div className="space-y-3 p-3.5">
-          <label className="block">
-            <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">Staff Name</span>
+          <label className="theme-roster-staff-name-card block rounded-[18px] border border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] p-3.5 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
+            <span className="mb-1.5 block text-[10px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Staff Name</span>
             <select
               value={staffId}
               onChange={(event) => {
@@ -691,7 +691,7 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
                 setCopyError("");
               }}
               disabled={!parsed}
-              className="theme-roster-control h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none focus:border-sky-400/60 disabled:opacity-50"
+              className="theme-roster-control theme-roster-ext-control h-11 w-full rounded-xl border border-[#376d60] bg-[#061a20] px-3 text-[12px] font-semibold text-white outline-none focus:border-emerald-300/70 disabled:opacity-50"
             >
               <option value="">Select staff…</option>
               {people.map((person) => (
@@ -1318,37 +1318,37 @@ export default function RosterWorkspace() {
                   <ActionButton icon={Download} onClick={() => handleDownload(record)}>Download Selected</ActionButton>
                 </div>
 
-                <section className="theme-roster-filter-panel rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
+                <section className="theme-roster-filter-panel theme-roster-ext-card rounded-[18px] border border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] p-3.5 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
                   <div className="grid gap-3 md:grid-cols-[1fr_0.8fr_1.25fr]">
                     <label className="block">
-                      <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Date</span>
+                      <span className="mb-1.5 block text-[10px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Date</span>
                       <input
                         type="date"
                         value={selectedDate}
                         onChange={(event) => setSelectedDate(event.target.value)}
-                        className={`theme-roster-control is-date ${dateExists ? "is-valid" : "is-invalid"} h-11 w-full rounded-xl border bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none [color-scheme:dark] ${dateExists ? "border-[#2b506a] focus:border-sky-400/60" : "border-rose-400/70 focus:border-rose-300"}`}
+                        className={`theme-roster-control theme-roster-ext-control is-date ${dateExists ? "is-valid" : "is-invalid"} h-11 w-full rounded-xl border bg-[#061a20] px-3 text-[12px] font-semibold text-white outline-none [color-scheme:dark] ${dateExists ? "border-[#376d60] focus:border-emerald-300/70" : "border-rose-400/70 focus:border-rose-300"}`}
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Controller Type</span>
+                      <span className="mb-1.5 block text-[10px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Controller Type</span>
                       <select
                         value={role}
                         onChange={(event) => setRole(event.target.value)}
-                        className="theme-roster-control h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none focus:border-sky-400/60"
+                        className="theme-roster-control theme-roster-ext-control h-11 w-full rounded-xl border border-[#376d60] bg-[#061a20] px-3 text-[12px] font-semibold text-white outline-none focus:border-emerald-300/70"
                       >
                         <option value="ALL">All Controllers</option>
                         {ROSTER_ROLE_ORDER.filter((item) => parsed.roles.includes(item)).map((item) => <option key={item} value={item}>{item}</option>)}
                       </select>
                     </label>
                     <label className="block">
-                      <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Search Name / Duty</span>
+                      <span className="mb-1.5 block text-[10px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Search Name / Duty</span>
                       <div className="relative">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#55778d]" />
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#76d5ae]" />
                         <input
                           value={search}
                           onChange={(event) => setSearch(event.target.value)}
                           placeholder="Search controller…"
-                          className="theme-roster-control h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] pl-9 pr-3 text-[12px] text-white outline-none focus:border-sky-400/60 placeholder:text-[#456277]"
+                          className="theme-roster-control theme-roster-ext-control h-11 w-full rounded-xl border border-[#376d60] bg-[#061a20] pl-9 pr-3 text-[12px] text-white outline-none focus:border-emerald-300/70 placeholder:text-[#5d7f76]"
                         />
                       </div>
                     </label>
