@@ -2961,3 +2961,75 @@ html[data-app-theme="light"] .theme-roster-compare-pill {
   background: #f5f3ff !important;
   color: #6d28d9 !important;
 }
+
+/* Multiple staff comparison: comparison schedules flow to the right. */
+.theme-roster-staff-results-row {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(125, 170, 199, 0.42) transparent;
+  scroll-snap-type: x proximity;
+}
+
+.theme-roster-staff-results-row::-webkit-scrollbar {
+  height: 8px;
+}
+
+.theme-roster-staff-results-row::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.theme-roster-staff-results-row::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(125, 170, 199, 0.34);
+  background-clip: padding-box;
+}
+
+.theme-roster-staff-result-column {
+  scroll-snap-align: start;
+}
+
+.theme-roster-staff-result-column > .theme-roster-staff-result-block {
+  height: 100%;
+}
+
+.theme-roster-staff-result-block.is-primary {
+  border-color: rgba(56, 189, 248, 0.30);
+}
+
+.theme-roster-staff-result-block.is-comparison {
+  border-color: rgba(167, 139, 250, 0.34);
+}
+
+.theme-roster-compare-controls {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+html[data-app-theme="light"] .theme-roster-compare-controls {
+  border-color: #d7e1ea !important;
+  background: #f8fbfe !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-roster-add-compare {
+  border-color: #c4b5fd !important;
+  background: #f5f3ff !important;
+  color: #6d28d9 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-remove-compare {
+  border-color: #fecdd3 !important;
+  background: #fff1f2 !important;
+  color: #be123c !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-result-block {
+  background: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-result-block.is-primary {
+  border-color: #bae6fd !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-result-block.is-comparison {
+  border-color: #ddd6fe !important;
+}

@@ -10,6 +10,7 @@ import {
   History,
   LoaderCircle,
   Pencil,
+  Plus,
   Save,
   Search,
   ShieldCheck,
@@ -512,7 +513,7 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
     [...(parsed?.people || [])].sort((a, b) => String(a.displayName || a.rawName || "").localeCompare(String(b.displayName || b.rawName || "")))
   ), [parsed]);
   const [staffId, setStaffId] = useState("");
-  const [compareStaffId, setCompareStaffId] = useState("");
+  const [compareStaffIds, setCompareStaffIds] = useState([""]);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [copiedKey, setCopiedKey] = useState("");
@@ -524,7 +525,7 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
     const fromIndex = Math.max(0, rosterDates.indexOf(defaultFrom));
     const defaultTo = rosterDates[Math.min(fromIndex + 5, Math.max(0, rosterDates.length - 1))] || defaultFrom;
     setStaffId("");
-    setCompareStaffId("");
+    setCompareStaffIds([""]);
     setFromDate(defaultFrom);
     setToDate(defaultTo);
     setCopiedKey("");
@@ -559,10 +560,43 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
     () => buildResult(staffId),
     [staffId, parsed, rangeError, people, rosterDates, fromDate, toDate],
   );
-  const compareResult = useMemo(
-    () => buildResult(compareStaffId),
-    [compareStaffId, parsed, rangeError, people, rosterDates, fromDate, toDate],
+  const compareResults = useMemo(
+    () => compareStaffIds.map((selectedStaffId, index) => ({
+      index,
+      staffId: selectedStaffId,
+      result: buildResult(selectedStaffId),
+    })).filter((item) => item.result),
+    [compareStaffIds, parsed, rangeError, people, rosterDates, fromDate, toDate],
   );
+
+  const selectedCompareIds = compareStaffIds.filter(Boolean);
+  const canAddCompare = Boolean(
+    staffId
+    && selectedCompareIds.length < Math.max(0, people.length - 1)
+    && compareStaffIds.every(Boolean)
+  );
+
+  const updateCompareStaff = (index, nextStaffId) => {
+    setCompareStaffIds((current) => current.map((value, itemIndex) => (
+      itemIndex === index ? nextStaffId : value
+    )));
+    setCopiedKey("");
+    setCopyError("");
+  };
+
+  const addCompareStaff = () => {
+    if (!canAddCompare) return;
+    setCompareStaffIds((current) => [...current, ""]);
+  };
+
+  const removeCompareStaff = (index) => {
+    setCompareStaffIds((current) => {
+      const next = current.filter((_, itemIndex) => itemIndex !== index);
+      return next.length ? next : [""];
+    });
+    setCopiedKey("");
+    setCopyError("");
+  };
 
   const scheduleLine = ({ dateKey, entry, status }) => {
     const date = parseDateInputValue(dateKey)?.date;
@@ -591,12 +625,12 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
     }
   };
 
-  const renderScheduleResult = (result, resultKey, comparison = false) => {
+  const renderScheduleResult = (result, resultKey, comparison = false, comparisonNumber = 0) => {
     if (!result) return null;
     const start = parseDateInputValue(result.fromDate)?.date;
     const end = parseDateInputValue(result.toDate)?.date;
     return (
-      <div className={`theme-roster-staff-result-block ${comparison ? "is-comparison border-t border-[#1d4058]" : ""}`}>
+      <div className={`theme-roster-staff-result-block ${comparison ? "is-comparison" : "is-primary"} min-w-0 overflow-hidden rounded-xl border border-[#1d4058] bg-[#071827]`}>
         <div className="theme-roster-staff-result-head border-b border-[#1d4058] px-4 py-3.5">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
@@ -609,7 +643,7 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
                     {result.person.displayName || result.person.rawName}
                   </div>
                   {comparison ? (
-                    <span className="theme-roster-compare-pill shrink-0 rounded-full border border-violet-300/30 bg-violet-400/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-wide text-violet-100">Compare</span>
+                    <span className="theme-roster-compare-pill shrink-0 rounded-full border border-violet-300/30 bg-violet-400/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-wide text-violet-100">Compare {comparisonNumber}</span>
                   ) : null}
                 </div>
                 <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[9px] font-semibold text-[#7897aa]">
@@ -694,7 +728,7 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
               onChange={(event) => {
                 const nextStaffId = event.target.value;
                 setStaffId(nextStaffId);
-                if (nextStaffId && nextStaffId === compareStaffId) setCompareStaffId("");
+                setCompareStaffIds((current) => current.map((value) => value === nextStaffId ? "" : value));
                 setCopiedKey("");
                 setCopyError("");
               }}
@@ -708,20 +742,49 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
             </select>
           </label>
 
-          <label className="block">
-            <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">Compare Staff <span className="font-semibold normal-case tracking-normal text-[#58778c]">(optional)</span></span>
-            <select
-              value={compareStaffId}
-              onChange={(event) => { setCompareStaffId(event.target.value); setCopiedKey(""); setCopyError(""); }}
-              disabled={!parsed || !staffId}
-              className="theme-roster-control h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none focus:border-violet-400/60 disabled:opacity-50"
-            >
-              <option value="">No comparison</option>
-              {people.filter((person) => person.id !== staffId).map((person) => (
-                <option key={person.id} value={person.id}>{person.displayName || person.rawName}</option>
+          <div className="theme-roster-compare-controls rounded-xl border border-[#24465f] bg-[#071827]/55 p-2.5">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">Compare Staff</span>
+              <button
+                type="button"
+                onClick={addCompareStaff}
+                disabled={!canAddCompare}
+                className="theme-roster-add-compare inline-flex h-7 items-center gap-1 rounded-lg border border-violet-300/30 bg-violet-400/10 px-2 text-[9px] font-black text-violet-100 transition hover:bg-violet-400/20 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Plus className="h-3.5 w-3.5" /> Add Compare
+              </button>
+            </div>
+            <div className="space-y-2">
+              {compareStaffIds.map((selectedCompareId, index) => (
+                <div key={`compare-control-${index}`} className="grid grid-cols-[minmax(0,1fr)_32px] gap-2">
+                  <select
+                    value={selectedCompareId}
+                    onChange={(event) => updateCompareStaff(index, event.target.value)}
+                    disabled={!parsed || !staffId}
+                    aria-label={`Compare staff ${index + 1}`}
+                    className="theme-roster-control h-10 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[11px] font-semibold text-white outline-none focus:border-violet-400/60 disabled:opacity-50"
+                  >
+                    <option value="">Select comparison {index + 1}…</option>
+                    {people.filter((person) => (
+                      person.id !== staffId
+                      && (!compareStaffIds.includes(person.id) || person.id === selectedCompareId)
+                    )).map((person) => (
+                      <option key={person.id} value={person.id}>{person.displayName || person.rawName}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => removeCompareStaff(index)}
+                    title={`Remove comparison ${index + 1}`}
+                    aria-label={`Remove comparison ${index + 1}`}
+                    className="theme-roster-remove-compare flex h-10 w-8 items-center justify-center rounded-xl border border-rose-400/25 bg-rose-500/10 text-rose-100 transition hover:bg-rose-500/20"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               ))}
-            </select>
-          </label>
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-2.5">
             <label className="block min-w-0">
@@ -766,10 +829,16 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
               <div className="mt-1 text-[9px] leading-4 text-[#58778c]">Select a staff member. The schedule appears automatically.</div>
             </div>
           ) : rangeError ? null : (
-            <>
-              {renderScheduleResult(primaryResult, "primary")}
-              {renderScheduleResult(compareResult, "compare", true)}
-            </>
+            <div className="theme-roster-staff-results-row flex gap-3 overflow-x-auto p-3">
+              <div className="theme-roster-staff-result-column min-w-[310px] flex-[0_0_310px]">
+                {renderScheduleResult(primaryResult, "primary")}
+              </div>
+              {compareResults.map(({ index, result }, compareIndex) => (
+                <div key={`compare-result-${index}-${result.person.id}`} className="theme-roster-staff-result-column min-w-[310px] flex-[0_0_310px]">
+                  {renderScheduleResult(result, `compare-${index}`, true, compareIndex + 1)}
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </section>
@@ -1130,7 +1199,7 @@ export default function RosterWorkspace() {
         onChange={(event) => processFile(event.target.files?.[0])}
       />
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(580px,680px)]">
       <section className="theme-roster-shell min-w-0 overflow-hidden rounded-2xl border border-[#294b63] bg-[#071827] shadow-[0_16px_36px_rgba(0,0,0,0.18)]">
         <div className="theme-roster-topbar flex flex-wrap items-center justify-between gap-4 border-b border-[#1a3b52] bg-[linear-gradient(135deg,#0b2a43_0%,#071827_70%)] px-4 py-4">
           <div className="flex min-w-0 items-center gap-3">
