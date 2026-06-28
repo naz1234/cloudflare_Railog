@@ -719,11 +719,11 @@ export default function RosterWorkspace() {
                 <Upload className="h-4 w-4 text-sky-200" />
                 <div>
                   <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-white">Upload New Version</h3>
-                  <p className="mt-0.5 text-[8px] text-[#65859a]">Older versions remain saved below.</p>
+                  <p className="mt-0.5 text-[10px] text-[#65859a]">Older versions remain saved below.</p>
                 </div>
               </div>
               <label className="mt-3 block">
-                <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">Remark shown as pill</span>
+                <span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">Remark shown as pill</span>
                 <input
                   value={uploadRemark}
                   onChange={(event) => setUploadRemark(event.target.value)}
@@ -832,9 +832,9 @@ export default function RosterWorkspace() {
                     <div className="min-w-0">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <div className="truncate text-[11px] font-bold text-white">{record.fileName}</div>
-                        {record.remark ? <span className="theme-roster-remark-pill max-w-[280px] truncate rounded-full border border-amber-300/35 bg-amber-400/10 px-2 py-0.5 text-[8px] font-bold text-amber-100">{record.remark}</span> : null}
+                        {record.remark ? <span className="theme-roster-remark-pill max-w-[280px] truncate rounded-full border border-amber-300/35 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-100">{record.remark}</span> : null}
                       </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[8px] text-[#648399]">
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[#648399]">
                         <span>{bytesToLabel(record.size)}</span>
                         <span>{record.parsed?.people?.length || 0} personnel</span>
                         <span>{record.parsed?.days?.length || 0} days</span>
