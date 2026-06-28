@@ -21137,14 +21137,14 @@ function StablingSection({
       {/* Search Box */}
       <div className="mb-3" style={{ width: 912 }}>
         <div
-          className="theme-stabling-search flex items-center gap-2 px-3 py-2 rounded-xl transition-all"
+          className={`theme-stabling-search flex items-center gap-2 px-3 py-2 rounded-xl transition-all ${found ? "is-found" : notFound ? "is-not-found" : sectionSearch ? "is-active" : "is-empty"}`}
           style={{
             background: "#071828",
             border: found ? "1.5px solid #facc15" : notFound ? "1.5px solid #ef4444" : sectionSearch ? "1.5px solid #4f8ef7" : "1.5px dashed #1b3a55",
             boxShadow: found ? "0 0 0 2px rgba(250,204,21,0.10)" : notFound ? "0 0 0 2px rgba(239,68,68,0.10)" : sectionSearch ? "0 0 0 2px rgba(79,142,247,0.12)" : undefined,
           }}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={found ? "#facc15" : notFound ? "#ef4444" : sectionSearch ? "#4f8ef7" : "#2a4a64"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg className="theme-stabling-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={found ? "#facc15" : notFound ? "#ef4444" : sectionSearch ? "#4f8ef7" : "#2a4a64"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input
@@ -21152,7 +21152,7 @@ function StablingSection({
             value={sectionSearch}
             onChange={(e) => setSectionSearch(e.target.value)}
             placeholder="Search train ID across both depots…"
-            className="flex-1 bg-transparent outline-none text-sm font-semibold placeholder:font-normal"
+            className="theme-stabling-search-input flex-1 bg-transparent outline-none text-sm font-semibold placeholder:font-normal"
             style={{
               color: found ? "#fde68a" : notFound ? "#fca5a5" : sectionSearch ? "#e2eaf4" : undefined,
               caretColor: "#4f8ef7",
@@ -21162,7 +21162,7 @@ function StablingSection({
           {sectionSearch && (
             <button
               onClick={() => setSectionSearch("")}
-              className="flex items-center justify-center rounded-full w-4 h-4 transition-all hover:bg-[#1a3a56]"
+              className="theme-stabling-search-clear flex items-center justify-center rounded-full w-4 h-4 transition-all hover:bg-[#1a3a56]"
               style={{ color: "#4a8ab5" }}
             >
               <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -21174,7 +21174,7 @@ function StablingSection({
         {searched && (
           <div className="flex flex-wrap items-center gap-2 mt-2 min-h-[22px]">
             {found ? locationResults.map((r, idx) => (
-              <div key={idx} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{ background: "linear-gradient(135deg,#1a2e10,#0f1f08)", border: "1px solid #4d7c0f" }}>
+              <div key={idx} className="theme-stabling-search-result is-found flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{ background: "linear-gradient(135deg,#1a2e10,#0f1f08)", border: "1px solid #4d7c0f" }}>
                 {/* pin icon */}
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#a3e635" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
@@ -21188,7 +21188,7 @@ function StablingSection({
                 <span className="text-[11px] font-bold" style={{ color: "#bef264" }}>{r.blockLabel}</span>
               </div>
             )) : (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{ background: "rgba(127,29,29,0.35)", border: "1px solid #7f1d1d" }}>
+              <div className="theme-stabling-search-result is-not-found flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{ background: "rgba(127,29,29,0.35)", border: "1px solid #7f1d1d" }}>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
                 </svg>
@@ -21422,7 +21422,7 @@ function RoadRow({
             }}
           >
             <div
-              className={`theme-stabling-train-card relative flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-150 ${primaryMaint ? "has-request" : ""} ${isDup ? "is-duplicate" : ""} ${isFlashing ? "is-flashing" : ""} ${key ? "has-train" : "is-empty"}`}
+              className={`theme-stabling-train-card relative flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-150 ${primaryMaint ? "has-request" : ""} ${isDup ? "is-duplicate" : ""} ${isFlashing ? "is-flashing" : ""} ${isSearchMatch ? "is-search-match" : ""} ${key ? "has-train" : "is-empty"}`}
               style={{
                 minHeight: 76,
                 padding: "7px 4px",

@@ -246,9 +246,109 @@ html[data-app-theme="light"] :is(
 }
 
 html[data-app-theme="light"] .theme-stabling-search {
-  background: #f8fafc !important;
   background-image: none !important;
   box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* Light mode only: clear, readable status colours for the cross-depot Train ID search. */
+html[data-app-theme="light"] .theme-stabling-search.is-empty {
+  background: #ffffff !important;
+  border-color: #b7c4d1 !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search.is-active {
+  background: #eff6ff !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.12), inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search.is-found {
+  background: #f0fdf4 !important;
+  border-color: #22c55e !important;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.13), inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search.is-not-found {
+  background: #fff1f2 !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.11), inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search-input {
+  color: #0f172a !important;
+  caret-color: #2563eb !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search-input::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search.is-found .theme-stabling-search-input {
+  color: #166534 !important;
+  caret-color: #16a34a !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search.is-not-found .theme-stabling-search-input {
+  color: #991b1b !important;
+  caret-color: #dc2626 !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search.is-empty .theme-stabling-search-icon {
+  stroke: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search.is-active .theme-stabling-search-icon {
+  stroke: #2563eb !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search.is-found .theme-stabling-search-icon {
+  stroke: #16a34a !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search.is-not-found .theme-stabling-search-icon {
+  stroke: #dc2626 !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search-clear {
+  color: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search-clear:hover {
+  background: rgba(100, 116, 139, 0.12) !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search-result.is-found {
+  background: #ecfdf5 !important;
+  background-image: none !important;
+  border-color: #86efac !important;
+  box-shadow: 0 1px 3px rgba(22, 101, 52, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search-result.is-found span {
+  color: #166534 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search-result.is-found svg {
+  stroke: #16a34a !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search-result.is-not-found {
+  background: #fee2e2 !important;
+  background-image: none !important;
+  border-color: #fca5a5 !important;
+  box-shadow: 0 1px 3px rgba(153, 27, 27, 0.07) !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search-result.is-not-found span {
+  color: #991b1b !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-search-result.is-not-found svg {
+  stroke: #dc2626 !important;
 }
 
 html[data-app-theme="light"] :is(
@@ -293,6 +393,13 @@ html[data-app-theme="light"] .theme-stabling-train-card.has-request:not(.is-dupl
   background: color-mix(in srgb, var(--theme-accent, #4f8ef7) 18%, #ffffff) !important;
   border-color: color-mix(in srgb, var(--theme-accent, #4f8ef7) 70%, #8394a5) !important;
   box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-accent, #4f8ef7) 18%, transparent) !important;
+}
+
+
+/* Keep the searched train obvious in light mode without replacing its request colour. */
+html[data-app-theme="light"] .theme-stabling-train-card.is-search-match {
+  border: 2px solid #f59e0b !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22), 0 2px 8px rgba(15, 23, 42, 0.10) !important;
 }
 
 html[data-app-theme="light"] .theme-stabling-train-card.is-duplicate,
