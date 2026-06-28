@@ -370,6 +370,37 @@ export async function saveRoster({ file, parsed, remark = "" }) {
   }
 }
 
+export async function updateRosterParsed(record, parsed) {
+  if (!record?.versionKey) throw new Error("Roster version is missing.");
+  if (!parsed) throw new Error("Parsed roster data is missing.");
+  const updatedAt = new Date().toISOString();
+  let updated = { ...record, parsed, updatedAt };
+  await writeLocalRoster(updated);
+
+  const entity = getRosterEntity();
+  if (!isRosterEntityReady(entity)) {
+    updated = { ...updated, cloudSynced: false, syncError: "Roster live storage is not available in this build." };
+    await writeLocalRoster(updated);
+    return updated;
+  }
+
+  try {
+    if (record.cloudId) {
+      const cloudResult = await entity.update(record.cloudId, { parsed, updatedAt });
+      updated = hydrateCloudRecord(cloudResult);
+    } else {
+      updated = await createRecordInCloud(updated);
+    }
+    await removeLocalRoster(record.versionKey);
+    await writeLocalRoster(updated);
+    return updated;
+  } catch (error) {
+    updated = { ...updated, cloudSynced: false, syncError: errorMessage(error) };
+    await writeLocalRoster(updated);
+    return updated;
+  }
+}
+
 export async function updateRosterRemark(record, remark = "") {
   if (!record?.versionKey) throw new Error("Roster version is missing.");
   const updatedAt = new Date().toISOString();

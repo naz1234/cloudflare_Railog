@@ -31,6 +31,7 @@ import {
   loadSavedRosters,
   saveRoster,
   sortRosterVersions,
+  updateRosterParsed,
   updateRosterRemark,
 } from "./roster/rosterStorage";
 
@@ -122,6 +123,34 @@ function formatInputDate(value, locale = "en-GB") {
     month: "long",
     year: "numeric",
   }).format(parsedDate.date);
+}
+
+function formatRosterCoverage(parsed, locale = "en-GB") {
+  if (!parsed) return "this roster";
+  const dateKeys = Array.isArray(parsed.dates) ? parsed.dates.filter(Boolean).sort() : [];
+  const startKey = parsed.startDate || dateKeys[0];
+  const endKey = parsed.endDate || dateKeys[dateKeys.length - 1];
+  const start = parseDateInputValue(startKey || "");
+  const end = parseDateInputValue(endKey || "");
+
+  if (start && end) {
+    const sameDate = startKey === endKey;
+    const sameMonth = start.year === end.year && start.month === end.month;
+    if (sameDate) {
+      return new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" }).format(start.date);
+    }
+    if (sameMonth) {
+      const monthYear = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(start.date);
+      return `${start.day}-${end.day} ${monthYear}`;
+    }
+    const startLabel = new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", ...(start.year !== end.year ? { year: "numeric" } : {}) }).format(start.date);
+    const endLabel = new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" }).format(end.date);
+    return `${startLabel}-${endLabel}`;
+  }
+
+  return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(
+    new Date(parsed.year, (parsed.month || 1) - 1, 1),
+  );
 }
 
 function roleBadgeClass(role) {
@@ -328,6 +357,7 @@ export default function RosterWorkspace() {
   const recordsRef = useRef([]);
   const selectedIdRef = useRef("");
   const processingRef = useRef(false);
+  const upgradedVersionsRef = useRef(new Set());
   const [records, setRecords] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -458,27 +488,63 @@ export default function RosterWorkspace() {
     setIncludeRest(false);
   }, [record?.versionKey]);
 
+  useEffect(() => {
+    let active = true;
+    const target = record;
+    const parsedVersion = Number(target?.parsed?.version || 0);
+    if (!target?.versionKey || !target.fileBlob || parsedVersion >= 3) return undefined;
+    if (upgradedVersionsRef.current.has(target.versionKey)) return undefined;
+    upgradedVersionsRef.current.add(target.versionKey);
+
+    const upgradeSavedRoster = async () => {
+      processingRef.current = true;
+      try {
+        const pdfjsLib = await loadPdfJs();
+        const arrayBuffer = await target.fileBlob.arrayBuffer();
+        const upgradedParsed = await parseRosterPdf(arrayBuffer, target.fileName, pdfjsLib);
+        const updated = await updateRosterParsed(target, upgradedParsed);
+        if (!active) return;
+        const nextRecords = repairRosterVersions(recordsRef.current.map((item) => (
+          item.versionKey === target.versionKey ? updated : item
+        )));
+        setRecords(nextRecords);
+        recordsRef.current = nextRecords;
+        setNotice("Roster date format updated for multi-month support.");
+        if (updated.cloudSynced === false && updated.syncError) setError(updated.syncError);
+      } catch (upgradeError) {
+        if (active) setError(upgradeError.message || "Unable to update this saved roster format. Re-upload the original PDF.");
+      } finally {
+        processingRef.current = false;
+      }
+    };
+
+    upgradeSavedRoster();
+    return () => { active = false; };
+  }, [record?.versionKey, record?.parsed?.version]);
+
   const selectedDateParts = useMemo(() => parseDateInputValue(selectedDate), [selectedDate]);
-  const selectedDay = useMemo(() => {
+  const selectedDateRef = useMemo(() => {
     if (!parsed || !selectedDateParts) return null;
+    if (Array.isArray(parsed.dates) && parsed.dates.length) {
+      return parsed.dates.includes(selectedDate) ? selectedDate : null;
+    }
     if (Number(parsed.year) !== selectedDateParts.year || Number(parsed.month) !== selectedDateParts.month) return null;
     return parsed.days?.some((day) => Number(day) === selectedDateParts.day) ? selectedDateParts.day : null;
-  }, [parsed, selectedDateParts]);
-  const dateExists = selectedDay !== null;
+  }, [parsed, selectedDate, selectedDateParts]);
+  const dateExists = selectedDateRef !== null;
 
   const rows = useMemo(() => queryRoster(parsed, {
-    day: selectedDay,
+    dateKey: typeof selectedDateRef === "string" ? selectedDateRef : null,
+    day: typeof selectedDateRef === "number" ? selectedDateRef : null,
     role,
     includeRest,
     search,
-  }), [parsed, selectedDay, role, includeRest, search]);
+  }), [parsed, selectedDateRef, role, includeRest, search]);
 
   const groupedRows = useMemo(() => groupRows(rows), [rows]);
   const workingCount = rows.filter(({ entry }) => entry.isWorking).length;
   const currentDateLabel = formatInputDate(selectedDate);
-  const rosterMonthLabel = parsed
-    ? new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(new Date(parsed.year, (parsed.month || 1) - 1, 1))
-    : "";
+  const rosterCoverageLabel = formatRosterCoverage(parsed);
 
   const processFile = async (file) => {
     setError("");
@@ -587,7 +653,7 @@ export default function RosterWorkspace() {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(buildCopyText(parsed, selectedDay, rows));
+      await navigator.clipboard.writeText(buildCopyText(parsed, selectedDateRef, rows));
       setNotice("Roster result copied.");
     } catch {
       setError("Unable to copy the roster result.");
@@ -832,7 +898,7 @@ export default function RosterWorkspace() {
                     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                     <div>
                       <div className="text-[12px] font-bold">{currentDateLabel} does not exist in this roster.</div>
-                      <div className="mt-0.5 text-[11px] text-rose-200/75">This uploaded roster contains dates for {rosterMonthLabel}. Enter another date or select a different roster version.</div>
+                      <div className="mt-0.5 text-[11px] text-rose-200/75">This uploaded roster contains dates for {rosterCoverageLabel}. Enter another date or select a different roster version.</div>
                     </div>
                   </div>
                 ) : null}
@@ -854,11 +920,11 @@ export default function RosterWorkspace() {
                   <div className="rounded-2xl border border-dashed border-rose-400/30 bg-rose-500/[0.04] px-5 py-10 text-center">
                     <CalendarDays className="mx-auto h-7 w-7 text-rose-300/70" />
                     <div className="mt-3 text-[11px] font-bold text-rose-100">Date not available in this roster</div>
-                    <div className="mt-1 text-[9px] text-rose-200/65">Enter a date included in {rosterMonthLabel} or select another roster version.</div>
+                    <div className="mt-1 text-[9px] text-rose-200/65">Enter a date included in {rosterCoverageLabel} or select another roster version.</div>
                   </div>
                 ) : groupedRows.length ? (
                   <div className="grid gap-3 xl:grid-cols-2">
-                    {groupedRows.map((group) => <ShiftGroup key={group.shiftKey} {...group} day={selectedDay} />)}
+                    {groupedRows.map((group) => <ShiftGroup key={group.shiftKey} {...group} day={selectedDateRef} />)}
                   </div>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-[#315671] bg-[#081b2a] px-5 py-10 text-center">

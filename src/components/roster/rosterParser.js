@@ -1,5 +1,5 @@
 const DATE_TOKEN_RE = /^\d{2}\.\d{2}\.$/;
-const PREFIX_RE = /^L3-DEP-(DM|TCC|TC|DC|EFC|SC)\s*\d*$/i;
+const PREFIX_RE = /^L3(?:\d+)?-DEP-(DM|TCC|TC|DC|EFC|SC)\s*\d*$/i;
 const TIME_RANGE_RE = /(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/;
 
 export const ROSTER_ROLE_ORDER = ["DM", "TCC", "TC", "DC", "EFC", "SC"];
@@ -12,6 +12,7 @@ export const ROSTER_NAME_ALIASES = {
   "ALHASHYAN, A.": "TCC AlHasyn",
   "ALANAZI, A.": "TCC Alanazi",
   "ALIED, A.": "TCC Asim",
+  "ALEID, A.": "TCC Asim",
   "ALOMAR, S.": "TCC Saleh",
   "Madrio, M.": "TC Teresa",
   "Madrio,M.": "TC Teresa",
@@ -178,6 +179,25 @@ function inferYear(fileName = "", fallbackYear = new Date().getFullYear()) {
   return yearMatch ? Number(yearMatch[0]) : fallbackYear;
 }
 
+function rosterDateKey(year, month, day) {
+  return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function datePartsFromKey(value = "") {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value));
+  if (!match) return null;
+  return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
+}
+
+function entryForDate(person, dateRef) {
+  if (!person?.entries || dateRef === null || dateRef === undefined || dateRef === "") return undefined;
+  const direct = person.entries[dateRef];
+  if (direct) return direct;
+  const parts = typeof dateRef === "string" ? datePartsFromKey(dateRef) : null;
+  const day = parts?.day ?? Number(dateRef);
+  return Number.isFinite(day) ? person.entries[day] : undefined;
+}
+
 function cleanCellText(value = "") {
   let text = compactSpaces(value);
   text = text.replace(/^(?:8:30|12:00)\s+(?=[A-Z])/i, "");
@@ -220,7 +240,7 @@ function shiftFromTimes(start, end, dutyCode = "") {
 }
 
 function roleFromPrefix(prefix = "") {
-  const match = prefix.match(/L3-DEP-(DM|TCC|TC|DC|EFC|SC)/i);
+  const match = prefix.match(/L3(?:\d+)?-DEP-(DM|TCC|TC|DC|EFC|SC)/i);
   return match ? match[1].toUpperCase() : "OTHER";
 }
 
@@ -291,8 +311,9 @@ function itemCenter(item, viewport, pdfjsLib) {
   const tx = pdfjsLib?.Util?.transform
     ? pdfjsLib.Util.transform(viewport.transform, item.transform)
     : item.transform;
-  const scaleX = Math.hypot(tx[0], tx[1]) || 1;
-  const width = Math.abs((item.width || 0) * scaleX);
+  // PDF.js already reports item.width in viewport units. Multiplying it by the
+  // font transform makes wide labels overlap the first date columns and hides names.
+  const width = Math.abs((item.width || 0) * (viewport?.scale || 1));
   return {
     text: compactSpaces(item.str),
     x: tx[4] + width / 2,
@@ -318,7 +339,7 @@ function extractNameFromRow(rowItems, prefixItem, dateAxis, dateCenters) {
   });
 
   const sorted = [...metaItems].sort((a, b) => {
-    const delta = b[dateAxis] - a[dateAxis];
+    const delta = a[dateAxis] - b[dateAxis];
     return Math.abs(delta) > 1 ? delta : a.text.localeCompare(b.text);
   });
   const prefixIndex = sorted.findIndex((item) => item === prefixItem || item.text === prefixItem.text);
@@ -327,7 +348,8 @@ function extractNameFromRow(rowItems, prefixItem, dateAxis, dateCenters) {
     .filter(Boolean)
     .filter((token) => !/^\d{1,2}$/.test(token))
     .filter((token) => !/^\d{7}$/.test(token))
-    .filter((token) => !/^Roster$/i.test(token) && !/^Personnel$/i.test(token));
+    .filter((token) => !/^\d{1,3}:\d{2}$/.test(token))
+    .filter((token) => !/^Roster$/i.test(token) && !/^Personnel$/i.test(token) && !/^Paid time$/i.test(token));
 
   const nameTokens = [];
   for (const token of afterPrefix) {
@@ -339,7 +361,8 @@ function extractNameFromRow(rowItems, prefixItem, dateAxis, dateCenters) {
 
 function parsePageItems(items, pageNumber, fileName, pdfjsLib) {
   const dateTokens = items.filter((item) => DATE_TOKEN_RE.test(item.text));
-  if (dateTokens.length < 20) return { people: [], month: null, year: inferYear(fileName), warnings: [] };
+  const baseYear = inferYear(fileName);
+  if (dateTokens.length < 20) return { people: [], dates: [], month: null, year: baseYear, warnings: [] };
 
   const xClusters = clusterValues(dateTokens.map((item) => item.x));
   const yClusters = clusterValues(dateTokens.map((item) => item.y));
@@ -350,22 +373,31 @@ function parsePageItems(items, pageNumber, fileName, pdfjsLib) {
     .filter((group) => group.length >= 20)
     .sort((a, b) => median(a.map((item) => item[rowAxis])) - median(b.map((item) => item[rowAxis])));
 
-  const prefixItems = items.filter((item) => /^L3-DEP-(DM|TCC|TC|DC|EFC|SC)/i.test(item.text));
+  const prefixItems = items.filter((item) => /^L3(?:\d+)?-DEP-(DM|TCC|TC|DC|EFC|SC)/i.test(item.text));
   const people = [];
-  let detectedMonth = null;
+  const detectedDates = [];
 
   headerGroups.forEach((headerGroup, headerIndex) => {
     const headerRow = median(headerGroup.map((item) => item[rowAxis]));
     const nextHeaderRow = headerIndex < headerGroups.length - 1
       ? median(headerGroups[headerIndex + 1].map((item) => item[rowAxis]))
       : Number.POSITIVE_INFINITY;
+
+    let runningYear = baseYear;
+    let previousMonth = null;
     const dates = [...headerGroup]
-      .map((item) => ({ ...item, day: Number(item.text.slice(0, 2)), month: Number(item.text.slice(3, 5)) }))
-      .sort((a, b) => a.day - b.day);
-    if (!detectedMonth && dates[0]?.month) detectedMonth = dates[0].month;
-    const dateCenters = Object.fromEntries(dates.map((date) => [date.day, date[dateAxis]]));
-    const days = Object.keys(dateCenters).map(Number).sort((a, b) => a - b);
-    const centers = days.map((day) => dateCenters[day]);
+      .sort((a, b) => a[dateAxis] - b[dateAxis])
+      .map((item) => {
+        const day = Number(item.text.slice(0, 2));
+        const month = Number(item.text.slice(3, 5));
+        if (previousMonth !== null && month < previousMonth) runningYear += 1;
+        previousMonth = month;
+        return { ...item, day, month, year: runningYear, key: rosterDateKey(runningYear, month, day) };
+      });
+
+    dates.forEach((date) => detectedDates.push(date.key));
+    const dateCenters = Object.fromEntries(dates.map((date) => [date.key, date[dateAxis]]));
+    const centers = dates.map((date) => date[dateAxis]);
 
     const sectionPeople = prefixItems
       .filter((item) => item[rowAxis] > headerRow + 1 && item[rowAxis] < nextHeaderRow - 1)
@@ -383,7 +415,7 @@ function parsePageItems(items, pageNumber, fileName, pdfjsLib) {
       const fallbackRole = roleFromPrefix(prefixItem.text);
       const entries = {};
 
-      days.forEach((day, index) => {
+      dates.forEach((date, index) => {
         const center = centers[index];
         let previousBoundary;
         let nextBoundary;
@@ -408,7 +440,7 @@ function parsePageItems(items, pageNumber, fileName, pdfjsLib) {
             return Math.abs(rowDelta) > 0.8 ? rowDelta : b[dateAxis] - a[dateAxis];
           });
         const rawText = cleanCellText(cellItems.map((item) => item.text).join(" "));
-        entries[day] = normalizeRosterCell(rawText, fallbackRole);
+        entries[date.key] = normalizeRosterCell(rawText, fallbackRole);
       });
 
       people.push({
@@ -423,10 +455,13 @@ function parsePageItems(items, pageNumber, fileName, pdfjsLib) {
     });
   });
 
+  const uniqueDates = [...new Set(detectedDates)].sort();
+  const firstDate = datePartsFromKey(uniqueDates[0]);
   return {
     people,
-    month: detectedMonth,
-    year: inferYear(fileName),
+    dates: uniqueDates,
+    month: firstDate?.month || null,
+    year: firstDate?.year || baseYear,
     warnings: headerGroups.length ? [] : ["No roster date header was detected on this page."],
   };
 }
@@ -437,6 +472,7 @@ export async function parseRosterPdf(arrayBuffer, fileName = "roster.pdf", pdfjs
   const pdf = await loadingTask.promise;
   const allPeople = [];
   const warnings = [];
+  const allDates = [];
   let month = null;
   let year = inferYear(fileName);
 
@@ -450,6 +486,7 @@ export async function parseRosterPdf(arrayBuffer, fileName = "roster.pdf", pdfjs
     const parsedPage = parsePageItems(items, pageNumber, fileName, pdfjsLib);
     if (!month && parsedPage.month) month = parsedPage.month;
     if (parsedPage.year) year = parsedPage.year;
+    allDates.push(...(parsedPage.dates || []));
     allPeople.push(...parsedPage.people);
     warnings.push(...parsedPage.warnings);
   }
@@ -458,16 +495,22 @@ export async function parseRosterPdf(arrayBuffer, fileName = "roster.pdf", pdfjs
     throw new Error("No controller roster rows were detected. Please upload the original OCC roster PDF.");
   }
 
-  const days = [...new Set(allPeople.flatMap((person) => Object.keys(person.entries).map(Number)))].sort((a, b) => a - b);
+  const dates = [...new Set(allDates)].sort();
+  const firstDate = datePartsFromKey(dates[0]);
+  const lastDate = datePartsFromKey(dates[dates.length - 1]);
+  const days = [...new Set(dates.map((date) => datePartsFromKey(date)?.day).filter(Number.isFinite))].sort((a, b) => a - b);
   const roles = [...new Set(allPeople.map((person) => person.rosterRole).filter(Boolean))]
     .sort((a, b) => ROSTER_ROLE_ORDER.indexOf(a) - ROSTER_ROLE_ORDER.indexOf(b));
 
   return ensureRosterNames({
-    version: 2,
+    version: 3,
     parsedAt: new Date().toISOString(),
     fileName,
-    year,
-    month: month || 1,
+    year: firstDate?.year || year,
+    month: firstDate?.month || month || 1,
+    startDate: dates[0] || "",
+    endDate: dates[dates.length - 1] || "",
+    dates,
     days,
     roles,
     people: allPeople,
@@ -475,20 +518,21 @@ export async function parseRosterPdf(arrayBuffer, fileName = "roster.pdf", pdfjs
   });
 }
 
-export function getRosterEntryRole(person, day) {
-  return person.entries?.[day]?.role || person.rosterRole || "OTHER";
+export function getRosterEntryRole(person, dateRef) {
+  return entryForDate(person, dateRef)?.role || person.rosterRole || "OTHER";
 }
 
-export function queryRoster(parsedRoster, { day, role = "ALL", includeRest = false, search = "" } = {}) {
-  if (!parsedRoster?.people?.length || !day) return [];
+export function queryRoster(parsedRoster, { dateKey = null, day = null, role = "ALL", includeRest = false, search = "" } = {}) {
+  const dateRef = dateKey || day;
+  if (!parsedRoster?.people?.length || !dateRef) return [];
   const normalizedRole = String(role || "ALL").toUpperCase();
   const query = compactSpaces(search).toLowerCase();
 
   return parsedRoster.people
-    .map((person) => ({ person, entry: person.entries?.[day] }))
+    .map((person) => ({ person, entry: entryForDate(person, dateRef) }))
     .filter(({ entry }) => entry)
     .filter(({ entry }) => includeRest || entry.isWorking)
-    .filter(({ person, entry }) => normalizedRole === "ALL" || getRosterEntryRole(person, day) === normalizedRole)
+    .filter(({ person }) => normalizedRole === "ALL" || getRosterEntryRole(person, dateRef) === normalizedRole)
     .filter(({ person, entry }) => {
       if (!query) return true;
       return [person.displayName, person.rawName, person.rosterCode, entry.dutyCode, entry.shiftLabel, entry.role]
@@ -499,7 +543,7 @@ export function queryRoster(parsedRoster, { day, role = "ALL", includeRest = fal
       const shiftOrder = ["early", "late", "night", "extension", "training", "other", "rest", "empty"];
       const shiftDelta = shiftOrder.indexOf(a.entry.shiftKey) - shiftOrder.indexOf(b.entry.shiftKey);
       if (shiftDelta) return shiftDelta;
-      const roleDelta = ROSTER_ROLE_ORDER.indexOf(getRosterEntryRole(a.person, day)) - ROSTER_ROLE_ORDER.indexOf(getRosterEntryRole(b.person, day));
+      const roleDelta = ROSTER_ROLE_ORDER.indexOf(getRosterEntryRole(a.person, dateRef)) - ROSTER_ROLE_ORDER.indexOf(getRosterEntryRole(b.person, dateRef));
       if (roleDelta) return roleDelta;
       return String(a.person.displayName || a.person.rawName || a.person.rosterCode || "")
         .localeCompare(String(b.person.displayName || b.person.rawName || b.person.rosterCode || ""));
@@ -541,8 +585,11 @@ export function parseRosterQuestion(question = "", parsedRoster = null) {
   return { day, month, year, role };
 }
 
-export function formatRosterDate(parsedRoster, day, locale = "en-GB") {
-  if (!parsedRoster || !day) return "";
-  const date = new Date(parsedRoster.year, (parsedRoster.month || 1) - 1, day);
+export function formatRosterDate(parsedRoster, dateRef, locale = "en-GB") {
+  if (!parsedRoster || !dateRef) return "";
+  const parts = typeof dateRef === "string" ? datePartsFromKey(dateRef) : null;
+  const date = parts
+    ? new Date(parts.year, parts.month - 1, parts.day)
+    : new Date(parsedRoster.year, (parsedRoster.month || 1) - 1, Number(dateRef));
   return new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(date);
 }
