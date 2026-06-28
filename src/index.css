@@ -3685,3 +3685,118 @@ html[data-app-theme="light"] .theme-roster-shift-group.is-other .theme-roster-ti
   background: #f3e8ff !important;
   color: #6b21a8 !important;
 }
+
+/* Special leave table: keep controller names as compact role-coloured pills,
+   while AL / RD / TOIL stay as clean row labels without a highlighted box. */
+.theme-roster-leave-cell .theme-roster-name-pill {
+  min-height: 24px;
+  padding: 3px 10px !important;
+  border: 1px solid rgba(148, 163, 184, 0.34) !important;
+  border-radius: 999px !important;
+  background: rgba(148, 163, 184, 0.09) !important;
+  color: #eef6ff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 4px 12px rgba(0, 0, 0, 0.12) !important;
+}
+
+.theme-roster-leave-cell .theme-roster-name-pill.is-dm {
+  border-color: rgba(167, 139, 250, 0.48) !important;
+  background: rgba(139, 92, 246, 0.13) !important;
+  color: #ede9fe !important;
+}
+
+.theme-roster-leave-cell .theme-roster-name-pill.is-tcc {
+  border-color: rgba(34, 211, 238, 0.48) !important;
+  background: rgba(34, 211, 238, 0.11) !important;
+  color: #cffafe !important;
+}
+
+.theme-roster-leave-cell .theme-roster-name-pill.is-tc {
+  border-color: rgba(96, 165, 250, 0.48) !important;
+  background: rgba(59, 130, 246, 0.12) !important;
+  color: #dbeafe !important;
+}
+
+.theme-roster-leave-cell .theme-roster-name-pill.is-dc {
+  border-color: rgba(74, 222, 128, 0.46) !important;
+  background: rgba(34, 197, 94, 0.11) !important;
+  color: #dcfce7 !important;
+}
+
+.theme-roster-leave-cell .theme-roster-name-pill.is-efc {
+  border-color: rgba(251, 191, 36, 0.50) !important;
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #fef3c7 !important;
+}
+
+.theme-roster-leave-cell .theme-roster-name-pill.is-sc {
+  border-color: rgba(244, 114, 182, 0.48) !important;
+  background: rgba(236, 72, 153, 0.12) !important;
+  color: #fce7f3 !important;
+}
+
+.theme-roster-leave-type .theme-roster-leave-label,
+.theme-roster-leave-type.is-toil .theme-roster-leave-label,
+.theme-roster-leave-type.is-al .theme-roster-leave-label,
+.theme-roster-leave-type.is-rd .theme-roster-leave-label {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #f8fafc !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-cell .theme-roster-name-pill {
+  border-color: #cbd5e1 !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-cell .theme-roster-name-pill.is-dm {
+  border-color: #c4b5fd !important;
+  background: #f5f3ff !important;
+  color: #6d28d9 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-cell .theme-roster-name-pill.is-tcc {
+  border-color: #67e8f9 !important;
+  background: #ecfeff !important;
+  color: #0e7490 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-cell .theme-roster-name-pill.is-tc {
+  border-color: #93c5fd !important;
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-cell .theme-roster-name-pill.is-dc {
+  border-color: #86efac !important;
+  background: #ecfdf5 !important;
+  color: #166534 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-cell .theme-roster-name-pill.is-efc {
+  border-color: #fcd34d !important;
+  background: #fffbeb !important;
+  color: #92400e !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-cell .theme-roster-name-pill.is-sc {
+  border-color: #f9a8d4 !important;
+  background: #fdf2f8 !important;
+  color: #9d174d !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-type .theme-roster-leave-label,
+html[data-app-theme="light"] .theme-roster-leave-type.is-toil .theme-roster-leave-label,
+html[data-app-theme="light"] .theme-roster-leave-type.is-al .theme-roster-leave-label,
+html[data-app-theme="light"] .theme-roster-leave-type.is-rd .theme-roster-leave-label {
+  border: 0 !important;
+  background: transparent !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
