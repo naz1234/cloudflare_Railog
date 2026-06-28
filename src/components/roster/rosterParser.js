@@ -19,6 +19,7 @@ function isExcludedRosterPerson(rawName = "", personnelId = "") {
 export const ROSTER_NAME_ALIASES = {
   "ABESAMIS, J.": "DM Jhoana",
   "RAMOS, A.": "DM Allan",
+  "PADILLA, A.": "DM Allan",
   "ALSHAHRANI, F.": "DM Faisal",
   "DEVILLA, R.": "DM Rea",
   "REYES, J.": "DM Jho",
@@ -186,7 +187,11 @@ export function ensureRosterNames(parsedRoster) {
     const currentDisplayName = compactSpaces(person.displayName || "");
     const fallbackRawName = useTemplateFallback ? ROSTER_TEMPLATE_NAMES[index] : "";
     const rawName = currentRawName || fallbackRawName;
-    const displayName = currentDisplayName || preferredRosterName(rawName);
+    const aliasKey = canonicalPersonName(rawName);
+    const preferredName = preferredRosterName(rawName);
+    const displayName = ROSTER_NAME_ALIASES[aliasKey]
+      ? preferredName
+      : (currentDisplayName || preferredName);
 
     if (rawName !== currentRawName || displayName !== currentDisplayName) changed = true;
     return { ...person, rawName, displayName };
