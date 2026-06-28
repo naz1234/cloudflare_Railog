@@ -3510,3 +3510,130 @@ html[data-app-theme="light"] .theme-roster-staff-result-block.comparison-tone-5 
 html[data-app-theme="light"] .theme-roster-staff-result-block.comparison-tone-6 .theme-roster-staff-result-head {
   background: linear-gradient(135deg, #dcfce7, #f4fff7) !important;
 }
+
+/* Roster shift cards: distinct full-card themes for quick visual scanning. */
+.theme-roster-shift-group.is-early {
+  background:
+    radial-gradient(circle at 4% 40%, rgba(250, 204, 21, 0.16), transparent 34%),
+    linear-gradient(135deg, rgba(45, 34, 7, 0.97), rgba(16, 25, 34, 0.995) 58%, rgba(8, 20, 32, 0.995)) !important;
+  border-color: rgba(250, 204, 21, 0.48) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 245, 157, 0.08),
+    0 8px 24px rgba(113, 79, 0, 0.16) !important;
+}
+
+.theme-roster-shift-group.is-early .theme-roster-horizontal-shift-cell {
+  background: linear-gradient(145deg, rgba(88, 64, 7, 0.58), rgba(41, 34, 17, 0.74)) !important;
+}
+
+.theme-roster-shift-group.is-early .theme-roster-horizontal-role-cell {
+  background: linear-gradient(180deg, rgba(85, 65, 12, 0.13), rgba(8, 20, 32, 0.22)) !important;
+}
+
+.theme-roster-shift-group.is-early .theme-roster-horizontal-shift-cell,
+.theme-roster-shift-group.is-early .theme-roster-horizontal-role-cell {
+  border-color: rgba(250, 204, 21, 0.18) !important;
+}
+
+.theme-roster-shift-group.is-early .theme-roster-time-pill {
+  border-color: rgba(250, 204, 21, 0.58) !important;
+  background: rgba(250, 204, 21, 0.12) !important;
+  color: #fff3a3 !important;
+}
+
+.theme-roster-shift-group.is-late {
+  background:
+    radial-gradient(circle at 4% 40%, rgba(56, 189, 248, 0.17), transparent 35%),
+    linear-gradient(135deg, rgba(5, 48, 78, 0.97), rgba(7, 28, 45, 0.995) 58%, rgba(5, 19, 32, 0.995)) !important;
+  border-color: rgba(56, 189, 248, 0.48) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(186, 230, 253, 0.08),
+    0 8px 24px rgba(0, 94, 148, 0.17) !important;
+}
+
+.theme-roster-shift-group.is-late .theme-roster-horizontal-shift-cell {
+  background: linear-gradient(145deg, rgba(8, 71, 111, 0.60), rgba(10, 38, 58, 0.76)) !important;
+}
+
+.theme-roster-shift-group.is-late .theme-roster-horizontal-role-cell {
+  background: linear-gradient(180deg, rgba(14, 91, 137, 0.14), rgba(5, 20, 33, 0.22)) !important;
+}
+
+.theme-roster-shift-group.is-late .theme-roster-horizontal-shift-cell,
+.theme-roster-shift-group.is-late .theme-roster-horizontal-role-cell {
+  border-color: rgba(56, 189, 248, 0.19) !important;
+}
+
+.theme-roster-shift-group.is-late .theme-roster-time-pill {
+  border-color: rgba(56, 189, 248, 0.58) !important;
+  background: rgba(56, 189, 248, 0.12) !important;
+  color: #ccefff !important;
+}
+
+.theme-roster-shift-group.is-night {
+  background:
+    radial-gradient(circle at 4% 42%, rgba(148, 163, 184, 0.10), transparent 34%),
+    linear-gradient(135deg, rgba(18, 24, 33, 0.995), rgba(8, 15, 24, 0.998) 58%, rgba(3, 10, 18, 1)) !important;
+  border-color: rgba(148, 163, 184, 0.34) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(226, 232, 240, 0.045),
+    0 8px 24px rgba(0, 0, 0, 0.26) !important;
+}
+
+.theme-roster-shift-group.is-night .theme-roster-horizontal-shift-cell {
+  background: linear-gradient(145deg, rgba(42, 50, 61, 0.62), rgba(18, 25, 35, 0.80)) !important;
+}
+
+.theme-roster-shift-group.is-night .theme-roster-horizontal-role-cell {
+  background: linear-gradient(180deg, rgba(100, 116, 139, 0.065), rgba(2, 10, 18, 0.32)) !important;
+}
+
+.theme-roster-shift-group.is-night .theme-roster-horizontal-shift-cell,
+.theme-roster-shift-group.is-night .theme-roster-horizontal-role-cell {
+  border-color: rgba(148, 163, 184, 0.13) !important;
+}
+
+.theme-roster-shift-group.is-night .theme-roster-time-pill {
+  border-color: rgba(148, 163, 184, 0.42) !important;
+  background: rgba(148, 163, 184, 0.09) !important;
+  color: #dbe5ef !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-early {
+  background: linear-gradient(135deg, #fff7d6, #fffdf4) !important;
+  border-color: #e8bb2f !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-early .theme-roster-horizontal-shift-cell {
+  background: #fff2b8 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-early .theme-roster-horizontal-role-cell {
+  background: rgba(255, 251, 235, 0.82) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-late {
+  background: linear-gradient(135deg, #dff4ff, #f7fcff) !important;
+  border-color: #67bde9 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-late .theme-roster-horizontal-shift-cell {
+  background: #cfeeff !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-late .theme-roster-horizontal-role-cell {
+  background: rgba(240, 249, 255, 0.86) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-night {
+  background: linear-gradient(135deg, #e7ebf0, #f7f8fa) !important;
+  border-color: #9aa7b5 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-night .theme-roster-horizontal-shift-cell {
+  background: #d7dde5 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-night .theme-roster-horizontal-role-cell {
+  background: rgba(241, 245, 249, 0.88) !important;
+}
