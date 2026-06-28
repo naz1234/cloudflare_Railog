@@ -201,9 +201,9 @@ const SHIFT_STYLES = {
   },
   other: {
     label: "Other Duty",
-    border: "border-slate-400/25",
-    badge: "border-slate-300/30 bg-slate-400/10 text-slate-100",
-    dot: "bg-slate-300",
+    border: "border-purple-400/30",
+    badge: "border-purple-300/35 bg-purple-400/10 text-purple-100",
+    dot: "bg-purple-300",
   },
   rest: {
     label: "Rest / Leave",
