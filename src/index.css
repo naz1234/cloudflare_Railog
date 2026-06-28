@@ -3433,3 +3433,74 @@ html[data-app-theme="light"] .theme-roster-control.theme-roster-ext-control:focu
   border-color: #22c55e !important;
   box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12) !important;
 }
+
+/* Staff schedule: give every added comparison column its own header colour. */
+.theme-roster-staff-result-block.is-primary .theme-roster-staff-result-head {
+  background:
+    radial-gradient(circle at 12% -35%, rgba(56, 189, 248, 0.28), transparent 52%),
+    linear-gradient(105deg, rgba(8, 53, 82, 0.98), rgba(7, 24, 39, 0.99));
+}
+
+.theme-roster-staff-result-block.comparison-tone-1 .theme-roster-staff-result-head {
+  background:
+    radial-gradient(circle at 12% -35%, rgba(167, 139, 250, 0.30), transparent 52%),
+    linear-gradient(105deg, rgba(63, 42, 105, 0.98), rgba(17, 24, 39, 0.99));
+}
+
+.theme-roster-staff-result-block.comparison-tone-2 .theme-roster-staff-result-head {
+  background:
+    radial-gradient(circle at 12% -35%, rgba(45, 212, 191, 0.28), transparent 52%),
+    linear-gradient(105deg, rgba(12, 73, 72, 0.98), rgba(7, 28, 38, 0.99));
+}
+
+.theme-roster-staff-result-block.comparison-tone-3 .theme-roster-staff-result-head {
+  background:
+    radial-gradient(circle at 12% -35%, rgba(251, 191, 36, 0.28), transparent 52%),
+    linear-gradient(105deg, rgba(92, 61, 15, 0.98), rgba(35, 28, 18, 0.99));
+}
+
+.theme-roster-staff-result-block.comparison-tone-4 .theme-roster-staff-result-head {
+  background:
+    radial-gradient(circle at 12% -35%, rgba(244, 114, 182, 0.28), transparent 52%),
+    linear-gradient(105deg, rgba(91, 36, 68, 0.98), rgba(35, 22, 35, 0.99));
+}
+
+.theme-roster-staff-result-block.comparison-tone-5 .theme-roster-staff-result-head {
+  background:
+    radial-gradient(circle at 12% -35%, rgba(129, 140, 248, 0.30), transparent 52%),
+    linear-gradient(105deg, rgba(48, 50, 112, 0.98), rgba(18, 24, 48, 0.99));
+}
+
+.theme-roster-staff-result-block.comparison-tone-6 .theme-roster-staff-result-head {
+  background:
+    radial-gradient(circle at 12% -35%, rgba(74, 222, 128, 0.26), transparent 52%),
+    linear-gradient(105deg, rgba(23, 79, 54, 0.98), rgba(12, 32, 30, 0.99));
+}
+
+html[data-app-theme="light"] .theme-roster-staff-result-block.is-primary .theme-roster-staff-result-head {
+  background: linear-gradient(135deg, #e0f2fe, #f4faff) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-result-block.comparison-tone-1 .theme-roster-staff-result-head {
+  background: linear-gradient(135deg, #ede9fe, #faf8ff) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-result-block.comparison-tone-2 .theme-roster-staff-result-head {
+  background: linear-gradient(135deg, #ccfbf1, #f2fffb) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-result-block.comparison-tone-3 .theme-roster-staff-result-head {
+  background: linear-gradient(135deg, #fef3c7, #fffaf0) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-result-block.comparison-tone-4 .theme-roster-staff-result-head {
+  background: linear-gradient(135deg, #fce7f3, #fff7fb) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-result-block.comparison-tone-5 .theme-roster-staff-result-head {
+  background: linear-gradient(135deg, #e0e7ff, #f6f7ff) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-result-block.comparison-tone-6 .theme-roster-staff-result-head {
+  background: linear-gradient(135deg, #dcfce7, #f4fff7) !important;
+}

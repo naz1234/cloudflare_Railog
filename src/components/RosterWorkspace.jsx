@@ -587,8 +587,9 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
     if (!result) return null;
     const start = parseDateInputValue(result.fromDate)?.date;
     const end = parseDateInputValue(result.toDate)?.date;
+    const comparisonTone = comparison ? `comparison-tone-${((comparisonNumber - 1) % 6) + 1}` : "";
     return (
-      <div className={`theme-roster-staff-result-block ${comparison ? "is-comparison" : "is-primary"} min-w-0 overflow-hidden rounded-xl border border-[#1d4058] bg-[#071827]`}>
+      <div className={`theme-roster-staff-result-block ${comparison ? "is-comparison" : "is-primary"} ${comparisonTone} min-w-0 overflow-hidden rounded-xl border border-[#1d4058] bg-[#071827]`}>
         <div className="theme-roster-staff-result-head border-b border-[#1d4058] px-4 py-3.5">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
