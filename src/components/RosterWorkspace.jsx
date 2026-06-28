@@ -663,7 +663,10 @@ export default function RosterWorkspace() {
                         tabIndex={0}
                         onClick={() => setSelectedId(item.versionKey)}
                         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedId(item.versionKey); }}
-                        className={`cursor-pointer rounded-xl border p-3 transition ${selected ? "border-sky-300/55 bg-sky-400/10 shadow-[0_0_0_2px_rgba(56,189,248,0.08)]" : "border-[#23465f] bg-[#091d2e] hover:border-[#37627e]"}`}
+                        className={`cursor-pointer rounded-xl border p-3 transition duration-200 ${selected
+                          ? "border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] shadow-[0_0_0_1px_rgba(85,215,170,0.24),0_0_22px_rgba(38,199,129,0.18),0_12px_30px_rgba(0,0,0,0.22)]"
+                          : "border-[#23465f] bg-[#091d2e] hover:border-[#37627e]"
+                        }`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
