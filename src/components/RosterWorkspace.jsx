@@ -706,19 +706,19 @@ export default function RosterWorkspace() {
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <div className="truncate text-[10px] font-extrabold text-white">{item.fileName}</div>
-                            <div className="mt-1 text-[8px] text-[#6f8fa4]">Uploaded {dateTimeLabel(item.uploadedAt)}</div>
+                            <div className="truncate text-[12px] font-extrabold text-white">{item.fileName}</div>
+                            <div className="mt-1 text-[10px] text-[#6f8fa4]">Uploaded {dateTimeLabel(item.uploadedAt)}</div>
                           </div>
-                          {index === 0 ? <span className="shrink-0 rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2 py-0.5 text-[7px] font-black uppercase tracking-wide text-emerald-100">Latest</span> : null}
+                          {index === 0 ? <span className="shrink-0 rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-emerald-100">Latest</span> : null}
                         </div>
 
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {item.remark ? (
-                            <span className="max-w-full truncate rounded-full border border-amber-300/35 bg-amber-400/10 px-2 py-0.5 text-[8px] font-bold text-amber-100">{item.remark}</span>
+                            <span className="max-w-full truncate rounded-full border border-amber-300/35 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-100">{item.remark}</span>
                           ) : (
-                            <span className="rounded-full border border-slate-300/20 bg-slate-400/[0.06] px-2 py-0.5 text-[8px] text-slate-300">No remark</span>
+                            <span className="rounded-full border border-slate-300/20 bg-slate-400/[0.06] px-2 py-0.5 text-[10px] text-slate-300">No remark</span>
                           )}
-                          <span className="rounded-full border border-[#315671] bg-[#0a253b] px-2 py-0.5 text-[8px] text-[#9fb9ca]">{item.parsed?.people?.length || 0} personnel</span>
+                          <span className="rounded-full border border-[#315671] bg-[#0a253b] px-2 py-0.5 text-[10px] text-[#9fb9ca]">{item.parsed?.people?.length || 0} personnel</span>
                         </div>
 
                         {editing ? (
