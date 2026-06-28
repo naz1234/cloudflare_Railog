@@ -15909,7 +15909,7 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "roster" && (
-          <div className="w-full px-2 pb-10 pt-6">
+          <div className="w-full px-2 pb-10 pt-2">
             <div className="mx-auto w-full max-w-[1680px]">
               <RosterWorkspace />
             </div>
