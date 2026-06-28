@@ -275,9 +275,23 @@ export function normalizeRosterCell(rawText = "", fallbackRole = "") {
   const dutyCode = compactSpaces(raw.replace(TIME_RANGE_RE, "").replace(/\b(?:8:30|12:00)\b/g, ""));
   const upperCode = dutyCode.toUpperCase();
   const effectiveRole = roleFromDutyCode(dutyCode) || fallbackRole;
+  const isRest = NOT_WORKING_CODES.has(upperCode) || /^(WR|AL|CF\s*AL|TOIL|UA|OFF|REST|SICK)\b/.test(upperCode);
+
+  if (isRest) {
+    return {
+      raw,
+      dutyCode: dutyCode || raw,
+      timeStart: timeMatch?.[1] || "",
+      timeEnd: timeMatch?.[2] || "",
+      shiftKey: "rest",
+      shiftLabel: "Rest / Leave",
+      role: effectiveRole,
+      isWorking: false,
+      isRest: true,
+    };
+  }
 
   if (!timeMatch) {
-    const isRest = NOT_WORKING_CODES.has(upperCode) || /^(WR|AL|CF\s*AL|TOIL|UA)\b/.test(upperCode);
     const isTraining = /\bTRG\b|TRAINING/.test(upperCode);
     const isBooked = /\bBKD\b/.test(upperCode);
     return {
@@ -285,11 +299,11 @@ export function normalizeRosterCell(rawText = "", fallbackRole = "") {
       dutyCode: dutyCode || raw,
       timeStart: "",
       timeEnd: "",
-      shiftKey: isTraining ? "training" : isBooked ? "other" : isRest ? "rest" : "other",
-      shiftLabel: isTraining ? "Training" : isBooked ? "Booked Duty" : isRest ? "Rest / Leave" : "Other Duty",
+      shiftKey: isTraining ? "training" : isBooked ? "other" : "other",
+      shiftLabel: isTraining ? "Training" : isBooked ? "Booked Duty" : "Other Duty",
       role: effectiveRole,
       isWorking: isTraining || isBooked,
-      isRest,
+      isRest: false,
     };
   }
 
@@ -356,7 +370,8 @@ function extractNameFromRow(rowItems, prefixItem, dateAxis, dateCenters) {
     if (DATE_TOKEN_RE.test(token) || PREFIX_RE.test(token)) break;
     nameTokens.push(token);
   }
-  return compactSpaces(nameTokens.join(" "));
+  return compactSpaces(nameTokens.join(" "))
+    .replace(/^(?:No\.?\s*)?\d+\s+/i, "");
 }
 
 function parsePageItems(items, pageNumber, fileName, pdfjsLib) {
@@ -404,12 +419,15 @@ function parsePageItems(items, pageNumber, fileName, pdfjsLib) {
       .sort((a, b) => a[rowAxis] - b[rowAxis]);
 
     sectionPeople.forEach((prefixItem, personIndex) => {
-      const previousRow = personIndex === 0 ? headerRow : sectionPeople[personIndex - 1][rowAxis];
       const followingRow = personIndex === sectionPeople.length - 1 ? nextHeaderRow : sectionPeople[personIndex + 1][rowAxis];
-      const rowLow = personIndex === 0 ? headerRow + 0.5 : (previousRow + prefixItem[rowAxis]) / 2;
-      const rowHigh = personIndex === sectionPeople.length - 1
-        ? Math.min(nextHeaderRow - 0.5, prefixItem[rowAxis] + 17)
-        : (prefixItem[rowAxis] + followingRow) / 2;
+      // The roster cells are multi-line. Using midpoints between personnel labels
+      // cuts the final time line from the current row and assigns it to the next
+      // person. Start at the current roster label and stop at the next label so
+      // every duty code and complete time range stays with the correct person.
+      const rowLow = Math.max(headerRow + 0.5, prefixItem[rowAxis] - 1.5);
+      const rowHigh = Number.isFinite(followingRow)
+        ? Math.min(nextHeaderRow - 0.5, followingRow - 1.5)
+        : prefixItem[rowAxis] + 42;
       const rowItems = items.filter((item) => item[rowAxis] >= rowLow && item[rowAxis] < rowHigh);
       const rawName = extractNameFromRow(rowItems, prefixItem, dateAxis, dateCenters);
       const fallbackRole = roleFromPrefix(prefixItem.text);
@@ -503,7 +521,7 @@ export async function parseRosterPdf(arrayBuffer, fileName = "roster.pdf", pdfjs
     .sort((a, b) => ROSTER_ROLE_ORDER.indexOf(a) - ROSTER_ROLE_ORDER.indexOf(b));
 
   return ensureRosterNames({
-    version: 4,
+    version: 5,
     parsedAt: new Date().toISOString(),
     fileName,
     year: firstDate?.year || year,

@@ -515,7 +515,7 @@ export default function RosterWorkspace() {
     let active = true;
     const target = record;
     const parsedVersion = Number(target?.parsed?.version || 0);
-    if (!target?.versionKey || !target.fileBlob || parsedVersion >= 4) return undefined;
+    if (!target?.versionKey || !target.fileBlob || parsedVersion >= 5) return undefined;
     if (upgradedVersionsRef.current.has(target.versionKey)) return undefined;
     upgradedVersionsRef.current.add(target.versionKey);
 
@@ -532,7 +532,7 @@ export default function RosterWorkspace() {
         )));
         setRecords(nextRecords);
         recordsRef.current = nextRecords;
-        setNotice("Roster updated to include L3-DEP personnel only.");
+        setNotice("Roster parser updated for complete L3-DEP duty detection.");
         if (updated.cloudSynced === false && updated.syncError) setError(updated.syncError);
       } catch (upgradeError) {
         if (active) setError(upgradeError.message || "Unable to update this saved roster format. Re-upload the original PDF.");
