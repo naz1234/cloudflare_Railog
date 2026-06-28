@@ -807,8 +807,16 @@ html[data-app-theme="light"] .theme-insertion-reference-row-cell {
   background: #ffffff !important;
   background-image: none !important;
   border-color: #c8d2dc !important;
+  border-bottom: none !important;
   color: #000000 !important;
   text-shadow: none !important;
+}
+
+/* Use each following row's top edge as the divider. This keeps the line visible
+   between consecutive coloured/remark rows, where the previous bottom edge can
+   be hidden by the row background in light mode. */
+html[data-app-theme="light"] .theme-insertion-reference-row + .theme-insertion-reference-row .theme-insertion-reference-row-cell {
+  border-top: 1px solid #c8d2dc !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-reference-row:nth-child(even) .theme-insertion-reference-row-cell {
