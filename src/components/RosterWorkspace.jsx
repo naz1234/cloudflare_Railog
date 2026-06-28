@@ -308,11 +308,12 @@ function ShiftGroup({ shiftKey, rows, day }) {
         {HORIZONTAL_ROLE_ORDER.map((role) => {
           const roleRows = rows.filter(({ person }) => getRosterEntryRole(person, day) === role);
           return (
-            <div key={role} className="theme-roster-horizontal-role-cell flex min-w-0 flex-col items-center justify-center border-r border-white/10 px-3 py-4 last:border-r-0">
-              <div className={`theme-roster-role-badge is-${role.toLowerCase()} mb-3 inline-flex rounded-lg border px-2.5 py-0.5 text-[10px] font-black tracking-wide ${roleBadgeClass(role)}`}>
-                {role}
+            <div key={role} className="theme-roster-horizontal-role-cell flex min-w-0 flex-col items-center border-r border-white/10 px-3 py-4 last:border-r-0">
+              <div className={`theme-roster-role-heading is-${role.toLowerCase()}`}>
+                <span className="theme-roster-role-heading-label">{role}</span>
+                <span className="theme-roster-role-divider" aria-hidden="true" />
               </div>
-              <div className="theme-roster-horizontal-names flex w-full flex-col items-center justify-center gap-1.5">
+              <div className="theme-roster-horizontal-names flex w-full flex-1 flex-col items-center justify-start gap-1.5">
                 {roleRows.length
                   ? roleRows.map(({ person, entry }) => (
                     <HorizontalPersonPill key={`${person.id}-${day}-${entry.dutyCode || entry.shiftKey}`} person={person} entry={entry} day={day} />

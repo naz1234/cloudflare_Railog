@@ -3307,3 +3307,69 @@ html[data-app-theme="light"] .theme-roster-leave-row {
     min-width: 900px;
   }
 }
+
+/* Roster role headings: fixed title row keeps every column aligned even when
+   one role contains more controller names than the others. */
+.theme-roster-horizontal-role-cell {
+  min-height: 128px;
+  justify-content: flex-start !important;
+}
+
+.theme-roster-role-heading {
+  display: flex;
+  width: 100%;
+  max-width: 118px;
+  height: 39px;
+  flex: 0 0 39px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.theme-roster-role-heading-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 18px;
+  letter-spacing: 0.025em;
+  text-align: center;
+}
+
+.theme-roster-role-divider {
+  display: block;
+  width: 82%;
+  height: 1px;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.92;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.theme-roster-role-heading.is-dm { color: #a970ff; }
+.theme-roster-role-heading.is-tcc { color: #22d3ee; }
+.theme-roster-role-heading.is-tc { color: #60a5fa; }
+.theme-roster-role-heading.is-dc { color: #4ade80; }
+.theme-roster-role-heading.is-efc { color: #fbbf24; }
+.theme-roster-role-heading.is-sc { color: #f472b6; }
+
+.theme-roster-horizontal-names {
+  min-height: 32px;
+  padding-top: 4px;
+}
+
+.theme-roster-horizontal-role-cell .theme-roster-name-pill {
+  width: 100%;
+  max-width: 138px;
+}
+
+html[data-app-theme="light"] .theme-roster-role-heading.is-dm { color: #7c3aed !important; }
+html[data-app-theme="light"] .theme-roster-role-heading.is-tcc { color: #0891b2 !important; }
+html[data-app-theme="light"] .theme-roster-role-heading.is-tc { color: #2563eb !important; }
+html[data-app-theme="light"] .theme-roster-role-heading.is-dc { color: #15803d !important; }
+html[data-app-theme="light"] .theme-roster-role-heading.is-efc { color: #b45309 !important; }
+html[data-app-theme="light"] .theme-roster-role-heading.is-sc { color: #be185d !important; }
+
+html[data-app-theme="light"] .theme-roster-role-divider {
+  box-shadow: none !important;
+}
