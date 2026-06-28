@@ -831,8 +831,8 @@ export default function RosterWorkspace() {
                   <div className="flex items-start gap-2 rounded-xl border border-rose-400/35 bg-rose-500/10 px-3 py-2.5 text-rose-100">
                     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                     <div>
-                      <div className="text-[10px] font-bold">{currentDateLabel} does not exist in this roster.</div>
-                      <div className="mt-0.5 text-[9px] text-rose-200/75">This uploaded roster contains dates for {rosterMonthLabel}. Enter another date or select a different roster version.</div>
+                      <div className="text-[12px] font-bold">{currentDateLabel} does not exist in this roster.</div>
+                      <div className="mt-0.5 text-[11px] text-rose-200/75">This uploaded roster contains dates for {rosterMonthLabel}. Enter another date or select a different roster version.</div>
                     </div>
                   </div>
                 ) : null}
