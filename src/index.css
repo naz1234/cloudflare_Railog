@@ -2031,3 +2031,293 @@ html[data-app-theme="light"] .theme-maintenance-delete-icon svg * {
   color: #ffffff !important;
   stroke: #ffffff !important;
 }
+
+/* Controller Roster light-mode redesign.
+   Dark mode keeps the original navy/glass treatment. */
+html[data-app-theme="light"] .theme-roster-loading,
+html[data-app-theme="light"] .theme-roster-shell,
+html[data-app-theme="light"] .theme-roster-upload-panel,
+html[data-app-theme="light"] .theme-roster-history-panel,
+html[data-app-theme="light"] .theme-roster-main,
+html[data-app-theme="light"] .theme-roster-filter-panel,
+html[data-app-theme="light"] .theme-roster-empty {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shell {
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-topbar {
+  background: linear-gradient(135deg, #f8fbff 0%, #e7f1fa 100%) !important;
+  background-image: linear-gradient(135deg, #f8fbff 0%, #e7f1fa 100%) !important;
+  border-color: #b7c9d8 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-title-icon,
+html[data-app-theme="light"] .theme-roster-file-icon,
+html[data-app-theme="light"] .theme-roster-empty-icon {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  background-image: linear-gradient(145deg, #eff6ff, #dbeafe) !important;
+  border-color: #93b9df !important;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.10) !important;
+}
+
+html[data-app-theme="light"] :is(.theme-roster-title-icon, .theme-roster-file-icon, .theme-roster-empty-icon) svg {
+  color: #2563eb !important;
+  stroke: #2563eb !important;
+}
+
+html[data-app-theme="light"] .theme-roster-live-badge,
+html[data-app-theme="light"] .theme-roster-sync-badge,
+html[data-app-theme="light"] .theme-roster-latest-pill {
+  background: #ecfdf5 !important;
+  background-image: none !important;
+  border-color: #86efac !important;
+  color: #166534 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] :is(.theme-roster-live-badge, .theme-roster-sync-badge, .theme-roster-latest-pill) svg {
+  color: #16a34a !important;
+  stroke: #16a34a !important;
+}
+
+html[data-app-theme="light"] .theme-roster-alert.is-notice {
+  background: #ecfdf5 !important;
+  border-color: #86efac !important;
+  color: #166534 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-alert.is-error {
+  background: #fff1f2 !important;
+  border-color: #fda4af !important;
+  color: #991b1b !important;
+}
+
+html[data-app-theme="light"] .theme-roster-history-header {
+  background: linear-gradient(180deg, #f8fafc 0%, #edf3f8 100%) !important;
+  background-image: linear-gradient(180deg, #f8fafc 0%, #edf3f8 100%) !important;
+  border-color: #c3cfda !important;
+}
+
+html[data-app-theme="light"] .theme-roster-version-card {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #b8c6d3 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-version-card:hover {
+  background: #f8fbff !important;
+  border-color: #7fa5c4 !important;
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.09) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-version-card.is-selected {
+  background: linear-gradient(145deg, #f0fdf4 0%, #dcfce7 100%) !important;
+  background-image: linear-gradient(145deg, #f0fdf4 0%, #dcfce7 100%) !important;
+  border-color: #4ade80 !important;
+  box-shadow:
+    0 0 0 2px rgba(34, 197, 94, 0.13),
+    0 8px 20px rgba(22, 163, 74, 0.13) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-remark-pill {
+  background: #fffbeb !important;
+  border-color: #f6c453 !important;
+  color: #92400e !important;
+}
+
+html[data-app-theme="light"] .theme-roster-no-remark-pill {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-personnel-pill {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+  color: #1e40af !important;
+}
+
+html[data-app-theme="light"] .theme-roster-remark-editor {
+  background: #f8fafc !important;
+  border-color: #c3cfda !important;
+}
+
+html[data-app-theme="light"] .theme-roster-selected-file {
+  background: linear-gradient(135deg, #f8fbff 0%, #eef6fc 100%) !important;
+  background-image: linear-gradient(135deg, #f8fbff 0%, #eef6fc 100%) !important;
+  border-color: #b9ccdb !important;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-control,
+html[data-app-theme="light"] .theme-roster-checkbox,
+html[data-app-theme="light"] .theme-roster-upload-panel input,
+html[data-app-theme="light"] .theme-roster-remark-editor input {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #9fb0c0 !important;
+  color: #0f172a !important;
+  color-scheme: light !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-control:focus,
+html[data-app-theme="light"] .theme-roster-upload-panel input:focus,
+html[data-app-theme="light"] .theme-roster-remark-editor input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-control.is-invalid {
+  background: #fff7f7 !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-filter-panel svg {
+  color: #64748b !important;
+  stroke: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-roster-date-alert.is-warning {
+  background: #fffbeb !important;
+  border-color: #f6c453 !important;
+  color: #92400e !important;
+}
+
+html[data-app-theme="light"] .theme-roster-date-alert.is-error,
+html[data-app-theme="light"] .theme-roster-empty-result.is-error {
+  background: #fff1f2 !important;
+  background-image: none !important;
+  border-color: #fda4af !important;
+  color: #991b1b !important;
+}
+
+html[data-app-theme="light"] :is(.theme-roster-date-alert.is-error, .theme-roster-empty-result.is-error) svg {
+  color: #dc2626 !important;
+  stroke: #dc2626 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-result-header {
+  background: linear-gradient(90deg, #eff6ff 0%, #f8fbff 100%) !important;
+  background-image: linear-gradient(90deg, #eff6ff 0%, #f8fbff 100%) !important;
+  border-color: #abc4d8 !important;
+  box-shadow: 0 3px 12px rgba(30, 64, 175, 0.07) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #c3cfda !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-header {
+  background: #f8fafc !important;
+  background-image: none !important;
+  border-color: #d5dee7 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-early .theme-roster-shift-header { background: #fffbeb !important; }
+html[data-app-theme="light"] .theme-roster-shift-group.is-late .theme-roster-shift-header { background: #f0f9ff !important; }
+html[data-app-theme="light"] .theme-roster-shift-group.is-night .theme-roster-shift-header { background: #eef2ff !important; }
+html[data-app-theme="light"] .theme-roster-shift-group.is-extension .theme-roster-shift-header { background: #fff7ed !important; }
+html[data-app-theme="light"] .theme-roster-shift-group.is-training .theme-roster-shift-header { background: #f0fdfa !important; }
+html[data-app-theme="light"] .theme-roster-shift-group.is-rest .theme-roster-shift-header { background: #fff1f2 !important; }
+
+html[data-app-theme="light"] .theme-roster-shift-count {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-controller-row {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #d5dee7 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-controller-row:hover {
+  background: #f8fbff !important;
+  border-color: #9bb4c9 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-role-badge {
+  color: #0f172a !important;
+}
+html[data-app-theme="light"] .theme-roster-role-badge.is-dm { background: #f5f3ff !important; border-color: #c4b5fd !important; color: #6d28d9 !important; }
+html[data-app-theme="light"] .theme-roster-role-badge.is-tcc { background: #ecfeff !important; border-color: #67e8f9 !important; color: #0e7490 !important; }
+html[data-app-theme="light"] .theme-roster-role-badge.is-tc { background: #f0f9ff !important; border-color: #7dd3fc !important; color: #0369a1 !important; }
+html[data-app-theme="light"] .theme-roster-role-badge.is-dc { background: #ecfdf5 !important; border-color: #86efac !important; color: #166534 !important; }
+html[data-app-theme="light"] .theme-roster-role-badge.is-efc { background: #fffbeb !important; border-color: #fcd34d !important; color: #92400e !important; }
+html[data-app-theme="light"] .theme-roster-role-badge.is-sc { background: #fdf4ff !important; border-color: #e879f9 !important; color: #a21caf !important; }
+
+html[data-app-theme="light"] .theme-roster-empty-result {
+  background: #f8fafc !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-action-btn,
+html[data-app-theme="light"] .theme-roster-mini-btn {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #9fb0c0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-action-btn:hover,
+html[data-app-theme="light"] .theme-roster-mini-btn:hover {
+  background: #f1f5f9 !important;
+  border-color: #7f96aa !important;
+}
+
+html[data-app-theme="light"] .theme-roster-action-btn.is-primary {
+  background: linear-gradient(145deg, #dbeafe, #bfdbfe) !important;
+  background-image: linear-gradient(145deg, #dbeafe, #bfdbfe) !important;
+  border-color: #60a5fa !important;
+  color: #1e3a8a !important;
+}
+
+html[data-app-theme="light"] :is(.theme-roster-action-btn.is-danger, .theme-roster-mini-btn.is-danger) {
+  background: #fff1f2 !important;
+  border-color: #fda4af !important;
+  color: #991b1b !important;
+}
+
+html[data-app-theme="light"] .theme-roster-mini-btn.is-confirm {
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
+  color: #991b1b !important;
+}
+
+html[data-app-theme="light"] :is(.theme-roster-action-btn, .theme-roster-mini-btn) svg {
+  color: currentColor !important;
+  stroke: currentColor !important;
+}
+
+/* Restore useful secondary hierarchy inside the roster page, after the global
+   light-theme black-text rule. */
+html[data-app-theme="light"] .theme-roster-page :is(
+  [class*="text-[#7898ad]"],
+  [class*="text-[#65859a]"],
+  [class*="text-[#8eb0c5]"],
+  [class*="text-[#6f8fa4]"],
+  [class*="text-[#648399]"],
+  [class*="text-[#8eabbc]"],
+  [class*="text-[#7899ae]"],
+  [class*="text-[#7897aa]"],
+  [class*="text-[#58778c]"],
+  [class*="text-[#58758b]"]
+) {
+  color: #64748b !important;
+}

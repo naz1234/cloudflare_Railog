@@ -222,7 +222,7 @@ function ActionButton({ children, icon: Icon, onClick, disabled = false, primary
       title={title}
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-3.5 text-[13px] font-bold transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 ${className}`}
+      className={`theme-roster-action-btn ${primary ? "is-primary" : ""} ${danger ? "is-danger" : ""} inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-3.5 text-[13px] font-bold transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 ${className}`}
     >
       {Icon ? <Icon className="h-4 w-4" /> : null}
       {children}
@@ -232,8 +232,8 @@ function ActionButton({ children, icon: Icon, onClick, disabled = false, primary
 
 function EmptyRoster({ onUpload }) {
   return (
-    <div className="rounded-2xl border border-dashed border-[#315671] bg-[#081b2b] px-6 py-12 text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-sky-400/25 bg-sky-400/10 text-sky-200">
+    <div className="theme-roster-empty rounded-2xl border border-dashed border-[#315671] bg-[#081b2b] px-6 py-12 text-center">
+      <div className="theme-roster-empty-icon mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-sky-400/25 bg-sky-400/10 text-sky-200">
         <FileText className="h-7 w-7" />
       </div>
       <h3 className="mt-4 text-[16px] font-extrabold text-white">Upload the OCC roster PDF</h3>
@@ -256,11 +256,11 @@ function ControllerRow({ person, entry, day }) {
     : person.rosterCode || "";
   const time = entry.timeStart && entry.timeEnd ? `${entry.timeStart}–${entry.timeEnd}` : entry.dutyCode || entry.raw;
   return (
-    <div className="grid min-h-[66px] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl border border-white/5 bg-[#091d2d] px-4 py-3 transition-colors hover:border-[#315671] hover:bg-[#0b2235]">
+    <div className="theme-roster-controller-row grid min-h-[66px] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl border border-white/5 bg-[#091d2d] px-4 py-3 transition-colors hover:border-[#315671] hover:bg-[#0b2235]">
       <div className="min-w-0">
         <div className="flex min-w-0 flex-wrap items-center gap-2.5">
           <span className="min-w-0 max-w-full truncate text-[14px] font-extrabold leading-5 text-white">{controllerName}</span>
-          <span className={`shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-black tracking-wide ${roleBadgeClass(role)}`}>{role}</span>
+          <span className={`theme-roster-role-badge is-${String(role).toLowerCase()} shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-black tracking-wide ${roleBadgeClass(role)}`}>{role}</span>
         </div>
         <div className="mt-1 truncate text-[11px] leading-4 text-[#7899ae]">{originalName}</div>
       </div>
@@ -276,13 +276,13 @@ function ShiftGroup({ shiftKey, rows, day }) {
   const style = SHIFT_STYLES[shiftKey] || SHIFT_STYLES.other;
   const label = shiftKey === "extension" && rows.length === 1 ? rows[0].entry.shiftLabel : style.label;
   return (
-    <section className={`overflow-hidden rounded-2xl border bg-[#071827] ${style.border}`}>
-      <header className="flex items-center justify-between border-b border-white/5 px-4 py-3.5">
+    <section className={`theme-roster-shift-group is-${shiftKey} overflow-hidden rounded-2xl border bg-[#071827] ${style.border}`}>
+      <header className="theme-roster-shift-header flex items-center justify-between border-b border-white/5 px-4 py-3.5">
         <div className="flex items-center gap-2">
           <span className={`h-2 w-2 rounded-full ${style.dot}`} />
           <h4 className="text-[13px] font-black uppercase tracking-[0.13em] text-white">{label}</h4>
         </div>
-        <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-black ${style.badge}`}>{rows.length}</span>
+        <span className={`theme-roster-shift-count rounded-full border px-2.5 py-0.5 text-[11px] font-black ${style.badge}`}>{rows.length}</span>
       </header>
       <div className="space-y-2.5 p-3">
         {rows.map(({ person, entry }) => <ControllerRow key={`${person.id}-${day}`} person={person} entry={entry} day={day} />)}
@@ -331,7 +331,7 @@ function MiniButton({ icon: Icon, label, onClick, danger = false, confirm = fals
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-[9px] font-bold transition disabled:cursor-not-allowed disabled:opacity-45 ${tone}`}
+      className={`theme-roster-mini-btn ${danger ? "is-danger" : ""} ${confirm ? "is-confirm" : ""} inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-[9px] font-bold transition disabled:cursor-not-allowed disabled:opacity-45 ${tone}`}
     >
       {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
       <span>{confirm ? "Confirm" : label}</span>
@@ -662,14 +662,14 @@ export default function RosterWorkspace() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-[#294b63] bg-[#071827]">
+      <div className="theme-roster-loading flex min-h-[280px] items-center justify-center rounded-2xl border border-[#294b63] bg-[#071827]">
         <div className="flex items-center gap-2 text-[11px] font-semibold text-[#8fb0c7]"><LoaderCircle className="h-4 w-4 animate-spin" /> Restoring roster history…</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="theme-roster-page space-y-4">
       <input
         ref={fileInputRef}
         type="file"
@@ -678,35 +678,35 @@ export default function RosterWorkspace() {
         onChange={(event) => processFile(event.target.files?.[0])}
       />
 
-      <section className="overflow-hidden rounded-2xl border border-[#294b63] bg-[#071827] shadow-[0_16px_36px_rgba(0,0,0,0.18)]">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1a3b52] bg-[linear-gradient(135deg,#0b2a43_0%,#071827_70%)] px-4 py-4">
+      <section className="theme-roster-shell overflow-hidden rounded-2xl border border-[#294b63] bg-[#071827] shadow-[0_16px_36px_rgba(0,0,0,0.18)]">
+        <div className="theme-roster-topbar flex flex-wrap items-center justify-between gap-4 border-b border-[#1a3b52] bg-[linear-gradient(135deg,#0b2a43_0%,#071827_70%)] px-4 py-4">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-sky-300/25 bg-sky-400/10 text-sky-100">
+            <div className="theme-roster-title-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-sky-300/25 bg-sky-400/10 text-sky-100">
               <CalendarDays className="h-5 w-5" />
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-[15px] font-extrabold text-white">Controller Roster</h2>
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-wide text-emerald-200">
+                <span className="theme-roster-live-badge inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-wide text-emerald-200">
                   <Database className="h-2.5 w-2.5" /> Live D1
                 </span>
               </div>
               <p className="mt-1 text-[10px] text-[#7898ad]">Upload and manage roster versions on the left. The selected roster output is shown on the right.</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.07] px-3 py-2 text-[9px] font-semibold text-emerald-100">
+          <div className="theme-roster-sync-badge flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.07] px-3 py-2 text-[9px] font-semibold text-emerald-100">
             <ShieldCheck className="h-4 w-4" /> {syncStatus}
           </div>
         </div>
 
         {error ? (
-          <div className="mx-4 mt-4 flex items-start gap-2 rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2.5 text-[10px] text-rose-100">
+          <div className="theme-roster-alert is-error mx-4 mt-4 flex items-start gap-2 rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2.5 text-[10px] text-rose-100">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{error}</span>
           </div>
         ) : null}
         {notice ? (
-          <div className="mx-4 mt-4 flex items-center gap-2 rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-3 py-2.5 text-[10px] text-emerald-100">
+          <div className="theme-roster-alert is-notice mx-4 mt-4 flex items-center gap-2 rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-3 py-2.5 text-[10px] text-emerald-100">
             <Check className="h-4 w-4 shrink-0" />
             <span>{notice}</span>
           </div>
@@ -714,7 +714,7 @@ export default function RosterWorkspace() {
 
         <div className="grid items-start gap-4 p-4 lg:grid-cols-[330px_minmax(0,1fr)]">
           <aside className="space-y-3 lg:sticky lg:top-3">
-            <section className="rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
+            <section className="theme-roster-upload-panel rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
               <div className="flex items-center gap-2">
                 <Upload className="h-4 w-4 text-sky-200" />
                 <div>
@@ -737,8 +737,8 @@ export default function RosterWorkspace() {
               </ActionButton>
             </section>
 
-            <section className="overflow-hidden rounded-2xl border border-[#294b63] bg-[#081b2a]">
-              <header className="flex items-center justify-between border-b border-[#1d4058] px-3.5 py-3">
+            <section className="theme-roster-history-panel overflow-hidden rounded-2xl border border-[#294b63] bg-[#081b2a]">
+              <header className="theme-roster-history-header flex items-center justify-between border-b border-[#1d4058] px-3.5 py-3">
                 <div className="flex items-center gap-2">
                   <History className="h-4 w-4 text-sky-200" />
                   <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-white">Saved Versions</h3>
@@ -765,7 +765,7 @@ export default function RosterWorkspace() {
                         tabIndex={0}
                         onClick={() => setSelectedId(item.versionKey)}
                         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedId(item.versionKey); }}
-                        className={`cursor-pointer rounded-xl border p-3 transition duration-200 ${selected
+                        className={`theme-roster-version-card ${selected ? "is-selected" : ""} cursor-pointer rounded-xl border p-3 transition duration-200 ${selected
                           ? "border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] shadow-[0_0_0_1px_rgba(85,215,170,0.24),0_0_22px_rgba(38,199,129,0.18),0_12px_30px_rgba(0,0,0,0.22)]"
                           : "border-[#23465f] bg-[#091d2e] hover:border-[#37627e]"
                         }`}
@@ -775,20 +775,20 @@ export default function RosterWorkspace() {
                             <div className="truncate text-[12px] font-extrabold text-white">{item.fileName}</div>
                             <div className="mt-1 text-[10px] text-[#6f8fa4]">Uploaded {dateTimeLabel(item.uploadedAt)}</div>
                           </div>
-                          {index === 0 ? <span className="shrink-0 rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-emerald-100">Latest</span> : null}
+                          {index === 0 ? <span className="theme-roster-latest-pill shrink-0 rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-emerald-100">Latest</span> : null}
                         </div>
 
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {item.remark ? (
-                            <span className="max-w-full truncate rounded-full border border-amber-300/35 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-100">{item.remark}</span>
+                            <span className="theme-roster-remark-pill max-w-full truncate rounded-full border border-amber-300/35 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-100">{item.remark}</span>
                           ) : (
-                            <span className="rounded-full border border-slate-300/20 bg-slate-400/[0.06] px-2 py-0.5 text-[10px] text-slate-300">No remark</span>
+                            <span className="theme-roster-no-remark-pill rounded-full border border-slate-300/20 bg-slate-400/[0.06] px-2 py-0.5 text-[10px] text-slate-300">No remark</span>
                           )}
-                          <span className="rounded-full border border-[#315671] bg-[#0a253b] px-2 py-0.5 text-[10px] text-[#9fb9ca]">{item.parsed?.people?.length || 0} personnel</span>
+                          <span className="theme-roster-personnel-pill rounded-full border border-[#315671] bg-[#0a253b] px-2 py-0.5 text-[10px] text-[#9fb9ca]">{item.parsed?.people?.length || 0} personnel</span>
                         </div>
 
                         {editing ? (
-                          <div className="mt-2 rounded-lg border border-[#315671] bg-[#061522] p-2" onClick={(event) => event.stopPropagation()}>
+                          <div className="theme-roster-remark-editor mt-2 rounded-lg border border-[#315671] bg-[#061522] p-2" onClick={(event) => event.stopPropagation()}>
                             <input
                               autoFocus
                               value={editingRemark}
@@ -821,18 +821,18 @@ export default function RosterWorkspace() {
             </section>
           </aside>
 
-          <main className="min-w-0 rounded-2xl border border-[#294b63] bg-[#071827] p-3.5">
+          <main className="theme-roster-main min-w-0 rounded-2xl border border-[#294b63] bg-[#071827] p-3.5">
             {!record ? <EmptyRoster onUpload={() => fileInputRef.current?.click()} /> : (
               <div className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#23465f] bg-[#091d2e] px-3.5 py-3">
+                <div className="theme-roster-selected-file flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#23465f] bg-[#091d2e] px-3.5 py-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#315671] bg-[#0b2940] text-[#bfe3fa]">
+                    <div className="theme-roster-file-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#315671] bg-[#0b2940] text-[#bfe3fa]">
                       <FileText className="h-4.5 w-4.5" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <div className="truncate text-[11px] font-bold text-white">{record.fileName}</div>
-                        {record.remark ? <span className="max-w-[280px] truncate rounded-full border border-amber-300/35 bg-amber-400/10 px-2 py-0.5 text-[8px] font-bold text-amber-100">{record.remark}</span> : null}
+                        {record.remark ? <span className="theme-roster-remark-pill max-w-[280px] truncate rounded-full border border-amber-300/35 bg-amber-400/10 px-2 py-0.5 text-[8px] font-bold text-amber-100">{record.remark}</span> : null}
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[8px] text-[#648399]">
                         <span>{bytesToLabel(record.size)}</span>
@@ -846,7 +846,7 @@ export default function RosterWorkspace() {
                   <ActionButton icon={Download} onClick={() => handleDownload(record)}>Download Selected</ActionButton>
                 </div>
 
-                <section className="rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
+                <section className="theme-roster-filter-panel rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
                   <div className="grid gap-3 md:grid-cols-[1fr_0.8fr_1.25fr_auto]">
                     <label className="block">
                       <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Date</span>
@@ -854,7 +854,7 @@ export default function RosterWorkspace() {
                         type="date"
                         value={selectedDate}
                         onChange={(event) => setSelectedDate(event.target.value)}
-                        className={`h-11 w-full rounded-xl border bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none [color-scheme:dark] ${dateExists ? "border-[#2b506a] focus:border-sky-400/60" : "border-rose-400/70 focus:border-rose-300"}`}
+                        className={`theme-roster-control is-date ${dateExists ? "is-valid" : "is-invalid"} h-11 w-full rounded-xl border bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none [color-scheme:dark] ${dateExists ? "border-[#2b506a] focus:border-sky-400/60" : "border-rose-400/70 focus:border-rose-300"}`}
                       />
                     </label>
                     <label className="block">
@@ -862,7 +862,7 @@ export default function RosterWorkspace() {
                       <select
                         value={role}
                         onChange={(event) => setRole(event.target.value)}
-                        className="h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none focus:border-sky-400/60"
+                        className="theme-roster-control h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none focus:border-sky-400/60"
                       >
                         <option value="ALL">All Controllers</option>
                         {ROSTER_ROLE_ORDER.filter((item) => parsed.roles.includes(item)).map((item) => <option key={item} value={item}>{item}</option>)}
@@ -876,12 +876,12 @@ export default function RosterWorkspace() {
                           value={search}
                           onChange={(event) => setSearch(event.target.value)}
                           placeholder="Search controller…"
-                          className="h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] pl-9 pr-3 text-[12px] text-white outline-none focus:border-sky-400/60 placeholder:text-[#456277]"
+                          className="theme-roster-control h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] pl-9 pr-3 text-[12px] text-white outline-none focus:border-sky-400/60 placeholder:text-[#456277]"
                         />
                       </div>
                     </label>
                     <div className="flex items-end">
-                      <label className="flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[11px] font-semibold text-[#c4d8e5]">
+                      <label className="theme-roster-checkbox flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[11px] font-semibold text-[#c4d8e5]">
                         <input type="checkbox" checked={includeRest} onChange={(event) => setIncludeRest(event.target.checked)} className="accent-sky-500" />
                         Show rest/leave
                       </label>
@@ -890,11 +890,11 @@ export default function RosterWorkspace() {
                 </section>
 
                 {!selectedDateParts ? (
-                  <div className="flex items-center gap-2 rounded-xl border border-amber-400/35 bg-amber-400/10 px-3 py-2.5 text-[10px] font-semibold text-amber-100">
+                  <div className="theme-roster-date-alert is-warning flex items-center gap-2 rounded-xl border border-amber-400/35 bg-amber-400/10 px-3 py-2.5 text-[10px] font-semibold text-amber-100">
                     <AlertCircle className="h-4 w-4 shrink-0" /> Enter a valid date to view the roster.
                   </div>
                 ) : !dateExists ? (
-                  <div className="flex items-start gap-2 rounded-xl border border-rose-400/35 bg-rose-500/10 px-3 py-2.5 text-rose-100">
+                  <div className="theme-roster-date-alert is-error flex items-start gap-2 rounded-xl border border-rose-400/35 bg-rose-500/10 px-3 py-2.5 text-rose-100">
                     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                     <div>
                       <div className="text-[12px] font-bold">{currentDateLabel} does not exist in this roster.</div>
@@ -903,7 +903,7 @@ export default function RosterWorkspace() {
                   </div>
                 ) : null}
 
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#294b63] bg-[linear-gradient(90deg,#0a253a,#071827)] px-3.5 py-3">
+                <div className="theme-roster-result-header flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#294b63] bg-[linear-gradient(90deg,#0a253a,#071827)] px-3.5 py-3">
                   <div>
                     <div className="text-[14px] font-extrabold text-white">{currentDateLabel}</div>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[#8eabbc]">
@@ -917,7 +917,7 @@ export default function RosterWorkspace() {
                 </div>
 
                 {!dateExists ? (
-                  <div className="rounded-2xl border border-dashed border-rose-400/30 bg-rose-500/[0.04] px-5 py-10 text-center">
+                  <div className="theme-roster-empty-result is-error rounded-2xl border border-dashed border-rose-400/30 bg-rose-500/[0.04] px-5 py-10 text-center">
                     <CalendarDays className="mx-auto h-7 w-7 text-rose-300/70" />
                     <div className="mt-3 text-[11px] font-bold text-rose-100">Date not available in this roster</div>
                     <div className="mt-1 text-[9px] text-rose-200/65">Enter a date included in {rosterCoverageLabel} or select another roster version.</div>
@@ -927,7 +927,7 @@ export default function RosterWorkspace() {
                     {groupedRows.map((group) => <ShiftGroup key={group.shiftKey} {...group} day={selectedDateRef} />)}
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-[#315671] bg-[#081b2a] px-5 py-10 text-center">
+                  <div className="theme-roster-empty-result rounded-2xl border border-dashed border-[#315671] bg-[#081b2a] px-5 py-10 text-center">
                     <Users className="mx-auto h-7 w-7 text-[#52758d]" />
                     <div className="mt-3 text-[11px] font-bold text-[#bdd1de]">No matching controller found</div>
                     <div className="mt-1 text-[9px] text-[#58778c]">Change the controller type, search, or rest/leave filter.</div>
