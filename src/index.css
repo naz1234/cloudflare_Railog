@@ -2460,3 +2460,99 @@ html[data-app-theme="light"] .theme-roster-horizontal-role-cell {
 html[data-app-theme="light"] .theme-roster-horizontal-empty {
   color: #94a3b8 !important;
 }
+
+/* Roster dedicated TOIL / AL table. */
+.theme-roster-leave-table {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
+}
+
+.theme-roster-leave-table-header,
+.theme-roster-leave-heading,
+.theme-roster-leave-type,
+.theme-roster-leave-cell {
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+.theme-roster-leave-table-header {
+  background: linear-gradient(90deg, rgba(68, 26, 48, 0.74), rgba(24, 18, 35, 0.84));
+}
+
+.theme-roster-leave-heading {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.theme-roster-leave-type {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.theme-roster-leave-type span {
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.theme-roster-leave-type.is-toil span {
+  color: #fef3c7;
+  border-color: rgba(251, 191, 36, 0.38);
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.theme-roster-leave-type.is-al span {
+  color: #fbcfe8;
+  border-color: rgba(244, 114, 182, 0.38);
+  background: rgba(244, 114, 182, 0.12);
+}
+
+.theme-roster-leave-cell {
+  background: rgba(7, 24, 39, 0.88);
+}
+
+html[data-app-theme="light"] .theme-roster-leave-table {
+  border-color: #f1c4d4 !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.07) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-table-header {
+  border-color: #f1c4d4 !important;
+  background: linear-gradient(90deg, #fff1f5, #fff7ed) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-table-header > div > div:first-child {
+  color: #881337 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-table-header > div > div:last-child {
+  color: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-heading,
+html[data-app-theme="light"] .theme-roster-leave-type,
+html[data-app-theme="light"] .theme-roster-leave-cell {
+  border-color: #d9e1e8 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-heading {
+  background: #f8fafc !important;
+  color: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-type {
+  background: #fffafc !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-type.is-toil span {
+  color: #92400e !important;
+  border-color: #f6c453 !important;
+  background: #fff7d6 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-type.is-al span {
+  color: #9d174d !important;
+  border-color: #f9a8d4 !important;
+  background: #fce7f3 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-cell {
+  background: #ffffff !important;
+}

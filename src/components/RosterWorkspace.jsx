@@ -250,6 +250,16 @@ function EmptyRoster({ onUpload }) {
 
 const HORIZONTAL_ROLE_ORDER = ["DM", "TCC", "TC", "DC", "EFC", "SC"];
 
+function getSpecialLeaveType(entry) {
+  const code = String(entry?.dutyCode || entry?.raw || "")
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .trim();
+  if (/^TOIL\b/.test(code)) return "TOIL";
+  if (/^(?:CF\s+)?AL\b/.test(code)) return "AL";
+  return "";
+}
+
 function HorizontalPersonPill({ person, entry, day }) {
   const role = getRosterEntryRole(person, day);
   const controllerName = person.displayName || person.rawName || person.name || "Controller name unavailable";
@@ -320,6 +330,64 @@ function ShiftGroup({ shiftKey, rows, day }) {
   );
 }
 
+function SpecialLeaveTable({ rows, day }) {
+  const leaveGroups = ["TOIL", "AL"]
+    .map((leaveType) => ({
+      leaveType,
+      rows: rows.filter(({ entry }) => getSpecialLeaveType(entry) === leaveType),
+    }))
+    .filter((group) => group.rows.length);
+
+  if (!leaveGroups.length) return null;
+
+  return (
+    <section className="theme-roster-leave-table overflow-hidden rounded-2xl border border-rose-400/25 bg-[#071827]">
+      <div className="theme-roster-leave-table-header flex items-center justify-between border-b border-white/10 px-4 py-3">
+        <div>
+          <div className="text-[13px] font-black uppercase tracking-[0.12em] text-white">TOIL / AL</div>
+          <div className="mt-1 text-[10px] text-[#7897aa]">Personnel on time off in lieu or annual leave</div>
+        </div>
+        <span className="rounded-full border border-rose-300/30 bg-rose-400/10 px-2.5 py-0.5 text-[11px] font-black text-rose-100">{rows.length}</span>
+      </div>
+
+      <div className="overflow-x-auto">
+        <div className="min-w-[820px]">
+          <div className="theme-roster-leave-grid grid grid-cols-[130px_repeat(6,minmax(115px,1fr))] border-b border-white/10">
+            <div className="theme-roster-leave-heading border-r border-white/10 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#8ba4b7]">Leave</div>
+            {HORIZONTAL_ROLE_ORDER.map((role) => (
+              <div key={role} className="theme-roster-leave-heading border-r border-white/10 px-3 py-2.5 last:border-r-0">
+                <span className={`theme-roster-role-badge is-${role.toLowerCase()} inline-flex rounded-md border px-2 py-0.5 text-[10px] font-black tracking-wide ${roleBadgeClass(role)}`}>{role}</span>
+              </div>
+            ))}
+          </div>
+
+          {leaveGroups.map(({ leaveType, rows: leaveRows }) => (
+            <div key={leaveType} className="theme-roster-leave-grid grid grid-cols-[130px_repeat(6,minmax(115px,1fr))] border-b border-white/10 last:border-b-0">
+              <div className={`theme-roster-leave-type is-${leaveType.toLowerCase()} flex min-h-[72px] items-center border-r border-white/10 px-4 py-3`}>
+                <span className="rounded-full border px-3 py-1 text-[11px] font-black">{leaveType}</span>
+              </div>
+              {HORIZONTAL_ROLE_ORDER.map((role) => {
+                const roleRows = leaveRows.filter(({ person }) => getRosterEntryRole(person, day) === role);
+                return (
+                  <div key={role} className="theme-roster-leave-cell min-w-0 border-r border-white/10 px-3 py-3 last:border-r-0">
+                    <div className="flex flex-wrap gap-1.5">
+                      {roleRows.length
+                        ? roleRows.map(({ person, entry }) => (
+                          <HorizontalPersonPill key={`${person.id}-${day}-${leaveType}-${entry.dutyCode || entry.raw}`} person={person} entry={entry} day={day} />
+                        ))
+                        : <span className="theme-roster-horizontal-empty text-[11px] text-[#55758b]">—</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function groupRows(rows) {
   const order = ["early", "late", "night", "extension", "training", "other", "rest"];
   return order
@@ -327,9 +395,10 @@ function groupRows(rows) {
     .filter((group) => group.rows.length);
 }
 
-function buildCopyText(parsed, day, rows) {
+function buildCopyText(parsed, day, rows, specialLeaveRows = []) {
   const date = formatRosterDate(parsed, day);
-  const groups = groupRows(rows);
+  const normalRows = rows.filter(({ entry }) => !getSpecialLeaveType(entry));
+  const groups = groupRows(normalRows);
   const lines = [`Controllers working on ${date}:`, ""];
   groups.forEach(({ shiftKey, rows: group }) => {
     const style = SHIFT_STYLES[shiftKey] || SHIFT_STYLES.other;
@@ -342,7 +411,21 @@ function buildCopyText(parsed, day, rows) {
     });
     lines.push("");
   });
-  lines.push(`Total: ${rows.filter(({ entry }) => entry.isWorking).length} personnel.`);
+  if (specialLeaveRows.length) {
+    lines.push("TOIL / AL");
+    ["TOIL", "AL"].forEach((leaveType) => {
+      const leaveRows = specialLeaveRows.filter(({ entry }) => getSpecialLeaveType(entry) === leaveType);
+      if (!leaveRows.length) return;
+      lines.push(leaveType);
+      leaveRows.forEach(({ person }) => {
+        const role = getRosterEntryRole(person, day);
+        lines.push(`- ${person.displayName} [${role}]`);
+      });
+    });
+    lines.push("");
+  }
+
+  lines.push(`Total working: ${normalRows.filter(({ entry }) => entry.isWorking).length} personnel.`);
   return lines.join("\n").trim();
 }
 
@@ -570,8 +653,25 @@ export default function RosterWorkspace() {
     search,
   }), [parsed, selectedDateRef, role, includeRest, search]);
 
-  const groupedRows = useMemo(() => groupRows(rows), [rows]);
-  const workingCount = rows.filter(({ entry }) => entry.isWorking).length;
+  const allDateRows = useMemo(() => queryRoster(parsed, {
+    dateKey: typeof selectedDateRef === "string" ? selectedDateRef : null,
+    day: typeof selectedDateRef === "number" ? selectedDateRef : null,
+    role,
+    includeRest: true,
+    search,
+  }), [parsed, selectedDateRef, role, search]);
+
+  const specialLeaveRows = useMemo(
+    () => allDateRows.filter(({ entry }) => Boolean(getSpecialLeaveType(entry))),
+    [allDateRows],
+  );
+  const regularRows = useMemo(
+    () => rows.filter(({ entry }) => !getSpecialLeaveType(entry)),
+    [rows],
+  );
+  const groupedRows = useMemo(() => groupRows(regularRows), [regularRows]);
+  const workingCount = regularRows.filter(({ entry }) => entry.isWorking).length;
+  const otherRestCount = regularRows.filter(({ entry }) => entry.isRest).length;
   const currentDateLabel = formatInputDate(selectedDate);
   const rosterCoverageLabel = formatRosterCoverage(parsed);
 
@@ -682,7 +782,7 @@ export default function RosterWorkspace() {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(buildCopyText(parsed, selectedDateRef, rows));
+      await navigator.clipboard.writeText(buildCopyText(parsed, selectedDateRef, regularRows, specialLeaveRows));
       setNotice("Roster result copied.");
     } catch {
       setError("Unable to copy the roster result.");
@@ -939,10 +1039,11 @@ export default function RosterWorkspace() {
                       <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" /> {workingCount} working</span>
                       <span>·</span>
                       <span>{role === "ALL" ? "All controller types" : `${role} only`}</span>
-                      {includeRest ? <><span>·</span><span>{rows.length - workingCount} rest/leave shown</span></> : null}
+                      {specialLeaveRows.length ? <><span>·</span><span>{specialLeaveRows.length} TOIL/AL</span></> : null}
+                      {includeRest && otherRestCount ? <><span>·</span><span>{otherRestCount} other rest/leave</span></> : null}
                     </div>
                   </div>
-                  <ActionButton icon={ClipboardCopy} onClick={handleCopy} disabled={!dateExists || !rows.length}>Copy Result</ActionButton>
+                  <ActionButton icon={ClipboardCopy} onClick={handleCopy} disabled={!dateExists || (!regularRows.length && !specialLeaveRows.length)}>Copy Result</ActionButton>
                 </div>
 
                 {!dateExists ? (
@@ -951,9 +1052,10 @@ export default function RosterWorkspace() {
                     <div className="mt-3 text-[11px] font-bold text-rose-100">Date not available in this roster</div>
                     <div className="mt-1 text-[9px] text-rose-200/65">Enter a date included in {rosterCoverageLabel} or select another roster version.</div>
                   </div>
-                ) : groupedRows.length ? (
+                ) : (groupedRows.length || specialLeaveRows.length) ? (
                   <div className="space-y-3">
                     {groupedRows.map((group) => <ShiftGroup key={group.shiftKey} {...group} day={selectedDateRef} />)}
+                    {specialLeaveRows.length ? <SpecialLeaveTable rows={specialLeaveRows} day={selectedDateRef} /> : null}
                   </div>
                 ) : (
                   <div className="theme-roster-empty-result rounded-2xl border border-dashed border-[#315671] bg-[#081b2a] px-5 py-10 text-center">
