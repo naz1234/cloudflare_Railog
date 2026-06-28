@@ -12,6 +12,7 @@ import {
   LoaderCircle,
   Pencil,
   Plus,
+  RotateCcw,
   Save,
   Search,
   ShieldCheck,
@@ -492,6 +493,7 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
 
   const rangeError = useMemo(() => {
     if (!parsed) return "";
+    if (!staffId && !compareStaffIds.some(Boolean) && !fromDate && !toDate) return "";
     const from = parseDateInputValue(fromDate);
     const to = parseDateInputValue(toDate);
     if (!from || !to) return "Enter a valid From and To date.";
@@ -500,7 +502,7 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
       return `Choose a date range within ${formatRosterCoverage(parsed)}.`;
     }
     return "";
-  }, [parsed, fromDate, toDate, rosterDates]);
+  }, [parsed, staffId, compareStaffIds, fromDate, toDate, rosterDates]);
 
   const buildResult = (selectedStaffId) => {
     if (!selectedStaffId || !parsed || rangeError) return null;
@@ -552,6 +554,15 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
       const next = current.filter((_, itemIndex) => itemIndex !== index);
       return next.length ? next : [""];
     });
+    setCopiedKey("");
+    setCopyError("");
+  };
+
+  const resetStaffSchedule = () => {
+    setStaffId("");
+    setCompareStaffIds([""]);
+    setFromDate("");
+    setToDate("");
     setCopiedKey("");
     setCopyError("");
   };
@@ -634,23 +645,23 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
                 ? `${row.entry.timeStart}–${row.entry.timeEnd}`
                 : "";
               return (
-                <div key={row.dateKey} className={`theme-roster-schedule-item ${scheduleStatusClass(row.status.tone)} flex min-h-[38px] items-center gap-2 rounded-xl border px-2.5 py-1.5`}>
-                  <div className="theme-roster-schedule-date inline-flex h-7 min-w-[58px] shrink-0 items-center justify-center rounded-full border px-2 text-[10px] font-normal tabular-nums">
+                <div key={row.dateKey} className={`theme-roster-schedule-item ${scheduleStatusClass(row.status.tone)} flex min-h-[34px] items-center gap-1.5 rounded-xl border px-2.5 py-1`}>
+                  <div className="theme-roster-schedule-date inline-flex h-[26px] min-w-[54px] shrink-0 items-center justify-center rounded-full border px-2 text-[9px] font-normal tabular-nums">
                     {dateLabel}
                   </div>
-                  <span className="theme-roster-schedule-separator shrink-0 text-[10px] font-normal opacity-45">:</span>
-                  <div className="flex min-w-0 flex-1 items-center gap-2 whitespace-nowrap">
+                  <span className="theme-roster-schedule-separator shrink-0 text-[9px] font-normal opacity-45">:</span>
+                  <div className="flex min-w-0 flex-1 items-center gap-1.5 whitespace-nowrap">
                     <span className="theme-roster-schedule-dot h-1.5 w-1.5 shrink-0 rounded-full" />
                     {time ? (
                       <>
                         <span className="truncate text-[10px] font-normal leading-4">{row.status.label}</span>
                         <span className="theme-roster-schedule-comma shrink-0 opacity-45">,</span>
-                        <span className="theme-roster-schedule-time shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-normal tabular-nums">
+                        <span className="theme-roster-schedule-time shrink-0 rounded-full border px-2.5 py-[3px] text-[9px] font-normal tabular-nums">
                           {time}
                         </span>
                       </>
                     ) : (
-                      <span className="theme-roster-schedule-time is-status shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-normal">
+                      <span className="theme-roster-schedule-time is-status shrink-0 rounded-full border px-2.5 py-[3px] text-[9px] font-normal">
                         {row.status.label}
                       </span>
                     )}
@@ -668,14 +679,26 @@ function StaffSchedulePanel({ parsed, rosterKey }) {
     <aside className="theme-roster-staff-schedule xl:w-max xl:min-w-[420px]">
       <section className="overflow-hidden rounded-2xl border border-[#294b63] bg-[#081b2a] shadow-[0_16px_36px_rgba(0,0,0,0.18)]">
         <header className="theme-roster-staff-schedule-header border-b border-[#1d4058] px-4 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-sky-300/25 bg-sky-400/10 text-sky-100">
-              <CalendarDays className="h-4 w-4" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-sky-300/25 bg-sky-400/10 text-sky-100">
+                <CalendarDays className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-[12px] font-black uppercase tracking-[0.12em] text-white">Staff Schedule</h3>
+                <p className="mt-0.5 text-[10px] text-[#7897aa]">Updates automatically when staff or dates change.</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-[12px] font-black uppercase tracking-[0.12em] text-white">Staff Schedule</h3>
-              <p className="mt-0.5 text-[10px] text-[#7897aa]">Updates automatically when staff or dates change.</p>
-            </div>
+            <button
+              type="button"
+              onClick={resetStaffSchedule}
+              disabled={!staffId && !compareStaffIds.some(Boolean) && !fromDate && !toDate}
+              title="Clear staff, comparisons and dates"
+              aria-label="Reset staff schedule"
+              className="theme-roster-reset-schedule inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-rose-300/25 bg-rose-400/10 px-2.5 text-[9px] font-bold text-rose-100 transition hover:bg-rose-400/20 disabled:cursor-not-allowed disabled:opacity-35"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> Reset
+            </button>
           </div>
         </header>
 
