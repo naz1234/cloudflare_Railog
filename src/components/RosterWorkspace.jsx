@@ -451,6 +451,293 @@ function MiniButton({ icon: Icon, label, onClick, danger = false, confirm = fals
   );
 }
 
+
+function rosterEntryForDate(person, dateKey) {
+  if (!person?.entries || !dateKey) return null;
+  if (person.entries[dateKey]) return person.entries[dateKey];
+  const parts = parseDateInputValue(dateKey);
+  return parts ? person.entries[parts.day] || null : null;
+}
+
+function rosterRangeDates(fromDate, toDate) {
+  const from = parseDateInputValue(fromDate);
+  const to = parseDateInputValue(toDate);
+  if (!from || !to || from.date > to.date) return [];
+  const dates = [];
+  const cursor = new Date(from.year, from.month - 1, from.day);
+  while (cursor <= to.date && dates.length < 370) {
+    dates.push(localDateInputValue(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return dates;
+}
+
+function scheduleEntryStatus(entry) {
+  if (!entry) return { label: "Not in roster", tone: "missing", isWorking: false };
+  const leaveType = getSpecialLeaveType(entry);
+  if (leaveType) return { label: leaveType, tone: leaveType.toLowerCase(), isWorking: false };
+  if (entry.isRest) {
+    const label = String(entry.dutyCode || entry.shiftLabel || "Rest / Leave").trim();
+    return { label, tone: "rest", isWorking: false };
+  }
+  if (entry.isWorking) {
+    return { label: entry.shiftLabel || "Working", tone: entry.shiftKey || "working", isWorking: true };
+  }
+  return { label: entry.dutyCode || entry.shiftLabel || "No duty", tone: "other", isWorking: false };
+}
+
+function scheduleStatusClass(tone) {
+  const classes = {
+    early: "is-early",
+    late: "is-late",
+    night: "is-night",
+    extension: "is-extension",
+    training: "is-training",
+    other: "is-other",
+    working: "is-working",
+    toil: "is-toil",
+    al: "is-al",
+    rd: "is-rd",
+    rest: "is-rest",
+    missing: "is-missing",
+  };
+  return classes[tone] || "is-other";
+}
+
+function StaffSchedulePanel({ parsed, rosterKey }) {
+  const rosterDates = useMemo(() => (
+    Array.isArray(parsed?.dates) ? [...parsed.dates].filter(Boolean).sort() : []
+  ), [parsed]);
+  const people = useMemo(() => (
+    [...(parsed?.people || [])].sort((a, b) => String(a.displayName || a.rawName || "").localeCompare(String(b.displayName || b.rawName || "")))
+  ), [parsed]);
+  const [staffId, setStaffId] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [submitted, setSubmitted] = useState(null);
+  const [panelError, setPanelError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const today = localDateInputValue();
+    const defaultFrom = rosterDates.includes(today) ? today : rosterDates[0] || "";
+    const fromIndex = Math.max(0, rosterDates.indexOf(defaultFrom));
+    const defaultTo = rosterDates[Math.min(fromIndex + 5, Math.max(0, rosterDates.length - 1))] || defaultFrom;
+    setStaffId("");
+    setFromDate(defaultFrom);
+    setToDate(defaultTo);
+    setSubmitted(null);
+    setPanelError("");
+    setCopied(false);
+  }, [rosterKey]);
+
+  const result = useMemo(() => {
+    if (!submitted || !parsed) return null;
+    const person = people.find((item) => item.id === submitted.staffId);
+    if (!person) return null;
+    const dateKeys = rosterRangeDates(submitted.fromDate, submitted.toDate);
+    const rosterDateSet = new Set(rosterDates);
+    const rows = dateKeys.map((dateKey) => {
+      const entry = rosterDateSet.has(dateKey) ? rosterEntryForDate(person, dateKey) : null;
+      const status = scheduleEntryStatus(entry);
+      return { dateKey, entry, status };
+    });
+    const summary = rows.reduce((acc, row) => {
+      acc.total += 1;
+      if (row.status.isWorking) acc.working += 1;
+      if (row.status.tone === "rd") acc.rd += 1;
+      if (row.status.tone === "toil") acc.toil += 1;
+      if (row.status.tone === "al") acc.al += 1;
+      if (row.status.tone === "early") acc.early += 1;
+      if (row.status.tone === "late") acc.late += 1;
+      if (row.status.tone === "night") acc.night += 1;
+      return acc;
+    }, { total: 0, working: 0, rd: 0, toil: 0, al: 0, early: 0, late: 0, night: 0 });
+    return { person, rows, summary };
+  }, [submitted, parsed, people, rosterDates]);
+
+  const showSchedule = () => {
+    setCopied(false);
+    if (!staffId) {
+      setPanelError("Select a staff member first.");
+      setSubmitted(null);
+      return;
+    }
+    const from = parseDateInputValue(fromDate);
+    const to = parseDateInputValue(toDate);
+    if (!from || !to) {
+      setPanelError("Enter a valid From and To date.");
+      setSubmitted(null);
+      return;
+    }
+    if (from.date > to.date) {
+      setPanelError("The From date cannot be after the To date.");
+      setSubmitted(null);
+      return;
+    }
+    if (!rosterDates.length || fromDate < rosterDates[0] || toDate > rosterDates[rosterDates.length - 1]) {
+      setPanelError(`Choose a date range within ${formatRosterCoverage(parsed)}.`);
+      setSubmitted(null);
+      return;
+    }
+    setPanelError("");
+    setSubmitted({ staffId, fromDate, toDate });
+  };
+
+  const copySchedule = async () => {
+    if (!result) return;
+    const lines = [
+      `${result.person.displayName || result.person.rawName} — Staff Schedule`,
+      `${formatInputDate(submitted.fromDate)} to ${formatInputDate(submitted.toDate)}`,
+      "",
+    ];
+    result.rows.forEach(({ dateKey, entry, status }) => {
+      const dateLabel = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })
+        .format(parseDateInputValue(dateKey).date);
+      const time = entry?.timeStart && entry?.timeEnd ? `, ${entry.timeStart}–${entry.timeEnd}` : "";
+      const duty = entry?.dutyCode && entry.dutyCode !== status.label ? ` (${entry.dutyCode})` : "";
+      lines.push(`${dateLabel}: ${status.label}${duty}${time}`);
+    });
+    lines.push("", `Summary: ${result.summary.working} working, ${result.summary.rd} RD, ${result.summary.toil} TOIL, ${result.summary.al} AL.`);
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setPanelError("Unable to copy the staff schedule.");
+    }
+  };
+
+  return (
+    <aside className="theme-roster-staff-schedule">
+      <section className="overflow-hidden rounded-2xl border border-[#294b63] bg-[#081b2a]">
+        <header className="theme-roster-staff-schedule-header border-b border-[#1d4058] px-4 py-3.5">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-sky-200" />
+            <div>
+              <h3 className="text-[12px] font-black uppercase tracking-[0.12em] text-white">Staff Schedule</h3>
+              <p className="mt-0.5 text-[10px] text-[#7897aa]">Check one person across any roster date range.</p>
+            </div>
+          </div>
+        </header>
+
+        <div className="grid lg:grid-cols-[300px_minmax(0,1fr)]">
+          <div className="space-y-3 p-3.5">
+          <label className="block">
+            <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">Staff Name</span>
+            <select
+              value={staffId}
+              onChange={(event) => { setStaffId(event.target.value); setPanelError(""); }}
+              className="theme-roster-control h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none focus:border-sky-400/60"
+            >
+              <option value="">Select staff…</option>
+              {people.map((person) => (
+                <option key={person.id} value={person.id}>{person.displayName || person.rawName}</option>
+              ))}
+            </select>
+          </label>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <label className="block">
+              <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">From</span>
+              <input
+                type="date"
+                value={fromDate}
+                min={rosterDates[0] || undefined}
+                max={rosterDates[rosterDates.length - 1] || undefined}
+                onChange={(event) => { setFromDate(event.target.value); setPanelError(""); }}
+                className="theme-roster-control h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-2.5 text-[11px] font-semibold text-white outline-none [color-scheme:dark] focus:border-sky-400/60"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">To</span>
+              <input
+                type="date"
+                value={toDate}
+                min={rosterDates[0] || undefined}
+                max={rosterDates[rosterDates.length - 1] || undefined}
+                onChange={(event) => { setToDate(event.target.value); setPanelError(""); }}
+                className="theme-roster-control h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-2.5 text-[11px] font-semibold text-white outline-none [color-scheme:dark] focus:border-sky-400/60"
+              />
+            </label>
+          </div>
+
+          <ActionButton icon={Search} primary onClick={showSchedule} disabled={!parsed}>Show Schedule</ActionButton>
+
+          {panelError ? (
+            <div className="theme-roster-staff-error flex items-start gap-2 rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2.5 text-[10px] font-semibold text-rose-100">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {panelError}
+            </div>
+          ) : null}
+          </div>
+
+          <div className="theme-roster-staff-output border-t border-[#1d4058] lg:border-l lg:border-t-0">
+        {!result ? (
+          <div className="theme-roster-staff-empty flex min-h-[250px] flex-col items-center justify-center px-4 py-8 text-center">
+            <Users className="mx-auto h-6 w-6 text-[#52758d]" />
+            <div className="mt-2 text-[11px] font-bold text-[#bdd1de]">Select staff and date range</div>
+            <div className="mt-1 text-[9px] leading-4 text-[#58778c]">The schedule output will appear here.</div>
+          </div>
+        ) : (
+          <div className="border-t border-[#1d4058]">
+            <div className="theme-roster-staff-result-head flex items-start justify-between gap-3 px-4 py-3.5">
+              <div className="min-w-0">
+                <div className="truncate text-[13px] font-extrabold text-white">{result.person.displayName || result.person.rawName}</div>
+                <div className="mt-1 text-[9px] text-[#7897aa]">{submitted.fromDate} → {submitted.toDate}</div>
+              </div>
+              <button
+                type="button"
+                onClick={copySchedule}
+                className="theme-roster-copy-schedule inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#315671] bg-[#0a253b] px-2.5 text-[9px] font-bold text-[#d9eaf7] hover:bg-[#0e304c]"
+              >
+                {copied ? <Check className="h-3.5 w-3.5" /> : <ClipboardCopy className="h-3.5 w-3.5" />}
+                {copied ? "Copied" : "Copy"}
+              </button>
+            </div>
+
+            <div className="theme-roster-staff-summary grid grid-cols-4 gap-1.5 border-y border-[#1d4058] px-3 py-2.5">
+              {[
+                ["Days", result.summary.total],
+                ["Working", result.summary.working],
+                ["RD", result.summary.rd],
+                ["Leave", result.summary.toil + result.summary.al],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-lg border border-[#294b63] bg-[#071827] px-2 py-2 text-center">
+                  <div className="text-[13px] font-black text-white">{value}</div>
+                  <div className="mt-0.5 text-[8px] font-bold uppercase tracking-wide text-[#7897aa]">{label}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid max-h-[520px] gap-2 overflow-y-auto p-3 md:grid-cols-2">
+              {result.rows.map(({ dateKey, entry, status }) => {
+                const date = parseDateInputValue(dateKey).date;
+                const dayLabel = new Intl.DateTimeFormat("en-GB", { weekday: "short" }).format(date);
+                const dateLabel = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(date);
+                const time = entry?.timeStart && entry?.timeEnd ? `${entry.timeStart}–${entry.timeEnd}` : "—";
+                return (
+                  <div key={dateKey} className="theme-roster-staff-day rounded-xl border border-[#294b63] bg-[#071827] px-3 py-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="text-[11px] font-extrabold text-white">{dayLabel}, {dateLabel}</div>
+                        <div className="mt-1 text-[9px] text-[#7897aa]">{entry?.dutyCode || "No roster entry"}</div>
+                      </div>
+                      <span className={`theme-roster-schedule-status ${scheduleStatusClass(status.tone)} rounded-full border px-2 py-0.5 text-[9px] font-black`}>{status.label}</span>
+                    </div>
+                    <div className="mt-2 text-[11px] font-bold tabular-nums text-[#dcecf7]">{time}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+          </div>
+        </div>
+      </section>
+    </aside>
+  );
+}
+
 function repairRosterVersions(records = []) {
   return sortRosterVersions((Array.isArray(records) ? records : []).map((item) => ({
     ...item,
@@ -1054,6 +1341,8 @@ export default function RosterWorkspace() {
                     <div className="mt-1 text-[9px] text-[#58778c]">Change the controller type or search.</div>
                   </div>
                 )}
+
+                <StaffSchedulePanel parsed={parsed} rosterKey={record.versionKey} />
               </div>
             )}
           </main>

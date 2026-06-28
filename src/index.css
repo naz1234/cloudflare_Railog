@@ -2560,3 +2560,187 @@ html[data-app-theme="light"] .theme-roster-leave-type.is-rd span {
 html[data-app-theme="light"] .theme-roster-leave-cell {
   background: #ffffff !important;
 }
+
+/* Roster staff date-range schedule panel. */
+.theme-roster-staff-schedule > section {
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.16);
+}
+
+.theme-roster-staff-schedule-header {
+  background: linear-gradient(135deg, rgba(10, 42, 67, 0.96), rgba(7, 24, 39, 0.98));
+}
+
+.theme-roster-staff-result-head {
+  background: linear-gradient(90deg, rgba(10, 37, 58, 0.96), rgba(7, 24, 39, 0.98));
+}
+
+.theme-roster-schedule-status {
+  color: #dbeafe;
+  border-color: rgba(148, 163, 184, 0.32);
+  background: rgba(148, 163, 184, 0.10);
+}
+
+.theme-roster-schedule-status.is-early {
+  color: #fef3c7;
+  border-color: rgba(251, 191, 36, 0.38);
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.theme-roster-schedule-status.is-late {
+  color: #dbeafe;
+  border-color: rgba(56, 189, 248, 0.38);
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.theme-roster-schedule-status.is-night,
+.theme-roster-schedule-status.is-extension {
+  color: #e0e7ff;
+  border-color: rgba(129, 140, 248, 0.40);
+  background: rgba(129, 140, 248, 0.13);
+}
+
+.theme-roster-schedule-status.is-training {
+  color: #ccfbf1;
+  border-color: rgba(45, 212, 191, 0.38);
+  background: rgba(45, 212, 191, 0.12);
+}
+
+.theme-roster-schedule-status.is-toil {
+  color: #fef3c7;
+  border-color: rgba(251, 191, 36, 0.38);
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.theme-roster-schedule-status.is-al {
+  color: #fbcfe8;
+  border-color: rgba(244, 114, 182, 0.38);
+  background: rgba(244, 114, 182, 0.12);
+}
+
+.theme-roster-schedule-status.is-rd {
+  color: #bfdbfe;
+  border-color: rgba(96, 165, 250, 0.38);
+  background: rgba(96, 165, 250, 0.12);
+}
+
+.theme-roster-schedule-status.is-rest,
+.theme-roster-schedule-status.is-missing {
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.30);
+  background: rgba(148, 163, 184, 0.10);
+}
+
+html[data-app-theme="light"] .theme-roster-staff-schedule > section {
+  border-color: #cbd8e3 !important;
+  background: #ffffff !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-schedule-header,
+html[data-app-theme="light"] .theme-roster-staff-result-head {
+  border-color: #d7e1ea !important;
+  background: linear-gradient(135deg, #f7fbff, #eef7ff) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-schedule-header h3,
+html[data-app-theme="light"] .theme-roster-staff-result-head > div > div:first-child,
+html[data-app-theme="light"] .theme-roster-staff-empty > div:nth-child(2) {
+  color: #0f172a !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-schedule-header p,
+html[data-app-theme="light"] .theme-roster-staff-result-head > div > div:last-child,
+html[data-app-theme="light"] .theme-roster-staff-empty > div:last-child {
+  color: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-empty,
+html[data-app-theme="light"] .theme-roster-staff-summary {
+  border-color: #d7e1ea !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-summary > div,
+html[data-app-theme="light"] .theme-roster-staff-day {
+  border-color: #d7e1ea !important;
+  background: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-summary > div > div:first-child,
+html[data-app-theme="light"] .theme-roster-staff-day > div > div:first-child > div:first-child,
+html[data-app-theme="light"] .theme-roster-staff-day > div:last-child {
+  color: #0f172a !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-summary > div > div:last-child,
+html[data-app-theme="light"] .theme-roster-staff-day > div > div:first-child > div:last-child {
+  color: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-roster-copy-schedule {
+  border-color: #b7c7d5 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-error {
+  border-color: #fda4af !important;
+  background: #fff1f2 !important;
+  color: #9f1239 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-schedule-status.is-early {
+  color: #92400e !important;
+  border-color: #f6c453 !important;
+  background: #fff7d6 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-schedule-status.is-late {
+  color: #075985 !important;
+  border-color: #7dd3fc !important;
+  background: #e0f2fe !important;
+}
+
+html[data-app-theme="light"] .theme-roster-schedule-status.is-night,
+html[data-app-theme="light"] .theme-roster-schedule-status.is-extension {
+  color: #3730a3 !important;
+  border-color: #a5b4fc !important;
+  background: #eef2ff !important;
+}
+
+html[data-app-theme="light"] .theme-roster-schedule-status.is-training {
+  color: #115e59 !important;
+  border-color: #5eead4 !important;
+  background: #ccfbf1 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-schedule-status.is-toil {
+  color: #92400e !important;
+  border-color: #f6c453 !important;
+  background: #fff7d6 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-schedule-status.is-al {
+  color: #9d174d !important;
+  border-color: #f9a8d4 !important;
+  background: #fce7f3 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-schedule-status.is-rd {
+  color: #1d4ed8 !important;
+  border-color: #93c5fd !important;
+  background: #dbeafe !important;
+}
+
+html[data-app-theme="light"] .theme-roster-schedule-status.is-rest,
+html[data-app-theme="light"] .theme-roster-schedule-status.is-missing,
+html[data-app-theme="light"] .theme-roster-schedule-status.is-other,
+html[data-app-theme="light"] .theme-roster-schedule-status.is-working {
+  color: #475569 !important;
+  border-color: #cbd5e1 !important;
+  background: #f8fafc !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-output {
+  border-color: #d7e1ea !important;
+  background: #fbfdff !important;
+}
