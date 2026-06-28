@@ -1,10 +1,11 @@
 import { base44 } from "../../api/base44Client";
 
 const DB_NAME = "railog-roster-db";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = "rosters";
-const ACTIVE_ID = "active";
-const CLOUD_RECORD_KEY = "occ-roster-active";
+const LEGACY_ACTIVE_ID = "active";
+const CLOUD_VERSION_KEY = "occ-roster-version";
+const LEGACY_CLOUD_KEY = "occ-roster-active";
 
 function getRosterEntity() {
   return base44?.entities?.RosterFile || null;
@@ -26,10 +27,13 @@ function openRosterDb() {
       reject(new Error("This browser does not support persistent roster storage."));
       return;
     }
+
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME, { keyPath: "id" });
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: "id" });
+      }
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error || new Error("Unable to open roster storage."));
@@ -41,6 +45,7 @@ function runTransaction(mode, callback) {
     const transaction = db.transaction(STORE_NAME, mode);
     const store = transaction.objectStore(STORE_NAME);
     let request;
+
     try {
       request = callback(store);
     } catch (error) {
@@ -48,6 +53,7 @@ function runTransaction(mode, callback) {
       reject(error);
       return;
     }
+
     transaction.oncomplete = () => {
       const result = request?.result;
       db.close();
@@ -61,16 +67,25 @@ function runTransaction(mode, callback) {
   }));
 }
 
-function getRecordUpdatedMs(record) {
-  const value = record?.updatedAt || record?.updated_date || record?.createdAt || record?.created_date || "";
+function makeVersionKey() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return `roster-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function getRosterTimeMs(record) {
+  const value = record?.uploadedAt
+    || record?.createdAt
+    || record?.created_date
+    || record?.updatedAt
+    || record?.updated_date
+    || "";
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function pickLatestCloudRecord(records = []) {
+export function sortRosterVersions(records = []) {
   return [...(Array.isArray(records) ? records : [])]
-    .filter((record) => record?.recordKey === CLOUD_RECORD_KEY)
-    .sort((left, right) => getRecordUpdatedMs(right) - getRecordUpdatedMs(left))[0] || null;
+    .sort((left, right) => getRosterTimeMs(right) - getRosterTimeMs(left));
 }
 
 async function blobToBase64(blob) {
@@ -91,16 +106,56 @@ function base64ToBlob(base64, mimeType = "application/pdf") {
   return new Blob([bytes], { type: mimeType || "application/pdf" });
 }
 
-function buildLocalRecord({ file, parsed, updatedAt = new Date().toISOString(), cloudId = "", cloudSynced = false, syncError = "" }) {
+function restoreFile(blob, fileName, mimeType) {
+  if (!blob) return null;
+  try {
+    return new File([blob], fileName || "OCC-Roster.pdf", { type: mimeType || "application/pdf" });
+  } catch {
+    return blob;
+  }
+}
+
+function normalizeLocalRecord(record) {
+  if (!record) return null;
+  const uploadedAt = record.uploadedAt
+    || record.createdAt
+    || record.created_date
+    || record.updatedAt
+    || record.updated_date
+    || new Date().toISOString();
+  const versionKey = record.versionKey
+    || record.cloudId
+    || (record.id && record.id !== LEGACY_ACTIVE_ID ? record.id : `legacy-${getRosterTimeMs(record) || Date.now()}`);
+
   return {
-    id: ACTIVE_ID,
-    cloudId,
-    cloudSynced,
-    syncError,
+    ...record,
+    id: versionKey,
+    versionKey,
+    cloudId: record.cloudId || "",
+    cloudSynced: record.cloudSynced !== false,
+    syncError: record.syncError || "",
+    remark: String(record.remark || "").trim(),
+    uploadedAt,
+    updatedAt: record.updatedAt || uploadedAt,
+  };
+}
+
+function buildLocalRecord({ file, parsed, remark = "" }) {
+  const now = new Date().toISOString();
+  const versionKey = makeVersionKey();
+  return {
+    id: versionKey,
+    versionKey,
+    cloudId: "",
+    cloudSynced: false,
+    syncError: "",
+    recordKey: CLOUD_VERSION_KEY,
     fileName: file?.name || "OCC-Roster.pdf",
     mimeType: file?.type || "application/pdf",
     size: Number(file?.size || 0),
-    updatedAt,
+    uploadedAt: now,
+    updatedAt: now,
+    remark: String(remark || "").trim(),
     fileBlob: file || null,
     parsed,
   };
@@ -109,147 +164,198 @@ function buildLocalRecord({ file, parsed, updatedAt = new Date().toISOString(), 
 function hydrateCloudRecord(record) {
   if (!record) return null;
   const mimeType = record.mimeType || "application/pdf";
-  let fileBlob = null;
+  let blob = null;
+
   try {
-    fileBlob = base64ToBlob(record.fileBase64 || "", mimeType);
+    blob = base64ToBlob(record.fileBase64 || "", mimeType);
   } catch (error) {
-    console.warn("Unable to restore the roster PDF blob from Cloudflare D1:", error);
+    console.warn("Unable to restore a roster PDF from Cloudflare D1:", error);
   }
 
-  if (fileBlob && record.fileName) {
-    try {
-      fileBlob = new File([fileBlob], record.fileName, { type: mimeType });
-    } catch {
-      // Blob is sufficient for downloading in browsers without the File constructor.
-    }
-  }
+  const uploadedAt = record.uploadedAt
+    || record.createdAt
+    || record.created_date
+    || record.updatedAt
+    || record.updated_date
+    || new Date().toISOString();
+  const versionKey = record.versionKey || record.id || makeVersionKey();
 
   return {
-    id: ACTIVE_ID,
+    id: versionKey,
+    versionKey,
     cloudId: record.id || "",
     cloudSynced: true,
     syncError: "",
+    recordKey: record.recordKey || CLOUD_VERSION_KEY,
     fileName: record.fileName || "OCC-Roster.pdf",
     mimeType,
-    size: Number(record.size || fileBlob?.size || 0),
-    updatedAt: record.updatedAt || record.updated_date || record.createdAt || record.created_date || new Date().toISOString(),
-    fileBlob,
+    size: Number(record.size || blob?.size || 0),
+    uploadedAt,
+    updatedAt: record.updatedAt || record.updated_date || uploadedAt,
+    remark: String(record.remark || "").trim(),
+    fileBlob: restoreFile(blob, record.fileName, mimeType),
     parsed: record.parsed || null,
   };
 }
 
-async function readLocalRoster() {
+async function readLocalRosters() {
   try {
-    return await runTransaction("readonly", (store) => store.get(ACTIVE_ID));
+    const records = await runTransaction("readonly", (store) => store.getAll());
+    return sortRosterVersions((records || []).map(normalizeLocalRecord).filter(Boolean));
   } catch (error) {
     console.warn("Unable to read the local roster cache:", error);
-    return null;
+    return [];
   }
 }
 
 async function writeLocalRoster(record) {
   if (!record) return null;
+  const normalized = normalizeLocalRecord(record);
   try {
-    await runTransaction("readwrite", (store) => store.put({ ...record, id: ACTIVE_ID }));
+    await runTransaction("readwrite", (store) => store.put(normalized));
+    if (record.id === LEGACY_ACTIVE_ID && normalized.id !== LEGACY_ACTIVE_ID) {
+      await runTransaction("readwrite", (store) => store.delete(LEGACY_ACTIVE_ID));
+    }
   } catch (error) {
     console.warn("Unable to update the local roster cache:", error);
   }
-  return record;
+  return normalized;
 }
 
-async function removeLocalRoster() {
+async function removeLocalRoster(versionKey) {
+  if (!versionKey) return;
   try {
-    await runTransaction("readwrite", (store) => store.delete(ACTIVE_ID));
+    await runTransaction("readwrite", (store) => store.delete(versionKey));
   } catch (error) {
-    console.warn("Unable to remove the local roster cache:", error);
+    console.warn("Unable to remove a roster from the local cache:", error);
+  }
+}
+
+async function replaceLocalRosters(records = []) {
+  try {
+    await runTransaction("readwrite", (store) => store.clear());
+    for (const record of records) {
+      await writeLocalRoster(record);
+    }
+  } catch (error) {
+    console.warn("Unable to refresh the local roster cache:", error);
   }
 }
 
 async function listCloudRosterRecords() {
   const entity = getRosterEntity();
   if (!isRosterEntityReady(entity)) throw new Error("Roster live storage is not available in this build.");
-  return entity.filter({ recordKey: CLOUD_RECORD_KEY });
+
+  const [versions, legacy] = await Promise.all([
+    entity.filter({ recordKey: CLOUD_VERSION_KEY }),
+    entity.filter({ recordKey: LEGACY_CLOUD_KEY }),
+  ]);
+
+  const combined = [...(Array.isArray(versions) ? versions : []), ...(Array.isArray(legacy) ? legacy : [])];
+  const byCloudId = new Map();
+  combined.forEach((record) => {
+    if (record?.id) byCloudId.set(record.id, record);
+  });
+  return [...byCloudId.values()];
 }
 
-async function saveRecordToCloud(record) {
+async function createRecordInCloud(record) {
   const entity = getRosterEntity();
   if (!isRosterEntityReady(entity)) throw new Error("Roster live storage is not available in this build.");
   if (!record?.fileBlob) throw new Error("The original roster PDF is unavailable for cloud upload.");
 
-  const updatedAt = record.updatedAt || new Date().toISOString();
+  const uploadedAt = record.uploadedAt || new Date().toISOString();
   const payload = {
-    recordKey: CLOUD_RECORD_KEY,
+    recordKey: CLOUD_VERSION_KEY,
+    versionKey: record.versionKey || makeVersionKey(),
     fileName: record.fileName || "OCC-Roster.pdf",
     mimeType: record.mimeType || record.fileBlob.type || "application/pdf",
     size: Number(record.size || record.fileBlob.size || 0),
-    updatedAt,
+    uploadedAt,
+    updatedAt: record.updatedAt || uploadedAt,
+    remark: String(record.remark || "").trim(),
     fileBase64: await blobToBase64(record.fileBlob),
     parsed: record.parsed || null,
   };
 
-  const records = await listCloudRosterRecords();
-  const latest = pickLatestCloudRecord(records);
-  const saved = latest
-    ? await entity.update(latest.id, payload)
-    : await entity.create(payload);
-
-  const duplicates = (Array.isArray(records) ? records : []).filter((item) => item?.id && item.id !== latest?.id);
-  await Promise.allSettled(duplicates.map((item) => entity.delete(item.id)));
-
+  const saved = await entity.create(payload);
   return hydrateCloudRecord(saved);
 }
 
-export async function loadCloudRoster() {
-  const records = await listCloudRosterRecords();
-  const cloudRecord = hydrateCloudRecord(pickLatestCloudRecord(records));
-  if (cloudRecord) await writeLocalRoster(cloudRecord);
-  return cloudRecord;
+function mergeRosterLists(cloudRecords = [], localRecords = []) {
+  const map = new Map();
+
+  cloudRecords.forEach((record) => {
+    if (record?.versionKey) map.set(record.versionKey, record);
+  });
+
+  localRecords.forEach((record) => {
+    if (!record?.versionKey) return;
+    const existing = map.get(record.versionKey);
+    if (!existing || record.cloudSynced === false) {
+      map.set(record.versionKey, existing ? { ...record, cloudId: existing.cloudId, cloudSynced: true, syncError: "" } : record);
+    }
+  });
+
+  return sortRosterVersions([...map.values()]);
 }
 
-export async function loadSavedRoster() {
-  const localRecord = await readLocalRoster();
-  let cloudRecord = null;
+export async function loadCloudRosters() {
+  const rawRecords = await listCloudRosterRecords();
+  const records = sortRosterVersions(rawRecords.map(hydrateCloudRecord).filter(Boolean));
+  await replaceLocalRosters(records);
+  return records;
+}
+
+export async function loadSavedRosters() {
+  const localRecords = await readLocalRosters();
+  let cloudRecords = [];
   let cloudError = null;
 
   try {
-    cloudRecord = await loadCloudRoster();
+    const rawRecords = await listCloudRosterRecords();
+    cloudRecords = sortRosterVersions(rawRecords.map(hydrateCloudRecord).filter(Boolean));
   } catch (error) {
     cloudError = error;
-    console.warn("Unable to load the shared roster from Cloudflare D1:", error);
+    console.warn("Unable to load shared roster versions from Cloudflare D1:", error);
   }
 
-  if (cloudRecord && getRecordUpdatedMs(cloudRecord) >= getRecordUpdatedMs(localRecord)) {
-    return cloudRecord;
+  if (cloudError) {
+    return sortRosterVersions(localRecords.map((record) => ({
+      ...record,
+      cloudSynced: record.cloudSynced !== false,
+      syncError: errorMessage(cloudError),
+    })));
   }
 
-  if (localRecord) {
-    if (!cloudRecord || getRecordUpdatedMs(localRecord) > getRecordUpdatedMs(cloudRecord)) {
-      try {
-        const migrated = await saveRecordToCloud(localRecord);
-        await writeLocalRoster(migrated);
-        return migrated;
-      } catch (error) {
-        console.warn("Unable to migrate the local roster to Cloudflare D1:", error);
-        return {
-          ...localRecord,
-          cloudSynced: false,
-          syncError: error?.message || cloudError?.message || "Cloud sync unavailable.",
-        };
-      }
+  const unsynced = localRecords.filter((record) => record.cloudSynced === false || !record.cloudId);
+  const migrated = [];
+
+  for (const record of unsynced) {
+    if (!record.fileBlob) continue;
+    try {
+      migrated.push(await createRecordInCloud(record));
+    } catch (error) {
+      migrated.push({ ...record, cloudSynced: false, syncError: errorMessage(error) });
     }
-    return { ...localRecord, cloudSynced: Boolean(cloudRecord), syncError: cloudError?.message || "" };
   }
 
-  return null;
+  const merged = mergeRosterLists([...cloudRecords, ...migrated.filter((record) => record.cloudSynced !== false)], migrated.filter((record) => record.cloudSynced === false));
+  await replaceLocalRosters(merged);
+  return merged;
 }
 
-export async function saveRoster({ file, parsed }) {
-  const updatedAt = new Date().toISOString();
-  const localRecord = buildLocalRecord({ file, parsed, updatedAt });
+function errorMessage(error) {
+  return error?.message || "Cloud sync unavailable.";
+}
+
+export async function saveRoster({ file, parsed, remark = "" }) {
+  const localRecord = buildLocalRecord({ file, parsed, remark });
   await writeLocalRoster(localRecord);
 
   try {
-    const cloudRecord = await saveRecordToCloud(localRecord);
+    const cloudRecord = await createRecordInCloud(localRecord);
+    await removeLocalRoster(localRecord.versionKey);
     await writeLocalRoster(cloudRecord);
     return cloudRecord;
   } catch (error) {
@@ -257,28 +363,59 @@ export async function saveRoster({ file, parsed }) {
     const fallback = {
       ...localRecord,
       cloudSynced: false,
-      syncError: error?.message || "Unable to save the roster to Cloudflare D1.",
+      syncError: errorMessage(error),
     };
     await writeLocalRoster(fallback);
     return fallback;
   }
 }
 
-export async function deleteSavedRoster() {
-  await removeLocalRoster();
+export async function updateRosterRemark(record, remark = "") {
+  if (!record?.versionKey) throw new Error("Roster version is missing.");
+  const updatedAt = new Date().toISOString();
+  const cleanRemark = String(remark || "").trim();
+  let updated = { ...record, remark: cleanRemark, updatedAt };
+  await writeLocalRoster(updated);
 
   const entity = getRosterEntity();
   if (!isRosterEntityReady(entity)) {
-    return { cloudDeleted: false, error: "Roster live storage is not available in this build." };
+    updated = { ...updated, cloudSynced: false, syncError: "Roster live storage is not available in this build." };
+    await writeLocalRoster(updated);
+    return updated;
   }
 
   try {
-    const records = await listCloudRosterRecords();
-    const targets = (Array.isArray(records) ? records : []).filter((record) => record?.id);
-    await Promise.all(targets.map((record) => entity.delete(record.id)));
-    return { cloudDeleted: true };
+    if (record.cloudId) {
+      const cloudResult = await entity.update(record.cloudId, { remark: cleanRemark, updatedAt });
+      updated = hydrateCloudRecord(cloudResult);
+    } else {
+      updated = await createRecordInCloud(updated);
+    }
+    await removeLocalRoster(record.versionKey);
+    await writeLocalRoster(updated);
+    return updated;
   } catch (error) {
-    console.warn("Unable to delete the shared roster from Cloudflare D1:", error);
-    return { cloudDeleted: false, error: error?.message || "Unable to delete the shared roster." };
+    updated = { ...updated, cloudSynced: false, syncError: errorMessage(error) };
+    await writeLocalRoster(updated);
+    return updated;
+  }
+}
+
+export async function deleteSavedRoster(record) {
+  if (!record?.versionKey) throw new Error("Roster version is missing.");
+  await removeLocalRoster(record.versionKey);
+
+  const entity = getRosterEntity();
+  if (!record.cloudId) return { cloudDeleted: false, localDeleted: true, error: "This version was only stored locally." };
+  if (!isRosterEntityReady(entity)) {
+    return { cloudDeleted: false, localDeleted: true, error: "Roster live storage is not available in this build." };
+  }
+
+  try {
+    await entity.delete(record.cloudId);
+    return { cloudDeleted: true, localDeleted: true };
+  } catch (error) {
+    console.warn("Unable to delete a shared roster version from Cloudflare D1:", error);
+    return { cloudDeleted: false, localDeleted: true, error: errorMessage(error) };
   }
 }

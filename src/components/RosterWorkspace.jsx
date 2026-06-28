@@ -8,12 +8,16 @@ import {
   Database,
   Download,
   FileText,
+  History,
   LoaderCircle,
+  Pencil,
+  Save,
   Search,
   ShieldCheck,
   Sparkles,
   Trash2,
   Upload,
+  X,
   Users,
 } from "lucide-react";
 import {
@@ -25,7 +29,13 @@ import {
   parseRosterQuestion,
   queryRoster,
 } from "./roster/rosterParser";
-import { deleteSavedRoster, loadCloudRoster, loadSavedRoster, saveRoster } from "./roster/rosterStorage";
+import {
+  deleteSavedRoster,
+  loadSavedRosters,
+  saveRoster,
+  sortRosterVersions,
+  updateRosterRemark,
+} from "./roster/rosterStorage";
 
 const PDFJS_VERSION = "3.11.174";
 const PDFJS_SCRIPT = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.js`;
@@ -252,28 +262,76 @@ function buildCopyText(parsed, day, rows) {
   return lines.join("\n").trim();
 }
 
+
+function MiniButton({ icon: Icon, label, onClick, danger = false, confirm = false, disabled = false }) {
+  const tone = danger
+    ? confirm
+      ? "border-rose-300/60 bg-rose-500/25 text-rose-50"
+      : "border-rose-400/25 bg-rose-500/10 text-rose-100 hover:bg-rose-500/20"
+    : "border-[#315671] bg-[#0a253b] text-[#d9eaf7] hover:bg-[#0e304c]";
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-[9px] font-bold transition disabled:cursor-not-allowed disabled:opacity-45 ${tone}`}
+    >
+      {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
+      <span>{confirm ? "Confirm" : label}</span>
+    </button>
+  );
+}
+
+function repairRosterVersions(records = []) {
+  return sortRosterVersions((Array.isArray(records) ? records : []).map((item) => ({
+    ...item,
+    parsed: ensureRosterNames(item.parsed),
+  })));
+}
+
+function rosterListSignature(records = []) {
+  return records
+    .map((item) => `${item.versionKey}:${item.updatedAt || ""}:${item.remark || ""}`)
+    .join("|");
+}
+
 export default function RosterWorkspace() {
   const fileInputRef = useRef(null);
-  const recordRef = useRef(null);
+  const recordsRef = useRef([]);
+  const selectedIdRef = useRef("");
   const processingRef = useRef(false);
-  const [record, setRecord] = useState(null);
+  const [records, setRecords] = useState([]);
+  const [selectedId, setSelectedId] = useState("");
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [uploadRemark, setUploadRemark] = useState("");
+  const [editingRemarkId, setEditingRemarkId] = useState("");
+  const [editingRemark, setEditingRemark] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState("");
   const [selectedDay, setSelectedDay] = useState(1);
   const [role, setRole] = useState("ALL");
   const [search, setSearch] = useState("");
   const [question, setQuestion] = useState("");
   const [includeRest, setIncludeRest] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Connecting to Cloudflare D1…");
 
+  const record = useMemo(
+    () => records.find((item) => item.versionKey === selectedId) || records[0] || null,
+    [records, selectedId],
+  );
   const parsed = record?.parsed || null;
 
   useEffect(() => {
-    recordRef.current = record;
-  }, [record]);
+    recordsRef.current = records;
+  }, [records]);
+
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
 
   useEffect(() => {
     processingRef.current = processing;
@@ -281,27 +339,26 @@ export default function RosterWorkspace() {
 
   useEffect(() => {
     let active = true;
-    loadSavedRoster()
-      .then((saved) => {
+    loadSavedRosters()
+      .then((savedRecords) => {
         if (!active) return;
-        if (!saved) {
+        const restored = repairRosterVersions(savedRecords);
+        setRecords(restored);
+        recordsRef.current = restored;
+        const latestId = restored[0]?.versionKey || "";
+        setSelectedId(latestId);
+        selectedIdRef.current = latestId;
+        if (!restored.length) {
           setSyncStatus("Live storage ready · no roster uploaded");
-          return;
+        } else if (restored.some((item) => item.cloudSynced === false)) {
+          setSyncStatus("Roster history ready · some versions are local only");
+        } else {
+          setSyncStatus(`${restored.length} saved version${restored.length === 1 ? "" : "s"} · live sync ready`);
         }
-        const repairedParsed = ensureRosterNames(saved.parsed);
-        const restored = { ...saved, parsed: repairedParsed };
-        setRecord(restored);
-        recordRef.current = restored;
-        setSyncStatus(saved.cloudSynced === false ? "Local cache ready · cloud sync unavailable" : "Live sync ready");
-        const now = new Date();
-        const preferredDay = saved.parsed?.year === now.getFullYear() && saved.parsed?.month === now.getMonth() + 1
-          ? now.getDate()
-          : saved.parsed?.days?.[0] || 1;
-        setSelectedDay(saved.parsed?.days?.includes(preferredDay) ? preferredDay : saved.parsed?.days?.[0] || 1);
       })
       .catch((storageError) => {
         if (active) {
-          setError(storageError.message || "Unable to restore the saved roster.");
+          setError(storageError.message || "Unable to restore the saved roster versions.");
           setSyncStatus("Cloud sync unavailable");
         }
       })
@@ -317,26 +374,32 @@ export default function RosterWorkspace() {
     const refreshFromCloud = async () => {
       if (!active || processingRef.current) return;
       try {
-        const cloudRecord = await loadCloudRoster();
+        const refreshed = repairRosterVersions(await loadSavedRosters());
         if (!active) return;
-        if (!cloudRecord) {
-          setSyncStatus(recordRef.current ? "Local cache ready · no shared roster found" : "Live storage ready · no roster uploaded");
-          return;
+        const oldRecords = recordsRef.current;
+        const oldLatestId = oldRecords[0]?.versionKey || "";
+        const newLatestId = refreshed[0]?.versionKey || "";
+        const changed = rosterListSignature(refreshed) !== rosterListSignature(oldRecords);
+
+        if (changed) {
+          setRecords(refreshed);
+          recordsRef.current = refreshed;
+          const currentSelected = selectedIdRef.current;
+          const selectedStillExists = refreshed.some((item) => item.versionKey === currentSelected);
+          const followLatest = !currentSelected || currentSelected === oldLatestId || !selectedStillExists;
+          const nextSelected = followLatest ? newLatestId : currentSelected;
+          setSelectedId(nextSelected);
+          selectedIdRef.current = nextSelected;
+          if (newLatestId && newLatestId !== oldLatestId) {
+            setNotice("A newer roster version was loaded and placed at the top.");
+          }
         }
 
-        const currentMs = Date.parse(recordRef.current?.updatedAt || "") || 0;
-        const cloudMs = Date.parse(cloudRecord.updatedAt || "") || 0;
-        if (!recordRef.current || cloudMs > currentMs) {
-          const repairedParsed = ensureRosterNames(cloudRecord.parsed);
-          const restored = { ...cloudRecord, parsed: repairedParsed };
-          setRecord(restored);
-          recordRef.current = restored;
-          setSelectedDay((currentDay) => repairedParsed?.days?.includes(currentDay) ? currentDay : repairedParsed?.days?.[0] || 1);
-          setNotice("A newer shared roster was loaded from Cloudflare D1.");
-        }
-        setSyncStatus("Live sync ready");
-      } catch (syncError) {
-        if (active) setSyncStatus("Local cache ready · cloud sync unavailable");
+        setSyncStatus(refreshed.length
+          ? `${refreshed.length} saved version${refreshed.length === 1 ? "" : "s"} · live sync ready`
+          : "Live storage ready · no roster uploaded");
+      } catch {
+        if (active) setSyncStatus("Local roster history ready · cloud sync unavailable");
       }
     };
 
@@ -358,9 +421,22 @@ export default function RosterWorkspace() {
 
   useEffect(() => {
     if (!notice) return undefined;
-    const timer = window.setTimeout(() => setNotice(""), 2800);
+    const timer = window.setTimeout(() => setNotice(""), 3000);
     return () => window.clearTimeout(timer);
   }, [notice]);
+
+  useEffect(() => {
+    if (!parsed) return;
+    const now = new Date();
+    const preferredDay = parsed.year === now.getFullYear() && parsed.month === now.getMonth() + 1
+      ? now.getDate()
+      : parsed.days?.[0] || 1;
+    setSelectedDay(parsed.days?.includes(preferredDay) ? preferredDay : parsed.days?.[0] || 1);
+    setRole("ALL");
+    setSearch("");
+    setQuestion("");
+    setIncludeRest(false);
+  }, [record?.versionKey]);
 
   const rows = useMemo(() => queryRoster(parsed, {
     day: selectedDay,
@@ -387,21 +463,22 @@ export default function RosterWorkspace() {
       const pdfjsLib = await loadPdfJs();
       const arrayBuffer = await file.arrayBuffer();
       const parsedRoster = await parseRosterPdf(arrayBuffer, file.name, pdfjsLib);
-      const saved = await saveRoster({ file, parsed: parsedRoster });
-      setRecord(saved);
-      recordRef.current = saved;
-      setSyncStatus(saved.cloudSynced === false ? "Saved locally · cloud sync unavailable" : "Saved to Cloudflare D1 · live sync ready");
-      const now = new Date();
-      const preferredDay = parsedRoster.year === now.getFullYear() && parsedRoster.month === now.getMonth() + 1
-        ? now.getDate()
-        : parsedRoster.days[0];
-      setSelectedDay(parsedRoster.days.includes(preferredDay) ? preferredDay : parsedRoster.days[0]);
-      setRole("ALL");
-      setSearch("");
-      setQuestion("");
+      const saved = { ...await saveRoster({ file, parsed: parsedRoster, remark: uploadRemark }), parsed: ensureRosterNames(parsedRoster) };
+      const nextRecords = sortRosterVersions([
+        saved,
+        ...recordsRef.current.filter((item) => item.versionKey !== saved.versionKey),
+      ]);
+      setRecords(nextRecords);
+      recordsRef.current = nextRecords;
+      setSelectedId(saved.versionKey);
+      selectedIdRef.current = saved.versionKey;
+      setUploadRemark("");
+      setSyncStatus(saved.cloudSynced === false
+        ? "New version saved locally · cloud sync unavailable"
+        : `${nextRecords.length} saved version${nextRecords.length === 1 ? "" : "s"} · live sync ready`);
       setNotice(saved.cloudSynced === false
-        ? `${parsedRoster.people.length} roster personnel detected and saved in this browser. Cloud sync could not be completed.`
-        : `${parsedRoster.people.length} roster personnel detected and saved live.`);
+        ? `${parsedRoster.people.length} personnel detected. This version is currently saved only in this browser.`
+        : `New roster version saved at the top with ${parsedRoster.people.length} personnel.`);
     } catch (fileError) {
       console.error("Roster PDF import failed:", fileError);
       setError(fileError.message || "Unable to read this roster PDF.");
@@ -411,35 +488,69 @@ export default function RosterWorkspace() {
     }
   };
 
-  const handleDownload = () => {
-    if (!record?.fileBlob) return;
-    const url = URL.createObjectURL(record.fileBlob);
+  const handleDownload = (targetRecord) => {
+    if (!targetRecord?.fileBlob) {
+      setError("The original PDF is unavailable for this roster version.");
+      return;
+    }
+    const url = URL.createObjectURL(targetRecord.fileBlob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = record.fileName || "OCC-Roster.pdf";
+    anchor.download = targetRecord.fileName || "OCC-Roster.pdf";
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  const handleDelete = async () => {
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      window.setTimeout(() => setConfirmDelete(false), 4000);
+  const handleDeleteVersion = async (targetRecord) => {
+    if (confirmDeleteId !== targetRecord.versionKey) {
+      setConfirmDeleteId(targetRecord.versionKey);
+      window.setTimeout(() => setConfirmDeleteId((current) => current === targetRecord.versionKey ? "" : current), 4000);
       return;
     }
+
     try {
-      const result = await deleteSavedRoster();
-      setRecord(null);
-      recordRef.current = null;
-      setConfirmDelete(false);
+      const result = await deleteSavedRoster(targetRecord);
+      const nextRecords = recordsRef.current.filter((item) => item.versionKey !== targetRecord.versionKey);
+      setRecords(nextRecords);
+      recordsRef.current = nextRecords;
+      if (selectedIdRef.current === targetRecord.versionKey) {
+        const nextSelected = nextRecords[0]?.versionKey || "";
+        setSelectedId(nextSelected);
+        selectedIdRef.current = nextSelected;
+      }
+      setConfirmDeleteId("");
       setError("");
-      setSyncStatus(result.cloudDeleted ? "Live storage ready · no roster uploaded" : "Local roster removed · cloud delete unavailable");
-      setNotice(result.cloudDeleted ? "Roster removed from shared storage." : "Roster removed from this browser only.");
+      setSyncStatus(nextRecords.length
+        ? `${nextRecords.length} saved version${nextRecords.length === 1 ? "" : "s"} · live sync ready`
+        : "Live storage ready · no roster uploaded");
+      setNotice(result.cloudDeleted ? "Roster version deleted from shared history." : "Roster version deleted from this browser.");
       if (!result.cloudDeleted && result.error) setError(result.error);
     } catch (deleteError) {
-      setError(deleteError.message || "Unable to delete the saved roster.");
+      setError(deleteError.message || "Unable to delete this roster version.");
+    }
+  };
+
+  const startRemarkEdit = (targetRecord) => {
+    setEditingRemarkId(targetRecord.versionKey);
+    setEditingRemark(targetRecord.remark || "");
+  };
+
+  const saveRemarkEdit = async (targetRecord) => {
+    try {
+      const updated = await updateRosterRemark(targetRecord, editingRemark);
+      const nextRecords = sortRosterVersions(recordsRef.current.map((item) => (
+        item.versionKey === targetRecord.versionKey ? { ...updated, parsed: ensureRosterNames(updated.parsed) } : item
+      )));
+      setRecords(nextRecords);
+      recordsRef.current = nextRecords;
+      setEditingRemarkId("");
+      setEditingRemark("");
+      setNotice(updated.cloudSynced === false ? "Remark saved locally." : "Remark saved to the shared roster version.");
+      if (updated.cloudSynced === false && updated.syncError) setError(updated.syncError);
+    } catch (remarkError) {
+      setError(remarkError.message || "Unable to save the roster remark.");
     }
   };
 
@@ -451,11 +562,11 @@ export default function RosterWorkspace() {
       return;
     }
     if (result.month && result.month !== parsed.month) {
-      setError(`The uploaded roster is for month ${parsed.month}, but the question requested month ${result.month}.`);
+      setError(`The selected roster is for month ${parsed.month}, but the question requested month ${result.month}.`);
       return;
     }
     if (!parsed.days.includes(result.day)) {
-      setError(`Day ${result.day} is not available in the uploaded roster.`);
+      setError(`Day ${result.day} is not available in the selected roster.`);
       return;
     }
     setError("");
@@ -477,7 +588,7 @@ export default function RosterWorkspace() {
   if (loading) {
     return (
       <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-[#294b63] bg-[#071827]">
-        <div className="flex items-center gap-2 text-[11px] font-semibold text-[#8fb0c7]"><LoaderCircle className="h-4 w-4 animate-spin" /> Restoring roster…</div>
+        <div className="flex items-center gap-2 text-[11px] font-semibold text-[#8fb0c7]"><LoaderCircle className="h-4 w-4 animate-spin" /> Restoring roster history…</div>
       </div>
     );
   }
@@ -505,19 +616,11 @@ export default function RosterWorkspace() {
                   <Database className="h-2.5 w-2.5" /> Live D1
                 </span>
               </div>
-              <p className="mt-1 text-[10px] text-[#7898ad]">Upload once, auto-save to Cloudflare D1, and open the same roster from another laptop.</p>
+              <p className="mt-1 text-[10px] text-[#7898ad]">Upload and manage roster versions on the left. The selected roster output is shown on the right.</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <ActionButton icon={Upload} primary onClick={() => fileInputRef.current?.click()} disabled={processing}>
-              {processing ? "Reading PDF…" : record ? "Replace Roster" : "Upload Roster"}
-            </ActionButton>
-            {record ? <ActionButton icon={Download} onClick={handleDownload}>Download Original</ActionButton> : null}
-            {record ? (
-              <ActionButton icon={Trash2} danger={confirmDelete} onClick={handleDelete}>
-                {confirmDelete ? "Confirm Delete" : "Delete"}
-              </ActionButton>
-            ) : null}
+          <div className="flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.07] px-3 py-2 text-[9px] font-semibold text-emerald-100">
+            <ShieldCheck className="h-4 w-4" /> {syncStatus}
           </div>
         </div>
 
@@ -534,125 +637,231 @@ export default function RosterWorkspace() {
           </div>
         ) : null}
 
-        <div className="p-4">
-          {!record ? <EmptyRoster onUpload={() => fileInputRef.current?.click()} /> : (
-            <div className="space-y-4">
-              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
-                <div className="rounded-2xl border border-[#23465f] bg-[#091d2e] px-3.5 py-3">
+        <div className="grid items-start gap-4 p-4 lg:grid-cols-[330px_minmax(0,1fr)]">
+          <aside className="space-y-3 lg:sticky lg:top-3">
+            <section className="rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
+              <div className="flex items-center gap-2">
+                <Upload className="h-4 w-4 text-sky-200" />
+                <div>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-white">Upload New Version</h3>
+                  <p className="mt-0.5 text-[8px] text-[#65859a]">Older versions remain saved below.</p>
+                </div>
+              </div>
+              <label className="mt-3 block">
+                <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">Remark shown as pill</span>
+                <input
+                  value={uploadRemark}
+                  onChange={(event) => setUploadRemark(event.target.value)}
+                  placeholder="Example: Revised June roster"
+                  maxLength={80}
+                  className="h-10 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[11px] text-white outline-none focus:border-sky-400/60 placeholder:text-[#456277]"
+                />
+              </label>
+              <ActionButton icon={Upload} primary onClick={() => fileInputRef.current?.click()} disabled={processing}>
+                {processing ? "Reading PDF…" : "Upload Roster PDF"}
+              </ActionButton>
+            </section>
+
+            <section className="overflow-hidden rounded-2xl border border-[#294b63] bg-[#081b2a]">
+              <header className="flex items-center justify-between border-b border-[#1d4058] px-3.5 py-3">
+                <div className="flex items-center gap-2">
+                  <History className="h-4 w-4 text-sky-200" />
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-white">Saved Versions</h3>
+                </div>
+                <span className="rounded-full border border-sky-300/25 bg-sky-400/10 px-2 py-0.5 text-[9px] font-black text-sky-100">{records.length}</span>
+              </header>
+
+              {!records.length ? (
+                <div className="px-4 py-8 text-center">
+                  <FileText className="mx-auto h-7 w-7 text-[#52758d]" />
+                  <div className="mt-3 text-[10px] font-bold text-[#bdd1de]">No roster version saved</div>
+                  <div className="mt-1 text-[8px] text-[#58778c]">Upload the first PDF above.</div>
+                </div>
+              ) : (
+                <div className="max-h-[calc(100vh-290px)] min-h-[180px] space-y-2 overflow-y-auto p-2.5">
+                  {records.map((item, index) => {
+                    const selected = item.versionKey === record?.versionKey;
+                    const editing = editingRemarkId === item.versionKey;
+                    const confirming = confirmDeleteId === item.versionKey;
+                    return (
+                      <div
+                        key={item.versionKey}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedId(item.versionKey)}
+                        onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedId(item.versionKey); }}
+                        className={`cursor-pointer rounded-xl border p-3 transition ${selected ? "border-sky-300/55 bg-sky-400/10 shadow-[0_0_0_2px_rgba(56,189,248,0.08)]" : "border-[#23465f] bg-[#091d2e] hover:border-[#37627e]"}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="truncate text-[10px] font-extrabold text-white">{item.fileName}</div>
+                            <div className="mt-1 text-[8px] text-[#6f8fa4]">Uploaded {dateTimeLabel(item.uploadedAt)}</div>
+                          </div>
+                          {index === 0 ? <span className="shrink-0 rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2 py-0.5 text-[7px] font-black uppercase tracking-wide text-emerald-100">Latest</span> : null}
+                        </div>
+
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {item.remark ? (
+                            <span className="max-w-full truncate rounded-full border border-amber-300/35 bg-amber-400/10 px-2 py-0.5 text-[8px] font-bold text-amber-100">{item.remark}</span>
+                          ) : (
+                            <span className="rounded-full border border-slate-300/20 bg-slate-400/[0.06] px-2 py-0.5 text-[8px] text-slate-300">No remark</span>
+                          )}
+                          <span className="rounded-full border border-[#315671] bg-[#0a253b] px-2 py-0.5 text-[8px] text-[#9fb9ca]">{item.parsed?.people?.length || 0} personnel</span>
+                        </div>
+
+                        {editing ? (
+                          <div className="mt-2 rounded-lg border border-[#315671] bg-[#061522] p-2" onClick={(event) => event.stopPropagation()}>
+                            <input
+                              autoFocus
+                              value={editingRemark}
+                              onChange={(event) => setEditingRemark(event.target.value)}
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") saveRemarkEdit(item);
+                                if (event.key === "Escape") setEditingRemarkId("");
+                              }}
+                              maxLength={80}
+                              placeholder="Roster remark"
+                              className="h-8 w-full rounded-lg border border-[#2b506a] bg-[#081b2a] px-2.5 text-[10px] text-white outline-none focus:border-sky-400/60"
+                            />
+                            <div className="mt-2 flex gap-1.5">
+                              <MiniButton icon={Save} label="Save" onClick={() => saveRemarkEdit(item)} />
+                              <MiniButton icon={X} label="Cancel" onClick={() => setEditingRemarkId("")} />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-2 flex flex-wrap gap-1.5" onClick={(event) => event.stopPropagation()}>
+                            <MiniButton icon={Download} label="Download" onClick={() => handleDownload(item)} />
+                            <MiniButton icon={Pencil} label="Remark" onClick={() => startRemarkEdit(item)} />
+                            <MiniButton icon={Trash2} label="Delete" danger confirm={confirming} onClick={() => handleDeleteVersion(item)} />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </aside>
+
+          <main className="min-w-0 rounded-2xl border border-[#294b63] bg-[#071827] p-3.5">
+            {!record ? <EmptyRoster onUpload={() => fileInputRef.current?.click()} /> : (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#23465f] bg-[#091d2e] px-3.5 py-3">
                   <div className="flex min-w-0 items-center gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#315671] bg-[#0b2940] text-[#bfe3fa]">
                       <FileText className="h-4.5 w-4.5" />
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate text-[11px] font-bold text-white">{record.fileName}</div>
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <div className="truncate text-[11px] font-bold text-white">{record.fileName}</div>
+                        {record.remark ? <span className="max-w-[280px] truncate rounded-full border border-amber-300/35 bg-amber-400/10 px-2 py-0.5 text-[8px] font-bold text-amber-100">{record.remark}</span> : null}
+                      </div>
                       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[8px] text-[#648399]">
                         <span>{bytesToLabel(record.size)}</span>
                         <span>{record.parsed?.people?.length || 0} personnel</span>
                         <span>{record.parsed?.days?.length || 0} days</span>
-                        <span>Saved {dateTimeLabel(record.updatedAt)}</span>
+                        <span>Uploaded {dateTimeLabel(record.uploadedAt)}</span>
                         <span>{record.cloudSynced === false ? "Local cache" : "Cloud synced"}</span>
                       </div>
                     </div>
                   </div>
+                  <ActionButton icon={Download} onClick={() => handleDownload(record)}>Download Selected</ActionButton>
                 </div>
-                <div className="flex items-center gap-2 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] px-3.5 py-3 text-[9px] font-semibold text-emerald-100">
-                  <ShieldCheck className="h-4 w-4" /> {syncStatus}
-                </div>
-              </div>
 
-              <section className="rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
-                <div className="mb-3 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-sky-200" />
-                  <div>
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-white">Ask Roster</h3>
-                    <p className="mt-0.5 text-[8px] text-[#65859a]">Example: Who is working on 2 June? · Show DC on 16 June</p>
+                <section className="rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-sky-200" />
+                    <div>
+                      <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-white">Ask Roster</h3>
+                      <p className="mt-0.5 text-[8px] text-[#65859a]">Example: Who is working on 2 June? · Show DC on 16 June</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <div className="relative flex-1">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#55778d]" />
-                    <input
-                      value={question}
-                      onChange={(event) => setQuestion(event.target.value)}
-                      onKeyDown={(event) => { if (event.key === "Enter") handleQuestion(); }}
-                      placeholder="Who is working on 2 June?"
-                      className="h-10 w-full rounded-xl border border-[#2b506a] bg-[#061522] pl-9 pr-3 text-[11px] text-white outline-none transition focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/10 placeholder:text-[#456277]"
-                    />
-                  </div>
-                  <ActionButton icon={ChevronRight} primary onClick={handleQuestion} disabled={!question.trim()}>Show Roster</ActionButton>
-                </div>
-              </section>
-
-              <section className="rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
-                <div className="grid gap-3 md:grid-cols-[1fr_0.8fr_1.25fr_auto]">
-                  <label className="block">
-                    <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Date</span>
-                    <select
-                      value={selectedDay}
-                      onChange={(event) => setSelectedDay(Number(event.target.value))}
-                      className="h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none focus:border-sky-400/60"
-                    >
-                      {parsed.days.map((day) => <option key={day} value={day}>{formatRosterDate(parsed, day)}</option>)}
-                    </select>
-                  </label>
-                  <label className="block">
-                    <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Controller Type</span>
-                    <select
-                      value={role}
-                      onChange={(event) => setRole(event.target.value)}
-                      className="h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none focus:border-sky-400/60"
-                    >
-                      <option value="ALL">All Controllers</option>
-                      {ROSTER_ROLE_ORDER.filter((item) => parsed.roles.includes(item)).map((item) => <option key={item} value={item}>{item}</option>)}
-                    </select>
-                  </label>
-                  <label className="block">
-                    <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Search Name / Duty</span>
-                    <div className="relative">
-                      <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#55778d]" />
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <div className="relative flex-1">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#55778d]" />
                       <input
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Search controller…"
-                        className="h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] pl-9 pr-3 text-[12px] text-white outline-none focus:border-sky-400/60 placeholder:text-[#456277]"
+                        value={question}
+                        onChange={(event) => setQuestion(event.target.value)}
+                        onKeyDown={(event) => { if (event.key === "Enter") handleQuestion(); }}
+                        placeholder="Who is working on 2 June?"
+                        className="h-10 w-full rounded-xl border border-[#2b506a] bg-[#061522] pl-9 pr-3 text-[11px] text-white outline-none transition focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/10 placeholder:text-[#456277]"
                       />
                     </div>
-                  </label>
-                  <div className="flex items-end">
-                    <label className="flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[11px] font-semibold text-[#c4d8e5]">
-                      <input type="checkbox" checked={includeRest} onChange={(event) => setIncludeRest(event.target.checked)} className="accent-sky-500" />
-                      Show rest/leave
+                    <ActionButton icon={ChevronRight} primary onClick={handleQuestion} disabled={!question.trim()}>Show Roster</ActionButton>
+                  </div>
+                </section>
+
+                <section className="rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
+                  <div className="grid gap-3 md:grid-cols-[1fr_0.8fr_1.25fr_auto]">
+                    <label className="block">
+                      <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Date</span>
+                      <select
+                        value={selectedDay}
+                        onChange={(event) => setSelectedDay(Number(event.target.value))}
+                        className="h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none focus:border-sky-400/60"
+                      >
+                        {parsed.days.map((day) => <option key={day} value={day}>{formatRosterDate(parsed, day)}</option>)}
+                      </select>
                     </label>
+                    <label className="block">
+                      <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Controller Type</span>
+                      <select
+                        value={role}
+                        onChange={(event) => setRole(event.target.value)}
+                        className="h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[12px] font-semibold text-white outline-none focus:border-sky-400/60"
+                      >
+                        <option value="ALL">All Controllers</option>
+                        {ROSTER_ROLE_ORDER.filter((item) => parsed.roles.includes(item)).map((item) => <option key={item} value={item}>{item}</option>)}
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-[#8eb0c5]">Search Name / Duty</span>
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#55778d]" />
+                        <input
+                          value={search}
+                          onChange={(event) => setSearch(event.target.value)}
+                          placeholder="Search controller…"
+                          className="h-11 w-full rounded-xl border border-[#2b506a] bg-[#061522] pl-9 pr-3 text-[12px] text-white outline-none focus:border-sky-400/60 placeholder:text-[#456277]"
+                        />
+                      </div>
+                    </label>
+                    <div className="flex items-end">
+                      <label className="flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[11px] font-semibold text-[#c4d8e5]">
+                        <input type="checkbox" checked={includeRest} onChange={(event) => setIncludeRest(event.target.checked)} className="accent-sky-500" />
+                        Show rest/leave
+                      </label>
+                    </div>
                   </div>
-                </div>
-              </section>
+                </section>
 
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#294b63] bg-[linear-gradient(90deg,#0a253a,#071827)] px-3.5 py-3">
-                <div>
-                  <div className="text-[14px] font-extrabold text-white">{currentDateLabel}</div>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[#8eabbc]">
-                    <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" /> {workingCount} working</span>
-                    <span>·</span>
-                    <span>{role === "ALL" ? "All controller types" : `${role} only`}</span>
-                    {includeRest ? <><span>·</span><span>{rows.length - workingCount} rest/leave shown</span></> : null}
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#294b63] bg-[linear-gradient(90deg,#0a253a,#071827)] px-3.5 py-3">
+                  <div>
+                    <div className="text-[14px] font-extrabold text-white">{currentDateLabel}</div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[#8eabbc]">
+                      <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" /> {workingCount} working</span>
+                      <span>·</span>
+                      <span>{role === "ALL" ? "All controller types" : `${role} only`}</span>
+                      {includeRest ? <><span>·</span><span>{rows.length - workingCount} rest/leave shown</span></> : null}
+                    </div>
                   </div>
+                  <ActionButton icon={ClipboardCopy} onClick={handleCopy} disabled={!rows.length}>Copy Result</ActionButton>
                 </div>
-                <ActionButton icon={ClipboardCopy} onClick={handleCopy} disabled={!rows.length}>Copy Result</ActionButton>
+
+                {groupedRows.length ? (
+                  <div className="grid gap-3 xl:grid-cols-2">
+                    {groupedRows.map((group) => <ShiftGroup key={group.shiftKey} {...group} day={selectedDay} />)}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-[#315671] bg-[#081b2a] px-5 py-10 text-center">
+                    <Users className="mx-auto h-7 w-7 text-[#52758d]" />
+                    <div className="mt-3 text-[11px] font-bold text-[#bdd1de]">No matching controller found</div>
+                    <div className="mt-1 text-[9px] text-[#58778c]">Change the date, role, search, or rest/leave filter.</div>
+                  </div>
+                )}
               </div>
-
-              {groupedRows.length ? (
-                <div className="grid gap-3 xl:grid-cols-2">
-                  {groupedRows.map((group) => <ShiftGroup key={group.shiftKey} {...group} day={selectedDay} />)}
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-[#315671] bg-[#081b2a] px-5 py-10 text-center">
-                  <Users className="mx-auto h-7 w-7 text-[#52758d]" />
-                  <div className="mt-3 text-[11px] font-bold text-[#bdd1de]">No matching controller found</div>
-                  <div className="mt-1 text-[9px] text-[#58778c]">Change the date, role, search, or rest/leave filter.</div>
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </main>
         </div>
       </section>
     </div>
