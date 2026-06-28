@@ -1020,12 +1020,12 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                       gap: 4,
                       cursor: "pointer",
                     }}
-                    title="Choose the East Depot insertion timing: original timetable time or an additional 3 minutes"
+                    title="Choose the East Depot insertion timing: original timetable time or an additional 2 minutes"
                   >
                     <TimerIcon size={10} />
                     <select
-                      value={Number(timeOffsetMinutes) === 3 ? 3 : 0}
-                      onChange={(event) => onTimeOffsetChange?.(Number(event.target.value) === 3 ? 3 : 0)}
+                      value={Number(timeOffsetMinutes) === 2 ? 2 : 0}
+                      onChange={(event) => onTimeOffsetChange?.(Number(event.target.value) === 2 ? 2 : 0)}
                       onClick={(event) => event.stopPropagation()}
                       style={{
                         border: "none",
@@ -1043,7 +1043,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                       aria-label="East Depot insertion time adjustment"
                     >
                       <option value={0} style={{ color: "#0f172a", background: "#ffffff" }}>TIME</option>
-                      <option value={3} style={{ color: "#0f172a", background: "#ffffff" }}>TIME +3</option>
+                      <option value={2} style={{ color: "#0f172a", background: "#ffffff" }}>TIME +2</option>
                     </select>
                   </label>
                 ) : (
@@ -1273,7 +1273,7 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
     [activeTimetable, selectedScheduleKey]
   );
   const schedules = useMemo(() => {
-    const offset = Number(eastTimeOffsetMinutes) === 3 ? 3 : 0;
+    const offset = Number(eastTimeOffsetMinutes) === 2 ? 2 : 0;
     if (!offset) return baseSchedules;
 
     return Object.fromEntries(Object.entries(baseSchedules).map(([key, schedule]) => [
