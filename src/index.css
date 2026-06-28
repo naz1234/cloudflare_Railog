@@ -2744,3 +2744,18 @@ html[data-app-theme="light"] .theme-roster-staff-output {
   border-color: #d7e1ea !important;
   background: #fbfdff !important;
 }
+
+
+/* Staff schedule side panel: single-line output. */
+.theme-roster-schedule-line {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding-bottom: 0.45rem;
+}
+.theme-roster-schedule-line:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+html[data-app-theme="light"] .theme-roster-schedule-line {
+  color: #0f172a !important;
+  border-bottom-color: #e2e8f0 !important;
+}
