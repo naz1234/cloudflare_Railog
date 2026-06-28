@@ -22,7 +22,6 @@ import {
 import {
   ROSTER_ROLE_ORDER,
   ensureRosterNames,
-  formatRosterDate,
   getRosterEntryRole,
   parseRosterPdf,
   queryRoster,
@@ -272,7 +271,7 @@ function HorizontalPersonPill({ person, entry, day }) {
   return (
     <span
       title={time ? `${controllerName} · ${time}` : controllerName}
-      className={`theme-roster-role-badge theme-roster-name-pill is-${String(role).toLowerCase()} inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-[11px] font-bold leading-4 ${roleBadgeClass(role)}`}
+      className={`theme-roster-role-badge theme-roster-name-pill is-${String(role).toLowerCase()} inline-flex max-w-full items-center rounded-lg border px-2.5 py-1 text-[11px] font-semibold leading-4 ${roleBadgeClass(role)}`}
     >
       <span className="truncate">{controllerName}</span>
     </span>
@@ -289,43 +288,41 @@ function ShiftGroup({ shiftKey, rows, day }) {
   )).filter(Boolean))];
 
   return (
-    <section className={`theme-roster-shift-group theme-roster-horizontal-shift is-${shiftKey} overflow-hidden rounded-2xl border bg-[#071827] ${style.border}`}>
-      <div className="overflow-x-auto">
-        <div className="grid min-w-[820px] grid-cols-[130px_repeat(6,minmax(115px,1fr))]">
-          <div className="theme-roster-horizontal-shift-cell flex min-h-[112px] flex-col justify-center border-r border-white/10 px-4 py-3.5">
-            <div className="flex items-center gap-2">
-              <span className={`h-2 w-2 rounded-full ${style.dot}`} />
-              <h4 className="theme-roster-horizontal-shift-title text-[13px] font-black uppercase tracking-[0.1em] text-white">{label}</h4>
-            </div>
-            <div className="theme-roster-horizontal-times mt-2 flex flex-col gap-1.5 text-[11px] font-semibold tabular-nums text-[#9bb7c9]">
-              {timeLabels.length
-                ? timeLabels.map((time) => (
-                  <div key={time} className="theme-roster-time-pill inline-flex w-fit items-center rounded-full border px-2.5 py-1">
-                    {time}
-                  </div>
-                ))
-                : <div className="theme-roster-time-pill is-empty inline-flex w-fit items-center rounded-full border px-2.5 py-1">—</div>}
-            </div>
+    <section className={`theme-roster-shift-group theme-roster-horizontal-shift is-${shiftKey} overflow-hidden rounded-[18px] border bg-[#071827] ${style.border}`}>
+      <div className="theme-roster-shift-grid grid grid-cols-[148px_repeat(6,minmax(0,1fr))]">
+        <div className="theme-roster-horizontal-shift-cell flex min-h-[116px] flex-col justify-center border-r border-white/10 px-4 py-4">
+          <div className="flex items-center gap-2.5">
+            <span className={`theme-roster-shift-dot h-2 w-2 rounded-full ${style.dot}`} />
+            <h4 className="theme-roster-horizontal-shift-title text-[13px] font-black uppercase leading-[1.15] tracking-[0.11em] text-white">{label}</h4>
           </div>
-
-          {HORIZONTAL_ROLE_ORDER.map((role) => {
-            const roleRows = rows.filter(({ person }) => getRosterEntryRole(person, day) === role);
-            return (
-              <div key={role} className="theme-roster-horizontal-role-cell min-w-0 border-r border-white/10 px-3 py-3 last:border-r-0">
-                <div className={`theme-roster-role-badge is-${role.toLowerCase()} mb-2 inline-flex rounded-md border px-2 py-0.5 text-[10px] font-black tracking-wide ${roleBadgeClass(role)}`}>
-                  {role}
+          <div className="theme-roster-horizontal-times mt-3 flex flex-col gap-1.5 text-[11px] font-semibold tabular-nums text-[#9bb7c9]">
+            {timeLabels.length
+              ? timeLabels.map((time) => (
+                <div key={time} className="theme-roster-time-pill inline-flex w-fit items-center rounded-full border px-2.5 py-1">
+                  {time}
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {roleRows.length
-                    ? roleRows.map(({ person, entry }) => (
-                      <HorizontalPersonPill key={`${person.id}-${day}-${entry.dutyCode || entry.shiftKey}`} person={person} entry={entry} day={day} />
-                    ))
-                    : <span className="theme-roster-horizontal-empty text-[11px] text-[#55758b]">—</span>}
-                </div>
-              </div>
-            );
-          })}
+              ))
+              : <div className="theme-roster-time-pill is-empty inline-flex w-fit items-center rounded-full border px-2.5 py-1">—</div>}
+          </div>
         </div>
+
+        {HORIZONTAL_ROLE_ORDER.map((role) => {
+          const roleRows = rows.filter(({ person }) => getRosterEntryRole(person, day) === role);
+          return (
+            <div key={role} className="theme-roster-horizontal-role-cell flex min-w-0 flex-col items-center border-r border-white/10 px-3 py-4 last:border-r-0">
+              <div className={`theme-roster-role-badge is-${role.toLowerCase()} mb-3 inline-flex rounded-lg border px-2.5 py-0.5 text-[10px] font-black tracking-wide ${roleBadgeClass(role)}`}>
+                {role}
+              </div>
+              <div className="flex w-full flex-wrap justify-center gap-1.5">
+                {roleRows.length
+                  ? roleRows.map(({ person, entry }) => (
+                    <HorizontalPersonPill key={`${person.id}-${day}-${entry.dutyCode || entry.shiftKey}`} person={person} entry={entry} day={day} />
+                  ))
+                  : <span className="theme-roster-horizontal-empty mt-1 text-[11px] text-[#55758b]">—</span>}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
@@ -342,48 +339,30 @@ function SpecialLeaveTable({ rows, day }) {
   if (!leaveGroups.length) return null;
 
   return (
-    <section className="theme-roster-leave-table overflow-hidden rounded-2xl border border-rose-400/25 bg-[#071827]">
-      <div className="theme-roster-leave-table-header flex items-center justify-between border-b border-white/10 px-4 py-3">
+    <section className="theme-roster-leave-table overflow-hidden rounded-[18px] border border-rose-400/25 bg-[#071827]">
+      <div className="theme-roster-leave-table-header flex items-center justify-between border-b border-white/10 px-5 py-3.5">
         <div>
-          <div className="text-[13px] font-black uppercase tracking-[0.12em] text-white">TOIL / AL / RD</div>
-          <div className="mt-1 text-[10px] text-[#7897aa]">Personnel on time off in lieu, annual leave, or rest day</div>
+          <div className="text-[14px] font-black uppercase tracking-[0.12em] text-white">TOIL / AL / RD</div>
+          <div className="mt-0.5 text-[10px] text-[#7897aa]">Personnel on time off, annual leave, or rest day</div>
         </div>
-        <span className="rounded-full border border-rose-300/30 bg-rose-400/10 px-2.5 py-0.5 text-[11px] font-black text-rose-100">{rows.length}</span>
+        <span className="theme-roster-leave-total rounded-full border border-rose-300/30 bg-rose-400/10 px-3 py-1 text-[11px] font-black text-rose-100">{rows.length}</span>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[820px]">
-          <div className="theme-roster-leave-grid grid grid-cols-[130px_repeat(6,minmax(115px,1fr))] border-b border-white/10">
-            <div className="theme-roster-leave-heading border-r border-white/10 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#8ba4b7]">Leave</div>
-            {HORIZONTAL_ROLE_ORDER.map((role) => (
-              <div key={role} className="theme-roster-leave-heading border-r border-white/10 px-3 py-2.5 last:border-r-0">
-                <span className={`theme-roster-role-badge is-${role.toLowerCase()} inline-flex rounded-md border px-2 py-0.5 text-[10px] font-black tracking-wide ${roleBadgeClass(role)}`}>{role}</span>
-              </div>
-            ))}
-          </div>
-
-          {leaveGroups.map(({ leaveType, rows: leaveRows }) => (
-            <div key={leaveType} className="theme-roster-leave-grid grid grid-cols-[130px_repeat(6,minmax(115px,1fr))] border-b border-white/10 last:border-b-0">
-              <div className={`theme-roster-leave-type is-${leaveType.toLowerCase()} flex min-h-[72px] items-center border-r border-white/10 px-4 py-3`}>
-                <span className="rounded-full border px-3 py-1 text-[11px] font-black">{leaveType}</span>
-              </div>
-              {HORIZONTAL_ROLE_ORDER.map((role) => {
-                const roleRows = leaveRows.filter(({ person }) => getRosterEntryRole(person, day) === role);
-                return (
-                  <div key={role} className="theme-roster-leave-cell min-w-0 border-r border-white/10 px-3 py-3 last:border-r-0">
-                    <div className="flex flex-wrap gap-1.5">
-                      {roleRows.length
-                        ? roleRows.map(({ person, entry }) => (
-                          <HorizontalPersonPill key={`${person.id}-${day}-${leaveType}-${entry.dutyCode || entry.raw}`} person={person} entry={entry} day={day} />
-                        ))
-                        : <span className="theme-roster-horizontal-empty text-[11px] text-[#55758b]">—</span>}
-                    </div>
-                  </div>
-                );
-              })}
+      <div className="theme-roster-leave-list divide-y divide-white/10 px-4">
+        {leaveGroups.map(({ leaveType, rows: leaveRows }) => (
+          <div key={leaveType} className="theme-roster-leave-row grid grid-cols-[92px_minmax(0,1fr)] items-center gap-4 py-3">
+            <div className={`theme-roster-leave-type is-${leaveType.toLowerCase()} flex items-center`}>
+              <span className="rounded-lg border px-3 py-1 text-[11px] font-black">{leaveType}</span>
             </div>
-          ))}
-        </div>
+            <div className="theme-roster-leave-cell min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                {leaveRows.map(({ person, entry }) => (
+                  <HorizontalPersonPill key={`${person.id}-${day}-${leaveType}-${entry.dutyCode || entry.raw}`} person={person} entry={entry} day={day} />
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -395,41 +374,6 @@ function groupRows(rows) {
     .map((shiftKey) => ({ shiftKey, rows: rows.filter(({ entry }) => entry.shiftKey === shiftKey) }))
     .filter((group) => group.rows.length);
 }
-
-function buildCopyText(parsed, day, rows, specialLeaveRows = []) {
-  const date = formatRosterDate(parsed, day);
-  const normalRows = rows.filter(({ entry }) => !getSpecialLeaveType(entry));
-  const groups = groupRows(normalRows);
-  const lines = [`Controllers working on ${date}:`, ""];
-  groups.forEach(({ shiftKey, rows: group }) => {
-    const style = SHIFT_STYLES[shiftKey] || SHIFT_STYLES.other;
-    const heading = shiftKey === "extension" && group.length === 1 ? group[0].entry.shiftLabel : style.label;
-    lines.push(heading);
-    group.forEach(({ person, entry }) => {
-      const role = getRosterEntryRole(person, day);
-      const time = entry.timeStart && entry.timeEnd ? ` (${entry.timeStart}–${entry.timeEnd})` : entry.dutyCode ? ` (${entry.dutyCode})` : "";
-      lines.push(`- ${person.displayName} [${role}]${time}`);
-    });
-    lines.push("");
-  });
-  if (specialLeaveRows.length) {
-    lines.push("TOIL / AL / RD");
-    ["TOIL", "AL", "RD"].forEach((leaveType) => {
-      const leaveRows = specialLeaveRows.filter(({ entry }) => getSpecialLeaveType(entry) === leaveType);
-      if (!leaveRows.length) return;
-      lines.push(leaveType);
-      leaveRows.forEach(({ person }) => {
-        const role = getRosterEntryRole(person, day);
-        lines.push(`- ${person.displayName} [${role}]`);
-      });
-    });
-    lines.push("");
-  }
-
-  lines.push(`Total working: ${normalRows.filter(({ entry }) => entry.isWorking).length} personnel.`);
-  return lines.join("\n").trim();
-}
-
 
 function MiniButton({ icon: Icon, label, onClick, danger = false, confirm = false, disabled = false }) {
   const tone = danger
@@ -1172,14 +1116,6 @@ export default function RosterWorkspace() {
     }
   };
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(buildCopyText(parsed, selectedDateRef, regularRows, specialLeaveRows));
-      setNotice("Roster result copied.");
-    } catch {
-      setError("Unable to copy the roster result.");
-    }
-  };
 
   if (loading) {
     return (
@@ -1419,17 +1355,19 @@ export default function RosterWorkspace() {
                   </div>
                 ) : null}
 
-                <div className="theme-roster-result-header flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#294b63] bg-[linear-gradient(90deg,#0a253a,#071827)] px-3.5 py-3">
-                  <div>
-                    <div className="text-[14px] font-extrabold text-white">{currentDateLabel}</div>
+                <div className="theme-roster-result-header flex items-center gap-3 rounded-[18px] border border-[#294b63] bg-[linear-gradient(90deg,#0a253a,#071827)] px-4 py-3.5">
+                  <div className="theme-roster-result-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sky-400/25 bg-sky-400/10 text-sky-200">
+                    <CalendarDays className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="truncate text-[16px] font-extrabold text-white">{currentDateLabel}</div>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[#8eabbc]">
                       <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" /> {workingCount} working</span>
-                      <span>·</span>
+                      <span className="theme-roster-meta-dot">•</span>
                       <span>{role === "ALL" ? "All controller types" : `${role} only`}</span>
-                      {specialLeaveRows.length ? <><span>·</span><span>{specialLeaveRows.length} TOIL/AL/RD</span></> : null}
+                      {specialLeaveRows.length ? <><span className="theme-roster-meta-dot">•</span><span>{specialLeaveRows.length} TOIL/AL/RD</span></> : null}
                     </div>
                   </div>
-                  <ActionButton icon={ClipboardCopy} onClick={handleCopy} disabled={!dateExists || (!regularRows.length && !specialLeaveRows.length)}>Copy Result</ActionButton>
                 </div>
 
                 {!dateExists ? (

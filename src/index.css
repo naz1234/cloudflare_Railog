@@ -3028,3 +3028,207 @@ html[data-app-theme="light"] .theme-roster-staff-result-block.is-primary {
 html[data-app-theme="light"] .theme-roster-staff-result-block.is-comparison {
   border-color: #ddd6fe !important;
 }
+
+/* Modern daily Controller Roster output — reference redesign. */
+.theme-roster-result-header {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(59, 130, 246, 0.14), transparent 34%),
+    linear-gradient(135deg, rgba(10, 35, 58, 0.98), rgba(5, 20, 35, 0.99)) !important;
+  border-color: rgba(72, 112, 146, 0.58) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    0 12px 30px rgba(0, 0, 0, 0.18) !important;
+}
+
+.theme-roster-result-icon {
+  background: linear-gradient(145deg, rgba(35, 105, 173, 0.28), rgba(25, 57, 105, 0.22)) !important;
+  border-color: rgba(96, 165, 250, 0.38) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 22px rgba(59, 130, 246, 0.12);
+}
+
+.theme-roster-meta-dot {
+  color: #3b82f6;
+}
+
+.theme-roster-shift-group {
+  background:
+    radial-gradient(circle at 0% 50%, rgba(40, 99, 148, 0.08), transparent 34%),
+    linear-gradient(145deg, rgba(6, 24, 39, 0.99), rgba(5, 20, 34, 0.99)) !important;
+  border-color: rgba(56, 88, 116, 0.72) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 9px 24px rgba(0, 0, 0, 0.13) !important;
+}
+
+.theme-roster-shift-grid {
+  width: 100%;
+}
+
+.theme-roster-horizontal-shift-cell,
+.theme-roster-horizontal-role-cell {
+  border-color: rgba(105, 137, 163, 0.22) !important;
+}
+
+.theme-roster-horizontal-shift-cell {
+  background: rgba(8, 28, 46, 0.56);
+}
+
+.theme-roster-shift-group.is-early .theme-roster-horizontal-shift-cell {
+  background: linear-gradient(145deg, rgba(53, 43, 10, 0.24), rgba(8, 28, 46, 0.56));
+}
+
+.theme-roster-shift-group.is-late .theme-roster-horizontal-shift-cell {
+  background: linear-gradient(145deg, rgba(5, 48, 70, 0.28), rgba(8, 28, 46, 0.56));
+}
+
+.theme-roster-shift-group.is-night .theme-roster-horizontal-shift-cell {
+  background: linear-gradient(145deg, rgba(30, 34, 87, 0.28), rgba(8, 28, 46, 0.56));
+}
+
+.theme-roster-shift-group.is-other .theme-roster-horizontal-shift-cell {
+  background: linear-gradient(145deg, rgba(46, 57, 69, 0.20), rgba(8, 28, 46, 0.56));
+}
+
+.theme-roster-horizontal-role-cell {
+  background: rgba(5, 22, 36, 0.40);
+}
+
+.theme-roster-shift-dot {
+  box-shadow: 0 0 12px currentColor;
+}
+
+.theme-roster-horizontal-shift-title {
+  max-width: 94px;
+}
+
+.theme-roster-role-badge {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.theme-roster-role-badge.is-dm { box-shadow: 0 0 14px rgba(139, 92, 246, 0.13), inset 0 1px 0 rgba(255,255,255,.08); }
+.theme-roster-role-badge.is-tcc { box-shadow: 0 0 14px rgba(34, 211, 238, 0.12), inset 0 1px 0 rgba(255,255,255,.08); }
+.theme-roster-role-badge.is-tc { box-shadow: 0 0 14px rgba(56, 189, 248, 0.12), inset 0 1px 0 rgba(255,255,255,.08); }
+.theme-roster-role-badge.is-dc { box-shadow: 0 0 14px rgba(52, 211, 153, 0.12), inset 0 1px 0 rgba(255,255,255,.08); }
+.theme-roster-role-badge.is-efc { box-shadow: 0 0 14px rgba(251, 191, 36, 0.12), inset 0 1px 0 rgba(255,255,255,.08); }
+.theme-roster-role-badge.is-sc { box-shadow: 0 0 14px rgba(232, 121, 249, 0.12), inset 0 1px 0 rgba(255,255,255,.08); }
+
+.theme-roster-name-pill {
+  background: rgba(12, 31, 49, 0.88) !important;
+  min-height: 26px;
+  justify-content: center;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    0 3px 9px rgba(0, 0, 0, 0.11) !important;
+}
+
+.theme-roster-time-pill {
+  min-height: 26px;
+  font-weight: 700;
+}
+
+.theme-roster-leave-table {
+  border-color: rgba(190, 68, 142, 0.52) !important;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(190, 24, 93, 0.09), transparent 38%),
+    linear-gradient(145deg, rgba(7, 24, 39, 0.99), rgba(5, 20, 34, 0.99)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 30px rgba(0, 0, 0, 0.16) !important;
+}
+
+.theme-roster-leave-table-header {
+  background: linear-gradient(90deg, rgba(129, 30, 84, 0.72), rgba(42, 29, 92, 0.55), rgba(7, 36, 63, 0.72)) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.theme-roster-leave-total {
+  box-shadow: 0 0 16px rgba(244, 114, 182, 0.14);
+}
+
+.theme-roster-leave-list {
+  background: rgba(3, 17, 29, 0.20);
+}
+
+.theme-roster-leave-row {
+  border-color: rgba(107, 134, 157, 0.22) !important;
+}
+
+.theme-roster-leave-cell {
+  background: transparent !important;
+}
+
+.theme-roster-leave-type {
+  background: transparent !important;
+}
+
+.theme-roster-leave-type span {
+  min-width: 54px;
+  justify-content: center;
+  text-align: center;
+}
+
+html[data-app-theme="light"] .theme-roster-result-header {
+  background: linear-gradient(135deg, #f7fbff, #eef6ff) !important;
+  border-color: #b7c9d8 !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-result-icon {
+  background: linear-gradient(145deg, #e0efff, #f0f7ff) !important;
+  border-color: #93c5fd !important;
+  color: #2563eb !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group {
+  background: #ffffff !important;
+  border-color: #c7d3df !important;
+  box-shadow: 0 7px 18px rgba(15, 23, 42, 0.055) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-horizontal-shift-cell,
+html[data-app-theme="light"] .theme-roster-horizontal-role-cell {
+  border-color: #d7e0e8 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-horizontal-role-cell {
+  background: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-roster-name-pill {
+  background: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.055) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-table {
+  background: #ffffff !important;
+  border-color: #e7b6cd !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.065) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-table-header {
+  background: linear-gradient(90deg, #ffe9f3, #f3edff, #eaf5ff) !important;
+  border-color: #e7c4d6 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-list {
+  background: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-row {
+  border-color: #dbe3ea !important;
+}
+
+@media (max-width: 900px) {
+  .theme-roster-shift-group {
+    overflow-x: auto !important;
+  }
+
+  .theme-roster-shift-grid {
+    min-width: 900px;
+  }
+}
