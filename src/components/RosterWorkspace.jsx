@@ -25,7 +25,7 @@ import {
   parseRosterQuestion,
   queryRoster,
 } from "./roster/rosterParser";
-import { deleteSavedRoster, loadSavedRoster, saveRoster } from "./roster/rosterStorage";
+import { deleteSavedRoster, loadCloudRoster, loadSavedRoster, saveRoster } from "./roster/rosterStorage";
 
 const PDFJS_VERSION = "3.11.174";
 const PDFJS_SCRIPT = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.js`;
@@ -173,7 +173,7 @@ function EmptyRoster({ onUpload }) {
       </div>
       <h3 className="mt-4 text-[16px] font-extrabold text-white">Upload the OCC roster PDF</h3>
       <p className="mx-auto mt-2 max-w-lg text-[11px] leading-5 text-[#8eabc0]">
-        The original PDF and the detected controller schedule are saved in this browser, so they remain available after refresh.
+        The original PDF and detected controller schedule are saved to Cloudflare D1, so they remain after refresh and can be opened from another laptop.
       </p>
       <div className="mt-5 flex justify-center">
         <ActionButton icon={Upload} primary onClick={onUpload}>Upload Roster</ActionButton>
@@ -254,6 +254,8 @@ function buildCopyText(parsed, day, rows) {
 
 export default function RosterWorkspace() {
   const fileInputRef = useRef(null);
+  const recordRef = useRef(null);
+  const processingRef = useRef(false);
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -265,16 +267,32 @@ export default function RosterWorkspace() {
   const [question, setQuestion] = useState("");
   const [includeRest, setIncludeRest] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [syncStatus, setSyncStatus] = useState("Connecting to Cloudflare D1…");
 
   const parsed = record?.parsed || null;
+
+  useEffect(() => {
+    recordRef.current = record;
+  }, [record]);
+
+  useEffect(() => {
+    processingRef.current = processing;
+  }, [processing]);
 
   useEffect(() => {
     let active = true;
     loadSavedRoster()
       .then((saved) => {
-        if (!active || !saved) return;
+        if (!active) return;
+        if (!saved) {
+          setSyncStatus("Live storage ready · no roster uploaded");
+          return;
+        }
         const repairedParsed = ensureRosterNames(saved.parsed);
-        setRecord({ ...saved, parsed: repairedParsed });
+        const restored = { ...saved, parsed: repairedParsed };
+        setRecord(restored);
+        recordRef.current = restored;
+        setSyncStatus(saved.cloudSynced === false ? "Local cache ready · cloud sync unavailable" : "Live sync ready");
         const now = new Date();
         const preferredDay = saved.parsed?.year === now.getFullYear() && saved.parsed?.month === now.getMonth() + 1
           ? now.getDate()
@@ -282,12 +300,60 @@ export default function RosterWorkspace() {
         setSelectedDay(saved.parsed?.days?.includes(preferredDay) ? preferredDay : saved.parsed?.days?.[0] || 1);
       })
       .catch((storageError) => {
-        if (active) setError(storageError.message || "Unable to restore the saved roster.");
+        if (active) {
+          setError(storageError.message || "Unable to restore the saved roster.");
+          setSyncStatus("Cloud sync unavailable");
+        }
       })
       .finally(() => {
         if (active) setLoading(false);
       });
     return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const refreshFromCloud = async () => {
+      if (!active || processingRef.current) return;
+      try {
+        const cloudRecord = await loadCloudRoster();
+        if (!active) return;
+        if (!cloudRecord) {
+          setSyncStatus(recordRef.current ? "Local cache ready · no shared roster found" : "Live storage ready · no roster uploaded");
+          return;
+        }
+
+        const currentMs = Date.parse(recordRef.current?.updatedAt || "") || 0;
+        const cloudMs = Date.parse(cloudRecord.updatedAt || "") || 0;
+        if (!recordRef.current || cloudMs > currentMs) {
+          const repairedParsed = ensureRosterNames(cloudRecord.parsed);
+          const restored = { ...cloudRecord, parsed: repairedParsed };
+          setRecord(restored);
+          recordRef.current = restored;
+          setSelectedDay((currentDay) => repairedParsed?.days?.includes(currentDay) ? currentDay : repairedParsed?.days?.[0] || 1);
+          setNotice("A newer shared roster was loaded from Cloudflare D1.");
+        }
+        setSyncStatus("Live sync ready");
+      } catch (syncError) {
+        if (active) setSyncStatus("Local cache ready · cloud sync unavailable");
+      }
+    };
+
+    const handleFocus = () => refreshFromCloud();
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") refreshFromCloud();
+    };
+    const timer = window.setInterval(refreshFromCloud, 60000);
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   useEffect(() => {
@@ -321,17 +387,10 @@ export default function RosterWorkspace() {
       const pdfjsLib = await loadPdfJs();
       const arrayBuffer = await file.arrayBuffer();
       const parsedRoster = await parseRosterPdf(arrayBuffer, file.name, pdfjsLib);
-      await saveRoster({ file, parsed: parsedRoster });
-      const saved = {
-        id: "active",
-        fileName: file.name,
-        mimeType: file.type || "application/pdf",
-        size: file.size,
-        updatedAt: new Date().toISOString(),
-        fileBlob: file,
-        parsed: parsedRoster,
-      };
+      const saved = await saveRoster({ file, parsed: parsedRoster });
       setRecord(saved);
+      recordRef.current = saved;
+      setSyncStatus(saved.cloudSynced === false ? "Saved locally · cloud sync unavailable" : "Saved to Cloudflare D1 · live sync ready");
       const now = new Date();
       const preferredDay = parsedRoster.year === now.getFullYear() && parsedRoster.month === now.getMonth() + 1
         ? now.getDate()
@@ -340,7 +399,9 @@ export default function RosterWorkspace() {
       setRole("ALL");
       setSearch("");
       setQuestion("");
-      setNotice(`${parsedRoster.people.length} roster personnel detected and saved.`);
+      setNotice(saved.cloudSynced === false
+        ? `${parsedRoster.people.length} roster personnel detected and saved in this browser. Cloud sync could not be completed.`
+        : `${parsedRoster.people.length} roster personnel detected and saved live.`);
     } catch (fileError) {
       console.error("Roster PDF import failed:", fileError);
       setError(fileError.message || "Unable to read this roster PDF.");
@@ -369,11 +430,14 @@ export default function RosterWorkspace() {
       return;
     }
     try {
-      await deleteSavedRoster();
+      const result = await deleteSavedRoster();
       setRecord(null);
+      recordRef.current = null;
       setConfirmDelete(false);
       setError("");
-      setNotice("Roster removed from this browser.");
+      setSyncStatus(result.cloudDeleted ? "Live storage ready · no roster uploaded" : "Local roster removed · cloud delete unavailable");
+      setNotice(result.cloudDeleted ? "Roster removed from shared storage." : "Roster removed from this browser only.");
+      if (!result.cloudDeleted && result.error) setError(result.error);
     } catch (deleteError) {
       setError(deleteError.message || "Unable to delete the saved roster.");
     }
@@ -438,10 +502,10 @@ export default function RosterWorkspace() {
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-[15px] font-extrabold text-white">Controller Roster</h2>
                 <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-wide text-emerald-200">
-                  <Database className="h-2.5 w-2.5" /> Persistent
+                  <Database className="h-2.5 w-2.5" /> Live D1
                 </span>
               </div>
-              <p className="mt-1 text-[10px] text-[#7898ad]">Upload, retain, download, and query the monthly OCC roster.</p>
+              <p className="mt-1 text-[10px] text-[#7898ad]">Upload once, auto-save to Cloudflare D1, and open the same roster from another laptop.</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -486,12 +550,13 @@ export default function RosterWorkspace() {
                         <span>{record.parsed?.people?.length || 0} personnel</span>
                         <span>{record.parsed?.days?.length || 0} days</span>
                         <span>Saved {dateTimeLabel(record.updatedAt)}</span>
+                        <span>{record.cloudSynced === false ? "Local cache" : "Cloud synced"}</span>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] px-3.5 py-3 text-[9px] font-semibold text-emerald-100">
-                  <ShieldCheck className="h-4 w-4" /> Remains after refresh on this browser
+                  <ShieldCheck className="h-4 w-4" /> {syncStatus}
                 </div>
               </div>
 

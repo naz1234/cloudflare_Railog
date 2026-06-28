@@ -12,6 +12,7 @@ const ENTITY_NAMES = [
   'InsertionLive',
   'PSTTrainPrep',
   'PossessionLive',
+  'RosterFile',
   'RemovalListRow',
   'MainlineTrainRow',
   'BookmarkLink',
