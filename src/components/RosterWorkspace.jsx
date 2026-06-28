@@ -3,7 +3,6 @@ import {
   AlertCircle,
   CalendarDays,
   Check,
-  ChevronRight,
   ClipboardCopy,
   Database,
   Download,
@@ -14,7 +13,6 @@ import {
   Save,
   Search,
   ShieldCheck,
-  Sparkles,
   Trash2,
   Upload,
   X,
@@ -26,7 +24,6 @@ import {
   formatRosterDate,
   getRosterEntryRole,
   parseRosterPdf,
-  parseRosterQuestion,
   queryRoster,
 } from "./roster/rosterParser";
 import {
@@ -315,7 +312,6 @@ export default function RosterWorkspace() {
   const [selectedDay, setSelectedDay] = useState(1);
   const [role, setRole] = useState("ALL");
   const [search, setSearch] = useState("");
-  const [question, setQuestion] = useState("");
   const [includeRest, setIncludeRest] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Connecting to Cloudflare D1…");
 
@@ -434,7 +430,6 @@ export default function RosterWorkspace() {
     setSelectedDay(parsed.days?.includes(preferredDay) ? preferredDay : parsed.days?.[0] || 1);
     setRole("ALL");
     setSearch("");
-    setQuestion("");
     setIncludeRest(false);
   }, [record?.versionKey]);
 
@@ -552,28 +547,6 @@ export default function RosterWorkspace() {
     } catch (remarkError) {
       setError(remarkError.message || "Unable to save the roster remark.");
     }
-  };
-
-  const handleQuestion = () => {
-    if (!parsed) return;
-    const result = parseRosterQuestion(question, parsed);
-    if (!result?.day) {
-      setError("Include a date in the question, for example: Who is working on 2 June?");
-      return;
-    }
-    if (result.month && result.month !== parsed.month) {
-      setError(`The selected roster is for month ${parsed.month}, but the question requested month ${result.month}.`);
-      return;
-    }
-    if (!parsed.days.includes(result.day)) {
-      setError(`Day ${result.day} is not available in the selected roster.`);
-      return;
-    }
-    setError("");
-    setSelectedDay(result.day);
-    setRole(result.role || "ALL");
-    setSearch("");
-    setNotice(`Showing ${result.role === "ALL" ? "all controllers" : result.role} for day ${result.day}.`);
   };
 
   const handleCopy = async () => {
@@ -767,29 +740,6 @@ export default function RosterWorkspace() {
                   </div>
                   <ActionButton icon={Download} onClick={() => handleDownload(record)}>Download Selected</ActionButton>
                 </div>
-
-                <section className="rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-sky-200" />
-                    <div>
-                      <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-white">Ask Roster</h3>
-                      <p className="mt-0.5 text-[8px] text-[#65859a]">Example: Who is working on 2 June? · Show DC on 16 June</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <div className="relative flex-1">
-                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#55778d]" />
-                      <input
-                        value={question}
-                        onChange={(event) => setQuestion(event.target.value)}
-                        onKeyDown={(event) => { if (event.key === "Enter") handleQuestion(); }}
-                        placeholder="Who is working on 2 June?"
-                        className="h-10 w-full rounded-xl border border-[#2b506a] bg-[#061522] pl-9 pr-3 text-[11px] text-white outline-none transition focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/10 placeholder:text-[#456277]"
-                      />
-                    </div>
-                    <ActionButton icon={ChevronRight} primary onClick={handleQuestion} disabled={!question.trim()}>Show Roster</ActionButton>
-                  </div>
-                </section>
 
                 <section className="rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
                   <div className="grid gap-3 md:grid-cols-[1fr_0.8fr_1.25fr_auto]">

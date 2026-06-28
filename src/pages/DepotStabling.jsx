@@ -15909,25 +15909,6 @@ export default function DepotStablingPage() {
         {activeTab === "roster" && (
           <div className="w-full px-2 pb-10 pt-6">
             <div className="mx-auto w-full max-w-[1320px]">
-              <div className="mb-3 w-full rounded-[24px] border border-[#1d4869] bg-[#061827]/90 p-3 shadow-[0_18px_55px_rgba(0,0,0,0.25)]">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[10px] font-semibold tracking-[0.16em] text-[#bceaff]">
-                    ROS
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Live shared page</p>
-                    <h2 className="truncate text-[17px] font-normal leading-tight text-white">Roster</h2>
-                    <p className="mt-0.5 text-[10px] font-semibold text-[#8ea8c0]">
-                      No password required. Uploaded roster auto-saves to Cloudflare D1 and remains after refresh.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.85)]" />
-                    Live sync
-                  </div>
-                </div>
-              </div>
-
               <RosterWorkspace />
             </div>
           </div>
