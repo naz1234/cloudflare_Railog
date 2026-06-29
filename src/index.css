@@ -1107,6 +1107,12 @@ html[data-app-theme="light"] .theme-pst-card.is-prep-done {
   border-color: #4f8ef7 !important;
 }
 
+html[data-app-theme="light"] .theme-pst-apu-remark {
+  background: #ccfbf1 !important;
+  border-color: #5eead4 !important;
+  color: #115e59 !important;
+}
+
 html[data-app-theme="light"] .theme-pst-train-number,
 html[data-app-theme="light"] .theme-pst-time-label,
 html[data-app-theme="light"] .theme-pst-prep-label,

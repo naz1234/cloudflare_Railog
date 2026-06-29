@@ -1320,28 +1320,6 @@ export default function RosterWorkspace() {
           <main className="theme-roster-main min-w-0 rounded-2xl border border-[#294b63] bg-[#071827] p-3.5">
             {!record ? <EmptyRoster onUpload={() => fileInputRef.current?.click()} /> : (
               <div className="space-y-4">
-                <div className="theme-roster-selected-file flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#23465f] bg-[#091d2e] px-3.5 py-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="theme-roster-file-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#315671] bg-[#0b2940] text-[#bfe3fa]">
-                      <FileText className="h-[18px] w-[18px]" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <div className="truncate text-[11px] font-bold text-white">{record.fileName}</div>
-                        {record.remark ? <span className="theme-roster-remark-pill max-w-[280px] truncate rounded-full border border-amber-300/35 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-100">{record.remark}</span> : null}
-                      </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[#648399]">
-                        <span>{bytesToLabel(record.size)}</span>
-                        <span>{record.parsed?.people?.length || 0} personnel</span>
-                        <span>{record.parsed?.days?.length || 0} days</span>
-                        <span>Uploaded {dateTimeLabel(record.uploadedAt)}</span>
-                        <span>{record.cloudSynced === false ? "Local cache" : "Cloud synced"}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <ActionButton icon={Download} onClick={() => handleDownload(record)}>Download Selected</ActionButton>
-                </div>
-
                 <section className="theme-roster-filter-panel theme-roster-ext-card rounded-[18px] border border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] p-3.5 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
                   <div className="grid gap-3 md:grid-cols-[1fr_0.8fr_1.25fr]">
                     <label className="block">

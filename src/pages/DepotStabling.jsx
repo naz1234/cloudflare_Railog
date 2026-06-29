@@ -3466,9 +3466,20 @@ function getTrainRemRowCardVisual(requestItem = null, label = "", options = {}) 
 function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taName, onTaNameChange }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
-  // PST / Train Prep section must not inherit Maintenance Request / Request Type colors.
-  // Keep all normal train cells in one consistent colour; only PST / Prep status changes the colour.
-  void maintenanceMap;
+  // Keep PST / Train Prep cards clean: hide normal maintenance remarks and show
+  // a remark only when the train's request/manual remark contains the keyword APU.
+  const apuRemarkLabels = key
+    ? [
+        ...(maintenanceMap?.[key] || []).map((item) => (
+          item?.badgeText || item?.displayType || item?.typeKey || item?.remark || ""
+        )),
+        block?.extraRemark || "",
+      ]
+        .map((label) => String(label || "").trim().replace(/\s+/g, " "))
+        .filter((label) => /\bAPU\b/i.test(label))
+        .filter((label, index, labels) => labels.findIndex((candidate) => candidate.toUpperCase() === label.toUpperCase()) === index)
+        .slice(0, 2)
+    : [];
   const isWestBottomRightCorner = labelSide === "left" && isLast && isLastBlock;
   const isEastBottomLeftCorner = labelSide === "right" && isLast && isFirstBlock;
   let trainColor = "#e2eaf4";
@@ -3515,7 +3526,19 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
         <div className="theme-pst-train-number w-full text-center font-black leading-none" style={{ fontSize: key ? 15 : 12, color: key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}>
           {displayVal || "—"}
         </div>
-        {/* PST / Train Prep cells intentionally hide Maintenance Request type / remark pills. */}
+        {apuRemarkLabels.length > 0 && (
+          <div className="theme-pst-apu-remarks flex w-full flex-col items-center gap-0.5 px-0.5">
+            {apuRemarkLabels.map((label) => (
+              <span
+                key={`${cellKey}-${label}`}
+                className="theme-pst-apu-remark block w-full truncate rounded-md border border-teal-500/50 bg-teal-950/35 px-1 py-0.5 text-center text-[9px] font-semibold leading-tight text-teal-200"
+                title={label}
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        )}
         {key && (isPstDone || isPstConfirming) && (
           <div className={`theme-pst-time-panel w-full rounded-lg border px-1 py-1 ${isPstConfirming ? "is-confirming border-amber-500/60 bg-amber-950/25" : "is-done border-emerald-500/60 bg-emerald-950/30"}`}>
             <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap">
