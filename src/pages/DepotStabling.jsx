@@ -6380,7 +6380,209 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   );
 }
 
+
+function createInsertionLiquidLensMap(size = 160) {
+  if (typeof document === "undefined") return "";
+
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d", { willReadFrequently: false });
+  if (!context) return "";
+
+  const imageData = context.createImageData(size, size);
+  const pixels = imageData.data;
+  const half = size / 2;
+  const boxX = 0.94;
+  const boxY = 0.94;
+  const radius = 0.24;
+  const edgeDepth = 0.44;
+  const epsilon = 0.006;
+
+  const roundedBoxDistance = (x, y) => {
+    const qx = Math.abs(x) - boxX + radius;
+    const qy = Math.abs(y) - boxY + radius;
+    const outsideX = Math.max(qx, 0);
+    const outsideY = Math.max(qy, 0);
+    return Math.hypot(outsideX, outsideY) + Math.min(Math.max(qx, qy), 0) - radius;
+  };
+
+  const smoothStep = (edge0, edge1, value) => {
+    const t = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0 || 1)));
+    return t * t * (3 - 2 * t);
+  };
+
+  for (let py = 0; py < size; py += 1) {
+    for (let px = 0; px < size; px += 1) {
+      const x = ((px + 0.5) - half) / half;
+      const y = ((py + 0.5) - half) / half;
+      const distance = roundedBoxDistance(x, y);
+      const index = (py * size + px) * 4;
+
+      let mapX = 0.5;
+      let mapY = 0.5;
+
+      if (distance <= 0) {
+        const edgeAmount = 1 - smoothStep(0, edgeDepth, -distance);
+        const lensAmount = Math.pow(edgeAmount, 1.35);
+        const gradX = roundedBoxDistance(x + epsilon, y) - roundedBoxDistance(x - epsilon, y);
+        const gradY = roundedBoxDistance(x, y + epsilon) - roundedBoxDistance(x, y - epsilon);
+        const gradLength = Math.hypot(gradX, gradY) || 1;
+        const normalX = gradX / gradLength;
+        const normalY = gradY / gradLength;
+        const centrePull = Math.pow(Math.min(1, Math.hypot(x, y) / 1.2), 1.5) * 0.18;
+        const strength = Math.min(0.49, lensAmount * 0.44 + centrePull);
+
+        mapX = 0.5 + normalX * strength;
+        mapY = 0.5 + normalY * strength;
+      }
+
+      pixels[index] = Math.round(Math.min(1, Math.max(0, mapX)) * 255);
+      pixels[index + 1] = Math.round(Math.min(1, Math.max(0, mapY)) * 255);
+      pixels[index + 2] = 128;
+      pixels[index + 3] = 255;
+    }
+  }
+
+  context.putImageData(imageData, 0, 0);
+  return canvas.toDataURL("image/png");
+}
+
+function InsertionLiquidGlassFilters() {
+  const lensMap = useMemo(() => createInsertionLiquidLensMap(), []);
+
+  return (
+    <svg
+      className="insertion-liquid-filter-defs"
+      aria-hidden="true"
+      focusable="false"
+      width="0"
+      height="0"
+    >
+      <defs>
+        <filter
+          id="insertion-liquid-panel-filter"
+          x="-10%"
+          y="-10%"
+          width="120%"
+          height="120%"
+          colorInterpolationFilters="sRGB"
+        >
+          {lensMap ? (
+            <feImage href={lensMap} x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="liquidLensMap" />
+          ) : (
+            <feTurbulence type="fractalNoise" baseFrequency="0.009 0.014" numOctaves="1" seed="19" result="liquidLensMap" />
+          )}
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1.65" result="liquidSoftSource" />
+          <feDisplacementMap
+            in="liquidSoftSource"
+            in2="liquidLensMap"
+            scale="42"
+            xChannelSelector="R"
+            yChannelSelector="G"
+            result="liquidRefracted"
+          />
+          <feColorMatrix
+            in="liquidRefracted"
+            type="matrix"
+            values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .20 0"
+            result="liquidRed"
+          />
+          <feColorMatrix
+            in="liquidRefracted"
+            type="matrix"
+            values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 .14 0"
+            result="liquidGreen"
+          />
+          <feColorMatrix
+            in="liquidRefracted"
+            type="matrix"
+            values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 .20 0"
+            result="liquidBlue"
+          />
+          <feOffset in="liquidRed" dx="-1.35" dy="0.35" result="liquidRedShift" />
+          <feOffset in="liquidBlue" dx="1.35" dy="-0.35" result="liquidBlueShift" />
+          <feBlend in="liquidGreen" in2="liquidRedShift" mode="screen" result="liquidRG" />
+          <feBlend in="liquidRG" in2="liquidBlueShift" mode="screen" result="liquidFringe" />
+          <feBlend in="liquidRefracted" in2="liquidFringe" mode="screen" />
+        </filter>
+
+        <filter
+          id="insertion-liquid-control-filter"
+          x="-14%"
+          y="-18%"
+          width="128%"
+          height="136%"
+          colorInterpolationFilters="sRGB"
+        >
+          {lensMap ? (
+            <feImage href={lensMap} x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="liquidControlMap" />
+          ) : (
+            <feTurbulence type="fractalNoise" baseFrequency="0.018 0.026" numOctaves="1" seed="11" result="liquidControlMap" />
+          )}
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="liquidControlMap"
+            scale="17"
+            xChannelSelector="R"
+            yChannelSelector="G"
+            result="liquidControlRefracted"
+          />
+          <feGaussianBlur in="liquidControlRefracted" stdDeviation="0.55" />
+        </filter>
+      </defs>
+    </svg>
+  );
+}
+
 function InsertionTabContent({ westSection, eastSection, maintenanceMap, insertionLog, onClearInsertionDepot, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug, eastInsertionTimeOffsetMinutes = 0, onEastInsertionTimeOffsetChange }) {
+  const liquidGlassPageRef = useRef(null);
+  const liquidGlassFrameRef = useRef(0);
+
+  const handleLiquidGlassPointerMove = useCallback((event) => {
+    const page = liquidGlassPageRef.current;
+    if (!page || liquidGlassFrameRef.current) return;
+
+    const clientX = event.clientX;
+    const clientY = event.clientY;
+    liquidGlassFrameRef.current = window.requestAnimationFrame(() => {
+      liquidGlassFrameRef.current = 0;
+      const rect = page.getBoundingClientRect();
+      const x = Math.min(1, Math.max(0, (clientX - rect.left) / Math.max(rect.width, 1)));
+      const y = Math.min(1, Math.max(0, (clientY - rect.top) / Math.max(rect.height, 1)));
+      const shiftX = (x - 0.5) * 18;
+      const shiftY = (y - 0.5) * 14;
+      page.style.setProperty("--liquid-pointer-x", `${(x * 100).toFixed(2)}%`);
+      page.style.setProperty("--liquid-pointer-y", `${(y * 100).toFixed(2)}%`);
+      page.style.setProperty("--liquid-shift-x", `${shiftX.toFixed(2)}px`);
+      page.style.setProperty("--liquid-shift-y", `${shiftY.toFixed(2)}px`);
+      page.style.setProperty("--liquid-shift-x-neg", `${(-shiftX * 0.72).toFixed(2)}px`);
+      page.style.setProperty("--liquid-shift-y-neg", `${(-shiftY * 0.76).toFixed(2)}px`);
+      page.style.setProperty("--liquid-shift-x-soft", `${(shiftX * 0.26).toFixed(2)}px`);
+      page.style.setProperty("--liquid-shift-y-soft", `${(shiftY * 0.26).toFixed(2)}px`);
+      page.style.setProperty("--liquid-shift-x-tiny", `${(shiftX * 0.18).toFixed(2)}px`);
+      page.style.setProperty("--liquid-shift-y-tiny", `${(shiftY * 0.18).toFixed(2)}px`);
+    });
+  }, []);
+
+  const handleLiquidGlassPointerLeave = useCallback(() => {
+    const page = liquidGlassPageRef.current;
+    if (!page) return;
+    page.style.setProperty("--liquid-pointer-x", "52%");
+    page.style.setProperty("--liquid-pointer-y", "18%");
+    page.style.setProperty("--liquid-shift-x", "0px");
+    page.style.setProperty("--liquid-shift-y", "0px");
+    page.style.setProperty("--liquid-shift-x-neg", "0px");
+    page.style.setProperty("--liquid-shift-y-neg", "0px");
+    page.style.setProperty("--liquid-shift-x-soft", "0px");
+    page.style.setProperty("--liquid-shift-y-soft", "0px");
+    page.style.setProperty("--liquid-shift-x-tiny", "0px");
+    page.style.setProperty("--liquid-shift-y-tiny", "0px");
+  }, []);
+
+  useEffect(() => () => {
+    if (liquidGlassFrameRef.current) window.cancelAnimationFrame(liquidGlassFrameRef.current);
+  }, []);
   const [tidDragState, setTidDragState] = useState(null);
   const [tidDragPoint, setTidDragPoint] = useState({ x: 0, y: 0 });
   const [tidDragHover, setTidDragHover] = useState(null);
@@ -6543,7 +6745,20 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
   const withinTIDSchedule = isWithinTIDSchedule(TID_SCHEDULE_FIRST, TID_SCHEDULE_LAST);
 
   return (
-    <div className="theme-insertion-page flex flex-col gap-5">
+    <div
+      ref={liquidGlassPageRef}
+      className="theme-insertion-page is-liquid-glass flex flex-col gap-5"
+      onPointerMove={handleLiquidGlassPointerMove}
+      onPointerLeave={handleLiquidGlassPointerLeave}
+    >
+      <InsertionLiquidGlassFilters />
+      <div className="insertion-liquid-scene" aria-hidden="true">
+        <span className="insertion-liquid-orb insertion-liquid-orb-a" />
+        <span className="insertion-liquid-orb insertion-liquid-orb-b" />
+        <span className="insertion-liquid-orb insertion-liquid-orb-c" />
+        <span className="insertion-liquid-ribbon" />
+        <span className="insertion-liquid-grid" />
+      </div>
       <style>{`
         @keyframes insertionTidDragLift {
           from { opacity: 0; transform: translateY(5px) scale(0.94) rotate(-1deg); }

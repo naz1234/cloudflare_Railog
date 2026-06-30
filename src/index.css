@@ -5063,3 +5063,447 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-help-shell::before
     background-color: rgba(246, 249, 255, 0.88) !important;
   }
 }
+
+/* ========================================================================
+   INSERTION PAGE — TRUE DISPLACEMENT-BASED LIQUID GLASS (LIGHT MODE ONLY)
+   The visible lens layer is a real SVG feDisplacementMap refraction pass.
+   It bends a synchronized copy of the sharp colour/grid scene beneath each
+   pane, then adds chromatic edging, specular light and a frosted clear coat.
+   ======================================================================== */
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass {
+  --liquid-pointer-x: 52%;
+  --liquid-pointer-y: 18%;
+  --liquid-shift-x: 0px;
+  --liquid-shift-y: 0px;
+  --liquid-shift-x-neg: 0px;
+  --liquid-shift-y-neg: 0px;
+  --liquid-shift-x-soft: 0px;
+  --liquid-shift-y-soft: 0px;
+  --liquid-shift-x-tiny: 0px;
+  --liquid-shift-y-tiny: 0px;
+  --liquid-scene-image:
+    radial-gradient(circle at 7% 9%, rgba(112, 74, 255, 0.82) 0 5.5%, transparent 6.1%),
+    radial-gradient(circle at 24% 78%, rgba(57, 116, 255, 0.58) 0 7.5%, transparent 8.2%),
+    radial-gradient(circle at 72% 12%, rgba(8, 205, 242, 0.76) 0 8.5%, transparent 9.2%),
+    radial-gradient(circle at 94% 72%, rgba(31, 211, 183, 0.64) 0 10%, transparent 10.8%),
+    conic-gradient(from 128deg at 52% 48%,
+      rgba(109, 80, 255, 0.24),
+      transparent 18%,
+      rgba(23, 177, 247, 0.24) 34%,
+      transparent 52%,
+      rgba(53, 224, 194, 0.22) 70%,
+      transparent 86%,
+      rgba(109, 80, 255, 0.24)),
+    repeating-linear-gradient(116deg,
+      transparent 0 74px,
+      rgba(255, 255, 255, 0.42) 75px 77px,
+      rgba(82, 111, 199, 0.11) 78px 81px,
+      transparent 82px 164px),
+    linear-gradient(132deg, #e9e9ff 0%, #f6f8ff 31%, #e7f8ff 65%, #e4fff9 100%);
+
+  background: linear-gradient(132deg, #ebeaff 0%, #f7f9ff 34%, #e8faff 68%, #e7fff9 100%) !important;
+  box-shadow:
+    0 26px 72px rgba(76, 64, 180, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    inset 0 -1px 0 rgba(47, 61, 118, 0.11) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass::before,
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass::after {
+  content: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass > .insertion-liquid-filter-defs {
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass > .insertion-liquid-scene {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  border-radius: inherit !important;
+  background-image: var(--liquid-scene-image) !important;
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 520px 520px, 100% 100% !important;
+  background-position: center !important;
+  opacity: 0.94 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass > :not(.insertion-liquid-scene):not(.insertion-liquid-filter-defs) {
+  position: relative;
+  z-index: 2 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-orb,
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-ribbon,
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-grid {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-orb {
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    inset 0 0 0 1px rgba(77, 96, 182, 0.14),
+    0 12px 36px rgba(67, 56, 202, 0.14);
+  transform: translate3d(var(--liquid-shift-x), var(--liquid-shift-y), 0);
+  transition: transform 180ms cubic-bezier(.2,.8,.2,1);
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-orb-a {
+  width: 290px;
+  height: 290px;
+  left: -94px;
+  top: -105px;
+  background:
+    repeating-conic-gradient(from 24deg, rgba(255,255,255,.48) 0 5deg, transparent 5deg 17deg),
+    radial-gradient(circle at 34% 30%, rgba(255,255,255,.92), rgba(128,90,255,.58) 42%, rgba(86,68,224,.18) 72%);
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-orb-b {
+  width: 360px;
+  height: 360px;
+  right: -120px;
+  top: 8%;
+  transform: translate3d(var(--liquid-shift-x-neg), var(--liquid-shift-y), 0);
+  background:
+    repeating-linear-gradient(35deg, rgba(255,255,255,.30) 0 2px, transparent 2px 15px),
+    radial-gradient(circle at 36% 34%, rgba(255,255,255,.90), rgba(25,210,245,.54) 42%, rgba(14,165,233,.12) 75%);
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-orb-c {
+  width: 250px;
+  height: 250px;
+  left: 31%;
+  bottom: -92px;
+  transform: translate3d(var(--liquid-shift-x-soft), var(--liquid-shift-y-neg), 0);
+  background:
+    repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,.24) 0 3px, transparent 4px 18px),
+    radial-gradient(circle at 35% 32%, rgba(255,255,255,.88), rgba(51,210,181,.46) 45%, rgba(20,184,166,.10) 76%);
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-ribbon {
+  width: 128%;
+  height: 150px;
+  left: -14%;
+  top: 46%;
+  transform: rotate(-7deg) translate3d(var(--liquid-shift-x-neg), var(--liquid-shift-y-soft), 0);
+  border-top: 2px solid rgba(255,255,255,.72);
+  border-bottom: 1px solid rgba(72,92,177,.18);
+  background:
+    repeating-linear-gradient(90deg, rgba(93,75,232,.17) 0 18px, rgba(31,190,236,.18) 18px 36px, rgba(34,211,181,.16) 36px 54px),
+    linear-gradient(90deg, rgba(115,92,255,.22), rgba(22,201,239,.25), rgba(44,211,184,.20));
+  opacity: .72;
+  transition: transform 220ms cubic-bezier(.2,.8,.2,1);
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-grid {
+  inset: 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(58, 74, 151, 0.18) 0 1px, transparent 1px 36px),
+    repeating-linear-gradient(0deg, rgba(58, 74, 151, 0.14) 0 1px, transparent 1px 36px),
+    radial-gradient(circle at var(--liquid-pointer-x) var(--liquid-pointer-y), rgba(255,255,255,.62), transparent 17%);
+  opacity: .46;
+}
+
+/* Large liquid-glass lenses. The ::before layer is the scene copy that is
+   physically bent by the SVG feDisplacementMap. Content remains undistorted. */
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
+  .theme-insertion-section,
+  .theme-insertion-reference,
+  .insertion-clean-shell,
+  .insertion-help-shell
+) {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+  background: rgba(255, 255, 255, 0.13) !important;
+  border: 1px solid rgba(255, 255, 255, 0.86) !important;
+  backdrop-filter: blur(15px) saturate(132%) !important;
+  -webkit-backdrop-filter: blur(15px) saturate(132%) !important;
+  box-shadow:
+    0 24px 56px rgba(42, 47, 104, 0.16),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.98),
+    inset -1px -1px 0 rgba(50, 67, 129, 0.22),
+    inset 0 20px 42px rgba(255, 255, 255, 0.13) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
+  .theme-insertion-section,
+  .theme-insertion-reference,
+  .insertion-clean-shell,
+  .insertion-help-shell
+)::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: -34px !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+  border-radius: 36px !important;
+  background-image: var(--liquid-scene-image) !important;
+  background-size: 100vw 100vh, 100vw 100vh, 100vw 100vh, 100vw 100vh, 100vw 100vh, 520px 520px, 100vw 100vh !important;
+  background-position: center !important;
+  background-attachment: fixed !important;
+  filter: url(#insertion-liquid-panel-filter) !important;
+  opacity: 0.64 !important;
+  mix-blend-mode: normal !important;
+  transform: translate3d(var(--liquid-shift-x), var(--liquid-shift-y), 0) scale(1.055) !important;
+  transform-origin: center !important;
+  transition: transform 190ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease !important;
+  will-change: filter, transform !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
+  .theme-insertion-section,
+  .theme-insertion-reference,
+  .insertion-clean-shell,
+  .insertion-help-shell
+)::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+  padding: 1px !important;
+  border-radius: inherit !important;
+  background:
+    radial-gradient(240px 160px at var(--liquid-pointer-x) var(--liquid-pointer-y), rgba(255,255,255,.72), transparent 58%),
+    linear-gradient(135deg, rgba(255,255,255,.96) 0%, rgba(255,255,255,.18) 27%, transparent 47%, rgba(22,205,240,.16) 72%, rgba(124,92,255,.20) 100%) !important;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0) !important;
+  -webkit-mask-composite: xor !important;
+  mask-composite: exclude !important;
+  opacity: .90 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
+  .theme-insertion-section,
+  .theme-insertion-reference,
+  .insertion-clean-shell,
+  .insertion-help-shell
+) > * {
+  position: relative;
+  z-index: 2 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-section:hover::before,
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-reference:hover::before,
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-clean-shell:hover::before,
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-help-shell:hover::before {
+  opacity: .76 !important;
+  transform: translate3d(var(--liquid-shift-x), var(--liquid-shift-y), 0) scale(1.075) !important;
+}
+
+/* Internal surfaces stay clear so the displaced scene can remain visible. */
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
+  .theme-insertion-table-wrap,
+  .theme-insertion-reference-header,
+  .theme-insertion-reference-depot,
+  .theme-insertion-reference-table
+) {
+  background: rgba(255,255,255,.075) !important;
+  border-color: rgba(255,255,255,.54) !important;
+  backdrop-filter: blur(8px) saturate(125%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(125%) !important;
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.70),
+    inset -1px -1px 0 rgba(62,75,123,.12) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
+  .theme-insertion-table-header,
+  .theme-insertion-road-label,
+  .theme-insertion-reference-depot-header,
+  .theme-insertion-reference-table-header
+) {
+  background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.055)) !important;
+  border-color: rgba(58,74,121,.14) !important;
+  backdrop-filter: blur(7px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(7px) saturate(120%) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-reference-row-cell {
+  background: rgba(255,255,255,.105) !important;
+  border-color: rgba(58,74,121,.10) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-reference-row:nth-child(even) .theme-insertion-reference-row-cell {
+  background: rgba(255,255,255,.045) !important;
+}
+
+/* Train cards become smaller independent liquid lenses. Refraction is kept on
+   populated cards only to avoid dozens of unnecessary GPU filter passes. */
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+  background: rgba(255,255,255,.11) !important;
+  border-color: rgba(255,255,255,.78) !important;
+  backdrop-filter: blur(8px) saturate(126%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(126%) !important;
+  box-shadow:
+    0 8px 22px rgba(42,48,97,.12),
+    inset 1px 1px 0 rgba(255,255,255,.96),
+    inset -1px -1px 0 rgba(55,68,116,.19),
+    inset 0 9px 18px rgba(255,255,255,.08) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card.has-train::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: -16px !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+  background-image: var(--liquid-scene-image) !important;
+  background-size: 100vw 100vh, 100vw 100vh, 100vw 100vh, 100vw 100vh, 100vw 100vh, 520px 520px, 100vw 100vh !important;
+  background-position: center !important;
+  background-attachment: fixed !important;
+  filter: url(#insertion-liquid-control-filter) !important;
+  opacity: .42 !important;
+  transform: translate3d(var(--liquid-shift-x-soft), var(--liquid-shift-y-soft), 0) scale(1.08) !important;
+  will-change: filter, transform !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+  border-radius: inherit !important;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.58), transparent 31%, transparent 68%, rgba(55,211,235,.12)),
+    radial-gradient(90px 64px at 20% 4%, rgba(255,255,255,.54), transparent 66%) !important;
+  border: 1px solid rgba(255,255,255,.31) !important;
+  box-shadow: inset -1px -1px 0 rgba(80,72,180,.12) !important;
+  opacity: .88 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card > * {
+  position: relative;
+  z-index: 2 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card.is-empty {
+  background: rgba(255,255,255,.025) !important;
+  border-color: rgba(70,84,127,.18) !important;
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,.42) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card.has-input:not(.is-inserted),
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card:is(.is-inserted, .is-complete),
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card.is-duplicate {
+  background: rgba(255,255,255,.13) !important;
+}
+
+/* Selection pills and action buttons use the same displacement map at a
+   smaller scale, giving them a moving lens rather than a flat translucent fill. */
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
+  .theme-insertion-pg-button.is-selected,
+  .theme-insertion-action:not(:disabled),
+  .theme-insertion-refresh-button:not(:disabled),
+  .theme-insertion-reference-tab.is-active,
+  .theme-insertion-reference-sound-button.is-enabled,
+  .theme-insertion-insert-button.has-input,
+  .insertion-clean-action:not(:disabled)
+) {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+  background-color: rgba(255,255,255,.15) !important;
+  background-image: linear-gradient(145deg, rgba(255,255,255,.34), rgba(255,255,255,.035)) !important;
+  border-color: rgba(255,255,255,.80) !important;
+  backdrop-filter: blur(8px) saturate(135%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(135%) !important;
+  box-shadow:
+    0 6px 18px rgba(40,47,94,.11),
+    inset 1px 1px 0 rgba(255,255,255,.96),
+    inset -1px -1px 0 rgba(64,76,123,.18) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
+  .theme-insertion-pg-button.is-selected,
+  .theme-insertion-action:not(:disabled),
+  .theme-insertion-refresh-button:not(:disabled),
+  .theme-insertion-reference-tab.is-active,
+  .theme-insertion-reference-sound-button.is-enabled,
+  .theme-insertion-insert-button.has-input,
+  .insertion-clean-action:not(:disabled)
+)::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: -10px !important;
+  z-index: -1 !important;
+  pointer-events: none !important;
+  background-image: var(--liquid-scene-image) !important;
+  background-size: 100vw 100vh, 100vw 100vh, 100vw 100vh, 100vw 100vh, 100vw 100vh, 520px 520px, 100vw 100vh !important;
+  background-position: center !important;
+  background-attachment: fixed !important;
+  filter: url(#insertion-liquid-control-filter) !important;
+  opacity: .40 !important;
+  transform: translate3d(var(--liquid-shift-x-tiny), var(--liquid-shift-y-tiny), 0) scale(1.10) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
+  .theme-insertion-pg-button.is-selected,
+  .theme-insertion-action:not(:disabled),
+  .theme-insertion-refresh-button:not(:disabled),
+  .theme-insertion-reference-tab.is-active,
+  .theme-insertion-reference-sound-button.is-enabled,
+  .theme-insertion-insert-button.has-input,
+  .insertion-clean-action:not(:disabled)
+)::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+  border-radius: inherit !important;
+  background: linear-gradient(135deg, rgba(255,255,255,.56), transparent 45%, rgba(37,211,238,.10)) !important;
+  opacity: .72 !important;
+}
+
+/* Remove the old grain pass: refraction now creates the material depth. */
+html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
+  .theme-insertion-section,
+  .theme-insertion-reference,
+  .insertion-clean-shell,
+  .insertion-help-shell
+)::before {
+  mix-blend-mode: normal !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-orb,
+  html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-ribbon,
+  html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
+    .theme-insertion-section,
+    .theme-insertion-reference,
+    .insertion-clean-shell,
+    .insertion-help-shell
+  )::before {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* SVG-filter fallback: keep the previous frosted glass if a browser disables
+   external filter references for CSS elements. */
+@supports not (filter: url(#insertion-liquid-panel-filter)) {
+  html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
+    .theme-insertion-section,
+    .theme-insertion-reference,
+    .insertion-clean-shell,
+    .insertion-help-shell
+  )::before,
+  html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card.has-train::before {
+    filter: blur(18px) saturate(150%) !important;
+  }
+}
