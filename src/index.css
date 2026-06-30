@@ -4854,3 +4854,212 @@ html[data-app-theme="light"] .theme-insertion-page :is(.insertion-clean-card-hea
 html[data-app-theme="light"] .theme-insertion-page .insertion-clean-card-body {
   background: rgba(255, 255, 255, 0.055) !important;
 }
+
+/* --------------------------------------------------------------------------
+   INSERTION / LIGHT MODE — VISIBLE FROSTED-BLUR PASS
+   Backdrop blur is only visible when there is detailed artwork behind the
+   glass. Keep this scene layer sharp, then let each panel blur it.
+   -------------------------------------------------------------------------- */
+html[data-app-theme="light"] .theme-insertion-page {
+  background:
+    linear-gradient(135deg, rgba(248, 250, 255, 0.76), rgba(239, 248, 255, 0.68) 46%, rgba(246, 241, 255, 0.72) 72%, rgba(236, 253, 250, 0.70)),
+    #eef4ff !important;
+}
+
+/* Sharp colour ribbons below the panes. They become soft only through glass. */
+html[data-app-theme="light"] .theme-insertion-page::before {
+  inset: -10% -6% !important;
+  width: auto !important;
+  height: auto !important;
+  top: -10% !important;
+  left: -6% !important;
+  right: -6% !important;
+  bottom: -10% !important;
+  z-index: 0 !important;
+  border-radius: 34px !important;
+  opacity: 0.92 !important;
+  filter: none !important;
+  animation: none !important;
+  background:
+    radial-gradient(circle at 8% 12%, rgba(124, 92, 255, 0.62) 0 8%, transparent 8.5%),
+    radial-gradient(circle at 31% 76%, rgba(91, 129, 255, 0.40) 0 10%, transparent 10.6%),
+    radial-gradient(circle at 79% 14%, rgba(18, 204, 239, 0.56) 0 11%, transparent 11.6%),
+    radial-gradient(circle at 92% 72%, rgba(36, 211, 183, 0.44) 0 13%, transparent 13.7%),
+    linear-gradient(116deg,
+      transparent 0 9%,
+      rgba(125, 92, 255, 0.26) 9% 15%,
+      transparent 15% 39%,
+      rgba(48, 133, 255, 0.20) 39% 45%,
+      transparent 45% 70%,
+      rgba(17, 205, 238, 0.23) 70% 77%,
+      transparent 77% 100%);
+  transform: none !important;
+}
+
+/* Fine sharp grid gives the eye a clear before/after blur reference. */
+html[data-app-theme="light"] .theme-insertion-page::after {
+  inset: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  right: 0 !important;
+  top: 0 !important;
+  z-index: 0 !important;
+  border-radius: inherit !important;
+  opacity: 0.28 !important;
+  filter: none !important;
+  animation: none !important;
+  background:
+    repeating-linear-gradient(90deg, rgba(71, 85, 145, 0.18) 0 1px, transparent 1px 42px),
+    repeating-linear-gradient(0deg, rgba(71, 85, 145, 0.14) 0 1px, transparent 1px 42px) !important;
+  -webkit-mask: none !important;
+  mask: none !important;
+  transform: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page > * {
+  position: relative;
+  z-index: 2 !important;
+}
+
+/* Real panes: low-opacity fill + stronger backdrop blur. */
+html[data-app-theme="light"] .theme-insertion-page :is(
+  .theme-insertion-section,
+  .theme-insertion-reference,
+  .insertion-clean-shell,
+  .insertion-help-shell
+) {
+  background-color: rgba(255, 255, 255, 0.20) !important;
+  background-image:
+    linear-gradient(142deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0.09) 48%, rgba(255, 255, 255, 0.025) 100%) !important;
+  border-color: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: blur(38px) saturate(150%) contrast(103%) !important;
+  -webkit-backdrop-filter: blur(38px) saturate(150%) contrast(103%) !important;
+  box-shadow:
+    0 18px 48px rgba(51, 58, 105, 0.12),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.98),
+    inset -1px -1px 0 rgba(67, 76, 120, 0.16),
+    inset 0 18px 34px rgba(255, 255, 255, 0.11) !important;
+}
+
+/* Nested panes should not rebuild an opaque white wall. */
+html[data-app-theme="light"] .theme-insertion-page :is(
+  .theme-insertion-reference-header,
+  .theme-insertion-reference-depot,
+  .theme-insertion-reference-table,
+  .theme-insertion-table-wrap
+) {
+  background-color: rgba(255, 255, 255, 0.11) !important;
+  background-image:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.025)) !important;
+  border-color: rgba(255, 255, 255, 0.58) !important;
+  backdrop-filter: blur(24px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(145%) !important;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.76),
+    inset -1px -1px 0 rgba(66, 77, 112, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-table,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-grid-cell {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page :is(
+  .theme-insertion-table-header,
+  .theme-insertion-road-label,
+  .theme-insertion-reference-depot-header,
+  .theme-insertion-reference-table-header
+) {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.23), rgba(255, 255, 255, 0.025)) !important;
+  backdrop-filter: blur(18px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+}
+
+/* Rows remain readable while still revealing the blurred scene beneath. */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row-cell {
+  background: rgba(255, 255, 255, 0.085) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row:nth-child(even) .theme-insertion-reference-row-cell {
+  background: rgba(255, 255, 255, 0.035) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row.has-remark .theme-insertion-reference-row-cell {
+  background: rgba(255, 255, 255, 0.075) !important;
+}
+
+/* Card lenses: enough blur to frost the sharp grid and colour ribbons. */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  background-image:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.065) 52%, rgba(255, 255, 255, 0.015) 100%) !important;
+  border-color: rgba(255, 255, 255, 0.76) !important;
+  backdrop-filter: blur(18px) saturate(145%) contrast(102%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(145%) contrast(102%) !important;
+  box-shadow:
+    0 7px 20px rgba(39, 47, 86, 0.09),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.98),
+    inset -1px -1px 0 rgba(64, 74, 111, 0.18),
+    inset 0 10px 18px rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-empty {
+  background-color: rgba(255, 255, 255, 0.035) !important;
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.006)) !important;
+  border-color: rgba(80, 92, 128, 0.16) !important;
+  backdrop-filter: blur(13px) saturate(135%) !important;
+  -webkit-backdrop-filter: blur(13px) saturate(135%) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="west"] .theme-insertion-card.has-train:not(.has-input):not(.is-inserted):not(.is-complete) {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  background-image: linear-gradient(145deg, rgba(255,255,255,0.27), rgba(111,90,255,0.075)) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] .theme-insertion-card.has-train:not(.has-input):not(.is-inserted):not(.is-complete) {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  background-image: linear-gradient(145deg, rgba(255,255,255,0.27), rgba(22,210,245,0.075)) !important;
+}
+
+/* Keep status colours, but mix them with glass rather than filling the card. */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.has-input:not(.is-inserted) {
+  background-color: rgba(255, 255, 255, 0.16) !important;
+  background-image: linear-gradient(145deg, rgba(255,255,255,0.29), rgba(245,158,11,0.11)) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card:is(.is-inserted, .is-complete) {
+  background-color: rgba(255, 255, 255, 0.16) !important;
+  background-image: linear-gradient(145deg, rgba(255,255,255,0.29), rgba(45,212,191,0.11)) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-duplicate {
+  background-color: rgba(255, 255, 255, 0.16) !important;
+  background-image: linear-gradient(145deg, rgba(255,255,255,0.29), rgba(239,68,68,0.11)) !important;
+}
+
+/* Subtle grain makes the pane feel frosted rather than simply transparent. */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section::before,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference::before,
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-shell::before,
+html[data-app-theme="light"] .theme-insertion-page .insertion-help-shell::before {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.19), transparent 80%) !important;
+  background-size: 96px 96px, auto !important;
+  mix-blend-mode: soft-light;
+  opacity: 0.22 !important;
+}
+
+/* Fallback keeps the hierarchy readable on browsers without backdrop-filter. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html[data-app-theme="light"] .theme-insertion-page :is(
+    .theme-insertion-section,
+    .theme-insertion-reference,
+    .insertion-clean-shell,
+    .insertion-help-shell
+  ) {
+    background-color: rgba(246, 249, 255, 0.88) !important;
+  }
+}
