@@ -4881,6 +4881,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
   return (
     <section
       className="theme-insertion-section rounded-2xl border px-4 py-4"
+      data-depot={sectionDepot}
       style={{
         width: "fit-content",
         maxWidth: "fit-content",
@@ -6542,7 +6543,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
   const withinTIDSchedule = isWithinTIDSchedule(TID_SCHEDULE_FIRST, TID_SCHEDULE_LAST);
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="theme-insertion-page flex flex-col gap-5">
       <style>{`
         @keyframes insertionTidDragLift {
           from { opacity: 0; transform: translateY(5px) scale(0.94) rotate(-1deg); }
