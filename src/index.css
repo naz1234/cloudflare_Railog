@@ -3808,60 +3808,28 @@ html[data-app-theme="light"] .theme-roster-leave-type.is-rd .theme-roster-leave-
 }
 
 /* ========================================================================
-   INSERTION PAGE — AAVE-INSPIRED LIGHT GLASS
-   Scope: insertion page only, and only while the application is in light mode.
-   This is a lightweight, cross-browser visual treatment: frosted layers,
-   chromatic rim light, soft refraction-like colour fields and specular sheen.
-   Dark mode and every other page keep their existing design.
+   INSERTION PAGE — LIGHT GLASSMORPHISM
+   Adapted from the supplied West Depot glass reference.
+   Scope is deliberately limited to the insertion page while light mode is on.
    ======================================================================== */
 
-@keyframes insertionGlassDriftA {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(38px, 24px, 0) scale(1.08); }
-}
-
-@keyframes insertionGlassDriftB {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(-30px, 34px, 0) scale(1.06); }
-}
-
-@keyframes insertionGlassShimmer {
-  0% { transform: translateX(-130%) skewX(-18deg); opacity: 0; }
-  18% { opacity: 0.42; }
-  52% { opacity: 0.12; }
-  100% { transform: translateX(220%) skewX(-18deg); opacity: 0; }
-}
-
 html[data-app-theme="light"] .theme-insertion-page {
-  --ins-glass-text: #111827;
-  --ins-glass-muted: #556274;
-  --ins-glass-line: rgba(75, 91, 118, 0.13);
-  --ins-glass-white: rgba(255, 255, 255, 0.62);
-  --ins-glass-white-strong: rgba(255, 255, 255, 0.82);
-  --ins-glass-indigo: 99, 102, 241;
-  --ins-glass-violet: 139, 92, 246;
-  --ins-glass-cyan: 34, 211, 238;
-  --ins-glass-mint: 45, 212, 191;
-  --ins-glass-amber: 245, 158, 11;
-  --ins-glass-danger: 239, 68, 68;
-
   position: relative;
   isolation: isolate;
   overflow: hidden;
   padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.82);
-  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 26px;
   background:
-    radial-gradient(56% 52% at 4% 2%, rgba(var(--ins-glass-indigo), 0.26) 0%, transparent 66%),
-    radial-gradient(48% 58% at 98% 8%, rgba(var(--ins-glass-cyan), 0.24) 0%, transparent 64%),
-    radial-gradient(46% 50% at 82% 88%, rgba(var(--ins-glass-violet), 0.18) 0%, transparent 68%),
-    radial-gradient(42% 46% at 15% 92%, rgba(var(--ins-glass-mint), 0.19) 0%, transparent 66%),
-    linear-gradient(145deg, #f8faff 0%, #eef5ff 38%, #f6f2ff 68%, #effcfb 100%);
+    radial-gradient(ellipse 70% 58% at 4% 0%, rgba(251, 146, 60, 0.42) 0%, transparent 58%),
+    radial-gradient(ellipse 54% 66% at 98% 4%, rgba(20, 184, 166, 0.35) 0%, transparent 54%),
+    radial-gradient(ellipse 60% 46% at 55% 100%, rgba(234, 179, 8, 0.28) 0%, transparent 58%),
+    radial-gradient(ellipse 42% 50% at 8% 88%, rgba(239, 68, 68, 0.20) 0%, transparent 54%),
+    radial-gradient(ellipse 38% 42% at 88% 78%, rgba(16, 185, 129, 0.23) 0%, transparent 54%),
+    linear-gradient(145deg, #fff7ed 0%, #ecfdf5 42%, #fffbeb 72%, #fef2f2 100%);
   box-shadow:
-    0 28px 80px rgba(67, 56, 202, 0.11),
-    0 8px 30px rgba(15, 23, 42, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98),
-    inset 0 -1px 0 rgba(93, 78, 180, 0.05);
+    0 24px 70px rgba(120, 53, 15, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
 }
 
 html[data-app-theme="light"] .theme-insertion-page::before,
@@ -3871,30 +3839,23 @@ html[data-app-theme="light"] .theme-insertion-page::after {
   z-index: -1;
   pointer-events: none;
   border-radius: 999px;
-  filter: blur(56px);
-  will-change: transform;
+  filter: blur(58px);
 }
 
 html[data-app-theme="light"] .theme-insertion-page::before {
-  width: 460px;
-  height: 460px;
-  top: -210px;
-  left: -155px;
-  background:
-    radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.84), transparent 26%),
-    linear-gradient(135deg, rgba(var(--ins-glass-indigo), 0.42), rgba(var(--ins-glass-violet), 0.25));
-  animation: insertionGlassDriftA 18s ease-in-out infinite;
+  width: 430px;
+  height: 430px;
+  top: -170px;
+  left: -130px;
+  background: rgba(249, 115, 22, 0.26);
 }
 
 html[data-app-theme="light"] .theme-insertion-page::after {
-  width: 430px;
-  height: 430px;
-  right: -145px;
-  top: 20%;
-  background:
-    radial-gradient(circle at 40% 34%, rgba(255, 255, 255, 0.72), transparent 24%),
-    linear-gradient(135deg, rgba(var(--ins-glass-cyan), 0.36), rgba(var(--ins-glass-mint), 0.28));
-  animation: insertionGlassDriftB 21s ease-in-out infinite;
+  width: 390px;
+  height: 390px;
+  right: -120px;
+  top: 16%;
+  background: rgba(20, 184, 166, 0.22);
 }
 
 html[data-app-theme="light"] .theme-insertion-page > * {
@@ -3902,220 +3863,143 @@ html[data-app-theme="light"] .theme-insertion-page > * {
   z-index: 1;
 }
 
-/* Main depot panels */
+/* Main West / East depot glass panels */
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section {
   position: relative;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.42) !important;
-  background-image:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.70), rgba(255, 255, 255, 0.20)) !important;
-  border: 1px solid rgba(255, 255, 255, 0.88) !important;
-  backdrop-filter: blur(30px) saturate(185%) !important;
-  -webkit-backdrop-filter: blur(30px) saturate(185%) !important;
+  background: rgba(255, 255, 255, 0.38) !important;
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.20)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.84) !important;
+  backdrop-filter: blur(28px) saturate(185%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(185%) !important;
   box-shadow:
-    0 22px 58px rgba(67, 56, 202, 0.09),
-    0 4px 16px rgba(15, 23, 42, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98),
-    inset 0 -1px 0 rgba(30, 41, 59, 0.03) !important;
+    0 18px 52px rgba(120, 53, 15, 0.10),
+    0 3px 12px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.025) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="west"] {
-  border-color: rgba(var(--ins-glass-indigo), 0.28) !important;
+  border-color: rgba(249, 115, 22, 0.34) !important;
   box-shadow:
-    0 22px 58px rgba(var(--ins-glass-indigo), 0.11),
-    0 4px 16px rgba(15, 23, 42, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+    0 18px 52px rgba(249, 115, 22, 0.11),
+    0 3px 12px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] {
-  border-color: rgba(var(--ins-glass-cyan), 0.31) !important;
+  border-color: rgba(20, 184, 166, 0.32) !important;
   box-shadow:
-    0 22px 58px rgba(var(--ins-glass-cyan), 0.10),
-    0 4px 16px rgba(15, 23, 42, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+    0 18px 52px rgba(20, 184, 166, 0.10),
+    0 3px 12px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section::before {
   content: "";
   position: absolute;
-  z-index: 0;
   inset: 0 0 auto 0;
-  height: 44%;
+  height: 42%;
   pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.62), transparent 72%),
-    radial-gradient(65% 58% at 12% 0%, rgba(var(--ins-glass-indigo), 0.09), transparent 75%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.44), transparent);
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"]::before {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.62), transparent 72%),
-    radial-gradient(65% 58% at 88% 0%, rgba(var(--ins-glass-cyan), 0.10), transparent 75%);
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section::after {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  padding: 1px;
-  border-radius: inherit;
-  pointer-events: none;
-  background: conic-gradient(
-    from 205deg at 50% 50%,
-    rgba(var(--ins-glass-cyan), 0.22),
-    rgba(255, 255, 255, 0.92),
-    rgba(var(--ins-glass-violet), 0.18),
-    rgba(255, 255, 255, 0.82),
-    rgba(var(--ins-glass-cyan), 0.22)
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0.72;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* Titles and controls */
+/* Section title and compact controls */
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-title-icon {
-  position: relative;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.64) !important;
-  border-color: rgba(255, 255, 255, 0.94) !important;
-  color: #4f46e5 !important;
-  backdrop-filter: blur(14px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(180%) !important;
+  background: rgba(255, 255, 255, 0.62) !important;
+  border-color: rgba(255, 255, 255, 0.92) !important;
+  color: #ea580c !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
   box-shadow:
-    0 8px 22px rgba(var(--ins-glass-indigo), 0.14),
-    inset 0 1px 0 #ffffff,
-    inset 0 -1px 0 rgba(var(--ins-glass-violet), 0.08) !important;
+    0 4px 14px rgba(0, 0, 0, 0.07),
+    inset 0 1px 0 #ffffff !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] .theme-insertion-title-icon {
-  color: #0891b2 !important;
-  box-shadow:
-    0 8px 22px rgba(var(--ins-glass-cyan), 0.14),
-    inset 0 1px 0 #ffffff,
-    inset 0 -1px 0 rgba(var(--ins-glass-cyan), 0.09) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-title-icon::after {
-  content: "";
-  position: absolute;
-  inset: -30% auto -30% -65%;
-  width: 42%;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.92), transparent);
-  animation: insertionGlassShimmer 6.5s ease-in-out infinite;
+  color: #0f766e !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-title {
-  color: var(--ins-glass-text) !important;
-  letter-spacing: -0.025em !important;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.78) !important;
+  color: #1c1917 !important;
+  letter-spacing: -0.02em !important;
+  text-shadow: none !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-pg-switch,
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-control {
-  background: rgba(77, 87, 113, 0.07) !important;
-  border-color: rgba(255, 255, 255, 0.70) !important;
-  box-shadow:
-    inset 0 1px 3px rgba(30, 41, 59, 0.08),
-    0 1px 0 rgba(255, 255, 255, 0.76) !important;
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-pg-switch {
+  background: rgba(28, 25, 23, 0.055) !important;
+  border-color: rgba(28, 25, 23, 0.08) !important;
+  box-shadow: inset 0 1px 2px rgba(28, 25, 23, 0.06) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-pg-button {
   background: transparent !important;
   border-color: transparent !important;
-  color: rgba(30, 41, 59, 0.55) !important;
+  color: rgba(28, 25, 23, 0.48) !important;
   box-shadow: none !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-pg-button.is-selected {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(var(--ins-glass-indigo), 0.13)) !important;
-  border-color: rgba(var(--ins-glass-indigo), 0.28) !important;
-  color: #4338ca !important;
+  background: rgba(249, 115, 22, 0.14) !important;
+  border-color: rgba(249, 115, 22, 0.30) !important;
+  color: #c2410c !important;
   box-shadow:
-    0 5px 15px rgba(var(--ins-glass-indigo), 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+    0 2px 9px rgba(249, 115, 22, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] .theme-insertion-pg-button.is-selected {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(var(--ins-glass-cyan), 0.13)) !important;
-  border-color: rgba(var(--ins-glass-cyan), 0.30) !important;
-  color: #0e7490 !important;
-  box-shadow:
-    0 5px 15px rgba(var(--ins-glass-cyan), 0.13),
-    inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button,
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-action,
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-sound-button,
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-tab,
-html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action {
-  background: rgba(255, 255, 255, 0.58) !important;
-  border-color: rgba(255, 255, 255, 0.90) !important;
-  color: #374151 !important;
-  backdrop-filter: blur(14px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(180%) !important;
-  box-shadow:
-    0 5px 14px rgba(30, 41, 59, 0.07),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98),
-    inset 0 -1px 0 rgba(71, 85, 105, 0.04) !important;
-  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button:hover:not(:disabled),
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-action:hover:not(:disabled),
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-sound-button:hover:not(:disabled),
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-tab:hover:not(:disabled),
-html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.72) !important;
-  box-shadow:
-    0 9px 22px rgba(var(--ins-glass-indigo), 0.10),
-    inset 0 1px 0 #ffffff !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-download {
-  background: linear-gradient(145deg, rgba(255,255,255,0.76), rgba(var(--ins-glass-cyan),0.13)) !important;
-  border-color: rgba(var(--ins-glass-cyan), 0.32) !important;
-  color: #0e7490 !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-clear,
-html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action-danger {
-  background: linear-gradient(145deg, rgba(255,255,255,0.72), rgba(var(--ins-glass-danger),0.10)) !important;
-  border-color: rgba(var(--ins-glass-danger), 0.25) !important;
-  color: #dc2626 !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-hide.is-active,
-html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action-copied {
-  background: linear-gradient(145deg, rgba(255,255,255,0.76), rgba(var(--ins-glass-mint),0.15)) !important;
-  border-color: rgba(var(--ins-glass-mint), 0.30) !important;
+  background: rgba(20, 184, 166, 0.13) !important;
+  border-color: rgba(20, 184, 166, 0.29) !important;
   color: #0f766e !important;
 }
 
-/* Stabling table */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-action {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  color: #44403c !important;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.065),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-hide {
+  background: rgba(255, 255, 255, 0.60) !important;
+  border-color: rgba(255, 255, 255, 0.90) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-download {
+  background: rgba(20, 184, 166, 0.12) !important;
+  border-color: rgba(20, 184, 166, 0.30) !important;
+  color: #0f766e !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-clear {
+  background: rgba(239, 68, 68, 0.09) !important;
+  border-color: rgba(239, 68, 68, 0.24) !important;
+  color: #dc2626 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-hide.is-active {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.28) !important;
+  color: #047857 !important;
+}
+
+/* Glass table wrapper and grid */
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-table-wrap {
   overflow-x: auto !important;
   overflow-y: hidden !important;
-  background: rgba(255, 255, 255, 0.24) !important;
-  border-color: rgba(255, 255, 255, 0.82) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  background: rgba(255, 255, 255, 0.27) !important;
+  border-color: rgba(255, 255, 255, 0.80) !important;
+  backdrop-filter: blur(22px) saturate(175%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(175%) !important;
   box-shadow:
-    0 18px 45px rgba(67, 56, 202, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.96),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.20) !important;
+    0 15px 42px rgba(120, 53, 15, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.26) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-table {
@@ -4126,53 +4010,45 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-table {
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-table-header,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-road-label {
   background: rgba(255, 255, 255, 0.28) !important;
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0.16)) !important;
-  border-color: var(--ins-glass-line) !important;
-  color: #586579 !important;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.78) !important;
+  background-image: none !important;
+  border-color: rgba(28, 25, 23, 0.07) !important;
+  color: rgba(28, 25, 23, 0.48) !important;
+  text-shadow: none !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-road-label {
-  color: #334155 !important;
+  color: #44403c !important;
+  background: rgba(255, 255, 255, 0.22) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-road-label .bg-amber-950\/25 {
-  background: rgba(var(--ins-glass-amber), 0.13) !important;
-  border-color: rgba(var(--ins-glass-amber), 0.36) !important;
+  background: rgba(234, 179, 8, 0.13) !important;
+  border-color: rgba(234, 179, 8, 0.38) !important;
   color: #92400e !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.70) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-grid-cell {
-  background: rgba(255, 255, 255, 0.12) !important;
-  background-color: rgba(255, 255, 255, 0.12) !important;
-  border-color: var(--ins-glass-line) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  background-color: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(28, 25, 23, 0.07) !important;
 }
 
-/* Train cards */
+/* Core train-card glass */
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card {
   position: relative;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.53) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.72), rgba(255,255,255,0.28)) !important;
-  border: 1px solid rgba(255, 255, 255, 0.90) !important;
-  color: var(--ins-glass-text) !important;
-  backdrop-filter: blur(24px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  background: rgba(255, 255, 255, 0.56) !important;
+  background-image: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.88) !important;
+  color: #1c1917 !important;
+  backdrop-filter: blur(24px) saturate(195%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(195%) !important;
   box-shadow:
-    0 7px 22px rgba(30, 41, 59, 0.07),
-    0 1px 4px rgba(30, 41, 59, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.99),
-    inset 0 -1px 0 rgba(71, 85, 105, 0.035) !important;
-  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card:hover:not(.is-empty) {
-  transform: translateY(-1px);
-  box-shadow:
-    0 11px 28px rgba(var(--ins-glass-indigo), 0.11),
-    0 2px 7px rgba(30, 41, 59, 0.05),
-    inset 0 1px 0 #ffffff !important;
+    0 4px 18px rgba(0, 0, 0, 0.065),
+    0 1px 4px rgba(0, 0, 0, 0.035),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 0 rgba(28, 25, 23, 0.02) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card::before {
@@ -4180,27 +4056,10 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card::before
   position: absolute;
   z-index: 0;
   inset: 0 0 auto 0;
-  height: 44%;
+  height: 42%;
   border-radius: inherit;
   pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.80), transparent),
-    linear-gradient(110deg, transparent 20%, rgba(255,255,255,0.36) 48%, transparent 72%);
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card::after {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  left: 8%;
-  right: 8%;
-  bottom: -10px;
-  height: 20px;
-  border-radius: 999px;
-  pointer-events: none;
-  background: linear-gradient(90deg, rgba(var(--ins-glass-indigo), 0.12), rgba(var(--ins-glass-cyan), 0.10));
-  filter: blur(10px);
-  opacity: 0.70;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.67), transparent);
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card > * {
@@ -4209,1301 +4068,250 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card > * {
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="west"] .theme-insertion-card.has-train:not(.has-input):not(.is-inserted):not(.is-complete) {
-  background: linear-gradient(145deg, rgba(255,255,255,0.72), rgba(var(--ins-glass-indigo),0.085)) !important;
-  border-color: rgba(var(--ins-glass-indigo), 0.22) !important;
+  background: rgba(255, 253, 235, 0.62) !important;
+  border-color: rgba(234, 179, 8, 0.25) !important;
+  box-shadow:
+    0 4px 18px rgba(234, 179, 8, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] .theme-insertion-card.has-train:not(.has-input):not(.is-inserted):not(.is-complete) {
-  background: linear-gradient(145deg, rgba(255,255,255,0.72), rgba(var(--ins-glass-cyan),0.085)) !important;
-  border-color: rgba(var(--ins-glass-cyan), 0.23) !important;
+  background: rgba(240, 253, 250, 0.62) !important;
+  border-color: rgba(20, 184, 166, 0.24) !important;
+  box-shadow:
+    0 4px 18px rgba(20, 184, 166, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-empty {
-  background: rgba(255, 255, 255, 0.18) !important;
-  background-image: none !important;
-  border: 1.5px dashed rgba(71, 85, 105, 0.15) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.48) !important;
+  background: rgba(255, 255, 255, 0.20) !important;
+  border: 1.5px dashed rgba(28, 25, 23, 0.11) !important;
+  box-shadow: none !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.has-input:not(.is-inserted) {
-  background: linear-gradient(145deg, rgba(255,255,255,0.78), rgba(var(--ins-glass-amber),0.13)) !important;
-  border-color: rgba(var(--ins-glass-amber), 0.39) !important;
+  background: rgba(255, 251, 235, 0.67) !important;
+  border-color: rgba(234, 179, 8, 0.42) !important;
   box-shadow:
-    0 8px 25px rgba(var(--ins-glass-amber), 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+    0 4px 18px rgba(234, 179, 8, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-inserted,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-complete {
-  background: linear-gradient(145deg, rgba(255,255,255,0.78), rgba(var(--ins-glass-mint),0.15)) !important;
-  border-color: rgba(var(--ins-glass-mint), 0.38) !important;
+  background: rgba(240, 253, 250, 0.68) !important;
+  border-color: rgba(20, 184, 166, 0.38) !important;
   box-shadow:
-    0 9px 27px rgba(var(--ins-glass-mint), 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+    0 5px 20px rgba(20, 184, 166, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-duplicate {
-  background: linear-gradient(145deg, rgba(255,255,255,0.78), rgba(var(--ins-glass-danger),0.13)) !important;
-  border-color: rgba(var(--ins-glass-danger), 0.39) !important;
+  background: rgba(255, 241, 240, 0.70) !important;
+  border-color: rgba(239, 68, 68, 0.40) !important;
   box-shadow:
-    0 0 0 2px rgba(var(--ins-glass-danger), 0.07),
-    0 9px 27px rgba(var(--ins-glass-danger), 0.11),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+    0 0 0 2px rgba(239, 68, 68, 0.08),
+    0 5px 20px rgba(239, 68, 68, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-expired {
-  background: rgba(226, 232, 240, 0.52) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.48), rgba(203,213,225,0.42)) !important;
-  border-color: rgba(100, 116, 139, 0.20) !important;
-  filter: grayscale(0.18);
+  background: rgba(231, 229, 228, 0.54) !important;
+  border-color: rgba(120, 113, 108, 0.20) !important;
+  filter: grayscale(0.22);
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card :is(.text-blue-300, .text-purple-300) {
-  color: #64748b !important;
+  color: rgba(28, 25, 23, 0.48) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card :is(.text-blue-100, .text-purple-100, .text-purple-200) {
-  color: #334155 !important;
+  color: rgba(28, 25, 23, 0.76) !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input:not(.theme-insertion-tid-input),
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input:not(.theme-insertion-tid-input) {
+  color: #44403c !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input::placeholder {
+  color: rgba(68, 64, 60, 0.38) !important;
+}
+
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tid-input {
   background: transparent !important;
-  color: #334155 !important;
-  border-bottom-color: rgba(71, 85, 105, 0.24) !important;
+  color: #44403c !important;
+  border-bottom-color: rgba(68, 64, 60, 0.22) !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input::placeholder,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tid-input::placeholder {
-  color: rgba(71, 85, 105, 0.42) !important;
+  color: rgba(68, 64, 60, 0.34) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-insert-button {
-  background: rgba(255, 255, 255, 0.60) !important;
-  border-color: rgba(255, 255, 255, 0.92) !important;
-  color: #475569 !important;
-  backdrop-filter: blur(12px) saturate(175%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(175%) !important;
+  background: rgba(255, 255, 255, 0.58) !important;
+  border-color: rgba(255, 255, 255, 0.90) !important;
+  color: #57534e !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
   box-shadow:
-    0 4px 12px rgba(30, 41, 59, 0.07),
+    0 2px 7px rgba(0, 0, 0, 0.055),
     inset 0 1px 0 #ffffff !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-insert-button.has-input {
-  background: linear-gradient(145deg, rgba(255,255,255,0.74), rgba(var(--ins-glass-amber),0.14)) !important;
-  border-color: rgba(var(--ins-glass-amber), 0.32) !important;
-  color: #b45309 !important;
+  background: rgba(249, 115, 22, 0.11) !important;
+  border-color: rgba(249, 115, 22, 0.30) !important;
+  color: #c2410c !important;
 }
 
-/* TID reference panel */
+/* TID reference panel — same glass language, still keeping depot identity */
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-header,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-table {
-  background: rgba(255, 255, 255, 0.39) !important;
-  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.18)) !important;
-  border-color: rgba(255, 255, 255, 0.86) !important;
-  backdrop-filter: blur(28px) saturate(185%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(185%) !important;
+  background: rgba(255, 255, 255, 0.40) !important;
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.20)) !important;
+  border-color: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
   box-shadow:
-    0 18px 48px rgba(var(--ins-glass-indigo), 0.09),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+    0 12px 36px rgba(120, 53, 15, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="west"] {
-  border-color: rgba(var(--ins-glass-indigo), 0.28) !important;
+  border-color: rgba(249, 115, 22, 0.30) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="east"] {
-  border-color: rgba(var(--ins-glass-cyan), 0.29) !important;
+  border-color: rgba(20, 184, 166, 0.29) !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-sound-button.is-enabled {
-  background: linear-gradient(145deg, rgba(255,255,255,0.76), rgba(var(--ins-glass-amber),0.13)) !important;
-  border-color: rgba(var(--ins-glass-amber), 0.30) !important;
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-control {
+  background: rgba(28, 25, 23, 0.05) !important;
+  border-color: rgba(28, 25, 23, 0.08) !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-sound-button.is-enabled.is-ready {
-  background: linear-gradient(145deg, rgba(255,255,255,0.76), rgba(var(--ins-glass-mint),0.15)) !important;
-  border-color: rgba(var(--ins-glass-mint), 0.30) !important;
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-sound-button,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-tab {
+  background: rgba(255, 255, 255, 0.58) !important;
+  border-color: rgba(255, 255, 255, 0.90) !important;
+  color: #44403c !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.90) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-tab.is-active {
-  background: linear-gradient(145deg, rgba(255,255,255,0.78), rgba(var(--ins-glass-indigo),0.14)) !important;
-  border-color: rgba(var(--ins-glass-indigo), 0.30) !important;
-  color: #4338ca !important;
+  background: rgba(249, 115, 22, 0.13) !important;
+  border-color: rgba(249, 115, 22, 0.30) !important;
+  color: #c2410c !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-tab.is-warning {
-  background: linear-gradient(145deg, rgba(255,255,255,0.76), rgba(var(--ins-glass-amber),0.14)) !important;
-  border-color: rgba(var(--ins-glass-amber), 0.34) !important;
-  color: #92400e !important;
+  background: rgba(234, 179, 8, 0.13) !important;
+  border-color: rgba(234, 179, 8, 0.34) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot-header,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-table-header {
-  background: rgba(255, 255, 255, 0.27) !important;
-  background-image: linear-gradient(180deg, rgba(255,255,255,0.52), rgba(255,255,255,0.14)) !important;
-  border-color: var(--ins-glass-line) !important;
-  color: #5d6b80 !important;
+  background: rgba(255, 255, 255, 0.29) !important;
+  background-image: none !important;
+  border-color: rgba(28, 25, 23, 0.07) !important;
+  color: rgba(28, 25, 23, 0.56) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row-cell {
-  background: rgba(255, 255, 255, 0.42) !important;
+  background: rgba(255, 255, 255, 0.40) !important;
   background-image: none !important;
-  border-color: rgba(75, 91, 118, 0.10) !important;
-  color: #273449 !important;
-  text-shadow: none !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row + .theme-insertion-reference-row .theme-insertion-reference-row-cell {
-  border-top-color: rgba(75, 91, 118, 0.10) !important;
+  border-color: rgba(28, 25, 23, 0.075) !important;
+  color: #292524 !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row:nth-child(even) .theme-insertion-reference-row-cell {
-  background: rgba(255, 255, 255, 0.27) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row.has-remark .theme-insertion-reference-row-cell {
-  background: rgba(255, 255, 255, 0.35) !important;
+  background: rgba(255, 255, 255, 0.26) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="west"] .theme-insertion-reference-row.is-active .theme-insertion-reference-row-cell {
-  background: rgba(var(--ins-glass-indigo), 0.12) !important;
+  background: rgba(249, 115, 22, 0.13) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="east"] .theme-insertion-reference-row.is-active .theme-insertion-reference-row-cell {
-  background: rgba(var(--ins-glass-cyan), 0.12) !important;
+  background: rgba(20, 184, 166, 0.13) !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-help,
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-warning {
-  background: rgba(255, 255, 255, 0.48) !important;
-  border-color: rgba(255, 255, 255, 0.84) !important;
-  color: #3f4c60 !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-help {
+  background: rgba(255, 255, 255, 0.46) !important;
+  border-color: rgba(255, 255, 255, 0.82) !important;
+  color: #44403c !important;
 }
 
-/* Insertion output and How-to panels */
+/* Insertion output and how-to panels */
 html[data-app-theme="light"] .theme-insertion-page .insertion-clean-shell,
 html[data-app-theme="light"] .theme-insertion-page .insertion-help-shell {
-  position: relative;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.39) !important;
-  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.18)) !important;
-  border-color: rgba(255, 255, 255, 0.87) !important;
-  backdrop-filter: blur(28px) saturate(185%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(185%) !important;
+  background: rgba(255, 255, 255, 0.38) !important;
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.20)) !important;
+  border-color: rgba(255, 255, 255, 0.84) !important;
+  backdrop-filter: blur(26px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(180%) !important;
   box-shadow:
-    0 20px 52px rgba(var(--ins-glass-violet), 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
-  scrollbar-color: rgba(99, 102, 241, 0.32) transparent !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .insertion-clean-shell::before,
-html[data-app-theme="light"] .theme-insertion-page .insertion-help-shell::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 34%;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(255,255,255,0.50), transparent);
-}
-
-html[data-app-theme="light"] .theme-insertion-page .insertion-clean-shell > *,
-html[data-app-theme="light"] .theme-insertion-page .insertion-help-shell > * {
-  position: relative;
-  z-index: 1;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .insertion-clean-shell::-webkit-scrollbar-track {
-  background: transparent !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .insertion-clean-shell::-webkit-scrollbar-thumb {
-  background: rgba(var(--ins-glass-indigo), 0.30) !important;
+    0 16px 44px rgba(120, 53, 15, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .insertion-clean-card,
 html[data-app-theme="light"] .theme-insertion-page .insertion-help-step {
-  background: rgba(255, 255, 255, 0.49) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.68), rgba(255,255,255,0.22)) !important;
-  border-color: rgba(255, 255, 255, 0.88) !important;
+  background: rgba(255, 255, 255, 0.50) !important;
+  border-color: rgba(255, 255, 255, 0.86) !important;
   box-shadow:
-    0 8px 24px rgba(30, 41, 59, 0.065),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .insertion-help-step:hover,
-html[data-app-theme="light"] .theme-insertion-page .insertion-help-step.is-open {
-  transform: translateY(-1px);
-  border-color: rgba(var(--ins-glass-indigo), 0.26) !important;
-  box-shadow:
-    0 12px 30px rgba(var(--ins-glass-indigo), 0.10),
-    inset 0 1px 0 #ffffff !important;
+    0 4px 16px rgba(0, 0, 0, 0.055),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .insertion-clean-card-header,
 html[data-app-theme="light"] .theme-insertion-page .insertion-help-details-inner {
-  background: rgba(255, 255, 255, 0.25) !important;
-  background-image: linear-gradient(180deg, rgba(255,255,255,0.46), rgba(255,255,255,0.12)) !important;
-  border-color: rgba(75, 91, 118, 0.10) !important;
+  background: rgba(255, 255, 255, 0.28) !important;
+  background-image: none !important;
+  border-color: rgba(28, 25, 23, 0.075) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .insertion-clean-card-body {
-  background: rgba(255, 255, 255, 0.18) !important;
-  border-color: rgba(75, 91, 118, 0.10) !important;
+  background: rgba(255, 255, 255, 0.20) !important;
+  border-color: rgba(28, 25, 23, 0.075) !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page :is(
-  .insertion-clean-title,
-  .insertion-clean-card-title,
-  .insertion-clean-section-title,
-  .insertion-help-title,
-  .insertion-help-step-title,
-  .insertion-help-detail-title
-) {
-  color: #1f2937 !important;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page :is(
-  .insertion-clean-subtitle,
-  .insertion-clean-pre,
-  .insertion-clean-empty-section,
-  .insertion-clean-empty-text,
-  .insertion-clean-empty-card,
-  .insertion-help-subtitle,
-  .insertion-help-step-text,
-  .insertion-help-detail-line,
-  .insertion-help-open-hint
-) {
-  color: #4b5a70 !important;
-  text-shadow: none !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .insertion-clean-title-icon,
-html[data-app-theme="light"] .theme-insertion-page .insertion-help-icon,
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action,
 html[data-app-theme="light"] .theme-insertion-page .insertion-help-chevron,
-html[data-app-theme="light"] .theme-insertion-page .insertion-help-step-number,
-html[data-app-theme="light"] .theme-insertion-page .insertion-help-detail-index {
-  background: linear-gradient(145deg, rgba(255,255,255,0.76), rgba(var(--ins-glass-indigo),0.12)) !important;
-  border-color: rgba(255, 255, 255, 0.90) !important;
-  color: #4f46e5 !important;
-  box-shadow:
-    0 5px 15px rgba(var(--ins-glass-indigo), 0.10),
-    inset 0 1px 0 #ffffff !important;
+html[data-app-theme="light"] .theme-insertion-page .insertion-help-step-number {
+  background: rgba(255, 255, 255, 0.60) !important;
+  border-color: rgba(255, 255, 255, 0.88) !important;
+  color: #44403c !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action-copied,
+html[data-app-theme="light"] .theme-insertion-page .insertion-help-step.is-open {
+  background: rgba(20, 184, 166, 0.11) !important;
+  border-color: rgba(20, 184, 166, 0.27) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action-danger {
+  background: rgba(239, 68, 68, 0.09) !important;
+  border-color: rgba(239, 68, 68, 0.24) !important;
+  color: #dc2626 !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .insertion-help-example {
-  background: rgba(var(--ins-glass-indigo), 0.08) !important;
-  border-color: rgba(var(--ins-glass-indigo), 0.22) !important;
+  background: rgba(249, 115, 22, 0.09) !important;
+  border-color: rgba(249, 115, 22, 0.24) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page :is(.insertion-help-result, .insertion-help-rule) {
-  background: rgba(var(--ins-glass-mint), 0.10) !important;
-  border-color: rgba(var(--ins-glass-mint), 0.24) !important;
-}
-
-/* Fallback for browsers/devices that cannot render backdrop blur. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  html[data-app-theme="light"] .theme-insertion-page :is(
-    .theme-insertion-section,
-    .theme-insertion-table-wrap,
-    .theme-insertion-card,
-    .theme-insertion-reference,
-    .theme-insertion-reference-header,
-    .theme-insertion-reference-depot,
-    .theme-insertion-reference-table,
-    .insertion-clean-shell,
-    .insertion-help-shell
-  ) {
-    background-color: rgba(248, 250, 252, 0.96) !important;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html[data-app-theme="light"] .theme-insertion-page::before,
-  html[data-app-theme="light"] .theme-insertion-page::after,
-  html[data-app-theme="light"] .theme-insertion-page .theme-insertion-title-icon::after {
-    animation: none !important;
-  }
-
-  html[data-app-theme="light"] .theme-insertion-page :is(
-    .theme-insertion-card,
-    .theme-insertion-action,
-    .theme-insertion-refresh-button,
-    .theme-insertion-reference-tab,
-    .theme-insertion-reference-sound-button,
-    .insertion-clean-action,
-    .insertion-help-step
-  ) {
-    transition: none !important;
-  }
+  background: rgba(20, 184, 166, 0.10) !important;
+  border-color: rgba(20, 184, 166, 0.25) !important;
 }
 
 @media (max-width: 900px) {
   html[data-app-theme="light"] .theme-insertion-page {
     padding: 10px;
-    border-radius: 21px;
-  }
-}
-
-/* ========================================================================
-   INSERTION PAGE — STRONGER LIQUID-GLASS PASS
-   Scope: insertion page only in light mode. This pass lowers white opacity,
-   exposes the colour field behind the panels and gives the glass a clear
-   top/left highlight with a darker bottom/right rim.
-   ======================================================================== */
-
-html[data-app-theme="light"] .theme-insertion-page {
-  --ins-glass-rim-light: rgba(255, 255, 255, 0.94);
-  --ins-glass-rim-dark: rgba(68, 78, 112, 0.18);
-  --ins-glass-surface: rgba(255, 255, 255, 0.20);
-  --ins-glass-surface-strong: rgba(255, 255, 255, 0.31);
-
-  border-color: rgba(255, 255, 255, 0.72) !important;
-  background:
-    radial-gradient(56% 54% at 3% 4%, rgba(111, 90, 255, 0.44) 0%, rgba(111, 90, 255, 0.12) 42%, transparent 72%),
-    radial-gradient(54% 58% at 98% 6%, rgba(22, 210, 245, 0.43) 0%, rgba(22, 210, 245, 0.11) 44%, transparent 73%),
-    radial-gradient(45% 52% at 83% 91%, rgba(126, 87, 255, 0.30) 0%, transparent 72%),
-    radial-gradient(43% 48% at 10% 88%, rgba(38, 220, 184, 0.27) 0%, transparent 70%),
-    linear-gradient(132deg, #f4f1ff 0%, #e9f4ff 38%, #edfaff 62%, #f3efff 100%) !important;
-  box-shadow:
-    0 18px 52px rgba(72, 70, 150, 0.10),
-    0 5px 18px rgba(15, 23, 42, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.90),
-    inset 0 -1px 0 rgba(73, 65, 130, 0.07) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page::before {
-  width: 560px;
-  height: 390px;
-  top: -115px;
-  left: 15%;
-  border-radius: 46% 54% 61% 39% / 54% 44% 56% 46%;
-  filter: blur(44px);
-  background:
-    radial-gradient(circle at 28% 28%, rgba(255, 255, 255, 0.74), transparent 22%),
-    linear-gradient(128deg, rgba(111, 90, 255, 0.48), rgba(180, 102, 255, 0.22) 52%, rgba(40, 198, 255, 0.18));
-  opacity: 0.82;
-}
-
-html[data-app-theme="light"] .theme-insertion-page::after {
-  width: 520px;
-  height: 420px;
-  right: 2%;
-  top: 36%;
-  border-radius: 58% 42% 44% 56% / 44% 55% 45% 56%;
-  filter: blur(48px);
-  background:
-    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.62), transparent 21%),
-    linear-gradient(136deg, rgba(16, 210, 244, 0.46), rgba(46, 225, 184, 0.25) 58%, rgba(119, 89, 255, 0.20));
-  opacity: 0.76;
-}
-
-/* Large glass panes */
-html[data-app-theme="light"] .theme-insertion-page :is(
-  .theme-insertion-section,
-  .theme-insertion-reference,
-  .theme-insertion-reference-header,
-  .theme-insertion-reference-depot,
-  .theme-insertion-reference-table,
-  .insertion-clean-shell,
-  .insertion-help-shell
-) {
-  background-color: var(--ins-glass-surface) !important;
-  background-image:
-    linear-gradient(142deg, rgba(255, 255, 255, 0.40) 0%, rgba(255, 255, 255, 0.12) 44%, rgba(255, 255, 255, 0.035) 100%) !important;
-  border-color: rgba(255, 255, 255, 0.72) !important;
-  backdrop-filter: blur(23px) saturate(165%) contrast(104%) !important;
-  -webkit-backdrop-filter: blur(23px) saturate(165%) contrast(104%) !important;
-  box-shadow:
-    0 16px 42px rgba(57, 65, 112, 0.10),
-    inset 1px 1px 0 var(--ins-glass-rim-light),
-    inset -1px -1px 0 var(--ins-glass-rim-dark),
-    inset 0 14px 28px rgba(255, 255, 255, 0.13) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="west"],
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="west"] {
-  border-color: rgba(112, 96, 255, 0.35) !important;
-  box-shadow:
-    0 17px 44px rgba(91, 79, 214, 0.13),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.96),
-    inset -1px -1px 0 rgba(91, 79, 214, 0.18),
-    inset 0 14px 30px rgba(255, 255, 255, 0.14) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"],
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="east"] {
-  border-color: rgba(28, 198, 232, 0.38) !important;
-  box-shadow:
-    0 17px 44px rgba(24, 174, 211, 0.12),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.96),
-    inset -1px -1px 0 rgba(24, 174, 211, 0.17),
-    inset 0 14px 30px rgba(255, 255, 255, 0.14) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section::before {
-  height: 34%;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.34), transparent 80%),
-    radial-gradient(62% 54% at 9% 0%, rgba(111, 90, 255, 0.14), transparent 76%);
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"]::before {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.34), transparent 80%),
-    radial-gradient(62% 54% at 91% 0%, rgba(22, 210, 245, 0.15), transparent 76%);
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section::after {
-  opacity: 0.88;
-  background: conic-gradient(
-    from 214deg at 50% 50%,
-    rgba(27, 211, 242, 0.34),
-    rgba(255, 255, 255, 0.96),
-    rgba(139, 92, 246, 0.29),
-    rgba(255, 255, 255, 0.84),
-    rgba(27, 211, 242, 0.34)
-  );
-}
-
-/* Table becomes transparent so the colour field can be seen through it. */
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-table-wrap {
-  background: rgba(255, 255, 255, 0.10) !important;
-  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.025)) !important;
-  border-color: rgba(255, 255, 255, 0.58) !important;
-  backdrop-filter: blur(17px) saturate(155%) !important;
-  -webkit-backdrop-filter: blur(17px) saturate(155%) !important;
-  box-shadow:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.82),
-    inset -1px -1px 0 rgba(67, 79, 112, 0.12) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-table {
-  background: transparent !important;
-  background-image: none !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page :is(
-  .theme-insertion-table-header,
-  .theme-insertion-road-label,
-  .theme-insertion-reference-depot-header,
-  .theme-insertion-reference-table-header
-) {
-  background-color: rgba(255, 255, 255, 0.17) !important;
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.31), rgba(255, 255, 255, 0.055)) !important;
-  border-color: rgba(73, 85, 118, 0.11) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-grid-cell {
-  background: rgba(255, 255, 255, 0.035) !important;
-  background-image: none !important;
-  border-color: rgba(72, 84, 116, 0.10) !important;
-}
-
-/* Train cards: clearly translucent with a bright upper rim and darker lower rim. */
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card {
-  background-color: rgba(255, 255, 255, 0.23) !important;
-  background-image:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.43) 0%, rgba(255, 255, 255, 0.12) 48%, rgba(255, 255, 255, 0.035) 100%) !important;
-  border-color: rgba(255, 255, 255, 0.77) !important;
-  backdrop-filter: blur(15px) saturate(170%) contrast(103%) !important;
-  -webkit-backdrop-filter: blur(15px) saturate(170%) contrast(103%) !important;
-  box-shadow:
-    0 8px 21px rgba(42, 49, 86, 0.09),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.96),
-    inset -1px -1px 0 rgba(66, 76, 112, 0.19),
-    inset 0 10px 18px rgba(255, 255, 255, 0.11) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card::before {
-  height: 32%;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.52), transparent 92%),
-    linear-gradient(108deg, transparent 21%, rgba(255, 255, 255, 0.24) 47%, transparent 73%);
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card::after {
-  bottom: -7px;
-  height: 13px;
-  filter: blur(8px);
-  opacity: 0.48;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card:hover:not(.is-empty) {
-  transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.94) !important;
-  box-shadow:
-    0 12px 27px rgba(72, 65, 150, 0.12),
-    inset 1px 1px 0 #ffffff,
-    inset -1px -1px 0 rgba(65, 76, 113, 0.20) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-empty {
-  background: rgba(255, 255, 255, 0.045) !important;
-  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.012)) !important;
-  border-color: rgba(91, 103, 132, 0.17) !important;
-  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.38) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="west"] .theme-insertion-card.has-train:not(.has-input):not(.is-inserted):not(.is-complete) {
-  background-color: rgba(255, 255, 255, 0.22) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.40), rgba(111,90,255,0.105)) !important;
-  border-color: rgba(111, 90, 255, 0.28) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] .theme-insertion-card.has-train:not(.has-input):not(.is-inserted):not(.is-complete) {
-  background-color: rgba(255, 255, 255, 0.22) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.40), rgba(22,210,245,0.105)) !important;
-  border-color: rgba(22, 190, 224, 0.29) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.has-input:not(.is-inserted) {
-  background-color: rgba(255, 255, 255, 0.25) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.43), rgba(245,158,11,0.15)) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card:is(.is-inserted, .is-complete) {
-  background-color: rgba(255, 255, 255, 0.25) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.43), rgba(45,212,191,0.16)) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-duplicate {
-  background-color: rgba(255, 255, 255, 0.25) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.43), rgba(239,68,68,0.15)) !important;
-}
-
-/* Left-side TID tables: retain row readability without becoming opaque white cards. */
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row-cell {
-  background: rgba(255, 255, 255, 0.16) !important;
-  border-color: rgba(72, 84, 116, 0.09) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row:nth-child(even) .theme-insertion-reference-row-cell {
-  background: rgba(255, 255, 255, 0.075) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row.has-remark .theme-insertion-reference-row-cell {
-  background: rgba(255, 255, 255, 0.12) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="west"] .theme-insertion-reference-row.is-active .theme-insertion-reference-row-cell {
-  background: rgba(111, 90, 255, 0.15) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="east"] .theme-insertion-reference-row.is-active .theme-insertion-reference-row-cell {
-  background: rgba(22, 210, 245, 0.15) !important;
-}
-
-/* Controls are small glass lenses rather than solid buttons. */
-html[data-app-theme="light"] .theme-insertion-page :is(
-  .theme-insertion-refresh-button,
-  .theme-insertion-action,
-  .theme-insertion-reference-sound-button,
-  .theme-insertion-reference-tab,
-  .theme-insertion-insert-button,
-  .insertion-clean-action
-) {
-  background-color: rgba(255, 255, 255, 0.34) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.56), rgba(255,255,255,0.12)) !important;
-  border-color: rgba(255, 255, 255, 0.82) !important;
-  backdrop-filter: blur(13px) saturate(170%) !important;
-  -webkit-backdrop-filter: blur(13px) saturate(170%) !important;
-  box-shadow:
-    0 5px 14px rgba(38, 46, 82, 0.08),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.96),
-    inset -1px -1px 0 rgba(66, 77, 112, 0.15) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-download {
-  border-color: rgba(15, 174, 219, 0.36) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.54), rgba(22,210,245,0.13)) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page :is(.theme-insertion-clear, .insertion-clean-action-danger) {
-  border-color: rgba(239, 68, 68, 0.30) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.54), rgba(239,68,68,0.11)) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page :is(.theme-insertion-hide.is-active, .insertion-clean-action-copied) {
-  border-color: rgba(45, 212, 191, 0.34) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.54), rgba(45,212,191,0.13)) !important;
-}
-
-/* Log and guide cards follow the same lower-opacity glass treatment. */
-html[data-app-theme="light"] .theme-insertion-page :is(.insertion-clean-card, .insertion-help-step) {
-  background-color: rgba(255, 255, 255, 0.22) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.39), rgba(255,255,255,0.06)) !important;
-  border-color: rgba(255, 255, 255, 0.72) !important;
-  box-shadow:
-    0 8px 22px rgba(42, 49, 86, 0.08),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.91),
-    inset -1px -1px 0 rgba(66, 76, 112, 0.14) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page :is(.insertion-clean-card-header, .insertion-help-details-inner) {
-  background-color: rgba(255, 255, 255, 0.12) !important;
-  background-image: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0.03)) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .insertion-clean-card-body {
-  background: rgba(255, 255, 255, 0.055) !important;
-}
-
-/* --------------------------------------------------------------------------
-   INSERTION / LIGHT MODE — VISIBLE FROSTED-BLUR PASS
-   Backdrop blur is only visible when there is detailed artwork behind the
-   glass. Keep this scene layer sharp, then let each panel blur it.
-   -------------------------------------------------------------------------- */
-html[data-app-theme="light"] .theme-insertion-page {
-  background:
-    linear-gradient(135deg, rgba(248, 250, 255, 0.76), rgba(239, 248, 255, 0.68) 46%, rgba(246, 241, 255, 0.72) 72%, rgba(236, 253, 250, 0.70)),
-    #eef4ff !important;
-}
-
-/* Sharp colour ribbons below the panes. They become soft only through glass. */
-html[data-app-theme="light"] .theme-insertion-page::before {
-  inset: -10% -6% !important;
-  width: auto !important;
-  height: auto !important;
-  top: -10% !important;
-  left: -6% !important;
-  right: -6% !important;
-  bottom: -10% !important;
-  z-index: 0 !important;
-  border-radius: 34px !important;
-  opacity: 0.92 !important;
-  filter: none !important;
-  animation: none !important;
-  background:
-    radial-gradient(circle at 8% 12%, rgba(124, 92, 255, 0.62) 0 8%, transparent 8.5%),
-    radial-gradient(circle at 31% 76%, rgba(91, 129, 255, 0.40) 0 10%, transparent 10.6%),
-    radial-gradient(circle at 79% 14%, rgba(18, 204, 239, 0.56) 0 11%, transparent 11.6%),
-    radial-gradient(circle at 92% 72%, rgba(36, 211, 183, 0.44) 0 13%, transparent 13.7%),
-    linear-gradient(116deg,
-      transparent 0 9%,
-      rgba(125, 92, 255, 0.26) 9% 15%,
-      transparent 15% 39%,
-      rgba(48, 133, 255, 0.20) 39% 45%,
-      transparent 45% 70%,
-      rgba(17, 205, 238, 0.23) 70% 77%,
-      transparent 77% 100%);
-  transform: none !important;
-}
-
-/* Fine sharp grid gives the eye a clear before/after blur reference. */
-html[data-app-theme="light"] .theme-insertion-page::after {
-  inset: 0 !important;
-  width: auto !important;
-  height: auto !important;
-  right: 0 !important;
-  top: 0 !important;
-  z-index: 0 !important;
-  border-radius: inherit !important;
-  opacity: 0.28 !important;
-  filter: none !important;
-  animation: none !important;
-  background:
-    repeating-linear-gradient(90deg, rgba(71, 85, 145, 0.18) 0 1px, transparent 1px 42px),
-    repeating-linear-gradient(0deg, rgba(71, 85, 145, 0.14) 0 1px, transparent 1px 42px) !important;
-  -webkit-mask: none !important;
-  mask: none !important;
-  transform: none !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page > * {
-  position: relative;
-  z-index: 2 !important;
-}
-
-/* Real panes: low-opacity fill + stronger backdrop blur. */
-html[data-app-theme="light"] .theme-insertion-page :is(
-  .theme-insertion-section,
-  .theme-insertion-reference,
-  .insertion-clean-shell,
-  .insertion-help-shell
-) {
-  background-color: rgba(255, 255, 255, 0.20) !important;
-  background-image:
-    linear-gradient(142deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0.09) 48%, rgba(255, 255, 255, 0.025) 100%) !important;
-  border-color: rgba(255, 255, 255, 0.82) !important;
-  backdrop-filter: blur(38px) saturate(150%) contrast(103%) !important;
-  -webkit-backdrop-filter: blur(38px) saturate(150%) contrast(103%) !important;
-  box-shadow:
-    0 18px 48px rgba(51, 58, 105, 0.12),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.98),
-    inset -1px -1px 0 rgba(67, 76, 120, 0.16),
-    inset 0 18px 34px rgba(255, 255, 255, 0.11) !important;
-}
-
-/* Nested panes should not rebuild an opaque white wall. */
-html[data-app-theme="light"] .theme-insertion-page :is(
-  .theme-insertion-reference-header,
-  .theme-insertion-reference-depot,
-  .theme-insertion-reference-table,
-  .theme-insertion-table-wrap
-) {
-  background-color: rgba(255, 255, 255, 0.11) !important;
-  background-image:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.025)) !important;
-  border-color: rgba(255, 255, 255, 0.58) !important;
-  backdrop-filter: blur(24px) saturate(145%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(145%) !important;
-  box-shadow:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.76),
-    inset -1px -1px 0 rgba(66, 77, 112, 0.10) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-table,
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-grid-cell {
-  background: transparent !important;
-  background-image: none !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page :is(
-  .theme-insertion-table-header,
-  .theme-insertion-road-label,
-  .theme-insertion-reference-depot-header,
-  .theme-insertion-reference-table-header
-) {
-  background-color: rgba(255, 255, 255, 0.12) !important;
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.23), rgba(255, 255, 255, 0.025)) !important;
-  backdrop-filter: blur(18px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
-}
-
-/* Rows remain readable while still revealing the blurred scene beneath. */
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row-cell {
-  background: rgba(255, 255, 255, 0.085) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row:nth-child(even) .theme-insertion-reference-row-cell {
-  background: rgba(255, 255, 255, 0.035) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row.has-remark .theme-insertion-reference-row-cell {
-  background: rgba(255, 255, 255, 0.075) !important;
-}
-
-/* Card lenses: enough blur to frost the sharp grid and colour ribbons. */
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card {
-  background-color: rgba(255, 255, 255, 0.14) !important;
-  background-image:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.065) 52%, rgba(255, 255, 255, 0.015) 100%) !important;
-  border-color: rgba(255, 255, 255, 0.76) !important;
-  backdrop-filter: blur(18px) saturate(145%) contrast(102%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(145%) contrast(102%) !important;
-  box-shadow:
-    0 7px 20px rgba(39, 47, 86, 0.09),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.98),
-    inset -1px -1px 0 rgba(64, 74, 111, 0.18),
-    inset 0 10px 18px rgba(255, 255, 255, 0.08) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-empty {
-  background-color: rgba(255, 255, 255, 0.035) !important;
-  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.006)) !important;
-  border-color: rgba(80, 92, 128, 0.16) !important;
-  backdrop-filter: blur(13px) saturate(135%) !important;
-  -webkit-backdrop-filter: blur(13px) saturate(135%) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="west"] .theme-insertion-card.has-train:not(.has-input):not(.is-inserted):not(.is-complete) {
-  background-color: rgba(255, 255, 255, 0.14) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.27), rgba(111,90,255,0.075)) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] .theme-insertion-card.has-train:not(.has-input):not(.is-inserted):not(.is-complete) {
-  background-color: rgba(255, 255, 255, 0.14) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.27), rgba(22,210,245,0.075)) !important;
-}
-
-/* Keep status colours, but mix them with glass rather than filling the card. */
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.has-input:not(.is-inserted) {
-  background-color: rgba(255, 255, 255, 0.16) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.29), rgba(245,158,11,0.11)) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card:is(.is-inserted, .is-complete) {
-  background-color: rgba(255, 255, 255, 0.16) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.29), rgba(45,212,191,0.11)) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-duplicate {
-  background-color: rgba(255, 255, 255, 0.16) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,0.29), rgba(239,68,68,0.11)) !important;
-}
-
-/* Subtle grain makes the pane feel frosted rather than simply transparent. */
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section::before,
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference::before,
-html[data-app-theme="light"] .theme-insertion-page .insertion-clean-shell::before,
-html[data-app-theme="light"] .theme-insertion-page .insertion-help-shell::before {
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E"),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.19), transparent 80%) !important;
-  background-size: 96px 96px, auto !important;
-  mix-blend-mode: soft-light;
-  opacity: 0.22 !important;
-}
-
-/* Fallback keeps the hierarchy readable on browsers without backdrop-filter. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  html[data-app-theme="light"] .theme-insertion-page :is(
-    .theme-insertion-section,
-    .theme-insertion-reference,
-    .insertion-clean-shell,
-    .insertion-help-shell
-  ) {
-    background-color: rgba(246, 249, 255, 0.88) !important;
-  }
-}
-
-/* ========================================================================
-   INSERTION PAGE — TRUE DISPLACEMENT-BASED LIQUID GLASS (LIGHT MODE ONLY)
-   The visible lens layer is a real SVG feDisplacementMap refraction pass.
-   It bends a synchronized copy of the sharp colour/grid scene beneath each
-   pane, then adds chromatic edging, specular light and a frosted clear coat.
-   ======================================================================== */
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass {
-  --liquid-pointer-x: 52%;
-  --liquid-pointer-y: 18%;
-  --liquid-shift-x: 0px;
-  --liquid-shift-y: 0px;
-  --liquid-shift-x-neg: 0px;
-  --liquid-shift-y-neg: 0px;
-  --liquid-shift-x-soft: 0px;
-  --liquid-shift-y-soft: 0px;
-  --liquid-shift-x-tiny: 0px;
-  --liquid-shift-y-tiny: 0px;
-  --liquid-scene-image:
-    radial-gradient(circle at 7% 9%, rgba(112, 74, 255, 0.82) 0 5.5%, transparent 6.1%),
-    radial-gradient(circle at 24% 78%, rgba(57, 116, 255, 0.58) 0 7.5%, transparent 8.2%),
-    radial-gradient(circle at 72% 12%, rgba(8, 205, 242, 0.76) 0 8.5%, transparent 9.2%),
-    radial-gradient(circle at 94% 72%, rgba(31, 211, 183, 0.64) 0 10%, transparent 10.8%),
-    conic-gradient(from 128deg at 52% 48%,
-      rgba(109, 80, 255, 0.24),
-      transparent 18%,
-      rgba(23, 177, 247, 0.24) 34%,
-      transparent 52%,
-      rgba(53, 224, 194, 0.22) 70%,
-      transparent 86%,
-      rgba(109, 80, 255, 0.24)),
-    repeating-linear-gradient(116deg,
-      transparent 0 74px,
-      rgba(255, 255, 255, 0.42) 75px 77px,
-      rgba(82, 111, 199, 0.11) 78px 81px,
-      transparent 82px 164px),
-    linear-gradient(132deg, #e9e9ff 0%, #f6f8ff 31%, #e7f8ff 65%, #e4fff9 100%);
-
-  background: linear-gradient(132deg, #ebeaff 0%, #f7f9ff 34%, #e8faff 68%, #e7fff9 100%) !important;
-  box-shadow:
-    0 26px 72px rgba(76, 64, 180, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.96),
-    inset 0 -1px 0 rgba(47, 61, 118, 0.11) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass::before,
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass::after {
-  content: none !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass > .insertion-liquid-filter-defs {
-  position: absolute !important;
-  width: 0 !important;
-  height: 0 !important;
-  overflow: hidden !important;
-  pointer-events: none !important;
-  z-index: -1 !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass > .insertion-liquid-scene {
-  position: absolute !important;
-  inset: 0 !important;
-  z-index: 0 !important;
-  overflow: hidden !important;
-  pointer-events: none !important;
-  border-radius: inherit !important;
-  background-image: var(--liquid-scene-image) !important;
-  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 520px 520px, 100% 100% !important;
-  background-position: center !important;
-  opacity: 0.94 !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass > :not(.insertion-liquid-scene):not(.insertion-liquid-filter-defs) {
-  position: relative;
-  z-index: 2 !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-orb,
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-ribbon,
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-grid {
-  position: absolute;
-  display: block;
-  pointer-events: none;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-orb {
-  border-radius: 999px;
-  border: 2px solid rgba(255, 255, 255, 0.72);
-  box-shadow:
-    inset 0 0 0 1px rgba(77, 96, 182, 0.14),
-    0 12px 36px rgba(67, 56, 202, 0.14);
-  transform: translate3d(var(--liquid-shift-x), var(--liquid-shift-y), 0);
-  transition: transform 180ms cubic-bezier(.2,.8,.2,1);
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-orb-a {
-  width: 290px;
-  height: 290px;
-  left: -94px;
-  top: -105px;
-  background:
-    repeating-conic-gradient(from 24deg, rgba(255,255,255,.48) 0 5deg, transparent 5deg 17deg),
-    radial-gradient(circle at 34% 30%, rgba(255,255,255,.92), rgba(128,90,255,.58) 42%, rgba(86,68,224,.18) 72%);
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-orb-b {
-  width: 360px;
-  height: 360px;
-  right: -120px;
-  top: 8%;
-  transform: translate3d(var(--liquid-shift-x-neg), var(--liquid-shift-y), 0);
-  background:
-    repeating-linear-gradient(35deg, rgba(255,255,255,.30) 0 2px, transparent 2px 15px),
-    radial-gradient(circle at 36% 34%, rgba(255,255,255,.90), rgba(25,210,245,.54) 42%, rgba(14,165,233,.12) 75%);
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-orb-c {
-  width: 250px;
-  height: 250px;
-  left: 31%;
-  bottom: -92px;
-  transform: translate3d(var(--liquid-shift-x-soft), var(--liquid-shift-y-neg), 0);
-  background:
-    repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,.24) 0 3px, transparent 4px 18px),
-    radial-gradient(circle at 35% 32%, rgba(255,255,255,.88), rgba(51,210,181,.46) 45%, rgba(20,184,166,.10) 76%);
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-ribbon {
-  width: 128%;
-  height: 150px;
-  left: -14%;
-  top: 46%;
-  transform: rotate(-7deg) translate3d(var(--liquid-shift-x-neg), var(--liquid-shift-y-soft), 0);
-  border-top: 2px solid rgba(255,255,255,.72);
-  border-bottom: 1px solid rgba(72,92,177,.18);
-  background:
-    repeating-linear-gradient(90deg, rgba(93,75,232,.17) 0 18px, rgba(31,190,236,.18) 18px 36px, rgba(34,211,181,.16) 36px 54px),
-    linear-gradient(90deg, rgba(115,92,255,.22), rgba(22,201,239,.25), rgba(44,211,184,.20));
-  opacity: .72;
-  transition: transform 220ms cubic-bezier(.2,.8,.2,1);
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-grid {
-  inset: 0;
-  background:
-    repeating-linear-gradient(90deg, rgba(58, 74, 151, 0.18) 0 1px, transparent 1px 36px),
-    repeating-linear-gradient(0deg, rgba(58, 74, 151, 0.14) 0 1px, transparent 1px 36px),
-    radial-gradient(circle at var(--liquid-pointer-x) var(--liquid-pointer-y), rgba(255,255,255,.62), transparent 17%);
-  opacity: .46;
-}
-
-/* Large liquid-glass lenses. The ::before layer is the scene copy that is
-   physically bent by the SVG feDisplacementMap. Content remains undistorted. */
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
-  .theme-insertion-section,
-  .theme-insertion-reference,
-  .insertion-clean-shell,
-  .insertion-help-shell
-) {
-  position: relative !important;
-  isolation: isolate !important;
-  overflow: hidden !important;
-  background: rgba(255, 255, 255, 0.13) !important;
-  border: 1px solid rgba(255, 255, 255, 0.86) !important;
-  backdrop-filter: blur(15px) saturate(132%) !important;
-  -webkit-backdrop-filter: blur(15px) saturate(132%) !important;
-  box-shadow:
-    0 24px 56px rgba(42, 47, 104, 0.16),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.98),
-    inset -1px -1px 0 rgba(50, 67, 129, 0.22),
-    inset 0 20px 42px rgba(255, 255, 255, 0.13) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
-  .theme-insertion-section,
-  .theme-insertion-reference,
-  .insertion-clean-shell,
-  .insertion-help-shell
-)::before {
-  content: "" !important;
-  position: absolute !important;
-  inset: -34px !important;
-  z-index: 0 !important;
-  pointer-events: none !important;
-  border-radius: 36px !important;
-  background-image: var(--liquid-scene-image) !important;
-  background-size: 100vw 100vh, 100vw 100vh, 100vw 100vh, 100vw 100vh, 100vw 100vh, 520px 520px, 100vw 100vh !important;
-  background-position: center !important;
-  background-attachment: fixed !important;
-  filter: url(#insertion-liquid-panel-filter) !important;
-  opacity: 0.64 !important;
-  mix-blend-mode: normal !important;
-  transform: translate3d(var(--liquid-shift-x), var(--liquid-shift-y), 0) scale(1.055) !important;
-  transform-origin: center !important;
-  transition: transform 190ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease !important;
-  will-change: filter, transform !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
-  .theme-insertion-section,
-  .theme-insertion-reference,
-  .insertion-clean-shell,
-  .insertion-help-shell
-)::after {
-  content: "" !important;
-  position: absolute !important;
-  inset: 0 !important;
-  z-index: 1 !important;
-  pointer-events: none !important;
-  padding: 1px !important;
-  border-radius: inherit !important;
-  background:
-    radial-gradient(240px 160px at var(--liquid-pointer-x) var(--liquid-pointer-y), rgba(255,255,255,.72), transparent 58%),
-    linear-gradient(135deg, rgba(255,255,255,.96) 0%, rgba(255,255,255,.18) 27%, transparent 47%, rgba(22,205,240,.16) 72%, rgba(124,92,255,.20) 100%) !important;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0) !important;
-  -webkit-mask-composite: xor !important;
-  mask-composite: exclude !important;
-  opacity: .90 !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
-  .theme-insertion-section,
-  .theme-insertion-reference,
-  .insertion-clean-shell,
-  .insertion-help-shell
-) > * {
-  position: relative;
-  z-index: 2 !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-section:hover::before,
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-reference:hover::before,
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-clean-shell:hover::before,
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-help-shell:hover::before {
-  opacity: .76 !important;
-  transform: translate3d(var(--liquid-shift-x), var(--liquid-shift-y), 0) scale(1.075) !important;
-}
-
-/* Internal surfaces stay clear so the displaced scene can remain visible. */
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
-  .theme-insertion-table-wrap,
-  .theme-insertion-reference-header,
-  .theme-insertion-reference-depot,
-  .theme-insertion-reference-table
-) {
-  background: rgba(255,255,255,.075) !important;
-  border-color: rgba(255,255,255,.54) !important;
-  backdrop-filter: blur(8px) saturate(125%) !important;
-  -webkit-backdrop-filter: blur(8px) saturate(125%) !important;
-  box-shadow:
-    inset 1px 1px 0 rgba(255,255,255,.70),
-    inset -1px -1px 0 rgba(62,75,123,.12) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
-  .theme-insertion-table-header,
-  .theme-insertion-road-label,
-  .theme-insertion-reference-depot-header,
-  .theme-insertion-reference-table-header
-) {
-  background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.055)) !important;
-  border-color: rgba(58,74,121,.14) !important;
-  backdrop-filter: blur(7px) saturate(120%) !important;
-  -webkit-backdrop-filter: blur(7px) saturate(120%) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-reference-row-cell {
-  background: rgba(255,255,255,.105) !important;
-  border-color: rgba(58,74,121,.10) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-reference-row:nth-child(even) .theme-insertion-reference-row-cell {
-  background: rgba(255,255,255,.045) !important;
-}
-
-/* Train cards become smaller independent liquid lenses. Refraction is kept on
-   populated cards only to avoid dozens of unnecessary GPU filter passes. */
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card {
-  position: relative !important;
-  isolation: isolate !important;
-  overflow: hidden !important;
-  background: rgba(255,255,255,.11) !important;
-  border-color: rgba(255,255,255,.78) !important;
-  backdrop-filter: blur(8px) saturate(126%) !important;
-  -webkit-backdrop-filter: blur(8px) saturate(126%) !important;
-  box-shadow:
-    0 8px 22px rgba(42,48,97,.12),
-    inset 1px 1px 0 rgba(255,255,255,.96),
-    inset -1px -1px 0 rgba(55,68,116,.19),
-    inset 0 9px 18px rgba(255,255,255,.08) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card.has-train::before {
-  content: "" !important;
-  position: absolute !important;
-  inset: -16px !important;
-  z-index: 0 !important;
-  pointer-events: none !important;
-  background-image: var(--liquid-scene-image) !important;
-  background-size: 100vw 100vh, 100vw 100vh, 100vw 100vh, 100vw 100vh, 100vw 100vh, 520px 520px, 100vw 100vh !important;
-  background-position: center !important;
-  background-attachment: fixed !important;
-  filter: url(#insertion-liquid-control-filter) !important;
-  opacity: .42 !important;
-  transform: translate3d(var(--liquid-shift-x-soft), var(--liquid-shift-y-soft), 0) scale(1.08) !important;
-  will-change: filter, transform !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card::after {
-  content: "" !important;
-  position: absolute !important;
-  inset: 0 !important;
-  z-index: 1 !important;
-  pointer-events: none !important;
-  border-radius: inherit !important;
-  background:
-    linear-gradient(145deg, rgba(255,255,255,.58), transparent 31%, transparent 68%, rgba(55,211,235,.12)),
-    radial-gradient(90px 64px at 20% 4%, rgba(255,255,255,.54), transparent 66%) !important;
-  border: 1px solid rgba(255,255,255,.31) !important;
-  box-shadow: inset -1px -1px 0 rgba(80,72,180,.12) !important;
-  opacity: .88 !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card > * {
-  position: relative;
-  z-index: 2 !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card.is-empty {
-  background: rgba(255,255,255,.025) !important;
-  border-color: rgba(70,84,127,.18) !important;
-  box-shadow: inset 1px 1px 0 rgba(255,255,255,.42) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card.has-input:not(.is-inserted),
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card:is(.is-inserted, .is-complete),
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card.is-duplicate {
-  background: rgba(255,255,255,.13) !important;
-}
-
-/* Selection pills and action buttons use the same displacement map at a
-   smaller scale, giving them a moving lens rather than a flat translucent fill. */
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
-  .theme-insertion-pg-button.is-selected,
-  .theme-insertion-action:not(:disabled),
-  .theme-insertion-refresh-button:not(:disabled),
-  .theme-insertion-reference-tab.is-active,
-  .theme-insertion-reference-sound-button.is-enabled,
-  .theme-insertion-insert-button.has-input,
-  .insertion-clean-action:not(:disabled)
-) {
-  position: relative !important;
-  isolation: isolate !important;
-  overflow: hidden !important;
-  background-color: rgba(255,255,255,.15) !important;
-  background-image: linear-gradient(145deg, rgba(255,255,255,.34), rgba(255,255,255,.035)) !important;
-  border-color: rgba(255,255,255,.80) !important;
-  backdrop-filter: blur(8px) saturate(135%) !important;
-  -webkit-backdrop-filter: blur(8px) saturate(135%) !important;
-  box-shadow:
-    0 6px 18px rgba(40,47,94,.11),
-    inset 1px 1px 0 rgba(255,255,255,.96),
-    inset -1px -1px 0 rgba(64,76,123,.18) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
-  .theme-insertion-pg-button.is-selected,
-  .theme-insertion-action:not(:disabled),
-  .theme-insertion-refresh-button:not(:disabled),
-  .theme-insertion-reference-tab.is-active,
-  .theme-insertion-reference-sound-button.is-enabled,
-  .theme-insertion-insert-button.has-input,
-  .insertion-clean-action:not(:disabled)
-)::before {
-  content: "" !important;
-  position: absolute !important;
-  inset: -10px !important;
-  z-index: -1 !important;
-  pointer-events: none !important;
-  background-image: var(--liquid-scene-image) !important;
-  background-size: 100vw 100vh, 100vw 100vh, 100vw 100vh, 100vw 100vh, 100vw 100vh, 520px 520px, 100vw 100vh !important;
-  background-position: center !important;
-  background-attachment: fixed !important;
-  filter: url(#insertion-liquid-control-filter) !important;
-  opacity: .40 !important;
-  transform: translate3d(var(--liquid-shift-x-tiny), var(--liquid-shift-y-tiny), 0) scale(1.10) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
-  .theme-insertion-pg-button.is-selected,
-  .theme-insertion-action:not(:disabled),
-  .theme-insertion-refresh-button:not(:disabled),
-  .theme-insertion-reference-tab.is-active,
-  .theme-insertion-reference-sound-button.is-enabled,
-  .theme-insertion-insert-button.has-input,
-  .insertion-clean-action:not(:disabled)
-)::after {
-  content: "" !important;
-  position: absolute !important;
-  inset: 0 !important;
-  z-index: 0 !important;
-  pointer-events: none !important;
-  border-radius: inherit !important;
-  background: linear-gradient(135deg, rgba(255,255,255,.56), transparent 45%, rgba(37,211,238,.10)) !important;
-  opacity: .72 !important;
-}
-
-/* Remove the old grain pass: refraction now creates the material depth. */
-html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
-  .theme-insertion-section,
-  .theme-insertion-reference,
-  .insertion-clean-shell,
-  .insertion-help-shell
-)::before {
-  mix-blend-mode: normal !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-orb,
-  html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .insertion-liquid-ribbon,
-  html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
-    .theme-insertion-section,
-    .theme-insertion-reference,
-    .insertion-clean-shell,
-    .insertion-help-shell
-  )::before {
-    transition: none !important;
-    transform: none !important;
-  }
-}
-
-/* SVG-filter fallback: keep the previous frosted glass if a browser disables
-   external filter references for CSS elements. */
-@supports not (filter: url(#insertion-liquid-panel-filter)) {
-  html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass :is(
-    .theme-insertion-section,
-    .theme-insertion-reference,
-    .insertion-clean-shell,
-    .insertion-help-shell
-  )::before,
-  html[data-app-theme="light"] .theme-insertion-page.is-liquid-glass .theme-insertion-card.has-train::before {
-    filter: blur(18px) saturate(150%) !important;
+    border-radius: 20px;
   }
 }
