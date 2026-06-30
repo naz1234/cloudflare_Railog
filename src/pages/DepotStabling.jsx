@@ -4366,13 +4366,19 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               ? "1px dashed rgba(125, 211, 252, 0.78)"
               : "none",
           outlineOffset: -3,
-          transform: isTidDropHovered ? "translateY(-3px) scale(1.025)" : isTidDragActive && isTidDropEligible ? "translateY(-1px) scale(1.008)" : "none",
+          transform: isTidDropHovered
+            ? "translateY(-3px) scale(1.025)"
+            : isTidDragActive && isTidDropEligible
+              ? "translateY(-1px) scale(1.008)"
+              : undefined,
           boxShadow: isTidDropHovered
             ? "0 12px 28px rgba(14, 165, 233, 0.34), 0 0 0 3px rgba(56, 189, 248, 0.12)"
             : isTidDragActive && isTidDropEligible
               ? "0 8px 20px rgba(14, 165, 233, 0.16)"
               : insCardGlow,
-          transition: "transform 140ms ease, outline-color 140ms ease, box-shadow 140ms ease",
+          transition: isTidDragActive
+            ? "transform 140ms ease, outline-color 140ms ease, box-shadow 140ms ease"
+            : undefined,
         }}
       >
         <div className={`flex w-full flex-col items-center ${hasInsertedPlainRemark ? "flex-1 gap-0" : (isInsertionDone ? "gap-1" : "gap-2")}`}>
