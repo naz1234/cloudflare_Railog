@@ -3808,28 +3808,60 @@ html[data-app-theme="light"] .theme-roster-leave-type.is-rd .theme-roster-leave-
 }
 
 /* ========================================================================
-   INSERTION PAGE — LIGHT GLASSMORPHISM
-   Adapted from the supplied West Depot glass reference.
-   Scope is deliberately limited to the insertion page while light mode is on.
+   INSERTION PAGE — AAVE-INSPIRED LIGHT GLASS
+   Scope: insertion page only, and only while the application is in light mode.
+   This is a lightweight, cross-browser visual treatment: frosted layers,
+   chromatic rim light, soft refraction-like colour fields and specular sheen.
+   Dark mode and every other page keep their existing design.
    ======================================================================== */
 
+@keyframes insertionGlassDriftA {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(38px, 24px, 0) scale(1.08); }
+}
+
+@keyframes insertionGlassDriftB {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-30px, 34px, 0) scale(1.06); }
+}
+
+@keyframes insertionGlassShimmer {
+  0% { transform: translateX(-130%) skewX(-18deg); opacity: 0; }
+  18% { opacity: 0.42; }
+  52% { opacity: 0.12; }
+  100% { transform: translateX(220%) skewX(-18deg); opacity: 0; }
+}
+
 html[data-app-theme="light"] .theme-insertion-page {
+  --ins-glass-text: #111827;
+  --ins-glass-muted: #556274;
+  --ins-glass-line: rgba(75, 91, 118, 0.13);
+  --ins-glass-white: rgba(255, 255, 255, 0.62);
+  --ins-glass-white-strong: rgba(255, 255, 255, 0.82);
+  --ins-glass-indigo: 99, 102, 241;
+  --ins-glass-violet: 139, 92, 246;
+  --ins-glass-cyan: 34, 211, 238;
+  --ins-glass-mint: 45, 212, 191;
+  --ins-glass-amber: 245, 158, 11;
+  --ins-glass-danger: 239, 68, 68;
+
   position: relative;
   isolation: isolate;
   overflow: hidden;
   padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 28px;
   background:
-    radial-gradient(ellipse 70% 58% at 4% 0%, rgba(251, 146, 60, 0.42) 0%, transparent 58%),
-    radial-gradient(ellipse 54% 66% at 98% 4%, rgba(20, 184, 166, 0.35) 0%, transparent 54%),
-    radial-gradient(ellipse 60% 46% at 55% 100%, rgba(234, 179, 8, 0.28) 0%, transparent 58%),
-    radial-gradient(ellipse 42% 50% at 8% 88%, rgba(239, 68, 68, 0.20) 0%, transparent 54%),
-    radial-gradient(ellipse 38% 42% at 88% 78%, rgba(16, 185, 129, 0.23) 0%, transparent 54%),
-    linear-gradient(145deg, #fff7ed 0%, #ecfdf5 42%, #fffbeb 72%, #fef2f2 100%);
+    radial-gradient(56% 52% at 4% 2%, rgba(var(--ins-glass-indigo), 0.26) 0%, transparent 66%),
+    radial-gradient(48% 58% at 98% 8%, rgba(var(--ins-glass-cyan), 0.24) 0%, transparent 64%),
+    radial-gradient(46% 50% at 82% 88%, rgba(var(--ins-glass-violet), 0.18) 0%, transparent 68%),
+    radial-gradient(42% 46% at 15% 92%, rgba(var(--ins-glass-mint), 0.19) 0%, transparent 66%),
+    linear-gradient(145deg, #f8faff 0%, #eef5ff 38%, #f6f2ff 68%, #effcfb 100%);
   box-shadow:
-    0 24px 70px rgba(120, 53, 15, 0.10),
-    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+    0 28px 80px rgba(67, 56, 202, 0.11),
+    0 8px 30px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 0 rgba(93, 78, 180, 0.05);
 }
 
 html[data-app-theme="light"] .theme-insertion-page::before,
@@ -3839,23 +3871,30 @@ html[data-app-theme="light"] .theme-insertion-page::after {
   z-index: -1;
   pointer-events: none;
   border-radius: 999px;
-  filter: blur(58px);
+  filter: blur(56px);
+  will-change: transform;
 }
 
 html[data-app-theme="light"] .theme-insertion-page::before {
-  width: 430px;
-  height: 430px;
-  top: -170px;
-  left: -130px;
-  background: rgba(249, 115, 22, 0.26);
+  width: 460px;
+  height: 460px;
+  top: -210px;
+  left: -155px;
+  background:
+    radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.84), transparent 26%),
+    linear-gradient(135deg, rgba(var(--ins-glass-indigo), 0.42), rgba(var(--ins-glass-violet), 0.25));
+  animation: insertionGlassDriftA 18s ease-in-out infinite;
 }
 
 html[data-app-theme="light"] .theme-insertion-page::after {
-  width: 390px;
-  height: 390px;
-  right: -120px;
-  top: 16%;
-  background: rgba(20, 184, 166, 0.22);
+  width: 430px;
+  height: 430px;
+  right: -145px;
+  top: 20%;
+  background:
+    radial-gradient(circle at 40% 34%, rgba(255, 255, 255, 0.72), transparent 24%),
+    linear-gradient(135deg, rgba(var(--ins-glass-cyan), 0.36), rgba(var(--ins-glass-mint), 0.28));
+  animation: insertionGlassDriftB 21s ease-in-out infinite;
 }
 
 html[data-app-theme="light"] .theme-insertion-page > * {
@@ -3863,143 +3902,220 @@ html[data-app-theme="light"] .theme-insertion-page > * {
   z-index: 1;
 }
 
-/* Main West / East depot glass panels */
+/* Main depot panels */
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section {
   position: relative;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.38) !important;
-  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.20)) !important;
-  border: 1px solid rgba(255, 255, 255, 0.84) !important;
-  backdrop-filter: blur(28px) saturate(185%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(185%) !important;
+  background: rgba(255, 255, 255, 0.42) !important;
+  background-image:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.70), rgba(255, 255, 255, 0.20)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(30px) saturate(185%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(185%) !important;
   box-shadow:
-    0 18px 52px rgba(120, 53, 15, 0.10),
-    0 3px 12px rgba(15, 23, 42, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.96),
-    inset 0 -1px 0 rgba(15, 23, 42, 0.025) !important;
+    0 22px 58px rgba(67, 56, 202, 0.09),
+    0 4px 16px rgba(15, 23, 42, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 0 rgba(30, 41, 59, 0.03) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="west"] {
-  border-color: rgba(249, 115, 22, 0.34) !important;
+  border-color: rgba(var(--ins-glass-indigo), 0.28) !important;
   box-shadow:
-    0 18px 52px rgba(249, 115, 22, 0.11),
-    0 3px 12px rgba(15, 23, 42, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+    0 22px 58px rgba(var(--ins-glass-indigo), 0.11),
+    0 4px 16px rgba(15, 23, 42, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] {
-  border-color: rgba(20, 184, 166, 0.32) !important;
+  border-color: rgba(var(--ins-glass-cyan), 0.31) !important;
   box-shadow:
-    0 18px 52px rgba(20, 184, 166, 0.10),
-    0 3px 12px rgba(15, 23, 42, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+    0 22px 58px rgba(var(--ins-glass-cyan), 0.10),
+    0 4px 16px rgba(15, 23, 42, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section::before {
   content: "";
   position: absolute;
+  z-index: 0;
   inset: 0 0 auto 0;
-  height: 42%;
+  height: 44%;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.44), transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.62), transparent 72%),
+    radial-gradient(65% 58% at 12% 0%, rgba(var(--ins-glass-indigo), 0.09), transparent 75%);
 }
 
-/* Section title and compact controls */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"]::before {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.62), transparent 72%),
+    radial-gradient(65% 58% at 88% 0%, rgba(var(--ins-glass-cyan), 0.10), transparent 75%);
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: conic-gradient(
+    from 205deg at 50% 50%,
+    rgba(var(--ins-glass-cyan), 0.22),
+    rgba(255, 255, 255, 0.92),
+    rgba(var(--ins-glass-violet), 0.18),
+    rgba(255, 255, 255, 0.82),
+    rgba(var(--ins-glass-cyan), 0.22)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.72;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Titles and controls */
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-title-icon {
-  background: rgba(255, 255, 255, 0.62) !important;
-  border-color: rgba(255, 255, 255, 0.92) !important;
-  color: #ea580c !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.64) !important;
+  border-color: rgba(255, 255, 255, 0.94) !important;
+  color: #4f46e5 !important;
+  backdrop-filter: blur(14px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(180%) !important;
   box-shadow:
-    0 4px 14px rgba(0, 0, 0, 0.07),
-    inset 0 1px 0 #ffffff !important;
+    0 8px 22px rgba(var(--ins-glass-indigo), 0.14),
+    inset 0 1px 0 #ffffff,
+    inset 0 -1px 0 rgba(var(--ins-glass-violet), 0.08) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] .theme-insertion-title-icon {
-  color: #0f766e !important;
+  color: #0891b2 !important;
+  box-shadow:
+    0 8px 22px rgba(var(--ins-glass-cyan), 0.14),
+    inset 0 1px 0 #ffffff,
+    inset 0 -1px 0 rgba(var(--ins-glass-cyan), 0.09) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-title-icon::after {
+  content: "";
+  position: absolute;
+  inset: -30% auto -30% -65%;
+  width: 42%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.92), transparent);
+  animation: insertionGlassShimmer 6.5s ease-in-out infinite;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-title {
-  color: #1c1917 !important;
-  letter-spacing: -0.02em !important;
-  text-shadow: none !important;
+  color: var(--ins-glass-text) !important;
+  letter-spacing: -0.025em !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.78) !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-pg-switch {
-  background: rgba(28, 25, 23, 0.055) !important;
-  border-color: rgba(28, 25, 23, 0.08) !important;
-  box-shadow: inset 0 1px 2px rgba(28, 25, 23, 0.06) !important;
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-pg-switch,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-control {
+  background: rgba(77, 87, 113, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.70) !important;
+  box-shadow:
+    inset 0 1px 3px rgba(30, 41, 59, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.76) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-pg-button {
   background: transparent !important;
   border-color: transparent !important;
-  color: rgba(28, 25, 23, 0.48) !important;
+  color: rgba(30, 41, 59, 0.55) !important;
   box-shadow: none !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-pg-button.is-selected {
-  background: rgba(249, 115, 22, 0.14) !important;
-  border-color: rgba(249, 115, 22, 0.30) !important;
-  color: #c2410c !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(var(--ins-glass-indigo), 0.13)) !important;
+  border-color: rgba(var(--ins-glass-indigo), 0.28) !important;
+  color: #4338ca !important;
   box-shadow:
-    0 2px 9px rgba(249, 115, 22, 0.11),
-    inset 0 1px 0 rgba(255, 255, 255, 0.82) !important;
+    0 5px 15px rgba(var(--ins-glass-indigo), 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] .theme-insertion-pg-button.is-selected {
-  background: rgba(20, 184, 166, 0.13) !important;
-  border-color: rgba(20, 184, 166, 0.29) !important;
-  color: #0f766e !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button,
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-action {
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  color: #44403c !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(var(--ins-glass-cyan), 0.13)) !important;
+  border-color: rgba(var(--ins-glass-cyan), 0.30) !important;
+  color: #0e7490 !important;
   box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.065),
-    inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+    0 5px 15px rgba(var(--ins-glass-cyan), 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button,
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-hide {
-  background: rgba(255, 255, 255, 0.60) !important;
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-action,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-sound-button,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-tab,
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action {
+  background: rgba(255, 255, 255, 0.58) !important;
   border-color: rgba(255, 255, 255, 0.90) !important;
+  color: #374151 !important;
+  backdrop-filter: blur(14px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(180%) !important;
+  box-shadow:
+    0 5px 14px rgba(30, 41, 59, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 0 rgba(71, 85, 105, 0.04) !important;
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button:hover:not(:disabled),
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-action:hover:not(:disabled),
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-sound-button:hover:not(:disabled),
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-tab:hover:not(:disabled),
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.72) !important;
+  box-shadow:
+    0 9px 22px rgba(var(--ins-glass-indigo), 0.10),
+    inset 0 1px 0 #ffffff !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-download {
-  background: rgba(20, 184, 166, 0.12) !important;
-  border-color: rgba(20, 184, 166, 0.30) !important;
-  color: #0f766e !important;
+  background: linear-gradient(145deg, rgba(255,255,255,0.76), rgba(var(--ins-glass-cyan),0.13)) !important;
+  border-color: rgba(var(--ins-glass-cyan), 0.32) !important;
+  color: #0e7490 !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-clear {
-  background: rgba(239, 68, 68, 0.09) !important;
-  border-color: rgba(239, 68, 68, 0.24) !important;
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-clear,
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action-danger {
+  background: linear-gradient(145deg, rgba(255,255,255,0.72), rgba(var(--ins-glass-danger),0.10)) !important;
+  border-color: rgba(var(--ins-glass-danger), 0.25) !important;
   color: #dc2626 !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-hide.is-active {
-  background: rgba(16, 185, 129, 0.12) !important;
-  border-color: rgba(16, 185, 129, 0.28) !important;
-  color: #047857 !important;
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-hide.is-active,
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action-copied {
+  background: linear-gradient(145deg, rgba(255,255,255,0.76), rgba(var(--ins-glass-mint),0.15)) !important;
+  border-color: rgba(var(--ins-glass-mint), 0.30) !important;
+  color: #0f766e !important;
 }
 
-/* Glass table wrapper and grid */
+/* Stabling table */
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-table-wrap {
   overflow-x: auto !important;
   overflow-y: hidden !important;
-  background: rgba(255, 255, 255, 0.27) !important;
-  border-color: rgba(255, 255, 255, 0.80) !important;
-  backdrop-filter: blur(22px) saturate(175%) !important;
-  -webkit-backdrop-filter: blur(22px) saturate(175%) !important;
+  background: rgba(255, 255, 255, 0.24) !important;
+  border-color: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
   box-shadow:
-    0 15px 42px rgba(120, 53, 15, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.94),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.26) !important;
+    0 18px 45px rgba(67, 56, 202, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.20) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-table {
@@ -4010,45 +4126,53 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-table {
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-table-header,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-road-label {
   background: rgba(255, 255, 255, 0.28) !important;
-  background-image: none !important;
-  border-color: rgba(28, 25, 23, 0.07) !important;
-  color: rgba(28, 25, 23, 0.48) !important;
-  text-shadow: none !important;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0.16)) !important;
+  border-color: var(--ins-glass-line) !important;
+  color: #586579 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.78) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-road-label {
-  color: #44403c !important;
-  background: rgba(255, 255, 255, 0.22) !important;
+  color: #334155 !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-road-label .bg-amber-950\/25 {
-  background: rgba(234, 179, 8, 0.13) !important;
-  border-color: rgba(234, 179, 8, 0.38) !important;
+  background: rgba(var(--ins-glass-amber), 0.13) !important;
+  border-color: rgba(var(--ins-glass-amber), 0.36) !important;
   color: #92400e !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.70) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-grid-cell {
-  background: rgba(255, 255, 255, 0.16) !important;
-  background-color: rgba(255, 255, 255, 0.16) !important;
-  border-color: rgba(28, 25, 23, 0.07) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: var(--ins-glass-line) !important;
 }
 
-/* Core train-card glass */
+/* Train cards */
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card {
   position: relative;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.56) !important;
-  background-image: none !important;
-  border: 1px solid rgba(255, 255, 255, 0.88) !important;
-  color: #1c1917 !important;
-  backdrop-filter: blur(24px) saturate(195%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(195%) !important;
+  background: rgba(255, 255, 255, 0.53) !important;
+  background-image: linear-gradient(145deg, rgba(255,255,255,0.72), rgba(255,255,255,0.28)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.90) !important;
+  color: var(--ins-glass-text) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
   box-shadow:
-    0 4px 18px rgba(0, 0, 0, 0.065),
-    0 1px 4px rgba(0, 0, 0, 0.035),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98),
-    inset 0 -1px 0 rgba(28, 25, 23, 0.02) !important;
+    0 7px 22px rgba(30, 41, 59, 0.07),
+    0 1px 4px rgba(30, 41, 59, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.99),
+    inset 0 -1px 0 rgba(71, 85, 105, 0.035) !important;
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card:hover:not(.is-empty) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 11px 28px rgba(var(--ins-glass-indigo), 0.11),
+    0 2px 7px rgba(30, 41, 59, 0.05),
+    inset 0 1px 0 #ffffff !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card::before {
@@ -4056,10 +4180,27 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card::before
   position: absolute;
   z-index: 0;
   inset: 0 0 auto 0;
-  height: 42%;
+  height: 44%;
   border-radius: inherit;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.67), transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.80), transparent),
+    linear-gradient(110deg, transparent 20%, rgba(255,255,255,0.36) 48%, transparent 72%);
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: 8%;
+  right: 8%;
+  bottom: -10px;
+  height: 20px;
+  border-radius: 999px;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(var(--ins-glass-indigo), 0.12), rgba(var(--ins-glass-cyan), 0.10));
+  filter: blur(10px);
+  opacity: 0.70;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card > * {
@@ -4068,250 +4209,343 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card > * {
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="west"] .theme-insertion-card.has-train:not(.has-input):not(.is-inserted):not(.is-complete) {
-  background: rgba(255, 253, 235, 0.62) !important;
-  border-color: rgba(234, 179, 8, 0.25) !important;
-  box-shadow:
-    0 4px 18px rgba(234, 179, 8, 0.09),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+  background: linear-gradient(145deg, rgba(255,255,255,0.72), rgba(var(--ins-glass-indigo),0.085)) !important;
+  border-color: rgba(var(--ins-glass-indigo), 0.22) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] .theme-insertion-card.has-train:not(.has-input):not(.is-inserted):not(.is-complete) {
-  background: rgba(240, 253, 250, 0.62) !important;
-  border-color: rgba(20, 184, 166, 0.24) !important;
-  box-shadow:
-    0 4px 18px rgba(20, 184, 166, 0.09),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+  background: linear-gradient(145deg, rgba(255,255,255,0.72), rgba(var(--ins-glass-cyan),0.085)) !important;
+  border-color: rgba(var(--ins-glass-cyan), 0.23) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-empty {
-  background: rgba(255, 255, 255, 0.20) !important;
-  border: 1.5px dashed rgba(28, 25, 23, 0.11) !important;
-  box-shadow: none !important;
+  background: rgba(255, 255, 255, 0.18) !important;
+  background-image: none !important;
+  border: 1.5px dashed rgba(71, 85, 105, 0.15) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.48) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.has-input:not(.is-inserted) {
-  background: rgba(255, 251, 235, 0.67) !important;
-  border-color: rgba(234, 179, 8, 0.42) !important;
+  background: linear-gradient(145deg, rgba(255,255,255,0.78), rgba(var(--ins-glass-amber),0.13)) !important;
+  border-color: rgba(var(--ins-glass-amber), 0.39) !important;
   box-shadow:
-    0 4px 18px rgba(234, 179, 8, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.94) !important;
+    0 8px 25px rgba(var(--ins-glass-amber), 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-inserted,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-complete {
-  background: rgba(240, 253, 250, 0.68) !important;
-  border-color: rgba(20, 184, 166, 0.38) !important;
+  background: linear-gradient(145deg, rgba(255,255,255,0.78), rgba(var(--ins-glass-mint),0.15)) !important;
+  border-color: rgba(var(--ins-glass-mint), 0.38) !important;
   box-shadow:
-    0 5px 20px rgba(20, 184, 166, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+    0 9px 27px rgba(var(--ins-glass-mint), 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-duplicate {
-  background: rgba(255, 241, 240, 0.70) !important;
-  border-color: rgba(239, 68, 68, 0.40) !important;
+  background: linear-gradient(145deg, rgba(255,255,255,0.78), rgba(var(--ins-glass-danger),0.13)) !important;
+  border-color: rgba(var(--ins-glass-danger), 0.39) !important;
   box-shadow:
-    0 0 0 2px rgba(239, 68, 68, 0.08),
-    0 5px 20px rgba(239, 68, 68, 0.10),
-    inset 0 1px 0 rgba(255, 255, 255, 0.94) !important;
+    0 0 0 2px rgba(var(--ins-glass-danger), 0.07),
+    0 9px 27px rgba(var(--ins-glass-danger), 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-expired {
-  background: rgba(231, 229, 228, 0.54) !important;
-  border-color: rgba(120, 113, 108, 0.20) !important;
-  filter: grayscale(0.22);
+  background: rgba(226, 232, 240, 0.52) !important;
+  background-image: linear-gradient(145deg, rgba(255,255,255,0.48), rgba(203,213,225,0.42)) !important;
+  border-color: rgba(100, 116, 139, 0.20) !important;
+  filter: grayscale(0.18);
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card :is(.text-blue-300, .text-purple-300) {
-  color: rgba(28, 25, 23, 0.48) !important;
+  color: #64748b !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card :is(.text-blue-100, .text-purple-100, .text-purple-200) {
-  color: rgba(28, 25, 23, 0.76) !important;
+  color: #334155 !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input:not(.theme-insertion-tid-input) {
-  color: #44403c !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input::placeholder {
-  color: rgba(68, 64, 60, 0.38) !important;
-}
-
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input:not(.theme-insertion-tid-input),
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tid-input {
   background: transparent !important;
-  color: #44403c !important;
-  border-bottom-color: rgba(68, 64, 60, 0.22) !important;
+  color: #334155 !important;
+  border-bottom-color: rgba(71, 85, 105, 0.24) !important;
 }
 
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input::placeholder,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tid-input::placeholder {
-  color: rgba(68, 64, 60, 0.34) !important;
+  color: rgba(71, 85, 105, 0.42) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-insert-button {
-  background: rgba(255, 255, 255, 0.58) !important;
-  border-color: rgba(255, 255, 255, 0.90) !important;
-  color: #57534e !important;
-  backdrop-filter: blur(10px) !important;
-  -webkit-backdrop-filter: blur(10px) !important;
+  background: rgba(255, 255, 255, 0.60) !important;
+  border-color: rgba(255, 255, 255, 0.92) !important;
+  color: #475569 !important;
+  backdrop-filter: blur(12px) saturate(175%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(175%) !important;
   box-shadow:
-    0 2px 7px rgba(0, 0, 0, 0.055),
+    0 4px 12px rgba(30, 41, 59, 0.07),
     inset 0 1px 0 #ffffff !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-insert-button.has-input {
-  background: rgba(249, 115, 22, 0.11) !important;
-  border-color: rgba(249, 115, 22, 0.30) !important;
-  color: #c2410c !important;
+  background: linear-gradient(145deg, rgba(255,255,255,0.74), rgba(var(--ins-glass-amber),0.14)) !important;
+  border-color: rgba(var(--ins-glass-amber), 0.32) !important;
+  color: #b45309 !important;
 }
 
-/* TID reference panel — same glass language, still keeping depot identity */
+/* TID reference panel */
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-header,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-table {
-  background: rgba(255, 255, 255, 0.40) !important;
-  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.20)) !important;
-  border-color: rgba(255, 255, 255, 0.82) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  background: rgba(255, 255, 255, 0.39) !important;
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.18)) !important;
+  border-color: rgba(255, 255, 255, 0.86) !important;
+  backdrop-filter: blur(28px) saturate(185%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(185%) !important;
   box-shadow:
-    0 12px 36px rgba(120, 53, 15, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.94) !important;
+    0 18px 48px rgba(var(--ins-glass-indigo), 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="west"] {
-  border-color: rgba(249, 115, 22, 0.30) !important;
+  border-color: rgba(var(--ins-glass-indigo), 0.28) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="east"] {
-  border-color: rgba(20, 184, 166, 0.29) !important;
+  border-color: rgba(var(--ins-glass-cyan), 0.29) !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-control {
-  background: rgba(28, 25, 23, 0.05) !important;
-  border-color: rgba(28, 25, 23, 0.08) !important;
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-sound-button.is-enabled {
+  background: linear-gradient(145deg, rgba(255,255,255,0.76), rgba(var(--ins-glass-amber),0.13)) !important;
+  border-color: rgba(var(--ins-glass-amber), 0.30) !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-sound-button,
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-tab {
-  background: rgba(255, 255, 255, 0.58) !important;
-  border-color: rgba(255, 255, 255, 0.90) !important;
-  color: #44403c !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.90) !important;
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-sound-button.is-enabled.is-ready {
+  background: linear-gradient(145deg, rgba(255,255,255,0.76), rgba(var(--ins-glass-mint),0.15)) !important;
+  border-color: rgba(var(--ins-glass-mint), 0.30) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-tab.is-active {
-  background: rgba(249, 115, 22, 0.13) !important;
-  border-color: rgba(249, 115, 22, 0.30) !important;
-  color: #c2410c !important;
+  background: linear-gradient(145deg, rgba(255,255,255,0.78), rgba(var(--ins-glass-indigo),0.14)) !important;
+  border-color: rgba(var(--ins-glass-indigo), 0.30) !important;
+  color: #4338ca !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-tab.is-warning {
-  background: rgba(234, 179, 8, 0.13) !important;
-  border-color: rgba(234, 179, 8, 0.34) !important;
+  background: linear-gradient(145deg, rgba(255,255,255,0.76), rgba(var(--ins-glass-amber),0.14)) !important;
+  border-color: rgba(var(--ins-glass-amber), 0.34) !important;
+  color: #92400e !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot-header,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-table-header {
-  background: rgba(255, 255, 255, 0.29) !important;
-  background-image: none !important;
-  border-color: rgba(28, 25, 23, 0.07) !important;
-  color: rgba(28, 25, 23, 0.56) !important;
+  background: rgba(255, 255, 255, 0.27) !important;
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.52), rgba(255,255,255,0.14)) !important;
+  border-color: var(--ins-glass-line) !important;
+  color: #5d6b80 !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row-cell {
-  background: rgba(255, 255, 255, 0.40) !important;
+  background: rgba(255, 255, 255, 0.42) !important;
   background-image: none !important;
-  border-color: rgba(28, 25, 23, 0.075) !important;
-  color: #292524 !important;
+  border-color: rgba(75, 91, 118, 0.10) !important;
+  color: #273449 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row + .theme-insertion-reference-row .theme-insertion-reference-row-cell {
+  border-top-color: rgba(75, 91, 118, 0.10) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row:nth-child(even) .theme-insertion-reference-row-cell {
-  background: rgba(255, 255, 255, 0.26) !important;
+  background: rgba(255, 255, 255, 0.27) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row.has-remark .theme-insertion-reference-row-cell {
+  background: rgba(255, 255, 255, 0.35) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="west"] .theme-insertion-reference-row.is-active .theme-insertion-reference-row-cell {
-  background: rgba(249, 115, 22, 0.13) !important;
+  background: rgba(var(--ins-glass-indigo), 0.12) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="east"] .theme-insertion-reference-row.is-active .theme-insertion-reference-row-cell {
-  background: rgba(20, 184, 166, 0.13) !important;
+  background: rgba(var(--ins-glass-cyan), 0.12) !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-help {
-  background: rgba(255, 255, 255, 0.46) !important;
-  border-color: rgba(255, 255, 255, 0.82) !important;
-  color: #44403c !important;
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-help,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-warning {
+  background: rgba(255, 255, 255, 0.48) !important;
+  border-color: rgba(255, 255, 255, 0.84) !important;
+  color: #3f4c60 !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
 }
 
-/* Insertion output and how-to panels */
+/* Insertion output and How-to panels */
 html[data-app-theme="light"] .theme-insertion-page .insertion-clean-shell,
 html[data-app-theme="light"] .theme-insertion-page .insertion-help-shell {
-  background: rgba(255, 255, 255, 0.38) !important;
-  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.20)) !important;
-  border-color: rgba(255, 255, 255, 0.84) !important;
-  backdrop-filter: blur(26px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(26px) saturate(180%) !important;
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.39) !important;
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.18)) !important;
+  border-color: rgba(255, 255, 255, 0.87) !important;
+  backdrop-filter: blur(28px) saturate(185%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(185%) !important;
   box-shadow:
-    0 16px 44px rgba(120, 53, 15, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+    0 20px 52px rgba(var(--ins-glass-violet), 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+  scrollbar-color: rgba(99, 102, 241, 0.32) transparent !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-shell::before,
+html[data-app-theme="light"] .theme-insertion-page .insertion-help-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 34%;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,0.50), transparent);
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-shell > *,
+html[data-app-theme="light"] .theme-insertion-page .insertion-help-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-shell::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-shell::-webkit-scrollbar-thumb {
+  background: rgba(var(--ins-glass-indigo), 0.30) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .insertion-clean-card,
 html[data-app-theme="light"] .theme-insertion-page .insertion-help-step {
-  background: rgba(255, 255, 255, 0.50) !important;
-  border-color: rgba(255, 255, 255, 0.86) !important;
+  background: rgba(255, 255, 255, 0.49) !important;
+  background-image: linear-gradient(145deg, rgba(255,255,255,0.68), rgba(255,255,255,0.22)) !important;
+  border-color: rgba(255, 255, 255, 0.88) !important;
   box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.055),
-    inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+    0 8px 24px rgba(30, 41, 59, 0.065),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-help-step:hover,
+html[data-app-theme="light"] .theme-insertion-page .insertion-help-step.is-open {
+  transform: translateY(-1px);
+  border-color: rgba(var(--ins-glass-indigo), 0.26) !important;
+  box-shadow:
+    0 12px 30px rgba(var(--ins-glass-indigo), 0.10),
+    inset 0 1px 0 #ffffff !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .insertion-clean-card-header,
 html[data-app-theme="light"] .theme-insertion-page .insertion-help-details-inner {
-  background: rgba(255, 255, 255, 0.28) !important;
-  background-image: none !important;
-  border-color: rgba(28, 25, 23, 0.075) !important;
+  background: rgba(255, 255, 255, 0.25) !important;
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.46), rgba(255,255,255,0.12)) !important;
+  border-color: rgba(75, 91, 118, 0.10) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .insertion-clean-card-body {
-  background: rgba(255, 255, 255, 0.20) !important;
-  border-color: rgba(28, 25, 23, 0.075) !important;
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(75, 91, 118, 0.10) !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action,
+html[data-app-theme="light"] .theme-insertion-page :is(
+  .insertion-clean-title,
+  .insertion-clean-card-title,
+  .insertion-clean-section-title,
+  .insertion-help-title,
+  .insertion-help-step-title,
+  .insertion-help-detail-title
+) {
+  color: #1f2937 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page :is(
+  .insertion-clean-subtitle,
+  .insertion-clean-pre,
+  .insertion-clean-empty-section,
+  .insertion-clean-empty-text,
+  .insertion-clean-empty-card,
+  .insertion-help-subtitle,
+  .insertion-help-step-text,
+  .insertion-help-detail-line,
+  .insertion-help-open-hint
+) {
+  color: #4b5a70 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-title-icon,
+html[data-app-theme="light"] .theme-insertion-page .insertion-help-icon,
 html[data-app-theme="light"] .theme-insertion-page .insertion-help-chevron,
-html[data-app-theme="light"] .theme-insertion-page .insertion-help-step-number {
-  background: rgba(255, 255, 255, 0.60) !important;
-  border-color: rgba(255, 255, 255, 0.88) !important;
-  color: #44403c !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action-copied,
-html[data-app-theme="light"] .theme-insertion-page .insertion-help-step.is-open {
-  background: rgba(20, 184, 166, 0.11) !important;
-  border-color: rgba(20, 184, 166, 0.27) !important;
-}
-
-html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action-danger {
-  background: rgba(239, 68, 68, 0.09) !important;
-  border-color: rgba(239, 68, 68, 0.24) !important;
-  color: #dc2626 !important;
+html[data-app-theme="light"] .theme-insertion-page .insertion-help-step-number,
+html[data-app-theme="light"] .theme-insertion-page .insertion-help-detail-index {
+  background: linear-gradient(145deg, rgba(255,255,255,0.76), rgba(var(--ins-glass-indigo),0.12)) !important;
+  border-color: rgba(255, 255, 255, 0.90) !important;
+  color: #4f46e5 !important;
+  box-shadow:
+    0 5px 15px rgba(var(--ins-glass-indigo), 0.10),
+    inset 0 1px 0 #ffffff !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .insertion-help-example {
-  background: rgba(249, 115, 22, 0.09) !important;
-  border-color: rgba(249, 115, 22, 0.24) !important;
+  background: rgba(var(--ins-glass-indigo), 0.08) !important;
+  border-color: rgba(var(--ins-glass-indigo), 0.22) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page :is(.insertion-help-result, .insertion-help-rule) {
-  background: rgba(20, 184, 166, 0.10) !important;
-  border-color: rgba(20, 184, 166, 0.25) !important;
+  background: rgba(var(--ins-glass-mint), 0.10) !important;
+  border-color: rgba(var(--ins-glass-mint), 0.24) !important;
+}
+
+/* Fallback for browsers/devices that cannot render backdrop blur. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html[data-app-theme="light"] .theme-insertion-page :is(
+    .theme-insertion-section,
+    .theme-insertion-table-wrap,
+    .theme-insertion-card,
+    .theme-insertion-reference,
+    .theme-insertion-reference-header,
+    .theme-insertion-reference-depot,
+    .theme-insertion-reference-table,
+    .insertion-clean-shell,
+    .insertion-help-shell
+  ) {
+    background-color: rgba(248, 250, 252, 0.96) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-app-theme="light"] .theme-insertion-page::before,
+  html[data-app-theme="light"] .theme-insertion-page::after,
+  html[data-app-theme="light"] .theme-insertion-page .theme-insertion-title-icon::after {
+    animation: none !important;
+  }
+
+  html[data-app-theme="light"] .theme-insertion-page :is(
+    .theme-insertion-card,
+    .theme-insertion-action,
+    .theme-insertion-refresh-button,
+    .theme-insertion-reference-tab,
+    .theme-insertion-reference-sound-button,
+    .insertion-clean-action,
+    .insertion-help-step
+  ) {
+    transition: none !important;
+  }
 }
 
 @media (max-width: 900px) {
   html[data-app-theme="light"] .theme-insertion-page {
     padding: 10px;
-    border-radius: 20px;
+    border-radius: 21px;
   }
 }
