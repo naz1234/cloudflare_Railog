@@ -676,6 +676,7 @@ html[data-app-theme="light"] .theme-train-rem-row-card.is-9am-other-tid-row inpu
   background: linear-gradient(90deg, rgba(71,15,25,0.96) 0%, rgba(45,17,29,0.94) 52%, rgba(16,27,42,0.98) 100%) !important;
   border-color: #fb5b63 !important;
   box-shadow:
+    inset 3px 0 0 #fb5b63,
     0 0 0 1px rgba(251,91,99,0.12),
     0 0 7px rgba(239,68,68,0.20),
     inset 0 1px 0 rgba(255,255,255,0.045) !important;
@@ -694,6 +695,7 @@ html[data-app-theme="light"] .theme-train-rem-row-card.is-duplicate[data-preset=
   background: linear-gradient(90deg, #7f1d2d 0%, #991b2f 54%, #7f1d2d 100%) !important;
   border-color: #ef4444 !important;
   box-shadow:
+    inset 3px 0 0 #ef4444,
     0 0 0 1px rgba(239,68,68,0.14),
     0 1px 4px rgba(127,29,29,0.20),
     inset 0 1px 0 rgba(255,255,255,0.14) !important;
