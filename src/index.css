@@ -667,6 +667,40 @@ html[data-app-theme="light"] .theme-train-rem-row-card.is-9am-other-tid-row inpu
   text-shadow: 0 1px 1px rgba(0,0,0,0.26);
 }
 
+/* 9am highlighted rows: keep Train ID and Timing pure white in both themes.
+   TID already uses pure white. Train ID remains 700 except on duplicate rows. */
+.theme-train-rem-row-card.is-9am-exact-tid-row input:nth-child(1),
+.theme-train-rem-row-card.is-9am-exact-tid-row input:nth-child(3),
+.theme-train-rem-row-card.is-9am-special-tid-row input:nth-child(1),
+.theme-train-rem-row-card.is-9am-special-tid-row input:nth-child(3),
+.theme-train-rem-row-card.is-9am-other-tid-row input:nth-child(1),
+.theme-train-rem-row-card.is-9am-other-tid-row input:nth-child(3),
+.theme-train-rem-row-card[data-preset="9am"][data-tid="207"] input:nth-child(1),
+.theme-train-rem-row-card[data-preset="9am"][data-tid="207"] input:nth-child(3),
+.theme-train-rem-row-card[data-preset="9am"][data-tid="209"] input:nth-child(1),
+.theme-train-rem-row-card[data-preset="9am"][data-tid="209"] input:nth-child(3),
+.theme-train-rem-row-card[data-preset="9am"][data-tid="211"] input:nth-child(1),
+.theme-train-rem-row-card[data-preset="9am"][data-tid="211"] input:nth-child(3) {
+  color: #ffffff !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.34);
+}
+
+html[data-app-theme="light"] .theme-train-rem-row-card.is-9am-exact-tid-row input:nth-child(1),
+html[data-app-theme="light"] .theme-train-rem-row-card.is-9am-exact-tid-row input:nth-child(3),
+html[data-app-theme="light"] .theme-train-rem-row-card.is-9am-special-tid-row input:nth-child(1),
+html[data-app-theme="light"] .theme-train-rem-row-card.is-9am-special-tid-row input:nth-child(3),
+html[data-app-theme="light"] .theme-train-rem-row-card.is-9am-other-tid-row input:nth-child(1),
+html[data-app-theme="light"] .theme-train-rem-row-card.is-9am-other-tid-row input:nth-child(3),
+html[data-app-theme="light"] .theme-train-rem-row-card[data-preset="9am"][data-tid="207"] input:nth-child(1),
+html[data-app-theme="light"] .theme-train-rem-row-card[data-preset="9am"][data-tid="207"] input:nth-child(3),
+html[data-app-theme="light"] .theme-train-rem-row-card[data-preset="9am"][data-tid="209"] input:nth-child(1),
+html[data-app-theme="light"] .theme-train-rem-row-card[data-preset="9am"][data-tid="209"] input:nth-child(3),
+html[data-app-theme="light"] .theme-train-rem-row-card[data-preset="9am"][data-tid="211"] input:nth-child(1),
+html[data-app-theme="light"] .theme-train-rem-row-card[data-preset="9am"][data-tid="211"] input:nth-child(3) {
+  color: #ffffff !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.28);
+}
+
 /* Duplicate Train ID / TID: full-row red warning treatment.
    This rule intentionally comes after all 9am colour rules so the duplicate
    warning always wins, matching the compact red-outline style used elsewhere. */
