@@ -6412,18 +6412,14 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 const tidTextColor = isDuplicateTid
                   ? "#fecaca"
                   : isNineAmReferenceTid
-                    ? "#fde68a"
+                    ? "#ffffff"
                     : cleanTid.length === 3
                       ? "#dbeafe"
                       : hasTid
                         ? "#fbbf24"
                         : "#466681";
-                const tidCellBackground = isNineAmReferenceTid
-                  ? "linear-gradient(180deg, rgba(146,64,14,0.72) 0%, rgba(69,32,6,0.94) 100%)"
-                  : "transparent";
-                const tidCellBoxShadow = isNineAmReferenceTid
-                  ? "inset 0 0 0 1px rgba(245,158,11,0.52), inset 0 1px 0 rgba(253,230,138,0.12)"
-                  : "none";
+                const tidCellBackground = "transparent";
+                const tidCellBoxShadow = "none";
                 const timingTextColor = (displayTimingValue || "").toString().trim()
                   ? "#c5d8ea"
                   : "#58758f";
@@ -6452,7 +6448,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     <tr>
                       <td colSpan={4} className="theme-train-rem-table-cell bg-[#071828] px-1 py-[1px]">
                         <div
-                          className={`theme-train-rem-row-card grid h-[22px] items-center overflow-hidden rounded-md border transition-[border-color,background,box-shadow] duration-150 ${hasDuplicateValue ? "is-duplicate" : ""}`}
+                          className={`theme-train-rem-row-card grid h-[22px] items-center overflow-hidden rounded-md border transition-[border-color,background,box-shadow] duration-150 ${hasDuplicateValue ? "is-duplicate" : ""} ${isNineAmReferenceTid ? "is-9am-exact-tid-row" : ""}`}
                           style={{
                             gridTemplateColumns: "18% 18% 22% 42%",
                             background: rowCardVisual.background,
