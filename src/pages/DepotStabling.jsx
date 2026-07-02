@@ -3127,6 +3127,18 @@ function getCustomRequestStyle(label = "") {
   };
 }
 
+function normalizeRequestGroupColorKey(value = "") {
+  return normalizeRequestIdentity(value)
+    // Keep equivalent date spellings in the same colour group:
+    // "Wash 2Jul", "Wash 2-Jul" and "WASH 2 JUL".
+    .replace(/\b(\d{1,2})(JAN(?:UARY)?|FEB(?:RUARY)?|MAR(?:CH)?|APR(?:IL)?|MAY|JUN(?:E)?|JUL(?:Y)?|AUG(?:UST)?|SEP(?:T(?:EMBER)?)?|OCT(?:OBER)?|NOV(?:EMBER)?|DEC(?:EMBER)?)\b/g, "$1 $2");
+}
+
+function isNamedWashRequest(value = "") {
+  const groupKey = normalizeRequestGroupColorKey(value);
+  return groupKey.includes("WASH") && groupKey !== "WASH";
+}
+
 function getKnownMaintenanceStyle(label = "") {
   const clean = cleanRequestLabel(label);
   if (MAINT_STYLES[clean]) return MAINT_STYLES[clean];
@@ -3178,7 +3190,13 @@ function buildMaintenanceMap(requests, mainStablingKeys = new Set()) {
       ? "WORKSHOP"
       : "";
 
-    const styles = getKnownMaintenanceStyle(typeKey) || getCustomRequestStyle(displayType);
+    // Generic WASH keeps the standard cyan style. A named WASH group such as
+    // WASH 1-JUL or WASH 2-JUL gets a stable colour derived from its full group
+    // name, so separate groups are visually distinct in the main stabling grid.
+    const requestGroupColorKey = normalizeRequestGroupColorKey(displayType);
+    const styles = isNamedWashRequest(displayType)
+      ? getCustomRequestStyle(requestGroupColorKey)
+      : getKnownMaintenanceStyle(typeKey) || getCustomRequestStyle(displayType);
 
     if (!map[key]) {
       map[key] = [];
@@ -3311,6 +3329,17 @@ function getPrimaryStablingRequest(items = []) {
 function getStablingRequestVisual(item = null) {
   const category = getStablingRequestCategory(item);
   const fallbackAccent = getRequestAccent(item);
+  const requestLabel = item?.badgeText || item?.remark || item?.displayType || item?.typeKey || "";
+
+  // Named wash groups use their own deterministic accent instead of every
+  // WASH request being forced into the same cyan card style.
+  if (category === "wash" && isNamedWashRequest(requestLabel)) {
+    return {
+      accent: fallbackAccent,
+      gradient: `linear-gradient(135deg,${hexToRgba(fallbackAccent, 0.28)} 0%,${hexToRgba(fallbackAccent, 0.12)} 42%,#071828 100%)`,
+      glow: `0 0 0 1px ${hexToRgba(fallbackAccent, 0.18)},0 0 14px ${hexToRgba(fallbackAccent, 0.32)},0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)`,
+    };
+  }
 
   const visuals = {
     critical: {
