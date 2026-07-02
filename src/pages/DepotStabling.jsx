@@ -6390,9 +6390,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   (remarkValue || "").toString().trim()
                 );
                 const hasDuplicateValue = isDuplicateTrainId || isDuplicateTid;
-                const isNineAmReferenceTid = selectedPreset === "9am" && referenceOnly && NINE_AM_HIGHLIGHT_TIDS.has(cleanTid) && !isDuplicateTid;
-                const isNineAmSpecialTid = selectedPreset === "9am" && hasTid && NINE_AM_SPECIAL_TIDS.has(cleanTid) && !isDuplicateTid;
-                const isNineAmOtherTid = selectedPreset === "9am" && hasTid && !NINE_AM_HIGHLIGHT_TIDS.has(cleanTid) && !NINE_AM_SPECIAL_TIDS.has(cleanTid) && !isDuplicateTid;
+                // Duplicate styling must take priority over every 9am colour group.
+                // Do not attach amber / violet / steel-blue classes when either the
+                // Train ID or TID is duplicated.
+                const isNineAmReferenceTid = selectedPreset === "9am" && referenceOnly && NINE_AM_HIGHLIGHT_TIDS.has(cleanTid) && !hasDuplicateValue;
+                const isNineAmSpecialTid = selectedPreset === "9am" && hasTid && NINE_AM_SPECIAL_TIDS.has(cleanTid) && !hasDuplicateValue;
+                const isNineAmOtherTid = selectedPreset === "9am" && hasTid && !NINE_AM_HIGHLIGHT_TIDS.has(cleanTid) && !NINE_AM_SPECIAL_TIDS.has(cleanTid) && !hasDuplicateValue;
                 const rowCardVisual = getTrainRemRowCardVisual(
                   null,
                   "",

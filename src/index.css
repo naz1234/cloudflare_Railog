@@ -667,6 +667,43 @@ html[data-app-theme="light"] .theme-train-rem-row-card.is-9am-other-tid-row inpu
   text-shadow: 0 1px 1px rgba(0,0,0,0.26);
 }
 
+/* Duplicate Train ID / TID: full-row red warning treatment.
+   This rule intentionally comes after all 9am colour rules so the duplicate
+   warning always wins, matching the compact red-outline style used elsewhere. */
+.theme-train-rem-row-card.is-duplicate,
+.theme-train-rem-row-card.is-duplicate[data-preset="9am"],
+.theme-train-rem-row-card.is-duplicate[data-preset="9am"][data-tid] {
+  background: linear-gradient(90deg, rgba(71,15,25,0.96) 0%, rgba(45,17,29,0.94) 52%, rgba(16,27,42,0.98) 100%) !important;
+  border-color: #fb5b63 !important;
+  box-shadow:
+    0 0 0 1px rgba(251,91,99,0.12),
+    0 0 7px rgba(239,68,68,0.20),
+    inset 0 1px 0 rgba(255,255,255,0.045) !important;
+}
+
+.theme-train-rem-row-card.is-duplicate input {
+  color: #ffffff !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.38);
+}
+
+html[data-app-theme="light"] .theme-train-rem-row-card.is-duplicate,
+html[data-app-theme="light"] .theme-train-rem-row-card.is-duplicate[data-preset="9am"],
+html[data-app-theme="light"] .theme-train-rem-row-card.is-duplicate[data-preset="9am"][data-tid] {
+  background: linear-gradient(90deg, #7f1d2d 0%, #991b2f 54%, #7f1d2d 100%) !important;
+  border-color: #ef4444 !important;
+  box-shadow:
+    0 0 0 1px rgba(239,68,68,0.14),
+    0 1px 4px rgba(127,29,29,0.20),
+    inset 0 1px 0 rgba(255,255,255,0.14) !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-row-card.is-duplicate input {
+  color: #ffffff !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.30);
+}
+
 html[data-app-theme="light"] .theme-train-rem-row-card input::placeholder {
   color: #000000 !important;
   opacity: 0.48;
