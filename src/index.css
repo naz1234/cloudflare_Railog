@@ -4624,3 +4624,520 @@ html[data-app-theme="light"] .theme-insertion-page :is(input, button, [tabindex]
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ========================================================================== 
+   INSERTION — WEST DEPOT WARM GLASS REFERENCE
+   Light mode only. Dark mode and every other Railog section remain unchanged.
+   ========================================================================== */
+html[data-app-theme="light"] .theme-insertion-page {
+  --ins-glass-orange: 249, 115, 22;
+  --ins-glass-teal: 20, 184, 166;
+  --ins-glass-yellow: 234, 179, 8;
+  --ins-glass-coral: 239, 68, 68;
+  --ins-glass-green: 16, 185, 129;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 18px;
+  border-radius: 24px;
+  background:
+    radial-gradient(ellipse 75% 65% at 5% 0%, rgba(var(--ins-glass-orange), 0.55) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 70% at 95% 5%, rgba(var(--ins-glass-teal), 0.45) 0%, transparent 50%),
+    radial-gradient(ellipse 65% 50% at 55% 100%, rgba(var(--ins-glass-yellow), 0.38) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 55% at 10% 85%, rgba(var(--ins-glass-coral), 0.28) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 40% at 85% 75%, rgba(var(--ins-glass-green), 0.30) 0%, transparent 50%),
+    linear-gradient(145deg, #fff7ed 0%, #ecfdf5 40%, #fffbeb 70%, #fef2f2 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow:
+    0 24px 70px rgba(var(--ins-glass-orange), 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+html[data-app-theme="light"] .theme-insertion-page::before,
+html[data-app-theme="light"] .theme-insertion-page::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(46px);
+}
+
+html[data-app-theme="light"] .theme-insertion-page::before {
+  width: 420px;
+  height: 420px;
+  top: -150px;
+  left: -100px;
+  background: radial-gradient(circle, rgba(var(--ins-glass-orange), 0.42), transparent 70%);
+}
+
+html[data-app-theme="light"] .theme-insertion-page::after {
+  width: 380px;
+  height: 380px;
+  top: -110px;
+  right: -100px;
+  background: radial-gradient(circle, rgba(var(--ins-glass-teal), 0.36), transparent 70%);
+}
+
+html[data-app-theme="light"] .theme-insertion-page > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Main West / East insertion glass shells. */
+html[data-app-theme="light"] .theme-insertion-section {
+  background: rgba(255, 255, 255, 0.40) !important;
+  background-image: none !important;
+  backdrop-filter: blur(32px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(190%) !important;
+  border-color: rgba(255, 255, 255, 0.86) !important;
+  box-shadow:
+    0 16px 42px rgba(var(--ins-glass-orange), 0.10),
+    0 4px 14px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.025) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-title-icon,
+html[data-app-theme="light"] .insertion-clean-title-icon,
+html[data-app-theme="light"] .insertion-help-icon {
+  background: rgba(255, 255, 255, 0.70) !important;
+  background-image: none !important;
+  border-color: rgba(255, 255, 255, 0.94) !important;
+  color: #f97316 !important;
+  backdrop-filter: blur(14px) saturate(170%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(170%) !important;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-title {
+  background: linear-gradient(90deg, #f97316, #14b8a6, #eab308) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+}
+
+/* PG selector and insertion controls. */
+html[data-app-theme="light"] .theme-insertion-pg-switch,
+html[data-app-theme="light"] .theme-insertion-reference-control {
+  background: rgba(255, 255, 255, 0.48) !important;
+  border-color: rgba(255, 255, 255, 0.86) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 2px 7px rgba(0, 0, 0, 0.05) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-pg-button,
+html[data-app-theme="light"] .theme-insertion-reference-tab {
+  color: rgba(28, 25, 23, 0.62) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-pg-button.is-selected,
+html[data-app-theme="light"] .theme-insertion-reference-tab.is-active {
+  background: rgba(var(--ins-glass-orange), 0.14) !important;
+  background-image: none !important;
+  border-color: rgba(var(--ins-glass-orange), 0.34) !important;
+  color: #ea580c !important;
+  box-shadow:
+    0 0 12px rgba(var(--ins-glass-orange), 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.76) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-refresh-button,
+html[data-app-theme="light"] .theme-insertion-action,
+html[data-app-theme="light"] .insertion-clean-action,
+html[data-app-theme="light"] .theme-insertion-reference-sound-button {
+  backdrop-filter: blur(12px) saturate(170%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(170%) !important;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-refresh-button,
+html[data-app-theme="light"] .insertion-clean-action {
+  background: rgba(255, 255, 255, 0.62) !important;
+  background-image: none !important;
+  border-color: rgba(255, 255, 255, 0.90) !important;
+  color: #44403c !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-download {
+  background: rgba(var(--ins-glass-teal), 0.12) !important;
+  background-image: none !important;
+  border-color: rgba(var(--ins-glass-teal), 0.30) !important;
+  color: #0f766e !important;
+  box-shadow:
+    0 2px 10px rgba(var(--ins-glass-teal), 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-clear,
+html[data-app-theme="light"] .insertion-clean-action-danger {
+  background: rgba(var(--ins-glass-coral), 0.09) !important;
+  background-image: none !important;
+  border-color: rgba(var(--ins-glass-coral), 0.25) !important;
+  color: #dc2626 !important;
+  box-shadow:
+    0 2px 10px rgba(var(--ins-glass-coral), 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-hide {
+  background: rgba(var(--ins-glass-orange), 0.10) !important;
+  background-image: none !important;
+  border-color: rgba(var(--ins-glass-orange), 0.28) !important;
+  color: #ea580c !important;
+  box-shadow:
+    0 2px 10px rgba(var(--ins-glass-orange), 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-hide.is-active,
+html[data-app-theme="light"] .theme-insertion-reference-sound-button.is-enabled.is-ready,
+html[data-app-theme="light"] .insertion-clean-action-copied {
+  background: rgba(var(--ins-glass-green), 0.12) !important;
+  background-image: none !important;
+  border-color: rgba(var(--ins-glass-green), 0.32) !important;
+  color: #047857 !important;
+}
+
+html[data-app-theme="light"] :is(
+  .theme-insertion-refresh-button,
+  .theme-insertion-action,
+  .insertion-clean-action,
+  .theme-insertion-pg-button,
+  .theme-insertion-reference-tab,
+  .theme-insertion-reference-sound-button
+):hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+}
+
+/* Glass grid and headers. */
+html[data-app-theme="light"] .theme-insertion-table-wrap,
+html[data-app-theme="light"] .theme-insertion-table {
+  background: rgba(255, 255, 255, 0.30) !important;
+  background-image: none !important;
+  border-color: rgba(255, 255, 255, 0.78) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  box-shadow:
+    0 20px 60px rgba(var(--ins-glass-orange), 0.10),
+    0 4px 16px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-table-header,
+html[data-app-theme="light"] .theme-insertion-road-label {
+  background: rgba(255, 255, 255, 0.30) !important;
+  background-image: none !important;
+  border-color: rgba(0, 0, 0, 0.055) !important;
+  color: rgba(28, 25, 23, 0.48) !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-grid-cell {
+  background: rgba(255, 255, 255, 0.12) !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Train cards — same glass base, with amber / teal / coral state tints. */
+html[data-app-theme="light"] .theme-insertion-card {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.58) !important;
+  background-image: none !important;
+  border-color: rgba(255, 255, 255, 0.88) !important;
+  color: #1c1917 !important;
+  backdrop-filter: blur(28px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.07),
+    0 1px 4px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 #ffffff,
+    inset 0 -1px 0 rgba(0, 0, 0, 0.02) !important;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+html[data-app-theme="light"] .theme-insertion-card::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+}
+
+html[data-app-theme="light"] .theme-insertion-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-app-theme="light"] .theme-insertion-card:hover:not(.is-empty) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 9px 26px rgba(0, 0, 0, 0.10),
+    0 2px 6px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-card.is-empty {
+  background: rgba(255, 255, 255, 0.22) !important;
+  background-image: none !important;
+  border: 1.5px dashed rgba(0, 0, 0, 0.10) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-card.has-input:not(.is-inserted) {
+  background: rgba(255, 253, 235, 0.66) !important;
+  border-color: rgba(var(--ins-glass-yellow), 0.34) !important;
+  box-shadow:
+    0 4px 20px rgba(var(--ins-glass-yellow), 0.10),
+    0 1px 4px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-card.is-inserted,
+html[data-app-theme="light"] .theme-insertion-card.is-complete {
+  background: rgba(240, 253, 250, 0.68) !important;
+  border-color: rgba(var(--ins-glass-teal), 0.34) !important;
+  box-shadow:
+    0 4px 20px rgba(var(--ins-glass-teal), 0.12),
+    0 1px 4px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-card.is-complete {
+  border-color: rgba(var(--ins-glass-teal), 0.54) !important;
+  box-shadow:
+    0 0 0 1px rgba(var(--ins-glass-teal), 0.08),
+    0 7px 22px rgba(var(--ins-glass-teal), 0.16),
+    inset 0 1px 0 #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-card.is-duplicate {
+  background: rgba(255, 241, 240, 0.70) !important;
+  border-color: rgba(var(--ins-glass-coral), 0.40) !important;
+  box-shadow:
+    0 0 0 1px rgba(var(--ins-glass-coral), 0.08),
+    0 5px 20px rgba(var(--ins-glass-coral), 0.12),
+    inset 0 1px 0 #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-card.is-expired {
+  background: rgba(255, 255, 255, 0.30) !important;
+  border-color: rgba(0, 0, 0, 0.10) !important;
+  opacity: 0.62 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-tid-input {
+  background: rgba(255, 255, 255, 0.34) !important;
+  color: #1c1917 !important;
+  border-bottom-color: rgba(28, 25, 23, 0.20) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-tid-input::placeholder {
+  color: rgba(28, 25, 23, 0.42) !important;
+  opacity: 1 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-insert-button {
+  background: rgba(255, 255, 255, 0.62) !important;
+  background-image: none !important;
+  border-color: rgba(255, 255, 255, 0.90) !important;
+  color: #44403c !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07), inset 0 1px 0 #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-insert-button.has-input {
+  background: rgba(var(--ins-glass-yellow), 0.13) !important;
+  border-color: rgba(var(--ins-glass-yellow), 0.38) !important;
+  color: #92400e !important;
+}
+
+/* TID reference — glass container, translucent tables and colour-tinted depots. */
+html[data-app-theme="light"] .theme-insertion-reference,
+html[data-app-theme="light"] .insertion-clean-shell,
+html[data-app-theme="light"] .insertion-help-shell {
+  background: rgba(255, 255, 255, 0.38) !important;
+  background-image: none !important;
+  border-color: rgba(255, 255, 255, 0.84) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  box-shadow:
+    0 18px 48px rgba(var(--ins-glass-orange), 0.09),
+    0 4px 16px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-header,
+html[data-app-theme="light"] .insertion-clean-card-header {
+  background: rgba(255, 255, 255, 0.48) !important;
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.68), rgba(255,255,255,0.26)) !important;
+  border-color: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: blur(18px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.94) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-depot,
+html[data-app-theme="light"] .insertion-clean-card,
+html[data-app-theme="light"] .insertion-help-step {
+  background: rgba(255, 255, 255, 0.50) !important;
+  background-image: none !important;
+  border-color: rgba(255, 255, 255, 0.84) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-depot[data-depot="west"] {
+  border-color: rgba(var(--ins-glass-orange), 0.28) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-depot[data-depot="east"] {
+  border-color: rgba(var(--ins-glass-teal), 0.28) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-depot-header,
+html[data-app-theme="light"] .theme-insertion-reference-depot[data-depot="west"] .theme-insertion-reference-depot-header,
+html[data-app-theme="light"] .theme-insertion-reference-depot[data-depot="east"] .theme-insertion-reference-depot-header {
+  background: rgba(255, 255, 255, 0.34) !important;
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.62), rgba(255,255,255,0.18)) !important;
+  border-color: rgba(0, 0, 0, 0.055) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-table {
+  background: rgba(255, 255, 255, 0.24) !important;
+  border-color: rgba(255, 255, 255, 0.78) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-table-header {
+  background: rgba(255, 255, 255, 0.32) !important;
+  background-image: none !important;
+  border-color: rgba(0, 0, 0, 0.055) !important;
+  color: rgba(28, 25, 23, 0.54) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-row-cell,
+html[data-app-theme="light"] .theme-insertion-reference-row:nth-child(even) .theme-insertion-reference-row-cell,
+html[data-app-theme="light"] .theme-insertion-reference-row.has-remark .theme-insertion-reference-row-cell {
+  background: rgba(255, 255, 255, 0.36) !important;
+  background-image: none !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+  color: #1c1917 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-row:nth-child(even) .theme-insertion-reference-row-cell {
+  background: rgba(255, 255, 255, 0.22) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-depot[data-depot="west"] .theme-insertion-reference-row.is-active .theme-insertion-reference-row-cell {
+  background: rgba(var(--ins-glass-orange), 0.13) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-depot[data-depot="east"] .theme-insertion-reference-row.is-active .theme-insertion-reference-row-cell {
+  background: rgba(var(--ins-glass-teal), 0.13) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-reference-help {
+  background: rgba(var(--ins-glass-teal), 0.10) !important;
+  border-color: rgba(var(--ins-glass-teal), 0.28) !important;
+  color: #0f766e !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* Log output and How-to cards use the same warm glass language. */
+html[data-app-theme="light"] .insertion-clean-card-body,
+html[data-app-theme="light"] .insertion-help-details-inner {
+  background: rgba(255, 255, 255, 0.28) !important;
+  background-image: none !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+html[data-app-theme="light"] .insertion-help-step:hover,
+html[data-app-theme="light"] .insertion-help-step.is-open {
+  background: rgba(255, 255, 255, 0.66) !important;
+  border-color: rgba(var(--ins-glass-orange), 0.32) !important;
+  transform: translateY(-1px);
+  box-shadow:
+    0 8px 22px rgba(var(--ins-glass-orange), 0.10),
+    inset 0 1px 0 #ffffff !important;
+}
+
+html[data-app-theme="light"] .insertion-help-step-number,
+html[data-app-theme="light"] .insertion-help-chevron,
+html[data-app-theme="light"] .insertion-help-open-hint {
+  background: rgba(255, 255, 255, 0.54) !important;
+  background-image: none !important;
+  border-color: rgba(255, 255, 255, 0.88) !important;
+  color: #ea580c !important;
+  box-shadow: inset 0 1px 0 #ffffff !important;
+}
+
+html[data-app-theme="light"] .insertion-help-step.is-open .insertion-help-chevron {
+  background: rgba(var(--ins-glass-orange), 0.13) !important;
+  border-color: rgba(var(--ins-glass-orange), 0.30) !important;
+  color: #ea580c !important;
+}
+
+html[data-app-theme="light"] .insertion-help-example {
+  background: rgba(var(--ins-glass-yellow), 0.11) !important;
+  border-color: rgba(var(--ins-glass-yellow), 0.30) !important;
+}
+
+html[data-app-theme="light"] .insertion-help-result,
+html[data-app-theme="light"] .insertion-help-rule {
+  background: rgba(var(--ins-glass-teal), 0.10) !important;
+  border-color: rgba(var(--ins-glass-teal), 0.28) !important;
+}
+
+html[data-app-theme="light"] .insertion-clean-shell::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.20) !important;
+}
+
+html[data-app-theme="light"] .insertion-clean-shell::-webkit-scrollbar-thumb {
+  background: rgba(249, 115, 22, 0.34) !important;
+}
+
+@media (max-width: 1100px) {
+  html[data-app-theme="light"] .theme-insertion-page {
+    padding: 12px;
+    border-radius: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-app-theme="light"] .theme-insertion-page :is(
+    .theme-insertion-card,
+    .theme-insertion-action,
+    .theme-insertion-refresh-button,
+    .theme-insertion-pg-button,
+    .theme-insertion-reference-tab,
+    .theme-insertion-reference-sound-button,
+    .insertion-clean-action,
+    .insertion-help-step
+  ) {
+    transition: none !important;
+    transform: none !important;
+  }
+}

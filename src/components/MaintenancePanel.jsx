@@ -248,11 +248,22 @@ function rgbaFromHex(hex = "#4f8ef7", alpha = 1) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+function normalizeRequestGroupColorKey(value = "") {
+  return normalizeRequestIdentity(value)
+    // Treat date spellings such as "Wash 2Jul", "Wash 2-Jul" and
+    // "WASH 2 JUL" as the same request group.
+    .replace(/\b(\d{1,2})(JAN(?:UARY)?|FEB(?:RUARY)?|MAR(?:CH)?|APR(?:IL)?|MAY|JUN(?:E)?|JUL(?:Y)?|AUG(?:UST)?|SEP(?:T(?:EMBER)?)?|OCT(?:OBER)?|NOV(?:EMBER)?|DEC(?:EMBER)?)\b/g, "$1 $2");
+}
+
 function getMainStablingCompactCardStyle(typeKey, displayLabel = "") {
+  const requestLabel = displayLabel || typeKey;
   const styleKey = getKnownRequestColorKey(typeKey || displayLabel);
   const configuredColor = REQUEST_COLORS[styleKey];
-  const fallbackAccent = configuredColor?.bg || getCustomRequestColor(displayLabel || typeKey);
-  const category = getMainStablingRequestCategory(displayLabel || typeKey);
+  const fallbackAccent = configuredColor?.bg || getCustomRequestColor(requestLabel);
+  const category = getMainStablingRequestCategory(requestLabel);
+  const groupColorKey = normalizeRequestGroupColorKey(requestLabel);
+  const isNamedWashGroup = category === "wash" && groupColorKey && groupColorKey !== "WASH";
+  const namedWashAccent = isNamedWashGroup ? getCustomRequestColor(groupColorKey) : "";
 
   const visuals = {
     critical: {
@@ -282,11 +293,20 @@ function getMainStablingCompactCardStyle(typeKey, displayLabel = "") {
     },
   };
 
-  const visual = visuals[category] || {
-    accent: fallbackAccent,
-    gradient: `linear-gradient(135deg,${rgbaFromHex(fallbackAccent, 0.22)} 0%,#10243a 48%,#071828 100%)`,
-    glow: `0 0 0 1px ${rgbaFromHex(fallbackAccent, 0.12)},0 0 10px ${rgbaFromHex(fallbackAccent, 0.21)},0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.05)`,
-  };
+  const visual = isNamedWashGroup
+    ? {
+        // Each named wash batch/date gets a stable colour derived from its
+        // full group name. Identical names keep the same colour, while
+        // WASH 1-JUL and WASH 2-JUL are visually separated.
+        accent: namedWashAccent,
+        gradient: `linear-gradient(135deg,${rgbaFromHex(namedWashAccent, 0.30)} 0%,${rgbaFromHex(namedWashAccent, 0.13)} 48%,#071828 100%)`,
+        glow: `0 0 0 1px ${rgbaFromHex(namedWashAccent, 0.14)},0 0 11px ${rgbaFromHex(namedWashAccent, 0.27)},0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.06)`,
+      }
+    : visuals[category] || {
+        accent: fallbackAccent,
+        gradient: `linear-gradient(135deg,${rgbaFromHex(fallbackAccent, 0.22)} 0%,#10243a 48%,#071828 100%)`,
+        glow: `0 0 0 1px ${rgbaFromHex(fallbackAccent, 0.12)},0 0 10px ${rgbaFromHex(fallbackAccent, 0.21)},0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.05)`,
+      };
 
   return {
     accent: visual.accent,
