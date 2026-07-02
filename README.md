@@ -94,3 +94,6 @@ If your Cloudflare D1 page still shows 0 tables, open `/api/health` after the DB
 
 ## 9am exact-TID highlight refinement
 The exact 9am reference TIDs (112, 114, 116, 118, 120, 202, 204, 206, 208 and 210) now use a subtle amber whole-row highlight with a 3px left accent. The TID remains plain white text with no solid badge.
+
+## 9am other-TID row style
+Other populated TIDs shown while the 9am preset is selected now follow the same full-row format using a subtle steel-blue highlight and 3px left accent. Their TID text is white and bold, while the exact 9am reference set remains amber. Remark colours continue to use their own category/group accent.

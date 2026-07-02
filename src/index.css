@@ -561,6 +561,40 @@ html[data-app-theme="light"] .theme-train-rem-row-card.is-9am-exact-tid-row inpu
   text-shadow: 0 1px 1px rgba(0,0,0,0.28);
 }
 
+/* Other populated TIDs in the 9am preset use the same whole-row format,
+   but with a restrained steel-blue treatment so the exact 9am set stays distinct. */
+.theme-train-rem-row-card.is-9am-other-tid-row {
+  background: linear-gradient(90deg, rgba(49,104,147,0.24) 0%, rgba(35,79,116,0.13) 55%, rgba(28,61,91,0.07) 100%) !important;
+  border-color: rgba(96,165,250,0.58) !important;
+  box-shadow:
+    inset 3px 0 0 #3b82f6,
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 1px 3px rgba(0,0,0,0.16) !important;
+}
+
+.theme-train-rem-row-card.is-9am-other-tid-row input.is-9am-other-tid-reference {
+  color: #ffffff !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.32);
+}
+
+html[data-app-theme="light"] .theme-train-rem-row-card.is-9am-other-tid-row {
+  background: linear-gradient(90deg, rgba(36,93,138,0.86) 0%, rgba(53,112,158,0.76) 55%, rgba(77,136,181,0.66) 100%) !important;
+  border-color: #2563a5 !important;
+  box-shadow:
+    inset 3px 0 0 #60a5fa,
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    0 1px 3px rgba(15,23,42,0.14) !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-row-card.is-9am-other-tid-row input.is-9am-other-tid-reference {
+  color: #ffffff !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.26);
+}
+
 html[data-app-theme="light"] .theme-train-rem-row-card input::placeholder {
   color: #000000 !important;
   opacity: 0.48;
