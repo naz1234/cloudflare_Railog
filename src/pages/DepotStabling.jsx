@@ -32,6 +32,7 @@ const LOCAL_TIMETABLE_RECORDS_KEY = "storedTimetableRecords_v1";
 const EAST_INSERTION_TIME_OFFSET_KEY = "eastInsertionTimeOffsetMinutes_v1";
 const TIMETABLE_PARSE_VERSION = 5;
 const APP_THEME_KEY = "l3DcTheme_v1";
+const NINE_AM_HIGHLIGHT_TIDS = new Set(["112", "114", "116", "118", "120", "202", "204", "206", "208", "210"]);
 
 function normalizeAppTheme(value = "") {
   return String(value || "").toLowerCase() === "light" ? "light" : "dark";
@@ -6388,7 +6389,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   (remarkValue || "").toString().trim()
                 );
                 const hasDuplicateValue = isDuplicateTrainId || isDuplicateTid;
-                const isNineAmReferenceTid = selectedPreset === "9am" && referenceOnly && !isDuplicateTid;
+                const isNineAmReferenceTid = selectedPreset === "9am" && referenceOnly && NINE_AM_HIGHLIGHT_TIDS.has(cleanTid) && !isDuplicateTid;
                 const rowCardVisual = getTrainRemRowCardVisual(
                   null,
                   "",
