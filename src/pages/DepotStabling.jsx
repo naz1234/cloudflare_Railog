@@ -6388,14 +6388,21 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   (remarkValue || "").toString().trim()
                 );
                 const hasDuplicateValue = isDuplicateTrainId || isDuplicateTid;
-                const rowCardVisual = getTrainRemRowCardVisual(
-                  null,
-                  "",
-                  {
-                    hasContent: hasRowContent,
-                    isDuplicate: hasDuplicateValue,
-                  }
-                );
+                const isNineAmReferenceRow = selectedPreset === "9am" && referenceOnly && !hasDuplicateValue;
+                const rowCardVisual = isNineAmReferenceRow
+                  ? {
+                      background: "linear-gradient(90deg, rgba(120,53,15,0.62) 0%, rgba(78,39,8,0.90) 48%, rgba(45,28,8,0.97) 100%)",
+                      borderColor: "rgba(245,158,11,0.78)",
+                      boxShadow: "0 0 10px rgba(245,158,11,0.14), inset 0 1px 0 rgba(253,230,138,0.10)",
+                    }
+                  : getTrainRemRowCardVisual(
+                      null,
+                      "",
+                      {
+                        hasContent: hasRowContent,
+                        isDuplicate: hasDuplicateValue,
+                      }
+                    );
                 const remarkCardVisual = (remarkValue || "").toString().trim() && !hasDuplicateValue
                   ? getTrainRemRowCardVisual(trainRemRequestItems[0], remarkValue, {
                       hasContent: true,
@@ -6404,19 +6411,25 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   : null;
                 const trainIdTextColor = isDuplicateTrainId
                   ? "#fecaca"
-                  : hasTrainId
-                    ? "#c5d8ea"
-                    : "#466681";
+                  : isNineAmReferenceRow
+                    ? "#fde68a"
+                    : hasTrainId
+                      ? "#c5d8ea"
+                      : "#466681";
                 const tidTextColor = isDuplicateTid
                   ? "#fecaca"
-                  : cleanTid.length === 3
-                    ? "#dbeafe"
-                    : hasTid
-                      ? "#fbbf24"
-                      : "#466681";
-                const timingTextColor = (displayTimingValue || "").toString().trim()
-                  ? "#c5d8ea"
-                  : "#58758f";
+                  : isNineAmReferenceRow
+                    ? "#fff7d6"
+                    : cleanTid.length === 3
+                      ? "#dbeafe"
+                      : hasTid
+                        ? "#fbbf24"
+                        : "#466681";
+                const timingTextColor = isNineAmReferenceRow
+                  ? "#fcd34d"
+                  : (displayTimingValue || "").toString().trim()
+                    ? "#c5d8ea"
+                    : "#58758f";
                 const remarkTextColor = hasDuplicateValue
                   ? "#fecaca"
                   : (remarkValue || "").toString().trim()
@@ -6442,7 +6455,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     <tr>
                       <td colSpan={4} className="theme-train-rem-table-cell bg-[#071828] px-1 py-[1px]">
                         <div
-                          className={`theme-train-rem-row-card grid h-[22px] items-center overflow-hidden rounded-md border transition-[border-color,background,box-shadow] duration-150 ${hasDuplicateValue ? "is-duplicate" : ""}`}
+                          className={`theme-train-rem-row-card grid h-[22px] items-center overflow-hidden rounded-md border transition-[border-color,background,box-shadow] duration-150 ${hasDuplicateValue ? "is-duplicate" : ""} ${isNineAmReferenceRow ? "is-9am-reference" : ""}`}
                           style={{
                             gridTemplateColumns: "18% 18% 22% 42%",
                             background: rowCardVisual.background,

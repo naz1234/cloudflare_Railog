@@ -532,6 +532,16 @@ html[data-app-theme="light"] .theme-train-rem-row-card input::placeholder {
   opacity: 0.48;
 }
 
+html[data-app-theme="light"] .theme-train-rem-row-card.is-9am-reference {
+  background: linear-gradient(90deg, #fff7d6 0%, #ffedb5 52%, #ffe39a 100%) !important;
+  border-color: #d58a00 !important;
+  box-shadow: inset 3px 0 0 #f59e0b, inset 0 1px 0 rgba(255,255,255,0.95), 0 1px 4px rgba(146,64,14,0.12) !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-row-card.is-9am-reference input {
+  color: #7c2d12 !important;
+}
+
 /* Insertion workspace light-mode cleanup.
    Dark mode keeps the original navy design; these rules only override the
    remaining inline dark surfaces while the saved light theme is active. */
