@@ -2041,7 +2041,26 @@ function buildInsertionLivePayload(state = {}) {
 
 
 const TRAIN_REM_STORAGE_KEY = "trainRemState_v1";
+const TRAIN_REM_DIRTY_STORAGE_KEY = "trainRemStateDirty_v1";
 const TRAIN_REM_SYNC_INTERVAL_MS = 5000;
+
+function isTrainRemLocalDirty() {
+  try {
+    return localStorage.getItem(TRAIN_REM_DIRTY_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function setTrainRemLocalDirty(isDirty) {
+  try {
+    if (isDirty) {
+      localStorage.setItem(TRAIN_REM_DIRTY_STORAGE_KEY, "true");
+    } else {
+      localStorage.removeItem(TRAIN_REM_DIRTY_STORAGE_KEY);
+    }
+  } catch {}
+}
 const TRAIN_REM_UNDO_LIMIT = 30;
 const TRAIN_REM_ROW_COUNTS = { west: 40, east: 14 };
 const TRAIN_REM_WEST_DEFAULT_VISIBLE_ROW_COUNT = 32;
@@ -5357,6 +5376,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         trainRemMapRef.current = map;
         setTrainRemState(state);
         saveTrainRemState(state);
+        setTrainRemLocalDirty(false);
         setTrainRemLastSynced(new Date());
         setTrainRemSyncError(false);
         setTrainRemDbReady(true);
@@ -5367,7 +5387,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       const { state, map } = buildTrainRemStateFromRecords(records || []);
       const localState = loadTrainRemState();
 
-      if (isTrainRemLocalStateNewer(localState, state)) {
+      // A normal browser cache must never overwrite the shared live record.
+      // Only prefer local data when it is explicitly marked dirty, which means
+      // an edit was made locally but could not finish syncing before reload/offline.
+      if (isTrainRemLocalDirty() && isTrainRemLocalStateNewer(localState, state)) {
         trainRemMapRef.current = map;
         trainRemStateRef.current = localState;
         setTrainRemState(localState);
@@ -5384,6 +5407,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
           }
         }
 
+        setTrainRemLocalDirty(false);
         setTrainRemLastSynced(new Date());
         setTrainRemSyncError(false);
         setTrainRemDebug("");
@@ -5396,6 +5420,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       trainRemStateRef.current = state;
       setTrainRemState(state);
       saveTrainRemState(state);
+      setTrainRemLocalDirty(false);
       setTrainRemLastSynced(new Date());
       setTrainRemSyncError(false);
       setTrainRemDebug("");
@@ -5447,6 +5472,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         }
       }
 
+      setTrainRemLocalDirty(false);
       setTrainRemLastSynced(new Date());
       setTrainRemSyncError(false);
       setTrainRemDebug("");
@@ -5476,6 +5502,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
     trainRemSaveRevisionRef.current = saveRevision;
     trainRemStateRef.current = stateToSave;
+    setTrainRemLocalDirty(true);
     saveTrainRemState(stateToSave);
     trainRemPendingSaveRef.current = true;
 
@@ -17309,6 +17336,14 @@ function buildRequestedActionSummaryLines(rows = []) {
 }
 
 const REQUESTED_TRAIN_MANUAL_TID_STORAGE_KEY = "requestedTrainManualTidByTrain";
+const REQUESTED_TRAIN_MANUAL_TID_SESSION_KEY = "requestedTrainManualTidByTrain_v2";
+
+function getRequestedTrainManualTidDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 function cleanRequestedTrainTidInput(value = "") {
   return (value || "").toString().replace(/[^0-9]/g, "").slice(0, 3);
@@ -17327,19 +17362,54 @@ function normalizeRequestedTrainManualTidMap(value = {}) {
   return map;
 }
 
-function loadRequestedTrainManualTidMap() {
+function getRequestedTrainKeys(requests = []) {
+  return new Set(
+    (Array.isArray(requests) ? requests : [])
+      .map((request) => normalizeTrainId(request?.trainId || ""))
+      .filter(Boolean)
+  );
+}
+
+function pruneRequestedTrainManualTidMap(map = {}, requests = []) {
+  const normalized = normalizeRequestedTrainManualTidMap(map);
+  const validTrainKeys = getRequestedTrainKeys(requests);
+
+  if (!validTrainKeys.size) return {};
+
+  return Object.fromEntries(
+    Object.entries(normalized).filter(([trainKey]) => validTrainKeys.has(trainKey))
+  );
+}
+
+function loadRequestedTrainManualTidMap(requests = []) {
   try {
-    return normalizeRequestedTrainManualTidMap(
-      JSON.parse(localStorage.getItem(REQUESTED_TRAIN_MANUAL_TID_STORAGE_KEY) || "{}")
-    );
+    // Remove the old permanent cache once. It is the source of stale TIDs
+    // surviving across operating days and overriding current PDF values.
+    localStorage.removeItem(REQUESTED_TRAIN_MANUAL_TID_STORAGE_KEY);
+
+    const parsed = JSON.parse(sessionStorage.getItem(REQUESTED_TRAIN_MANUAL_TID_SESSION_KEY) || "{}");
+    if (parsed?.dateKey !== getRequestedTrainManualTidDateKey()) {
+      sessionStorage.removeItem(REQUESTED_TRAIN_MANUAL_TID_SESSION_KEY);
+      return {};
+    }
+
+    return pruneRequestedTrainManualTidMap(parsed?.values || {}, requests);
   } catch {
     return {};
   }
 }
 
-function saveRequestedTrainManualTidMap(map = {}) {
+function saveRequestedTrainManualTidMap(map = {}, requests = []) {
   try {
-    localStorage.setItem(REQUESTED_TRAIN_MANUAL_TID_STORAGE_KEY, JSON.stringify(normalizeRequestedTrainManualTidMap(map)));
+    const values = pruneRequestedTrainManualTidMap(map, requests);
+    sessionStorage.setItem(
+      REQUESTED_TRAIN_MANUAL_TID_SESSION_KEY,
+      JSON.stringify({
+        dateKey: getRequestedTrainManualTidDateKey(),
+        values,
+      })
+    );
+    localStorage.removeItem(REQUESTED_TRAIN_MANUAL_TID_STORAGE_KEY);
   } catch {}
 }
 
@@ -17349,7 +17419,7 @@ function loadRequestedTrainIncludeTomorrowSwaps() {
 }
 
 function getRemovalPdfSwappingRows({ requests = [], trainRemState = {}, westData = {}, eastData = {}, activeTimetable = null } = {}) {
-  const manualTidByTrain = loadRequestedTrainManualTidMap();
+  const manualTidByTrain = loadRequestedTrainManualTidMap(requests);
   const includeTomorrowRequests = loadRequestedTrainIncludeTomorrowSwaps();
   const allRows = applyManualTidToRequestedRows(
     getRequestedTrainsNotInWestDepotStablingRemoval({
@@ -18076,11 +18146,16 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
   const [arrivalLookupTime, setArrivalLookupTime] = useState(() => new Date());
   const includeTomorrowRequests = true;
 
-  const [manualTidByTrain, setManualTidByTrain] = useState(loadRequestedTrainManualTidMap);
+  const [manualTidByTrain, setManualTidByTrain] = useState(() => loadRequestedTrainManualTidMap(requests));
 
   useEffect(() => {
-    saveRequestedTrainManualTidMap(manualTidByTrain);
-  }, [manualTidByTrain]);
+    const pruned = pruneRequestedTrainManualTidMap(manualTidByTrain, requests);
+    saveRequestedTrainManualTidMap(pruned, requests);
+
+    if (JSON.stringify(pruned) !== JSON.stringify(manualTidByTrain)) {
+      setManualTidByTrain(pruned);
+    }
+  }, [manualTidByTrain, requests]);
 
   useEffect(() => {
     const tick = () => setArrivalLookupTime(new Date());
