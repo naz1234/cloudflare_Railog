@@ -255,15 +255,151 @@ function normalizeRequestGroupColorKey(value = "") {
     .replace(/\b(\d{1,2})(JAN(?:UARY)?|FEB(?:RUARY)?|MAR(?:CH)?|APR(?:IL)?|MAY|JUN(?:E)?|JUL(?:Y)?|AUG(?:UST)?|SEP(?:T(?:EMBER)?)?|OCT(?:OBER)?|NOV(?:EMBER)?|DEC(?:EMBER)?)\b/g, "$1 $2");
 }
 
-function getMainStablingCompactCardStyle(typeKey, displayLabel = "") {
+// Match Main Stabling's high-contrast group palette. The hue order jumps
+// between colour families so consecutive request groups do not end up as
+// almost identical purple/pink/blue shades.
+const DISTINCT_REQUEST_GROUP_PALETTE = [
+  "#22d3ee", // cyan
+  "#fb923c", // orange
+  "#a3e635", // lime
+  "#f472b6", // pink
+  "#60a5fa", // blue
+  "#facc15", // yellow
+  "#34d399", // emerald
+  "#fb7185", // rose
+  "#c084fc", // purple
+  "#2dd4bf", // teal
+  "#f97316", // deep orange
+  "#818cf8", // indigo
+  "#84cc16", // green-lime
+  "#e879f9", // fuchsia
+  "#38bdf8", // sky
+  "#fbbf24", // amber
+  "#10b981", // green
+  "#ef4444", // red
+  "#a78bfa", // violet
+  "#06b6d4", // aqua
+  "#d946ef", // magenta
+  "#4ade80", // bright green
+  "#0ea5e9", // strong blue
+  "#eab308", // gold
+];
+
+const GENERIC_REQUEST_GROUP_KEYS = new Set(
+  [
+    ...Object.keys(REQUEST_COLORS),
+    "PM",
+    "CM",
+    "SR",
+    "WASH",
+    "UNFIT",
+    "NOT FIT",
+    "NOTFIT",
+    "WORKSHOP UNFIT",
+    "W TA",
+    "TA REQUIRED",
+    "WITH TA",
+    "OTHER",
+    "REQUEST",
+  ].map((value) => normalizeRequestGroupColorKey(value))
+);
+
+function isSpecificRequestGroup(value = "") {
+  const groupKey = normalizeRequestGroupColorKey(value);
+  return Boolean(groupKey && !GENERIC_REQUEST_GROUP_KEYS.has(groupKey));
+}
+
+function hashRequestGroupKey(value = "") {
+  const key = normalizeRequestGroupColorKey(value);
+  let hash = 2166136261;
+
+  for (let i = 0; i < key.length; i += 1) {
+    hash ^= key.charCodeAt(i);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+
+  return hash >>> 0;
+}
+
+function requestColorDistance(first, second) {
+  const a = hexToRgb(first);
+  const b = hexToRgb(second);
+  const redMean = (a.r + b.r) / 2;
+  const red = a.r - b.r;
+  const green = a.g - b.g;
+  const blue = a.b - b.b;
+
+  return Math.sqrt(
+    (2 + redMean / 256) * red * red +
+      4 * green * green +
+      (2 + (255 - redMean) / 256) * blue * blue
+  );
+}
+
+function buildDistinctRequestGroupColorMap(values = []) {
+  const keys = Array.from(
+    new Set(
+      values
+        .map((value) => normalizeRequestGroupColorKey(value))
+        .filter((value) => value && isSpecificRequestGroup(value))
+    )
+  ).sort((a, b) => hashRequestGroupKey(a) - hashRequestGroupKey(b) || a.localeCompare(b));
+
+  const available = DISTINCT_REQUEST_GROUP_PALETTE.map((color, index) => ({ color, index }));
+  const assigned = {};
+  const usedColors = ["#fb5b63", "#fb923c", "#d879ff", "#2ee6b7", "#4de3ff"];
+
+  keys.forEach((key) => {
+    if (available.length === 0) {
+      assigned[key] = getCustomRequestColor(key);
+      return;
+    }
+
+    const preferredIndex = hashRequestGroupKey(key) % DISTINCT_REQUEST_GROUP_PALETTE.length;
+    let bestPosition = 0;
+    let bestDistance = -1;
+    let bestTieBreak = Number.POSITIVE_INFINITY;
+
+    available.forEach((candidate, position) => {
+      const minimumDistance = usedColors.reduce(
+        (minimum, usedColor) => Math.min(minimum, requestColorDistance(candidate.color, usedColor)),
+        Number.POSITIVE_INFINITY
+      );
+      const directDistance = Math.abs(candidate.index - preferredIndex);
+      const circularDistance = Math.min(
+        directDistance,
+        DISTINCT_REQUEST_GROUP_PALETTE.length - directDistance
+      );
+
+      if (
+        minimumDistance > bestDistance ||
+        (minimumDistance === bestDistance && circularDistance < bestTieBreak)
+      ) {
+        bestPosition = position;
+        bestDistance = minimumDistance;
+        bestTieBreak = circularDistance;
+      }
+    });
+
+    const [{ color }] = available.splice(bestPosition, 1);
+    assigned[key] = color;
+    usedColors.push(color);
+  });
+
+  return assigned;
+}
+
+function getMainStablingCompactCardStyle(typeKey, displayLabel = "", requestGroupColors = {}) {
   const requestLabel = displayLabel || typeKey;
   const styleKey = getKnownRequestColorKey(typeKey || displayLabel);
   const configuredColor = REQUEST_COLORS[styleKey];
   const fallbackAccent = configuredColor?.bg || getCustomRequestColor(requestLabel);
   const category = getMainStablingRequestCategory(requestLabel);
   const groupColorKey = normalizeRequestGroupColorKey(requestLabel);
-  const isNamedWashGroup = category === "wash" && groupColorKey && groupColorKey !== "WASH";
-  const namedWashAccent = isNamedWashGroup ? getCustomRequestColor(groupColorKey) : "";
+  const usesGroupColor = isSpecificRequestGroup(requestLabel);
+  const groupAccent = usesGroupColor
+    ? requestGroupColors[groupColorKey] || getCustomRequestColor(groupColorKey)
+    : "";
 
   const visuals = {
     critical: {
@@ -293,14 +429,13 @@ function getMainStablingCompactCardStyle(typeKey, displayLabel = "") {
     },
   };
 
-  const visual = isNamedWashGroup
+  const visual = usesGroupColor
     ? {
-        // Each named wash batch/date gets a stable colour derived from its
-        // full group name. Identical names keep the same colour, while
-        // WASH 1-JUL and WASH 2-JUL are visually separated.
-        accent: namedWashAccent,
-        gradient: `linear-gradient(135deg,${rgbaFromHex(namedWashAccent, 0.30)} 0%,${rgbaFromHex(namedWashAccent, 0.13)} 48%,#071828 100%)`,
-        glow: `0 0 0 1px ${rgbaFromHex(namedWashAccent, 0.14)},0 0 11px ${rgbaFromHex(namedWashAccent, 0.27)},0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.06)`,
+        // Every specific group name receives a distinct colour allocated
+        // across the complete request set. The same name always reuses it.
+        accent: groupAccent,
+        gradient: `linear-gradient(135deg,${rgbaFromHex(groupAccent, 0.30)} 0%,${rgbaFromHex(groupAccent, 0.13)} 48%,#071828 100%)`,
+        glow: `0 0 0 1px ${rgbaFromHex(groupAccent, 0.14)},0 0 11px ${rgbaFromHex(groupAccent, 0.27)},0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.06)`,
       }
     : visuals[category] || {
         accent: fallbackAccent,
@@ -581,6 +716,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   };
 
   const displayType = (req) => getRequestDisplayLabel(req) || "Request";
+  const requestGroupColors = buildDistinctRequestGroupColorMap(
+    (requests || []).map((req) => displayType(req))
+  );
   const isWorkshopRequest = (req) => isWorkshopRequestLabel(displayType(req));
   const workshopTrainKeys = new Set(
     (requests || [])
@@ -851,7 +989,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 const crossOutInfo = getCrossOutInfo(req);
                 const crossOutReason = crossOutInfo.reason;
                 const crossedOut = Boolean(crossOutReason);
-                const requestCardStyle = getMainStablingCompactCardStyle(displayLabel, displayLabel);
+                const requestCardStyle = getMainStablingCompactCardStyle(displayLabel, displayLabel, requestGroupColors);
                 const workshopCardStyle = {
                   ...requestCardStyle.card,
                   ...(crossedOut
@@ -928,7 +1066,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 const displayLabel = displayType(req);
                 const crossOutInfo = getCrossOutInfo(req);
                 const crossOutReason = crossOutInfo.reason;
-                const requestCardStyle = getMainStablingCompactCardStyle(displayLabel, displayLabel);
+                const requestCardStyle = getMainStablingCompactCardStyle(displayLabel, displayLabel, requestGroupColors);
                 const statusMessage = getAlreadyStatusMessage(crossOutInfo);
 
                 return (
@@ -1005,7 +1143,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               const crossOutInfo = getCrossOutInfo(req);
               const crossOutReason = crossOutInfo.reason;
               const crossedOut = Boolean(crossOutReason);
-              const requestCardStyle = getMainStablingCompactCardStyle(typeKey, displayLabel);
+              const requestCardStyle = getMainStablingCompactCardStyle(typeKey, displayLabel, requestGroupColors);
               const regularCardStyle = {
                 ...requestCardStyle.card,
                 ...(crossedOut
