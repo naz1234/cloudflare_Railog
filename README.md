@@ -91,3 +91,6 @@ A healthy response should show:
 ```
 
 If your Cloudflare D1 page still shows 0 tables, open `/api/health` after the DB binding is added and redeploy once more.
+
+## 9am exact-TID highlight refinement
+The exact 9am reference TIDs (112, 114, 116, 118, 120, 202, 204, 206, 208 and 210) now use a subtle amber whole-row highlight with a 3px left accent. The TID remains plain white text with no solid badge.
