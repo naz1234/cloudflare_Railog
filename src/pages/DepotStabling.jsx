@@ -3068,27 +3068,34 @@ function getDuplicates(westData, eastData) {
   return new Set(Object.keys(counts).filter((k) => counts[k] > 1));
 }
 
+// High-contrast accents for named request groups shown in Main Stabling.
+// The order deliberately jumps between hue families instead of placing
+// similar purple/pink/blue shades next to one another.
 const CUSTOM_REQUEST_PALETTE = [
-  "#22c55e",
-  "#38bdf8",
-  "#a78bfa",
-  "#f472b6",
-  "#fbbf24",
-  "#2dd4bf",
-  "#fb7185",
-  "#c084fc",
-  "#60a5fa",
-  "#f97316",
-  "#34d399",
-  "#e879f9",
-  "#84cc16",
-  "#06b6d4",
-  "#d946ef",
-  "#facc15",
-  "#10b981",
-  "#818cf8",
-  "#fb923c",
-  "#2dd4bf",
+  "#22d3ee", // cyan
+  "#fb923c", // orange
+  "#a3e635", // lime
+  "#f472b6", // pink
+  "#60a5fa", // blue
+  "#facc15", // yellow
+  "#34d399", // emerald
+  "#fb7185", // rose
+  "#c084fc", // purple
+  "#2dd4bf", // teal
+  "#f97316", // deep orange
+  "#818cf8", // indigo
+  "#84cc16", // green-lime
+  "#e879f9", // fuchsia
+  "#38bdf8", // sky
+  "#fbbf24", // amber
+  "#10b981", // green
+  "#ef4444", // red
+  "#a78bfa", // violet
+  "#06b6d4", // aqua
+  "#d946ef", // magenta
+  "#4ade80", // bright green
+  "#0ea5e9", // strong blue
+  "#eab308", // gold
 ];
 
 function getCustomRequestColor(label = "") {
@@ -3115,8 +3122,8 @@ function getCustomRequestColor(label = "") {
   return CUSTOM_REQUEST_PALETTE[hash % CUSTOM_REQUEST_PALETTE.length];
 }
 
-function getCustomRequestStyle(label = "") {
-  const accent = getCustomRequestColor(label);
+function getCustomRequestStyle(label = "", accentOverride = "") {
+  const accent = accentOverride || getCustomRequestColor(label);
 
   return {
     cellBg: "#f8fafc",
@@ -3139,6 +3146,124 @@ function isNamedWashRequest(value = "") {
   return groupKey.includes("WASH") && groupKey !== "WASH";
 }
 
+const GENERIC_REQUEST_GROUP_KEYS = new Set(
+  [
+    ...Object.keys(MAINT_STYLES),
+    "PM",
+    "CM",
+    "SR",
+    "WASH",
+    "UNFIT",
+    "NOT FIT",
+    "NOTFIT",
+    "WORKSHOP UNFIT",
+    "W TA",
+    "TA REQUIRED",
+    "WITH TA",
+    "OTHER",
+    "REQUEST",
+  ].map((value) => normalizeRequestGroupColorKey(value))
+);
+
+function isSpecificRequestGroup(value = "") {
+  const groupKey = normalizeRequestGroupColorKey(value);
+  return Boolean(groupKey && !GENERIC_REQUEST_GROUP_KEYS.has(groupKey));
+}
+
+function hashRequestGroupKey(value = "") {
+  const key = normalizeRequestGroupColorKey(value);
+  let hash = 2166136261;
+
+  for (let i = 0; i < key.length; i += 1) {
+    hash ^= key.charCodeAt(i);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+
+  return hash >>> 0;
+}
+
+function requestColorRgb(hex = "#4f8ef7") {
+  const clean = String(hex).replace("#", "").trim();
+  if (!/^[0-9a-f]{6}$/i.test(clean)) return { r: 79, g: 142, b: 247 };
+
+  return {
+    r: Number.parseInt(clean.slice(0, 2), 16),
+    g: Number.parseInt(clean.slice(2, 4), 16),
+    b: Number.parseInt(clean.slice(4, 6), 16),
+  };
+}
+
+function requestColorDistance(first, second) {
+  const a = requestColorRgb(first);
+  const b = requestColorRgb(second);
+  const redMean = (a.r + b.r) / 2;
+  const red = a.r - b.r;
+  const green = a.g - b.g;
+  const blue = a.b - b.b;
+
+  // Weighted RGB distance better matches perceived colour separation than
+  // plain Euclidean RGB and helps avoid "different but almost the same" cards.
+  return Math.sqrt(
+    (2 + redMean / 256) * red * red +
+      4 * green * green +
+      (2 + (255 - redMean) / 256) * blue * blue
+  );
+}
+
+function buildDistinctRequestGroupColorMap(values = []) {
+  const keys = Array.from(
+    new Set(
+      values
+        .map((value) => normalizeRequestGroupColorKey(value))
+        .filter((value) => value && isSpecificRequestGroup(value))
+    )
+  ).sort((a, b) => hashRequestGroupKey(a) - hashRequestGroupKey(b) || a.localeCompare(b));
+
+  const available = CUSTOM_REQUEST_PALETTE.map((color, index) => ({ color, index }));
+  const assigned = {};
+  // Keep named groups away from the standard fixed category colours as well.
+  const usedColors = ["#fb5b63", "#fb923c", "#d879ff", "#2ee6b7", "#4de3ff"];
+
+  keys.forEach((key) => {
+    if (available.length === 0) {
+      assigned[key] = getCustomRequestColor(key);
+      return;
+    }
+
+    const preferredIndex = hashRequestGroupKey(key) % CUSTOM_REQUEST_PALETTE.length;
+    let bestPosition = 0;
+    let bestDistance = -1;
+    let bestTieBreak = Number.POSITIVE_INFINITY;
+
+    available.forEach((candidate, position) => {
+      const minimumDistance = usedColors.reduce(
+        (minimum, usedColor) => Math.min(minimum, requestColorDistance(candidate.color, usedColor)),
+        Number.POSITIVE_INFINITY
+      );
+      const directDistance = Math.abs(candidate.index - preferredIndex);
+      const circularDistance = Math.min(
+        directDistance,
+        CUSTOM_REQUEST_PALETTE.length - directDistance
+      );
+
+      if (
+        minimumDistance > bestDistance ||
+        (minimumDistance === bestDistance && circularDistance < bestTieBreak)
+      ) {
+        bestPosition = position;
+        bestDistance = minimumDistance;
+        bestTieBreak = circularDistance;
+      }
+    });
+
+    const [{ color }] = available.splice(bestPosition, 1);
+    assigned[key] = color;
+    usedColors.push(color);
+  });
+
+  return assigned;
+}
+
 function getKnownMaintenanceStyle(label = "") {
   const clean = cleanRequestLabel(label);
   if (MAINT_STYLES[clean]) return MAINT_STYLES[clean];
@@ -3155,6 +3280,14 @@ function getKnownMaintenanceStyle(label = "") {
 function buildMaintenanceMap(requests, mainStablingKeys = new Set()) {
   const map = {};
   const workshopTrainKeys = new Set();
+  const requestDisplayTypes = (requests || []).map((req) =>
+    cleanRequestLabel(
+      req.requestType === "Other"
+        ? req.customType || "Other"
+        : req.requestType || "Request"
+    ) || "Request"
+  );
+  const requestGroupColors = buildDistinctRequestGroupColorMap(requestDisplayTypes);
 
   (requests || []).forEach((req) => {
     const key = normalizeTrainId(req.trainId);
@@ -3190,12 +3323,16 @@ function buildMaintenanceMap(requests, mainStablingKeys = new Set()) {
       ? "WORKSHOP"
       : "";
 
-    // Generic WASH keeps the standard cyan style. A named WASH group such as
-    // WASH 1-JUL or WASH 2-JUL gets a stable colour derived from its full group
-    // name, so separate groups are visually distinct in the main stabling grid.
+    // Generic categories keep their standard colour. Any specific group name
+    // (for example PM 2-JUL, WASH 1-JUL or ALWYS MAN PM 2-JUL) receives a
+    // separately allocated high-contrast colour across the current request set.
     const requestGroupColorKey = normalizeRequestGroupColorKey(displayType);
-    const styles = isNamedWashRequest(displayType)
-      ? getCustomRequestStyle(requestGroupColorKey)
+    const usesGroupColor = isSpecificRequestGroup(displayType);
+    const groupColorAccent = usesGroupColor
+      ? requestGroupColors[requestGroupColorKey] || getCustomRequestColor(requestGroupColorKey)
+      : "";
+    const styles = usesGroupColor
+      ? getCustomRequestStyle(requestGroupColorKey, groupColorAccent)
       : getKnownMaintenanceStyle(typeKey) || getCustomRequestStyle(displayType);
 
     if (!map[key]) {
@@ -3212,6 +3349,9 @@ function buildMaintenanceMap(requests, mainStablingKeys = new Set()) {
       isSuppressedByStabling,
       isSuppressed: Boolean(suppressionReason),
       suppressionReason,
+      usesGroupColor,
+      requestGroupColorKey,
+      groupColorAccent,
       ...styles,
     });
   });
@@ -3331,9 +3471,10 @@ function getStablingRequestVisual(item = null) {
   const fallbackAccent = getRequestAccent(item);
   const requestLabel = item?.badgeText || item?.remark || item?.displayType || item?.typeKey || "";
 
-  // Named wash groups use their own deterministic accent instead of every
-  // WASH request being forced into the same cyan card style.
-  if (category === "wash" && isNamedWashRequest(requestLabel)) {
+  // Specific request groups use the accent allocated by buildMaintenanceMap.
+  // This applies across categories, so PM 2-JUL cannot look almost identical
+  // to WASH 1-JUL merely because both happened to land in a purple hue family.
+  if (item?.usesGroupColor || (category === "wash" && isNamedWashRequest(requestLabel))) {
     return {
       accent: fallbackAccent,
       gradient: `linear-gradient(135deg,${hexToRgba(fallbackAccent, 0.28)} 0%,${hexToRgba(fallbackAccent, 0.12)} 42%,#071828 100%)`,
