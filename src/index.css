@@ -5175,3 +5175,10 @@ html[data-app-theme="light"] .insertion-clean-shell::-webkit-scrollbar-thumb {
     transform: none !important;
   }
 }
+
+/* 9am recommended row: remarks keep their own dynamic category tint/left accent.
+   This only strengthens the label text; no solid TID or remark badge is added. */
+.theme-train-rem-row-card.is-9am-exact-tid-row input.is-9am-remark-accent {
+  font-weight: 700 !important;
+  letter-spacing: 0.01em;
+}

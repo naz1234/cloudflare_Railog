@@ -6537,7 +6537,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                             readOnly={Boolean(requestRemark) || referenceOnly}
                             title={referenceOnly ? rowStatusTitle : requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
                             placeholder="-"
-                            className={`h-full min-w-0 border-0 px-1.5 text-[11px] font-normal outline-none placeholder:text-[#36536c] focus:brightness-110 ${(remarkValue || "").toString().trim() ? "text-left" : "text-center"} ${requestRemark || referenceOnly ? "cursor-default" : ""}`}
+                            className={`h-full min-w-0 border-0 px-1.5 text-[11px] font-normal outline-none placeholder:text-[#36536c] focus:brightness-110 ${(remarkValue || "").toString().trim() ? "text-left" : "text-center"} ${requestRemark || referenceOnly ? "cursor-default" : ""} ${isNineAmReferenceTid && (remarkValue || "").toString().trim() && !hasDuplicateValue ? "is-9am-remark-accent" : ""}`}
                             style={{
                               color: remarkTextColor,
                               background: remarkCellBackground,
