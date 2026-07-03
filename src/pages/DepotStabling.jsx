@@ -4472,12 +4472,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   // Elapsed inserted trains are hidden only after user clicks "Hide elapsed TID".
   const expired = Boolean(hideElapsedTid && inserted && isTimePast(inserted.time));
 
-  let trainColor = "#e2eaf4";
-  if (expired) { trainColor = "#3a5068"; }
-  else if (isInsertionDone) { trainColor = "#93c5fd"; }
-  else if (activeTidRemarkStyle) { trainColor = activeTidRemarkStyle.color; }
-  else if (inserted) { trainColor = "#4ade80"; }
-  else if (hasTidRemark) { trainColor = "#facc15"; }
+  // Keep the Train ID consistently pure white in dark mode. The insertion
+  // state is now communicated by the 6 px status rail, not by recolouring
+  // the most important identifier on the card.
+  const trainColor = expired ? "#3a5068" : "#ffffff";
 
   const displayVal = formatTrainNumberOnly(val);
 
@@ -4485,41 +4483,35 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   // Keep the stabling card border/background neutral so the pill is the only request colour.
   const insCardBg = expired
     ? "#07131e"
-    : isInsertionDone
-      ? "linear-gradient(135deg,#0d1f2e,#081525)"
-      : inserted
-        ? "#0b2730"
+    : inserted?.isSweeping
+      ? "linear-gradient(145deg, #17142d 0%, #0a1727 58%, #071523 100%)"
+      : isInsertionDone
+        ? "linear-gradient(145deg, #0b2930 0%, #0a1c2b 58%, #071523 100%)"
         : key
-          ? INSERTION_PANEL_COLORS.card
-          : "rgba(7, 24, 39, 0.38)";
+          ? "linear-gradient(145deg, #0d2a42 0%, #0a1d30 52%, #071827 100%)"
+          : "rgba(7, 24, 39, 0.30)";
+  // Keep the card frame calm and neutral. State colour is concentrated in
+  // the 6 px left rail so maintenance pills and insertion status do not fight
+  // for attention.
   const insCardBorder = expired
     ? "1px solid #1e3547"
     : isDuplicateInsertedTid
-      ? "2px solid #f59e0b"
-      : isInsertionDone
-        ? "1px solid #3b82f6"
-      : activeTidRemarkStyle
-        ? `1px solid ${activeTidRemarkStyle.border}`
-        : inserted
-          ? "1px solid #17825f"
-          : hasTidRemark
-            ? "1px solid #9a7416"
-            : key
-              ? `1px solid ${INSERTION_PANEL_COLORS.cardBorder}`
-              : `1px dashed ${INSERTION_PANEL_COLORS.emptyBorder}`;
+      ? "1px solid #6d4b20"
+      : key
+        ? `1px solid ${INSERTION_PANEL_COLORS.cardBorder}`
+        : `1px dashed ${INSERTION_PANEL_COLORS.emptyBorder}`;
   const insCardGlow = isDuplicateInsertedTid
     ? "0 0 0 2px rgba(245, 158, 11, 0.18), 0 0 18px rgba(245, 158, 11, 0.58), 0 8px 22px rgba(0, 0, 0, 0.24)"
     : key && !expired
       ? "0 4px 12px rgba(0,0,0,0.12)"
       : undefined;
-  const tidDividerColor = specialTidRemarkStyle?.border || (hasTidRemark ? "#9a7416" : "#27475d");
+  const tidDividerColor = specialTidRemarkStyle?.border || (hasTidRemark ? "#b68a19" : "#315671");
   const insTidInputStyle = {
-    border: "none",
-    borderBottom: `1px solid ${tidDividerColor}`,
-    borderRadius: 0,
-    backgroundColor: "transparent",
-    color: specialTidRemarkStyle ? specialTidRemarkStyle.color : hasTidRemark ? "#fde68a" : "#c6d6e3",
-    boxShadow: "none",
+    border: `1px solid ${tidDividerColor}`,
+    borderRadius: 7,
+    backgroundColor: hasTidRemark ? "rgba(120, 83, 10, 0.13)" : "rgba(3, 17, 29, 0.54)",
+    color: specialTidRemarkStyle ? specialTidRemarkStyle.color : hasTidRemark ? "#fde68a" : "#d6e6f3",
+    boxShadow: "inset 0 1px 2px rgba(0, 0, 0, 0.20)",
   };
   const insRowLine = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
 
@@ -4544,7 +4536,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         data-insertion-drop-depot={autoTidDepot}
         data-insertion-drop-road={road}
         data-insertion-drop-bi={bi}
-        className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} relative flex h-full flex-col items-center justify-start rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
+        className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} relative flex h-full flex-col items-center justify-start overflow-hidden rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
         style={{
           minHeight: Math.max(inserted?.isSweeping ? 158 : isInsertionDone ? ((insertedTid || hasInsertedPlainRemark) ? 126 : 130) : 98, rowCardMinHeight),
           height: "100%",
@@ -4731,7 +4723,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 onKeyDown={onTidKeyDown}
                 onFocus={onTidFocus}
                 onPointerDown={onTidFocus}
-                placeholder="TID"
+                placeholder="Enter TID"
                 className="theme-insertion-tid-input h-6 w-full px-1.5 text-center text-[11px] font-semibold outline-none placeholder:text-[#47637a]"
                 style={insTidInputStyle}
               />
@@ -4739,9 +4731,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             {!inserted && !canAutoInsertTid && (
               <button
                 onClick={handleInsertClick}
-                className={`theme-insertion-insert-button ${hasTidRemark ? "has-input" : ""} h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-colors ${hasTidRemark ? "bg-[#211d0c] border-[#8f7118] text-yellow-200 hover:border-emerald-600 hover:text-emerald-200" : "bg-[#0a1c2d] border-[#315671] text-[#9ab2c6] hover:border-[#4f8fbf] hover:text-white"}`}
+                className={`theme-insertion-insert-button ${hasTidRemark ? "has-input" : ""} h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-all`}
               >
-                Insert
+                Insert Train
               </button>
             )}
             {inserted && !inserted.isSweeping && (

@@ -5507,3 +5507,195 @@ html[data-app-theme="light"] .insertion-clean-shell::-webkit-scrollbar-thumb {
   font-weight: 700 !important;
   letter-spacing: 0.01em;
 }
+
+/* ========================================================================
+   INSERTION CARD POLISH — STATUS RAIL + ACTION HIERARCHY
+   Uses one 6 px rail to communicate the insertion state while keeping the
+   Train ID pure white and leaving maintenance/request pills independent.
+   ======================================================================== */
+
+.theme-insertion-card {
+  position: relative;
+  isolation: isolate;
+}
+
+.theme-insertion-card.has-train {
+  padding-left: 11px !important;
+}
+
+.theme-insertion-card::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 6px;
+  border-radius: 11px 0 0 11px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease, filter 160ms ease;
+}
+
+/* Waiting for TID — steel blue. */
+.theme-insertion-card.has-train:not(.has-input):not(.is-inserted)::after {
+  background: #2ea8ff;
+  box-shadow: 2px 0 10px rgba(46, 168, 255, 0.24);
+  opacity: 1;
+}
+
+/* TID or manual remark entered — amber. */
+.theme-insertion-card.has-input:not(.is-inserted)::after {
+  background: #f6b91a;
+  box-shadow: 2px 0 10px rgba(246, 185, 26, 0.24);
+  opacity: 1;
+}
+
+/* Sweeping — purple. */
+.theme-insertion-card.is-sweeping::after {
+  background: #a855f7;
+  box-shadow: 2px 0 10px rgba(168, 85, 247, 0.28);
+  opacity: 1;
+}
+
+/* Insertion completed — green. */
+.theme-insertion-card.is-complete::after {
+  background: #34d399;
+  box-shadow: 2px 0 10px rgba(52, 211, 153, 0.25);
+  opacity: 1;
+}
+
+/* Duplicate is always the highest-priority state colour. */
+.theme-insertion-card.is-duplicate::after {
+  background: #f97316;
+  box-shadow: 2px 0 12px rgba(249, 115, 22, 0.40);
+  opacity: 1;
+}
+
+.theme-insertion-card.is-expired::after {
+  background: #64748b;
+  box-shadow: none;
+  opacity: 0.62;
+}
+
+html:not([data-app-theme="light"]) .theme-insertion-card.has-train {
+  box-shadow:
+    0 5px 14px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    filter 160ms ease;
+}
+
+@media (hover: hover) {
+  html:not([data-app-theme="light"]) .theme-insertion-card.has-train:not(.is-expired):not(.is-duplicate):hover {
+    transform: translateY(-2px);
+    border-color: #4b81a7 !important;
+    box-shadow:
+      0 10px 24px rgba(0, 0, 0, 0.26),
+      0 0 0 1px rgba(56, 189, 248, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.055) !important;
+  }
+
+  html:not([data-app-theme="light"]) .theme-insertion-card.is-duplicate:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 0 1px rgba(249, 115, 22, 0.22),
+      0 10px 24px rgba(249, 115, 22, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.045) !important;
+  }
+}
+
+html:not([data-app-theme="light"]) .theme-insertion-tid-input {
+  background: rgba(3, 17, 29, 0.58) !important;
+  border: 1px solid #315671 !important;
+  border-radius: 7px !important;
+  color: #dbeafe !important;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.24),
+    0 1px 0 rgba(255, 255, 255, 0.025) !important;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+html:not([data-app-theme="light"]) .theme-insertion-card.has-input .theme-insertion-tid-input {
+  background: rgba(120, 83, 10, 0.13) !important;
+  border-color: #b68a19 !important;
+  color: #fde68a !important;
+}
+
+html:not([data-app-theme="light"]) .theme-insertion-tid-input::placeholder {
+  color: #6f899f !important;
+  opacity: 0.78;
+}
+
+html:not([data-app-theme="light"]) .theme-insertion-tid-input:focus {
+  background: rgba(5, 24, 40, 0.86) !important;
+  border-color: #38bdf8 !important;
+  box-shadow:
+    0 0 0 2px rgba(56, 189, 248, 0.14),
+    inset 0 1px 2px rgba(0, 0, 0, 0.25) !important;
+}
+
+html:not([data-app-theme="light"]) .theme-insertion-insert-button {
+  background: linear-gradient(180deg, #147cf3 0%, #0758c8 100%) !important;
+  border-color: #2f8cf0 !important;
+  color: #ffffff !important;
+  box-shadow:
+    0 3px 8px rgba(0, 74, 173, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20) !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.30);
+  transition: transform 140ms ease, filter 140ms ease, box-shadow 140ms ease !important;
+}
+
+html:not([data-app-theme="light"]) .theme-insertion-insert-button.has-input {
+  background: linear-gradient(180deg, #1f93ff 0%, #0870dc 100%) !important;
+  border-color: #60b5ff !important;
+  box-shadow:
+    0 4px 11px rgba(14, 116, 220, 0.34),
+    0 0 0 1px rgba(96, 181, 255, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24) !important;
+}
+
+@media (hover: hover) {
+  html:not([data-app-theme="light"]) .theme-insertion-insert-button:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.10);
+    box-shadow:
+      0 6px 14px rgba(0, 87, 196, 0.36),
+      inset 0 1px 0 rgba(255, 255, 255, 0.24) !important;
+  }
+}
+
+html:not([data-app-theme="light"]) .theme-insertion-insert-button:active {
+  transform: translateY(0) scale(0.985);
+}
+
+/* The light glass theme keeps its glass language but receives the same clear
+   status rail and boxed input hierarchy. */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.has-train {
+  padding-left: 11px !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tid-input {
+  height: 24px !important;
+  background: rgba(255, 255, 255, 0.50) !important;
+  border: 1px solid rgba(68, 64, 60, 0.20) !important;
+  border-radius: 7px !important;
+  box-shadow: inset 0 1px 2px rgba(28, 25, 23, 0.05) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tid-input:focus {
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: rgba(14, 116, 144, 0.46) !important;
+  box-shadow: 0 0 0 2px rgba(14, 116, 144, 0.10) !important;
+}
+
+html:not([data-app-theme="light"]) .theme-insertion-card.is-duplicate {
+  border-color: #7a5324 !important;
+  box-shadow:
+    0 0 0 1px rgba(249, 115, 22, 0.18),
+    0 7px 20px rgba(249, 115, 22, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
