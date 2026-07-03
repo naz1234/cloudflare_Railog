@@ -377,10 +377,12 @@ html[data-app-theme="light"] .theme-stabling-train-card:not(.has-request):not(.i
   box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
 }
 
-/* Light mode only: make stabling request remarks one pixel larger and slightly clearer. */
+/* Keep stabling remarks regular weight. Light mode uses dark text so the
+   remarks remain readable on the light card surface. */
 html[data-app-theme="light"] .theme-stabling-remark {
+  color: #0f172a !important;
   font-size: 11px !important;
-  font-weight: 600 !important;
+  font-weight: 400 !important;
 }
 
 html[data-app-theme="light"] .theme-stabling-train-card.is-empty {
@@ -395,8 +397,8 @@ html[data-app-theme="light"] .theme-stabling-train-card.has-request:not(.is-dupl
   box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
 }
 
-/* Main stabling status cards use one calm surface. Only the 6 px rail and
-   request remark carry the status colour, so the grid remains easy to scan. */
+/* Main stabling status cards use one calm surface. The 6 px rail carries
+   the status colour while request remarks stay regular-weight white in dark mode. */
 .theme-stabling-status-rail {
   pointer-events: none;
 }
