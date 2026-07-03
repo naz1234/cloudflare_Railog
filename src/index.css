@@ -701,6 +701,92 @@ html[data-app-theme="light"] .theme-train-rem-row-card[data-preset="9am"][data-t
   text-shadow: 0 1px 1px rgba(0,0,0,0.28);
 }
 
+
+/* Other removal presets use the same compact whole-row language as 9am,
+   while each preset has its own clearly recognisable colour. The TID stays
+   white and bold, Train ID remains bold (except duplicates), and Timing is white. */
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"] {
+  background: linear-gradient(90deg, rgba(13,148,136,0.28) 0%, rgba(15,118,110,0.15) 55%, rgba(19,78,74,0.08) 100%) !important;
+  border-color: rgba(45,212,191,0.66) !important;
+  box-shadow: inset 3px 0 0 #14b8a6, inset 0 1px 0 rgba(255,255,255,0.045), 0 1px 3px rgba(0,0,0,0.18) !important;
+}
+
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="12am"] {
+  background: linear-gradient(90deg, rgba(79,70,229,0.28) 0%, rgba(67,56,202,0.16) 55%, rgba(49,46,129,0.08) 100%) !important;
+  border-color: rgba(129,140,248,0.68) !important;
+  box-shadow: inset 3px 0 0 #6366f1, inset 0 1px 0 rgba(255,255,255,0.045), 0 1px 3px rgba(0,0,0,0.18) !important;
+}
+
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="Fri"] {
+  background: linear-gradient(90deg, rgba(22,163,74,0.27) 0%, rgba(21,128,61,0.15) 55%, rgba(20,83,45,0.08) 100%) !important;
+  border-color: rgba(74,222,128,0.64) !important;
+  box-shadow: inset 3px 0 0 #22c55e, inset 0 1px 0 rgba(255,255,255,0.045), 0 1px 3px rgba(0,0,0,0.18) !important;
+}
+
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="Sat"] {
+  background: linear-gradient(90deg, rgba(2,132,199,0.28) 0%, rgba(3,105,161,0.16) 55%, rgba(12,74,110,0.08) 100%) !important;
+  border-color: rgba(56,189,248,0.66) !important;
+  box-shadow: inset 3px 0 0 #0ea5e9, inset 0 1px 0 rgba(255,255,255,0.045), 0 1px 3px rgba(0,0,0,0.18) !important;
+}
+
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="PH"] {
+  background: linear-gradient(90deg, rgba(225,29,72,0.27) 0%, rgba(190,24,93,0.15) 55%, rgba(131,24,67,0.08) 100%) !important;
+  border-color: rgba(251,113,133,0.66) !important;
+  box-shadow: inset 3px 0 0 #f43f5e, inset 0 1px 0 rgba(255,255,255,0.045), 0 1px 3px rgba(0,0,0,0.18) !important;
+}
+
+.theme-train-rem-row-card.is-other-preset-themed-row input.is-other-preset-tid-reference {
+  color: #ffffff !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.35);
+}
+
+.theme-train-rem-row-card.is-other-preset-themed-row input:nth-child(1),
+.theme-train-rem-row-card.is-other-preset-themed-row input:nth-child(3) {
+  color: #ffffff !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.34);
+}
+
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"] {
+  background: linear-gradient(90deg, #0f766e 0%, #0d9488 56%, #14b8a6 100%) !important;
+  border-color: #115e59 !important;
+  box-shadow: inset 3px 0 0 #99f6e4, inset 0 1px 0 rgba(255,255,255,0.18), 0 1px 3px rgba(15,23,42,0.16) !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="12am"] {
+  background: linear-gradient(90deg, #4338ca 0%, #4f46e5 56%, #6366f1 100%) !important;
+  border-color: #3730a3 !important;
+  box-shadow: inset 3px 0 0 #c7d2fe, inset 0 1px 0 rgba(255,255,255,0.18), 0 1px 3px rgba(15,23,42,0.16) !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="Fri"] {
+  background: linear-gradient(90deg, #15803d 0%, #16a34a 56%, #22c55e 100%) !important;
+  border-color: #166534 !important;
+  box-shadow: inset 3px 0 0 #bbf7d0, inset 0 1px 0 rgba(255,255,255,0.18), 0 1px 3px rgba(15,23,42,0.16) !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="Sat"] {
+  background: linear-gradient(90deg, #0369a1 0%, #0284c7 56%, #0ea5e9 100%) !important;
+  border-color: #075985 !important;
+  box-shadow: inset 3px 0 0 #bae6fd, inset 0 1px 0 rgba(255,255,255,0.18), 0 1px 3px rgba(15,23,42,0.16) !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="PH"] {
+  background: linear-gradient(90deg, #be123c 0%, #e11d48 56%, #f43f5e 100%) !important;
+  border-color: #9f1239 !important;
+  box-shadow: inset 3px 0 0 #fecdd3, inset 0 1px 0 rgba(255,255,255,0.18), 0 1px 3px rgba(15,23,42,0.16) !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row input.is-other-preset-tid-reference,
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row input:nth-child(1),
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row input:nth-child(3) {
+  color: #ffffff !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.28);
+}
+
 /* Duplicate Train ID / TID: full-row red warning treatment.
    This rule intentionally comes after all 9am colour rules so the duplicate
    warning always wins, matching the compact red-outline style used elsewhere. */
