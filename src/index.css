@@ -703,9 +703,8 @@ html[data-app-theme="light"] .theme-train-rem-row-card[data-preset="9am"][data-t
 
 
 /* Other removal presets use the same compact whole-row language as 9am.
-   7pm, Fri, Sat and PH share the restrained steel-blue theme. 12am keeps its
-   existing indigo theme. TID stays white and bold, Train ID remains bold
-   (except duplicates), and Timing is white. */
+   7pm, 12am, Fri, Sat and PH share the restrained steel-blue theme. TID stays
+   white and bold, Train ID remains bold (except duplicates), and Timing is white. */
 .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"] {
   background: linear-gradient(90deg, rgba(49,104,147,0.24) 0%, rgba(35,79,116,0.13) 55%, rgba(28,61,91,0.07) 100%) !important;
   border-color: rgba(96,165,250,0.58) !important;
@@ -713,9 +712,9 @@ html[data-app-theme="light"] .theme-train-rem-row-card[data-preset="9am"][data-t
 }
 
 .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="12am"] {
-  background: linear-gradient(90deg, rgba(79,70,229,0.28) 0%, rgba(67,56,202,0.16) 55%, rgba(49,46,129,0.08) 100%) !important;
-  border-color: rgba(129,140,248,0.68) !important;
-  box-shadow: inset 3px 0 0 #6366f1, inset 0 1px 0 rgba(255,255,255,0.045), 0 1px 3px rgba(0,0,0,0.18) !important;
+  background: linear-gradient(90deg, rgba(49,104,147,0.24) 0%, rgba(35,79,116,0.13) 55%, rgba(28,61,91,0.07) 100%) !important;
+  border-color: rgba(96,165,250,0.58) !important;
+  box-shadow: inset 3px 0 0 #3b82f6, inset 0 1px 0 rgba(255,255,255,0.04), 0 1px 3px rgba(0,0,0,0.16) !important;
 }
 
 .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="Fri"] {
@@ -758,9 +757,9 @@ html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-ro
 }
 
 html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="12am"] {
-  background: linear-gradient(90deg, #4338ca 0%, #4f46e5 56%, #6366f1 100%) !important;
-  border-color: #3730a3 !important;
-  box-shadow: inset 3px 0 0 #c7d2fe, inset 0 1px 0 rgba(255,255,255,0.18), 0 1px 3px rgba(15,23,42,0.16) !important;
+  background: linear-gradient(90deg, rgba(36,93,138,0.86) 0%, rgba(53,112,158,0.76) 55%, rgba(77,136,181,0.66) 100%) !important;
+  border-color: #2563a5 !important;
+  box-shadow: inset 3px 0 0 #60a5fa, inset 0 1px 0 rgba(255,255,255,0.14), 0 1px 3px rgba(15,23,42,0.14) !important;
 }
 
 html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="Fri"] {

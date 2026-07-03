@@ -5849,31 +5849,45 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       // Save the currently displayed preset before changing tabs, then restore
       // the exact rows previously entered for the newly selected preset.
       const syncedPrev = syncTrainRemActiveRowsToPresetCache(prev);
-      const cachedTargetRows = getTrainRemCachedPresetRows(syncedPrev, depot, label);
-      const restoredRows = buildTrainRemRowsFromPresetConfig(
-        depot,
-        label,
-        cachedTargetRows,
-        activeTimetable,
-        { preserveManualBlankRows: true }
-      );
+
+      // 12am is a paired West/East removal plan. Selecting it from West must
+      // activate the matching East 12am preset at the same time, just like the
+      // coordinated preset workflow expected by the operator.
+      const targetDepots = depot === "west" && label === "12am"
+        ? ["west", "east"]
+        : [depot];
+
+      const nextSelectedPreset = { ...syncedPrev.selectedPreset };
+      const nextRows = { ...syncedPrev.rows };
+      const nextPresetRows = {
+        ...syncedPrev.presetRows,
+        west: { ...syncedPrev.presetRows?.west },
+        east: { ...syncedPrev.presetRows?.east },
+      };
+
+      targetDepots.forEach((targetDepot) => {
+        const cachedTargetRows = getTrainRemCachedPresetRows(syncedPrev, targetDepot, label);
+        const restoredRows = buildTrainRemRowsFromPresetConfig(
+          targetDepot,
+          label,
+          cachedTargetRows,
+          activeTimetable,
+          { preserveManualBlankRows: true }
+        );
+
+        nextSelectedPreset[targetDepot] = label;
+        nextRows[targetDepot] = restoredRows;
+        nextPresetRows[targetDepot] = {
+          ...nextPresetRows[targetDepot],
+          [label]: restoredRows,
+        };
+      });
+
       const nextState = {
         ...syncedPrev,
-        selectedPreset: {
-          ...syncedPrev.selectedPreset,
-          [depot]: label,
-        },
-        rows: {
-          ...syncedPrev.rows,
-          [depot]: restoredRows,
-        },
-        presetRows: {
-          ...syncedPrev.presetRows,
-          [depot]: {
-            ...syncedPrev.presetRows?.[depot],
-            [label]: restoredRows,
-          },
-        },
+        selectedPreset: nextSelectedPreset,
+        rows: nextRows,
+        presetRows: nextPresetRows,
       };
 
       return mergeTrainRemCombinedMorningReferenceState(nextState);
