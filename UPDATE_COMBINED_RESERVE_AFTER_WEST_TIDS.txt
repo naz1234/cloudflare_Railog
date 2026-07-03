@@ -1,0 +1,6 @@
+Combined preset layout update:
+- For 12am, Fri, Sat and PH, the 4 reserve rows are now placed immediately after the West Depot scheduled TIDs.
+- The East Depot scheduled TIDs now appear after those 4 reserve rows.
+- The reserve rows no longer show WD RESERVE text in the remark column.
+- East Depot window remains hidden for combined presets.
+- Removal output logic is preserved: West scheduled + reserve rows go to West output, East scheduled rows go to East output.
