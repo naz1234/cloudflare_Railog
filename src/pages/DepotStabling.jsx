@@ -6349,11 +6349,11 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       if (combinedExtendedLayout
         && sourceIndex >= combinedExtendedLayout.reserveStartIndex
         && sourceIndex < combinedExtendedLayout.eastStartIndex) {
-        return 1;
+        return 0;
       }
       if (getTrainRemScheduleMatch(activeTimetable, "west", selectedPreset, row?.tid)) return 0;
-      if (getTrainRemScheduleMatch(activeTimetable, "east", selectedPreset, row?.tid)) return combinedExtendedLayout ? 2 : 1;
-      return combinedExtendedLayout ? 1 : 2;
+      if (getTrainRemScheduleMatch(activeTimetable, "east", selectedPreset, row?.tid)) return combinedExtendedLayout ? 1 : 1;
+      return combinedExtendedLayout ? 0 : 2;
     };
     const westLocationOrderByPreset = {
       "9am": [212, 214, 216, 218, 220, 102, 104, 106, 108, 110],
