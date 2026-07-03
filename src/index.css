@@ -460,15 +460,33 @@ html[data-app-theme="light"] .theme-maintenance-panel :is(
 }
 
 
-/* Maintenance request rows use bright colour-tinted cards in light mode.
-   The dark gradients remain untouched in the current dark theme. */
+/* Maintenance request rows use a calm steel-blue card with a 6 px
+   status rail on the left. The rail keeps the request colour visible
+   without turning the entire row into a neon outline. */
+.theme-maintenance-request-card {
+  position: relative;
+}
+
+.theme-maintenance-request-card::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  border-radius: 6px 0 0 6px;
+  background: var(--maintenance-request-accent, #4f8ef7);
+  box-shadow: 0 0 7px color-mix(in srgb, var(--maintenance-request-accent, #4f8ef7) 48%, transparent);
+  pointer-events: none;
+}
+
 html[data-app-theme="light"] .theme-maintenance-request-card {
-  background: color-mix(in srgb, var(--maintenance-request-accent, #4f8ef7) 28%, #ffffff) !important;
-  background-image: none !important;
-  border-color: color-mix(in srgb, var(--maintenance-request-accent, #4f8ef7) 78%, #94a3b8) !important;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--maintenance-request-accent, #4f8ef7) 7%, #ffffff), #f8fafc) !important;
+  border-color: #b7c6d3 !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 1px 4px color-mix(in srgb, var(--maintenance-request-accent, #4f8ef7) 20%, transparent) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    0 1px 4px rgba(15, 23, 42, 0.10) !important;
   color: #000000 !important;
 }
 

@@ -446,11 +446,14 @@ function getMainStablingCompactCardStyle(typeKey, displayLabel = "", requestGrou
   return {
     accent: visual.accent,
     card: {
-      background: visual.gradient,
-      border: `1.5px solid ${visual.accent}`,
-      boxShadow: visual.glow,
+      // Keep the row calm and readable. The request/status colour is now
+      // represented by the dedicated 6 px rail on the left instead of a
+      // bright full-row border and gradient.
+      background: "linear-gradient(90deg, rgba(15,45,70,0.98) 0%, rgba(8,25,42,0.98) 100%)",
+      border: "1px solid rgba(70,111,145,0.58)",
+      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 7px rgba(0,0,0,0.34), 0 0 8px ${rgbaFromHex(visual.accent, 0.10)}`,
     },
-    divider: rgbaFromHex(visual.accent, 0.72),
+    divider: rgbaFromHex(visual.accent, 0.34),
   };
 }
 
@@ -1012,7 +1015,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                         style={{ ...workshopCardStyle, "--maintenance-request-accent": requestCardStyle.accent }}
                       >
                         <span
-                          className="flex h-[14px] items-center justify-center border-r text-[12px] font-normal leading-none"
+                          className="flex h-[14px] items-center justify-center border-r pl-1 text-[12px] font-bold leading-none"
                           style={{ borderColor: requestCardStyle.divider, color: "#ffffff" }}
                         >
                           {req.trainId}
@@ -1081,7 +1084,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                         style={{ ...requestCardStyle.card, "--maintenance-request-accent": requestCardStyle.accent }}
                       >
                         <span
-                          className="flex h-[14px] items-center justify-center border-r text-[12px] font-normal leading-none"
+                          className="flex h-[14px] items-center justify-center border-r pl-1 text-[12px] font-bold leading-none"
                           style={{ borderColor: requestCardStyle.divider, color: "#ffffff" }}
                         >
                           {req.trainId}
@@ -1165,7 +1168,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                       style={{ ...regularCardStyle, "--maintenance-request-accent": requestCardStyle.accent }}
                     >
                       <span
-                        className="flex h-[14px] items-center justify-center border-r text-[12px] font-normal leading-none"
+                        className="flex h-[14px] items-center justify-center border-r pl-1 text-[12px] font-bold leading-none"
                         style={{ borderColor: requestCardStyle.divider, color: "#ffffff" }}
                       >
                         {req.trainId}
