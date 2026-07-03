@@ -5850,10 +5850,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       // the exact rows previously entered for the newly selected preset.
       const syncedPrev = syncTrainRemActiveRowsToPresetCache(prev);
 
-      // 12am is a paired West/East removal plan. Selecting it from West must
-      // activate the matching East 12am preset at the same time, just like the
-      // coordinated preset workflow expected by the operator.
-      const targetDepots = depot === "west" && label === "12am"
+      // West Depot is the master preset control. Selecting any preset from
+      // West must activate the matching preset for East at the same time.
+      // East still restores its own saved rows for that preset.
+      const targetDepots = depot === "west"
         ? ["west", "east"]
         : [depot];
 

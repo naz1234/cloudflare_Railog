@@ -6,3 +6,7 @@
 - 7pm TIDs 207, 209 and 211 remain violet.
 - Duplicate rows remain red and take visual priority.
 - Lint and production build passed.
+## West master preset sync
+
+Selecting any removal preset on West Depot now automatically selects the matching preset on East Depot. Each depot keeps and restores its own saved rows.
+
