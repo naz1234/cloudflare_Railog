@@ -1,0 +1,39 @@
+{
+  "name": "DepotStabling",
+  "type": "object",
+  "properties": {
+    "depot": {
+      "type": "string",
+      "description": "west or east"
+    },
+    "road": {
+      "type": "string",
+      "description": "e.g. WD-ST15, ED-ST02"
+    },
+    "blocks": {
+      "type": "array",
+      "description": "Array of 7 blocks, each with trainId, remark1, remark2, and extraRemark",
+      "items": {
+        "type": "object",
+        "properties": {
+          "trainId": {
+            "type": "string"
+          },
+          "remark1": {
+            "type": "string"
+          },
+          "remark2": {
+            "type": "string"
+          },
+          "extraRemark": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "depot",
+    "road"
+  ]
+}

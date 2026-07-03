@@ -1,0 +1,24 @@
+{
+  "name": "BookmarkLink",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Bookmark display name"
+    },
+    "url": {
+      "type": "string",
+      "description": "External hyperlink URL"
+    },
+    "sortOrder": {
+      "type": "number",
+      "description": "Display order in the bookmark dropdown"
+    },
+    "createdAt": {
+      "type": "string"
+    },
+    "updatedAt": {
+      "type": "string"
+    }
+  }
+}

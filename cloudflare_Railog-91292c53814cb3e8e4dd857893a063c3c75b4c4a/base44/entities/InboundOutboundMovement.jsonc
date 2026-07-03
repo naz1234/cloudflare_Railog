@@ -1,0 +1,10 @@
+{
+  "name": "InboundOutboundMovement",
+  "type": "object",
+  "properties": {
+    "stateKey": { "type": "string" },
+    "form": { "type": "object" },
+    "entries": { "type": "array" },
+    "updatedAt": { "type": "string" }
+  }
+}

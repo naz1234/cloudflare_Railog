@@ -1,0 +1,27 @@
+UPDATE TITLE
+PST ELOG Separate West / East Depot Windows and Left-Aligned Selector
+
+EXACT CHANGES
+- Removed the combined West & East Depot ELOG-2 output window.
+- ELOG-2 now displays inside two separate windows:
+  1. West Depot PST / Train Prep Log
+  2. East Depot PST / Train Prep Log
+- Each depot window has its own Copy PST, Copy Train Prep and Clear buttons.
+- ELOG-2 location groups and train lines are generated only from that depot's PST records.
+- ELOG-2 closing note and total train count now refer only to the relevant depot.
+- ELOG-1 summary wording now also refers only to the relevant depot instead of mentioning both depots.
+- Moved the ELOG-1 / ELOG-2 selector to the left, directly beside the PST / Train Prep Log Output header.
+- On smaller screens, the selector stays compact and wraps from the left instead of expanding to full width.
+- The selected ELOG preset continues to be remembered using browser local storage.
+
+IMPACT ON DATA / LOGS / PDF / PNG
+- No changes to saved PST or Train Prep records.
+- No changes to database or Excel data.
+- Copy PST output is now separated by West and East Depot.
+- No changes to PDF or PNG generation.
+- Clear remains depot-specific.
+
+BUILD STATUS
+- Edited PSTLogOutput component lint check passed.
+- Production build passed.
+- Full-project lint remains blocked by an existing unrelated unused Trash2 import in src/components/MaintenancePanel.jsx.

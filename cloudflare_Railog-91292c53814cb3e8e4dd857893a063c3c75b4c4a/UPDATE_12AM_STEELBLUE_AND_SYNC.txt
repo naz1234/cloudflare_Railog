@@ -1,0 +1,7 @@
+12AM PRESET UPDATE
+
+- 12am rows now use the same steel-blue whole-row theme as 7pm, Fri, Sat and PH.
+- Clicking 12am under West Depot automatically selects and restores 12am under East Depot.
+- East 12am data is restored from its own saved preset cache; West and East rows are not mixed.
+- 7pm TIDs 207, 209 and 211 keep their violet special colour.
+- Duplicate styling still takes priority.

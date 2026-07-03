@@ -1,0 +1,23 @@
+{
+  "name": "MainlineTrainRow",
+  "type": "object",
+  "properties": {
+    "tableType": {
+      "type": "string",
+      "description": "mainline, west, or east"
+    },
+    "trainId": {
+      "type": "string",
+      "description": "Train ID"
+    },
+    "tid": {
+      "type": "string",
+      "description": "TID (Tracking ID)"
+    },
+    "rowIndex": {
+      "type": "number",
+      "description": "Row position index"
+    }
+  },
+  "required": []
+}

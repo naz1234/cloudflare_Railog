@@ -1,0 +1,17 @@
+{
+  "name": "AdminNote",
+  "type": "object",
+  "properties": {
+    "recordKey": {
+      "type": "string",
+      "description": "Singleton key for the admin notes record"
+    },
+    "notes": {
+      "type": "array",
+      "description": "Admin note parent cards and note text"
+    },
+    "updatedAt": {
+      "type": "string"
+    }
+  }
+}
