@@ -1,8 +1,0 @@
-Duplicate row visual update
-
-- Duplicate Train ID or TID now uses a full-row dark red background.
-- Bright red outline is shown around the complete row.
-- All row text, including TID, is white for readability.
-- Duplicate warning overrides amber, violet and steel-blue 9am row colours.
-- When the duplicate is resolved, the normal preset colour returns automatically.
-- Applied to Train Removal rows in dark and light mode.

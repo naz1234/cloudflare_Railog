@@ -1,5 +1,0 @@
-TRAIN ID FONT WEIGHT UPDATE
-
-- Train ID column now uses font-weight 700 on normal rows.
-- Duplicate rows intentionally keep normal font weight.
-- TID, timing, remark colours, and duplicate row styling are unchanged.

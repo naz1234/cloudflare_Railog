@@ -1,9 +1,0 @@
-{
-  "name": "L3 Depot Controller Template",
-  "site": {
-    "installCommand": "npm install",
-    "buildCommand": "npm run build",
-    "serveCommand": "npm run dev",
-    "outputDirectory": "./dist"
-  }
-}

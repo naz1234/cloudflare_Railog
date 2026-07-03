@@ -1,6 +1,0 @@
-WEST DEPOT MASTER PRESET SYNC
-
-- West Depot is now the master preset selector.
-- Selecting 9am, 7pm, 12am, Fri, Sat, or PH on West automatically switches East Depot to the same preset.
-- West and East continue restoring their own saved Train ID/TID rows for the selected preset.
-- Selecting a preset directly on East still changes East only.
