@@ -1,0 +1,7 @@
+Updated Train Removal preset row themes:
+- 7pm, Fri, Sat and PH now use the same steel-blue whole-row theme.
+- 12am keeps its existing indigo theme.
+- In the 7pm preset, TIDs 207, 209 and 211 keep the special violet whole-row theme.
+- Train ID, TID and Timing remain pure white on themed rows.
+- Duplicate warning red styling still takes priority.
+- Applied to dark and light mode.
