@@ -6394,7 +6394,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         <div className="theme-train-rem-header px-2 py-2 border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
           <div className="flex items-start justify-between gap-2">
             <div>
-              <div className="text-[10px] font-normal text-white uppercase tracking-widest">{title}</div>
+              {depot !== "west" && <div className="text-[10px] font-normal text-white uppercase tracking-widest">{title}</div>}
               {subtitle && <div className="mt-0.5 text-[7px] font-normal text-[#7eb8e0]">{subtitle}</div>}
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
