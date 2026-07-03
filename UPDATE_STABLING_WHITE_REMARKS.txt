@@ -1,7 +1,0 @@
-STABLING REMARK FONT UPDATE
-
-- Stabling request remarks are now pure white in dark mode.
-- Remark font weight is regular (not bold).
-- The 6 px left status rail keeps the request/status colour.
-- Light mode uses regular-weight dark remark text for readability on light cards.
-- No stabling logic, editing, search, copy, PDF, or maintenance logic was changed.

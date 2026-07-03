@@ -1,9 +1,0 @@
-9AM SPECIAL TID ROW COLOR
-
-Updated TIDs: 207, 209, 211
-
-- These TIDs use a distinct muted violet whole-row style in the 9am preset.
-- The TID text remains white and bold.
-- The exact amber TID group and steel-blue other TID rows are unchanged.
-- Duplicate warning rows remain red.
-- Remark colours continue to use their existing request/category colour.

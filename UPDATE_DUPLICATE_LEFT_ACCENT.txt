@@ -1,7 +1,0 @@
-Duplicate row visual update
-
-- Keeps the same row structure as normal 9am highlighted rows.
-- Adds a 3px red left accent line when a duplicate Train ID or TID is detected.
-- Only the colour changes to the duplicate red warning theme.
-- Whole-row red tint, red border, white text, and duplicate priority remain unchanged.
-- Applied in dark and light mode.

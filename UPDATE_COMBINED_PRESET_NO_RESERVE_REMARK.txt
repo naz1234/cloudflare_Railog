@@ -1,5 +1,0 @@
-Combined preset single-panel update:
-- Removed the WD RESERVE text from the reserve-row remark column.
-- The 4 reserve rows remain at the bottom of the combined West table.
-- Empty reserve rows keep the steel-blue row style and are still available for additional West trains.
-- East Depot window remains hidden for combined presets.

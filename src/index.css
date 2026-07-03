@@ -823,6 +823,48 @@ html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-ro
   text-shadow: 0 1px 1px rgba(0,0,0,0.28);
 }
 
+/* Combined 12am / Fri / Sat / PH: East Depot scheduled rows use the
+   same amber theme as the East Depot 9am reference rows. */
+.theme-train-rem-row-card.is-combined-east-preset-row {
+  background: linear-gradient(90deg, rgba(180,120,35,0.22) 0%, rgba(180,120,35,0.11) 55%, rgba(180,120,35,0.06) 100%) !important;
+  border-color: rgba(183,121,31,0.78) !important;
+  box-shadow:
+    inset 3px 0 0 #d97706,
+    inset 0 1px 0 rgba(255,255,255,0.045),
+    0 1px 3px rgba(0,0,0,0.18) !important;
+}
+
+.theme-train-rem-row-card.is-combined-east-preset-row input.is-combined-east-preset-tid-reference {
+  color: #ffffff !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.35);
+}
+
+.theme-train-rem-row-card.is-combined-east-preset-row input:nth-child(1),
+.theme-train-rem-row-card.is-combined-east-preset-row input:nth-child(3) {
+  color: #ffffff !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.34);
+}
+
+html[data-app-theme="light"] .theme-train-rem-row-card.is-combined-east-preset-row {
+  background: linear-gradient(90deg, rgba(146,91,18,0.82) 0%, rgba(180,120,35,0.72) 55%, rgba(194,139,57,0.64) 100%) !important;
+  border-color: #a16207 !important;
+  box-shadow:
+    inset 3px 0 0 #f59e0b,
+    inset 0 1px 0 rgba(255,255,255,0.16),
+    0 1px 3px rgba(15,23,42,0.14) !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-row-card.is-combined-east-preset-row input.is-combined-east-preset-tid-reference,
+html[data-app-theme="light"] .theme-train-rem-row-card.is-combined-east-preset-row input:nth-child(1),
+html[data-app-theme="light"] .theme-train-rem-row-card.is-combined-east-preset-row input:nth-child(3) {
+  color: #ffffff !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.28);
+}
+
 /* 7pm preset: TIDs 207, 209 and 211 keep the same special violet theme
    used for those TIDs in 9am, while the remaining 7pm rows stay steel-blue. */
 .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="207"],

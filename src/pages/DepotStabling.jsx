@@ -6669,9 +6669,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 const isNineAmReferenceTid = selectedPreset === "9am" && referenceOnly && NINE_AM_HIGHLIGHT_TIDS.has(cleanTid) && !hasDuplicateValue;
                 const isNineAmSpecialTid = selectedPreset === "9am" && hasTid && NINE_AM_SPECIAL_TIDS.has(cleanTid) && !hasDuplicateValue;
                 const isNineAmOtherTid = selectedPreset === "9am" && hasTid && !NINE_AM_HIGHLIGHT_TIDS.has(cleanTid) && !NINE_AM_SPECIAL_TIDS.has(cleanTid) && !hasDuplicateValue;
+                const isExtendedEastPresetRow = Boolean(isEastReferenceRemoval)
+                  && TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(selectedPreset)
+                  && !hasDuplicateValue;
                 const isOtherPresetThemedRow = selectedPreset !== "9am"
                   && ["7pm", "12am", "Fri", "Sat", "PH"].includes(selectedPreset)
-                  && hasTid
+                  && (hasTid || isCombinedWestReserveRow)
+                  && !isExtendedEastPresetRow
                   && !hasDuplicateValue;
                 const rowCardVisual = getTrainRemRowCardVisual(
                   null,
@@ -6731,7 +6735,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     <tr>
                       <td colSpan={4} className="theme-train-rem-table-cell bg-[#071828] px-1 py-[1px]">
                         <div
-                          className={`theme-train-rem-row-card grid h-[22px] items-center overflow-hidden rounded-md border transition-[border-color,background,box-shadow] duration-150 ${hasDuplicateValue ? "is-duplicate" : ""} ${isNineAmReferenceTid ? "is-9am-exact-tid-row" : ""} ${isNineAmSpecialTid ? "is-9am-special-tid-row" : ""} ${isNineAmOtherTid ? "is-9am-other-tid-row" : ""} ${isOtherPresetThemedRow ? "is-other-preset-themed-row" : ""}`}
+                          className={`theme-train-rem-row-card grid h-[22px] items-center overflow-hidden rounded-md border transition-[border-color,background,box-shadow] duration-150 ${hasDuplicateValue ? "is-duplicate" : ""} ${isNineAmReferenceTid ? "is-9am-exact-tid-row" : ""} ${isNineAmSpecialTid ? "is-9am-special-tid-row" : ""} ${isNineAmOtherTid ? "is-9am-other-tid-row" : ""} ${isOtherPresetThemedRow ? "is-other-preset-themed-row" : ""} ${isExtendedEastPresetRow ? "is-combined-east-preset-row" : ""}`}
                           data-preset={selectedPreset}
                           data-tid={cleanTid}
                           style={{
@@ -6786,7 +6790,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                             maxLength={3}
                             readOnly={referenceOnly}
                             title={referenceOnly ? rowStatusTitle : isDuplicateTid ? "Duplicate TID detected" : "Enter exactly 3 digits"}
-                            className={`h-full min-w-0 border-0 bg-transparent px-1 text-center text-[11px] font-normal outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${referenceOnly ? "cursor-default" : ""} ${isNineAmReferenceTid ? "is-9am-tid-reference" : ""} ${isNineAmSpecialTid ? "is-9am-special-tid-reference" : ""} ${isNineAmOtherTid ? "is-9am-other-tid-reference" : ""} ${isOtherPresetThemedRow ? "is-other-preset-tid-reference" : ""}`}
+                            className={`h-full min-w-0 border-0 bg-transparent px-1 text-center text-[11px] font-normal outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${referenceOnly ? "cursor-default" : ""} ${isNineAmReferenceTid ? "is-9am-tid-reference" : ""} ${isNineAmSpecialTid ? "is-9am-special-tid-reference" : ""} ${isNineAmOtherTid ? "is-9am-other-tid-reference" : ""} ${isOtherPresetThemedRow ? "is-other-preset-tid-reference" : ""} ${isExtendedEastPresetRow ? "is-combined-east-preset-tid-reference" : ""}`}
                             style={{
                               color: tidTextColor,
                               background: tidCellBackground,
