@@ -21227,7 +21227,6 @@ function StablingSection({
     const blocks = data[road] || [];
     return total + blockIndices.filter((bi) => String(blocks[bi]?.trainId || "").trim()).length;
   }, 0);
-  const displayTitle = `${title} (${totalTrains} ${totalTrains === 1 ? "Train" : "Trains"})`;
 
   const handleDownloadPdf = async () => {
     if (downloadingPdf) return;
@@ -21295,7 +21294,8 @@ function StablingSection({
   return (
     <section className="theme-stabling-section bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
       <SectionTitle
-        title={displayTitle}
+        title={title}
+        count={totalTrains}
         action={
           <div className="flex items-center gap-2">
             <button
@@ -21461,7 +21461,7 @@ function StablingSection({
 }
 
 
-function SectionTitle({ title, small = false, action = null }) {
+function SectionTitle({ title, count = null, small = false, action = null }) {
   return (
     <div className="flex items-center gap-2 mb-2">
       <div className="w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
@@ -21481,13 +21481,24 @@ function SectionTitle({ title, small = false, action = null }) {
       </div>
 
       <h2
-        className={`leading-none font-black text-white tracking-widest uppercase flex-1 ${
+        className={`leading-none font-black text-white tracking-widest uppercase ${
           small ? "text-sm" : "text-base"
         }`}
       >
         {title}
       </h2>
 
+      {Number.isFinite(count) && (
+        <span
+          className="theme-stabling-count inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 text-[11px] font-black text-[#4f8ef7]"
+          aria-label={`${count} ${count === 1 ? "train" : "trains"}`}
+          title={`${count} ${count === 1 ? "train" : "trains"}`}
+        >
+          {count}
+        </span>
+      )}
+
+      <div className="flex-1" />
       {action && <div className="flex-shrink-0">{action}</div>}
     </div>
   );
@@ -21560,29 +21571,22 @@ function RoadRow({
         const isEastBottomLeftCorner =
           labelSide === "right" && isLast && isFirstBlock;
 
-        let cellBg = "#10263b";
-        let trainColor = "#e2eaf4";
+        let trainColor = "#ffffff";
         const requestAccent = primaryVisual?.accent || "#4f8ef7";
 
         if (isFlashing) {
-          cellBg = "#7f1d1d";
-          trainColor = "#ffffff";
+          trainColor = "#fecaca";
         } else if (isDup) {
-          cellBg = "#2d0a0a";
           trainColor = "#f87171";
-        } else if (primaryMaint) {
-          // Keep the request train number/control-card dark like Train REM, but use the request color as accent.
-          cellBg = "#071828";
-          trainColor = requestAccent;
         }
 
-        // Train card styling
+        // Keep every normal/request train card on the same calm steel-blue surface.
+        // Request identity is shown by the 6 px left status rail and remark colour,
+        // rather than a bright full-card border or neon background.
         const cardGrad = isFlashing
           ? "linear-gradient(135deg,#7f1d1d,#5c0f0f)"
           : isDup
           ? "linear-gradient(135deg,#2d0a0a,#1a0505)"
-          : key && primaryMaint
-          ? primaryVisual.gradient
           : key
           ? "linear-gradient(135deg,#0f2d4a,#081e32)"
           : "none";
@@ -21590,15 +21594,13 @@ function RoadRow({
           ? "2px solid #facc15"
           : isFlashing || isDup
           ? "1.5px solid #ef4444"
-          : key && primaryMaint
-          ? `1.5px solid ${requestAccent}`
           : key
           ? "1px solid #1e4d72"
           : "1.5px dashed #1b3a55";
         const cardGlow = isSearchMatch
           ? "0 0 0 3px rgba(250,204,21,0.18), 0 2px 8px rgba(0,0,0,0.45)"
           : key && primaryMaint && !isFlashing && !isDup
-          ? primaryVisual.glow
+          ? `0 2px 8px rgba(0,0,0,0.45), inset 0 0 0 1px ${hexToRgba(requestAccent, 0.11)}, inset 0 1px 0 rgba(255,255,255,0.06)`
           : key && !isFlashing && !isDup
           ? "0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)"
           : undefined;
@@ -21617,7 +21619,7 @@ function RoadRow({
             }}
           >
             <div
-              className={`theme-stabling-train-card relative flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-150 ${primaryMaint ? "has-request" : ""} ${isDup ? "is-duplicate" : ""} ${isFlashing ? "is-flashing" : ""} ${isSearchMatch ? "is-search-match" : ""} ${key ? "has-train" : "is-empty"}`}
+              className={`theme-stabling-train-card relative flex flex-col items-center justify-center gap-1 overflow-hidden rounded-xl transition-all duration-150 ${primaryMaint ? "has-request" : ""} ${isDup ? "is-duplicate" : ""} ${isFlashing ? "is-flashing" : ""} ${isSearchMatch ? "is-search-match" : ""} ${key ? "has-train" : "is-empty"}`}
               style={{
                 minHeight: 76,
                 padding: "7px 4px",
@@ -21627,6 +21629,27 @@ function RoadRow({
                 boxShadow: cardGlow,
               }}
             >
+              {key && maintList.length > 0 && !isFlashing && !isDup && (
+                <div
+                  className="theme-stabling-status-rail absolute inset-y-0 left-0 z-[2] flex w-[6px] flex-col overflow-hidden"
+                  aria-hidden="true"
+                >
+                  {maintList.map((item, railIndex) => {
+                    const itemVisual = getStablingRequestVisual(item);
+                    return (
+                      <span
+                        key={`${key}-status-rail-${railIndex}-${item.displayType || item.typeKey || "request"}`}
+                        className="theme-stabling-status-rail-segment block min-h-0 flex-1"
+                        style={{
+                          background: itemVisual.accent,
+                          boxShadow: `0 0 7px ${hexToRgba(itemVisual.accent, 0.34)}`,
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+
               <input
                 ref={(el) => { cellRefs.current[`${depot}-${roadIndex}-${i}`] = el; }}
                 type="text"
@@ -21642,8 +21665,8 @@ function RoadRow({
                   onCellKeyDown(e, depot, roadIndex, i, totalRows, blockIndices.length);
                 }}
                 placeholder="—"
-                className="w-full text-center font-black outline-none bg-transparent leading-none"
-                style={{ fontSize: key ? 17 : 13, color: isFlashing ? "#fecaca" : isDup ? "#f87171" : key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}
+                className="theme-stabling-train-id w-full text-center font-black outline-none bg-transparent leading-none"
+                style={{ fontSize: key ? 17 : 13, color: key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}
               />
 
               {key && (
@@ -21655,8 +21678,6 @@ function RoadRow({
                     margin: "2px 0 1px",
                     background: isFlashing || isDup
                       ? "rgba(248,113,113,0.72)"
-                      : primaryMaint
-                      ? hexToRgba(requestAccent, 0.72)
                       : "rgba(126,184,224,0.42)",
                   }}
                 />

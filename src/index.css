@@ -390,9 +390,25 @@ html[data-app-theme="light"] .theme-stabling-train-card.is-empty {
 }
 
 html[data-app-theme="light"] .theme-stabling-train-card.has-request:not(.is-duplicate):not(.is-flashing) {
-  background: color-mix(in srgb, var(--theme-accent, #4f8ef7) 18%, #ffffff) !important;
-  border-color: color-mix(in srgb, var(--theme-accent, #4f8ef7) 70%, #8394a5) !important;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-accent, #4f8ef7) 18%, transparent) !important;
+  background: linear-gradient(145deg, #ffffff 0%, #edf4f8 100%) !important;
+  border-color: #9fb2c2 !important;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Main stabling status cards use one calm surface. Only the 6 px rail and
+   request remark carry the status colour, so the grid remains easy to scan. */
+.theme-stabling-status-rail {
+  pointer-events: none;
+}
+
+html[data-app-theme="light"] .theme-stabling-status-rail-segment {
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-stabling-count {
+  background: #e8f1fb !important;
+  border-color: #9fb2c2 !important;
+  color: #1d4ed8 !important;
 }
 
 
