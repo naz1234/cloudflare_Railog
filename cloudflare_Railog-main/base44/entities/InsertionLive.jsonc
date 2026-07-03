@@ -1,0 +1,36 @@
+{
+  "name": "InsertionLive",
+  "type": "object",
+  "properties": {
+    "stateKey": {
+      "type": "string"
+    },
+    "insertionLog": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "tidInputs": {
+      "type": "object"
+    },
+    "pg2Stabling": {
+      "type": "object"
+    },
+    "pg2InsertionLog": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "pg2TidInputs": {
+      "type": "object"
+    },
+    "updatedAt": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "stateKey"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "RemovalListRow",
+  "type": "object",
+  "properties": {
+    "trainId": {
+      "type": "string",
+      "description": "Train ID"
+    },
+    "trackingId": {
+      "type": "string",
+      "description": "Tracking ID (TID)"
+    },
+    "rowIndex": {
+      "type": "number",
+      "description": "Row order index"
+    }
+  },
+  "required": []
+}

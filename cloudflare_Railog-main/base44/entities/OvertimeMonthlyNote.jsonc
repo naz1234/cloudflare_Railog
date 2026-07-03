@@ -1,0 +1,21 @@
+{
+  "name": "OvertimeMonthlyNote",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "description": "Monthly note date in YYYY-MM-DD format"
+    },
+    "note": {
+      "type": "string",
+      "description": "General dated note for the selected month; separate from overtime records"
+    },
+    "createdAt": {
+      "type": "string"
+    },
+    "updatedAt": {
+      "type": "string"
+    }
+  },
+  "required": ["date", "note"]
+}

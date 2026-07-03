@@ -1,0 +1,26 @@
+{
+  "name": "MaintenanceRequest",
+  "type": "object",
+  "properties": {
+    "trainId": {
+      "type": "string",
+      "description": "Train ID number"
+    },
+    "requestType": {
+      "type": "string",
+      "description": "Manual maintenance request type entered by user"
+    },
+    "customType": {
+      "type": "string",
+      "description": "Legacy custom type text for older saved records"
+    },
+    "remark": {
+      "type": "string",
+      "description": "Optional remark"
+    }
+  },
+  "required": [
+    "trainId",
+    "requestType"
+  ]
+}
