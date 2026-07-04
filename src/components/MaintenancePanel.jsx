@@ -423,21 +423,26 @@ function getMainStablingCompactCardStyle(typeKey, displayLabel = "", requestGrou
       glow: "0 0 0 1px rgba(16,185,129,0.12),0 0 10px rgba(16,185,129,0.21),0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.05)",
     },
     wash: {
-      accent: "#4de3ff",
-      gradient: "linear-gradient(135deg,rgba(34,211,238,0.24) 0%,#062937 48%,#071828 100%)",
-      glow: "0 0 0 1px rgba(34,211,238,0.12),0 0 10px rgba(34,211,238,0.22),0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.05)",
+      // Keep all WASH variants (Wash 5 July, Wash TMR, etc.) on
+      // a fixed lime-green accent so they do not clash with custom
+      // request colours such as TCMS NOT WORKING.
+      accent: "#8afc3f",
+      gradient: "linear-gradient(135deg,rgba(132,204,22,0.24) 0%,#132b08 48%,#071828 100%)",
+      glow: "0 0 0 1px rgba(132,204,22,0.12),0 0 10px rgba(132,204,22,0.22),0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.05)",
     },
   };
 
-  const visual = usesGroupColor
-    ? {
-        // Every specific group name receives a distinct colour allocated
-        // across the complete request set. The same name always reuses it.
-        accent: groupAccent,
-      }
-    : visuals[category] || {
-        accent: fallbackAccent,
-      };
+  const visual = category === "wash"
+    ? visuals.wash
+    : usesGroupColor
+      ? {
+          // Every specific group name receives a distinct colour allocated
+          // across the complete request set. The same name always reuses it.
+          accent: groupAccent,
+        }
+      : visuals[category] || {
+          accent: fallbackAccent,
+        };
 
   const accent = visual.accent || "#4f8ef7";
 
