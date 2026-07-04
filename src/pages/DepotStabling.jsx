@@ -4845,35 +4845,91 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               {displayVal || "—"}
             </div>
           )}
-          {rowMaintenanceSlotHeight > 0 && (
-            <div
-              className="flex w-full shrink-0 flex-col items-center justify-start gap-1.5"
-              style={{ height: rowMaintenanceSlotHeight, minHeight: rowMaintenanceSlotHeight, marginTop: 3 }}
-              aria-hidden={maintList.length === 0 ? "true" : undefined}
-            >
-              {maintList.map((item) => (
-                <span
-                  key={`${item.displayType}-${item.badgeText || ""}`}
-                  className="inline-flex min-w-[92px] w-fit max-w-full items-center justify-center rounded-full px-2 py-0.5 text-center text-[10px] font-normal leading-none whitespace-nowrap"
-                  style={getRequestPillStyle(item, { showSuppressedStyle: false })}
-                  title={item.badgeText || item.displayType}
-                >
-                  {item.badgeText || item.displayType}
-                </span>
-              ))}
+          {key && !inserted?.isSweeping && (
+            <div className="flex w-full flex-col items-center gap-1">
+              <div
+                className="w-full"
+                style={{
+                  borderTop: `1px solid ${key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine}`,
+                  opacity: 0.82,
+                  marginTop: stablingEditable ? 1 : 0,
+                }}
+              />
+
+              <div
+                className="flex w-full shrink-0 flex-col items-center justify-start gap-1.5"
+                style={{
+                  minHeight: rowMaintenanceSlotHeight > 0 ? rowMaintenanceSlotHeight : 16,
+                  marginTop: 2,
+                }}
+                aria-hidden={maintList.length === 0 && !insertedTidAssistRemark && !hasInsertedPlainRemark ? "true" : undefined}
+              >
+                {rowMaintenanceSlotHeight > 0 && maintList.map((item) => (
+                  <span
+                    key={`${item.displayType}-${item.badgeText || ""}`}
+                    className="inline-flex min-w-[92px] w-fit max-w-full items-center justify-center rounded-full px-2 py-0.5 text-center text-[10px] font-normal leading-none whitespace-nowrap"
+                    style={getRequestPillStyle(item, { showSuppressedStyle: false })}
+                    title={item.badgeText || item.displayType}
+                  >
+                    {item.badgeText || item.displayType}
+                  </span>
+                ))}
+
+                {key && insertedTidAssistRemark && !hasInsertedPlainRemark && (
+                  useLargerWeekdayAssistRemark ? (
+                    <button
+                      type="button"
+                      onClick={handleInsertedUndoClick}
+                      className="inline-flex min-w-0 max-w-full items-center justify-center self-center rounded-full border px-2 py-[1px] text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                      style={{
+                        color: insertedTidRemarkStyle?.color || "#bfdbfe",
+                        background: insertedTidRemarkStyle?.bg || "rgba(59, 130, 246, 0.16)",
+                        borderColor: insertedTidRemarkStyle?.border || "#60a5fa",
+                        boxShadow: insertedTidRemarkStyle?.shadow || "none",
+                        lineHeight: "16px",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={`Click ${insertedTidAssistDisplayRemark} to undo insertion`}
+                      aria-label={`Undo insertion for ${insertedTidAssistDisplayRemark}`}
+                    >
+                      {insertedTidAssistDisplayRemark}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleInsertedUndoClick}
+                      className="inline-flex min-w-0 max-w-full items-center justify-center self-center border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none transition-colors hover:text-red-200 focus-visible:text-red-200"
+                      style={{ color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
+                      title={`Click ${insertedTidAssistDisplayRemark} to undo insertion`}
+                      aria-label={`Undo insertion for ${insertedTidAssistDisplayRemark}`}
+                    >
+                      {insertedTidAssistDisplayRemark}
+                    </button>
+                  )
+                )}
+
+                {key && hasInsertedPlainRemark && (
+                  <button
+                    type="button"
+                    onClick={handleInsertedUndoClick}
+                    className={`inline-flex w-full flex-1 items-center justify-center self-stretch border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none transition-colors hover:text-red-200 focus-visible:text-red-200 ${maintList.length > 0 ? "mt-1" : "mt-[3px]"}`}
+                    style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
+                    title={`Click ${insertedPlainRemark} to undo insertion`}
+                    aria-label={`Undo insertion for remark ${insertedPlainRemark}`}
+                  >
+                    {insertedPlainRemark}
+                  </button>
+                )}
+              </div>
+
+              <div
+                className="w-full"
+                style={{
+                  borderTop: `1px solid ${key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine}`,
+                  opacity: 0.82,
+                }}
+              />
             </div>
-          )}
-          {key && hasInsertedPlainRemark && (
-            <button
-              type="button"
-              onClick={handleInsertedUndoClick}
-              className={`inline-flex w-full flex-1 items-center justify-center self-stretch border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none transition-colors hover:text-red-200 focus-visible:text-red-200 ${maintList.length > 0 ? "mt-1" : "mt-[3px]"}`}
-              style={{ color: activeTidRemarkStyle?.color || "#4ade80" }}
-              title={`Click ${insertedPlainRemark} to undo insertion`}
-              aria-label={`Undo insertion for remark ${insertedPlainRemark}`}
-            >
-              {insertedPlainRemark}
-            </button>
           )}
           {key && inserted?.isSweeping && (
             <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
@@ -5024,35 +5080,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     title="Edit insertion completion time"
                   />
 
-                  {insertedTidAssistRemark && (
-                    useLargerWeekdayAssistRemark ? (
-                      <button
-                        type="button"
-                        onClick={handleInsertedUndoClick}
-                        className="col-span-2 inline-flex min-w-0 max-w-full items-center justify-center justify-self-center rounded-full border px-2 py-[1px] text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
-                        style={{
-                          color: insertedTidRemarkStyle?.color || "#bfdbfe",
-                          background: insertedTidRemarkStyle?.bg || "rgba(59, 130, 246, 0.16)",
-                          borderColor: insertedTidRemarkStyle?.border || "#60a5fa",
-                          boxShadow: insertedTidRemarkStyle?.shadow || "none",
-                          lineHeight: "16px",
-                          whiteSpace: "nowrap",
-                        }}
-                        title={`Click ${insertedTidAssistDisplayRemark} to undo insertion`}
-                        aria-label={`Undo insertion for ${insertedTidAssistDisplayRemark}`}
-                      >
-                        {insertedTidAssistDisplayRemark}
-                      </button>
-                    ) : (
-                      <span
-                        className="col-span-2 min-w-0 justify-self-center text-center text-[12px] font-normal leading-tight"
-                        style={{ color: insertedTidRemarkStyle?.color || "#bfdbfe" }}
-                        title={insertedTidAssistDisplayRemark}
-                      >
-                        {insertedTidAssistDisplayRemark}
-                      </span>
-                    )
-                  )}
                 </div>
               ) : hasInsertedPlainRemark ? (
                 <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
