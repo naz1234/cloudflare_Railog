@@ -1581,7 +1581,7 @@ function TrainWashingDocxExport() {
                 <div className="text-[11px] text-slate-400">{group.rows.length} trains</div>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-[820px] w-full text-xs">
+                <table className="min-w-[740px] w-full text-xs">
                   <thead className="bg-[#071828] text-slate-200">
                     <tr>
                       {OUTPUT_HEADERS.map((header) => (
@@ -7681,8 +7681,7 @@ function getMovementExcelStatus(row = {}) {
   const train = normalizeMovementTrain(row.trainId);
   const time = normalizeMovementCustomTimeInput(row.time);
   const replacementInput = operation === "insertion" ? "" : row.replacedBy;
-  const roadInput = operation === "insertion" ? (row.road || row.track) : "";
-  const hasAnyInput = Boolean(train || time || row.tid || row.reason || replacementInput || row.notes || roadInput);
+  const hasAnyInput = Boolean(train || time || row.tid || row.reason || replacementInput || row.notes);
   if (!hasAnyInput) return "Draft";
   return buildMovementExcelLogLine(row) ? "Added" : "Missing";
 }
@@ -7703,12 +7702,6 @@ function buildMovementExcelRemarkSuffix(value = "") {
   return ` ${/[.!?]$/.test(clean) ? clean : `${clean}.`}`;
 }
 
-function getMovementExcelRoadOrDefault(row = {}) {
-  const depot = row.depot === "east" ? "east" : "west";
-  const defaultRoad = getMovementRoads(depot)?.[0] || (depot === "east" ? "ED-ST01" : "WD-ST14");
-  return String(row.road || row.track || defaultRoad).trim();
-}
-
 function buildMovementExcelLogLine(row = {}) {
   const operation = row.operation || "swapping";
   const train = normalizeMovementTrain(row.trainId || row.train);
@@ -7721,10 +7714,9 @@ function buildMovementExcelLogLine(row = {}) {
   if (!train || !isCompleteMovementTimeInput(time)) return "";
 
   if (operation === "insertion") {
-    const road = getMovementExcelRoadOrDefault(row);
     const track = getMovementTrack(row.depot);
     const remarkSuffix = buildMovementExcelRemarkSuffix(String(row.reason || notes || "").trim());
-    return `${time} hrs – ${train}${tidPart} inserted from ${road} to mainline track ${track}.${remarkSuffix}`;
+    return `${time} hrs – ${train}${tidPart} inserted from ${depotLabel} to mainline track ${track}.${remarkSuffix}`;
   }
 
   if (operation === "removal") {
@@ -7944,14 +7936,14 @@ function TrainMovementExcelSheet() {
       </div>
 
       <div className="overflow-x-auto p-3">
-        <table className="w-full min-w-[820px] border-collapse table-fixed text-left">
+        <table className="w-full min-w-[740px] border-collapse table-fixed text-left">
           <thead>
             <tr className="text-[10px] uppercase tracking-[0.12em] text-[#9fd3f6]">
-              {["", "Type", "Depot", "Train", "TID", "Road / Track", "Reason / Remark", "Replaced By", "Time", "Status"].map((heading, index) => (
+              {["", "Type", "Depot", "Train", "TID", "Reason / Remark", "Replaced By", "Time", "Status"].map((heading, index) => (
                 <th
                   key={heading || "remove"}
                   className="border border-[#245171] bg-[#0b2b45] px-2 py-1.5 text-center font-black"
-                  style={{ width: [42, 90, 92, 74, 66, 116, 168, 94, 76, 82][index] }}
+                  style={{ width: [42, 90, 92, 74, 66, 194, 94, 76, 82][index] }}
                 >
                   {heading ? heading : <Trash2 size={12} className="mx-auto text-red-200" />}
                 </th>
@@ -7992,15 +7984,6 @@ function TrainMovementExcelSheet() {
                   </td>
                   <td className={cellClass}>
                     <input value={row.tid} onChange={(e) => updateRow(row.id, "tid", e.target.value.replace(/\D/g, "").slice(0, 3))} placeholder="111" className={tableInputClass} />
-                  </td>
-                  <td className={row.operation === "insertion" ? cellClass : "border border-[#173653] bg-[#334155] align-middle"}>
-                    {row.operation === "insertion" ? (
-                      <input value={row.road || row.track} onChange={(e) => updateRow(row.id, "road", e.target.value)} placeholder="WD-ST14" className={tableInputClass} />
-                    ) : (
-                      <div className="flex h-7 items-center justify-center rounded-sm bg-[#475569] text-[10px] font-black uppercase tracking-[0.12em] text-[#cbd5e1] opacity-80">
-                        N/A
-                      </div>
-                    )}
                   </td>
                   <td className={cellClass}>
                     <input value={row.reason} onChange={(e) => updateRow(row.id, "reason", e.target.value)} placeholder={row.operation === "swapping" ? "RST PM / CM" : "Remark"} className={tableInputClass} />
