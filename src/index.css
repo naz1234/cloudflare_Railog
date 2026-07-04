@@ -478,7 +478,7 @@ html[data-app-theme="light"] .theme-maintenance-panel :is(
 }
 
 
-/* Maintenance request rows use a calm steel-blue card with a 3 px
+/* Maintenance request rows use a calm steel-blue card with a 6 px
    status rail on the left. The rail keeps the request colour visible
    without turning the entire row into a neon outline. */
 .theme-maintenance-request-card {
@@ -492,7 +492,7 @@ html[data-app-theme="light"] .theme-maintenance-panel :is(
   left: 0;
   top: 0;
   bottom: 0;
-  width: 3px;
+  width: 6px;
   border-radius: 6px 0 0 6px;
   background: var(--maintenance-request-accent, #4f8ef7);
   box-shadow: 0 0 7px color-mix(in srgb, var(--maintenance-request-accent, #4f8ef7) 48%, transparent);

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, X } from "lucide-react";
+import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X } from "lucide-react";
+
+const MIN_VISIBLE_REQUEST_ROWS = 40;
 
 export const REQUEST_COLORS = {
   // Matched with DepotStabling.jsx MAINT_STYLES badgeBorder values.
@@ -105,6 +107,34 @@ function DeleteRequestIcon() {
       className="theme-maintenance-delete-icon inline-flex h-4 w-4 items-center justify-center rounded-full border border-red-300/85 bg-[#941c24] shadow-[0_0_6px_rgba(148,28,36,0.5)] transition-all group-hover/delete:scale-105 group-hover/delete:bg-[#c92a35]"
     >
       <X className="h-2.5 w-2.5 stroke-[3.5] text-white" />
+    </span>
+  );
+}
+
+function AlreadyStatusIcon({ message, reason }) {
+  if (!message) return null;
+
+  const isWorkshop = reason === "WORKSHOP";
+
+  return (
+    <span
+      className="already-status-trigger relative z-40 inline-flex shrink-0 items-center justify-center"
+      tabIndex={0}
+      aria-label={message}
+    >
+      <span
+        className={`inline-flex h-4 w-4 items-center justify-center rounded-full border ${
+          isWorkshop
+            ? "border-[#fbbf24] bg-[#fbbf24] shadow-[0_0_6px_rgba(251,191,36,0.46)]"
+            : "border-emerald-300/80 bg-[#58c96b] shadow-[0_0_6px_rgba(88,201,107,0.42)]"
+        }`}
+      >
+        <Check className="h-2.5 w-2.5 stroke-[3.5] text-white" />
+      </span>
+      <span className="already-status-bubble pointer-events-none absolute right-[25px] top-1/2 z-[90] -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150">
+        <span className="absolute -right-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-r border-t border-slate-200 bg-white" />
+        <span className="relative z-10">{message}</span>
+      </span>
     </span>
   );
 }
@@ -551,66 +581,6 @@ function getRequestDisplayLabel(request = {}) {
   );
 }
 
-
-function escapeRegExp(value = "") {
-  return value.toString().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function getGroupedRequestTitle(label = "") {
-  const clean = cleanRequestLabel(label) || "Request";
-  const normalized = normalizeRequestIdentity(clean);
-
-  // Keep related APU requests together while still showing each detail on the chip
-  // (example: APU Mismatch + APU Testing => one APU card).
-  if (normalized === "APU" || normalized.startsWith("APU ")) return "APU";
-
-  return clean;
-}
-
-function getGroupedRequestChipLabel(request = {}, groupTitle = "", displayLabel = "") {
-  const trainLabel = formatTrainIdForPopup(request?.trainId || "");
-  const cleanLabel = cleanRequestLabel(displayLabel);
-  const cleanTitle = cleanRequestLabel(groupTitle);
-
-  if (!cleanLabel || normalizeRequestIdentity(cleanLabel) === normalizeRequestIdentity(cleanTitle)) {
-    return trainLabel;
-  }
-
-  const titlePattern = new RegExp(`^${escapeRegExp(cleanTitle)}\\b\\s*`, "i");
-  const detail = cleanLabel.replace(titlePattern, "").trim();
-
-  return detail ? `${trainLabel} ${detail}` : `${trainLabel} ${cleanLabel}`;
-}
-
-function buildGroupedRequestCards(items = [], getLabel = () => "Request") {
-  const groupMap = new Map();
-
-  items.forEach((request) => {
-    const displayLabel = getLabel(request) || "Request";
-    const title = getGroupedRequestTitle(displayLabel);
-    const key = normalizeRequestGroupColorKey(title) || title;
-
-    if (!groupMap.has(key)) {
-      groupMap.set(key, { key, title, items: [] });
-    }
-
-    groupMap.get(key).items.push(request);
-  });
-
-  return Array.from(groupMap.values()).map((group) => ({
-    ...group,
-    items: [...group.items].sort((a, b) => {
-      const trainSort = normalizeTrainCompareKey(a.trainId || "").localeCompare(
-        normalizeTrainCompareKey(b.trainId || ""),
-        undefined,
-        { numeric: true }
-      );
-
-      return trainSort || getLabel(a).localeCompare(getLabel(b));
-    }),
-  }));
-}
-
 export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, stabledTrainIds = [], stabledTrainLocations = {} }) {
   const [trainId, setTrainId] = useState("");
   const [requestType, setRequestType] = useState("");
@@ -835,12 +805,60 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const isAlreadyAtStablingOrWorkshopRequest = (req) =>
     !isWorkshopRequest(req) && Boolean(getCrossOutInfo(req).reason);
 
-  const workshopRequests = [...requests]
-    .filter(isWorkshopRequest)
-    .sort((a, b) => {
-      const trainSort = normalizeTrainCompareKey(a.trainId || "").localeCompare(normalizeTrainCompareKey(b.trainId || ""), undefined, { numeric: true });
-      return trainSort || displayType(a).localeCompare(displayType(b));
+  const sortRequestsByTrainThenLabel = (items = []) => [...items].sort((a, b) => {
+    const trainSort = normalizeTrainCompareKey(a.trainId || "").localeCompare(
+      normalizeTrainCompareKey(b.trainId || ""),
+      undefined,
+      { numeric: true }
+    );
+    return trainSort || displayType(a).localeCompare(displayType(b));
+  });
+
+  const groupRequestsByExactRemark = (items = [], options = {}) => {
+    const groups = new Map();
+
+    items.forEach((req) => {
+      const label = displayType(req) || "Request";
+      const key = normalizeRequestIdentity(label) || label.toUpperCase();
+      if (!groups.has(key)) {
+        groups.set(key, { key, label, items: [] });
+      }
+      groups.get(key).items.push(req);
     });
+
+    return [...groups.values()]
+      .map((group) => ({
+        ...group,
+        items: [...group.items].sort((a, b) => {
+          if (options.byReason) {
+            const reasonSort = getCrossOutInfo(a).reason.localeCompare(getCrossOutInfo(b).reason);
+            if (reasonSort) return reasonSort;
+          }
+
+          return normalizeTrainCompareKey(a.trainId || "").localeCompare(
+            normalizeTrainCompareKey(b.trainId || ""),
+            undefined,
+            { numeric: true }
+          );
+        }),
+      }))
+      .sort((a, b) => {
+        const labelSort = a.label.localeCompare(b.label, undefined, { sensitivity: "base" });
+        if (labelSort) return labelSort;
+
+        return normalizeTrainCompareKey(a.items?.[0]?.trainId || "").localeCompare(
+          normalizeTrainCompareKey(b.items?.[0]?.trainId || ""),
+          undefined,
+          { numeric: true }
+        );
+      });
+  };
+
+  const getRequestChipTrainLabel = (req) => formatTrainIdForPopup(req?.trainId || "");
+
+  const workshopRequests = sortRequestsByTrainThenLabel(
+    [...requests].filter(isWorkshopRequest)
+  );
   const alreadyAtStablingOrWorkshopRequests = [...requests]
     .filter(isAlreadyAtStablingOrWorkshopRequest)
     .sort((a, b) => {
@@ -852,8 +870,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const regularRequests = [...requests]
     .filter((req) => !isWorkshopRequest(req) && !isAlreadyAtStablingOrWorkshopRequest(req))
     .sort((a, b) => displayType(a).localeCompare(displayType(b)) || normalizeTrainCompareKey(a.trainId || "").localeCompare(normalizeTrainCompareKey(b.trainId || ""), undefined, { numeric: true }));
-  const alreadyAtStablingOrWorkshopGroups = buildGroupedRequestCards(alreadyAtStablingOrWorkshopRequests, displayType);
-  const regularRequestGroups = buildGroupedRequestCards(regularRequests, displayType);
+  const alreadyRequestGroups = groupRequestsByExactRemark(alreadyAtStablingOrWorkshopRequests, { byReason: true });
+  const regularRequestGroups = groupRequestsByExactRemark(regularRequests);
   const hasWorkshopRequests = workshopRequests.length > 0;
   const hasAlreadyAtStablingOrWorkshopRequests = alreadyAtStablingOrWorkshopRequests.length > 0;
   const buildWorkshopCopyText = () => {
@@ -878,62 +896,55 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     }
   };
 
+  const renderGroupedRequestCard = (group, options = {}) => {
+    const { showStatus = false } = options;
+    const cardVisual = getMainStablingCompactCardStyle(group.label, group.label, requestGroupColors);
+
+    return (
+      <div
+        key={group.key}
+        className="relative overflow-hidden rounded-[10px] border px-3 pb-3 pt-2.5"
+        style={cardVisual.card}
+      >
+        <span
+          aria-hidden="true"
+          className="absolute bottom-2 left-0 top-2 w-[3px] rounded-full"
+          style={{ backgroundColor: cardVisual.accent }}
+        />
+        <div className="pl-2.5">
+          <div className="text-[12px] font-black leading-tight text-white">{group.label}</div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {group.items.map((req) => {
+              const chipLabel = getRequestChipTrainLabel(req);
+              const crossOutInfo = getCrossOutInfo(req);
+              const statusMessage = showStatus ? getAlreadyStatusMessage(crossOutInfo) : "";
+
+              return (
+                <div
+                  key={`${group.key}-${req.id || req._tempId || chipLabel}`}
+                  className="inline-flex min-h-[28px] items-center gap-1.5 rounded-[8px] border border-[#2b4f6b] bg-[#0a2540] pl-3 pr-2 text-[11px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                >
+                  <span className="leading-none">{chipLabel}</span>
+                  <button
+                    onClick={() => onRemove(req.id)}
+                    className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center"
+                    aria-label={`Delete ${chipLabel}`}
+                    title="Delete request"
+                  >
+                    <DeleteRequestIcon />
+                  </button>
+                  {showStatus ? <AlreadyStatusIcon message={statusMessage} reason={crossOutInfo.reason} /> : null}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const inputCls = "w-full border border-[#1e4060] rounded-full px-3 py-[5px] text-xs outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] bg-[#091828] text-[#c8d8ea] transition-all placeholder:text-[#2b4f6b]";
   const labelCls = "block text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-widest mb-0.5";
-
-  const renderGroupedRequestCards = (groups, { already = false } = {}) => (
-    <div className="space-y-1.5 p-2">
-      {groups.map((group) => {
-        const requestCardStyle = getMainStablingCompactCardStyle(group.title, group.title, requestGroupColors);
-
-        return (
-          <div
-            key={group.key}
-            className="theme-maintenance-request-card relative overflow-visible rounded-[8px] px-2.5 py-2.5 pl-4 transition-[filter,box-shadow] duration-150 hover:brightness-105"
-            style={{ ...requestCardStyle.card, "--maintenance-request-accent": requestCardStyle.accent }}
-          >
-            <div
-              className="mb-2 min-w-0 truncate text-left text-[12px] font-semibold leading-none tracking-wide"
-              style={{ color: "#ffffff" }}
-              title={group.title}
-            >
-              {group.title}
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {group.items.map((req) => {
-                const displayLabel = displayType(req);
-                const chipLabel = getGroupedRequestChipLabel(req, group.title, displayLabel);
-                const crossOutInfo = getCrossOutInfo(req);
-                const chipTitle = already
-                  ? getAlreadyStatusMessage(crossOutInfo) || chipLabel
-                  : getCrossOutMessage(req, crossOutInfo) || displayLabel;
-
-                return (
-                  <span
-                    key={`${group.key}-${req.id || req._tempId || req.trainId}`}
-                    className="inline-flex min-h-[22px] max-w-full items-center gap-1.5 rounded-[6px] border border-[#2a638c] bg-[#0a2942] px-2 py-1 text-[11px] font-semibold leading-none text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_1px_3px_rgba(0,0,0,0.25)]"
-                    title={chipTitle}
-                  >
-                    <span className="min-w-0 truncate">{chipLabel}</span>
-                    <button
-                      type="button"
-                      onClick={() => onRemove(req.id)}
-                      className="group/delete relative z-30 inline-flex h-4 w-4 shrink-0 items-center justify-center"
-                      aria-label={`Delete ${chipLabel}`}
-                      title="Delete request"
-                    >
-                      <DeleteRequestIcon />
-                    </button>
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
 
   return (
     <div className="theme-maintenance-panel relative overflow-visible bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shadow-md">
@@ -1138,25 +1149,28 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Already at Stabling / Workshop</span>
             <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{alreadyAtStablingOrWorkshopRequests.length}</span>
           </div>
-          {renderGroupedRequestCards(alreadyAtStablingOrWorkshopGroups, { already: true })}
+
+          <div className="grid gap-2 p-2.5">
+            {alreadyRequestGroups.map((group) => renderGroupedRequestCard(group, { showStatus: true }))}
+          </div>
         </div>
       )}
 
       {/* Requests List */}
       <div className="overflow-visible">
-        {(hasWorkshopRequests || hasAlreadyAtStablingOrWorkshopRequests) && (
-          <div className="theme-maintenance-subheader flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Pending Request</span>
-            <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{regularRequests.length}</span>
-          </div>
-        )}
+        <div className="theme-maintenance-subheader flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Pending Request</span>
+          <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{regularRequests.length}</span>
+        </div>
 
-        {regularRequests.length === 0 ? (
-          <div className="border-b border-[#0f2040] py-2 text-center text-xs italic text-[#3a5a7a]">
+        {regularRequestGroups.length === 0 ? (
+          <div className="px-3 py-3 text-center text-xs italic text-[#3a5a7a]">
             {requests.length === 0 ? "No requests yet" : "No other request type"}
           </div>
         ) : (
-          renderGroupedRequestCards(regularRequestGroups)
+          <div className="grid gap-2 p-2.5">
+            {regularRequestGroups.map((group) => renderGroupedRequestCard(group))}
+          </div>
         )}
       </div>
     </div>
