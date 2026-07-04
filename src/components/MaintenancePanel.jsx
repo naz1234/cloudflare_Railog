@@ -994,15 +994,16 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     return (
       <div
         key={`${section}-${group.key}`}
-        className="space-y-[4px]"
+        className="space-y-[1px]"
       >
         <div
-          className="theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] w-full grid-cols-[minmax(0,1fr)] items-center gap-1 overflow-hidden rounded-md border pl-3 pr-1.5 text-left leading-none transition-[border-color,background,box-shadow] duration-150"
+          className="theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] w-full grid-cols-[minmax(0,1fr)_18px] items-center gap-1 overflow-hidden rounded-md border pl-3 pr-1.5 text-left leading-none transition-[border-color,background,box-shadow] duration-150"
           style={cardVisual.card}
         >
           <span className="min-w-0 truncate text-[12px] font-normal uppercase text-[#f8fbff]">
             {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
           </span>
+          <span className="justify-self-end text-[12px] font-bold leading-none text-[#a9bfd1]" aria-hidden="true">⌄</span>
         </div>
 
         <div className="space-y-[1px]">
