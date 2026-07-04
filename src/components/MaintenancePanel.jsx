@@ -911,7 +911,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             <div className="theme-maintenance-group-title text-[12px] font-normal uppercase leading-tight text-[#f8fbff]">{group.label}</div>
             {showStatus ? (
               <div className="shrink-0 pt-[1px] text-right text-[9px] font-normal uppercase tracking-[0.08em] text-[#8fa3b2]">
-                Train at WD STB.
+                at WD STB
               </div>
             ) : null}
           </div>
