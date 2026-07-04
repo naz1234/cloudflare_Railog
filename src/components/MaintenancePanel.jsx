@@ -957,7 +957,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           className="theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[22px] w-full grid-cols-[minmax(0,1fr)_20px] items-center gap-1 overflow-hidden rounded-md border px-1.5 text-left leading-none transition-[border-color,background,box-shadow] duration-150 hover:brightness-105"
           style={cardVisual.card}
         >
-          <span className="min-w-0 truncate text-[11px] font-normal uppercase text-[#f8fbff]">
+          <span className="min-w-0 truncate text-[13px] font-normal uppercase text-[#f8fbff]">
             {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
           </span>
           <ChevronDown
@@ -977,10 +977,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 <div
                   key={`${section}-${group.key}-${req.id || req._tempId || chipLabel}`}
                   className="theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[22px] grid-cols-[56px_minmax(0,1fr)_20px] items-center gap-1 overflow-hidden rounded-md border px-1.5 leading-none transition-[border-color,background,box-shadow] duration-150"
-                  style={cardVisual.card}
+                  style={{ ...cardVisual.card, marginLeft: "10px", width: "calc(100% - 10px)" }}
                 >
-                  <span className="truncate text-center text-[11px] font-semibold text-[#f8fbff]">{chipLabel}</span>
-                  <span className="truncate text-center text-[10px] font-normal uppercase tracking-[0.02em] text-[#a9bfd1]">{locationText}</span>
+                  <span className="truncate text-center text-[13px] font-semibold text-[#f8fbff]">{chipLabel}</span>
+                  <span className="truncate text-center text-[12px] font-normal uppercase tracking-[0.02em] text-[#a9bfd1]">{locationText}</span>
                   <button
                     onClick={(event) => {
                       event.stopPropagation();
@@ -1167,13 +1167,13 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                         style={{ ...workshopCardStyle, "--maintenance-request-accent": requestCardStyle.accent }}
                       >
                         <span
-                          className="flex h-[14px] items-center justify-center border-r pl-1 text-[12px] font-bold leading-none"
+                          className="flex h-[14px] items-center justify-center border-r pl-1 text-[14px] font-bold leading-none"
                           style={{ borderColor: requestCardStyle.divider, color: "#ffffff" }}
                         >
                           {req.trainId}
                         </span>
                         <span
-                          className="theme-maintenance-request-type min-w-0 truncate px-2 text-left text-[12px] font-semibold leading-none"
+                          className="theme-maintenance-request-type min-w-0 truncate px-2 text-left text-[14px] font-semibold leading-none"
                           style={{ color: "#ffffff" }}
                         >
                           {displayLabel}
