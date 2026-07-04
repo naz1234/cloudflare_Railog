@@ -898,16 +898,16 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     return (
       <div
         key={group.key}
-        className="relative overflow-hidden rounded-[10px] border px-3 pb-3 pt-2.5"
+        className="theme-maintenance-group-card relative overflow-hidden rounded-[10px] border px-3 pb-3 pt-2.5"
         style={cardVisual.card}
       >
         <span
           aria-hidden="true"
-          className="absolute bottom-2 left-0 top-2 w-[3px] rounded-full"
+          className="absolute bottom-0 left-0 top-0 w-[3px] rounded-l-[10px]"
           style={{ backgroundColor: cardVisual.accent }}
         />
         <div className="pl-2.5">
-          <div className="text-[12px] font-normal uppercase leading-tight text-white">{group.label}</div>
+          <div className="theme-maintenance-group-title text-[12px] font-normal uppercase leading-tight text-[#f8fbff]">{group.label}</div>
           <div className="mt-2 flex flex-wrap gap-2">
             {group.items.map((req) => {
               const chipLabel = getRequestChipTrainLabel(req);
@@ -917,7 +917,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               return (
                 <div
                   key={`${group.key}-${req.id || req._tempId || chipLabel}`}
-                  className="inline-flex min-h-[28px] items-center gap-1.5 rounded-[8px] border border-[#2b4f6b] bg-[#0a2540] pl-3 pr-2 text-[12px] font-normal text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                  className="theme-maintenance-train-chip inline-flex min-h-[28px] items-center gap-1.5 rounded-[8px] border border-[#2b4f6b] bg-[#0a2540] pl-3 pr-2 text-[12px] font-normal text-[#f8fbff] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                 >
                   <span className="leading-none">{chipLabel}</span>
                   <button
