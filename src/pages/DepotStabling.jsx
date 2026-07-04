@@ -16589,8 +16589,8 @@ export default function DepotStablingPage() {
           onAdd={handleAddRequest}
           onRemove={handleRemoveRequest}
           onClearAll={handleClearAllRequests}
-          stabledTrainIds={Array.from(westStablingKeys)}
-          stabledTrainLocations={westStablingLocations}
+          stabledTrainIds={Array.from(getMainStablingKeys(westData, eastData))}
+          stabledTrainLocations={getMainStablingLocations(westData, eastData)}
         />
       </div>
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X } from "lucide-react";
+import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, ChevronDown } from "lucide-react";
 
 const MIN_VISIBLE_REQUEST_ROWS = 40;
 
@@ -589,6 +589,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const [excelWashPreview, setExcelWashPreview] = useState([]);
   const [excelUploadStatus, setExcelUploadStatus] = useState("");
   const [workshopCopyStatus, setWorkshopCopyStatus] = useState("");
+  const [expandedAlreadyGroups, setExpandedAlreadyGroups] = useState({});
+  const [expandedPendingGroups, setExpandedPendingGroups] = useState({});
 
   const handleAdd = () => {
     const trainIds = trainId.split(/[\s,]+/).map(normalizeTrainId).filter(Boolean);
@@ -802,6 +804,44 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     return "";
   };
 
+  const formatCompactLocationText = (locationText = "", fallback = "") => {
+    const firstLocation = (locationText || "")
+      .toString()
+      .split("/")
+      .map((part) => part.trim())
+      .find(Boolean) || "";
+
+    if (!firstLocation) return fallback;
+    if (/WORKSHOP/i.test(firstLocation)) return "WORKSHOP";
+
+    const depotMatch = firstLocation.match(/^(West|East) Depot\s+STB\s*(\d+)\s+Block\s*(\d+)$/i);
+    if (depotMatch) {
+      const [, depot, stablingNo, blockNo] = depotMatch;
+      const depotPrefix = depot.toUpperCase() === "EAST" ? "ED " : "";
+      return `${depotPrefix}STB-${String(stablingNo).padStart(2, "0")} BLK-${String(Number(blockNo))}`;
+    }
+
+    const genericMatch = firstLocation.match(/STB\s*(\d+)\s+Block\s*(\d+)/i);
+    if (genericMatch) {
+      return `STB-${String(genericMatch[1]).padStart(2, "0")} BLK-${String(Number(genericMatch[2]))}`;
+    }
+
+    return firstLocation.toUpperCase();
+  };
+
+  const getAlreadyExpandedLocationText = (req) => {
+    const crossOutInfo = getCrossOutInfo(req);
+    if (crossOutInfo.reason === "WORKSHOP") return "WORKSHOP";
+    return formatCompactLocationText(crossOutInfo.locationText, "STABLING");
+  };
+
+  const getPendingExpandedLocationText = (req) => {
+    const crossOutInfo = getCrossOutInfo(req);
+    if (crossOutInfo.reason === "WORKSHOP") return "WORKSHOP";
+    if (crossOutInfo.locationText) return formatCompactLocationText(crossOutInfo.locationText, "MAINLINE");
+    return "MAINLINE";
+  };
+
   const isAlreadyAtStablingOrWorkshopRequest = (req) =>
     !isWorkshopRequest(req) && Boolean(getCrossOutInfo(req).reason);
 
@@ -891,56 +931,82 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     }
   };
 
+  const toggleGroupExpanded = (section, groupKey) => {
+    const setter = section === "already" ? setExpandedAlreadyGroups : setExpandedPendingGroups;
+    setter((previous) => ({ ...previous, [groupKey]: !previous[groupKey] }));
+  };
+
   const renderGroupedRequestCard = (group, options = {}) => {
-    const { showStatus = false } = options;
+    const { section = "pending", showStatus = false } = options;
     const cardVisual = getMainStablingCompactCardStyle(group.label, group.label, requestGroupColors);
+    const isExpanded = section === "already"
+      ? Boolean(expandedAlreadyGroups[group.key])
+      : Boolean(expandedPendingGroups[group.key]);
 
     return (
       <div
-        key={group.key}
-        className="theme-maintenance-group-card relative overflow-hidden rounded-[10px] border px-3 pb-3 pt-2.5"
+        key={`${section}-${group.key}`}
+        className="theme-maintenance-group-card relative overflow-hidden rounded-[10px] border"
         style={cardVisual.card}
       >
-        <span
-          aria-hidden="true"
-          className="absolute bottom-0 left-0 top-0 w-[3px] rounded-l-[10px]"
-          style={{ backgroundColor: cardVisual.accent }}
-        />
-        <div className="pl-2.5">
-          <div className="flex items-start justify-between gap-2">
-            <div className="theme-maintenance-group-title text-[12px] font-normal uppercase leading-tight text-[#f8fbff]">{group.label}</div>
-            {showStatus ? (
-              <div className="shrink-0 pt-[1px] text-right text-[9px] font-normal uppercase tracking-[0.08em] text-[#8fa3b2]">
-                at WD STB
-              </div>
-            ) : null}
+        <button
+          type="button"
+          onClick={() => toggleGroupExpanded(section, group.key)}
+          className="relative flex w-full items-center gap-2 overflow-hidden rounded-[10px] px-3 py-2 text-left transition-colors hover:bg-white/[0.03]"
+        >
+          <span
+            aria-hidden="true"
+            className="absolute bottom-0 left-0 top-0 w-[3px] rounded-l-[10px]"
+            style={{ backgroundColor: cardVisual.accent }}
+          />
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-2 pl-2.5">
+            <div className="min-w-0 text-[12px] font-normal uppercase leading-tight text-[#f8fbff]">
+              {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
+            </div>
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 text-[#8fa3b2] transition-transform duration-200 ${isExpanded ? "rotate-180" : "rotate-0"}`}
+            />
           </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {group.items.map((req) => {
-              const chipLabel = getRequestChipTrainLabel(req);
-              const crossOutInfo = getCrossOutInfo(req);
-              const statusMessage = showStatus ? getAlreadyStatusMessage(crossOutInfo) : "";
+        </button>
 
-              return (
-                <div
-                  key={`${group.key}-${req.id || req._tempId || chipLabel}`}
-                  className="theme-maintenance-train-chip inline-flex min-h-[28px] items-center gap-1.5 rounded-[8px] border border-[#2b4f6b] bg-[#0a2540] pl-3 pr-2 text-[12px] font-normal text-[#f8fbff] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
-                >
-                  <span className="leading-none">{chipLabel}</span>
-                  <button
-                    onClick={() => onRemove(req.id)}
-                    className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center"
-                    aria-label={`Delete ${chipLabel}`}
-                    title="Delete request"
+        {isExpanded ? (
+          <div className="border-t border-[#1a3a56] px-3 pb-2.5 pl-[18px] pr-2.5 pt-2">
+            <div className="grid grid-cols-[84px_minmax(0,1fr)_26px] items-center gap-2 px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[#4a8ab5]">
+              <span>Train ID</span>
+              <span>Location</span>
+              <span />
+            </div>
+            <div className="space-y-1.5">
+              {group.items.map((req) => {
+                const chipLabel = getRequestChipTrainLabel(req);
+                const locationText = showStatus
+                  ? getAlreadyExpandedLocationText(req)
+                  : getPendingExpandedLocationText(req);
+
+                return (
+                  <div
+                    key={`${section}-${group.key}-${req.id || req._tempId || chipLabel}`}
+                    className="grid grid-cols-[84px_minmax(0,1fr)_26px] items-center gap-2 rounded-[8px] border border-[#214867] bg-[#0a2540] px-2 py-1.5"
                   >
-                    <DeleteRequestIcon />
-                  </button>
-                  
-                </div>
-              );
-            })}
+                    <span className="truncate text-[12px] font-semibold text-[#f8fbff]">{chipLabel}</span>
+                    <span className="truncate text-[11px] font-normal uppercase tracking-[0.04em] text-[#a9bfd1]">{locationText}</span>
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onRemove(req.id);
+                      }}
+                      className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center justify-self-end"
+                      aria-label={`Delete ${chipLabel}`}
+                      title="Delete request"
+                    >
+                      <DeleteRequestIcon />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
     );
   };
@@ -1153,7 +1219,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           </div>
 
           <div className="grid gap-2 p-2.5">
-            {alreadyRequestGroups.map((group) => renderGroupedRequestCard(group, { showStatus: true }))}
+            {alreadyRequestGroups.map((group) => renderGroupedRequestCard(group, { section: "already", showStatus: true }))}
           </div>
         </div>
       )}
@@ -1171,7 +1237,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           </div>
         ) : (
           <div className="grid gap-2 p-2.5">
-            {regularRequestGroups.map((group) => renderGroupedRequestCard(group))}
+            {regularRequestGroups.map((group) => renderGroupedRequestCard(group, { section: "pending" }))}
           </div>
         )}
       </div>
