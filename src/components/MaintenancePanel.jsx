@@ -952,32 +952,28 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     return (
       <div
         key={`${section}-${group.key}`}
-        className="space-y-1"
+        className="space-y-[3px]"
       >
         <button
           type="button"
           onClick={() => toggleGroupExpanded(section, group.key)}
-          className="relative grid h-[24px] w-full grid-cols-[minmax(0,1fr)_22px] items-center gap-1 overflow-hidden rounded-full border bg-[#061d31] px-1.5 pl-3 pr-1.5 text-left leading-none transition-colors hover:bg-[#0a2540]"
+          className="grid h-[22px] w-full grid-cols-[minmax(0,1fr)_20px] items-center gap-1 overflow-hidden rounded-[9px] border bg-[#061d31] px-1.5 pl-2 text-left leading-none transition-colors hover:bg-[#08243c]"
           style={{
-            borderColor: rgbaFromHex(cardVisual.accent, 0.74),
-            boxShadow: `0 0 0 1px ${rgbaFromHex(cardVisual.accent, 0.10)}, inset 0 1px 0 rgba(255,255,255,0.035)`,
+            borderColor: "rgba(125, 184, 224, 0.38)",
+            borderLeft: `3px solid ${cardVisual.accent}`,
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.035)",
           }}
         >
-          <span
-            aria-hidden="true"
-            className="absolute bottom-[4px] left-[4px] top-[4px] w-[3px] rounded-full"
-            style={{ backgroundColor: cardVisual.accent }}
-          />
-          <span className="min-w-0 truncate pl-3 text-[11px] font-normal uppercase text-[#f8fbff]">
+          <span className="min-w-0 truncate text-[11px] font-normal uppercase text-[#f8fbff]">
             {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
           </span>
           <ChevronDown
-            className={`h-4 w-4 shrink-0 text-[#8fa3b2] transition-transform duration-200 ${isExpanded ? "rotate-180" : "rotate-0"}`}
+            className={`h-4 w-4 shrink-0 justify-self-end text-[#8fa3b2] transition-transform duration-200 ${isExpanded ? "rotate-180" : "rotate-0"}`}
           />
         </button>
 
         {isExpanded ? (
-          <div className="space-y-1 pl-2">
+          <div className="space-y-[3px]">
             {group.items.map((req) => {
               const chipLabel = getRequestChipTrainLabel(req);
               const locationText = showStatus
@@ -987,18 +983,14 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               return (
                 <div
                   key={`${section}-${group.key}-${req.id || req._tempId || chipLabel}`}
-                  className="relative grid h-[22px] grid-cols-[58px_minmax(0,1fr)_22px] items-center gap-1 overflow-hidden rounded-full border bg-[#061d31] px-1.5 pl-3 leading-none shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]"
+                  className="grid h-[21px] grid-cols-[56px_minmax(0,1fr)_20px] items-center gap-1 overflow-hidden rounded-[9px] border bg-[#061d31] px-1.5 pl-2 leading-none"
                   style={{
-                    borderColor: rgbaFromHex(cardVisual.accent, 0.74),
-                    boxShadow: `0 0 0 1px ${rgbaFromHex(cardVisual.accent, 0.10)}, inset 0 1px 0 rgba(255,255,255,0.035)`,
+                    borderColor: "rgba(125, 184, 224, 0.38)",
+                    borderLeft: `3px solid ${cardVisual.accent}`,
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.035)",
                   }}
                 >
-                  <span
-                    aria-hidden="true"
-                    className="absolute bottom-[4px] left-[4px] top-[4px] w-[3px] rounded-full"
-                    style={{ backgroundColor: cardVisual.accent }}
-                  />
-                  <span className="truncate text-center text-[11px] font-bold text-[#f8fbff]">{chipLabel}</span>
+                  <span className="truncate text-center text-[11px] font-semibold text-[#f8fbff]">{chipLabel}</span>
                   <span className="truncate text-center text-[10px] font-normal uppercase tracking-[0.02em] text-[#a9bfd1]">{locationText}</span>
                   <button
                     onClick={(event) => {
@@ -1227,7 +1219,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{alreadyAtStablingOrWorkshopRequests.length}</span>
           </div>
 
-          <div className="grid gap-2 p-2.5">
+          <div className="grid gap-[3px] p-2.5">
             {alreadyRequestGroups.map((group) => renderGroupedRequestCard(group, { section: "already", showStatus: true }))}
           </div>
         </div>
@@ -1245,7 +1237,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             {requests.length === 0 ? "No requests yet" : "No other request type"}
           </div>
         ) : (
-          <div className="grid gap-2 p-2.5">
+          <div className="grid gap-[3px] p-2.5">
             {regularRequestGroups.map((group) => renderGroupedRequestCard(group, { section: "pending" }))}
           </div>
         )}
