@@ -917,7 +917,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               return (
                 <div
                   key={`${group.key}-${req.id || req._tempId || chipLabel}`}
-                  className="inline-flex min-h-[28px] items-center gap-1.5 rounded-[8px] border border-[#2b4f6b] bg-[#0a2540] pl-3 pr-2 text-[11px] font-normal text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                  className="inline-flex min-h-[28px] items-center gap-1.5 rounded-[8px] border border-[#2b4f6b] bg-[#0a2540] pl-3 pr-2 text-[12px] font-normal text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                 >
                   <span className="leading-none">{chipLabel}</span>
                   <button
