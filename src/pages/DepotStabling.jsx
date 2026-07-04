@@ -7677,9 +7677,11 @@ function formatMovementExcelOperation(value = "") {
 }
 
 function getMovementExcelStatus(row = {}) {
+  const operation = row.operation || "swapping";
   const train = normalizeMovementTrain(row.trainId);
   const time = normalizeMovementCustomTimeInput(row.time);
-  const hasAnyInput = Boolean(train || time || row.tid || row.reason || row.replacedBy || row.notes || row.road || row.track);
+  const replacementInput = operation === "insertion" ? "" : row.replacedBy;
+  const hasAnyInput = Boolean(train || time || row.tid || row.reason || replacementInput || row.notes || row.road || row.track);
   if (!hasAnyInput) return "Draft";
   return buildMovementExcelLogLine(row) ? "Added" : "Missing";
 }
@@ -7832,6 +7834,15 @@ function TrainMovementExcelSheet() {
     setRows(Array.from({ length: 6 }, () => createTrainMovementExcelRow()));
   };
 
+  const removeExcelInputRow = (id) => {
+    setRows((prev) => {
+      const targetRow = prev.find((row) => row.id === id) || prev[0] || {};
+      const remaining = prev.filter((row) => row.id !== id);
+      if (remaining.length) return remaining;
+      return [createTrainMovementExcelRow({ operation: targetRow.operation || "swapping", depot: targetRow.depot || "west" })];
+    });
+  };
+
   const copyAllRows = async () => {
     const lines = rows.map(buildMovementExcelLogLine).filter(Boolean);
     if (!lines.length) {
@@ -7935,26 +7946,30 @@ function TrainMovementExcelSheet() {
         <table className="w-full min-w-[820px] border-collapse table-fixed text-left">
           <thead>
             <tr className="text-[10px] uppercase tracking-[0.12em] text-[#9fd3f6]">
-              {["No", "Type", "Depot", "Train", "TID", "Road / Track", "Reason / Remark", "Replaced By", "Time", "Status"].map((heading, index) => (
+              {["", "Type", "Depot", "Train", "TID", "Road / Track", "Reason / Remark", "Replaced By", "Time", "Status"].map((heading, index) => (
                 <th
-                  key={heading}
-                  className="border border-[#245171] bg-[#0b2b45] px-2 py-1.5 font-black"
+                  key={heading || "remove"}
+                  className="border border-[#245171] bg-[#0b2b45] px-2 py-1.5 text-center font-black"
                   style={{ width: [42, 90, 92, 74, 66, 116, 168, 94, 76, 82][index] }}
                 >
-                  {heading}
+                  {heading ? heading : <Trash2 size={12} className="mx-auto text-red-200" />}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, index) => {
+            {rows.map((row) => {
               const status = getMovementExcelStatus(row);
               const statusStyle = getMovementExcelStatusStyle(status);
               const operationAccent = row.operation === "insertion" ? "#22c55e" : row.operation === "removal" ? "#ef4444" : "#f59e0b";
 
               return (
                 <tr key={row.id} className="group text-[11px] text-[#eaf4ff]">
-                  <td className="border border-[#173653] bg-[#082136] px-2 text-center font-mono text-[#7eb8e0]" style={{ boxShadow: `inset 3px 0 0 ${operationAccent}` }}>{index + 1}</td>
+                  <td className="border border-[#173653] bg-[#082136] px-1 text-center" style={{ boxShadow: `inset 3px 0 0 ${operationAccent}` }}>
+                    <button type="button" onClick={() => removeExcelInputRow(row.id)} className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-red-500/30 bg-red-950/20 text-red-200 transition-all hover:border-red-400 hover:text-white" title="Remove row">
+                      <Trash2 size={11} />
+                    </button>
+                  </td>
                   <td className={cellClass}>
                     <select value={row.operation} onChange={(e) => updateRow(row.id, "operation", e.target.value)} className={tableSelectClass}>
                       <option value="swapping">Swapping</option>
@@ -7983,11 +7998,17 @@ function TrainMovementExcelSheet() {
                   <td className={cellClass}>
                     <input value={row.reason} onChange={(e) => updateRow(row.id, "reason", e.target.value)} placeholder={row.operation === "swapping" ? "RST PM / CM" : "Remark"} className={tableInputClass} />
                   </td>
-                  <td className={cellClass}>
-                    <div className="flex items-center px-2">
-                      <span className="text-[11px] font-bold text-[#58a6ff]">T</span>
-                      <input value={row.replacedBy} onChange={(e) => updateRow(row.id, "replacedBy", e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="30" className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[11px] font-medium text-white outline-none placeholder:text-[#45677f]" />
-                    </div>
+                  <td className={row.operation === "insertion" ? "border border-[#173653] bg-[#334155] align-middle" : cellClass}>
+                    {row.operation === "insertion" ? (
+                      <div className="flex h-7 items-center justify-center rounded-sm bg-[#475569] text-[10px] font-black uppercase tracking-[0.12em] text-[#cbd5e1] opacity-80">
+                        N/A
+                      </div>
+                    ) : (
+                      <div className="flex items-center px-2">
+                        <span className="text-[11px] font-bold text-[#58a6ff]">T</span>
+                        <input value={row.replacedBy} onChange={(e) => updateRow(row.id, "replacedBy", e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="30" className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[11px] font-medium text-white outline-none placeholder:text-[#45677f]" />
+                      </div>
+                    )}
                   </td>
                   <td className={cellClass}>
                     <input value={row.time} onChange={(e) => updateRow(row.id, "time", cleanMovementCustomTimeInput(e.target.value))} onBlur={(e) => updateRow(row.id, "time", normalizeMovementCustomTimeInput(e.target.value))} placeholder="00:00" className={`${tableInputClass} font-mono`} />
@@ -8026,9 +8047,8 @@ function TrainMovementExcelSheet() {
         <div className="min-h-[82px] rounded-b-lg border-x border-b border-[#173653] bg-[#04111d] p-2">
           {sortedLogRows.length ? (
             <div className="space-y-1.5">
-              {sortedLogRows.map((entry, index) => (
-                <div key={entry.id} className="grid grid-cols-[38px_68px_1fr_auto] items-center gap-2 rounded-lg border border-[#12304a] bg-[#061827] px-2 py-1.5 text-[11px] text-[#dff4ff]">
-                  <span className="font-mono text-[#7eb8e0]">{String(index + 1).padStart(2, "0")}</span>
+              {sortedLogRows.map((entry) => (
+                <div key={entry.id} className="grid grid-cols-[68px_1fr_auto] items-center gap-2 rounded-lg border border-[#12304a] bg-[#061827] px-2 py-1.5 text-[11px] text-[#dff4ff]">
                   <span className={`rounded-md border px-1.5 py-0.5 text-center text-[9px] font-black uppercase ${entry.depot === "east" ? "border-cyan-400/40 bg-cyan-950/25 text-cyan-200" : "border-indigo-400/40 bg-indigo-950/25 text-indigo-200"}`}>{entry.depot === "east" ? "ED" : "WD"}</span>
                   <span className="font-mono leading-relaxed text-white">{entry.text}</span>
                   <button type="button" onClick={() => deleteExcelLogRow(entry.id)} className="inline-flex h-6 items-center rounded-md border border-red-500/30 bg-red-950/20 px-1.5 text-[9px] font-bold text-red-200 hover:text-white" title="Delete this log line">
