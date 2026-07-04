@@ -434,25 +434,23 @@ function getMainStablingCompactCardStyle(typeKey, displayLabel = "", requestGrou
         // Every specific group name receives a distinct colour allocated
         // across the complete request set. The same name always reuses it.
         accent: groupAccent,
-        gradient: `linear-gradient(135deg,${rgbaFromHex(groupAccent, 0.30)} 0%,${rgbaFromHex(groupAccent, 0.13)} 48%,#071828 100%)`,
-        glow: `0 0 0 1px ${rgbaFromHex(groupAccent, 0.14)},0 0 11px ${rgbaFromHex(groupAccent, 0.27)},0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.06)`,
       }
     : visuals[category] || {
         accent: fallbackAccent,
-        gradient: `linear-gradient(135deg,${rgbaFromHex(fallbackAccent, 0.22)} 0%,#10243a 48%,#071828 100%)`,
-        glow: `0 0 0 1px ${rgbaFromHex(fallbackAccent, 0.12)},0 0 10px ${rgbaFromHex(fallbackAccent, 0.21)},0 2px 7px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.05)`,
       };
 
+  const accent = visual.accent || "#4f8ef7";
+
   return {
-    accent: visual.accent,
+    accent,
     card: {
-      // Match Removal Summary rows: the request colour is carried by the
-      // bordered gradient card itself, not by a separate left status rail.
-      background: visual.gradient,
-      borderColor: rgbaFromHex(visual.accent, 0.84),
-      boxShadow: `0 0 0 1px ${rgbaFromHex(visual.accent, 0.10)},0 0 8px ${rgbaFromHex(visual.accent, 0.15)},inset 0 1px 0 rgba(255,255,255,0.04)`,
+      // Same treatment as the Removal Summary rows: low-fill horizontal row,
+      // thin coloured border, subtle 3px inset on the left, and no bright pill.
+      background: `linear-gradient(90deg,${rgbaFromHex(accent, 0.20)} 0%,${rgbaFromHex(accent, 0.10)} 55%,rgba(7,24,40,0.98) 100%)`,
+      borderColor: rgbaFromHex(accent, 0.72),
+      boxShadow: `inset 3px 0 0 ${rgbaFromHex(accent, 0.86)},inset 0 1px 0 rgba(255,255,255,0.045),0 1px 3px rgba(0,0,0,0.18)`,
     },
-    divider: rgbaFromHex(visual.accent, 0.34),
+    divider: rgbaFromHex(accent, 0.34),
   };
 }
 
@@ -956,7 +954,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         <button
           type="button"
           onClick={() => toggleGroupExpanded(section, group.key)}
-          className="grid h-[22px] w-full grid-cols-[minmax(0,1fr)_20px] items-center gap-1 overflow-hidden rounded-md border px-1.5 text-left leading-none transition-[border-color,background,box-shadow] duration-150 hover:brightness-105"
+          className="theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[22px] w-full grid-cols-[minmax(0,1fr)_20px] items-center gap-1 overflow-hidden rounded-md border px-1.5 text-left leading-none transition-[border-color,background,box-shadow] duration-150 hover:brightness-105"
           style={cardVisual.card}
         >
           <span className="min-w-0 truncate text-[11px] font-normal uppercase text-[#f8fbff]">
@@ -978,7 +976,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               return (
                 <div
                   key={`${section}-${group.key}-${req.id || req._tempId || chipLabel}`}
-                  className="grid h-[22px] grid-cols-[56px_minmax(0,1fr)_20px] items-center gap-1 overflow-hidden rounded-md border px-1.5 leading-none transition-[border-color,background,box-shadow] duration-150"
+                  className="theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[22px] grid-cols-[56px_minmax(0,1fr)_20px] items-center gap-1 overflow-hidden rounded-md border px-1.5 leading-none transition-[border-color,background,box-shadow] duration-150"
                   style={cardVisual.card}
                 >
                   <span className="truncate text-center text-[11px] font-semibold text-[#f8fbff]">{chipLabel}</span>
@@ -1165,7 +1163,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   >
                     <td colSpan={3} className="h-[24px] p-[2px]">
                       <div
-                        className="theme-maintenance-request-card request-cross-trigger relative grid h-[22px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-md border text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
+                        className="theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row request-cross-trigger relative grid h-[22px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-md border text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
                         style={{ ...workshopCardStyle, "--maintenance-request-accent": requestCardStyle.accent }}
                       >
                         <span
