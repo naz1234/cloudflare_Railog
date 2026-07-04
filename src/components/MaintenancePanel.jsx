@@ -1014,9 +1014,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         <div className="space-y-[1px]">
             {group.items.map((req) => {
               const chipLabel = getRequestChipTrainLabel(req);
-              const locationText = showStatus
-                ? getAlreadyExpandedLocationText(req)
-                : getPendingExpandedLocationText(req);
 
               const crossOutInfo = getCrossOutInfo(req);
               const crossOutMessage = getCrossOutMessage(req, crossOutInfo);
@@ -1033,7 +1030,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   style={{ ...cardVisual.card, marginLeft: "10px", width: "calc(100% - 10px)" }}
                 >
                   <span className="truncate text-center text-[12px] font-semibold text-[#f8fbff]">{chipLabel}</span>
-                  <span className="truncate text-center text-[11px] font-normal uppercase tracking-[0.02em] text-[#a9bfd1]">{locationText}</span>
+                  <span className="min-w-0" aria-hidden="true" />
                   {showAlreadyStatusIcon ? (
                     <AlreadyStatusIcon message={statusMessage} reason={crossOutInfo.reason} />
                   ) : null}
