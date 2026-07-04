@@ -4931,8 +4931,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 <option value="TK1" style={{ backgroundColor: "#071828", color: "#e9d5ff" }}>Track 01</option>
                 <option value="TK2" style={{ backgroundColor: "#071828", color: "#e9d5ff" }}>Track 02</option>
               </select>
-              <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 gap-y-1">
-                <span className="font-normal text-purple-300">Start :</span>
+              <div className="grid w-full grid-cols-[auto_8px_minmax(0,1fr)] items-center gap-x-1 gap-y-1">
+                <span className="text-right font-normal text-purple-300">Start</span>
+                <span className="text-center font-normal text-purple-300">:</span>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -4953,7 +4954,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800"
                   title="Edit Sweep start time. End time updates automatically +2 minutes."
                 />
-                <span className="font-normal text-purple-300">End :</span>
+                <span className="text-right font-normal text-purple-300">End</span>
+                <span className="text-center font-normal text-purple-300">:</span>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -4974,14 +4976,15 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800"
                   title="Edit Sweep end time"
                 />
-                <span className="font-normal text-purple-300">TA :</span>
+                <span className="text-right font-normal text-purple-300">TA</span>
+                <span className="text-center font-normal text-purple-300">:</span>
                 <input
                   type="text"
                   maxLength={40}
                   value={inserted.taName || ""}
                   onClick={(e) => e.stopPropagation()}
                   onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                  placeholder="Optional"
+                  placeholder="Name"
                   className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800"
                   title="Optional TA name for the sweeping output"
                 />
@@ -5022,8 +5025,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             {inserted && !inserted.isSweeping && (
               <>
                 {insertedTid ? (
-                <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
-                  <span className="font-normal text-blue-300">TID :</span>
+                <div className="grid w-full grid-cols-[auto_8px_minmax(0,1fr)] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                  <span className="text-right font-normal text-blue-300">TID</span>
+                  <span className="text-center font-normal text-blue-300">:</span>
                   <button
                     type="button"
                     onClick={handleInsertedUndoClick}
@@ -5034,7 +5038,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     {insertedTid}
                   </button>
 
-                  <span className="font-normal text-blue-300">Time :</span>
+                  <span className="text-right font-normal text-blue-300">Time</span>
+                  <span className="text-center font-normal text-blue-300">:</span>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -5061,8 +5066,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
                 </div>
               ) : hasInsertedPlainRemark ? (
-                <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
-                  <span className="font-normal text-blue-300">Time :</span>
+                <div className="grid w-full grid-cols-[auto_8px_minmax(0,1fr)] items-center gap-x-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                  <span className="text-right font-normal text-blue-300">Time</span>
+                  <span className="text-center font-normal text-blue-300">:</span>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -5089,8 +5095,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               ) : (
                 <>
-                  <div className="flex w-full items-center justify-center gap-1 whitespace-nowrap px-1 text-[12px] font-normal leading-tight">
-                    <span className="shrink-0 text-blue-300">TIME :</span>
+                  <div className="grid w-full grid-cols-[auto_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
+                    <span className="text-right font-normal text-blue-300">Time</span>
+                    <span className="text-center font-normal text-blue-300">:</span>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -5111,7 +5118,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                       }}
                       placeholder="00:00"
-                      className="w-[42px] border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                      className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
                       title="Edit insertion completion time"
                     />
                   </div>
@@ -5126,15 +5133,16 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </button>
                 </>
                 )}
-                <div className="grid w-full grid-cols-[auto_1fr] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
-                  <span className="font-normal text-blue-300">TA :</span>
+                <div className="grid w-full grid-cols-[auto_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
+                  <span className="text-right font-normal text-blue-300">TA</span>
+                  <span className="text-center font-normal text-blue-300">:</span>
                   <input
                     type="text"
                     maxLength={40}
                     value={inserted.taName || ""}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                    placeholder="Optional"
+                    placeholder="Name"
                     className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
                     title="Optional TA name for the insertion output"
                   />
