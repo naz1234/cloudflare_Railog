@@ -948,11 +948,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     const crossedOut = Boolean(crossOutInfo.reason);
     const singleCardStyle = {
       ...cardVisual.card,
-      ...(crossedOut
-        ? {
-            opacity: 0.58,
-          }
-        : {}),
     };
     const crossOutMessage = getCrossOutMessage(req, crossOutInfo);
     const statusMessage = getAlreadyStatusMessage(crossOutInfo) || crossOutMessage;
@@ -1212,11 +1207,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 const requestCardStyle = getMainStablingCompactCardStyle(displayLabel, displayLabel, requestGroupColors);
                 const workshopCardStyle = {
                   ...requestCardStyle.card,
-                  ...(crossedOut
-                    ? {
-                        opacity: 0.58,
-                      }
-                    : {}),
                 };
                 const crossOutMessage = getCrossOutMessage(req, crossOutInfo);
 
