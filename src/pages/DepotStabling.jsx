@@ -7823,7 +7823,7 @@ function TrainMovementExcelSheet() {
   };
 
   const clearRows = () => {
-    if (!window.confirm("Clear Train Movement Excel sheet?")) return;
+    if (!window.confirm("Clear Train Swapping / Insertion / Removal log sheet?")) return;
     setRows(Array.from({ length: 6 }, () => createTrainMovementExcelRow()));
   };
 
@@ -7877,7 +7877,7 @@ function TrainMovementExcelSheet() {
 
     setLogRows((prev) => sortTrainMovementExcelLogRows([...prev, entry]).slice(0, 120));
     setRows((prev) => prev.map((item) => item.id === row.id ? { ...item, status: "Added" } : item));
-    showFeedback("Added to Excel log");
+    showFeedback("Added to log");
   };
 
   const sortedLogRows = useMemo(() => sortTrainMovementExcelLogRows(logRows), [logRows]);
@@ -7902,7 +7902,7 @@ function TrainMovementExcelSheet() {
   };
 
   const clearExcelLogRows = () => {
-    if (!window.confirm("Clear Train Movement Excel log?")) return;
+    if (!window.confirm("Clear Train Swapping / Insertion / Removal output log?")) return;
     setLogRows([]);
   };
 
@@ -7915,7 +7915,7 @@ function TrainMovementExcelSheet() {
     <section className="w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_12px_26px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.05)]">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2.5" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
         <div>
-          <h2 className="text-[13px] font-black uppercase tracking-[1.8px] text-white">TRAIN MOVEMENT EXCEL</h2>
+          <h2 className="text-[13px] font-black tracking-[1.2px] text-white">Train Swapping / Insertion / Removal Log</h2>
           <p className="mt-0.5 text-[10px] font-medium text-[#58a6ff]">Compact spreadsheet format below Train Removal Plan</p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -8016,7 +8016,7 @@ function TrainMovementExcelSheet() {
       <div className="border-t border-[#1a3a56] px-3 pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-t-lg border border-[#173653] bg-[#061827] px-3 py-2">
           <div>
-            <h3 className="text-[12px] font-black uppercase tracking-[1.6px] text-white">TRAIN MOVEMENT EXCEL LOG</h3>
+            <h3 className="text-[12px] font-black tracking-[1.2px] text-white">Train Swapping / Insertion / Removal Log Output</h3>
             <p className="mt-0.5 text-[10px] font-bold text-[#7eb8e0]">{sortedLogRows.length} entries • WD {westLogCount} • ED {eastLogCount}</p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
@@ -8049,7 +8049,7 @@ function TrainMovementExcelSheet() {
             </div>
           ) : (
             <div className="flex h-[62px] items-center justify-center rounded-lg border border-dashed border-[#173653] text-[11px] font-bold text-[#6ea6cf]">
-              No Excel log yet. Ready rows will be added automatically.
+              No log yet. Ready rows will be added automatically.
             </div>
           )}
         </div>
