@@ -954,13 +954,13 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     const secondaryText = showStatus ? displayLabel : (statusText ? `${displayLabel} • ${statusText}` : displayLabel);
     const showAlreadyStatusIcon = Boolean(crossedOut && statusMessage);
     const actionGridClass = showAlreadyStatusIcon
-      ? "grid-cols-[46px_minmax(0,1fr)_18px_18px]"
+      ? "grid-cols-[46px_minmax(0,1fr)_16px_16px]"
       : "grid-cols-[46px_minmax(0,1fr)_20px]";
 
     return (
       <div
         key={`${section}-${groupKey}-${req.id || req._tempId || chipLabel}`}
-        className={`theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row relative grid h-[24px] w-full ${actionGridClass} items-center gap-1 overflow-visible rounded-md border px-1.5 leading-none text-white transition-[filter,box-shadow] duration-150 hover:brightness-105`}
+        className={`theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row relative grid h-[24px] w-full ${actionGridClass} items-center gap-[2px] overflow-visible rounded-md border px-1.5 leading-none text-white transition-[filter,box-shadow] duration-150 hover:brightness-105`}
         style={{ ...singleCardStyle, "--maintenance-request-accent": cardVisual.accent }}
       >
         <span className="truncate text-center text-[12px] font-semibold text-[#f8fbff]">{chipLabel}</span>
@@ -1017,13 +1017,13 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               const statusMessage = getAlreadyStatusMessage(crossOutInfo) || crossOutMessage;
               const showAlreadyStatusIcon = Boolean(showStatus && statusMessage);
               const expandedGridClass = showAlreadyStatusIcon
-                ? "grid-cols-[56px_minmax(0,1fr)_18px_18px]"
+                ? "grid-cols-[56px_minmax(0,1fr)_16px_16px]"
                 : "grid-cols-[56px_minmax(0,1fr)_20px]";
 
               return (
                 <div
                   key={`${section}-${group.key}-${req.id || req._tempId || chipLabel}`}
-                  className={`theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] ${expandedGridClass} items-center gap-1 overflow-visible rounded-md border px-1.5 leading-none transition-[border-color,background,box-shadow] duration-150`}
+                  className={`theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] ${expandedGridClass} items-center gap-[2px] overflow-visible rounded-md border px-1.5 leading-none transition-[border-color,background,box-shadow] duration-150`}
                   style={{ ...cardVisual.card, marginLeft: "10px", width: "calc(100% - 10px)" }}
                 >
                   <span className="truncate text-center text-[12px] font-semibold text-[#f8fbff]">{chipLabel}</span>
@@ -1227,7 +1227,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   >
                     <td colSpan={3} className="h-[30px] p-[3px]">
                       <div
-                        className={`theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row relative grid h-[24px] w-full ${crossedOut ? "grid-cols-[40px_minmax(0,1fr)_18px_18px]" : "grid-cols-[40px_minmax(0,1fr)_24px]"} items-center overflow-visible rounded-md border text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-105`}
+                        className={`theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row relative grid h-[24px] w-full ${crossedOut ? "grid-cols-[40px_minmax(0,1fr)_16px_16px]" : "grid-cols-[40px_minmax(0,1fr)_24px]"} items-center gap-[2px] overflow-visible rounded-md border text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-105`}
                         style={{ ...workshopCardStyle, "--maintenance-request-accent": requestCardStyle.accent }}
                       >
                         <span
