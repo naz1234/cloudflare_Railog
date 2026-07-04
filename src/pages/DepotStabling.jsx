@@ -4931,7 +4931,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 <option value="TK1" style={{ backgroundColor: "#071828", color: "#e9d5ff" }}>Track 01</option>
                 <option value="TK2" style={{ backgroundColor: "#071828", color: "#e9d5ff" }}>Track 02</option>
               </select>
-              <div className="grid w-full grid-cols-[auto_8px_minmax(0,1fr)] items-center gap-x-1 gap-y-1">
+              <div className="grid w-full grid-cols-[34px_8px_minmax(0,1fr)] items-center gap-x-1 gap-y-1">
                 <span className="text-right font-normal text-purple-300">Start</span>
                 <span className="text-center font-normal text-purple-300">:</span>
                 <input
@@ -5025,7 +5025,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             {inserted && !inserted.isSweeping && (
               <>
                 {insertedTid ? (
-                <div className="grid w-full grid-cols-[auto_8px_minmax(0,1fr)] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
                   <span className="text-right font-normal text-blue-300">TID</span>
                   <span className="text-center font-normal text-blue-300">:</span>
                   <button
@@ -5066,7 +5066,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
                 </div>
               ) : hasInsertedPlainRemark ? (
-                <div className="grid w-full grid-cols-[auto_8px_minmax(0,1fr)] items-center gap-x-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
                   <span className="text-right font-normal text-blue-300">Time</span>
                   <span className="text-center font-normal text-blue-300">:</span>
                   <input
@@ -5095,7 +5095,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               ) : (
                 <>
-                  <div className="grid w-full grid-cols-[auto_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
+                  <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
                     <span className="text-right font-normal text-blue-300">Time</span>
                     <span className="text-center font-normal text-blue-300">:</span>
                     <input
@@ -5133,7 +5133,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </button>
                 </>
                 )}
-                <div className="grid w-full grid-cols-[auto_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
+                <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
                   <span className="text-right font-normal text-blue-300">TA</span>
                   <span className="text-center font-normal text-blue-300">:</span>
                   <input
