@@ -962,7 +962,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         >
           <span
             aria-hidden="true"
-            className="absolute bottom-0 left-0 top-0 w-[3px] rounded-l-[10px]"
+            className="absolute bottom-0 left-0 top-0 w-[5px] rounded-l-[10px]"
             style={{ backgroundColor: cardVisual.accent }}
           />
           <div className="flex min-w-0 flex-1 items-center justify-between gap-2 pl-2.5">
