@@ -446,12 +446,11 @@ function getMainStablingCompactCardStyle(typeKey, displayLabel = "", requestGrou
   return {
     accent: visual.accent,
     card: {
-      // Keep the row calm and readable. The request/status colour is now
-      // represented by the dedicated 6 px rail on the left instead of a
-      // bright full-row border and gradient.
-      background: "linear-gradient(90deg, rgba(15,45,70,0.98) 0%, rgba(8,25,42,0.98) 100%)",
-      border: "1px solid rgba(70,111,145,0.58)",
-      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 7px rgba(0,0,0,0.34), 0 0 8px ${rgbaFromHex(visual.accent, 0.10)}`,
+      // Match Removal Summary rows: the request colour is carried by the
+      // bordered gradient card itself, not by a separate left status rail.
+      background: visual.gradient,
+      borderColor: rgbaFromHex(visual.accent, 0.84),
+      boxShadow: `0 0 0 1px ${rgbaFromHex(visual.accent, 0.10)},0 0 8px ${rgbaFromHex(visual.accent, 0.15)},inset 0 1px 0 rgba(255,255,255,0.04)`,
     },
     divider: rgbaFromHex(visual.accent, 0.34),
   };
@@ -957,12 +956,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         <button
           type="button"
           onClick={() => toggleGroupExpanded(section, group.key)}
-          className="grid h-[22px] w-full grid-cols-[minmax(0,1fr)_20px] items-center gap-1 overflow-hidden rounded-[9px] border bg-[#061d31] px-1.5 pl-2 text-left leading-none transition-colors hover:bg-[#08243c]"
-          style={{
-            borderColor: "rgba(125, 184, 224, 0.38)",
-            borderLeft: `3px solid ${cardVisual.accent}`,
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.035)",
-          }}
+          className="grid h-[22px] w-full grid-cols-[minmax(0,1fr)_20px] items-center gap-1 overflow-hidden rounded-md border px-1.5 text-left leading-none transition-[border-color,background,box-shadow] duration-150 hover:brightness-105"
+          style={cardVisual.card}
         >
           <span className="min-w-0 truncate text-[11px] font-normal uppercase text-[#f8fbff]">
             {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
@@ -983,12 +978,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               return (
                 <div
                   key={`${section}-${group.key}-${req.id || req._tempId || chipLabel}`}
-                  className="grid h-[21px] grid-cols-[56px_minmax(0,1fr)_20px] items-center gap-1 overflow-hidden rounded-[9px] border bg-[#061d31] px-1.5 pl-2 leading-none"
-                  style={{
-                    borderColor: "rgba(125, 184, 224, 0.38)",
-                    borderLeft: `3px solid ${cardVisual.accent}`,
-                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.035)",
-                  }}
+                  className="grid h-[22px] grid-cols-[56px_minmax(0,1fr)_20px] items-center gap-1 overflow-hidden rounded-md border px-1.5 leading-none transition-[border-color,background,box-shadow] duration-150"
+                  style={cardVisual.card}
                 >
                   <span className="truncate text-center text-[11px] font-semibold text-[#f8fbff]">{chipLabel}</span>
                   <span className="truncate text-center text-[10px] font-normal uppercase tracking-[0.02em] text-[#a9bfd1]">{locationText}</span>
@@ -1174,7 +1165,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   >
                     <td colSpan={3} className="h-[24px] p-[2px]">
                       <div
-                        className="theme-maintenance-request-card request-cross-trigger relative grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-[6px] text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
+                        className="theme-maintenance-request-card request-cross-trigger relative grid h-[22px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-md border text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
                         style={{ ...workshopCardStyle, "--maintenance-request-accent": requestCardStyle.accent }}
                       >
                         <span

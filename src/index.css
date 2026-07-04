@@ -478,25 +478,16 @@ html[data-app-theme="light"] .theme-maintenance-panel :is(
 }
 
 
-/* Maintenance request rows use a calm steel-blue card with a 6 px
-   status rail on the left. The rail keeps the request colour visible
-   without turning the entire row into a neon outline. */
+/* Maintenance request rows now follow the Removal Summary row style.
+   The colour sits in the bordered gradient card itself, so there is no
+   separate left status rail. */
 .theme-maintenance-request-card {
   position: relative;
 }
 
 .theme-maintenance-request-card::before {
-  content: "";
-  position: absolute;
-  z-index: 2;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  border-radius: 6px 0 0 6px;
-  background: var(--maintenance-request-accent, #4f8ef7);
-  box-shadow: 0 0 7px color-mix(in srgb, var(--maintenance-request-accent, #4f8ef7) 48%, transparent);
-  pointer-events: none;
+  content: none;
+  display: none;
 }
 
 html[data-app-theme="light"] .theme-maintenance-request-card {
