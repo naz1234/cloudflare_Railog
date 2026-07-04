@@ -93,11 +93,11 @@ const steps = [
     number: "06",
     icon: Undo2,
     title: "Undo a wrong entry",
-    text: "Click the completed TID, remark pill, INSERT COMP. or Sweep text to undo it.",
+    text: "Click the completed TID, remark pill, Inserted text or Sweep text to undo it.",
     detailTitle: "Correcting an insertion without losing the previous input",
     details: [
       "Find the train card containing the incorrect completed entry.",
-      "Click the completed TID number, the coloured assistance remark, the manual remark pill, INSERT COMP., or the Sweep text—whichever represents the entry you need to remove.",
+      "Click the completed TID number, the coloured assistance remark, the manual remark pill, Inserted text, or the Sweep text—whichever represents the entry you need to remove.",
       "The completed status is removed, but the previous TID or remark is returned to the input box instead of becoming blank.",
       "Edit the restored value, correct the time or track when required, and complete the entry again.",
       "After correcting it, review the depot log output to confirm the old line has been replaced by the correct information.",
