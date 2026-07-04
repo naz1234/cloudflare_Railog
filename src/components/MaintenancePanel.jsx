@@ -814,7 +814,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     return trainSort || displayType(a).localeCompare(displayType(b));
   });
 
-  const groupRequestsByExactRemark = (items = [], options = {}) => {
+  const groupRequestsByExactRemark = (items = []) => {
     const groups = new Map();
 
     items.forEach((req) => {
@@ -829,18 +829,13 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     return [...groups.values()]
       .map((group) => ({
         ...group,
-        items: [...group.items].sort((a, b) => {
-          if (options.byReason) {
-            const reasonSort = getCrossOutInfo(a).reason.localeCompare(getCrossOutInfo(b).reason);
-            if (reasonSort) return reasonSort;
-          }
-
-          return normalizeTrainCompareKey(a.trainId || "").localeCompare(
+        items: [...group.items].sort((a, b) =>
+          normalizeTrainCompareKey(a.trainId || "").localeCompare(
             normalizeTrainCompareKey(b.trainId || ""),
             undefined,
             { numeric: true }
-          );
-        }),
+          )
+        ),
       }))
       .sort((a, b) => {
         const labelSort = a.label.localeCompare(b.label, undefined, { sensitivity: "base" });
@@ -870,7 +865,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const regularRequests = [...requests]
     .filter((req) => !isWorkshopRequest(req) && !isAlreadyAtStablingOrWorkshopRequest(req))
     .sort((a, b) => displayType(a).localeCompare(displayType(b)) || normalizeTrainCompareKey(a.trainId || "").localeCompare(normalizeTrainCompareKey(b.trainId || ""), undefined, { numeric: true }));
-  const alreadyRequestGroups = groupRequestsByExactRemark(alreadyAtStablingOrWorkshopRequests, { byReason: true });
+  const alreadyRequestGroups = groupRequestsByExactRemark(alreadyAtStablingOrWorkshopRequests);
   const regularRequestGroups = groupRequestsByExactRemark(regularRequests);
   const hasWorkshopRequests = workshopRequests.length > 0;
   const hasAlreadyAtStablingOrWorkshopRequests = alreadyAtStablingOrWorkshopRequests.length > 0;
@@ -912,7 +907,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           style={{ backgroundColor: cardVisual.accent }}
         />
         <div className="pl-2.5">
-          <div className="text-[12px] font-black leading-tight text-white">{group.label}</div>
+          <div className="text-[12px] font-normal uppercase leading-tight text-white">{group.label}</div>
           <div className="mt-2 flex flex-wrap gap-2">
             {group.items.map((req) => {
               const chipLabel = getRequestChipTrainLabel(req);
@@ -922,7 +917,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               return (
                 <div
                   key={`${group.key}-${req.id || req._tempId || chipLabel}`}
-                  className="inline-flex min-h-[28px] items-center gap-1.5 rounded-[8px] border border-[#2b4f6b] bg-[#0a2540] pl-3 pr-2 text-[11px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                  className="inline-flex min-h-[28px] items-center gap-1.5 rounded-[8px] border border-[#2b4f6b] bg-[#0a2540] pl-3 pr-2 text-[11px] font-normal text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                 >
                   <span className="leading-none">{chipLabel}</span>
                   <button
