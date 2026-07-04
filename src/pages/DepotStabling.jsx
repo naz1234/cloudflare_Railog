@@ -16009,20 +16009,20 @@ export default function DepotStablingPage() {
       />
 
 
-      <TrainRequestedNotInRemoval
-        requests={requests}
+      <RemovalLogOutputFromTrainRem
         trainRemState={trainRemCheckState}
         maintenanceMap={maintenanceMap}
+        requests={requests}
         westData={westData}
         eastData={eastData}
         activeTimetable={activeTimetable}
         activeTimetableType={selectedTimetableType}
       />
 
-      <RemovalLogOutputFromTrainRem
+      <TrainRequestedNotInRemoval
+        requests={requests}
         trainRemState={trainRemCheckState}
         maintenanceMap={maintenanceMap}
-        requests={requests}
         westData={westData}
         eastData={eastData}
         activeTimetable={activeTimetable}
