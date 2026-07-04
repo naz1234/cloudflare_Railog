@@ -5617,12 +5617,7 @@ html[data-app-theme="light"] .insertion-clean-shell::-webkit-scrollbar-thumb {
   transition: opacity 160ms ease, filter 160ms ease;
 }
 
-/* Waiting for TID — steel blue. */
-.theme-insertion-card.has-train:not(.has-input):not(.is-inserted)::after {
-  background: #2ea8ff;
-  box-shadow: 2px 0 10px rgba(46, 168, 255, 0.24);
-  opacity: 1;
-}
+/* No rail for normal waiting cards. Rail appears only after TID/remark, sweeping, completion, duplicate or elapsed state. */
 
 /* TID or manual remark entered — amber. */
 .theme-insertion-card.has-input:not(.is-inserted)::after {
