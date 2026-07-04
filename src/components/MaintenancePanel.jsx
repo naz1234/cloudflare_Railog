@@ -976,8 +976,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         </button>
 
         {isExpanded ? (
-          <div className="border-t border-[#1a3a56] px-2 pb-2 pl-[18px] pr-2 pt-1.5">
-            <div className="space-y-1">
+          <div className="border-t border-[#1a3a56] px-3 pb-2.5 pl-[18px] pr-2.5 pt-2">
+            <div className="space-y-1.5">
               {group.items.map((req) => {
                 const chipLabel = getRequestChipTrainLabel(req);
                 const locationText = showStatus
@@ -987,15 +987,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 return (
                   <div
                     key={`${section}-${group.key}-${req.id || req._tempId || chipLabel}`}
-                    className="grid h-[22px] grid-cols-[32px_54px_minmax(0,1fr)_22px] items-center gap-1 overflow-hidden rounded-full border bg-[#061d31] px-1.5 leading-none shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]"
-                    style={{
-                      borderColor: rgbaFromHex(cardVisual.accent, 0.74),
-                      boxShadow: `0 0 0 1px ${rgbaFromHex(cardVisual.accent, 0.10)}, inset 0 1px 0 rgba(255,255,255,0.035)`,
-                    }}
+                    className="grid grid-cols-[84px_minmax(0,1fr)_26px] items-center gap-2 rounded-[8px] border border-[#214867] bg-[#0a2540] px-2 py-1.5"
                   >
-                    <span className="text-center text-[9px] font-normal uppercase text-[#58758f]">ID</span>
-                    <span className="truncate text-center text-[11px] font-bold text-[#f8fbff]">{chipLabel}</span>
-                    <span className="truncate text-center text-[10px] font-normal uppercase tracking-[0.02em] text-[#a9bfd1]">{locationText}</span>
+                    <span className="truncate text-[12px] font-semibold text-[#f8fbff]">{chipLabel}</span>
+                    <span className="truncate text-[11px] font-normal uppercase tracking-[0.04em] text-[#a9bfd1]">{locationText}</span>
                     <button
                       onClick={(event) => {
                         event.stopPropagation();
