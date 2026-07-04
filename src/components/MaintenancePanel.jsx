@@ -1005,7 +1005,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           </span>
         </div>
 
-        <div className="space-y-[4px]">
+        <div className="space-y-[1px]">
             {group.items.map((req) => {
               const chipLabel = getRequestChipTrainLabel(req);
               const locationText = showStatus
