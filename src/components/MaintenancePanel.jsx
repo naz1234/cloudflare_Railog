@@ -444,13 +444,14 @@ function getMainStablingCompactCardStyle(typeKey, displayLabel = "", requestGrou
   return {
     accent,
     card: {
-      // Same treatment as the Removal Summary rows: low-fill horizontal row,
-      // thin coloured border, subtle 3px inset on the left, and no bright pill.
-      background: `linear-gradient(90deg,${rgbaFromHex(accent, 0.20)} 0%,${rgbaFromHex(accent, 0.10)} 55%,rgba(7,24,40,0.98) 100%)`,
-      borderColor: rgbaFromHex(accent, 0.72),
-      boxShadow: `inset 3px 0 0 ${rgbaFromHex(accent, 0.86)},inset 0 1px 0 rgba(255,255,255,0.045),0 1px 3px rgba(0,0,0,0.18)`,
+      // Unified steel-blue row style. Only the inset left line keeps
+      // the request/remark colour so rows feel cleaner while still
+      // showing the remark difference at a glance.
+      background: "linear-gradient(90deg,rgba(17,54,82,0.96) 0%,rgba(9,36,61,0.98) 58%,rgba(7,24,40,0.99) 100%)",
+      borderColor: "rgba(64,132,176,0.74)",
+      boxShadow: `inset 3px 0 0 ${rgbaFromHex(accent, 0.92)},inset 0 1px 0 rgba(255,255,255,0.055),0 1px 3px rgba(0,0,0,0.20)`,
     },
-    divider: rgbaFromHex(accent, 0.34),
+    divider: "rgba(96,165,210,0.36)",
   };
 }
 

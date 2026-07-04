@@ -491,9 +491,10 @@ html[data-app-theme="light"] .theme-maintenance-panel :is(
 }
 
 html[data-app-theme="light"] .theme-maintenance-request-card {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--maintenance-request-accent, #4f8ef7) 7%, #ffffff), #f8fafc) !important;
-  border-color: #b7c6d3 !important;
+  background: linear-gradient(90deg, #dbe8f2 0%, #f8fafc 58%, #ffffff 100%) !important;
+  border-color: #9eb6c8 !important;
   box-shadow:
+    inset 3px 0 0 var(--maintenance-request-accent, #4f8ef7),
     inset 0 1px 0 rgba(255, 255, 255, 0.98),
     0 1px 4px rgba(15, 23, 42, 0.10) !important;
   color: #000000 !important;
