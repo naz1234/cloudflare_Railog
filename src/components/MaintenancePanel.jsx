@@ -939,7 +939,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
   const toggleGroupExpanded = (section, groupKey) => {
     const setter = section === "already" ? setExpandedAlreadyGroups : setExpandedPendingGroups;
-    setter((previous) => ({ ...previous, [groupKey]: !previous[groupKey] }));
+    setter((previous) => ({ [groupKey]: !previous[groupKey] }));
   };
 
   const renderGroupedRequestCard = (group, options = {}) => {
@@ -952,60 +952,68 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     return (
       <div
         key={`${section}-${group.key}`}
-        className="theme-maintenance-group-card relative overflow-hidden rounded-[10px] border"
-        style={cardVisual.card}
+        className="space-y-1"
       >
         <button
           type="button"
           onClick={() => toggleGroupExpanded(section, group.key)}
-          className="relative flex w-full items-center gap-2 overflow-hidden rounded-[10px] px-3 py-2 text-left transition-colors hover:bg-white/[0.03]"
+          className="relative grid h-[24px] w-full grid-cols-[minmax(0,1fr)_22px] items-center gap-1 overflow-hidden rounded-full border bg-[#061d31] px-1.5 pl-3 pr-1.5 text-left leading-none transition-colors hover:bg-[#0a2540]"
+          style={{
+            borderColor: rgbaFromHex(cardVisual.accent, 0.74),
+            boxShadow: `0 0 0 1px ${rgbaFromHex(cardVisual.accent, 0.10)}, inset 0 1px 0 rgba(255,255,255,0.035)`,
+          }}
         >
           <span
             aria-hidden="true"
-            className="absolute bottom-0 left-0 top-0 w-[5px] rounded-l-[10px]"
+            className="absolute bottom-[4px] left-[4px] top-[4px] w-[3px] rounded-full"
             style={{ backgroundColor: cardVisual.accent }}
           />
-          <div className="flex min-w-0 flex-1 items-center justify-between gap-2 pl-2.5">
-            <div className="min-w-0 text-[12px] font-normal uppercase leading-tight text-[#f8fbff]">
-              {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
-            </div>
-            <ChevronDown
-              className={`h-4 w-4 shrink-0 text-[#8fa3b2] transition-transform duration-200 ${isExpanded ? "rotate-180" : "rotate-0"}`}
-            />
-          </div>
+          <span className="min-w-0 truncate pl-3 text-[11px] font-normal uppercase text-[#f8fbff]">
+            {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
+          </span>
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-[#8fa3b2] transition-transform duration-200 ${isExpanded ? "rotate-180" : "rotate-0"}`}
+          />
         </button>
 
         {isExpanded ? (
-          <div className="border-t border-[#1a3a56] px-3 pb-2.5 pl-[18px] pr-2.5 pt-2">
-            <div className="space-y-1.5">
-              {group.items.map((req) => {
-                const chipLabel = getRequestChipTrainLabel(req);
-                const locationText = showStatus
-                  ? getAlreadyExpandedLocationText(req)
-                  : getPendingExpandedLocationText(req);
+          <div className="space-y-1 pl-2">
+            {group.items.map((req) => {
+              const chipLabel = getRequestChipTrainLabel(req);
+              const locationText = showStatus
+                ? getAlreadyExpandedLocationText(req)
+                : getPendingExpandedLocationText(req);
 
-                return (
-                  <div
-                    key={`${section}-${group.key}-${req.id || req._tempId || chipLabel}`}
-                    className="grid grid-cols-[84px_minmax(0,1fr)_26px] items-center gap-2 rounded-[8px] border border-[#214867] bg-[#0a2540] px-2 py-1.5"
+              return (
+                <div
+                  key={`${section}-${group.key}-${req.id || req._tempId || chipLabel}`}
+                  className="relative grid h-[22px] grid-cols-[58px_minmax(0,1fr)_22px] items-center gap-1 overflow-hidden rounded-full border bg-[#061d31] px-1.5 pl-3 leading-none shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]"
+                  style={{
+                    borderColor: rgbaFromHex(cardVisual.accent, 0.74),
+                    boxShadow: `0 0 0 1px ${rgbaFromHex(cardVisual.accent, 0.10)}, inset 0 1px 0 rgba(255,255,255,0.035)`,
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="absolute bottom-[4px] left-[4px] top-[4px] w-[3px] rounded-full"
+                    style={{ backgroundColor: cardVisual.accent }}
+                  />
+                  <span className="truncate text-center text-[11px] font-bold text-[#f8fbff]">{chipLabel}</span>
+                  <span className="truncate text-center text-[10px] font-normal uppercase tracking-[0.02em] text-[#a9bfd1]">{locationText}</span>
+                  <button
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onRemove(req.id);
+                    }}
+                    className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center justify-self-end"
+                    aria-label={`Delete ${chipLabel}`}
+                    title="Delete request"
                   >
-                    <span className="truncate text-[12px] font-semibold text-[#f8fbff]">{chipLabel}</span>
-                    <span className="truncate text-[11px] font-normal uppercase tracking-[0.04em] text-[#a9bfd1]">{locationText}</span>
-                    <button
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onRemove(req.id);
-                      }}
-                      className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center justify-self-end"
-                      aria-label={`Delete ${chipLabel}`}
-                      title="Delete request"
-                    >
-                      <DeleteRequestIcon />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+                    <DeleteRequestIcon />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         ) : null}
       </div>
