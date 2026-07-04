@@ -4721,7 +4721,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const expired = Boolean(hideElapsedTid && inserted && isTimePast(inserted.time));
 
   // Keep the Train ID consistently pure white in dark mode. The insertion
-  // state is now communicated by the 6 px status rail, not by recolouring
+  // state is now communicated by the 3 px status rail, not by recolouring
   // the most important identifier on the card.
   const trainColor = expired ? "#3a5068" : "#ffffff";
 
@@ -4739,7 +4739,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           ? "linear-gradient(145deg, #0d2a42 0%, #0a1d30 52%, #071827 100%)"
           : "rgba(7, 24, 39, 0.30)";
   // Keep the card frame calm and neutral. State colour is concentrated in
-  // the 6 px left rail so maintenance pills and insertion status do not fight
+  // the 3 px left rail so maintenance pills and insertion status do not fight
   // for attention.
   const insCardBorder = expired
     ? "1px solid #1e3547"

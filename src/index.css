@@ -5590,7 +5590,7 @@ html[data-app-theme="light"] .insertion-clean-shell::-webkit-scrollbar-thumb {
 
 /* ========================================================================
    INSERTION CARD POLISH — STATUS RAIL + ACTION HIERARCHY
-   Uses one 6 px rail to communicate the insertion state while keeping the
+   Uses one 3 px rail to communicate the insertion state while keeping the
    Train ID pure white and leaving maintenance/request pills independent.
    ======================================================================== */
 
@@ -5600,7 +5600,7 @@ html[data-app-theme="light"] .insertion-clean-shell::-webkit-scrollbar-thumb {
 }
 
 .theme-insertion-card.has-train {
-  padding-left: 11px !important;
+  padding-left: 8px !important;
 }
 
 .theme-insertion-card::after {
@@ -5610,7 +5610,7 @@ html[data-app-theme="light"] .insertion-clean-shell::-webkit-scrollbar-thumb {
   top: 0;
   bottom: 0;
   left: 0;
-  width: 6px;
+  width: 3px;
   border-radius: 11px 0 0 11px;
   pointer-events: none;
   opacity: 0;
@@ -5755,7 +5755,7 @@ html:not([data-app-theme="light"]) .theme-insertion-insert-button:active {
 /* The light glass theme keeps its glass language but receives the same clear
    status rail and boxed input hierarchy. */
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.has-train {
-  padding-left: 11px !important;
+  padding-left: 8px !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tid-input {
