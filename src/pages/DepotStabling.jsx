@@ -3788,6 +3788,19 @@ function getStablingRequestVisual(item = null) {
   };
 }
 
+function getMainStablingRemarkPillStyle(item = null) {
+  const visual = getStablingRequestVisual(item);
+  const accent = visual?.accent || getRequestAccent(item) || "#4f8ef7";
+
+  return {
+    background: `linear-gradient(135deg, ${hexToRgba(accent, 0.98)} 0%, ${hexToRgba(accent, 0.62)} 100%)`,
+    border: `1px solid ${hexToRgba(accent, 0.95)}`,
+    boxShadow: `0 0 8px ${hexToRgba(accent, 0.24)}, inset 0 1px 0 rgba(255,255,255,0.14)`,
+    color: "#ffffff",
+    textShadow: "0 1px 1px rgba(0,0,0,0.45)",
+  };
+}
+
 function getRequestPillStyle(item, options = {}) {
   const accent = getRequestAccent(item);
   const showSuppressedStyle = options.showSuppressedStyle !== false;
@@ -22457,8 +22470,8 @@ function RoadRow({
         }
 
         // Keep every normal/request train card on the same calm steel-blue surface.
-        // Request identity is shown by the 6 px left status rail and remark colour,
-        // rather than a bright full-card border or neon background.
+        // Request identity is shown by the remark pill colour below the divider,
+        // matching the main stabling PDF style while keeping the PDF export unchanged.
         const cardGrad = isFlashing
           ? "linear-gradient(135deg,#7f1d1d,#5c0f0f)"
           : isDup
@@ -22505,27 +22518,6 @@ function RoadRow({
                 boxShadow: cardGlow,
               }}
             >
-              {key && maintList.length > 0 && !isFlashing && !isDup && (
-                <div
-                  className="theme-stabling-status-rail absolute inset-y-0 left-0 z-[2] flex w-[6px] flex-col overflow-hidden"
-                  aria-hidden="true"
-                >
-                  {maintList.map((item, railIndex) => {
-                    const itemVisual = getStablingRequestVisual(item);
-                    return (
-                      <span
-                        key={`${key}-status-rail-${railIndex}-${item.displayType || item.typeKey || "request"}`}
-                        className="theme-stabling-status-rail-segment block min-h-0 flex-1"
-                        style={{
-                          background: itemVisual.accent,
-                          boxShadow: `0 0 7px ${hexToRgba(itemVisual.accent, 0.34)}`,
-                        }}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-
               <input
                 ref={(el) => { cellRefs.current[`${depot}-${roadIndex}-${i}`] = el; }}
                 type="text"
@@ -22570,13 +22562,12 @@ function RoadRow({
               ) : maintList.length > 0 ? (
                 <div className="flex w-full flex-col items-center gap-0.5 px-1">
                   {maintList.map((item) => {
-                    const itemVisual = getStablingRequestVisual(item);
                     const label = item.badgeText || item.displayType || item.typeKey || "Request";
                     return (
                       <span
                         key={`${key}-${item.displayType}-${item.badgeText || ""}`}
-                        className="theme-stabling-remark block w-full truncate text-center text-[10px] font-normal leading-tight text-white"
-                        style={{ color: "#ffffff" }}
+                        className="theme-stabling-remark block w-full truncate rounded-md px-1.5 py-0.5 text-center text-[10px] font-normal leading-tight text-white"
+                        style={getMainStablingRemarkPillStyle(item)}
                         title={label}
                       >
                         {label}
