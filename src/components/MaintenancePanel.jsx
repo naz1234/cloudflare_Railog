@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, ChevronDown } from "lucide-react";
+import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X } from "lucide-react";
 
 const MIN_VISIBLE_REQUEST_ROWS = 40;
 
@@ -587,8 +587,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const [excelWashPreview, setExcelWashPreview] = useState([]);
   const [excelUploadStatus, setExcelUploadStatus] = useState("");
   const [workshopCopyStatus, setWorkshopCopyStatus] = useState("");
-  const [expandedAlreadyGroups, setExpandedAlreadyGroups] = useState({});
-  const [expandedPendingGroups, setExpandedPendingGroups] = useState({});
 
   const handleAdd = () => {
     const trainIds = trainId.split(/[\s,]+/).map(normalizeTrainId).filter(Boolean);
@@ -911,6 +909,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     .sort((a, b) => displayType(a).localeCompare(displayType(b)) || normalizeTrainCompareKey(a.trainId || "").localeCompare(normalizeTrainCompareKey(b.trainId || ""), undefined, { numeric: true }));
   const alreadyRequestGroups = groupRequestsByExactRemark(alreadyAtStablingOrWorkshopRequests);
   const regularRequestGroups = groupRequestsByExactRemark(regularRequests);
+  const splitGroupedAndSingleRequests = (groups = []) => ({
+    grouped: groups.filter((group) => group.items.length > 1),
+    ungrouped: groups.filter((group) => group.items.length === 1),
+  });
   const hasWorkshopRequests = workshopRequests.length > 0;
   const hasAlreadyAtStablingOrWorkshopRequests = alreadyAtStablingOrWorkshopRequests.length > 0;
   const buildWorkshopCopyText = () => {
@@ -935,10 +937,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     }
   };
 
-  const toggleGroupExpanded = (section, groupKey) => {
-    const setter = section === "already" ? setExpandedAlreadyGroups : setExpandedPendingGroups;
-    setter((previous) => ({ ...previous, [groupKey]: !previous[groupKey] }));
-  };
 
   const renderSingleRequestCard = (req, options = {}) => {
     const { section = "pending", showStatus = false, groupKey = "single" } = options;
@@ -992,31 +990,22 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     }
 
     const cardVisual = getMainStablingCompactCardStyle(group.label, group.label, requestGroupColors);
-    const isExpanded = section === "already"
-      ? Boolean(expandedAlreadyGroups[group.key])
-      : Boolean(expandedPendingGroups[group.key]);
 
     return (
       <div
         key={`${section}-${group.key}`}
         className="space-y-[4px]"
       >
-        <button
-          type="button"
-          onClick={() => toggleGroupExpanded(section, group.key)}
-          className="theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] w-full grid-cols-[minmax(0,1fr)_20px] items-center gap-1 overflow-hidden rounded-md border pl-3 pr-1.5 text-left leading-none transition-[border-color,background,box-shadow] duration-150 hover:brightness-105"
+        <div
+          className="theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] w-full grid-cols-[minmax(0,1fr)] items-center gap-1 overflow-hidden rounded-md border pl-3 pr-1.5 text-left leading-none transition-[border-color,background,box-shadow] duration-150"
           style={cardVisual.card}
         >
           <span className="min-w-0 truncate text-[12px] font-normal uppercase text-[#f8fbff]">
             {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
           </span>
-          <ChevronDown
-            className={`h-4 w-4 shrink-0 justify-self-end text-[#8fa3b2] transition-transform duration-200 ${isExpanded ? "rotate-180" : "rotate-0"}`}
-          />
-        </button>
+        </div>
 
-        {isExpanded ? (
-          <div className="space-y-[4px]">
+        <div className="space-y-[4px]">
             {group.items.map((req) => {
               const chipLabel = getRequestChipTrainLabel(req);
               const locationText = showStatus
@@ -1056,9 +1045,28 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 </div>
               );
             })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderGroupedAndUngroupedCards = (groups, options = {}) => {
+    const { grouped, ungrouped } = splitGroupedAndSingleRequests(groups);
+
+    return (
+      <>
+        {grouped.map((group) => renderGroupedRequestCard(group, options))}
+
+        {grouped.length > 0 && ungrouped.length > 0 ? (
+          <div className="flex items-center gap-2 py-1">
+            <div className="h-px flex-1 bg-[#2b4f6b]/80" />
+            <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.24em] text-[#6f9fbd]">Ungroup</span>
+            <div className="h-px flex-1 bg-[#2b4f6b]/80" />
           </div>
         ) : null}
-      </div>
+
+        {ungrouped.map((group) => renderGroupedRequestCard(group, options))}
+      </>
     );
   };
 
@@ -1264,7 +1272,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           </div>
 
           <div className="grid gap-[5px] p-2.5">
-            {alreadyRequestGroups.map((group) => renderGroupedRequestCard(group, { section: "already", showStatus: true }))}
+            {renderGroupedAndUngroupedCards(alreadyRequestGroups, { section: "already", showStatus: true })}
           </div>
         </div>
       )}
@@ -1282,7 +1290,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           </div>
         ) : (
           <div className="grid gap-[5px] p-2.5">
-            {regularRequestGroups.map((group) => renderGroupedRequestCard(group, { section: "pending" }))}
+            {renderGroupedAndUngroupedCards(regularRequestGroups, { section: "pending" })}
           </div>
         )}
       </div>
