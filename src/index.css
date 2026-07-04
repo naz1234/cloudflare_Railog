@@ -889,6 +889,44 @@ html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-ro
     0 1px 3px rgba(15,23,42,0.16) !important;
 }
 
+/* 7pm preset: East Depot 12am TID set uses the same amber/gold style
+   as East Depot 9am reference rows when those TIDs appear under 7pm. */
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="222"],
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="223"],
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="224"],
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="225"],
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="226"],
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="227"],
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="228"],
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="229"],
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="230"],
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="121"] {
+  background: linear-gradient(90deg, rgba(180,120,35,0.22) 0%, rgba(180,120,35,0.11) 55%, rgba(180,120,35,0.06) 100%) !important;
+  border-color: rgba(183,121,31,0.78) !important;
+  box-shadow:
+    inset 3px 0 0 #d97706,
+    inset 0 1px 0 rgba(255,255,255,0.045),
+    0 1px 3px rgba(0,0,0,0.18) !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="222"],
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="223"],
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="224"],
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="225"],
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="226"],
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="227"],
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="228"],
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="229"],
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="230"],
+html[data-app-theme="light"] .theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"][data-tid="121"] {
+  background: linear-gradient(90deg, rgba(146,91,18,0.82) 0%, rgba(180,120,35,0.72) 55%, rgba(194,139,57,0.64) 100%) !important;
+  border-color: #a16207 !important;
+  box-shadow:
+    inset 3px 0 0 #f59e0b,
+    inset 0 1px 0 rgba(255,255,255,0.16),
+    0 1px 3px rgba(15,23,42,0.14) !important;
+}
+
 /* Duplicate Train ID / TID: full-row red warning treatment.
    This rule intentionally comes after all 9am colour rules so the duplicate
    warning always wins, matching the compact red-outline style used elsewhere. */
