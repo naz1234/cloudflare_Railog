@@ -2321,19 +2321,39 @@ function buildTrainRemCombinedWestRows(existingRows = [], label = "9am", activeT
       };
     });
 
-    const additionalRows = normalizedSourceRows
-      .filter((row) => {
-        if (!hasTrainRemRowContent(row)) return false;
-        const tid = normalizeTrainRemTidValue(row?.tid || "");
-        return !tid || !referenceTidSet.has(tid);
-      })
-      .slice(0, layout.reserveCount)
-      .map((row) => ({
-        trainId: row?.trainId || "",
-        tid: normalizeTrainRemTidValue(row?.tid || ""),
-        timing: row?.timing || "",
-        remark: row?.remark || "",
-      }));
+    const reserveRowsFromSlots = Array.from({ length: layout.reserveCount }, (_, offset) => {
+      const sourceRow = normalizedSourceRows[layout.reserveStartIndex + offset] || {};
+      const tid = normalizeTrainRemTidValue(sourceRow?.tid || "");
+      const isScheduledTid = Boolean(tid && referenceTidSet.has(tid));
+
+      if (!hasTrainRemRowContent(sourceRow) || isScheduledTid) {
+        return { trainId: "", tid: "", timing: "", remark: "" };
+      }
+
+      return {
+        trainId: sourceRow?.trainId || "",
+        tid,
+        timing: sourceRow?.timing || "",
+        remark: sourceRow?.remark || "",
+      };
+    });
+
+    const reserveSlotsHaveContent = reserveRowsFromSlots.some(hasTrainRemRowContent);
+    const additionalRows = reserveSlotsHaveContent
+      ? reserveRowsFromSlots
+      : normalizedSourceRows
+        .filter((row) => {
+          if (!hasTrainRemRowContent(row)) return false;
+          const tid = normalizeTrainRemTidValue(row?.tid || "");
+          return !tid || !referenceTidSet.has(tid);
+        })
+        .slice(0, layout.reserveCount)
+        .map((row) => ({
+          trainId: row?.trainId || "",
+          tid: normalizeTrainRemTidValue(row?.tid || ""),
+          timing: row?.timing || "",
+          remark: row?.remark || "",
+        }));
 
     while (additionalRows.length < layout.reserveCount) {
       additionalRows.push({ trainId: "", tid: "", timing: "", remark: "" });
