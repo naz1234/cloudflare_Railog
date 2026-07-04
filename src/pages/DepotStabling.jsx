@@ -5095,6 +5095,15 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               ) : (
                 <>
+                  <button
+                    type="button"
+                    onClick={handleInsertedUndoClick}
+                    className="w-full border-0 bg-transparent px-1 py-0 text-center text-[12px] font-normal leading-tight text-white transition-colors hover:text-red-200 focus-visible:text-red-200"
+                    title="Click Refresh to undo insertion"
+                    aria-label="Undo insertion using Refresh"
+                  >
+                    Refresh
+                  </button>
                   <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
                     <span className="text-right font-normal text-blue-300">Time</span>
                     <span className="text-center font-normal text-blue-300">:</span>
@@ -5122,15 +5131,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       title="Edit insertion completion time"
                     />
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleInsertedUndoClick}
-                    className="w-full border-0 bg-transparent px-1 py-0 text-center text-[10px] font-normal leading-tight tracking-[0.02em] text-blue-200 transition-colors hover:text-blue-50"
-                    title="Click to undo insertion"
-                    aria-label="Undo inserted status"
-                  >
-                    Inserted
-                  </button>
                 </>
                 )}
                 <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
