@@ -3740,10 +3740,21 @@ function getStablingRequestVisual(item = null) {
   const fallbackAccent = getRequestAccent(item);
   const requestLabel = item?.badgeText || item?.remark || item?.displayType || item?.typeKey || "";
 
+  const washVisual = {
+    // Keep all WASH variants (Wash 5 July, Wash 6 July, Wash TMR, etc.)
+    // on a fixed lime-green accent in Main Stabling, so they do not clash
+    // with custom request colours such as TCMS NOT WORKING.
+    accent: "#8afc3f",
+    gradient: "linear-gradient(135deg,rgba(132,204,22,0.24) 0%,#132b08 48%,#071828 100%)",
+    glow: "0 0 0 1px rgba(132,204,22,0.16),0 0 14px rgba(132,204,22,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+  };
+
+  if (category === "wash") return washVisual;
+
   // Specific request groups use the accent allocated by buildMaintenanceMap.
-  // This applies across categories, so PM 2-JUL cannot look almost identical
-  // to WASH 1-JUL merely because both happened to land in a purple hue family.
-  if (item?.usesGroupColor || (category === "wash" && isNamedWashRequest(requestLabel))) {
+  // This applies across non-WASH categories, so PM 2-JUL cannot look almost
+  // identical to another specific custom group.
+  if (item?.usesGroupColor) {
     return {
       accent: fallbackAccent,
       gradient: `linear-gradient(135deg,${hexToRgba(fallbackAccent, 0.28)} 0%,${hexToRgba(fallbackAccent, 0.12)} 42%,#071828 100%)`,
@@ -3772,11 +3783,7 @@ function getStablingRequestVisual(item = null) {
       gradient: "linear-gradient(135deg,rgba(16,185,129,0.25) 0%,#062a23 48%,#071828 100%)",
       glow: "0 0 0 1px rgba(16,185,129,0.16),0 0 14px rgba(16,185,129,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
     },
-    wash: {
-      accent: "#4de3ff",
-      gradient: "linear-gradient(135deg,rgba(34,211,238,0.24) 0%,#062937 48%,#071828 100%)",
-      glow: "0 0 0 1px rgba(34,211,238,0.16),0 0 14px rgba(34,211,238,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
-    },
+    wash: washVisual,
   };
 
   if (visuals[category]) return visuals[category];
