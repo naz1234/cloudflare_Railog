@@ -7681,7 +7681,8 @@ function getMovementExcelStatus(row = {}) {
   const train = normalizeMovementTrain(row.trainId);
   const time = normalizeMovementCustomTimeInput(row.time);
   const replacementInput = operation === "insertion" ? "" : row.replacedBy;
-  const hasAnyInput = Boolean(train || time || row.tid || row.reason || replacementInput || row.notes || row.road || row.track);
+  const roadInput = operation === "insertion" ? (row.road || row.track) : "";
+  const hasAnyInput = Boolean(train || time || row.tid || row.reason || replacementInput || row.notes || roadInput);
   if (!hasAnyInput) return "Draft";
   return buildMovementExcelLogLine(row) ? "Added" : "Missing";
 }
@@ -7992,8 +7993,14 @@ function TrainMovementExcelSheet() {
                   <td className={cellClass}>
                     <input value={row.tid} onChange={(e) => updateRow(row.id, "tid", e.target.value.replace(/\D/g, "").slice(0, 3))} placeholder="111" className={tableInputClass} />
                   </td>
-                  <td className={cellClass}>
-                    <input value={row.road || row.track} onChange={(e) => updateRow(row.id, "road", e.target.value)} placeholder={row.operation === "insertion" ? "WD-ST14" : "Optional"} className={tableInputClass} />
+                  <td className={row.operation === "insertion" ? cellClass : "border border-[#173653] bg-[#334155] align-middle"}>
+                    {row.operation === "insertion" ? (
+                      <input value={row.road || row.track} onChange={(e) => updateRow(row.id, "road", e.target.value)} placeholder="WD-ST14" className={tableInputClass} />
+                    ) : (
+                      <div className="flex h-7 items-center justify-center rounded-sm bg-[#475569] text-[10px] font-black uppercase tracking-[0.12em] text-[#cbd5e1] opacity-80">
+                        N/A
+                      </div>
+                    )}
                   </td>
                   <td className={cellClass}>
                     <input value={row.reason} onChange={(e) => updateRow(row.id, "reason", e.target.value)} placeholder={row.operation === "swapping" ? "RST PM / CM" : "Remark"} className={tableInputClass} />
