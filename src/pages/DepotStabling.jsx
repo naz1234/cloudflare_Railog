@@ -1581,7 +1581,7 @@ function TrainWashingDocxExport() {
                 <div className="text-[11px] text-slate-400">{group.rows.length} trains</div>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-[920px] w-full text-xs">
+                <table className="min-w-[820px] w-full text-xs">
                   <thead className="bg-[#071828] text-slate-200">
                     <tr>
                       {OUTPUT_HEADERS.map((header) => (
@@ -7638,6 +7638,7 @@ function normalizeTrainMovementExcelLogEntry(entry = {}) {
     text: String(entry.text || "").trim(),
     train: normalizeMovementTrain(entry.train),
     tid: String(entry.tid || "").replace(/\D/g, "").slice(0, 3),
+    sourceRowId: entry.sourceRowId || "",
     createdAt: entry.createdAt || new Date().toISOString(),
   };
 }
@@ -7676,23 +7677,16 @@ function formatMovementExcelOperation(value = "") {
 }
 
 function getMovementExcelStatus(row = {}) {
-  if (row.status === "Added") return "Added";
   const train = normalizeMovementTrain(row.trainId);
   const time = normalizeMovementCustomTimeInput(row.time);
-  if (!train && !time && !row.tid && !row.reason && !row.replacedBy && !row.notes) return "Draft";
-  if (!train || !isCompleteMovementTimeInput(time)) return "Missing";
-  if (row.operation === "swapping" && (!/^\d{3}$/.test(String(row.tid || "")) || !normalizeMovementTrain(row.replacedBy) || !String(row.reason || "").trim())) {
-    return "Missing";
-  }
-  return "Ready";
+  const hasAnyInput = Boolean(train || time || row.tid || row.reason || row.replacedBy || row.notes || row.road || row.track);
+  if (!hasAnyInput) return "Draft";
+  return buildMovementExcelLogLine(row) ? "Added" : "Missing";
 }
 
 function getMovementExcelStatusStyle(status = "Draft") {
   if (status === "Added") {
     return { borderColor: "rgba(34,197,94,0.72)", background: "rgba(22,101,52,0.28)", color: "#86efac" };
-  }
-  if (status === "Ready") {
-    return { borderColor: "rgba(56,189,248,0.70)", background: "rgba(14,116,144,0.24)", color: "#7dd3fc" };
   }
   if (status === "Missing") {
     return { borderColor: "rgba(248,113,113,0.70)", background: "rgba(127,29,29,0.26)", color: "#fecaca" };
@@ -7756,6 +7750,33 @@ function TrainMovementExcelSheet() {
     saveTrainMovementExcelLogRows(logRows);
   }, [logRows]);
 
+  useEffect(() => {
+    setLogRows((prev) => {
+      const previousBySource = new Map((prev || []).filter((entry) => entry.sourceRowId).map((entry) => [entry.sourceRowId, entry]));
+      const autoEntries = rows
+        .map((row) => {
+          const text = buildMovementExcelLogLine(row);
+          if (!text) return null;
+          const previous = previousBySource.get(row.id);
+          return normalizeTrainMovementExcelLogEntry({
+            ...(previous || {}),
+            id: previous?.id || `movement-excel-log-${row.id}`,
+            sourceRowId: row.id,
+            depot: row.depot === "east" ? "east" : "west",
+            operation: row.operation || "swapping",
+            time: normalizeMovementCustomTimeInput(row.time),
+            createdAt: previous?.createdAt || new Date().toISOString(),
+            text,
+            train: normalizeMovementTrain(row.trainId),
+            tid: String(row.tid || "").replace(/\D/g, "").trim(),
+          });
+        })
+        .filter(Boolean);
+
+      return sortTrainMovementExcelLogRows(autoEntries).slice(0, 120);
+    });
+  }, [rows]);
+
   useEffect(() => () => {
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
   }, []);
@@ -7783,7 +7804,7 @@ function TrainMovementExcelSheet() {
     setRows((prev) => prev.map((row) => {
       if (row.id !== id) return row;
 
-      const next = { ...row, [field]: value, status: row.status === "Added" ? "Ready" : row.status };
+      const next = { ...row, [field]: value };
       if (field === "operation" || field === "depot") {
         const operation = field === "operation" ? value : next.operation;
         const depot = field === "depot" ? value : next.depot;
@@ -7814,7 +7835,7 @@ function TrainMovementExcelSheet() {
   const copyAllRows = async () => {
     const lines = rows.map(buildMovementExcelLogLine).filter(Boolean);
     if (!lines.length) {
-      showFeedback("No ready rows");
+      showFeedback("No added rows");
       return;
     }
     await copyText(lines.join("\n"));
@@ -7881,7 +7902,7 @@ function TrainMovementExcelSheet() {
     setLogRows([]);
   };
 
-  const readyCount = rows.filter((row) => getMovementExcelStatus(row) === "Ready" || row.status === "Added").length;
+  const readyCount = rows.filter((row) => getMovementExcelStatus(row) === "Added").length;
   const tableInputClass = "h-7 w-full min-w-0 border-0 bg-transparent px-2 text-[11px] font-medium text-[#eaf4ff] outline-none placeholder:text-[#45677f] focus:bg-[#0d2b43]";
   const tableSelectClass = `${tableInputClass} appearance-none cursor-pointer`;
   const cellClass = "border border-[#173653] bg-[#061827] align-middle";
@@ -7897,7 +7918,7 @@ function TrainMovementExcelSheet() {
           {feedback && (
             <span className="rounded-lg border border-[#2b4f6b] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#9fd3f6]">{feedback}</span>
           )}
-          <span className="rounded-lg border border-[#2b4f6b] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#8ea8c0]">{readyCount} ready</span>
+          <span className="rounded-lg border border-[#2b4f6b] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#8ea8c0]">{readyCount} added</span>
           <button type="button" onClick={addRow} className="inline-flex h-7 items-center gap-1 rounded-lg border border-[#2f6084] bg-[#0a2236] px-2 text-[10px] font-bold text-[#9fd3f6] transition-all hover:border-[#58a6ff] hover:text-white">
             <Plus size={12} />Add Row
           </button>
@@ -7911,14 +7932,14 @@ function TrainMovementExcelSheet() {
       </div>
 
       <div className="overflow-x-auto p-3">
-        <table className="w-full min-w-[920px] border-collapse table-fixed text-left">
+        <table className="w-full min-w-[820px] border-collapse table-fixed text-left">
           <thead>
             <tr className="text-[10px] uppercase tracking-[0.12em] text-[#9fd3f6]">
-              {["No", "Type", "Depot", "Train", "TID", "Road / Track", "Reason / Remark", "Replaced By", "Time", "Status", "Action"].map((heading, index) => (
+              {["No", "Type", "Depot", "Train", "TID", "Road / Track", "Reason / Remark", "Replaced By", "Time", "Status"].map((heading, index) => (
                 <th
                   key={heading}
                   className="border border-[#245171] bg-[#0b2b45] px-2 py-1.5 font-black"
-                  style={{ width: [42, 90, 92, 74, 66, 116, 168, 94, 76, 82, 136][index] }}
+                  style={{ width: [42, 90, 92, 74, 66, 116, 168, 94, 76, 82][index] }}
                 >
                   {heading}
                 </th>
@@ -7974,16 +7995,6 @@ function TrainMovementExcelSheet() {
                   <td className="border border-[#173653] bg-[#061827] px-1.5 text-center">
                     <span className="inline-flex min-w-[58px] justify-center rounded-md border px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em]" style={statusStyle}>{status}</span>
                   </td>
-                  <td className="border border-[#173653] bg-[#061827] px-1.5">
-                    <div className="flex items-center gap-1">
-                      <button type="button" onClick={() => copySingleRow(row)} className="inline-flex h-6 items-center gap-1 rounded-md border border-[#2f6084] bg-[#0a2236] px-1.5 text-[9px] font-bold text-[#9fd3f6] hover:text-white" title="Copy this row log">
-                        <Copy size={10} />Copy
-                      </button>
-                      <button type="button" onClick={() => addRowToMovementLog(row)} className="inline-flex h-6 items-center gap-1 rounded-md border border-emerald-500/45 bg-emerald-950/25 px-1.5 text-[9px] font-bold text-emerald-200 hover:text-white" title="Add this row into Excel log output">
-                        <Check size={10} />Log
-                      </button>
-                    </div>
-                  </td>
                 </tr>
               );
             })}
@@ -8028,7 +8039,7 @@ function TrainMovementExcelSheet() {
             </div>
           ) : (
             <div className="flex h-[62px] items-center justify-center rounded-lg border border-dashed border-[#173653] text-[11px] font-bold text-[#6ea6cf]">
-              No Excel log yet. Click Log in any ready row.
+              No Excel log yet. Ready rows will be added automatically.
             </div>
           )}
         </div>
