@@ -977,11 +977,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
         {isExpanded ? (
           <div className="border-t border-[#1a3a56] px-3 pb-2.5 pl-[18px] pr-2.5 pt-2">
-            <div className="grid grid-cols-[84px_minmax(0,1fr)_26px] items-center gap-2 px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[#4a8ab5]">
-              <span>Train ID</span>
-              <span>Location</span>
-              <span />
-            </div>
             <div className="space-y-1.5">
               {group.items.map((req) => {
                 const chipLabel = getRequestChipTrainLabel(req);
