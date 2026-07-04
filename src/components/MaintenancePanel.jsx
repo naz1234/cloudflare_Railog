@@ -954,7 +954,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         <button
           type="button"
           onClick={() => toggleGroupExpanded(section, group.key)}
-          className="theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] w-full grid-cols-[minmax(0,1fr)_20px] items-center gap-1 overflow-hidden rounded-md border px-1.5 text-left leading-none transition-[border-color,background,box-shadow] duration-150 hover:brightness-105"
+          className="theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] w-full grid-cols-[minmax(0,1fr)_20px] items-center gap-1 overflow-hidden rounded-md border pl-3 pr-1.5 text-left leading-none transition-[border-color,background,box-shadow] duration-150 hover:brightness-105"
           style={cardVisual.card}
         >
           <span className="min-w-0 truncate text-[12px] font-normal uppercase text-[#f8fbff]">
