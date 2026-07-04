@@ -1,8 +1,6 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X } from "lucide-react";
-
-const MIN_VISIBLE_REQUEST_ROWS = 40;
+import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, X } from "lucide-react";
 
 export const REQUEST_COLORS = {
   // Matched with DepotStabling.jsx MAINT_STYLES badgeBorder values.
@@ -107,34 +105,6 @@ function DeleteRequestIcon() {
       className="theme-maintenance-delete-icon inline-flex h-4 w-4 items-center justify-center rounded-full border border-red-300/85 bg-[#941c24] shadow-[0_0_6px_rgba(148,28,36,0.5)] transition-all group-hover/delete:scale-105 group-hover/delete:bg-[#c92a35]"
     >
       <X className="h-2.5 w-2.5 stroke-[3.5] text-white" />
-    </span>
-  );
-}
-
-function AlreadyStatusIcon({ message, reason }) {
-  if (!message) return null;
-
-  const isWorkshop = reason === "WORKSHOP";
-
-  return (
-    <span
-      className="already-status-trigger relative z-40 inline-flex shrink-0 items-center justify-center"
-      tabIndex={0}
-      aria-label={message}
-    >
-      <span
-        className={`inline-flex h-4 w-4 items-center justify-center rounded-full border ${
-          isWorkshop
-            ? "border-[#fbbf24] bg-[#fbbf24] shadow-[0_0_6px_rgba(251,191,36,0.46)]"
-            : "border-emerald-300/80 bg-[#58c96b] shadow-[0_0_6px_rgba(88,201,107,0.42)]"
-        }`}
-      >
-        <Check className="h-2.5 w-2.5 stroke-[3.5] text-white" />
-      </span>
-      <span className="already-status-bubble pointer-events-none absolute right-[25px] top-1/2 z-[90] -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150">
-        <span className="absolute -right-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-r border-t border-slate-200 bg-white" />
-        <span className="relative z-10">{message}</span>
-      </span>
     </span>
   );
 }
@@ -581,6 +551,66 @@ function getRequestDisplayLabel(request = {}) {
   );
 }
 
+
+function escapeRegExp(value = "") {
+  return value.toString().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function getGroupedRequestTitle(label = "") {
+  const clean = cleanRequestLabel(label) || "Request";
+  const normalized = normalizeRequestIdentity(clean);
+
+  // Keep related APU requests together while still showing each detail on the chip
+  // (example: APU Mismatch + APU Testing => one APU card).
+  if (normalized === "APU" || normalized.startsWith("APU ")) return "APU";
+
+  return clean;
+}
+
+function getGroupedRequestChipLabel(request = {}, groupTitle = "", displayLabel = "") {
+  const trainLabel = formatTrainIdForPopup(request?.trainId || "");
+  const cleanLabel = cleanRequestLabel(displayLabel);
+  const cleanTitle = cleanRequestLabel(groupTitle);
+
+  if (!cleanLabel || normalizeRequestIdentity(cleanLabel) === normalizeRequestIdentity(cleanTitle)) {
+    return trainLabel;
+  }
+
+  const titlePattern = new RegExp(`^${escapeRegExp(cleanTitle)}\\b\\s*`, "i");
+  const detail = cleanLabel.replace(titlePattern, "").trim();
+
+  return detail ? `${trainLabel} ${detail}` : `${trainLabel} ${cleanLabel}`;
+}
+
+function buildGroupedRequestCards(items = [], getLabel = () => "Request") {
+  const groupMap = new Map();
+
+  items.forEach((request) => {
+    const displayLabel = getLabel(request) || "Request";
+    const title = getGroupedRequestTitle(displayLabel);
+    const key = normalizeRequestGroupColorKey(title) || title;
+
+    if (!groupMap.has(key)) {
+      groupMap.set(key, { key, title, items: [] });
+    }
+
+    groupMap.get(key).items.push(request);
+  });
+
+  return Array.from(groupMap.values()).map((group) => ({
+    ...group,
+    items: [...group.items].sort((a, b) => {
+      const trainSort = normalizeTrainCompareKey(a.trainId || "").localeCompare(
+        normalizeTrainCompareKey(b.trainId || ""),
+        undefined,
+        { numeric: true }
+      );
+
+      return trainSort || getLabel(a).localeCompare(getLabel(b));
+    }),
+  }));
+}
+
 export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, stabledTrainIds = [], stabledTrainLocations = {} }) {
   const [trainId, setTrainId] = useState("");
   const [requestType, setRequestType] = useState("");
@@ -822,6 +852,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const regularRequests = [...requests]
     .filter((req) => !isWorkshopRequest(req) && !isAlreadyAtStablingOrWorkshopRequest(req))
     .sort((a, b) => displayType(a).localeCompare(displayType(b)) || normalizeTrainCompareKey(a.trainId || "").localeCompare(normalizeTrainCompareKey(b.trainId || ""), undefined, { numeric: true }));
+  const alreadyAtStablingOrWorkshopGroups = buildGroupedRequestCards(alreadyAtStablingOrWorkshopRequests, displayType);
+  const regularRequestGroups = buildGroupedRequestCards(regularRequests, displayType);
   const hasWorkshopRequests = workshopRequests.length > 0;
   const hasAlreadyAtStablingOrWorkshopRequests = alreadyAtStablingOrWorkshopRequests.length > 0;
   const buildWorkshopCopyText = () => {
@@ -846,11 +878,62 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     }
   };
 
-  const visibleRequestRowCount = Math.max(regularRequests.length, 1);
-  const emptyRequestRowCount = Math.max(0, MIN_VISIBLE_REQUEST_ROWS - visibleRequestRowCount);
 
   const inputCls = "w-full border border-[#1e4060] rounded-full px-3 py-[5px] text-xs outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] bg-[#091828] text-[#c8d8ea] transition-all placeholder:text-[#2b4f6b]";
   const labelCls = "block text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-widest mb-0.5";
+
+  const renderGroupedRequestCards = (groups, { already = false } = {}) => (
+    <div className="space-y-1.5 p-2">
+      {groups.map((group) => {
+        const requestCardStyle = getMainStablingCompactCardStyle(group.title, group.title, requestGroupColors);
+
+        return (
+          <div
+            key={group.key}
+            className="theme-maintenance-request-card relative overflow-visible rounded-[8px] px-2.5 py-2.5 pl-4 transition-[filter,box-shadow] duration-150 hover:brightness-105"
+            style={{ ...requestCardStyle.card, "--maintenance-request-accent": requestCardStyle.accent }}
+          >
+            <div
+              className="mb-2 min-w-0 truncate text-left text-[12px] font-semibold leading-none tracking-wide"
+              style={{ color: "#ffffff" }}
+              title={group.title}
+            >
+              {group.title}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {group.items.map((req) => {
+                const displayLabel = displayType(req);
+                const chipLabel = getGroupedRequestChipLabel(req, group.title, displayLabel);
+                const crossOutInfo = getCrossOutInfo(req);
+                const chipTitle = already
+                  ? getAlreadyStatusMessage(crossOutInfo) || chipLabel
+                  : getCrossOutMessage(req, crossOutInfo) || displayLabel;
+
+                return (
+                  <span
+                    key={`${group.key}-${req.id || req._tempId || req.trainId}`}
+                    className="inline-flex min-h-[22px] max-w-full items-center gap-1.5 rounded-[6px] border border-[#2a638c] bg-[#0a2942] px-2 py-1 text-[11px] font-semibold leading-none text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_1px_3px_rgba(0,0,0,0.25)]"
+                    title={chipTitle}
+                  >
+                    <span className="min-w-0 truncate">{chipLabel}</span>
+                    <button
+                      type="button"
+                      onClick={() => onRemove(req.id)}
+                      className="group/delete relative z-30 inline-flex h-4 w-4 shrink-0 items-center justify-center"
+                      aria-label={`Delete ${chipLabel}`}
+                      title="Delete request"
+                    >
+                      <DeleteRequestIcon />
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <div className="theme-maintenance-panel relative overflow-visible bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shadow-md">
@@ -1055,64 +1138,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Already at Stabling / Workshop</span>
             <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{alreadyAtStablingOrWorkshopRequests.length}</span>
           </div>
-
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="theme-maintenance-subheader border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-                <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">ID</th>
-                <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">Type</th>
-                <th className="w-12" />
-              </tr>
-            </thead>
-            <tbody>
-              {alreadyAtStablingOrWorkshopRequests.map((req) => {
-                const displayLabel = displayType(req);
-                const crossOutInfo = getCrossOutInfo(req);
-                const crossOutReason = crossOutInfo.reason;
-                const requestCardStyle = getMainStablingCompactCardStyle(displayLabel, displayLabel, requestGroupColors);
-                const statusMessage = getAlreadyStatusMessage(crossOutInfo);
-
-                return (
-                  <tr
-                    key={`already-${crossOutReason}-${req.id || req._tempId}`}
-                    className="group h-[24px]"
-                    aria-label={statusMessage || undefined}
-                  >
-                    <td colSpan={3} className="h-[24px] p-[2px]">
-                      <div
-                        className="theme-maintenance-request-card grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_44px] items-center overflow-visible rounded-[6px] transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
-                        style={{ ...requestCardStyle.card, "--maintenance-request-accent": requestCardStyle.accent }}
-                      >
-                        <span
-                          className="flex h-[14px] items-center justify-center border-r pl-1 text-[12px] font-bold leading-none"
-                          style={{ borderColor: requestCardStyle.divider, color: "#ffffff" }}
-                        >
-                          {req.trainId}
-                        </span>
-                        <span
-                          className="theme-maintenance-request-type min-w-0 truncate px-2 text-left text-[12px] font-semibold leading-none"
-                          style={{ color: "#ffffff" }}
-                        >
-                          {displayLabel}
-                        </span>
-                        <div className="flex items-center justify-end gap-1 pr-1.5">
-                          <button
-                            onClick={() => onRemove(req.id)}
-                            className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center"
-                            aria-label={`Delete ${req.trainId}`}
-                            title="Delete request"
-                          >
-                            <DeleteRequestIcon />
-                          </button>
-                          <AlreadyStatusIcon message={statusMessage} reason={crossOutReason} />
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          {renderGroupedRequestCards(alreadyAtStablingOrWorkshopGroups, { already: true })}
         </div>
       )}
 
@@ -1124,87 +1150,14 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{regularRequests.length}</span>
           </div>
         )}
-        <table className="w-full border-collapse text-xs">
-          <thead>
-            <tr className="theme-maintenance-subheader border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-              <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">ID</th>
-              <th className="px-0.5 py-1 text-center text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-wider">Type</th>
-              <th className="w-7" />
-            </tr>
-          </thead>
-          <tbody>
-            {regularRequests.length === 0 && (
-              <tr className="h-[24px] border-b border-[#0f2040]">
-                <td colSpan={3} className="text-center text-[#3a5a7a] py-1 text-xs italic">
-                  {requests.length === 0 ? "No requests yet" : "No other request type"}
-                </td>
-              </tr>
-            )}
-            {regularRequests.map((req) => {
-              const displayLabel = displayType(req);
-              const typeKey = displayLabel;
-              const crossOutInfo = getCrossOutInfo(req);
-              const crossOutReason = crossOutInfo.reason;
-              const crossedOut = Boolean(crossOutReason);
-              const requestCardStyle = getMainStablingCompactCardStyle(typeKey, displayLabel, requestGroupColors);
-              const regularCardStyle = {
-                ...requestCardStyle.card,
-                ...(crossedOut
-                  ? {
-                      opacity: 0.58,
-                    }
-                  : {}),
-              };
-              const crossOutMessage = getCrossOutMessage(req, crossOutInfo);
-              return (
-                <tr
-                  key={req.id || req._tempId}
-                  className="group h-[24px]"
-                  aria-label={crossOutMessage || undefined}
-                >
-                  <td colSpan={3} className="h-[24px] p-[2px]">
-                    <div
-                      className="theme-maintenance-request-card request-cross-trigger relative grid h-[20px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-[6px] text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
-                      style={{ ...regularCardStyle, "--maintenance-request-accent": requestCardStyle.accent }}
-                    >
-                      <span
-                        className="flex h-[14px] items-center justify-center border-r pl-1 text-[12px] font-bold leading-none"
-                        style={{ borderColor: requestCardStyle.divider, color: "#ffffff" }}
-                      >
-                        {req.trainId}
-                      </span>
-                      <span
-                        className="theme-maintenance-request-type min-w-0 truncate px-2 text-left text-[12px] font-semibold leading-none"
-                        style={{ color: "#ffffff" }}
-                      >
-                        {displayLabel}
-                      </span>
-                      <div className="flex items-center justify-end pr-1.5">
-                        <button
-                          onClick={() => onRemove(req.id)}
-                          className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center"
-                          aria-label={`Delete ${req.trainId}`}
-                          title="Delete request"
-                        >
-                          <DeleteRequestIcon />
-                        </button>
-                      </div>
-                      <RequestCrossLine show={crossedOut} />
-                      <RequestCrossBubble message={crossOutMessage} />
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {Array.from({ length: emptyRequestRowCount }).map((_, index) => (
-              <tr key={`maintenance-empty-${index}`} className="h-[24px] border-b border-[#0f2040] last:border-0">
-                <td className="px-0.5 py-0.5 text-center text-[#17314a]">&nbsp;</td>
-                <td className="px-0.5 py-0.5 text-center text-[#17314a]">&nbsp;</td>
-                <td className="pr-1 py-0.5 text-center">&nbsp;</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+        {regularRequests.length === 0 ? (
+          <div className="border-b border-[#0f2040] py-2 text-center text-xs italic text-[#3a5a7a]">
+            {requests.length === 0 ? "No requests yet" : "No other request type"}
+          </div>
+        ) : (
+          renderGroupedRequestCards(regularRequestGroups)
+        )}
       </div>
     </div>
   );
