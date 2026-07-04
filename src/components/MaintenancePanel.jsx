@@ -104,9 +104,9 @@ function DeleteRequestIcon() {
   return (
     <span
       aria-hidden="true"
-      className="theme-maintenance-delete-icon inline-flex h-4 w-4 items-center justify-center rounded-full border border-red-300/85 bg-[#941c24] shadow-[0_0_6px_rgba(148,28,36,0.5)] transition-all group-hover/delete:scale-105 group-hover/delete:bg-[#c92a35]"
+      className="theme-maintenance-delete-icon inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border border-red-300/85 bg-[#941c24] shadow-[0_0_6px_rgba(148,28,36,0.5)] transition-all group-hover/delete:scale-105 group-hover/delete:bg-[#c92a35]"
     >
-      <X className="h-2.5 w-2.5 stroke-[3.5] text-white" />
+      <X className="h-[9px] w-[9px] stroke-[3.5] text-white" />
     </span>
   );
 }
@@ -123,13 +123,13 @@ function AlreadyStatusIcon({ message, reason }) {
       aria-label={message}
     >
       <span
-        className={`inline-flex h-4 w-4 items-center justify-center rounded-full border ${
+        className={`inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border ${
           isWorkshop
             ? "border-[#fbbf24] bg-[#fbbf24] shadow-[0_0_6px_rgba(251,191,36,0.46)]"
             : "border-emerald-300/80 bg-[#58c96b] shadow-[0_0_6px_rgba(88,201,107,0.42)]"
         }`}
       >
-        <Check className="h-2.5 w-2.5 stroke-[3.5] text-white" />
+        <Check className="h-[9px] w-[9px] stroke-[3.5] text-white" />
       </span>
       <span className="already-status-bubble pointer-events-none absolute right-[25px] top-1/2 z-[90] -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150">
         <span className="absolute -right-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-r border-t border-slate-200 bg-white" />
@@ -975,7 +975,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             event.stopPropagation();
             onRemove(req.id);
           }}
-          className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center justify-self-end"
+          className="group/delete relative z-30 inline-flex h-[15px] w-[15px] items-center justify-center justify-self-end"
           aria-label={`Delete ${chipLabel}`}
           title="Delete request"
         >
@@ -1047,7 +1047,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                       event.stopPropagation();
                       onRemove(req.id);
                     }}
-                    className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center justify-self-end"
+                    className="group/delete relative z-30 inline-flex h-[15px] w-[15px] items-center justify-center justify-self-end"
                     aria-label={`Delete ${chipLabel}`}
                     title="Delete request"
                   >
@@ -1239,7 +1239,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                         ) : null}
                         <button
                           onClick={() => onRemove(req.id)}
-                          className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center justify-self-end"
+                          className="group/delete relative z-30 inline-flex h-[15px] w-[15px] items-center justify-center justify-self-end"
                           aria-label={`Delete ${req.trainId}`}
                           title="Delete request"
                         >
