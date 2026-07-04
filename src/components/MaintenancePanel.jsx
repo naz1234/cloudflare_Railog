@@ -957,32 +957,34 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     const crossOutMessage = getCrossOutMessage(req, crossOutInfo);
     const statusMessage = getAlreadyStatusMessage(crossOutInfo) || crossOutMessage;
     const statusText = showStatus ? getAlreadyExpandedLocationText(req) : "";
-    const secondaryText = statusText ? `${displayLabel} • ${statusText}` : displayLabel;
+    const secondaryText = showStatus ? displayLabel : (statusText ? `${displayLabel} • ${statusText}` : displayLabel);
     const showAlreadyStatusIcon = Boolean(crossedOut && statusMessage);
+    const actionGridClass = showAlreadyStatusIcon
+      ? "grid-cols-[46px_minmax(0,1fr)_18px_18px]"
+      : "grid-cols-[46px_minmax(0,1fr)_20px]";
 
     return (
       <div
         key={`${section}-${groupKey}-${req.id || req._tempId || chipLabel}`}
-        className="theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row relative grid h-[24px] w-full grid-cols-[46px_minmax(0,1fr)_20px] items-center gap-1 overflow-visible rounded-md border px-1.5 leading-none text-white transition-[filter,box-shadow] duration-150 hover:brightness-105"
+        className={`theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row relative grid h-[24px] w-full ${actionGridClass} items-center gap-1 overflow-visible rounded-md border px-1.5 leading-none text-white transition-[filter,box-shadow] duration-150 hover:brightness-105`}
         style={{ ...singleCardStyle, "--maintenance-request-accent": cardVisual.accent }}
       >
         <span className="truncate text-center text-[12px] font-semibold text-[#f8fbff]">{chipLabel}</span>
         <span className="min-w-0 truncate pl-2 text-left text-[12px] font-normal uppercase tracking-[0.02em] text-[#f8fbff]">{secondaryText}</span>
         {showAlreadyStatusIcon ? (
           <AlreadyStatusIcon message={statusMessage} reason={crossOutInfo.reason} />
-        ) : (
-          <button
-            onClick={(event) => {
-              event.stopPropagation();
-              onRemove(req.id);
-            }}
-            className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center justify-self-end"
-            aria-label={`Delete ${chipLabel}`}
-            title="Delete request"
-          >
-            <DeleteRequestIcon />
-          </button>
-        )}
+        ) : null}
+        <button
+          onClick={(event) => {
+            event.stopPropagation();
+            onRemove(req.id);
+          }}
+          className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center justify-self-end"
+          aria-label={`Delete ${chipLabel}`}
+          title="Delete request"
+        >
+          <DeleteRequestIcon />
+        </button>
       </div>
     );
   };
@@ -1029,30 +1031,32 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               const crossOutMessage = getCrossOutMessage(req, crossOutInfo);
               const statusMessage = getAlreadyStatusMessage(crossOutInfo) || crossOutMessage;
               const showAlreadyStatusIcon = Boolean(showStatus && statusMessage);
+              const expandedGridClass = showAlreadyStatusIcon
+                ? "grid-cols-[56px_minmax(0,1fr)_18px_18px]"
+                : "grid-cols-[56px_minmax(0,1fr)_20px]";
 
               return (
                 <div
                   key={`${section}-${group.key}-${req.id || req._tempId || chipLabel}`}
-                  className="theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] grid-cols-[56px_minmax(0,1fr)_20px] items-center gap-1 overflow-visible rounded-md border px-1.5 leading-none transition-[border-color,background,box-shadow] duration-150"
+                  className={`theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] ${expandedGridClass} items-center gap-1 overflow-visible rounded-md border px-1.5 leading-none transition-[border-color,background,box-shadow] duration-150`}
                   style={{ ...cardVisual.card, marginLeft: "10px", width: "calc(100% - 10px)" }}
                 >
                   <span className="truncate text-center text-[12px] font-semibold text-[#f8fbff]">{chipLabel}</span>
                   <span className="truncate text-center text-[11px] font-normal uppercase tracking-[0.02em] text-[#a9bfd1]">{locationText}</span>
                   {showAlreadyStatusIcon ? (
                     <AlreadyStatusIcon message={statusMessage} reason={crossOutInfo.reason} />
-                  ) : (
-                    <button
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onRemove(req.id);
-                      }}
-                      className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center justify-self-end"
-                      aria-label={`Delete ${chipLabel}`}
-                      title="Delete request"
-                    >
-                      <DeleteRequestIcon />
-                    </button>
-                  )}
+                  ) : null}
+                  <button
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onRemove(req.id);
+                    }}
+                    className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center justify-self-end"
+                    aria-label={`Delete ${chipLabel}`}
+                    title="Delete request"
+                  >
+                    <DeleteRequestIcon />
+                  </button>
                 </div>
               );
             })}
@@ -1224,7 +1228,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   >
                     <td colSpan={3} className="h-[30px] p-[3px]">
                       <div
-                        className="theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row relative grid h-[24px] w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center overflow-visible rounded-md border text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-105"
+                        className={`theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row relative grid h-[24px] w-full ${crossedOut ? "grid-cols-[40px_minmax(0,1fr)_18px_18px]" : "grid-cols-[40px_minmax(0,1fr)_24px]"} items-center overflow-visible rounded-md border text-white transition-[filter,box-shadow] duration-150 group-hover:brightness-105`}
                         style={{ ...workshopCardStyle, "--maintenance-request-accent": requestCardStyle.accent }}
                       >
                         <span
@@ -1239,20 +1243,17 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                         >
                           {displayLabel}
                         </span>
-                        <div className="flex items-center justify-end pr-1.5">
-                          {crossedOut ? (
-                            <AlreadyStatusIcon message={getAlreadyStatusMessage(crossOutInfo) || crossOutMessage} reason={crossOutInfo.reason} />
-                          ) : (
-                            <button
-                              onClick={() => onRemove(req.id)}
-                              className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center"
-                              aria-label={`Delete ${req.trainId}`}
-                              title="Delete request"
-                            >
-                              <DeleteRequestIcon />
-                            </button>
-                          )}
-                        </div>
+                        {crossedOut ? (
+                          <AlreadyStatusIcon message={getAlreadyStatusMessage(crossOutInfo) || crossOutMessage} reason={crossOutInfo.reason} />
+                        ) : null}
+                        <button
+                          onClick={() => onRemove(req.id)}
+                          className="group/delete relative z-30 inline-flex h-4 w-4 items-center justify-center justify-self-end"
+                          aria-label={`Delete ${req.trainId}`}
+                          title="Delete request"
+                        >
+                          <DeleteRequestIcon />
+                        </button>
                       </div>
                     </td>
                   </tr>
