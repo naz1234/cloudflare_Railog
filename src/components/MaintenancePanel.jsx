@@ -836,9 +836,15 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   };
 
   const getPendingExpandedLocationText = (req) => {
+    const key = normalizeTrainCompareKey(req?.trainId || "");
     const crossOutInfo = getCrossOutInfo(req);
+
     if (crossOutInfo.reason === "WORKSHOP") return "WORKSHOP";
     if (crossOutInfo.locationText) return formatCompactLocationText(crossOutInfo.locationText, "MAINLINE");
+
+    const detectedLocationText = key ? (stabledTrainLocationMap.get(key) || []).join(" / ") : "";
+    if (detectedLocationText) return formatCompactLocationText(detectedLocationText, "MAINLINE");
+
     return "MAINLINE";
   };
 
