@@ -928,7 +928,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   >
                     <DeleteRequestIcon />
                   </button>
-                  {showStatus ? <AlreadyStatusIcon message={statusMessage} reason={crossOutInfo.reason} /> : null}
+                  
                 </div>
               );
             })}
