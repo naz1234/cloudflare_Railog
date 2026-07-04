@@ -894,12 +894,20 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const renderGroupedRequestCard = (group, options = {}) => {
     const { showStatus = false } = options;
     const cardVisual = getMainStablingCompactCardStyle(group.label, group.label, requestGroupColors);
+    const groupedCardStyle = showStatus
+      ? {
+          ...cardVisual.card,
+          background: "linear-gradient(90deg, rgba(6,55,63,0.98) 0%, rgba(7,36,50,0.98) 100%)",
+          border: "1px solid rgba(45,212,191,0.50)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 7px rgba(0,0,0,0.34), 0 0 10px rgba(45,212,191,0.10)",
+        }
+      : cardVisual.card;
 
     return (
       <div
         key={group.key}
-        className="theme-maintenance-group-card relative overflow-hidden rounded-[10px] border px-3 pb-3 pt-2.5"
-        style={cardVisual.card}
+        className={`theme-maintenance-group-card relative overflow-hidden rounded-[10px] border px-3 pb-3 pt-2.5 ${showStatus ? "theme-maintenance-already-card" : ""}`}
+        style={groupedCardStyle}
       >
         <span
           aria-hidden="true"
@@ -1139,10 +1147,22 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
       {/* Already at Stabling / Workshop Requests */}
       {hasAlreadyAtStablingOrWorkshopRequests && (
-        <div className="border-b border-[#1a3a56]">
-          <div className="theme-maintenance-subheader flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Already at Stabling / Workshop</span>
-            <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{alreadyAtStablingOrWorkshopRequests.length}</span>
+        <div
+          className="border-b"
+          style={{
+            borderColor: "rgba(45,212,191,0.30)",
+            background: "linear-gradient(180deg, rgba(8,47,54,0.55) 0%, rgba(5,33,45,0.34) 100%)",
+          }}
+        >
+          <div
+            className="theme-maintenance-subheader flex items-center justify-between gap-2 border-b px-3 py-2"
+            style={{
+              borderColor: "rgba(45,212,191,0.32)",
+              background: "linear-gradient(180deg, rgba(13,76,82,0.88) 0%, rgba(7,47,58,0.82) 100%)",
+            }}
+          >
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#5eead4]">Already at Stabling / Workshop</span>
+            <span className="rounded-full border border-[#2dd4bf]/55 bg-[#0f3d43] px-2 py-0.5 text-[10px] font-black text-[#99f6e4]">{alreadyAtStablingOrWorkshopRequests.length}</span>
           </div>
 
           <div className="grid gap-2 p-2.5">
