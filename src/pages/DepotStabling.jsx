@@ -7548,6 +7548,381 @@ function normalizeMovementTrain(value) {
   return normalized ? padTrainId(normalized) : "";
 }
 
+
+const TRAIN_MOVEMENT_EXCEL_KEY = "trainMovementExcelRows_v1";
+
+function createTrainMovementExcelRow(overrides = {}) {
+  const id = overrides.id || `excel-movement-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const operation = overrides.operation || "swapping";
+  const depot = overrides.depot || "west";
+  const depotLabel = getMovementDepotLabel(depot);
+  const track = getMovementTrack(depot);
+  const road = overrides.road || getMovementRoads(depot)?.[0] || "";
+
+  const defaults = {
+    swapping: {
+      from: "Mainline",
+      to: `${depotLabel} stabling`,
+      road: "",
+      track: "",
+    },
+    insertion: {
+      from: road,
+      to: `Mainline track ${track}`,
+      road,
+      track,
+    },
+    removal: {
+      from: "Mainline",
+      to: depotLabel,
+      road: "",
+      track: "",
+    },
+  };
+
+  const base = defaults[operation] || defaults.swapping;
+
+  return {
+    id,
+    operation,
+    depot,
+    trainId: "",
+    tid: "",
+    from: base.from,
+    to: base.to,
+    road: base.road,
+    track: base.track,
+    reason: "",
+    replacedBy: "",
+    time: "",
+    notes: "",
+    status: "Draft",
+    ...overrides,
+  };
+}
+
+function normalizeTrainMovementExcelRow(row = {}) {
+  const safeOperation = ["swapping", "insertion", "removal"].includes(row.operation) ? row.operation : "swapping";
+  const safeDepot = row.depot === "east" ? "east" : "west";
+  return createTrainMovementExcelRow({
+    ...row,
+    operation: safeOperation,
+    depot: safeDepot,
+    id: row.id || `excel-movement-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  });
+}
+
+function loadTrainMovementExcelRows() {
+  try {
+    const raw = localStorage.getItem(TRAIN_MOVEMENT_EXCEL_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (Array.isArray(parsed) && parsed.length) {
+      return parsed.map(normalizeTrainMovementExcelRow).slice(0, 60);
+    }
+  } catch {}
+
+  return Array.from({ length: 6 }, () => createTrainMovementExcelRow());
+}
+
+function saveTrainMovementExcelRows(rows = []) {
+  try { localStorage.setItem(TRAIN_MOVEMENT_EXCEL_KEY, JSON.stringify(rows || [])); } catch {}
+}
+
+function formatMovementExcelOperation(value = "") {
+  const clean = String(value || "").toLowerCase();
+  if (clean === "insertion") return "Insertion";
+  if (clean === "removal") return "Removal";
+  return "Swapping";
+}
+
+function getMovementExcelStatus(row = {}) {
+  if (row.status === "Added") return "Added";
+  const train = normalizeMovementTrain(row.trainId);
+  const time = normalizeMovementCustomTimeInput(row.time);
+  if (!train && !time && !row.tid && !row.reason && !row.replacedBy && !row.notes) return "Draft";
+  if (!train || !isCompleteMovementTimeInput(time)) return "Missing";
+  if (row.operation === "swapping" && (!/^\d{3}$/.test(String(row.tid || "")) || !normalizeMovementTrain(row.replacedBy) || !String(row.reason || "").trim())) {
+    return "Missing";
+  }
+  return "Ready";
+}
+
+function getMovementExcelStatusStyle(status = "Draft") {
+  if (status === "Added") {
+    return { borderColor: "rgba(34,197,94,0.72)", background: "rgba(22,101,52,0.28)", color: "#86efac" };
+  }
+  if (status === "Ready") {
+    return { borderColor: "rgba(56,189,248,0.70)", background: "rgba(14,116,144,0.24)", color: "#7dd3fc" };
+  }
+  if (status === "Missing") {
+    return { borderColor: "rgba(248,113,113,0.70)", background: "rgba(127,29,29,0.26)", color: "#fecaca" };
+  }
+  return { borderColor: "rgba(148,163,184,0.48)", background: "rgba(51,65,85,0.22)", color: "#cbd5e1" };
+}
+
+function buildMovementExcelLogLine(row = {}) {
+  const operation = row.operation || "swapping";
+  const train = normalizeMovementTrain(row.trainId);
+  const tid = String(row.tid || "").replace(/\D/g, "").trim();
+  const time = normalizeMovementCustomTimeInput(row.time);
+  const depotLabel = getMovementDepotLabel(row.depot);
+  const tidPart = tid ? ` (TID ${tid})` : "";
+  const notes = String(row.notes || "").trim();
+  const notesPart = notes ? ` ${notes}` : "";
+
+  if (!train || !isCompleteMovementTimeInput(time)) return "";
+
+  if (operation === "insertion") {
+    const from = String(row.from || row.road || getMovementRoads(row.depot)?.[0] || "WD-ST14").trim();
+    const to = String(row.to || `mainline track ${getMovementTrack(row.depot)}`).trim();
+    return `${time} hrs – ${train}${tidPart} inserted from ${from} to ${to}.${notesPart}`;
+  }
+
+  if (operation === "removal") {
+    const to = String(row.to || depotLabel).trim();
+    return `${time} hrs – ${train}${tidPart} removed from mainline to ${to}.${notesPart}`;
+  }
+
+  const replacement = normalizeMovementTrain(row.replacedBy);
+  const reason = String(row.reason || "").trim();
+  if (!/^\d{3}$/.test(tid) || !replacement || !reason) return "";
+  const to = String(row.to || `${depotLabel} stabling`).trim();
+  return `${time} hrs – ${train} (${tid}) removed from mainline to ${to} due to ${reason}. Replaced by ${replacement}.${notesPart}`;
+}
+
+function TrainMovementExcelSheet() {
+  const [rows, setRows] = useState(() => loadTrainMovementExcelRows());
+  const [feedback, setFeedback] = useState("");
+  const feedbackTimerRef = useRef(null);
+
+  useEffect(() => {
+    saveTrainMovementExcelRows(rows);
+  }, [rows]);
+
+  useEffect(() => () => {
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+  }, []);
+
+  const showFeedback = (text) => {
+    setFeedback(text);
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = setTimeout(() => setFeedback(""), 1600);
+  };
+
+  const copyText = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+  };
+
+  const updateRow = (id, field, value) => {
+    setRows((prev) => prev.map((row) => {
+      if (row.id !== id) return row;
+
+      const next = { ...row, [field]: value, status: row.status === "Added" ? "Ready" : row.status };
+      if (field === "operation" || field === "depot") {
+        const operation = field === "operation" ? value : next.operation;
+        const depot = field === "depot" ? value : next.depot;
+        const generated = createTrainMovementExcelRow({ operation, depot });
+        next.operation = operation;
+        next.depot = depot;
+        next.from = generated.from;
+        next.to = generated.to;
+        next.road = generated.road;
+        next.track = generated.track;
+      }
+      return next;
+    }));
+  };
+
+  const addRow = () => {
+    setRows((prev) => {
+      const lastRow = prev[prev.length - 1] || {};
+      return [...prev, createTrainMovementExcelRow({ operation: lastRow.operation || "swapping", depot: lastRow.depot || "west" })];
+    });
+  };
+
+  const clearRows = () => {
+    if (!window.confirm("Clear Train Movement Excel sheet?")) return;
+    setRows(Array.from({ length: 6 }, () => createTrainMovementExcelRow()));
+  };
+
+  const copyAllRows = async () => {
+    const lines = rows.map(buildMovementExcelLogLine).filter(Boolean);
+    if (!lines.length) {
+      showFeedback("No ready rows");
+      return;
+    }
+    await copyText(lines.join("\n"));
+    showFeedback("Copied");
+  };
+
+  const copySingleRow = async (row) => {
+    const line = buildMovementExcelLogLine(row);
+    if (!line) {
+      showFeedback("Row missing data");
+      return;
+    }
+    await copyText(line);
+    showFeedback("Copied row");
+  };
+
+  const addRowToMovementLog = (row) => {
+    const line = buildMovementExcelLogLine(row);
+    if (!line) {
+      showFeedback("Row missing data");
+      return;
+    }
+
+    const now = new Date();
+    const train = normalizeMovementTrain(row.trainId);
+    const entry = {
+      id: `movement-excel-${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
+      depot: row.depot === "east" ? "east" : "west",
+      operation: row.operation || "swapping",
+      time: normalizeMovementCustomTimeInput(row.time),
+      createdAt: now.toISOString(),
+      text: line,
+      train,
+      tid: String(row.tid || "").replace(/\D/g, "").trim(),
+      road: row.road || "",
+      replacement: normalizeMovementTrain(row.replacedBy),
+      reason: String(row.reason || "").trim(),
+      notes: String(row.notes || "").trim(),
+    };
+
+    const existing = loadTrainMovementLog();
+    saveTrainMovementLog([...existing, entry]);
+    setRows((prev) => prev.map((item) => item.id === row.id ? { ...item, status: "Added" } : item));
+    showFeedback("Added to log");
+  };
+
+  const readyCount = rows.filter((row) => getMovementExcelStatus(row) === "Ready" || row.status === "Added").length;
+  const tableInputClass = "h-7 w-full min-w-0 border-0 bg-transparent px-2 text-[11px] font-medium text-[#eaf4ff] outline-none placeholder:text-[#45677f] focus:bg-[#0d2b43]";
+  const tableSelectClass = `${tableInputClass} appearance-none cursor-pointer`;
+  const cellClass = "border border-[#173653] bg-[#061827] align-middle";
+
+  return (
+    <section className="w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_12px_26px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.05)]">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2.5" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+        <div>
+          <h2 className="text-[13px] font-black uppercase tracking-[1.8px] text-white">TRAIN MOVEMENT EXCEL</h2>
+          <p className="mt-0.5 text-[10px] font-medium text-[#58a6ff]">Compact spreadsheet format below Train Removal Plan</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {feedback && (
+            <span className="rounded-lg border border-[#2b4f6b] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#9fd3f6]">{feedback}</span>
+          )}
+          <span className="rounded-lg border border-[#2b4f6b] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#8ea8c0]">{readyCount} ready</span>
+          <button type="button" onClick={addRow} className="inline-flex h-7 items-center gap-1 rounded-lg border border-[#2f6084] bg-[#0a2236] px-2 text-[10px] font-bold text-[#9fd3f6] transition-all hover:border-[#58a6ff] hover:text-white">
+            <Plus size={12} />Add Row
+          </button>
+          <button type="button" onClick={copyAllRows} className="inline-flex h-7 items-center gap-1 rounded-lg border border-[#2f6084] bg-[#0a2236] px-2 text-[10px] font-bold text-[#9fd3f6] transition-all hover:border-[#58a6ff] hover:text-white">
+            <Copy size={12} />Copy All
+          </button>
+          <button type="button" onClick={clearRows} className="inline-flex h-7 items-center gap-1 rounded-lg border border-red-500/45 bg-red-950/25 px-2 text-[10px] font-bold text-red-200 transition-all hover:border-red-400 hover:text-white">
+            <Trash2 size={12} />Clear
+          </button>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto p-3">
+        <table className="w-full min-w-[1060px] border-collapse table-fixed text-left">
+          <thead>
+            <tr className="text-[10px] uppercase tracking-[0.12em] text-[#9fd3f6]">
+              {["No", "Type", "Depot", "Train", "TID", "From", "To", "Track/Road", "Reason / Remark", "Replaced By", "Time", "Status", "Action"].map((heading, index) => (
+                <th
+                  key={heading}
+                  className="border border-[#245171] bg-[#0b2b45] px-2 py-1.5 font-black"
+                  style={{ width: [42, 90, 92, 74, 66, 138, 150, 104, 150, 94, 76, 82, 136][index] }}
+                >
+                  {heading}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => {
+              const status = getMovementExcelStatus(row);
+              const statusStyle = getMovementExcelStatusStyle(status);
+              const operationAccent = row.operation === "insertion" ? "#22c55e" : row.operation === "removal" ? "#ef4444" : "#f59e0b";
+
+              return (
+                <tr key={row.id} className="group text-[11px] text-[#eaf4ff]">
+                  <td className="border border-[#173653] bg-[#082136] px-2 text-center font-mono text-[#7eb8e0]" style={{ boxShadow: `inset 3px 0 0 ${operationAccent}` }}>{index + 1}</td>
+                  <td className={cellClass}>
+                    <select value={row.operation} onChange={(e) => updateRow(row.id, "operation", e.target.value)} className={tableSelectClass}>
+                      <option value="swapping">Swapping</option>
+                      <option value="insertion">Insertion</option>
+                      <option value="removal">Removal</option>
+                    </select>
+                  </td>
+                  <td className={cellClass}>
+                    <select value={row.depot} onChange={(e) => updateRow(row.id, "depot", e.target.value)} className={tableSelectClass}>
+                      <option value="west">West</option>
+                      <option value="east">East</option>
+                    </select>
+                  </td>
+                  <td className={cellClass}>
+                    <div className="flex items-center px-2">
+                      <span className="text-[11px] font-bold text-[#58a6ff]">T</span>
+                      <input value={row.trainId} onChange={(e) => updateRow(row.id, "trainId", e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="25" className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[11px] font-medium text-white outline-none placeholder:text-[#45677f]" />
+                    </div>
+                  </td>
+                  <td className={cellClass}>
+                    <input value={row.tid} onChange={(e) => updateRow(row.id, "tid", e.target.value.replace(/\D/g, "").slice(0, 3))} placeholder="111" className={tableInputClass} />
+                  </td>
+                  <td className={cellClass}>
+                    <input value={row.from} onChange={(e) => updateRow(row.id, "from", e.target.value)} placeholder="Mainline" className={tableInputClass} />
+                  </td>
+                  <td className={cellClass}>
+                    <input value={row.to} onChange={(e) => updateRow(row.id, "to", e.target.value)} placeholder="West Depot" className={tableInputClass} />
+                  </td>
+                  <td className={cellClass}>
+                    <input value={row.road || row.track} onChange={(e) => updateRow(row.id, row.operation === "insertion" ? "road" : "track", e.target.value)} placeholder="WD-ST14" className={tableInputClass} />
+                  </td>
+                  <td className={cellClass}>
+                    <input value={row.reason} onChange={(e) => updateRow(row.id, "reason", e.target.value)} placeholder={row.operation === "swapping" ? "RST PM / CM" : "Remark"} className={tableInputClass} />
+                  </td>
+                  <td className={cellClass}>
+                    <div className="flex items-center px-2">
+                      <span className="text-[11px] font-bold text-[#58a6ff]">T</span>
+                      <input value={row.replacedBy} onChange={(e) => updateRow(row.id, "replacedBy", e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="30" className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[11px] font-medium text-white outline-none placeholder:text-[#45677f]" />
+                    </div>
+                  </td>
+                  <td className={cellClass}>
+                    <input value={row.time} onChange={(e) => updateRow(row.id, "time", cleanMovementCustomTimeInput(e.target.value))} onBlur={(e) => updateRow(row.id, "time", normalizeMovementCustomTimeInput(e.target.value))} placeholder="00:00" className={`${tableInputClass} font-mono`} />
+                  </td>
+                  <td className="border border-[#173653] bg-[#061827] px-1.5 text-center">
+                    <span className="inline-flex min-w-[58px] justify-center rounded-md border px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em]" style={statusStyle}>{status}</span>
+                  </td>
+                  <td className="border border-[#173653] bg-[#061827] px-1.5">
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => copySingleRow(row)} className="inline-flex h-6 items-center gap-1 rounded-md border border-[#2f6084] bg-[#0a2236] px-1.5 text-[9px] font-bold text-[#9fd3f6] hover:text-white" title="Copy this row log">
+                        <Copy size={10} />Copy
+                      </button>
+                      <button type="button" onClick={() => addRowToMovementLog(row)} className="inline-flex h-6 items-center gap-1 rounded-md border border-emerald-500/45 bg-emerald-950/25 px-1.5 text-[9px] font-bold text-emerald-200 hover:text-white" title="Add this row into Train Movement Log">
+                        <Check size={10} />Log
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 function cleanMovementCustomTimeInput(value) {
   const raw = String(value || "").replace(/[^\d:]/g, "").slice(0, 5);
   if (raw.includes(":")) {
@@ -16042,6 +16417,8 @@ export default function DepotStablingPage() {
         activeTimetable={activeTimetable}
         activeTimetableType={selectedTimetableType}
       />
+
+      <TrainMovementExcelSheet />
     </div>
 
     {/* RIGHT PANEL */}
