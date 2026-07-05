@@ -7755,7 +7755,9 @@ function TrainMovementExcelSheet() {
   const [rows, setRows] = useState(() => loadTrainMovementExcelRows());
   const [logRows, setLogRows] = useState(() => loadTrainMovementExcelLogRows());
   const [feedback, setFeedback] = useState("");
+  const [confirmClearTarget, setConfirmClearTarget] = useState("");
   const feedbackTimerRef = useRef(null);
+  const confirmClearTimerRef = useRef(null);
 
   useEffect(() => {
     saveTrainMovementExcelRows(rows);
@@ -7794,12 +7796,27 @@ function TrainMovementExcelSheet() {
 
   useEffect(() => () => {
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    if (confirmClearTimerRef.current) clearTimeout(confirmClearTimerRef.current);
   }, []);
 
   const showFeedback = (text) => {
     setFeedback(text);
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
     feedbackTimerRef.current = setTimeout(() => setFeedback(""), 1600);
+  };
+
+  const requestClearConfirm = (target) => {
+    if (confirmClearTarget === target) return true;
+    setConfirmClearTarget(target);
+    if (confirmClearTimerRef.current) clearTimeout(confirmClearTimerRef.current);
+    confirmClearTimerRef.current = setTimeout(() => setConfirmClearTarget(""), 3000);
+    return false;
+  };
+
+  const resetClearConfirm = () => {
+    setConfirmClearTarget("");
+    if (confirmClearTimerRef.current) clearTimeout(confirmClearTimerRef.current);
+    confirmClearTimerRef.current = null;
   };
 
   const copyText = async (text) => {
@@ -7844,8 +7861,10 @@ function TrainMovementExcelSheet() {
   };
 
   const clearRows = () => {
-    if (!window.confirm("Clear Train Swapping / Insertion / Removal log sheet?")) return;
+    if (!requestClearConfirm("sheet")) return;
     setRows(Array.from({ length: 6 }, () => createTrainMovementExcelRow()));
+    resetClearConfirm();
+    showFeedback("Sheet cleared");
   };
 
   const removeExcelInputRow = (id) => {
@@ -7923,8 +7942,10 @@ function TrainMovementExcelSheet() {
   };
 
   const clearExcelLogRows = () => {
-    if (!window.confirm("Clear Train Swapping / Insertion / Removal output log?")) return;
+    if (!requestClearConfirm("output")) return;
     setLogRows([]);
+    resetClearConfirm();
+    showFeedback("Output cleared");
   };
 
   const readyCount = rows.filter((row) => getMovementExcelStatus(row) === "Added").length;
@@ -7950,8 +7971,8 @@ function TrainMovementExcelSheet() {
           <button type="button" onClick={copyAllRows} className="inline-flex h-7 items-center gap-1 rounded-lg border border-[#2f6084] bg-[#0a2236] px-2 text-[10px] font-bold text-[#9fd3f6] transition-all hover:border-[#58a6ff] hover:text-white">
             <Copy size={12} />Copy All
           </button>
-          <button type="button" onClick={clearRows} className="inline-flex h-7 items-center gap-1 rounded-lg border border-red-500/45 bg-red-950/25 px-2 text-[10px] font-bold text-red-200 transition-all hover:border-red-400 hover:text-white">
-            <Trash2 size={12} />Clear
+          <button type="button" onClick={clearRows} className={`inline-flex h-7 items-center gap-1 rounded-lg border px-2 text-[10px] font-bold transition-all hover:text-white ${confirmClearTarget === "sheet" ? "border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-red-200 hover:border-red-400"}`}>
+            <Trash2 size={12} />{confirmClearTarget === "sheet" ? "Confirm Clear All" : "Clear"}
           </button>
         </div>
       </div>
@@ -8050,8 +8071,8 @@ function TrainMovementExcelSheet() {
             <button type="button" onClick={() => copyExcelLogRows("east")} className="inline-flex h-7 items-center gap-1 rounded-lg border border-cyan-400/45 bg-cyan-950/25 px-2 text-[10px] font-bold text-cyan-200 hover:text-white">
               <Copy size={12} />Copy East
             </button>
-            <button type="button" onClick={clearExcelLogRows} className="inline-flex h-7 items-center gap-1 rounded-lg border border-red-500/45 bg-red-950/25 px-2 text-[10px] font-bold text-red-200 hover:text-white">
-              <Trash2 size={12} />Clear
+            <button type="button" onClick={clearExcelLogRows} className={`inline-flex h-7 items-center gap-1 rounded-lg border px-2 text-[10px] font-bold transition-all hover:text-white ${confirmClearTarget === "output" ? "border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-red-200 hover:border-red-400"}`}>
+              <Trash2 size={12} />{confirmClearTarget === "output" ? "Confirm Clear All" : "Clear"}
             </button>
           </div>
         </div>
