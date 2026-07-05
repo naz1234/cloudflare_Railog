@@ -10116,9 +10116,9 @@ function TrainMovementContent() {
         }}
       >
         <div className="mb-1 flex items-center justify-between gap-1.5">
-          <span className={`movement-flow-step-label ${step.complete ? "movement-flow-step-label-complete" : "movement-flow-step-label-next"} inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]`} style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: step.complete ? accent : "#7ea6c2", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
-            <span className="movement-flow-step-number flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal" style={{ borderColor: step.complete ? `${accent}80` : "#31516b" }}>{index + 1}</span>
-            <span className="truncate">{step.label}</span>
+          <span className={`movement-flow-step-label ${step.complete ? "movement-flow-step-label-complete" : "movement-flow-step-label-next"} inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]`} style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: "#ffffff", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
+            <span className="movement-flow-step-number flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal text-white" style={{ borderColor: step.complete ? `${accent}80` : "#31516b", color: "#ffffff" }}>{index + 1}</span>
+            <span className="truncate text-white">{step.label}</span>
           </span>
           <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>
             {step.complete ? "DONE" : step.optional ? "OPTIONAL" : "NEXT"}
@@ -10678,9 +10678,9 @@ function TrainMovementContent() {
         }}
       >
         <div className="mb-1 flex items-center justify-between gap-1.5">
-          <span className={`movement-flow-step-label ${step.complete ? "movement-flow-step-label-complete" : "movement-flow-step-label-next"} inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]`} style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: step.complete ? accent : "#7ea6c2", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
-            <span className="movement-flow-step-number flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal" style={{ borderColor: step.complete ? `${accent}80` : "#31516b" }}>{index + 1}</span>
-            <span className="truncate">{step.label}</span>
+          <span className={`movement-flow-step-label ${step.complete ? "movement-flow-step-label-complete" : "movement-flow-step-label-next"} inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]`} style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: "#ffffff", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
+            <span className="movement-flow-step-number flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal text-white" style={{ borderColor: step.complete ? `${accent}80` : "#31516b", color: "#ffffff" }}>{index + 1}</span>
+            <span className="truncate text-white">{step.label}</span>
           </span>
           <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>{step.complete ? "DONE" : "NEXT"}</span>
         </div>
@@ -10752,9 +10752,15 @@ function TrainMovementContent() {
             <span className="rounded-md border px-2 py-1 text-[10px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}1c`, color: accent }}>
               {modeEntries.length} entries
             </span>
-            <span className={`rounded-md border px-2 py-1 text-[10px] font-black ${tp1LiveStatusClass}`} title={tp1LiveDebug || tp1LiveStatusText}>
-              {tp1LiveStatusText}
-            </span>
+            <button
+              type="button"
+              onClick={isAutomatic ? resetTp1AutomaticFlow : resetTp1ManualFlow}
+              className="inline-flex items-center rounded-md border px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] transition-all hover:scale-[1.03]"
+              style={{ borderColor: "rgba(248,113,113,0.75)", backgroundColor: "rgba(127,29,29,0.30)", color: "#fecaca" }}
+              title={isAutomatic ? "Reset Automatic Flow" : "Reset Manual Flow"}
+            >
+              Reset
+            </button>
           </div>
         </div>
 
@@ -10788,15 +10794,6 @@ function TrainMovementContent() {
                 title={tp1RequiredReady ? `Add ${modeTitle} Log` : "Complete all required fields first"}
               >
                 <span className="text-[11px] leading-none">+</span> Add to Log
-              </button>
-              <button
-                type="button"
-                onClick={isAutomatic ? resetTp1AutomaticFlow : resetTp1ManualFlow}
-                className="inline-flex items-center rounded-md border px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] transition-all hover:scale-[1.03]"
-                style={{ borderColor: "rgba(248,113,113,0.75)", backgroundColor: "rgba(127,29,29,0.30)", color: "#fecaca" }}
-                title={isAutomatic ? "Reset Automatic Flow" : "Reset Manual Flow"}
-              >
-                Reset
               </button>
             </div>
             <pre className="max-h-44 overflow-auto whitespace-pre-wrap font-mono text-[12px] font-medium leading-[1.35] text-[#c8d8ea]">{buildTp1MovementText({ preview: true, movementType })}</pre>
@@ -12894,9 +12891,9 @@ function CcTechnicalFailureContent() {
       }}
     >
       <div className="mb-1 flex items-center justify-between gap-1.5">
-        <span className={`movement-flow-step-label ${step.complete ? "movement-flow-step-label-complete" : "movement-flow-step-label-next"} inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]`} style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: step.complete ? accent : "#7ea6c2", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
-          <span className="movement-flow-step-number flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal" style={{ borderColor: step.complete ? `${accent}80` : "#31516b" }}>{index + 1}</span>
-          <span className="truncate">{step.label}</span>
+        <span className={`movement-flow-step-label ${step.complete ? "movement-flow-step-label-complete" : "movement-flow-step-label-next"} inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]`} style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: "#ffffff", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
+          <span className="movement-flow-step-number flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal text-white" style={{ borderColor: step.complete ? `${accent}80` : "#31516b", color: "#ffffff" }}>{index + 1}</span>
+          <span className="truncate text-white">{step.label}</span>
         </span>
         <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>
           {step.complete ? "DONE" : step.optional ? "OPTIONAL" : "NEXT"}
