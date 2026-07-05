@@ -7949,7 +7949,7 @@ function TrainMovementExcelSheet() {
   };
 
   const readyCount = rows.filter((row) => getMovementExcelStatus(row) === "Added").length;
-  const tableInputClass = "h-7 w-full min-w-0 border-0 bg-transparent px-2 text-[11px] font-medium text-[#eaf4ff] outline-none placeholder:text-[#45677f] focus:bg-[#0d2b43]";
+  const tableInputClass = "h-7 w-full min-w-0 border-0 bg-transparent px-2 text-[12px] font-medium text-[#eaf4ff] outline-none placeholder:text-[#45677f] focus:bg-[#0d2b43]";
   const tableSelectClass = `${tableInputClass} appearance-none cursor-pointer`;
   const cellClass = "border border-[#173653] bg-[#061827] align-middle";
 
@@ -7999,7 +7999,7 @@ function TrainMovementExcelSheet() {
               const operationAccent = row.operation === "insertion" ? "#22c55e" : row.operation === "removal" ? "#ef4444" : "#f59e0b";
 
               return (
-                <tr key={row.id} className="group text-[11px] text-[#eaf4ff]">
+                <tr key={row.id} className="group text-[12px] text-[#eaf4ff]">
                   <td className="border border-[#173653] bg-[#082136] px-1 text-center" style={{ boxShadow: `inset 3px 0 0 ${operationAccent}` }}>
                     <button type="button" onClick={() => removeExcelInputRow(row.id)} className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-red-500/30 bg-red-950/20 text-red-200 transition-all hover:border-red-400 hover:text-white" title="Remove row">
                       <Trash2 size={11} />
@@ -8020,8 +8020,8 @@ function TrainMovementExcelSheet() {
                   </td>
                   <td className={cellClass}>
                     <div className="flex items-center px-2">
-                      <span className="text-[11px] font-bold text-[#58a6ff]">T</span>
-                      <input value={row.trainId} onChange={(e) => updateRow(row.id, "trainId", e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="25" className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[11px] font-medium text-white outline-none placeholder:text-[#45677f]" />
+                      <span className="text-[12px] font-bold text-[#58a6ff]">T</span>
+                      <input value={row.trainId} onChange={(e) => updateRow(row.id, "trainId", e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="25" className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[12px] font-medium text-white outline-none placeholder:text-[#45677f]" />
                     </div>
                   </td>
                   <td className={cellClass}>
@@ -8037,8 +8037,8 @@ function TrainMovementExcelSheet() {
                       </div>
                     ) : (
                       <div className="flex items-center px-2">
-                        <span className="text-[11px] font-bold text-[#58a6ff]">T</span>
-                        <input value={row.replacedBy} onChange={(e) => updateRow(row.id, "replacedBy", e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="30" className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[11px] font-medium text-white outline-none placeholder:text-[#45677f]" />
+                        <span className="text-[12px] font-bold text-[#58a6ff]">T</span>
+                        <input value={row.replacedBy} onChange={(e) => updateRow(row.id, "replacedBy", e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="30" className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[12px] font-medium text-white outline-none placeholder:text-[#45677f]" />
                       </div>
                     )}
                   </td>
@@ -8080,7 +8080,7 @@ function TrainMovementExcelSheet() {
           {sortedLogRows.length ? (
             <div className="space-y-1.5">
               {sortedLogRows.map((entry) => (
-                <div key={entry.id} className="grid grid-cols-[68px_1fr_auto] items-center gap-2 rounded-lg border border-[#12304a] bg-[#061827] px-2 py-1.5 text-[11px] text-[#dff4ff]">
+                <div key={entry.id} className="grid grid-cols-[68px_1fr_auto] items-center gap-2 rounded-lg border border-[#12304a] bg-[#061827] px-2 py-1.5 text-[12px] text-[#dff4ff]">
                   <span className={`rounded-md border px-1.5 py-0.5 text-center text-[9px] font-black uppercase ${entry.depot === "east" ? "border-cyan-400/40 bg-cyan-950/25 text-cyan-200" : "border-indigo-400/40 bg-indigo-950/25 text-indigo-200"}`}>{entry.depot === "east" ? "ED" : "WD"}</span>
                   <span className="font-mono leading-relaxed text-white">{entry.text}</span>
                   <button type="button" onClick={() => deleteExcelLogRow(entry.id)} className="inline-flex h-6 items-center rounded-md border border-red-500/30 bg-red-950/20 px-1.5 text-[9px] font-bold text-red-200 hover:text-white" title="Delete this log line">
