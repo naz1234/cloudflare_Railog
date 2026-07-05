@@ -10258,55 +10258,6 @@ function TrainMovementContent() {
     );
   };
 
-  const renderTrainMovementOperationWindow = (operation) => {
-    const meta = OPERATION_META[operation];
-    const westLogs = entries.filter((entry) => entry.depot === "west" && entry.operation === operation);
-    const eastLogs = entries.filter((entry) => entry.depot === "east" && entry.operation === operation);
-    const operationLogs = entries.filter((entry) => entry.operation === operation);
-    const totalLogs = operationLogs.length;
-
-    return (
-      <section
-        key={operation}
-        className="overflow-hidden rounded-xl border shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]"
-        style={{
-          borderColor: `${meta.accent}55`,
-          background: "linear-gradient(180deg,#071e33 0%,#061827 100%)",
-          boxShadow: `0 0 24px ${meta.accent}16, inset 0 1px 0 rgba(255,255,255,0.05)`,
-        }}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2.5 border-b px-4 py-3" style={{ borderColor: `${meta.accent}35`, background: `linear-gradient(90deg, ${meta.accent}1f, transparent)` }}>
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: `${meta.accent}24`, color: meta.accent, boxShadow: `0 0 14px ${meta.accent}22` }}>
-              <MovementIcon type={meta.iconType} color={meta.accent} />
-            </div>
-            <div>
-              <h2 className="text-[16px] font-black leading-tight text-white">{meta.title} Movement + Log</h2>
-              <p className="mt-0.5 text-[11px] font-medium" style={{ color: meta.accent }}>One window for input and output log</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="rounded-md border px-2 py-1 text-[10px] font-black" style={{ borderColor: `${meta.accent}55`, backgroundColor: `${meta.accent}1c`, color: meta.accent }}>
-              {totalLogs} entries
-            </span>
-            <span className="rounded-md border border-[#1e4060] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#8ea8c0]">
-              WD {westLogs.length} • ED {eastLogs.length}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid gap-3 p-4">
-          {renderMovementAutomaticFlowCard(operation)}
-
-          <div className="grid content-start gap-3">
-            {renderTrainMovementOperationLogTable({ operation, logs: operationLogs, westCount: westLogs.length, eastCount: eastLogs.length })}
-          </div>
-        </div>
-      </section>
-    );
-  };
-
   const tp1LiveStatusText = !tp1LiveDbReady
     ? "Local only"
     : tp1LiveSyncError
@@ -10879,82 +10830,9 @@ function TrainMovementContent() {
     );
   };
 
-  const TrainMovementDepotCard = ({ depot, title, accent, logs }) => {
-    const insertionLogs = logs.filter((entry) => entry.operation === "insertion");
-    const removalLogs = logs.filter((entry) => entry.operation === "removal");
-    const swapLogs = logs.filter((entry) => entry.operation === "swapping");
-
-    return (
-      <section
-        className="overflow-hidden rounded-xl border"
-        style={{
-          borderColor: `${accent}55`,
-          background: depot === "west" ? "linear-gradient(180deg,rgba(35,18,77,0.58),rgba(6,24,39,0.94))" : "linear-gradient(180deg,rgba(8,73,86,0.48),rgba(6,24,39,0.94))",
-          boxShadow: `0 0 24px ${accent}18, inset 0 1px 0 rgba(255,255,255,0.05)`,
-        }}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2.5 border-b px-4 py-3" style={{ borderColor: `${accent}3a`, background: `linear-gradient(90deg, ${accent}17, transparent)` }}>
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: `linear-gradient(135deg, ${accent}, ${accent}66)`, boxShadow: `0 0 18px ${accent}55` }}>
-              <MovementIcon type="train" color="#ffffff" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-[15px] font-black uppercase tracking-wide text-white">{title}</h3>
-                <span className="rounded-md border px-1.5 py-0.5 text-[10px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}1c`, color: accent }}>
-                  {logs.length} entries
-                </span>
-              </div>
-              <p className="mt-0.5 text-[10px] font-medium text-[#8ea8c0]">
-                Insertions {insertionLogs.length} • Removals {removalLogs.length} • Swaps {swapLogs.length}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button onClick={() => copyDepotLogs(depot)} className="flex min-w-[82px] items-center justify-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition-all hover:scale-[1.02]" style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}><MovementIcon type="copy" />{getCopyButtonLabel(depot, "all", "Copy All")}</button>
-            <button onClick={() => clearDepotLogs(depot)} className="flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition-all hover:scale-[1.02]" style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}><MovementIcon type="trash" />Clear All</button>
-          </div>
-        </div>
-
-        <div className="grid gap-3 p-4">
-          {renderTrainMovementOperationLogTable({ depot, operation: "insertion", accent, logs: insertionLogs })}
-          {renderTrainMovementOperationLogTable({ depot, operation: "removal", accent, logs: removalLogs })}
-          {renderTrainMovementOperationLogTable({ depot, operation: "swapping", accent, logs: swapLogs })}
-        </div>
-      </section>
-    );
-  };
 
   return (
-    <div className="theme-train-movement-page grid w-full gap-3 xl:grid-cols-2 xl:items-start">
-      <section className="rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_14px_30px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.05)]">
-        <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[#1a3a56] px-4 py-3" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600/25 text-blue-300 shadow-[0_0_14px_rgba(59,130,246,0.22)]">
-              <MovementIcon type="train" />
-            </div>
-            <div>
-              <h2 className="text-[17px] font-black leading-tight text-white">Train Movement + Log</h2>
-              <p className="mt-0.5 text-[11px] font-medium text-[#58a6ff]">Swapping, Insertion, and Removal are separated into their own input + log windows</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-lg border border-[#2b4f6b] bg-[#061827] px-3 py-1.5 font-mono text-[11px] font-bold text-[#7eb8e0]">
-              {clockText} hrs
-            </span>
-            <span className="rounded-lg border border-[#2b4f6b] bg-[#061827] px-3 py-1.5 text-[11px] font-bold text-[#8ea8c0]">
-              {entries.length} total logs
-            </span>
-          </div>
-        </div>
-
-        <div className="grid gap-4 p-4">
-          {MOVEMENT_OPERATIONS.map((operation) => renderTrainMovementOperationWindow(operation))}
-        </div>
-      </section>
-
+    <div className="theme-train-movement-page grid w-full gap-3">
       {renderTp1MovementWindow()}
     </div>
   );
