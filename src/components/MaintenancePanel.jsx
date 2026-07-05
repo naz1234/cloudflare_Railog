@@ -13,7 +13,6 @@ export const REQUEST_COLORS = {
   "RST CM":              { bg: "#fb923c", text: "#000000" },
   "RST PM":              { bg: "#86efac", text: "#000000" },
   WASH:                  { bg: "#7dd3fc", text: "#000000" },
-  "Wash only":           { bg: "#7dd3fc", text: "#000000" },
   "TLC Comms":           { bg: "#6366f1", text: "#000000" },
   "ML Fault":            { bg: "#dc2626", text: "#000000" },
   "HVAC TESTING":        { bg: "#f9a8d4", text: "#000000" },
@@ -558,21 +557,11 @@ function formatExcelWashDatePart(value) {
 
 function buildExcelWashRequestLabel(nextWashValue) {
   const datePart = formatExcelWashDatePart(nextWashValue);
-  return datePart ? `Wash ${datePart}` : "Wash only";
+  return datePart ? `Wash ${datePart}` : "WASH";
 }
 
 function isWashRequestLabel(value = "") {
   return normalizeRequestIdentity(value).split(" ").includes("WASH");
-}
-
-function isWashOnlyRequestLabel(value = "") {
-  const normalized = normalizeRequestIdentity(value);
-  return normalized === "WASH ONLY" || normalized === "ONLY WASH";
-}
-
-function formatWashOnlyRequestLabel(value = "") {
-  const clean = cleanRequestLabel(value);
-  return isWashOnlyRequestLabel(clean) ? "Wash only" : clean;
 }
 
 function getKnownRequestColorKey(label = "") {
@@ -583,13 +572,12 @@ function getKnownRequestColorKey(label = "") {
   if (normalized === "UNFIT") return "UNFIT";
   if (normalized === "NOT FIT" || normalized === "NOTFIT") return "Not Fit";
   if (normalized === "WORKSHOP UNFIT") return "Workshop /Unfit";
-  if (isWashOnlyRequestLabel(clean)) return "Wash only";
   if (isWashRequestLabel(clean)) return "WASH";
   return clean;
 }
 
 function getRequestDisplayLabel(request = {}) {
-  return formatWashOnlyRequestLabel(
+  return cleanRequestLabel(
     request?.requestType === "Other"
       ? request?.customType || "Other"
       : request?.requestType || ""
@@ -607,7 +595,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
   const handleAdd = () => {
     const trainIds = trainId.split(/[\s,]+/).map(normalizeTrainId).filter(Boolean);
-    const cleanType = formatWashOnlyRequestLabel(requestType);
+    const cleanType = cleanRequestLabel(requestType);
 
     if (trainIds.length === 0) { setError("Train ID is required."); return; }
     if (!cleanType) { setError("Request type is required."); return; }
@@ -1170,14 +1158,14 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             className={inputCls}
             placeholder="e.g. RST PM / INBOUND (G to C)"
           />
-          {formatWashOnlyRequestLabel(requestType) && (
+          {cleanRequestLabel(requestType) && (
             <div className="mt-1 flex items-center gap-1.5 text-[10px] text-[#4a8ab5]">
               <span>Colour preview:</span>
               <span
                 className="inline-flex max-w-[150px] items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold leading-none truncate"
-                style={getRequestPillStyle(formatWashOnlyRequestLabel(requestType), formatWashOnlyRequestLabel(requestType))}
+                style={getRequestPillStyle(cleanRequestLabel(requestType), cleanRequestLabel(requestType))}
               >
-                {formatWashOnlyRequestLabel(requestType)}
+                {cleanRequestLabel(requestType)}
               </span>
             </div>
           )}
