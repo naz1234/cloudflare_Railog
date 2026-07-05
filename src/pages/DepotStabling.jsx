@@ -8484,6 +8484,7 @@ function TrainMovementContent() {
     trainPrepCompletedTime: "",
     pstPerformedTime: "",
     completedByDc: "",
+    cmmsNumber: "",
     nextWashText: "",
     nextWashDate: "",
     nextWashTime: "",
@@ -8995,6 +8996,7 @@ function TrainMovementContent() {
         trainPrepCompletedTime: "",
         pstPerformedTime: "",
         completedByDc: "",
+        cmmsNumber: "",
         nextWashText: "",
         nextWashDate: "",
         nextWashTime: "",
@@ -9018,6 +9020,7 @@ function TrainMovementContent() {
         shunterName: "",
         fromTp1: "",
         toManual: "",
+        cmmsNumber: "",
         nextWashText: "",
         nextWashDate: "",
         nextWashTime: "",
@@ -9346,6 +9349,7 @@ function TrainMovementContent() {
     const fromTp1 = form.fromTp1 || "18:30";
     const toManual = form.toManual || "18:35";
     const nextWashSuffix = getTp1NextWashSuffix(form);
+    const cmmsNumber = String(form.cmmsNumber || "").replace(/[^0-9A-Za-z/-]/g, "").trim();
 
     if (!preview) {
       const missing = [];
@@ -9357,8 +9361,10 @@ function TrainMovementContent() {
       if (movementType === "automatic" && !form.automaticStablingRoad) missing.push("Parking location");
       if (movementType === "automatic" && !isCompleteMovementTimeInput(form.trainPrepCompletedTime)) missing.push("Time Train Prep Completed (HH:MM)");
       if (movementType === "automatic" && !isCompleteMovementTimeInput(form.pstPerformedTime)) missing.push("Time PST Performed (HH:MM)");
+      if (movementType === "automatic" && !cmmsNumber) missing.push("CMMS Number");
       if (movementType === "manual" && !isCompleteMovementTimeInput(form.fromTp1)) missing.push("Time start moving from TP1 (HH:MM)");
       if (movementType === "manual" && !isCompleteMovementTimeInput(form.toManual)) missing.push("Time arrival to Manual Area (HH:MM)");
+      if (movementType === "manual" && !cmmsNumber) missing.push("CMMS Number");
 
       if (missing.length) {
         alert(`Please complete: ${missing.join(", ")}.`);
@@ -9382,6 +9388,10 @@ function TrainMovementContent() {
         timedLines.push(`${pstPerformedTime} hrs – ${displayTrain} PST completed at ${stablingRoad} from ${pstPerformedTime} to ${pstCompletedTime} hrs. No alarm reported.`);
       }
 
+      if (cmmsNumber) {
+        timedLines.push(`${pstCompletedTime || pstPerformedTime || trLocalized} hrs – CMMS Hand Back Completed. Handover #${cmmsNumber}.`);
+      }
+
       return [titleLine, ...sortTp1TimedLogLines(timedLines)].join("\n");
     }
 
@@ -9391,6 +9401,7 @@ function TrainMovementContent() {
         `${trAtTp1} hrs – ${displayTrain} arrived at TP1.`,
         `${shunterAuth} hrs – ${displayTrain} was authorized to prepare the train. Shunter ${shunterNameForLog} onboard.`,
         `${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual Area at ${toManual} hrs.`,
+        ...(cmmsNumber ? [`${toManual} hrs – CMMS Hand Over Completed. Handover #${cmmsNumber}.`] : []),
       ]),
     ].join("\n");
   };
@@ -9427,6 +9438,7 @@ function TrainMovementContent() {
       stablingRoad,
       fromTp1: form.fromTp1,
       toManual: form.toManual,
+      cmmsNumber: form.cmmsNumber || "",
       nextWashText: form.nextWashText || "",
       createdAt: now.toISOString(),
       text,
@@ -9446,6 +9458,7 @@ function TrainMovementContent() {
           automaticStablingRoad: "",
           trainPrepCompletedTime: "",
           pstPerformedTime: "",
+          cmmsNumber: "",
           nextWashText: "",
           nextWashDate: "",
           nextWashTime: "",
@@ -10422,6 +10435,7 @@ function TrainMovementContent() {
     const automaticTrainPrepReady = automaticStablingReady && isTp1TimeReadyForMode("trainPrepCompletedTime");
     const automaticPstReady = automaticTrainPrepReady && isTp1TimeReadyForMode("pstPerformedTime");
     const automaticCompletedDcReady = automaticPstReady && Boolean(String(modeForm.completedByDc || "").trim()) && isTp1FlowFieldSettled("completedByDc");
+    const automaticCmmsReady = automaticCompletedDcReady && Boolean(String(modeForm.cmmsNumber || "").trim()) && isTp1FlowFieldSettled("cmmsNumber");
 
     const automaticFlowSteps = [
       {
@@ -10549,9 +10563,30 @@ function TrainMovementContent() {
         ),
       },
       {
+        key: "cmmsNumber",
+        label: "CMMS Number :",
+        visible: automaticCompletedDcReady,
+        complete: automaticCmmsReady,
+        render: () => (
+          <input
+            type="text"
+            value={modeForm.cmmsNumber || ""}
+            onFocus={() => focusFlowInput(getTp1FlowInputKey("cmmsNumber", movementType))}
+            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+            onChange={(e) => {
+              updateTp1ModeForm(movementType, "cmmsNumber", e.target.value.replace(/[^0-9A-Za-z/-]/g, ""));
+              scheduleFlowInputSettled(getTp1FlowInputKey("cmmsNumber", movementType));
+            }}
+            onBlur={() => blurFlowInput(getTp1FlowInputKey("cmmsNumber", movementType))}
+            placeholder="4969"
+            className={inputClass}
+          />
+        ),
+      },
+      {
         key: "nextWashText",
         label: "Next Wash Optional",
-        visible: automaticCompletedDcReady,
+        visible: automaticCmmsReady,
         complete: Boolean(String(modeForm.nextWashText || "").trim()),
         render: () => (
           <input
@@ -10578,6 +10613,7 @@ function TrainMovementContent() {
     const manualShunterReady = manualTrAtTp1Ready && Boolean(modeForm.shunterName);
     const manualFromTp1Ready = manualShunterReady && isTp1TimeReadyForMode("fromTp1");
     const manualToManualReady = manualFromTp1Ready && isTp1TimeReadyForMode("toManual");
+    const manualCmmsReady = manualToManualReady && Boolean(String(modeForm.cmmsNumber || "").trim()) && isTp1FlowFieldSettled("cmmsNumber");
 
     const manualFlowSteps = [
       {
@@ -10659,9 +10695,30 @@ function TrainMovementContent() {
         render: () => renderTp1TimeInput("toManual"),
       },
       {
+        key: "cmmsNumber",
+        label: "CMMS Number :",
+        visible: manualToManualReady,
+        complete: manualCmmsReady,
+        render: () => (
+          <input
+            type="text"
+            value={modeForm.cmmsNumber || ""}
+            onFocus={() => focusFlowInput(getTp1FlowInputKey("cmmsNumber", movementType))}
+            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+            onChange={(e) => {
+              updateTp1ModeForm(movementType, "cmmsNumber", e.target.value.replace(/[^0-9A-Za-z/-]/g, ""));
+              scheduleFlowInputSettled(getTp1FlowInputKey("cmmsNumber", movementType));
+            }}
+            onBlur={() => blurFlowInput(getTp1FlowInputKey("cmmsNumber", movementType))}
+            placeholder="4969"
+            className={inputClass}
+          />
+        ),
+      },
+      {
         key: "nextWashText",
         label: "Next Wash Optional",
-        visible: manualToManualReady,
+        visible: manualCmmsReady,
         complete: Boolean(String(modeForm.nextWashText || "").trim()),
         render: () => (
           <input
@@ -10683,7 +10740,7 @@ function TrainMovementContent() {
     ];
 
     const visibleFlowSteps = (isAutomatic ? automaticFlowSteps : manualFlowSteps).filter((step) => step.visible);
-    const tp1RequiredReady = isAutomatic ? automaticPstReady : manualToManualReady;
+    const tp1RequiredReady = isAutomatic ? automaticCmmsReady : manualCmmsReady;
     const tp1ClearTarget = movementType;
     const isTp1ConfirmingClear = tp1ConfirmClearTarget === tp1ClearTarget;
     const tp1LogPillButtonClass = "flex min-w-[78px] items-center justify-center gap-1 rounded-full border px-3 py-1 text-[10px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.02] hover:text-white";
