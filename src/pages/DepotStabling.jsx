@@ -3798,13 +3798,14 @@ function getStablingRequestVisual(item = null) {
 function getMainStablingRemarkPillStyle(item = null) {
   const visual = getStablingRequestVisual(item);
   const accent = visual?.accent || getRequestAccent(item) || "#4f8ef7";
+  const isWashRemark = getStablingRequestCategory(item) === "wash";
 
   return {
     background: `linear-gradient(135deg, ${hexToRgba(accent, 0.98)} 0%, ${hexToRgba(accent, 0.62)} 100%)`,
     border: `1px solid ${hexToRgba(accent, 0.95)}`,
     boxShadow: `0 0 8px ${hexToRgba(accent, 0.24)}, inset 0 1px 0 rgba(255,255,255,0.14)`,
-    color: "#ffffff",
-    textShadow: "0 1px 1px rgba(0,0,0,0.45)",
+    color: isWashRemark ? "#000000" : "#ffffff",
+    textShadow: isWashRemark ? "none" : "0 1px 1px rgba(0,0,0,0.45)",
   };
 }
 
