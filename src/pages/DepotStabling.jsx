@@ -6965,11 +6965,17 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                             onFocus={handleTrainRemOtherFieldFocus}
                             onChange={(e) => {
                               if (!referenceOnly) {
-                                updateTrainRemCell(depot, index, "timing", e.target.value);
+                                updateTrainRemCell(depot, index, "timing", cleanMovementCustomTimeInput(e.target.value));
                               }
                             }}
-                            onBlur={handleTrainRemEditEnd}
+                            onBlur={(e) => {
+                              if (!referenceOnly) {
+                                updateTrainRemCell(depot, index, "timing", normalizeMovementCustomTimeInput(e.target.value));
+                              }
+                              handleTrainRemEditEnd();
+                            }}
                             placeholder={referenceOnly ? "" : "00:00"}
+                            inputMode="numeric"
                             readOnly={referenceOnly}
                             title={referenceOnly ? rowStatusTitle : ""}
                             className={`h-full min-w-0 border-0 bg-transparent px-1 text-center text-[11px] font-normal outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${referenceOnly ? "cursor-default" : ""}`}
