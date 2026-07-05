@@ -2357,9 +2357,9 @@ function buildTrainRemCombinedWestRows(existingRows = [], label = "9am", activeT
     const reserveRowsFromSlots = Array.from({ length: layout.reserveCount }, (_, offset) => {
       const sourceRow = normalizedSourceRows[layout.reserveStartIndex + offset] || {};
       const tid = normalizeTrainRemTidValue(sourceRow?.tid || "");
-      const isScheduledTid = Boolean(tid && referenceTidSet.has(tid));
-
-      if (!hasTrainRemRowContent(sourceRow) || isScheduledTid) {
+      // Keep user-entered duplicate TIDs visible in reserve rows. Duplicate styling
+      // will warn the user instead of auto-clearing the typed value.
+      if (!hasTrainRemRowContent(sourceRow)) {
         return { trainId: "", tid: "", timing: "", remark: "" };
       }
 
@@ -2398,9 +2398,9 @@ function buildTrainRemCombinedWestRows(existingRows = [], label = "9am", activeT
     const eastAdditionalRows = Array.from({ length: layout.eastReserveCount }, (_, offset) => {
       const sourceRow = normalizedSourceRows[layout.eastReserveStartIndex + offset] || {};
       const tid = normalizeTrainRemTidValue(sourceRow?.tid || "");
-      const isScheduledTid = Boolean(tid && referenceTidSet.has(tid));
-
-      if (!hasTrainRemRowContent(sourceRow) || isScheduledTid) {
+      // Keep user-entered duplicate TIDs visible in reserve rows. Duplicate styling
+      // will warn the user instead of auto-clearing the typed value.
+      if (!hasTrainRemRowContent(sourceRow)) {
         return { trainId: "", tid: "", timing: "", remark: "" };
       }
 
@@ -2466,11 +2466,12 @@ function buildTrainRemAdditionalEastRows(existingRows = [], label = "9am", activ
     const tid = normalizeTrainRemTidValue(row?.tid || "");
     const hasTrainId = Boolean(normalizeTrainId(row?.trainId || ""));
     const hasRemark = Boolean(String(row?.remark || "").trim());
+    const hasTiming = Boolean(String(row?.timing || "").trim());
 
-    // Migrate old preset-only rows to blank additional-East rows. Rows with a
-    // Train ID are retained long enough for the merge step to move them into
-    // the combined West schedule before the East table is cleared.
-    if (tid && scheduledTidSet.has(tid) && !hasTrainId && !hasRemark) {
+    // Migrate old preset-only rows to blank additional-East rows. Once a user
+    // types a duplicate scheduled TID into a reserve row, keep it visible so
+    // the duplicate warning can guide correction instead of clearing the input.
+    if (tid && scheduledTidSet.has(tid) && !hasTrainId && !hasTiming && !hasRemark) {
       return { trainId: "", tid: "", timing: "", remark: "" };
     }
 
