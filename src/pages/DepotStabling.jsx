@@ -3802,14 +3802,14 @@ function getMainStablingRemarkPillStyle(item = null) {
 
   if (isWashRemark) {
     return {
-      // Match the cooler Removal Summary look by layering a light WASH
-      // lime overlay on top of the steel-blue row colour instead of using
-      // a solid bright lime pill.
-      background: `linear-gradient(90deg, ${hexToRgba(accent, 0.11)} 0%, ${hexToRgba(accent, 0.20)} 100%), linear-gradient(90deg, rgba(49,104,147,0.24) 0%, rgba(35,79,116,0.13) 55%, rgba(28,61,91,0.07) 100%)`,
-      border: `1px solid ${hexToRgba(accent, 0.52)}`,
-      boxShadow: `0 0 0 1px rgba(96,165,250,0.18), 0 0 8px ${hexToRgba(accent, 0.18)}, inset 3px 0 0 #3b82f6`,
+      // Match the cooler Removal Summary look: steel-blue base with only
+      // a soft lime wash overlay. Keep the border/glow mostly blue so the
+      // pill does not look like a bright neon green badge.
+      background: `linear-gradient(90deg, ${hexToRgba(accent, 0.08)} 0%, ${hexToRgba(accent, 0.14)} 100%), linear-gradient(90deg, rgba(49,104,147,0.48) 0%, rgba(35,79,116,0.34) 55%, rgba(28,61,91,0.24) 100%)`,
+      border: "1px solid rgba(96,165,250,0.58)",
+      boxShadow: `inset 3px 0 0 #3b82f6, inset 0 1px 0 rgba(255,255,255,0.05), 0 0 6px ${hexToRgba(accent, 0.10)}`,
       color: "#ffffff",
-      textShadow: "0 1px 1px rgba(0,0,0,0.45)",
+      textShadow: "0 1px 1px rgba(0,0,0,0.55)",
     };
   }
 
