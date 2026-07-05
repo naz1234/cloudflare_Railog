@@ -6135,7 +6135,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const getTrainRemDuplicateCounts = () => {
     const counts = {};
     const westPreset = trainRemState.selectedPreset?.west || "9am";
-    const scanDepots = isTrainRemLegacyCombinedReferencePreset("west", westPreset)
+    // Combined presets render East rows inside the West table. Scanning the
+    // hidden East state as well makes one real East reserve entry count twice,
+    // so rows like T08/T18 can turn red even when the user entered them once.
+    const scanDepots = isTrainRemCombinedReferencePreset("west", westPreset)
       ? ["west"]
       : ["west", "east"];
 
@@ -6175,7 +6178,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const getTrainRemTidDuplicateCounts = () => {
     const counts = {};
     const westPreset = trainRemState.selectedPreset?.west || "9am";
-    const scanDepots = isTrainRemLegacyCombinedReferencePreset("west", westPreset)
+    // Same rule as Train ID duplicates: for combined presets, East scheduled
+    // and East reserve rows are already represented in the West table.
+    const scanDepots = isTrainRemCombinedReferencePreset("west", westPreset)
       ? ["west"]
       : ["west", "east"];
 
