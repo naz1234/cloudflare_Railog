@@ -8249,14 +8249,14 @@ function TrainMovementExcelSheet() {
           )}
           <span className={`rounded-lg border px-2 py-1 text-[10px] font-bold ${liveStatusClass}`}>{liveStatusText}</span>
           <span className="rounded-lg border border-[#2b4f6b] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#8ea8c0]">{readyCount} added</span>
-          <button type="button" onClick={addRow} className="inline-flex h-7 items-center gap-1 rounded-lg border border-[#2f6084] bg-[#0a2236] px-2 text-[10px] font-bold text-[#9fd3f6] transition-all hover:border-[#58a6ff] hover:text-white">
+          <button type="button" onClick={addRow} className="inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
             <Plus size={12} />Add Row
           </button>
-          <button type="button" onClick={copyAllRows} className="inline-flex h-7 items-center gap-1 rounded-lg border border-[#2f6084] bg-[#0a2236] px-2 text-[10px] font-bold text-[#9fd3f6] transition-all hover:border-[#58a6ff] hover:text-white">
+          <button type="button" onClick={copyAllRows} className="inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
             <Copy size={12} />Copy All
           </button>
-          <button type="button" onClick={clearRows} className={`inline-flex h-7 items-center gap-1 rounded-lg border px-2 text-[10px] font-bold transition-all hover:text-white ${confirmClearTarget === "sheet" ? "border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-red-200 hover:border-red-400"}`}>
-            <Trash2 size={12} />{confirmClearTarget === "sheet" ? "Confirm Clear All" : "Clear"}
+          <button type="button" onClick={clearRows} className={`inline-flex h-7 items-center gap-1 rounded-full border px-3 text-[10px] font-bold text-white transition-all hover:text-white ${confirmClearTarget === "sheet" ? "border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-white hover:border-red-400"}`}>
+            <Trash2 size={12} />{confirmClearTarget === "sheet" ? "Confirm Clear" : "Clear"}
           </button>
         </div>
       </div>
@@ -8346,17 +8346,17 @@ function TrainMovementExcelSheet() {
             <p className="mt-0.5 text-[10px] font-bold text-[#7eb8e0]">{sortedLogRows.length} entries • WD {westLogCount} • ED {eastLogCount}</p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            <button type="button" onClick={() => copyExcelLogRows("")} className="inline-flex h-7 items-center gap-1 rounded-lg border border-[#2f6084] bg-[#0a2236] px-2 text-[10px] font-bold text-[#9fd3f6] hover:border-[#58a6ff] hover:text-white">
+            <button type="button" onClick={() => copyExcelLogRows("")} className="inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white hover:border-[#58a6ff] hover:text-white">
               <Copy size={12} />Copy All
             </button>
-            <button type="button" onClick={() => copyExcelLogRows("west")} className="inline-flex h-7 items-center gap-1 rounded-lg border border-indigo-400/45 bg-indigo-950/25 px-2 text-[10px] font-bold text-indigo-200 hover:text-white">
+            <button type="button" onClick={() => copyExcelLogRows("west")} className="inline-flex h-7 items-center gap-1 rounded-full border border-indigo-400/45 bg-indigo-950/25 px-3 text-[10px] font-bold text-white hover:text-white">
               <Copy size={12} />Copy West
             </button>
-            <button type="button" onClick={() => copyExcelLogRows("east")} className="inline-flex h-7 items-center gap-1 rounded-lg border border-cyan-400/45 bg-cyan-950/25 px-2 text-[10px] font-bold text-cyan-200 hover:text-white">
+            <button type="button" onClick={() => copyExcelLogRows("east")} className="inline-flex h-7 items-center gap-1 rounded-full border border-cyan-400/45 bg-cyan-950/25 px-3 text-[10px] font-bold text-white hover:text-white">
               <Copy size={12} />Copy East
             </button>
-            <button type="button" onClick={clearExcelLogRows} className={`inline-flex h-7 items-center gap-1 rounded-lg border px-2 text-[10px] font-bold transition-all hover:text-white ${confirmClearTarget === "output" ? "border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-red-200 hover:border-red-400"}`}>
-              <Trash2 size={12} />{confirmClearTarget === "output" ? "Confirm Clear All" : "Clear"}
+            <button type="button" onClick={clearExcelLogRows} className={`inline-flex h-7 items-center gap-1 rounded-full border px-3 text-[10px] font-bold text-white transition-all hover:text-white ${confirmClearTarget === "output" ? "border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-white hover:border-red-400"}`}>
+              <Trash2 size={12} />{confirmClearTarget === "output" ? "Confirm Clear" : "Clear"}
             </button>
           </div>
         </div>
@@ -8558,6 +8558,8 @@ function TrainMovementContent() {
   const [tp1Entries, setTp1Entries] = useState(() => sortTp1MovementEntries(loadTp1MovementLog()));
   const [copyFeedback, setCopyFeedback] = useState({});
   const copyFeedbackTimerRef = useRef({});
+  const [tp1ConfirmClearTarget, setTp1ConfirmClearTarget] = useState("");
+  const tp1ConfirmClearTimerRef = useRef(null);
   const [forms, setForms] = useState(() => {
     const defaultForms = createDefaultMovementForms();
     return mergeTrainMovementForms(defaultForms, loadSavedMovementObject(TRAIN_MOVEMENT_FORM_KEY));
@@ -8825,6 +8827,7 @@ function TrainMovementContent() {
     return () => {
       Object.values(copyFeedbackTimerRef.current || {}).forEach((timer) => clearTimeout(timer));
       Object.values(movementAutoFocusTimerRef.current || {}).forEach((timer) => clearTimeout(timer));
+      if (tp1ConfirmClearTimerRef.current) clearTimeout(tp1ConfirmClearTimerRef.current);
       if (tp1LiveAutoSaveTimerRef.current) clearTimeout(tp1LiveAutoSaveTimerRef.current);
     };
   }, []);
@@ -9079,6 +9082,20 @@ function TrainMovementContent() {
     if (status === "copied") return "copied !";
     if (status === "empty") return "no log !";
     return fallbackLabel;
+  };
+
+  const requestTp1ClearConfirm = (target) => {
+    if (tp1ConfirmClearTarget === target) return true;
+    setTp1ConfirmClearTarget(target);
+    if (tp1ConfirmClearTimerRef.current) clearTimeout(tp1ConfirmClearTimerRef.current);
+    tp1ConfirmClearTimerRef.current = setTimeout(() => setTp1ConfirmClearTarget(""), 3000);
+    return false;
+  };
+
+  const resetTp1ClearConfirm = () => {
+    setTp1ConfirmClearTarget("");
+    if (tp1ConfirmClearTimerRef.current) clearTimeout(tp1ConfirmClearTimerRef.current);
+    tp1ConfirmClearTimerRef.current = null;
   };
 
   const buildMovementLine = (operation) => {
@@ -9449,10 +9466,11 @@ function TrainMovementContent() {
     const movementType = requestedMovementType === "manual" || requestedMovementType === "automatic"
       ? requestedMovementType
       : "";
-    const label = movementType === "automatic" ? "automatic area" : movementType === "manual" ? "manual area" : "inbound / outbound movement";
-    if (!window.confirm(`Clear all ${label} logs?`)) return;
+    const clearTarget = movementType || "all";
+    if (!requestTp1ClearConfirm(clearTarget)) return;
     captureMovementScrollPosition();
     setTp1Entries((prev) => movementType ? prev.filter((entry) => entry.type !== movementType) : []);
+    resetTp1ClearConfirm();
   };
 
   const copyTp1MovementPreview = async (requestedMovementType = "") => {
@@ -10666,6 +10684,9 @@ function TrainMovementContent() {
 
     const visibleFlowSteps = (isAutomatic ? automaticFlowSteps : manualFlowSteps).filter((step) => step.visible);
     const tp1RequiredReady = isAutomatic ? automaticPstReady : manualToManualReady;
+    const tp1ClearTarget = movementType;
+    const isTp1ConfirmingClear = tp1ConfirmClearTarget === tp1ClearTarget;
+    const tp1LogPillButtonClass = "flex min-w-[78px] items-center justify-center gap-1 rounded-full border px-3 py-1 text-[10px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.02] hover:text-white";
 
     const renderTp1FlowStepCard = (step, index) => (
       <div
@@ -10810,29 +10831,29 @@ function TrainMovementContent() {
                 <button
                   type="button"
                   onClick={() => copyTp1MovementLogs(movementType)}
-                  className="flex min-w-[78px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
-                  style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}
+                  className={tp1LogPillButtonClass}
+                  style={{ borderColor: `${accent}70`, color: "#ffffff", background: `linear-gradient(135deg, ${accent}3f, rgba(6,24,39,0.94))` }}
                 >
-                  <MovementIcon type="copy" />{getCopyFeedbackLabel(`tp1-all-${movementType}`, "Copy All")}
+                  <MovementIcon type="copy" color="currentColor" />{getCopyFeedbackLabel(`tp1-all-${movementType}`, "Copy All")}
                 </button>
                 {isAutomatic && (
                   <button
                     type="button"
                     onClick={handleDownloadTp1AutomaticExcel}
-                    className="flex min-w-[78px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold shadow-[0_0_14px_rgba(34,197,94,0.35),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.02]"
-                    style={{ borderColor: "rgba(74,222,128,0.82)", color: "#86efac", backgroundColor: "rgba(20,83,45,0.32)" }}
+                    className={tp1LogPillButtonClass}
+                    style={{ borderColor: "rgba(74,222,128,0.86)", color: "#ffffff", background: "linear-gradient(135deg, rgba(34,197,94,0.42), rgba(6,24,39,0.94))", boxShadow: "0 0 14px rgba(34,197,94,0.35), inset 0 1px 0 rgba(255,255,255,0.08)" }}
                     title="Download Automatic Area PST / Train Prep Excel"
                   >
-                    <MovementIcon type="download" />Excel
+                    <MovementIcon type="download" color="currentColor" />Excel
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={() => clearTp1MovementLogs(movementType)}
-                  className="flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
-                  style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}
+                  className={tp1LogPillButtonClass}
+                  style={{ borderColor: isTp1ConfirmingClear ? "rgba(248,113,113,0.95)" : `${accent}70`, color: "#ffffff", background: isTp1ConfirmingClear ? "linear-gradient(135deg, rgba(220,38,38,0.86), rgba(127,29,29,0.92))" : `linear-gradient(135deg, ${accent}3f, rgba(6,24,39,0.94))` }}
                 >
-                  <MovementIcon type="trash" />Clear
+                  <MovementIcon type="trash" color="currentColor" />{isTp1ConfirmingClear ? "Confirm Clear" : "Clear"}
                 </button>
               </div>
             </div>
