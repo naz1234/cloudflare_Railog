@@ -3800,12 +3800,25 @@ function getMainStablingRemarkPillStyle(item = null) {
   const accent = visual?.accent || getRequestAccent(item) || "#4f8ef7";
   const isWashRemark = getStablingRequestCategory(item) === "wash";
 
+  if (isWashRemark) {
+    return {
+      // Match the cooler Removal Summary look by layering a light WASH
+      // lime overlay on top of the steel-blue row colour instead of using
+      // a solid bright lime pill.
+      background: `linear-gradient(90deg, ${hexToRgba(accent, 0.11)} 0%, ${hexToRgba(accent, 0.20)} 100%), linear-gradient(90deg, rgba(49,104,147,0.24) 0%, rgba(35,79,116,0.13) 55%, rgba(28,61,91,0.07) 100%)`,
+      border: `1px solid ${hexToRgba(accent, 0.52)}`,
+      boxShadow: `0 0 0 1px rgba(96,165,250,0.18), 0 0 8px ${hexToRgba(accent, 0.18)}, inset 3px 0 0 #3b82f6`,
+      color: "#ffffff",
+      textShadow: "0 1px 1px rgba(0,0,0,0.45)",
+    };
+  }
+
   return {
     background: `linear-gradient(135deg, ${hexToRgba(accent, 0.98)} 0%, ${hexToRgba(accent, 0.62)} 100%)`,
     border: `1px solid ${hexToRgba(accent, 0.95)}`,
     boxShadow: `0 0 8px ${hexToRgba(accent, 0.24)}, inset 0 1px 0 rgba(255,255,255,0.14)`,
-    color: isWashRemark ? "#000000" : "#ffffff",
-    textShadow: isWashRemark ? "none" : "0 1px 1px rgba(0,0,0,0.45)",
+    color: "#ffffff",
+    textShadow: "0 1px 1px rgba(0,0,0,0.45)",
   };
 }
 
