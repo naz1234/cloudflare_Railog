@@ -1670,6 +1670,13 @@ const MAINT_STYLES = {
     badgeBorder: "#7dd3fc",
     badgeColor: "#000000",
   },
+  "Wash only": {
+    cellBg: "#eaf8ff",
+    trainColor: "#0e7490",
+    badgeBg: "#ADD8E6",
+    badgeBorder: "#7dd3fc",
+    badgeColor: "#000000",
+  },
   "TLC Comms": {
     cellBg: "#eef2ff",
     trainColor: "#4f46e5",
@@ -3410,6 +3417,16 @@ function normalizeRequestGroupColorKey(value = "") {
     .replace(/\b(\d{1,2})(JAN(?:UARY)?|FEB(?:RUARY)?|MAR(?:CH)?|APR(?:IL)?|MAY|JUN(?:E)?|JUL(?:Y)?|AUG(?:UST)?|SEP(?:T(?:EMBER)?)?|OCT(?:OBER)?|NOV(?:EMBER)?|DEC(?:EMBER)?)\b/g, "$1 $2");
 }
 
+function isWashOnlyRequestLabel(value = "") {
+  const normalized = normalizeRequestIdentity(value);
+  return normalized === "WASH ONLY" || normalized === "ONLY WASH";
+}
+
+function formatWashOnlyRequestLabel(value = "") {
+  const clean = cleanRequestLabel(value);
+  return isWashOnlyRequestLabel(clean) ? "Wash only" : clean;
+}
+
 function isNamedWashRequest(value = "") {
   const groupKey = normalizeRequestGroupColorKey(value);
   return groupKey.includes("WASH") && groupKey !== "WASH";
@@ -3541,6 +3558,7 @@ function getKnownMaintenanceStyle(label = "") {
   if (normalized === "UNFIT") return MAINT_STYLES.UNFIT;
   if (normalized === "NOT FIT" || normalized === "NOTFIT") return MAINT_STYLES["Not Fit"] || MAINT_STYLES.UNFIT;
   if (normalized === "WORKSHOP UNFIT") return MAINT_STYLES["Workshop /Unfit"] || MAINT_STYLES.UNFIT;
+  if (isWashOnlyRequestLabel(clean)) return MAINT_STYLES["Wash only"] || MAINT_STYLES.WASH;
   if (normalized.split(" ").includes("WASH")) return MAINT_STYLES.WASH;
 
   return null;
@@ -3644,6 +3662,7 @@ const TRAIN_REM_AUTO_REMARK_LABELS = [
   "RST PM",
   "RST CM",
   "WASH",
+  "Wash only",
   "HVAC",
   "HVAC TESTING",
   "UNFIT",
@@ -16419,8 +16438,9 @@ export default function DepotStablingPage() {
 
   const duplicates = getDuplicates(westData, eastData);
   const westStablingKeys = getWestStablingKeys(westData);
+  const mainStablingKeys = getMainStablingKeys(westData, eastData);
   const westStablingLocations = getWestStablingLocations(westData);
-  const maintenanceMap = buildMaintenanceMap(requests, westStablingKeys);
+  const maintenanceMap = buildMaintenanceMap(requests, mainStablingKeys);
   const activeInsertionPgByDepot = normalizeInsertionPgByDepot(activeInsertionPg);
   const westInsertionPg = activeInsertionPgByDepot.west;
   const eastInsertionPg = activeInsertionPgByDepot.east;
@@ -16907,7 +16927,7 @@ export default function DepotStablingPage() {
           onAdd={handleAddRequest}
           onRemove={handleRemoveRequest}
           onClearAll={handleClearAllRequests}
-          stabledTrainIds={Array.from(westStablingKeys)}
+          stabledTrainIds={Array.from(mainStablingKeys)}
           stabledTrainLocations={getMainStablingLocations(westData, eastData)}
         />
       </div>
@@ -22867,7 +22887,7 @@ function RoadRow({
               ) : maintList.length > 0 ? (
                 <div className="flex w-full flex-col items-center gap-0.5 px-1">
                   {maintList.map((item) => {
-                    const label = item.badgeText || item.displayType || item.typeKey || "Request";
+                    const label = formatWashOnlyRequestLabel(item.badgeText || item.displayType || item.typeKey || "Request") || "Request";
                     return (
                       <span
                         key={`${key}-${item.displayType}-${item.badgeText || ""}`}
