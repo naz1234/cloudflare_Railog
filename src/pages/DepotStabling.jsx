@@ -2068,6 +2068,7 @@ const TRAIN_REM_WEST_COMPACT_EMPTY_ROW_COUNT = 4;
 const TRAIN_REM_LEGACY_COMBINED_PRESET_LABELS = new Set(["9am", "7pm"]);
 const TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS = new Set(["12am", "Fri", "Sat", "PH"]);
 const TRAIN_REM_ADDITIONAL_WEST_ROW_COUNT = 4;
+const TRAIN_REM_ADDITIONAL_EAST_ROW_COUNTS = { "12am": 3 };
 const TRAIN_REM_WEST_9AM_REAL_ROW_COUNT = 0;
 const TRAIN_REM_WEST_9AM_REFERENCE_SEPARATOR_COUNT = 0;
 const TRAIN_REM_WEST_9AM_REFERENCE_START_INDEX = 0;
@@ -2222,16 +2223,21 @@ function getTrainRemCombinedExtendedLayout(label = "9am", activeTimetable = null
     .map((tid) => normalizeTrainRemTidValue(tid))
     .filter(Boolean);
   const reserveCount = getTrainRemAdditionalWestRowCount(label);
+  const eastReserveCount = getTrainRemAdditionalEastRowCount(label);
+  const eastStartIndex = westTids.length + reserveCount;
+  const eastReserveStartIndex = eastStartIndex + eastTids.length;
 
   return {
     westTids,
     eastTids,
     reserveCount,
+    eastReserveCount,
     westCount: westTids.length,
     eastCount: eastTids.length,
     reserveStartIndex: westTids.length,
-    eastStartIndex: westTids.length + reserveCount,
-    totalCount: westTids.length + reserveCount + eastTids.length,
+    eastStartIndex,
+    eastReserveStartIndex,
+    totalCount: eastReserveStartIndex + eastReserveCount,
   };
 }
 
@@ -2239,6 +2245,28 @@ function getTrainRemAdditionalWestRowCount(label = "9am") {
   return TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(label)
     ? TRAIN_REM_ADDITIONAL_WEST_ROW_COUNT
     : 0;
+}
+
+function getTrainRemAdditionalEastRowCount(label = "9am") {
+  return TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(label)
+    ? TRAIN_REM_ADDITIONAL_EAST_ROW_COUNTS[label] || 0
+    : 0;
+}
+
+function isTrainRemCombinedWestReserveRowIndex(label = "9am", rowIndex = -1, activeTimetable = null) {
+  if (!TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(label) || rowIndex < 0) return false;
+  const layout = getTrainRemCombinedExtendedLayout(label, activeTimetable);
+  return rowIndex >= layout.reserveStartIndex && rowIndex < layout.eastStartIndex;
+}
+
+function isTrainRemCombinedEastExtraRowIndex(depot = "west", label = "9am", rowIndex = -1, activeTimetable = null) {
+  if (depot !== "west" || !TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(label) || rowIndex < 0) return false;
+  const layout = getTrainRemCombinedExtendedLayout(label, activeTimetable);
+  return rowIndex >= layout.eastReserveStartIndex && rowIndex < layout.totalCount;
+}
+
+function getTrainRemCombinedManualRowDepot(depot = "west", label = "9am", rowIndex = -1, activeTimetable = null) {
+  return isTrainRemCombinedEastExtraRowIndex(depot, label, rowIndex, activeTimetable) ? "east" : depot;
 }
 
 function isTrainRemReferenceSeparatorIndex(depot = "west", label = "9am", rowIndex = -1) {
@@ -2251,7 +2279,7 @@ function isTrainRemReferenceOnlyIndex(depot = "west", label = "9am", rowIndex = 
   if (TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(label) && depot === "west") {
     const layout = getTrainRemCombinedExtendedLayout(label, activeTimetable);
     return rowIndex < layout.westCount
-      || (rowIndex >= layout.eastStartIndex && rowIndex < layout.totalCount);
+      || (rowIndex >= layout.eastStartIndex && rowIndex < layout.eastReserveStartIndex);
   }
 
   return rowIndex < getTrainRemReferenceTids(label, activeTimetable).length;
@@ -2266,7 +2294,12 @@ function getTrainRemPresetRowTids(depot = "west", label = "9am", tids = [], acti
 
   if (TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(label) && depot === "west") {
     const layout = getTrainRemCombinedExtendedLayout(label, activeTimetable);
-    return [...layout.westTids, ...Array.from({ length: layout.reserveCount }, () => ""), ...layout.eastTids];
+    return [
+      ...layout.westTids,
+      ...Array.from({ length: layout.reserveCount }, () => ""),
+      ...layout.eastTids,
+      ...Array.from({ length: layout.eastReserveCount }, () => ""),
+    ];
   }
 
   return getTrainRemReferenceTids(label, activeTimetable).map((tid) => String(tid));
@@ -2359,7 +2392,24 @@ function buildTrainRemCombinedWestRows(existingRows = [], label = "9am", activeT
       additionalRows.push({ trainId: "", tid: "", timing: "", remark: "" });
     }
 
-    return [...westReferenceRows, ...additionalRows, ...eastReferenceRows];
+    const eastAdditionalRows = Array.from({ length: layout.eastReserveCount }, (_, offset) => {
+      const sourceRow = normalizedSourceRows[layout.eastReserveStartIndex + offset] || {};
+      const tid = normalizeTrainRemTidValue(sourceRow?.tid || "");
+      const isScheduledTid = Boolean(tid && referenceTidSet.has(tid));
+
+      if (!hasTrainRemRowContent(sourceRow) || isScheduledTid) {
+        return { trainId: "", tid: "", timing: "", remark: "" };
+      }
+
+      return {
+        trainId: sourceRow?.trainId || "",
+        tid,
+        timing: sourceRow?.timing || "",
+        remark: sourceRow?.remark || "",
+      };
+    });
+
+    return [...westReferenceRows, ...additionalRows, ...eastReferenceRows, ...eastAdditionalRows];
   }
 
   const referenceRows = referenceTids.map((referenceTid) => {
@@ -2713,7 +2763,7 @@ function mergeTrainRemCombinedMorningReferenceState(state = {}, activeTimetable 
   const normalizedEastPresetRows = normalizeTrainRemRows(eastPresetRows, "east");
   const eastRowsByTid = indexTrainRemRowsByTid(normalizedEastPresetRows);
 
-  const mergedWestRows = westRows.map((row, index) => {
+  let mergedWestRows = westRows.map((row, index) => {
     if (!isTrainRemReferenceOnlyIndex("west", westPreset, index, activeTimetable) || normalizeTrainId(row?.trainId || "")) return row;
     const eastRow = eastRowsByTid.get(normalizeTrainRemTidValue(row?.tid || ""));
     if (!eastRow || !normalizeTrainId(eastRow?.trainId || "")) return row;
@@ -2725,6 +2775,35 @@ function mergeTrainRemCombinedMorningReferenceState(state = {}, activeTimetable 
       remark: "",
     };
   });
+
+  if (TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(westPreset)) {
+    const layout = getTrainRemCombinedExtendedLayout(westPreset, activeTimetable);
+    const scheduledTidSet = new Set([...layout.westTids, ...layout.eastTids].map((tid) => normalizeTrainRemTidValue(tid)).filter(Boolean));
+    const eastManualRows = normalizedEastPresetRows
+      .filter((row) => {
+        if (!hasTrainRemRowContent(row)) return false;
+        const tid = normalizeTrainRemTidValue(row?.tid || "");
+        return !tid || !scheduledTidSet.has(tid);
+      })
+      .slice(0, layout.eastReserveCount);
+
+    if (eastManualRows.length) {
+      mergedWestRows = mergedWestRows.map((row, index) => {
+        if (!isTrainRemCombinedEastExtraRowIndex("west", westPreset, index, activeTimetable)) return row;
+        if (hasTrainRemRowContent(row)) return row;
+
+        const eastManualRow = eastManualRows[index - layout.eastReserveStartIndex];
+        if (!eastManualRow) return row;
+
+        return {
+          trainId: eastManualRow?.trainId || "",
+          tid: normalizeTrainRemTidValue(eastManualRow?.tid || ""),
+          timing: eastManualRow?.timing || "",
+          remark: eastManualRow?.remark || "",
+        };
+      });
+    }
+  }
 
   const clearedEastPresetRows = TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(westPreset)
     ? buildTrainRemAdditionalEastRows(normalizedEastPresetRows, westPreset, activeTimetable, {
@@ -2802,17 +2881,23 @@ function collectTrainRemTrainIdsForDepotCopy(
       westSelectedPreset,
       activeTimetable
     );
-    const referenceRowCount = getTrainRemReferenceTids(westSelectedPreset, activeTimetable).length;
-
     westRows.forEach((row, index) => {
       const tid = normalizeTrainRemTidValue(row?.tid || "");
-      if (index < referenceRowCount) {
+      const isReferenceRow = isTrainRemReferenceOnlyIndex("west", westSelectedPreset, index, activeTimetable);
+      const isEastExtraRow = isTrainRemCombinedEastExtraRowIndex("west", westSelectedPreset, index, activeTimetable);
+
+      if (isReferenceRow) {
         if (!getTrainRemScheduleMatch(activeTimetable, safeDepot, westSelectedPreset, tid)) return;
         rowsToScan.push(row);
         return;
       }
 
-      if (safeDepot === "west") rowsToScan.push(row);
+      if (safeDepot === "east" && isEastExtraRow) {
+        rowsToScan.push(row);
+        return;
+      }
+
+      if (safeDepot === "west" && !isEastExtraRow) rowsToScan.push(row);
     });
 
     if (safeDepot === "east" && TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(westSelectedPreset)) {
@@ -6199,8 +6284,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
       if (field === "tid") {
         const cleanTid = (value || "").toString().replace(/[^0-9]/g, "");
+        const timingDepot = getTrainRemCombinedManualRowDepot(depot, presetLabel, rowIndex, activeTimetable);
         updatedRow.tid = cleanTid;
-        updatedRow.timing = referenceOnly ? "" : getTimingForTid(depot, presetLabel, cleanTid);
+        updatedRow.timing = referenceOnly ? "" : getTimingForTid(timingDepot, presetLabel, cleanTid);
       }
 
       if (field === "trainId") {
@@ -6414,6 +6500,11 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         && sourceIndex >= combinedExtendedLayout.reserveStartIndex
         && sourceIndex < combinedExtendedLayout.eastStartIndex) {
         return 0;
+      }
+      if (combinedExtendedLayout
+        && sourceIndex >= combinedExtendedLayout.eastReserveStartIndex
+        && sourceIndex < combinedExtendedLayout.totalCount) {
+        return 1;
       }
       if (getTrainRemScheduleMatch(activeTimetable, "west", selectedPreset, row?.tid)) return 0;
       if (getTrainRemScheduleMatch(activeTimetable, "east", selectedPreset, row?.tid)) return combinedExtendedLayout ? 1 : 1;
@@ -6691,11 +6782,18 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 const combinedExtendedLayout = TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(selectedPreset)
                   ? getTrainRemCombinedExtendedLayout(selectedPreset, activeTimetable)
                   : null;
-                const isCombinedWestReserveRow = depot === "west"
-                  && Boolean(combinedExtendedLayout)
-                  && index >= combinedExtendedLayout.reserveStartIndex
-                  && index < combinedExtendedLayout.eastStartIndex;
-                const isEmptyCombinedWestReserveRow = isCombinedWestReserveRow
+                const isCombinedWestReserveRow = isTrainRemCombinedWestReserveRowIndex(
+                  selectedPreset,
+                  index,
+                  activeTimetable
+                );
+                const isCombinedEastExtraRow = isTrainRemCombinedEastExtraRowIndex(
+                  depot,
+                  selectedPreset,
+                  index,
+                  activeTimetable
+                );
+                const isEmptyCombinedManualReserveRow = (isCombinedWestReserveRow || isCombinedEastExtraRow)
                   && !String(row.trainId || "").trim()
                   && !String(row.tid || "").trim()
                   && !String(displayTimingValue || "").trim()
@@ -6738,14 +6836,14 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   && !hasDuplicateValue;
                 const isOtherPresetThemedRow = selectedPreset !== "9am"
                   && ["7pm", "12am", "Fri", "Sat", "PH"].includes(selectedPreset)
-                  && (hasTid || isCombinedWestReserveRow)
+                  && (hasTid || isCombinedWestReserveRow || isCombinedEastExtraRow)
                   && !isExtendedEastPresetRow
                   && !hasDuplicateValue;
                 const rowCardVisual = getTrainRemRowCardVisual(
                   null,
                   "",
                   {
-                    hasContent: hasRowContent || isEmptyCombinedWestReserveRow,
+                    hasContent: hasRowContent || isEmptyCombinedManualReserveRow,
                     isDuplicate: hasDuplicateValue,
                   }
                 );
@@ -17599,8 +17697,10 @@ function getTrainRemRowForTrain(trainRemState = {}, trainKey = "", activeTimetab
         activeTimetable
       );
 
+      const manualRowDepot = getTrainRemCombinedManualRowDepot(depot, selectedPreset, matchIndex, activeTimetable);
+
       return {
-        depot: derivedScheduleMatch?.depot || depot,
+        depot: derivedScheduleMatch?.depot || manualRowDepot,
         tid,
         timing: derivedScheduleMatch?.timing || (match.timing || "").toString().trim(),
         remark: (match.remark || "").toString().trim(),
@@ -17640,18 +17740,19 @@ function getWestRemovalRowsMap(trainRemState = {}, activeTimetable = null) {
   );
 
   if (isTrainRemCombinedReferencePreset("west", selectedPreset)) {
-    const referenceRowCount = getTrainRemReferenceTids(selectedPreset, activeTimetable).length;
-
     westRows.forEach((row, index) => {
       const key = normalizeTrainId(row.trainId);
       if (!key) return;
 
       const tid = normalizeTrainRemTidValue(row.tid);
-      const scheduleMatch = index < referenceRowCount
+      const isReferenceRow = isTrainRemReferenceOnlyIndex("west", selectedPreset, index, activeTimetable);
+      const isEastExtraRow = isTrainRemCombinedEastExtraRowIndex("west", selectedPreset, index, activeTimetable);
+      const scheduleMatch = isReferenceRow
         ? getTrainRemScheduleMatch(activeTimetable, "west", selectedPreset, tid)
         : null;
 
-      if (index < referenceRowCount && !scheduleMatch) return;
+      if (isReferenceRow && !scheduleMatch) return;
+      if (isEastExtraRow) return;
 
       map.set(key, {
         tid,
@@ -17659,9 +17760,9 @@ function getWestRemovalRowsMap(trainRemState = {}, activeTimetable = null) {
         remark: (row.remark || "").toString().trim(),
         rowIndex: index,
         selectedPreset,
-        isTrainRemReferenceOnly: index < referenceRowCount,
+        isTrainRemReferenceOnly: isReferenceRow,
         // Legacy property name retained for requested-train compatibility.
-        isWest9amReferenceOnly: index < referenceRowCount,
+        isWest9amReferenceOnly: isReferenceRow,
         isWest9amRealRemoval: selectedPreset === "9am" && Boolean(scheduleMatch),
         isWest7pmRealRemoval: selectedPreset === "7pm" && Boolean(scheduleMatch),
       });
@@ -19647,11 +19748,11 @@ function getTrainRemRemovalEntries(trainRemState = {}, depot = "west", maintenan
       westSelectedPreset,
       activeTimetable
     );
-    const referenceRowCount = getTrainRemReferenceTids(westSelectedPreset, activeTimetable).length;
 
     westRows.forEach((row, index) => {
       const tid = normalizeTrainRemTidValue(row?.tid || "");
       const isReferenceRow = isTrainRemReferenceOnlyIndex("west", westSelectedPreset, index, activeTimetable);
+      const isEastExtraRow = isTrainRemCombinedEastExtraRowIndex("west", westSelectedPreset, index, activeTimetable);
 
       if (isReferenceRow) {
         const scheduleMatch = getTrainRemScheduleMatch(activeTimetable, safeDepot, westSelectedPreset, tid);
@@ -19665,9 +19766,19 @@ function getTrainRemRemovalEntries(trainRemState = {}, depot = "west", maintenan
         return;
       }
 
+      if (safeDepot === "east" && isEastExtraRow) {
+        candidates.push({
+          row,
+          tid,
+          time: cleanRemovalTime(row?.timing),
+          originalIndex: index,
+        });
+        return;
+      }
+
       // The reserve rows inserted after the West scheduled TIDs are explicit
-      // additional West removals. They are never auto-routed to East.
-      if (safeDepot === "west") {
+      // additional West removals. The 12am East extra rows are routed only to East.
+      if (safeDepot === "west" && !isEastExtraRow) {
         candidates.push({
           row,
           tid,
@@ -19677,10 +19788,9 @@ function getTrainRemRemovalEntries(trainRemState = {}, depot = "west", maintenan
       }
     });
 
-    // 12am / Fri / Sat / PH now follow the same single-panel layout as 9am / 7pm.
-    // East Depot scheduled rows are already represented in the combined West list,
-    // and the East panel is hidden for these presets, so do not append any hidden
-    // additional-East rows into the removal output.
+    // 12am / Fri / Sat / PH follow the combined single-panel layout. East Depot
+    // scheduled rows and the 12am East extra rows are represented inside the
+    // combined West list, so no hidden East-panel rows are appended.
   } else {
     const sourceRows = normalizeTrainRemRowsForPreset(
       trainRemState?.rows?.[safeDepot],
