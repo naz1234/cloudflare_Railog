@@ -8867,8 +8867,42 @@ function TrainMovementContent() {
     }));
   };
 
+  const getTp1ModeForm = (mode = "automatic", source = tp1Form) => {
+    const normalizedMode = mode === "manual" ? "manual" : "automatic";
+    const safeSource = source && typeof source === "object" && !Array.isArray(source) ? source : {};
+    const rawModeSource = safeSource?.[normalizedMode] && typeof safeSource[normalizedMode] === "object" && !Array.isArray(safeSource[normalizedMode])
+      ? safeSource[normalizedMode]
+      : {};
+    const { automatic: _legacyAutomatic, manual: _legacyManual, ...legacySource } = safeSource;
+    const { automatic: _nestedAutomatic, manual: _nestedManual, ...modeSource } = rawModeSource;
+
+    return {
+      ...createDefaultTp1MovementForm(),
+      ...legacySource,
+      ...modeSource,
+      movementType: normalizedMode,
+    };
+  };
+
+  const updateTp1ModeForm = (mode, field, value) => {
+    const normalizedMode = mode === "manual" ? "manual" : "automatic";
+    captureMovementScrollPosition();
+    setTp1Form((prev) => {
+      const currentModeForm = getTp1ModeForm(normalizedMode, prev);
+      return {
+        ...prev,
+        movementType: normalizedMode,
+        [normalizedMode]: {
+          ...currentModeForm,
+          [field]: value,
+          movementType: normalizedMode,
+        },
+      };
+    });
+  };
+
   const getMovementFlowInputKey = (operation, field) => `movement:${operation}:${field}`;
-  const getTp1FlowInputKey = (field) => `tp1:${field}`;
+  const getTp1FlowInputKey = (field, mode = "shared") => `tp1:${mode}:${field}`;
   const isFlowInputFocused = (key) => focusedFlowInput === key;
   const focusFlowInput = (key) => setFocusedFlowInput(key);
   const focusNextMovementControl = (operation, field) => {
@@ -8947,18 +8981,22 @@ function TrainMovementContent() {
     setTp1Form((prev) => ({
       ...prev,
       movementType: "automatic",
-      trainSet: "",
-      planStatus: "Planned",
-      trAtTp1: "",
-      shunterName: "",
-      trLocalized: "",
-      automaticStablingRoad: "",
-      trainPrepCompletedTime: "",
-      pstPerformedTime: "",
-      completedByDc: "",
-      nextWashText: "",
-      nextWashDate: "",
-      nextWashTime: "",
+      automatic: {
+        ...getTp1ModeForm("automatic", prev),
+        trainSet: "",
+        planStatus: "Planned",
+        trAtTp1: "",
+        shunterName: "",
+        trLocalized: "",
+        automaticStablingRoad: "",
+        trainPrepCompletedTime: "",
+        pstPerformedTime: "",
+        completedByDc: "",
+        nextWashText: "",
+        nextWashDate: "",
+        nextWashTime: "",
+        movementType: "automatic",
+      },
     }));
   };
 
@@ -8969,15 +9007,19 @@ function TrainMovementContent() {
     setTp1Form((prev) => ({
       ...prev,
       movementType: "manual",
-      trainSet: "",
-      planStatus: "Planned",
-      trAtTp1: "",
-      shunterName: "",
-      fromTp1: "",
-      toManual: "",
-      nextWashText: "",
-      nextWashDate: "",
-      nextWashTime: "",
+      manual: {
+        ...getTp1ModeForm("manual", prev),
+        trainSet: "",
+        planStatus: "Planned",
+        trAtTp1: "",
+        shunterName: "",
+        fromTp1: "",
+        toManual: "",
+        nextWashText: "",
+        nextWashDate: "",
+        nextWashTime: "",
+        movementType: "manual",
+      },
     }));
   };
 
@@ -9266,37 +9308,40 @@ function TrainMovementContent() {
     return form.trLocalized ? "automatic" : "manual";
   };
 
-  const buildTp1MovementText = ({ preview = false } = {}) => {
-    const movementType = getTp1MovementType();
-    const train = normalizeMovementTrain(tp1Form.trainSet);
+  const buildTp1MovementText = ({ preview = false, movementType: requestedMovementType = "" } = {}) => {
+    const movementType = requestedMovementType === "manual" || requestedMovementType === "automatic"
+      ? requestedMovementType
+      : getTp1MovementType();
+    const form = getTp1ModeForm(movementType);
+    const train = normalizeMovementTrain(form.trainSet);
     const displayTrain = train || "T19";
-    const planStatus = tp1Form.planStatus || "Planned";
-    const shunterName = (tp1Form.shunterName || "ALVIN").trim();
+    const planStatus = form.planStatus || "Planned";
+    const shunterName = (form.shunterName || "ALVIN").trim();
     const shunterNameForLog = formatTp1ShunterNameForLog(shunterName) || shunterName;
-    const trAtTp1 = tp1Form.trAtTp1 || "18:20";
+    const trAtTp1 = form.trAtTp1 || "18:20";
     const shunterAuth = addMinutesToHHMM(trAtTp1, 1);
-    const trLocalized = tp1Form.trLocalized || "18:28";
-    const trainPrepCompletedTime = tp1Form.trainPrepCompletedTime || "";
-    const pstPerformedTime = tp1Form.pstPerformedTime || "";
+    const trLocalized = form.trLocalized || "18:28";
+    const trainPrepCompletedTime = form.trainPrepCompletedTime || "";
+    const pstPerformedTime = form.pstPerformedTime || "";
     const pstCompletedTime = pstPerformedTime ? addMinutesToHHMM(pstPerformedTime, 6) : "";
-    const selectedAutomaticStablingRoad = formatTp1RoadForLog(tp1Form.automaticStablingRoad);
+    const selectedAutomaticStablingRoad = formatTp1RoadForLog(form.automaticStablingRoad);
     const stablingRoad = selectedAutomaticStablingRoad || findTp1TrainStablingRoad(train || displayTrain) || "Automatic Area";
-    const fromTp1 = tp1Form.fromTp1 || "18:30";
-    const toManual = tp1Form.toManual || "18:35";
-    const nextWashSuffix = getTp1NextWashSuffix();
+    const fromTp1 = form.fromTp1 || "18:30";
+    const toManual = form.toManual || "18:35";
+    const nextWashSuffix = getTp1NextWashSuffix(form);
 
     if (!preview) {
       const missing = [];
       if (!train) missing.push(movementType === "manual" ? "Train Set going to workshop" : "Train Set (from workshop)");
-      if (!tp1Form.planStatus) missing.push("Plan / Unplanned");
-      if (!isCompleteMovementTimeInput(tp1Form.trAtTp1)) missing.push(movementType === "automatic" ? "Time arrival at TP1 (HH:MM)" : "TR at TP1 (HH:MM)");
-      if (!tp1Form.shunterName) missing.push("Shunter Name");
-      if (movementType === "automatic" && !isCompleteMovementTimeInput(tp1Form.trLocalized)) missing.push("Time Train Localized (HH:MM)");
-      if (movementType === "automatic" && !tp1Form.automaticStablingRoad) missing.push("Parking location");
-      if (movementType === "automatic" && !isCompleteMovementTimeInput(tp1Form.trainPrepCompletedTime)) missing.push("Time Train Prep Completed (HH:MM)");
-      if (movementType === "automatic" && !isCompleteMovementTimeInput(tp1Form.pstPerformedTime)) missing.push("Time PST Performed (HH:MM)");
-      if (movementType === "manual" && !isCompleteMovementTimeInput(tp1Form.fromTp1)) missing.push("Time start moving from TP1 (HH:MM)");
-      if (movementType === "manual" && !isCompleteMovementTimeInput(tp1Form.toManual)) missing.push("Time arrival to Manual Area (HH:MM)");
+      if (!form.planStatus) missing.push("Plan / Unplanned");
+      if (!isCompleteMovementTimeInput(form.trAtTp1)) missing.push(movementType === "automatic" ? "Time arrival at TP1 (HH:MM)" : "TR at TP1 (HH:MM)");
+      if (!form.shunterName) missing.push("Shunter Name");
+      if (movementType === "automatic" && !isCompleteMovementTimeInput(form.trLocalized)) missing.push("Time Train Localized (HH:MM)");
+      if (movementType === "automatic" && !form.automaticStablingRoad) missing.push("Parking location");
+      if (movementType === "automatic" && !isCompleteMovementTimeInput(form.trainPrepCompletedTime)) missing.push("Time Train Prep Completed (HH:MM)");
+      if (movementType === "automatic" && !isCompleteMovementTimeInput(form.pstPerformedTime)) missing.push("Time PST Performed (HH:MM)");
+      if (movementType === "manual" && !isCompleteMovementTimeInput(form.fromTp1)) missing.push("Time start moving from TP1 (HH:MM)");
+      if (movementType === "manual" && !isCompleteMovementTimeInput(form.toManual)) missing.push("Time arrival to Manual Area (HH:MM)");
 
       if (missing.length) {
         alert(`Please complete: ${missing.join(", ")}.`);
@@ -9333,54 +9378,66 @@ function TrainMovementContent() {
     ].join("\n");
   };
 
-  const addTp1MovementLog = () => {
+  const addTp1MovementLog = (requestedMovementType = "") => {
+    const movementType = requestedMovementType === "manual" || requestedMovementType === "automatic"
+      ? requestedMovementType
+      : getTp1MovementType();
+    const form = getTp1ModeForm(movementType);
+
     captureMovementScrollPosition();
     setFocusedFlowInput("");
-    const text = buildTp1MovementText();
+    const text = buildTp1MovementText({ movementType });
     if (!text) return;
 
     const now = new Date();
-    const movementType = getTp1MovementType();
-    const normalizedTrain = normalizeMovementTrain(tp1Form.trainSet);
-    const selectedAutomaticStablingRoad = formatTp1RoadForLog(tp1Form.automaticStablingRoad);
+    const normalizedTrain = normalizeMovementTrain(form.trainSet);
+    const selectedAutomaticStablingRoad = formatTp1RoadForLog(form.automaticStablingRoad);
     const stablingRoad = movementType === "automatic" ? (selectedAutomaticStablingRoad || findTp1TrainStablingRoad(normalizedTrain) || "Automatic Area") : "";
-    const pstPerformedTime = tp1Form.pstPerformedTime || "";
+    const pstPerformedTime = form.pstPerformedTime || "";
     const entry = {
       id: `tp1-movement-${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
       type: movementType,
       train: normalizedTrain,
-      planStatus: tp1Form.planStatus,
-      startTime: tp1Form.trAtTp1,
-      trAtTp1: tp1Form.trAtTp1,
-      trLocalized: tp1Form.trLocalized,
-      automaticStablingRoad: tp1Form.automaticStablingRoad,
-      trainPrepCompletedTime: tp1Form.trainPrepCompletedTime,
+      planStatus: form.planStatus,
+      startTime: form.trAtTp1,
+      trAtTp1: form.trAtTp1,
+      trLocalized: form.trLocalized,
+      automaticStablingRoad: form.automaticStablingRoad,
+      trainPrepCompletedTime: form.trainPrepCompletedTime,
       pstPerformedTime,
       pstCompletedTime: pstPerformedTime ? addMinutesToHHMM(pstPerformedTime, 6) : "",
-      shunterName: tp1Form.shunterName,
+      shunterName: form.shunterName,
       stablingRoad,
-      fromTp1: tp1Form.fromTp1,
-      toManual: tp1Form.toManual,
-      nextWashText: tp1Form.nextWashText || "",
+      fromTp1: form.fromTp1,
+      toManual: form.toManual,
+      nextWashText: form.nextWashText || "",
       createdAt: now.toISOString(),
       text,
     };
 
     setTp1Entries((prev) => sortTp1MovementEntries([...prev, entry]));
-    setTp1Form((prev) => ({
-      ...prev,
-      trainSet: "",
-      trAtTp1: "",
-      trLocalized: "",
-      automaticStablingRoad: "",
-      trainPrepCompletedTime: "",
-      pstPerformedTime: "",
-      nextWashText: "",
-      nextWashDate: "",
-      nextWashTime: "",
-      fromTp1: "",
-      toManual: "",
-    }));
+    setTp1Form((prev) => {
+      const currentModeForm = getTp1ModeForm(movementType, prev);
+      return {
+        ...prev,
+        movementType,
+        [movementType]: {
+          ...currentModeForm,
+          trainSet: "",
+          trAtTp1: "",
+          trLocalized: "",
+          automaticStablingRoad: "",
+          trainPrepCompletedTime: "",
+          pstPerformedTime: "",
+          nextWashText: "",
+          nextWashDate: "",
+          nextWashTime: "",
+          fromTp1: "",
+          toManual: "",
+          movementType,
+        },
+      };
+    });
   };
 
   const removeTp1MovementLog = (id) => {
@@ -9388,21 +9445,33 @@ function TrainMovementContent() {
     setTp1Entries((prev) => prev.filter((entry) => entry.id !== id));
   };
 
-  const clearTp1MovementLogs = () => {
-    if (!window.confirm("Clear all inbound / outbound movement logs?")) return;
+  const clearTp1MovementLogs = (requestedMovementType = "") => {
+    const movementType = requestedMovementType === "manual" || requestedMovementType === "automatic"
+      ? requestedMovementType
+      : "";
+    const label = movementType === "automatic" ? "automatic area" : movementType === "manual" ? "manual area" : "inbound / outbound movement";
+    if (!window.confirm(`Clear all ${label} logs?`)) return;
     captureMovementScrollPosition();
-    setTp1Entries([]);
+    setTp1Entries((prev) => movementType ? prev.filter((entry) => entry.type !== movementType) : []);
   };
 
-  const copyTp1MovementPreview = async () => {
-    await copyTextToClipboard(buildTp1MovementText({ preview: true }));
-    showCopyFeedback("tp1-preview", "copied");
+  const copyTp1MovementPreview = async (requestedMovementType = "") => {
+    const movementType = requestedMovementType === "manual" || requestedMovementType === "automatic"
+      ? requestedMovementType
+      : getTp1MovementType();
+    await copyTextToClipboard(buildTp1MovementText({ preview: true, movementType }));
+    showCopyFeedback(`tp1-preview-${movementType}`, "copied");
   };
 
-  const copyTp1MovementLogs = async () => {
-    const lines = sortTp1MovementEntries(tp1Entries).map((entry) => sortTp1MovementTextLinesByTime(entry.text));
+  const copyTp1MovementLogs = async (requestedMovementType = "") => {
+    const movementType = requestedMovementType === "manual" || requestedMovementType === "automatic"
+      ? requestedMovementType
+      : "";
+    const feedbackKey = movementType ? `tp1-all-${movementType}` : "tp1-all";
+    const entriesToCopy = movementType ? tp1Entries.filter((entry) => entry.type === movementType) : tp1Entries;
+    const lines = sortTp1MovementEntries(entriesToCopy).map((entry) => sortTp1MovementTextLinesByTime(entry.text));
     if (lines.length === 0) {
-      showCopyFeedback("tp1-all", "empty");
+      showCopyFeedback(feedbackKey, "empty");
       return;
     }
 
@@ -9417,11 +9486,11 @@ function TrainMovementContent() {
       document.body.removeChild(textarea);
     }
 
-    showCopyFeedback("tp1-all", "copied");
+    showCopyFeedback(feedbackKey, "copied");
   };
 
   const handleDownloadTp1AutomaticExcel = () => {
-    const completedByDc = String(tp1Form.completedByDc || "").trim();
+    const completedByDc = String(getTp1ModeForm("automatic").completedByDc || "").trim();
     const exportLines = buildTp1AutomaticPSTExportLines(tp1Entries);
 
     if (!exportLines.length) {
@@ -10272,27 +10341,31 @@ function TrainMovementContent() {
     ? "border-amber-600/50 bg-amber-950/30 text-amber-300"
     : "border-emerald-600/50 bg-emerald-950/30 text-emerald-300";
 
-  const renderTp1MovementWindow = () => {
-    const movementType = getTp1MovementType();
+  const renderTp1MovementWindow = (mode = "automatic") => {
+    const movementType = mode === "manual" ? "manual" : "automatic";
     const isAutomatic = movementType === "automatic";
     const accent = isAutomatic ? "#22c55e" : "#f59e0b";
-    const labelClass = "mb-1 block text-[11px] font-medium uppercase tracking-[0.12em] text-[#58a6ff]";
+    const modeTitle = isAutomatic ? "Automatic Area Movement" : "Manual Area Movement";
+    const modeSubtitle = isAutomatic ? "Automatic Area log generator" : "Manual Area log generator";
+    const modeForm = getTp1ModeForm(movementType);
+    const modeEntries = sortTp1MovementEntries(tp1Entries.filter((entry) => entry.type === movementType));
     const inputClass = "h-8 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
     const glowInputBoxClass = "flex h-8 items-center gap-1.5 rounded-lg border border-[#2f7bc4] bg-[#061827] px-2 shadow-[0_0_12px_rgba(79,142,247,0.25),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_16px_rgba(79,142,247,0.42),inset_0_1px_0_rgba(255,255,255,0.08)]";
     const timeInputBoxClass = "flex h-8 w-full items-center gap-1.5 rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-all focus-within:border-[#4f8ef7]";
 
     const renderTp1TimeInput = (field, disabled = false) => {
-      const fieldKey = getTp1FlowInputKey(field);
+      const fieldKey = getTp1FlowInputKey(field, movementType);
+      const fieldValue = modeForm[field] || "";
       return (
         <div className={`${timeInputBoxClass} ${disabled ? "cursor-not-allowed opacity-35" : ""}`}>
           <input
             type="text"
             inputMode="numeric"
             maxLength={5}
-            value={tp1Form[field]}
+            value={fieldValue}
             onFocus={() => focusFlowInput(fieldKey)}
             onKeyDown={(e) => {
-              const value = String(tp1Form[field] || "");
+              const value = String(modeForm[field] || "");
               const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
               if (e.key === "Enter") {
                 e.currentTarget.blur();
@@ -10300,15 +10373,15 @@ function TrainMovementContent() {
               }
               if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
                 e.preventDefault();
-                updateTp1MovementForm(field, value.slice(0, -2));
+                updateTp1ModeForm(movementType, field, value.slice(0, -2));
               }
             }}
             onChange={(e) => {
-              updateTp1MovementForm(field, cleanTp1MovementTimeInput(e.target.value));
+              updateTp1ModeForm(movementType, field, cleanTp1MovementTimeInput(e.target.value));
               scheduleFlowInputSettled(fieldKey);
             }}
             onBlur={(e) => {
-              updateTp1MovementForm(field, normalizeMovementCustomTimeInput(e.target.value));
+              updateTp1ModeForm(movementType, field, normalizeMovementCustomTimeInput(e.target.value));
               blurFlowInput(fieldKey);
             }}
             placeholder="00:00"
@@ -10320,36 +10393,17 @@ function TrainMovementContent() {
       );
     };
 
-    const renderTypeButton = (type, title, subtitle, color) => {
-      const active = movementType === type;
-      return (
-        <button
-          type="button"
-          onClick={() => updateTp1MovementForm("movementType", type)}
-          className="rounded-lg border px-3 py-2 text-left transition-all"
-          style={{
-            borderColor: active ? color : "#1e4060",
-            background: active ? `linear-gradient(135deg, ${color}30, #061827 86%)` : "#061827",
-            boxShadow: active ? `0 0 18px ${color}26, inset 0 1px 0 rgba(255,255,255,0.06)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
-          }}
-        >
-          <span className="block text-[12px] font-semibold text-white">{title}</span>
-          <span className="mt-0.5 block text-[10px] font-medium text-[#8ea8c0]">{subtitle}</span>
-        </button>
-      );
-    };
+    const isTp1TimeReadyForMode = (field) => isCompleteMovementTimeInput(modeForm[field]) && isTp1FlowFieldSettled(field);
 
-    const isTp1TimeReady = (field) => isCompleteMovementTimeInput(tp1Form[field]) && isTp1FlowFieldSettled(field);
-
-    const automaticTrainSetReady = Boolean(normalizeMovementTrain(tp1Form.trainSet)) && isTp1FlowFieldSettled("trainSet");
-    const automaticPlanReady = automaticTrainSetReady && Boolean(tp1Form.planStatus);
-    const automaticTrAtTp1Ready = automaticPlanReady && isTp1TimeReady("trAtTp1");
-    const automaticShunterReady = automaticTrAtTp1Ready && Boolean(tp1Form.shunterName);
-    const automaticTrLocalizedReady = automaticShunterReady && isTp1TimeReady("trLocalized");
-    const automaticStablingReady = automaticTrLocalizedReady && Boolean(tp1Form.automaticStablingRoad);
-    const automaticTrainPrepReady = automaticStablingReady && isTp1TimeReady("trainPrepCompletedTime");
-    const automaticPstReady = automaticTrainPrepReady && isTp1TimeReady("pstPerformedTime");
-    const automaticCompletedDcReady = automaticPstReady && Boolean(String(tp1Form.completedByDc || "").trim()) && isTp1FlowFieldSettled("completedByDc");
+    const automaticTrainSetReady = Boolean(normalizeMovementTrain(modeForm.trainSet)) && isTp1FlowFieldSettled("trainSet");
+    const automaticPlanReady = automaticTrainSetReady && Boolean(modeForm.planStatus);
+    const automaticTrAtTp1Ready = automaticPlanReady && isTp1TimeReadyForMode("trAtTp1");
+    const automaticShunterReady = automaticTrAtTp1Ready && Boolean(modeForm.shunterName);
+    const automaticTrLocalizedReady = automaticShunterReady && isTp1TimeReadyForMode("trLocalized");
+    const automaticStablingReady = automaticTrLocalizedReady && Boolean(modeForm.automaticStablingRoad);
+    const automaticTrainPrepReady = automaticStablingReady && isTp1TimeReadyForMode("trainPrepCompletedTime");
+    const automaticPstReady = automaticTrainPrepReady && isTp1TimeReadyForMode("pstPerformedTime");
+    const automaticCompletedDcReady = automaticPstReady && Boolean(String(modeForm.completedByDc || "").trim()) && isTp1FlowFieldSettled("completedByDc");
 
     const automaticFlowSteps = [
       {
@@ -10361,14 +10415,14 @@ function TrainMovementContent() {
           <div className={glowInputBoxClass}>
             <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
             <input
-              value={tp1Form.trainSet}
-              onFocus={() => focusFlowInput(getTp1FlowInputKey("trainSet"))}
+              value={modeForm.trainSet || ""}
+              onFocus={() => focusFlowInput(getTp1FlowInputKey("trainSet", movementType))}
               onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
               onChange={(e) => {
-                updateTp1MovementForm("trainSet", e.target.value.replace(/\D/g, ""));
-                scheduleFlowInputSettled(getTp1FlowInputKey("trainSet"));
+                updateTp1ModeForm(movementType, "trainSet", e.target.value.replace(/\D/g, ""));
+                scheduleFlowInputSettled(getTp1FlowInputKey("trainSet", movementType));
               }}
-              onBlur={() => blurFlowInput(getTp1FlowInputKey("trainSet"))}
+              onBlur={() => blurFlowInput(getTp1FlowInputKey("trainSet", movementType))}
               placeholder="19"
               className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
             />
@@ -10382,8 +10436,8 @@ function TrainMovementContent() {
         complete: automaticPlanReady,
         render: () => (
           <select
-            value={tp1Form.planStatus}
-            onChange={(e) => updateTp1MovementForm("planStatus", e.target.value)}
+            value={modeForm.planStatus || "Planned"}
+            onChange={(e) => updateTp1ModeForm(movementType, "planStatus", e.target.value)}
             className={inputClass}
           >
             <option value="Planned">Planned</option>
@@ -10405,8 +10459,8 @@ function TrainMovementContent() {
         complete: automaticShunterReady,
         render: () => (
           <select
-            value={tp1Form.shunterName}
-            onChange={(e) => updateTp1MovementForm("shunterName", e.target.value)}
+            value={modeForm.shunterName || ""}
+            onChange={(e) => updateTp1ModeForm(movementType, "shunterName", e.target.value)}
             className={inputClass}
           >
             <option value="">Select Shunter</option>
@@ -10418,23 +10472,23 @@ function TrainMovementContent() {
       },
       {
         key: "trLocalized",
-        label: "Time Train Localized",
+        label: "TR Localized",
         visible: automaticShunterReady,
         complete: automaticTrLocalizedReady,
         render: () => renderTp1TimeInput("trLocalized"),
       },
       {
         key: "automaticStablingRoad",
-        label: "Parking location",
+        label: "Parking Location",
         visible: automaticTrLocalizedReady,
         complete: automaticStablingReady,
         render: () => (
           <select
-            value={tp1Form.automaticStablingRoad || ""}
-            onChange={(e) => updateTp1MovementForm("automaticStablingRoad", e.target.value)}
+            value={modeForm.automaticStablingRoad || ""}
+            onChange={(e) => updateTp1ModeForm(movementType, "automaticStablingRoad", e.target.value)}
             className={inputClass}
           >
-            <option value="">Select location</option>
+            <option value="">Select Location</option>
             {TP1_AUTOMATIC_STABLING_OPTIONS.map((road) => (
               <option key={road} value={road}>{road}</option>
             ))}
@@ -10443,34 +10497,34 @@ function TrainMovementContent() {
       },
       {
         key: "trainPrepCompletedTime",
-        label: "Time Train Prep Completed",
+        label: "Train Prep Completed",
         visible: automaticStablingReady,
         complete: automaticTrainPrepReady,
         render: () => renderTp1TimeInput("trainPrepCompletedTime"),
       },
       {
         key: "pstPerformedTime",
-        label: "Time PST Performed",
+        label: "PST Performed",
         visible: automaticTrainPrepReady,
         complete: automaticPstReady,
         render: () => renderTp1TimeInput("pstPerformedTime"),
       },
       {
         key: "completedByDc",
-        label: "PST Performed by DC",
+        label: "Completed By DC",
         visible: automaticPstReady,
         complete: automaticCompletedDcReady,
         render: () => (
           <input
             type="text"
-            value={tp1Form.completedByDc || ""}
-            onFocus={() => focusFlowInput(getTp1FlowInputKey("completedByDc"))}
+            value={modeForm.completedByDc || ""}
+            onFocus={() => focusFlowInput(getTp1FlowInputKey("completedByDc", movementType))}
             onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
             onChange={(e) => {
-              updateTp1MovementForm("completedByDc", e.target.value);
-              scheduleFlowInputSettled(getTp1FlowInputKey("completedByDc"));
+              updateTp1ModeForm(movementType, "completedByDc", e.target.value);
+              scheduleFlowInputSettled(getTp1FlowInputKey("completedByDc", movementType));
             }}
-            onBlur={() => blurFlowInput(getTp1FlowInputKey("completedByDc"))}
+            onBlur={() => blurFlowInput(getTp1FlowInputKey("completedByDc", movementType))}
             placeholder="DC name"
             className={inputClass}
           />
@@ -10480,19 +10534,19 @@ function TrainMovementContent() {
         key: "nextWashText",
         label: "Next Wash Optional",
         visible: automaticCompletedDcReady,
-        complete: Boolean(String(tp1Form.nextWashText || "").trim()),
+        complete: Boolean(String(modeForm.nextWashText || "").trim()),
         render: () => (
           <input
             type="text"
             maxLength={19}
-            value={tp1Form.nextWashText || ""}
-            onFocus={() => focusFlowInput(getTp1FlowInputKey("nextWashText"))}
+            value={modeForm.nextWashText || ""}
+            onFocus={() => focusFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
             onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
             onChange={(e) => {
-              updateTp1MovementForm("nextWashText", e.target.value);
-              scheduleFlowInputSettled(getTp1FlowInputKey("nextWashText"));
+              updateTp1ModeForm(movementType, "nextWashText", e.target.value);
+              scheduleFlowInputSettled(getTp1FlowInputKey("nextWashText", movementType));
             }}
-            onBlur={() => blurFlowInput(getTp1FlowInputKey("nextWashText"))}
+            onBlur={() => blurFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
             placeholder="28-05-2026 12:23:00"
             className={inputClass}
           />
@@ -10500,14 +10554,12 @@ function TrainMovementContent() {
       },
     ];
 
-    const visibleAutomaticFlowSteps = automaticFlowSteps.filter((step) => step.visible);
-
-    const manualTrainSetReady = Boolean(normalizeMovementTrain(tp1Form.trainSet)) && isTp1FlowFieldSettled("trainSet");
-    const manualPlanReady = manualTrainSetReady && Boolean(tp1Form.planStatus);
-    const manualTrAtTp1Ready = manualPlanReady && isTp1TimeReady("trAtTp1");
-    const manualShunterReady = manualTrAtTp1Ready && Boolean(tp1Form.shunterName);
-    const manualFromTp1Ready = manualShunterReady && isTp1TimeReady("fromTp1");
-    const manualToManualReady = manualFromTp1Ready && isTp1TimeReady("toManual");
+    const manualTrainSetReady = Boolean(normalizeMovementTrain(modeForm.trainSet)) && isTp1FlowFieldSettled("trainSet");
+    const manualPlanReady = manualTrainSetReady && Boolean(modeForm.planStatus);
+    const manualTrAtTp1Ready = manualPlanReady && isTp1TimeReadyForMode("trAtTp1");
+    const manualShunterReady = manualTrAtTp1Ready && Boolean(modeForm.shunterName);
+    const manualFromTp1Ready = manualShunterReady && isTp1TimeReadyForMode("fromTp1");
+    const manualToManualReady = manualFromTp1Ready && isTp1TimeReadyForMode("toManual");
 
     const manualFlowSteps = [
       {
@@ -10519,14 +10571,14 @@ function TrainMovementContent() {
           <div className={glowInputBoxClass}>
             <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
             <input
-              value={tp1Form.trainSet}
-              onFocus={() => focusFlowInput(getTp1FlowInputKey("trainSet"))}
+              value={modeForm.trainSet || ""}
+              onFocus={() => focusFlowInput(getTp1FlowInputKey("trainSet", movementType))}
               onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
               onChange={(e) => {
-                updateTp1MovementForm("trainSet", e.target.value.replace(/\D/g, ""));
-                scheduleFlowInputSettled(getTp1FlowInputKey("trainSet"));
+                updateTp1ModeForm(movementType, "trainSet", e.target.value.replace(/\D/g, ""));
+                scheduleFlowInputSettled(getTp1FlowInputKey("trainSet", movementType));
               }}
-              onBlur={() => blurFlowInput(getTp1FlowInputKey("trainSet"))}
+              onBlur={() => blurFlowInput(getTp1FlowInputKey("trainSet", movementType))}
               placeholder="19"
               className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
             />
@@ -10540,8 +10592,8 @@ function TrainMovementContent() {
         complete: manualPlanReady,
         render: () => (
           <select
-            value={tp1Form.planStatus}
-            onChange={(e) => updateTp1MovementForm("planStatus", e.target.value)}
+            value={modeForm.planStatus || "Planned"}
+            onChange={(e) => updateTp1ModeForm(movementType, "planStatus", e.target.value)}
             className={inputClass}
           >
             <option value="Planned">Planned</option>
@@ -10563,8 +10615,8 @@ function TrainMovementContent() {
         complete: manualShunterReady,
         render: () => (
           <select
-            value={tp1Form.shunterName}
-            onChange={(e) => updateTp1MovementForm("shunterName", e.target.value)}
+            value={modeForm.shunterName || ""}
+            onChange={(e) => updateTp1ModeForm(movementType, "shunterName", e.target.value)}
             className={inputClass}
           >
             <option value="">Select Shunter</option>
@@ -10592,19 +10644,19 @@ function TrainMovementContent() {
         key: "nextWashText",
         label: "Next Wash Optional",
         visible: manualToManualReady,
-        complete: Boolean(String(tp1Form.nextWashText || "").trim()),
+        complete: Boolean(String(modeForm.nextWashText || "").trim()),
         render: () => (
           <input
             type="text"
             maxLength={19}
-            value={tp1Form.nextWashText || ""}
-            onFocus={() => focusFlowInput(getTp1FlowInputKey("nextWashText"))}
+            value={modeForm.nextWashText || ""}
+            onFocus={() => focusFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
             onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
             onChange={(e) => {
-              updateTp1MovementForm("nextWashText", e.target.value);
-              scheduleFlowInputSettled(getTp1FlowInputKey("nextWashText"));
+              updateTp1ModeForm(movementType, "nextWashText", e.target.value);
+              scheduleFlowInputSettled(getTp1FlowInputKey("nextWashText", movementType));
             }}
-            onBlur={() => blurFlowInput(getTp1FlowInputKey("nextWashText"))}
+            onBlur={() => blurFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
             placeholder="28-05-2026 12:23:00"
             className={inputClass}
           />
@@ -10612,10 +10664,8 @@ function TrainMovementContent() {
       },
     ];
 
-    const visibleManualFlowSteps = manualFlowSteps.filter((step) => step.visible);
-    const tp1RequiredReady = isAutomatic
-      ? automaticPstReady
-      : manualToManualReady;
+    const visibleFlowSteps = (isAutomatic ? automaticFlowSteps : manualFlowSteps).filter((step) => step.visible);
+    const tp1RequiredReady = isAutomatic ? automaticPstReady : manualToManualReady;
 
     const renderTp1FlowStepCard = (step, index) => (
       <div
@@ -10656,7 +10706,7 @@ function TrainMovementContent() {
           const arrow = second ? (leftToRight ? "→" : "←") : "";
 
           return (
-            <div key={`movement-flow-row-${pairIndex}`} className="grid grid-cols-[minmax(0,1fr)_24px_minmax(0,1fr)] items-center gap-x-1.5">
+            <div key={`movement-flow-row-${movementType}-${pairIndex}`} className="grid grid-cols-[minmax(0,1fr)_24px_minmax(0,1fr)] items-center gap-x-1.5">
               <div>{leftStep ? renderTp1FlowStepCard(leftStep, leftIndex) : null}</div>
               <div className="flex items-center justify-center">
                 <span
@@ -10678,21 +10728,9 @@ function TrainMovementContent() {
       </div>
     );
 
-    const renderTp1ZigZagFlowCard = ({ steps }) => (
-      <div className="rounded-xl border border-[#1e4060] bg-[#031827] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-        <div className="mb-2 flex justify-end">
-          <span className="rounded-full border px-2 py-0.5 text-[9px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}16`, color: accent }}>
-            L ↔ R
-          </span>
-        </div>
-
-        {renderTp1FlowRows(steps)}
-      </div>
-    );
-
     return (
       <section
-        className="overflow-hidden rounded-xl border shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)] xl:sticky xl:top-3"
+        className="overflow-hidden rounded-xl border shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]"
         style={{
           borderColor: `${accent}55`,
           background: "linear-gradient(180deg,#071e33 0%,#061827 100%)",
@@ -10705,14 +10743,14 @@ function TrainMovementContent() {
               <MovementIcon type="train" color={accent} />
             </div>
             <div>
-              <h2 className="text-[16px] font-black leading-tight text-white">Inbound / Outbound Movement</h2>
-              <p className="mt-0.5 text-[11px] font-medium" style={{ color: accent }}>Automatic / Manual Area log generator</p>
+              <h2 className="text-[16px] font-black leading-tight text-white">{modeTitle}</h2>
+              <p className="mt-0.5 text-[11px] font-medium" style={{ color: accent }}>{modeSubtitle}</p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="rounded-md border px-2 py-1 text-[10px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}1c`, color: accent }}>
-              {tp1Entries.length} entries
+              {modeEntries.length} entries
             </span>
             <span className={`rounded-md border px-2 py-1 text-[10px] font-black ${tp1LiveStatusClass}`} title={tp1LiveDebug || tp1LiveStatusText}>
               {tp1LiveStatusText}
@@ -10721,33 +10759,33 @@ function TrainMovementContent() {
         </div>
 
         <div className="grid gap-3 p-4">
-          <div className="grid grid-cols-2 gap-2">
-            {renderTypeButton("automatic", "Automatic Area", "Fill Time Train Localized", "#22c55e")}
-            {renderTypeButton("manual", "Manual Area", "Fill From TP1 + to Manual", "#f59e0b")}
+          <div className="rounded-xl border border-[#1e4060] bg-[#031827] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+            <div className="mb-2 flex justify-end">
+              <span className="rounded-full border px-2 py-0.5 text-[9px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}16`, color: accent }}>
+                L ↔ R
+              </span>
+            </div>
+            {renderTp1FlowRows(visibleFlowSteps)}
           </div>
-
-          {isAutomatic
-            ? renderTp1ZigZagFlowCard({ steps: visibleAutomaticFlowSteps })
-            : renderTp1ZigZagFlowCard({ steps: visibleManualFlowSteps })}
 
           <div className="rounded-xl border border-[#1e4060] bg-[#041727] p-3">
             <div className="mb-2 flex flex-wrap items-center justify-start gap-1.5">
               <p className="mr-0.5 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
               <button
                 type="button"
-                onClick={copyTp1MovementPreview}
+                onClick={() => copyTp1MovementPreview(movementType)}
                 className="inline-flex items-center gap-1 rounded-md border border-[#2f6084] bg-[#0a2236] px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-[#9fd3f6] transition-all hover:border-[#58a6ff] hover:text-white"
               >
                 <MovementIcon type="copy" color="currentColor" />
-                {getCopyFeedbackLabel("tp1-preview", "Copy")}
+                {getCopyFeedbackLabel(`tp1-preview-${movementType}`, "Copy")}
               </button>
               <button
                 type="button"
-                onClick={addTp1MovementLog}
+                onClick={() => addTp1MovementLog(movementType)}
                 disabled={!tp1RequiredReady}
                 className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-white transition-all enabled:hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-35"
                 style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
-                title={tp1RequiredReady ? "Add Inbound / Outbound Movement Log" : "Complete all required fields first"}
+                title={tp1RequiredReady ? `Add ${modeTitle} Log` : "Complete all required fields first"}
               >
                 <span className="text-[11px] leading-none">+</span> Add to Log
               </button>
@@ -10761,24 +10799,24 @@ function TrainMovementContent() {
                 Reset
               </button>
             </div>
-            <pre className="max-h-44 overflow-auto whitespace-pre-wrap font-mono text-[12px] font-medium leading-[1.35] text-[#c8d8ea]">{buildTp1MovementText({ preview: true })}</pre>
+            <pre className="max-h-44 overflow-auto whitespace-pre-wrap font-mono text-[12px] font-medium leading-[1.35] text-[#c8d8ea]">{buildTp1MovementText({ preview: true, movementType })}</pre>
           </div>
 
           <section className="overflow-hidden rounded-xl border border-[#1e4060] bg-[#03111d]">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#12304a] px-3 py-2">
               <div>
-                <h4 className="text-[12px] font-black uppercase tracking-wide text-white">Inbound / Outbound Movement Log</h4>
-                <p className="text-[10px] font-semibold text-[#8ea8c0]">{tp1Entries.length} entries</p>
+                <h4 className="text-[12px] font-black uppercase tracking-wide text-white">{isAutomatic ? "Automatic Area Log" : "Manual Area Log"}</h4>
+                <p className="text-[10px] font-semibold text-[#8ea8c0]">{modeEntries.length} entries</p>
               </div>
 
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={copyTp1MovementLogs}
+                  onClick={() => copyTp1MovementLogs(movementType)}
                   className="flex min-w-[78px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
                   style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}
                 >
-                  <MovementIcon type="copy" />{getTp1CopyButtonLabel("Copy All")}
+                  <MovementIcon type="copy" />{getCopyFeedbackLabel(`tp1-all-${movementType}`, "Copy All")}
                 </button>
                 {isAutomatic && (
                   <button
@@ -10793,7 +10831,7 @@ function TrainMovementContent() {
                 )}
                 <button
                   type="button"
-                  onClick={clearTp1MovementLogs}
+                  onClick={() => clearTp1MovementLogs(movementType)}
                   className="flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:scale-[1.02]"
                   style={{ borderColor: `${accent}55`, color: accent, backgroundColor: `${accent}14` }}
                 >
@@ -10803,12 +10841,12 @@ function TrainMovementContent() {
             </div>
 
             <div className="min-h-[120px]">
-              {tp1Entries.length === 0 ? (
+              {modeEntries.length === 0 ? (
                 <div className="flex min-h-[120px] items-center justify-center px-3 text-center text-[11px] font-semibold text-[#7eb8e0]">
-                  No inbound / outbound movement log yet.
+                  No {isAutomatic ? "automatic area" : "manual area"} movement log yet.
                 </div>
               ) : (
-                sortTp1MovementEntries(tp1Entries).map((entry) => (
+                modeEntries.map((entry) => (
                   <div key={entry.id} className="group flex items-start gap-2 border-b border-[#12304a]/55 px-3 py-2 last:border-b-0">
                     <pre className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.32] tracking-[-0.01em] text-[#f4f8ff]">{sortTp1MovementTextLinesByTime(entry.text)}</pre>
                     <button
@@ -10832,8 +10870,9 @@ function TrainMovementContent() {
 
 
   return (
-    <div className="theme-train-movement-page grid w-full gap-3">
-      {renderTp1MovementWindow()}
+    <div className="theme-train-movement-page grid w-full gap-3 xl:grid-cols-2">
+      {renderTp1MovementWindow("automatic")}
+      {renderTp1MovementWindow("manual")}
     </div>
   );
 }
