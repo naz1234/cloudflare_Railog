@@ -22739,6 +22739,19 @@ function RoadRow({
     />
   );
 
+  // Keep every card in the same stabling road at one shared height.
+  // The row follows the largest card, so trains with one/no remark stay
+  // aligned with trains that have two or more remark pills.
+  const rowMaxRemarkCount = blockIndices.reduce((maxCount, blockIndex) => {
+    const rowKey = normalizeTrainId(blocks[blockIndex]?.trainId || "");
+    const rowRemarkCount = rowKey ? (maintenanceMap[rowKey] || []).length : 0;
+    return Math.max(maxCount, rowRemarkCount);
+  }, 0);
+  const rowRemarkSlotHeight = rowMaxRemarkCount > 0
+    ? (rowMaxRemarkCount * 18) + ((rowMaxRemarkCount - 1) * 2)
+    : 0;
+  const rowCardMinHeight = Math.max(76, 56 + rowRemarkSlotHeight);
+
   return (
     <tr>
       {labelSide === "left" && labelCell}
@@ -22809,9 +22822,10 @@ function RoadRow({
             }}
           >
             <div
-              className={`theme-stabling-train-card relative flex flex-col items-center justify-center gap-1 overflow-hidden rounded-xl transition-all duration-150 ${primaryMaint ? "has-request" : ""} ${isDup ? "is-duplicate" : ""} ${isFlashing ? "is-flashing" : ""} ${isSearchMatch ? "is-search-match" : ""} ${key ? "has-train" : "is-empty"}`}
+              className={`theme-stabling-train-card relative flex flex-col items-center justify-start gap-1 overflow-hidden rounded-xl transition-all duration-150 ${primaryMaint ? "has-request" : ""} ${isDup ? "is-duplicate" : ""} ${isFlashing ? "is-flashing" : ""} ${isSearchMatch ? "is-search-match" : ""} ${key ? "has-train" : "is-empty"}`}
               style={{
-                minHeight: 76,
+                minHeight: rowCardMinHeight,
+                height: "100%",
                 padding: "7px 4px",
                 "--theme-accent": requestAccent,
                 background: cardGrad,
@@ -22861,7 +22875,10 @@ function RoadRow({
                   {isFlashing ? "DUPLICATE!" : "DUPLICATE"}
                 </span>
               ) : maintList.length > 0 ? (
-                <div className="flex w-full flex-col items-center gap-0.5 px-1">
+                <div
+                  className="flex w-full flex-col items-center justify-start gap-0.5 px-1"
+                  style={{ minHeight: rowRemarkSlotHeight || undefined }}
+                >
                   {maintList.map((item) => {
                     const label = item.badgeText || item.displayType || item.typeKey || "Request";
                     return (
@@ -22877,7 +22894,12 @@ function RoadRow({
                   })}
                 </div>
               ) : key ? (
-                <span className="block w-full text-center text-[10px] font-medium leading-tight" style={{ color: "#5f7f99" }}>—</span>
+                <span
+                  className="block w-full text-center text-[10px] font-medium leading-tight"
+                  style={{ color: "#5f7f99", minHeight: rowRemarkSlotHeight || undefined }}
+                >
+                  —
+                </span>
               ) : null}
             </div>
           </td>
