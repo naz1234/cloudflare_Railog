@@ -22867,7 +22867,7 @@ function RoadRow({
                     return (
                       <span
                         key={`${key}-${item.displayType}-${item.badgeText || ""}`}
-                        className="theme-stabling-remark block w-full truncate rounded-md px-1.5 py-0.5 text-center text-[10px] font-normal leading-tight text-white"
+                        className="theme-stabling-remark block w-full truncate rounded-md px-1.5 py-0.5 text-center text-[11px] font-normal leading-tight text-white"
                         style={getMainStablingRemarkPillStyle(item)}
                         title={label}
                       >
