@@ -7700,7 +7700,7 @@ function getMovementExcelStatus(row = {}) {
   const operation = row.operation || "swapping";
   const train = normalizeMovementTrain(row.trainId);
   const time = normalizeMovementCustomTimeInput(row.time);
-  const replacementInput = operation === "insertion" ? "" : row.replacedBy;
+  const replacementInput = operation === "swapping" ? row.replacedBy : "";
   const hasAnyInput = Boolean(train || time || row.tid || row.reason || replacementInput || row.notes);
   if (!hasAnyInput) return "Draft";
   return buildMovementExcelLogLine(row) ? "Added" : "Missing";
@@ -7830,6 +7830,7 @@ function TrainMovementExcelSheet() {
         next.to = generated.to;
         next.road = generated.road;
         next.track = generated.track;
+        if (operation !== "swapping") next.replacedBy = "";
       }
       return next;
     }));
@@ -7936,7 +7937,7 @@ function TrainMovementExcelSheet() {
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2.5" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
         <div>
           <h2 className="text-[13px] font-black tracking-[1.2px] text-white">Train Swapping / Insertion / Removal Log</h2>
-          <p className="mt-0.5 text-[10px] font-medium text-[#58a6ff]">Compact spreadsheet format below Train Removal Plan</p>
+          <p className="mt-0.5 text-[10px] font-medium text-[#58a6ff]">Compact spreadsheet format above Removal Log Output</p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           {feedback && (
@@ -8008,8 +8009,8 @@ function TrainMovementExcelSheet() {
                   <td className={cellClass}>
                     <input value={row.reason} onChange={(e) => updateRow(row.id, "reason", e.target.value)} placeholder={row.operation === "swapping" ? "RST PM / CM" : "Remark"} className={tableInputClass} />
                   </td>
-                  <td className={row.operation === "insertion" ? "border border-[#173653] bg-[#334155] align-middle" : cellClass}>
-                    {row.operation === "insertion" ? (
+                  <td className={row.operation !== "swapping" ? "border border-[#173653] bg-[#334155] align-middle" : cellClass}>
+                    {row.operation !== "swapping" ? (
                       <div className="flex h-7 items-center justify-center rounded-sm bg-[#475569] text-[10px] font-black uppercase tracking-[0.12em] text-[#cbd5e1] opacity-80">
                         N/A
                       </div>
@@ -16553,6 +16554,8 @@ export default function DepotStablingPage() {
       />
 
 
+      <TrainMovementExcelSheet />
+
       <RemovalLogOutputFromTrainRem
         trainRemState={trainRemCheckState}
         maintenanceMap={maintenanceMap}
@@ -16572,8 +16575,6 @@ export default function DepotStablingPage() {
         activeTimetable={activeTimetable}
         activeTimetableType={selectedTimetableType}
       />
-
-      <TrainMovementExcelSheet />
     </div>
 
     {/* RIGHT PANEL */}
