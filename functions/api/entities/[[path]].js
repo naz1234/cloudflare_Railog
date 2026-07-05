@@ -14,6 +14,7 @@ const ALLOWED_ENTITIES = new Set([
   'TimetableFile',
   'AdminNote',
   'InboundOutboundMovement',
+  'TrainMovementExcelLive',
   'OvertimeRecord',
   'OvertimeMonthlyNote',
   'OvertimeAllowanceCheck',

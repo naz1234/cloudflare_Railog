@@ -1,0 +1,34 @@
+{
+  "name": "TrainMovementExcelLive",
+  "type": "object",
+  "properties": {
+    "recordKey": {
+      "type": "string",
+      "description": "Singleton key, default value: main",
+      "default": "main"
+    },
+    "rows": {
+      "type": "array",
+      "description": "Train Swapping / Insertion / Removal spreadsheet rows",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "logRows": {
+      "type": "array",
+      "description": "Train Swapping / Insertion / Removal output log rows",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "updatedAt": {
+      "type": "string",
+      "description": "Last Train Movement Excel live sync update timestamp"
+    }
+  },
+  "required": [
+    "recordKey"
+  ]
+}

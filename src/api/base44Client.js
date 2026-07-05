@@ -19,6 +19,7 @@ const ENTITY_NAMES = [
   'TimetableFile',
   'AdminNote',
   'InboundOutboundMovement',
+  'TrainMovementExcelLive',
   'OvertimeRecord',
   'OvertimeMonthlyNote',
   'OvertimeAllowanceCheck',
