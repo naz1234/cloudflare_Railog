@@ -6742,6 +6742,18 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 const nextVisibleRowIndex = displayIndex < displayRowEntries.length - 1
                   ? displayRowEntries[displayIndex + 1].sourceIndex
                   : null;
+                const getAdjacentEditableTidRowIndex = (direction) => {
+                  const step = direction === "previous" ? -1 : 1;
+                  for (let pointer = displayIndex + step; pointer >= 0 && pointer < displayRowEntries.length; pointer += step) {
+                    const candidateIndex = displayRowEntries[pointer]?.sourceIndex;
+                    if (candidateIndex === undefined || candidateIndex === null) continue;
+                    if (isTrainRemReferenceOnlyIndex(depot, selectedPreset, candidateIndex, activeTimetable)) continue;
+                    return candidateIndex;
+                  }
+                  return null;
+                };
+                const previousEditableTidRowIndex = getAdjacentEditableTidRowIndex("previous");
+                const nextEditableTidRowIndex = getAdjacentEditableTidRowIndex("next");
                 const currentLocationGroup = activeSortMode === "color"
                   ? getRemovalColorSortGroup(row, index)
                   : null;
@@ -6940,13 +6952,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                               if (!referenceOnly) {
                                 const nextValue = cleanTrainRemTidInput(e.target.value);
                                 updateTrainRemCell(depot, index, "tid", nextValue);
-                                handleTrainRemTidAutoMove(depot, index, rows.length, nextValue, nextVisibleRowIndex);
+                                handleTrainRemTidAutoMove(depot, index, rows.length, nextValue, nextEditableTidRowIndex);
                               }
                             }}
                             onKeyDown={(e) => {
-                              if (!referenceOnly && e.key === "Backspace" && !row.tid && previousVisibleRowIndex !== null) {
+                              if (!referenceOnly && e.key === "Backspace" && !row.tid && previousEditableTidRowIndex !== null) {
                                 e.preventDefault();
-                                focusTrainRemTid(depot, previousVisibleRowIndex);
+                                focusTrainRemTid(depot, previousEditableTidRowIndex);
                               }
                             }}
                             onBlur={handleTrainRemEditEnd}
@@ -19303,6 +19315,37 @@ function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null
   const displayRows = Array.isArray(rows) ? rows : [];
   const countableRows = displayRows.filter((row) => row && !row.isSeparator);
   const hasRows = countableRows.length > 0;
+  const manualTidInputRefs = useRef({});
+
+  const setManualTidInputRef = (key, element) => {
+    const normalizedKey = normalizeTrainId(key);
+    if (!normalizedKey) return;
+    if (element) {
+      manualTidInputRefs.current[normalizedKey] = element;
+    } else {
+      delete manualTidInputRefs.current[normalizedKey];
+    }
+  };
+
+  const focusManualTidInput = (key) => {
+    const normalizedKey = normalizeTrainId(key);
+    const element = normalizedKey ? manualTidInputRefs.current[normalizedKey] : null;
+    if (!element) return;
+    element.focus();
+    element.select();
+  };
+
+  const getAdjacentEditableManualTidKey = (startIndex, direction = "next") => {
+    const step = direction === "previous" ? -1 : 1;
+    for (let pointer = startIndex + step; pointer >= 0 && pointer < displayRows.length; pointer += step) {
+      const candidate = displayRows[pointer];
+      if (!candidate || candidate.isSeparator) continue;
+      if (candidate?.group === "removal" || !candidate?.canEditTid) continue;
+      const key = normalizeTrainId(candidate?.key || candidate?.trainsetNumber || "");
+      if (key) return key;
+    }
+    return null;
+  };
 
   return (
     <div className="flex h-fit w-[500px] max-w-full self-start flex-col leading-tight">
@@ -19348,12 +19391,29 @@ function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null
                   <td className="border-b border-r border-[#193752] px-2 py-1 text-center align-middle leading-none text-[#eaf4ff]">
                     {canEditTid ? (
                       <input
+                        ref={(element) => setManualTidInputRef(item.key, element)}
                         value={displayTid}
-                        onChange={(event) => onManualTidChange(item.key, event.target.value)}
+                        onChange={(event) => {
+                          const nextValue = cleanRequestedTrainTidInput(event.target.value);
+                          onManualTidChange(item.key, nextValue);
+                          if (nextValue.length === 3) {
+                            const nextKey = getAdjacentEditableManualTidKey(index, "next");
+                            if (nextKey) window.setTimeout(() => focusManualTidInput(nextKey), 0);
+                          }
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Backspace" && !displayTid) {
+                            const previousKey = getAdjacentEditableManualTidKey(index, "previous");
+                            if (previousKey) {
+                              event.preventDefault();
+                              focusManualTidInput(previousKey);
+                            }
+                          }
+                        }}
                         inputMode="numeric"
                         maxLength={3}
                         placeholder="--"
-                        title={item.manualTid ? "Enter TID manually" : (displayTid ? "Matched TID from train removal/reference row" : "Enter TID manually")}
+                        title={item.manualTid ? "Enter exactly 3 digits" : (displayTid ? "Matched TID from train removal/reference row" : "Enter exactly 3 digits")}
                         className="h-[21px] w-[46px] bg-transparent px-1 py-0 text-center text-[13px] font-normal leading-none tracking-wide text-[#eef7ff] outline-none placeholder:text-[#8fa6bd] focus:text-sky-200"
                       />
                     ) : displayTid}
