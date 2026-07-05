@@ -2372,14 +2372,17 @@ function buildTrainRemCombinedWestRows(existingRows = [], label = "9am", activeT
     });
 
     const reserveSlotsHaveContent = reserveRowsFromSlots.some(hasTrainRemRowContent);
+    const westManualCandidateRows = normalizedSourceRows
+      .slice(0, layout.eastStartIndex)
+      .filter((row, index) => {
+        if (index >= layout.eastStartIndex) return false;
+        if (!hasTrainRemRowContent(row)) return false;
+        const tid = normalizeTrainRemTidValue(row?.tid || "");
+        return !tid || !referenceTidSet.has(tid);
+      });
     const additionalRows = reserveSlotsHaveContent
       ? reserveRowsFromSlots
-      : normalizedSourceRows
-        .filter((row) => {
-          if (!hasTrainRemRowContent(row)) return false;
-          const tid = normalizeTrainRemTidValue(row?.tid || "");
-          return !tid || !referenceTidSet.has(tid);
-        })
+      : westManualCandidateRows
         .slice(0, layout.reserveCount)
         .map((row) => ({
           trainId: row?.trainId || "",
