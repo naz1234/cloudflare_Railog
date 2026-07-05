@@ -3741,12 +3741,11 @@ function getStablingRequestVisual(item = null) {
   const requestLabel = item?.badgeText || item?.remark || item?.displayType || item?.typeKey || "";
 
   const washVisual = {
-    // Keep all WASH variants (Wash 5 July, Wash 6 July, Wash TMR, etc.)
-    // on a fixed lime-green accent in Main Stabling, so they do not clash
-    // with custom request colours such as TCMS NOT WORKING.
-    accent: "#8afc3f",
-    gradient: "linear-gradient(135deg,rgba(132,204,22,0.24) 0%,#132b08 48%,#071828 100%)",
-    glow: "0 0 0 1px rgba(132,204,22,0.16),0 0 14px rgba(132,204,22,0.28),0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)",
+    // Keep all WASH variants on the same emerald/dark-steel look as the
+    // Automatic Area Log Excel button.
+    accent: "#22c55e",
+    gradient: "linear-gradient(135deg, rgba(34,197,94,0.42), rgba(6,24,39,0.94))",
+    glow: "0 0 14px rgba(34,197,94,0.35), inset 0 1px 0 rgba(255,255,255,0.08)",
   };
 
   if (category === "wash") return washVisual;
@@ -3802,14 +3801,11 @@ function getMainStablingRemarkPillStyle(item = null) {
 
   if (isWashRemark) {
     return {
-      // Match the cooler Removal Summary look: steel-blue base with only
-      // a soft lime wash overlay. Keep the border/glow mostly blue so the
-      // pill does not look like a bright neon green badge.
-      background: `linear-gradient(90deg, ${hexToRgba(accent, 0.08)} 0%, ${hexToRgba(accent, 0.14)} 100%), linear-gradient(90deg, rgba(49,104,147,0.48) 0%, rgba(35,79,116,0.34) 55%, rgba(28,61,91,0.24) 100%)`,
-      border: "1px solid rgba(96,165,250,0.58)",
-      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05), 0 0 6px ${hexToRgba(accent, 0.10)}`,
+      // Same visual treatment as the Automatic Area Log Excel button.
+      background: "linear-gradient(135deg, rgba(34,197,94,0.42), rgba(6,24,39,0.94))",
+      border: "1px solid rgba(74,222,128,0.86)",
+      boxShadow: "0 0 14px rgba(34,197,94,0.35), inset 0 1px 0 rgba(255,255,255,0.08)",
       color: "#ffffff",
-      textShadow: "0 1px 1px rgba(0,0,0,0.55)",
     };
   }
 
