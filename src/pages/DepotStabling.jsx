@@ -5391,17 +5391,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         {key && (
           <div className={`mt-auto flex w-full flex-col items-center ${isInsertionDone ? "gap-1" : "gap-2"}`}>
             {!inserted && (
-              <div
-                className="flex h-12 w-full items-center justify-center rounded-lg border px-2 text-center text-[10px] font-semibold leading-tight"
-                style={{
-                  borderColor: "rgba(125, 184, 224, 0.20)",
-                  background: "rgba(3, 17, 29, 0.36)",
-                  color: "#7fa5bf",
-                }}
-                title="Add TID from the TID Reference Table only"
-              >
-                Add TID at Reference Table
-              </div>
+              <div className="h-12 w-full" aria-hidden="true" />
             )}
             {inserted && !inserted.isSweeping && (
               <>
@@ -16393,70 +16383,9 @@ export default function DepotStablingPage() {
     });
   }, [markInsertionLiveLocalEdit, selectedTimetableType]);
 
-  useEffect(() => {
-    const activeScheduleKey = normalizeTimetableType(selectedTimetableType);
-    const desiredAssignments = new Map();
-
-    const collectFromStablingTidInputs = (inputs = {}, activePg = "pg1", depotData = {}) => {
-      Object.entries(inputs || {}).forEach(([cellKey, rawValue]) => {
-        const match = String(cellKey || "").match(/^(.+)-(\d+)$/);
-        if (!match) return;
-
-        const road = match[1];
-        const blockIndex = Number(match[2]);
-        const depot = getDepotFromRoad(road);
-        if (!depot) return;
-
-        const tidMatch = String(rawValue || "").trim().match(/^(?:TID[:\s-]*)?T?(\d{3})$/i);
-        if (!tidMatch) return;
-
-        const tid = Number(tidMatch[1]);
-        if (!tid || !getTidScheduledTime(tid, depot, { allowFallback: false })) return;
-
-        const targetData = depot === "west" ? depotData?.westData : depotData?.eastData;
-        const trainId = normalizeInsertionTidReferenceTrainId(targetData?.[road]?.[blockIndex]?.trainId || "");
-        if (!trainId) return;
-
-        const referenceKey = getInsertionTidReferenceAssignmentKey(activeScheduleKey, depot, activePg, tid);
-        if (!desiredAssignments.has(referenceKey)) {
-          desiredAssignments.set(referenceKey, { trainId, source: "stabling" });
-        }
-      });
-    };
-
-    collectFromStablingTidInputs(tidInputs, "pg1", { westData, eastData });
-    collectFromStablingTidInputs(pg2TidInputs, "pg2", pg2Stabling);
-
-    setTidReferenceAssignments((prev) => {
-      const next = { ...normalizeInsertionTidReferenceAssignments(prev) };
-      let changed = false;
-
-      Object.entries(next).forEach(([key, assignment]) => {
-        const parsed = parseInsertionTidReferenceAssignmentKey(key);
-        if (!parsed || parsed.scheduleKey !== activeScheduleKey) return;
-        if (assignment?.source !== "stabling") return;
-        if (desiredAssignments.has(key)) return;
-        delete next[key];
-        changed = true;
-      });
-
-      desiredAssignments.forEach((desired, key) => {
-        const existing = next[key] || {};
-        const updated = {
-          ...existing,
-          trainId: desired.trainId,
-          source: "stabling",
-        };
-
-        if (existing.trainId !== updated.trainId || existing.source !== updated.source) {
-          next[key] = updated;
-          changed = true;
-        }
-      });
-
-      return changed ? next : prev;
-    });
-  }, [tidInputs, pg2TidInputs, selectedTimetableType, westData, eastData, pg2Stabling, getTidScheduledTime]);
+  // TID Reference Table is now the only place to assign insertion TIDs.
+  // Do not sync stabling-side TID inputs back into the reference Train ID column,
+  // otherwise clearing a Train ID in the table can be re-added from old stabling state.
 
   const insertionTidReferenceStatuses = useMemo(() => {
     const statuses = {};
