@@ -230,7 +230,7 @@ function getRequestCardStyle(typeKey, displayLabel = "") {
 
 // Mirrors the request-card visual language used inside the West and East
 // main stabling tables. Shared by Workshop, Already-at-Stabling/Workshop,
-// and Pending Request compact rows so every request section stays consistent.
+// and Train Request compact rows so every request section stays consistent.
 function getMainStablingRequestCategory(value = "") {
   const label = normalizeRequestIdentity(value);
 
@@ -1283,7 +1283,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       {/* Requests List */}
       <div className="overflow-visible">
         <div className="theme-maintenance-subheader flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Pending Request</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Train Request</span>
           <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{regularRequests.length}</span>
         </div>
 
