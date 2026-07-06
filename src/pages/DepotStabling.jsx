@@ -9,7 +9,6 @@ import OdoReading from "../components/OdoReading";
 import TIDReferenceTable, { getTidReferenceRemark } from "../components/TIDReferenceTable";
 import PSTLogOutput from "../components/depot/PSTLogOutput";
 import InsertionLogOutput from "../components/depot/InsertionLogOutput";
-import InsertionHowToUse from "../components/depot/InsertionHowToUse";
 import OvertimeTracker from "../components/OvertimeTracker";
 import RosterWorkspace from "../components/RosterWorkspace";
 
@@ -7604,9 +7603,6 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
           </div>
         </div>
       </div>
-
-      {/* Beginner guide — full width below the depot logs */}
-      <InsertionHowToUse />
     </div>
   );
 }
