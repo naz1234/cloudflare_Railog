@@ -1878,6 +1878,9 @@ const INSERTION_ACTIVE_PG_KEY = "insertionActivePg_v1";
 const INSERTION_PG2_STABLING_KEY = "insertionPg2StablingState_v1";
 const INSERTION_PG2_LOG_KEY = "insertionPg2LogState_v1";
 const INSERTION_PG2_TID_INPUTS_KEY = "insertionPg2TidInputsState_v1";
+const PST_ACTIVE_PG_KEY = "pstActivePg_v1";
+const PST_PG2_STABLING_KEY = "pstPg2StablingState_v1";
+const PST_PG2_STATE_KEY = "pstPg2WorkState_v1";
 
 function normalizeInsertionPg(value = "pg1") {
   return String(value || "").toLowerCase() === "pg2" ? "pg2" : "pg1";
@@ -1979,6 +1982,114 @@ function saveInsertionPg2TidInputs(inputs = {}) {
     if (typeof localStorage === "undefined") return;
     localStorage.setItem(INSERTION_PG2_TID_INPUTS_KEY, JSON.stringify(inputs && typeof inputs === "object" ? inputs : {}));
   } catch {}
+}
+
+function normalizePSTPg(value = "pg1") {
+  return normalizeInsertionPg(value);
+}
+
+function normalizePSTPgByDepot(value = {}) {
+  if (typeof value === "string") {
+    const migratedPg = normalizePSTPg(value);
+    return { west: migratedPg, east: migratedPg };
+  }
+
+  return {
+    west: normalizePSTPg(value?.west),
+    east: normalizePSTPg(value?.east),
+  };
+}
+
+function loadPSTActivePg() {
+  try {
+    if (typeof localStorage === "undefined") return { west: "pg1", east: "pg1" };
+    const raw = localStorage.getItem(PST_ACTIVE_PG_KEY);
+    if (!raw) return { west: "pg1", east: "pg1" };
+    if (raw === "pg1" || raw === "pg2") return normalizePSTPgByDepot(raw);
+    return normalizePSTPgByDepot(JSON.parse(raw));
+  } catch {
+    return { west: "pg1", east: "pg1" };
+  }
+}
+
+function savePSTActivePg(value = {}) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(PST_ACTIVE_PG_KEY, JSON.stringify(normalizePSTPgByDepot(value)));
+  } catch {}
+}
+
+function normalizePSTPg2Stabling(source = {}, fallbackWest = {}, fallbackEast = {}) {
+  return normalizeInsertionPg2Stabling(source, fallbackWest, fallbackEast);
+}
+
+function loadPSTPg2Stabling(fallbackWest = {}, fallbackEast = {}) {
+  try {
+    if (typeof localStorage === "undefined") return cloneInsertionStablingState(fallbackWest, fallbackEast);
+    const raw = localStorage.getItem(PST_PG2_STABLING_KEY);
+    if (!raw) return cloneInsertionStablingState(fallbackWest, fallbackEast);
+    return normalizePSTPg2Stabling(JSON.parse(raw), fallbackWest, fallbackEast);
+  } catch {
+    return cloneInsertionStablingState(fallbackWest, fallbackEast);
+  }
+}
+
+function savePSTPg2Stabling(state = {}) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(PST_PG2_STABLING_KEY, JSON.stringify(normalizePSTPg2Stabling(state)));
+  } catch {}
+}
+
+function normalizePSTPg2WorkState(source = {}) {
+  const fallbackCompletedByNames = getSavedPSTCompletedByNames();
+  return {
+    pstState: source?.pstState && typeof source.pstState === "object" ? source.pstState : {},
+    prepState: source?.prepState && typeof source.prepState === "object" ? source.prepState : {},
+    logLines: sortPSTLogLinesByTime(Array.isArray(source?.logLines) ? source.logLines : []),
+    taNameState: source?.taNameState && typeof source.taNameState === "object" ? source.taNameState : {},
+    completedByNames: {
+      west: (source?.completedByNames?.west || source?.completedByWest || fallbackCompletedByNames.west || "").toString(),
+      east: (source?.completedByNames?.east || source?.completedByEast || fallbackCompletedByNames.east || "").toString(),
+    },
+  };
+}
+
+function loadPSTPg2WorkState() {
+  try {
+    if (typeof localStorage === "undefined") return normalizePSTPg2WorkState({});
+    const raw = localStorage.getItem(PST_PG2_STATE_KEY);
+    if (!raw) return normalizePSTPg2WorkState({});
+    return normalizePSTPg2WorkState(JSON.parse(raw));
+  } catch {
+    return normalizePSTPg2WorkState({});
+  }
+}
+
+function savePSTPg2WorkState(state = {}) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(PST_PG2_STATE_KEY, JSON.stringify(normalizePSTPg2WorkState(state)));
+  } catch {}
+}
+
+function getPSTDepotStateEntries(source = {}, depot = "west") {
+  const roads = depot === "west" ? WEST_ROADS : EAST_ROADS;
+  const next = {};
+  roads.forEach((road) => {
+    for (let bi = 0; bi < 7; bi += 1) {
+      const key = `${road}-${bi}`;
+      if (Object.prototype.hasOwnProperty.call(source || {}, key)) next[key] = source[key];
+    }
+  });
+  return next;
+}
+
+function getPSTEntriesForDepot(logLines = [], depot = "west") {
+  return (Array.isArray(logLines) ? logLines : []).filter((entry) => {
+    const entryDepot = entry?.depot || (WEST_ROADS.includes(entry?.road || "") ? "west" : EAST_ROADS.includes(entry?.road || "") ? "east" : "");
+    return entryDepot === depot;
+  });
 }
 
 const INSERTION_HIDE_ELAPSED_TID_KEY_PREFIX = "insertionHideElapsedTid_v1";
@@ -3148,6 +3259,29 @@ function getSavedPSTCompletedByNames() {
 }
 
 function normalizePSTLiveState(source = {}) {
+  const hasActivePg = Boolean(source?.activePg || source?.pstActivePg);
+  const pg2StablingSource = source?.pg2Stabling || source?.pstPg2Stabling || {
+    westData: source?.pg2WestData,
+    eastData: source?.pg2EastData,
+  };
+  const hasPg2Stabling = Boolean(source?.pg2Stabling || source?.pstPg2Stabling || source?.pg2WestData || source?.pg2EastData);
+  const pg2WorkSource = source?.pg2WorkState || source?.pstPg2WorkState || {
+    pstState: source?.pg2PstState,
+    prepState: source?.pg2PrepState,
+    logLines: source?.pg2LogLines,
+    taNameState: source?.pg2TaNameState,
+    completedByNames: source?.pg2CompletedByNames,
+  };
+  const hasPg2Work = Boolean(
+    source?.pg2WorkState ||
+    source?.pstPg2WorkState ||
+    source?.pg2PstState ||
+    source?.pg2PrepState ||
+    source?.pg2LogLines ||
+    source?.pg2TaNameState ||
+    source?.pg2CompletedByNames
+  );
+
   return {
     pstState: source?.pstState && typeof source.pstState === "object" ? source.pstState : {},
     prepState: source?.prepState && typeof source.prepState === "object" ? source.prepState : {},
@@ -3157,6 +3291,9 @@ function normalizePSTLiveState(source = {}) {
       west: (source?.completedByNames?.west || source?.completedByWest || "").toString(),
       east: (source?.completedByNames?.east || source?.completedByEast || "").toString(),
     },
+    activePg: hasActivePg ? normalizePSTPgByDepot(source?.activePg || source?.pstActivePg || {}) : null,
+    pg2Stabling: hasPg2Stabling ? normalizePSTPg2Stabling(pg2StablingSource) : null,
+    pg2WorkState: hasPg2Work ? normalizePSTPg2WorkState(pg2WorkSource) : null,
     updatedAt: (source?.updatedAt || source?.updated_date || source?.updatedDate || source?.createdAt || source?.created_date || "").toString(),
   };
 }
@@ -3253,6 +3390,9 @@ function buildPSTLivePayload(state = {}) {
     logLines: normalized.logLines,
     taNameState: normalized.taNameState,
     completedByNames: normalized.completedByNames,
+    activePg: normalized.activePg || normalizePSTPgByDepot(state?.activePg || {}),
+    pg2Stabling: normalized.pg2Stabling || (state?.pg2Stabling ? normalizePSTPg2Stabling(state.pg2Stabling) : null),
+    pg2WorkState: normalized.pg2WorkState || (state?.pg2WorkState ? normalizePSTPg2WorkState(state.pg2WorkState) : null),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -4021,7 +4161,8 @@ function getTrainRemRowCardVisual(requestItem = null, label = "", options = {}) 
 
 // ── PST / Train Prep Components ──────────────────────────────────────────────
 
-function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taName, onTaNameChange }) {
+function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taName, onTaNameChange, stablingEditable = false, onEditableTrainIdChange }) {
+  const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   // Keep PST / Train Prep cards clean: hide normal maintenance remarks and show
@@ -4081,9 +4222,30 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={trainColor} strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/></svg>
           </div>
         )}
-        <div className="theme-pst-train-number w-full text-center font-black leading-none" style={{ fontSize: key ? 15 : 12, color: key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}>
-          {displayVal || "—"}
-        </div>
+        {stablingEditable ? (
+          <input
+            type="text"
+            value={isTrainIdEditing ? val : (key ? displayVal : val)}
+            onFocus={(e) => {
+              setIsTrainIdEditing(true);
+              requestAnimationFrame(() => e.currentTarget.select());
+            }}
+            onBlur={() => setIsTrainIdEditing(false)}
+            onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
+            placeholder="Train ID"
+            className="theme-pst-train-number h-7 w-full border-0 border-b bg-transparent px-1 text-center text-[15px] font-black uppercase leading-none outline-none placeholder:text-[10px] placeholder:text-[#47637a]"
+            style={{
+              borderBottomColor: key ? "#1e4d72" : "#1a3a56",
+              color: key ? trainColor : "#6f899f",
+              letterSpacing: key ? "0.05em" : undefined,
+              borderRadius: 0,
+            }}
+          />
+        ) : (
+          <div className="theme-pst-train-number w-full text-center font-black leading-none" style={{ fontSize: key ? 15 : 12, color: key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}>
+            {displayVal || "—"}
+          </div>
+        )}
         {apuRemarkLabels.length > 0 && (
           <div className="theme-pst-apu-remarks flex w-full flex-col items-center gap-0.5 px-0.5">
             {apuRemarkLabels.map((label) => (
@@ -4173,7 +4335,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   );
 }
 
-function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taNameState, onTaNameChange, onClearPST, onClearPrep }) {
+function PSTStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taNameState, onTaNameChange, onClearPST, onClearPrep, stablingEditable = false, onEditableTrainIdChange }) {
   const [confirmClearAction, setConfirmClearAction] = useState(null);
   const hasClearControls = Boolean(onClearPST || onClearPrep);
   const pstClearCount = roads.reduce((count, road) => {
@@ -4218,8 +4380,10 @@ function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, lab
           <h2 className="theme-pst-title text-base leading-none font-black text-white tracking-widest uppercase whitespace-nowrap">{title}</h2>
         </div>
 
-        {hasClearControls && (
-          <div className="flex flex-shrink-0 items-center gap-2">
+        <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-2">
+          <InsertionPgHeaderControls activePg={activePg} onPgChange={onPgChange} onRefreshPg2={onRefreshPg2} />
+          {hasClearControls && (
+            <div className="flex flex-shrink-0 items-center gap-2">
             {onClearPST && (
               <button
                 type="button"
@@ -4242,8 +4406,9 @@ function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, lab
                 {confirmClearAction === "prep" ? "Confirm Prep?" : "Clear Train Prep"}
               </button>
             )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
       <div className="overflow-x-auto rounded-xl">
         <table className="theme-stabling-table border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 912, maxWidth: 912, width: 912 }}>
@@ -4271,7 +4436,7 @@ function PSTStablingSection({ title, blockLabels, blockIndices, roads, data, lab
                 <tr key={road}>
                   {labelSide === "left" && labelCell}
                   {blockIndices.map((bi, i) => (
-                    <PSTCell key={bi} block={data[road]?.[bi]} bi={bi} road={road} labelSide={labelSide} isLast={ri === roads.length - 1} isFirstBlock={i === 0} isLastBlock={i === blockIndices.length - 1} maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taName={taNameState[`${road}-${bi}`] || ""} onTaNameChange={onTaNameChange} />
+                    <PSTCell key={bi} block={data[road]?.[bi]} bi={bi} road={road} labelSide={labelSide} isLast={ri === roads.length - 1} isFirstBlock={i === 0} isLastBlock={i === blockIndices.length - 1} maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taName={taNameState[`${road}-${bi}`] || ""} onTaNameChange={onTaNameChange} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} />
                   ))}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -11180,7 +11345,7 @@ function buildPSTExportLinesFromVisibleState({
 
 
 function PSTTabContent
-({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug }) {
+({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug, westPg = "pg1", eastPg = "pg1", onPSTPgChange, onRefreshPSTPg2, westPSTStablingEditable = false, eastPSTStablingEditable = false, onEditablePSTTrainIdChange }) {
   const [downloadingExcelDepot, setDownloadingExcelDepot] = useState("");
   const safeCompletedByNames = completedByNames || { west: "", east: "" };
   const sortedLogLines = sortPSTLogLinesByTime(logLines);
@@ -11271,8 +11436,8 @@ function PSTTabContent
     <div className="flex flex-col lg:flex-row gap-5 w-fit items-start">
       <div className="flex flex-col gap-5 min-w-0 shrink-0">
         <div className="space-y-5 min-w-0">
-          <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} />
-          <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} />
+          <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" activePg={westPg} onPgChange={(pg) => onPSTPgChange?.("west", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("west")} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} stablingEditable={westPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} />
+          <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" activePg={eastPg} onPgChange={(pg) => onPSTPgChange?.("east", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("east")} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} stablingEditable={eastPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} />
         </div>
 
       <div className="w-full max-w-[960px]">
@@ -13773,6 +13938,14 @@ export default function DepotStablingPage() {
   const [pstLogLines, setPstLogLines] = useState(savedPST.logLines);
   const [taNameState, setTaNameState] = useState(savedPST.taNameState || {});
   const [pstCompletedByNames, setPstCompletedByNames] = useState(savedPST.completedByNames || { west: "", east: "" });
+  const [activePSTPg, setActivePSTPg] = useState(() => loadPSTActivePg());
+  const [pstPg2Stabling, setPstPg2Stabling] = useState(() => loadPSTPg2Stabling(westData, eastData));
+  const savedPSTPg2 = loadPSTPg2WorkState();
+  const [pstPg2State, setPstPg2State] = useState(savedPSTPg2.pstState);
+  const [prepPg2State, setPrepPg2State] = useState(savedPSTPg2.prepState);
+  const [pstPg2LogLines, setPstPg2LogLines] = useState(savedPSTPg2.logLines);
+  const [taNamePg2State, setTaNamePg2State] = useState(savedPSTPg2.taNameState || {});
+  const [pstPg2CompletedByNames, setPstPg2CompletedByNames] = useState(savedPSTPg2.completedByNames || { west: "", east: "" });
   const [pstLiveLoaded, setPstLiveLoaded] = useState(false);
   const [pstLiveSyncing, setPstLiveSyncing] = useState(false);
   const [pstLiveLastSynced, setPstLiveLastSynced] = useState(null);
@@ -13798,6 +13971,17 @@ export default function DepotStablingPage() {
     applyAppTheme(appTheme);
   }, [appTheme]);
 
+  useEffect(() => { savePSTActivePg(activePSTPg); }, [activePSTPg]);
+  useEffect(() => { savePSTPg2Stabling(pstPg2Stabling); }, [pstPg2Stabling]);
+  useEffect(() => {
+    savePSTPg2WorkState({
+      pstState: pstPg2State,
+      prepState: prepPg2State,
+      logLines: pstPg2LogLines,
+      taNameState: taNamePg2State,
+      completedByNames: pstPg2CompletedByNames,
+    });
+  }, [pstPg2State, prepPg2State, pstPg2LogLines, taNamePg2State, pstPg2CompletedByNames]);
   useEffect(() => { saveTidInputs(tidInputs); }, [tidInputs]);
   useEffect(() => { saveInsertionActivePg(activeInsertionPg); }, [activeInsertionPg]);
   useEffect(() => { saveInsertionPg2Stabling(pg2Stabling); }, [pg2Stabling]);
@@ -14534,6 +14718,13 @@ export default function DepotStablingPage() {
   const pstLogLinesRef = useRef(pstLogLines);
   const taNameStateRef = useRef(taNameState);
   const pstCompletedByNamesRef = useRef(pstCompletedByNames);
+  const activePSTPgRef = useRef(activePSTPg);
+  const pstPg2StablingRef = useRef(pstPg2Stabling);
+  const pstPg2StateRef = useRef(pstPg2State);
+  const prepPg2StateRef = useRef(prepPg2State);
+  const pstPg2LogLinesRef = useRef(pstPg2LogLines);
+  const taNamePg2StateRef = useRef(taNamePg2State);
+  const pstPg2CompletedByNamesRef = useRef(pstPg2CompletedByNames);
   const pstLiveLocalUpdatedAtRef = useRef(Date.parse(savedPST.updatedAt || "") || 0);
   const pstLiveRemoteUpdatedAtRef = useRef(0);
 
@@ -14557,6 +14748,13 @@ export default function DepotStablingPage() {
   useEffect(() => { pstLogLinesRef.current = pstLogLines; }, [pstLogLines]);
   useEffect(() => { taNameStateRef.current = taNameState; }, [taNameState]);
   useEffect(() => { pstCompletedByNamesRef.current = pstCompletedByNames; }, [pstCompletedByNames]);
+  useEffect(() => { activePSTPgRef.current = activePSTPg; }, [activePSTPg]);
+  useEffect(() => { pstPg2StablingRef.current = pstPg2Stabling; }, [pstPg2Stabling]);
+  useEffect(() => { pstPg2StateRef.current = pstPg2State; }, [pstPg2State]);
+  useEffect(() => { prepPg2StateRef.current = prepPg2State; }, [prepPg2State]);
+  useEffect(() => { pstPg2LogLinesRef.current = pstPg2LogLines; }, [pstPg2LogLines]);
+  useEffect(() => { taNamePg2StateRef.current = taNamePg2State; }, [taNamePg2State]);
+  useEffect(() => { pstPg2CompletedByNamesRef.current = pstPg2CompletedByNames; }, [pstPg2CompletedByNames]);
   useEffect(() => { insertionLogRef.current = insertionLog; }, [insertionLog]);
   useEffect(() => { tidInputsRef.current = tidInputs; }, [tidInputs]);
   useEffect(() => { pg2StablingRef.current = pg2Stabling; }, [pg2Stabling]);
@@ -14632,6 +14830,31 @@ export default function DepotStablingPage() {
     setPstLogLines(normalized.logLines);
     setTaNameState(normalized.taNameState);
     setPstCompletedByNames(normalized.completedByNames);
+
+    if (normalized.activePg) {
+      activePSTPgRef.current = normalized.activePg;
+      setActivePSTPg(normalized.activePg);
+      savePSTActivePg(normalized.activePg);
+    }
+    if (normalized.pg2Stabling) {
+      pstPg2StablingRef.current = normalized.pg2Stabling;
+      setPstPg2Stabling(normalized.pg2Stabling);
+      savePSTPg2Stabling(normalized.pg2Stabling);
+    }
+    if (normalized.pg2WorkState) {
+      pstPg2StateRef.current = normalized.pg2WorkState.pstState;
+      prepPg2StateRef.current = normalized.pg2WorkState.prepState;
+      pstPg2LogLinesRef.current = normalized.pg2WorkState.logLines;
+      taNamePg2StateRef.current = normalized.pg2WorkState.taNameState;
+      pstPg2CompletedByNamesRef.current = normalized.pg2WorkState.completedByNames;
+      setPstPg2State(normalized.pg2WorkState.pstState);
+      setPrepPg2State(normalized.pg2WorkState.prepState);
+      setPstPg2LogLines(normalized.pg2WorkState.logLines);
+      setTaNamePg2State(normalized.pg2WorkState.taNameState);
+      setPstPg2CompletedByNames(normalized.pg2WorkState.completedByNames);
+      savePSTPg2WorkState(normalized.pg2WorkState);
+    }
+
     savePSTState(
       normalized.pstState,
       normalized.prepState,
@@ -14762,6 +14985,15 @@ export default function DepotStablingPage() {
           logLines: pstLogLinesRef.current,
           taNameState: taNameStateRef.current,
           completedByNames: pstCompletedByNamesRef.current,
+          activePg: activePSTPgRef.current,
+          pg2Stabling: pstPg2StablingRef.current,
+          pg2WorkState: {
+            pstState: pstPg2StateRef.current,
+            prepState: prepPg2StateRef.current,
+            logLines: pstPg2LogLinesRef.current,
+            taNameState: taNamePg2StateRef.current,
+            completedByNames: pstPg2CompletedByNamesRef.current,
+          },
         });
         const created = await entity.create(payload);
         if (created?.id) pstLiveRecordIdRef.current = created.id;
@@ -14826,6 +15058,15 @@ export default function DepotStablingPage() {
       logLines: pstLogLines,
       taNameState,
       completedByNames: pstCompletedByNames,
+      activePg: activePSTPg,
+      pg2Stabling: pstPg2Stabling,
+      pg2WorkState: {
+        pstState: pstPg2State,
+        prepState: prepPg2State,
+        logLines: pstPg2LogLines,
+        taNameState: taNamePg2State,
+        completedByNames: pstPg2CompletedByNames,
+      },
     };
     const payload = buildPSTLivePayload(state);
 
@@ -14840,7 +15081,7 @@ export default function DepotStablingPage() {
 
     if (!pstLiveLoaded) return;
     schedulePSTLiveSave(payload);
-  }, [pstState, prepState, pstLogLines, taNameState, pstCompletedByNames, pstLiveLoaded, schedulePSTLiveSave]);
+  }, [pstState, prepState, pstLogLines, taNameState, pstCompletedByNames, activePSTPg, pstPg2Stabling, pstPg2State, prepPg2State, pstPg2LogLines, taNamePg2State, pstPg2CompletedByNames, pstLiveLoaded, schedulePSTLiveSave]);
 
   useEffect(() => {
     return () => {
@@ -16523,6 +16764,386 @@ export default function DepotStablingPage() {
     setTaNameState((prev) => removePSTSectionKeys(prev, depot));
   };
 
+  const handlePSTPgChange = useCallback((depot, pg) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    setActivePSTPg((prev) => ({
+      ...normalizePSTPgByDepot(prev),
+      [normalizedDepot]: normalizePSTPg(pg),
+    }));
+  }, []);
+
+  const handlePSTPg2TrainIdChange = useCallback((depot, road, blockIndex, value) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    const cellKey = `${road}-${blockIndex}`;
+    const pstLogKey = `pst-${cellKey}`;
+    const prepLogKey = `prep-${cellKey}`;
+
+    setPstPg2Stabling((prev) => {
+      const currentDepotData = normalizedDepot === "west" ? prev.westData : prev.eastData;
+      const previousKey = normalizeTrainId(currentDepotData?.[road]?.[blockIndex]?.trainId || "");
+      const incomingKey = normalizeTrainId(value);
+
+      if (previousKey !== incomingKey) {
+        setPstPg2State((prevState) => { const next = { ...prevState }; delete next[cellKey]; return next; });
+        setPrepPg2State((prevState) => { const next = { ...prevState }; delete next[cellKey]; return next; });
+        setTaNamePg2State((prevState) => { const next = { ...prevState }; delete next[cellKey]; return next; });
+        setPstPg2LogLines((prevLog) => prevLog.filter((entry) => entry.key !== pstLogKey && entry.key !== prepLogKey));
+      }
+
+      const next = cloneInsertionStablingState(prev.westData, prev.eastData);
+      const target = normalizedDepot === "west" ? next.westData : next.eastData;
+      const blocks = [...(target[road] || emptyBlocks())];
+      blocks[blockIndex] = { ...(blocks[blockIndex] || { trainId: "", extraRemark: "" }), trainId: value };
+      target[road] = blocks;
+      return next;
+    });
+  }, []);
+
+  const handleRefreshPSTPg2FromDefault = useCallback((depot) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    const targetRoads = normalizedDepot === "west" ? WEST_ROADS : EAST_ROADS;
+
+    setPstPg2Stabling((prev) => {
+      const next = cloneInsertionStablingState(prev?.westData || {}, prev?.eastData || {});
+      if (normalizedDepot === "west") {
+        next.westData = normalizeStablingDepotData(westDataRef.current, WEST_ROADS);
+      } else {
+        next.eastData = normalizeStablingDepotData(eastDataRef.current, EAST_ROADS);
+      }
+      return next;
+    });
+
+    setPstPg2State((prev) => removePSTSectionKeys(prev, normalizedDepot));
+    setPrepPg2State((prev) => removePSTSectionKeys(prev, normalizedDepot));
+    setTaNamePg2State((prev) => removePSTSectionKeys(prev, normalizedDepot));
+    setPstPg2LogLines((prev) => prev.filter((entry) => entry?.depot !== normalizedDepot));
+    setActivePSTPg((prev) => ({
+      ...normalizePSTPgByDepot(prev),
+      [normalizedDepot]: "pg2",
+    }));
+
+    // Clear any stale per-cell PG2 values for this depot after copying PG1.
+    targetRoads.forEach((road) => {
+      for (let bi = 0; bi < 7; bi += 1) {
+        const cellKey = `${road}-${bi}`;
+        pstPg2StateRef.current = { ...pstPg2StateRef.current };
+        prepPg2StateRef.current = { ...prepPg2StateRef.current };
+        taNamePg2StateRef.current = { ...taNamePg2StateRef.current };
+        delete pstPg2StateRef.current[cellKey];
+        delete prepPg2StateRef.current[cellKey];
+        delete taNamePg2StateRef.current[cellKey];
+      }
+    });
+  }, []);
+
+  const commitPSTPg2WorkState = useCallback((nextPstState, nextPrepState, nextLogLines, nextTaNameState = taNamePg2StateRef.current, nextCompletedByNames = pstPg2CompletedByNamesRef.current) => {
+    const sortedLog = sortPSTLogLinesByTime(nextLogLines);
+    pstPg2StateRef.current = nextPstState;
+    prepPg2StateRef.current = nextPrepState;
+    pstPg2LogLinesRef.current = sortedLog;
+    taNamePg2StateRef.current = nextTaNameState;
+    pstPg2CompletedByNamesRef.current = nextCompletedByNames;
+    setPstPg2State(nextPstState);
+    setPrepPg2State(nextPrepState);
+    setPstPg2LogLines(sortedLog);
+    setTaNamePg2State(nextTaNameState);
+    setPstPg2CompletedByNames(nextCompletedByNames);
+    savePSTPg2WorkState({
+      pstState: nextPstState,
+      prepState: nextPrepState,
+      logLines: sortedLog,
+      taNameState: nextTaNameState,
+      completedByNames: nextCompletedByNames,
+    });
+  }, []);
+
+  const handlePSTPg2StartTimeChange = useCallback((road, bi, trainKey, startTime) => {
+    const cleanStartTime = cleanMovementCustomTimeInput(startTime);
+    const cellKey = `${road}-${bi}`;
+    const logKey = `pst-${cellKey}`;
+    const currentPst = pstPg2StateRef.current[cellKey];
+    if (!currentPst) return;
+
+    const paddedKey = padTrainId(normalizeTrainId(trainKey || currentPst.trainKey));
+    const isCompleteTime = /^\d{2}:\d{2}$/.test(cleanStartTime);
+    const endTime = isCompleteTime ? addMinutesToHHMM(cleanStartTime, 6) : currentPst.endTime;
+    const alarmStatus = currentPst.alarmStatus || "no_alarm";
+    const nextPstState = {
+      ...pstPg2StateRef.current,
+      [cellKey]: {
+        ...currentPst,
+        startTime: cleanStartTime,
+        endTime,
+        trainKey: paddedKey || currentPst.trainKey,
+      },
+    };
+
+    let nextLogLines = pstPg2LogLinesRef.current;
+    if ((currentPst.done || currentPst.confirming) && isCompleteTime) {
+      const depot = getDepotFromRoad(road);
+      nextLogLines = sortPSTLogLinesByTime([
+        ...nextLogLines.filter((line) => line.key !== logKey),
+        {
+          key: logKey,
+          text: buildPSTLogLine(cleanStartTime, endTime, road, paddedKey, alarmStatus),
+          type: "PST",
+          depot,
+          road,
+          trainKey: paddedKey,
+          startTime: cleanStartTime,
+          endTime,
+          alarmStatus,
+        },
+      ]);
+    }
+
+    commitPSTPg2WorkState(nextPstState, prepPg2StateRef.current, nextLogLines);
+  }, [commitPSTPg2WorkState]);
+
+  const handlePSTPg2Tick = useCallback((road, bi, trainKey, alarmStatus = null) => {
+    const cellKey = `${road}-${bi}`;
+    const current = pstPg2StateRef.current[cellKey];
+    const logKey = `pst-${cellKey}`;
+
+    if (current?.done) {
+      const nextPstState = { ...pstPg2StateRef.current };
+      delete nextPstState[cellKey];
+      const nextLogLines = pstPg2LogLinesRef.current.filter((line) => line.key !== logKey);
+      commitPSTPg2WorkState(nextPstState, prepPg2StateRef.current, nextLogLines);
+      return;
+    }
+
+    const paddedKey = padTrainId(normalizeTrainId(trainKey));
+    const depot = getDepotFromRoad(road);
+
+    if (current?.confirming) {
+      const startTime = normalizeMovementCustomTimeInput(current.startTime);
+      if (!/^\d{2}:\d{2}$/.test(startTime)) return;
+      const endTime = addMinutesToHHMM(startTime, 6);
+      const finalAlarmStatus = alarmStatus || "no_alarm";
+      const nextPstState = {
+        ...pstPg2StateRef.current,
+        [cellKey]: { done: true, confirming: false, startTime, endTime, alarmStatus: finalAlarmStatus, trainKey: paddedKey },
+      };
+      const nextLogLines = sortPSTLogLinesByTime([
+        ...pstPg2LogLinesRef.current.filter((entry) => entry.key !== logKey),
+        { key: logKey, text: buildPSTLogLine(startTime, endTime, road, paddedKey, finalAlarmStatus), type: "PST", depot, road, trainKey: paddedKey, startTime, endTime, alarmStatus: finalAlarmStatus },
+      ]);
+      commitPSTPg2WorkState(nextPstState, prepPg2StateRef.current, nextLogLines);
+      return;
+    }
+
+    const now = new Date();
+    const startTime = formatTime(now);
+    const endTime = formatTime(addMinutes(now, 6));
+    const finalAlarmStatus = alarmStatus || "no_alarm";
+    const nextPstState = {
+      ...pstPg2StateRef.current,
+      [cellKey]: { done: false, confirming: true, startTime, endTime, alarmStatus: finalAlarmStatus, trainKey: paddedKey },
+    };
+    const nextLogLines = sortPSTLogLinesByTime([
+      ...pstPg2LogLinesRef.current.filter((entry) => entry.key !== logKey),
+      { key: logKey, text: buildPSTLogLine(startTime, endTime, road, paddedKey, finalAlarmStatus), type: "PST", depot, road, trainKey: paddedKey, startTime, endTime, alarmStatus: finalAlarmStatus },
+    ]);
+    commitPSTPg2WorkState(nextPstState, prepPg2StateRef.current, nextLogLines);
+  }, [commitPSTPg2WorkState]);
+
+  const handlePrepPg2CompletionTimeChange = useCallback((road, bi, trainKey, endTime) => {
+    const cleanEndTime = cleanMovementCustomTimeInput(endTime);
+    const cellKey = `${road}-${bi}`;
+    const paddedKey = trainKey.replace(/^T(\d+)$/, (_, n) => `T${n.padStart(2, "0")}`);
+    const currentPrep = prepPg2StateRef.current[cellKey];
+    if (!currentPrep?.done) return;
+    const completedTaName = (currentPrep.taName || taNamePg2StateRef.current[cellKey] || "").toString().trim();
+    const entryTrainKey = currentPrep.trainKey || paddedKey;
+    const logKey = `prep-${cellKey}`;
+    const nextPrepState = {
+      ...prepPg2StateRef.current,
+      [cellKey]: { ...currentPrep, endTime: cleanEndTime, time: cleanEndTime, trainKey: currentPrep.trainKey || paddedKey },
+    };
+    let found = false;
+    const nextLogLines = pstPg2LogLinesRef.current.map((entry) => {
+      if (entry.key !== logKey) return entry;
+      found = true;
+      return {
+        ...entry,
+        text: buildTrainPrepLogLine(cleanEndTime, entry.trainKey || entryTrainKey, road, entry.taName || completedTaName),
+        time: cleanEndTime,
+        endTime: cleanEndTime,
+        startTime: "",
+      };
+    });
+    if (!found) {
+      const depot = getDepotFromRoad(road);
+      nextLogLines.push({
+        key: logKey,
+        text: buildTrainPrepLogLine(cleanEndTime, entryTrainKey, road, completedTaName),
+        type: "Prep",
+        depot,
+        road,
+        trainKey: entryTrainKey,
+        startTime: "",
+        time: cleanEndTime,
+        endTime: cleanEndTime,
+        taName: completedTaName,
+      });
+    }
+    commitPSTPg2WorkState(pstPg2StateRef.current, nextPrepState, nextLogLines);
+  }, [commitPSTPg2WorkState]);
+
+  const handlePrepPg2Tick = useCallback((road, bi, trainKey, taName = "") => {
+    const cellKey = `${road}-${bi}`;
+    const current = prepPg2StateRef.current[cellKey];
+    if (current?.done) {
+      const nextPrepState = { ...prepPg2StateRef.current };
+      delete nextPrepState[cellKey];
+      const nextTaNameState = { ...taNamePg2StateRef.current };
+      delete nextTaNameState[cellKey];
+      const nextLogLines = pstPg2LogLinesRef.current.filter((l) => l.key !== `prep-${cellKey}`);
+      commitPSTPg2WorkState(pstPg2StateRef.current, nextPrepState, nextLogLines, nextTaNameState);
+      return;
+    }
+    const paddedKey = trainKey.replace(/^T(\d+)$/, (_, n) => `T${n.padStart(2, "0")}`);
+    const endTime = formatTime(new Date());
+    const resolvedTaName = taNamePg2StateRef.current[cellKey] || taName || "";
+    const completedTaName = resolvedTaName.trim();
+    const depot = getDepotFromRoad(road);
+    const nextPrepState = {
+      ...prepPg2StateRef.current,
+      [cellKey]: { done: true, endTime, time: endTime, trainKey: paddedKey, taName: completedTaName },
+    };
+    const nextLogLines = sortPSTLogLinesByTime([
+      ...pstPg2LogLinesRef.current.filter((l) => l.key !== `prep-${cellKey}`),
+      { key: `prep-${cellKey}`, text: buildTrainPrepLogLine(endTime, paddedKey, road, completedTaName), type: "Prep", depot, road, trainKey: paddedKey, startTime: "", time: endTime, endTime, taName: completedTaName },
+    ]);
+    commitPSTPg2WorkState(pstPg2StateRef.current, nextPrepState, nextLogLines);
+  }, [commitPSTPg2WorkState]);
+
+  const handlePg2TaNameChange = useCallback((road, bi, value) => {
+    const nextTaNameState = { ...taNamePg2StateRef.current, [`${road}-${bi}`]: value };
+    commitPSTPg2WorkState(pstPg2StateRef.current, prepPg2StateRef.current, pstPg2LogLinesRef.current, nextTaNameState);
+  }, [commitPSTPg2WorkState]);
+
+  const handlePg2CompletedByChange = useCallback((depot, value) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    const nextCompletedByNames = { ...pstPg2CompletedByNamesRef.current, [normalizedDepot]: value };
+    commitPSTPg2WorkState(pstPg2StateRef.current, prepPg2StateRef.current, pstPg2LogLinesRef.current, taNamePg2StateRef.current, nextCompletedByNames);
+  }, [commitPSTPg2WorkState]);
+
+  const handleClearPSTPg2DepotPSTOnly = useCallback((depot) => {
+    const nextPstState = removePSTSectionKeys(pstPg2StateRef.current, depot);
+    const nextLogLines = pstPg2LogLinesRef.current.filter((line) => !(line.depot === depot && line.type === "PST"));
+    commitPSTPg2WorkState(nextPstState, prepPg2StateRef.current, nextLogLines);
+  }, [commitPSTPg2WorkState]);
+
+  const handleClearPSTPg2DepotPrepOnly = useCallback((depot) => {
+    const nextPrepState = removePSTSectionKeys(prepPg2StateRef.current, depot);
+    const nextTaNameState = removePSTSectionKeys(taNamePg2StateRef.current, depot);
+    const nextLogLines = pstPg2LogLinesRef.current.filter((line) => !(line.depot === depot && isTrainPrepLogEntry(line)));
+    commitPSTPg2WorkState(pstPg2StateRef.current, nextPrepState, nextLogLines, nextTaNameState);
+  }, [commitPSTPg2WorkState]);
+
+  const handleClearPSTPg2Depot = useCallback((depot) => {
+    const nextPstState = removePSTSectionKeys(pstPg2StateRef.current, depot);
+    const nextPrepState = removePSTSectionKeys(prepPg2StateRef.current, depot);
+    const nextTaNameState = removePSTSectionKeys(taNamePg2StateRef.current, depot);
+    const nextLogLines = pstPg2LogLinesRef.current.filter((line) => line.depot !== depot);
+    commitPSTPg2WorkState(nextPstState, nextPrepState, nextLogLines, nextTaNameState);
+  }, [commitPSTPg2WorkState]);
+
+  const getActivePSTPgForDepot = useCallback((depot) => normalizePSTPgByDepot(activePSTPgRef.current)[normalizeDepotKey(depot)], []);
+  const getActivePSTPgForRoad = useCallback((road) => getActivePSTPgForDepot(getDepotFromRoad(road)), [getActivePSTPgForDepot]);
+  const isActivePSTPg2Depot = useCallback((depot) => getActivePSTPgForDepot(depot) === "pg2", [getActivePSTPgForDepot]);
+  const isActivePSTPg2Road = useCallback((road) => getActivePSTPgForRoad(road) === "pg2", [getActivePSTPgForRoad]);
+
+  const handleActivePSTTick = useCallback((road, bi, trainKey, alarmStatus = null) => {
+    if (isActivePSTPg2Road(road)) handlePSTPg2Tick(road, bi, trainKey, alarmStatus);
+    else handlePSTTick(road, bi, trainKey, alarmStatus);
+  }, [handlePSTPg2Tick, isActivePSTPg2Road]);
+
+  const handleActivePSTStartTimeChange = useCallback((road, bi, trainKey, startTime) => {
+    if (isActivePSTPg2Road(road)) handlePSTPg2StartTimeChange(road, bi, trainKey, startTime);
+    else handlePSTStartTimeChange(road, bi, trainKey, startTime);
+  }, [handlePSTPg2StartTimeChange, handlePSTStartTimeChange, isActivePSTPg2Road]);
+
+  const handleActivePrepTick = useCallback((road, bi, trainKey, taName = "") => {
+    if (isActivePSTPg2Road(road)) handlePrepPg2Tick(road, bi, trainKey, taName);
+    else handlePrepTick(road, bi, trainKey, taName);
+  }, [handlePrepPg2Tick, isActivePSTPg2Road]);
+
+  const handleActivePrepCompletionTimeChange = useCallback((road, bi, trainKey, endTime) => {
+    if (isActivePSTPg2Road(road)) handlePrepPg2CompletionTimeChange(road, bi, trainKey, endTime);
+    else handlePrepCompletionTimeChange(road, bi, trainKey, endTime);
+  }, [handlePrepPg2CompletionTimeChange, isActivePSTPg2Road]);
+
+  const handleActiveTaNameChange = useCallback((road, bi, value) => {
+    if (isActivePSTPg2Road(road)) handlePg2TaNameChange(road, bi, value);
+    else handleTaNameChange(road, bi, value);
+  }, [handlePg2TaNameChange, handleTaNameChange, isActivePSTPg2Road]);
+
+  const handleActiveCompletedByChange = useCallback((depot, value) => {
+    if (isActivePSTPg2Depot(depot)) handlePg2CompletedByChange(depot, value);
+    else handleCompletedByChange(depot, value);
+  }, [handleCompletedByChange, handlePg2CompletedByChange, isActivePSTPg2Depot]);
+
+  const handleActiveClearDepotPSTOnly = useCallback((depot) => {
+    if (isActivePSTPg2Depot(depot)) handleClearPSTPg2DepotPSTOnly(depot);
+    else handleClearDepotPSTOnly(depot);
+  }, [handleClearPSTPg2DepotPSTOnly, isActivePSTPg2Depot]);
+
+  const handleActiveClearDepotPrepOnly = useCallback((depot) => {
+    if (isActivePSTPg2Depot(depot)) handleClearPSTPg2DepotPrepOnly(depot);
+    else handleClearDepotPrepOnly(depot);
+  }, [handleClearPSTPg2DepotPrepOnly, isActivePSTPg2Depot]);
+
+  const handleActiveClearDepotPST = useCallback((depot) => {
+    if (isActivePSTPg2Depot(depot)) handleClearPSTPg2Depot(depot);
+    else handleClearDepotPST(depot);
+  }, [handleClearPSTPg2Depot, isActivePSTPg2Depot]);
+
+  const handleActiveRemovePSTLog = useCallback((key) => {
+    const cellKey = key.replace(/^(pst|prep)-/, "");
+    const road = cellKey.split("-").slice(0, 2).join("-");
+    if (isActivePSTPg2Road(road)) {
+      const nextLogLines = pstPg2LogLinesRef.current.filter((l) => l.key !== key);
+      const nextPstState = { ...pstPg2StateRef.current };
+      const nextPrepState = { ...prepPg2StateRef.current };
+      if (key.startsWith("pst-")) delete nextPstState[cellKey];
+      else delete nextPrepState[cellKey];
+      commitPSTPg2WorkState(nextPstState, nextPrepState, nextLogLines);
+    } else {
+      handleRemovePSTLog(key);
+    }
+  }, [commitPSTPg2WorkState, handleRemovePSTLog, isActivePSTPg2Road]);
+
+  const activePSTPgByDepot = normalizePSTPgByDepot(activePSTPg);
+  const westPSTPg = activePSTPgByDepot.west;
+  const eastPSTPg = activePSTPgByDepot.east;
+  const westPSTIsPg2 = westPSTPg === "pg2";
+  const eastPSTIsPg2 = eastPSTPg === "pg2";
+  const activePSTWestData = westPSTIsPg2 ? pstPg2Stabling.westData : westData;
+  const activePSTEastData = eastPSTIsPg2 ? pstPg2Stabling.eastData : eastData;
+  const activePSTState = {
+    ...getPSTDepotStateEntries(westPSTIsPg2 ? pstPg2State : pstState, "west"),
+    ...getPSTDepotStateEntries(eastPSTIsPg2 ? pstPg2State : pstState, "east"),
+  };
+  const activePrepState = {
+    ...getPSTDepotStateEntries(westPSTIsPg2 ? prepPg2State : prepState, "west"),
+    ...getPSTDepotStateEntries(eastPSTIsPg2 ? prepPg2State : prepState, "east"),
+  };
+  const activeTaNameState = {
+    ...getPSTDepotStateEntries(westPSTIsPg2 ? taNamePg2State : taNameState, "west"),
+    ...getPSTDepotStateEntries(eastPSTIsPg2 ? taNamePg2State : taNameState, "east"),
+  };
+  const activePSTLogLines = sortPSTLogLinesByTime([
+    ...getPSTEntriesForDepot(westPSTIsPg2 ? pstPg2LogLines : pstLogLines, "west"),
+    ...getPSTEntriesForDepot(eastPSTIsPg2 ? pstPg2LogLines : pstLogLines, "east"),
+  ]);
+  const activePSTCompletedByNames = {
+    west: westPSTIsPg2 ? (pstPg2CompletedByNames?.west || "") : (pstCompletedByNames?.west || ""),
+    east: eastPSTIsPg2 ? (pstPg2CompletedByNames?.east || "") : (pstCompletedByNames?.east || ""),
+  };
+
   const handleAddRequest = async (reqData) => {
     const created = await base44.entities.MaintenanceRequest.create(reqData);
     setRequests((prev) => [...prev, created]);
@@ -17174,27 +17795,34 @@ export default function DepotStablingPage() {
 
         {activeTab === "pst" && (
           <PSTTabContent
-            westData={westData}
-            eastData={eastData}
+            westData={activePSTWestData}
+            eastData={activePSTEastData}
             maintenanceMap={maintenanceMap}
-            pstState={pstState}
-            prepState={prepState}
-            logLines={pstLogLines}
-            onPSTTick={handlePSTTick}
-            onPSTStartTimeChange={handlePSTStartTimeChange}
-            onPrepTick={handlePrepTick}
-            onPrepCompletionTimeChange={handlePrepCompletionTimeChange}
-            onRemoveLog={handleRemovePSTLog}
-            onClearDepotLog={handleClearDepotPST}
-            onClearDepotPSTOnly={handleClearDepotPSTOnly}
-            onClearDepotPrepOnly={handleClearDepotPrepOnly}
-            taNameState={taNameState}
-            onTaNameChange={handleTaNameChange}
-            completedByNames={pstCompletedByNames}
-            onCompletedByChange={handleCompletedByChange}
+            pstState={activePSTState}
+            prepState={activePrepState}
+            logLines={activePSTLogLines}
+            onPSTTick={handleActivePSTTick}
+            onPSTStartTimeChange={handleActivePSTStartTimeChange}
+            onPrepTick={handleActivePrepTick}
+            onPrepCompletionTimeChange={handleActivePrepCompletionTimeChange}
+            onRemoveLog={handleActiveRemovePSTLog}
+            onClearDepotLog={handleActiveClearDepotPST}
+            onClearDepotPSTOnly={handleActiveClearDepotPSTOnly}
+            onClearDepotPrepOnly={handleActiveClearDepotPrepOnly}
+            taNameState={activeTaNameState}
+            onTaNameChange={handleActiveTaNameChange}
+            completedByNames={activePSTCompletedByNames}
+            onCompletedByChange={handleActiveCompletedByChange}
             pstLiveStatusText={pstLiveStatusText}
             pstLiveStatusClass={pstLiveStatusClass}
             pstLiveDebug={pstLiveDebug}
+            westPg={westPSTPg}
+            eastPg={eastPSTPg}
+            onPSTPgChange={handlePSTPgChange}
+            onRefreshPSTPg2={handleRefreshPSTPg2FromDefault}
+            westPSTStablingEditable={westPSTIsPg2}
+            eastPSTStablingEditable={eastPSTIsPg2}
+            onEditablePSTTrainIdChange={handlePSTPg2TrainIdChange}
           />
         )}
 
