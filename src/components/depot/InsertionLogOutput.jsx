@@ -292,10 +292,13 @@ function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot }) {
   );
 }
 
-export default function InsertionLogOutput({ insertionLog, onClearDepot }) {
+export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFilter = "all" }) {
   const safeInsertionLog = Array.isArray(insertionLog) ? insertionLog : [];
+  const normalizedDepotFilter = depotFilter === "west" || depotFilter === "east" ? depotFilter : "all";
   const westLines = safeInsertionLog.filter((line) => line.depot === "west");
   const eastLines = safeInsertionLog.filter((line) => line.depot === "east");
+  const showWestCard = normalizedDepotFilter === "all" || normalizedDepotFilter === "west";
+  const showEastCard = normalizedDepotFilter === "all" || normalizedDepotFilter === "east";
 
   const scrollMainPageFromLog = (event) => {
     if (event.ctrlKey || event.metaKey) return;
@@ -578,18 +581,22 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot }) {
       </div>
 
       <div className="insertion-clean-cards">
-        <DepotLogCard
-          depotLabel="West"
-          lines={westLines}
-          depot="west"
-          onClearDepot={onClearDepot}
-        />
-        <DepotLogCard
-          depotLabel="East"
-          lines={eastLines}
-          depot="east"
-          onClearDepot={onClearDepot}
-        />
+        {showWestCard && (
+          <DepotLogCard
+            depotLabel="West"
+            lines={westLines}
+            depot="west"
+            onClearDepot={onClearDepot}
+          />
+        )}
+        {showEastCard && (
+          <DepotLogCard
+            depotLabel="East"
+            lines={eastLines}
+            depot="east"
+            onClearDepot={onClearDepot}
+          />
+        )}
       </div>
     </section>
   );

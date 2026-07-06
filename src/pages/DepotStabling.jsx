@@ -7524,8 +7524,8 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
         </div>
       )}
 
-      {/* Insertion layout: each depot reference table sits beside its own stabling table */}
-      <div className="space-y-5 min-w-0">
+      {/* Insertion layout: each depot reference table sits beside its own stabling table, with that depot log below the stabling side */}
+      <div className="space-y-6 min-w-0">
         <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
           <div className="self-start">
             <TIDReferenceTable
@@ -7536,24 +7536,31 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
             />
           </div>
 
-          <InsertionStablingSection
-            title="WEST DEPOT"
-            blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]}
-            blockIndices={[6,5,4,3,2,1,0]}
-            roads={WEST_ROADS}
-            labelSide="left"
-            maintenanceMap={maintenanceMap}
-            getTidScheduledTime={getTidScheduledTime}
-            getTidAssistRemark={getTidAssistRemark}
-            getTidAssistRemarkStyle={getTidAssistRemarkStyle}
-            isWeekdayActive={normalizeTimetableType(activeTimetableType) === "weekday"}
-            duplicateTidKeys={insertionAssistDuplicateTidKeySet}
-            tidDragState={tidDragState}
-            tidDragHover={tidDragHover}
-            tidDropRequest={tidDropRequest}
-            onTidDropApplied={handleTidDropApplied}
-            {...westSection}
-          />
+          <div className="min-w-0 space-y-3">
+            <InsertionStablingSection
+              title="WEST DEPOT"
+              blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]}
+              blockIndices={[6,5,4,3,2,1,0]}
+              roads={WEST_ROADS}
+              labelSide="left"
+              maintenanceMap={maintenanceMap}
+              getTidScheduledTime={getTidScheduledTime}
+              getTidAssistRemark={getTidAssistRemark}
+              getTidAssistRemarkStyle={getTidAssistRemarkStyle}
+              isWeekdayActive={normalizeTimetableType(activeTimetableType) === "weekday"}
+              duplicateTidKeys={insertionAssistDuplicateTidKeySet}
+              tidDragState={tidDragState}
+              tidDragHover={tidDragHover}
+              tidDropRequest={tidDropRequest}
+              onTidDropApplied={handleTidDropApplied}
+              {...westSection}
+            />
+            <InsertionLogOutput
+              insertionLog={sortInsertionLogByTime(insertionLog)}
+              onClearDepot={onClearInsertionDepot}
+              depotFilter="west"
+            />
+          </div>
         </div>
 
         <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
@@ -7566,31 +7573,35 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
             />
           </div>
 
-          <InsertionStablingSection
-            title="EAST DEPOT"
-            blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]}
-            blockIndices={[0,1,2,3,4,5,6]}
-            roads={EAST_ROADS}
-            labelSide="right"
-            maintenanceMap={maintenanceMap}
-            getTidScheduledTime={getTidScheduledTime}
-            getTidAssistRemark={getTidAssistRemark}
-            getTidAssistRemarkStyle={getTidAssistRemarkStyle}
-            isWeekdayActive={normalizeTimetableType(activeTimetableType) === "weekday"}
-            duplicateTidKeys={insertionAssistDuplicateTidKeySet}
-            tidDragState={tidDragState}
-            tidDragHover={tidDragHover}
-            tidDropRequest={tidDropRequest}
-            onTidDropApplied={handleTidDropApplied}
-            {...eastSection}
-          />
+          <div className="min-w-0 space-y-3">
+            <InsertionStablingSection
+              title="EAST DEPOT"
+              blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]}
+              blockIndices={[0,1,2,3,4,5,6]}
+              roads={EAST_ROADS}
+              labelSide="right"
+              maintenanceMap={maintenanceMap}
+              getTidScheduledTime={getTidScheduledTime}
+              getTidAssistRemark={getTidAssistRemark}
+              getTidAssistRemarkStyle={getTidAssistRemarkStyle}
+              isWeekdayActive={normalizeTimetableType(activeTimetableType) === "weekday"}
+              duplicateTidKeys={insertionAssistDuplicateTidKeySet}
+              tidDragState={tidDragState}
+              tidDragHover={tidDragHover}
+              tidDropRequest={tidDropRequest}
+              onTidDropApplied={handleTidDropApplied}
+              {...eastSection}
+            />
+            <InsertionLogOutput
+              insertionLog={sortInsertionLogByTime(insertionLog)}
+              onClearDepot={onClearInsertionDepot}
+              depotFilter="east"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Insertion log — full width below both depot rows */}
-      <InsertionLogOutput insertionLog={sortInsertionLogByTime(insertionLog)} onClearDepot={onClearInsertionDepot} />
-
-      {/* Beginner guide — full width below the log output */}
+      {/* Beginner guide — full width below the depot logs */}
       <InsertionHowToUse />
     </div>
   );
