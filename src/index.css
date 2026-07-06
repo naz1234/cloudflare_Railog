@@ -51,7 +51,10 @@
 
   .already-status-trigger:hover .already-status-bubble,
   .already-status-trigger:focus .already-status-bubble,
-  .already-status-trigger:focus-within .already-status-bubble {
+  .already-status-trigger:focus-within .already-status-bubble,
+  .still-not-stabling-trigger:hover .still-not-stabling-bubble,
+  .still-not-stabling-trigger:focus .still-not-stabling-bubble,
+  .still-not-stabling-trigger:focus-within .still-not-stabling-bubble {
     opacity: 1;
     transform: translateY(-50%) scale(1);
   }
@@ -2472,6 +2475,18 @@ html[data-app-theme="light"] .group\/delete:hover .theme-maintenance-delete-icon
 
 html[data-app-theme="light"] .theme-maintenance-delete-icon svg,
 html[data-app-theme="light"] .theme-maintenance-delete-icon svg * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-pending-icon {
+  background: #d99a2b !important;
+  border-color: #f2c46f !important;
+  box-shadow: 0 0 4px rgba(217, 154, 43, 0.28) !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-pending-icon svg,
+html[data-app-theme="light"] .theme-maintenance-pending-icon svg * {
   color: #ffffff !important;
   stroke: #ffffff !important;
 }

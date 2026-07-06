@@ -111,6 +111,39 @@ function DeleteRequestIcon() {
   );
 }
 
+
+function StillNotAtStablingIcon({ message = "Train still not at stabling" }) {
+  return (
+    <span
+      className="still-not-stabling-trigger relative z-40 inline-flex shrink-0 items-center justify-center justify-self-end"
+      tabIndex={0}
+      aria-label={message}
+      title={message}
+    >
+      <span className="theme-maintenance-pending-icon inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border border-amber-300/85 bg-[#d97706] shadow-[0_0_6px_rgba(217,119,6,0.42)]">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="h-[9px] w-[9px] text-white"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M6 2h12" />
+          <path d="M6 22h12" />
+          <path d="M8 2v5c0 2 2.2 3.4 4 5 1.8-1.6 4-3 4-5V2" />
+          <path d="M8 22v-5c0-2 2.2-3.4 4-5 1.8 1.6 4 3 4 5v5" />
+        </svg>
+      </span>
+      <span className="still-not-stabling-bubble pointer-events-none absolute right-[25px] top-1/2 z-[90] -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150">
+        <span className="absolute -right-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-r border-t border-slate-200 bg-white" />
+        <span className="relative z-10">{message}</span>
+      </span>
+    </span>
+  );
+}
 function AlreadyStatusIcon({ message, reason }) {
   if (!message) return null;
 
@@ -958,7 +991,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     const statusText = showStatus ? getAlreadyExpandedLocationText(req) : "";
     const secondaryText = showStatus ? displayLabel : (statusText ? `${displayLabel} • ${statusText}` : displayLabel);
     const showAlreadyStatusIcon = Boolean(crossedOut && statusMessage);
-    const actionGridClass = showAlreadyStatusIcon
+    const showStillNotAtStablingIcon = section === "pending" && !showStatus && !showAlreadyStatusIcon;
+    const actionGridClass = showAlreadyStatusIcon || showStillNotAtStablingIcon
       ? "grid-cols-[46px_minmax(0,1fr)_16px_16px]"
       : "grid-cols-[46px_minmax(0,1fr)_20px]";
 
@@ -972,6 +1006,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         <span className="min-w-0 truncate pl-2 text-left text-[12px] font-normal uppercase tracking-[0.02em] text-[#f8fbff]">{secondaryText}</span>
         {showAlreadyStatusIcon ? (
           <AlreadyStatusIcon message={statusMessage} reason={crossOutInfo.reason} />
+        ) : showStillNotAtStablingIcon ? (
+          <StillNotAtStablingIcon />
         ) : null}
         <button
           onClick={(event) => {
@@ -1019,7 +1055,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               const crossOutMessage = getCrossOutMessage(req, crossOutInfo);
               const statusMessage = getAlreadyStatusMessage(crossOutInfo) || crossOutMessage;
               const showAlreadyStatusIcon = Boolean(showStatus && statusMessage);
-              const expandedGridClass = showAlreadyStatusIcon
+              const showStillNotAtStablingIcon = section === "pending" && !showStatus && !showAlreadyStatusIcon;
+              const expandedGridClass = showAlreadyStatusIcon || showStillNotAtStablingIcon
                 ? "grid-cols-[56px_minmax(0,1fr)_16px_16px]"
                 : "grid-cols-[56px_minmax(0,1fr)_20px]";
 
@@ -1033,6 +1070,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   <span className="min-w-0" aria-hidden="true" />
                   {showAlreadyStatusIcon ? (
                     <AlreadyStatusIcon message={statusMessage} reason={crossOutInfo.reason} />
+                  ) : showStillNotAtStablingIcon ? (
+                    <StillNotAtStablingIcon />
                   ) : null}
                   <button
                     onClick={(event) => {
