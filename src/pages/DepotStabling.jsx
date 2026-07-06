@@ -3463,11 +3463,31 @@ function hasAnyStablingTrain(data = {}, roads = []) {
   return roads.some((road) => (data?.[road] || []).some((block) => normalizeTrainId(block?.trainId || "")));
 }
 
+function getStablingRecordUpdatedMs(record = {}) {
+  const ms = Date.parse(record?.updatedAt || record?.updated_date || record?.createdAt || record?.created_date || "");
+  return Number.isFinite(ms) ? ms : 0;
+}
+
 function getStablingRecordsUpdatedMs(records = []) {
-  return (records || []).reduce((latest, rec) => {
-    const ms = Date.parse(rec?.updatedAt || rec?.updated_date || rec?.createdAt || rec?.created_date || "");
-    return Number.isFinite(ms) ? Math.max(latest, ms) : latest;
-  }, 0);
+  return (records || []).reduce((latest, rec) => Math.max(latest, getStablingRecordUpdatedMs(rec)), 0);
+}
+
+function countStablingRecordTrains(record = {}) {
+  const blocks = Array.isArray(record?.blocks) ? record.blocks : [];
+  return blocks.reduce((count, block) => count + (normalizeTrainId(block?.trainId || "") ? 1 : 0), 0);
+}
+
+function isNewerStablingRecord(candidate = {}, current = null) {
+  if (!current) return true;
+
+  const candidateUpdatedMs = getStablingRecordUpdatedMs(candidate);
+  const currentUpdatedMs = getStablingRecordUpdatedMs(current);
+  if (candidateUpdatedMs !== currentUpdatedMs) return candidateUpdatedMs > currentUpdatedMs;
+
+  // When D1 contains duplicate road records with the same timestamp, prefer the
+  // record that still has train IDs instead of letting an older blank duplicate
+  // wipe the visible main stabling table.
+  return countStablingRecordTrains(candidate) > countStablingRecordTrains(current);
 }
 
 function loadLocalStablingState() {
@@ -3505,21 +3525,36 @@ function buildStablingStateFromRecords(stablingRecords = []) {
   const map = {};
   const newWest = initRoads(WEST_ROADS);
   const newEast = initRoads(EAST_ROADS);
+  const latestByRoad = {};
 
   (stablingRecords || []).forEach((rec) => {
-    map[`${rec.depot}_${rec.road}`] = rec.id;
+    const depot = (rec?.depot || "").toString().trim().toLowerCase();
+    const road = (rec?.road || "").toString().trim();
+    if (!depot || !road) return;
+    if (depot !== "west" && depot !== "east") return;
 
-    const blocks = (rec.blocks || emptyBlocks()).map((b) => ({
-      trainId: b.trainId || "",
-      extraRemark: b.extraRemark || "",
-    }));
+    const targetRoads = depot === "west" ? WEST_ROADS : EAST_ROADS;
+    if (!targetRoads.includes(road)) return;
 
-    if (rec.depot === "west" && newWest[rec.road]) {
-      newWest[rec.road] = blocks;
+    const key = `${depot}_${road}`;
+    if (isNewerStablingRecord(rec, latestByRoad[key])) {
+      latestByRoad[key] = rec;
+    }
+  });
+
+  Object.entries(latestByRoad).forEach(([key, rec]) => {
+    const depot = (rec?.depot || "").toString().trim().toLowerCase();
+    const road = (rec?.road || "").toString().trim();
+    map[key] = rec.id;
+
+    const blocks = normalizeStablingBlocks(rec.blocks);
+
+    if (depot === "west" && newWest[road]) {
+      newWest[road] = blocks;
     }
 
-    if (rec.depot === "east" && newEast[rec.road]) {
-      newEast[rec.road] = blocks;
+    if (depot === "east" && newEast[road]) {
+      newEast[road] = blocks;
     }
   });
 
@@ -15697,6 +15732,8 @@ export default function DepotStablingPage() {
       updated[road] = blocks;
       const newWest = depot === "west" ? updated : westDataRef.current;
       const newEast = depot === "east" ? updated : eastDataRef.current;
+      westDataRef.current = newWest;
+      eastDataRef.current = newEast;
       markStablingLocalEdit(newWest, newEast);
       return updated;
     });
@@ -15751,6 +15788,8 @@ export default function DepotStablingPage() {
       updated[road] = blocks;
       const newWest = depot === "west" ? updated : westDataRef.current;
       const newEast = depot === "east" ? updated : eastDataRef.current;
+      westDataRef.current = newWest;
+      eastDataRef.current = newEast;
       markStablingLocalEdit(newWest, newEast);
       scheduleAutoSave(newWest, newEast);
       return updated;
@@ -15773,6 +15812,8 @@ export default function DepotStablingPage() {
 
       const newWest = depot === "west" ? updated : westDataRef.current;
       const newEast = depot === "east" ? updated : eastDataRef.current;
+      westDataRef.current = newWest;
+      eastDataRef.current = newEast;
 
       scheduleAutoSave(newWest, newEast);
 
@@ -15801,6 +15842,8 @@ export default function DepotStablingPage() {
 
       const newWest = depot === "west" ? updated : westDataRef.current;
       const newEast = depot === "east" ? updated : eastDataRef.current;
+      westDataRef.current = newWest;
+      eastDataRef.current = newEast;
       scheduleAutoSave(newWest, newEast);
 
       return updated;
