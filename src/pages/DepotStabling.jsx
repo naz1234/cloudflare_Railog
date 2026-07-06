@@ -7555,11 +7555,13 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
               onTidDropApplied={handleTidDropApplied}
               {...westSection}
             />
-            <InsertionLogOutput
-              insertionLog={sortInsertionLogByTime(insertionLog)}
-              onClearDepot={onClearInsertionDepot}
-              depotFilter="west"
-            />
+            <div className="w-full max-w-full" style={{ width: "914px" }}>
+              <InsertionLogOutput
+                insertionLog={sortInsertionLogByTime(insertionLog)}
+                onClearDepot={onClearInsertionDepot}
+                depotFilter="west"
+              />
+            </div>
           </div>
         </div>
 
@@ -7592,11 +7594,13 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
               onTidDropApplied={handleTidDropApplied}
               {...eastSection}
             />
-            <InsertionLogOutput
-              insertionLog={sortInsertionLogByTime(insertionLog)}
-              onClearDepot={onClearInsertionDepot}
-              depotFilter="east"
-            />
+            <div className="w-full max-w-full" style={{ width: "914px" }}>
+              <InsertionLogOutput
+                insertionLog={sortInsertionLogByTime(insertionLog)}
+                onClearDepot={onClearInsertionDepot}
+                depotFilter="east"
+              />
+            </div>
           </div>
         </div>
       </div>
