@@ -23338,19 +23338,9 @@ function buildInsertionPrintPillItems({ road, bi, block, tidInputs = {}, inserti
       ...getInsertionPrintPillStyle("TID"),
     }];
 
-    const assistRemark = typeof getTidAssistRemark === "function"
-      ? getTidAssistRemark(tid, depot)
-      : "";
-    const assistLabel = getInsertionAssistRemarkDisplayLabel(assistRemark);
-    const assistStyle = getInsertionPrintAssistPillStyle(assistRemark);
-
-    if (assistLabel && assistStyle) {
-      pills.push({
-        label: assistLabel,
-        ...assistStyle,
-      });
-    }
-
+    // PNG export should show only the inserted TID and timing.
+    // Preset helper labels such as WD (9am), WD (7pm), ED (9am) and ED (7pm)
+    // stay on-screen only and are intentionally omitted from the downloaded image.
     if (time) {
       pills.push({
         label: time,
