@@ -2832,8 +2832,24 @@ function syncTrainRemActiveRowsToPresetCache(state = {}) {
     east: normalizeTrainRemPresetRows(state?.presetRows?.east, "east"),
   };
 
+  // For 12am/Fri/Sat/PH the East scheduled rows and East reserve rows are
+  // rendered inside the West combined table. Keep the hidden East preset cache
+  // blank so old East rows cannot be pulled back into the first East reserve
+  // row after typing or after live sync refreshes.
+  const blankEastCombinedRows = TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(selectedPreset.west)
+    ? emptyTrainRemRows(TRAIN_REM_ROW_COUNTS.east)
+    : null;
+
+  if (blankEastCombinedRows && selectedPreset.east === selectedPreset.west) {
+    rows.east = blankEastCombinedRows;
+  }
+
   presetRows.west[selectedPreset.west] = rows.west;
   presetRows.east[selectedPreset.east] = rows.east;
+
+  if (blankEastCombinedRows) {
+    presetRows.east[selectedPreset.west] = blankEastCombinedRows;
+  }
 
   return {
     ...state,
@@ -2892,47 +2908,8 @@ function mergeTrainRemCombinedMorningReferenceState(state = {}, activeTimetable 
     };
   });
 
-  if (TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(westPreset)) {
-    const layout = getTrainRemCombinedExtendedLayout(westPreset, activeTimetable);
-    const scheduledTidSet = new Set([...layout.westTids, ...layout.eastTids].map((tid) => normalizeTrainRemTidValue(tid)).filter(Boolean));
-    const eastManualRows = normalizedEastPresetRows
-      .filter((row) => {
-        if (!hasTrainRemRowContent(row)) return false;
-        const tid = normalizeTrainRemTidValue(row?.tid || "");
-        return !tid || !scheduledTidSet.has(tid);
-      })
-      .slice(0, layout.eastReserveCount);
-
-    if (eastManualRows.length) {
-      mergedWestRows = mergedWestRows.map((row, index) => {
-        if (!isTrainRemCombinedEastExtraRowIndex("west", westPreset, index, activeTimetable)) return row;
-        if (hasTrainRemRowContent(row)) return row;
-
-        const eastManualRow = eastManualRows[index - layout.eastReserveStartIndex];
-        if (!eastManualRow) return row;
-
-        return {
-          trainId: eastManualRow?.trainId || "",
-          tid: normalizeTrainRemTidValue(eastManualRow?.tid || ""),
-          timing: eastManualRow?.timing || "",
-          remark: eastManualRow?.remark || "",
-        };
-      });
-    }
-  }
-
   const clearedEastPresetRows = TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(westPreset)
-    ? buildTrainRemAdditionalEastRows(normalizedEastPresetRows, westPreset, activeTimetable, {
-        migrateScheduledPlaceholders: true,
-      }).map((row) => {
-        const tid = normalizeTrainRemTidValue(row?.tid || "");
-        const isScheduledEastTid = Boolean(
-          tid && getTrainRemScheduleMatch(activeTimetable, "east", westPreset, tid)
-        );
-        return isScheduledEastTid
-          ? { trainId: "", tid: "", timing: "", remark: "" }
-          : row;
-      })
+    ? emptyTrainRemRows(TRAIN_REM_ROW_COUNTS.east)
     : buildTrainRemRowsFromPreset("east", westPreset);
 
   const nextRows = {
@@ -6529,12 +6506,31 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
       rows[rowIndex] = updatedRow;
 
+      const nextRows = {
+        ...prev.rows,
+        [depot]: rows,
+      };
+      let nextPresetRows = prev.presetRows;
+
+      if (depot === "west" && TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(presetLabel)) {
+        const blankEastCombinedRows = emptyTrainRemRows(TRAIN_REM_ROW_COUNTS.east);
+        nextPresetRows = {
+          ...prev.presetRows,
+          east: {
+            ...prev.presetRows?.east,
+            [presetLabel]: blankEastCombinedRows,
+          },
+        };
+
+        if ((prev.selectedPreset?.east || "9am") === presetLabel) {
+          nextRows.east = blankEastCombinedRows;
+        }
+      }
+
       return {
         ...prev,
-        rows: {
-          ...prev.rows,
-          [depot]: rows,
-        },
+        rows: nextRows,
+        presetRows: nextPresetRows,
       };
     });
   };
