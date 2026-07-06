@@ -3363,6 +3363,7 @@ function buildPSTLivePayload(state = {}) {
 
   return {
     stateKey: PST_LIVE_RECORD_KEY,
+    recordKey: PST_LIVE_RECORD_KEY,
     pstState: normalized.pstState,
     prepState: normalized.prepState,
     logLines: normalized.logLines,
@@ -14897,6 +14898,7 @@ export default function DepotStablingPage() {
 
   const markPSTLiveLocalEdit = useCallback(() => {
     const now = Date.now();
+    pstLiveApplyingRemoteRef.current = false;
     pstLiveLocalUpdatedAtRef.current = now;
     pstLiveLocalEditUntilRef.current = now + PST_LIVE_LOCAL_EDIT_HOLD_MS;
   }, []);
@@ -16696,7 +16698,9 @@ export default function DepotStablingPage() {
     const commitPSTCellUpdate = (nextPstState, nextLogLines) => {
       const updatedAt = new Date().toISOString();
       const updatedMs = Date.parse(updatedAt) || Date.now();
+      pstLiveApplyingRemoteRef.current = false;
       pstLiveLocalUpdatedAtRef.current = Math.max(pstLiveLocalUpdatedAtRef.current || 0, updatedMs);
+      pstLiveLocalEditUntilRef.current = Date.now() + PST_LIVE_LOCAL_EDIT_HOLD_MS;
       pstStateRef.current = nextPstState;
       pstLogLinesRef.current = nextLogLines;
 
@@ -16710,6 +16714,24 @@ export default function DepotStablingPage() {
         pstCompletedByNamesRef.current,
         updatedAt
       );
+
+      const livePayload = buildPSTLivePayload({
+        pstState: nextPstState,
+        prepState: prepStateRef.current,
+        logLines: nextLogLines,
+        taNameState: taNameStateRef.current,
+        completedByNames: pstCompletedByNamesRef.current,
+        activePg: activePSTPgRef.current,
+        pg2Stabling: pstPg2StablingRef.current,
+        pg2WorkState: {
+          pstState: pstPg2StateRef.current,
+          prepState: prepPg2StateRef.current,
+          logLines: pstPg2LogLinesRef.current,
+          taNameState: taNamePg2StateRef.current,
+          completedByNames: pstPg2CompletedByNamesRef.current,
+        },
+      });
+      if (pstLiveLoaded) schedulePSTLiveSave(livePayload);
 
       setPstState(nextPstState);
       setPstLogLines(nextLogLines);
@@ -16921,14 +16943,16 @@ export default function DepotStablingPage() {
   };
 
   const handlePSTPgChange = useCallback((depot, pg) => {
+    markPSTLiveLocalEdit();
     const normalizedDepot = normalizeDepotKey(depot);
     setActivePSTPg((prev) => ({
       ...normalizePSTPgByDepot(prev),
       [normalizedDepot]: normalizePSTPg(pg),
     }));
-  }, []);
+  }, [markPSTLiveLocalEdit]);
 
   const handlePSTPg2TrainIdChange = useCallback((depot, road, blockIndex, value) => {
+    markPSTLiveLocalEdit();
     const normalizedDepot = normalizeDepotKey(depot);
     const cellKey = `${road}-${blockIndex}`;
     const pstLogKey = `pst-${cellKey}`;
@@ -16953,9 +16977,10 @@ export default function DepotStablingPage() {
       target[road] = blocks;
       return next;
     });
-  }, []);
+  }, [markPSTLiveLocalEdit]);
 
   const handleRefreshPSTPg2FromDefault = useCallback((depot) => {
+    markPSTLiveLocalEdit();
     const normalizedDepot = normalizeDepotKey(depot);
     const targetRoads = normalizedDepot === "west" ? WEST_ROADS : EAST_ROADS;
 
@@ -16990,9 +17015,10 @@ export default function DepotStablingPage() {
         delete taNamePg2StateRef.current[cellKey];
       }
     });
-  }, []);
+  }, [markPSTLiveLocalEdit]);
 
   const commitPSTPg2WorkState = useCallback((nextPstState, nextPrepState, nextLogLines, nextTaNameState = taNamePg2StateRef.current, nextCompletedByNames = pstPg2CompletedByNamesRef.current) => {
+    markPSTLiveLocalEdit();
     const sortedLog = sortPSTLogLinesByTime(nextLogLines);
     pstPg2StateRef.current = nextPstState;
     prepPg2StateRef.current = nextPrepState;
@@ -17004,14 +17030,36 @@ export default function DepotStablingPage() {
     setPstPg2LogLines(sortedLog);
     setTaNamePg2State(nextTaNameState);
     setPstPg2CompletedByNames(nextCompletedByNames);
-    savePSTPg2WorkState({
+
+    const pg2WorkState = {
       pstState: nextPstState,
       prepState: nextPrepState,
       logLines: sortedLog,
       taNameState: nextTaNameState,
       completedByNames: nextCompletedByNames,
+    };
+    savePSTPg2WorkState(pg2WorkState);
+
+    const livePayload = buildPSTLivePayload({
+      pstState: pstStateRef.current,
+      prepState: prepStateRef.current,
+      logLines: pstLogLinesRef.current,
+      taNameState: taNameStateRef.current,
+      completedByNames: pstCompletedByNamesRef.current,
+      activePg: activePSTPgRef.current,
+      pg2Stabling: pstPg2StablingRef.current,
+      pg2WorkState,
     });
-  }, []);
+    savePSTState(
+      livePayload.pstState,
+      livePayload.prepState,
+      livePayload.logLines,
+      livePayload.taNameState,
+      livePayload.completedByNames,
+      livePayload.updatedAt
+    );
+    if (pstLiveLoaded) schedulePSTLiveSave(livePayload);
+  }, [markPSTLiveLocalEdit, pstLiveLoaded, schedulePSTLiveSave]);
 
   const handlePSTPg2StartTimeChange = useCallback((road, bi, trainKey, startTime) => {
     const cleanStartTime = cleanMovementCustomTimeInput(startTime);
@@ -17241,7 +17289,7 @@ export default function DepotStablingPage() {
   const handleActivePSTTick = useCallback((road, bi, trainKey, alarmStatus = null) => {
     if (isActivePSTPg2Road(road)) handlePSTPg2Tick(road, bi, trainKey, alarmStatus);
     else handlePSTTick(road, bi, trainKey, alarmStatus);
-  }, [handlePSTPg2Tick, isActivePSTPg2Road]);
+  }, [handlePSTPg2Tick, handlePSTTick, isActivePSTPg2Road]);
 
   const handleActivePSTStartTimeChange = useCallback((road, bi, trainKey, startTime) => {
     if (isActivePSTPg2Road(road)) handlePSTPg2StartTimeChange(road, bi, trainKey, startTime);
@@ -17271,17 +17319,17 @@ export default function DepotStablingPage() {
   const handleActiveClearDepotPSTOnly = useCallback((depot) => {
     if (isActivePSTPg2Depot(depot)) handleClearPSTPg2DepotPSTOnly(depot);
     else handleClearDepotPSTOnly(depot);
-  }, [handleClearPSTPg2DepotPSTOnly, isActivePSTPg2Depot]);
+  }, [handleClearDepotPSTOnly, handleClearPSTPg2DepotPSTOnly, isActivePSTPg2Depot]);
 
   const handleActiveClearDepotPrepOnly = useCallback((depot) => {
     if (isActivePSTPg2Depot(depot)) handleClearPSTPg2DepotPrepOnly(depot);
     else handleClearDepotPrepOnly(depot);
-  }, [handleClearPSTPg2DepotPrepOnly, isActivePSTPg2Depot]);
+  }, [handleClearDepotPrepOnly, handleClearPSTPg2DepotPrepOnly, isActivePSTPg2Depot]);
 
   const handleActiveClearDepotPST = useCallback((depot) => {
     if (isActivePSTPg2Depot(depot)) handleClearPSTPg2Depot(depot);
     else handleClearDepotPST(depot);
-  }, [handleClearPSTPg2Depot, isActivePSTPg2Depot]);
+  }, [handleClearDepotPST, handleClearPSTPg2Depot, isActivePSTPg2Depot]);
 
   const handleActiveRemovePSTLog = useCallback((key) => {
     const cellKey = key.replace(/^(pst|prep)-/, "");
