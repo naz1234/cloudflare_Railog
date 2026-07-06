@@ -934,25 +934,24 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const workshopRequests = sortRequestsByTrainThenLabel(
     [...requests].filter(isWorkshopRequest)
   );
-  const alreadyAtStablingOrWorkshopRequests = [...requests]
-    .filter(isAlreadyAtStablingOrWorkshopRequest)
-    .sort((a, b) => {
-      const reasonSort = getCrossOutInfo(a).reason.localeCompare(getCrossOutInfo(b).reason);
-      const typeSort = displayType(a).localeCompare(displayType(b));
-      const trainSort = normalizeTrainCompareKey(a.trainId || "").localeCompare(normalizeTrainCompareKey(b.trainId || ""), undefined, { numeric: true });
-      return reasonSort || typeSort || trainSort;
-    });
   const regularRequests = [...requests]
-    .filter((req) => !isWorkshopRequest(req) && !isAlreadyAtStablingOrWorkshopRequest(req))
-    .sort((a, b) => displayType(a).localeCompare(displayType(b)) || normalizeTrainCompareKey(a.trainId || "").localeCompare(normalizeTrainCompareKey(b.trainId || ""), undefined, { numeric: true }));
-  const alreadyRequestGroups = groupRequestsByExactRemark(alreadyAtStablingOrWorkshopRequests);
+    .filter((req) => !isWorkshopRequest(req))
+    .sort((a, b) => {
+      const typeSort = displayType(a).localeCompare(displayType(b));
+      const trainSort = normalizeTrainCompareKey(a.trainId || "").localeCompare(
+        normalizeTrainCompareKey(b.trainId || ""),
+        undefined,
+        { numeric: true }
+      );
+      const statusSort = getCrossOutInfo(a).reason.localeCompare(getCrossOutInfo(b).reason);
+      return typeSort || trainSort || statusSort;
+    });
   const regularRequestGroups = groupRequestsByExactRemark(regularRequests);
   const splitGroupedAndSingleRequests = (groups = []) => ({
     grouped: groups.filter((group) => group.items.length > 1),
     ungrouped: groups.filter((group) => group.items.length === 1),
   });
   const hasWorkshopRequests = workshopRequests.length > 0;
-  const hasAlreadyAtStablingOrWorkshopRequests = alreadyAtStablingOrWorkshopRequests.length > 0;
   const buildWorkshopCopyText = () => {
     const trainList = workshopRequests
       .map((req) => normalizeTrainCompareKey(req.trainId || ""))
@@ -1054,7 +1053,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               const crossOutInfo = getCrossOutInfo(req);
               const crossOutMessage = getCrossOutMessage(req, crossOutInfo);
               const statusMessage = getAlreadyStatusMessage(crossOutInfo) || crossOutMessage;
-              const showAlreadyStatusIcon = Boolean(showStatus && statusMessage);
+              const showAlreadyStatusIcon = Boolean(crossOutInfo.reason && statusMessage);
               const showStillNotAtStablingIcon = section === "pending" && !showStatus && !showAlreadyStatusIcon;
               const expandedGridClass = showAlreadyStatusIcon || showStillNotAtStablingIcon
                 ? "grid-cols-[56px_minmax(0,1fr)_16px_16px]"
@@ -1305,20 +1304,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         </div>
       )}
 
-      {/* Already at Stabling / Workshop Requests */}
-      {hasAlreadyAtStablingOrWorkshopRequests && (
-        <div className="border-b border-[#1a3a56]">
-          <div className="theme-maintenance-subheader flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Already at Stabling / Workshop</span>
-            <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{alreadyAtStablingOrWorkshopRequests.length}</span>
-          </div>
-
-          <div className="grid gap-[5px] p-2.5">
-            {renderGroupedAndUngroupedCards(alreadyRequestGroups, { section: "already", showStatus: true })}
-          </div>
-        </div>
-      )}
-
       {/* Requests List */}
       <div className="overflow-visible">
         <div className="theme-maintenance-subheader flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
@@ -1328,7 +1313,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
         {regularRequestGroups.length === 0 ? (
           <div className="px-3 py-3 text-center text-xs italic text-[#3a5a7a]">
-            {requests.length === 0 ? "No requests yet" : "No other request type"}
+            {requests.length === 0 ? "No requests yet" : "No train request"}
           </div>
         ) : (
           <div className="grid gap-[5px] p-2.5">
