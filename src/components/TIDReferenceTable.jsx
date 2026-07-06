@@ -1151,7 +1151,8 @@ function DepotCard({ depotType, title, dayLabel, scheduleKey = "weekday", active
                     : "rgba(6, 24, 39, 0.68)";
 
               const rowDragKey = `${depotType}:${tid}`;
-              const isDraggingSource = activeDragKey === rowDragKey;
+              const rowCanDrag = typeof onTidDragStart === "function";
+              const isDraggingSource = rowCanDrag && activeDragKey === rowDragKey;
               const isHovered = hoveredRowKey === rowDragKey && !isDraggingSource;
               const isRaised = isHovered || isDraggingSource;
               const interactionColor = remark ? remarkStyle.sideColor : accent.accent;
@@ -1181,14 +1182,15 @@ function DepotCard({ depotType, title, dayLabel, scheduleKey = "weekday", active
                 <tr
                   key={tid}
                   className={`theme-insertion-reference-row ${isActive ? "is-active" : ""} ${remark ? "has-remark" : ""} ${isPast ? "is-past" : ""} ${isRaised ? "is-raised" : ""}`}
-                  title={isDuplicate ? `TID ${tid} is used on more than one stabling card.` : isUsed ? `TID ${tid} label is already used in stabling. Hold and drag to use it again.` : `Hold and drag TID ${tid} to a train card`}
+                  title={isDuplicate ? `TID ${tid} is used on more than one stabling card.` : isUsed ? `TID ${tid} is already applied from the reference table.` : `Enter Train ID in this row to apply TID ${tid}`}
                   onMouseEnter={() => setHoveredRowKey(rowDragKey)}
                   onMouseLeave={() => setHoveredRowKey((currentKey) => currentKey === rowDragKey ? "" : currentKey)}
                   onPointerDown={(event) => {
+                    if (!rowCanDrag) return;
                     if (event.button !== undefined && event.button !== 0) return;
                     event.preventDefault();
                     try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch {}
-                    onTidDragStart?.({
+                    onTidDragStart({
                       tid,
                       remark: remark || "",
                       displayRemark: getDisplayAssistRemark(remark || ""),
@@ -1201,8 +1203,8 @@ function DepotCard({ depotType, title, dayLabel, scheduleKey = "weekday", active
                     });
                   }}
                   style={{
-                    cursor: isDraggingSource ? "grabbing" : "grab",
-                    touchAction: "none",
+                    cursor: rowCanDrag ? (isDraggingSource ? "grabbing" : "grab") : "default",
+                    touchAction: rowCanDrag ? "none" : "auto",
                     userSelect: "none",
                     transform: isDraggingSource
                       ? "scale(1.026) translateY(-4px)"

@@ -5391,32 +5391,17 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         {key && (
           <div className={`mt-auto flex w-full flex-col items-center ${isInsertionDone ? "gap-1" : "gap-2"}`}>
             {!inserted && (
-              <input
-                ref={(element) => {
-                  localTidInputRef.current = element;
-                  tidInputRef?.(element);
+              <div
+                className="flex h-12 w-full items-center justify-center rounded-lg border px-2 text-center text-[10px] font-semibold leading-tight"
+                style={{
+                  borderColor: "rgba(125, 184, 224, 0.20)",
+                  background: "rgba(3, 17, 29, 0.36)",
+                  color: "#7fa5bf",
                 }}
-                type="text"
-                value={tidInput}
-                onChange={(e) => {
-                  setSuppressAutoInsert(false);
-                  onTidChange(road, bi, e.target.value);
-                }}
-                onKeyDown={onTidKeyDown}
-                onFocus={onTidFocus}
-                onPointerDown={onTidFocus}
-                placeholder="Enter TID"
-                className="theme-insertion-tid-input h-6 w-full px-1.5 text-center text-[11px] font-semibold outline-none placeholder:text-[#47637a]"
-                style={insTidInputStyle}
-              />
-            )}
-            {!inserted && !canAutoInsertTid && (
-              <button
-                onClick={handleInsertClick}
-                className={`theme-insertion-insert-button ${hasTidRemark ? "has-input" : ""} h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-all`}
+                title="Add TID from the TID Reference Table only"
               >
-                Insert Train
-              </button>
+                Add TID at Reference Table
+              </div>
             )}
             {inserted && !inserted.isSweeping && (
               <>
@@ -7520,8 +7505,8 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
     withinSchedule: withinTIDSchedule,
     activeTimetable,
     activeTimetableType,
-    onTidDragStart: handleTidDragStart,
-    activeDragKey: tidDragState?.sourceKey || "",
+    onTidDragStart: null,
+    activeDragKey: "",
     usedTidKeys: insertionAssistTidUsage.usedTidKeys,
     duplicateTidKeys: insertionAssistTidUsage.duplicateTidKeys,
     eastTimeOffsetMinutes: eastInsertionTimeOffsetMinutes,
