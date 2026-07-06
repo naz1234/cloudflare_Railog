@@ -16660,85 +16660,96 @@ export default function DepotStablingPage() {
 
     markPSTLiveLocalEdit();
     const cellKey = `${road}-${bi}`;
-    const paddedKey = trainKey.replace(/^T(\d+)$/, (_, n) => `T${n.padStart(2, "0")}`);
-    const currentPrep = prepState[cellKey];
+    const paddedKey = padTrainId(normalizeTrainId(trainKey));
+    // Use refs for PG1 edits so the visible field updates even when the active
+    // PG wrapper was created before the latest East Depot prep state render.
+    const currentPrep = prepStateRef.current[cellKey];
     if (!currentPrep?.done) return;
-    const completedTaName = (currentPrep.taName || taNameState[cellKey] || "").toString().trim();
+    const completedTaName = (currentPrep.taName || taNameStateRef.current[cellKey] || "").toString().trim();
     const entryTrainKey = currentPrep.trainKey || paddedKey;
+    const logKey = `prep-${cellKey}`;
+    const nextPrepState = {
+      ...prepStateRef.current,
+      [cellKey]: {
+        ...currentPrep,
+        endTime: cleanEndTime,
+        time: cleanEndTime,
+        trainKey: currentPrep.trainKey || paddedKey,
+      },
+    };
 
-    setPrepState((prev) => {
-      const current = prev[cellKey];
-      if (!current?.done) return prev;
+    let found = false;
+    const nextLogLines = pstLogLinesRef.current.map((entry) => {
+      if (entry.key !== logKey) return entry;
+      found = true;
       return {
-        ...prev,
-        [cellKey]: {
-          ...current,
-          endTime: cleanEndTime,
-          time: cleanEndTime,
-          trainKey: current.trainKey || paddedKey,
-        },
+        ...entry,
+        text: buildTrainPrepLogLine(cleanEndTime, entry.trainKey || entryTrainKey, road, entry.taName || completedTaName),
+        time: cleanEndTime,
+        endTime: cleanEndTime,
+        startTime: "",
       };
     });
-
-    setPstLogLines((prev) => {
-      const logKey = `prep-${cellKey}`;
-      let found = false;
-      const next = prev.map((entry) => {
-        if (entry.key !== logKey) return entry;
-        found = true;
-        return {
-          ...entry,
-          text: buildTrainPrepLogLine(cleanEndTime, entry.trainKey || entryTrainKey, road, entry.taName || completedTaName),
-          time: cleanEndTime,
-          endTime: cleanEndTime,
-          startTime: "",
-        };
+    if (!found) {
+      const depot = getDepotFromRoad(road);
+      nextLogLines.push({
+        key: logKey,
+        text: buildTrainPrepLogLine(cleanEndTime, entryTrainKey, road, completedTaName),
+        type: "Prep",
+        depot,
+        road,
+        trainKey: entryTrainKey,
+        startTime: "",
+        time: cleanEndTime,
+        endTime: cleanEndTime,
+        taName: completedTaName,
       });
-      if (!found) {
-        const depot = getDepotFromRoad(road);
-        next.push({
-          key: logKey,
-          text: buildTrainPrepLogLine(cleanEndTime, entryTrainKey, road, completedTaName),
-          type: "Prep",
-          depot,
-          road,
-          trainKey: entryTrainKey,
-          startTime: "",
-          time: cleanEndTime,
-          endTime: cleanEndTime,
-          taName: completedTaName,
-        });
-      }
-      return sortPSTLogLinesByTime(next);
-    });
+    }
+
+    const sortedLogLines = sortPSTLogLinesByTime(nextLogLines);
+    prepStateRef.current = nextPrepState;
+    pstLogLinesRef.current = sortedLogLines;
+    setPrepState(nextPrepState);
+    setPstLogLines(sortedLogLines);
   };
 
   const handlePrepTick = (road, bi, trainKey, taName = "") => {
     markPSTLiveLocalEdit();
     const cellKey = `${road}-${bi}`;
-    const current = prepState[cellKey];
+    const logKey = `prep-${cellKey}`;
+    const current = prepStateRef.current[cellKey];
     if (current?.done) {
-      setPrepState((prev) => { const n = { ...prev }; delete n[cellKey]; return n; });
-      setPstLogLines((prev) => prev.filter((l) => l.key !== `prep-${cellKey}`));
-      // Clear TA name when undoing completion
-      setTaNameState((prev) => { const n = { ...prev }; delete n[cellKey]; return n; });
+      const nextPrepState = { ...prepStateRef.current };
+      delete nextPrepState[cellKey];
+      const nextTaNameState = { ...taNameStateRef.current };
+      delete nextTaNameState[cellKey];
+      const nextLogLines = pstLogLinesRef.current.filter((l) => l.key !== logKey);
+      prepStateRef.current = nextPrepState;
+      taNameStateRef.current = nextTaNameState;
+      pstLogLinesRef.current = nextLogLines;
+      setPrepState(nextPrepState);
+      setTaNameState(nextTaNameState);
+      setPstLogLines(nextLogLines);
       return;
     }
-    const paddedKey = trainKey.replace(/^T(\d+)$/, (_, n) => `T${n.padStart(2, "0")}`);
+    const paddedKey = padTrainId(normalizeTrainId(trainKey));
     const endTime = formatTime(new Date());
-    const resolvedTaName = taNameState[cellKey] || taName || "";
+    const resolvedTaName = taNameStateRef.current[cellKey] || taName || "";
     const completedTaName = resolvedTaName.trim();
     const line = buildTrainPrepLogLine(endTime, paddedKey, road, completedTaName);
     const depot = getDepotFromRoad(road);
-
-    setPrepState((prev) => ({
-      ...prev,
+    const nextPrepState = {
+      ...prepStateRef.current,
       [cellKey]: { done: true, endTime, time: endTime, trainKey: paddedKey, taName: completedTaName },
-    }));
-    setPstLogLines((prev) => sortPSTLogLinesByTime([
-      ...prev.filter((l) => l.key !== `prep-${cellKey}`),
-      { key: `prep-${cellKey}`, text: line, type: "Prep", depot, road, trainKey: paddedKey, startTime: "", time: endTime, endTime, taName: completedTaName },
-    ]));
+    };
+    const nextLogLines = sortPSTLogLinesByTime([
+      ...pstLogLinesRef.current.filter((l) => l.key !== logKey),
+      { key: logKey, text: line, type: "Prep", depot, road, trainKey: paddedKey, startTime: "", time: endTime, endTime, taName: completedTaName },
+    ]);
+    prepStateRef.current = nextPrepState;
+    pstLogLinesRef.current = nextLogLines;
+    setPrepState(nextPrepState);
+    setPstLogLines(nextLogLines);
   };
 
   const handleRemovePSTLog = (key) => {
@@ -17110,12 +17121,12 @@ export default function DepotStablingPage() {
   const handleActivePrepTick = useCallback((road, bi, trainKey, taName = "") => {
     if (isActivePSTPg2Road(road)) handlePrepPg2Tick(road, bi, trainKey, taName);
     else handlePrepTick(road, bi, trainKey, taName);
-  }, [handlePrepPg2Tick, isActivePSTPg2Road]);
+  }, [handlePrepPg2Tick, handlePrepTick, isActivePSTPg2Road]);
 
   const handleActivePrepCompletionTimeChange = useCallback((road, bi, trainKey, endTime) => {
     if (isActivePSTPg2Road(road)) handlePrepPg2CompletionTimeChange(road, bi, trainKey, endTime);
     else handlePrepCompletionTimeChange(road, bi, trainKey, endTime);
-  }, [handlePrepPg2CompletionTimeChange, isActivePSTPg2Road]);
+  }, [handlePrepCompletionTimeChange, handlePrepPg2CompletionTimeChange, isActivePSTPg2Road]);
 
   const handleActiveTaNameChange = useCallback((road, bi, value) => {
     if (isActivePSTPg2Road(road)) handlePg2TaNameChange(road, bi, value);
