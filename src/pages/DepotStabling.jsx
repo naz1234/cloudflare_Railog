@@ -4650,20 +4650,37 @@ function getInsertionAssistRemarkDisplayLabel(remark = "") {
   return normalized;
 }
 
+const INSERTION_CARD_PILL_WIDTH = 68;
+
+const INSERTION_DEFAULT_REMARK_PILL_STYLE = {
+  bg: "rgba(250, 204, 21, 0.17)",
+  border: "#facc15",
+  color: "#fde68a",
+  shadow: "0 0 12px rgba(250, 204, 21, 0.18), inset 0 1px 0 rgba(255,255,255,0.06)",
+};
+
 function getInsertionAssistPillStyle(style = null) {
   if (!style) return {};
 
   return {
+    width: INSERTION_CARD_PILL_WIDTH,
     maxWidth: "100%",
     minHeight: 18,
     padding: "2px 7px",
+    boxSizing: "border-box",
     borderRadius: 999,
     background: style.bg || style.cardBg || "rgba(148, 163, 184, 0.16)",
     border: `1px solid ${style.border || "rgba(148, 163, 184, 0.36)"}`,
     color: style.color || "#ffffff",
     boxShadow: style.shadow || "inset 0 1px 0 rgba(255,255,255,0.06)",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   };
+}
+
+function getInsertionRemarkPillStyle(value = "") {
+  return getInsertionAssistPillStyle(getInsertionRemarkStyle(value) || INSERTION_DEFAULT_REMARK_PILL_STYLE);
 }
 
 function getTimetableInsertionRemarkMap(activeTimetable = null, depot = "west") {
@@ -5206,8 +5223,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   <button
                     type="button"
                     onClick={handleInsertedUndoClick}
-                    className={`inline-flex w-full flex-1 items-center justify-center self-stretch border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none transition-colors hover:text-red-200 focus-visible:text-red-200 ${maintList.length > 0 ? "mt-1" : "mt-[3px]"}`}
-                    style={{ color: "#ffffff" }}
+                    className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${maintList.length > 0 ? "mt-1" : "mt-[3px]"}`}
+                    style={getInsertionRemarkPillStyle(insertedPlainRemark)}
                     title={`Click ${insertedPlainRemark} to undo insertion`}
                     aria-label={`Undo insertion for remark ${insertedPlainRemark}`}
                   >
@@ -5230,7 +5247,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               <button
                 type="button"
                 onClick={handleInsertedUndoClick}
-                className="w-full border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-purple-200 outline-none transition-colors hover:text-red-200 focus-visible:text-red-200"
+                className="inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                style={getInsertionRemarkPillStyle(insertedRemarkLabel || "SW")}
                 title="Click Sweep to undo sweeping"
                 aria-label="Undo sweeping"
               >
@@ -22966,7 +22984,10 @@ function sectionToPrintableSvg({
         visiblePills.forEach((item) => {
           const label = item.label || "Remark";
           const safeLabel = label.length > 24 ? `${label.slice(0, 22)}…` : label;
-          const pillWidth = Math.min(bw - 20, Math.max(96, safeLabel.length * 7 + 32));
+          const requestedPillWidth = Number(item.width);
+          const pillWidth = Number.isFinite(requestedPillWidth) && requestedPillWidth > 0
+            ? Math.min(bw - 20, requestedPillWidth)
+            : Math.min(bw - 20, Math.max(96, safeLabel.length * 7 + 32));
           const pillX = bx + (bw - pillWidth) / 2;
           rect(pillX, pillY, pillWidth, pillHeight, {
             rx: 9,
@@ -23162,20 +23183,22 @@ function normalizeInsertionPrintAssistRemark(value = "") {
   return "";
 }
 
+const INSERTION_PRINT_PILL_WIDTH = 112;
+
 function getInsertionPrintAssistPillStyle(value = "") {
   const normalized = normalizeInsertionPrintAssistRemark(value);
 
   if (normalized === "Early Rem") {
-    return { fill: "#dcfce7", stroke: "#22c55e", textFill: "#14532d" };
+    return { fill: "#dcfce7", stroke: "#22c55e", textFill: "#14532d", width: INSERTION_PRINT_PILL_WIDTH };
   }
   if (normalized === "Late Rem") {
-    return { fill: "#fef3c7", stroke: "#facc15", textFill: "#713f12" };
+    return { fill: "#fef3c7", stroke: "#facc15", textFill: "#713f12", width: INSERTION_PRINT_PILL_WIDTH };
   }
   if (normalized === "ED (7pm)") {
-    return { fill: "#ede9fe", stroke: "#8b5cf6", textFill: "#4c1d95" };
+    return { fill: "#ede9fe", stroke: "#8b5cf6", textFill: "#4c1d95", width: INSERTION_PRINT_PILL_WIDTH };
   }
   if (normalized === "ED") {
-    return { fill: "#fee2e2", stroke: "#f87171", textFill: "#7f1d1d" };
+    return { fill: "#fee2e2", stroke: "#f87171", textFill: "#7f1d1d", width: INSERTION_PRINT_PILL_WIDTH };
   }
 
   return null;
@@ -23187,12 +23210,12 @@ function getInsertionPrintPillStyle(value = "") {
 
   const key = String(value || "").trim().toUpperCase();
   if (key === "3K1") {
-    return { fill: "#bff7f0", stroke: "#0f9f8f", textFill: "#003f39" };
+    return { fill: "#bff7f0", stroke: "#0f9f8f", textFill: "#003f39", width: INSERTION_PRINT_PILL_WIDTH };
   }
   if (isSweepRemark(key) || key.startsWith("SW ") || key === "2W" || key.startsWith("2W ")) {
-    return { fill: "#dfc6ff", stroke: "#8b5cf6", textFill: "#3b1163" };
+    return { fill: "#dfc6ff", stroke: "#8b5cf6", textFill: "#3b1163", width: INSERTION_PRINT_PILL_WIDTH };
   }
-  return { fill: "#fff176", stroke: "#000", textFill: "#000" };
+  return { fill: "#fff176", stroke: "#000", textFill: "#000", width: INSERTION_PRINT_PILL_WIDTH };
 }
 
 function buildInsertionPrintPillItems({ road, bi, block, tidInputs = {}, insertionLog = [], getTidScheduledTime, getTidAssistRemark }) {
