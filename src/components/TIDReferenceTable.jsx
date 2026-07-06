@@ -362,6 +362,41 @@ function addMinutesToTime(timeStr = "", minutesToAdd = 0) {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
+
+function cleanReferenceTrainIdInput(value = "") {
+  return String(value || "").replace(/\D/g, "").slice(0, 2);
+}
+
+function normalizeReferenceTrainIdInput(value = "") {
+  const clean = cleanReferenceTrainIdInput(value);
+  if (!clean) return "";
+  return clean.padStart(2, "0");
+}
+
+function cleanReferenceTimeInput(value = "") {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 4);
+  if (digits.length <= 1) return digits;
+  if (digits.length === 2) return `${digits}:`;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
+function normalizeReferenceTimeInput(value = "") {
+  const cleaned = cleanReferenceTimeInput(value);
+  const match = cleaned.match(/^(\d{1,2})(?::(\d{0,2}))?$/);
+  if (!match) return "";
+
+  const hours = Math.min(23, Number(match[1] || 0));
+  const minutes = Math.min(59, Number((match[2] || "0").padEnd(2, "0")));
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function getReferenceAssignmentKey(scheduleKey = "weekday", depot = "west", activePg = "pg1", tid = "") {
+  const cleanTid = String(tid || "").replace(/\D/g, "");
+  const cleanDepot = depot === "east" ? "east" : "west";
+  const cleanPg = String(activePg || "pg1").toLowerCase() === "pg2" ? "pg2" : "pg1";
+  return `${normalizeTimetableTypeKey(scheduleKey)}:${cleanDepot}:${cleanPg}:${cleanTid}`;
+}
+
 const TID_SOUND_ENABLED_KEY = "insertionTidSoundEnabled_v1";
 const TID_SOUND_SETTINGS_KEY = "insertionTidSoundSettings_v2";
 const DEFAULT_TID_SOUND_SETTINGS = { east: false, west: false };
@@ -857,7 +892,7 @@ function ScheduleWarningBanner({ selectedLabel, todayLabel, onSwitchToToday }) {
   );
 }
 
-function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedule, isScheduleOverride, onTidDragStart, activeDragKey = "", usedTidKeys = new Set(), duplicateTidKeys = new Set(), timeOffsetMinutes = 0, onTimeOffsetChange }) {
+function DepotCard({ depotType, title, dayLabel, scheduleKey = "weekday", activePg = "pg1", rows, nowMinutes, withinSchedule, isScheduleOverride, onTidDragStart, activeDragKey = "", usedTidKeys = new Set(), duplicateTidKeys = new Set(), timeOffsetMinutes = 0, onTimeOffsetChange, referenceAssignments = {}, referenceStatuses = {}, onReferenceTrainIdChange, onReferenceTimeChange, onRefreshReferenceTimes }) {
   const accent = DEPOT_ACCENTS[depotType];
   const activeIndex = getActiveIndex(rows, nowMinutes);
   const isWeekday = dayLabel === "Weekday";
@@ -941,22 +976,49 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
           </div>
         </div>
 
-        <div
-          className={`theme-insertion-reference-depot-chip ${isScheduleOverride ? "is-override" : ""}`}
-          style={{
-            color: isScheduleOverride ? "#fbbf24" : accent.accent,
-            fontSize: 8,
-            fontWeight: 400,
-            letterSpacing: "0.10em",
-            textTransform: "uppercase",
-            padding: "4px 6px",
-            borderRadius: 999,
-            background: isScheduleOverride ? "rgba(245, 158, 11, 0.16)" : accent.accentSoft,
-            border: isScheduleOverride ? "1px solid rgba(251, 191, 36, 0.38)" : `1px solid ${accent.border}`,
-            whiteSpace: "nowrap",
-          }}
-        >
-          {title.split(" ")[0]} • {displayDayLabel}
+        <div style={{ display: "flex", flexShrink: 0, alignItems: "center", justifyContent: "flex-end", gap: 5, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onRefreshReferenceTimes?.({ scheduleKey, depot: depotType, activePg });
+            }}
+            onPointerDown={(event) => event.stopPropagation()}
+            style={{
+              border: `1px solid ${accent.border}`,
+              background: "rgba(6, 24, 39, 0.56)",
+              color: "#dbeafe",
+              fontSize: 8,
+              lineHeight: "10px",
+              fontWeight: 400,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              padding: "4px 6px",
+              borderRadius: 999,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+            title="Reset edited reference times for this depot back to the active timetable defaults"
+          >
+            Refresh Time
+          </button>
+          <div
+            className={`theme-insertion-reference-depot-chip ${isScheduleOverride ? "is-override" : ""}`}
+            style={{
+              color: isScheduleOverride ? "#fbbf24" : accent.accent,
+              fontSize: 8,
+              fontWeight: 400,
+              letterSpacing: "0.10em",
+              textTransform: "uppercase",
+              padding: "4px 6px",
+              borderRadius: 999,
+              background: isScheduleOverride ? "rgba(245, 158, 11, 0.16)" : accent.accentSoft,
+              border: isScheduleOverride ? "1px solid rgba(251, 191, 36, 0.38)" : `1px solid ${accent.border}`,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {title.split(" ")[0]} • {displayDayLabel}
+          </div>
         </div>
       </div>
 
@@ -979,7 +1041,25 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               <th
                 className="theme-insertion-reference-table-header"
                 style={{
-                  width: isWeekday ? "60%" : "68%",
+                  width: isWeekday ? "25%" : "27%",
+                  padding: "6px 4px",
+                  textAlign: "center",
+                  color: accent.text,
+                  fontSize: 9,
+                  fontWeight: 400,
+                  letterSpacing: "0.11em",
+                  textTransform: "uppercase",
+                  background: "linear-gradient(180deg, rgba(12,46,74,0.94), rgba(7,30,51,0.96))",
+                  borderBottom: "1px solid rgba(125, 184, 224, 0.16)",
+                  borderRight: "1px solid rgba(125, 184, 224, 0.12)",
+                }}
+              >
+                TRAIN ID
+              </th>
+              <th
+                className="theme-insertion-reference-table-header"
+                style={{
+                  width: isWeekday ? "48%" : "45%",
                   padding: "6px 5px",
                   textAlign: "center",
                   color: accent.text,
@@ -999,8 +1079,8 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               <th
                 className="theme-insertion-reference-table-header"
                 style={{
-                  width: isWeekday ? "40%" : "32%",
-                  padding: "6px 5px",
+                  width: isWeekday ? "27%" : "28%",
+                  padding: "6px 4px",
                   textAlign: "center",
                   color: accent.text,
                   fontSize: 10,
@@ -1027,6 +1107,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                       value={Number(timeOffsetMinutes) === 2 ? 2 : 0}
                       onChange={(event) => onTimeOffsetChange?.(Number(event.target.value) === 2 ? 2 : 0)}
                       onClick={(event) => event.stopPropagation()}
+                      onPointerDown={(event) => event.stopPropagation()}
                       style={{
                         border: "none",
                         outline: "none",
@@ -1076,6 +1157,13 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               const interactionColor = remark ? remarkStyle.sideColor : accent.accent;
               const isUsed = Boolean(isWeekday && remark && usedTidKeys.has(String(tid)));
               const isDuplicate = Boolean(isUsed && duplicateTidKeys.has(String(tid)));
+              const referenceKey = getReferenceAssignmentKey(scheduleKey, depotType, activePg, tid);
+              const referenceAssignment = referenceAssignments?.[referenceKey] || {};
+              const referenceTrainId = String(referenceAssignment?.trainId || "");
+              const referenceTime = String(referenceAssignment?.time || time || "");
+              const referenceStatus = referenceStatuses?.[referenceKey] || "";
+              const referenceHasError = Boolean(referenceTrainId && ["wrong-depot", "not-found", "duplicate"].includes(referenceStatus));
+              const referenceIsApplied = Boolean(referenceTrainId && referenceStatus === "applied");
 
               const commonCellStyle = {
                 padding: isWeekday ? "3px 6px" : "1px 6px",
@@ -1104,7 +1192,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                       tid,
                       remark: remark || "",
                       displayRemark: getDisplayAssistRemark(remark || ""),
-                      time,
+                      time: referenceTime || time,
                       depotType,
                       sourceKey: rowDragKey,
                       pointerId: event.pointerId,
@@ -1139,6 +1227,70 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                     willChange: "transform, filter, box-shadow",
                   }}
                 >
+                  <td
+                    className="theme-insertion-reference-row-cell theme-insertion-reference-train-cell"
+                    style={{
+                      ...commonCellStyle,
+                      padding: isWeekday ? "2px 4px" : "1px 4px",
+                      borderLeft: isRaised
+                        ? `2px solid ${interactionColor}`
+                        : isActive
+                          ? `3px solid ${accent.accent}`
+                          : `3px solid ${referenceHasError ? "#ef4444" : referenceIsApplied ? "#22c55e" : "transparent"}`,
+                      borderRight: "1px solid rgba(125, 184, 224, 0.10)",
+                      boxShadow: referenceHasError
+                        ? "inset 0 0 0 1px rgba(239, 68, 68, 0.55), inset 5px 0 13px rgba(239, 68, 68, 0.16)"
+                        : referenceIsApplied
+                          ? "inset 0 0 0 1px rgba(34, 197, 94, 0.32), inset 5px 0 13px rgba(34, 197, 94, 0.12)"
+                          : commonCellStyle.boxShadow,
+                    }}
+                  >
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={2}
+                      value={referenceTrainId}
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={(event) => event.stopPropagation()}
+                      onChange={(event) => onReferenceTrainIdChange?.({
+                        scheduleKey,
+                        depot: depotType,
+                        activePg,
+                        tid,
+                        value: cleanReferenceTrainIdInput(event.target.value),
+                      })}
+                      onBlur={(event) => onReferenceTrainIdChange?.({
+                        scheduleKey,
+                        depot: depotType,
+                        activePg,
+                        tid,
+                        value: normalizeReferenceTrainIdInput(event.target.value),
+                      })}
+                      placeholder="Txx"
+                      title={referenceHasError
+                        ? (referenceStatus === "wrong-depot" ? "Train is found in the opposite depot. It will not auto insert here." : "Train ID was not found in this depot stabling.")
+                        : referenceIsApplied
+                          ? "Train ID matched this depot and was added to the stabling insertion log."
+                          : "Enter Train ID to auto add this TID to the matching stabling card."
+                      }
+                      style={{
+                        width: "100%",
+                        height: 22,
+                        border: `1px solid ${referenceHasError ? "rgba(248, 113, 113, 0.85)" : referenceIsApplied ? "rgba(74, 222, 128, 0.58)" : "rgba(125, 184, 224, 0.18)"}`,
+                        borderRadius: 8,
+                        background: referenceHasError ? "rgba(127, 29, 29, 0.50)" : referenceIsApplied ? "rgba(22, 101, 52, 0.24)" : "rgba(6, 24, 39, 0.58)",
+                        color: referenceHasError ? "#fecaca" : "#f8fbff",
+                        outline: "none",
+                        padding: "0 4px",
+                        textAlign: "center",
+                        fontSize: 11,
+                        lineHeight: "14px",
+                        fontWeight: 400,
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    />
+                  </td>
+
                   <td
                     className="theme-insertion-reference-row-cell theme-insertion-reference-tid-cell"
                     style={{
@@ -1249,7 +1401,56 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                       borderRight: isRaised ? `2px solid ${interactionColor}` : "none",
                     }}
                   >
-                    {time}
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      value={referenceTime}
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => {
+                        const value = String(referenceTime || "");
+                        const cursorAtEnd = event.currentTarget.selectionStart === value.length && event.currentTarget.selectionEnd === value.length;
+                        if (event.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                          event.preventDefault();
+                          onReferenceTimeChange?.({ scheduleKey, depot: depotType, activePg, tid, value: value.slice(0, -2), defaultTime: time });
+                        }
+                      }}
+                      onChange={(event) => onReferenceTimeChange?.({
+                        scheduleKey,
+                        depot: depotType,
+                        activePg,
+                        tid,
+                        value: cleanReferenceTimeInput(event.target.value),
+                        defaultTime: time,
+                      })}
+                      onBlur={(event) => onReferenceTimeChange?.({
+                        scheduleKey,
+                        depot: depotType,
+                        activePg,
+                        tid,
+                        value: normalizeReferenceTimeInput(event.target.value) || time,
+                        defaultTime: time,
+                      })}
+                      placeholder="00:00"
+                      title="Edit this TID time. Click Refresh Time to return to active timetable default."
+                      style={{
+                        width: "100%",
+                        height: 22,
+                        border: "1px solid rgba(125, 184, 224, 0.16)",
+                        borderRadius: 8,
+                        background: "rgba(6, 24, 39, 0.40)",
+                        color: isActive ? accent.accent : "#dbeafe",
+                        outline: "none",
+                        padding: "0 3px",
+                        textAlign: "center",
+                        fontSize: 11,
+                        lineHeight: "14px",
+                        fontWeight: 400,
+                        letterSpacing: "0.02em",
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    />
                   </td>
                 </tr>
               );
@@ -1261,7 +1462,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
   );
 }
 
-export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday", onTidDragStart, activeDragKey = "", usedTidKeys = [], duplicateTidKeys = [], eastTimeOffsetMinutes = 0, onEastTimeOffsetChange, depotFilter = "", showHeader = true, showHelp = true, controlledScheduleKey = null, onScheduleKeyChange = null }) {
+export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday", onTidDragStart, activeDragKey = "", usedTidKeys = [], duplicateTidKeys = [], eastTimeOffsetMinutes = 0, onEastTimeOffsetChange, depotFilter = "", showHeader = true, showHelp = true, controlledScheduleKey = null, onScheduleKeyChange = null, activePg = "pg1", referenceAssignments = {}, referenceStatuses = {}, onReferenceTrainIdChange, onReferenceTimeChange, onRefreshReferenceTimes }) {
   const [now, setNow] = useState(new Date());
   const [soundSettings, setSoundSettings] = useState(loadTidSoundSettings);
   const [soundReady, setSoundReady] = useState(false);
@@ -1382,6 +1583,8 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
       depotType={depotType}
       title={depotType === "east" ? "East Depot" : "West Depot"}
       dayLabel={activeSchedule.label}
+      scheduleKey={scheduleKey}
+      activePg={activePg}
       rows={depotType === "east" ? activeSchedule.east : activeSchedule.west}
       nowMinutes={nowMinutes}
       withinSchedule={withinSchedule}
@@ -1392,6 +1595,11 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
       duplicateTidKeys={duplicateTidKeySet}
       timeOffsetMinutes={depotType === "east" ? eastTimeOffsetMinutes : 0}
       onTimeOffsetChange={depotType === "east" ? onEastTimeOffsetChange : undefined}
+      referenceAssignments={referenceAssignments}
+      referenceStatuses={referenceStatuses}
+      onReferenceTrainIdChange={onReferenceTrainIdChange}
+      onReferenceTimeChange={onReferenceTimeChange}
+      onRefreshReferenceTimes={onRefreshReferenceTimes}
     />
   );
 
@@ -1399,7 +1607,7 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
     <div
       className="theme-insertion-reference"
       style={{
-        width: normalizedDepotFilter ? "clamp(250px, 26vw, 340px)" : isWeekday ? "clamp(500px, 48vw, 620px)" : isScheduleOverride ? "clamp(300px, 32vw, 430px)" : "clamp(240px, 25vw, 300px)",
+        width: normalizedDepotFilter ? "clamp(310px, 30vw, 400px)" : isWeekday ? "clamp(500px, 48vw, 620px)" : isScheduleOverride ? "clamp(300px, 32vw, 430px)" : "clamp(240px, 25vw, 300px)",
         maxWidth: "100%",
         boxSizing: "border-box",
         padding: 8,

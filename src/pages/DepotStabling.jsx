@@ -1873,6 +1873,64 @@ function saveTidInputs(inputs) {
   try { localStorage.setItem(TID_INPUTS_KEY, JSON.stringify(inputs)); } catch {}
 }
 
+
+const INSERTION_TID_REFERENCE_ASSIGNMENTS_KEY = "insertionTidReferenceAssignments_v1";
+function normalizeInsertionTidReferenceTrainId(value = "") {
+  const clean = String(value || "").replace(/\D/g, "").slice(0, 2);
+  return clean ? clean.padStart(2, "0") : "";
+}
+function cleanInsertionTidReferenceTrainId(value = "") {
+  return String(value || "").replace(/\D/g, "").slice(0, 2);
+}
+function normalizeInsertionTidReferenceAssignments(source = {}) {
+  if (!source || typeof source !== "object" || Array.isArray(source)) return {};
+
+  return Object.fromEntries(Object.entries(source).map(([rawKey, rawValue]) => {
+    const value = rawValue && typeof rawValue === "object" && !Array.isArray(rawValue) ? rawValue : {};
+    return [
+      String(rawKey || ""),
+      {
+        trainId: normalizeInsertionTidReferenceTrainId(value.trainId || ""),
+        time: cleanMovementCustomTimeInput(value.time || ""),
+      },
+    ];
+  }).filter(([key, value]) => key && (value.trainId || value.time)));
+}
+function loadInsertionTidReferenceAssignments() {
+  try {
+    if (typeof localStorage === "undefined") return {};
+    const raw = localStorage.getItem(INSERTION_TID_REFERENCE_ASSIGNMENTS_KEY);
+    if (!raw) return {};
+    return normalizeInsertionTidReferenceAssignments(JSON.parse(raw));
+  } catch { return {}; }
+}
+function saveInsertionTidReferenceAssignments(assignments = {}) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(INSERTION_TID_REFERENCE_ASSIGNMENTS_KEY, JSON.stringify(normalizeInsertionTidReferenceAssignments(assignments)));
+  } catch {}
+}
+function getInsertionTidReferenceAssignmentKey(scheduleKey = "weekday", depot = "west", activePg = "pg1", tid = "") {
+  const cleanSchedule = normalizeTimetableType(scheduleKey);
+  const cleanDepot = normalizeDepotKey(depot);
+  const cleanPg = normalizeInsertionPg(activePg);
+  const cleanTid = String(tid || "").replace(/\D/g, "");
+  return `${cleanSchedule}:${cleanDepot}:${cleanPg}:${cleanTid}`;
+}
+function parseInsertionTidReferenceAssignmentKey(key = "") {
+  const parts = String(key || "").split(":");
+  if (parts.length < 4) return null;
+  const [scheduleKey, depot, activePg, tidText] = parts;
+  const cleanTid = Number(String(tidText || "").replace(/\D/g, ""));
+  if (!cleanTid) return null;
+  return {
+    scheduleKey: normalizeTimetableType(scheduleKey),
+    depot: normalizeDepotKey(depot),
+    activePg: normalizeInsertionPg(activePg),
+    tid: cleanTid,
+  };
+}
+
 const INSERTION_ACTIVE_PG_KEY = "insertionActivePg_v1";
 const INSERTION_PG2_STABLING_KEY = "insertionPg2StablingState_v1";
 const INSERTION_PG2_LOG_KEY = "insertionPg2LogState_v1";
@@ -2123,6 +2181,7 @@ function normalizeInsertionLiveState(source = {}) {
     pg2Stabling: hasPg2Stabling ? normalizeInsertionPg2Stabling(pg2StablingSource) : null,
     pg2InsertionLog: Array.isArray(source?.pg2InsertionLog) ? sortInsertionLogByTime(source.pg2InsertionLog) : null,
     pg2TidInputs: source?.pg2TidInputs && typeof source.pg2TidInputs === "object" ? source.pg2TidInputs : null,
+    tidReferenceAssignments: normalizeInsertionTidReferenceAssignments(source?.tidReferenceAssignments || source?.referenceAssignments || {}),
     updatedAt: (source?.updatedAt || "").toString(),
   };
 }
@@ -2146,6 +2205,7 @@ function buildInsertionLivePayload(state = {}) {
     pg2Stabling: normalized.pg2Stabling || normalizeInsertionPg2Stabling(state?.pg2Stabling || {}),
     pg2InsertionLog: normalized.pg2InsertionLog || [],
     pg2TidInputs: normalized.pg2TidInputs || {},
+    tidReferenceAssignments: normalized.tidReferenceAssignments || normalizeInsertionTidReferenceAssignments(state?.tidReferenceAssignments || {}),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -7287,7 +7347,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   );
 }
 
-function InsertionTabContent({ westSection, eastSection, maintenanceMap, insertionLog, onClearInsertionDepot, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug, eastInsertionTimeOffsetMinutes = 0, onEastInsertionTimeOffsetChange }) {
+function InsertionTabContent({ westSection, eastSection, maintenanceMap, insertionLog, onClearInsertionDepot, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug, eastInsertionTimeOffsetMinutes = 0, onEastInsertionTimeOffsetChange, tidReferenceAssignments = {}, tidReferenceStatuses = {}, onTidReferenceTrainIdChange, onTidReferenceTimeChange, onRefreshTidReferenceTimes }) {
   const [tidDragState, setTidDragState] = useState(null);
   const [tidDragPoint, setTidDragPoint] = useState({ x: 0, y: 0 });
   const [tidDragHover, setTidDragHover] = useState(null);
@@ -7466,6 +7526,11 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
     onEastTimeOffsetChange: onEastInsertionTimeOffsetChange,
     controlledScheduleKey: tidReferenceScheduleKey,
     onScheduleKeyChange: setTidReferenceScheduleKey,
+    referenceAssignments: tidReferenceAssignments,
+    referenceStatuses: tidReferenceStatuses,
+    onReferenceTrainIdChange: onTidReferenceTrainIdChange,
+    onReferenceTimeChange: onTidReferenceTimeChange,
+    onRefreshReferenceTimes: onRefreshTidReferenceTimes,
   };
 
   return (
@@ -7530,6 +7595,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
             <TIDReferenceTable
               {...tidReferenceCommonProps}
               depotFilter="west"
+              activePg={normalizeInsertionPg(westSection?.activePg || "pg1")}
               showHeader={true}
               showHelp={false}
             />
@@ -7569,6 +7635,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
             <TIDReferenceTable
               {...tidReferenceCommonProps}
               depotFilter="east"
+              activePg={normalizeInsertionPg(eastSection?.activePg || "pg1")}
               showHeader={false}
               showHelp={true}
             />
@@ -14051,6 +14118,7 @@ export default function DepotStablingPage() {
   const [pg2Stabling, setPg2Stabling] = useState(() => loadInsertionPg2Stabling(westData, eastData));
   const [pg2InsertionLog, setPg2InsertionLog] = useState(() => loadInsertionPg2Log());
   const [pg2TidInputs, setPg2TidInputs] = useState(() => loadInsertionPg2TidInputs());
+  const [tidReferenceAssignments, setTidReferenceAssignments] = useState(() => loadInsertionTidReferenceAssignments());
   const [eastInsertionTimeOffsetMinutes, setEastInsertionTimeOffsetMinutes] = useState(() => loadEastInsertionTimeOffset());
   const [insertionLiveLoaded, setInsertionLiveLoaded] = useState(false);
   const [insertionLiveSyncing, setInsertionLiveSyncing] = useState(false);
@@ -14080,6 +14148,7 @@ export default function DepotStablingPage() {
   useEffect(() => { saveInsertionPg2Stabling(pg2Stabling); }, [pg2Stabling]);
   useEffect(() => { saveInsertionPg2Log(pg2InsertionLog); }, [pg2InsertionLog]);
   useEffect(() => { saveInsertionPg2TidInputs(pg2TidInputs); }, [pg2TidInputs]);
+  useEffect(() => { saveInsertionTidReferenceAssignments(tidReferenceAssignments); }, [tidReferenceAssignments]);
   useEffect(() => { saveEastInsertionTimeOffset(eastInsertionTimeOffsetMinutes); }, [eastInsertionTimeOffsetMinutes]);
 
   const getTabFromPath = (path) => {
@@ -14834,6 +14903,7 @@ export default function DepotStablingPage() {
   const pg2StablingRef = useRef(pg2Stabling);
   const pg2InsertionLogRef = useRef(pg2InsertionLog);
   const pg2TidInputsRef = useRef(pg2TidInputs);
+  const tidReferenceAssignmentsRef = useRef(tidReferenceAssignments);
   const insertionLiveLocalUpdatedAtRef = useRef(0);
   const insertionLiveRemoteUpdatedAtRef = useRef(0);
 
@@ -14855,6 +14925,7 @@ export default function DepotStablingPage() {
   useEffect(() => { pg2StablingRef.current = pg2Stabling; }, [pg2Stabling]);
   useEffect(() => { pg2InsertionLogRef.current = pg2InsertionLog; }, [pg2InsertionLog]);
   useEffect(() => { pg2TidInputsRef.current = pg2TidInputs; }, [pg2TidInputs]);
+  useEffect(() => { tidReferenceAssignmentsRef.current = tidReferenceAssignments; }, [tidReferenceAssignments]);
 
   const markStablingLocalEdit = useCallback((nextWest = westDataRef.current, nextEast = eastDataRef.current) => {
     const updatedAt = new Date().toISOString();
@@ -15246,6 +15317,10 @@ export default function DepotStablingPage() {
       setPg2TidInputs(normalized.pg2TidInputs);
       saveInsertionPg2TidInputs(normalized.pg2TidInputs);
     }
+    if (normalized.tidReferenceAssignments && typeof normalized.tidReferenceAssignments === "object") {
+      setTidReferenceAssignments(normalized.tidReferenceAssignments);
+      saveInsertionTidReferenceAssignments(normalized.tidReferenceAssignments);
+    }
   }, []);
 
   const saveInsertionLiveToDb = useCallback(async (state) => {
@@ -15258,6 +15333,7 @@ export default function DepotStablingPage() {
     saveInsertionPg2Stabling(payload.pg2Stabling);
     saveInsertionPg2Log(payload.pg2InsertionLog);
     saveInsertionPg2TidInputs(payload.pg2TidInputs);
+    saveInsertionTidReferenceAssignments(payload.tidReferenceAssignments);
 
     if (!isInsertionLiveEntityReady(entity)) {
       setInsertionLiveDbReady(false);
@@ -15311,6 +15387,7 @@ export default function DepotStablingPage() {
     saveInsertionPg2Stabling(payload.pg2Stabling);
     saveInsertionPg2Log(payload.pg2InsertionLog);
     saveInsertionPg2TidInputs(payload.pg2TidInputs);
+    saveInsertionTidReferenceAssignments(payload.tidReferenceAssignments);
 
     insertionLivePendingSaveRef.current = true;
     insertionLiveLocalEditUntilRef.current = Date.now() + INSERTION_LIVE_LOCAL_EDIT_HOLD_MS;
@@ -15360,6 +15437,7 @@ export default function DepotStablingPage() {
           pg2Stabling: pg2StablingRef.current,
           pg2InsertionLog: pg2InsertionLogRef.current,
           pg2TidInputs: pg2TidInputsRef.current,
+          tidReferenceAssignments: tidReferenceAssignmentsRef.current,
         });
         const created = await entity.create(payload);
         if (created?.id) insertionLiveRecordIdRef.current = created.id;
@@ -15419,6 +15497,7 @@ export default function DepotStablingPage() {
       pg2Stabling,
       pg2InsertionLog,
       pg2TidInputs,
+      tidReferenceAssignments,
     };
 
     saveInsertionLog(sortInsertionLogByTime(insertionLog));
@@ -15427,6 +15506,7 @@ export default function DepotStablingPage() {
     saveInsertionPg2Stabling(pg2Stabling);
     saveInsertionPg2Log(pg2InsertionLog);
     saveInsertionPg2TidInputs(pg2TidInputs);
+    saveInsertionTidReferenceAssignments(tidReferenceAssignments);
 
     if (insertionLiveApplyingRemoteRef.current) {
       insertionLiveApplyingRemoteRef.current = false;
@@ -15435,7 +15515,7 @@ export default function DepotStablingPage() {
 
     if (!insertionLiveLoaded) return;
     scheduleInsertionLiveSave(payload);
-  }, [insertionLog, tidInputs, activeInsertionPg, pg2Stabling, pg2InsertionLog, pg2TidInputs, insertionLiveLoaded, scheduleInsertionLiveSave]);
+  }, [insertionLog, tidInputs, activeInsertionPg, pg2Stabling, pg2InsertionLog, pg2TidInputs, tidReferenceAssignments, insertionLiveLoaded, scheduleInsertionLiveSave]);
 
   useEffect(() => {
     return () => {
@@ -16194,6 +16274,253 @@ export default function DepotStablingPage() {
     markInsertionLiveLocalEdit();
     setPg2InsertionLog((prev) => applyInsertionTickToLog(prev, road, bi, trainKey, remark, sweepTrack));
   }, [applyInsertionTickToLog, markInsertionLiveLocalEdit]);
+
+  const getInsertionReferenceVisibleDepotData = useCallback((depot = "west", activePg = "pg1") => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    const normalizedPg = normalizeInsertionPg(activePg);
+    if (normalizedPg === "pg2") {
+      return normalizedDepot === "west" ? pg2StablingRef.current.westData : pg2StablingRef.current.eastData;
+    }
+    return normalizedDepot === "west" ? westDataRef.current : eastDataRef.current;
+  }, []);
+
+  const findInsertionReferenceTrainCell = useCallback((depot = "west", activePg = "pg1", trainId = "") => {
+    const trainKey = normalizeTrainId(trainId);
+    const normalizedDepot = normalizeDepotKey(depot);
+    const normalizedPg = normalizeInsertionPg(activePg);
+    if (!trainKey) return { status: "", trainKey: "", targetCell: null, oppositeCell: null };
+
+    const findInDepot = (targetDepot) => {
+      const targetData = getInsertionReferenceVisibleDepotData(targetDepot, normalizedPg);
+      const targetRoads = targetDepot === "west" ? WEST_ROADS : EAST_ROADS;
+      const matches = [];
+      targetRoads.forEach((road) => {
+        const blocks = Array.isArray(targetData?.[road]) ? targetData[road] : [];
+        blocks.forEach((block, bi) => {
+          if (normalizeTrainId(block?.trainId || "") === trainKey) {
+            matches.push({ depot: targetDepot, road, bi, trainKey });
+          }
+        });
+      });
+      return matches;
+    };
+
+    const targetMatches = findInDepot(normalizedDepot);
+    const oppositeDepot = normalizedDepot === "west" ? "east" : "west";
+    const oppositeMatches = findInDepot(oppositeDepot);
+
+    if (targetMatches.length > 1) return { status: "duplicate", trainKey, targetCell: targetMatches[0], oppositeCell: null };
+    if (targetMatches.length === 1) return { status: "applied", trainKey, targetCell: targetMatches[0], oppositeCell: null };
+    if (oppositeMatches.length > 0) return { status: "wrong-depot", trainKey, targetCell: null, oppositeCell: oppositeMatches[0] };
+    return { status: "not-found", trainKey, targetCell: null, oppositeCell: null };
+  }, [getInsertionReferenceVisibleDepotData]);
+
+  const upsertInsertionReferenceEntryInLog = useCallback((prevLog = [], referenceEntry = {}) => {
+    const { referenceKey, road, bi, trainKey, tid, time, timeEdited = false } = referenceEntry;
+    const cellKey = `${road}-${bi}`;
+    const logKey = `ins-${cellKey}`;
+    const depot = getDepotFromRoad(road);
+    const mainlineTrack = depot === "west" ? 1 : 2;
+    const paddedTrainKey = padTrainId(normalizeTrainId(trainKey));
+    const cleanTid = Number(String(tid || "").replace(/\D/g, ""));
+    const cleanTime = normalizeMovementCustomTimeInput(time) || formatTime(new Date());
+    if (!paddedTrainKey || !cleanTid || !referenceKey) return prevLog || [];
+
+    const nextEntry = {
+      key: logKey,
+      text: buildNormalInsertionEntryText({
+        time: cleanTime,
+        trainKey: paddedTrainKey,
+        tid: cleanTid,
+        road,
+        mainlineTrack,
+      }),
+      time: cleanTime,
+      depot,
+      road,
+      trainKey: paddedTrainKey,
+      tid: cleanTid,
+      mainlineTrack,
+      remark: "",
+      inputValue: String(cleanTid),
+      source: "tidReference",
+      referenceKey,
+      timeEdited: Boolean(timeEdited),
+    };
+
+    const filtered = (prevLog || []).filter((entry) => entry?.key !== logKey);
+    const existing = (prevLog || []).find((entry) => entry?.key === logKey);
+    if (existing && JSON.stringify(existing) === JSON.stringify(nextEntry)) return prevLog || [];
+    return sortInsertionLogByTime([...filtered, nextEntry]);
+  }, []);
+
+  const handleTidReferenceTrainIdChange = useCallback(({ scheduleKey = selectedTimetableType, depot = "west", activePg = "pg1", tid = "", value = "" } = {}) => {
+    markInsertionLiveLocalEdit();
+    const referenceKey = getInsertionTidReferenceAssignmentKey(scheduleKey, depot, activePg, tid);
+    const cleanTrainId = cleanInsertionTidReferenceTrainId(value);
+    setTidReferenceAssignments((prev) => {
+      const next = { ...normalizeInsertionTidReferenceAssignments(prev) };
+      const existing = next[referenceKey] || {};
+      const updated = { ...existing, trainId: cleanTrainId };
+      if (!updated.trainId && !updated.time) delete next[referenceKey];
+      else next[referenceKey] = updated;
+      return next;
+    });
+  }, [markInsertionLiveLocalEdit, selectedTimetableType]);
+
+  const handleTidReferenceTimeChange = useCallback(({ scheduleKey = selectedTimetableType, depot = "west", activePg = "pg1", tid = "", value = "", defaultTime = "" } = {}) => {
+    markInsertionLiveLocalEdit();
+    const referenceKey = getInsertionTidReferenceAssignmentKey(scheduleKey, depot, activePg, tid);
+    const cleanTime = cleanMovementCustomTimeInput(value);
+    const normalizedDefaultTime = normalizeMovementCustomTimeInput(defaultTime);
+    setTidReferenceAssignments((prev) => {
+      const next = { ...normalizeInsertionTidReferenceAssignments(prev) };
+      const existing = next[referenceKey] || {};
+      const updated = {
+        ...existing,
+        time: cleanTime && cleanTime !== normalizedDefaultTime ? cleanTime : "",
+      };
+      if (!updated.trainId && !updated.time) delete next[referenceKey];
+      else next[referenceKey] = updated;
+      return next;
+    });
+  }, [markInsertionLiveLocalEdit, selectedTimetableType]);
+
+  const handleRefreshTidReferenceTimes = useCallback(({ scheduleKey = selectedTimetableType, depot = "west", activePg = "pg1" } = {}) => {
+    markInsertionLiveLocalEdit();
+    const normalizedSchedule = normalizeTimetableType(scheduleKey);
+    const normalizedDepot = normalizeDepotKey(depot);
+    const normalizedPg = normalizeInsertionPg(activePg);
+
+    setTidReferenceAssignments((prev) => {
+      const next = { ...normalizeInsertionTidReferenceAssignments(prev) };
+      Object.entries(next).forEach(([key, value]) => {
+        const parsed = parseInsertionTidReferenceAssignmentKey(key);
+        if (!parsed) return;
+        if (parsed.scheduleKey !== normalizedSchedule || parsed.depot !== normalizedDepot || parsed.activePg !== normalizedPg) return;
+        const updated = { ...value, time: "" };
+        if (!updated.trainId) delete next[key];
+        else next[key] = updated;
+      });
+      return next;
+    });
+  }, [markInsertionLiveLocalEdit, selectedTimetableType]);
+
+  const insertionTidReferenceStatuses = useMemo(() => {
+    const statuses = {};
+    Object.entries(tidReferenceAssignments || {}).forEach(([key, assignment]) => {
+      const parsed = parseInsertionTidReferenceAssignmentKey(key);
+      const trainKey = normalizeTrainId(assignment?.trainId || "");
+      if (!parsed || !trainKey) return;
+      const match = findInsertionReferenceTrainCell(parsed.depot, parsed.activePg, trainKey);
+      statuses[key] = match.status || "";
+    });
+    return statuses;
+  }, [tidReferenceAssignments, findInsertionReferenceTrainCell, westData, eastData, pg2Stabling]);
+
+  useEffect(() => {
+    const activeScheduleKey = normalizeTimetableType(selectedTimetableType);
+    const desiredByPg = { pg1: new Map(), pg2: new Map() };
+    const staleCellsByPg = { pg1: new Set(), pg2: new Set() };
+
+    Object.entries(tidReferenceAssignments || {}).forEach(([referenceKey, assignment]) => {
+      const parsed = parseInsertionTidReferenceAssignmentKey(referenceKey);
+      const trainKey = normalizeTrainId(assignment?.trainId || "");
+      if (!parsed || !trainKey || parsed.scheduleKey !== activeScheduleKey) return;
+
+      const match = findInsertionReferenceTrainCell(parsed.depot, parsed.activePg, trainKey);
+      if (match.status !== "applied" || !match.targetCell) return;
+
+      const defaultTime = getTidScheduledTime(parsed.tid, parsed.depot, { allowFallback: false });
+      const assignmentTime = cleanMovementCustomTimeInput(assignment?.time || "");
+      const completeAssignmentTime = /^\d{1,2}:\d{2}$/.test(assignmentTime)
+        ? normalizeMovementCustomTimeInput(assignmentTime)
+        : "";
+      const time = completeAssignmentTime || defaultTime || formatTime(new Date());
+      const cleanPg = normalizeInsertionPg(parsed.activePg);
+      desiredByPg[cleanPg].set(referenceKey, {
+        referenceKey,
+        road: match.targetCell.road,
+        bi: match.targetCell.bi,
+        trainKey,
+        tid: parsed.tid,
+        time,
+        timeEdited: Boolean(completeAssignmentTime),
+      });
+    });
+
+    const collectStaleReferenceCells = (currentLog = [], desiredMap = new Map(), pg = "pg1") => {
+      const desiredReferenceKeys = new Set(desiredMap.keys());
+      (currentLog || []).forEach((entry) => {
+        if (entry?.source !== "tidReference") return;
+        if (desiredReferenceKeys.has(entry.referenceKey)) return;
+        if (entry.road !== undefined && entry.bi !== undefined) staleCellsByPg[pg].add(`${entry.road}-${entry.bi}`);
+      });
+    };
+
+    collectStaleReferenceCells(insertionLogRef.current, desiredByPg.pg1, "pg1");
+    collectStaleReferenceCells(pg2InsertionLogRef.current, desiredByPg.pg2, "pg2");
+
+    const applyReferenceLog = (prevLog = [], desiredMap = new Map()) => {
+      let nextLog = prevLog || [];
+      const desiredReferenceKeys = new Set(desiredMap.keys());
+
+      nextLog = nextLog.filter((entry) => {
+        if (entry?.source !== "tidReference") return true;
+        if (desiredReferenceKeys.has(entry.referenceKey)) return true;
+        return false;
+      });
+
+      desiredMap.forEach((entry) => {
+        nextLog = upsertInsertionReferenceEntryInLog(nextLog, entry);
+      });
+
+      return JSON.stringify(nextLog) === JSON.stringify(prevLog || []) ? prevLog : nextLog;
+    };
+
+    setInsertionLog((prev) => applyReferenceLog(prev, desiredByPg.pg1));
+    setPg2InsertionLog((prev) => applyReferenceLog(prev, desiredByPg.pg2));
+
+    setTidInputs((prev) => {
+      const next = { ...(prev || {}) };
+      let changed = false;
+      staleCellsByPg.pg1.forEach((cellKey) => {
+        if (Object.prototype.hasOwnProperty.call(next, cellKey)) {
+          delete next[cellKey];
+          changed = true;
+        }
+      });
+      desiredByPg.pg1.forEach((entry) => {
+        const cellKey = `${entry.road}-${entry.bi}`;
+        const value = String(entry.tid);
+        if (next[cellKey] !== value) {
+          next[cellKey] = value;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+
+    setPg2TidInputs((prev) => {
+      const next = { ...(prev || {}) };
+      let changed = false;
+      staleCellsByPg.pg2.forEach((cellKey) => {
+        if (Object.prototype.hasOwnProperty.call(next, cellKey)) {
+          delete next[cellKey];
+          changed = true;
+        }
+      });
+      desiredByPg.pg2.forEach((entry) => {
+        const cellKey = `${entry.road}-${entry.bi}`;
+        const value = String(entry.tid);
+        if (next[cellKey] !== value) {
+          next[cellKey] = value;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [tidReferenceAssignments, selectedTimetableType, westData, eastData, pg2Stabling, findInsertionReferenceTrainCell, getTidScheduledTime, upsertInsertionReferenceEntryInLog]);
 
   const updateInsertionEntryTimeInLog = useCallback((prevLog = [], entryKey, nextValue = "") => {
     const time = cleanMovementCustomTimeInput(nextValue);
@@ -17834,6 +18161,11 @@ export default function DepotStablingPage() {
             insertionLiveDebug={insertionLiveDebug}
             eastInsertionTimeOffsetMinutes={eastInsertionTimeOffsetMinutes}
             onEastInsertionTimeOffsetChange={setEastInsertionTimeOffsetMinutes}
+            tidReferenceAssignments={tidReferenceAssignments}
+            tidReferenceStatuses={insertionTidReferenceStatuses}
+            onTidReferenceTrainIdChange={handleTidReferenceTrainIdChange}
+            onTidReferenceTimeChange={handleTidReferenceTimeChange}
+            onRefreshTidReferenceTimes={handleRefreshTidReferenceTimes}
           />
         )}
 
