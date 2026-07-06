@@ -2120,6 +2120,7 @@ function normalizeInsertionLiveState(source = {}) {
   return {
     insertionLog: sortInsertionLogByTime(Array.isArray(source?.insertionLog) ? source.insertionLog : []),
     tidInputs: source?.tidInputs && typeof source.tidInputs === "object" ? source.tidInputs : {},
+    activePg: source?.activePg || source?.insertionActivePg ? normalizeInsertionPgByDepot(source?.activePg || source?.insertionActivePg) : null,
     pg2Stabling: hasPg2Stabling ? normalizeInsertionPg2Stabling(pg2StablingSource) : null,
     pg2InsertionLog: Array.isArray(source?.pg2InsertionLog) ? sortInsertionLogByTime(source.pg2InsertionLog) : null,
     pg2TidInputs: source?.pg2TidInputs && typeof source.pg2TidInputs === "object" ? source.pg2TidInputs : null,
@@ -2142,6 +2143,7 @@ function buildInsertionLivePayload(state = {}) {
     stateKey: INSERTION_LIVE_RECORD_KEY,
     insertionLog: normalized.insertionLog,
     tidInputs: normalized.tidInputs,
+    activePg: normalized.activePg || normalizeInsertionPgByDepot(state?.activePg || {}),
     pg2Stabling: normalized.pg2Stabling || normalizeInsertionPg2Stabling(state?.pg2Stabling || {}),
     pg2InsertionLog: normalized.pg2InsertionLog || [],
     pg2TidInputs: normalized.pg2TidInputs || {},
@@ -7447,6 +7449,25 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
   const TID_SCHEDULE_FIRST = eastInsertionTimeOffsetMinutes === 2 ? "05:25" : "05:24";
   const TID_SCHEDULE_LAST = eastInsertionTimeOffsetMinutes === 2 ? "06:23" : "06:22";
   const withinTIDSchedule = isWithinTIDSchedule(TID_SCHEDULE_FIRST, TID_SCHEDULE_LAST);
+  const [tidReferenceScheduleKey, setTidReferenceScheduleKey] = useState(() => normalizeTimetableType(activeTimetableType));
+
+  useEffect(() => {
+    setTidReferenceScheduleKey(normalizeTimetableType(activeTimetableType));
+  }, [activeTimetableType]);
+
+  const tidReferenceCommonProps = {
+    withinSchedule: withinTIDSchedule,
+    activeTimetable,
+    activeTimetableType,
+    onTidDragStart: handleTidDragStart,
+    activeDragKey: tidDragState?.sourceKey || "",
+    usedTidKeys: insertionAssistTidUsage.usedTidKeys,
+    duplicateTidKeys: insertionAssistTidUsage.duplicateTidKeys,
+    eastTimeOffsetMinutes: eastInsertionTimeOffsetMinutes,
+    onEastTimeOffsetChange: onEastInsertionTimeOffsetChange,
+    controlledScheduleKey: tidReferenceScheduleKey,
+    onScheduleKeyChange: setTidReferenceScheduleKey,
+  };
 
   return (
     <div className="theme-insertion-page flex flex-col gap-5">
@@ -7456,6 +7477,12 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
           to { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
         }
       `}</style>
+
+      {insertionLiveStatusText && (
+        <div className={`w-fit rounded-xl border px-3 py-1.5 text-[11px] font-normal ${insertionLiveStatusClass || "border-emerald-600/50 bg-emerald-950/30 text-emerald-300"}`}>
+          {insertionLiveStatusText}
+        </div>
+      )}
 
       {tidDragState && (
         <div
@@ -7497,25 +7524,18 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
         </div>
       )}
 
-      {/* Top row: TID Reference Table (left) + Stabling sections (centre) */}
-      <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto 1fr" }}>
-        {/* TID Reference Tables — left column */}
-        <div className="self-start">
-          <TIDReferenceTable
-            withinSchedule={withinTIDSchedule}
-            activeTimetable={activeTimetable}
-            activeTimetableType={activeTimetableType}
-            onTidDragStart={handleTidDragStart}
-            activeDragKey={tidDragState?.sourceKey || ""}
-            usedTidKeys={insertionAssistTidUsage.usedTidKeys}
-            duplicateTidKeys={insertionAssistTidUsage.duplicateTidKeys}
-            eastTimeOffsetMinutes={eastInsertionTimeOffsetMinutes}
-            onEastTimeOffsetChange={onEastInsertionTimeOffsetChange}
-          />
-        </div>
+      {/* Insertion layout: each depot reference table sits beside its own stabling table */}
+      <div className="space-y-5 min-w-0">
+        <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
+          <div className="self-start">
+            <TIDReferenceTable
+              {...tidReferenceCommonProps}
+              depotFilter="west"
+              showHeader={true}
+              showHelp={false}
+            />
+          </div>
 
-        {/* Stabling sections — centre column */}
-        <div className="space-y-5 min-w-0">
           <InsertionStablingSection
             title="WEST DEPOT"
             blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]}
@@ -7534,6 +7554,18 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
             onTidDropApplied={handleTidDropApplied}
             {...westSection}
           />
+        </div>
+
+        <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
+          <div className="self-start">
+            <TIDReferenceTable
+              {...tidReferenceCommonProps}
+              depotFilter="east"
+              showHeader={false}
+              showHelp={true}
+            />
+          </div>
+
           <InsertionStablingSection
             title="EAST DEPOT"
             blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]}
@@ -7555,7 +7587,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
         </div>
       </div>
 
-      {/* Insertion log — full width below stabling tables */}
+      {/* Insertion log — full width below both depot rows */}
       <InsertionLogOutput insertionLog={sortInsertionLogByTime(insertionLog)} onClearDepot={onClearInsertionDepot} />
 
       {/* Beginner guide — full width below the log output */}
@@ -14787,6 +14819,7 @@ export default function DepotStablingPage() {
   const insertionLiveApplyingRemoteRef = useRef(false);
   const insertionLogRef = useRef(insertionLog);
   const tidInputsRef = useRef(tidInputs);
+  const activeInsertionPgRef = useRef(activeInsertionPg);
   const pg2StablingRef = useRef(pg2Stabling);
   const pg2InsertionLogRef = useRef(pg2InsertionLog);
   const pg2TidInputsRef = useRef(pg2TidInputs);
@@ -14807,6 +14840,7 @@ export default function DepotStablingPage() {
   useEffect(() => { pstPg2CompletedByNamesRef.current = pstPg2CompletedByNames; }, [pstPg2CompletedByNames]);
   useEffect(() => { insertionLogRef.current = insertionLog; }, [insertionLog]);
   useEffect(() => { tidInputsRef.current = tidInputs; }, [tidInputs]);
+  useEffect(() => { activeInsertionPgRef.current = activeInsertionPg; }, [activeInsertionPg]);
   useEffect(() => { pg2StablingRef.current = pg2Stabling; }, [pg2Stabling]);
   useEffect(() => { pg2InsertionLogRef.current = pg2InsertionLog; }, [pg2InsertionLog]);
   useEffect(() => { pg2TidInputsRef.current = pg2TidInputs; }, [pg2TidInputs]);
@@ -15183,6 +15217,12 @@ export default function DepotStablingPage() {
     saveInsertionLog(normalized.insertionLog);
     saveTidInputs(normalized.tidInputs);
 
+    if (normalized.activePg) {
+      activeInsertionPgRef.current = normalized.activePg;
+      setActiveInsertionPg(normalized.activePg);
+      saveInsertionActivePg(normalized.activePg);
+    }
+
     if (normalized.pg2Stabling) {
       setPg2Stabling(normalized.pg2Stabling);
       saveInsertionPg2Stabling(normalized.pg2Stabling);
@@ -15203,6 +15243,7 @@ export default function DepotStablingPage() {
 
     saveInsertionLog(payload.insertionLog);
     saveTidInputs(payload.tidInputs);
+    saveInsertionActivePg(payload.activePg);
     saveInsertionPg2Stabling(payload.pg2Stabling);
     saveInsertionPg2Log(payload.pg2InsertionLog);
     saveInsertionPg2TidInputs(payload.pg2TidInputs);
@@ -15255,6 +15296,7 @@ export default function DepotStablingPage() {
 
     saveInsertionLog(payload.insertionLog);
     saveTidInputs(payload.tidInputs);
+    saveInsertionActivePg(payload.activePg);
     saveInsertionPg2Stabling(payload.pg2Stabling);
     saveInsertionPg2Log(payload.pg2InsertionLog);
     saveInsertionPg2TidInputs(payload.pg2TidInputs);
@@ -15303,6 +15345,7 @@ export default function DepotStablingPage() {
         const payload = buildInsertionLivePayload({
           insertionLog: insertionLogRef.current,
           tidInputs: tidInputsRef.current,
+          activePg: activeInsertionPgRef.current,
           pg2Stabling: pg2StablingRef.current,
           pg2InsertionLog: pg2InsertionLogRef.current,
           pg2TidInputs: pg2TidInputsRef.current,
@@ -15361,6 +15404,7 @@ export default function DepotStablingPage() {
     const payload = {
       insertionLog,
       tidInputs,
+      activePg: activeInsertionPg,
       pg2Stabling,
       pg2InsertionLog,
       pg2TidInputs,
@@ -15368,6 +15412,7 @@ export default function DepotStablingPage() {
 
     saveInsertionLog(sortInsertionLogByTime(insertionLog));
     saveTidInputs(tidInputs);
+    saveInsertionActivePg(activeInsertionPg);
     saveInsertionPg2Stabling(pg2Stabling);
     saveInsertionPg2Log(pg2InsertionLog);
     saveInsertionPg2TidInputs(pg2TidInputs);
@@ -15379,7 +15424,7 @@ export default function DepotStablingPage() {
 
     if (!insertionLiveLoaded) return;
     scheduleInsertionLiveSave(payload);
-  }, [insertionLog, tidInputs, pg2Stabling, pg2InsertionLog, pg2TidInputs, insertionLiveLoaded, scheduleInsertionLiveSave]);
+  }, [insertionLog, tidInputs, activeInsertionPg, pg2Stabling, pg2InsertionLog, pg2TidInputs, insertionLiveLoaded, scheduleInsertionLiveSave]);
 
   useEffect(() => {
     return () => {
@@ -17268,6 +17313,7 @@ export default function DepotStablingPage() {
 
   const updateActiveInsertionPgForDepot = (depot, pg) => {
     const normalizedDepot = normalizeDepotKey(depot);
+    markInsertionLiveLocalEdit();
     setActiveInsertionPg((prev) => ({
       ...normalizeInsertionPgByDepot(prev),
       [normalizedDepot]: normalizeInsertionPg(pg),

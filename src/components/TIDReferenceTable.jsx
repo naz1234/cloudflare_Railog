@@ -1261,7 +1261,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
   );
 }
 
-export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday", onTidDragStart, activeDragKey = "", usedTidKeys = [], duplicateTidKeys = [], eastTimeOffsetMinutes = 0, onEastTimeOffsetChange }) {
+export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday", onTidDragStart, activeDragKey = "", usedTidKeys = [], duplicateTidKeys = [], eastTimeOffsetMinutes = 0, onEastTimeOffsetChange, depotFilter = "", showHeader = true, showHelp = true, controlledScheduleKey = null, onScheduleKeyChange = null }) {
   const [now, setNow] = useState(new Date());
   const [soundSettings, setSoundSettings] = useState(loadTidSoundSettings);
   const [soundReady, setSoundReady] = useState(false);
@@ -1287,7 +1287,17 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
       },
     ]));
   }, [baseSchedules, eastTimeOffsetMinutes]);
-  const [scheduleKey, setScheduleKey] = useState(() => selectedScheduleKey || getDefaultScheduleKey());
+  const [localScheduleKey, setLocalScheduleKey] = useState(() => selectedScheduleKey || getDefaultScheduleKey());
+  const normalizedControlledScheduleKey = controlledScheduleKey ? normalizeTimetableTypeKey(controlledScheduleKey) : null;
+  const scheduleKey = normalizedControlledScheduleKey || localScheduleKey;
+  const setScheduleKey = useCallback((nextScheduleKey) => {
+    const normalizedNextScheduleKey = normalizeTimetableTypeKey(nextScheduleKey);
+    if (typeof onScheduleKeyChange === "function") {
+      onScheduleKeyChange(normalizedNextScheduleKey);
+      return;
+    }
+    setLocalScheduleKey(normalizedNextScheduleKey);
+  }, [onScheduleKeyChange]);
   const activeSchedule = schedules[scheduleKey] || schedules[selectedScheduleKey] || schedules[getDefaultScheduleKey()] || schedules.weekday;
   const todayScheduleKey = getTodayScheduleKey(now);
   const todaySchedule = schedules[todayScheduleKey] || SCHEDULES[todayScheduleKey] || schedules.weekday;
@@ -1341,7 +1351,7 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
   }, [soundSettings]);
 
   useEffect(() => {
-    if (!isAnyTidSoundEnabled(soundSettings) || !activeSchedule) return;
+    if (!showHeader || !isAnyTidSoundEnabled(soundSettings) || !activeSchedule) return;
 
     const currentTime = formatClockTime(now);
     const dueTidList = buildDueTidList(activeSchedule, currentTime, soundSettings);
@@ -1360,17 +1370,36 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
       const context = audioContextRef.current;
       setSoundReady(Boolean(context && context.state === "running"));
     }
-  }, [now, soundSettings, activeSchedule, scheduleKey]);
+  }, [now, soundSettings, activeSchedule, scheduleKey, showHeader]);
 
   useEffect(() => {
     if (schedules[selectedScheduleKey]) setScheduleKey(selectedScheduleKey);
-  }, [selectedScheduleKey, schedules]);
+  }, [selectedScheduleKey, schedules, setScheduleKey]);
+
+  const normalizedDepotFilter = depotFilter === "east" || depotFilter === "west" ? depotFilter : "";
+  const renderDepotCard = (depotType) => (
+    <DepotCard
+      depotType={depotType}
+      title={depotType === "east" ? "East Depot" : "West Depot"}
+      dayLabel={activeSchedule.label}
+      rows={depotType === "east" ? activeSchedule.east : activeSchedule.west}
+      nowMinutes={nowMinutes}
+      withinSchedule={withinSchedule}
+      isScheduleOverride={isScheduleOverride}
+      onTidDragStart={onTidDragStart}
+      activeDragKey={activeDragKey}
+      usedTidKeys={usedTidKeySet}
+      duplicateTidKeys={duplicateTidKeySet}
+      timeOffsetMinutes={depotType === "east" ? eastTimeOffsetMinutes : 0}
+      onTimeOffsetChange={depotType === "east" ? onEastTimeOffsetChange : undefined}
+    />
+  );
 
   return (
     <div
       className="theme-insertion-reference"
       style={{
-        width: isWeekday ? "clamp(500px, 48vw, 620px)" : isScheduleOverride ? "clamp(300px, 32vw, 430px)" : "clamp(240px, 25vw, 300px)",
+        width: normalizedDepotFilter ? "clamp(250px, 26vw, 340px)" : isWeekday ? "clamp(500px, 48vw, 620px)" : isScheduleOverride ? "clamp(300px, 32vw, 430px)" : "clamp(240px, 25vw, 300px)",
         maxWidth: "100%",
         boxSizing: "border-box",
         padding: 8,
@@ -1387,7 +1416,7 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
         flexShrink: 0,
       }}
     >
-      {isScheduleOverride && (
+      {showHeader && isScheduleOverride && (
         <ScheduleWarningBanner
           selectedLabel={activeSchedule.label}
           todayLabel={todaySchedule.label}
@@ -1395,19 +1424,23 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
         />
       )}
 
-      <HeaderCard
-        now={now}
-        schedules={schedules}
-        scheduleKey={scheduleKey}
-        setScheduleKey={setScheduleKey}
-        todayScheduleKey={todayScheduleKey}
-        isScheduleOverride={isScheduleOverride}
-        soundSettings={soundSettings}
-        soundReady={soundReady}
-        onToggleDepotSound={handleToggleDepotSound}
-      />
+      {showHeader && (
+        <HeaderCard
+          now={now}
+          schedules={schedules}
+          scheduleKey={scheduleKey}
+          setScheduleKey={setScheduleKey}
+          todayScheduleKey={todayScheduleKey}
+          isScheduleOverride={isScheduleOverride}
+          soundSettings={soundSettings}
+          soundReady={soundReady}
+          onToggleDepotSound={handleToggleDepotSound}
+        />
+      )}
 
-      {isWeekday ? (
+      {normalizedDepotFilter ? (
+        renderDepotCard(normalizedDepotFilter)
+      ) : isWeekday ? (
         <div
           style={{
             display: "grid",
@@ -1416,72 +1449,19 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
             alignItems: "start",
           }}
         >
-          <DepotCard
-            depotType="east"
-            title="East Depot"
-            dayLabel={activeSchedule.label}
-            rows={activeSchedule.east}
-            nowMinutes={nowMinutes}
-            withinSchedule={withinSchedule}
-            isScheduleOverride={isScheduleOverride}
-            onTidDragStart={onTidDragStart}
-            activeDragKey={activeDragKey}
-            usedTidKeys={usedTidKeySet}
-            duplicateTidKeys={duplicateTidKeySet}
-            timeOffsetMinutes={eastTimeOffsetMinutes}
-            onTimeOffsetChange={onEastTimeOffsetChange}
-          />
-
-          <DepotCard
-            depotType="west"
-            title="West Depot"
-            dayLabel={activeSchedule.label}
-            rows={activeSchedule.west}
-            nowMinutes={nowMinutes}
-            withinSchedule={withinSchedule}
-            isScheduleOverride={isScheduleOverride}
-            onTidDragStart={onTidDragStart}
-            activeDragKey={activeDragKey}
-            usedTidKeys={usedTidKeySet}
-            duplicateTidKeys={duplicateTidKeySet}
-          />
+          {renderDepotCard("east")}
+          {renderDepotCard("west")}
         </div>
       ) : (
         <>
-          <DepotCard
-            depotType="west"
-            title="West Depot"
-            dayLabel={activeSchedule.label}
-            rows={activeSchedule.west}
-            nowMinutes={nowMinutes}
-            withinSchedule={withinSchedule}
-            isScheduleOverride={isScheduleOverride}
-            onTidDragStart={onTidDragStart}
-            activeDragKey={activeDragKey}
-            usedTidKeys={usedTidKeySet}
-            duplicateTidKeys={duplicateTidKeySet}
-          />
-
-          <DepotCard
-            depotType="east"
-            title="East Depot"
-            dayLabel={activeSchedule.label}
-            rows={activeSchedule.east}
-            nowMinutes={nowMinutes}
-            withinSchedule={withinSchedule}
-            isScheduleOverride={isScheduleOverride}
-            onTidDragStart={onTidDragStart}
-            activeDragKey={activeDragKey}
-            usedTidKeys={usedTidKeySet}
-            duplicateTidKeys={duplicateTidKeySet}
-            timeOffsetMinutes={eastTimeOffsetMinutes}
-            onTimeOffsetChange={onEastTimeOffsetChange}
-          />
+          {renderDepotCard("west")}
+          {renderDepotCard("east")}
         </>
       )}
 
-      <div
-        className="theme-insertion-reference-help"
+      {showHelp && (
+        <div
+          className="theme-insertion-reference-help"
         style={{
           display: "flex",
           alignItems: "center",
@@ -1498,10 +1478,11 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
           background: "rgba(14, 165, 233, 0.09)",
           border: "1px dashed rgba(125, 211, 252, 0.28)",
         }}
-      >
-        <span aria-hidden="true" style={{ fontSize: 15, lineHeight: 1 }}>↕</span>
-        <span>Drag and drop a TID row onto a train card.</span>
-      </div>
+        >
+          <span aria-hidden="true" style={{ fontSize: 15, lineHeight: 1 }}>↕</span>
+          <span>Drag and drop a TID row onto a train card.</span>
+        </div>
+      )}
     </div>
   );
 }
