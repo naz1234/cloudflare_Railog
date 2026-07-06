@@ -29,9 +29,6 @@
     "pg2TidInputs": {
       "type": "object"
     },
-    "tidReferenceAssignments": {
-      "type": "object"
-    },
     "updatedAt": {
       "type": "string"
     }
