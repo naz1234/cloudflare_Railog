@@ -4650,6 +4650,22 @@ function getInsertionAssistRemarkDisplayLabel(remark = "") {
   return normalized;
 }
 
+function getInsertionAssistPillStyle(style = null) {
+  if (!style) return {};
+
+  return {
+    maxWidth: "100%",
+    minHeight: 18,
+    padding: "2px 7px",
+    borderRadius: 999,
+    background: style.bg || style.cardBg || "rgba(148, 163, 184, 0.16)",
+    border: `1px solid ${style.border || "rgba(148, 163, 184, 0.36)"}`,
+    color: style.color || "#ffffff",
+    boxShadow: style.shadow || "inset 0 1px 0 rgba(255,255,255,0.06)",
+    whiteSpace: "nowrap",
+  };
+}
+
 function getTimetableInsertionRemarkMap(activeTimetable = null, depot = "west") {
   const parsed = getActiveTimetableParsedData(activeTimetable);
   const depotKey = normalizeDepotKey(depot);
@@ -5177,8 +5193,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   <button
                     type="button"
                     onClick={handleInsertedUndoClick}
-                    className={`inline-flex min-w-0 max-w-full items-center justify-center self-center border-0 bg-transparent p-0 text-center font-normal leading-tight text-white outline-none transition-colors hover:text-red-200 focus-visible:text-red-200 ${useLargerWeekdayAssistRemark ? "text-[12px]" : "text-[11px]"}`}
-                    style={{ whiteSpace: "nowrap" }}
+                    className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${useLargerWeekdayAssistRemark ? "text-[12px]" : "text-[11px]"}`}
+                    style={getInsertionAssistPillStyle(insertedTidRemarkStyle || getInsertionAssistRemarkStyle(insertedTidAssistRemark))}
                     title={`Click ${insertedTidAssistDisplayRemark} to undo insertion`}
                     aria-label={`Undo insertion for ${insertedTidAssistDisplayRemark}`}
                   >
@@ -5479,6 +5495,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
         insertionLog,
         tidInputs,
         getTidScheduledTime,
+        getTidAssistRemark,
       });
     } catch (error) {
       console.error("Insertion PNG export failed:", error);
@@ -23132,7 +23149,42 @@ function getInsertionPrintDepotFromRoad(road = "") {
   return String(road || "").toUpperCase().startsWith("WD-") ? "west" : "east";
 }
 
+function normalizeInsertionPrintAssistRemark(value = "") {
+  const normalized = normalizeInsertionAssistRemark(value);
+  if (normalized) return normalized;
+
+  const key = String(value || "").trim().toUpperCase().replace(/\s+/g, " ");
+  if (/^WD\s*\(?\s*7\s*PM\s*\)?$/.test(key)) return "Late Rem";
+  if (/^WD\s*\(?\s*9\s*AM\s*\)?$/.test(key)) return "Early Rem";
+  if (/^ED\s*\(?\s*7\s*PM\s*\)?$/.test(key)) return "ED (7pm)";
+  if (/^ED\s*\(?\s*9\s*AM\s*\)?$/.test(key)) return "ED";
+
+  return "";
+}
+
+function getInsertionPrintAssistPillStyle(value = "") {
+  const normalized = normalizeInsertionPrintAssistRemark(value);
+
+  if (normalized === "Early Rem") {
+    return { fill: "#dcfce7", stroke: "#22c55e", textFill: "#14532d" };
+  }
+  if (normalized === "Late Rem") {
+    return { fill: "#fef3c7", stroke: "#facc15", textFill: "#713f12" };
+  }
+  if (normalized === "ED (7pm)") {
+    return { fill: "#ede9fe", stroke: "#8b5cf6", textFill: "#4c1d95" };
+  }
+  if (normalized === "ED") {
+    return { fill: "#fee2e2", stroke: "#f87171", textFill: "#7f1d1d" };
+  }
+
+  return null;
+}
+
 function getInsertionPrintPillStyle(value = "") {
+  const assistStyle = getInsertionPrintAssistPillStyle(value);
+  if (assistStyle) return assistStyle;
+
   const key = String(value || "").trim().toUpperCase();
   if (key === "3K1") {
     return { fill: "#bff7f0", stroke: "#0f9f8f", textFill: "#003f39" };
@@ -23143,7 +23195,7 @@ function getInsertionPrintPillStyle(value = "") {
   return { fill: "#fff176", stroke: "#000", textFill: "#000" };
 }
 
-function buildInsertionPrintPillItems({ road, bi, block, tidInputs = {}, insertionLog = [], getTidScheduledTime }) {
+function buildInsertionPrintPillItems({ road, bi, block, tidInputs = {}, insertionLog = [], getTidScheduledTime, getTidAssistRemark }) {
   const cellKey = `${road}-${bi}`;
   const trainKey = normalizeTrainId(block?.trainId || "");
   const logEntry = getActiveInsertionEntryForCell(insertionLog, road, bi, trainKey);
@@ -23166,6 +23218,19 @@ function buildInsertionPrintPillItems({ road, bi, block, tidInputs = {}, inserti
       label: `TID ${tid}`,
       ...getInsertionPrintPillStyle("TID"),
     }];
+
+    const assistRemark = typeof getTidAssistRemark === "function"
+      ? getTidAssistRemark(tid, depot)
+      : "";
+    const assistLabel = getInsertionAssistRemarkDisplayLabel(assistRemark);
+    const assistStyle = getInsertionPrintAssistPillStyle(assistRemark);
+
+    if (assistLabel && assistStyle) {
+      pills.push({
+        label: assistLabel,
+        ...assistStyle,
+      });
+    }
 
     if (time) {
       pills.push({
@@ -23224,7 +23289,7 @@ function buildInsertionPrintPillItems({ road, bi, block, tidInputs = {}, inserti
   }];
 }
 
-async function downloadInsertionPicturePng({ title, blockLabels, blockIndices, roads, data, labelSide, insertionLog, tidInputs, getTidScheduledTime }) {
+async function downloadInsertionPicturePng({ title, blockLabels, blockIndices, roads, data, labelSide, insertionLog, tidInputs, getTidScheduledTime, getTidAssistRemark }) {
   const printableTitle = `${String(title || "Depot").replace(/\s+INSERTION$/i, "").trim()} STABLING`;
   const svg = sectionToPrintableSvg({
     title: printableTitle,
@@ -23243,6 +23308,7 @@ async function downloadInsertionPicturePng({ title, blockLabels, blockIndices, r
       tidInputs,
       insertionLog,
       getTidScheduledTime,
+      getTidAssistRemark,
     }),
   });
   const sizeMatch = svg.match(/width="(\d+)" height="(\d+)"/);
