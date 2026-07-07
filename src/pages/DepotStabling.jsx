@@ -5379,8 +5379,12 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       handleInsertedUndoClick(e);
                     }
                   }}
-                  className="w-full rounded-lg border px-1.5 py-1 text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                  className="rounded-lg border px-1 py-1 text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
                   style={{
+                    width: "calc(100% + 8px)",
+                    maxWidth: "calc(100% + 8px)",
+                    marginLeft: -4,
+                    marginRight: -4,
                     background: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.bg,
                     borderColor: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.border,
                     color: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.color,
@@ -5390,8 +5394,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   aria-label="Undo sweeping"
                 >
                   <div className="mb-0.5 text-center text-[11px] font-normal leading-tight text-white">Sweep</div>
-                  <div className="grid w-full grid-cols-[26px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
-                    <span className="text-right text-[8px] font-normal uppercase tracking-wide text-purple-200/90">Track</span>
+                  <div className="flex w-full flex-col gap-0.5">
                     <select
                       value={inserted.sweepTrack || "TK1"}
                       onClick={(e) => e.stopPropagation()}
@@ -5405,51 +5408,53 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       <option value="TK2" style={{ backgroundColor: "#071828", color: "#ffffff" }}>Track 02</option>
                     </select>
 
-                    <span className="text-right text-[8px] font-normal uppercase tracking-wide text-purple-200/90">Start</span>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={5}
-                      value={inserted.time || ""}
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => {
-                        e.stopPropagation();
-                        const value = String(inserted.time || "");
-                        const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-                        if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                          e.preventDefault();
-                          onSweepUpdate?.(inserted.key, { time: value.slice(0, -2) });
-                        }
-                      }}
-                      onChange={(e) => onSweepUpdate?.(inserted.key, { time: cleanMovementCustomTimeInput(e.target.value) })}
-                      onBlur={(e) => onSweepUpdate?.(inserted.key, { time: normalizeMovementCustomTimeInput(e.target.value) })}
-                      placeholder="00:00"
-                      className="h-4 w-full rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[9px] font-normal leading-none text-white outline-none placeholder:text-white/45"
-                      title="Edit Sweep start time. End time updates automatically +2 minutes."
-                    />
+                    <div className="grid w-full grid-cols-[25px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
+                      <span className="text-right text-[8px] font-normal uppercase tracking-wide text-purple-200/90">Start</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={5}
+                        value={inserted.time || ""}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          e.stopPropagation();
+                          const value = String(inserted.time || "");
+                          const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                          if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                            e.preventDefault();
+                            onSweepUpdate?.(inserted.key, { time: value.slice(0, -2) });
+                          }
+                        }}
+                        onChange={(e) => onSweepUpdate?.(inserted.key, { time: cleanMovementCustomTimeInput(e.target.value) })}
+                        onBlur={(e) => onSweepUpdate?.(inserted.key, { time: normalizeMovementCustomTimeInput(e.target.value) })}
+                        placeholder="00:00"
+                        className="h-4 w-full rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[9px] font-normal leading-none text-white outline-none placeholder:text-white/45"
+                        title="Edit Sweep start time. End time updates automatically +2 minutes."
+                      />
 
-                    <span className="text-right text-[8px] font-normal uppercase tracking-wide text-purple-200/90">End</span>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={5}
-                      value={inserted.clearTime || ""}
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => {
-                        e.stopPropagation();
-                        const value = String(inserted.clearTime || "");
-                        const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-                        if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                          e.preventDefault();
-                          onSweepUpdate?.(inserted.key, { clearTime: value.slice(0, -2) });
-                        }
-                      }}
-                      onChange={(e) => onSweepUpdate?.(inserted.key, { clearTime: cleanMovementCustomTimeInput(e.target.value) })}
-                      onBlur={(e) => onSweepUpdate?.(inserted.key, { clearTime: normalizeMovementCustomTimeInput(e.target.value) })}
-                      placeholder="00:00"
-                      className="h-4 w-full rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[9px] font-normal leading-none text-white outline-none placeholder:text-white/45"
-                      title="Edit Sweep end time"
-                    />
+                      <span className="text-right text-[8px] font-normal uppercase tracking-wide text-purple-200/90">End</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={5}
+                        value={inserted.clearTime || ""}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          e.stopPropagation();
+                          const value = String(inserted.clearTime || "");
+                          const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                          if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                            e.preventDefault();
+                            onSweepUpdate?.(inserted.key, { clearTime: value.slice(0, -2) });
+                          }
+                        }}
+                        onChange={(e) => onSweepUpdate?.(inserted.key, { clearTime: cleanMovementCustomTimeInput(e.target.value) })}
+                        onBlur={(e) => onSweepUpdate?.(inserted.key, { clearTime: normalizeMovementCustomTimeInput(e.target.value) })}
+                        placeholder="00:00"
+                        className="h-4 w-full rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[9px] font-normal leading-none text-white outline-none placeholder:text-white/45"
+                        title="Edit Sweep end time"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-2 text-[12px] font-normal leading-tight">
