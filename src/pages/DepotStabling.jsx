@@ -4769,7 +4769,7 @@ const EAST_INSERTION_KEYWORD_REMARK_STYLES = {
     color: "#fef3c7",
     shadow: "0 0 11px rgba(250, 204, 21, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
-  "(G TO C)": {
+  "G TO C": {
     bg: "rgba(168, 85, 247, 0.22)",
     border: "#c084fc",
     color: "#f3e8ff",
@@ -4817,11 +4817,20 @@ function getEastInsertionKeywordRemarkLabel(value = "") {
   const noSpace = compact.replace(/[()\s]/g, "");
 
   if (noSpace === "3K1" || noSpace === "3K1INSERTION" || /\b3K1\b/.test(compact)) return "3K1";
+  if (noSpace === "SW" || noSpace === "SW1" || noSpace === "SW2" || /\bSWEEP(?:ING)?\b/.test(compact)) return "SWEEP";
   if (/\bWASH(?:ING)?\b/.test(compact)) return "WASH";
-  if (/\bREQUEST(?:ED)?\b|\bREQ\b/.test(compact)) return "REQUEST";
-  if (noSpace === "GTOC" || /\bG\s*TO\s*C\b/.test(compact)) return "(G TO C)";
-  if (/\bPM\b/.test(compact)) return "PM";
-  if (/\bCM\b/.test(compact)) return "CM";
+  if (/\bPM\b|\bRST\s*PM\b|\bPREVENTIVE\b/.test(compact)) return "PM";
+  if (/\bCM\b|\bRST\s*CM\b|\bCORRECTIVE\b/.test(compact)) return "CM";
+  if (noSpace === "GTOC" || /\bG\s*TO\s*C\b/.test(compact)) return "G TO C";
+  if (
+    /\bREQUEST(?:ED)?\b|\bREQ\b/.test(compact) ||
+    /\bRST\b/.test(compact) ||
+    /\bUNPLANNED\b/.test(compact) ||
+    /\bWORKSHOP\b/.test(compact) ||
+    /\bMOVEMENT\b/.test(compact) ||
+    /\bTLC\b/.test(compact) ||
+    /\bNOT\s*FIT\b|\bUNFIT\b/.test(compact)
+  ) return "REQUEST";
 
   return "";
 }
