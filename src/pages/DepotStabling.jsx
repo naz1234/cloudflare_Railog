@@ -5153,6 +5153,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const insertedPlainKeywordLabel = getEastInsertionKeywordRemarkLabel(insertedPlainRemark);
   const is3K1InsertionCard = Boolean(getEastInsertionKeywordRemarkLabel(eastInsertionRemarkSource) === "3K1");
   const isEast3K1InsertionCard = is3K1InsertionCard;
+  // The 3K1 special card already shows 3K1 in the main big pill.
+  // Do not duplicate another 3K1 pill in the remark section for West or East.
+  const suppressDuplicate3K1RemarkPill = is3K1InsertionCard;
   const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
@@ -5390,6 +5393,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     ? getEastInsertionKeywordRemarkLabel(maintText)
                     : "";
 
+                  if (suppressDuplicate3K1RemarkPill && eastMaintPillLabel === "3K1") return null;
+
                   return eastMaintPillLabel ? (
                     <button
                       key={`${item.displayType}-${item.badgeText || ""}`}
@@ -5413,7 +5418,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   );
                 })}
 
-                {key && insertedTidAssistRemark && !hasInsertedPlainRemark && insertedTidAssistKeywordLabel && (
+                {key && insertedTidAssistRemark && !hasInsertedPlainRemark && insertedTidAssistKeywordLabel && !(suppressDuplicate3K1RemarkPill && insertedTidAssistKeywordLabel === "3K1") && (
                   <button
                     type="button"
                     onClick={handleInsertedUndoClick}
@@ -5439,7 +5444,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </button>
                 )}
 
-                {key && hasInsertedPlainRemark && (
+                {key && hasInsertedPlainRemark && !(suppressDuplicate3K1RemarkPill && insertedPlainKeywordLabel === "3K1") && (
                   <button
                     type="button"
                     onClick={handleInsertedUndoClick}
