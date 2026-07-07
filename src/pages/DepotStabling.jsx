@@ -5412,7 +5412,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onChange={(e) => onSweepUpdate?.(inserted.key, { time: cleanMovementCustomTimeInput(e.target.value) })}
                       onBlur={(e) => onSweepUpdate?.(inserted.key, { time: normalizeMovementCustomTimeInput(e.target.value) })}
                       placeholder="00:00"
-                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-center text-[11px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-center text-[10px] font-normal leading-tight outline-none placeholder:text-slate-500"
                       style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
                       title="Edit Sweep start time. End time updates automatically +2 minutes."
                     />
@@ -5439,13 +5439,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onChange={(e) => onSweepUpdate?.(inserted.key, { clearTime: cleanMovementCustomTimeInput(e.target.value) })}
                       onBlur={(e) => onSweepUpdate?.(inserted.key, { clearTime: normalizeMovementCustomTimeInput(e.target.value) })}
                       placeholder="00:00"
-                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-center text-[11px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-center text-[10px] font-normal leading-tight outline-none placeholder:text-slate-500"
                       style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
                       title="Edit Sweep end time"
                     />
                   </div>
                 </div>
-                <div className="grid w-full grid-cols-[34px_8px_minmax(0,1fr)] items-center gap-x-1 px-2 text-[12px] font-normal leading-tight">
+                <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-2 text-[12px] font-normal leading-tight">
                   <span className="text-right font-normal text-white">TA</span>
                   <span className="text-center font-normal text-white">:</span>
                   <input
@@ -5456,6 +5456,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
                     placeholder="Name"
                     className="min-w-0 border-0 bg-transparent p-0 pl-1 text-left text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                    style={{ justifySelf: "start" }}
                     title="Optional TA name for the sweeping output"
                   />
                 </div>
