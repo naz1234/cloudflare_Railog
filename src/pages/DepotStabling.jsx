@@ -5942,20 +5942,22 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </div>
                 </div>
                 )}
-                <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
-                  <span className="text-right font-normal text-blue-300">TA</span>
-                  <span className="text-center font-normal text-blue-300">:</span>
-                  <input
-                    type="text"
-                    maxLength={40}
-                    value={inserted.taName || ""}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                    placeholder="Name"
-                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
-                    title="Optional TA name for the insertion output"
-                  />
-                </div>
+                {(insertedTid || hasInsertedPlainRemark) && (
+                  <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
+                    <span className="text-right font-normal text-blue-300">TA</span>
+                    <span className="text-center font-normal text-blue-300">:</span>
+                    <input
+                      type="text"
+                      maxLength={40}
+                      value={inserted.taName || ""}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
+                      placeholder="Name"
+                      className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                      title="Optional TA name for the insertion output"
+                    />
+                  </div>
+                )}
               </>
               )
             )}
