@@ -1747,6 +1747,7 @@ const PST_LIVE_SYNC_INTERVAL_MS = 5000;
 const PST_LIVE_LOCAL_EDIT_HOLD_MS = 30000;
 const PST_LIVE_POST_SAVE_HOLD_MS = 12000;
 const INSERTION_LOG_KEY = "insertionLogState_v1";
+const INSERTION_LIVE_LOCAL_UPDATED_KEY = "insertionLiveLocalUpdatedAt_v1";
 const INSERTION_LIVE_RECORD_KEY = "insertion-live-main";
 const INSERTION_LIVE_SYNC_INTERVAL_MS = 5000;
 const INSERTION_LIVE_LOCAL_EDIT_HOLD_MS = 30000;
@@ -1980,6 +1981,42 @@ function saveInsertionPg2TidInputs(inputs = {}) {
   try {
     if (typeof localStorage === "undefined") return;
     localStorage.setItem(INSERTION_PG2_TID_INPUTS_KEY, JSON.stringify(inputs && typeof inputs === "object" ? inputs : {}));
+  } catch {}
+}
+
+function loadInsertionLiveLocalUpdatedMs() {
+  try {
+    if (typeof localStorage === "undefined") return 0;
+    const raw = localStorage.getItem(INSERTION_LIVE_LOCAL_UPDATED_KEY);
+    const parsed = raw ? Date.parse(raw) : 0;
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+
+    const hasLocalState =
+      (Array.isArray(loadInsertionLog()) && loadInsertionLog().length > 0) ||
+      Object.keys(loadTidInputs() || {}).length > 0 ||
+      (Array.isArray(loadInsertionPg2Log()) && loadInsertionPg2Log().length > 0) ||
+      Object.keys(loadInsertionPg2TidInputs() || {}).length > 0;
+
+    if (!hasLocalState) return 0;
+
+    const now = Date.now();
+    localStorage.setItem(INSERTION_LIVE_LOCAL_UPDATED_KEY, new Date(now).toISOString());
+    return now;
+  } catch {
+    return 0;
+  }
+}
+
+function saveInsertionLiveLocalUpdatedAt(value = Date.now()) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    const dateValue = value instanceof Date
+      ? value
+      : typeof value === "number"
+      ? new Date(value)
+      : new Date(value || Date.now());
+    const safeDate = Number.isNaN(dateValue.getTime()) ? new Date() : dateValue;
+    localStorage.setItem(INSERTION_LIVE_LOCAL_UPDATED_KEY, safeDate.toISOString());
   } catch {}
 }
 
@@ -15163,7 +15200,7 @@ export default function DepotStablingPage() {
   const pg2StablingRef = useRef(pg2Stabling);
   const pg2InsertionLogRef = useRef(pg2InsertionLog);
   const pg2TidInputsRef = useRef(pg2TidInputs);
-  const insertionLiveLocalUpdatedAtRef = useRef(0);
+  const insertionLiveLocalUpdatedAtRef = useRef(loadInsertionLiveLocalUpdatedMs());
   const insertionLiveRemoteUpdatedAtRef = useRef(0);
 
   useEffect(() => { pstStateRef.current = pstState; }, [pstState]);
@@ -15207,8 +15244,10 @@ export default function DepotStablingPage() {
 
   const markInsertionLiveLocalEdit = useCallback(() => {
     const now = Date.now();
+    insertionLiveApplyingRemoteRef.current = false;
     insertionLiveLocalUpdatedAtRef.current = now;
     insertionLiveLocalEditUntilRef.current = now + INSERTION_LIVE_LOCAL_EDIT_HOLD_MS;
+    saveInsertionLiveLocalUpdatedAt(now);
   }, []);
 
   const handleTidChange = useCallback((road, bi, value) => {
@@ -15550,6 +15589,8 @@ export default function DepotStablingPage() {
 
     if (incomingUpdatedMs) {
       insertionLiveRemoteUpdatedAtRef.current = Math.max(insertionLiveRemoteUpdatedAtRef.current, incomingUpdatedMs);
+      insertionLiveLocalUpdatedAtRef.current = Math.max(insertionLiveLocalUpdatedAtRef.current || 0, incomingUpdatedMs);
+      saveInsertionLiveLocalUpdatedAt(insertionLiveLocalUpdatedAtRef.current);
     }
 
     insertionLiveApplyingRemoteRef.current = true;
@@ -15588,6 +15629,8 @@ export default function DepotStablingPage() {
     saveInsertionPg2Stabling(payload.pg2Stabling);
     saveInsertionPg2Log(payload.pg2InsertionLog);
     saveInsertionPg2TidInputs(payload.pg2TidInputs);
+    saveInsertionLiveLocalUpdatedAt(payload.updatedAt);
+    insertionLiveLocalUpdatedAtRef.current = Date.parse(payload.updatedAt || "") || insertionLiveLocalUpdatedAtRef.current || Date.now();
 
     if (!isInsertionLiveEntityReady(entity)) {
       setInsertionLiveDbReady(false);
@@ -15613,6 +15656,8 @@ export default function DepotStablingPage() {
       const payloadUpdatedMs = Date.parse(payload.updatedAt || "");
       if (payloadUpdatedMs) {
         insertionLiveRemoteUpdatedAtRef.current = Math.max(insertionLiveRemoteUpdatedAtRef.current, payloadUpdatedMs);
+        insertionLiveLocalUpdatedAtRef.current = Math.max(insertionLiveLocalUpdatedAtRef.current || 0, payloadUpdatedMs);
+        saveInsertionLiveLocalUpdatedAt(insertionLiveLocalUpdatedAtRef.current);
       }
 
       setInsertionLiveLastSynced(new Date());
@@ -15641,6 +15686,8 @@ export default function DepotStablingPage() {
     saveInsertionPg2Stabling(payload.pg2Stabling);
     saveInsertionPg2Log(payload.pg2InsertionLog);
     saveInsertionPg2TidInputs(payload.pg2TidInputs);
+    saveInsertionLiveLocalUpdatedAt(payload.updatedAt);
+    insertionLiveLocalUpdatedAtRef.current = Date.parse(payload.updatedAt || "") || insertionLiveLocalUpdatedAtRef.current || Date.now();
 
     insertionLivePendingSaveRef.current = true;
     insertionLiveLocalEditUntilRef.current = Date.now() + INSERTION_LIVE_LOCAL_EDIT_HOLD_MS;
@@ -15697,6 +15744,8 @@ export default function DepotStablingPage() {
         const payloadUpdatedMs = Date.parse(payload.updatedAt || "");
         if (payloadUpdatedMs) {
           insertionLiveRemoteUpdatedAtRef.current = Math.max(insertionLiveRemoteUpdatedAtRef.current, payloadUpdatedMs);
+          insertionLiveLocalUpdatedAtRef.current = Math.max(insertionLiveLocalUpdatedAtRef.current || 0, payloadUpdatedMs);
+          saveInsertionLiveLocalUpdatedAt(insertionLiveLocalUpdatedAtRef.current);
         }
 
         setInsertionLiveLastSynced(new Date());
@@ -16525,12 +16574,20 @@ export default function DepotStablingPage() {
 
   const handleInsertionTick = useCallback((road, bi, trainKey, remark = "", sweepTrack = "") => {
     markInsertionLiveLocalEdit();
-    setInsertionLog((prev) => applyInsertionTickToLog(prev, road, bi, trainKey, remark, sweepTrack));
+    setInsertionLog((prev) => {
+      const next = applyInsertionTickToLog(prev, road, bi, trainKey, remark, sweepTrack);
+      saveInsertionLog(next);
+      return next;
+    });
   }, [applyInsertionTickToLog, markInsertionLiveLocalEdit]);
 
   const handlePg2InsertionTick = useCallback((road, bi, trainKey, remark = "", sweepTrack = "") => {
     markInsertionLiveLocalEdit();
-    setPg2InsertionLog((prev) => applyInsertionTickToLog(prev, road, bi, trainKey, remark, sweepTrack));
+    setPg2InsertionLog((prev) => {
+      const next = applyInsertionTickToLog(prev, road, bi, trainKey, remark, sweepTrack);
+      saveInsertionPg2Log(next);
+      return next;
+    });
   }, [applyInsertionTickToLog, markInsertionLiveLocalEdit]);
 
   const updateInsertionEntryTimeInLog = useCallback((prevLog = [], entryKey, nextValue = "") => {
@@ -16562,12 +16619,20 @@ export default function DepotStablingPage() {
 
   const handleInsertionTimeUpdate = useCallback((entryKey, nextValue) => {
     markInsertionLiveLocalEdit();
-    setInsertionLog((prev) => updateInsertionEntryTimeInLog(prev, entryKey, nextValue));
+    setInsertionLog((prev) => {
+      const next = updateInsertionEntryTimeInLog(prev, entryKey, nextValue);
+      saveInsertionLog(next);
+      return next;
+    });
   }, [markInsertionLiveLocalEdit, updateInsertionEntryTimeInLog]);
 
   const handlePg2InsertionTimeUpdate = useCallback((entryKey, nextValue) => {
     markInsertionLiveLocalEdit();
-    setPg2InsertionLog((prev) => updateInsertionEntryTimeInLog(prev, entryKey, nextValue));
+    setPg2InsertionLog((prev) => {
+      const next = updateInsertionEntryTimeInLog(prev, entryKey, nextValue);
+      saveInsertionPg2Log(next);
+      return next;
+    });
   }, [markInsertionLiveLocalEdit, updateInsertionEntryTimeInLog]);
 
   const updateInsertionEntryRemarkInLog = useCallback((prevLog = [], entryKey, nextValue = "") => {
@@ -16640,12 +16705,20 @@ export default function DepotStablingPage() {
 
   const handleInsertionTaNameUpdate = useCallback((entryKey, nextValue) => {
     markInsertionLiveLocalEdit();
-    setInsertionLog((prev) => updateInsertionEntryTaNameInLog(prev, entryKey, nextValue));
+    setInsertionLog((prev) => {
+      const next = updateInsertionEntryTaNameInLog(prev, entryKey, nextValue);
+      saveInsertionLog(next);
+      return next;
+    });
   }, [markInsertionLiveLocalEdit, updateInsertionEntryTaNameInLog]);
 
   const handlePg2InsertionTaNameUpdate = useCallback((entryKey, nextValue) => {
     markInsertionLiveLocalEdit();
-    setPg2InsertionLog((prev) => updateInsertionEntryTaNameInLog(prev, entryKey, nextValue));
+    setPg2InsertionLog((prev) => {
+      const next = updateInsertionEntryTaNameInLog(prev, entryKey, nextValue);
+      saveInsertionPg2Log(next);
+      return next;
+    });
   }, [markInsertionLiveLocalEdit, updateInsertionEntryTaNameInLog]);
 
   const updateSweepEntryInLog = useCallback((prevLog = [], entryKey, changes = {}) => {
@@ -16681,12 +16754,20 @@ export default function DepotStablingPage() {
 
   const handleSweepUpdate = useCallback((entryKey, changes) => {
     markInsertionLiveLocalEdit();
-    setInsertionLog((prev) => updateSweepEntryInLog(prev, entryKey, changes));
+    setInsertionLog((prev) => {
+      const next = updateSweepEntryInLog(prev, entryKey, changes);
+      saveInsertionLog(next);
+      return next;
+    });
   }, [markInsertionLiveLocalEdit, updateSweepEntryInLog]);
 
   const handlePg2SweepUpdate = useCallback((entryKey, changes) => {
     markInsertionLiveLocalEdit();
-    setPg2InsertionLog((prev) => updateSweepEntryInLog(prev, entryKey, changes));
+    setPg2InsertionLog((prev) => {
+      const next = updateSweepEntryInLog(prev, entryKey, changes);
+      saveInsertionPg2Log(next);
+      return next;
+    });
   }, [markInsertionLiveLocalEdit, updateSweepEntryInLog]);
 
   const clearTidInputForInsertionKey = (key) => {
