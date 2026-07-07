@@ -160,11 +160,12 @@ function getParsedTimetable(activeTimetable = null) {
 function normalizeAssistRemark(value = "") {
   const text = String(value || "").trim();
   const compact = text.replace(/\s+/g, " ");
+  const noSpace = compact.replace(/[\s_-]+/g, "");
 
-  if (/^early\s*rem$/i.test(compact)) return "Early Rem";
-  if (/^late\s*rem$/i.test(compact)) return "Late Rem";
-  if (/^ed\s*\(\s*7\s*pm\s*\)$/i.test(compact)) return "ED (7pm)";
-  if (/^ed$/i.test(compact)) return "ED";
+  if (/^early\s*rem$/i.test(compact) || /^wd\(?9am\)?$/i.test(noSpace)) return "Early Rem";
+  if (/^late\s*rem$/i.test(compact) || /^wd\(?7pm\)?$/i.test(noSpace)) return "Late Rem";
+  if (/^ed\s*\(\s*7\s*pm\s*\)$/i.test(compact) || /^ed\(?7pm\)?$/i.test(noSpace)) return "ED (7pm)";
+  if (/^ed$/i.test(compact) || /^ed\(?9am\)?$/i.test(noSpace)) return "ED";
 
   return "";
 }

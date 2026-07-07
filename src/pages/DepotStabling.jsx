@@ -4728,10 +4728,11 @@ function getInsertionTidRemarkNumber(value) {
 
 function normalizeInsertionAssistRemark(value = "") {
   const text = String(value || "").trim().replace(/\s+/g, " ");
-  if (/^early\s*rem$/i.test(text)) return "Early Rem";
-  if (/^late\s*rem$/i.test(text)) return "Late Rem";
-  if (/^ed\s*\(\s*7\s*pm\s*\)$/i.test(text)) return "ED (7pm)";
-  if (/^ed$/i.test(text)) return "ED";
+  const noSpace = text.replace(/[\s_-]+/g, "");
+  if (/^early\s*rem$/i.test(text) || /^wd\(?9am\)?$/i.test(noSpace)) return "Early Rem";
+  if (/^late\s*rem$/i.test(text) || /^wd\(?7pm\)?$/i.test(noSpace)) return "Late Rem";
+  if (/^ed\s*\(\s*7\s*pm\s*\)$/i.test(text) || /^ed\(?7pm\)?$/i.test(noSpace)) return "ED (7pm)";
+  if (/^ed$/i.test(text) || /^ed\(?9am\)?$/i.test(noSpace)) return "ED";
   return "";
 }
 
@@ -4856,6 +4857,24 @@ function getInsertionTidBigPillStyle(assistStyle = null, depot = "west") {
     border: assistStyle.border || fallback.border,
     color: assistStyle.color || fallback.color,
     shadow: assistStyle.shadow || fallback.shadow,
+  };
+}
+
+function getInsertionTidAssistMiniPillStyle(assistStyle = null) {
+  const style = assistStyle || INSERTION_DEFAULT_REMARK_PILL_STYLE;
+
+  return {
+    width: "min(74px, calc(100% - 8px))",
+    minHeight: 16,
+    padding: "1px 5px",
+    borderRadius: 999,
+    background: style.bg || "rgba(148, 163, 184, 0.16)",
+    border: `1px solid ${style.border || "rgba(148, 163, 184, 0.36)"}`,
+    color: style.color || "#ffffff",
+    boxShadow: style.shadow || "inset 0 1px 0 rgba(255,255,255,0.06)",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
   };
 }
 
@@ -5189,6 +5208,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     ? getTidAssistRemarkStyle(insertedTid, autoTidDepot)
     : null;
   const insertedTidAssistDisplayRemark = getInsertionAssistRemarkDisplayLabel(insertedTidAssistRemark);
+  const hasInsertedTidAssistDisplayRemark = Boolean(insertedTid && insertedTidAssistDisplayRemark);
+  const insertedTidAssistMiniPillStyle = getInsertionTidAssistMiniPillStyle(insertedTidRemarkStyle);
   const useLargerWeekdayAssistRemark = Boolean(
     isWeekdayActive && ["Early Rem", "Late Rem", "ED", "ED (7pm)"].includes(insertedTidAssistRemark)
   );
@@ -5219,6 +5240,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const suppressDuplicate3K1RemarkPill = is3K1InsertionCard;
   const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
   const insertedTidBigPillStyle = getInsertionTidBigPillStyle(insertedTidRemarkStyle, autoTidDepot);
+  const insertionDoneCardMinHeight = hasInsertedTidAssistDisplayRemark
+    ? 138
+    : ((insertedTid || hasInsertedPlainRemark) ? 126 : 130);
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
   const isInsertionDone = Boolean(inserted && !inserted.isSweeping);
@@ -5362,7 +5386,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         data-insertion-drop-bi={bi}
         className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} relative flex h-full flex-col items-center justify-start overflow-hidden rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
         style={{
-          minHeight: Math.max(inserted?.isSweeping ? 158 : isEast3K1InsertionCard ? 142 : isInsertionDone ? ((insertedTid || hasInsertedPlainRemark) ? 126 : 130) : 98, rowCardMinHeight),
+          minHeight: Math.max(inserted?.isSweeping ? 158 : isEast3K1InsertionCard ? 142 : isInsertionDone ? insertionDoneCardMinHeight : 98, rowCardMinHeight),
           height: "100%",
           padding: useUnifiedInsertionCardStyle
             ? (inserted?.isSweeping ? "8px 4px" : isInsertionDone ? "6px 1px 6px 5px" : "8px 1px 8px 7px")
@@ -5857,7 +5881,17 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       title={`TID ${insertedTid} insertion details`}
                       aria-label={`TID ${insertedTid} insertion details`}
                     >
-                      <div className="mb-1 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
+                      <div className="mb-0.5 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
+                      {hasInsertedTidAssistDisplayRemark && (
+                        <div
+                          className="mx-auto mb-1 inline-flex items-center justify-center text-center text-[10px] font-normal leading-tight"
+                          style={insertedTidAssistMiniPillStyle}
+                          title={insertedTidAssistDisplayRemark}
+                          aria-label={insertedTidAssistDisplayRemark}
+                        >
+                          {insertedTidAssistDisplayRemark}
+                        </div>
+                      )}
                       <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
                         <span className="text-right text-[10px] font-normal uppercase tracking-normal" style={{ color: insertedTidBigPillStyle.color, opacity: 0.92 }}>Time :</span>
                         <input
@@ -5964,7 +5998,17 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       title={`TID ${insertedTid} insertion details`}
                       aria-label={`TID ${insertedTid} insertion details`}
                     >
-                      <div className="mb-1 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
+                      <div className="mb-0.5 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
+                      {hasInsertedTidAssistDisplayRemark && (
+                        <div
+                          className="mx-auto mb-1 inline-flex items-center justify-center text-center text-[10px] font-normal leading-tight"
+                          style={insertedTidAssistMiniPillStyle}
+                          title={insertedTidAssistDisplayRemark}
+                          aria-label={insertedTidAssistDisplayRemark}
+                        >
+                          {insertedTidAssistDisplayRemark}
+                        </div>
+                      )}
                       <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
                         <span className="text-right text-[10px] font-normal uppercase tracking-normal" style={{ color: insertedTidBigPillStyle.color, opacity: 0.92 }}>Time :</span>
                         <input
@@ -24137,9 +24181,16 @@ function buildInsertionPrintPillItems({ road, bi, block, tidInputs = {}, inserti
       ...getInsertionPrintPillStyle("TID"),
     }];
 
-    // PNG export should show only the inserted TID and timing.
-    // Preset helper labels such as WD (9am), WD (7pm), ED (9am) and ED (7pm)
-    // stay on-screen only and are intentionally omitted from the downloaded image.
+    const assistRemark = String(getTidAssistRemark?.(tid, depot) || "").trim();
+    const assistLabel = getInsertionAssistRemarkDisplayLabel(assistRemark);
+
+    if (assistLabel) {
+      pills.push({
+        label: assistLabel,
+        ...getInsertionPrintPillStyle(assistRemark || assistLabel),
+      });
+    }
+
     if (time) {
       pills.push({
         label: time,
