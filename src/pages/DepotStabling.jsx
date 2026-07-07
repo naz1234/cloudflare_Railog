@@ -5368,7 +5368,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               <div
                 className="flex w-full shrink-0 flex-col items-center justify-start gap-1.5"
                 style={{
-                  minHeight: rowMaintenanceSlotHeight > 0 ? rowMaintenanceSlotHeight : 16,
+                  minHeight: rowMaintenanceSlotHeight > 0 ? Math.max(rowMaintenanceSlotHeight, 40) : 40,
                   marginTop: 2,
                 }}
                 aria-hidden={maintList.length === 0 && !insertedTidAssistRemark && !hasInsertedPlainRemark ? "true" : undefined}
@@ -5439,7 +5439,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           )}
           {key && inserted?.isSweeping && (
             isEastInsertionCard ? (
-              <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+              <div className="flex w-full flex-col items-center gap-1 px-1 pt-1.5 pb-0.5 text-[12px] font-normal leading-tight">
                 <button
                   type="button"
                   onClick={handleSpecialCardRefresh}
@@ -5662,7 +5662,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             )}
             {inserted && !inserted.isSweeping && (
               isEast3K1InsertionCard ? (
-                <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1.5 pb-0.5 text-[12px] font-normal leading-tight">
                   <button
                     type="button"
                     onClick={handleSpecialCardRefresh}
@@ -5735,16 +5735,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               ) : isEastInsertionCard ? (
                 <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
-                  <button
-                    type="button"
-                    onClick={handleSpecialCardRefresh}
-                    className="text-[10px] font-normal leading-none text-cyan-100/90 transition-all hover:text-white focus-visible:text-white"
-                    title="Refresh this card and go back to Add TID"
-                    aria-label="Refresh this card and go back to Add TID"
-                  >
-                    -- Refresh --
-                  </button>
-                  {eastInsertionRemarkPillLabel && insertedTid && (
+                  {eastInsertionRemarkPillLabel && (
                     <button
                       type="button"
                       onClick={handleInsertedUndoClick}
@@ -5801,33 +5792,23 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     />
                   </div>
 
-                  <div className="w-full px-1">
-                    <div className="flex w-full flex-col items-center justify-center rounded-lg border border-blue-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(59,130,246,0.22)]">
-                      <span className="text-[10px] font-normal leading-tight text-white">TA Name:</span>
-                      <input
-                        type="text"
-                        maxLength={40}
-                        value={inserted.taName || ""}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                        placeholder="(Name)"
-                        className="mt-0.5 w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
-                        title="Optional TA name for the insertion output"
-                      />
-                    </div>
+                  <div className="grid w-full grid-cols-[34px_8px_minmax(0,1fr)] items-center gap-x-1 px-2 text-[12px] font-normal leading-tight">
+                    <span className="text-right font-normal text-white">TA</span>
+                    <span className="text-center font-normal text-white">:</span>
+                    <input
+                      type="text"
+                      maxLength={40}
+                      value={inserted.taName || ""}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
+                      placeholder="Name"
+                      className="min-w-0 border-0 bg-transparent p-0 pl-1 text-left text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                      title="Optional TA name for the insertion output"
+                    />
                   </div>
                 </div>
               ) : (
               <>
-                <button
-                  type="button"
-                  onClick={handleSpecialCardRefresh}
-                  className="w-full border-0 bg-transparent px-1 py-0 text-center text-[10px] font-normal leading-none text-blue-100 transition-colors hover:text-white focus-visible:text-white"
-                  title="Refresh this card and go back to Add TID"
-                  aria-label="Refresh this card and go back to Add TID"
-                >
-                  -- Refresh --
-                </button>
                 {insertedTid ? (
                 <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
                   <span className="text-right font-normal text-blue-300">TID</span>
@@ -5870,11 +5851,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
                 </div>
               ) : hasInsertedPlainRemark ? (
-                <div
-                  className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
-                  style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
-                >
-                  <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Time</span>
+                <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                  <span className="text-right font-normal text-blue-300">Time</span>
+                  <span className="text-center font-normal text-blue-300">:</span>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -5895,13 +5874,21 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                     }}
                     placeholder="00:00"
-                    className="min-w-0 flex-1 border-0 bg-transparent p-0 text-center text-[11px] font-normal leading-tight outline-none placeholder:text-slate-500"
-                    style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
+                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
                     title="Edit insertion completion time"
                   />
                 </div>
               ) : (
-                <>
+                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1.5 pb-0.5 text-[12px] font-normal leading-tight">
+                  <button
+                    type="button"
+                    onClick={handleSpecialCardRefresh}
+                    className="text-[10px] font-normal leading-none text-slate-200/90 transition-all hover:text-white focus-visible:text-white"
+                    title="Refresh this card and go back to Add TID"
+                    aria-label="Refresh this card and go back to Add TID"
+                  >
+                    -- Refresh --
+                  </button>
                   <div
                     className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
                     style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
@@ -5927,27 +5914,41 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                       }}
                       placeholder="00:00"
-                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-center text-[11px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                      className="min-w-0 w-[42px] border-0 bg-transparent p-0 text-center text-[11px] font-normal leading-tight outline-none placeholder:text-slate-500"
                       style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
                       title="Edit insertion completion time"
                     />
                   </div>
-                </>
-                )}
-                <div className="w-full px-1">
-                  <div className="flex w-full flex-col items-center justify-center rounded-lg border border-blue-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(59,130,246,0.22)]">
-                    <span className="text-[10px] font-normal leading-tight text-white">TA Name:</span>
-                    <input
-                      type="text"
-                      maxLength={40}
-                      value={inserted.taName || ""}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                      placeholder="(Name)"
-                      className="mt-0.5 w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
-                      title="Optional TA name for the insertion output"
-                    />
+                  <div className="w-full px-1">
+                    <div className="flex w-full flex-col items-center justify-center rounded-lg border border-slate-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(96,165,250,0.18)]">
+                      <span className="text-[10px] font-normal leading-tight text-white">TA Name:</span>
+                      <input
+                        type="text"
+                        maxLength={40}
+                        value={inserted.taName || ""}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
+                        placeholder="(Name)"
+                        className="mt-0.5 w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                        title="Optional TA name for the insertion output"
+                      />
+                    </div>
                   </div>
+                </div>
+                )}
+                <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
+                  <span className="text-right font-normal text-blue-300">TA</span>
+                  <span className="text-center font-normal text-blue-300">:</span>
+                  <input
+                    type="text"
+                    maxLength={40}
+                    value={inserted.taName || ""}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
+                    placeholder="Name"
+                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                    title="Optional TA name for the insertion output"
+                  />
                 </div>
               </>
               )
