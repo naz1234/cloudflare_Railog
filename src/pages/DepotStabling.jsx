@@ -5369,32 +5369,43 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           {key && inserted?.isSweeping && (
             isEastInsertionCard ? (
               <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={handleInsertedUndoClick}
-                  className="inline-flex min-w-0 max-w-full items-center justify-center self-center text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
-                  style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP, 82)}
-                  title="Click Sweep to undo sweeping"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleInsertedUndoClick(e);
+                    }
+                  }}
+                  className="w-full rounded-lg border px-1.5 py-1 text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                  style={{
+                    background: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.bg,
+                    borderColor: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.border,
+                    color: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.color,
+                    boxShadow: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.shadow,
+                  }}
+                  title="Click Sweep pill to undo sweeping"
                   aria-label="Undo sweeping"
                 >
-                  Sweep
-                </button>
-                <select
-                  value={inserted.sweepTrack || "TK1"}
-                  onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
-                  className="h-5 w-full appearance-none border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-purple-100 outline-none"
-                  style={{ colorScheme: "dark" }}
-                  title="Select Sweep track"
-                >
-                  <option value="TK1" style={{ backgroundColor: "#071828", color: "#e9d5ff" }}>Track 01</option>
-                  <option value="TK2" style={{ backgroundColor: "#071828", color: "#e9d5ff" }}>Track 02</option>
-                </select>
-                <div className="flex w-full flex-col items-center gap-1">
-                  <div
-                    className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
-                    style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
-                  >
-                    <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Start</span>
+                  <div className="mb-0.5 text-center text-[11px] font-normal leading-tight text-white">Sweep</div>
+                  <div className="grid w-full grid-cols-[26px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
+                    <span className="text-right text-[8px] font-normal uppercase tracking-wide text-purple-200/90">Track</span>
+                    <select
+                      value={inserted.sweepTrack || "TK1"}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
+                      className="h-4 w-full appearance-none rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[9px] font-normal leading-none text-white outline-none"
+                      style={{ colorScheme: "dark" }}
+                      title="Select Sweep track"
+                    >
+                      <option value="TK1" style={{ backgroundColor: "#071828", color: "#ffffff" }}>Track 01</option>
+                      <option value="TK2" style={{ backgroundColor: "#071828", color: "#ffffff" }}>Track 02</option>
+                    </select>
+
+                    <span className="text-right text-[8px] font-normal uppercase tracking-wide text-purple-200/90">Start</span>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -5402,6 +5413,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       value={inserted.time || ""}
                       onClick={(e) => e.stopPropagation()}
                       onKeyDown={(e) => {
+                        e.stopPropagation();
                         const value = String(inserted.time || "");
                         const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
                         if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
@@ -5412,16 +5424,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onChange={(e) => onSweepUpdate?.(inserted.key, { time: cleanMovementCustomTimeInput(e.target.value) })}
                       onBlur={(e) => onSweepUpdate?.(inserted.key, { time: normalizeMovementCustomTimeInput(e.target.value) })}
                       placeholder="00:00"
-                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-center text-[10px] font-normal leading-tight outline-none placeholder:text-slate-500"
-                      style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
+                      className="h-4 w-full rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[9px] font-normal leading-none text-white outline-none placeholder:text-white/45"
                       title="Edit Sweep start time. End time updates automatically +2 minutes."
                     />
-                  </div>
-                  <div
-                    className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
-                    style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
-                  >
-                    <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">End</span>
+
+                    <span className="text-right text-[8px] font-normal uppercase tracking-wide text-purple-200/90">End</span>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -5429,6 +5436,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       value={inserted.clearTime || ""}
                       onClick={(e) => e.stopPropagation()}
                       onKeyDown={(e) => {
+                        e.stopPropagation();
                         const value = String(inserted.clearTime || "");
                         const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
                         if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
@@ -5439,8 +5447,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onChange={(e) => onSweepUpdate?.(inserted.key, { clearTime: cleanMovementCustomTimeInput(e.target.value) })}
                       onBlur={(e) => onSweepUpdate?.(inserted.key, { clearTime: normalizeMovementCustomTimeInput(e.target.value) })}
                       placeholder="00:00"
-                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-center text-[10px] font-normal leading-tight outline-none placeholder:text-slate-500"
-                      style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
+                      className="h-4 w-full rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[9px] font-normal leading-none text-white outline-none placeholder:text-white/45"
                       title="Edit Sweep end time"
                     />
                   </div>
