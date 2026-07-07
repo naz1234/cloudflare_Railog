@@ -5514,20 +5514,20 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     </div>
                   </div>
                 </div>
-                <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-2 text-[12px] font-normal leading-tight">
-                  <span className="text-right font-normal text-white">TA</span>
-                  <span className="text-center font-normal text-white">:</span>
-                  <input
-                    type="text"
-                    maxLength={40}
-                    value={inserted.taName || ""}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                    placeholder="Name"
-                    className="min-w-0 border-0 bg-transparent p-0 pl-1 text-left text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
-                    style={{ justifySelf: "start" }}
-                    title="Optional TA name for the sweeping output"
-                  />
+                <div className="w-full px-1">
+                  <div className="flex w-full flex-col items-center justify-center rounded-lg border border-purple-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(168,85,247,0.22)]">
+                    <span className="text-[10px] font-normal leading-tight text-white">TA Name:</span>
+                    <input
+                      type="text"
+                      maxLength={40}
+                      value={inserted.taName || ""}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
+                      placeholder="(Name)"
+                      className="mt-0.5 w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                      title="Optional TA name for the sweeping output"
+                    />
+                  </div>
                 </div>
               </div>
             ) : (
@@ -5597,16 +5597,17 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800"
                   title="Edit Sweep end time"
                 />
-                <span className="text-right font-normal text-purple-300">TA</span>
-                <span className="text-center font-normal text-purple-300">:</span>
+              </div>
+              <div className="w-full rounded-lg border border-purple-400/35 bg-[#071828]/70 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(168,85,247,0.18)]">
+                <span className="block text-[10px] font-normal leading-tight text-purple-100">TA Name:</span>
                 <input
                   type="text"
                   maxLength={40}
                   value={inserted.taName || ""}
                   onClick={(e) => e.stopPropagation()}
                   onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                  placeholder="Name"
-                  className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800"
+                  placeholder="(Name)"
+                  className="mt-0.5 w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-700"
                   title="Optional TA name for the sweeping output"
                 />
               </div>
