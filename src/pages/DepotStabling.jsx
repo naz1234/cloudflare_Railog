@@ -15600,9 +15600,12 @@ export default function DepotStablingPage() {
     const localUpdatedMs = insertionLiveLocalUpdatedAtRef.current || 0;
 
     // Prevent an older in-flight sync response or eventual-consistency DB read
-    // from overwriting a fresh local Insertion click / TID remark edit.
+    // from overwriting a fresh local Insertion / PG2 edit after a browser refresh.
     if (Date.now() < insertionLiveLocalEditUntilRef.current) return;
-    if (localUpdatedMs && (!incomingUpdatedMs || incomingUpdatedMs + 1000 < localUpdatedMs)) return;
+    // Do not use a one-second tolerance here. If the user refreshes immediately
+    // after editing PG2, the D1 snapshot can be slightly older and would wipe
+    // the local PG2 west/east changes before the debounced save finishes.
+    if (localUpdatedMs && (!incomingUpdatedMs || incomingUpdatedMs < localUpdatedMs)) return;
 
     if (incomingUpdatedMs) {
       insertionLiveRemoteUpdatedAtRef.current = Math.max(insertionLiveRemoteUpdatedAtRef.current, incomingUpdatedMs);
@@ -15611,6 +15614,9 @@ export default function DepotStablingPage() {
     }
 
     insertionLiveApplyingRemoteRef.current = true;
+
+    insertionLogRef.current = normalized.insertionLog;
+    tidInputsRef.current = normalized.tidInputs;
     setInsertionLog(normalized.insertionLog);
     setTidInputs(normalized.tidInputs);
     saveInsertionLog(normalized.insertionLog);
@@ -15623,14 +15629,17 @@ export default function DepotStablingPage() {
     }
 
     if (normalized.pg2Stabling) {
+      pg2StablingRef.current = normalized.pg2Stabling;
       setPg2Stabling(normalized.pg2Stabling);
       saveInsertionPg2Stabling(normalized.pg2Stabling);
     }
     if (Array.isArray(normalized.pg2InsertionLog)) {
+      pg2InsertionLogRef.current = normalized.pg2InsertionLog;
       setPg2InsertionLog(normalized.pg2InsertionLog);
       saveInsertionPg2Log(normalized.pg2InsertionLog);
     }
     if (normalized.pg2TidInputs && typeof normalized.pg2TidInputs === "object") {
+      pg2TidInputsRef.current = normalized.pg2TidInputs;
       setPg2TidInputs(normalized.pg2TidInputs);
       saveInsertionPg2TidInputs(normalized.pg2TidInputs);
     }
