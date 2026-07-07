@@ -5552,85 +5552,110 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               </div>
             ) : (
-            <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+            <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
               <button
                 type="button"
-                onClick={handleInsertedUndoClick}
-                className="inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
-                style={getInsertionRemarkPillStyle(insertedRemarkLabel || "SW")}
-                title="Click Sweep to undo sweeping"
-                aria-label="Undo sweeping"
+                onClick={handleSpecialCardRefresh}
+                className="text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
+                title="Refresh this card and go back to Add TID"
+                aria-label="Refresh this card and go back to Add TID"
               >
-                Sweep
+                -- Refresh --
               </button>
-              <select
-                value={inserted.sweepTrack || "TK1"}
-                onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
-                className="h-5 w-full appearance-none border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-purple-100 outline-none"
-                style={{ colorScheme: "dark" }}
-                title="Select Sweep track"
+              <div
+                className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
+                style={{
+                  width: "calc(100% + 8px)",
+                  maxWidth: "calc(100% + 8px)",
+                  marginLeft: -4,
+                  marginRight: -4,
+                  alignSelf: "center",
+                  background: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.bg,
+                  borderColor: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.border,
+                  color: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.color,
+                  boxShadow: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.shadow,
+                }}
+                title="Sweep details"
+                aria-label="Sweep details"
               >
-                <option value="TK1" style={{ backgroundColor: "#071828", color: "#e9d5ff" }}>Track 01</option>
-                <option value="TK2" style={{ backgroundColor: "#071828", color: "#e9d5ff" }}>Track 02</option>
-              </select>
-              <div className="mt-1 grid w-full grid-cols-[34px_8px_minmax(0,1fr)] items-center gap-x-1 gap-y-1">
-                <span className="text-right font-normal text-purple-300">STRT</span>
-                <span className="text-center font-normal text-purple-300">:</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={5}
-                  value={inserted.time || ""}
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => {
-                    const value = String(inserted.time || "");
-                    const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-                    if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                      e.preventDefault();
-                      onSweepUpdate?.(inserted.key, { time: value.slice(0, -2) });
-                    }
-                  }}
-                  onChange={(e) => onSweepUpdate?.(inserted.key, { time: cleanMovementCustomTimeInput(e.target.value) })}
-                  onBlur={(e) => onSweepUpdate?.(inserted.key, { time: normalizeMovementCustomTimeInput(e.target.value) })}
-                  placeholder="00:00"
-                  className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800"
-                  title="Edit Sweep start time. End time updates automatically +2 minutes."
-                />
-                <span className="text-right font-normal text-purple-300">End</span>
-                <span className="text-center font-normal text-purple-300">:</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={5}
-                  value={inserted.clearTime || ""}
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => {
-                    const value = String(inserted.clearTime || "");
-                    const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-                    if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                      e.preventDefault();
-                      onSweepUpdate?.(inserted.key, { clearTime: value.slice(0, -2) });
-                    }
-                  }}
-                  onChange={(e) => onSweepUpdate?.(inserted.key, { clearTime: cleanMovementCustomTimeInput(e.target.value) })}
-                  onBlur={(e) => onSweepUpdate?.(inserted.key, { clearTime: normalizeMovementCustomTimeInput(e.target.value) })}
-                  placeholder="00:00"
-                  className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800"
-                  title="Edit Sweep end time"
-                />
+                <div className="mb-0.5 text-center text-[10px] font-normal leading-tight text-white">Sweep</div>
+                <div className="flex w-full flex-col gap-0.5">
+                  <select
+                    value={inserted.sweepTrack || "TK1"}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
+                    className="h-4 w-full appearance-none rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[10px] font-normal leading-none text-white outline-none"
+                    style={{ colorScheme: "dark" }}
+                    title="Select Sweep track"
+                  >
+                    <option value="TK1" style={{ backgroundColor: "#071828", color: "#ffffff" }}>Track 01</option>
+                    <option value="TK2" style={{ backgroundColor: "#071828", color: "#ffffff" }}>Track 02</option>
+                  </select>
+
+                  <div className="mt-1 grid w-full grid-cols-[32px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
+                    <span className="text-right text-[9px] font-normal uppercase tracking-normal text-purple-200/90">STRT :</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      value={inserted.time || ""}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                        const value = String(inserted.time || "");
+                        const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                        if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                          e.preventDefault();
+                          onSweepUpdate?.(inserted.key, { time: value.slice(0, -2) });
+                        }
+                      }}
+                      onChange={(e) => onSweepUpdate?.(inserted.key, { time: cleanMovementCustomTimeInput(e.target.value) })}
+                      onBlur={(e) => onSweepUpdate?.(inserted.key, { time: normalizeMovementCustomTimeInput(e.target.value) })}
+                      placeholder="00:00"
+                      className="min-w-0 border-0 bg-transparent p-0 text-left text-[10px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                      title="Edit Sweep start time. End time updates automatically +2 minutes."
+                    />
+
+                    <span className="text-right text-[9px] font-normal uppercase tracking-normal text-purple-200/90">End :</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      value={inserted.clearTime || ""}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                        const value = String(inserted.clearTime || "");
+                        const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                        if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                          e.preventDefault();
+                          onSweepUpdate?.(inserted.key, { clearTime: value.slice(0, -2) });
+                        }
+                      }}
+                      onChange={(e) => onSweepUpdate?.(inserted.key, { clearTime: cleanMovementCustomTimeInput(e.target.value) })}
+                      onBlur={(e) => onSweepUpdate?.(inserted.key, { clearTime: normalizeMovementCustomTimeInput(e.target.value) })}
+                      placeholder="00:00"
+                      className="min-w-0 border-0 bg-transparent p-0 text-left text-[10px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                      title="Edit Sweep end time"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="w-full rounded-lg border border-purple-400/35 bg-[#071828]/70 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(168,85,247,0.18)]">
-                <span className="block text-[10px] font-normal leading-tight text-purple-100">TA Name:</span>
-                <input
-                  type="text"
-                  maxLength={40}
-                  value={inserted.taName || ""}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                  placeholder="(Name)"
-                  className="mt-0.5 w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-700"
-                  title="Optional TA name for the sweeping output"
-                />
+              <div className="w-full px-1">
+                <div className="flex w-full flex-col items-center justify-center rounded-lg border border-purple-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(168,85,247,0.22)]">
+                  <span className="text-[10px] font-normal leading-tight text-white">TA Name:</span>
+                  <input
+                    type="text"
+                    maxLength={40}
+                    value={inserted.taName || ""}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
+                    placeholder="(Name)"
+                    className="mt-0.5 w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                    title="Optional TA name for the sweeping output"
+                  />
+                </div>
               </div>
             </div>
             )
@@ -5921,32 +5946,61 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     </div>
                   </div>
               ) : hasInsertedPlainRemark ? (
-                <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
-                  <span className="text-right font-normal text-blue-300">Time</span>
-                  <span className="text-center font-normal text-blue-300">:</span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={5}
-                    value={insertedDisplayTime}
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => {
-                      const value = String(insertedDisplayTime || "");
-                      const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-                      if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                        e.preventDefault();
-                        onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
-                      }
-                    }}
-                    onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
-                    onBlur={(e) => {
-                      const normalized = normalizeMovementCustomTimeInput(e.target.value);
-                      onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
-                    }}
-                    placeholder="00:00"
-                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
-                    title="Edit insertion completion time"
-                  />
+                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+                  <button
+                    type="button"
+                    onClick={handleSpecialCardRefresh}
+                    className="text-[10px] font-normal leading-none text-slate-200/90 transition-all hover:text-white focus-visible:text-white"
+                    title="Refresh this card and go back to Add TID"
+                    aria-label="Refresh this card and go back to Add TID"
+                  >
+                    -- Refresh --
+                  </button>
+                  <div
+                    className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
+                    style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
+                  >
+                    <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Time</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      value={insertedDisplayTime}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => {
+                        const value = String(insertedDisplayTime || "");
+                        const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                        if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                          e.preventDefault();
+                          onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
+                        }
+                      }}
+                      onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
+                      onBlur={(e) => {
+                        const normalized = normalizeMovementCustomTimeInput(e.target.value);
+                        onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
+                      }}
+                      placeholder="00:00"
+                      className="min-w-0 w-[42px] border-0 bg-transparent p-0 text-center text-[11px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                      style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
+                      title="Edit insertion completion time"
+                    />
+                  </div>
+                  <div className="w-full px-1">
+                    <div className="flex w-full flex-col items-center justify-center rounded-lg border border-slate-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(96,165,250,0.18)]">
+                      <span className="text-[10px] font-normal leading-tight text-white">TA Name:</span>
+                      <input
+                        type="text"
+                        maxLength={40}
+                        value={inserted.taName || ""}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
+                        placeholder="(Name)"
+                        className="mt-0.5 w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                        title="Optional TA name for the insertion output"
+                      />
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
@@ -6005,22 +6059,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     </div>
                   </div>
                 </div>
-                )}
-                {hasInsertedPlainRemark && (
-                  <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
-                    <span className="text-right font-normal text-blue-300">TA</span>
-                    <span className="text-center font-normal text-blue-300">:</span>
-                    <input
-                      type="text"
-                      maxLength={40}
-                      value={inserted.taName || ""}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                      placeholder="Name"
-                      className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
-                      title="Optional TA name for the insertion output"
-                    />
-                  </div>
                 )}
               </>
               )
