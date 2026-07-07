@@ -5465,8 +5465,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       <option value="TK2" style={{ backgroundColor: "#071828", color: "#ffffff" }}>Track 02</option>
                     </select>
 
-                    <div className="grid w-full grid-cols-[25px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
-                      <span className="text-right text-[10px] font-normal uppercase tracking-wide text-purple-200/90">Start</span>
+                    <div className="grid w-full grid-cols-[32px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
+                      <span className="text-right text-[10px] font-normal uppercase tracking-wide text-purple-200/90">Start :</span>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -5489,7 +5489,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         title="Edit Sweep start time. End time updates automatically +2 minutes."
                       />
 
-                      <span className="text-right text-[10px] font-normal uppercase tracking-wide text-purple-200/90">End</span>
+                      <span className="text-right text-[10px] font-normal uppercase tracking-wide text-purple-200/90">End :</span>
                       <input
                         type="text"
                         inputMode="numeric"
