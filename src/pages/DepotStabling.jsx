@@ -5485,7 +5485,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onChange={(e) => onSweepUpdate?.(inserted.key, { time: cleanMovementCustomTimeInput(e.target.value) })}
                         onBlur={(e) => onSweepUpdate?.(inserted.key, { time: normalizeMovementCustomTimeInput(e.target.value) })}
                         placeholder="00:00"
-                        className="h-4 w-full rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[10px] font-normal leading-none text-white outline-none placeholder:text-white/45"
+                        className="min-w-0 border-0 bg-transparent p-0 text-left text-[10px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                         title="Edit Sweep start time. End time updates automatically +2 minutes."
                       />
 
@@ -5508,7 +5508,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onChange={(e) => onSweepUpdate?.(inserted.key, { clearTime: cleanMovementCustomTimeInput(e.target.value) })}
                         onBlur={(e) => onSweepUpdate?.(inserted.key, { clearTime: normalizeMovementCustomTimeInput(e.target.value) })}
                         placeholder="00:00"
-                        className="h-4 w-full rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[10px] font-normal leading-none text-white outline-none placeholder:text-white/45"
+                        className="min-w-0 border-0 bg-transparent p-0 text-left text-[10px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                         title="Edit Sweep end time"
                       />
                     </div>
