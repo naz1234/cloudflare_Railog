@@ -5445,7 +5445,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           )}
           {key && inserted?.isSweeping && (
             isEastInsertionCard ? (
-              <div className="flex w-full flex-col items-center gap-1 px-1 pt-3 pb-0.5 text-[12px] font-normal leading-tight">
+              <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                 <button
                   type="button"
                   onClick={handleSpecialCardRefresh}
@@ -5668,7 +5668,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             )}
             {inserted && !inserted.isSweeping && (
               isEast3K1InsertionCard ? (
-                <div className="flex w-full flex-col items-center gap-1 px-1 pt-3 pb-0.5 text-[12px] font-normal leading-tight">
+                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                   <button
                     type="button"
                     onClick={handleSpecialCardRefresh}
@@ -5885,7 +5885,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   />
                 </div>
               ) : (
-                <div className="flex w-full flex-col items-center gap-1 px-1 pt-3 pb-0.5 text-[12px] font-normal leading-tight">
+                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                   <button
                     type="button"
                     onClick={handleSpecialCardRefresh}
