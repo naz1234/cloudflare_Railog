@@ -3575,6 +3575,39 @@ function saveLocalStablingState(westData = {}, eastData = {}, updatedAt = new Da
   } catch {}
 }
 
+function buildStablingMoveState({ westData = {}, eastData = {}, depot = "west", road = "", blockIndex = 0, trainId = "" } = {}) {
+  const targetDepot = depot === "east" ? "east" : "west";
+  const nextWest = normalizeStablingDepotData(westData, WEST_ROADS);
+  const nextEast = normalizeStablingDepotData(eastData, EAST_ROADS);
+  const trainKey = normalizeTrainId(trainId);
+  const clearedCells = [];
+
+  const applyToDepot = (depotName, data, roads) => {
+    roads.forEach((currentRoad) => {
+      data[currentRoad] = (data[currentRoad] || emptyBlocks()).map((block, currentBlockIndex) => {
+        const isTargetCell = depotName === targetDepot && currentRoad === road && currentBlockIndex === blockIndex;
+        const blockTrainKey = normalizeTrainId(block?.trainId || "");
+
+        if (isTargetCell) {
+          return { ...block, trainId };
+        }
+
+        if (trainKey && blockTrainKey === trainKey) {
+          clearedCells.push({ depot: depotName, road: currentRoad, blockIndex: currentBlockIndex });
+          return { ...block, trainId: "" };
+        }
+
+        return block;
+      });
+    });
+  };
+
+  applyToDepot("west", nextWest, WEST_ROADS);
+  applyToDepot("east", nextEast, EAST_ROADS);
+
+  return { nextWest, nextEast, clearedCells };
+}
+
 function buildStablingStateFromRecords(stablingRecords = []) {
   const map = {};
   const newWest = initRoads(WEST_ROADS);
@@ -16148,7 +16181,7 @@ export default function DepotStablingPage() {
       const shouldKeepLocalStabling = hasLocalTrains && localUpdatedMs && (
         Date.now() < stablingLocalEditUntilRef.current ||
         (!hasRemoteTrains && !remoteUpdatedMs) ||
-        (remoteUpdatedMs && remoteUpdatedMs + 1000 < localUpdatedMs)
+        (remoteUpdatedMs && remoteUpdatedMs < localUpdatedMs)
       );
 
       existingMapRef.current = map;
@@ -16185,7 +16218,7 @@ export default function DepotStablingPage() {
       const hasRemoteTrains = hasAnyStablingTrain(newWest, WEST_ROADS) || hasAnyStablingTrain(newEast, EAST_ROADS);
       const shouldKeepLocalStabling = hasLocalTrains && localUpdatedMs && (
         (!hasRemoteTrains && !remoteUpdatedMs) ||
-        (remoteUpdatedMs && remoteUpdatedMs + 1000 < localUpdatedMs)
+        (remoteUpdatedMs && remoteUpdatedMs < localUpdatedMs)
       );
 
       existingMapRef.current = map;
@@ -16346,61 +16379,40 @@ export default function DepotStablingPage() {
     });
   };
 
-  // Called on blur or Enter — runs duplicate check against the final typed value
+  // Called on blur or Enter — commit the final typed value.
+  // If the same train already exists in another Main Stabling cell, treat this as
+  // a move: keep the newly edited location and clear the old location(s).
   const commitBlockTrain = (depot, road, blockIndex, value) => {
-    const setter = depot === "west" ? setWestData : setEastData;
-    const sourceData = depot === "west" ? westDataRef.current : eastDataRef.current;
+    const targetDepot = depot === "east" ? "east" : "west";
+    const sourceData = targetDepot === "west" ? westDataRef.current : eastDataRef.current;
     const previousKey = normalizeTrainId(sourceData?.[road]?.[blockIndex]?.trainId);
     const incomingKey = normalizeTrainId(value);
 
-    if (incomingKey) {
-      const allKeys = [];
-      const collectFrom = (data, depotName) => {
-        Object.entries(data).forEach(([r, blocks]) => {
-          blocks.forEach((b, bi) => {
-            if (depotName === depot && r === road && bi === blockIndex) return;
-            const k = normalizeTrainId(b.trainId);
-            if (k) allKeys.push(k);
-          });
-        });
-      };
-      collectFrom(westDataRef.current, "west");
-      collectFrom(eastDataRef.current, "east");
+    const { nextWest, nextEast, clearedCells } = buildStablingMoveState({
+      westData: westDataRef.current,
+      eastData: eastDataRef.current,
+      depot: targetDepot,
+      road,
+      blockIndex,
+      trainId: value,
+    });
 
-      if (allKeys.includes(incomingKey)) {
-        // Keep the typed Train ID visible. Duplicate trains are highlighted red instead
-        // of auto-clearing, so the user can see and correct the duplicated entry.
-        const cellKey = `${depot}-${road}-${blockIndex}`;
-        setFlashingCells((prev) => new Set([...prev, cellKey]));
-        setTimeout(() => {
-          setFlashingCells((prev) => {
-            const next = new Set(prev);
-            next.delete(cellKey);
-            return next;
-          });
-        }, 1200);
-      }
-    }
-
-    // Persist and schedule auto-save. If duplicate, it stays visible and the DUP highlight shows it.
     if (previousKey !== incomingKey) {
       markPSTLiveLocalEdit();
       clearPSTTrainPrepForCell(road, blockIndex);
     }
 
-    setter((prev) => {
-      const updated = { ...prev };
-      const blocks = [...updated[road]];
-      blocks[blockIndex] = { ...blocks[blockIndex], trainId: value };
-      updated[road] = blocks;
-      const newWest = depot === "west" ? updated : westDataRef.current;
-      const newEast = depot === "east" ? updated : eastDataRef.current;
-      westDataRef.current = newWest;
-      eastDataRef.current = newEast;
-      markStablingLocalEdit(newWest, newEast);
-      scheduleAutoSave(newWest, newEast);
-      return updated;
-    });
+    if (clearedCells.length > 0) {
+      markPSTLiveLocalEdit();
+      clearedCells.forEach((cell) => clearPSTTrainPrepForCell(cell.road, cell.blockIndex));
+    }
+
+    westDataRef.current = nextWest;
+    eastDataRef.current = nextEast;
+    setWestData(nextWest);
+    setEastData(nextEast);
+    markStablingLocalEdit(nextWest, nextEast);
+    scheduleAutoSave(nextWest, nextEast);
   };
 
   const updateExtraRemark = (depot, road, blockIndex, value) => {
