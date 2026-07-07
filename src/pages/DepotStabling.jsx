@@ -4787,6 +4787,12 @@ const EAST_INSERTION_KEYWORD_REMARK_STYLES = {
     color: "#f6e8ff",
     shadow: "0 0 10px rgba(168, 85, 247, 0.36), inset 0 1px 0 rgba(255,255,255,0.08)",
   },
+  "3K1": {
+    bg: "rgba(20, 216, 189, 0.18)",
+    border: "#2dd4bf",
+    color: "#ccfbf1",
+    shadow: "0 0 10px rgba(45, 212, 191, 0.28), inset 0 1px 0 rgba(255,255,255,0.08)",
+  },
 };
 
 const EAST_INSERTION_TID_PILL_STYLE = {
@@ -4810,6 +4816,7 @@ function getEastInsertionKeywordRemarkLabel(value = "") {
   const compact = text.toUpperCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
   const noSpace = compact.replace(/[()\s]/g, "");
 
+  if (noSpace === "3K1" || noSpace === "3K1INSERTION" || /\b3K1\b/.test(compact)) return "3K1";
   if (/\bWASH(?:ING)?\b/.test(compact)) return "WASH";
   if (/\bREQUEST(?:ED)?\b|\bREQ\b/.test(compact)) return "REQUEST";
   if (noSpace === "GTOC" || /\bG\s*TO\s*C\b/.test(compact)) return "(G TO C)";
@@ -5139,7 +5146,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const eastInsertionRemarkPillLabel = isEastInsertionCard
     ? getEastInsertionKeywordRemarkLabel(eastInsertionRemarkSource)
     : "";
-  const isEast3K1InsertionCard = Boolean(isEastInsertionCard && eastInsertionRemarkPillLabel === "3K1");
+  const is3K1InsertionCard = Boolean(getEastInsertionKeywordRemarkLabel(eastInsertionRemarkSource) === "3K1");
+  const isEast3K1InsertionCard = is3K1InsertionCard;
   const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
