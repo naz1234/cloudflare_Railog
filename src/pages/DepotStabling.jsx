@@ -5735,6 +5735,15 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               ) : isEastInsertionCard ? (
                 <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                  <button
+                    type="button"
+                    onClick={handleSpecialCardRefresh}
+                    className="text-[10px] font-normal leading-none text-cyan-100/90 transition-all hover:text-white focus-visible:text-white"
+                    title="Refresh this card and go back to Add TID"
+                    aria-label="Refresh this card and go back to Add TID"
+                  >
+                    -- Refresh --
+                  </button>
                   {eastInsertionRemarkPillLabel && (
                     <button
                       type="button"
@@ -5809,6 +5818,15 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               ) : (
               <>
+                <button
+                  type="button"
+                  onClick={handleSpecialCardRefresh}
+                  className="w-full border-0 bg-transparent px-1 py-0 text-center text-[10px] font-normal leading-none text-blue-100 transition-colors hover:text-white focus-visible:text-white"
+                  title="Refresh this card and go back to Add TID"
+                  aria-label="Refresh this card and go back to Add TID"
+                >
+                  -- Refresh --
+                </button>
                 {insertedTid ? (
                 <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
                   <span className="text-right font-normal text-blue-300">TID</span>
@@ -5880,15 +5898,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               ) : (
                 <>
-                  <button
-                    type="button"
-                    onClick={handleInsertedUndoClick}
-                    className="w-full border-0 bg-transparent px-1 py-0 text-center text-[12px] font-normal leading-tight text-white transition-colors hover:text-red-200 focus-visible:text-red-200"
-                    title="Click Refresh to undo insertion"
-                    aria-label="Undo insertion using Refresh"
-                  >
-                    Refresh
-                  </button>
                   <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
                     <span className="text-right font-normal text-blue-300">Time</span>
                     <span className="text-center font-normal text-blue-300">:</span>
