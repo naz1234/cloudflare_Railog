@@ -5465,7 +5465,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       <option value="TK2" style={{ backgroundColor: "#071828", color: "#ffffff" }}>Track 02</option>
                     </select>
 
-                    <div className="grid w-full grid-cols-[32px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
+                    <div className="mt-1 grid w-full grid-cols-[32px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
                       <span className="text-right text-[9px] font-normal uppercase tracking-normal text-purple-200/90">STRT :</span>
                       <input
                         type="text"
@@ -5552,7 +5552,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 <option value="TK1" style={{ backgroundColor: "#071828", color: "#e9d5ff" }}>Track 01</option>
                 <option value="TK2" style={{ backgroundColor: "#071828", color: "#e9d5ff" }}>Track 02</option>
               </select>
-              <div className="grid w-full grid-cols-[34px_8px_minmax(0,1fr)] items-center gap-x-1 gap-y-1">
+              <div className="mt-1 grid w-full grid-cols-[34px_8px_minmax(0,1fr)] items-center gap-x-1 gap-y-1">
                 <span className="text-right font-normal text-purple-300">STRT</span>
                 <span className="text-center font-normal text-purple-300">:</span>
                 <input
