@@ -5450,14 +5450,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   title="Click Sweep pill to undo sweeping"
                   aria-label="Undo sweeping"
                 >
-                  <div className="mb-0.5 text-center text-[14px] font-normal leading-tight text-white">Sweep</div>
+                  <div className="mb-0.5 text-center text-[10px] font-normal leading-tight text-white">Sweep</div>
                   <div className="flex w-full flex-col gap-0.5">
                     <select
                       value={inserted.sweepTrack || "TK1"}
                       onClick={(e) => e.stopPropagation()}
                       onKeyDown={(e) => e.stopPropagation()}
                       onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
-                      className="h-4 w-full appearance-none rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[11px] font-normal leading-none text-white outline-none"
+                      className="h-4 w-full appearance-none rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[10px] font-normal leading-none text-white outline-none"
                       style={{ colorScheme: "dark" }}
                       title="Select Sweep track"
                     >
@@ -5466,7 +5466,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     </select>
 
                     <div className="grid w-full grid-cols-[25px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
-                      <span className="text-right text-[9px] font-normal uppercase tracking-wide text-purple-200/90">Start</span>
+                      <span className="text-right text-[10px] font-normal uppercase tracking-wide text-purple-200/90">Start</span>
                       <input
                         type="text"
                         inputMode="numeric"
