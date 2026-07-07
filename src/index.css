@@ -5625,8 +5625,8 @@ html[data-app-theme="light"] .insertion-clean-shell::-webkit-scrollbar-thumb {
 
 /* No rail for normal waiting cards. Rail appears only after TID/remark, sweeping, completion, duplicate or elapsed state. */
 
-/* East Depot insertion cards do not use the side status rail.
-   Keeps West Depot rail unchanged. */
+/* West and East insertion cards use the same clean style without the side status rail. */
+.theme-insertion-section[data-depot="west"] .theme-insertion-card::after,
 .theme-insertion-section[data-depot="east"] .theme-insertion-card::after {
   display: none;
   opacity: 0;
