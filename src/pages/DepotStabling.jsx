@@ -5137,15 +5137,20 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     : "";
   const hasInsertedPlainRemark = Boolean(insertedPlainRemark);
   const isEastInsertionCard = autoTidDepot === "east";
+  // Use the same insertion-card logic/theme for West and East so both depots
+  // render remarks, special cards, TID pills and refresh controls identically.
+  const useUnifiedInsertionCardStyle = true;
   const eastInsertionRemarkSource = String(
     inserted?.remark ||
     inserted?.inputValue ||
     insertedTidAssistRemark ||
     ""
   );
-  const eastInsertionRemarkPillLabel = isEastInsertionCard
+  const eastInsertionRemarkPillLabel = useUnifiedInsertionCardStyle
     ? getEastInsertionKeywordRemarkLabel(eastInsertionRemarkSource)
     : "";
+  const insertedTidAssistKeywordLabel = getEastInsertionKeywordRemarkLabel(insertedTidAssistRemark);
+  const insertedPlainKeywordLabel = getEastInsertionKeywordRemarkLabel(insertedPlainRemark);
   const is3K1InsertionCard = Boolean(getEastInsertionKeywordRemarkLabel(eastInsertionRemarkSource) === "3K1");
   const isEast3K1InsertionCard = is3K1InsertionCard;
   const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
@@ -5271,7 +5276,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
   if (expired) {
     return (
-      <td className="theme-stabling-grid-cell theme-insertion-grid-cell p-1.5 align-middle" title="Elapsed TID hidden manually" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
+      <td className="theme-stabling-grid-cell theme-insertion-grid-cell p-1.5 align-middle" title="Elapsed TID hidden manually" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
         <div className="theme-insertion-card is-expired flex h-full flex-col items-center justify-center gap-1 rounded-xl select-none" style={{ minHeight: rowCardMinHeight, height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, opacity: 0.55 }}>
           <div className="flex h-5 w-full items-center justify-center text-center font-black leading-none" style={{ fontSize: 14, color: "#3a5068" }}>{displayVal || "—"}</div>
           {insertedRemarkLabel && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
@@ -5283,7 +5288,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   }
 
   return (
-    <td className="theme-stabling-grid-cell theme-insertion-grid-cell p-1.5 align-middle" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
+    <td className="theme-stabling-grid-cell theme-insertion-grid-cell p-1.5 align-middle" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
       <div
         data-insertion-drop-target="true"
         data-insertion-drop-eligible={isTidDropEligible ? "true" : "false"}
@@ -5294,12 +5299,12 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         style={{
           minHeight: Math.max(inserted?.isSweeping ? 158 : isEast3K1InsertionCard ? 142 : isInsertionDone ? ((insertedTid || hasInsertedPlainRemark) ? 126 : 130) : 98, rowCardMinHeight),
           height: "100%",
-          padding: isEastInsertionCard
+          padding: useUnifiedInsertionCardStyle
             ? (inserted?.isSweeping ? "8px 4px" : isInsertionDone ? "6px 1px 6px 5px" : "8px 1px 8px 7px")
             : (isInsertionDone ? "6px 5px" : "8px 7px"),
           background: insCardBg,
           border: insCardBorder,
-          borderRight: isEastInsertionCard ? "0" : undefined,
+          borderRight: useUnifiedInsertionCardStyle ? "0" : undefined,
           outline: isTidDropHovered
             ? "2px solid #38bdf8"
             : isTidDragActive && isTidDropEligible
@@ -5381,7 +5386,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               >
                 {rowMaintenanceSlotHeight > 0 && maintList.map((item) => {
                   const maintText = item.badgeText || item.displayType;
-                  const eastMaintPillLabel = isEastInsertionCard
+                  const eastMaintPillLabel = useUnifiedInsertionCardStyle
                     ? getEastInsertionKeywordRemarkLabel(maintText)
                     : "";
 
@@ -5408,7 +5413,20 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   );
                 })}
 
-                {key && insertedTidAssistRemark && !hasInsertedPlainRemark && !isEastInsertionCard && (
+                {key && insertedTidAssistRemark && !hasInsertedPlainRemark && insertedTidAssistKeywordLabel && (
+                  <button
+                    type="button"
+                    onClick={handleInsertedUndoClick}
+                    className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${useLargerWeekdayAssistRemark ? "text-[12px]" : "text-[11px]"}`}
+                    style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedTidAssistKeywordLabel], 82)}
+                    title={`Click ${insertedTidAssistKeywordLabel} to undo insertion`}
+                    aria-label={`Undo insertion for ${insertedTidAssistKeywordLabel}`}
+                  >
+                    {insertedTidAssistKeywordLabel}
+                  </button>
+                )}
+
+                {key && insertedTidAssistRemark && !hasInsertedPlainRemark && !insertedTidAssistKeywordLabel && !isEastInsertionCard && (
                   <button
                     type="button"
                     onClick={handleInsertedUndoClick}
@@ -5421,16 +5439,18 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </button>
                 )}
 
-                {key && hasInsertedPlainRemark && !isEastInsertionCard && (
+                {key && hasInsertedPlainRemark && (
                   <button
                     type="button"
                     onClick={handleInsertedUndoClick}
                     className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${maintList.length > 0 ? "mt-1" : "mt-[3px]"}`}
-                    style={getInsertionRemarkPillStyle(insertedPlainRemark)}
-                    title={`Click ${insertedPlainRemark} to undo insertion`}
-                    aria-label={`Undo insertion for remark ${insertedPlainRemark}`}
+                    style={insertedPlainKeywordLabel
+                      ? getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedPlainKeywordLabel], 82)
+                      : getInsertionRemarkPillStyle(insertedPlainRemark)}
+                    title={`Click ${insertedPlainKeywordLabel || insertedPlainRemark} to undo insertion`}
+                    aria-label={`Undo insertion for remark ${insertedPlainKeywordLabel || insertedPlainRemark}`}
                   >
-                    {insertedPlainRemark}
+                    {insertedPlainKeywordLabel || insertedPlainRemark}
                   </button>
                 )}
               </div>
@@ -5764,7 +5784,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     </div>
                   </div>
                 </div>
-              ) : isEastInsertionCard ? (
+              ) : useUnifiedInsertionCardStyle ? (
                 <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                   <button
                     type="button"
