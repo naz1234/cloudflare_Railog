@@ -5301,15 +5301,34 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 }}
                 aria-hidden={maintList.length === 0 && !insertedTidAssistRemark && !hasInsertedPlainRemark ? "true" : undefined}
               >
-                {rowMaintenanceSlotHeight > 0 && maintList.map((item) => (
-                  <div
-                    key={`${item.displayType}-${item.badgeText || ""}`}
-                    className="w-full text-center text-[10px] font-normal leading-tight text-white"
-                    title={item.badgeText || item.displayType}
-                  >
-                    {item.badgeText || item.displayType}
-                  </div>
-                ))}
+                {rowMaintenanceSlotHeight > 0 && maintList.map((item) => {
+                  const maintText = item.badgeText || item.displayType;
+                  const eastMaintPillLabel = isEastInsertionCard
+                    ? getEastInsertionKeywordRemarkLabel(maintText)
+                    : "";
+
+                  return eastMaintPillLabel ? (
+                    <button
+                      key={`${item.displayType}-${item.badgeText || ""}`}
+                      type="button"
+                      onClick={handleInsertedUndoClick}
+                      className="inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[11px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                      style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[eastMaintPillLabel], 82)}
+                      title={eastMaintPillLabel}
+                      aria-label={eastMaintPillLabel}
+                    >
+                      {eastMaintPillLabel}
+                    </button>
+                  ) : (
+                    <div
+                      key={`${item.displayType}-${item.badgeText || ""}`}
+                      className="w-full text-center text-[10px] font-normal leading-tight text-white"
+                      title={maintText}
+                    >
+                      {maintText}
+                    </div>
+                  );
+                })}
 
                 {key && insertedTidAssistRemark && !hasInsertedPlainRemark && !isEastInsertionCard && (
                   <button
@@ -5426,9 +5445,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     />
                   </div>
                 </div>
-                <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
-                  <span className="text-right font-normal text-purple-300">TA</span>
-                  <span className="text-center font-normal text-purple-300">:</span>
+                <div className="grid w-full grid-cols-[34px_8px_minmax(0,1fr)] items-center gap-x-1 px-2 text-[12px] font-normal leading-tight">
+                  <span className="text-right font-normal text-white">TA</span>
+                  <span className="text-center font-normal text-white">:</span>
                   <input
                     type="text"
                     maxLength={40}
@@ -5436,7 +5455,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
                     placeholder="Name"
-                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800"
+                    className="min-w-0 border-0 bg-transparent p-0 pl-1 text-left text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                     title="Optional TA name for the sweeping output"
                   />
                 </div>
@@ -5615,9 +5634,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     />
                   </div>
 
-                  <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
-                    <span className="text-right font-normal text-blue-300">TA</span>
-                    <span className="text-center font-normal text-blue-300">:</span>
+                  <div className="grid w-full grid-cols-[34px_8px_minmax(0,1fr)] items-center gap-x-1 px-2 text-[12px] font-normal leading-tight">
+                    <span className="text-right font-normal text-white">TA</span>
+                    <span className="text-center font-normal text-white">:</span>
                     <input
                       type="text"
                       maxLength={40}
@@ -5625,7 +5644,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onClick={(e) => e.stopPropagation()}
                       onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
                       placeholder="Name"
-                      className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                      className="min-w-0 border-0 bg-transparent p-0 pl-1 text-left text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                       title="Optional TA name for the insertion output"
                     />
                   </div>
