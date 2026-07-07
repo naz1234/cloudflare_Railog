@@ -5216,6 +5216,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     onInsertionTick(road, bi, key, restoredInput);
   };
 
+  const handleSpecialCardRefresh = () => {
+    // Special cards such as Sweep / 3K1 should go back to a clean Add TID state.
+    setSuppressAutoInsert(false);
+    onTidChange?.(road, bi, "");
+    onInsertionTick?.(road, bi, key, inserted?.inputValue || inserted?.remark || "");
+  };
+
   // Elapsed inserted trains are hidden only after user clicks "Hide elapsed TID".
   const expired = Boolean(hideElapsedTid && inserted && isTimePast(inserted.time));
 
@@ -5326,8 +5333,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               onBlur={() => setIsTrainIdEditing(false)}
               onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
               placeholder="Train ID"
-              className="h-7 w-full border-0 px-1.5 text-center text-[15px] font-black uppercase outline-none placeholder:text-[10px] placeholder:text-[#47637a]"
+              className="h-7 w-full border-0 border-b px-1.5 text-center text-[15px] font-black uppercase outline-none placeholder:text-[10px] placeholder:text-[#47637a]"
               style={{
+                borderBottomColor: key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine,
                 backgroundColor: "transparent",
                 color: key ? trainColor : "#6f899f",
                 letterSpacing: key ? "0.04em" : undefined,
@@ -5420,31 +5428,22 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </button>
                 )}
               </div>
-
-              <div
-                className="w-full"
-                style={{
-                  borderTop: `1px solid ${key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine}`,
-                  opacity: 0.82,
-                  marginTop: 2,
-                }}
-              />
             </div>
           )}
           {key && inserted?.isSweeping && (
             isEastInsertionCard ? (
               <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                <button
+                  type="button"
+                  onClick={handleSpecialCardRefresh}
+                  className="text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
+                  title="Refresh this card and go back to Add TID"
+                  aria-label="Refresh this card and go back to Add TID"
+                >
+                  -- Refresh --
+                </button>
                 <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={handleInsertedUndoClick}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleInsertedUndoClick(e);
-                    }
-                  }}
-                  className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                  className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                   style={{
                     width: "calc(100% + 8px)",
                     maxWidth: "calc(100% + 8px)",
@@ -5456,8 +5455,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     color: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.color,
                     boxShadow: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.shadow,
                   }}
-                  title="Click Sweep pill to undo sweeping"
-                  aria-label="Undo sweeping"
+                  title="Sweep details"
+                  aria-label="Sweep details"
                 >
                   <div className="mb-0.5 text-center text-[10px] font-normal leading-tight text-white">Sweep</div>
                   <div className="flex w-full flex-col gap-0.5">
@@ -5657,17 +5656,17 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             {inserted && !inserted.isSweeping && (
               isEast3K1InsertionCard ? (
                 <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                  <button
+                    type="button"
+                    onClick={handleSpecialCardRefresh}
+                    className="text-[10px] font-normal leading-none text-cyan-100/90 transition-all hover:text-white focus-visible:text-white"
+                    title="Refresh this card and go back to Add TID"
+                    aria-label="Refresh this card and go back to Add TID"
+                  >
+                    -- Refresh --
+                  </button>
                   <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={handleInsertedUndoClick}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        handleInsertedUndoClick(e);
-                      }
-                    }}
-                    className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                    className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                     style={{
                       width: "calc(100% + 8px)",
                       maxWidth: "calc(100% + 8px)",
@@ -5679,8 +5678,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       color: EAST_INSERTION_KEYWORD_REMARK_STYLES["3K1"].color,
                       boxShadow: EAST_INSERTION_KEYWORD_REMARK_STYLES["3K1"].shadow,
                     }}
-                    title="Click 3K1 pill to undo insertion"
-                    aria-label="Undo 3K1 insertion"
+                    title="3K1 insertion details"
+                    aria-label="3K1 insertion details"
                   >
                     <div className="mb-1 text-center text-[11px] font-normal leading-tight text-white">3K1</div>
                     <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
