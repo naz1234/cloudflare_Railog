@@ -2172,6 +2172,22 @@ function isInsertionLiveEntityReady(entity = getInsertionLiveEntity()) {
   return Boolean(entity?.list && entity?.create && entity?.update);
 }
 
+function getInsertionLiveRecordUpdatedMs(record = {}) {
+  const ms = Date.parse(record?.updatedAt || record?.updated_date || record?.createdAt || record?.created_date || "");
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+function selectInsertionLiveRecord(records = []) {
+  const list = Array.isArray(records) ? records : [];
+  const matching = list.filter((item) => item?.stateKey === INSERTION_LIVE_RECORD_KEY || item?.key === INSERTION_LIVE_RECORD_KEY);
+  const candidates = matching.length ? matching : list;
+
+  return candidates.reduce((latest, item) => {
+    if (!latest) return item;
+    return getInsertionLiveRecordUpdatedMs(item) >= getInsertionLiveRecordUpdatedMs(latest) ? item : latest;
+  }, null);
+}
+
 function buildInsertionLivePayload(state = {}) {
   const normalized = normalizeInsertionLiveState(state);
 
@@ -15701,6 +15717,17 @@ export default function DepotStablingPage() {
     }, 1200);
   }, [saveInsertionLiveToDb]);
 
+  const commitInsertionLiveSnapshot = useCallback((overrides = {}) => {
+    scheduleInsertionLiveSave({
+      insertionLog: overrides.insertionLog ?? insertionLogRef.current,
+      tidInputs: overrides.tidInputs ?? tidInputsRef.current,
+      activePg: overrides.activePg ?? activeInsertionPgRef.current,
+      pg2Stabling: overrides.pg2Stabling ?? pg2StablingRef.current,
+      pg2InsertionLog: overrides.pg2InsertionLog ?? pg2InsertionLogRef.current,
+      pg2TidInputs: overrides.pg2TidInputs ?? pg2TidInputsRef.current,
+    });
+  }, [scheduleInsertionLiveSave]);
+
   const refreshInsertionLiveFromDb = useCallback(async ({ showStatus = false } = {}) => {
     const entity = getInsertionLiveEntity();
 
@@ -15727,7 +15754,7 @@ export default function DepotStablingPage() {
 
     try {
       const records = await entity.list();
-      const record = (records || []).find((item) => item?.stateKey === INSERTION_LIVE_RECORD_KEY || item?.key === INSERTION_LIVE_RECORD_KEY) || (records || [])[0];
+      const record = selectInsertionLiveRecord(records);
 
       if (!record) {
         const payload = buildInsertionLivePayload({
@@ -16583,12 +16610,12 @@ export default function DepotStablingPage() {
 
   const handlePg2InsertionTick = useCallback((road, bi, trainKey, remark = "", sweepTrack = "") => {
     markInsertionLiveLocalEdit();
-    setPg2InsertionLog((prev) => {
-      const next = applyInsertionTickToLog(prev, road, bi, trainKey, remark, sweepTrack);
-      saveInsertionPg2Log(next);
-      return next;
-    });
-  }, [applyInsertionTickToLog, markInsertionLiveLocalEdit]);
+    const next = applyInsertionTickToLog(pg2InsertionLogRef.current, road, bi, trainKey, remark, sweepTrack);
+    pg2InsertionLogRef.current = next;
+    saveInsertionPg2Log(next);
+    setPg2InsertionLog(next);
+    commitInsertionLiveSnapshot({ pg2InsertionLog: next });
+  }, [applyInsertionTickToLog, commitInsertionLiveSnapshot, markInsertionLiveLocalEdit]);
 
   const updateInsertionEntryTimeInLog = useCallback((prevLog = [], entryKey, nextValue = "") => {
     const time = cleanMovementCustomTimeInput(nextValue);
@@ -16628,12 +16655,12 @@ export default function DepotStablingPage() {
 
   const handlePg2InsertionTimeUpdate = useCallback((entryKey, nextValue) => {
     markInsertionLiveLocalEdit();
-    setPg2InsertionLog((prev) => {
-      const next = updateInsertionEntryTimeInLog(prev, entryKey, nextValue);
-      saveInsertionPg2Log(next);
-      return next;
-    });
-  }, [markInsertionLiveLocalEdit, updateInsertionEntryTimeInLog]);
+    const next = updateInsertionEntryTimeInLog(pg2InsertionLogRef.current, entryKey, nextValue);
+    pg2InsertionLogRef.current = next;
+    saveInsertionPg2Log(next);
+    setPg2InsertionLog(next);
+    commitInsertionLiveSnapshot({ pg2InsertionLog: next });
+  }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit, updateInsertionEntryTimeInLog]);
 
   const updateInsertionEntryRemarkInLog = useCallback((prevLog = [], entryKey, nextValue = "") => {
     const remark = String(nextValue || "").slice(0, 40);
@@ -16666,8 +16693,12 @@ export default function DepotStablingPage() {
 
   const handlePg2InsertionRemarkUpdate = useCallback((entryKey, nextValue) => {
     markInsertionLiveLocalEdit();
-    setPg2InsertionLog((prev) => updateInsertionEntryRemarkInLog(prev, entryKey, nextValue));
-  }, [markInsertionLiveLocalEdit, updateInsertionEntryRemarkInLog]);
+    const next = updateInsertionEntryRemarkInLog(pg2InsertionLogRef.current, entryKey, nextValue);
+    pg2InsertionLogRef.current = next;
+    saveInsertionPg2Log(next);
+    setPg2InsertionLog(next);
+    commitInsertionLiveSnapshot({ pg2InsertionLog: next });
+  }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit, updateInsertionEntryRemarkInLog]);
 
   const updateInsertionEntryTaNameInLog = useCallback((prevLog = [], entryKey, nextValue = "") => {
     const taName = cleanInsertionTaName(nextValue);
@@ -16714,12 +16745,12 @@ export default function DepotStablingPage() {
 
   const handlePg2InsertionTaNameUpdate = useCallback((entryKey, nextValue) => {
     markInsertionLiveLocalEdit();
-    setPg2InsertionLog((prev) => {
-      const next = updateInsertionEntryTaNameInLog(prev, entryKey, nextValue);
-      saveInsertionPg2Log(next);
-      return next;
-    });
-  }, [markInsertionLiveLocalEdit, updateInsertionEntryTaNameInLog]);
+    const next = updateInsertionEntryTaNameInLog(pg2InsertionLogRef.current, entryKey, nextValue);
+    pg2InsertionLogRef.current = next;
+    saveInsertionPg2Log(next);
+    setPg2InsertionLog(next);
+    commitInsertionLiveSnapshot({ pg2InsertionLog: next });
+  }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit, updateInsertionEntryTaNameInLog]);
 
   const updateSweepEntryInLog = useCallback((prevLog = [], entryKey, changes = {}) => {
     return sortInsertionLogByTime((prevLog || []).map((entry) => {
@@ -16763,12 +16794,12 @@ export default function DepotStablingPage() {
 
   const handlePg2SweepUpdate = useCallback((entryKey, changes) => {
     markInsertionLiveLocalEdit();
-    setPg2InsertionLog((prev) => {
-      const next = updateSweepEntryInLog(prev, entryKey, changes);
-      saveInsertionPg2Log(next);
-      return next;
-    });
-  }, [markInsertionLiveLocalEdit, updateSweepEntryInLog]);
+    const next = updateSweepEntryInLog(pg2InsertionLogRef.current, entryKey, changes);
+    pg2InsertionLogRef.current = next;
+    saveInsertionPg2Log(next);
+    setPg2InsertionLog(next);
+    commitInsertionLiveSnapshot({ pg2InsertionLog: next });
+  }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit, updateSweepEntryInLog]);
 
   const clearTidInputForInsertionKey = (key) => {
     const match = (key || "").match(/^ins-(.+)-(\d+)$/);
@@ -16838,8 +16869,25 @@ export default function DepotStablingPage() {
 
   const handleRemovePg2InsertionLog = (key) => {
     markInsertionLiveLocalEdit();
-    clearPg2TidInputForInsertionKey(key);
-    setPg2InsertionLog((prev) => prev.filter((l) => l.key !== key));
+
+    const match = (key || "").match(/^ins-(.+)-(\d+)$/);
+    let nextInputs = pg2TidInputsRef.current || {};
+    if (match) {
+      const cellKey = `${match[1]}-${match[2]}`;
+      if (Object.prototype.hasOwnProperty.call(nextInputs, cellKey)) {
+        nextInputs = { ...nextInputs };
+        delete nextInputs[cellKey];
+      }
+    }
+
+    const nextLog = (pg2InsertionLogRef.current || []).filter((l) => l.key !== key);
+    pg2TidInputsRef.current = nextInputs;
+    pg2InsertionLogRef.current = nextLog;
+    saveInsertionPg2TidInputs(nextInputs);
+    saveInsertionPg2Log(nextLog);
+    setPg2TidInputs(nextInputs);
+    setPg2InsertionLog(nextLog);
+    commitInsertionLiveSnapshot({ pg2InsertionLog: nextLog, pg2TidInputs: nextInputs });
   };
 
   const handleRemoveInsertionLog = (key) => {
@@ -16856,8 +16904,20 @@ export default function DepotStablingPage() {
 
   const handleClearPg2InsertionDepot = (depot) => {
     markInsertionLiveLocalEdit();
-    clearPg2TidInputsForInsertionDepot(depot);
-    setPg2InsertionLog((prev) => prev.filter((l) => l.depot !== depot));
+    const targetRoads = depot === "west" ? WEST_ROADS : EAST_ROADS;
+    const nextInputs = { ...(pg2TidInputsRef.current || {}) };
+    targetRoads.forEach((road) => {
+      for (let bi = 0; bi < 7; bi += 1) delete nextInputs[`${road}-${bi}`];
+    });
+    const nextLog = (pg2InsertionLogRef.current || []).filter((l) => l.depot !== depot);
+
+    pg2TidInputsRef.current = nextInputs;
+    pg2InsertionLogRef.current = nextLog;
+    saveInsertionPg2TidInputs(nextInputs);
+    saveInsertionPg2Log(nextLog);
+    setPg2TidInputs(nextInputs);
+    setPg2InsertionLog(nextLog);
+    commitInsertionLiveSnapshot({ pg2InsertionLog: nextLog, pg2TidInputs: nextInputs });
   };
 
   const handleClearInsertedTidRemarks = useCallback((roads, blockIndices) => {
@@ -16909,7 +16969,7 @@ export default function DepotStablingPage() {
       blockIndices.forEach((bi) => targetKeys.add(`ins-${road}-${bi}`));
     });
 
-    setPg2InsertionLog((prev) => prev.map((entry) => {
+    const next = (pg2InsertionLogRef.current || []).map((entry) => {
       if (!targetKeys.has(entry.key)) return entry;
       if (entry.isSweeping) return entry;
 
@@ -16931,8 +16991,13 @@ export default function DepotStablingPage() {
         clearTime: "",
         isSweeping: false,
       };
-    }));
-  }, [markInsertionLiveLocalEdit]);
+    });
+
+    pg2InsertionLogRef.current = next;
+    saveInsertionPg2Log(next);
+    setPg2InsertionLog(next);
+    commitInsertionLiveSnapshot({ pg2InsertionLog: next });
+  }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit]);
 
   const handleClearPg2InsertedTrains = useCallback((roads, blockIndices) => {
     markInsertionLiveLocalEdit();
@@ -16941,73 +17006,108 @@ export default function DepotStablingPage() {
       blockIndices.forEach((bi) => targetKeys.add(`ins-${road}-${bi}`));
     });
 
-    setPg2InsertionLog((prev) => prev.filter((entry) => !targetKeys.has(entry.key)));
-  }, [markInsertionLiveLocalEdit]);
+    const next = (pg2InsertionLogRef.current || []).filter((entry) => !targetKeys.has(entry.key));
+    pg2InsertionLogRef.current = next;
+    saveInsertionPg2Log(next);
+    setPg2InsertionLog(next);
+    commitInsertionLiveSnapshot({ pg2InsertionLog: next });
+  }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit]);
 
   const handlePg2TidChange = useCallback((road, bi, value) => {
     markInsertionLiveLocalEdit();
-    setPg2TidInputs((prev) => ({ ...prev, [`${road}-${bi}`]: value }));
-  }, [markInsertionLiveLocalEdit]);
+    const nextInputs = { ...(pg2TidInputsRef.current || {}), [`${road}-${bi}`]: value };
+    pg2TidInputsRef.current = nextInputs;
+    saveInsertionPg2TidInputs(nextInputs);
+    setPg2TidInputs(nextInputs);
+    commitInsertionLiveSnapshot({ pg2TidInputs: nextInputs });
+  }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit]);
 
   const handlePg2TrainIdChange = useCallback((depot, road, blockIndex, value) => {
     markInsertionLiveLocalEdit();
     const normalizedDepot = normalizeDepotKey(depot);
     const cellKey = `${road}-${blockIndex}`;
     const logKey = `ins-${cellKey}`;
+    const currentPg2Stabling = pg2StablingRef.current || cloneInsertionStablingState(westDataRef.current, eastDataRef.current);
+    const currentDepotData = normalizedDepot === "west" ? currentPg2Stabling.westData : currentPg2Stabling.eastData;
+    const previousKey = normalizeTrainId(currentDepotData?.[road]?.[blockIndex]?.trainId || "");
+    const incomingKey = normalizeTrainId(value);
 
-    setPg2Stabling((prev) => {
-      const currentDepotData = normalizedDepot === "west" ? prev.westData : prev.eastData;
-      const previousKey = normalizeTrainId(currentDepotData?.[road]?.[blockIndex]?.trainId || "");
-      const incomingKey = normalizeTrainId(value);
+    let nextInputs = pg2TidInputsRef.current || {};
+    let nextLog = pg2InsertionLogRef.current || [];
 
-      if (previousKey !== incomingKey) {
-        setPg2TidInputs((prevInputs) => {
-          if (!Object.prototype.hasOwnProperty.call(prevInputs, cellKey)) return prevInputs;
-          const nextInputs = { ...prevInputs };
-          delete nextInputs[cellKey];
-          return nextInputs;
-        });
-        setPg2InsertionLog((prevLog) => prevLog.filter((entry) => entry.key !== logKey));
+    if (previousKey !== incomingKey) {
+      if (Object.prototype.hasOwnProperty.call(nextInputs, cellKey)) {
+        nextInputs = { ...nextInputs };
+        delete nextInputs[cellKey];
       }
+      nextLog = nextLog.filter((entry) => entry.key !== logKey);
+    }
 
-      const next = cloneInsertionStablingState(prev.westData, prev.eastData);
-      const target = normalizedDepot === "west" ? next.westData : next.eastData;
-      const blocks = [...(target[road] || emptyBlocks())];
-      blocks[blockIndex] = { ...(blocks[blockIndex] || { trainId: "", extraRemark: "" }), trainId: value };
-      target[road] = blocks;
-      return next;
+    const nextStabling = cloneInsertionStablingState(currentPg2Stabling.westData, currentPg2Stabling.eastData);
+    const target = normalizedDepot === "west" ? nextStabling.westData : nextStabling.eastData;
+    const blocks = [...(target[road] || emptyBlocks())];
+    blocks[blockIndex] = { ...(blocks[blockIndex] || { trainId: "", extraRemark: "" }), trainId: value };
+    target[road] = blocks;
+
+    pg2StablingRef.current = nextStabling;
+    pg2TidInputsRef.current = nextInputs;
+    pg2InsertionLogRef.current = nextLog;
+    saveInsertionPg2Stabling(nextStabling);
+    saveInsertionPg2TidInputs(nextInputs);
+    saveInsertionPg2Log(nextLog);
+    setPg2Stabling(nextStabling);
+    setPg2TidInputs(nextInputs);
+    setPg2InsertionLog(nextLog);
+    commitInsertionLiveSnapshot({
+      pg2Stabling: nextStabling,
+      pg2TidInputs: nextInputs,
+      pg2InsertionLog: nextLog,
     });
-  }, [markInsertionLiveLocalEdit]);
+  }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit]);
 
   const handleRefreshPg2FromDefault = useCallback((depot) => {
     markInsertionLiveLocalEdit();
     const normalizedDepot = normalizeDepotKey(depot);
     const targetRoads = normalizedDepot === "west" ? WEST_ROADS : EAST_ROADS;
+    const currentPg2Stabling = pg2StablingRef.current || cloneInsertionStablingState(westDataRef.current, eastDataRef.current);
 
     // Refresh only the selected depot. The other depot's PG2 layout and work stay untouched.
-    setPg2Stabling((prev) => {
-      const next = cloneInsertionStablingState(prev?.westData || {}, prev?.eastData || {});
-      if (normalizedDepot === "west") {
-        next.westData = normalizeStablingDepotData(westDataRef.current, WEST_ROADS);
-      } else {
-        next.eastData = normalizeStablingDepotData(eastDataRef.current, EAST_ROADS);
-      }
-      return next;
-    });
+    const nextStabling = cloneInsertionStablingState(currentPg2Stabling?.westData || {}, currentPg2Stabling?.eastData || {});
+    if (normalizedDepot === "west") {
+      nextStabling.westData = normalizeStablingDepotData(westDataRef.current, WEST_ROADS);
+    } else {
+      nextStabling.eastData = normalizeStablingDepotData(eastDataRef.current, EAST_ROADS);
+    }
 
-    setPg2InsertionLog((prev) => prev.filter((entry) => entry?.depot !== normalizedDepot));
-    setPg2TidInputs((prev) => {
-      const next = { ...prev };
-      targetRoads.forEach((road) => {
-        for (let bi = 0; bi < 7; bi += 1) delete next[`${road}-${bi}`];
-      });
-      return next;
+    const nextLog = (pg2InsertionLogRef.current || []).filter((entry) => entry?.depot !== normalizedDepot);
+    const nextInputs = { ...(pg2TidInputsRef.current || {}) };
+    targetRoads.forEach((road) => {
+      for (let bi = 0; bi < 7; bi += 1) delete nextInputs[`${road}-${bi}`];
     });
-    setActiveInsertionPg((prev) => ({
-      ...normalizeInsertionPgByDepot(prev),
+    const nextActivePg = {
+      ...normalizeInsertionPgByDepot(activeInsertionPgRef.current),
       [normalizedDepot]: "pg2",
-    }));
-  }, [markInsertionLiveLocalEdit]);
+    };
+
+    pg2StablingRef.current = nextStabling;
+    pg2InsertionLogRef.current = nextLog;
+    pg2TidInputsRef.current = nextInputs;
+    activeInsertionPgRef.current = nextActivePg;
+    saveInsertionPg2Stabling(nextStabling);
+    saveInsertionPg2Log(nextLog);
+    saveInsertionPg2TidInputs(nextInputs);
+    saveInsertionActivePg(nextActivePg);
+    setPg2Stabling(nextStabling);
+    setPg2InsertionLog(nextLog);
+    setPg2TidInputs(nextInputs);
+    setActiveInsertionPg(nextActivePg);
+    commitInsertionLiveSnapshot({
+      activePg: nextActivePg,
+      pg2Stabling: nextStabling,
+      pg2InsertionLog: nextLog,
+      pg2TidInputs: nextInputs,
+    });
+  }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit]);
 
   const getDepotFromRoad = (road) => WEST_ROADS.includes(road) ? "west" : "east";
 
@@ -17790,10 +17890,14 @@ export default function DepotStablingPage() {
   const updateActiveInsertionPgForDepot = (depot, pg) => {
     const normalizedDepot = normalizeDepotKey(depot);
     markInsertionLiveLocalEdit();
-    setActiveInsertionPg((prev) => ({
-      ...normalizeInsertionPgByDepot(prev),
+    const nextActivePg = {
+      ...normalizeInsertionPgByDepot(activeInsertionPgRef.current),
       [normalizedDepot]: normalizeInsertionPg(pg),
-    }));
+    };
+    activeInsertionPgRef.current = nextActivePg;
+    saveInsertionActivePg(nextActivePg);
+    setActiveInsertionPg(nextActivePg);
+    commitInsertionLiveSnapshot({ activePg: nextActivePg });
   };
 
   const buildInsertionSectionConfig = (depot, pg) => {
