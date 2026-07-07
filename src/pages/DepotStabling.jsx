@@ -5273,7 +5273,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     return (
       <td className="theme-stabling-grid-cell theme-insertion-grid-cell p-1.5 align-middle" title="Elapsed TID hidden manually" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
         <div className="theme-insertion-card is-expired flex h-full flex-col items-center justify-center gap-1 rounded-xl select-none" style={{ minHeight: rowCardMinHeight, height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, opacity: 0.55 }}>
-          <div className="w-full text-center font-black leading-none" style={{ fontSize: 14, color: "#3a5068" }}>{displayVal || "—"}</div>
+          <div className="flex h-5 w-full items-center justify-center text-center font-black leading-none" style={{ fontSize: 14, color: "#3a5068" }}>{displayVal || "—"}</div>
           {insertedRemarkLabel && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
           <span className="text-[9px] font-semibold" style={{ color: "#3a5068" }}>✓ {insertedDisplayTime}</span>
           <span className="text-[8px] tracking-wide uppercase" style={{ color: "#1e3a52" }}>elapsed hidden</span>
@@ -5321,7 +5321,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             : undefined,
         }}
       >
-        <div className={`flex w-full flex-col items-center ${hasInsertedPlainRemark ? "flex-1 gap-0" : (isInsertionDone ? "gap-1" : "gap-2")}`}>
+        <div className="flex w-full flex-col items-center gap-1">
           {stablingEditable ? (
             <input
               type="text"
@@ -5355,7 +5355,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             </div>
           )}
           {key && (
-            <div className="flex w-full flex-col items-center gap-1">
+            <div
+              className="flex w-full flex-col items-center gap-1"
+              style={{ minHeight: 56 }}
+            >
               <div
                 className="w-full"
                 style={{
@@ -5368,8 +5371,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               <div
                 className="flex w-full shrink-0 flex-col items-center justify-start gap-1.5"
                 style={{
-                  minHeight: rowMaintenanceSlotHeight > 0 ? Math.max(rowMaintenanceSlotHeight, 40) : 40,
+                  height: 46,
+                  minHeight: 46,
+                  maxHeight: 46,
                   marginTop: 2,
+                  overflow: "hidden",
                 }}
                 aria-hidden={maintList.length === 0 && !insertedTidAssistRemark && !hasInsertedPlainRemark ? "true" : undefined}
               >
@@ -5439,7 +5445,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           )}
           {key && inserted?.isSweeping && (
             isEastInsertionCard ? (
-              <div className="flex w-full flex-col items-center gap-1 px-1 pt-1.5 pb-0.5 text-[12px] font-normal leading-tight">
+              <div className="flex w-full flex-col items-center gap-1 px-1 pt-3 pb-0.5 text-[12px] font-normal leading-tight">
                 <button
                   type="button"
                   onClick={handleSpecialCardRefresh}
@@ -5662,7 +5668,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             )}
             {inserted && !inserted.isSweeping && (
               isEast3K1InsertionCard ? (
-                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1.5 pb-0.5 text-[12px] font-normal leading-tight">
+                <div className="flex w-full flex-col items-center gap-1 px-1 pt-3 pb-0.5 text-[12px] font-normal leading-tight">
                   <button
                     type="button"
                     onClick={handleSpecialCardRefresh}
@@ -5879,7 +5885,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   />
                 </div>
               ) : (
-                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1.5 pb-0.5 text-[12px] font-normal leading-tight">
+                <div className="flex w-full flex-col items-center gap-1 px-1 pt-3 pb-0.5 text-[12px] font-normal leading-tight">
                   <button
                     type="button"
                     onClick={handleSpecialCardRefresh}
