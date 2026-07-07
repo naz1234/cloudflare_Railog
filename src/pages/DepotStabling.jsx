@@ -4828,12 +4828,36 @@ const EAST_INSERTION_KEYWORD_REMARK_STYLES = {
   },
 };
 
-const EAST_INSERTION_TID_PILL_STYLE = {
-  bg: "rgba(14, 165, 233, 0.20)",
-  border: "#38bdf8",
-  color: "#e0f2fe",
-  shadow: "0 0 10px rgba(56, 189, 248, 0.24), inset 0 1px 0 rgba(255,255,255,0.06)",
+const INSERTION_DEPOT_TID_PILL_STYLES = {
+  west: {
+    bg: "rgba(14, 165, 233, 0.20)",
+    border: "#38bdf8",
+    color: "#e0f2fe",
+    shadow: "0 0 10px rgba(56, 189, 248, 0.24), inset 0 1px 0 rgba(255,255,255,0.06)",
+  },
+  east: {
+    bg: "rgba(168, 85, 247, 0.22)",
+    border: "#c084fc",
+    color: "#f3e8ff",
+    shadow: "0 0 10px rgba(192, 132, 252, 0.24), inset 0 1px 0 rgba(255,255,255,0.06)",
+  },
 };
+
+function getInsertionTidBigPillStyle(assistStyle = null, depot = "west") {
+  const depotKey = normalizeDepotKey(depot);
+  const fallback = INSERTION_DEPOT_TID_PILL_STYLES[depotKey] || INSERTION_DEPOT_TID_PILL_STYLES.west;
+
+  if (!assistStyle) return fallback;
+
+  // Use the same colour family as the active TID Reference Table remark:
+  // WD (9am) = green, WD (7pm) = yellow, ED (9am) = red, ED (7pm) = violet.
+  return {
+    bg: assistStyle.cardBg || assistStyle.bg || fallback.bg,
+    border: assistStyle.border || fallback.border,
+    color: assistStyle.color || fallback.color,
+    shadow: assistStyle.shadow || fallback.shadow,
+  };
+}
 
 const EAST_INSERTION_TIME_PILL_STYLE = {
   bg: "rgba(30, 41, 59, 0.72)",
@@ -5194,6 +5218,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   // Do not duplicate another 3K1 pill in the remark section for West or East.
   const suppressDuplicate3K1RemarkPill = is3K1InsertionCard;
   const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
+  const insertedTidBigPillStyle = getInsertionTidBigPillStyle(insertedTidRemarkStyle, autoTidDepot);
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
   const isInsertionDone = Boolean(inserted && !inserted.isSweeping);
@@ -5824,17 +5849,17 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         marginLeft: -4,
                         marginRight: -4,
                         alignSelf: "center",
-                        background: EAST_INSERTION_TID_PILL_STYLE.bg,
-                        borderColor: EAST_INSERTION_TID_PILL_STYLE.border,
-                        color: EAST_INSERTION_TID_PILL_STYLE.color,
-                        boxShadow: EAST_INSERTION_TID_PILL_STYLE.shadow,
+                        background: insertedTidBigPillStyle.bg,
+                        borderColor: insertedTidBigPillStyle.border,
+                        color: insertedTidBigPillStyle.color,
+                        boxShadow: insertedTidBigPillStyle.shadow,
                       }}
                       title={`TID ${insertedTid} insertion details`}
                       aria-label={`TID ${insertedTid} insertion details`}
                     >
                       <div className="mb-1 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
                       <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
-                        <span className="text-right text-[10px] font-normal uppercase tracking-normal text-sky-100/90">Time :</span>
+                        <span className="text-right text-[10px] font-normal uppercase tracking-normal" style={{ color: insertedTidBigPillStyle.color, opacity: 0.92 }}>Time :</span>
                         <input
                           type="text"
                           inputMode="numeric"
@@ -5931,17 +5956,17 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         marginLeft: -4,
                         marginRight: -4,
                         alignSelf: "center",
-                        background: EAST_INSERTION_TID_PILL_STYLE.bg,
-                        borderColor: EAST_INSERTION_TID_PILL_STYLE.border,
-                        color: EAST_INSERTION_TID_PILL_STYLE.color,
-                        boxShadow: EAST_INSERTION_TID_PILL_STYLE.shadow,
+                        background: insertedTidBigPillStyle.bg,
+                        borderColor: insertedTidBigPillStyle.border,
+                        color: insertedTidBigPillStyle.color,
+                        boxShadow: insertedTidBigPillStyle.shadow,
                       }}
                       title={`TID ${insertedTid} insertion details`}
                       aria-label={`TID ${insertedTid} insertion details`}
                     >
                       <div className="mb-1 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
                       <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
-                        <span className="text-right text-[10px] font-normal uppercase tracking-normal text-sky-100/90">Time :</span>
+                        <span className="text-right text-[10px] font-normal uppercase tracking-normal" style={{ color: insertedTidBigPillStyle.color, opacity: 0.92 }}>Time :</span>
                         <input
                           type="text"
                           inputMode="numeric"
