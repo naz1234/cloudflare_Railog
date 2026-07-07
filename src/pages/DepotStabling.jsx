@@ -5526,7 +5526,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     </select>
 
                     <div className="mt-1 grid w-full grid-cols-[32px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
-                      <span className="text-right text-[9px] font-normal uppercase tracking-normal text-purple-200/90">STRT :</span>
+                      <span className="text-right text-[10px] font-normal uppercase tracking-normal text-purple-200/90">STRT :</span>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -5545,11 +5545,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onChange={(e) => onSweepUpdate?.(inserted.key, { time: cleanMovementCustomTimeInput(e.target.value) })}
                         onBlur={(e) => onSweepUpdate?.(inserted.key, { time: normalizeMovementCustomTimeInput(e.target.value) })}
                         placeholder="00:00"
-                        className="min-w-0 border-0 bg-transparent p-0 text-left text-[10px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                        className="min-w-0 border-0 bg-transparent p-0 text-left text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                         title="Edit Sweep start time. End time updates automatically +2 minutes."
                       />
 
-                      <span className="text-right text-[9px] font-normal uppercase tracking-normal text-purple-200/90">End :</span>
+                      <span className="text-right text-[10px] font-normal uppercase tracking-normal text-purple-200/90">End :</span>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -5568,7 +5568,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onChange={(e) => onSweepUpdate?.(inserted.key, { clearTime: cleanMovementCustomTimeInput(e.target.value) })}
                         onBlur={(e) => onSweepUpdate?.(inserted.key, { clearTime: normalizeMovementCustomTimeInput(e.target.value) })}
                         placeholder="00:00"
-                        className="min-w-0 border-0 bg-transparent p-0 text-left text-[10px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                        className="min-w-0 border-0 bg-transparent p-0 text-left text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                         title="Edit Sweep end time"
                       />
                     </div>
@@ -5633,7 +5633,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </select>
 
                   <div className="mt-1 grid w-full grid-cols-[32px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
-                    <span className="text-right text-[9px] font-normal uppercase tracking-normal text-purple-200/90">STRT :</span>
+                    <span className="text-right text-[10px] font-normal uppercase tracking-normal text-purple-200/90">STRT :</span>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -5652,11 +5652,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onChange={(e) => onSweepUpdate?.(inserted.key, { time: cleanMovementCustomTimeInput(e.target.value) })}
                       onBlur={(e) => onSweepUpdate?.(inserted.key, { time: normalizeMovementCustomTimeInput(e.target.value) })}
                       placeholder="00:00"
-                      className="min-w-0 border-0 bg-transparent p-0 text-left text-[10px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                      className="min-w-0 border-0 bg-transparent p-0 text-left text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                       title="Edit Sweep start time. End time updates automatically +2 minutes."
                     />
 
-                    <span className="text-right text-[9px] font-normal uppercase tracking-normal text-purple-200/90">End :</span>
+                    <span className="text-right text-[10px] font-normal uppercase tracking-normal text-purple-200/90">End :</span>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -5675,7 +5675,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onChange={(e) => onSweepUpdate?.(inserted.key, { clearTime: cleanMovementCustomTimeInput(e.target.value) })}
                       onBlur={(e) => onSweepUpdate?.(inserted.key, { clearTime: normalizeMovementCustomTimeInput(e.target.value) })}
                       placeholder="00:00"
-                      className="min-w-0 border-0 bg-transparent p-0 text-left text-[10px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                      className="min-w-0 border-0 bg-transparent p-0 text-left text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                       title="Edit Sweep end time"
                     />
                   </div>
@@ -5760,7 +5760,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   >
                     <div className="mb-1 text-center text-[11px] font-normal leading-tight text-white">3K1</div>
                     <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
-                      <span className="text-right text-[9px] font-normal uppercase tracking-normal text-cyan-100/90">Time :</span>
+                      <span className="text-right text-[10px] font-normal uppercase tracking-normal text-cyan-100/90">Time :</span>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -5782,7 +5782,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                           onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
                         }}
                         placeholder="00:00"
-                        className="min-w-0 border-0 bg-transparent p-0 text-left text-[10px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                        className="min-w-0 border-0 bg-transparent p-0 text-left text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                         title="Edit 3K1 insertion completion time"
                       />
                     </div>
@@ -5834,7 +5834,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     >
                       <div className="mb-1 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
                       <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
-                        <span className="text-right text-[9px] font-normal uppercase tracking-normal text-sky-100/90">Time :</span>
+                        <span className="text-right text-[10px] font-normal uppercase tracking-normal text-sky-100/90">Time :</span>
                         <input
                           type="text"
                           inputMode="numeric"
@@ -5856,7 +5856,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                             onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
                           }}
                           placeholder="00:00"
-                          className="min-w-0 border-0 bg-transparent p-0 text-left text-[10px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                          className="min-w-0 border-0 bg-transparent p-0 text-left text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                           title="Edit insertion completion time"
                         />
                       </div>
@@ -5866,7 +5866,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
                       style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
                     >
-                      <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Time</span>
+                      <span className="shrink-0 text-[11px] uppercase tracking-wide opacity-80">Time</span>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -5887,7 +5887,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                           onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                         }}
                         placeholder="00:00"
-                        className="min-w-0 w-[42px] border-0 bg-transparent p-0 text-center text-[11px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                        className="min-w-0 w-[48px] border-0 bg-transparent p-0 text-center text-[13px] font-normal leading-tight outline-none placeholder:text-slate-500"
                         style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
                         title="Edit insertion completion time"
                       />
@@ -5941,7 +5941,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     >
                       <div className="mb-1 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
                       <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
-                        <span className="text-right text-[9px] font-normal uppercase tracking-normal text-sky-100/90">Time :</span>
+                        <span className="text-right text-[10px] font-normal uppercase tracking-normal text-sky-100/90">Time :</span>
                         <input
                           type="text"
                           inputMode="numeric"
@@ -5963,7 +5963,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                             onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
                           }}
                           placeholder="00:00"
-                          className="min-w-0 border-0 bg-transparent p-0 text-left text-[10px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                          className="min-w-0 border-0 bg-transparent p-0 text-left text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                           title="Edit insertion completion time"
                         />
                       </div>
@@ -5999,7 +5999,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
                     style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
                   >
-                    <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Time</span>
+                    <span className="shrink-0 text-[11px] uppercase tracking-wide opacity-80">Time</span>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -6020,7 +6020,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                       }}
                       placeholder="00:00"
-                      className="min-w-0 w-[42px] border-0 bg-transparent p-0 text-center text-[11px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                      className="min-w-0 w-[48px] border-0 bg-transparent p-0 text-center text-[13px] font-normal leading-tight outline-none placeholder:text-slate-500"
                       style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
                       title="Edit insertion completion time"
                     />
@@ -6056,7 +6056,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
                     style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
                   >
-                    <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Time</span>
+                    <span className="shrink-0 text-[11px] uppercase tracking-wide opacity-80">Time</span>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -6077,7 +6077,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                       }}
                       placeholder="00:00"
-                      className="min-w-0 w-[42px] border-0 bg-transparent p-0 text-center text-[11px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                      className="min-w-0 w-[48px] border-0 bg-transparent p-0 text-center text-[13px] font-normal leading-tight outline-none placeholder:text-slate-500"
                       style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
                       title="Edit insertion completion time"
                     />
