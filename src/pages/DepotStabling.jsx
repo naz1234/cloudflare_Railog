@@ -5421,14 +5421,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </button>
                 )}
               </div>
-
-              <div
-                className="w-full"
-                style={{
-                  borderTop: `1px solid ${key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine}`,
-                  opacity: 0.82,
-                }}
-              />
             </div>
           )}
           {key && inserted?.isSweeping && (
