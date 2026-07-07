@@ -5740,122 +5740,186 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </div>
                 </div>
               ) : isEastInsertionCard ? (
-                <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
-                  {eastInsertionRemarkPillLabel && (
-                    <button
-                      type="button"
-                      onClick={handleInsertedUndoClick}
-                      className="inline-flex min-w-0 max-w-full items-center justify-center self-center text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
-                      style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[eastInsertionRemarkPillLabel], 82)}
-                      title={`Click ${eastInsertionRemarkPillLabel} to undo insertion`}
-                      aria-label={`Undo insertion for remark ${eastInsertionRemarkPillLabel}`}
-                    >
-                      {eastInsertionRemarkPillLabel}
-                    </button>
-                  )}
-
-                  {insertedTid && (
-                    <button
-                      type="button"
-                      onClick={handleInsertedUndoClick}
-                      className="inline-flex min-w-0 max-w-full items-center justify-center self-center text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
-                      style={getEastInsertionPillStyle(EAST_INSERTION_TID_PILL_STYLE, 82)}
-                      title={`Click TID ${insertedTid} to undo insertion`}
-                      aria-label={`Undo insertion for TID ${insertedTid}`}
-                    >
-                      TID {insertedTid}
-                    </button>
-                  )}
-
-                  <div
-                    className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
-                    style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
+                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+                  <button
+                    type="button"
+                    onClick={handleSpecialCardRefresh}
+                    className="text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
+                    title="Refresh this card and go back to Add TID"
+                    aria-label="Refresh this card and go back to Add TID"
                   >
-                    <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Time</span>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={5}
-                      value={insertedDisplayTime}
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => {
-                        const value = String(insertedDisplayTime || "");
-                        const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-                        if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                          e.preventDefault();
-                          onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
-                        }
-                      }}
-                      onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
-                      onBlur={(e) => {
-                        const normalized = normalizeMovementCustomTimeInput(e.target.value);
-                        onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
-                      }}
-                      placeholder="00:00"
-                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-center text-[11px] font-normal leading-tight outline-none placeholder:text-slate-500"
-                      style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
-                      title="Edit insertion completion time"
-                    />
-                  </div>
+                    -- Refresh --
+                  </button>
 
-                  <div className="grid w-full grid-cols-[34px_8px_minmax(0,1fr)] items-center gap-x-1 px-2 text-[12px] font-normal leading-tight">
-                    <span className="text-right font-normal text-white">TA</span>
-                    <span className="text-center font-normal text-white">:</span>
-                    <input
-                      type="text"
-                      maxLength={40}
-                      value={inserted.taName || ""}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                      placeholder="Name"
-                      className="min-w-0 border-0 bg-transparent p-0 pl-1 text-left text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
-                      title="Optional TA name for the insertion output"
-                    />
+                  {insertedTid ? (
+                    <div
+                      className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
+                      style={{
+                        width: "calc(100% + 8px)",
+                        maxWidth: "calc(100% + 8px)",
+                        marginLeft: -4,
+                        marginRight: -4,
+                        alignSelf: "center",
+                        background: EAST_INSERTION_TID_PILL_STYLE.bg,
+                        borderColor: EAST_INSERTION_TID_PILL_STYLE.border,
+                        color: EAST_INSERTION_TID_PILL_STYLE.color,
+                        boxShadow: EAST_INSERTION_TID_PILL_STYLE.shadow,
+                      }}
+                      title={`TID ${insertedTid} insertion details`}
+                      aria-label={`TID ${insertedTid} insertion details`}
+                    >
+                      <div className="mb-1 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
+                      <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
+                        <span className="text-right text-[9px] font-normal uppercase tracking-normal text-sky-100/90">Time :</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={5}
+                          value={insertedDisplayTime}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+                            const value = String(insertedDisplayTime || "");
+                            const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                            if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                              e.preventDefault();
+                              onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
+                            }
+                          }}
+                          onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
+                          onBlur={(e) => {
+                            const normalized = normalizeMovementCustomTimeInput(e.target.value);
+                            onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
+                          }}
+                          placeholder="00:00"
+                          className="min-w-0 border-0 bg-transparent p-0 text-left text-[10px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                          title="Edit insertion completion time"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
+                      style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
+                    >
+                      <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Time</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={5}
+                        value={insertedDisplayTime}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          const value = String(insertedDisplayTime || "");
+                          const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                          if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                            e.preventDefault();
+                            onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
+                          }
+                        }}
+                        onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
+                        onBlur={(e) => {
+                          const normalized = normalizeMovementCustomTimeInput(e.target.value);
+                          onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
+                        }}
+                        placeholder="00:00"
+                        className="min-w-0 w-[42px] border-0 bg-transparent p-0 text-center text-[11px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                        style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
+                        title="Edit insertion completion time"
+                      />
+                    </div>
+                  )}
+
+                  <div className="w-full px-1">
+                    <div className="flex w-full flex-col items-center justify-center rounded-lg border border-sky-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(56,189,248,0.20)]">
+                      <span className="text-[10px] font-normal leading-tight text-white">TA Name:</span>
+                      <input
+                        type="text"
+                        maxLength={40}
+                        value={inserted.taName || ""}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
+                        placeholder="(Name)"
+                        className="mt-0.5 w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                        title="Optional TA name for the insertion output"
+                      />
+                    </div>
                   </div>
                 </div>
               ) : (
               <>
                 {insertedTid ? (
-                <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
-                  <span className="text-right font-normal text-blue-300">TID</span>
-                  <span className="text-center font-normal text-blue-300">:</span>
-                  <button
-                    type="button"
-                    onClick={handleInsertedUndoClick}
-                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none transition-colors hover:text-red-200 focus-visible:text-red-200"
-                    title={`Click TID ${insertedTid} to undo insertion`}
-                    aria-label={`Undo insertion for TID ${insertedTid}`}
-                  >
-                    {insertedTid}
-                  </button>
-
-                  <span className="text-right font-normal text-blue-300">Time</span>
-                  <span className="text-center font-normal text-blue-300">:</span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={5}
-                    value={insertedDisplayTime}
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => {
-                      const value = String(insertedDisplayTime || "");
-                      const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
-                      if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
-                        e.preventDefault();
-                        onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
-                      }
-                    }}
-                    onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
-                    onBlur={(e) => {
-                      const normalized = normalizeMovementCustomTimeInput(e.target.value);
-                      onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
-                    }}
-                    placeholder="00:00"
-                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
-                    title="Edit insertion completion time"
-                  />
-
-                </div>
+                  <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+                    <button
+                      type="button"
+                      onClick={handleSpecialCardRefresh}
+                      className="text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
+                      title="Refresh this card and go back to Add TID"
+                      aria-label="Refresh this card and go back to Add TID"
+                    >
+                      -- Refresh --
+                    </button>
+                    <div
+                      className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
+                      style={{
+                        width: "calc(100% + 8px)",
+                        maxWidth: "calc(100% + 8px)",
+                        marginLeft: -4,
+                        marginRight: -4,
+                        alignSelf: "center",
+                        background: EAST_INSERTION_TID_PILL_STYLE.bg,
+                        borderColor: EAST_INSERTION_TID_PILL_STYLE.border,
+                        color: EAST_INSERTION_TID_PILL_STYLE.color,
+                        boxShadow: EAST_INSERTION_TID_PILL_STYLE.shadow,
+                      }}
+                      title={`TID ${insertedTid} insertion details`}
+                      aria-label={`TID ${insertedTid} insertion details`}
+                    >
+                      <div className="mb-1 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
+                      <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
+                        <span className="text-right text-[9px] font-normal uppercase tracking-normal text-sky-100/90">Time :</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={5}
+                          value={insertedDisplayTime}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+                            const value = String(insertedDisplayTime || "");
+                            const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                            if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                              e.preventDefault();
+                              onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
+                            }
+                          }}
+                          onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
+                          onBlur={(e) => {
+                            const normalized = normalizeMovementCustomTimeInput(e.target.value);
+                            onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
+                          }}
+                          placeholder="00:00"
+                          className="min-w-0 border-0 bg-transparent p-0 text-left text-[10px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                          title="Edit insertion completion time"
+                        />
+                      </div>
+                    </div>
+                    <div className="w-full px-1">
+                      <div className="flex w-full flex-col items-center justify-center rounded-lg border border-sky-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(56,189,248,0.20)]">
+                        <span className="text-[10px] font-normal leading-tight text-white">TA Name:</span>
+                        <input
+                          type="text"
+                          maxLength={40}
+                          value={inserted.taName || ""}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
+                          placeholder="(Name)"
+                          className="mt-0.5 w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                          title="Optional TA name for the insertion output"
+                        />
+                      </div>
+                    </div>
+                  </div>
               ) : hasInsertedPlainRemark ? (
                 <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
                   <span className="text-right font-normal text-blue-300">Time</span>
@@ -5942,7 +6006,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </div>
                 </div>
                 )}
-                {(insertedTid || hasInsertedPlainRemark) && (
+                {hasInsertedPlainRemark && (
                   <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
                     <span className="text-right font-normal text-blue-300">TA</span>
                     <span className="text-center font-normal text-blue-300">:</span>
