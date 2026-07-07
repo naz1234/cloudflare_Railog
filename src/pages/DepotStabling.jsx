@@ -5279,7 +5279,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           minHeight: Math.max(inserted?.isSweeping ? 158 : isInsertionDone ? ((insertedTid || hasInsertedPlainRemark) ? 126 : 130) : 98, rowCardMinHeight),
           height: "100%",
           padding: isEastInsertionCard
-            ? (isInsertionDone ? "6px 1px 6px 5px" : "8px 1px 8px 7px")
+            ? (inserted?.isSweeping ? "8px 4px" : isInsertionDone ? "6px 1px 6px 5px" : "8px 1px 8px 7px")
             : (isInsertionDone ? "6px 5px" : "8px 7px"),
           background: insCardBg,
           border: insCardBorder,
@@ -5437,10 +5437,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   }}
                   className="rounded-lg border px-1.5 py-1 text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
                   style={{
-                    width: "calc(100% + 12px)",
-                    maxWidth: "calc(100% + 12px)",
-                    marginLeft: -6,
-                    marginRight: -6,
+                    width: "calc(100% + 4px)",
+                    maxWidth: "calc(100% + 4px)",
+                    marginLeft: -2,
+                    marginRight: -2,
+                    alignSelf: "center",
                     background: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.bg,
                     borderColor: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.border,
                     color: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.color,
