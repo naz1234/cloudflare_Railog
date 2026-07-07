@@ -5637,7 +5637,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           )}
         </div>
         {key && (
-          <div className={`mt-auto flex w-full flex-col items-center ${isInsertionDone ? "gap-1" : "gap-2"}`}>
+          <div className={`${inserted ? "mt-0" : "mt-auto"} flex w-full flex-col items-center ${isInsertionDone ? "gap-1" : "gap-2"}`}>
             {!inserted && (
               <input
                 ref={(element) => {
