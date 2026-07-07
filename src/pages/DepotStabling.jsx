@@ -5435,12 +5435,12 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       handleInsertedUndoClick(e);
                     }
                   }}
-                  className="rounded-lg border px-1.5 py-1 text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                  className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
                   style={{
-                    width: "calc(100% + 4px)",
-                    maxWidth: "calc(100% + 4px)",
-                    marginLeft: -2,
-                    marginRight: -2,
+                    width: "calc(100% + 8px)",
+                    maxWidth: "calc(100% + 8px)",
+                    marginLeft: -4,
+                    marginRight: -4,
                     alignSelf: "center",
                     background: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.bg,
                     borderColor: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.border,
@@ -5450,7 +5450,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   title="Click Sweep pill to undo sweeping"
                   aria-label="Undo sweeping"
                 >
-                  <div className="mb-0.5 text-center text-[13px] font-normal leading-tight text-white">Sweep</div>
+                  <div className="mb-0.5 text-center text-[14px] font-normal leading-tight text-white">Sweep</div>
                   <div className="flex w-full flex-col gap-0.5">
                     <select
                       value={inserted.sweepTrack || "TK1"}
