@@ -5465,7 +5465,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     </select>
 
                     <div className="grid w-full grid-cols-[25px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
-                      <span className="text-right text-[10px] font-normal uppercase tracking-wide text-purple-200/90">Start</span>
+                      <span className="text-right text-[9px] font-normal uppercase tracking-wide text-purple-200/90">Start</span>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -5484,7 +5484,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onChange={(e) => onSweepUpdate?.(inserted.key, { time: cleanMovementCustomTimeInput(e.target.value) })}
                         onBlur={(e) => onSweepUpdate?.(inserted.key, { time: normalizeMovementCustomTimeInput(e.target.value) })}
                         placeholder="00:00"
-                        className="h-4 w-full rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[11px] font-normal leading-none text-white outline-none placeholder:text-white/45"
+                        className="h-4 w-full rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[10px] font-normal leading-none text-white outline-none placeholder:text-white/45"
                         title="Edit Sweep start time. End time updates automatically +2 minutes."
                       />
 
