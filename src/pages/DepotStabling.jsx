@@ -4697,6 +4697,87 @@ function getInsertionRemarkPillStyle(value = "") {
   return getInsertionAssistPillStyle(getInsertionRemarkStyle(value) || INSERTION_DEFAULT_REMARK_PILL_STYLE);
 }
 
+const EAST_INSERTION_KEYWORD_REMARK_STYLES = {
+  WASH: {
+    bg: "rgba(16, 185, 129, 0.24)",
+    border: "#34d399",
+    color: "#d1fae5",
+    shadow: "0 0 11px rgba(52, 211, 153, 0.26), inset 0 1px 0 rgba(255,255,255,0.06)",
+  },
+  PM: {
+    bg: "rgba(59, 130, 246, 0.24)",
+    border: "#60a5fa",
+    color: "#dbeafe",
+    shadow: "0 0 11px rgba(96, 165, 250, 0.24), inset 0 1px 0 rgba(255,255,255,0.06)",
+  },
+  REQUEST: {
+    bg: "rgba(250, 204, 21, 0.18)",
+    border: "#facc15",
+    color: "#fef3c7",
+    shadow: "0 0 11px rgba(250, 204, 21, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
+  },
+  "(G TO C)": {
+    bg: "rgba(168, 85, 247, 0.22)",
+    border: "#c084fc",
+    color: "#f3e8ff",
+    shadow: "0 0 11px rgba(192, 132, 252, 0.24), inset 0 1px 0 rgba(255,255,255,0.06)",
+  },
+  CM: {
+    bg: "rgba(20, 184, 166, 0.22)",
+    border: "#2dd4bf",
+    color: "#ccfbf1",
+    shadow: "0 0 11px rgba(45, 212, 191, 0.24), inset 0 1px 0 rgba(255,255,255,0.06)",
+  },
+  SWEEP: {
+    bg: "rgba(88, 28, 135, 0.58)",
+    border: "#a855f7",
+    color: "#f6e8ff",
+    shadow: "0 0 10px rgba(168, 85, 247, 0.36), inset 0 1px 0 rgba(255,255,255,0.08)",
+  },
+};
+
+const EAST_INSERTION_TID_PILL_STYLE = {
+  bg: "rgba(14, 165, 233, 0.20)",
+  border: "#38bdf8",
+  color: "#e0f2fe",
+  shadow: "0 0 10px rgba(56, 189, 248, 0.24), inset 0 1px 0 rgba(255,255,255,0.06)",
+};
+
+const EAST_INSERTION_TIME_PILL_STYLE = {
+  bg: "rgba(30, 41, 59, 0.72)",
+  border: "#64748b",
+  color: "#f8fafc",
+  shadow: "0 0 10px rgba(148, 163, 184, 0.16), inset 0 1px 0 rgba(255,255,255,0.06)",
+};
+
+function getEastInsertionKeywordRemarkLabel(value = "") {
+  const text = String(value || "").trim();
+  if (!text) return "";
+
+  const compact = text.toUpperCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+  const noSpace = compact.replace(/[()\s]/g, "");
+
+  if (/\bWASH(?:ING)?\b/.test(compact)) return "WASH";
+  if (/\bREQUEST(?:ED)?\b|\bREQ\b/.test(compact)) return "REQUEST";
+  if (noSpace === "GTOC" || /\bG\s*TO\s*C\b/.test(compact)) return "(G TO C)";
+  if (/\bPM\b/.test(compact)) return "PM";
+  if (/\bCM\b/.test(compact)) return "CM";
+
+  return "";
+}
+
+function getEastInsertionPillStyle(style = null, width = 78) {
+  const base = style || INSERTION_DEFAULT_REMARK_PILL_STYLE;
+  return {
+    ...getInsertionAssistPillStyle(base),
+    width,
+    minHeight: 20,
+    padding: "2px 6px",
+    fontSize: 11,
+    lineHeight: "14px",
+  };
+}
+
 function getTimetableInsertionRemarkMap(activeTimetable = null, depot = "west") {
   const parsed = getActiveTimetableParsedData(activeTimetable);
   const depotKey = normalizeDepotKey(depot);
@@ -4995,6 +5076,16 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     ? String(inserted.remark ?? parsedInsertedTid ?? "").trim()
     : "";
   const hasInsertedPlainRemark = Boolean(insertedPlainRemark);
+  const isEastInsertionCard = autoTidDepot === "east";
+  const eastInsertionRemarkSource = String(
+    inserted?.remark ||
+    inserted?.inputValue ||
+    insertedTidAssistRemark ||
+    ""
+  );
+  const eastInsertionRemarkPillLabel = isEastInsertionCard
+    ? getEastInsertionKeywordRemarkLabel(eastInsertionRemarkSource)
+    : "";
   const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
@@ -5220,7 +5311,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </div>
                 ))}
 
-                {key && insertedTidAssistRemark && !hasInsertedPlainRemark && (
+                {key && insertedTidAssistRemark && !hasInsertedPlainRemark && !isEastInsertionCard && (
                   <button
                     type="button"
                     onClick={handleInsertedUndoClick}
@@ -5233,7 +5324,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </button>
                 )}
 
-                {key && hasInsertedPlainRemark && (
+                {key && hasInsertedPlainRemark && !isEastInsertionCard && (
                   <button
                     type="button"
                     onClick={handleInsertedUndoClick}
@@ -5257,6 +5348,100 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             </div>
           )}
           {key && inserted?.isSweeping && (
+            isEastInsertionCard ? (
+              <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                <button
+                  type="button"
+                  onClick={handleInsertedUndoClick}
+                  className="inline-flex min-w-0 max-w-full items-center justify-center self-center text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                  style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP, 82)}
+                  title="Click Sweep to undo sweeping"
+                  aria-label="Undo sweeping"
+                >
+                  Sweep
+                </button>
+                <select
+                  value={inserted.sweepTrack || "TK1"}
+                  onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
+                  className="h-5 w-full appearance-none border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-purple-100 outline-none"
+                  style={{ colorScheme: "dark" }}
+                  title="Select Sweep track"
+                >
+                  <option value="TK1" style={{ backgroundColor: "#071828", color: "#e9d5ff" }}>Track 01</option>
+                  <option value="TK2" style={{ backgroundColor: "#071828", color: "#e9d5ff" }}>Track 02</option>
+                </select>
+                <div className="flex w-full flex-col items-center gap-1">
+                  <div
+                    className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
+                    style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
+                  >
+                    <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Start</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      value={inserted.time || ""}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => {
+                        const value = String(inserted.time || "");
+                        const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                        if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                          e.preventDefault();
+                          onSweepUpdate?.(inserted.key, { time: value.slice(0, -2) });
+                        }
+                      }}
+                      onChange={(e) => onSweepUpdate?.(inserted.key, { time: cleanMovementCustomTimeInput(e.target.value) })}
+                      onBlur={(e) => onSweepUpdate?.(inserted.key, { time: normalizeMovementCustomTimeInput(e.target.value) })}
+                      placeholder="00:00"
+                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-center text-[11px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                      style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
+                      title="Edit Sweep start time. End time updates automatically +2 minutes."
+                    />
+                  </div>
+                  <div
+                    className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
+                    style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
+                  >
+                    <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">End</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      value={inserted.clearTime || ""}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => {
+                        const value = String(inserted.clearTime || "");
+                        const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                        if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                          e.preventDefault();
+                          onSweepUpdate?.(inserted.key, { clearTime: value.slice(0, -2) });
+                        }
+                      }}
+                      onChange={(e) => onSweepUpdate?.(inserted.key, { clearTime: cleanMovementCustomTimeInput(e.target.value) })}
+                      onBlur={(e) => onSweepUpdate?.(inserted.key, { clearTime: normalizeMovementCustomTimeInput(e.target.value) })}
+                      placeholder="00:00"
+                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-center text-[11px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                      style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
+                      title="Edit Sweep end time"
+                    />
+                  </div>
+                </div>
+                <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
+                  <span className="text-right font-normal text-purple-300">TA</span>
+                  <span className="text-center font-normal text-purple-300">:</span>
+                  <input
+                    type="text"
+                    maxLength={40}
+                    value={inserted.taName || ""}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
+                    placeholder="Name"
+                    className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-purple-100 outline-none placeholder:text-purple-800"
+                    title="Optional TA name for the sweeping output"
+                  />
+                </div>
+              </div>
+            ) : (
             <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
               <button
                 type="button"
@@ -5337,6 +5522,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 />
               </div>
             </div>
+            )
           )}
         </div>
         {key && (
@@ -5370,6 +5556,81 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               </button>
             )}
             {inserted && !inserted.isSweeping && (
+              isEastInsertionCard ? (
+                <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                  {eastInsertionRemarkPillLabel && (
+                    <button
+                      type="button"
+                      onClick={handleInsertedUndoClick}
+                      className="inline-flex min-w-0 max-w-full items-center justify-center self-center text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                      style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[eastInsertionRemarkPillLabel], 82)}
+                      title={`Click ${eastInsertionRemarkPillLabel} to undo insertion`}
+                      aria-label={`Undo insertion for remark ${eastInsertionRemarkPillLabel}`}
+                    >
+                      {eastInsertionRemarkPillLabel}
+                    </button>
+                  )}
+
+                  {insertedTid && (
+                    <button
+                      type="button"
+                      onClick={handleInsertedUndoClick}
+                      className="inline-flex min-w-0 max-w-full items-center justify-center self-center text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                      style={getEastInsertionPillStyle(EAST_INSERTION_TID_PILL_STYLE, 82)}
+                      title={`Click TID ${insertedTid} to undo insertion`}
+                      aria-label={`Undo insertion for TID ${insertedTid}`}
+                    >
+                      TID {insertedTid}
+                    </button>
+                  )}
+
+                  <div
+                    className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
+                    style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
+                  >
+                    <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Time</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      value={insertedDisplayTime}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => {
+                        const value = String(insertedDisplayTime || "");
+                        const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                        if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                          e.preventDefault();
+                          onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
+                        }
+                      }}
+                      onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
+                      onBlur={(e) => {
+                        const normalized = normalizeMovementCustomTimeInput(e.target.value);
+                        onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
+                      }}
+                      placeholder="00:00"
+                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-center text-[11px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                      style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
+                      title="Edit insertion completion time"
+                    />
+                  </div>
+
+                  <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 px-1 text-[12px] font-normal leading-tight">
+                    <span className="text-right font-normal text-blue-300">TA</span>
+                    <span className="text-center font-normal text-blue-300">:</span>
+                    <input
+                      type="text"
+                      maxLength={40}
+                      value={inserted.taName || ""}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
+                      placeholder="Name"
+                      className="min-w-0 border-0 bg-transparent p-0 text-right text-[12px] font-normal leading-tight text-blue-100 outline-none placeholder:text-blue-700"
+                      title="Optional TA name for the insertion output"
+                    />
+                  </div>
+                </div>
+              ) : (
               <>
                 {insertedTid ? (
                 <div className="grid w-full grid-cols-[30px_8px_minmax(0,1fr)] items-center gap-x-1 gap-y-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
@@ -5495,6 +5756,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   />
                 </div>
               </>
+              )
             )}
           </div>
         )}
