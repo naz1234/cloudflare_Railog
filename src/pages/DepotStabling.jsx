@@ -5139,6 +5139,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const eastInsertionRemarkPillLabel = isEastInsertionCard
     ? getEastInsertionKeywordRemarkLabel(eastInsertionRemarkSource)
     : "";
+  const isEast3K1InsertionCard = Boolean(isEastInsertionCard && eastInsertionRemarkPillLabel === "3K1");
   const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
@@ -5276,7 +5277,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         data-insertion-drop-bi={bi}
         className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} relative flex h-full flex-col items-center justify-start overflow-hidden rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
         style={{
-          minHeight: Math.max(inserted?.isSweeping ? 158 : isInsertionDone ? ((insertedTid || hasInsertedPlainRemark) ? 126 : 130) : 98, rowCardMinHeight),
+          minHeight: Math.max(inserted?.isSweeping ? 158 : isEast3K1InsertionCard ? 142 : isInsertionDone ? ((insertedTid || hasInsertedPlainRemark) ? 126 : 130) : 98, rowCardMinHeight),
           height: "100%",
           padding: isEastInsertionCard
             ? (inserted?.isSweeping ? "8px 4px" : isInsertionDone ? "6px 1px 6px 5px" : "8px 1px 8px 7px")
@@ -5646,7 +5647,79 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               </button>
             )}
             {inserted && !inserted.isSweeping && (
-              isEastInsertionCard ? (
+              isEast3K1InsertionCard ? (
+                <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={handleInsertedUndoClick}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleInsertedUndoClick(e);
+                      }
+                    }}
+                    className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                    style={{
+                      width: "calc(100% + 8px)",
+                      maxWidth: "calc(100% + 8px)",
+                      marginLeft: -4,
+                      marginRight: -4,
+                      alignSelf: "center",
+                      background: EAST_INSERTION_KEYWORD_REMARK_STYLES["3K1"].bg,
+                      borderColor: EAST_INSERTION_KEYWORD_REMARK_STYLES["3K1"].border,
+                      color: EAST_INSERTION_KEYWORD_REMARK_STYLES["3K1"].color,
+                      boxShadow: EAST_INSERTION_KEYWORD_REMARK_STYLES["3K1"].shadow,
+                    }}
+                    title="Click 3K1 pill to undo insertion"
+                    aria-label="Undo 3K1 insertion"
+                  >
+                    <div className="mb-1 text-center text-[11px] font-normal leading-tight text-white">3K1</div>
+                    <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
+                      <span className="text-right text-[9px] font-normal uppercase tracking-normal text-cyan-100/90">Time :</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={5}
+                        value={insertedDisplayTime}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          e.stopPropagation();
+                          const value = String(insertedDisplayTime || "");
+                          const cursorAtEnd = e.currentTarget.selectionStart === value.length && e.currentTarget.selectionEnd === value.length;
+                          if (e.key === "Backspace" && value.endsWith(":") && cursorAtEnd) {
+                            e.preventDefault();
+                            onInsertionTimeUpdate?.(inserted.key, value.slice(0, -2));
+                          }
+                        }}
+                        onChange={(e) => onInsertionTimeUpdate?.(inserted.key, cleanMovementCustomTimeInput(e.target.value))}
+                        onBlur={(e) => {
+                          const normalized = normalizeMovementCustomTimeInput(e.target.value);
+                          onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
+                        }}
+                        placeholder="00:00"
+                        className="min-w-0 border-0 bg-transparent p-0 text-left text-[10px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                        title="Edit 3K1 insertion completion time"
+                      />
+                    </div>
+                  </div>
+                  <div className="w-full px-1">
+                    <div className="flex w-full flex-col items-center justify-center rounded-lg border border-cyan-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(20,216,189,0.22)]">
+                      <span className="text-[10px] font-normal leading-tight text-white">TA Name:</span>
+                      <input
+                        type="text"
+                        maxLength={40}
+                        value={inserted.taName || ""}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
+                        placeholder="(Name)"
+                        className="mt-0.5 w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                        title="Optional TA name for the 3K1 insertion output"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : isEastInsertionCard ? (
                 <div className="flex w-full flex-col items-center gap-1 px-1 py-0.5 text-[12px] font-normal leading-tight">
                   {eastInsertionRemarkPillLabel && (
                     <button
