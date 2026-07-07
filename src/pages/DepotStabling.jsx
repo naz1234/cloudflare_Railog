@@ -4816,21 +4816,16 @@ function getEastInsertionKeywordRemarkLabel(value = "") {
   const compact = text.toUpperCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
   const noSpace = compact.replace(/[()\s]/g, "");
 
+  // Strict insertion remark whitelist only.
+  // Do not convert other maintenance text such as APU TEST, CC Technical,
+  // RST/unplanned/workshop/movement into an insertion remark pill.
   if (noSpace === "3K1" || noSpace === "3K1INSERTION" || /\b3K1\b/.test(compact)) return "3K1";
   if (noSpace === "SW" || noSpace === "SW1" || noSpace === "SW2" || /\bSWEEP(?:ING)?\b/.test(compact)) return "SWEEP";
   if (/\bWASH(?:ING)?\b/.test(compact)) return "WASH";
-  if (/\bPM\b|\bRST\s*PM\b|\bPREVENTIVE\b/.test(compact)) return "PM";
-  if (/\bCM\b|\bRST\s*CM\b|\bCORRECTIVE\b/.test(compact)) return "CM";
+  if (/\bPM\b/.test(compact)) return "PM";
+  if (/\bCM\b/.test(compact)) return "CM";
   if (noSpace === "GTOC" || /\bG\s*TO\s*C\b/.test(compact)) return "G TO C";
-  if (
-    /\bREQUEST(?:ED)?\b|\bREQ\b/.test(compact) ||
-    /\bRST\b/.test(compact) ||
-    /\bUNPLANNED\b/.test(compact) ||
-    /\bWORKSHOP\b/.test(compact) ||
-    /\bMOVEMENT\b/.test(compact) ||
-    /\bTLC\b/.test(compact) ||
-    /\bNOT\s*FIT\b|\bUNFIT\b/.test(compact)
-  ) return "REQUEST";
+  if (/\bREQUEST(?:ED)?\b|\bREQ\b/.test(compact)) return "REQUEST";
 
   return "";
 }
@@ -5416,15 +5411,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     >
                       {eastMaintPillLabel}
                     </button>
-                  ) : (
-                    <div
-                      key={`${item.displayType}-${item.badgeText || ""}`}
-                      className="w-full text-center text-[10px] font-normal leading-tight text-white"
-                      title={maintText}
-                    >
-                      {maintText}
-                    </div>
-                  );
+                  ) : null;
                 })}
 
                 {key && insertedTidAssistRemark && !hasInsertedPlainRemark && insertedTidAssistKeywordLabel && !(suppressDuplicate3K1RemarkPill && insertedTidAssistKeywordLabel === "3K1") && (
@@ -5440,31 +5427,16 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </button>
                 )}
 
-                {key && insertedTidAssistRemark && !hasInsertedPlainRemark && !insertedTidAssistKeywordLabel && !isEastInsertionCard && (
-                  <button
-                    type="button"
-                    onClick={handleInsertedUndoClick}
-                    className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${useLargerWeekdayAssistRemark ? "text-[12px]" : "text-[11px]"}`}
-                    style={getInsertionAssistPillStyle(insertedTidRemarkStyle || getInsertionAssistRemarkStyle(insertedTidAssistRemark))}
-                    title={`Click ${insertedTidAssistDisplayRemark} to undo insertion`}
-                    aria-label={`Undo insertion for ${insertedTidAssistDisplayRemark}`}
-                  >
-                    {insertedTidAssistDisplayRemark}
-                  </button>
-                )}
-
-                {key && hasInsertedPlainRemark && !(suppressDuplicate3K1RemarkPill && insertedPlainKeywordLabel === "3K1") && (
+                {key && hasInsertedPlainRemark && insertedPlainKeywordLabel && !(suppressDuplicate3K1RemarkPill && insertedPlainKeywordLabel === "3K1") && (
                   <button
                     type="button"
                     onClick={handleInsertedUndoClick}
                     className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${maintList.length > 0 ? "mt-1" : "mt-[3px]"}`}
-                    style={insertedPlainKeywordLabel
-                      ? getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedPlainKeywordLabel], 82)
-                      : getInsertionRemarkPillStyle(insertedPlainRemark)}
-                    title={`Click ${insertedPlainKeywordLabel || insertedPlainRemark} to undo insertion`}
-                    aria-label={`Undo insertion for remark ${insertedPlainKeywordLabel || insertedPlainRemark}`}
+                    style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedPlainKeywordLabel], 82)}
+                    title={`Click ${insertedPlainKeywordLabel} to undo insertion`}
+                    aria-label={`Undo insertion for remark ${insertedPlainKeywordLabel}`}
                   >
-                    {insertedPlainKeywordLabel || insertedPlainRemark}
+                    {insertedPlainKeywordLabel}
                   </button>
                 )}
               </div>
