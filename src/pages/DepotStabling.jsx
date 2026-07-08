@@ -5374,6 +5374,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     boxShadow: "inset 0 1px 2px rgba(0, 0, 0, 0.20)",
   };
   const insRowLine = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
+  const insertionCardDividerBorder = "1px solid rgba(255, 255, 255, 0.78)";
 
   if (expired) {
     return (
@@ -5469,8 +5470,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 <div
                   className="w-full"
                   style={{
-                    borderTop: `1px solid ${key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine}`,
-                    opacity: 0.82,
+                    borderTop: key ? insertionCardDividerBorder : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`,
+                    opacity: key ? 1 : 0.82,
                     marginTop: stablingEditable ? 1 : 0,
                   }}
                 />
@@ -5537,8 +5538,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 <div
                   className="w-full"
                   style={{
-                    borderTop: `1px solid ${INSERTION_PANEL_COLORS.cardBorder}`,
-                    opacity: 0.82,
+                    borderTop: insertionCardDividerBorder,
+                    opacity: 1,
                   }}
                 />
               </div>
@@ -5550,8 +5551,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 <div
                   className="w-full"
                   style={{
-                    borderTop: `1px solid ${key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine}`,
-                    opacity: 0.82,
+                    borderTop: key ? insertionCardDividerBorder : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`,
+                    opacity: key ? 1 : 0.82,
                     marginTop: stablingEditable ? 1 : 0,
                   }}
                 />
@@ -5569,7 +5570,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   aria-hidden="true"
                   className="w-full"
                   style={{
-                    borderTop: `1px solid ${INSERTION_PANEL_COLORS.cardBorder}`,
+                    borderTop: insertionCardDividerBorder,
                     opacity: 0,
                   }}
                 />
@@ -5578,8 +5579,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               <div
                 className="w-full"
                 style={{
-                  borderTop: `1px solid ${key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine}`,
-                  opacity: 0.82,
+                  borderTop: key ? insertionCardDividerBorder : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`,
+                  opacity: key ? 1 : 0.82,
                   marginTop: stablingEditable ? 1 : 0,
                 }}
               />
