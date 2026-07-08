@@ -5884,7 +5884,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       <div className="mb-0.5 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
                       {hasInsertedTidAssistDisplayRemark && (
                         <div
-                          className="mb-1 text-center text-[10px] font-normal leading-tight text-white"
+                          className="mb-1 text-center text-[11px] font-normal leading-tight text-white"
                           title={insertedTidAssistDisplayRemark}
                           aria-label={insertedTidAssistDisplayRemark}
                         >
@@ -6000,7 +6000,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       <div className="mb-0.5 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
                       {hasInsertedTidAssistDisplayRemark && (
                         <div
-                          className="mb-1 text-center text-[10px] font-normal leading-tight text-white"
+                          className="mb-1 text-center text-[11px] font-normal leading-tight text-white"
                           title={insertedTidAssistDisplayRemark}
                           aria-label={insertedTidAssistDisplayRemark}
                         >
