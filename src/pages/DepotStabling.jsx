@@ -5375,6 +5375,16 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   };
   const insRowLine = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
   const insertionCardDividerBorder = "1px solid rgba(255, 255, 255, 0.78)";
+  // Keep cards without their own remark area compact.
+  // Do not stretch a no-remark card just because another card in the same road has PM/Wash/etc.
+  const ownInsertionCardMinHeight = inserted?.isSweeping
+    ? 158
+    : isEast3K1InsertionCard
+      ? 142
+      : isInsertionDone
+        ? insertionDoneCardMinHeight
+        : 98;
+  const shouldStretchInsertionCard = Boolean(inserted?.isSweeping || isEast3K1InsertionCard || hasMiddleInsertionRemark);
 
   if (expired) {
     return (
@@ -5397,10 +5407,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         data-insertion-drop-depot={autoTidDepot}
         data-insertion-drop-road={road}
         data-insertion-drop-bi={bi}
-        className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} relative flex h-full flex-col items-center justify-start overflow-hidden rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
+        className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${shouldStretchInsertionCard ? "h-full" : ""} relative flex flex-col items-center justify-start overflow-hidden rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
         style={{
-          minHeight: Math.max(inserted?.isSweeping ? 158 : isEast3K1InsertionCard ? 142 : isInsertionDone ? insertionDoneCardMinHeight : 98, rowCardMinHeight),
-          height: "100%",
+          minHeight: ownInsertionCardMinHeight,
+          height: shouldStretchInsertionCard ? "100%" : undefined,
           padding: useUnifiedInsertionCardStyle
             ? (inserted?.isSweeping ? "8px 4px" : isInsertionDone ? "6px 1px 6px 5px" : "8px 1px 8px 7px")
             : (isInsertionDone ? "6px 5px" : "8px 7px"),
@@ -6500,31 +6510,6 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
               const rowMaintenanceSlotHeight = rowMaxMaintenanceCount > 0
                 ? 16 + ((rowMaxMaintenanceCount - 1) * 22)
                 : 0;
-              const rowHasMiddleInsertionRemark = rowMaxMaintenanceCount > 0 || blockIndices.some((blockIndex) => {
-                const rowBlock = data[road]?.[blockIndex];
-                const rowTrainKey = normalizeTrainId(rowBlock?.trainId || "");
-                if (!rowTrainKey) return false;
-
-                const rowEntry = getActiveInsertionEntryForCell(insertionLog, road, blockIndex, rowTrainKey);
-                const rowEntryTid = rowEntry?.tid !== null && rowEntry?.tid !== undefined
-                  ? Number(String(rowEntry.tid).replace(/\D/g, ""))
-                  : null;
-                const rowEntryDepot = WEST_ROADS.includes(road) ? "west" : "east";
-                const rowHasValidTid = Boolean(
-                  rowEntryTid && typeof getTidScheduledTime === "function" &&
-                  getTidScheduledTime(rowEntryTid, rowEntryDepot, { allowFallback: false })
-                );
-                const rowAssistRemark = rowHasValidTid && typeof getTidAssistRemark === "function"
-                  ? getTidAssistRemark(rowEntryTid, rowEntryDepot)
-                  : "";
-                const rowAssistKeyword = getEastInsertionKeywordRemarkLabel(rowAssistRemark);
-                const rowPlainRemark = rowEntry && !rowEntry.isSweeping && !rowHasValidTid
-                  ? String(rowEntry.remark ?? rowEntryTid ?? "").trim()
-                  : "";
-                const rowPlainKeyword = getEastInsertionKeywordRemarkLabel(rowPlainRemark);
-
-                return Boolean(rowAssistKeyword || rowPlainKeyword);
-              });
               // The maintenance slot is already reserved evenly for every card in the row.
               // Add it only once; the previous calculation counted extra maintenance height again,
               // which made completed TID rows noticeably taller than their visible content.
@@ -6576,7 +6561,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
                     const borderBottom = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
                     const borderBottomRightRadius = labelSide === "left" && isLastRow && isLastBlock ? 12 : undefined;
                     const borderBottomLeftRadius = labelSide === "right" && isLastRow && i === 0 ? 12 : undefined;
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onInsertionTaNameUpdate={onInsertionTaNameUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} reserveMiddleInsertionRemark={rowHasMiddleInsertionRemark} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onInsertionTaNameUpdate={onInsertionTaNameUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} reserveMiddleInsertionRemark={false} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
