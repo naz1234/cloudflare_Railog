@@ -7697,6 +7697,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               )}
             </div>
 
+            {depot === "west" && canSortByRemovalColor && (
+              <div className="flex justify-end">
+                {renderEastDepotCopyButton()}
+              </div>
+            )}
+
             <div className="flex items-center gap-1">
               {TID_PRESETS[depot].slice(3).map((preset) => {
                 const active = selectedPreset === preset.label;
@@ -8039,7 +8045,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
           </div>
         </div>
         <div className="flex items-center gap-1.5">
-          {renderEastDepotCopyButton()}
           <div className={`px-1.5 py-0.5 rounded-md border text-[7px] font-black whitespace-nowrap ${syncStatusClass}`}>
             {syncStatusText}
           </div>
