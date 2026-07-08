@@ -7458,6 +7458,38 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     return "CPY";
   };
 
+  const renderEastDepotCopyButton = (extraClassName = "") => (
+    <button
+      type="button"
+      onClick={handleCopyEastDepotTrainList}
+      className={`inline-flex h-5 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5 ${extraClassName}`}
+      style={{
+        background: eastDepotCopyStatus === "copied"
+          ? "rgba(34,197,94,0.18)"
+          : "rgba(15,45,74,0.75)",
+        borderColor: eastDepotCopyStatus === "copied"
+          ? "rgba(34,197,94,0.48)"
+          : "rgba(74,138,181,0.55)",
+        color: eastDepotCopyStatus === "copied"
+          ? "#86efac"
+          : eastDepotCopyStatus === "empty"
+            ? "#fbbf24"
+            : eastDepotCopyStatus === "failed"
+              ? "#fca5a5"
+              : "#9ccbea",
+        boxShadow: eastDepotCopyStatus === "copied"
+          ? "0 0 12px rgba(34,197,94,0.16)"
+          : "none",
+      }}
+      title="Copy all East Depot trains from removal list and current East Depot stabling. Duplicates are removed automatically."
+    >
+      {eastDepotCopyStatus === "copied"
+        ? <ClipboardCheck size={11} />
+        : <Copy size={11} />}
+      {getEastDepotCopyLabel()}
+    </button>
+  );
+
   const renderDepotTable = (depot, title, subtitle) => {
     const selectedPreset = trainRemState.selectedPreset?.[depot] || "9am";
     const normalizedRows = normalizeTrainRemRowsForPreset(
@@ -7674,36 +7706,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   </button>
                 );
               })}
-
-              {depot === "east" && (
-                <button
-                  type="button"
-                  onClick={handleCopyEastDepotTrainList}
-                  className="ml-auto inline-flex h-5 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5"
-                  style={{
-                    background: eastDepotCopyStatus === "copied"
-                      ? "rgba(34,197,94,0.18)"
-                      : "rgba(15,45,74,0.75)",
-                    borderColor: eastDepotCopyStatus === "copied"
-                      ? "rgba(34,197,94,0.48)"
-                      : "rgba(74,138,181,0.55)",
-                    color: eastDepotCopyStatus === "copied"
-                      ? "#86efac"
-                      : eastDepotCopyStatus === "empty"
-                        ? "#fbbf24"
-                        : "#9ccbea",
-                    boxShadow: eastDepotCopyStatus === "copied"
-                      ? "0 0 12px rgba(34,197,94,0.16)"
-                      : "none",
-                  }}
-                  title={`Copy ${title} removal Train ID list together with main ${title} stabling Train ID list`}
-                >
-                  {eastDepotCopyStatus === "copied"
-                    ? <ClipboardCheck size={11} />
-                    : <Copy size={11} />}
-                  {getEastDepotCopyLabel()}
-                </button>
-              )}
             </div>
 
           </div>
@@ -8027,8 +8029,11 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
             <h2 className="text-[11px] font-normal text-white tracking-widest uppercase leading-none">REMOVAL SUMMARY</h2>
           </div>
         </div>
-        <div className={`px-1.5 py-0.5 rounded-md border text-[7px] font-black whitespace-nowrap ${syncStatusClass}`}>
-          {syncStatusText}
+        <div className="flex items-center gap-1.5">
+          {renderEastDepotCopyButton()}
+          <div className={`px-1.5 py-0.5 rounded-md border text-[7px] font-black whitespace-nowrap ${syncStatusClass}`}>
+            {syncStatusText}
+          </div>
         </div>
       </div>
 
