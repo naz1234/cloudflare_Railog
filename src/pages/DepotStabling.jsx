@@ -7431,12 +7431,22 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     }, 1600);
   };
 
-  const handleCopyEastDepotTrainList = async () => {
-    const latestState = trainRemStateRef.current || trainRemState;
+  const getEastDepotCopyTrainIds = useCallback((sourceState = null) => {
+    const latestState = sourceState || trainRemStateRef.current || trainRemState;
     const removalTrainIds = collectTrainRemTrainIdsForDepotCopy(latestState, "east", activeTimetable);
     const latestEastStablingData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
     const stablingTrainIds = collectStablingTrainIds(latestEastStablingData, EAST_ROADS);
-    const combinedTrainIds = Array.from(new Set([...removalTrainIds, ...stablingTrainIds]));
+
+    return Array.from(new Set([...removalTrainIds, ...stablingTrainIds]));
+  }, [activeTimetable, eastData, eastStablingData, trainRemState]);
+
+  const eastDepotCopyTrainIds = useMemo(() => (
+    getEastDepotCopyTrainIds(trainRemState)
+  ), [getEastDepotCopyTrainIds, trainRemState]);
+  const eastDepotCopyCount = eastDepotCopyTrainIds.length;
+
+  const handleCopyEastDepotTrainList = async () => {
+    const combinedTrainIds = getEastDepotCopyTrainIds();
 
     if (combinedTrainIds.length === 0) {
       flashEastDepotCopyStatus("empty");
@@ -7452,10 +7462,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   };
 
   const getEastDepotCopyLabel = () => {
-    if (eastDepotCopyStatus === "copied") return "Copied";
-    if (eastDepotCopyStatus === "empty") return "No Train";
+    if (eastDepotCopyStatus === "copied") return `Copied : ${eastDepotCopyCount}`;
     if (eastDepotCopyStatus === "failed") return "Failed";
-    return "CPY";
+    return `CPY : ${eastDepotCopyCount}`;
   };
 
   const renderEastDepotCopyButton = (extraClassName = "") => (
