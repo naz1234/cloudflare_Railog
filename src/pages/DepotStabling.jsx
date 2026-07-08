@@ -5376,7 +5376,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const insRowLine = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
   const insertionCardDividerBorder = "1px solid rgba(255, 255, 255, 0.78)";
   // Base minimum per card state. When the row contains PM/Wash/etc.,
-  // no-remark cards reserve the same middle slot through reserveMiddleInsertionRemark.
+  // no-remark cards reserve the same compact middle slot through reserveMiddleInsertionRemark.
+  const middleInsertionRemarkContentHeight = rowMaintenanceSlotHeight > 0
+    ? Math.max(22, rowMaintenanceSlotHeight)
+    : 0;
+  const middleInsertionRemarkSlotMinHeight = rowMaintenanceSlotHeight > 0
+    ? middleInsertionRemarkContentHeight + 10
+    : 0;
   const ownInsertionCardMinHeight = inserted?.isSweeping
     ? 158
     : isEast3K1InsertionCard
@@ -5480,7 +5486,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             hasMiddleInsertionRemark ? (
               <div
                 className="flex w-full flex-col items-center gap-1"
-                style={{ minHeight: 56 }}
+                style={{ minHeight: middleInsertionRemarkSlotMinHeight }}
               >
                 <div
                   className="w-full"
@@ -5494,9 +5500,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 <div
                   className="flex w-full shrink-0 flex-col items-center justify-start gap-1.5"
                   style={{
-                    height: 46,
-                    minHeight: 46,
-                    maxHeight: 46,
+                    height: middleInsertionRemarkContentHeight,
+                    minHeight: middleInsertionRemarkContentHeight,
+                    maxHeight: middleInsertionRemarkContentHeight,
                     marginTop: 2,
                     overflow: "hidden",
                   }}
@@ -5561,7 +5567,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             ) : reserveMiddleInsertionRemark ? (
               <div
                 className="flex w-full flex-col items-center"
-                style={{ minHeight: 56 }}
+                style={{ minHeight: middleInsertionRemarkSlotMinHeight }}
               >
                 <div
                   className="w-full"
@@ -5575,9 +5581,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   aria-hidden="true"
                   className="w-full shrink-0"
                   style={{
-                    height: 46,
-                    minHeight: 46,
-                    maxHeight: 46,
+                    height: middleInsertionRemarkContentHeight,
+                    minHeight: middleInsertionRemarkContentHeight,
+                    maxHeight: middleInsertionRemarkContentHeight,
                     marginTop: 2,
                   }}
                 />
