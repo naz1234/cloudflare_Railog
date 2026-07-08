@@ -9332,8 +9332,10 @@ function TrainMovementExcelSheet() {
   };
 
   const sortedLogRows = useMemo(() => sortTrainMovementExcelLogRows(logRows), [logRows]);
-  const westLogCount = sortedLogRows.filter((entry) => entry.depot === "west").length;
-  const eastLogCount = sortedLogRows.filter((entry) => entry.depot === "east").length;
+  const westMovementLogRows = sortedLogRows.filter((entry) => entry.depot === "west");
+  const eastMovementLogRows = sortedLogRows.filter((entry) => entry.depot === "east");
+  const westLogCount = westMovementLogRows.length;
+  const eastLogCount = eastMovementLogRows.length;
 
   const copyExcelLogRows = async (depot = "") => {
     const lines = sortedLogRows
@@ -9346,11 +9348,6 @@ function TrainMovementExcelSheet() {
     }
     await copyText(lines.join("\n"));
     showFeedback(depot ? `Copied ${depot === "east" ? "East" : "West"}` : "Copied log");
-  };
-
-  const deleteExcelLogRow = (id) => {
-    markTrainMovementExcelLocalEdit();
-    setLogRows((prev) => prev.filter((entry) => entry.id !== id));
   };
 
   const clearExcelLogRows = () => {
@@ -9481,47 +9478,104 @@ function TrainMovementExcelSheet() {
         </table>
       </div>
 
-      <div className="border-t border-[#1a3a56] px-3 pb-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-t-lg border border-[#173653] bg-[#061827] px-3 py-2">
-          <div>
-            <h3 className="text-[12px] font-black tracking-[1.2px] text-white">Train Swapping / Insertion / Removal Log Output</h3>
-            <p className="mt-0.5 text-[10px] font-bold text-[#7eb8e0]">{sortedLogRows.length} entries • WD {westLogCount} • ED {eastLogCount}</p>
+      <section
+        className="mt-3 w-full rounded-xl border border-[#2b4f6b] bg-[#0b1f33] px-3 py-3 shadow-md"
+        style={{
+          background: "linear-gradient(135deg,rgba(12,46,74,0.58) 0%,rgba(7,24,40,0.98) 100%)",
+          boxShadow: "0 16px 32px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.04)",
+        }}
+      >
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#2b4f6b] bg-[#10263b] shadow-sm">
+              <FileText size={15} className="text-[#4f8ef7]" strokeWidth={2.4} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="truncate text-sm font-black uppercase leading-none tracking-widest text-white">Train Swapping / Insertion / Removal Log Output</h3>
+              <p className="mt-1 text-[10px] font-normal text-[#58a6ff]">{sortedLogRows.length} entries • WD {westLogCount} • ED {eastLogCount}</p>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            <button type="button" onClick={() => copyExcelLogRows("")} className="inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white hover:border-[#58a6ff] hover:text-white">
+            <button type="button" onClick={() => copyExcelLogRows("")} className="inline-flex h-6 items-center gap-1 rounded-md border border-[#4a8ab5]/55 bg-[#0f2d4a]/75 px-1.5 text-[9px] font-black text-[#9ccbea] transition-all hover:-translate-y-0.5 hover:text-white">
               <Copy size={12} />Copy All
             </button>
-            <button type="button" onClick={() => copyExcelLogRows("west")} className="inline-flex h-7 items-center gap-1 rounded-full border border-indigo-400/45 bg-indigo-950/25 px-3 text-[10px] font-bold text-white hover:text-white">
-              <Copy size={12} />Copy West
-            </button>
-            <button type="button" onClick={() => copyExcelLogRows("east")} className="inline-flex h-7 items-center gap-1 rounded-full border border-cyan-400/45 bg-cyan-950/25 px-3 text-[10px] font-bold text-white hover:text-white">
-              <Copy size={12} />Copy East
-            </button>
-            <button type="button" onClick={clearExcelLogRows} className={`inline-flex h-7 items-center gap-1 rounded-full border px-3 text-[10px] font-bold text-white transition-all hover:text-white ${confirmClearTarget === "output" ? "border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-white hover:border-red-400"}`}>
+            <button type="button" onClick={clearExcelLogRows} className={`inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 hover:text-white ${confirmClearTarget === "output" ? "border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-red-100 hover:border-red-400"}`}>
               <Trash2 size={12} />{confirmClearTarget === "output" ? "Confirm Clear" : "Clear"}
             </button>
           </div>
         </div>
-        <div className="min-h-[82px] rounded-b-lg border-x border-b border-[#173653] bg-[#04111d] p-2">
-          {sortedLogRows.length ? (
-            <div className="space-y-1.5">
-              {sortedLogRows.map((entry) => (
-                <div key={entry.id} className="grid grid-cols-[68px_1fr_auto] items-center gap-2 rounded-lg border border-[#12304a] bg-[#061827] px-2 py-1.5 text-[12px] text-[#dff4ff]">
-                  <span className={`rounded-md border px-1.5 py-0.5 text-center text-[9px] font-black uppercase ${entry.depot === "east" ? "border-cyan-400/40 bg-cyan-950/25 text-cyan-200" : "border-indigo-400/40 bg-indigo-950/25 text-indigo-200"}`}>{entry.depot === "east" ? "ED" : "WD"}</span>
-                  <span className="font-mono leading-relaxed text-white">{entry.text}</span>
-                  <button type="button" onClick={() => deleteExcelLogRow(entry.id)} className="inline-flex h-6 items-center rounded-md border border-red-500/30 bg-red-950/20 px-1.5 text-[9px] font-bold text-red-200 hover:text-white" title="Delete this log line">
-                    <Trash2 size={10} />
+
+        <div className="space-y-2">
+          {[
+            {
+              key: "west",
+              title: "WEST DEPOT SWAPPING / INSERTION / REMOVAL LOG",
+              dotColor: "#c084fc",
+              rows: westMovementLogRows,
+              copyLabel: "Copy West Log",
+              emptyText: "No West Depot movement log yet",
+            },
+            {
+              key: "east",
+              title: "EAST DEPOT SWAPPING / INSERTION / REMOVAL LOG",
+              dotColor: "#22d3ee",
+              rows: eastMovementLogRows,
+              copyLabel: "Copy East Log",
+              emptyText: "No East Depot movement log yet",
+            },
+          ].map((log) => {
+            const hasRows = log.rows.length > 0;
+            const logText = log.rows.map((entry) => entry.text).filter(Boolean).join("\n");
+
+            return (
+              <div key={log.key} className="overflow-hidden rounded-lg border border-[#1a3a56] bg-[#061827]">
+                <div
+                  className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5"
+                  style={{ background: "linear-gradient(90deg,#0d4d75 0%,#0b5f88 55%,#0d4d75 100%)" }}
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+                      className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
+                      style={{ backgroundColor: log.dotColor, boxShadow: `0 0 10px ${log.dotColor}` }}
+                    />
+                    <div className="truncate text-[10px] font-black uppercase tracking-widest text-white">
+                      {log.title}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => copyExcelLogRows(log.key)}
+                    disabled={!hasRows}
+                    className="inline-flex h-6 flex-shrink-0 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                    style={{
+                      background: "rgba(15,45,74,0.75)",
+                      borderColor: "rgba(74,138,181,0.55)",
+                      color: "#9ccbea",
+                    }}
+                  >
+                    <Copy size={12} />
+                    {log.copyLabel}
                   </button>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex h-[62px] items-center justify-center rounded-lg border border-dashed border-[#173653] text-[11px] font-bold text-[#6ea6cf]">
-              No log yet. Ready rows will be added automatically.
-            </div>
-          )}
+
+                <div className="min-h-[76px] rounded-b-lg border-t border-[#1a3a56] bg-[#061321] px-3 py-2">
+                  {hasRows ? (
+                    <pre className="whitespace-pre-wrap break-words text-[11px] font-normal leading-[1.4] text-[#d8e7f7]">
+                      {logText}
+                    </pre>
+                  ) : (
+                    <div className="flex min-h-[56px] flex-col items-center justify-center gap-1.5 text-[#315d82]">
+                      <FileText size={16} strokeWidth={2.2} />
+                      <div className="text-[10px] font-normal">{log.emptyText}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      </div>
+      </section>
     </section>
   );
 }
