@@ -7661,7 +7661,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                             ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
                             : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
                         }`}
-                        style={{ width: "13%" }}
+                        style={{ width: "34px", minWidth: "34px" }}
                       >
                         {preset.label}
                       </button>
@@ -7681,7 +7681,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                             ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
                             : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
                         }`}
-                        style={{ width: "13%" }}
+                        style={{ width: "34px", minWidth: "34px" }}
                       >
                         {preset.label}
                       </button>
