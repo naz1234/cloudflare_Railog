@@ -5884,12 +5884,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       <div className="mb-0.5 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
                       {hasInsertedTidAssistDisplayRemark && (
                         <div
-                          className="mx-auto mb-1 inline-flex items-center justify-center text-center text-[10px] font-normal leading-tight"
-                          style={insertedTidAssistMiniPillStyle}
+                          className="mb-1 text-center text-[10px] font-normal leading-tight text-white"
                           title={insertedTidAssistDisplayRemark}
                           aria-label={insertedTidAssistDisplayRemark}
                         >
-                          {insertedTidAssistDisplayRemark}
+                          --{insertedTidAssistDisplayRemark}--
                         </div>
                       )}
                       <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
@@ -6001,12 +6000,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       <div className="mb-0.5 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
                       {hasInsertedTidAssistDisplayRemark && (
                         <div
-                          className="mx-auto mb-1 inline-flex items-center justify-center text-center text-[10px] font-normal leading-tight"
-                          style={insertedTidAssistMiniPillStyle}
+                          className="mb-1 text-center text-[10px] font-normal leading-tight text-white"
                           title={insertedTidAssistDisplayRemark}
                           aria-label={insertedTidAssistDisplayRemark}
                         >
-                          {insertedTidAssistDisplayRemark}
+                          --{insertedTidAssistDisplayRemark}--
                         </div>
                       )}
                       <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
@@ -24181,16 +24179,9 @@ function buildInsertionPrintPillItems({ road, bi, block, tidInputs = {}, inserti
       ...getInsertionPrintPillStyle("TID"),
     }];
 
-    const assistRemark = String(getTidAssistRemark?.(tid, depot) || "").trim();
-    const assistLabel = getInsertionAssistRemarkDisplayLabel(assistRemark);
-
-    if (assistLabel) {
-      pills.push({
-        label: assistLabel,
-        ...getInsertionPrintPillStyle(assistRemark || assistLabel),
-      });
-    }
-
+    // PNG/export stays clean: show only inserted TID and timing.
+    // Timetable helper labels such as WD (9am), WD (7pm), ED (9am), and ED (7pm)
+    // are shown on-screen only inside the big TID pill.
     if (time) {
       pills.push({
         label: time,
