@@ -5378,18 +5378,19 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   // Base minimum per card state. When the row contains PM/Wash/etc.,
   // no-remark cards reserve the same compact middle slot through reserveMiddleInsertionRemark.
   const middleInsertionRemarkContentHeight = rowMaintenanceSlotHeight > 0
-    ? Math.max(22, rowMaintenanceSlotHeight)
+    ? rowMaintenanceSlotHeight
     : 0;
   const middleInsertionRemarkSlotMinHeight = rowMaintenanceSlotHeight > 0
     ? middleInsertionRemarkContentHeight + 10
     : 0;
-  const ownInsertionCardMinHeight = inserted?.isSweeping
+  const ownInsertionCardMinHeightBase = inserted?.isSweeping
     ? 158
     : isEast3K1InsertionCard
       ? 142
       : isInsertionDone
         ? insertionDoneCardMinHeight
         : 98;
+  const ownInsertionCardMinHeight = Math.max(ownInsertionCardMinHeightBase, rowCardMinHeight);
   const shouldStretchInsertionCard = Boolean(
     inserted?.isSweeping ||
     isEast3K1InsertionCard ||
@@ -5504,7 +5505,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     minHeight: middleInsertionRemarkContentHeight,
                     maxHeight: middleInsertionRemarkContentHeight,
                     marginTop: 2,
-                    overflow: "hidden",
+                    overflow: "visible",
                   }}
                 >
                   {rowMaintenanceSlotHeight > 0 && maintList.map((item) => {
@@ -6515,11 +6516,16 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
               const rowMaxMaintenanceCount = blockIndices.reduce((maxCount, blockIndex) => {
                 const rowBlock = data[road]?.[blockIndex];
                 const rowTrainKey = normalizeTrainId(rowBlock?.trainId || "");
-                const rowMaintenanceCount = rowTrainKey ? (maintenanceMap[rowTrainKey] || []).length : 0;
+                const rowMaintenanceCount = rowTrainKey
+                  ? (maintenanceMap[rowTrainKey] || []).reduce((count, item) => {
+                      const maintText = item.badgeText || item.displayType;
+                      return getEastInsertionKeywordRemarkLabel(maintText) ? count + 1 : count;
+                    }, 0)
+                  : 0;
                 return Math.max(maxCount, rowMaintenanceCount);
               }, 0);
               const rowMaintenanceSlotHeight = rowMaxMaintenanceCount > 0
-                ? 16 + ((rowMaxMaintenanceCount - 1) * 22)
+                ? (rowMaxMaintenanceCount * 20) + ((rowMaxMaintenanceCount - 1) * 6)
                 : 0;
               // The maintenance slot is already reserved evenly for every card in the row.
               // Add it only once; the previous calculation counted extra maintenance height again,
