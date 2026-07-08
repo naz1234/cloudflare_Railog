@@ -5375,8 +5375,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   };
   const insRowLine = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
   const insertionCardDividerBorder = "1px solid rgba(255, 255, 255, 0.78)";
-  // Keep cards without their own remark area compact.
-  // Do not stretch a no-remark card just because another card in the same road has PM/Wash/etc.
+  // Base minimum per card state. When the row contains PM/Wash/etc.,
+  // no-remark cards reserve the same middle slot through reserveMiddleInsertionRemark.
   const ownInsertionCardMinHeight = inserted?.isSweeping
     ? 158
     : isEast3K1InsertionCard
@@ -5384,7 +5384,12 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
       : isInsertionDone
         ? insertionDoneCardMinHeight
         : 98;
-  const shouldStretchInsertionCard = Boolean(inserted?.isSweeping || isEast3K1InsertionCard || hasMiddleInsertionRemark);
+  const shouldStretchInsertionCard = Boolean(
+    inserted?.isSweeping ||
+    isEast3K1InsertionCard ||
+    hasMiddleInsertionRemark ||
+    (key && reserveMiddleInsertionRemark)
+  );
 
   if (expired) {
     return (
@@ -6500,7 +6505,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
               const insertionRoadPill = INSERTION_ROAD_PILLS[road];
               // Keep every card within the same stabling road at one uniform height.
               // Also reserve one shared maintenance-pill area across the row so a card
-              // with a request pill does not push its TID/remark text lower than the others.
+              // without PM/Wash/etc. still matches the height of cards with remarks.
               const rowMaxMaintenanceCount = blockIndices.reduce((maxCount, blockIndex) => {
                 const rowBlock = data[road]?.[blockIndex];
                 const rowTrainKey = normalizeTrainId(rowBlock?.trainId || "");
@@ -6561,7 +6566,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
                     const borderBottom = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
                     const borderBottomRightRadius = labelSide === "left" && isLastRow && isLastBlock ? 12 : undefined;
                     const borderBottomLeftRadius = labelSide === "right" && isLastRow && i === 0 ? 12 : undefined;
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onInsertionTaNameUpdate={onInsertionTaNameUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} reserveMiddleInsertionRemark={false} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onInsertionTaNameUpdate={onInsertionTaNameUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} reserveMiddleInsertionRemark={rowMaxMaintenanceCount > 0} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
