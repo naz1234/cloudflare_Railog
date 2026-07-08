@@ -5238,9 +5238,21 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   // The 3K1 special card already shows 3K1 in the main big pill.
   // Do not duplicate another 3K1 pill in the remark section for West or East.
   const suppressDuplicate3K1RemarkPill = is3K1InsertionCard;
+  const visibleInsertionRemarkList = key
+    ? maintList
+        .map((item) => getEastInsertionKeywordRemarkLabel(item.badgeText || item.displayType))
+        .filter((label) => label && !(suppressDuplicate3K1RemarkPill && label === "3K1"))
+    : [];
+  const hasMiddleInsertionRemark = Boolean(
+    key && (
+      visibleInsertionRemarkList.length > 0 ||
+      (insertedTidAssistKeywordLabel && !(suppressDuplicate3K1RemarkPill && insertedTidAssistKeywordLabel === "3K1")) ||
+      (hasInsertedPlainRemark && insertedPlainKeywordLabel && !(suppressDuplicate3K1RemarkPill && insertedPlainKeywordLabel === "3K1"))
+    )
+  );
   const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
   const insertedTidBigPillStyle = getInsertionTidBigPillStyle(insertedTidRemarkStyle, autoTidDepot);
-  const insertionDoneCardMinHeight = hasInsertedTidAssistDisplayRemark
+  const insertionDoneCardMinHeight = hasMiddleInsertionRemark && hasInsertedTidAssistDisplayRemark
     ? 138
     : ((insertedTid || hasInsertedPlainRemark) ? 126 : 130);
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
@@ -5449,10 +5461,88 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             </div>
           )}
           {key && (
-            <div
-              className="flex w-full flex-col items-center gap-1"
-              style={{ minHeight: 56 }}
-            >
+            hasMiddleInsertionRemark ? (
+              <div
+                className="flex w-full flex-col items-center gap-1"
+                style={{ minHeight: 56 }}
+              >
+                <div
+                  className="w-full"
+                  style={{
+                    borderTop: `1px solid ${key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine}`,
+                    opacity: 0.82,
+                    marginTop: stablingEditable ? 1 : 0,
+                  }}
+                />
+
+                <div
+                  className="flex w-full shrink-0 flex-col items-center justify-start gap-1.5"
+                  style={{
+                    height: 46,
+                    minHeight: 46,
+                    maxHeight: 46,
+                    marginTop: 2,
+                    overflow: "hidden",
+                  }}
+                >
+                  {rowMaintenanceSlotHeight > 0 && maintList.map((item) => {
+                    const maintText = item.badgeText || item.displayType;
+                    const eastMaintPillLabel = useUnifiedInsertionCardStyle
+                      ? getEastInsertionKeywordRemarkLabel(maintText)
+                      : "";
+
+                    if (suppressDuplicate3K1RemarkPill && eastMaintPillLabel === "3K1") return null;
+
+                    return eastMaintPillLabel ? (
+                      <button
+                        key={`${item.displayType}-${item.badgeText || ""}`}
+                        type="button"
+                        onClick={handleInsertedUndoClick}
+                        className="inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[11px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                        style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[eastMaintPillLabel], 82)}
+                        title={eastMaintPillLabel}
+                        aria-label={eastMaintPillLabel}
+                      >
+                        {eastMaintPillLabel}
+                      </button>
+                    ) : null;
+                  })}
+
+                  {key && insertedTidAssistRemark && !hasInsertedPlainRemark && insertedTidAssistKeywordLabel && !(suppressDuplicate3K1RemarkPill && insertedTidAssistKeywordLabel === "3K1") && (
+                    <button
+                      type="button"
+                      onClick={handleInsertedUndoClick}
+                      className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${useLargerWeekdayAssistRemark ? "text-[12px]" : "text-[11px]"}`}
+                      style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedTidAssistKeywordLabel], 82)}
+                      title={`Click ${insertedTidAssistKeywordLabel} to undo insertion`}
+                      aria-label={`Undo insertion for ${insertedTidAssistKeywordLabel}`}
+                    >
+                      {insertedTidAssistKeywordLabel}
+                    </button>
+                  )}
+
+                  {key && hasInsertedPlainRemark && insertedPlainKeywordLabel && !(suppressDuplicate3K1RemarkPill && insertedPlainKeywordLabel === "3K1") && (
+                    <button
+                      type="button"
+                      onClick={handleInsertedUndoClick}
+                      className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${maintList.length > 0 ? "mt-1" : "mt-[3px]"}`}
+                      style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedPlainKeywordLabel], 82)}
+                      title={`Click ${insertedPlainKeywordLabel} to undo insertion`}
+                      aria-label={`Undo insertion for remark ${insertedPlainKeywordLabel}`}
+                    >
+                      {insertedPlainKeywordLabel}
+                    </button>
+                  )}
+                </div>
+                <div
+                  className="w-full"
+                  style={{
+                    borderTop: `1px solid ${INSERTION_PANEL_COLORS.cardBorder}`,
+                    opacity: 0.82,
+                  }}
+                />
+              </div>
+            ) : (
               <div
                 className="w-full"
                 style={{
@@ -5461,75 +5551,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   marginTop: stablingEditable ? 1 : 0,
                 }}
               />
-
-              <div
-                className="flex w-full shrink-0 flex-col items-center justify-start gap-1.5"
-                style={{
-                  height: 46,
-                  minHeight: 46,
-                  maxHeight: 46,
-                  marginTop: 2,
-                  overflow: "hidden",
-                }}
-                aria-hidden={maintList.length === 0 && !insertedTidAssistRemark && !hasInsertedPlainRemark ? "true" : undefined}
-              >
-                {rowMaintenanceSlotHeight > 0 && maintList.map((item) => {
-                  const maintText = item.badgeText || item.displayType;
-                  const eastMaintPillLabel = useUnifiedInsertionCardStyle
-                    ? getEastInsertionKeywordRemarkLabel(maintText)
-                    : "";
-
-                  if (suppressDuplicate3K1RemarkPill && eastMaintPillLabel === "3K1") return null;
-
-                  return eastMaintPillLabel ? (
-                    <button
-                      key={`${item.displayType}-${item.badgeText || ""}`}
-                      type="button"
-                      onClick={handleInsertedUndoClick}
-                      className="inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[11px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
-                      style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[eastMaintPillLabel], 82)}
-                      title={eastMaintPillLabel}
-                      aria-label={eastMaintPillLabel}
-                    >
-                      {eastMaintPillLabel}
-                    </button>
-                  ) : null;
-                })}
-
-                {key && insertedTidAssistRemark && !hasInsertedPlainRemark && insertedTidAssistKeywordLabel && !(suppressDuplicate3K1RemarkPill && insertedTidAssistKeywordLabel === "3K1") && (
-                  <button
-                    type="button"
-                    onClick={handleInsertedUndoClick}
-                    className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${useLargerWeekdayAssistRemark ? "text-[12px]" : "text-[11px]"}`}
-                    style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedTidAssistKeywordLabel], 82)}
-                    title={`Click ${insertedTidAssistKeywordLabel} to undo insertion`}
-                    aria-label={`Undo insertion for ${insertedTidAssistKeywordLabel}`}
-                  >
-                    {insertedTidAssistKeywordLabel}
-                  </button>
-                )}
-
-                {key && hasInsertedPlainRemark && insertedPlainKeywordLabel && !(suppressDuplicate3K1RemarkPill && insertedPlainKeywordLabel === "3K1") && (
-                  <button
-                    type="button"
-                    onClick={handleInsertedUndoClick}
-                    className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${maintList.length > 0 ? "mt-1" : "mt-[3px]"}`}
-                    style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedPlainKeywordLabel], 82)}
-                    title={`Click ${insertedPlainKeywordLabel} to undo insertion`}
-                    aria-label={`Undo insertion for remark ${insertedPlainKeywordLabel}`}
-                  >
-                    {insertedPlainKeywordLabel}
-                  </button>
-                )}
-              </div>
-              <div
-                className="w-full"
-                style={{
-                  borderTop: `1px solid ${INSERTION_PANEL_COLORS.cardBorder}`,
-                  opacity: 0.82,
-                }}
-              />
-            </div>
+            )
           )}
           {key && inserted?.isSweeping && (
             isEastInsertionCard ? (
@@ -5807,7 +5829,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     title="3K1 insertion details"
                     aria-label="3K1 insertion details"
                   >
-                    <div className="mb-1 text-center text-[11px] font-normal leading-tight text-white">3K1</div>
+                    <div className="mb-1 text-center text-[11px] font-normal leading-tight tracking-[0.5px] text-white">3K1</div>
                     <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
                       <span className="text-right text-[10px] font-normal uppercase tracking-normal text-cyan-100/90">Time :</span>
                       <input
@@ -5884,7 +5906,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       <div className="mb-0.5 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
                       {hasInsertedTidAssistDisplayRemark && (
                         <div
-                          className="mb-1 text-center text-[11px] font-normal leading-tight text-white"
+                          className="mb-1 text-center text-[11px] font-normal leading-tight tracking-[0.5px] text-white"
                           title={insertedTidAssistDisplayRemark}
                           aria-label={insertedTidAssistDisplayRemark}
                         >
@@ -6000,7 +6022,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       <div className="mb-0.5 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
                       {hasInsertedTidAssistDisplayRemark && (
                         <div
-                          className="mb-1 text-center text-[11px] font-normal leading-tight text-white"
+                          className="mb-1 text-center text-[11px] font-normal leading-tight tracking-[0.5px] text-white"
                           title={insertedTidAssistDisplayRemark}
                           aria-label={insertedTidAssistDisplayRemark}
                         >
