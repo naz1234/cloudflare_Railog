@@ -7647,80 +7647,81 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 {timetablePresetNotice}
               </div>
             )}
-            <div className="flex items-center gap-1">
-              {TID_PRESETS[depot].slice(0, 3).map((preset) => {
-                const active = selectedPreset === preset.label;
-                return (
-                  <button
-                    key={preset.label}
-                    onClick={() => applyPreset(depot, preset.label)}
-                    className={`h-5 rounded-md text-[11px] font-normal border transition-all ${
-                      active
-                        ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
-                        : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
-                    }`}
-                    style={{ width: "13%" }}
-                  >
-                    {preset.label}
-                  </button>
-                );
-              })}
+            <div className="flex items-start justify-between gap-1.5">
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center gap-1">
+                  {TID_PRESETS[depot].slice(0, 3).map((preset) => {
+                    const active = selectedPreset === preset.label;
+                    return (
+                      <button
+                        key={preset.label}
+                        onClick={() => applyPreset(depot, preset.label)}
+                        className={`h-5 rounded-md text-[11px] font-normal border transition-all ${
+                          active
+                            ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
+                            : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
+                        }`}
+                        style={{ width: "13%" }}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center gap-1">
+                  {TID_PRESETS[depot].slice(3).map((preset) => {
+                    const active = selectedPreset === preset.label;
+                    return (
+                      <button
+                        key={preset.label}
+                        onClick={() => applyPreset(depot, preset.label)}
+                        className={`h-5 rounded-md text-[11px] font-normal border transition-all ${
+                          active
+                            ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
+                            : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
+                        }`}
+                        style={{ width: "13%" }}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
               {canSortByRemovalColor && (
-                <div className="ml-auto inline-flex h-5 items-center rounded-md border border-[#2b4f6b] bg-[#081c2d] p-0.5">
-                  <span className="px-1 text-[10px] font-normal tracking-wide text-[#5f8fb2]">SORT by :</span>
-                  <button
-                    type="button"
-                    onClick={() => updateTrainRemSortMode(depot, "tid")}
-                    className={`h-4 rounded px-1.5 text-[10px] font-normal transition-colors ${
-                      activeSortMode === "tid"
-                        ? "bg-[#1d4ed8] text-white"
-                        : "text-[#7eb8e0] hover:bg-[#102f4a] hover:text-white"
-                    }`}
-                    title="Sort by TID (current order)"
-                  >
-                    TID
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateTrainRemSortMode(depot, "color")}
-                    className={`h-4 rounded px-1.5 text-[10px] font-normal transition-colors ${
-                      activeSortMode === "color"
-                        ? "bg-[#1d4ed8] text-white"
-                        : "text-[#7eb8e0] hover:bg-[#102f4a] hover:text-white"
-                    }`}
-                    title="Sort by West Rem, East Rem, then Off Peak location"
-                  >
-                    Location
-                  </button>
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  <div className="inline-flex h-5 items-center rounded-md border border-[#2b4f6b] bg-[#081c2d] p-0.5">
+                    <span className="px-1 text-[10px] font-normal tracking-wide text-[#5f8fb2]">SORT by :</span>
+                    <button
+                      type="button"
+                      onClick={() => updateTrainRemSortMode(depot, "tid")}
+                      className={`h-4 rounded px-1.5 text-[10px] font-normal transition-colors ${
+                        activeSortMode === "tid"
+                          ? "bg-[#1d4ed8] text-white"
+                          : "text-[#7eb8e0] hover:bg-[#102f4a] hover:text-white"
+                      }`}
+                      title="Sort by TID (current order)"
+                    >
+                      TID
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateTrainRemSortMode(depot, "color")}
+                      className={`h-4 rounded px-1.5 text-[10px] font-normal transition-colors ${
+                        activeSortMode === "color"
+                          ? "bg-[#1d4ed8] text-white"
+                          : "text-[#7eb8e0] hover:bg-[#102f4a] hover:text-white"
+                      }`}
+                      title="Sort by West Rem, East Rem, then Off Peak location"
+                    >
+                      Location
+                    </button>
+                  </div>
+                  {depot === "west" && renderEastDepotCopyButton()}
                 </div>
               )}
-            </div>
-
-            {depot === "west" && canSortByRemovalColor && (
-              <div className="flex justify-end">
-                {renderEastDepotCopyButton()}
-              </div>
-            )}
-
-            <div className="flex items-center gap-1">
-              {TID_PRESETS[depot].slice(3).map((preset) => {
-                const active = selectedPreset === preset.label;
-                return (
-                  <button
-                    key={preset.label}
-                    onClick={() => applyPreset(depot, preset.label)}
-                    className={`h-5 rounded-md text-[11px] font-normal border transition-all ${
-                      active
-                        ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
-                        : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
-                    }`}
-                    style={{ width: "13%" }}
-                  >
-                    {preset.label}
-                  </button>
-                );
-              })}
             </div>
 
           </div>
