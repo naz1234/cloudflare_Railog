@@ -6589,6 +6589,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const [trainRemPdfStatus, setTrainRemPdfStatus] = useState({ west: false, east: false });
   const [trainRemPngStatus, setTrainRemPngStatus] = useState({ west: false, east: false });
   const [trainRemUndoCount, setTrainRemUndoCount] = useState(0);
+  const [westDepotCopyStatus, setWestDepotCopyStatus] = useState("");
   const [eastDepotCopyStatus, setEastDepotCopyStatus] = useState("");
 
   const trainRemStateRef = useRef(trainRemState);
@@ -6612,10 +6613,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const trainRemSmartDirectionRef = useRef({});
   const trainRemLastFocusedIndexRef = useRef({});
   const trainRemFocusedTrainIdCellRef = useRef(null);
+  const westDepotCopyTimerRef = useRef(null);
   const eastDepotCopyTimerRef = useRef(null);
 
   useEffect(() => {
     return () => {
+      if (westDepotCopyTimerRef.current) clearTimeout(westDepotCopyTimerRef.current);
       if (eastDepotCopyTimerRef.current) clearTimeout(eastDepotCopyTimerRef.current);
     };
   }, []);
@@ -7418,86 +7421,110 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     }
   };
 
-  const flashEastDepotCopyStatus = (status) => {
-    setEastDepotCopyStatus(status);
+  const flashDepotCopyStatus = (depot, status) => {
+    const setStatus = depot === "west" ? setWestDepotCopyStatus : setEastDepotCopyStatus;
+    const timerRef = depot === "west" ? westDepotCopyTimerRef : eastDepotCopyTimerRef;
 
-    if (eastDepotCopyTimerRef.current) {
-      clearTimeout(eastDepotCopyTimerRef.current);
+    setStatus(status);
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
     }
 
-    eastDepotCopyTimerRef.current = setTimeout(() => {
-      setEastDepotCopyStatus("");
-      eastDepotCopyTimerRef.current = null;
+    timerRef.current = setTimeout(() => {
+      setStatus("");
+      timerRef.current = null;
     }, 1600);
   };
 
-  const getEastDepotCopyTrainIds = useCallback((sourceState = null) => {
+  const getDepotCopyTrainIds = useCallback((depot = "east", sourceState = null) => {
+    const safeDepot = depot === "west" ? "west" : "east";
     const latestState = sourceState || trainRemStateRef.current || trainRemState;
-    const removalTrainIds = collectTrainRemTrainIdsForDepotCopy(latestState, "east", activeTimetable);
-    const latestEastStablingData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
-    const stablingTrainIds = collectStablingTrainIds(latestEastStablingData, EAST_ROADS);
+    const removalTrainIds = collectTrainRemTrainIdsForDepotCopy(latestState, safeDepot, activeTimetable);
+    const stablingSourceData = safeDepot === "west"
+      ? westData
+      : (Object.keys(eastData || {}).length ? eastData : eastStablingData);
+    const stablingRoads = safeDepot === "west" ? WEST_ROADS : EAST_ROADS;
+    const stablingTrainIds = collectStablingTrainIds(stablingSourceData, stablingRoads);
 
     return Array.from(new Set([...removalTrainIds, ...stablingTrainIds]));
-  }, [activeTimetable, eastData, eastStablingData, trainRemState]);
+  }, [activeTimetable, eastData, eastStablingData, trainRemState, westData]);
 
+  const westDepotCopyTrainIds = useMemo(() => (
+    getDepotCopyTrainIds("west", trainRemState)
+  ), [getDepotCopyTrainIds, trainRemState]);
   const eastDepotCopyTrainIds = useMemo(() => (
-    getEastDepotCopyTrainIds(trainRemState)
-  ), [getEastDepotCopyTrainIds, trainRemState]);
+    getDepotCopyTrainIds("east", trainRemState)
+  ), [getDepotCopyTrainIds, trainRemState]);
+  const westDepotCopyCount = westDepotCopyTrainIds.length;
   const eastDepotCopyCount = eastDepotCopyTrainIds.length;
 
-  const handleCopyEastDepotTrainList = async () => {
-    const combinedTrainIds = getEastDepotCopyTrainIds();
+  const handleCopyDepotTrainList = async (depot = "east") => {
+    const safeDepot = depot === "west" ? "west" : "east";
+    const combinedTrainIds = getDepotCopyTrainIds(safeDepot);
 
     if (combinedTrainIds.length === 0) {
-      flashEastDepotCopyStatus("empty");
+      flashDepotCopyStatus(safeDepot, "empty");
       return;
     }
 
-    const text = [`East Depot Train (Total ${combinedTrainIds.length} trains)`, ...combinedTrainIds.map(formatTrainNumberOnly)]
+    const depotLabel = safeDepot === "west" ? "West Depot" : "East Depot";
+    const text = [`${depotLabel} Train (Total ${combinedTrainIds.length} trains)`, ...combinedTrainIds.map(formatTrainNumberOnly)]
       .filter(Boolean)
       .join("\n");
 
     const ok = await copyTextToClipboard(text);
-    flashEastDepotCopyStatus(ok ? "copied" : "failed");
+    flashDepotCopyStatus(safeDepot, ok ? "copied" : "failed");
   };
 
-  const getEastDepotCopyLabel = () => {
-    if (eastDepotCopyStatus === "copied") return `Copied : ${eastDepotCopyCount}`;
-    if (eastDepotCopyStatus === "failed") return "Failed";
-    return `CPY : ${eastDepotCopyCount}`;
+  const getDepotCopyLabel = (depot = "east") => {
+    const safeDepot = depot === "west" ? "west" : "east";
+    const status = safeDepot === "west" ? westDepotCopyStatus : eastDepotCopyStatus;
+    const count = safeDepot === "west" ? westDepotCopyCount : eastDepotCopyCount;
+    const prefix = safeDepot === "west" ? "W" : "E";
+
+    if (status === "copied") return `${prefix} Copied : ${count}`;
+    if (status === "failed") return `${prefix} Failed`;
+    return `${prefix} CPY : ${count}`;
   };
 
-  const renderEastDepotCopyButton = (extraClassName = "") => (
-    <button
-      type="button"
-      onClick={handleCopyEastDepotTrainList}
-      className={`inline-flex h-5 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5 ${extraClassName}`}
-      style={{
-        background: eastDepotCopyStatus === "copied"
-          ? "rgba(34,197,94,0.18)"
-          : "rgba(15,45,74,0.75)",
-        borderColor: eastDepotCopyStatus === "copied"
-          ? "rgba(34,197,94,0.48)"
-          : "rgba(74,138,181,0.55)",
-        color: eastDepotCopyStatus === "copied"
-          ? "#86efac"
-          : eastDepotCopyStatus === "empty"
-            ? "#fbbf24"
-            : eastDepotCopyStatus === "failed"
-              ? "#fca5a5"
-              : "#9ccbea",
-        boxShadow: eastDepotCopyStatus === "copied"
-          ? "0 0 12px rgba(34,197,94,0.16)"
-          : "none",
-      }}
-      title="Copy all East Depot trains from removal list and current East Depot stabling. Duplicates are removed automatically."
-    >
-      {eastDepotCopyStatus === "copied"
-        ? <ClipboardCheck size={11} />
-        : <Copy size={11} />}
-      {getEastDepotCopyLabel()}
-    </button>
-  );
+  const renderDepotCopyButton = (depot = "east", extraClassName = "") => {
+    const safeDepot = depot === "west" ? "west" : "east";
+    const status = safeDepot === "west" ? westDepotCopyStatus : eastDepotCopyStatus;
+    const depotLabel = safeDepot === "west" ? "West Depot" : "East Depot";
+
+    return (
+      <button
+        type="button"
+        onClick={() => handleCopyDepotTrainList(safeDepot)}
+        className={`inline-flex h-5 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5 ${extraClassName}`}
+        style={{
+          background: status === "copied"
+            ? "rgba(34,197,94,0.18)"
+            : "rgba(15,45,74,0.75)",
+          borderColor: status === "copied"
+            ? "rgba(34,197,94,0.48)"
+            : "rgba(74,138,181,0.55)",
+          color: status === "copied"
+            ? "#86efac"
+            : status === "empty"
+              ? "#fbbf24"
+              : status === "failed"
+                ? "#fca5a5"
+                : "#9ccbea",
+          boxShadow: status === "copied"
+            ? "0 0 12px rgba(34,197,94,0.16)"
+            : "none",
+        }}
+        title={`Copy all ${depotLabel} trains from removal list and current ${depotLabel} stabling. Duplicates are removed automatically.`}
+      >
+        {status === "copied"
+          ? <ClipboardCheck size={11} />
+          : <Copy size={11} />}
+        {getDepotCopyLabel(safeDepot)}
+      </button>
+    );
+  };
 
   const renderDepotTable = (depot, title, subtitle) => {
     const selectedPreset = trainRemState.selectedPreset?.[depot] || "9am";
@@ -7719,7 +7746,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       Location
                     </button>
                   </div>
-                  {depot === "west" && renderEastDepotCopyButton()}
+                  {depot === "west" && (
+                    <div className="flex items-center justify-end gap-1">
+                      {renderDepotCopyButton("west")}
+                      {renderDepotCopyButton("east")}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
