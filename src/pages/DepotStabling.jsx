@@ -24514,7 +24514,7 @@ function StablingSection({
         .filter(Boolean);
       const roadNum = road.replace(/^[A-Z]+-ST0?/, "");
       const label = `STABLING ${roadNum.padStart(2, "0")}`;
-      return `${label}: ${trains.join(", ")}`;
+      return trains.length ? `${trains.join(", ")} : ${label}` : `${label}:`;
     });
     navigator.clipboard.writeText(lines.join("\n"));
     setCopiedStabling(true);
