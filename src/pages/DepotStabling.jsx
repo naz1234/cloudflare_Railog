@@ -4786,11 +4786,10 @@ function getInsertionRemarkPillStyle(value = "") {
 
 const EAST_INSERTION_KEYWORD_REMARK_STYLES = {
   WASH: {
-    // Match PM pill colour for a cleaner, uniform screenshot-style card.
-    bg: "rgba(59, 130, 246, 0.24)",
-    border: "#60a5fa",
-    color: "#dbeafe",
-    shadow: "0 0 11px rgba(96, 165, 250, 0.24), inset 0 1px 0 rgba(255,255,255,0.06)",
+    bg: "rgba(16, 185, 129, 0.24)",
+    border: "#34d399",
+    color: "#d1fae5",
+    shadow: "0 0 11px rgba(52, 211, 153, 0.26), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
   PM: {
     bg: "rgba(59, 130, 246, 0.24)",
@@ -5123,11 +5122,6 @@ function InsertionSectionTitle({ title, leftAction = null, action = null }) {
       {action && <div className="flex flex-wrap items-center justify-end gap-2">{action}</div>}
     </div>
   );
-}
-
-function getInsertionRoadSubLabel(road = "") {
-  const match = String(road || "").match(/ST(\d+)/i);
-  return match ? `Stabling ${match[1]}` : "";
 }
 
 function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2 }) {
@@ -5468,7 +5462,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               onBlur={() => setIsTrainIdEditing(false)}
               onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
               placeholder="Train ID"
-              className="theme-insertion-train-id h-7 w-full border-0 px-1.5 text-center text-[15px] font-black uppercase outline-none placeholder:text-[10px] placeholder:text-[#47637a]"
+              className="h-7 w-full border-0 px-1.5 text-center text-[15px] font-black uppercase outline-none placeholder:text-[10px] placeholder:text-[#47637a]"
               style={{
                 borderBottomColor: key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine,
                 backgroundColor: "transparent",
@@ -5479,7 +5473,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             />
           ) : (
             <div
-              className="theme-insertion-train-id w-full text-center font-black leading-none"
+              className="w-full text-center font-black leading-none"
               style={{
                 fontSize: key ? (isInsertionDone ? 15 : 18) : 13,
                 color: key ? trainColor : "#587187",
@@ -5627,7 +5621,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   -- Refresh --
                 </button>
                 <div
-                  className="theme-insertion-detail-box rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
+                  className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                   style={{
                     width: "calc(100% + 8px)",
                     maxWidth: "calc(100% + 8px)",
@@ -5707,7 +5701,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </div>
                 </div>
                 <div className="w-full px-1">
-                  <div className="theme-insertion-name-box flex w-full flex-col items-center justify-center rounded-lg border border-purple-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(168,85,247,0.22)]">
+                  <div className="flex w-full flex-col items-center justify-center rounded-lg border border-purple-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(168,85,247,0.22)]">
                                         <input
                       type="text"
                       maxLength={40}
@@ -5733,7 +5727,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 -- Refresh --
               </button>
               <div
-                className="theme-insertion-detail-box rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
+                className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                 style={{
                   width: "calc(100% + 8px)",
                   maxWidth: "calc(100% + 8px)",
@@ -5813,7 +5807,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               </div>
               <div className="w-full px-1">
-                <div className="theme-insertion-name-box flex w-full flex-col items-center justify-center rounded-lg border border-purple-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(168,85,247,0.22)]">
+                <div className="flex w-full flex-col items-center justify-center rounded-lg border border-purple-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(168,85,247,0.22)]">
                                     <input
                     type="text"
                     maxLength={40}
@@ -5873,7 +5867,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     -- Refresh --
                   </button>
                   <div
-                    className="theme-insertion-detail-box rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
+                    className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                     style={{
                       width: "calc(100% + 8px)",
                       maxWidth: "calc(100% + 8px)",
@@ -5946,7 +5940,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
                   {insertedTid ? (
                     <div
-                      className="theme-insertion-detail-box rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
+                      className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                       style={{
                         width: "calc(100% + 8px)",
                         maxWidth: "calc(100% + 8px)",
@@ -6033,7 +6027,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   )}
 
                   <div className="w-full px-1">
-                    <div className="theme-insertion-name-box flex w-full flex-col items-center justify-center rounded-lg border border-sky-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(56,189,248,0.20)]">
+                    <div className="flex w-full flex-col items-center justify-center rounded-lg border border-sky-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(56,189,248,0.20)]">
                                             <input
                         type="text"
                         maxLength={40}
@@ -6061,7 +6055,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       -- Refresh --
                     </button>
                     <div
-                      className="theme-insertion-detail-box rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
+                      className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                       style={{
                         width: "calc(100% + 8px)",
                         maxWidth: "calc(100% + 8px)",
@@ -6115,7 +6109,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       </div>
                     </div>
                     <div className="w-full px-1">
-                      <div className="theme-insertion-name-box flex w-full flex-col items-center justify-center rounded-lg border border-sky-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(56,189,248,0.20)]">
+                      <div className="flex w-full flex-col items-center justify-center rounded-lg border border-sky-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(56,189,248,0.20)]">
                                                 <input
                           type="text"
                           maxLength={40}
@@ -6171,7 +6165,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     />
                   </div>
                   <div className="w-full px-1">
-                    <div className="theme-insertion-name-box flex w-full flex-col items-center justify-center rounded-lg border border-slate-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(96,165,250,0.18)]">
+                    <div className="flex w-full flex-col items-center justify-center rounded-lg border border-slate-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(96,165,250,0.18)]">
                                             <input
                         type="text"
                         maxLength={40}
@@ -6227,7 +6221,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     />
                   </div>
                   <div className="w-full px-1">
-                    <div className="theme-insertion-name-box flex w-full flex-col items-center justify-center rounded-lg border border-slate-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(96,165,250,0.18)]">
+                    <div className="flex w-full flex-col items-center justify-center rounded-lg border border-slate-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(96,165,250,0.18)]">
                                             <input
                         type="text"
                         maxLength={40}
@@ -6497,7 +6491,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
         }
       />
       <div className="theme-insertion-table-wrap overflow-x-auto rounded-xl border" style={{ borderColor: INSERTION_PANEL_COLORS.gridLine }}>
-        <table className="theme-insertion-table border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 1128, maxWidth: 1128, width: 1128 }}>
+        <table className="theme-insertion-table border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 880, maxWidth: 880, width: 880 }}>
           <thead>
             <tr>
               {labelSide === "left" && <th className="theme-insertion-table-header w-[68px]" style={{ background: INSERTION_PANEL_COLORS.header, border: "none", borderBottom: `1px solid ${INSERTION_PANEL_COLORS.gridLine}` }} />}
@@ -6564,11 +6558,10 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
               const rowCardMinHeight = rowBaseMinHeight + rowMaintenanceSlotHeight;
               const labelCell = (
                 <td className="theme-insertion-road-label text-center align-middle text-[12px] font-black tracking-tight uppercase" style={{ background: INSERTION_PANEL_COLORS.header, color: "#d6e7f4", borderTop: ri === 0 ? "none" : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderBottom: rowLine, borderRight: labelSide === "left" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderLeft: labelSide === "right" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, whiteSpace: "nowrap", width: 68, minWidth: 68, letterSpacing: "0.025em", borderTopLeftRadius: labelSide === "left" && ri === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && ri === 0 ? 12 : undefined, borderBottomLeftRadius: labelSide === "left" && ri === roads.length - 1 ? 12 : undefined, borderBottomRightRadius: labelSide === "right" && ri === roads.length - 1 ? 12 : undefined }}>
-                  <div className="theme-insertion-road-label-inner flex flex-col items-center justify-center gap-1 leading-none">
-                    <span className="theme-insertion-road-main">{road}</span>
-                    <span className="theme-insertion-road-sub">{getInsertionRoadSubLabel(road)}</span>
+                  <div className="flex flex-col items-center justify-center gap-1 leading-none">
+                    <span>{road}</span>
                     {insertionRoadPill && (
-                      <span className="theme-insertion-road-pill rounded-full border border-amber-400/80 bg-amber-950/25 px-2.5 py-1 text-[9px] font-black leading-none text-amber-200">
+                      <span className="rounded-full border border-amber-400/80 bg-amber-950/25 px-2.5 py-1 text-[9px] font-black leading-none text-amber-200">
                         {insertionRoadPill}
                       </span>
                     )}
@@ -8393,7 +8386,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
               onTidDropApplied={handleTidDropApplied}
               {...westSection}
             />
-            <div className="w-full max-w-full" style={{ width: "1128px" }}>
+            <div className="w-full max-w-full" style={{ width: "914px" }}>
               <InsertionLogOutput
                 insertionLog={sortInsertionLogByTime(insertionLog)}
                 onClearDepot={onClearInsertionDepot}
@@ -8432,7 +8425,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
               onTidDropApplied={handleTidDropApplied}
               {...eastSection}
             />
-            <div className="w-full max-w-full" style={{ width: "1128px" }}>
+            <div className="w-full max-w-full" style={{ width: "914px" }}>
               <InsertionLogOutput
                 insertionLog={sortInsertionLogByTime(insertionLog)}
                 onClearDepot={onClearInsertionDepot}
