@@ -112,7 +112,7 @@ function DeleteRequestIcon() {
 }
 
 
-function StillNotAtStablingIcon({ message = "Train still not at West Depot" }) {
+function StillNotAtStablingIcon({ message = "Still not in WD" }) {
   return (
     <span
       className="still-not-stabling-trigger relative z-40 inline-flex shrink-0 items-center justify-center justify-self-end"
