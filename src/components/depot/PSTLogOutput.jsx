@@ -345,7 +345,7 @@ function ClearIcon() {
   );
 }
 
-function CopyButton({ text, label, disabled }) {
+function CopyButton({ text, label, disabled, variant = "pst" }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -365,7 +365,7 @@ function CopyButton({ text, label, disabled }) {
       type="button"
       onClick={handleCopy}
       disabled={disabled}
-      className={copied ? "pst-clean-action pst-clean-action-copied" : "pst-clean-action"}
+      className={`pst-clean-action pst-clean-action-${variant}${copied ? " pst-clean-action-copied" : ""}`}
       title={`Copy ${label}`}
     >
       <CopyIcon copied={copied} />
@@ -395,7 +395,7 @@ function ClearDepotButton({ depotLabel, disabled, onClear }) {
       type="button"
       onClick={handleClear}
       disabled={disabled}
-      className={confirming ? "pst-clean-action pst-clean-action-danger" : "pst-clean-action"}
+      className={`pst-clean-action pst-clean-action-clear${confirming ? " pst-clean-action-danger" : ""}`}
       title={`Clear ${depotLabel} Depot log`}
     >
       <ClearIcon />
@@ -451,8 +451,8 @@ function DepotLogCard({ depotLabel, lines = [], onClearDepot, logStyle = ELOG_1,
         </div>
 
         <div className="pst-clean-actions">
-          <CopyButton text={pstText} label="Copy PST" disabled={!pstLines.length} />
-          <CopyButton text={prepText} label="Copy Train Prep" disabled={!prepLines.length} />
+          <CopyButton text={pstText} label="Copy PST" disabled={!pstLines.length} variant="pst" />
+          <CopyButton text={prepText} label="Copy Train Prep" disabled={!prepLines.length} variant="prep" />
           <ClearDepotButton depotLabel={depotLabel} disabled={!hasEntries} onClear={onClearDepot} />
         </div>
       </div>
@@ -760,6 +760,45 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
           border-color: rgba(125,190,232,0.72);
           color: #ffffff;
           background: rgba(19,63,100,0.88);
+        }
+
+        .pst-clean-action-pst {
+          border-color: rgba(52,211,153,0.72);
+          background: rgba(6,78,59,0.72);
+          color: #a7f3d0;
+          box-shadow: 0 0 10px rgba(16,185,129,0.14);
+        }
+
+        .pst-clean-action-pst:hover:not(:disabled) {
+          border-color: rgba(110,231,183,0.92);
+          background: rgba(5,100,75,0.90);
+          color: #ecfdf5;
+        }
+
+        .pst-clean-action-prep {
+          border-color: rgba(96,165,250,0.74);
+          background: rgba(30,64,175,0.58);
+          color: #bfdbfe;
+          box-shadow: 0 0 10px rgba(59,130,246,0.14);
+        }
+
+        .pst-clean-action-prep:hover:not(:disabled) {
+          border-color: rgba(147,197,253,0.94);
+          background: rgba(30,82,185,0.88);
+          color: #eff6ff;
+        }
+
+        .pst-clean-action-clear {
+          border-color: rgba(248,113,113,0.74);
+          background: rgba(127,29,29,0.62);
+          color: #fecaca;
+          box-shadow: 0 0 10px rgba(239,68,68,0.12);
+        }
+
+        .pst-clean-action-clear:hover:not(:disabled) {
+          border-color: rgba(252,165,165,0.94);
+          background: rgba(153,27,27,0.88);
+          color: #fff1f2;
         }
 
         .pst-clean-action:disabled {
