@@ -5374,7 +5374,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     boxShadow: "inset 0 1px 2px rgba(0, 0, 0, 0.20)",
   };
   const insRowLine = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
-  const insertionCardDividerBorder = "1px solid rgba(255, 255, 255, 0.78)";
+  const insertionCardDividerBorder = "1px solid rgba(255, 255, 255, 0.08)";
   // Base minimum per card state. When the row contains PM/Wash/etc.,
   // no-remark cards reserve the same compact middle slot through reserveMiddleInsertionRemark.
   const middleInsertionRemarkContentHeight = rowMaintenanceSlotHeight > 0
