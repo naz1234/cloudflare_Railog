@@ -1246,7 +1246,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             {requests.length === 0 ? "No requests yet" : "No train request"}
           </div>
         ) : (
-          <div className="grid gap-[5px] p-2.5">
+          <div className="grid gap-[9px] p-2.5">
             {renderRequestGroupCards(regularRequestGroups, { section: "pending" })}
           </div>
         )}
