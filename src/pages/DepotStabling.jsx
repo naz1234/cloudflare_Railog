@@ -4692,11 +4692,13 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     shadow: "0 0 12px rgba(250, 204, 21, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
   "ED (7pm)": {
-    bg: "rgba(244, 63, 94, 0.18)",
-    cardBg: "linear-gradient(135deg, rgba(244, 63, 94, 0.22) 0%, rgba(88, 28, 48, 0.18) 100%)",
-    border: "#fb3f5f",
-    color: "#ff6b7d",
-    shadow: "0 0 13px rgba(244, 63, 94, 0.34), inset 0 1px 0 rgba(255,255,255,0.08)",
+    // Match the TID Reference Table violet colour transparency.
+    // Table row uses 20% fading to 7%; pill fill uses 18%.
+    bg: "rgba(139, 92, 246, 0.18)",
+    cardBg: "linear-gradient(135deg, rgba(139, 92, 246, 0.20) 0%, rgba(139, 92, 246, 0.07) 100%)",
+    border: "#8b5cf6",
+    color: "#ddd6fe",
+    shadow: "0 0 12px rgba(139, 92, 246, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
   ED: {
     // Match the TID Reference Table colour transparency.
@@ -4749,17 +4751,7 @@ function getInsertionAssistRemarkDisplayLabel(remark = "") {
   return normalized;
 }
 
-function getInsertionTidTitle(entry = {}, tid = "") {
-  const cleanTid = String(tid || "").replace(/\D/g, "");
-  if (!cleanTid) return "";
-
-  const sourceText = String(entry?.inputValue || entry?.remark || "").trim().toUpperCase();
-  const prefixMatch = sourceText.match(/^(TD|LU|TID)\b/);
-  const prefix = prefixMatch?.[1] === "LU" ? "LU" : "TD";
-  return `${prefix} ${cleanTid}`;
-}
-
-const INSERTION_CARD_PILL_WIDTH = 132;
+const INSERTION_CARD_PILL_WIDTH = 68;
 
 const INSERTION_DEFAULT_REMARK_PILL_STYLE = {
   bg: "rgba(250, 204, 21, 0.17)",
@@ -4774,14 +4766,14 @@ function getInsertionAssistPillStyle(style = null) {
   return {
     width: INSERTION_CARD_PILL_WIDTH,
     maxWidth: "100%",
-    minHeight: 34,
-    padding: "5px 14px",
+    minHeight: 18,
+    padding: "2px 7px",
     boxSizing: "border-box",
     borderRadius: 999,
     background: style.bg || style.cardBg || "rgba(148, 163, 184, 0.16)",
-    border: `2px solid ${style.border || "rgba(148, 163, 184, 0.36)"}`,
+    border: `1px solid ${style.border || "rgba(148, 163, 184, 0.36)"}`,
     color: style.color || "#ffffff",
-    boxShadow: style.shadow || "inset 0 1px 0 rgba(255,255,255,0.08)",
+    boxShadow: style.shadow || "inset 0 1px 0 rgba(255,255,255,0.06)",
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
@@ -4794,16 +4786,16 @@ function getInsertionRemarkPillStyle(value = "") {
 
 const EAST_INSERTION_KEYWORD_REMARK_STYLES = {
   WASH: {
-    bg: "linear-gradient(180deg, rgba(20, 57, 139, 0.96) 0%, rgba(12, 47, 111, 0.94) 100%)",
-    border: "#3b73ff",
-    color: "#f8fbff",
-    shadow: "0 0 13px rgba(59, 115, 255, 0.36), inset 0 1px 0 rgba(255,255,255,0.12)",
+    bg: "rgba(16, 185, 129, 0.24)",
+    border: "#34d399",
+    color: "#d1fae5",
+    shadow: "0 0 11px rgba(52, 211, 153, 0.26), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
   PM: {
-    bg: "linear-gradient(180deg, rgba(20, 57, 139, 0.96) 0%, rgba(12, 47, 111, 0.94) 100%)",
-    border: "#3b73ff",
-    color: "#f8fbff",
-    shadow: "0 0 13px rgba(59, 115, 255, 0.36), inset 0 1px 0 rgba(255,255,255,0.12)",
+    bg: "rgba(59, 130, 246, 0.24)",
+    border: "#60a5fa",
+    color: "#dbeafe",
+    shadow: "0 0 11px rgba(96, 165, 250, 0.24), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
   REQUEST: {
     bg: "rgba(250, 204, 21, 0.18)",
@@ -4914,18 +4906,15 @@ function getEastInsertionKeywordRemarkLabel(value = "") {
   return "";
 }
 
-function getEastInsertionPillStyle(style = null, width = INSERTION_CARD_PILL_WIDTH) {
+function getEastInsertionPillStyle(style = null, width = 78) {
   const base = style || INSERTION_DEFAULT_REMARK_PILL_STYLE;
   return {
     ...getInsertionAssistPillStyle(base),
     width,
-    minHeight: 34,
-    padding: "4px 12px",
-    fontSize: 22,
-    fontWeight: 800,
-    lineHeight: "24px",
-    letterSpacing: "0.01em",
-    textShadow: "0 1px 2px rgba(0,0,0,0.45)",
+    minHeight: 20,
+    padding: "2px 6px",
+    fontSize: 11,
+    lineHeight: "14px",
   };
 }
 
@@ -5061,17 +5050,17 @@ function getActiveInsertionEntryForCell(insertionLog = [], road, bi, trainKey = 
 }
 
 const INSERTION_PANEL_COLORS = {
-  shell: "#061d2f",
-  shellBorder: "#0b476b",
-  grid: "#061a2b",
-  gridLine: "#0d3d5c",
-  header: "#082033",
-  headerText: "#d8edff",
-  card: "#082235",
-  cardBorder: "rgba(148, 163, 184, 0.52)",
-  emptyBorder: "rgba(148, 163, 184, 0.34)",
-  text: "#f7fbff",
-  muted: "#c7d6e3",
+  shell: "#071622",
+  shellBorder: "#1f3b50",
+  grid: "#081a29",
+  gridLine: "#183449",
+  header: "#0a2235",
+  headerText: "#75b8e6",
+  card: "#0b2031",
+  cardBorder: "#27475d",
+  emptyBorder: "#304b60",
+  text: "#f4f8fc",
+  muted: "#8aa4ba",
 };
 
 const INSERTION_ACTION_BUTTON_COMMON = {
@@ -5188,7 +5177,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const inserted = getActiveInsertionEntryForCell(insertionLog, road, bi, key);
   const tidRemarkText = (tidInput || "").toString().trim().toUpperCase();
   const hasTidRemark = key && !inserted && tidRemarkText !== "";
-  const autoTidMatch = tidRemarkText.match(/^(?:(?:TID|TD|LU)[:\s-]*)?T?(\d{3})$/i);
+  const autoTidMatch = tidRemarkText.match(/^(?:TID[:\s-]*)?T?(\d{3})$/i);
   const autoTid = autoTidMatch ? parseInt(autoTidMatch[1], 10) : null;
   const autoTidDepot = WEST_ROADS.includes(road) ? "west" : "east";
   const specialTidRemarkStyle = hasTidRemark
@@ -5354,19 +5343,28 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   // Keep the stabling card border/background neutral so the pill is the only request colour.
   const insCardBg = expired
     ? "#07131e"
-    : key
-      ? "linear-gradient(180deg, #09263b 0%, #071e31 46%, #06192a 100%)"
-      : "linear-gradient(180deg, rgba(9, 38, 59, 0.46) 0%, rgba(6, 25, 42, 0.34) 100%)";
+    : inserted?.isSweeping
+      ? "linear-gradient(145deg, #17142d 0%, #0a1727 58%, #071523 100%)"
+      : isInsertionDone
+        ? "linear-gradient(145deg, #0b2930 0%, #0a1c2b 58%, #071523 100%)"
+        : key
+          ? "linear-gradient(145deg, #0d2a42 0%, #0a1d30 52%, #071827 100%)"
+          : "rgba(7, 24, 39, 0.30)";
+  // Keep the card frame calm and neutral. State colour is concentrated in
+  // the 3 px left rail so maintenance pills and insertion status do not fight
+  // for attention.
   const insCardBorder = expired
-    ? "1px solid rgba(87, 103, 117, 0.36)"
-    : key
-      ? `1px solid ${INSERTION_PANEL_COLORS.cardBorder}`
-      : `1px dashed ${INSERTION_PANEL_COLORS.emptyBorder}`;
+    ? "1px solid #1e3547"
+    : isDuplicateInsertedTid
+      ? "1px solid #6d4b20"
+      : key
+        ? `1px solid ${INSERTION_PANEL_COLORS.cardBorder}`
+        : `1px dashed ${INSERTION_PANEL_COLORS.emptyBorder}`;
   const insCardGlow = isDuplicateInsertedTid
-    ? "0 0 0 2px rgba(245, 158, 11, 0.16), 0 0 20px rgba(245, 158, 11, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.08)"
+    ? "0 0 0 2px rgba(245, 158, 11, 0.18), 0 0 18px rgba(245, 158, 11, 0.58), 0 8px 22px rgba(0, 0, 0, 0.24)"
     : key && !expired
-      ? "inset 0 1px 0 rgba(255,255,255,0.07), 0 12px 24px rgba(0,0,0,0.20)"
-      : "inset 0 1px 0 rgba(255,255,255,0.04)";
+      ? "0 4px 12px rgba(0,0,0,0.12)"
+      : undefined;
   const tidDividerColor = specialTidRemarkStyle?.border || (hasTidRemark ? "#b68a19" : "#315671");
   const insTidInputStyle = {
     border: `1px solid ${tidDividerColor}`,
@@ -5383,15 +5381,15 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     ? rowMaintenanceSlotHeight
     : 0;
   const middleInsertionRemarkSlotMinHeight = rowMaintenanceSlotHeight > 0
-    ? middleInsertionRemarkContentHeight + 34
+    ? middleInsertionRemarkContentHeight + 10
     : 0;
   const ownInsertionCardMinHeightBase = inserted?.isSweeping
-    ? 408
+    ? 158
     : isEast3K1InsertionCard
-      ? 392
+      ? 142
       : isInsertionDone
-        ? Math.max(insertionDoneCardMinHeight, 396)
-        : 340;
+        ? insertionDoneCardMinHeight
+        : 98;
   const ownInsertionCardMinHeight = Math.max(ownInsertionCardMinHeightBase, rowCardMinHeight);
   const shouldStretchInsertionCard = Boolean(
     inserted?.isSweeping ||
@@ -5426,11 +5424,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           minHeight: ownInsertionCardMinHeight,
           height: shouldStretchInsertionCard ? "100%" : undefined,
           padding: useUnifiedInsertionCardStyle
-            ? (inserted?.isSweeping ? "22px 12px 18px" : isInsertionDone ? "22px 12px 18px" : "22px 12px 18px")
-            : (isInsertionDone ? "22px 12px 18px" : "22px 12px 18px"),
+            ? (inserted?.isSweeping ? "8px 4px" : isInsertionDone ? "6px 1px 6px 5px" : "8px 1px 8px 7px")
+            : (isInsertionDone ? "6px 5px" : "8px 7px"),
           background: insCardBg,
           border: insCardBorder,
-          borderRadius: 22,
+          borderRight: useUnifiedInsertionCardStyle ? "0" : undefined,
           outline: isTidDropHovered
             ? "2px solid #38bdf8"
             : isTidDragActive && isTidDropEligible
@@ -5452,7 +5450,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             : undefined,
         }}
       >
-        <div className="flex w-full flex-col items-center gap-3">
+        <div className="flex w-full flex-col items-center gap-1">
           {stablingEditable ? (
             <input
               type="text"
@@ -5477,10 +5475,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             <div
               className="w-full text-center font-black leading-none"
               style={{
-                fontSize: key ? 44 : 22,
+                fontSize: key ? (isInsertionDone ? 15 : 18) : 13,
                 color: key ? trainColor : "#587187",
-                letterSpacing: key ? "0.04em" : undefined,
-                textShadow: key ? "0 2px 4px rgba(0,0,0,0.55)" : undefined,
+                letterSpacing: key ? (isInsertionDone ? "0.05em" : "0.04em") : undefined,
               }}
             >
               {displayVal || "—"}
@@ -5525,7 +5522,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         type="button"
                         onClick={handleInsertedUndoClick}
                         className="inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[11px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
-                        style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[eastMaintPillLabel], INSERTION_CARD_PILL_WIDTH)}
+                        style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[eastMaintPillLabel], 82)}
                         title={eastMaintPillLabel}
                         aria-label={eastMaintPillLabel}
                       >
@@ -5539,7 +5536,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       type="button"
                       onClick={handleInsertedUndoClick}
                       className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${useLargerWeekdayAssistRemark ? "text-[12px]" : "text-[11px]"}`}
-                      style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedTidAssistKeywordLabel], INSERTION_CARD_PILL_WIDTH)}
+                      style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedTidAssistKeywordLabel], 82)}
                       title={`Click ${insertedTidAssistKeywordLabel} to undo insertion`}
                       aria-label={`Undo insertion for ${insertedTidAssistKeywordLabel}`}
                     >
@@ -5552,7 +5549,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       type="button"
                       onClick={handleInsertedUndoClick}
                       className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${maintList.length > 0 ? "mt-1" : "mt-[3px]"}`}
-                      style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedPlainKeywordLabel], INSERTION_CARD_PILL_WIDTH)}
+                      style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedPlainKeywordLabel], 82)}
                       title={`Click ${insertedPlainKeywordLabel} to undo insertion`}
                       aria-label={`Undo insertion for remark ${insertedPlainKeywordLabel}`}
                     >
@@ -5613,11 +5610,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           )}
           {key && inserted?.isSweeping && (
             isEastInsertionCard ? (
-              <div className="flex w-full flex-col items-center gap-4 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+              <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                 <button
                   type="button"
                   onClick={handleSpecialCardRefresh}
-                  className="text-[24px] font-normal leading-none text-slate-200/95 transition-all hover:text-white focus-visible:text-white"
+                  className="text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
                   title="Refresh this card and go back to Add TID"
                   aria-label="Refresh this card and go back to Add TID"
                 >
@@ -5719,11 +5716,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               </div>
             ) : (
-            <div className="flex w-full flex-col items-center gap-4 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+            <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
               <button
                 type="button"
                 onClick={handleSpecialCardRefresh}
-                className="text-[24px] font-normal leading-none text-slate-200/95 transition-all hover:text-white focus-visible:text-white"
+                className="text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
                 title="Refresh this card and go back to Add TID"
                 aria-label="Refresh this card and go back to Add TID"
               >
@@ -5859,11 +5856,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             )}
             {inserted && !inserted.isSweeping && (
               isEast3K1InsertionCard ? (
-                <div className="flex w-full flex-col items-center gap-4 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                   <button
                     type="button"
                     onClick={handleSpecialCardRefresh}
-                    className="text-[24px] font-normal leading-none text-slate-200/95 transition-all hover:text-white focus-visible:text-white"
+                    className="text-[10px] font-normal leading-none text-cyan-100/90 transition-all hover:text-white focus-visible:text-white"
                     title="Refresh this card and go back to Add TID"
                     aria-label="Refresh this card and go back to Add TID"
                   >
@@ -5930,11 +5927,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </div>
                 </div>
               ) : useUnifiedInsertionCardStyle ? (
-                <div className="flex w-full flex-col items-center gap-4 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                   <button
                     type="button"
                     onClick={handleSpecialCardRefresh}
-                    className="text-[24px] font-normal leading-none text-slate-200/95 transition-all hover:text-white focus-visible:text-white"
+                    className="text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
                     title="Refresh this card and go back to Add TID"
                     aria-label="Refresh this card and go back to Add TID"
                   >
@@ -5945,32 +5942,31 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     <div
                       className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                       style={{
-                        width: "100%",
-                        maxWidth: "168px",
-                        minHeight: 120,
+                        width: "calc(100% + 8px)",
+                        maxWidth: "calc(100% + 8px)",
+                        marginLeft: -4,
+                        marginRight: -4,
                         alignSelf: "center",
                         background: insertedTidBigPillStyle.bg,
                         borderColor: insertedTidBigPillStyle.border,
-                        borderWidth: 2,
-                        borderRadius: 14,
                         color: insertedTidBigPillStyle.color,
                         boxShadow: insertedTidBigPillStyle.shadow,
                       }}
                       title={`TID ${insertedTid} insertion details`}
                       aria-label={`TID ${insertedTid} insertion details`}
                     >
-                      <div className="mb-1 text-center text-[28px] font-black leading-none tracking-tight" style={{ color: insertedTidBigPillStyle.color }}>{getInsertionTidTitle(inserted, insertedTid)}</div>
+                      <div className="mb-0.5 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
                       {hasInsertedTidAssistDisplayRemark && (
                         <div
-                          className="mb-2 text-center text-[24px] font-bold leading-none tracking-tight text-white"
+                          className="mb-1 text-center text-[11px] font-normal leading-tight tracking-[0.5px] text-white"
                           title={insertedTidAssistDisplayRemark}
                           aria-label={insertedTidAssistDisplayRemark}
                         >
-                          -{insertedTidAssistDisplayRemark}-
+                          --{insertedTidAssistDisplayRemark}--
                         </div>
                       )}
-                      <div className="grid w-full grid-cols-[78px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
-                        <span className="text-right text-[22px] font-normal tracking-normal text-white">Time :</span>
+                      <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
+                        <span className="text-right text-[10px] font-normal uppercase tracking-normal" style={{ color: insertedTidBigPillStyle.color, opacity: 0.92 }}>Time :</span>
                         <input
                           type="text"
                           inputMode="numeric"
@@ -5992,7 +5988,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                             onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
                           }}
                           placeholder="00:00"
-                          className="min-w-0 border-0 bg-transparent p-0 text-left text-[22px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                          className="min-w-0 border-0 bg-transparent p-0 text-left text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                           title="Edit insertion completion time"
                         />
                       </div>
@@ -6031,7 +6027,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   )}
 
                   <div className="w-full px-1">
-                    <div className="flex w-full flex-col items-center justify-center px-2 py-1 text-center">
+                    <div className="flex w-full flex-col items-center justify-center rounded-lg border border-sky-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(56,189,248,0.20)]">
                                             <input
                         type="text"
                         maxLength={40}
@@ -6039,7 +6035,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onClick={(e) => e.stopPropagation()}
                         onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
                         placeholder="(Name)"
-                        className="w-full min-w-0 border-0 bg-transparent p-0 text-center text-[24px] font-normal leading-tight text-white outline-none placeholder:text-slate-200/90"
+                        className="w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                         title="Optional TA name for the insertion output"
                       />
                     </div>
@@ -6048,11 +6044,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               ) : (
               <>
                 {insertedTid ? (
-                  <div className="flex w-full flex-col items-center gap-4 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+                  <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                     <button
                       type="button"
                       onClick={handleSpecialCardRefresh}
-                      className="text-[24px] font-normal leading-none text-slate-200/95 transition-all hover:text-white focus-visible:text-white"
+                      className="text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
                       title="Refresh this card and go back to Add TID"
                       aria-label="Refresh this card and go back to Add TID"
                     >
@@ -6061,32 +6057,31 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     <div
                       className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                       style={{
-                        width: "100%",
-                        maxWidth: "168px",
-                        minHeight: 120,
+                        width: "calc(100% + 8px)",
+                        maxWidth: "calc(100% + 8px)",
+                        marginLeft: -4,
+                        marginRight: -4,
                         alignSelf: "center",
                         background: insertedTidBigPillStyle.bg,
                         borderColor: insertedTidBigPillStyle.border,
-                        borderWidth: 2,
-                        borderRadius: 14,
                         color: insertedTidBigPillStyle.color,
                         boxShadow: insertedTidBigPillStyle.shadow,
                       }}
                       title={`TID ${insertedTid} insertion details`}
                       aria-label={`TID ${insertedTid} insertion details`}
                     >
-                      <div className="mb-1 text-center text-[28px] font-black leading-none tracking-tight" style={{ color: insertedTidBigPillStyle.color }}>{getInsertionTidTitle(inserted, insertedTid)}</div>
+                      <div className="mb-0.5 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
                       {hasInsertedTidAssistDisplayRemark && (
                         <div
-                          className="mb-2 text-center text-[24px] font-bold leading-none tracking-tight text-white"
+                          className="mb-1 text-center text-[11px] font-normal leading-tight tracking-[0.5px] text-white"
                           title={insertedTidAssistDisplayRemark}
                           aria-label={insertedTidAssistDisplayRemark}
                         >
-                          -{insertedTidAssistDisplayRemark}-
+                          --{insertedTidAssistDisplayRemark}--
                         </div>
                       )}
-                      <div className="grid w-full grid-cols-[78px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
-                        <span className="text-right text-[22px] font-normal tracking-normal text-white">Time :</span>
+                      <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
+                        <span className="text-right text-[10px] font-normal uppercase tracking-normal" style={{ color: insertedTidBigPillStyle.color, opacity: 0.92 }}>Time :</span>
                         <input
                           type="text"
                           inputMode="numeric"
@@ -6108,7 +6103,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                             onInsertionTimeUpdate?.(inserted.key, normalized || insertedScheduledTime || formatTime(new Date()));
                           }}
                           placeholder="00:00"
-                          className="min-w-0 border-0 bg-transparent p-0 text-left text-[22px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                          className="min-w-0 border-0 bg-transparent p-0 text-left text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                           title="Edit insertion completion time"
                         />
                       </div>
@@ -6129,7 +6124,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     </div>
                   </div>
               ) : hasInsertedPlainRemark ? (
-                <div className="flex w-full flex-col items-center gap-4 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                   <button
                     type="button"
                     onClick={handleSpecialCardRefresh}
@@ -6185,7 +6180,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </div>
                 </div>
               ) : (
-                <div className="flex w-full flex-col items-center gap-4 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                   <button
                     type="button"
                     onClick={handleSpecialCardRefresh}
@@ -6427,14 +6422,14 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
   };
   return (
     <section
-      className="theme-insertion-section rounded-2xl border px-3 py-3"
+      className="theme-insertion-section rounded-2xl border px-4 py-4"
       data-depot={sectionDepot}
       style={{
         width: "fit-content",
         maxWidth: "fit-content",
-        background: "linear-gradient(180deg, #062238 0%, #04192b 100%)",
+        background: INSERTION_PANEL_COLORS.shell,
         borderColor: INSERTION_PANEL_COLORS.shellBorder,
-        boxShadow: "0 0 0 1px rgba(39, 126, 178, 0.18), 0 14px 34px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05)",
+        boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
       }}
     >
       <InsertionSectionTitle
@@ -6495,15 +6490,15 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
           </div>
         }
       />
-      <div className="theme-insertion-table-wrap overflow-x-auto rounded-xl border" style={{ borderColor: INSERTION_PANEL_COLORS.gridLine, background: INSERTION_PANEL_COLORS.grid }}>
-        <table className="theme-insertion-table border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 1496, maxWidth: 1496, width: 1496 }}>
+      <div className="theme-insertion-table-wrap overflow-x-auto rounded-xl border" style={{ borderColor: INSERTION_PANEL_COLORS.gridLine }}>
+        <table className="theme-insertion-table border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 880, maxWidth: 880, width: 880 }}>
           <thead>
             <tr>
               {labelSide === "left" && <th className="theme-insertion-table-header w-[68px]" style={{ background: INSERTION_PANEL_COLORS.header, border: "none", borderBottom: `1px solid ${INSERTION_PANEL_COLORS.gridLine}` }} />}
               {blockLabels.map((label, i) => {
                 const isLastBlock = i === blockLabels.length - 1;
                 return (
-                  <th key={label} className="theme-insertion-table-header h-10 text-center text-[10px] font-black tracking-[0.13em] uppercase" style={{ width: 204, minWidth: 204, maxWidth: 204, background: INSERTION_PANEL_COLORS.header, color: INSERTION_PANEL_COLORS.headerText, borderLeft: i > 0 ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderTopLeftRadius: labelSide === "left" && i === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && isLastBlock ? 12 : undefined }}>
+                  <th key={label} className="theme-insertion-table-header h-10 text-center text-[10px] font-black tracking-[0.13em] uppercase" style={{ width: 116, minWidth: 116, maxWidth: 116, background: INSERTION_PANEL_COLORS.header, color: INSERTION_PANEL_COLORS.headerText, borderLeft: i > 0 ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderRight: labelSide === "left" && isLastBlock ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, borderBottom: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderTopLeftRadius: labelSide === "left" && i === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && isLastBlock ? 12 : undefined }}>
                     {label}
                   </th>
                 );
@@ -6530,7 +6525,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
                 return Math.max(maxCount, rowMaintenanceCount);
               }, 0);
               const rowMaintenanceSlotHeight = rowMaxMaintenanceCount > 0
-                ? (rowMaxMaintenanceCount * 34) + ((rowMaxMaintenanceCount - 1) * 8)
+                ? (rowMaxMaintenanceCount * 20) + ((rowMaxMaintenanceCount - 1) * 6)
                 : 0;
               // The maintenance slot is already reserved evenly for every card in the row.
               // Add it only once; the previous calculation counted extra maintenance height again,
@@ -6554,10 +6549,10 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
                   String(rowEntry.remark ?? rowEntryTid ?? "").trim()
                 );
                 const baseHeight = rowEntry?.isSweeping
-                  ? 408
+                  ? 194
                   : rowEntry
-                    ? (rowHasValidTid ? 322 : rowHasPlainRemark ? 344 : 322)
-                    : 300;
+                    ? (rowHasValidTid ? 126 : rowHasPlainRemark ? 146 : 130)
+                    : 98;
                 return Math.max(maxHeight, baseHeight);
               }, 98);
               const rowCardMinHeight = rowBaseMinHeight + rowMaintenanceSlotHeight;
@@ -17038,7 +17033,7 @@ export default function DepotStablingPage() {
     // Unmatched values such as 555 remain normal remarks and never receive a TID label.
     const tidStr = remark && remark.toString().trim();
     const normalizedRemark = (tidStr || "").toUpperCase();
-    const tidMatch = tidStr ? tidStr.match(/^(?:(?:tid|td|lu)[:\s-]*)?t?(\d{1,3})$/i) : null;
+    const tidMatch = tidStr ? tidStr.match(/^(?:tid[:\s-]*)?t?(\d{1,3})$/i) : null;
     const candidateTid = tidMatch ? parseInt(tidMatch[1], 10) : null;
     const scheduledTime = candidateTid
       ? getTidScheduledTime(candidateTid, depot, { allowFallback: false })
