@@ -947,10 +947,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       return typeSort || trainSort || statusSort;
     });
   const regularRequestGroups = groupRequestsByExactRemark(regularRequests);
-  const splitGroupedAndSingleRequests = (groups = []) => ({
-    grouped: groups.filter((group) => group.items.length > 1),
-    ungrouped: groups.filter((group) => group.items.length === 1),
-  });
   const hasWorkshopRequests = workshopRequests.length > 0;
   const buildWorkshopCopyText = () => {
     const trainList = workshopRequests
@@ -975,60 +971,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   };
 
 
-  const renderSingleRequestCard = (req, options = {}) => {
-    const { section = "pending", showStatus = false, groupKey = "single" } = options;
-    const displayLabel = displayType(req);
-    const cardVisual = getMainStablingCompactCardStyle(displayLabel, displayLabel, requestGroupColors);
-    const chipLabel = getRequestChipTrainLabel(req);
-    const crossOutInfo = getCrossOutInfo(req);
-    const crossedOut = Boolean(crossOutInfo.reason);
-    const singleCardStyle = {
-      ...cardVisual.card,
-    };
-    const crossOutMessage = getCrossOutMessage(req, crossOutInfo);
-    const statusMessage = getAlreadyStatusMessage(crossOutInfo) || crossOutMessage;
-    const statusText = showStatus ? getAlreadyExpandedLocationText(req) : "";
-    const secondaryText = showStatus ? displayLabel : (statusText ? `${displayLabel} • ${statusText}` : displayLabel);
-    const showAlreadyStatusIcon = Boolean(crossedOut && statusMessage);
-    const showStillNotAtStablingIcon = section === "pending" && !showStatus && !showAlreadyStatusIcon;
-    const actionGridClass = showAlreadyStatusIcon || showStillNotAtStablingIcon
-      ? "grid-cols-[46px_minmax(0,1fr)_16px_16px]"
-      : "grid-cols-[46px_minmax(0,1fr)_20px]";
-
-    return (
-      <div
-        key={`${section}-${groupKey}-${req.id || req._tempId || chipLabel}`}
-        className={`theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row relative grid h-[24px] w-full ${actionGridClass} items-center gap-[2px] overflow-visible rounded-md border px-1.5 leading-none text-white transition-[filter,box-shadow] duration-150 hover:brightness-105`}
-        style={{ ...singleCardStyle, "--maintenance-request-accent": cardVisual.accent }}
-      >
-        <span className="truncate text-center text-[12px] font-semibold text-[#f8fbff]">{chipLabel}</span>
-        <span className="min-w-0 truncate pl-2 text-left text-[12px] font-normal uppercase tracking-[0.02em] text-[#f8fbff]">{secondaryText}</span>
-        {showAlreadyStatusIcon ? (
-          <AlreadyStatusIcon message={statusMessage} reason={crossOutInfo.reason} />
-        ) : showStillNotAtStablingIcon ? (
-          <StillNotAtStablingIcon />
-        ) : null}
-        <button
-          onClick={(event) => {
-            event.stopPropagation();
-            onRemove(req.id);
-          }}
-          className="group/delete relative z-30 inline-flex h-[15px] w-[15px] items-center justify-center justify-self-end"
-          aria-label={`Delete ${chipLabel}`}
-          title="Delete request"
-        >
-          <DeleteRequestIcon />
-        </button>
-      </div>
-    );
-  };
-
   const renderGroupedRequestCard = (group, options = {}) => {
     const { section = "pending", showStatus = false } = options;
-    if (group.items.length === 1) {
-      return renderSingleRequestCard(group.items[0], { section, showStatus, groupKey: group.key });
-    }
-
     const cardVisual = getMainStablingCompactCardStyle(group.label, group.label, requestGroupColors);
 
     return (
@@ -1091,25 +1035,11 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     );
   };
 
-  const renderGroupedAndUngroupedCards = (groups, options = {}) => {
-    const { grouped, ungrouped } = splitGroupedAndSingleRequests(groups);
-
-    return (
-      <>
-        {grouped.map((group) => renderGroupedRequestCard(group, options))}
-
-        {grouped.length > 0 && ungrouped.length > 0 ? (
-          <div className="flex items-center gap-2 py-1">
-            <div className="h-px flex-1 bg-[#2b4f6b]/80" />
-            <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.24em] text-[#6f9fbd]">Ungroup</span>
-            <div className="h-px flex-1 bg-[#2b4f6b]/80" />
-          </div>
-        ) : null}
-
-        {ungrouped.map((group) => renderGroupedRequestCard(group, options))}
-      </>
-    );
-  };
+  const renderRequestGroupCards = (groups, options = {}) => (
+    <>
+      {groups.map((group) => renderGroupedRequestCard(group, options))}
+    </>
+  );
 
   const inputCls = "w-full border border-[#1e4060] rounded-full px-3 py-[5px] text-xs outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] bg-[#091828] text-[#c8d8ea] transition-all placeholder:text-[#2b4f6b]";
   const labelCls = "block text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-widest mb-0.5";
@@ -1317,7 +1247,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           </div>
         ) : (
           <div className="grid gap-[5px] p-2.5">
-            {renderGroupedAndUngroupedCards(regularRequestGroups, { section: "pending" })}
+            {renderRequestGroupCards(regularRequestGroups, { section: "pending" })}
           </div>
         )}
       </div>
