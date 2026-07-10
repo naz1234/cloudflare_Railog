@@ -54,7 +54,10 @@
   .already-status-trigger:focus-within .already-status-bubble,
   .still-not-stabling-trigger:hover .still-not-stabling-bubble,
   .still-not-stabling-trigger:focus .still-not-stabling-bubble,
-  .still-not-stabling-trigger:focus-within .still-not-stabling-bubble {
+  .still-not-stabling-trigger:focus-within .still-not-stabling-bubble,
+  .delete-request-trigger:hover .delete-request-bubble,
+  .delete-request-trigger:focus .delete-request-bubble,
+  .delete-request-trigger:focus-within .delete-request-bubble {
     opacity: 1;
     transform: translateY(-50%) scale(1);
   }

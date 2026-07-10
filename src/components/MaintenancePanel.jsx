@@ -111,6 +111,26 @@ function DeleteRequestIcon() {
   );
 }
 
+function DeleteRequestButton({ label, onClick }) {
+  const message = "delete request";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="delete-request-trigger group/delete relative z-40 inline-flex h-[15px] w-[15px] items-center justify-center justify-self-end"
+      aria-label={label ? `Delete request ${label}` : "Delete request"}
+      title={message}
+    >
+      <DeleteRequestIcon />
+      <span className="delete-request-bubble pointer-events-none absolute right-[25px] top-1/2 z-[90] -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150">
+        <span className="absolute -right-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-r border-t border-slate-200 bg-white" />
+        <span className="relative z-10">{message}</span>
+      </span>
+    </button>
+  );
+}
+
 
 function StillNotAtStablingIcon({ message = "Still not in WD" }) {
   return (
@@ -1016,17 +1036,13 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   ) : showStillNotAtStablingIcon ? (
                     <StillNotAtStablingIcon />
                   ) : null}
-                  <button
+                  <DeleteRequestButton
+                    label={chipLabel}
                     onClick={(event) => {
                       event.stopPropagation();
                       onRemove(req.id);
                     }}
-                    className="group/delete relative z-30 inline-flex h-[15px] w-[15px] items-center justify-center justify-self-end"
-                    aria-label={`Delete ${chipLabel}`}
-                    title="Delete request"
-                  >
-                    <DeleteRequestIcon />
-                  </button>
+                  />
                 </div>
               );
             })}
@@ -1216,14 +1232,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                         {crossedOut ? (
                           <AlreadyStatusIcon message={getAlreadyStatusMessage(crossOutInfo) || crossOutMessage} reason={crossOutInfo.reason} />
                         ) : null}
-                        <button
+                        <DeleteRequestButton
+                          label={req.trainId}
                           onClick={() => onRemove(req.id)}
-                          className="group/delete relative z-30 inline-flex h-[15px] w-[15px] items-center justify-center justify-self-end"
-                          aria-label={`Delete ${req.trainId}`}
-                          title="Delete request"
-                        >
-                          <DeleteRequestIcon />
-                        </button>
+                        />
                       </div>
                     </td>
                   </tr>
