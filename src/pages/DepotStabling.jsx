@@ -24514,6 +24514,9 @@ function StablingSection({
         .filter(Boolean);
       const roadNum = road.replace(/^[A-Z]+-ST0?/, "");
       const label = `STABLING ${roadNum.padStart(2, "0")}`;
+      if (depot === "west") {
+        return trains.length ? `${label} : ${trains.join(", ")}` : `${label} :`;
+      }
       return trains.length ? `${trains.join(", ")} : ${label}` : `${label}:`;
     });
     navigator.clipboard.writeText(lines.join("\n"));
