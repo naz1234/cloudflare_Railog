@@ -6594,6 +6594,46 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
 
 
 
+function RemovalSummaryTooltip({ message, align = "center" }) {
+  if (!message) return null;
+
+  const positionClass = align === "left"
+    ? "left-0"
+    : align === "right"
+      ? "right-0"
+      : "left-1/2 -translate-x-1/2";
+  const arrowClass = align === "left"
+    ? "left-4"
+    : align === "right"
+      ? "right-4"
+      : "left-1/2 -translate-x-1/2";
+
+  return (
+    <span className={`pointer-events-none absolute top-[calc(100%+6px)] z-[140] ${positionClass}`}>
+      <span
+        role="tooltip"
+        className="removal-summary-tooltip-bubble relative block w-max max-w-[280px] origin-top whitespace-normal rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left text-[11px] font-semibold leading-snug text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150"
+      >
+        <span className={`absolute -top-1 h-2 w-2 rotate-45 border-l border-t border-slate-200 bg-white ${arrowClass}`} />
+        <span className="relative z-10">{message}</span>
+      </span>
+    </span>
+  );
+}
+
+function getRemovalPresetTooltip(label = "") {
+  const tooltipByLabel = {
+    "9am": "Show 9am Weekday removal TID",
+    "7pm": "Show 7pm Weekday removal TID",
+    "12am": "Show 12am Weekday removal TID",
+    Fri: "Show Friday End of Service removal TID",
+    Sat: "Show Saturday End of Service removal TID",
+    PH: "Show Public Holiday End of Service removal TID",
+  };
+
+  return tooltipByLabel[label] || `Show ${label} removal TID`;
+}
+
 function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablingData = {}, requests = [], westData = {}, eastData = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
   const [trainRemState, setTrainRemState] = useState(() => loadTrainRemState());
   const [trainRemLoaded, setTrainRemLoaded] = useState(false);
@@ -7509,12 +7549,17 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     const safeDepot = depot === "west" ? "west" : "east";
     const status = safeDepot === "west" ? westDepotCopyStatus : eastDepotCopyStatus;
     const depotLabel = safeDepot === "west" ? "West Depot" : "East Depot";
+    const copyCount = safeDepot === "west" ? westDepotCopyCount : eastDepotCopyCount;
+    const tooltipMessage = copyCount > 0
+      ? `Copy ${copyCount} ${depotLabel} trains`
+      : `No ${depotLabel} trains to copy`;
 
     return (
       <button
         type="button"
         onClick={() => handleCopyDepotTrainList(safeDepot)}
-        className={`inline-flex h-5 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5 ${extraClassName}`}
+        className={`removal-summary-tooltip-trigger relative z-50 inline-flex h-5 items-center gap-1 overflow-visible rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5 ${extraClassName}`}
+        aria-label={tooltipMessage}
         style={{
           background: status === "copied"
             ? "rgba(34,197,94,0.18)"
@@ -7533,12 +7578,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
             ? "0 0 12px rgba(34,197,94,0.16)"
             : "none",
         }}
-        title={`Copy all ${depotLabel} trains from removal list and current ${depotLabel} stabling. Duplicates are removed automatically.`}
       >
         {status === "copied"
           ? <ClipboardCheck size={11} />
           : <Copy size={11} />}
         {getDepotCopyLabel(safeDepot)}
+        <RemovalSummaryTooltip message={tooltipMessage} align="right" />
       </button>
     );
   };
@@ -7618,8 +7663,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       : "";
 
     return (
-      <div className="theme-train-rem-depot-card rounded-xl border border-[#2b4f6b] bg-[#071828] overflow-hidden shadow-md">
-        <div className="theme-train-rem-header px-2 py-2 border-b border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+      <div className="theme-train-rem-depot-card relative overflow-visible rounded-xl border border-[#2b4f6b] bg-[#071828] shadow-md">
+        <div className="theme-train-rem-header relative z-30 rounded-t-xl border-b border-[#1a3a56] px-2 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
           <div className="flex items-start justify-between gap-2">
             <div>
               {depot !== "west" && <div className="text-[10px] font-normal text-white uppercase tracking-widest">{title}</div>}
@@ -7629,58 +7674,65 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               <button
                 type="button"
                 onClick={(event) => handleTrainRemPdfDownload(depot, event)}
-                className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5"
+                className="removal-summary-tooltip-trigger relative z-50 inline-flex h-6 items-center gap-1 overflow-visible rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5"
                 style={{
                   background: pdfActive ? "rgba(34,197,94,0.18)" : "rgba(6,212,232,0.14)",
                   borderColor: pdfActive ? "rgba(34,197,94,0.48)" : "rgba(34,211,238,0.55)",
                   color: pdfActive ? "#86efac" : "#b6f3ff",
                   boxShadow: pdfActive ? "0 0 12px rgba(34,197,94,0.16)" : "0 0 12px rgba(34,211,238,0.16)",
                 }}
-                title="Download one-page PDF: West and East stacked left, Requested Train right"
+                aria-label="Download removal summary as PDF"
               >
                 <FileText size={12} />
                 {pdfActive ? "Done" : "PDF"}
+                <RemovalSummaryTooltip message="Download removal summary as PDF" align="right" />
               </button>
 
               <button
                 type="button"
                 onClick={(event) => handleTrainRemPngDownload(depot, event)}
-                className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5"
+                className="removal-summary-tooltip-trigger relative z-50 inline-flex h-6 items-center gap-1 overflow-visible rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5"
                 style={{
                   background: pngActive ? "rgba(34,197,94,0.18)" : "rgba(14,165,233,0.14)",
                   borderColor: pngActive ? "rgba(34,197,94,0.48)" : "rgba(56,189,248,0.55)",
                   color: pngActive ? "#86efac" : "#bae6fd",
                   boxShadow: pngActive ? "0 0 12px rgba(34,197,94,0.16)" : "0 0 12px rgba(56,189,248,0.14)",
                 }}
-                title="Download the same removal summary layout as a PNG picture"
+                aria-label="Download removal summary as PNG"
               >
                 <ImageIcon size={12} />
                 {pngActive ? "Done" : "PNG"}
+                <RemovalSummaryTooltip message="Download removal summary as PNG" align="right" />
               </button>
 
               <button
                 type="button"
                 onClick={handleTrainRemUndo}
                 disabled={trainRemUndoCount === 0}
-                className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0"
+                className="removal-summary-tooltip-trigger relative z-50 inline-flex h-6 items-center gap-1 overflow-visible rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0"
                 style={{
                   background: "rgba(15,45,74,0.75)",
                   borderColor: "rgba(74,138,181,0.55)",
                   color: "#9ccbea",
                 }}
-                title={trainRemUndoCount > 0 ? "Undo last Train Rem change" : "No Train Rem changes to undo"}
+                aria-label={trainRemUndoCount > 0 ? "Undo last change" : "Nothing to undo"}
               >
                 <Undo2 size={12} />
                 UND
+                <RemovalSummaryTooltip
+                  message={trainRemUndoCount > 0 ? "Undo last change" : "Nothing to undo"}
+                  align="right"
+                />
               </button>
 
               <button
                 onClick={() => clearDepotTrainRem(depot)}
-                className="inline-flex h-6 items-center gap-1 rounded-md border border-[#2b4f6b] bg-[#10263b] px-1.5 text-[10px] font-normal text-[#7eb8e0] transition-colors hover:border-red-600/60 hover:bg-red-950/30 hover:text-red-300"
-                title={`Clear ${title}`}
+                className="removal-summary-tooltip-trigger relative z-50 inline-flex h-6 items-center gap-1 overflow-visible rounded-md border border-[#2b4f6b] bg-[#10263b] px-1.5 text-[10px] font-normal text-[#7eb8e0] transition-colors hover:border-red-600/60 hover:bg-red-950/30 hover:text-red-300"
+                aria-label="Clear removal summary"
               >
                 <Trash2 size={12} />
                 CLR
+                <RemovalSummaryTooltip message="Clear removal summary" align="right" />
               </button>
             </div>
           </div>
@@ -7699,15 +7751,18 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     return (
                       <button
                         key={preset.label}
+                        type="button"
                         onClick={() => applyPreset(depot, preset.label)}
-                        className={`h-5 rounded-md text-[11px] font-normal border transition-all ${
+                        className={`removal-summary-tooltip-trigger relative z-50 h-5 overflow-visible rounded-md border text-[11px] font-normal transition-all ${
                           active
                             ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
                             : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
                         }`}
                         style={{ width: "34px", minWidth: "34px" }}
+                        aria-label={getRemovalPresetTooltip(preset.label)}
                       >
                         {preset.label}
+                        <RemovalSummaryTooltip message={getRemovalPresetTooltip(preset.label)} align="left" />
                       </button>
                     );
                   })}
@@ -7719,15 +7774,18 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     return (
                       <button
                         key={preset.label}
+                        type="button"
                         onClick={() => applyPreset(depot, preset.label)}
-                        className={`h-5 rounded-md text-[11px] font-normal border transition-all ${
+                        className={`removal-summary-tooltip-trigger relative z-50 h-5 overflow-visible rounded-md border text-[11px] font-normal transition-all ${
                           active
                             ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
                             : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
                         }`}
                         style={{ width: "34px", minWidth: "34px" }}
+                        aria-label={getRemovalPresetTooltip(preset.label)}
                       >
                         {preset.label}
+                        <RemovalSummaryTooltip message={getRemovalPresetTooltip(preset.label)} align={preset.label === "PH" ? "right" : "left"} />
                       </button>
                     );
                   })}
@@ -7737,30 +7795,39 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               {canSortByRemovalColor && (
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
                   <div className="inline-flex h-5 items-center rounded-md border border-[#2b4f6b] bg-[#081c2d] p-0.5">
-                    <span className="px-1 text-[10px] font-normal tracking-wide text-[#5f8fb2]">SORT by :</span>
+                    <span
+                      className="removal-summary-tooltip-trigger relative z-50 px-1 text-[10px] font-normal tracking-wide text-[#5f8fb2]"
+                      tabIndex={0}
+                      aria-label="Choose train sorting method"
+                    >
+                      SORT by :
+                      <RemovalSummaryTooltip message="Choose train sorting method" align="right" />
+                    </span>
                     <button
                       type="button"
                       onClick={() => updateTrainRemSortMode(depot, "tid")}
-                      className={`h-4 rounded px-1.5 text-[10px] font-normal transition-colors ${
+                      className={`removal-summary-tooltip-trigger relative z-50 h-4 overflow-visible rounded px-1.5 text-[10px] font-normal transition-colors ${
                         activeSortMode === "tid"
                           ? "bg-[#1d4ed8] text-white"
                           : "text-[#7eb8e0] hover:bg-[#102f4a] hover:text-white"
                       }`}
-                      title="Sort by TID (current order)"
+                      aria-label="Sort trains by Train ID"
                     >
                       TID
+                      <RemovalSummaryTooltip message="Sort trains by Train ID" align="right" />
                     </button>
                     <button
                       type="button"
                       onClick={() => updateTrainRemSortMode(depot, "color")}
-                      className={`h-4 rounded px-1.5 text-[10px] font-normal transition-colors ${
+                      className={`removal-summary-tooltip-trigger relative z-50 h-4 overflow-visible rounded px-1.5 text-[10px] font-normal transition-colors ${
                         activeSortMode === "color"
                           ? "bg-[#1d4ed8] text-white"
                           : "text-[#7eb8e0] hover:bg-[#102f4a] hover:text-white"
                       }`}
-                      title="Sort by West Rem, East Rem, then Off Peak location"
+                      aria-label="Sort trains by location"
                     >
                       Location
+                      <RemovalSummaryTooltip message="Sort trains by location" align="right" />
                     </button>
                   </div>
                   {depot === "west" && (
@@ -7776,7 +7843,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
           </div>
         </div>
 
-        <div className="overflow-hidden">
+        <div className="overflow-hidden rounded-b-xl">
           <table className="theme-train-rem-table w-full border-separate border-spacing-0 table-fixed text-[12px]">
             <thead>
               <tr>

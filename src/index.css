@@ -61,6 +61,13 @@
     opacity: 1;
     transform: translateY(-50%) scale(1);
   }
+
+  .removal-summary-tooltip-trigger:hover .removal-summary-tooltip-bubble,
+  .removal-summary-tooltip-trigger:focus .removal-summary-tooltip-bubble,
+  .removal-summary-tooltip-trigger:focus-within .removal-summary-tooltip-bubble {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* L3 DC Template light theme. Dark mode remains the original/default design. */
