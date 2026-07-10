@@ -6594,7 +6594,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
 
 
 
-function RemovalSummaryTooltip({ message, align = "center" }) {
+function RemovalSummaryTooltip({ message, align = "center", placement = "bottom" }) {
   if (!message) return null;
 
   const positionClass = align === "left"
@@ -6607,14 +6607,22 @@ function RemovalSummaryTooltip({ message, align = "center" }) {
     : align === "right"
       ? "right-4"
       : "left-1/2 -translate-x-1/2";
+  const isTopPlacement = placement === "top";
+  const verticalClass = isTopPlacement
+    ? "bottom-[calc(100%+6px)]"
+    : "top-[calc(100%+6px)]";
+  const bubbleOriginClass = isTopPlacement ? "origin-bottom" : "origin-top";
+  const arrowPositionClass = isTopPlacement
+    ? "-bottom-1 border-b border-r"
+    : "-top-1 border-l border-t";
 
   return (
-    <span className={`pointer-events-none absolute top-[calc(100%+6px)] z-[140] ${positionClass}`}>
+    <span className={`pointer-events-none absolute z-[140] ${verticalClass} ${positionClass}`}>
       <span
         role="tooltip"
-        className="removal-summary-tooltip-bubble relative block w-max max-w-[280px] origin-top whitespace-normal rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left text-[11px] font-semibold leading-snug text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150"
+        className={`removal-summary-tooltip-bubble relative block w-max max-w-[280px] ${bubbleOriginClass} whitespace-normal rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left text-[11px] font-semibold leading-snug text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150`}
       >
-        <span className={`absolute -top-1 h-2 w-2 rotate-45 border-l border-t border-slate-200 bg-white ${arrowClass}`} />
+        <span className={`absolute h-2 w-2 rotate-45 border-slate-200 bg-white ${arrowPositionClass} ${arrowClass}`} />
         <span className="relative z-10">{message}</span>
       </span>
     </span>
@@ -7762,7 +7770,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                         aria-label={getRemovalPresetTooltip(preset.label)}
                       >
                         {preset.label}
-                        <RemovalSummaryTooltip message={getRemovalPresetTooltip(preset.label)} align="left" />
+                        <RemovalSummaryTooltip message={getRemovalPresetTooltip(preset.label)} align="left" placement="top" />
                       </button>
                     );
                   })}
@@ -7801,7 +7809,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       aria-label="Choose train sorting method"
                     >
                       SORT by :
-                      <RemovalSummaryTooltip message="Choose train sorting method" align="right" />
+                      <RemovalSummaryTooltip message="Choose train sorting method" align="right" placement="top" />
                     </span>
                     <button
                       type="button"
@@ -7814,7 +7822,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       aria-label="Sort trains by Train ID"
                     >
                       TID
-                      <RemovalSummaryTooltip message="Sort trains by Train ID" align="right" />
+                      <RemovalSummaryTooltip message="Sort trains by Train ID" align="right" placement="top" />
                     </button>
                     <button
                       type="button"
@@ -7827,7 +7835,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       aria-label="Sort trains by location"
                     >
                       Location
-                      <RemovalSummaryTooltip message="Sort trains by location" align="right" />
+                      <RemovalSummaryTooltip message="Sort trains by location" align="right" placement="top" />
                     </button>
                   </div>
                   {depot === "west" && (
