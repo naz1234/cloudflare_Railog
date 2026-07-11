@@ -404,10 +404,12 @@ function ClearDepotButton({ depotLabel, disabled, onClear }) {
   );
 }
 
-function SectionTextBlock({ title, text, emptyText }) {
+function SectionTextBlock({ title, text, emptyText, variant = "pst" }) {
+  const sectionClassName = `pst-clean-section pst-clean-section-${variant}`;
+
   if (!text) {
     return (
-      <div className="pst-clean-empty-section">
+      <div className={`pst-clean-empty-section ${sectionClassName}`}>
         <div className="pst-clean-section-title">{title}</div>
         <div className="pst-clean-empty-text">{emptyText}</div>
       </div>
@@ -415,7 +417,7 @@ function SectionTextBlock({ title, text, emptyText }) {
   }
 
   return (
-    <div className="pst-clean-text-section">
+    <div className={`pst-clean-text-section ${sectionClassName}`}>
       <div className="pst-clean-section-title">{title}</div>
       <pre className="pst-clean-pre">{text}</pre>
     </div>
@@ -460,8 +462,8 @@ function DepotLogCard({ depotLabel, lines = [], onClearDepot, logStyle = ELOG_1,
       <div className="pst-clean-card-body">
         {hasEntries ? (
           <>
-            <SectionTextBlock title="PST" text={pstText} emptyText="No PST entries." />
-            <SectionTextBlock title="Train Prep" text={prepText} emptyText="No Train Prep entries." />
+            <SectionTextBlock title="PST" text={pstText} emptyText="No PST entries." variant="pst" />
+            <SectionTextBlock title="Train Prep" text={prepText} emptyText="No Train Prep entries." variant="prep" />
           </>
         ) : (
           <div className="pst-clean-empty-card">
@@ -827,13 +829,37 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
           font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         }
 
+        .pst-clean-section {
+          padding: 8px 9px;
+          border: 1px solid transparent;
+          border-radius: 8px;
+        }
+
+        .pst-clean-section-pst {
+          border-color: rgba(52,211,153,0.28);
+          background: linear-gradient(135deg, rgba(6,78,59,0.40) 0%, rgba(6,19,33,0.96) 100%);
+          box-shadow: inset 3px 0 0 rgba(52,211,153,0.58);
+        }
+
+        .pst-clean-section-prep {
+          border-color: rgba(96,165,250,0.30);
+          background: linear-gradient(135deg, rgba(30,64,175,0.36) 0%, rgba(6,19,33,0.96) 100%);
+          box-shadow: inset 3px 0 0 rgba(96,165,250,0.60);
+        }
+
+        .pst-clean-section-pst .pst-clean-section-title {
+          color: #6ee7b7;
+        }
+
+        .pst-clean-section-prep .pst-clean-section-title {
+          color: #93c5fd;
+        }
+
         .pst-clean-text-section + .pst-clean-text-section,
         .pst-clean-text-section + .pst-clean-empty-section,
         .pst-clean-empty-section + .pst-clean-text-section,
         .pst-clean-empty-section + .pst-clean-empty-section {
-          margin-top: 10px;
-          padding-top: 8px;
-          border-top: 1px solid rgba(43,79,107,0.66);
+          margin-top: 8px;
         }
 
         .pst-clean-section-title {
