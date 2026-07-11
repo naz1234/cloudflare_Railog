@@ -345,7 +345,44 @@ function ClearIcon() {
   );
 }
 
-function CopyButton({ text, label, disabled, variant = "pst" }) {
+const PST_ACTION_TOOLTIP_ACCENTS = {
+  pst: "#34d399",
+  prep: "#60a5fa",
+  clear: "#f87171",
+  elog: "#22d3ee",
+};
+
+function PSTActionTooltip({ message, variant = "elog", placement = "top" }) {
+  if (!message) return null;
+
+  const accentColor = PST_ACTION_TOOLTIP_ACCENTS[variant] || PST_ACTION_TOOLTIP_ACCENTS.elog;
+  const isTopPlacement = placement === "top";
+  const verticalClass = isTopPlacement
+    ? "bottom-[calc(100%+6px)]"
+    : "top-[calc(100%+6px)]";
+  const originClass = isTopPlacement ? "origin-bottom" : "origin-top";
+  const arrowClass = isTopPlacement
+    ? "-bottom-1 border-b border-r"
+    : "-top-1 border-l border-t";
+
+  return (
+    <span className={`pointer-events-none absolute left-1/2 z-[160] -translate-x-1/2 ${verticalClass}`}>
+      <span
+        role="tooltip"
+        className={`pst-action-tooltip-bubble relative block w-max max-w-[280px] ${originClass} whitespace-normal rounded-lg border bg-white px-2.5 py-1.5 text-left text-[11px] font-semibold leading-snug text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150`}
+        style={{ borderColor: accentColor }}
+      >
+        <span
+          className={`absolute left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-white ${arrowClass}`}
+          style={{ borderColor: accentColor }}
+        />
+        <span className="relative z-10">{message}</span>
+      </span>
+    </span>
+  );
+}
+
+function CopyButton({ text, label, disabled, variant = "pst", tooltip }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -360,17 +397,22 @@ function CopyButton({ text, label, disabled, variant = "pst" }) {
     }
   };
 
+  const tooltipMessage = tooltip || label;
+
   return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      disabled={disabled}
-      className={`pst-clean-action pst-clean-action-${variant}${copied ? " pst-clean-action-copied" : ""}`}
-      title={`Copy ${label}`}
-    >
-      <CopyIcon copied={copied} />
-      {copied ? "Copied" : label}
-    </button>
+    <span className="pst-action-tooltip-trigger relative inline-flex overflow-visible">
+      <button
+        type="button"
+        onClick={handleCopy}
+        disabled={disabled}
+        className={`pst-clean-action pst-clean-action-${variant}${copied ? " pst-clean-action-copied" : ""}`}
+        aria-label={tooltipMessage}
+      >
+        <CopyIcon copied={copied} />
+        {copied ? "Copied" : label}
+      </button>
+      <PSTActionTooltip message={tooltipMessage} variant={variant} />
+    </span>
   );
 }
 
@@ -390,17 +432,22 @@ function ClearDepotButton({ depotLabel, disabled, onClear }) {
     setConfirming(false);
   };
 
+  const tooltipMessage = `Clear all ${depotLabel} Depot PST and Train Prep logs`;
+
   return (
-    <button
-      type="button"
-      onClick={handleClear}
-      disabled={disabled}
-      className={`pst-clean-action pst-clean-action-clear${confirming ? " pst-clean-action-danger" : ""}`}
-      title={`Clear ${depotLabel} Depot log`}
-    >
-      <ClearIcon />
-      {confirming ? "Confirm" : "Clear"}
-    </button>
+    <span className="pst-action-tooltip-trigger relative inline-flex overflow-visible">
+      <button
+        type="button"
+        onClick={handleClear}
+        disabled={disabled}
+        className={`pst-clean-action pst-clean-action-clear${confirming ? " pst-clean-action-danger" : ""}`}
+        aria-label={tooltipMessage}
+      >
+        <ClearIcon />
+        {confirming ? "Confirm" : "Clear"}
+      </button>
+      <PSTActionTooltip message={tooltipMessage} variant="clear" />
+    </span>
   );
 }
 
@@ -453,8 +500,8 @@ function DepotLogCard({ depotLabel, lines = [], onClearDepot, logStyle = ELOG_1,
         </div>
 
         <div className="pst-clean-actions">
-          <CopyButton text={pstText} label="Copy PST" disabled={!pstLines.length} variant="pst" />
-          <CopyButton text={prepText} label="Copy Train Prep" disabled={!prepLines.length} variant="prep" />
+          <CopyButton text={pstText} label="Copy PST" disabled={!pstLines.length} variant="pst" tooltip={`Copy ${depotLabel} Depot PST log`} />
+          <CopyButton text={prepText} label="Copy Train Prep" disabled={!prepLines.length} variant="prep" tooltip={`Copy ${depotLabel} Depot Train Prep log`} />
           <ClearDepotButton depotLabel={depotLabel} disabled={!hasEntries} onClear={onClearDepot} />
         </div>
       </div>
@@ -479,16 +526,20 @@ function DepotLogCard({ depotLabel, lines = [], onClearDepot, logStyle = ELOG_1,
   );
 }
 
-function ELogStyleButton({ active, children, onClick }) {
+function ELogStyleButton({ active, children, onClick, tooltip }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={active ? "pst-elog-style-button pst-elog-style-button-active" : "pst-elog-style-button"}
-    >
-      {children}
-    </button>
+    <span className="pst-action-tooltip-trigger relative inline-flex overflow-visible">
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={active}
+        aria-label={tooltip}
+        className={active ? "pst-elog-style-button pst-elog-style-button-active" : "pst-elog-style-button"}
+      >
+        {children}
+      </button>
+      <PSTActionTooltip message={tooltip} variant="elog" placement="bottom" />
+    </span>
   );
 }
 
@@ -681,10 +732,17 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
         }
 
         .pst-clean-card {
-          overflow: hidden;
+          position: relative;
+          z-index: 1;
+          overflow: visible;
           border: 1px solid #1a3a56;
           border-radius: 10px;
           background: #061827;
+        }
+
+        .pst-clean-card:hover,
+        .pst-clean-card:focus-within {
+          z-index: 40;
         }
 
         .pst-clean-card-header {
@@ -695,6 +753,7 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
           gap: 7px;
           padding: 6px 10px;
           background: linear-gradient(90deg, #0d4d75 0%, #0b5f88 55%, #0d4d75 100%);
+          border-radius: 9px 9px 0 0;
         }
 
         .pst-elog2-card {
@@ -735,6 +794,23 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
           justify-content: flex-start;
           flex-wrap: wrap;
           gap: 4px;
+        }
+
+        .pst-action-tooltip-trigger {
+          position: relative;
+          z-index: 30;
+          display: inline-flex;
+          overflow: visible;
+        }
+
+        .pst-action-tooltip-bubble {
+          max-width: min(280px, calc(100vw - 32px));
+        }
+
+        .pst-action-tooltip-trigger:hover .pst-action-tooltip-bubble,
+        .pst-action-tooltip-trigger:focus-within .pst-action-tooltip-bubble {
+          opacity: 1;
+          transform: scale(1);
         }
 
         .pst-clean-action {
@@ -826,6 +902,7 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
           padding: 8px 10px 9px;
           border-top: 1px solid #1a3a56;
           background: #061321;
+          border-radius: 0 0 9px 9px;
           font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         }
 
@@ -917,10 +994,10 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
           <div className="pst-clean-heading-line">
             <div className="pst-clean-title">PST / Train Prep Log Output</div>
             <div className="pst-elog-style-picker" aria-label="PST log style">
-              <ELogStyleButton active={logStyle === ELOG_1} onClick={() => setLogStyle(ELOG_1)}>
+              <ELogStyleButton active={logStyle === ELOG_1} onClick={() => setLogStyle(ELOG_1)} tooltip="Show grouped PST and Train Prep log format">
                 ELOG-1
               </ELogStyleButton>
-              <ELogStyleButton active={logStyle === ELOG_2} onClick={() => setLogStyle(ELOG_2)}>
+              <ELogStyleButton active={logStyle === ELOG_2} onClick={() => setLogStyle(ELOG_2)} tooltip="Show PST log grouped by stabling location">
                 ELOG-2
               </ELogStyleButton>
             </div>
