@@ -4485,30 +4485,51 @@ function PSTStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2,
         </div>
 
         <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-2">
-          <InsertionPgHeaderControls activePg={activePg} onPgChange={onPgChange} onRefreshPg2={onRefreshPg2} />
+          <InsertionPgHeaderControls
+            activePg={activePg}
+            onPgChange={onPgChange}
+            onRefreshPg2={onRefreshPg2}
+            tooltips={{
+              pg1: "Show PG1 default stabling",
+              pg2: "Show PG2 editable stabling",
+              refresh: "Copy latest PG1 stabling to PG2 and reset its PG2.",
+            }}
+          />
           {hasClearControls && (
             <div className="flex flex-shrink-0 items-center gap-2">
             {onClearPST && (
-              <button
-                type="button"
-                onClick={() => handleSectionClear("pst")}
-                disabled={pstClearCount === 0}
-                className={`theme-pst-clear-button is-pst ${confirmClearAction === "pst" ? "is-confirming" : ""} ${clearButtonBase} ${confirmClearAction === "pst" ? "border-red-500 bg-red-600 text-white" : "border-emerald-500/50 bg-emerald-950/35 text-emerald-300 hover:border-emerald-400 hover:bg-emerald-900/50"}`}
-                title={`Clear ${sectionDepotLabel} PST status only`}
-              >
-                {confirmClearAction === "pst" ? "Confirm PST?" : "Clear PST"}
-              </button>
+              <span className="removal-summary-tooltip-trigger relative z-50 inline-flex overflow-visible">
+                <button
+                  type="button"
+                  onClick={() => handleSectionClear("pst")}
+                  disabled={pstClearCount === 0}
+                  aria-label={`Clear ${sectionDepotLabel} PST status and PST logs only`}
+                  className={`theme-pst-clear-button is-pst ${confirmClearAction === "pst" ? "is-confirming" : ""} ${clearButtonBase} ${confirmClearAction === "pst" ? "border-red-500 bg-red-600 text-white" : "border-emerald-500/50 bg-emerald-950/35 text-emerald-300 hover:border-emerald-400 hover:bg-emerald-900/50"}`}
+                >
+                  {confirmClearAction === "pst" ? "Confirm PST?" : "Clear PST"}
+                </button>
+                <RemovalSummaryTooltip
+                  message={`Clear ${sectionDepotLabel} PST status and PST logs only`}
+                  placement="top"
+                />
+              </span>
             )}
             {onClearPrep && (
-              <button
-                type="button"
-                onClick={() => handleSectionClear("prep")}
-                disabled={prepClearCount === 0}
-                className={`theme-pst-clear-button is-prep ${confirmClearAction === "prep" ? "is-confirming" : ""} ${clearButtonBase} ${confirmClearAction === "prep" ? "border-red-500 bg-red-600 text-white" : "border-blue-500/50 bg-blue-950/35 text-blue-300 hover:border-blue-400 hover:bg-blue-900/50"}`}
-                title={`Clear ${sectionDepotLabel} Train Prep status only`}
-              >
-                {confirmClearAction === "prep" ? "Confirm Prep?" : "Clear Train Prep"}
-              </button>
+              <span className="removal-summary-tooltip-trigger relative z-50 inline-flex overflow-visible">
+                <button
+                  type="button"
+                  onClick={() => handleSectionClear("prep")}
+                  disabled={prepClearCount === 0}
+                  aria-label={`Clear ${sectionDepotLabel} Train Prep status, TA names, and Train Prep logs only`}
+                  className={`theme-pst-clear-button is-prep ${confirmClearAction === "prep" ? "is-confirming" : ""} ${clearButtonBase} ${confirmClearAction === "prep" ? "border-red-500 bg-red-600 text-white" : "border-blue-500/50 bg-blue-950/35 text-blue-300 hover:border-blue-400 hover:bg-blue-900/50"}`}
+                >
+                  {confirmClearAction === "prep" ? "Confirm Prep?" : "Clear Train Prep"}
+                </button>
+                <RemovalSummaryTooltip
+                  message={`Clear ${sectionDepotLabel} Train Prep status, TA names, and Train Prep logs only`}
+                  placement="top"
+                />
+              </span>
             )}
             {isPg2Active && onClearPg2Trains && (
               <button
@@ -5124,41 +5145,63 @@ function InsertionSectionTitle({ title, leftAction = null, action = null }) {
   );
 }
 
-function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2 }) {
+function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2, tooltips = null }) {
+  const defaultRefreshTooltip = "Refresh only this depot's PG2 from its current PG1 stabling";
+  const refreshTooltipMessage = tooltips?.refresh || "";
+
   return (
     <div className="flex flex-wrap items-center justify-start gap-2">
       <div className="theme-insertion-pg-switch inline-flex w-fit items-center rounded-full border border-[#2b4f6b] bg-[#071828] p-1 text-[10px] font-normal shadow-inner shadow-black/20">
         {(["pg1", "pg2"]).map((pg) => {
           const selected = normalizeInsertionPg(activePg) === pg;
+          const defaultTooltip = pg === "pg1" ? "PG1 default stabling" : "PG2 editable stabling";
+          const tooltipMessage = tooltips?.[pg] || "";
+
           return (
-            <button
+            <span
               key={pg}
-              type="button"
-              onClick={() => onPgChange?.(pg)}
-              className={`theme-insertion-pg-button ${selected ? "is-selected" : ""} rounded-full px-3 py-1 transition-all`}
-              style={selected ? MAIN_STABLING_BUTTON_PRIMARY : { color: "#7eb8e0", background: "transparent" }}
-              title={pg === "pg1" ? "PG1 default stabling" : "PG2 editable stabling"}
+              className={`${tooltipMessage ? "removal-summary-tooltip-trigger " : ""}relative z-50 inline-flex overflow-visible`}
             >
-              {pg.toUpperCase()}
-            </button>
+              <button
+                type="button"
+                onClick={() => onPgChange?.(pg)}
+                aria-label={tooltipMessage || defaultTooltip}
+                title={tooltipMessage ? undefined : defaultTooltip}
+                className={`theme-insertion-pg-button ${selected ? "is-selected" : ""} rounded-full px-3 py-1 transition-all`}
+                style={selected ? MAIN_STABLING_BUTTON_PRIMARY : { color: "#7eb8e0", background: "transparent" }}
+              >
+                {pg.toUpperCase()}
+              </button>
+              {tooltipMessage && (
+                <RemovalSummaryTooltip message={tooltipMessage} placement="top" />
+              )}
+            </span>
           );
         })}
       </div>
-      <button
-        type="button"
-        onClick={onRefreshPg2}
-        className="theme-insertion-refresh-button group flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-normal transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
-        style={MAIN_STABLING_BUTTON_BLUE}
-        title="Refresh only this depot's PG2 from its current PG1 stabling"
+      <span
+        className={`${refreshTooltipMessage ? "removal-summary-tooltip-trigger " : ""}relative z-50 inline-flex overflow-visible`}
       >
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 12a9 9 0 0 1-15.5 6.2" />
-          <path d="M3 12A9 9 0 0 1 18.5 5.8" />
-          <path d="M18 2v4h4" />
-          <path d="M6 22v-4H2" />
-        </svg>
-        Refresh PG2
-      </button>
+        <button
+          type="button"
+          onClick={onRefreshPg2}
+          aria-label={refreshTooltipMessage || defaultRefreshTooltip}
+          title={refreshTooltipMessage ? undefined : defaultRefreshTooltip}
+          className="theme-insertion-refresh-button group flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-normal transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
+          style={MAIN_STABLING_BUTTON_BLUE}
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12a9 9 0 0 1-15.5 6.2" />
+            <path d="M3 12A9 9 0 0 1 18.5 5.8" />
+            <path d="M18 2v4h4" />
+            <path d="M6 22v-4H2" />
+          </svg>
+          Refresh PG2
+        </button>
+        {refreshTooltipMessage && (
+          <RemovalSummaryTooltip message={refreshTooltipMessage} placement="top" />
+        )}
+      </span>
     </div>
   );
 }
