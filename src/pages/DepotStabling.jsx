@@ -6760,6 +6760,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const [trainRemUndoCount, setTrainRemUndoCount] = useState(0);
   const [westDepotCopyStatus, setWestDepotCopyStatus] = useState("");
   const [eastDepotCopyStatus, setEastDepotCopyStatus] = useState("");
+  const [totalServiceCopyStatus, setTotalServiceCopyStatus] = useState("");
 
   const trainRemStateRef = useRef(trainRemState);
 
@@ -6784,11 +6785,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const trainRemFocusedTrainIdCellRef = useRef(null);
   const westDepotCopyTimerRef = useRef(null);
   const eastDepotCopyTimerRef = useRef(null);
+  const totalServiceCopyTimerRef = useRef(null);
 
   useEffect(() => {
     return () => {
       if (westDepotCopyTimerRef.current) clearTimeout(westDepotCopyTimerRef.current);
       if (eastDepotCopyTimerRef.current) clearTimeout(eastDepotCopyTimerRef.current);
+      if (totalServiceCopyTimerRef.current) clearTimeout(totalServiceCopyTimerRef.current);
     };
   }, []);
 
@@ -7627,14 +7630,62 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   ), [getDepotCopyTrainIds, trainRemState]);
   const westDepotCopyCount = westDepotCopyTrainIds.length;
   const eastDepotCopyCount = eastDepotCopyTrainIds.length;
-  const totalDepotCopyCount = useMemo(() => (
-    new Set(
-      [...westDepotCopyTrainIds, ...eastDepotCopyTrainIds]
+  const inServiceTrainIds = useMemo(() => {
+    const eastStablingSourceData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
+    const stablingTrainIdSet = new Set(
+      [
+        ...collectStablingTrainIds(westData, WEST_ROADS),
+        ...collectStablingTrainIds(eastStablingSourceData, EAST_ROADS),
+      ]
         .map((trainId) => normalizeTrainId(trainId))
         .filter(Boolean)
-    ).size
-  ), [eastDepotCopyTrainIds, westDepotCopyTrainIds]);
-  const totalDepotCopyTooltip = `Total ${totalDepotCopyCount} unique trains currently listed across West and East Depot`;
+    );
+
+    return Array.from(
+      new Set(
+        [...westDepotCopyTrainIds, ...eastDepotCopyTrainIds]
+          .map((trainId) => normalizeTrainId(trainId))
+          .filter(Boolean)
+      )
+    ).filter((trainId) => {
+      if (!stablingTrainIdSet.has(trainId)) return true;
+
+      const maintenanceRemarks = Array.isArray(maintenanceMap?.[trainId])
+        ? maintenanceMap[trainId]
+        : [];
+      const hasUnfitRemark = maintenanceRemarks.some((item) => (
+        /\bUNFIT\b/i.test(
+          [item?.badgeText, item?.displayType, item?.typeKey, item?.remark]
+            .filter(Boolean)
+            .join(" ")
+        )
+      ));
+
+      return !hasUnfitRemark;
+    });
+  }, [
+    eastData,
+    eastDepotCopyTrainIds,
+    eastStablingData,
+    maintenanceMap,
+    westData,
+    westDepotCopyTrainIds,
+  ]);
+  const totalServiceTrainCount = inServiceTrainIds.length;
+  const totalServiceText = `Total ${totalServiceTrainCount} trains in service.`;
+
+  const handleCopyTotalService = async () => {
+    const copied = await copyTextToClipboard(totalServiceText);
+    setTotalServiceCopyStatus(copied ? "copied" : "failed");
+
+    if (totalServiceCopyTimerRef.current) {
+      clearTimeout(totalServiceCopyTimerRef.current);
+    }
+    totalServiceCopyTimerRef.current = setTimeout(() => {
+      setTotalServiceCopyStatus("");
+      totalServiceCopyTimerRef.current = null;
+    }, 1600);
+  };
 
   const handleCopyDepotTrainList = async (depot = "east") => {
     const safeDepot = depot === "west" ? "west" : "east";
@@ -7793,23 +7844,38 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
             <div className="flex items-center gap-1 flex-shrink-0">
               {depot === "west" && (
                 <ActionTooltip
-                  message={totalDepotCopyTooltip}
+                  message={totalServiceText}
                   placement="top"
                   align="end"
                 >
-                  <span
-                    role="status"
-                    tabIndex={0}
-                    aria-label={totalDepotCopyTooltip}
-                    className="inline-flex h-6 cursor-default select-none items-center justify-center rounded-md border px-1.5 text-[10px] font-normal tracking-wide text-amber-200 outline-none transition-colors focus-visible:ring-1 focus-visible:ring-amber-300/70"
+                  <button
+                    type="button"
+                    onClick={handleCopyTotalService}
+                    aria-label={totalServiceText}
+                    className="inline-flex h-6 select-none items-center justify-center rounded-md border px-1.5 text-[10px] font-normal tracking-wide outline-none transition-all hover:-translate-y-0.5 focus-visible:ring-1 focus-visible:ring-amber-300/70"
                     style={{
-                      background: "rgba(245,158,11,0.13)",
-                      borderColor: "rgba(251,191,36,0.50)",
-                      boxShadow: "0 0 12px rgba(245,158,11,0.12)",
+                      background: totalServiceCopyStatus === "copied"
+                        ? "rgba(34,197,94,0.18)"
+                        : totalServiceCopyStatus === "failed"
+                          ? "rgba(127,29,29,0.50)"
+                          : "rgba(245,158,11,0.13)",
+                      borderColor: totalServiceCopyStatus === "copied"
+                        ? "rgba(34,197,94,0.48)"
+                        : totalServiceCopyStatus === "failed"
+                          ? "rgba(248,113,113,0.65)"
+                          : "rgba(251,191,36,0.50)",
+                      color: totalServiceCopyStatus === "copied"
+                        ? "#86efac"
+                        : totalServiceCopyStatus === "failed"
+                          ? "#fca5a5"
+                          : "#fde68a",
+                      boxShadow: totalServiceCopyStatus === "copied"
+                        ? "0 0 12px rgba(34,197,94,0.16)"
+                        : "0 0 12px rgba(245,158,11,0.12)",
                     }}
                   >
-                    TTL : {totalDepotCopyCount}
-                  </span>
+                    TTL : {totalServiceTrainCount}
+                  </button>
                 </ActionTooltip>
               )}
 
