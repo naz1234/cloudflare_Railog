@@ -160,8 +160,11 @@ function ClearIcon() {
   );
 }
 
-function CopyButton({ text, label, tooltip, disabled }) {
+function CopyButton({ text, label, tooltip, tone = "insertion", disabled }) {
   const [copied, setCopied] = useState(false);
+  const toneClass = tone === "special"
+    ? "insertion-clean-action-special"
+    : "insertion-clean-action-insertion";
 
   const handleCopy = async () => {
     if (disabled || !text) return;
@@ -184,7 +187,9 @@ function CopyButton({ text, label, tooltip, disabled }) {
         onClick={handleCopy}
         disabled={disabled}
         aria-label={tooltip}
-        className={copied ? "insertion-clean-action insertion-clean-action-copied" : "insertion-clean-action"}
+        className={copied
+          ? "insertion-clean-action insertion-clean-action-copied"
+          : `insertion-clean-action ${toneClass}`}
       >
         <CopyIcon copied={copied} />
         {copied ? "Copied" : label}
@@ -217,7 +222,9 @@ function ClearDepotButton({ depotCode, disabled, onClear }) {
         onClick={handleClear}
         disabled={disabled}
         aria-label={tooltip}
-        className={confirming ? "insertion-clean-action insertion-clean-action-danger" : "insertion-clean-action"}
+        className={confirming
+          ? "insertion-clean-action insertion-clean-action-danger"
+          : "insertion-clean-action insertion-clean-action-clear"}
       >
         <ClearIcon />
         {confirming ? "Confirm" : "Clear"}
@@ -270,12 +277,14 @@ function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot }) {
             text={sweepAnd3K1Text}
             label="Sweep + 3K1 only"
             tooltip={`Copy ${depotCode} Sweep and 3K1 insertion log only`}
+            tone="special"
             disabled={!sweepAnd3K1Text}
           />
           <CopyButton
             text={normalText}
             label="Insertion Only"
             tooltip={`Copy ${depotCode} insertion log excluding Sweep and 3K1`}
+            tone="insertion"
             disabled={!normalLines.length}
           />
           <ClearDepotButton
@@ -502,6 +511,30 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFi
         .insertion-clean-action:disabled {
           opacity: 0.42;
           cursor: not-allowed;
+        }
+
+        .insertion-clean-action-special {
+          color: #e9d5ff;
+        }
+
+        .insertion-clean-action-special:hover:not(:disabled) {
+          color: #f5d0fe;
+        }
+
+        .insertion-clean-action-insertion {
+          color: #67e8f9;
+        }
+
+        .insertion-clean-action-insertion:hover:not(:disabled) {
+          color: #cffafe;
+        }
+
+        .insertion-clean-action-clear {
+          color: #fca5a5;
+        }
+
+        .insertion-clean-action-clear:hover:not(:disabled) {
+          color: #fecaca;
         }
 
         .insertion-clean-action-copied {
