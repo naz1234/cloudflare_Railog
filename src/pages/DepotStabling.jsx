@@ -5566,22 +5566,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     if (suppressDuplicate3K1RemarkPill && eastMaintPillLabel === "3K1") return null;
 
                     return eastMaintPillLabel ? (
-                      <ActionTooltip
+                      <span
                         key={`${item.displayType}-${item.badgeText || ""}`}
-                        message={undoInsertionTooltip}
-                        placement="top"
-                        wrapperClassName="max-w-full self-center"
+                        className="inline-flex min-w-0 max-w-full cursor-default select-none items-center justify-center self-center text-center text-[11px] font-normal leading-tight"
+                        style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[eastMaintPillLabel], 82)}
+                        aria-label={`${eastMaintPillLabel} maintenance remark`}
                       >
-                        <button
-                          type="button"
-                          onClick={handleInsertedUndoClick}
-                          className="inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[11px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
-                          style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[eastMaintPillLabel], 82)}
-                          aria-label={undoInsertionTooltip}
-                        >
-                          {eastMaintPillLabel}
-                        </button>
-                      </ActionTooltip>
+                        {eastMaintPillLabel}
+                      </span>
                     ) : null;
                   })}
 
