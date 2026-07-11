@@ -226,20 +226,16 @@ function ClearDepotButton({ depotCode, disabled, onClear }) {
   );
 }
 
-function SectionTextBlock({ title, text, emptyText }) {
-  if (!text) {
-    return (
-      <div className="insertion-clean-empty-section">
-        <div className="insertion-clean-section-title">{title}</div>
-        <div className="insertion-clean-empty-text">{emptyText}</div>
-      </div>
-    );
-  }
+function SectionTextBlock({ title, text, emptyText, tone = "insertion" }) {
+  const toneClass = tone === "special" ? "is-special" : "is-insertion";
+  const contentClass = text ? "insertion-clean-text-section" : "insertion-clean-empty-section";
 
   return (
-    <div className="insertion-clean-text-section">
+    <div className={`insertion-clean-log-window ${toneClass} ${contentClass}`}>
       <div className="insertion-clean-section-title">{title}</div>
-      <pre className="insertion-clean-pre">{text}</pre>
+      {text
+        ? <pre className="insertion-clean-pre">{text}</pre>
+        : <div className="insertion-clean-empty-text">{emptyText}</div>}
     </div>
   );
 }
@@ -293,8 +289,8 @@ function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot }) {
       <div className="insertion-clean-card-body">
         {hasEntries ? (
           <>
-            <SectionTextBlock title="Insertion" text={normalText} emptyText="No insertion entries." />
-            <SectionTextBlock title="Sweep + 3K1" text={sweepAnd3K1Text} emptyText="No Sweep or 3K1 entries." />
+            <SectionTextBlock title="Insertion" text={normalText} emptyText="No insertion entries." tone="insertion" />
+            <SectionTextBlock title="Sweep + 3K1" text={sweepAnd3K1Text} emptyText="No Sweep or 3K1 entries." tone="special" />
           </>
         ) : (
           <div className="insertion-clean-empty-card">
@@ -529,13 +525,28 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFi
           font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         }
 
-        .insertion-clean-text-section + .insertion-clean-text-section,
-        .insertion-clean-text-section + .insertion-clean-empty-section,
-        .insertion-clean-empty-section + .insertion-clean-text-section,
-        .insertion-clean-empty-section + .insertion-clean-empty-section {
-          margin-top: 10px;
-          padding-top: 8px;
-          border-top: 1px solid rgba(43,79,107,0.66);
+        .insertion-clean-log-window {
+          padding: 8px 9px;
+          border: 1px solid;
+          border-left-width: 3px;
+          border-radius: 8px;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 16px rgba(0,0,0,0.14);
+        }
+
+        .insertion-clean-log-window + .insertion-clean-log-window {
+          margin-top: 8px;
+        }
+
+        .insertion-clean-log-window.is-insertion {
+          border-color: rgba(56,189,248,0.34);
+          border-left-color: #38bdf8;
+          background: linear-gradient(135deg, rgba(8,78,108,0.62), rgba(5,31,50,0.96));
+        }
+
+        .insertion-clean-log-window.is-special {
+          border-color: rgba(192,132,252,0.38);
+          border-left-color: #c084fc;
+          background: linear-gradient(135deg, rgba(88,28,135,0.56), rgba(30,27,75,0.90));
         }
 
         .insertion-clean-section-title {
@@ -546,6 +557,14 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFi
           font-weight: 900;
           letter-spacing: 0.10em;
           text-transform: uppercase;
+        }
+
+        .insertion-clean-log-window.is-insertion .insertion-clean-section-title {
+          color: #67e8f9;
+        }
+
+        .insertion-clean-log-window.is-special .insertion-clean-section-title {
+          color: #e9d5ff;
         }
 
         .insertion-clean-pre {
@@ -560,8 +579,16 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFi
           font-weight: 500;
         }
 
+        .insertion-clean-log-window.is-insertion .insertion-clean-pre {
+          color: #e0f2fe;
+        }
+
+        .insertion-clean-log-window.is-special .insertion-clean-pre {
+          color: #ede9fe;
+        }
+
         .insertion-clean-empty-section {
-          color: #668da9;
+          color: #8aa6bd;
         }
 
         .insertion-clean-empty-text {
