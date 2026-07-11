@@ -12630,14 +12630,14 @@ function PSTTabContent
             <button
               onClick={() => handleDownloadExcel("west")}
               disabled={Boolean(downloadingExcelDepot)}
-              className="theme-pst-excel-button theme-pst-excel-west flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
+              className="removal-summary-tooltip-trigger relative z-50 overflow-visible theme-pst-excel-button theme-pst-excel-west flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
               style={{
                 background: "linear-gradient(135deg, rgba(37,99,235,0.18), rgba(30,64,175,0.22))",
                 borderColor: "rgba(88,166,255,0.62)",
                 color: "#bfdbfe",
                 boxShadow: "0 0 18px rgba(59,130,246,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
               }}
-              title="Download West Depot only Excel"
+              aria-label="Download WD PST and Train Prep Excel report to paste into the official ELOG"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -12645,19 +12645,23 @@ function PSTTabContent
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
               {downloadingExcelDepot === "west" ? "Preparing..." : "West Excel"}
+              <RemovalSummaryTooltip
+                message="Download WD PST and Train Prep Excel report to paste into the official ELOG"
+                placement="top"
+              />
             </button>
 
             <button
               onClick={() => handleDownloadExcel("east")}
               disabled={Boolean(downloadingExcelDepot)}
-              className="theme-pst-excel-button theme-pst-excel-east flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
+              className="removal-summary-tooltip-trigger relative z-50 overflow-visible theme-pst-excel-button theme-pst-excel-east flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
               style={{
                 background: "linear-gradient(135deg, rgba(147,51,234,0.18), rgba(88,28,135,0.22))",
                 borderColor: "rgba(192,132,252,0.62)",
                 color: "#e9d5ff",
                 boxShadow: "0 0 18px rgba(168,85,247,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
               }}
-              title="Download East Depot only Excel"
+              aria-label="Download ED PST and Train Prep Excel report to paste into the official ELOG"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -12665,20 +12669,24 @@ function PSTTabContent
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
               {downloadingExcelDepot === "east" ? "Preparing..." : "East Excel"}
+              <RemovalSummaryTooltip
+                message="Download ED PST and Train Prep Excel report to paste into the official ELOG"
+                placement="top"
+              />
             </button>
 
 
             <button
               onClick={() => handleDownloadExcel("combined")}
               disabled={Boolean(downloadingExcelDepot)}
-              className="theme-pst-excel-button theme-pst-excel-combined flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
+              className="removal-summary-tooltip-trigger relative z-50 overflow-visible theme-pst-excel-button theme-pst-excel-combined flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
               style={{
                 background: "linear-gradient(135deg, rgba(20,184,166,0.18), rgba(14,116,144,0.22))",
                 borderColor: "rgba(94,234,212,0.58)",
                 color: "#ccfbf1",
                 boxShadow: "0 0 18px rgba(20,184,166,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
               }}
-              title="Download combined West + East Depot Excel"
+              aria-label="Download combined WD and ED PST and Train Prep Excel report to paste into the official ELOG"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -12686,6 +12694,10 @@ function PSTTabContent
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
               {downloadingExcelDepot === "combined" ? "Preparing..." : "Combined Excel"}
+              <RemovalSummaryTooltip
+                message="Download combined WD and ED PST and Train Prep Excel report to paste into the official ELOG"
+                placement="top"
+              />
             </button>
           </div>
         </div>
