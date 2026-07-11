@@ -4473,6 +4473,7 @@ function PSTStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2,
 
   const clearButtonBase = "rounded-xl border px-3 py-1.5 text-[10px] font-black uppercase tracking-wide transition-all disabled:cursor-not-allowed disabled:opacity-40";
   const sectionDepotLabel = title?.toUpperCase().includes("EAST") ? "East Depot" : "West Depot";
+  const headerTooltipPlacement = sectionDepotLabel === "West Depot" ? "bottom" : "top";
 
   return (
     <section className="theme-stabling-section theme-pst-section bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
@@ -4489,6 +4490,7 @@ function PSTStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2,
             activePg={activePg}
             onPgChange={onPgChange}
             onRefreshPg2={onRefreshPg2}
+            tooltipPlacement={headerTooltipPlacement}
             tooltips={{
               pg1: "Show PG1 default stabling",
               pg2: "Show PG2 editable stabling",
@@ -4510,7 +4512,7 @@ function PSTStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2,
                 </button>
                 <RemovalSummaryTooltip
                   message={`Clear ${sectionDepotLabel} PST status and PST logs only`}
-                  placement="top"
+                  placement={headerTooltipPlacement}
                 />
               </span>
             )}
@@ -4527,7 +4529,7 @@ function PSTStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2,
                 </button>
                 <RemovalSummaryTooltip
                   message={`Clear ${sectionDepotLabel} Train Prep status, TA names, and Train Prep logs only`}
-                  placement="top"
+                  placement={headerTooltipPlacement}
                 />
               </span>
             )}
@@ -5145,7 +5147,7 @@ function InsertionSectionTitle({ title, leftAction = null, action = null }) {
   );
 }
 
-function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2, tooltips = null }) {
+function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2, tooltips = null, tooltipPlacement = "top" }) {
   const defaultRefreshTooltip = "Refresh only this depot's PG2 from its current PG1 stabling";
   const refreshTooltipMessage = tooltips?.refresh || "";
 
@@ -5173,7 +5175,7 @@ function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2,
                 {pg.toUpperCase()}
               </button>
               {tooltipMessage && (
-                <RemovalSummaryTooltip message={tooltipMessage} placement="top" />
+                <RemovalSummaryTooltip message={tooltipMessage} placement={tooltipPlacement} />
               )}
             </span>
           );
@@ -5199,7 +5201,7 @@ function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2,
           Refresh PG2
         </button>
         {refreshTooltipMessage && (
-          <RemovalSummaryTooltip message={refreshTooltipMessage} placement="top" />
+          <RemovalSummaryTooltip message={refreshTooltipMessage} placement={tooltipPlacement} />
         )}
       </span>
     </div>
