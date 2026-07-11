@@ -7630,7 +7630,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   ), [getDepotCopyTrainIds, trainRemState]);
   const westDepotCopyCount = westDepotCopyTrainIds.length;
   const eastDepotCopyCount = eastDepotCopyTrainIds.length;
-  const inServiceTrainIds = useMemo(() => {
+  const automaticAreaSummary = useMemo(() => {
     const eastStablingSourceData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
     const stablingTrainIdSet = new Set(
       [
@@ -7640,29 +7640,41 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         .map((trainId) => normalizeTrainId(trainId))
         .filter(Boolean)
     );
-
-    return Array.from(
+    const automaticAreaTrainIds = Array.from(
       new Set(
         [...westDepotCopyTrainIds, ...eastDepotCopyTrainIds]
           .map((trainId) => normalizeTrainId(trainId))
           .filter(Boolean)
       )
-    ).filter((trainId) => {
-      if (!stablingTrainIdSet.has(trainId)) return true;
+    );
+    const unfitTrainDetails = automaticAreaTrainIds
+      .map((trainId) => {
+        if (!stablingTrainIdSet.has(trainId)) return null;
 
-      const maintenanceRemarks = Array.isArray(maintenanceMap?.[trainId])
-        ? maintenanceMap[trainId]
-        : [];
-      const hasUnfitRemark = maintenanceRemarks.some((item) => (
-        /\bUNFIT\b/i.test(
-          [item?.badgeText, item?.displayType, item?.typeKey, item?.remark]
-            .filter(Boolean)
-            .join(" ")
-        )
+        const maintenanceRemarks = Array.isArray(maintenanceMap?.[trainId])
+          ? maintenanceMap[trainId]
+          : [];
+        const matchingRemarks = Array.from(
+          new Set(
+            maintenanceRemarks
+              .flatMap((item) => (
+                [item?.badgeText, item?.displayType, item?.typeKey, item?.remark]
+                  .map((value) => String(value || "").trim())
+                  .filter((value) => value && /\bUNFIT\b/i.test(value))
+              ))
+          )
+        );
+
+        return matchingRemarks.length ? { trainId, remarks: matchingRemarks } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => (
+        Number(a.trainId.replace(/\D/g, "")) - Number(b.trainId.replace(/\D/g, ""))
       ));
+    const unfitTrainIdSet = new Set(unfitTrainDetails.map((item) => item.trainId));
+    const inServiceTrainIds = automaticAreaTrainIds.filter((trainId) => !unfitTrainIdSet.has(trainId));
 
-      return !hasUnfitRemark;
-    });
+    return { automaticAreaTrainIds, inServiceTrainIds, unfitTrainDetails };
   }, [
     eastData,
     eastDepotCopyTrainIds,
@@ -7671,8 +7683,18 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     westData,
     westDepotCopyTrainIds,
   ]);
-  const totalServiceTrainCount = inServiceTrainIds.length;
-  const totalServiceText = `Total ${totalServiceTrainCount} trains in service.`;
+  const totalServiceTrainCount = automaticAreaSummary.inServiceTrainIds.length;
+  const totalAutomaticAreaTrainCount = automaticAreaSummary.automaticAreaTrainIds.length;
+  const unfitTrainDetailText = automaticAreaSummary.unfitTrainDetails
+    .map((item) => `${padTrainId(item.trainId)} (${item.remarks.join(" / ")})`)
+    .join(", ");
+  const totalServiceText = automaticAreaSummary.unfitTrainDetails.length
+    ? [
+        `Total ${totalServiceTrainCount} trains in service.`,
+        `Total ${totalAutomaticAreaTrainCount} trains at automatic area.`,
+        `Unfit Train : ${unfitTrainDetailText}`,
+      ].join("\n")
+    : `Total ${totalServiceTrainCount} trains in service.`;
 
   const handleCopyTotalService = async () => {
     const copied = await copyTextToClipboard(totalServiceText);
@@ -7844,7 +7866,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
             <div className="flex items-center gap-1 flex-shrink-0">
               {depot === "west" && (
                 <ActionTooltip
-                  message={totalServiceText}
+                  message={<span className="whitespace-pre-line">{totalServiceText}</span>}
                   placement="top"
                   align="end"
                 >
