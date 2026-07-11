@@ -6066,7 +6066,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
                       style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
                     >
-                      <span className="shrink-0 text-[11px] uppercase tracking-wide opacity-80">Time</span>
+                      <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Time</span>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -6087,7 +6087,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                           onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                         }}
                         placeholder="00:00"
-                        className="min-w-0 w-[48px] border-0 bg-transparent p-0 text-center text-[13px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                        className="min-w-0 w-[48px] border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none placeholder:text-slate-500"
                         style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
                         title="Edit insertion completion time"
                       />
@@ -6208,7 +6208,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
                     style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
                   >
-                    <span className="shrink-0 text-[11px] uppercase tracking-wide opacity-80">Time</span>
+                    <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Time</span>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -6229,7 +6229,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                       }}
                       placeholder="00:00"
-                      className="min-w-0 w-[48px] border-0 bg-transparent p-0 text-center text-[13px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                      className="min-w-0 w-[48px] border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none placeholder:text-slate-500"
                       style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
                       title="Edit insertion completion time"
                     />
@@ -6265,7 +6265,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
                     style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
                   >
-                    <span className="shrink-0 text-[11px] uppercase tracking-wide opacity-80">Time</span>
+                    <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Time</span>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -6286,7 +6286,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                       }}
                       placeholder="00:00"
-                      className="min-w-0 w-[48px] border-0 bg-transparent p-0 text-center text-[13px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                      className="min-w-0 w-[48px] border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none placeholder:text-slate-500"
                       style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
                       title="Edit insertion completion time"
                     />
