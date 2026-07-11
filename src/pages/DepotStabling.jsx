@@ -7,6 +7,7 @@ import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
 import TIDReferenceTable, { getTidReferenceRemark } from "../components/TIDReferenceTable";
+import ActionTooltip from "../components/ActionTooltip";
 import PSTLogOutput from "../components/depot/PSTLogOutput";
 import InsertionLogOutput from "../components/depot/InsertionLogOutput";
 import OvertimeTracker from "../components/OvertimeTracker";
@@ -5313,6 +5314,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     : null;
   const canAutoInsertTid = Boolean(key && !inserted && !suppressAutoInsert && autoTid !== null && autoScheduledTime);
   const isTidDropEligible = Boolean(key && !inserted);
+  const insertTrainTooltip = "Insert this train using the entered TID or remark";
+  const resetCardTooltip = "Reset this card and return to Add TID";
+  const undoInsertionTooltip = "Undo this train insertion";
 
   useEffect(() => {
     if (!canAutoInsertTid) return;
@@ -5562,44 +5566,59 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     if (suppressDuplicate3K1RemarkPill && eastMaintPillLabel === "3K1") return null;
 
                     return eastMaintPillLabel ? (
-                      <button
+                      <ActionTooltip
                         key={`${item.displayType}-${item.badgeText || ""}`}
-                        type="button"
-                        onClick={handleInsertedUndoClick}
-                        className="inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[11px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
-                        style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[eastMaintPillLabel], 82)}
-                        title={eastMaintPillLabel}
-                        aria-label={eastMaintPillLabel}
+                        message={undoInsertionTooltip}
+                        placement="top"
+                        wrapperClassName="max-w-full self-center"
                       >
-                        {eastMaintPillLabel}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={handleInsertedUndoClick}
+                          className="inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[11px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125"
+                          style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[eastMaintPillLabel], 82)}
+                          aria-label={undoInsertionTooltip}
+                        >
+                          {eastMaintPillLabel}
+                        </button>
+                      </ActionTooltip>
                     ) : null;
                   })}
 
                   {key && insertedTidAssistRemark && !hasInsertedPlainRemark && insertedTidAssistKeywordLabel && !(suppressDuplicate3K1RemarkPill && insertedTidAssistKeywordLabel === "3K1") && (
-                    <button
-                      type="button"
-                      onClick={handleInsertedUndoClick}
-                      className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${useLargerWeekdayAssistRemark ? "text-[12px]" : "text-[11px]"}`}
-                      style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedTidAssistKeywordLabel], 82)}
-                      title={`Click ${insertedTidAssistKeywordLabel} to undo insertion`}
-                      aria-label={`Undo insertion for ${insertedTidAssistKeywordLabel}`}
+                    <ActionTooltip
+                      message={undoInsertionTooltip}
+                      placement="top"
+                      wrapperClassName="max-w-full self-center"
                     >
-                      {insertedTidAssistKeywordLabel}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={handleInsertedUndoClick}
+                        className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${useLargerWeekdayAssistRemark ? "text-[12px]" : "text-[11px]"}`}
+                        style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedTidAssistKeywordLabel], 82)}
+                        aria-label={undoInsertionTooltip}
+                      >
+                        {insertedTidAssistKeywordLabel}
+                      </button>
+                    </ActionTooltip>
                   )}
 
                   {key && hasInsertedPlainRemark && insertedPlainKeywordLabel && !(suppressDuplicate3K1RemarkPill && insertedPlainKeywordLabel === "3K1") && (
-                    <button
-                      type="button"
-                      onClick={handleInsertedUndoClick}
-                      className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${maintList.length > 0 ? "mt-1" : "mt-[3px]"}`}
-                      style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedPlainKeywordLabel], 82)}
-                      title={`Click ${insertedPlainKeywordLabel} to undo insertion`}
-                      aria-label={`Undo insertion for remark ${insertedPlainKeywordLabel}`}
+                    <ActionTooltip
+                      message={undoInsertionTooltip}
+                      placement="top"
+                      wrapperClassName="max-w-full self-center"
                     >
-                      {insertedPlainKeywordLabel}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={handleInsertedUndoClick}
+                        className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${maintList.length > 0 ? "mt-1" : "mt-[3px]"}`}
+                        style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedPlainKeywordLabel], 82)}
+                        aria-label={undoInsertionTooltip}
+                      >
+                        {insertedPlainKeywordLabel}
+                      </button>
+                    </ActionTooltip>
                   )}
                 </div>
                 <div
@@ -5656,15 +5675,16 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           {key && inserted?.isSweeping && (
             isEastInsertionCard ? (
               <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                <button
-                  type="button"
-                  onClick={handleSpecialCardRefresh}
-                  className="text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
-                  title="Refresh this card and go back to Add TID"
-                  aria-label="Refresh this card and go back to Add TID"
-                >
+                <ActionTooltip message={resetCardTooltip} placement="top">
+                  <button
+                    type="button"
+                    onClick={handleSpecialCardRefresh}
+                    className="text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
+                    aria-label={resetCardTooltip}
+                  >
                   -- Refresh --
-                </button>
+                  </button>
+                </ActionTooltip>
                 <div
                   className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                   style={{
@@ -5762,15 +5782,16 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               </div>
             ) : (
             <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-              <button
-                type="button"
-                onClick={handleSpecialCardRefresh}
-                className="text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
-                title="Refresh this card and go back to Add TID"
-                aria-label="Refresh this card and go back to Add TID"
-              >
+              <ActionTooltip message={resetCardTooltip} placement="top">
+                <button
+                  type="button"
+                  onClick={handleSpecialCardRefresh}
+                  className="text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
+                  aria-label={resetCardTooltip}
+                >
                 -- Refresh --
-              </button>
+                </button>
+              </ActionTooltip>
               <div
                 className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                 style={{
@@ -5892,25 +5913,34 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               />
             )}
             {!inserted && !canAutoInsertTid && (
-              <button
-                onClick={handleInsertClick}
-                className={`theme-insertion-insert-button ${hasTidRemark ? "has-input" : ""} h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-all`}
+              <ActionTooltip
+                message={insertTrainTooltip}
+                placement="top"
+                wrapperClassName="w-full"
               >
-                Insert Train
-              </button>
+                <button
+                  type="button"
+                  onClick={handleInsertClick}
+                  aria-label={insertTrainTooltip}
+                  className={`theme-insertion-insert-button ${hasTidRemark ? "has-input" : ""} h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-all`}
+                >
+                  Insert Train
+                </button>
+              </ActionTooltip>
             )}
             {inserted && !inserted.isSweeping && (
               isEast3K1InsertionCard ? (
                 <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                  <button
-                    type="button"
-                    onClick={handleSpecialCardRefresh}
-                    className="text-[10px] font-normal leading-none text-cyan-100/90 transition-all hover:text-white focus-visible:text-white"
-                    title="Refresh this card and go back to Add TID"
-                    aria-label="Refresh this card and go back to Add TID"
-                  >
+                  <ActionTooltip message={resetCardTooltip} placement="top">
+                    <button
+                      type="button"
+                      onClick={handleSpecialCardRefresh}
+                      className="text-[10px] font-normal leading-none text-cyan-100/90 transition-all hover:text-white focus-visible:text-white"
+                      aria-label={resetCardTooltip}
+                    >
                     -- Refresh --
-                  </button>
+                    </button>
+                  </ActionTooltip>
                   <div
                     className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                     style={{
@@ -5973,15 +6003,16 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               ) : useUnifiedInsertionCardStyle ? (
                 <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                  <button
-                    type="button"
-                    onClick={handleSpecialCardRefresh}
-                    className="text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
-                    title="Refresh this card and go back to Add TID"
-                    aria-label="Refresh this card and go back to Add TID"
-                  >
+                  <ActionTooltip message={resetCardTooltip} placement="top">
+                    <button
+                      type="button"
+                      onClick={handleSpecialCardRefresh}
+                      className="text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
+                      aria-label={resetCardTooltip}
+                    >
                     -- Refresh --
-                  </button>
+                    </button>
+                  </ActionTooltip>
 
                   {insertedTid ? (
                     <div
@@ -6090,15 +6121,16 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               <>
                 {insertedTid ? (
                   <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                    <button
-                      type="button"
-                      onClick={handleSpecialCardRefresh}
-                      className="text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
-                      title="Refresh this card and go back to Add TID"
-                      aria-label="Refresh this card and go back to Add TID"
-                    >
+                    <ActionTooltip message={resetCardTooltip} placement="top">
+                      <button
+                        type="button"
+                        onClick={handleSpecialCardRefresh}
+                        className="text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
+                        aria-label={resetCardTooltip}
+                      >
                       -- Refresh --
-                    </button>
+                      </button>
+                    </ActionTooltip>
                     <div
                       className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                       style={{
@@ -6170,15 +6202,16 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </div>
               ) : hasInsertedPlainRemark ? (
                 <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                  <button
-                    type="button"
-                    onClick={handleSpecialCardRefresh}
-                    className="text-[10px] font-normal leading-none text-slate-200/90 transition-all hover:text-white focus-visible:text-white"
-                    title="Refresh this card and go back to Add TID"
-                    aria-label="Refresh this card and go back to Add TID"
-                  >
+                  <ActionTooltip message={resetCardTooltip} placement="top">
+                    <button
+                      type="button"
+                      onClick={handleSpecialCardRefresh}
+                      className="text-[10px] font-normal leading-none text-slate-200/90 transition-all hover:text-white focus-visible:text-white"
+                      aria-label={resetCardTooltip}
+                    >
                     -- Refresh --
-                  </button>
+                    </button>
+                  </ActionTooltip>
                   <div
                     className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
                     style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
@@ -6226,15 +6259,16 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               ) : (
                 <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                  <button
-                    type="button"
-                    onClick={handleSpecialCardRefresh}
-                    className="text-[10px] font-normal leading-none text-slate-200/90 transition-all hover:text-white focus-visible:text-white"
-                    title="Refresh this card and go back to Add TID"
-                    aria-label="Refresh this card and go back to Add TID"
-                  >
+                  <ActionTooltip message={resetCardTooltip} placement="top">
+                    <button
+                      type="button"
+                      onClick={handleSpecialCardRefresh}
+                      className="text-[10px] font-normal leading-none text-slate-200/90 transition-all hover:text-white focus-visible:text-white"
+                      aria-label={resetCardTooltip}
+                    >
                     -- Refresh --
-                  </button>
+                    </button>
+                  </ActionTooltip>
                   <div
                     className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
                     style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
@@ -6295,6 +6329,13 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
   const sectionDepot = roads.some((road) => WEST_ROADS.includes(road)) ? "west" : "east";
+  const depotCode = sectionDepot === "west" ? "WD" : "ED";
+  const tooltipPlacement = sectionDepot === "west" ? "bottom" : "top";
+  const pgTooltips = {
+    pg1: `Show ${depotCode} PG1 default stabling`,
+    pg2: `Show ${depotCode} PG2 editable stabling`,
+    refresh: `Copy latest ${depotCode} PG1 stabling to PG2 and reset ${depotCode} PG2 insertion work`,
+  };
 
   useEffect(() => {
     saveInsertionHideElapsedTid(title, roads, hideElapsedTid);
@@ -6484,54 +6525,80 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
             activePg={activePg}
             onPgChange={onPgChange}
             onRefreshPg2={onRefreshPg2}
+            tooltips={pgTooltips}
+            tooltipPlacement={tooltipPlacement}
           />
         }
         action={
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleDownloadPng}
-              disabled={downloadingPng}
-              className="theme-insertion-action theme-insertion-download flex items-center justify-center gap-2 rounded-xl border text-[11px] font-bold transition-colors hover:bg-[#123554] disabled:cursor-not-allowed disabled:opacity-45"
-              style={INSERTION_ACTION_BUTTON_BLUE}
-              title="Download PNG picture with insertion TID, timing and 3K1/SW pills"
+            <ActionTooltip
+              message={`Download ${depotCode} insertion TID and timing as PNG`}
+              placement={tooltipPlacement}
             >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          {downloadingPng ? "Preparing..." : "Download PNG"}
-        </button>
-            <button
-              onClick={handleClearAllTid}
-              disabled={!hasTidRemarks && !hasInsertedTrains}
-              className="theme-insertion-action theme-insertion-clear flex items-center justify-center gap-2 rounded-xl border text-[11px] font-bold transition-colors hover:bg-[#641f2b] disabled:cursor-not-allowed disabled:opacity-45"
-              style={INSERTION_ACTION_BUTTON_DANGER}
-              title="Clear all TID inputs, remarks and inserted TID status for this depot"
+              <button
+                type="button"
+                onClick={handleDownloadPng}
+                disabled={downloadingPng}
+                aria-label={`Download ${depotCode} insertion TID and timing as PNG`}
+                className="theme-insertion-action theme-insertion-download flex items-center justify-center gap-2 rounded-xl border text-[11px] font-bold transition-colors hover:bg-[#123554] disabled:cursor-not-allowed disabled:opacity-45"
+                style={INSERTION_ACTION_BUTTON_BLUE}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                {downloadingPng ? "Preparing..." : "Download PNG"}
+              </button>
+            </ActionTooltip>
+
+            <ActionTooltip
+              message={`Clear all ${depotCode} TID inputs, remarks, and inserted status`}
+              placement={tooltipPlacement}
             >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 6h18" />
-            <path d="M8 6V4h8v2" />
-            <path d="M19 6l-1 14H6L5 6" />
-            <path d="M10 11v5" />
-            <path d="M14 11v5" />
-          </svg>
-          Clear All
-        </button>
-            <button
-              onClick={() => setHideElapsedTid((v) => !v)}
-              disabled={elapsedTidCount === 0}
-              className={`theme-insertion-action theme-insertion-hide ${hideElapsedTid ? "is-active" : ""} flex items-center justify-center gap-2 rounded-xl border text-[11px] font-bold transition-colors hover:bg-[#123554] disabled:cursor-not-allowed disabled:opacity-45`}
-              style={hideElapsedTid ? INSERTION_ACTION_BUTTON_PRIMARY : INSERTION_ACTION_BUTTON_BLUE}
-              title="Manually hide inserted TIDs where the scheduled time has elapsed"
+              <button
+                type="button"
+                onClick={handleClearAllTid}
+                disabled={!hasTidRemarks && !hasInsertedTrains}
+                aria-label={`Clear all ${depotCode} TID inputs, remarks, and inserted status`}
+                className="theme-insertion-action theme-insertion-clear flex items-center justify-center gap-2 rounded-xl border text-[11px] font-bold transition-colors hover:bg-[#641f2b] disabled:cursor-not-allowed disabled:opacity-45"
+                style={INSERTION_ACTION_BUTTON_DANGER}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18" />
+                  <path d="M8 6V4h8v2" />
+                  <path d="M19 6l-1 14H6L5 6" />
+                  <path d="M10 11v5" />
+                  <path d="M14 11v5" />
+                </svg>
+                Clear All
+              </button>
+            </ActionTooltip>
+
+            <ActionTooltip
+              message={hideElapsedTid
+                ? `Show hidden elapsed ${depotCode} inserted TIDs`
+                : `Hide ${depotCode} inserted TIDs whose scheduled time has elapsed`}
+              placement={tooltipPlacement}
             >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            {hideElapsedTid
-              ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>
-              : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}
-          </svg>
-          {hideElapsedTid ? `Show elapsed TID (${elapsedTidCount})` : `Hide elapsed TID (${elapsedTidCount})`}
-            </button>
+              <button
+                type="button"
+                onClick={() => setHideElapsedTid((value) => !value)}
+                disabled={elapsedTidCount === 0}
+                aria-label={hideElapsedTid
+                  ? `Show hidden elapsed ${depotCode} inserted TIDs`
+                  : `Hide ${depotCode} inserted TIDs whose scheduled time has elapsed`}
+                className={`theme-insertion-action theme-insertion-hide ${hideElapsedTid ? "is-active" : ""} flex items-center justify-center gap-2 rounded-xl border text-[11px] font-bold transition-colors hover:bg-[#123554] disabled:cursor-not-allowed disabled:opacity-45`}
+                style={hideElapsedTid ? INSERTION_ACTION_BUTTON_PRIMARY : INSERTION_ACTION_BUTTON_BLUE}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  {hideElapsedTid
+                    ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>
+                    : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}
+                </svg>
+                {hideElapsedTid ? `Show elapsed TID (${elapsedTidCount})` : `Hide elapsed TID (${elapsedTidCount})`}
+              </button>
+            </ActionTooltip>
           </div>
         }
       />

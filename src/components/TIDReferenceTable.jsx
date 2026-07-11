@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Check } from "lucide-react";
+import ActionTooltip from "./ActionTooltip";
 
 const WEEKDAY_EAST_ROWS = [
   { tid: 201, remark: "Late Rem", time: "05:24" },
@@ -628,11 +629,20 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
               const config = DEPOT_SOUND_CONFIG[depotKey];
               const enabled = Boolean(soundSettings?.[depotKey]);
 
+              const soundTooltip = enabled
+                ? `Disable ${config.label} insertion-time sound`
+                : `Enable ${config.label} insertion-time sound`;
+
               return (
-                <button
+                <ActionTooltip
                   key={depotKey}
-                  type="button"
-                  onClick={() => onToggleDepotSound(depotKey)}
+                  message={soundTooltip}
+                  placement="bottom"
+                >
+                  <button
+                    type="button"
+                    onClick={() => onToggleDepotSound(depotKey)}
+                    aria-label={soundTooltip}
                   className={`theme-insertion-reference-sound-button ${enabled ? "is-enabled" : ""} ${soundReady ? "is-ready" : ""}`}
                   style={{
                     border: "1px solid",
@@ -657,11 +667,11 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
                     whiteSpace: "nowrap",
                     boxShadow: enabled && soundReady ? `0 0 16px ${config.glow}` : "none",
                     transition: "all 160ms ease",
-                  }}
-                  title={enabled ? `Click to turn off ${config.label} time sound` : `Click to enable ${config.label} time sound`}
-                >
-                  {config.label} Sound {enabled ? "ON" : "OFF"}
-                </button>
+                    }}
+                  >
+                    {config.label} Sound {enabled ? "ON" : "OFF"}
+                  </button>
+                </ActionTooltip>
               );
             })}
           </div>
@@ -697,12 +707,21 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
         {Object.entries(schedules).map(([key, schedule]) => {
           const isActive = key === scheduleKey;
           const isWrongActiveTab = isActive && isScheduleOverride && key !== todayScheduleKey;
+          const scheduleTooltip = key === "ph"
+            ? "Show Public Holiday insertion TID schedule"
+            : `Show ${schedule.label} insertion TID schedule`;
 
           return (
-            <button
+            <ActionTooltip
               key={key}
-              type="button"
-              onClick={() => setScheduleKey(key)}
+              message={scheduleTooltip}
+              placement="bottom"
+              sideOffset={isWrongActiveTab ? 14 : 7}
+            >
+              <button
+                type="button"
+                onClick={() => setScheduleKey(key)}
+                aria-label={scheduleTooltip}
               className={`theme-insertion-reference-tab ${isActive ? "is-active" : ""} ${isWrongActiveTab ? "is-warning" : ""}`}
               style={{
                 position: "relative",
@@ -757,8 +776,9 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
                 >
                   OVERRIDE
                 </span>
-              )}
-            </button>
+                )}
+              </button>
+            </ActionTooltip>
           );
         })}
       </div>
@@ -831,10 +851,16 @@ function ScheduleWarningBanner({ selectedLabel, todayLabel, onSwitchToToday }) {
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onSwitchToToday}
-        className="theme-insertion-reference-warning-button"
+      <ActionTooltip
+        message="Return to today’s insertion TID schedule"
+        placement="top"
+        wrapperClassName="shrink-0"
+      >
+        <button
+          type="button"
+          onClick={onSwitchToToday}
+          aria-label="Return to today’s insertion TID schedule"
+          className="theme-insertion-reference-warning-button"
         style={{
           flexShrink: 0,
           border: "1px solid rgba(253, 186, 116, 0.80)",
@@ -851,9 +877,10 @@ function ScheduleWarningBanner({ selectedLabel, todayLabel, onSwitchToToday }) {
           boxShadow: "0 8px 18px rgba(127, 29, 29, 0.30)",
           whiteSpace: "nowrap",
         }}
-      >
-        Switch to {todayLabel.toUpperCase()} ↔
-      </button>
+        >
+          Switch to {todayLabel.toUpperCase()} ↔
+        </button>
+      </ActionTooltip>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ActionTooltip from "../ActionTooltip";
 
 function formatSentenceList(values = []) {
   const items = values
@@ -159,7 +160,7 @@ function ClearIcon() {
   );
 }
 
-function CopyButton({ text, label, disabled }) {
+function CopyButton({ text, label, tooltip, disabled }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -177,21 +178,24 @@ function CopyButton({ text, label, disabled }) {
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      disabled={disabled}
-      className={copied ? "insertion-clean-action insertion-clean-action-copied" : "insertion-clean-action"}
-      title={label}
-    >
-      <CopyIcon copied={copied} />
-      {copied ? "Copied" : label}
-    </button>
+    <ActionTooltip message={tooltip} placement="top">
+      <button
+        type="button"
+        onClick={handleCopy}
+        disabled={disabled}
+        aria-label={tooltip}
+        className={copied ? "insertion-clean-action insertion-clean-action-copied" : "insertion-clean-action"}
+      >
+        <CopyIcon copied={copied} />
+        {copied ? "Copied" : label}
+      </button>
+    </ActionTooltip>
   );
 }
 
-function ClearDepotButton({ depotLabel, disabled, onClear }) {
+function ClearDepotButton({ depotCode, disabled, onClear }) {
   const [confirming, setConfirming] = useState(false);
+  const tooltip = `Clear all ${depotCode} insertion log entries`;
 
   const handleClear = () => {
     if (disabled || !onClear) return;
@@ -207,16 +211,18 @@ function ClearDepotButton({ depotLabel, disabled, onClear }) {
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleClear}
-      disabled={disabled}
-      className={confirming ? "insertion-clean-action insertion-clean-action-danger" : "insertion-clean-action"}
-      title={`Clear ${depotLabel} Depot log`}
-    >
-      <ClearIcon />
-      {confirming ? "Confirm" : "Clear"}
-    </button>
+    <ActionTooltip message={tooltip} placement="top">
+      <button
+        type="button"
+        onClick={handleClear}
+        disabled={disabled}
+        aria-label={tooltip}
+        className={confirming ? "insertion-clean-action insertion-clean-action-danger" : "insertion-clean-action"}
+      >
+        <ClearIcon />
+        {confirming ? "Confirm" : "Clear"}
+      </button>
+    </ActionTooltip>
   );
 }
 
@@ -245,7 +251,9 @@ function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot }) {
   const normalText = buildNormalInsertionCopyText(normalLines, depotLabel);
   const sweepAnd3K1Text = buildSweepAnd3K1CopyText(sweepingLines, threeK1Lines, depotLabel);
   const hasEntries = lines.length > 0;
-  const dotColor = depotLabel.toLowerCase() === "west" ? "#d946ef" : "#22d3ee";
+  const isWestDepot = depotLabel.toLowerCase() === "west";
+  const depotCode = isWestDepot ? "WD" : "ED";
+  const dotColor = isWestDepot ? "#d946ef" : "#22d3ee";
 
   return (
     <div className="insertion-clean-card">
@@ -262,10 +270,20 @@ function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot }) {
         </div>
 
         <div className="insertion-clean-actions">
-          <CopyButton text={sweepAnd3K1Text} label="Sweep + 3K1 only" disabled={!sweepAnd3K1Text} />
-          <CopyButton text={normalText} label="Insertion Only" disabled={!normalLines.length} />
+          <CopyButton
+            text={sweepAnd3K1Text}
+            label="Sweep + 3K1 only"
+            tooltip={`Copy ${depotCode} Sweep and 3K1 insertion log only`}
+            disabled={!sweepAnd3K1Text}
+          />
+          <CopyButton
+            text={normalText}
+            label="Insertion Only"
+            tooltip={`Copy ${depotCode} insertion log excluding Sweep and 3K1`}
+            disabled={!normalLines.length}
+          />
           <ClearDepotButton
-            depotLabel={depotLabel}
+            depotCode={depotCode}
             disabled={!hasEntries}
             onClear={() => onClearDepot?.(depot)}
           />
