@@ -7627,6 +7627,14 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   ), [getDepotCopyTrainIds, trainRemState]);
   const westDepotCopyCount = westDepotCopyTrainIds.length;
   const eastDepotCopyCount = eastDepotCopyTrainIds.length;
+  const totalDepotCopyCount = useMemo(() => (
+    new Set(
+      [...westDepotCopyTrainIds, ...eastDepotCopyTrainIds]
+        .map((trainId) => normalizeTrainId(trainId))
+        .filter(Boolean)
+    ).size
+  ), [eastDepotCopyTrainIds, westDepotCopyTrainIds]);
+  const totalDepotCopyTooltip = `Total ${totalDepotCopyCount} unique trains currently listed across West and East Depot`;
 
   const handleCopyDepotTrainList = async (depot = "east") => {
     const safeDepot = depot === "west" ? "west" : "east";
@@ -7783,6 +7791,28 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               {subtitle && <div className="mt-0.5 text-[7px] font-normal text-[#7eb8e0]">{subtitle}</div>}
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
+              {depot === "west" && (
+                <ActionTooltip
+                  message={totalDepotCopyTooltip}
+                  placement="top"
+                  align="end"
+                >
+                  <span
+                    role="status"
+                    tabIndex={0}
+                    aria-label={totalDepotCopyTooltip}
+                    className="inline-flex h-6 cursor-default select-none items-center justify-center rounded-md border px-1.5 text-[10px] font-normal tracking-wide text-amber-200 outline-none transition-colors focus-visible:ring-1 focus-visible:ring-amber-300/70"
+                    style={{
+                      background: "rgba(245,158,11,0.13)",
+                      borderColor: "rgba(251,191,36,0.50)",
+                      boxShadow: "0 0 12px rgba(245,158,11,0.12)",
+                    }}
+                  >
+                    TTL : {totalDepotCopyCount}
+                  </span>
+                </ActionTooltip>
+              )}
+
               <ActionTooltip
                 message="Download removal summary as PDF"
                 placement="top"
