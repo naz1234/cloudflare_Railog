@@ -7783,69 +7783,87 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               {subtitle && <div className="mt-0.5 text-[7px] font-normal text-[#7eb8e0]">{subtitle}</div>}
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
-              <button
-                type="button"
-                onClick={(event) => handleTrainRemPdfDownload(depot, event)}
-                className="removal-summary-tooltip-trigger relative z-50 inline-flex h-6 items-center gap-1 overflow-visible rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5"
-                style={{
-                  background: pdfActive ? "rgba(34,197,94,0.18)" : "rgba(6,212,232,0.14)",
-                  borderColor: pdfActive ? "rgba(34,197,94,0.48)" : "rgba(34,211,238,0.55)",
-                  color: pdfActive ? "#86efac" : "#b6f3ff",
-                  boxShadow: pdfActive ? "0 0 12px rgba(34,197,94,0.16)" : "0 0 12px rgba(34,211,238,0.16)",
-                }}
-                aria-label="Download removal summary as PDF"
+              <ActionTooltip
+                message="Download removal summary as PDF"
+                placement="top"
+                align="end"
               >
-                <FileText size={12} />
-                {pdfActive ? "Done" : "PDF"}
-                <RemovalSummaryTooltip message="Download removal summary as PDF" align="right" />
-              </button>
+                <button
+                  type="button"
+                  onClick={(event) => handleTrainRemPdfDownload(depot, event)}
+                  className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5"
+                  style={{
+                    background: pdfActive ? "rgba(34,197,94,0.18)" : "rgba(6,212,232,0.14)",
+                    borderColor: pdfActive ? "rgba(34,197,94,0.48)" : "rgba(34,211,238,0.55)",
+                    color: pdfActive ? "#86efac" : "#b6f3ff",
+                    boxShadow: pdfActive ? "0 0 12px rgba(34,197,94,0.16)" : "0 0 12px rgba(34,211,238,0.16)",
+                  }}
+                  aria-label="Download removal summary as PDF"
+                >
+                  <FileText size={12} />
+                  {pdfActive ? "Done" : "PDF"}
+                </button>
+              </ActionTooltip>
 
-              <button
-                type="button"
-                onClick={(event) => handleTrainRemPngDownload(depot, event)}
-                className="removal-summary-tooltip-trigger relative z-50 inline-flex h-6 items-center gap-1 overflow-visible rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5"
-                style={{
-                  background: pngActive ? "rgba(34,197,94,0.18)" : "rgba(14,165,233,0.14)",
-                  borderColor: pngActive ? "rgba(34,197,94,0.48)" : "rgba(56,189,248,0.55)",
-                  color: pngActive ? "#86efac" : "#bae6fd",
-                  boxShadow: pngActive ? "0 0 12px rgba(34,197,94,0.16)" : "0 0 12px rgba(56,189,248,0.14)",
-                }}
-                aria-label="Download removal summary as PNG"
+              <ActionTooltip
+                message="Download removal summary as PNG"
+                placement="top"
+                align="end"
               >
-                <ImageIcon size={12} />
-                {pngActive ? "Done" : "PNG"}
-                <RemovalSummaryTooltip message="Download removal summary as PNG" align="right" />
-              </button>
+                <button
+                  type="button"
+                  onClick={(event) => handleTrainRemPngDownload(depot, event)}
+                  className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5"
+                  style={{
+                    background: pngActive ? "rgba(34,197,94,0.18)" : "rgba(14,165,233,0.14)",
+                    borderColor: pngActive ? "rgba(34,197,94,0.48)" : "rgba(56,189,248,0.55)",
+                    color: pngActive ? "#86efac" : "#bae6fd",
+                    boxShadow: pngActive ? "0 0 12px rgba(34,197,94,0.16)" : "0 0 12px rgba(56,189,248,0.14)",
+                  }}
+                  aria-label="Download removal summary as PNG"
+                >
+                  <ImageIcon size={12} />
+                  {pngActive ? "Done" : "PNG"}
+                </button>
+              </ActionTooltip>
 
-              <button
-                type="button"
-                onClick={handleTrainRemUndo}
-                disabled={trainRemUndoCount === 0}
-                className="removal-summary-tooltip-trigger relative z-50 inline-flex h-6 items-center gap-1 overflow-visible rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0"
-                style={{
-                  background: "rgba(15,45,74,0.75)",
-                  borderColor: "rgba(74,138,181,0.55)",
-                  color: "#9ccbea",
-                }}
-                aria-label={trainRemUndoCount > 0 ? "Undo last change" : "Nothing to undo"}
+              <ActionTooltip
+                message={trainRemUndoCount > 0 ? "Undo last change" : "Nothing to undo"}
+                placement="top"
+                align="end"
               >
-                <Undo2 size={12} />
-                UND
-                <RemovalSummaryTooltip
-                  message={trainRemUndoCount > 0 ? "Undo last change" : "Nothing to undo"}
-                  align="right"
-                />
-              </button>
+                <button
+                  type="button"
+                  onClick={handleTrainRemUndo}
+                  disabled={trainRemUndoCount === 0}
+                  className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0"
+                  style={{
+                    background: "rgba(15,45,74,0.75)",
+                    borderColor: "rgba(74,138,181,0.55)",
+                    color: "#9ccbea",
+                  }}
+                  aria-label={trainRemUndoCount > 0 ? "Undo last change" : "Nothing to undo"}
+                >
+                  <Undo2 size={12} />
+                  UND
+                </button>
+              </ActionTooltip>
 
-              <button
-                onClick={() => clearDepotTrainRem(depot)}
-                className="removal-summary-tooltip-trigger relative z-50 inline-flex h-6 items-center gap-1 overflow-visible rounded-md border border-[#2b4f6b] bg-[#10263b] px-1.5 text-[10px] font-normal text-[#7eb8e0] transition-colors hover:border-red-600/60 hover:bg-red-950/30 hover:text-red-300"
-                aria-label="Clear removal summary"
+              <ActionTooltip
+                message="Clear removal summary"
+                placement="top"
+                align="end"
               >
-                <Trash2 size={12} />
-                CLR
-                <RemovalSummaryTooltip message="Clear removal summary" align="right" />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => clearDepotTrainRem(depot)}
+                  className="inline-flex h-6 items-center gap-1 rounded-md border border-[#2b4f6b] bg-[#10263b] px-1.5 text-[10px] font-normal text-[#7eb8e0] transition-colors hover:border-red-600/60 hover:bg-red-950/30 hover:text-red-300"
+                  aria-label="Clear removal summary"
+                >
+                  <Trash2 size={12} />
+                  CLR
+                </button>
+              </ActionTooltip>
             </div>
           </div>
 
