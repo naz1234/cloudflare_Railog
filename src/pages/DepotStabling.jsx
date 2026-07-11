@@ -23692,9 +23692,12 @@ const MAIN_STABLING_BUTTON_DANGER = {
   boxShadow: "0 10px 28px rgba(185,28,28,0.22)",
 };
 
-function ClearAllStablingButton({ onClearAll }) {
+function ClearAllStablingButton({ onClearAll, depotLabel = "Depot" }) {
   const [confirming, setConfirming] = useState(false);
   const timerRef = useRef(null);
+  const tooltipMessage = confirming
+    ? `Confirm clearing all ${depotLabel} stabling train IDs`
+    : `Clear all ${depotLabel} stabling train IDs`;
 
   const handleClick = () => {
     if (confirming) {
@@ -23710,21 +23713,25 @@ function ClearAllStablingButton({ onClearAll }) {
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
   return (
-    <button
-      onClick={handleClick}
-      className="theme-light-control theme-light-clear group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
-      style={confirming ? MAIN_STABLING_BUTTON_DANGER : MAIN_STABLING_BUTTON_CLEAR}
-    >
-      {!confirming && (
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-          <path d="M10 11v6M14 11v6"/>
-          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-        </svg>
-      )}
-      {confirming ? "Confirm Clear?" : "Clear All"}
-    </button>
+    <ActionTooltip message={tooltipMessage} placement="top" align="end">
+      <button
+        type="button"
+        onClick={handleClick}
+        aria-label={tooltipMessage}
+        className="theme-light-control theme-light-clear group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
+        style={confirming ? MAIN_STABLING_BUTTON_DANGER : MAIN_STABLING_BUTTON_CLEAR}
+      >
+        {!confirming && (
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
+        )}
+        {confirming ? "Confirm Clear?" : "Clear All"}
+      </button>
+    </ActionTooltip>
   );
 }
 
@@ -24807,6 +24814,29 @@ function StablingSection({
     const blocks = data[road] || [];
     return total + blockIndices.filter((bi) => String(blocks[bi]?.trainId || "").trim()).length;
   }, 0);
+  const depotLabel = depot === "west" ? "West Depot" : "East Depot";
+  const stablingCopyText = roads.map((road) => {
+    const blocks = data[road] || [];
+    const trains = blockIndices
+      .map((bi) => {
+        const value = (blocks[bi]?.trainId || "").trim();
+        return value ? padTrainId(normalizeTrainId(value)) : null;
+      })
+      .filter(Boolean);
+    const roadNumber = road.replace(/^[A-Z]+-ST0?/, "");
+    const stablingLabel = `STABLING ${roadNumber.padStart(2, "0")}`;
+
+    if (depot === "west") {
+      return trains.length
+        ? `${stablingLabel} : ${trains.join(", ")}`
+        : `${stablingLabel} :`;
+    }
+    return trains.length
+      ? `${trains.join(", ")} : ${stablingLabel}`
+      : `${stablingLabel}:`;
+  }).join("\n");
+  const copyStablingTooltipText = `Copy text :\n${stablingCopyText}`;
+  const downloadPdfTooltipText = `Download ${depotLabel} stabling PDF with colour-coded remark pills`;
 
   const handleDownloadPdf = async () => {
     if (downloadingPdf) return;
@@ -24831,22 +24861,7 @@ function StablingSection({
   };
 
   const handleCopyStabling = () => {
-    const lines = roads.map((road) => {
-      const blocks = data[road] || [];
-      const trains = blockIndices
-        .map((bi) => {
-          const val = (blocks[bi]?.trainId || "").trim();
-          return val ? padTrainId(normalizeTrainId(val)) : null;
-        })
-        .filter(Boolean);
-      const roadNum = road.replace(/^[A-Z]+-ST0?/, "");
-      const label = `STABLING ${roadNum.padStart(2, "0")}`;
-      if (depot === "west") {
-        return trains.length ? `${label} : ${trains.join(", ")}` : `${label} :`;
-      }
-      return trains.length ? `${trains.join(", ")} : ${label}` : `${label}:`;
-    });
-    navigator.clipboard.writeText(lines.join("\n"));
+    navigator.clipboard.writeText(stablingCopyText);
     setCopiedStabling(true);
     setTimeout(() => setCopiedStabling(false), 2000);
   };
@@ -24881,33 +24896,48 @@ function StablingSection({
         count={totalTrains}
         action={
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleCopyStabling}
-              className="theme-light-control theme-light-copy group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
-              style={copiedStabling ? MAIN_STABLING_BUTTON_SUCCESS : MAIN_STABLING_BUTTON_COPY}
+            <ActionTooltip
+              message={<span className="whitespace-pre-line font-mono text-[10px]">{copyStablingTooltipText}</span>}
+              placement="top"
+              align="start"
             >
-              {copiedStabling ? (
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              ) : (
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              )}
-              {copiedStabling ? "Copied!" : "Copy Stabling"}
-            </button>
-            <button
-              onClick={handleDownloadPdf}
-              disabled={downloadingPdf}
-              className="theme-light-control theme-light-pdf group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
-              style={MAIN_STABLING_BUTTON_PDF}
-              title="Download PDF print version with colour-coded remark pills"
+              <button
+                type="button"
+                onClick={handleCopyStabling}
+                aria-label={copyStablingTooltipText}
+                className="theme-light-control theme-light-copy group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
+                style={copiedStabling ? MAIN_STABLING_BUTTON_SUCCESS : MAIN_STABLING_BUTTON_COPY}
+              >
+                {copiedStabling ? (
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                ) : (
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"/></svg>
+                )}
+                {copiedStabling ? "Copied!" : "Copy Stabling"}
+              </button>
+            </ActionTooltip>
+            <ActionTooltip
+              message={downloadPdfTooltipText}
+              placement="top"
+              align="center"
             >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              {downloadingPdf ? "Preparing..." : "Download PDF"}
-            </button>
-            {onClearAll && <ClearAllStablingButton onClearAll={onClearAll} />}
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={downloadingPdf}
+                aria-label={downloadPdfTooltipText}
+                className="theme-light-control theme-light-pdf group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
+                style={MAIN_STABLING_BUTTON_PDF}
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                {downloadingPdf ? "Preparing..." : "Download PDF"}
+              </button>
+            </ActionTooltip>
+            {onClearAll && <ClearAllStablingButton onClearAll={onClearAll} depotLabel={depotLabel} />}
           </div>
         }
       />
