@@ -24815,7 +24815,7 @@ function StablingSection({
     return total + blockIndices.filter((bi) => String(blocks[bi]?.trainId || "").trim()).length;
   }, 0);
   const depotLabel = depot === "west" ? "West Depot" : "East Depot";
-  const stablingCopyText = roads.map((road) => {
+  const stablingCopyRows = roads.map((road) => {
     const blocks = data[road] || [];
     const trains = blockIndices
       .map((bi) => {
@@ -24824,15 +24824,23 @@ function StablingSection({
       })
       .filter(Boolean);
     const roadNumber = road.replace(/^[A-Z]+-ST0?/, "");
-    const stablingLabel = `STABLING ${roadNumber.padStart(2, "0")}`;
 
+    return {
+      stablingLabel: `STABLING ${roadNumber.padStart(2, "0")}`,
+      trainText: trains.join(", "),
+    };
+  });
+  const eastTrainTextWidth = depot === "east"
+    ? stablingCopyRows.reduce((width, row) => Math.max(width, row.trainText.length), 0)
+    : 0;
+  const stablingCopyText = stablingCopyRows.map(({ stablingLabel, trainText }) => {
     if (depot === "west") {
-      return trains.length
-        ? `${stablingLabel} : ${trains.join(", ")}`
+      return trainText
+        ? `${stablingLabel} : ${trainText}`
         : `${stablingLabel} :`;
     }
-    return trains.length
-      ? `${trains.join(", ")} : ${stablingLabel}`
+    return trainText
+      ? `${trainText.padStart(eastTrainTextWidth, " ")} : ${stablingLabel}`
       : `${stablingLabel}:`;
   }).join("\n");
   const copyStablingTooltipText = `Copy text :\n${stablingCopyText}`;
@@ -24897,7 +24905,7 @@ function StablingSection({
         action={
           <div className="flex items-center gap-2">
             <ActionTooltip
-              message={<span className="whitespace-pre-line font-mono text-[10px]">{copyStablingTooltipText}</span>}
+              message={<span className="whitespace-pre-wrap font-mono text-[10px]">{copyStablingTooltipText}</span>}
               placement="top"
               align="start"
             >
