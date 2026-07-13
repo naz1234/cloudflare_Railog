@@ -7683,13 +7683,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     westData,
     westDepotCopyTrainIds,
   ]);
-  // Keep TTL aligned with the displayed depot totals, then remove each genuine
-  // stabled UNFIT train once.
-  const totalAutomaticAreaTrainCount = westDepotCopyCount + eastDepotCopyCount;
-  const totalServiceTrainCount = Math.max(
-    0,
-    totalAutomaticAreaTrainCount - automaticAreaSummary.unfitTrainDetails.length
-  );
+  const totalServiceTrainCount = automaticAreaSummary.inServiceTrainIds.length;
+  const totalAutomaticAreaTrainCount = automaticAreaSummary.automaticAreaTrainIds.length;
   const unfitTrainDetailText = automaticAreaSummary.unfitTrainDetails
     .map((item) => `${padTrainId(item.trainId)} (${item.remarks.join(" / ")})`)
     .join(", ");
