@@ -7821,6 +7821,20 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       ? ["", duplicateDepotWarningText, duplicateDepotTrainDetailText]
       : []),
   ].join("\n");
+  const duplicateWarningStartIndex = totalServiceText.indexOf(duplicateDepotWarningText);
+  const totalServiceTooltipContent = hasDepotTrainDuplicate && duplicateWarningStartIndex >= 0
+    ? (
+        <span className="whitespace-pre-line">
+          {totalServiceText.slice(0, duplicateWarningStartIndex)}
+          <span style={{ color: "#dc2626", fontWeight: 700 }}>
+            {duplicateDepotWarningText}
+          </span>
+          {totalServiceText.slice(
+            duplicateWarningStartIndex + duplicateDepotWarningText.length
+          )}
+        </span>
+      )
+    : <span className="whitespace-pre-line">{totalServiceText}</span>;
 
   const handleCopyTotalService = async () => {
     const copied = await copyTextToClipboard(totalServiceText);
@@ -7992,7 +8006,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
             <div className="flex items-center gap-1 flex-shrink-0">
               {depot === "west" && (
                 <ActionTooltip
-                  message={<span className="whitespace-pre-line">{totalServiceText}</span>}
+                  message={totalServiceTooltipContent}
                   placement="top"
                   align="end"
                 >
