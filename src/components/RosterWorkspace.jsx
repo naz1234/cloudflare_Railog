@@ -270,13 +270,20 @@ function HorizontalPersonPill({ person, entry, day }) {
   const time = entry.timeStart && entry.timeEnd
     ? `${entry.timeStart}–${entry.timeEnd}`
     : entry.dutyCode || entry.raw || "";
+  const isExtension = entry.shiftKey === "extension";
+  const titleParts = [controllerName, time, isExtension ? "Extension duty" : ""].filter(Boolean);
 
   return (
     <span
-      title={time ? `${controllerName} · ${time}` : controllerName}
-      className={`theme-roster-name-pill is-${String(role).toLowerCase()} inline-flex max-w-full items-center px-1 py-0.5 text-[11px] font-semibold leading-4`}
+      title={titleParts.join(" · ")}
+      className={`theme-roster-name-pill is-${String(role).toLowerCase()} inline-flex max-w-full items-center gap-1.5 px-1 py-0.5 text-[11px] font-semibold leading-4`}
     >
       <span className="truncate">{controllerName}</span>
+      {isExtension ? (
+        <span className="shrink-0 rounded-full border border-orange-300/45 bg-orange-400/15 px-1.5 py-px text-[8px] font-black uppercase tracking-wide text-orange-100">
+          Extension
+        </span>
+      ) : null}
     </span>
   );
 }
