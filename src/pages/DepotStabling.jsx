@@ -3010,7 +3010,7 @@ function collectStablingTrainIds(data = {}, roads = []) {
   return trainIds;
 }
 
-function collectTrainRemTrainIdsForDepotCopy(
+function collectTrainRemRowsForDepotCopy(
   trainRemState = {},
   depot = "east",
   activeTimetable = null
@@ -3077,6 +3077,15 @@ function collectTrainRemTrainIdsForDepotCopy(
     });
   }
 
+  return rowsToScan;
+}
+
+function collectTrainRemTrainIdsForDepotCopy(
+  trainRemState = {},
+  depot = "east",
+  activeTimetable = null
+) {
+  const rowsToScan = collectTrainRemRowsForDepotCopy(trainRemState, depot, activeTimetable);
   const seen = new Set();
   const trainIds = [];
 
@@ -3089,7 +3098,6 @@ function collectTrainRemTrainIdsForDepotCopy(
 
   return trainIds;
 }
-
 function buildTrainRemRowsFromPreset(depot, label, existingRows = []) {
   const preset = TID_PRESETS[depot].find((item) => item.label === label);
   const tids = getTrainRemPresetRowTids(depot, label, preset?.tids || []);
@@ -7648,6 +7656,93 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     ));
   }, [eastDepotCopyTrainIds, westDepotCopyTrainIds]);
   const hasDepotTrainDuplicate = duplicateDepotTrainIds.length > 0;
+  const duplicateDepotTrainDetails = useMemo(() => {
+    const eastStablingSourceData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
+    const westRemovalRows = collectTrainRemRowsForDepotCopy(
+      trainRemState,
+      "west",
+      activeTimetable
+    );
+    const eastRemovalRows = collectTrainRemRowsForDepotCopy(
+      trainRemState,
+      "east",
+      activeTimetable
+    );
+
+    const buildRemovalLocationMap = (rows = []) => {
+      const locationMap = new Map();
+
+      rows.forEach((row) => {
+        const trainId = normalizeTrainId(row?.trainId || "");
+        if (!trainId) return;
+
+        const tid = normalizeTrainRemTidValue(row?.tid || "");
+        const location = tid ? `Removal — TID ${tid.padStart(3, "0")}` : "Removal";
+        const currentLocations = locationMap.get(trainId) || [];
+        if (!currentLocations.includes(location)) {
+          locationMap.set(trainId, [...currentLocations, location]);
+        }
+      });
+
+      return locationMap;
+    };
+
+    const buildStablingLocationMap = (data = {}, roads = []) => {
+      const locationMap = new Map();
+
+      roads.forEach((road) => {
+        const blocks = Array.isArray(data?.[road]) ? data[road] : [];
+        blocks.forEach((block) => {
+          const trainId = normalizeTrainId(block?.trainId || "");
+          if (!trainId) return;
+
+          const location = String(road || "").trim() || "Stabling";
+          const currentLocations = locationMap.get(trainId) || [];
+          if (!currentLocations.includes(location)) {
+            locationMap.set(trainId, [...currentLocations, location]);
+          }
+        });
+      });
+
+      return locationMap;
+    };
+
+    const westRemovalLocationMap = buildRemovalLocationMap(westRemovalRows);
+    const eastRemovalLocationMap = buildRemovalLocationMap(eastRemovalRows);
+    const westStablingLocationMap = buildStablingLocationMap(westData, WEST_ROADS);
+    const eastStablingLocationMap = buildStablingLocationMap(
+      eastStablingSourceData,
+      EAST_ROADS
+    );
+    const formatDepotLocations = (trainId, stablingMap, removalMap) => {
+      const locations = [
+        ...(stablingMap.get(trainId) || []),
+        ...(removalMap.get(trainId) || []),
+      ];
+      return locations.length ? locations.join(" + ") : "Listed";
+    };
+
+    return duplicateDepotTrainIds.map((trainId) => ({
+      trainId,
+      westLocation: formatDepotLocations(
+        trainId,
+        westStablingLocationMap,
+        westRemovalLocationMap
+      ),
+      eastLocation: formatDepotLocations(
+        trainId,
+        eastStablingLocationMap,
+        eastRemovalLocationMap
+      ),
+    }));
+  }, [
+    activeTimetable,
+    duplicateDepotTrainIds,
+    eastData,
+    eastStablingData,
+    trainRemState,
+    westData,
+  ]);
   const automaticAreaSummary = useMemo(() => {
     const eastStablingSourceData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
     const stablingTrainIdSet = new Set(
@@ -7703,25 +7798,27 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   ]);
   const totalServiceTrainCount = automaticAreaSummary.inServiceTrainIds.length;
   const totalAutomaticAreaTrainCount = automaticAreaSummary.automaticAreaTrainIds.length;
-  const duplicateDepotTrainText = duplicateDepotTrainIds
-    .map((trainId) => padTrainId(trainId))
-    .join(", ");
-  const duplicateDepotTrainLabel = duplicateDepotTrainIds.length === 1
-    ? "Duplicate Train"
-    : "Duplicate Trains";
+  const duplicateDepotTrainDetailText = duplicateDepotTrainDetails
+    .map((item) => (
+      `${padTrainId(item.trainId)} — West: ${item.westLocation} | East: ${item.eastLocation}`
+    ))
+    .join("\n");
+  const duplicateDepotWarningText = duplicateDepotTrainDetails.length === 1
+    ? "Please check the following duplicate listing:"
+    : "Please check the following duplicate listings:";
   const unfitTrainDetailText = automaticAreaSummary.unfitTrainDetails
     .map((item) => `${padTrainId(item.trainId)} (${item.remarks.join(" / ")})`)
     .join(", ");
   const totalServiceText = [
     `Total ${totalServiceTrainCount} trains in service.`,
     ...(automaticAreaSummary.unfitTrainDetails.length
-      ? [`Total ${totalAutomaticAreaTrainCount} trains at automatic area.`]
+      ? [
+          `Total ${totalAutomaticAreaTrainCount} trains at automatic area.`,
+          `Unfit Train : ${unfitTrainDetailText}`,
+        ]
       : []),
     ...(hasDepotTrainDuplicate
-      ? [`${duplicateDepotTrainLabel} : ${duplicateDepotTrainText}`]
-      : []),
-    ...(automaticAreaSummary.unfitTrainDetails.length
-      ? [`Unfit Train : ${unfitTrainDetailText}`]
+      ? ["", duplicateDepotWarningText, duplicateDepotTrainDetailText]
       : []),
   ].join("\n");
 
