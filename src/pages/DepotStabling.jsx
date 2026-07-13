@@ -7630,6 +7630,24 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   ), [getDepotCopyTrainIds, trainRemState]);
   const westDepotCopyCount = westDepotCopyTrainIds.length;
   const eastDepotCopyCount = eastDepotCopyTrainIds.length;
+  const duplicateDepotTrainIds = useMemo(() => {
+    const eastDepotTrainIdSet = new Set(
+      eastDepotCopyTrainIds
+        .map((trainId) => normalizeTrainId(trainId))
+        .filter(Boolean)
+    );
+
+    return Array.from(
+      new Set(
+        westDepotCopyTrainIds
+          .map((trainId) => normalizeTrainId(trainId))
+          .filter((trainId) => trainId && eastDepotTrainIdSet.has(trainId))
+      )
+    ).sort((a, b) => (
+      Number(a.replace(/\D/g, "")) - Number(b.replace(/\D/g, ""))
+    ));
+  }, [eastDepotCopyTrainIds, westDepotCopyTrainIds]);
+  const hasDepotTrainDuplicate = duplicateDepotTrainIds.length > 0;
   const automaticAreaSummary = useMemo(() => {
     const eastStablingSourceData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
     const stablingTrainIdSet = new Set(
@@ -7685,16 +7703,27 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   ]);
   const totalServiceTrainCount = automaticAreaSummary.inServiceTrainIds.length;
   const totalAutomaticAreaTrainCount = automaticAreaSummary.automaticAreaTrainIds.length;
+  const duplicateDepotTrainText = duplicateDepotTrainIds
+    .map((trainId) => padTrainId(trainId))
+    .join(", ");
+  const duplicateDepotTrainLabel = duplicateDepotTrainIds.length === 1
+    ? "Duplicate Train"
+    : "Duplicate Trains";
   const unfitTrainDetailText = automaticAreaSummary.unfitTrainDetails
     .map((item) => `${padTrainId(item.trainId)} (${item.remarks.join(" / ")})`)
     .join(", ");
-  const totalServiceText = automaticAreaSummary.unfitTrainDetails.length
-    ? [
-        `Total ${totalServiceTrainCount} trains in service.`,
-        `Total ${totalAutomaticAreaTrainCount} trains at automatic area.`,
-        `Unfit Train : ${unfitTrainDetailText}`,
-      ].join("\n")
-    : `Total ${totalServiceTrainCount} trains in service.`;
+  const totalServiceText = [
+    `Total ${totalServiceTrainCount} trains in service.`,
+    ...(automaticAreaSummary.unfitTrainDetails.length
+      ? [`Total ${totalAutomaticAreaTrainCount} trains at automatic area.`]
+      : []),
+    ...(hasDepotTrainDuplicate
+      ? [`${duplicateDepotTrainLabel} : ${duplicateDepotTrainText}`]
+      : []),
+    ...(automaticAreaSummary.unfitTrainDetails.length
+      ? [`Unfit Train : ${unfitTrainDetailText}`]
+      : []),
+  ].join("\n");
 
   const handleCopyTotalService = async () => {
     const copied = await copyTextToClipboard(totalServiceText);
@@ -7874,26 +7903,30 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     type="button"
                     onClick={handleCopyTotalService}
                     aria-label={totalServiceText}
-                    className="inline-flex h-6 select-none items-center justify-center rounded-md border px-1.5 text-[10px] font-normal tracking-wide outline-none transition-all hover:-translate-y-0.5 focus-visible:ring-1 focus-visible:ring-amber-300/70"
+                    className={`inline-flex h-6 select-none items-center justify-center rounded-md border px-1.5 text-[10px] font-normal tracking-wide outline-none transition-all hover:-translate-y-0.5 focus-visible:ring-1 ${hasDepotTrainDuplicate ? "focus-visible:ring-red-300/70" : "focus-visible:ring-amber-300/70"}`}
                     style={{
                       background: totalServiceCopyStatus === "copied"
                         ? "rgba(34,197,94,0.18)"
-                        : totalServiceCopyStatus === "failed"
+                        : totalServiceCopyStatus === "failed" || hasDepotTrainDuplicate
                           ? "rgba(127,29,29,0.50)"
                           : "rgba(245,158,11,0.13)",
                       borderColor: totalServiceCopyStatus === "copied"
                         ? "rgba(34,197,94,0.48)"
-                        : totalServiceCopyStatus === "failed"
-                          ? "rgba(248,113,113,0.65)"
+                        : totalServiceCopyStatus === "failed" || hasDepotTrainDuplicate
+                          ? "rgba(248,113,113,0.72)"
                           : "rgba(251,191,36,0.50)",
                       color: totalServiceCopyStatus === "copied"
                         ? "#86efac"
                         : totalServiceCopyStatus === "failed"
                           ? "#fca5a5"
-                          : "#fde68a",
+                          : hasDepotTrainDuplicate
+                            ? "#fecaca"
+                            : "#fde68a",
                       boxShadow: totalServiceCopyStatus === "copied"
                         ? "0 0 12px rgba(34,197,94,0.16)"
-                        : "0 0 12px rgba(245,158,11,0.12)",
+                        : hasDepotTrainDuplicate
+                          ? "0 0 14px rgba(239,68,68,0.28)"
+                          : "0 0 12px rgba(245,158,11,0.12)",
                     }}
                   >
                     TTL : {totalServiceTrainCount}
