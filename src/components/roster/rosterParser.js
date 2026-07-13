@@ -129,6 +129,35 @@ const MONTHS = {
 
 const NOT_WORKING_CODES = new Set(["WR", "AL", "CF AL", "TOIL", "UA", "OFF", "REST"]);
 
+function isExtensionDutyCode(dutyCode = "") {
+  const normalized = compactSpaces(dutyCode).toUpperCase().replace(/\s+/g, "");
+  return /(?:^|-)EXT?(?:TC|TCC|DC|DM|EFC|SC)?(?:-|$)/.test(normalized);
+}
+
+function extensionShiftLabel(start = "") {
+  const startMinutes = timeToMinutes(start);
+  if (startMinutes >= 18 * 60 || startMinutes < 5 * 60) return "Night Extension Shift";
+  if (startMinutes < 12 * 60) return "Early Extension Shift";
+  return "Late Extension Shift";
+}
+
+function repairExtensionEntry(entry, fallbackRole = "") {
+  if (!entry || typeof entry !== "object") return entry;
+  const source = entry.dutyCode || entry.raw || "";
+  const hasTwelveHourRange = entry.timeStart && entry.timeEnd
+    ? (() => {
+        const start = timeToMinutes(entry.timeStart);
+        let end = timeToMinutes(entry.timeEnd);
+        if (end <= start) end += 24 * 60;
+        return end - start >= 11 * 60;
+      })()
+    : false;
+  if (!isExtensionDutyCode(source) && !hasTwelveHourRange) return entry;
+  const shiftLabel = extensionShiftLabel(entry.timeStart || "");
+  if (entry.shiftKey === "extension" && entry.shiftLabel === shiftLabel) return entry;
+  return { ...entry, shiftKey: "extension", shiftLabel, role: entry.role || fallbackRole, isWorking: true, isRest: false };
+}
+
 function median(values) {
   if (!values.length) return 0;
   const sorted = [...values].sort((a, b) => a - b);
@@ -193,8 +222,16 @@ export function ensureRosterNames(parsedRoster) {
       ? preferredName
       : (currentDisplayName || preferredName);
 
-    if (rawName !== currentRawName || displayName !== currentDisplayName) changed = true;
-    return { ...person, rawName, displayName };
+    const sourceEntries = person.entries || {};
+    let entriesChanged = false;
+    const entries = Object.fromEntries(Object.entries(sourceEntries).map(([dateKey, entry]) => {
+      const repaired = repairExtensionEntry(entry, person.rosterRole || "");
+      if (repaired !== entry) entriesChanged = true;
+      return [dateKey, repaired];
+    }));
+
+    if (rawName !== currentRawName || displayName !== currentDisplayName || entriesChanged) changed = true;
+    return { ...person, rawName, displayName, entries };
   });
 
   return changed ? { ...parsedRoster, people } : parsedRoster;
@@ -254,10 +291,10 @@ function shiftFromTimes(start, end, dutyCode = "") {
   let endMinutes = timeToMinutes(end);
   if (endMinutes <= startMinutes) endMinutes += 24 * 60;
   const duration = endMinutes - startMinutes;
-  if (duration >= 11 * 60 || /\bEX\b/i.test(dutyCode)) {
+  if (duration >= 11 * 60 || isExtensionDutyCode(dutyCode)) {
     return {
       shiftKey: "extension",
-      shiftLabel: startMinutes >= 18 * 60 || startMinutes < 5 * 60 ? "Night Extension Shift" : "Extension Shift",
+      shiftLabel: extensionShiftLabel(start),
     };
   }
   if (startMinutes >= 21 * 60 || startMinutes < 5 * 60) return { shiftKey: "night", shiftLabel: "Night Shift" };
@@ -553,7 +590,7 @@ export async function parseRosterPdf(arrayBuffer, fileName = "roster.pdf", pdfjs
     .sort((a, b) => ROSTER_ROLE_ORDER.indexOf(a) - ROSTER_ROLE_ORDER.indexOf(b));
 
   return ensureRosterNames({
-    version: 8,
+    version: 9,
     parsedAt: new Date().toISOString(),
     fileName,
     year: firstDate?.year || year,
