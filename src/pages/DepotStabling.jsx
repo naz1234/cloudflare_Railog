@@ -7829,9 +7829,19 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
           <span style={{ color: "#dc2626", fontWeight: 700 }}>
             {duplicateDepotWarningText}
           </span>
-          {totalServiceText.slice(
-            duplicateWarningStartIndex + duplicateDepotWarningText.length
-          )}
+          <span
+            style={{
+              display: "inline-block",
+              maxWidth: "calc(100vw - 40px)",
+              overflowX: "auto",
+              verticalAlign: "top",
+              whiteSpace: "pre",
+            }}
+          >
+            {totalServiceText.slice(
+              duplicateWarningStartIndex + duplicateDepotWarningText.length
+            )}
+          </span>
         </span>
       )
     : <span className="whitespace-pre-line">{totalServiceText}</span>;
@@ -8009,6 +8019,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   message={totalServiceTooltipContent}
                   placement="top"
                   align="end"
+                  contentStyle={{
+                    width: "max-content",
+                    maxWidth: "min(720px, calc(100vw - 20px))",
+                  }}
                 >
                   <button
                     type="button"
