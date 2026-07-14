@@ -5690,10 +5690,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 <div
                   className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                   style={{
-                    width: "calc(100% + 8px)",
-                    maxWidth: "calc(100% + 8px)",
-                    marginLeft: -4,
-                    marginRight: -4,
+                    width: "100%",
+                    maxWidth: "100%",
+                    marginLeft: "auto",
+                    marginRight: "auto",
                     alignSelf: "center",
                     background: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.bg,
                     borderColor: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.border,
@@ -5797,10 +5797,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               <div
                 className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                 style={{
-                  width: "calc(100% + 8px)",
-                  maxWidth: "calc(100% + 8px)",
-                  marginLeft: -4,
-                  marginRight: -4,
+                  width: "100%",
+                  maxWidth: "100%",
+                  marginLeft: "auto",
+                  marginRight: "auto",
                   alignSelf: "center",
                   background: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.bg,
                   borderColor: EAST_INSERTION_KEYWORD_REMARK_STYLES.SWEEP.border,
@@ -5946,10 +5946,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   <div
                     className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                     style={{
-                      width: "calc(100% + 8px)",
-                      maxWidth: "calc(100% + 8px)",
-                      marginLeft: -4,
-                      marginRight: -4,
+                      width: "100%",
+                      maxWidth: "100%",
+                      marginLeft: "auto",
+                      marginRight: "auto",
                       alignSelf: "center",
                       background: EAST_INSERTION_KEYWORD_REMARK_STYLES["3K1"].bg,
                       borderColor: EAST_INSERTION_KEYWORD_REMARK_STYLES["3K1"].border,
@@ -6020,10 +6020,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     <div
                       className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                       style={{
-                        width: "calc(100% + 8px)",
-                        maxWidth: "calc(100% + 8px)",
-                        marginLeft: -4,
-                        marginRight: -4,
+                        width: "100%",
+                        maxWidth: "100%",
+                        marginLeft: "auto",
+                        marginRight: "auto",
                         alignSelf: "center",
                         background: insertedTidBigPillStyle.bg,
                         borderColor: insertedTidBigPillStyle.border,
@@ -6136,10 +6136,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     <div
                       className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                       style={{
-                        width: "calc(100% + 8px)",
-                        maxWidth: "calc(100% + 8px)",
-                        marginLeft: -4,
-                        marginRight: -4,
+                        width: "100%",
+                        maxWidth: "100%",
+                        marginLeft: "auto",
+                        marginRight: "auto",
                         alignSelf: "center",
                         background: insertedTidBigPillStyle.bg,
                         borderColor: insertedTidBigPillStyle.border,
