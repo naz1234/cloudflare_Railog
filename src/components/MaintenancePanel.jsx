@@ -498,10 +498,13 @@ function getMainStablingCompactCardStyle(typeKey, displayLabel = "", requestGrou
         };
 
   const accent = visual.accent || "#4f8ef7";
+  const accentRgb = hexToRgb(accent);
 
   return {
     accent,
     card: {
+      "--maintenance-request-accent": accent,
+      "--maintenance-request-accent-rgb": `${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}`,
       // Unified steel-blue row style. Only the inset left line keeps
       // the request/remark colour so rows feel cleaner while still
       // showing the remark difference at a glance.
@@ -1001,7 +1004,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         className="space-y-[1px]"
       >
         <div
-          className="theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] w-full grid-cols-[minmax(0,1fr)_18px] items-center gap-1 overflow-hidden rounded-md border pl-3 pr-1.5 text-left leading-none transition-[border-color,background,box-shadow] duration-150"
+          className="theme-maintenance-request-card theme-maintenance-group-heading theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] w-full grid-cols-[minmax(0,1fr)_18px] items-center gap-1 overflow-hidden rounded-md border pl-3 pr-1.5 text-left leading-none transition-[border-color,background,box-shadow] duration-150"
           style={cardVisual.card}
         >
           <span className="min-w-0 truncate text-[12px] font-normal uppercase text-[#f8fbff]">
@@ -1026,7 +1029,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               return (
                 <div
                   key={`${section}-${group.key}-${req.id || req._tempId || chipLabel}`}
-                  className={`theme-maintenance-request-card theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] ${expandedGridClass} items-center gap-[2px] overflow-visible rounded-md border px-1.5 leading-none transition-[border-color,background,box-shadow] duration-150`}
+                  className={`theme-maintenance-request-card theme-maintenance-train-row theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] ${expandedGridClass} items-center gap-[2px] overflow-visible rounded-md border px-1.5 leading-none transition-[border-color,background,box-shadow] duration-150`}
                   style={{ ...cardVisual.card, marginLeft: "10px", width: "calc(100% - 10px)" }}
                 >
                   <span className="truncate text-center text-[12px] font-semibold text-[#f8fbff]">{chipLabel}</span>
