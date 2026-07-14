@@ -1,3 +1,4 @@
+// Keep the Shunter Name dropdown complete, unique, and alphabetical.
 export default function shunterNamePlugin() {
   return {
     name: 'railog-shunter-name-options',
