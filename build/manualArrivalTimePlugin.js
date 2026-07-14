@@ -30,7 +30,7 @@ function subtractThreeMinutesFromHHMM(value = "") {
   if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return "";
 
   const totalMinutes = (hours * 60 + minutes - 3 + 24 * 60) % (24 * 60);
-  return String(Math.floor(totalMinutes / 60)).padStart(2, "0") + String(totalMinutes % 60).padStart(2, "0");
+  return String(Math.floor(totalMinutes / 60)).padStart(2, "0") + ":" + String(totalMinutes % 60).padStart(2, "0");
 }
 
 function TrainMovementContent() {`,
@@ -57,6 +57,11 @@ function TrainMovementContent() {`,
         'automatic From TP1 form value'
       );
 
+      code = code.replace(
+        /const manualToManualReady = [^\r\n]+;/,
+        'const manualToManualReady = manualShunterReady && isCompleteMovementTimeInput(tp1Form.toManual);'
+      );
+
       code = replaceRequired(
         code,
         /      \{\r?\n        key: "fromTp1",\r?\n        label: "Time start moving from TP1",\r?\n        visible: manualShunterReady,\r?\n        complete: manualFromTp1Ready,\r?\n        render: \(\) => renderTp1TimeInput\("fromTp1"\),\r?\n      \},\r?\n      \{\r?\n        key: "toManual",\r?\n        label: "Time arrival to Manual Area",\r?\n        visible: manualFromTp1Ready,\r?\n        complete: manualToManualReady,\r?\n        render: \(\) => renderTp1TimeInput\("toManual"\),\r?\n      \},/,
@@ -64,7 +69,7 @@ function TrainMovementContent() {`,
         key: "toManual",
         label: "Time arrival to Manual Area",
         visible: manualShunterReady,
-        complete: manualToManualReady,
+        complete: isCompleteMovementTimeInput(tp1Form.toManual),
         render: () => renderTp1TimeInput("toManual"),
       },`,
         'manual flow time fields'
