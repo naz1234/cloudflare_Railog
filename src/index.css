@@ -7613,3 +7613,9 @@ html[data-app-theme="light"] .theme-train-rem-copy.is-east.is-copied {
     transform: none;
   }
 }
+
+/* Train Request: bold grouped titles in light mode only. */
+html[data-app-theme="light"] .theme-maintenance-panel
+.theme-maintenance-group-heading > span:first-child {
+  font-weight: 700 !important;
+}
