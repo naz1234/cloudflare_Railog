@@ -5676,7 +5676,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           )}
           {key && inserted?.isSweeping && (
             isEastInsertionCard ? (
-              <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+              <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                 <ActionTooltip message={resetCardTooltip} placement="top">
                   <button
                     type="button"
@@ -5783,7 +5783,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               </div>
             ) : (
-            <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+            <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
               <ActionTooltip message={resetCardTooltip} placement="top">
                 <button
                   type="button"
@@ -5932,7 +5932,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             )}
             {inserted && !inserted.isSweeping && (
               isEast3K1InsertionCard ? (
-                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+                <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                   <ActionTooltip message={resetCardTooltip} placement="top">
                     <button
                       type="button"
@@ -5959,7 +5959,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     title="3K1 insertion details"
                     aria-label="3K1 insertion details"
                   >
-                    <div className="mb-1 text-center text-[11px] font-normal leading-tight tracking-[0.5px] text-white">3K1</div>
+                    <div className="mb-1 whitespace-nowrap text-center text-[11px] font-normal leading-tight tracking-[0.5px] text-white">3K1</div>
                     <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
                       <span className="text-right text-[10px] font-normal uppercase tracking-normal text-cyan-100/90">Time :</span>
                       <input
@@ -6004,7 +6004,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </div>
                 </div>
               ) : useUnifiedInsertionCardStyle ? (
-                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+                <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                   <ActionTooltip message={resetCardTooltip} placement="top">
                     <button
                       type="button"
@@ -6033,10 +6033,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       title={`TID ${insertedTid} insertion details`}
                       aria-label={`TID ${insertedTid} insertion details`}
                     >
-                      <div className="mb-0.5 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
+                      <div className="mb-0.5 whitespace-nowrap text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
                       {hasInsertedTidAssistDisplayRemark && (
                         <div
-                          className="mb-1 text-center text-[11px] font-normal leading-tight tracking-[0.5px] text-white"
+                          className="mb-1 whitespace-nowrap text-center text-[11px] font-normal leading-tight tracking-[0.5px] text-white"
                           title={insertedTidAssistDisplayRemark}
                           aria-label={insertedTidAssistDisplayRemark}
                         >
@@ -6122,7 +6122,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               ) : (
               <>
                 {insertedTid ? (
-                  <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+                  <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                     <ActionTooltip message={resetCardTooltip} placement="top">
                       <button
                         type="button"
@@ -6149,10 +6149,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       title={`TID ${insertedTid} insertion details`}
                       aria-label={`TID ${insertedTid} insertion details`}
                     >
-                      <div className="mb-0.5 text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
+                      <div className="mb-0.5 whitespace-nowrap text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
                       {hasInsertedTidAssistDisplayRemark && (
                         <div
-                          className="mb-1 text-center text-[11px] font-normal leading-tight tracking-[0.5px] text-white"
+                          className="mb-1 whitespace-nowrap text-center text-[11px] font-normal leading-tight tracking-[0.5px] text-white"
                           title={insertedTidAssistDisplayRemark}
                           aria-label={insertedTidAssistDisplayRemark}
                         >
@@ -6203,7 +6203,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     </div>
                   </div>
               ) : hasInsertedPlainRemark ? (
-                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+                <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                   <ActionTooltip message={resetCardTooltip} placement="top">
                     <button
                       type="button"
@@ -6260,7 +6260,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </div>
                 </div>
               ) : (
-                <div className="flex w-full flex-col items-center gap-1 px-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
+                <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                   <ActionTooltip message={resetCardTooltip} placement="top">
                     <button
                       type="button"
