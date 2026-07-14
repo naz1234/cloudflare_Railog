@@ -7661,3 +7661,40 @@ html[data-app-theme="light"] .theme-train-rem-panel
 .theme-insertion-card [title^="TID "][title$=" insertion details"] > .grid {
   display: none !important;
 }
+
+/* Insertion TID reference: neutral elevation without coloured glow in either theme. */
+.theme-insertion-page :is(
+  .theme-insertion-reference,
+  .theme-insertion-reference-table
+),
+.theme-insertion-page :is(
+  .theme-insertion-reference,
+  .theme-insertion-reference-table
+):is(:hover, :focus-within) {
+  box-shadow: none !important;
+}
+
+.theme-insertion-page .theme-insertion-reference-depot,
+.theme-insertion-page .theme-insertion-reference-depot:is(:hover, :focus-within) {
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page :is(
+  .theme-insertion-reference,
+  .theme-insertion-reference-table
+),
+html[data-app-theme="light"] .theme-insertion-page :is(
+  .theme-insertion-reference,
+  .theme-insertion-reference-table
+):is(:hover, :focus-within) {
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot:is(:hover, :focus-within) {
+  box-shadow:
+    0 3px 12px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.90) !important;
+}
