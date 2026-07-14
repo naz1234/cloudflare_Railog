@@ -412,7 +412,7 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFi
         .insertion-clean-title {
           color: #ffffff;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 14px;
+          font-size: 15px;
           line-height: 1;
           font-weight: 900;
           letter-spacing: 0.12em;
@@ -422,7 +422,7 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFi
         .insertion-clean-subtitle {
           color: #58a6ff;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 10px;
+          font-size: 11px;
           font-weight: 500;
         }
 
@@ -466,7 +466,7 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFi
         .insertion-clean-card-title {
           color: #ffffff;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 10px;
+          font-size: 11px;
           line-height: 1.15;
           font-weight: 900;
           letter-spacing: 0.10em;
@@ -493,7 +493,7 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFi
           background: rgba(15,45,74,0.75);
           color: #b5d9ee;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 9px;
+          font-size: 10px;
           line-height: 1;
           font-weight: 850;
           white-space: nowrap;
@@ -585,7 +585,7 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFi
         .insertion-clean-section-title {
           margin-bottom: 4px;
           color: #69d2ff;
-          font-size: 10px;
+          font-size: 11px;
           line-height: 1;
           font-weight: 900;
           letter-spacing: 0.10em;
@@ -607,7 +607,7 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFi
           overflow-wrap: anywhere;
           color: #d8e7f7;
           font-family: inherit;
-          font-size: 10px;
+          font-size: 11px;
           line-height: 1.42;
           font-weight: 500;
         }
@@ -625,7 +625,7 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFi
         }
 
         .insertion-clean-empty-text {
-          font-size: 10px;
+          font-size: 11px;
           line-height: 1.4;
           font-style: italic;
         }
@@ -637,7 +637,7 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFi
           justify-content: center;
           gap: 7px;
           color: #668da9;
-          font-size: 10px;
+          font-size: 11px;
           font-weight: 700;
         }
 
@@ -645,8 +645,8 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFi
           .insertion-clean-shell { padding: 8px; }
           .insertion-clean-card-header { padding: 7px 8px; }
           .insertion-clean-card-body { padding: 8px; }
-          .insertion-clean-title { font-size: 12px; }
-          .insertion-clean-action { height: 23px; padding: 0 6px; font-size: 8px; }
+          .insertion-clean-title { font-size: 13px; }
+          .insertion-clean-action { height: 23px; padding: 0 6px; font-size: 9px; }
         }
       `}</style>
 
