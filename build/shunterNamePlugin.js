@@ -1,10 +1,3 @@
-function replaceRequired(source, before, after, label) {
-  if (!source.includes(before)) {
-    throw new Error(`[shunter-name] Unable to find ${label} in DepotStabling.jsx`);
-  }
-  return source.replace(before, after);
-}
-
 export default function shunterNamePlugin() {
   return {
     name: 'railog-shunter-name-options',
@@ -14,20 +7,28 @@ export default function shunterNamePlugin() {
         return null;
       }
 
-      const code = replaceRequired(
-        source,
-        `  const SHUNTER_NAME_OPTIONS = [
-    "PAUL",
-    "FAZREEN",
-    "ARSHAD",`,
-        `  const SHUNTER_NAME_OPTIONS = [
-    "PAUL",
-    "FAZREEN",
-    "AREFUR",
-    "ARSHAD",`,
-        'Shunter Name option list'
-      );
+      const optionListPattern = /  const SHUNTER_NAME_OPTIONS = \[\n([\s\S]*?)\n  \];/;
+      const optionListMatch = source.match(optionListPattern);
 
+      if (!optionListMatch) {
+        throw new Error('[shunter-name] Unable to find Shunter Name option list in DepotStabling.jsx');
+      }
+
+      const existingNames = Array.from(
+        optionListMatch[1].matchAll(/"([^"]+)"/g),
+        (match) => String(match[1] || '').trim()
+      ).filter(Boolean);
+
+      const sortedNames = Array.from(new Set([...existingNames, 'AREFUR']))
+        .sort((left, right) => left.localeCompare(right, 'en', { sensitivity: 'base' }));
+
+      const sortedOptionList = [
+        '  const SHUNTER_NAME_OPTIONS = [',
+        ...sortedNames.map((name) => `    "${name}",`),
+        '  ];',
+      ].join('\n');
+
+      const code = source.replace(optionListPattern, sortedOptionList);
       return { code, map: null };
     },
   };
