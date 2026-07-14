@@ -7619,3 +7619,39 @@ html[data-app-theme="light"] .theme-maintenance-panel
 .theme-maintenance-group-heading > span:first-child {
   font-weight: 700 !important;
 }
+
+/* Removal Summary 7pm: keep special rows pastel in light mode. */
+html[data-app-theme="light"] .theme-train-rem-panel
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"]:is(
+  [data-tid="207"],
+  [data-tid="209"],
+  [data-tid="211"]
+) {
+  background: linear-gradient(90deg, #faf5ff 0%, #f3e8ff 58%, #f5f3ff 100%) !important;
+  border-color: #8b5cf6 !important;
+  box-shadow:
+    inset 3px 0 0 #a855f7,
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    0 1px 3px rgba(88, 28, 135, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-panel
+.theme-train-rem-row-card.is-other-preset-themed-row[data-preset="7pm"]:is(
+  [data-tid="121"],
+  [data-tid="222"],
+  [data-tid="223"],
+  [data-tid="224"],
+  [data-tid="225"],
+  [data-tid="226"],
+  [data-tid="227"],
+  [data-tid="228"],
+  [data-tid="229"],
+  [data-tid="230"]
+) {
+  background: linear-gradient(90deg, #fff7ed 0%, #fef3c7 58%, #fffbeb 100%) !important;
+  border-color: #d97706 !important;
+  box-shadow:
+    inset 3px 0 0 #f59e0b,
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    0 1px 3px rgba(146, 64, 14, 0.10) !important;
+}
