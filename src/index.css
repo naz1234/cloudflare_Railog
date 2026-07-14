@@ -6827,3 +6827,28 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-ta-name-inpu
   font-weight: 500 !important;
 }
 
+/* Insertion light mode: black text throughout train cards. */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card :is(
+  div,
+  span,
+  label,
+  button,
+  input
+) {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card :is(
+  button,
+  input
+):disabled {
+  color: #000000 !important;
+  opacity: 0.72 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input::placeholder {
+  color: #000000 !important;
+  opacity: 0.65 !important;
+}
+
