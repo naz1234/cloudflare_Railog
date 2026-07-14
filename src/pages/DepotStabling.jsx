@@ -5679,7 +5679,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   <button
                     type="button"
                     onClick={handleSpecialCardRefresh}
-                    className="text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
+                    className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
                     aria-label={resetCardTooltip}
                   >
                   -- Refresh --
@@ -5786,7 +5786,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 <button
                   type="button"
                   onClick={handleSpecialCardRefresh}
-                  className="text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
+                  className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
                   aria-label={resetCardTooltip}
                 >
                 -- Refresh --
@@ -6007,7 +6007,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     <button
                       type="button"
                       onClick={handleSpecialCardRefresh}
-                      className="text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
+                      className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
                       aria-label={resetCardTooltip}
                     >
                     -- Refresh --
@@ -6071,7 +6071,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     </div>
                   ) : (
                     <div
-                      className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
+                      className="theme-insertion-time-pill inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
                       style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
                     >
                       <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Time</span>
@@ -6095,7 +6095,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                           onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                         }}
                         placeholder="00:00"
-                        className="min-w-0 w-[48px] border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                        className="theme-insertion-time-input min-w-0 w-[48px] border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none placeholder:text-slate-500"
                         style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
                         title="Edit insertion completion time"
                       />
@@ -6125,7 +6125,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       <button
                         type="button"
                         onClick={handleSpecialCardRefresh}
-                        className="text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
+                        className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
                         aria-label={resetCardTooltip}
                       >
                       -- Refresh --
@@ -6206,14 +6206,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     <button
                       type="button"
                       onClick={handleSpecialCardRefresh}
-                      className="text-[10px] font-normal leading-none text-slate-200/90 transition-all hover:text-white focus-visible:text-white"
+                      className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-slate-200/90 transition-all hover:text-white focus-visible:text-white"
                       aria-label={resetCardTooltip}
                     >
                     -- Refresh --
                     </button>
                   </ActionTooltip>
                   <div
-                    className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
+                    className="theme-insertion-time-pill inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
                     style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
                   >
                     <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Time</span>
@@ -6237,7 +6237,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                       }}
                       placeholder="00:00"
-                      className="min-w-0 w-[48px] border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                      className="theme-insertion-time-input min-w-0 w-[48px] border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none placeholder:text-slate-500"
                       style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
                       title="Edit insertion completion time"
                     />
@@ -6263,14 +6263,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     <button
                       type="button"
                       onClick={handleSpecialCardRefresh}
-                      className="text-[10px] font-normal leading-none text-slate-200/90 transition-all hover:text-white focus-visible:text-white"
+                      className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-slate-200/90 transition-all hover:text-white focus-visible:text-white"
                       aria-label={resetCardTooltip}
                     >
                     -- Refresh --
                     </button>
                   </ActionTooltip>
                   <div
-                    className="inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
+                    className="theme-insertion-time-pill inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
                     style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
                   >
                     <span className="shrink-0 text-[10px] uppercase tracking-wide opacity-80">Time</span>
@@ -6294,7 +6294,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onInsertionTimeUpdate?.(inserted.key, normalized || formatTime(new Date()));
                       }}
                       placeholder="00:00"
-                      className="min-w-0 w-[48px] border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none placeholder:text-slate-500"
+                      className="theme-insertion-time-input min-w-0 w-[48px] border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight outline-none placeholder:text-slate-500"
                       style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
                       title="Edit insertion completion time"
                     />
