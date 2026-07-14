@@ -7655,3 +7655,9 @@ html[data-app-theme="light"] .theme-train-rem-panel
     inset 0 1px 0 rgba(255, 255, 255, 0.98),
     0 1px 3px rgba(146, 64, 14, 0.10) !important;
 }
+
+/* Weekend insertion cards: keep the reference TID and remark, but hide card timing. */
+.theme-insertion-section[data-weekend-timetable="true"]
+.theme-insertion-card [title^="TID "][title$=" insertion details"] > .grid {
+  display: none !important;
+}

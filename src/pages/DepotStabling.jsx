@@ -6325,7 +6325,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   );
 }
 
-function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onInsertionTaNameUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied }) {
+function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onInsertionTaNameUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, isWeekendActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied }) {
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
   const sectionDepot = roads.some((road) => WEST_ROADS.includes(road)) ? "west" : "east";
@@ -6510,6 +6510,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
     <section
       className="theme-insertion-section rounded-2xl border px-4 py-4"
       data-depot={sectionDepot}
+      data-weekend-timetable={isWeekendActive ? "true" : "false"}
       style={{
         width: "fit-content",
         maxWidth: "fit-content",
@@ -8852,6 +8853,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
               getTidAssistRemark={getTidAssistRemark}
               getTidAssistRemarkStyle={getTidAssistRemarkStyle}
               isWeekdayActive={normalizeTimetableType(activeTimetableType) === "weekday"}
+              isWeekendActive={["friday", "saturday"].includes(normalizeTimetableType(activeTimetableType))}
               duplicateTidKeys={insertionAssistDuplicateTidKeySet}
               tidDragState={tidDragState}
               tidDragHover={tidDragHover}
@@ -8891,6 +8893,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
               getTidAssistRemark={getTidAssistRemark}
               getTidAssistRemarkStyle={getTidAssistRemarkStyle}
               isWeekdayActive={normalizeTimetableType(activeTimetableType) === "weekday"}
+              isWeekendActive={["friday", "saturday"].includes(normalizeTimetableType(activeTimetableType))}
               duplicateTidKeys={insertionAssistDuplicateTidKeySet}
               tidDragState={tidDragState}
               tidDragHover={tidDragHover}
