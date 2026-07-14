@@ -6738,3 +6738,92 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card-refresh
   text-shadow: none !important;
 }
 
+/* Insertion light mode: stronger controls and black labels. */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-pg-switch {
+  background: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-pg-button {
+  color: #000000 !important;
+  font-weight: 600 !important;
+  opacity: 1 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="west"] .theme-insertion-pg-button.is-selected {
+  color: #000000 !important;
+  background: #fed7aa !important;
+  border-color: #f97316 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] .theme-insertion-pg-button.is-selected {
+  color: #000000 !important;
+  background: #99f6e4 !important;
+  border-color: #14b8a6 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button {
+  color: #000000 !important;
+  background: #dbeafe !important;
+  border-color: #60a5fa !important;
+  font-weight: 600 !important;
+  opacity: 1 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-download {
+  color: #000000 !important;
+  background: #ccfbf1 !important;
+  border-color: #14b8a6 !important;
+  font-weight: 700 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-clear {
+  color: #000000 !important;
+  background: #fee2e2 !important;
+  border-color: #f87171 !important;
+  font-weight: 700 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-hide {
+  color: #000000 !important;
+  background: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+  font-weight: 700 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-hide.is-active {
+  color: #000000 !important;
+  background: #dcfce7 !important;
+  border-color: #22c55e !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page :is(
+  .theme-insertion-refresh-button,
+  .theme-insertion-action,
+  .theme-insertion-pg-button
+):disabled {
+  color: #000000 !important;
+  opacity: 0.72 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page :is(
+  .theme-insertion-refresh-button,
+  .theme-insertion-action,
+  .theme-insertion-pg-button
+) svg {
+  color: #000000 !important;
+  stroke: currentColor !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-ta-name-input {
+  color: #000000 !important;
+  font-weight: 600 !important;
+  opacity: 1 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-ta-name-input::placeholder {
+  color: #000000 !important;
+  opacity: 0.72 !important;
+  font-weight: 500 !important;
+}
+
