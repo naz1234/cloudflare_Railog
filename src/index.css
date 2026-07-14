@@ -7513,3 +7513,15 @@ html[data-app-theme="light"] .theme-train-rem-table-header {
   border-color: #a9bac8 !important;
 }
 
+/* PST cards: use solid black typography in light mode only. */
+html[data-app-theme="light"] .theme-pst-section .theme-pst-card,
+html[data-app-theme="light"] .theme-pst-section .theme-pst-card * {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-pst-section .theme-pst-card input::placeholder {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+}
