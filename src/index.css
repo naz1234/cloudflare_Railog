@@ -6846,3 +6846,14 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input::
   opacity: 0.65 !important;
 }
 
+/* Waiting insertion cards: keep the Insert Train action solid black in light mode,
+   including cards that already display maintenance or request remarks. */
+html[data-app-theme="light"] .theme-insertion-page
+.theme-insertion-card.has-train:not(.is-inserted):not(.is-complete)
+.theme-insertion-insert-button {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
