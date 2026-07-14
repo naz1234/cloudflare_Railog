@@ -493,9 +493,9 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFi
           background: rgba(15,45,74,0.75);
           color: #b5d9ee;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 10px;
+          font-size: 11px;
           line-height: 1;
-          font-weight: 850;
+          font-weight: 400;
           white-space: nowrap;
           cursor: pointer;
           transition: transform 120ms ease, border-color 120ms ease, color 120ms ease, background 120ms ease;
@@ -646,7 +646,7 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, depotFi
           .insertion-clean-card-header { padding: 7px 8px; }
           .insertion-clean-card-body { padding: 8px; }
           .insertion-clean-title { font-size: 13px; }
-          .insertion-clean-action { height: 23px; padding: 0 6px; font-size: 9px; }
+          .insertion-clean-action { height: 23px; padding: 0 6px; font-size: 10px; }
         }
       `}</style>
 
