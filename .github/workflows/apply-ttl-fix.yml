@@ -1,0 +1,89 @@
+name: Apply TTL calculation fix
+
+on:
+  push:
+    branches:
+      - agent/fix-ttl-calculation
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-ttl-calculation
+
+      - name: Patch TTL calculation
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('src/pages/DepotStabling.jsx')
+          text = path.read_text(encoding='utf-8')
+
+          old_match = '''                  .map((value) => String(value || "").trim())
+                  .filter((value) => value && /\\bUNFIT\\b/i.test(value))'''
+          new_match = '''                  .map((value) => String(value || "").trim())
+                  .filter((value) => value && (
+                    /\\bUNFIT\\b/i.test(value) ||
+                    /\\bNOT[\\s/_-]*FIT\\b/i.test(value)
+                  ))'''
+          if old_match not in text:
+              raise SystemExit('UNFIT matcher block was not found; no changes committed.')
+          text = text.replace(old_match, new_match, 1)
+
+          old_summary = '''  const totalServiceTrainCount = automaticAreaSummary.inServiceTrainIds.length;
+  const totalAutomaticAreaTrainCount = automaticAreaSummary.automaticAreaTrainIds.length;
+  const duplicateDepotTrainDetailText = duplicateDepotTrainDetails'''
+          new_summary = '''  const totalServiceTrainCount = automaticAreaSummary.inServiceTrainIds.length;
+  const totalAutomaticAreaTrainCount = automaticAreaSummary.automaticAreaTrainIds.length;
+  const totalListedTrainCount = westDepotCopyCount + eastDepotCopyCount;
+  const duplicateDepotTrainCount = duplicateDepotTrainIds.length;
+  const unfitTrainCount = automaticAreaSummary.unfitTrainDetails.length;
+  const duplicateDepotTrainDetailText = duplicateDepotTrainDetails'''
+          if old_summary not in text:
+              raise SystemExit('TTL summary variable block was not found; no changes committed.')
+          text = text.replace(old_summary, new_summary, 1)
+
+          old_text = '''  const totalServiceText = [
+    `Total ${totalServiceTrainCount} trains in service.`,
+    ...(automaticAreaSummary.unfitTrainDetails.length
+      ? [
+          `Total ${totalAutomaticAreaTrainCount} trains at automatic area.`,
+          `Unfit Train : ${unfitTrainDetailText}`,
+        ]
+      : []),'''
+          new_text = '''  const totalServiceText = [
+    `Total ${totalServiceTrainCount} trains in service.`,
+    `Calculation : W ${westDepotCopyCount} + E ${eastDepotCopyCount} - Duplicate ${duplicateDepotTrainCount} - Unfit / Not Fit ${unfitTrainCount} = ${totalServiceTrainCount}.`,
+    `Total ${totalListedTrainCount} trains listed before duplicate checking.`,
+    `Total ${totalAutomaticAreaTrainCount} unique trains at automatic area.`,
+    ...(automaticAreaSummary.unfitTrainDetails.length
+      ? [`Unfit / Not Fit Train : ${unfitTrainDetailText}`]
+      : []),'''
+          if old_text not in text:
+              raise SystemExit('TTL tooltip block was not found; no changes committed.')
+          text = text.replace(old_text, new_text, 1)
+
+          path.write_text(text, encoding='utf-8')
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Remove one-time workflow
+        run: rm .github/workflows/apply-ttl-fix.yml
+
+      - name: Commit patched code
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pages/DepotStabling.jsx .github/workflows/apply-ttl-fix.yml
+          git commit -m "fix TTL train calculation details"
+          git push origin agent/fix-ttl-calculation
