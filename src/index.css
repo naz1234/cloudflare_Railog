@@ -6703,3 +6703,38 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-help-details-inner
   }
 }
 
+/* Insertion light mode: non-remark timing and Refresh contrast. */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-time-pill {
+  color: #0f2742 !important;
+  background: #dbeafe !important;
+  background-image: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%) !important;
+  border: 1px solid #60a5fa !important;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.12) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-time-pill > span {
+  color: #1e3a5f !important;
+  opacity: 1 !important;
+  font-weight: 700 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-time-input {
+  color: #0f2742 !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-time-input::placeholder {
+  color: #475569 !important;
+  opacity: 0.7 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card-refresh,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card-refresh:hover,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card-refresh:focus-visible {
+  color: #000000 !important;
+  opacity: 1 !important;
+  font-weight: 600 !important;
+  text-shadow: none !important;
+}
+
