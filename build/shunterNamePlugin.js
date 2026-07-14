@@ -28,8 +28,10 @@ export default function shunterNamePlugin() {
         '  ];',
       ].join('\n');
 
-      const code = source.replace(optionListPattern, sortedOptionList);
-      return { code, map: null };
+      return {
+        code: source.replace(optionListPattern, sortedOptionList),
+        map: null,
+      };
     },
   };
 }
