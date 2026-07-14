@@ -7525,3 +7525,68 @@ html[data-app-theme="light"] .theme-pst-section .theme-pst-card input::placehold
   color: #000000 !important;
   -webkit-text-fill-color: #000000 !important;
 }
+
+/* Train Request: restore dynamic group colours in light mode.
+   The group heading uses a stronger tint; train rows use a softer tint. */
+html[data-app-theme="light"] .theme-maintenance-panel .theme-maintenance-request-card {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--maintenance-request-accent-rgb, 79, 142, 247), 0.18) 0%,
+    rgba(var(--maintenance-request-accent-rgb, 79, 142, 247), 0.08) 56%,
+    #ffffff 100%
+  ) !important;
+  border-color: rgba(var(--maintenance-request-accent-rgb, 79, 142, 247), 0.62) !important;
+  box-shadow:
+    inset 3px 0 0 var(--maintenance-request-accent, #4f8ef7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    0 1px 4px rgba(15, 23, 42, 0.09) !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-panel .theme-maintenance-group-heading {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--maintenance-request-accent-rgb, 79, 142, 247), 0.30) 0%,
+    rgba(var(--maintenance-request-accent-rgb, 79, 142, 247), 0.14) 58%,
+    #ffffff 100%
+  ) !important;
+  border-color: rgba(var(--maintenance-request-accent-rgb, 79, 142, 247), 0.82) !important;
+  box-shadow:
+    inset 4px 0 0 var(--maintenance-request-accent, #4f8ef7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    0 2px 5px rgba(15, 23, 42, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-panel .theme-maintenance-train-row {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--maintenance-request-accent-rgb, 79, 142, 247), 0.14) 0%,
+    rgba(var(--maintenance-request-accent-rgb, 79, 142, 247), 0.05) 58%,
+    #ffffff 100%
+  ) !important;
+}
+
+/* W/E copy buttons stay neutral until a copy action succeeds. */
+html[data-app-theme="light"] .theme-train-rem-copy.is-west:not(.is-copied):not(.is-failed):not(.is-empty),
+html[data-app-theme="light"] .theme-train-rem-copy.is-east:not(.is-copied):not(.is-failed):not(.is-empty) {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  background: #ffffff !important;
+  border-color: #a9bac8 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-copy.is-west.is-copied {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  background: #dbeafe !important;
+  border-color: #60a5fa !important;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.14) !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-copy.is-east.is-copied {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  background: #ccfbf1 !important;
+  border-color: #2dd4bf !important;
+  box-shadow: 0 1px 4px rgba(13, 148, 136, 0.14) !important;
+}
