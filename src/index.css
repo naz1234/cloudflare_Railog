@@ -7590,3 +7590,26 @@ html[data-app-theme="light"] .theme-train-rem-copy.is-east.is-copied {
   border-color: #2dd4bf !important;
   box-shadow: 0 1px 4px rgba(13, 148, 136, 0.14) !important;
 }
+
+/* Insertion cards: lift one extra pixel on hover without transform raster blur.
+   Drag-and-drop keeps its separate transform animation. */
+.theme-insertion-page .theme-insertion-card.has-train {
+  top: 0;
+  transform: none;
+  will-change: auto;
+  transition:
+    top 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    filter 160ms ease;
+}
+
+@media (hover: hover) {
+  html[data-app-theme="light"] .theme-insertion-page
+  .theme-insertion-card.has-train:not(.is-expired):not(.is-tid-drag-active):not(.is-tid-drop-hovered):hover,
+  html:not([data-app-theme="light"]) .theme-insertion-page
+  .theme-insertion-card.has-train:not(.is-expired):not(.is-tid-drag-active):not(.is-tid-drop-hovered):hover {
+    top: -3px;
+    transform: none;
+  }
+}
