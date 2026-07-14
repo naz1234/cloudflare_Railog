@@ -4485,7 +4485,7 @@ function PSTStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2,
   const headerTooltipPlacement = sectionDepotLabel === "West Depot" ? "bottom" : "top";
 
   return (
-    <section className="theme-stabling-section theme-pst-section bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
+    <section className={`theme-stabling-section theme-pst-section ${sectionDepotLabel === "East Depot" ? "is-east" : "is-west"} bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4`} style={{ width: "fit-content", maxWidth: "fit-content" }}>
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex min-w-0 items-center gap-3">
           <div className="theme-pst-title-icon w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
