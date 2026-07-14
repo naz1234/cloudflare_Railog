@@ -1,0 +1,8 @@
+/* TID reference top controls: increase the visible button labels by 1px. */
+.theme-insertion-reference-sound-button {
+  font-size: 9px !important;
+}
+
+.theme-insertion-reference-tab {
+  font-size: 10px !important;
+}
