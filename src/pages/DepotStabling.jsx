@@ -5389,8 +5389,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   // Elapsed inserted trains are hidden only after user clicks "Hide elapsed TID".
   const expired = Boolean(hideElapsedTid && inserted && isTimePast(inserted.time));
 
-  // Keep the Train ID consistently pure white in dark mode. The insertion
-  // state is now communicated by the 3 px status rail, not by recolouring
+  // Keep the Train ID consistently pure white in dark mode. Insertion state
+  // is communicated by the card surface and detail pills, not by recolouring
   // the most important identifier on the card.
   const trainColor = expired ? "#3a5068" : "#ffffff";
 
@@ -5407,9 +5407,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         : key
           ? "linear-gradient(145deg, #0d2a42 0%, #0a1d30 52%, #071827 100%)"
           : "rgba(7, 24, 39, 0.30)";
-  // Keep the card frame calm and neutral. State colour is concentrated in
-  // the 3 px left rail so maintenance pills and insertion status do not fight
-  // for attention.
+  // Keep the card frame calm and symmetric. State colour remains in the
+  // card surface and detail pills, with no reserved side-rail spacing.
   const insCardBorder = expired
     ? "1px solid #1e3547"
     : isDuplicateInsertedTid
@@ -5487,7 +5486,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             : (isInsertionDone ? "6px 5px" : "8px 7px"),
           background: insCardBg,
           border: insCardBorder,
-          borderRight: useUnifiedInsertionCardStyle ? "0" : undefined,
           outline: isTidDropHovered
             ? "2px solid #38bdf8"
             : isTidDragActive && isTidDropEligible
