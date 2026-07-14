@@ -6857,3 +6857,37 @@ html[data-app-theme="light"] .theme-insertion-page
   text-shadow: none !important;
 }
 
+/* Sweep details: use a light native dropdown and solid black pill text in light mode. */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-sweep-pill,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-sweep-pill :is(
+  div,
+  span,
+  label,
+  input,
+  select,
+  option
+) {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-sweep-track-select {
+  color-scheme: light !important;
+  color: #000000 !important;
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #a78bfa !important;
+  opacity: 1 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-sweep-track-select option {
+  color: #000000 !important;
+  background: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-sweep-track-select option:checked {
+  color: #000000 !important;
+  background: #ede9fe !important;
+}
+
