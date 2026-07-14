@@ -5475,7 +5475,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         data-insertion-drop-depot={autoTidDepot}
         data-insertion-drop-road={road}
         data-insertion-drop-bi={bi}
-        className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${shouldStretchInsertionCard ? "h-full" : ""} relative flex flex-col items-center justify-start overflow-hidden rounded-xl text-center ${isInsertionDone ? "gap-1" : "gap-2"}`}
+        className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${isTidDragActive ? "is-tid-drag-active" : ""} ${isTidDropHovered ? "is-tid-drop-hovered" : ""} ${shouldStretchInsertionCard ? "h-full" : ""} relative flex flex-col items-center justify-start overflow-hidden rounded-xl text-center ${isInsertionDone ? "gap-1" : "gap-2"}`}
         style={{
           minHeight: ownInsertionCardMinHeight,
           height: shouldStretchInsertionCard ? "100%" : undefined,
