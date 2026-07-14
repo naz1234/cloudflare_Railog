@@ -5605,9 +5605,9 @@ html[data-app-theme="light"] .insertion-clean-shell::-webkit-scrollbar-thumb {
 }
 
 /* ========================================================================
-   INSERTION CARD POLISH — STATUS RAIL + ACTION HIERARCHY
-   Uses one 3 px rail to communicate the insertion state while keeping the
-   Train ID pure white and leaving maintenance/request pills independent.
+   INSERTION CARD POLISH — CARD STATE + ACTION HIERARCHY
+   West and East use balanced cards without a side status rail. State colour
+   remains in the card surfaces and detail pills.
    ======================================================================== */
 
 .theme-insertion-card {
@@ -5615,9 +5615,8 @@ html[data-app-theme="light"] .insertion-clean-shell::-webkit-scrollbar-thumb {
   isolation: isolate;
 }
 
-.theme-insertion-card.has-train {
-  padding-left: 8px !important;
-}
+/* West and East no longer render the legacy left status rail. Horizontal
+   spacing must come from InsertionCell's symmetric padding only. */
 
 .theme-insertion-card::after {
   content: "";
@@ -5770,12 +5769,7 @@ html:not([data-app-theme="light"]) .theme-insertion-insert-button:active {
   transform: translateY(0) scale(0.985);
 }
 
-/* The light glass theme keeps its glass language but receives the same clear
-   status rail and boxed input hierarchy. */
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.has-train {
-  padding-left: 8px !important;
-}
-
+/* The light glass theme keeps its glass language and boxed input hierarchy. */
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tid-input {
   height: 24px !important;
   background: rgba(255, 255, 255, 0.50) !important;
