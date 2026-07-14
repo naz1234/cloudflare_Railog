@@ -17,12 +17,12 @@ export default function ttlFixPlugin() {
       let code = replaceOnce(
         source,
         `                  .map((value) => String(value || "").trim())
-                   .filter((value) => value && /\\bUNFIT\\b/i.test(value))`,
+                  .filter((value) => value && /\\bUNFIT\\b/i.test(value))`,
         `                  .map((value) => String(value || "").trim())
-                   .filter((value) => value && (
-                     /\\bUNFIT\\b/i.test(value) ||
-                     /\\bNOT[\\s/_-]*FIT\\b/i.test(value)
-                   ))`,
+                  .filter((value) => value && (
+                    /\\bUNFIT\\b/i.test(value) ||
+                    /\\bNOT[\\s/_-]*FIT\\b/i.test(value)
+                  ))`,
         'UNFIT matcher'
       );
 
