@@ -5774,7 +5774,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onClick={(e) => e.stopPropagation()}
                       onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
                       placeholder="(Name)"
-                      className="w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                      className="theme-insertion-ta-name-input w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                       title="Optional TA name for the sweeping output"
                     />
                   </div>
@@ -5881,7 +5881,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
                     placeholder="(Name)"
-                    className="w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                    className="theme-insertion-ta-name-input w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                     title="Optional TA name for the sweeping output"
                   />
                 </div>
@@ -5995,7 +5995,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onClick={(e) => e.stopPropagation()}
                         onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
                         placeholder="(Name)"
-                        className="w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                        className="theme-insertion-ta-name-input w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                         title="Optional TA name for the 3K1 insertion output"
                       />
                     </div>
@@ -6111,7 +6111,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onClick={(e) => e.stopPropagation()}
                         onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
                         placeholder="(Name)"
-                        className="w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                        className="theme-insertion-ta-name-input w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                         title="Optional TA name for the insertion output"
                       />
                     </div>
@@ -6194,7 +6194,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                           onClick={(e) => e.stopPropagation()}
                           onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
                           placeholder="(Name)"
-                          className="w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                          className="theme-insertion-ta-name-input w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                           title="Optional TA name for the insertion output"
                         />
                       </div>
@@ -6251,7 +6251,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onClick={(e) => e.stopPropagation()}
                         onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
                         placeholder="(Name)"
-                        className="w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                        className="theme-insertion-ta-name-input w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                         title="Optional TA name for the insertion output"
                       />
                     </div>
@@ -6308,7 +6308,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         onClick={(e) => e.stopPropagation()}
                         onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
                         placeholder="(Name)"
-                        className="w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
+                        className="theme-insertion-ta-name-input w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
                         title="Optional TA name for the insertion output"
                       />
                     </div>
