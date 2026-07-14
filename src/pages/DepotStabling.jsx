@@ -7901,7 +7901,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       <button
         type="button"
         onClick={() => handleCopyDepotTrainList(safeDepot)}
-        className={`removal-summary-tooltip-trigger relative z-50 inline-flex h-5 items-center gap-1 overflow-visible rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5 ${extraClassName}`}
+        className={`theme-train-rem-copy ${safeDepot === "west" ? "is-west" : "is-east"} ${status ? `is-${status}` : ""} removal-summary-tooltip-trigger relative z-50 inline-flex h-5 items-center gap-1 overflow-visible rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5 ${extraClassName}`}
         aria-label={tooltipMessage}
         style={{
           background: status === "copied"
@@ -8007,7 +8007,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
     return (
       <div className="theme-train-rem-depot-card relative overflow-visible rounded-xl border border-[#2b4f6b] bg-[#071828] shadow-md">
-        <div className="theme-train-rem-header relative z-30 rounded-t-xl border-b border-[#1a3a56] px-2 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+        <div className="theme-train-rem-header theme-train-rem-toolbar relative z-30 rounded-t-xl border-b border-[#1a3a56] px-2 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
           <div className="flex items-start justify-between gap-2">
             <div>
               {depot !== "west" && <div className="text-[10px] font-normal text-white uppercase tracking-widest">{title}</div>}
@@ -8028,7 +8028,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     type="button"
                     onClick={handleCopyTotalService}
                     aria-label={totalServiceText}
-                    className={`inline-flex h-6 select-none items-center justify-center rounded-md border px-1.5 text-[10px] font-normal tracking-wide outline-none transition-all hover:-translate-y-0.5 focus-visible:ring-1 ${hasDepotTrainDuplicate ? "focus-visible:ring-red-300/70" : "focus-visible:ring-amber-300/70"}`}
+                    className={`theme-train-rem-ttl ${totalServiceCopyStatus === "copied" ? "is-copied" : totalServiceCopyStatus === "failed" ? "is-error" : hasDepotTrainDuplicate ? "is-duplicate" : ""} inline-flex h-6 select-none items-center justify-center rounded-md border px-1.5 text-[10px] font-normal tracking-wide outline-none transition-all hover:-translate-y-0.5 focus-visible:ring-1 ${hasDepotTrainDuplicate ? "focus-visible:ring-red-300/70" : "focus-visible:ring-amber-300/70"}`}
                     style={{
                       background: totalServiceCopyStatus === "copied"
                         ? "rgba(34,197,94,0.18)"
@@ -8067,7 +8067,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 <button
                   type="button"
                   onClick={(event) => handleTrainRemPdfDownload(depot, event)}
-                  className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5"
+                  className={`theme-train-rem-export theme-train-rem-pdf ${pdfActive ? "is-done" : ""} inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5`}
                   style={{
                     background: pdfActive ? "rgba(34,197,94,0.18)" : "rgba(6,212,232,0.14)",
                     borderColor: pdfActive ? "rgba(34,197,94,0.48)" : "rgba(34,211,238,0.55)",
@@ -8089,7 +8089,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 <button
                   type="button"
                   onClick={(event) => handleTrainRemPngDownload(depot, event)}
-                  className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5"
+                  className={`theme-train-rem-export theme-train-rem-png ${pngActive ? "is-done" : ""} inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5`}
                   style={{
                     background: pngActive ? "rgba(34,197,94,0.18)" : "rgba(14,165,233,0.14)",
                     borderColor: pngActive ? "rgba(34,197,94,0.48)" : "rgba(56,189,248,0.55)",
@@ -8112,7 +8112,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   type="button"
                   onClick={handleTrainRemUndo}
                   disabled={trainRemUndoCount === 0}
-                  className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0"
+                  className="theme-train-rem-undo inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0"
                   style={{
                     background: "rgba(15,45,74,0.75)",
                     borderColor: "rgba(74,138,181,0.55)",
@@ -8133,7 +8133,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 <button
                   type="button"
                   onClick={() => clearDepotTrainRem(depot)}
-                  className="inline-flex h-6 items-center gap-1 rounded-md border border-[#2b4f6b] bg-[#10263b] px-1.5 text-[10px] font-normal text-[#7eb8e0] transition-colors hover:border-red-600/60 hover:bg-red-950/30 hover:text-red-300"
+                  className="theme-train-rem-clear inline-flex h-6 items-center gap-1 rounded-md border border-[#2b4f6b] bg-[#10263b] px-1.5 text-[10px] font-normal text-[#7eb8e0] transition-colors hover:border-red-600/60 hover:bg-red-950/30 hover:text-red-300"
                   aria-label="Clear removal summary"
                 >
                   <Trash2 size={12} />
@@ -8159,7 +8159,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                         key={preset.label}
                         type="button"
                         onClick={() => applyPreset(depot, preset.label)}
-                        className={`removal-summary-tooltip-trigger relative z-50 h-5 overflow-visible rounded-md border text-[11px] font-normal transition-all ${
+                        className={`theme-train-rem-preset ${active ? "is-active" : ""} removal-summary-tooltip-trigger relative z-50 h-5 overflow-visible rounded-md border text-[11px] font-normal transition-all ${
                           active
                             ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
                             : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
@@ -8182,7 +8182,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                         key={preset.label}
                         type="button"
                         onClick={() => applyPreset(depot, preset.label)}
-                        className={`removal-summary-tooltip-trigger relative z-50 h-5 overflow-visible rounded-md border text-[11px] font-normal transition-all ${
+                        className={`theme-train-rem-preset ${active ? "is-active" : ""} removal-summary-tooltip-trigger relative z-50 h-5 overflow-visible rounded-md border text-[11px] font-normal transition-all ${
                           active
                             ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
                             : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
@@ -8200,9 +8200,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
               {canSortByRemovalColor && (
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  <div className="inline-flex h-5 items-center rounded-md border border-[#2b4f6b] bg-[#081c2d] p-0.5">
+                  <div className="theme-train-rem-sort-control inline-flex h-5 items-center rounded-md border border-[#2b4f6b] bg-[#081c2d] p-0.5">
                     <span
-                      className="removal-summary-tooltip-trigger relative z-50 px-1 text-[10px] font-normal tracking-wide text-[#5f8fb2]"
+                      className="theme-train-rem-sort-label removal-summary-tooltip-trigger relative z-50 px-1 text-[10px] font-normal tracking-wide text-[#5f8fb2]"
                       tabIndex={0}
                       aria-label="Choose train sorting method"
                     >
@@ -8212,7 +8212,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     <button
                       type="button"
                       onClick={() => updateTrainRemSortMode(depot, "tid")}
-                      className={`removal-summary-tooltip-trigger relative z-50 h-4 overflow-visible rounded px-1.5 text-[10px] font-normal transition-colors ${
+                      className={`theme-train-rem-sort-button ${activeSortMode === "tid" ? "is-active" : ""} removal-summary-tooltip-trigger relative z-50 h-4 overflow-visible rounded px-1.5 text-[10px] font-normal transition-colors ${
                         activeSortMode === "tid"
                           ? "bg-[#1d4ed8] text-white"
                           : "text-[#7eb8e0] hover:bg-[#102f4a] hover:text-white"
@@ -8225,7 +8225,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     <button
                       type="button"
                       onClick={() => updateTrainRemSortMode(depot, "color")}
-                      className={`removal-summary-tooltip-trigger relative z-50 h-4 overflow-visible rounded px-1.5 text-[10px] font-normal transition-colors ${
+                      className={`theme-train-rem-sort-button ${activeSortMode === "color" ? "is-active" : ""} removal-summary-tooltip-trigger relative z-50 h-4 overflow-visible rounded px-1.5 text-[10px] font-normal transition-colors ${
                         activeSortMode === "color"
                           ? "bg-[#1d4ed8] text-white"
                           : "text-[#7eb8e0] hover:bg-[#102f4a] hover:text-white"
@@ -8556,9 +8556,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
   return (
     <section className="theme-train-rem-panel w-[314px] flex-shrink-0 rounded-xl border border-[#2b4f6b] bg-[#0b1f33] p-2 shadow-md">
-      <div className="flex items-center justify-between gap-2 mb-2">
+      <div className="theme-train-rem-titlebar flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center flex-shrink-0">
+          <div className="theme-train-rem-title-icon w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center flex-shrink-0">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/>
             </svg>
@@ -8568,7 +8568,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
           </div>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className={`px-1.5 py-0.5 rounded-md border text-[7px] font-black whitespace-nowrap ${syncStatusClass}`}>
+          <div className={`theme-train-rem-sync ${!trainRemDbReady || trainRemSyncError ? "is-warning" : "is-ready"} px-1.5 py-0.5 rounded-md border text-[7px] font-black whitespace-nowrap ${syncStatusClass}`}>
             {syncStatusText}
           </div>
         </div>
