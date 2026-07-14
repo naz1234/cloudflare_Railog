@@ -5476,12 +5476,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         data-insertion-drop-depot={autoTidDepot}
         data-insertion-drop-road={road}
         data-insertion-drop-bi={bi}
-        className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${shouldStretchInsertionCard ? "h-full" : ""} relative flex flex-col items-center justify-start overflow-hidden rounded-xl ${isInsertionDone ? "gap-1" : "gap-2"}`}
+        className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${shouldStretchInsertionCard ? "h-full" : ""} relative flex flex-col items-center justify-start overflow-hidden rounded-xl text-center ${isInsertionDone ? "gap-1" : "gap-2"}`}
         style={{
           minHeight: ownInsertionCardMinHeight,
           height: shouldStretchInsertionCard ? "100%" : undefined,
+          // Symmetric horizontal padding keeps every pill, field and action on the
+          // same visual centre line in both light and dark mode.
           padding: useUnifiedInsertionCardStyle
-            ? (inserted?.isSweeping ? "8px 4px" : isInsertionDone ? "6px 1px 6px 5px" : "8px 1px 8px 7px")
+            ? (inserted?.isSweeping ? "8px 4px" : isInsertionDone ? "6px 3px" : "8px 4px")
             : (isInsertionDone ? "6px 5px" : "8px 7px"),
           background: insCardBg,
           border: insCardBorder,
