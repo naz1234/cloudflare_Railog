@@ -9918,32 +9918,32 @@ function TrainMovementExcelSheet() {
   const cellClass = "border border-[#173653] bg-[#061827] align-middle";
 
   return (
-    <section className="w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_12px_26px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.05)]">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2.5" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+    <section className="theme-movement-sheet w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_12px_26px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.05)]">
+      <div className="theme-movement-sheet-header flex flex-wrap items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2.5" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
         <div>
           <h2 className="text-[13px] font-black tracking-[1.2px] text-white">Train Swapping / Insertion / Removal Log</h2>
           <p className="mt-0.5 text-[10px] font-medium text-[#58a6ff]">Compact spreadsheet format above Removal Log Output</p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           {feedback && (
-            <span className="rounded-lg border border-[#2b4f6b] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#9fd3f6]">{feedback}</span>
+            <span className="theme-movement-feedback rounded-lg border border-[#2b4f6b] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#9fd3f6]">{feedback}</span>
           )}
-          <span className={`rounded-lg border px-2 py-1 text-[10px] font-bold ${liveStatusClass}`}>{liveStatusText}</span>
-          <span className="rounded-lg border border-[#2b4f6b] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#8ea8c0]">{readyCount} added</span>
-          <button type="button" onClick={addRow} className="inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
+          <span className={`theme-movement-live-status rounded-lg border px-2 py-1 text-[10px] font-bold ${!liveDbReady || liveSyncError ? "is-warning" : "is-ready"} ${liveStatusClass}`}>{liveStatusText}</span>
+          <span className="theme-movement-ready-count rounded-lg border border-[#2b4f6b] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#8ea8c0]">{readyCount} added</span>
+          <button type="button" onClick={addRow} className="theme-movement-sheet-action inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
             <Plus size={12} />Add Row
           </button>
-          <button type="button" onClick={copyAllRows} className="inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
+          <button type="button" onClick={copyAllRows} className="theme-movement-sheet-action inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
             <Copy size={12} />Copy All
           </button>
-          <button type="button" onClick={clearRows} className={`inline-flex h-7 items-center gap-1 rounded-full border px-3 text-[10px] font-bold text-white transition-all hover:text-white ${confirmClearTarget === "sheet" ? "border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-white hover:border-red-400"}`}>
+          <button type="button" onClick={clearRows} className={`theme-movement-sheet-clear inline-flex h-7 items-center gap-1 rounded-full border px-3 text-[10px] font-bold text-white transition-all hover:text-white ${confirmClearTarget === "sheet" ? "is-confirming border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-white hover:border-red-400"}`}>
             <Trash2 size={12} />{confirmClearTarget === "sheet" ? "Confirm Clear" : "Clear"}
           </button>
         </div>
       </div>
 
       <div className="overflow-x-auto p-3">
-        <table className="w-full min-w-[740px] border-collapse table-fixed text-left">
+        <table className="theme-movement-sheet-table w-full min-w-[740px] border-collapse table-fixed text-left">
           <thead>
             <tr className="text-[10px] uppercase tracking-[0.12em] text-[#9fd3f6]">
               {["", "Type", "Depot", "Train", "TID", "Reason / Remark", "Replaced By", "Time", "Status"].map((heading, index) => (
@@ -9965,8 +9965,8 @@ function TrainMovementExcelSheet() {
 
               return (
                 <tr key={row.id} className="group text-[12px] text-[#eaf4ff]">
-                  <td className="border border-[#173653] bg-[#082136] px-1 text-center" style={{ boxShadow: `inset 3px 0 0 ${operationAccent}` }}>
-                    <button type="button" onClick={() => removeExcelInputRow(row.id)} className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-red-500/30 bg-red-950/20 text-red-200 transition-all hover:border-red-400 hover:text-white" title="Remove row">
+                  <td className="theme-movement-delete-cell border border-[#173653] bg-[#082136] px-1 text-center" style={{ boxShadow: `inset 3px 0 0 ${operationAccent}` }}>
+                    <button type="button" onClick={() => removeExcelInputRow(row.id)} className="theme-movement-delete-button inline-flex h-6 w-6 items-center justify-center rounded-md border border-red-500/30 bg-red-950/20 text-red-200 transition-all hover:border-red-400 hover:text-white" title="Remove row">
                       <Trash2 size={11} />
                     </button>
                   </td>
@@ -9995,9 +9995,9 @@ function TrainMovementExcelSheet() {
                   <td className={cellClass}>
                     <input value={row.reason} onChange={(e) => updateRow(row.id, "reason", e.target.value)} placeholder={row.operation === "swapping" ? "RST PM / CM" : "Remark"} className={tableInputClass} />
                   </td>
-                  <td className={row.operation !== "swapping" ? "border border-[#173653] bg-[#334155] align-middle" : cellClass}>
+                  <td className={row.operation !== "swapping" ? "theme-movement-na-cell border border-[#173653] bg-[#334155] align-middle" : cellClass}>
                     {row.operation !== "swapping" ? (
-                      <div className="flex h-7 items-center justify-center rounded-sm bg-[#475569] text-[10px] font-black uppercase tracking-[0.12em] text-[#cbd5e1] opacity-80">
+                      <div className="theme-movement-na flex h-7 items-center justify-center rounded-sm bg-[#475569] text-[10px] font-black uppercase tracking-[0.12em] text-[#cbd5e1] opacity-80">
                         N/A
                       </div>
                     ) : (
@@ -10010,8 +10010,8 @@ function TrainMovementExcelSheet() {
                   <td className={cellClass}>
                     <input value={row.time} onChange={(e) => updateRow(row.id, "time", cleanMovementCustomTimeInput(e.target.value))} onBlur={(e) => updateRow(row.id, "time", normalizeMovementCustomTimeInput(e.target.value))} placeholder="00:00" className={`${tableInputClass} font-mono`} />
                   </td>
-                  <td className="border border-[#173653] bg-[#061827] px-1.5 text-center">
-                    <span className="inline-flex min-w-[58px] justify-center rounded-md border px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em]" style={statusStyle}>{status}</span>
+                  <td className="theme-movement-status-cell border border-[#173653] bg-[#061827] px-1.5 text-center">
+                    <span data-status={status.toLowerCase()} className="theme-movement-status inline-flex min-w-[58px] justify-center rounded-md border px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em]" style={statusStyle}>{status}</span>
                   </td>
                 </tr>
               );
@@ -10021,7 +10021,7 @@ function TrainMovementExcelSheet() {
       </div>
 
       <section
-        className="mt-3 w-full rounded-xl border border-[#2b4f6b] bg-[#0b1f33] px-3 py-3 shadow-md"
+        className="theme-movement-log-output mt-3 w-full rounded-xl border border-[#2b4f6b] bg-[#0b1f33] px-3 py-3 shadow-md"
         style={{
           background: "linear-gradient(135deg,rgba(12,46,74,0.58) 0%,rgba(7,24,40,0.98) 100%)",
           boxShadow: "0 16px 32px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.04)",
@@ -10029,7 +10029,7 @@ function TrainMovementExcelSheet() {
       >
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#2b4f6b] bg-[#10263b] shadow-sm">
+            <div className="theme-movement-log-title-icon flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#2b4f6b] bg-[#10263b] shadow-sm">
               <FileText size={15} className="text-[#4f8ef7]" strokeWidth={2.4} />
             </div>
             <div className="min-w-0">
@@ -10038,10 +10038,10 @@ function TrainMovementExcelSheet() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            <button type="button" onClick={() => copyExcelLogRows("")} className="inline-flex h-6 items-center gap-1 rounded-md border border-[#4a8ab5]/55 bg-[#0f2d4a]/75 px-1.5 text-[9px] font-black text-[#9ccbea] transition-all hover:-translate-y-0.5 hover:text-white">
+            <button type="button" onClick={() => copyExcelLogRows("")} className="theme-movement-log-action inline-flex h-6 items-center gap-1 rounded-md border border-[#4a8ab5]/55 bg-[#0f2d4a]/75 px-1.5 text-[9px] font-black text-[#9ccbea] transition-all hover:-translate-y-0.5 hover:text-white">
               <Copy size={12} />Copy All
             </button>
-            <button type="button" onClick={clearExcelLogRows} className={`inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 hover:text-white ${confirmClearTarget === "output" ? "border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-red-100 hover:border-red-400"}`}>
+            <button type="button" onClick={clearExcelLogRows} className={`theme-movement-log-action theme-movement-log-clear inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 hover:text-white ${confirmClearTarget === "output" ? "is-confirming border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-red-100 hover:border-red-400"}`}>
               <Trash2 size={12} />{confirmClearTarget === "output" ? "Confirm Clear" : "Clear"}
             </button>
           </div>
@@ -10070,9 +10070,9 @@ function TrainMovementExcelSheet() {
             const logText = log.rows.map((entry) => entry.text).filter(Boolean).join("\n");
 
             return (
-              <div key={log.key} className="overflow-hidden rounded-lg border border-[#1a3a56] bg-[#061827]">
+              <div key={log.key} data-depot={log.key} className="theme-movement-log-card overflow-hidden rounded-lg border border-[#1a3a56] bg-[#061827]">
                 <div
-                  className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5"
+                  className="theme-movement-log-card-header flex flex-wrap items-center justify-between gap-2 px-3 py-1.5"
                   style={{ background: "linear-gradient(90deg,#0d4d75 0%,#0b5f88 55%,#0d4d75 100%)" }}
                 >
                   <div className="flex min-w-0 items-center gap-2">
@@ -10089,7 +10089,7 @@ function TrainMovementExcelSheet() {
                     type="button"
                     onClick={() => copyExcelLogRows(log.key)}
                     disabled={!hasRows}
-                    className="inline-flex h-6 flex-shrink-0 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                    className="theme-movement-log-copy inline-flex h-6 flex-shrink-0 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
                     style={{
                       background: "rgba(15,45,74,0.75)",
                       borderColor: "rgba(74,138,181,0.55)",
@@ -10101,7 +10101,7 @@ function TrainMovementExcelSheet() {
                   </button>
                 </div>
 
-                <div className="min-h-[76px] rounded-b-lg border-t border-[#1a3a56] bg-[#061321] px-3 py-2">
+                <div className="theme-movement-log-card-body min-h-[76px] rounded-b-lg border-t border-[#1a3a56] bg-[#061321] px-3 py-2">
                   {hasRows ? (
                     <pre className="whitespace-pre-wrap break-words text-[11px] font-normal leading-[1.4] text-[#d8e7f7]">
                       {logText}
@@ -23632,9 +23632,9 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
   };
 
   return (
-    <div className="rounded-lg border border-[#1a3a56] bg-[#061827] overflow-hidden">
+    <div data-depot={log.depot} className="theme-removal-log-card rounded-lg border border-[#1a3a56] bg-[#061827] overflow-hidden">
       <div
-        className="flex flex-wrap items-center justify-start gap-2 px-3 py-1.5"
+        className="theme-removal-log-card-header flex flex-wrap items-center justify-start gap-2 px-3 py-1.5"
         style={{ background: "linear-gradient(90deg,#0d4d75 0%,#0b5f88 55%,#0d4d75 100%)" }}
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -23652,7 +23652,7 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
             type="button"
             onClick={handleDownloadPdf}
             disabled={pdfReady || (!(combinedLogs?.westLog?.entries?.length || combinedLogs?.eastLog?.entries?.length) && !hasEntries)}
-            className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black text-cyan-100 transition-all hover:-translate-y-0.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="theme-removal-log-action inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black text-cyan-100 transition-all hover:-translate-y-0.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             style={{
               background: pdfReady ? "rgba(34,197,94,0.18)" : "rgba(6,212,232,0.14)",
               borderColor: pdfReady ? "rgba(34,197,94,0.48)" : "rgba(34,211,238,0.55)",
@@ -23669,7 +23669,7 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
             type="button"
             onClick={handleCopy}
             disabled={!hasEntries}
-            className="inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="theme-removal-log-action inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             style={{
               background: copied ? "rgba(34,197,94,0.18)" : "rgba(15,45,74,0.75)",
               borderColor: copied ? "rgba(34,197,94,0.48)" : "rgba(74,138,181,0.55)",
@@ -23683,7 +23683,7 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
         </div>
       </div>
 
-      <div className="min-h-[76px] rounded-b-lg border-t border-[#1a3a56] bg-[#061321] px-3 py-2">
+      <div className="theme-removal-log-card-body min-h-[76px] rounded-b-lg border-t border-[#1a3a56] bg-[#061321] px-3 py-2">
         {hasEntries ? (
           <pre className="whitespace-pre-wrap break-words text-[11px] leading-[1.4] font-normal text-[#d8e7f7]">
             {log.text}
@@ -23728,14 +23728,14 @@ function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {}, requ
 
   return (
     <section
-      className="w-full rounded-xl border border-[#2b4f6b] bg-[#0b1f33] shadow-md px-3 py-3"
+      className="theme-removal-log-output w-full rounded-xl border border-[#2b4f6b] bg-[#0b1f33] shadow-md px-3 py-3"
       style={{
         background: "linear-gradient(135deg,rgba(12,46,74,0.58) 0%,rgba(7,24,40,0.98) 100%)",
         boxShadow: "0 16px 32px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.04)",
       }}
     >
       <div className="flex items-center gap-2 mb-2">
-        <div className="w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
+        <div className="theme-removal-log-title-icon w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
