@@ -22,15 +22,15 @@ export default function manualArrivalTimePlugin() {
         /\nfunction TrainMovementContent\(\) \{/,
         `
 function subtractThreeMinutesFromHHMM(value = "") {
-  const match = String(value || "").trim().match(/^(\\d{1,2}):(\\d{2})$/);
-  if (!match) return "";
+  const digits = String(value || "").replace(/\\D/g, "").slice(0, 4);
+  if (digits.length !== 4) return "";
 
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
+  const hours = Number(digits.slice(0, 2));
+  const minutes = Number(digits.slice(2, 4));
   if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return "";
 
   const totalMinutes = (hours * 60 + minutes - 3 + 24 * 60) % (24 * 60);
-  return String(Math.floor(totalMinutes / 60)).padStart(2, "0") + ":" + String(totalMinutes % 60).padStart(2, "0");
+  return String(Math.floor(totalMinutes / 60)).padStart(2, "0") + String(totalMinutes % 60).padStart(2, "0");
 }
 
 function TrainMovementContent() {`,
