@@ -6146,3 +6146,560 @@ html[data-app-theme="light"] .pst-clean-action:hover:not(:disabled) {
   filter: brightness(0.985);
 }
 
+/* Insertion light mode v3 — clean operations dashboard.
+   This final scoped layer resolves the older competing glass rules. It affects
+   only the Insertion page while light mode is active. */
+html[data-app-theme="light"] .theme-insertion-page {
+  --insertion-west: #f59e0b;
+  --insertion-east: #14b8a6;
+  --insertion-blue: #3b82f6;
+  --insertion-purple: #8b5cf6;
+  overflow: hidden;
+  padding: 16px !important;
+  background: linear-gradient(180deg, #f6fafc 0%, #edf4f8 100%) !important;
+  background-image: linear-gradient(180deg, #f6fafc 0%, #edf4f8 100%) !important;
+  border-color: #d8e5ef !important;
+  border-radius: 24px !important;
+  box-shadow: inset 0 1px 0 #ffffff, 0 12px 32px rgba(15, 43, 68, 0.07) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page::before {
+  width: 360px !important;
+  height: 360px !important;
+  top: -190px !important;
+  left: -130px !important;
+  opacity: 1 !important;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.11), transparent 70%) !important;
+  filter: blur(18px) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page::after {
+  width: 420px !important;
+  height: 420px !important;
+  right: -180px !important;
+  bottom: -230px !important;
+  opacity: 1 !important;
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.10), transparent 70%) !important;
+  filter: blur(22px) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-live-status {
+  color: #166534 !important;
+  background: #f0fdf4 !important;
+  background-image: none !important;
+  border-color: #86c9a7 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-live-status[class*="border-amber"] {
+  color: #92400e !important;
+  background: #fffbeb !important;
+  border-color: #f2c66d !important;
+}
+
+/* Main West and East shells */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section {
+  overflow: visible;
+  background: #ffffff !important;
+  background-image: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+  border: 1px solid #d8e5ef !important;
+  box-shadow: 0 10px 26px rgba(15, 43, 68, 0.08) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section::before {
+  display: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="west"] {
+  border-top: 3px solid var(--insertion-west) !important;
+  box-shadow: 0 10px 26px rgba(146, 96, 13, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] {
+  border-top: 3px solid var(--insertion-east) !important;
+  box-shadow: 0 10px 26px rgba(15, 118, 110, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-title-icon {
+  color: #c2410c !important;
+  background: #fff7ed !important;
+  border-color: #fed7aa !important;
+  box-shadow: 0 2px 6px rgba(194, 65, 12, 0.08) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] .theme-insertion-title-icon {
+  color: #0f766e !important;
+  background: #f0fdfa !important;
+  border-color: #99f6e4 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-title {
+  color: #c2410c !important;
+  background: none !important;
+  background-image: none !important;
+  -webkit-text-fill-color: currentColor !important;
+  letter-spacing: 0.04em !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] .theme-insertion-title {
+  color: #0f766e !important;
+}
+
+/* PG selector and action buttons */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-pg-switch {
+  background: #f1f5f9 !important;
+  border-color: #d2dde7 !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-pg-button {
+  color: #64748b !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="west"] .theme-insertion-pg-button.is-selected {
+  color: #9a3412 !important;
+  background: #ffedd5 !important;
+  border-color: #fdba74 !important;
+  box-shadow: 0 1px 4px rgba(194, 65, 12, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] .theme-insertion-pg-button.is-selected {
+  color: #0f766e !important;
+  background: #ccfbf1 !important;
+  border-color: #5eead4 !important;
+  box-shadow: 0 1px 4px rgba(15, 118, 110, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page :is(
+  .theme-insertion-refresh-button,
+  .theme-insertion-action
+) {
+  min-height: 34px;
+  color: #334155 !important;
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #cbd8e3 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.07) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-download {
+  color: #0f766e !important;
+  background: #f0fdfa !important;
+  border-color: #5eead4 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-clear {
+  color: #b91c1c !important;
+  background: #fff1f2 !important;
+  border-color: #fda4af !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-hide {
+  color: #475569 !important;
+  background: #f8fafc !important;
+  border-color: #cbd8e3 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-hide.is-active {
+  color: #166534 !important;
+  background: #ecfdf5 !important;
+  border-color: #86c9a7 !important;
+}
+
+/* Stabling grid */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-table-wrap {
+  background: #f8fafc !important;
+  background-image: none !important;
+  border-color: #d8e5ef !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-table {
+  background: #ffffff !important;
+  border-color: #d8e5ef !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-table-header {
+  color: #334155 !important;
+  background: linear-gradient(180deg, #f8fbff 0%, #eaf1f7 100%) !important;
+  border-color: #cfdae5 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-road-label {
+  color: #17324d !important;
+  background: linear-gradient(180deg, #f4f8fc 0%, #e7eef5 100%) !important;
+  border-color: #cfdae5 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-grid-cell {
+  background: #f8fafc !important;
+  background-color: #f8fafc !important;
+  border-color: #d7e2ec !important;
+}
+
+/* Train cards */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card {
+  color: #172b3f !important;
+  background: #ffffff !important;
+  background-image: none !important;
+  border: 1px solid #d2dde7 !important;
+  box-shadow: 0 2px 7px rgba(15, 43, 68, 0.08) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card::before {
+  display: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="west"] .theme-insertion-card.has-train:not(.has-input):not(.is-inserted):not(.is-complete) {
+  background: linear-gradient(180deg, #fffaf0 0%, #ffffff 35%) !important;
+  border-color: #f4cf83 !important;
+  border-top: 2px solid var(--insertion-west) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-section[data-depot="east"] .theme-insertion-card.has-train:not(.has-input):not(.is-inserted):not(.is-complete) {
+  background: linear-gradient(180deg, #f0fdfa 0%, #ffffff 35%) !important;
+  border-color: #99e5dc !important;
+  border-top: 2px solid var(--insertion-east) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.has-input:not(.is-inserted) {
+  background: linear-gradient(180deg, #fffbeb 0%, #ffffff 42%) !important;
+  border-color: #f4c15d !important;
+  border-top: 2px solid #eab308 !important;
+  box-shadow: 0 3px 10px rgba(161, 98, 7, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card:is(.is-inserted, .is-complete) {
+  background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 44%) !important;
+  border-color: #86c9a7 !important;
+  border-top: 2px solid #10b981 !important;
+  box-shadow: 0 3px 10px rgba(5, 150, 105, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-sweeping {
+  background: linear-gradient(180deg, #faf5ff 0%, #ffffff 44%) !important;
+  border-color: #c4b5fd !important;
+  border-top: 2px solid var(--insertion-purple) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-duplicate {
+  background: linear-gradient(180deg, #fff1f2 0%, #ffffff 44%) !important;
+  border-color: #fda4af !important;
+  border-top: 2px solid #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.07), 0 3px 10px rgba(190, 24, 93, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-empty {
+  background: #f3f6f9 !important;
+  border: 1.5px dashed #c5d2dd !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-expired {
+  background: #eef2f6 !important;
+  border-color: #cbd5df !important;
+  opacity: 0.68 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card :is(
+  .text-blue-300,
+  .text-purple-300,
+  .text-blue-100,
+  .text-purple-100,
+  .text-purple-200
+) {
+  color: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tid-input {
+  height: 24px !important;
+  color: #172b3f !important;
+  background: #f8fafc !important;
+  border: 1px solid #c5d2dd !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tid-input:focus {
+  background: #ffffff !important;
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-insert-button {
+  color: #475569 !important;
+  background: #f8fafc !important;
+  border-color: #c5d2dd !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-insert-button.has-input {
+  color: #9a3412 !important;
+  background: #fff7ed !important;
+  border-color: #fdba74 !important;
+}
+
+/* TID reference panels */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference {
+  background: transparent !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-header,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #d8e5ef !important;
+  box-shadow: 0 8px 22px rgba(15, 43, 68, 0.07) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="west"] {
+  border-top: 3px solid var(--insertion-west) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="east"] {
+  border-top: 3px solid var(--insertion-east) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot-header {
+  background: linear-gradient(180deg, #f8fbff 0%, #edf3f8 100%) !important;
+  border-color: #d2dde7 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-control {
+  background: #f1f5f9 !important;
+  border-color: #d2dde7 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-tab,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-sound-button {
+  color: #475569 !important;
+  background: #ffffff !important;
+  border-color: #c5d2dd !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-tab.is-active {
+  color: #1e3a8a !important;
+  background: #dbeafe !important;
+  border-color: #93c5fd !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-sound-button.is-enabled.is-ready {
+  color: #166534 !important;
+  background: #ecfdf5 !important;
+  border-color: #86c9a7 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-table {
+  background: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-table-header {
+  color: #334155 !important;
+  background: linear-gradient(180deg, #f8fbff 0%, #eaf1f7 100%) !important;
+  border-color: #d2dde7 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row-cell {
+  color: #172b3f !important;
+  background: #ffffff !important;
+  border-color: #dbe4ec !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-row:nth-child(even) .theme-insertion-reference-row-cell {
+  background: #f8fafc !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="west"] .theme-insertion-reference-row.is-active .theme-insertion-reference-row-cell {
+  background: #fff7ed !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="east"] .theme-insertion-reference-row.is-active .theme-insertion-reference-row-cell {
+  background: #f0fdfa !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-help {
+  color: #0f766e !important;
+  background: #f0fdfa !important;
+  border-color: #99f6e4 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Insertion log output */
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-shell {
+  background: #ffffff !important;
+  background-image: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+  border-color: #d8e5ef !important;
+  box-shadow: 0 10px 26px rgba(15, 43, 68, 0.08) !important;
+  scrollbar-color: #a8bac9 #eef4f8 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-title {
+  color: #102a43 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-subtitle {
+  color: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-title-icon {
+  color: #1d4ed8 !important;
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.07) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-card {
+  background: #ffffff !important;
+  border-color: #d2dde7 !important;
+  box-shadow: 0 3px 10px rgba(15, 43, 68, 0.07) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-card-header {
+  background: linear-gradient(90deg, #fbf5ff 0%, #f2e8ff 100%) !important;
+  border-bottom: 1px solid #d8c7ef !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-dot {
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-card-title {
+  color: #172b3f !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-card-body {
+  background: #f8fafc !important;
+  border-top-color: #d2dde7 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-log-window {
+  background-image: none !important;
+  border-radius: 8px !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-log-window.is-insertion {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  border-left-color: var(--insertion-blue) !important;
+  box-shadow: inset 3px 0 0 var(--insertion-blue) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-log-window.is-special {
+  background: #faf5ff !important;
+  border-color: #ddd6fe !important;
+  border-left-color: var(--insertion-purple) !important;
+  box-shadow: inset 3px 0 0 var(--insertion-purple) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-log-window.is-insertion .insertion-clean-section-title {
+  color: #1d4ed8 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-log-window.is-special .insertion-clean-section-title {
+  color: #6d28d9 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-pre {
+  color: #172b3f !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-empty-text,
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-empty-card {
+  color: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action {
+  color: #334155 !important;
+  background: #ffffff !important;
+  border-color: #c5d2dd !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action-insertion {
+  color: #1d4ed8 !important;
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action-special {
+  color: #6d28d9 !important;
+  background: #faf5ff !important;
+  border-color: #c4b5fd !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action-clear,
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action-danger {
+  color: #b91c1c !important;
+  background: #fff1f2 !important;
+  border-color: #fda4af !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-clean-action-copied {
+  color: #166534 !important;
+  background: #dcfce7 !important;
+  border-color: #86c9a7 !important;
+}
+
+/* Keep the beginner guide consistent if opened from the Insertion page. */
+html[data-app-theme="light"] .theme-insertion-page .insertion-help-shell,
+html[data-app-theme="light"] .theme-insertion-page .insertion-help-step {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #d8e5ef !important;
+  box-shadow: 0 5px 16px rgba(15, 43, 68, 0.06) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .insertion-help-details-inner {
+  background: #f8fafc !important;
+  border-color: #d2dde7 !important;
+}
+
+@media (hover: hover) {
+  html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.has-train:not(.is-expired):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(15, 43, 68, 0.12) !important;
+  }
+
+  html[data-app-theme="light"] .theme-insertion-page :is(
+    .theme-insertion-refresh-button,
+    .theme-insertion-action,
+    .theme-insertion-insert-button,
+    .insertion-clean-action
+  ):hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(0.985);
+  }
+}
+

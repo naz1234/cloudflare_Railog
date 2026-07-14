@@ -8783,7 +8783,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
       `}</style>
 
       {insertionLiveStatusText && (
-        <div className={`w-fit rounded-xl border px-3 py-1.5 text-[11px] font-normal ${insertionLiveStatusClass || "border-emerald-600/50 bg-emerald-950/30 text-emerald-300"}`}>
+        <div className={`theme-insertion-live-status w-fit rounded-xl border px-3 py-1.5 text-[11px] font-normal ${insertionLiveStatusClass || "border-emerald-600/50 bg-emerald-950/30 text-emerald-300"}`}>
           {insertionLiveStatusText}
         </div>
       )}
