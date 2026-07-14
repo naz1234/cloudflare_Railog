@@ -5686,7 +5686,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </button>
                 </ActionTooltip>
                 <div
-                  className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
+                  className="theme-insertion-sweep-pill rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                   style={{
                     width: "100%",
                     maxWidth: "100%",
@@ -5708,7 +5708,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       onClick={(e) => e.stopPropagation()}
                       onKeyDown={(e) => e.stopPropagation()}
                       onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
-                      className="h-4 w-full appearance-none rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[10px] font-normal leading-none text-white outline-none"
+                      className="theme-insertion-sweep-track-select h-4 w-full appearance-none rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[10px] font-normal leading-none text-white outline-none"
                       style={{ colorScheme: "dark" }}
                       title="Select Sweep track"
                     >
@@ -5793,7 +5793,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </button>
               </ActionTooltip>
               <div
-                className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
+                className="theme-insertion-sweep-pill rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                 style={{
                   width: "100%",
                   maxWidth: "100%",
@@ -5815,7 +5815,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => e.stopPropagation()}
                     onChange={(e) => onSweepUpdate?.(inserted.key, { sweepTrack: e.target.value })}
-                    className="h-4 w-full appearance-none rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[10px] font-normal leading-none text-white outline-none"
+                    className="theme-insertion-sweep-track-select h-4 w-full appearance-none rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 py-0 text-center text-[10px] font-normal leading-none text-white outline-none"
                     style={{ colorScheme: "dark" }}
                     title="Select Sweep track"
                   >
