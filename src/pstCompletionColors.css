@@ -34,16 +34,16 @@ html[data-app-theme="light"] .theme-pst-section .theme-pst-prep-panel {
 }
 
 html[data-app-theme="light"] .theme-pst-section .theme-pst-action-button.is-done {
-  color: #14532d !important;
-  -webkit-text-fill-color: #14532d !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
   background: #bbf7d0 !important;
   border: 1.5px solid #22c55e !important;
   box-shadow: 0 2px 5px rgba(34, 197, 94, 0.14) !important;
 }
 
 html[data-app-theme="light"] .theme-pst-section .theme-pst-prep-button.is-done {
-  color: #1d4ed8 !important;
-  -webkit-text-fill-color: #1d4ed8 !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
   background: #bfdbfe !important;
   border: 1.5px solid #3b82f6 !important;
   box-shadow: 0 2px 5px rgba(59, 130, 246, 0.14) !important;
