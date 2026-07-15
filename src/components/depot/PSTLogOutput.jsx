@@ -808,7 +808,8 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
         }
 
         .pst-action-tooltip-trigger:hover .pst-action-tooltip-bubble,
-        .pst-action-tooltip-trigger:focus-within .pst-action-tooltip-bubble {
+        .pst-action-tooltip-trigger:focus-visible .pst-action-tooltip-bubble,
+        .pst-action-tooltip-trigger:has(:focus-visible) .pst-action-tooltip-bubble {
           opacity: 1;
           transform: scale(1);
         }
