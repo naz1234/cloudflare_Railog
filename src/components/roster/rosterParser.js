@@ -1,8 +1,10 @@
 const DATE_TOKEN_RE = /^\d{2}\.\d{2}\.$/;
 const PREFIX_RE = /^L3-DEP-(DM|TCC|TC|DC|EFC|SC)\s*\d*$/i;
+const PERSONNEL_BOUNDARY_PREFIX_RE = /^L(?:3|3465)-DEP-(DM|TCC|TC|DC|EFC|SC)\s*\d*$/i;
 const TIME_RANGE_RE = /(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/;
 
 export const ROSTER_ROLE_ORDER = ["DM", "TCC", "TC", "DC", "EFC", "SC"];
+export const ROSTER_PARSER_VERSION = 10;
 
 const EXCLUDED_ROSTER_PERSONNEL = [
   { personnelId: "1000351", canonicalName: "ARAB, A." },
@@ -451,7 +453,7 @@ function parsePageItems(items, pageNumber, fileName, pdfjsLib) {
     .filter((group) => group.length >= 20)
     .sort((a, b) => median(a.map((item) => item[rowAxis])) - median(b.map((item) => item[rowAxis])));
 
-  const prefixItems = items.filter((item) => /^L3-DEP-(DM|TCC|TC|DC|EFC|SC)\b/i.test(item.text));
+  const boundaryPrefixItems = items.filter((item) => PERSONNEL_BOUNDARY_PREFIX_RE.test(item.text));
   const people = [];
   const detectedDates = [];
 
@@ -477,20 +479,26 @@ function parsePageItems(items, pageNumber, fileName, pdfjsLib) {
     const dateCenters = Object.fromEntries(dates.map((date) => [date.key, date[dateAxis]]));
     const centers = dates.map((date) => date[dateAxis]);
 
-    const sectionPeople = prefixItems
+    const sectionBoundaries = boundaryPrefixItems
       .filter((item) => item[rowAxis] > headerRow + 1 && item[rowAxis] < nextHeaderRow - 1)
       .sort((a, b) => a[rowAxis] - b[rowAxis]);
+    const sectionPeople = sectionBoundaries.filter((item) => PREFIX_RE.test(item.text));
 
     sectionPeople.forEach((prefixItem, personIndex) => {
-      const followingRow = personIndex === sectionPeople.length - 1 ? nextHeaderRow : sectionPeople[personIndex + 1][rowAxis];
-      // The roster cells are multi-line. Using midpoints between personnel labels
-      // cuts the final time line from the current row and assigns it to the next
-      // person. Start at the current roster label and stop at the next label so
-      // every duty code and complete time range stays with the correct person.
-      const rowLow = Math.max(headerRow + 0.5, prefixItem[rowAxis] - 1.5);
-      const rowHigh = Number.isFinite(followingRow)
-        ? Math.min(nextHeaderRow - 0.5, followingRow - 1.5)
-        : prefixItem[rowAxis] + 42;
+      const boundaryIndex = sectionBoundaries.indexOf(prefixItem);
+      const previousRow = boundaryIndex > 0 ? sectionBoundaries[boundaryIndex - 1][rowAxis] : null;
+      const followingRow = boundaryIndex < sectionBoundaries.length - 1
+        ? sectionBoundaries[boundaryIndex + 1][rowAxis]
+        : null;
+      // A personnel block extends above and below its roster-code line. Split
+      // adjacent blocks at their midpoint so the name, personnel ID, duty code
+      // and time range all remain attached to the same person.
+      const rowLow = previousRow === null
+        ? headerRow + 0.5
+        : (previousRow + prefixItem[rowAxis]) / 2;
+      const rowHigh = followingRow === null
+        ? (Number.isFinite(nextHeaderRow) ? nextHeaderRow - 0.5 : prefixItem[rowAxis] + 42)
+        : Math.min(nextHeaderRow - 0.5, (prefixItem[rowAxis] + followingRow) / 2);
       const rowItems = items.filter((item) => item[rowAxis] >= rowLow && item[rowAxis] < rowHigh);
       const rawName = extractNameFromRow(rowItems, prefixItem, dateAxis, dateCenters);
       const personnelId = rowItems
@@ -590,7 +598,7 @@ export async function parseRosterPdf(arrayBuffer, fileName = "roster.pdf", pdfjs
     .sort((a, b) => ROSTER_ROLE_ORDER.indexOf(a) - ROSTER_ROLE_ORDER.indexOf(b));
 
   return ensureRosterNames({
-    version: 9,
+    version: ROSTER_PARSER_VERSION,
     parsedAt: new Date().toISOString(),
     fileName,
     year: firstDate?.year || year,
