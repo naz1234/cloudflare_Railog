@@ -1,4 +1,4 @@
-// Weekday insertion cards keep their stored timing but hide the visible TIME row for active TIDs 101–120 and 201–220.
+// Weekday insertion cards keep their stored timing but hide the visible TIME row only for weekday-specific active TID remarks.
 export default function hideWeekdayTidTimePlugin() {
   return {
     name: 'railog-hide-weekday-tid-time',
@@ -11,15 +11,31 @@ export default function hideWeekdayTidTimePlugin() {
       let timePanelMatches = 0;
       const code = source.replace(
         /<div className="grid w-full grid-cols-\[34px_minmax\(0,1fr\)\] items-center gap-x-1 gap-y-0\.5">/g,
-        (match) => {
+        () => {
           timePanelMatches += 1;
           return `<div
                         className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5"
                         style={
-                          isWeekdayActive && (
-                            (Number(insertedTid) >= 101 && Number(insertedTid) <= 120) ||
-                            (Number(insertedTid) >= 201 && Number(insertedTid) <= 220)
-                          )
+                          (() => {
+                            const normalizedRemark = String(insertedTidAssistRemark || "")
+                              .toUpperCase()
+                              .replace(/[^A-Z0-9]+/g, " ")
+                              .trim();
+                            const remarkTokens = normalizedRemark ? normalizedRemark.split(/\\s+/) : [];
+                            const hasWeekdayRemark =
+                              remarkTokens.includes("WD") ||
+                              remarkTokens.includes("ED") ||
+                              normalizedRemark.includes("EARLY REM") ||
+                              normalizedRemark.includes("LATE REM");
+                            const tidNumber = Number(insertedTid);
+
+                            return isWeekdayActive &&
+                              hasWeekdayRemark &&
+                              (
+                                (tidNumber >= 101 && tidNumber <= 120) ||
+                                (tidNumber >= 201 && tidNumber <= 220)
+                              );
+                          })()
                             ? { display: "none" }
                             : undefined
                         }
