@@ -1,4 +1,4 @@
-/* The TID reference schedule selector is the source of truth for card timing visibility. */
+/* Selected TID Reference schedule is the source of truth for insertion-card TIME visibility. */
 [data-weekday-active-tid-time="true"] {
   display: grid;
 }
