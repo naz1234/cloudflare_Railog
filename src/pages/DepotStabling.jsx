@@ -4136,9 +4136,16 @@ function getMainStablingRemarkPillStyle(item = null) {
   const visual = getStablingRequestVisual(item);
   const accent = visual?.accent || getRequestAccent(item) || "#4f8ef7";
   const isWashRemark = getStablingRequestCategory(item) === "wash";
+  const lightModeAccent = isWashRemark ? "#8afc3f" : accent;
+  const lightModeAccentRgb = requestColorRgb(lightModeAccent);
+  const lightModeVariables = {
+    "--stabling-remark-accent": lightModeAccent,
+    "--stabling-remark-accent-rgb": `${lightModeAccentRgb.r}, ${lightModeAccentRgb.g}, ${lightModeAccentRgb.b}`,
+  };
 
   if (isWashRemark) {
     return {
+      ...lightModeVariables,
       // Same visual treatment as the Automatic Area Log Excel button.
       background: "linear-gradient(135deg, rgba(34,197,94,0.42), rgba(6,24,39,0.94))",
       border: "1px solid rgba(74,222,128,0.86)",
@@ -4148,6 +4155,7 @@ function getMainStablingRemarkPillStyle(item = null) {
   }
 
   return {
+    ...lightModeVariables,
     background: `linear-gradient(135deg, ${hexToRgba(accent, 0.98)} 0%, ${hexToRgba(accent, 0.62)} 100%)`,
     border: `1px solid ${hexToRgba(accent, 0.95)}`,
     boxShadow: `0 0 8px ${hexToRgba(accent, 0.24)}, inset 0 1px 0 rgba(255,255,255,0.14)`,
