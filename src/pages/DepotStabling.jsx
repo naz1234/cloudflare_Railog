@@ -13243,7 +13243,7 @@ const POSSESSION_TEXTAREA = ({ value, onChange, placeholder, rows = 2 }) => (
 
 // ── Shared card/header styles ─────────────────────────────────────────────────
 const possessionCardCls = "bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shadow-md overflow-hidden";
-const possessionHeaderCls = "border-b border-[#1a3a56] px-4 py-3 flex items-center justify-between";
+const possessionHeaderCls = "theme-possession-header border-b border-[#1a3a56] px-4 py-3 flex items-center justify-between";
 const possessionHeaderStyle = { background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" };
 
 const POSSESSION_LIVE_SYNC_INTERVAL_MS = 5000;
