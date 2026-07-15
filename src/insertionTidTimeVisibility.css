@@ -1,0 +1,14 @@
+/* Selected TID Reference schedule is the source of truth for insertion-card TIME visibility. */
+[data-weekday-active-tid-time="true"] {
+  display: grid;
+}
+
+html[data-insertion-tid-schedule="weekday"] [data-weekday-active-tid-time="true"] {
+  display: none !important;
+}
+
+html[data-insertion-tid-schedule="friday"] [data-weekday-active-tid-time="true"],
+html[data-insertion-tid-schedule="saturday"] [data-weekday-active-tid-time="true"],
+html[data-insertion-tid-schedule="ph"] [data-weekday-active-tid-time="true"] {
+  display: grid !important;
+}
