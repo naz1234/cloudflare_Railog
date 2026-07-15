@@ -1,19 +1,31 @@
-/* Light mode: make completed PST and Train Prep states easier to identify. */
+/* Light mode: make PST and Train Prep states easier to identify without washing into white. */
 html[data-app-theme="light"] .theme-pst-section .theme-pst-card.is-pst-done {
-  background: linear-gradient(180deg, #dcfce7 0%, #f0fdf4 48%, #ffffff 100%) !important;
-  border: 2px solid #22c55e !important;
-  box-shadow: 0 4px 10px rgba(34, 197, 94, 0.14), inset 0 1px 0 #ffffff !important;
+  background: linear-gradient(180deg, #bbf7d0 0%, #d1fae5 52%, #dcfce7 100%) !important;
+  border: 2px solid #16a34a !important;
+  box-shadow: 0 4px 10px rgba(22, 163, 74, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
+}
+
+html[data-app-theme="light"] .theme-pst-section .theme-pst-card.is-pst-confirming,
+html[data-app-theme="light"] .theme-pst-section .theme-pst-card.is-prep-started {
+  background: linear-gradient(180deg, #fde68a 0%, #fef3c7 52%, #fff3bd 100%) !important;
+  border: 2px solid #d97706 !important;
+  box-shadow: 0 4px 10px rgba(217, 119, 6, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.68) !important;
 }
 
 html[data-app-theme="light"] .theme-pst-section .theme-pst-card.is-prep-done {
-  background: linear-gradient(180deg, #dbeafe 0%, #eff6ff 48%, #ffffff 100%) !important;
-  border: 2px solid #3b82f6 !important;
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.14), inset 0 1px 0 #ffffff !important;
+  background: linear-gradient(180deg, #bfdbfe 0%, #dbeafe 52%, #e0ecff 100%) !important;
+  border: 2px solid #2563eb !important;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.21), inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
 }
 
 html[data-app-theme="light"] .theme-pst-section .theme-pst-card.is-pst-done > .theme-pst-train-number {
   color: #14532d !important;
   -webkit-text-fill-color: #14532d !important;
+}
+
+html[data-app-theme="light"] .theme-pst-section :is(.theme-pst-card.is-pst-confirming, .theme-pst-card.is-prep-started) > .theme-pst-train-number {
+  color: #78350f !important;
+  -webkit-text-fill-color: #78350f !important;
 }
 
 html[data-app-theme="light"] .theme-pst-section .theme-pst-card.is-prep-done > .theme-pst-train-number {
@@ -22,29 +34,43 @@ html[data-app-theme="light"] .theme-pst-section .theme-pst-card.is-prep-done > .
 }
 
 html[data-app-theme="light"] .theme-pst-section .theme-pst-time-panel.is-done {
-  background: rgba(255, 255, 255, 0.88) !important;
-  border-color: #4ade80 !important;
-  box-shadow: inset 0 1px 2px rgba(20, 83, 45, 0.08) !important;
+  background: #dcfce7 !important;
+  border-color: #22c55e !important;
+  box-shadow: inset 0 1px 2px rgba(20, 83, 45, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-pst-section .theme-pst-time-panel.is-confirming {
+  background: #fef3c7 !important;
+  border-color: #f59e0b !important;
+  box-shadow: inset 0 1px 2px rgba(120, 53, 15, 0.10) !important;
 }
 
 html[data-app-theme="light"] .theme-pst-section .theme-pst-prep-panel {
-  background: #eff6ff !important;
-  border-color: #60a5fa !important;
-  box-shadow: inset 0 1px 2px rgba(30, 58, 138, 0.08) !important;
+  background: #dbeafe !important;
+  border-color: #3b82f6 !important;
+  box-shadow: inset 0 1px 2px rgba(30, 58, 138, 0.10) !important;
 }
 
 html[data-app-theme="light"] .theme-pst-section .theme-pst-action-button.is-done {
   color: #000000 !important;
   -webkit-text-fill-color: #000000 !important;
-  background: #bbf7d0 !important;
-  border: 1.5px solid #22c55e !important;
-  box-shadow: 0 2px 5px rgba(34, 197, 94, 0.14) !important;
+  background: #86efac !important;
+  border: 1.5px solid #16a34a !important;
+  box-shadow: 0 2px 5px rgba(22, 163, 74, 0.20) !important;
+}
+
+html[data-app-theme="light"] .theme-pst-section .theme-pst-action-button.is-confirming {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  background: #fde68a !important;
+  border: 1.5px solid #d97706 !important;
+  box-shadow: 0 2px 5px rgba(217, 119, 6, 0.18) !important;
 }
 
 html[data-app-theme="light"] .theme-pst-section .theme-pst-prep-button.is-done {
   color: #000000 !important;
   -webkit-text-fill-color: #000000 !important;
-  background: #bfdbfe !important;
-  border: 1.5px solid #3b82f6 !important;
-  box-shadow: 0 2px 5px rgba(59, 130, 246, 0.14) !important;
+  background: #93c5fd !important;
+  border: 1.5px solid #2563eb !important;
+  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.20) !important;
 }
