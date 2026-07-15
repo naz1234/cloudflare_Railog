@@ -1,4 +1,4 @@
-// Keep weekday TID timing hidden while showing timing for the actually selected Friday, Saturday or PH schedule.
+// Hide the visible TIME row only when the page's active timetable is Weekday.
 function replaceRequired(source, pattern, replacement, label) {
   const next = source.replace(pattern, replacement);
   if (next === source) {
@@ -14,31 +14,26 @@ export default function hideWeekdayTidTimePlugin() {
     transform(source, id) {
       const normalizedId = id.replace(/\\/g, '/');
 
-      if (normalizedId.endsWith('/src/components/TIDReferenceTable.jsx')) {
-        const code = replaceRequired(
-          source,
-          /  const scheduleKey = normalizedControlledScheduleKey \|\| localScheduleKey;\r?\n/,
-          `  const scheduleKey = normalizedControlledScheduleKey || localScheduleKey;
-
-  useEffect(() => {
-    // Only the visible reference table with the Weekday / Friday / Saturday header
-    // may publish the selected schedule. Hidden depot-only tables must not overwrite it.
-    if (!showHeader || typeof document === "undefined") return;
-    document.documentElement.dataset.insertionTidSchedule = scheduleKey;
-  }, [scheduleKey, showHeader]);
-`,
-          'selected insertion schedule marker in TIDReferenceTable.jsx'
-        );
-
-        return { code, map: null };
-      }
-
       if (!normalizedId.endsWith('/src/pages/DepotStabling.jsx')) {
         return null;
       }
 
+      // The top timetable selector is the operational source of truth. Publish that
+      // page state directly so Friday/Saturday overrides do not depend on child tables.
+      let code = replaceRequired(
+        source,
+        /(  const \[activeTimetableType,\s*setActiveTimetableType\]\s*=\s*useState\([\s\S]*?\);\r?\n)/,
+        `$1
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.dataset.insertionTidSchedule = normalizeTimetableType(activeTimetableType);
+  }, [activeTimetableType]);
+`,
+        'active timetable schedule marker in DepotStabling.jsx'
+      );
+
       let timePanelMatches = 0;
-      const code = source.replace(
+      code = code.replace(
         /<div className="grid w-full grid-cols-\[34px_minmax\(0,1fr\)\] items-center gap-x-1 gap-y-0\.5">/g,
         () => {
           timePanelMatches += 1;
