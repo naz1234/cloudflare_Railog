@@ -7290,6 +7290,124 @@ html[data-app-theme="light"] .theme-removal-log-card-body > div {
   color: #64748b !important;
 }
 
+/* West/East depot identity for Movement and Removal log cards.
+   West uses violet; East uses cyan/teal in both application themes. */
+html:not([data-app-theme="light"]) :is(
+  .theme-movement-log-card,
+  .theme-removal-log-card
+)[data-depot="west"] {
+  --depot-log-card-bg: #17172f;
+  --depot-log-body-bg: #131429;
+  --depot-log-header-start: #2b234e;
+  --depot-log-header-middle: #3a2c63;
+  --depot-log-header-end: #2b234e;
+  --depot-log-border: rgba(192, 132, 252, 0.52);
+  --depot-log-inner-border: rgba(192, 132, 252, 0.34);
+  --depot-log-shadow: 0 2px 9px rgba(76, 29, 149, 0.24);
+}
+
+html:not([data-app-theme="light"]) :is(
+  .theme-movement-log-card,
+  .theme-removal-log-card
+)[data-depot="east"] {
+  --depot-log-card-bg: #062a31;
+  --depot-log-body-bg: #061f26;
+  --depot-log-header-start: #07343d;
+  --depot-log-header-middle: #07525d;
+  --depot-log-header-end: #07343d;
+  --depot-log-border: rgba(34, 211, 238, 0.50);
+  --depot-log-inner-border: rgba(34, 211, 238, 0.32);
+  --depot-log-shadow: 0 2px 9px rgba(8, 145, 178, 0.22);
+}
+
+html[data-app-theme="light"] :is(
+  .theme-movement-log-card,
+  .theme-removal-log-card
+)[data-depot="west"] {
+  --depot-log-card-bg: #faf7ff;
+  --depot-log-body-bg: #faf7ff;
+  --depot-log-header-start: #f5f3ff;
+  --depot-log-header-middle: #ede9fe;
+  --depot-log-header-end: #ede9fe;
+  --depot-log-border: #c4b5fd;
+  --depot-log-inner-border: #c4b5fd;
+  --depot-log-shadow: 0 2px 7px rgba(109, 40, 217, 0.09);
+}
+
+html[data-app-theme="light"] :is(
+  .theme-movement-log-card,
+  .theme-removal-log-card
+)[data-depot="east"] {
+  --depot-log-card-bg: #f0fdfa;
+  --depot-log-body-bg: #f0fdfa;
+  --depot-log-header-start: #f0fdfa;
+  --depot-log-header-middle: #ccfbf1;
+  --depot-log-header-end: #ccfbf1;
+  --depot-log-border: #5eead4;
+  --depot-log-inner-border: #5eead4;
+  --depot-log-shadow: 0 2px 7px rgba(13, 148, 136, 0.09);
+}
+
+html:not([data-app-theme="light"]) :is(
+  .theme-movement-log-card,
+  .theme-removal-log-card
+)[data-depot],
+html[data-app-theme="light"] :is(
+  .theme-movement-log-card,
+  .theme-removal-log-card
+)[data-depot] {
+  background: var(--depot-log-card-bg) !important;
+  border-color: var(--depot-log-border) !important;
+  box-shadow: var(--depot-log-shadow) !important;
+}
+
+html:not([data-app-theme="light"]) :is(
+  .theme-movement-log-card,
+  .theme-removal-log-card
+)[data-depot] :is(
+  .theme-movement-log-card-header,
+  .theme-removal-log-card-header
+),
+html[data-app-theme="light"] :is(
+  .theme-movement-log-card,
+  .theme-removal-log-card
+)[data-depot] :is(
+  .theme-movement-log-card-header,
+  .theme-removal-log-card-header
+) {
+  background: linear-gradient(
+    90deg,
+    var(--depot-log-header-start) 0%,
+    var(--depot-log-header-middle) 55%,
+    var(--depot-log-header-end) 100%
+  ) !important;
+  background-image: linear-gradient(
+    90deg,
+    var(--depot-log-header-start) 0%,
+    var(--depot-log-header-middle) 55%,
+    var(--depot-log-header-end) 100%
+  ) !important;
+  border-color: var(--depot-log-inner-border) !important;
+}
+
+html:not([data-app-theme="light"]) :is(
+  .theme-movement-log-card,
+  .theme-removal-log-card
+)[data-depot] :is(
+  .theme-movement-log-card-body,
+  .theme-removal-log-card-body
+),
+html[data-app-theme="light"] :is(
+  .theme-movement-log-card,
+  .theme-removal-log-card
+)[data-depot] :is(
+  .theme-movement-log-card-body,
+  .theme-removal-log-card-body
+) {
+  background: var(--depot-log-body-bg) !important;
+  border-color: var(--depot-log-inner-border) !important;
+}
+
 /* Removal Summary toolbar: restore colour hierarchy in light mode. */
 html[data-app-theme="light"] .theme-train-rem-panel {
   background: linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%) !important;
