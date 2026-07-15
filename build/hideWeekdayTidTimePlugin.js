@@ -21,9 +21,11 @@ export default function hideWeekdayTidTimePlugin() {
           `  const scheduleKey = normalizedControlledScheduleKey || localScheduleKey;
 
   useEffect(() => {
-    if (typeof document === "undefined") return;
+    // Only the visible reference table with the Weekday / Friday / Saturday header
+    // may publish the selected schedule. Hidden depot-only tables must not overwrite it.
+    if (!showHeader || typeof document === "undefined") return;
     document.documentElement.dataset.insertionTidSchedule = scheduleKey;
-  }, [scheduleKey]);
+  }, [scheduleKey, showHeader]);
 `,
           'selected insertion schedule marker in TIDReferenceTable.jsx'
         );
