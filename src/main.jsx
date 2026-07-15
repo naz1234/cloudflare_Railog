@@ -4,6 +4,7 @@ import App from '@/App.jsx'
 import '@/index.css'
 import '@/pstCompletionColors.css'
 import '@/referenceControlFontSize.css'
+import '@/insertionTidTimeVisibility.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />
