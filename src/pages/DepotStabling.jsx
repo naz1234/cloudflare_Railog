@@ -25074,9 +25074,10 @@ function StablingSection({
         action={
           <div className="flex items-center gap-2">
             <ActionTooltip
-              message={<span className="whitespace-pre-wrap font-mono text-[10px]">{copyStablingTooltipText}</span>}
+              message={<span className="whitespace-pre font-mono text-[10px]">{copyStablingTooltipText}</span>}
               placement="top"
               align="start"
+              contentStyle={{ maxWidth: "none", width: "max-content" }}
             >
               <button
                 type="button"
