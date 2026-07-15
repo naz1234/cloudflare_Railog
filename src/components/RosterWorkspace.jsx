@@ -277,9 +277,9 @@ function HorizontalPersonPill({ person, entry, day }) {
   return (
     <span
       title={titleParts.join(" · ")}
-      className={`theme-roster-name-pill is-${String(role).toLowerCase()} inline-flex max-w-full items-center gap-1.5 px-1 py-0.5 text-[11px] font-semibold leading-4`}
+      className={`theme-roster-name-pill is-${String(role).toLowerCase()} inline-flex max-w-full items-center px-1 py-0.5 text-[11px] font-semibold leading-4 ${isExtension ? "flex-col gap-0.5" : "gap-1.5"}`}
     >
-      <span className="truncate">{controllerName}</span>
+      <span className={isExtension ? "max-w-full whitespace-normal break-words text-center" : "truncate"}>{controllerName}</span>
       {isExtension ? (
         <span className="shrink-0 rounded-full border border-orange-300/45 bg-orange-400/15 px-1.5 py-px text-[8px] font-black uppercase tracking-wide text-orange-100">
           Extension
