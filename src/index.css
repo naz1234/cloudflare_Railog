@@ -42,29 +42,32 @@
 }
 
 @layer components {
+  /* Show custom tooltips on mouse hover or keyboard-visible focus only.
+     Pointer clicks keep DOM focus, so :focus/:focus-within would leave the
+     tooltip visible after the mouse has moved away. */
   .request-cross-trigger:hover .request-cross-bubble,
-  .request-cross-trigger:focus-within .request-cross-bubble {
+  .request-cross-trigger:focus-visible .request-cross-bubble,
+  .request-cross-trigger:has(:focus-visible) .request-cross-bubble {
     opacity: 1;
     transform: translateY(-50%) scale(1);
   }
 
-
   .already-status-trigger:hover .already-status-bubble,
-  .already-status-trigger:focus .already-status-bubble,
-  .already-status-trigger:focus-within .already-status-bubble,
+  .already-status-trigger:focus-visible .already-status-bubble,
+  .already-status-trigger:has(:focus-visible) .already-status-bubble,
   .still-not-stabling-trigger:hover .still-not-stabling-bubble,
-  .still-not-stabling-trigger:focus .still-not-stabling-bubble,
-  .still-not-stabling-trigger:focus-within .still-not-stabling-bubble,
+  .still-not-stabling-trigger:focus-visible .still-not-stabling-bubble,
+  .still-not-stabling-trigger:has(:focus-visible) .still-not-stabling-bubble,
   .delete-request-trigger:hover .delete-request-bubble,
-  .delete-request-trigger:focus .delete-request-bubble,
-  .delete-request-trigger:focus-within .delete-request-bubble {
+  .delete-request-trigger:focus-visible .delete-request-bubble,
+  .delete-request-trigger:has(:focus-visible) .delete-request-bubble {
     opacity: 1;
     transform: translateY(-50%) scale(1);
   }
 
   .removal-summary-tooltip-trigger:hover .removal-summary-tooltip-bubble,
-  .removal-summary-tooltip-trigger:focus .removal-summary-tooltip-bubble,
-  .removal-summary-tooltip-trigger:focus-within .removal-summary-tooltip-bubble {
+  .removal-summary-tooltip-trigger:focus-visible .removal-summary-tooltip-bubble,
+  .removal-summary-tooltip-trigger:has(:focus-visible) .removal-summary-tooltip-bubble {
     opacity: 1;
     transform: scale(1);
   }
