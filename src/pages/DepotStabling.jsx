@@ -12497,7 +12497,7 @@ function TrainMovementContent() {
     const renderTp1FlowStepCard = (step, index) => (
       <div
         key={step.key}
-        className="rounded-xl border p-2 transition-all"
+        className={`theme-tp1-flow-step ${step.complete ? "is-complete" : "is-next"} rounded-xl border p-2 transition-all`}
         style={{
           borderColor: step.complete ? `${accent}70` : "#1e4060",
           background: step.complete ? `linear-gradient(135deg, ${accent}14, #061827 82%)` : "#061827",
@@ -12557,14 +12557,15 @@ function TrainMovementContent() {
 
     return (
       <section
-        className="overflow-hidden rounded-xl border shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]"
+        className="theme-tp1-movement-window overflow-hidden rounded-xl border shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]"
+        data-movement-mode={movementType}
         style={{
           borderColor: `${accent}55`,
           background: "linear-gradient(180deg,#071e33 0%,#061827 100%)",
           boxShadow: `0 0 24px ${accent}16, inset 0 1px 0 rgba(255,255,255,0.05)`,
         }}
       >
-        <div className="flex flex-wrap items-center justify-between gap-2.5 border-b px-4 py-3" style={{ borderColor: `${accent}35`, background: `linear-gradient(90deg, ${accent}1f, transparent)` }}>
+        <div className="theme-tp1-movement-header flex flex-wrap items-center justify-between gap-2.5 border-b px-4 py-3" style={{ borderColor: `${accent}35`, background: `linear-gradient(90deg, ${accent}1f, transparent)` }}>
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: `${accent}24`, color: accent, boxShadow: `0 0 14px ${accent}22` }}>
               <MovementIcon type="train" color={accent} />
@@ -12591,8 +12592,8 @@ function TrainMovementContent() {
           </div>
         </div>
 
-        <div className="grid gap-3 p-4">
-          <div className="rounded-xl border border-[#1e4060] bg-[#031827] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+        <div className="theme-tp1-movement-body grid gap-3 p-4">
+          <div className="theme-tp1-movement-flow rounded-xl border border-[#1e4060] bg-[#031827] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
             <div className="mb-2 flex justify-end">
               <span className="rounded-full border px-2 py-0.5 text-[9px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}16`, color: accent }}>
                 L ↔ R
@@ -12601,7 +12602,7 @@ function TrainMovementContent() {
             {renderTp1FlowRows(visibleFlowSteps)}
           </div>
 
-          <div className="rounded-xl border border-[#1e4060] bg-[#041727] p-3">
+          <div className="theme-tp1-movement-preview rounded-xl border border-[#1e4060] bg-[#041727] p-3">
             <div className="mb-2 flex flex-wrap items-center justify-start gap-1.5">
               <p className="mr-0.5 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
               <button
@@ -12626,8 +12627,8 @@ function TrainMovementContent() {
             <pre className="max-h-44 overflow-auto whitespace-pre-wrap font-mono text-[12px] font-medium leading-[1.35] text-[#c8d8ea]">{buildTp1MovementText({ preview: true, movementType })}</pre>
           </div>
 
-          <section className="overflow-hidden rounded-xl border border-[#1e4060] bg-[#03111d]">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#12304a] px-3 py-2">
+          <section className="theme-tp1-movement-log overflow-hidden rounded-xl border border-[#1e4060] bg-[#03111d]">
+            <div className="theme-tp1-movement-log-header flex flex-wrap items-center justify-between gap-2 border-b border-[#12304a] px-3 py-2">
               <div>
                 <h4 className="text-[12px] font-black uppercase tracking-wide text-white">{isAutomatic ? "Automatic Area Log" : "Manual Area Log"}</h4>
                 <p className="text-[10px] font-semibold text-[#8ea8c0]">{modeEntries.length} entries</p>
@@ -12664,14 +12665,14 @@ function TrainMovementContent() {
               </div>
             </div>
 
-            <div className="min-h-[120px]">
+            <div className="theme-tp1-movement-log-body min-h-[120px]">
               {modeEntries.length === 0 ? (
                 <div className="flex min-h-[120px] items-center justify-center px-3 text-center text-[11px] font-semibold text-[#7eb8e0]">
                   No {isAutomatic ? "automatic area" : "manual area"} movement log yet.
                 </div>
               ) : (
                 modeEntries.map((entry) => (
-                  <div key={entry.id} className="group flex items-start gap-2 border-b border-[#12304a]/55 px-3 py-2 last:border-b-0">
+                  <div key={entry.id} className="theme-tp1-movement-log-entry group flex items-start gap-2 border-b border-[#12304a]/55 px-3 py-2 last:border-b-0">
                     <pre className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.32] tracking-[-0.01em] text-[#f4f8ff]">{sortTp1MovementTextLinesByTime(entry.text)}</pre>
                     <button
                       type="button"
