@@ -120,7 +120,6 @@ function DeleteRequestButton({ label, onClick }) {
       onClick={onClick}
       className="delete-request-trigger group/delete relative z-40 inline-flex h-[15px] w-[15px] items-center justify-center justify-self-end"
       aria-label={label ? `Delete request ${label}` : "Delete request"}
-      title={message}
     >
       <DeleteRequestIcon />
       <span className="delete-request-bubble pointer-events-none absolute right-[25px] top-1/2 z-[90] -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150">
@@ -138,7 +137,6 @@ function StillNotAtStablingIcon({ message = "Still not in WD" }) {
       className="still-not-stabling-trigger relative z-40 inline-flex shrink-0 items-center justify-center justify-self-end"
       tabIndex={0}
       aria-label={message}
-      title={message}
     >
       <span className="theme-maintenance-pending-icon inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border border-amber-300/85 bg-[#d97706] shadow-[0_0_6px_rgba(217,119,6,0.42)]">
         <svg

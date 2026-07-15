@@ -14,7 +14,11 @@ export default function ActionTooltip({
   const side = placement === "bottom" ? "bottom" : "top";
 
   return (
-    <TooltipPrimitive.Provider delayDuration={150} skipDelayDuration={100}>
+    <TooltipPrimitive.Provider
+      delayDuration={150}
+      skipDelayDuration={100}
+      disableHoverableContent
+    >
       <TooltipPrimitive.Root>
         <TooltipPrimitive.Trigger asChild>
           <span className={`inline-flex ${wrapperClassName}`.trim()}>
