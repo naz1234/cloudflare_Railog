@@ -18,18 +18,45 @@ export default function hideWeekdayTidTimePlugin() {
         return null;
       }
 
-      // The top timetable selector is the operational source of truth. Publish that
-      // page state directly so Friday/Saturday overrides do not depend on child tables.
+      // Use the same load/save path as the top active-timetable selector. This avoids
+      // child reference tables, render order, and component-layout assumptions.
       let code = replaceRequired(
         source,
-        /(  const \[activeTimetableType,\s*setActiveTimetableType\]\s*=\s*useState\([\s\S]*?\);\r?\n)/,
-        `$1
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    document.documentElement.dataset.insertionTidSchedule = normalizeTimetableType(activeTimetableType);
-  }, [activeTimetableType]);
-`,
-        'active timetable schedule marker in DepotStabling.jsx'
+        /function loadActiveTimetableType\(\) \{/,
+        `function publishInsertionTidSchedule(type) {
+  const normalizedType = normalizeTimetableType(type);
+  if (typeof document !== "undefined") {
+    document.documentElement.dataset.insertionTidSchedule = normalizedType;
+  }
+  return normalizedType;
+}
+
+function loadActiveTimetableType() {`,
+        'active timetable publisher helper'
+      );
+
+      code = replaceRequired(
+        code,
+        /return storedType === "ph" \? "ph" : getCurrentDayTimetableType\(\);/,
+        'return publishInsertionTidSchedule(storedType === "ph" ? "ph" : getCurrentDayTimetableType());',
+        'loaded active timetable marker'
+      );
+
+      code = replaceRequired(
+        code,
+        /(\} catch \{\r?\n\s*)return getCurrentDayTimetableType\(\);/,
+        '$1return publishInsertionTidSchedule(getCurrentDayTimetableType());',
+        'fallback active timetable marker'
+      );
+
+      code = replaceRequired(
+        code,
+        /function saveActiveTimetableType\(type\) \{\r?\n  try \{ localStorage\.setItem\(ACTIVE_TIMETABLE_TYPE_KEY, normalizeTimetableType\(type\)\); \} catch \{\}\r?\n\}/,
+        `function saveActiveTimetableType(type) {
+  const normalizedType = publishInsertionTidSchedule(type);
+  try { localStorage.setItem(ACTIVE_TIMETABLE_TYPE_KEY, normalizedType); } catch {}
+}`,
+        'saved active timetable marker'
       );
 
       let timePanelMatches = 0;
