@@ -1,4 +1,4 @@
-/* Light mode: make PST and Train Prep states easier to identify without washing into white. */
+/* Light mode: keep completed, active, and occupied idle PST cards clearly distinguishable. */
 html[data-app-theme="light"] .theme-pst-section .theme-pst-card:not(.is-empty):not(.is-pst-done):not(.is-pst-confirming):not(.is-prep-started):not(.is-prep-done) {
   background: linear-gradient(180deg, #cbd5e1 0%, #dbe5ef 52%, #e2e8f0 100%) !important;
   background-image: linear-gradient(180deg, #cbd5e1 0%, #dbe5ef 52%, #e2e8f0 100%) !important;
