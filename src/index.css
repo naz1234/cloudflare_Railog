@@ -7656,12 +7656,6 @@ html[data-app-theme="light"] .theme-train-rem-panel
     0 1px 3px rgba(146, 64, 14, 0.10) !important;
 }
 
-/* Weekend insertion cards: keep the reference TID and remark, but hide card timing. */
-.theme-insertion-section[data-weekend-timetable="true"]
-.theme-insertion-card [title^="TID "][title$=" insertion details"] > .grid {
-  display: none !important;
-}
-
 /* Insertion TID reference: neutral elevation without coloured glow in either theme. */
 .theme-insertion-page :is(
   .theme-insertion-reference,
