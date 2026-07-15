@@ -1,3 +1,4 @@
+// Weekday insertion cards keep their stored timing but hide the visible TIME row for active TIDs 101–120 and 201–220.
 function replaceRequired(source, pattern, replacement, label) {
   const next = source.replace(pattern, replacement);
   if (next === source) {
