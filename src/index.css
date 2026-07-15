@@ -393,9 +393,23 @@ html[data-app-theme="light"] .theme-stabling-train-card:not(.has-request):not(.i
   box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
 }
 
-/* Keep main stabling remark pills regular weight with white text in all themes. */
+/* Main Stabling: match Train Request's pastel category pills in light mode.
+   Each remark keeps its own request accent, including multiple remarks on one train. */
 html[data-app-theme="light"] .theme-stabling-remark {
-  color: #ffffff !important;
+  background: linear-gradient(
+    90deg,
+    rgba(var(--stabling-remark-accent-rgb, 79, 142, 247), 0.30) 0%,
+    rgba(var(--stabling-remark-accent-rgb, 79, 142, 247), 0.14) 58%,
+    #ffffff 100%
+  ) !important;
+  border-color: rgba(var(--stabling-remark-accent-rgb, 79, 142, 247), 0.82) !important;
+  box-shadow:
+    inset 3px 0 0 var(--stabling-remark-accent, #4f8ef7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    0 1px 3px rgba(15, 23, 42, 0.10) !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  text-shadow: none !important;
   font-size: 11px !important;
   font-weight: 400 !important;
 }
