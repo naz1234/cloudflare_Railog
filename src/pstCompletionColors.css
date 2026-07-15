@@ -1,14 +1,14 @@
 /* Light mode: keep completed, active, and occupied idle PST cards clearly distinguishable. */
 html[data-app-theme="light"] .theme-pst-section .theme-pst-card:not(.is-empty):not(.is-pst-done):not(.is-pst-confirming):not(.is-prep-started):not(.is-prep-done) {
-  background: linear-gradient(180deg, #cbd5e1 0%, #dbe5ef 52%, #e2e8f0 100%) !important;
-  background-image: linear-gradient(180deg, #cbd5e1 0%, #dbe5ef 52%, #e2e8f0 100%) !important;
-  border: 2px solid #64748b !important;
-  box-shadow: 0 4px 10px rgba(71, 85, 105, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.68) !important;
+  background: linear-gradient(180deg, #e0f2fe 0%, #eaf5ff 52%, #f0f7ff 100%) !important;
+  background-image: linear-gradient(180deg, #e0f2fe 0%, #eaf5ff 52%, #f0f7ff 100%) !important;
+  border: 2px solid #60a5fa !important;
+  box-shadow: 0 3px 8px rgba(59, 130, 246, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.82) !important;
 }
 
 html[data-app-theme="light"] .theme-pst-section .theme-pst-card:not(.is-empty):not(.is-pst-done):not(.is-pst-confirming):not(.is-prep-started):not(.is-prep-done) > .theme-pst-train-number {
-  color: #0f172a !important;
-  -webkit-text-fill-color: #0f172a !important;
+  color: #1e3a8a !important;
+  -webkit-text-fill-color: #1e3a8a !important;
 }
 
 html[data-app-theme="light"] .theme-pst-section .theme-pst-card.is-pst-done {
@@ -46,9 +46,9 @@ html[data-app-theme="light"] .theme-pst-section .theme-pst-card.is-prep-done > .
 }
 
 html[data-app-theme="light"] .theme-pst-section .theme-pst-time-panel:not(.is-done):not(.is-confirming) {
-  background: #e2e8f0 !important;
-  border-color: #94a3b8 !important;
-  box-shadow: inset 0 1px 2px rgba(51, 65, 85, 0.10) !important;
+  background: #f0f7ff !important;
+  border-color: #93c5fd !important;
+  box-shadow: inset 0 1px 2px rgba(30, 64, 175, 0.07) !important;
 }
 
 html[data-app-theme="light"] .theme-pst-section .theme-pst-time-panel.is-done {
@@ -72,9 +72,9 @@ html[data-app-theme="light"] .theme-pst-section .theme-pst-prep-panel {
 html[data-app-theme="light"] .theme-pst-section :is(.theme-pst-action-button.is-idle, .theme-pst-prep-button.is-idle) {
   color: #000000 !important;
   -webkit-text-fill-color: #000000 !important;
-  background: #cbd5e1 !important;
-  border: 1.5px solid #64748b !important;
-  box-shadow: 0 2px 5px rgba(71, 85, 105, 0.17) !important;
+  background: #eff6ff !important;
+  border: 1.5px solid #93c5fd !important;
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.12) !important;
 }
 
 html[data-app-theme="light"] .theme-pst-section .theme-pst-action-button.is-done {
