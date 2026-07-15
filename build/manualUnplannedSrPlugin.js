@@ -84,7 +84,7 @@ export default function manualUnplannedSrPlugin() {
               scheduleFlowInputSettled(getTp1FlowInputKey("srNumber", movementType));
             }}
             onBlur={() => blurFlowInput(getTp1FlowInputKey("srNumber", movementType))}
-            placeholder="SR number"
+            placeholder="Enter SR number"
             className={inputClass}
           />
         ),
