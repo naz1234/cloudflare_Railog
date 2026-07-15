@@ -13422,7 +13422,7 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
   const set = (field) => (val) => onChange({ ...entry, [field]: val });
   return (
     <div className="rounded-xl border border-[#1e3a56] overflow-hidden bg-[#071828]">
-      <div className="border-b border-[#1e3a56] px-3 py-2 flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+      <div className="theme-possession-header border-b border-[#1e3a56] px-3 py-2 flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
         <span className="text-[11px] font-black text-[#7eb8e0] tracking-widest uppercase">Access Entry {index + 1}</span>
         {canRemove && (
           <button onClick={onRemove} className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border border-red-800/50 text-red-400 hover:bg-red-950/40 transition-colors">
