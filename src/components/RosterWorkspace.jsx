@@ -1195,7 +1195,7 @@ export default function RosterWorkspace() {
         onChange={(event) => processFile(event.target.files?.[0])}
       />
 
-      <div className="grid items-start gap-4 xl:w-max xl:min-w-full xl:grid-cols-[1280px_max-content]">
+      <div className="grid items-start gap-4 xl:w-max xl:min-w-full xl:grid-cols-[1080px_max-content]">
       <section className="theme-roster-shell min-w-0 overflow-hidden rounded-2xl border border-[#294b63] bg-[#071827] shadow-[0_16px_36px_rgba(0,0,0,0.18)]">
         <div className="theme-roster-topbar flex flex-wrap items-center justify-between gap-4 border-b border-[#1a3b52] bg-[linear-gradient(135deg,#0b2a43_0%,#071827_70%)] px-4 py-4">
           <div className="flex min-w-0 items-center gap-3">
