@@ -1209,7 +1209,7 @@ export default function RosterWorkspace() {
                   <Database className="h-2.5 w-2.5" /> Live D1
                 </span>
               </div>
-              <p className="mt-1 text-[10px] text-[#7898ad]">Upload and manage roster versions on the left. The selected roster output is shown on the right.</p>
+              <p className="mt-1 text-[10px] text-[#7898ad]">Upload and manage roster versions above. The selected roster output is shown below.</p>
             </div>
           </div>
           <div className="theme-roster-sync-badge flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.07] px-3 py-2 text-[9px] font-semibold text-emerald-100">
@@ -1230,14 +1230,14 @@ export default function RosterWorkspace() {
           </div>
         ) : null}
 
-        <div className="grid items-start gap-4 p-4 lg:grid-cols-[300px_minmax(0,1fr)]">
-          <aside className="space-y-3 lg:sticky lg:top-3">
-            <section className="theme-roster-upload-panel rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
+        <div className="flex flex-col gap-4 p-4">
+          <aside className="grid items-stretch gap-3 lg:grid-cols-[300px_minmax(0,1fr)]">
+            <section className="theme-roster-upload-panel h-full rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
               <div className="flex items-center gap-2">
                 <Upload className="h-4 w-4 text-sky-200" />
                 <div>
                   <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-white">Upload New Version</h3>
-                  <p className="mt-0.5 text-[10px] text-[#65859a]">Older versions remain saved below.</p>
+                  <p className="mt-0.5 text-[10px] text-[#65859a]">Older versions stay available in this top section.</p>
                 </div>
               </div>
               <label className="mt-3 block">
@@ -1255,7 +1255,7 @@ export default function RosterWorkspace() {
               </ActionButton>
             </section>
 
-            <section className="theme-roster-history-panel overflow-hidden rounded-2xl border border-[#294b63] bg-[#081b2a]">
+            <section className="theme-roster-history-panel h-full min-w-0 overflow-hidden rounded-2xl border border-[#294b63] bg-[#081b2a]">
               <header className="theme-roster-history-header flex items-center justify-between border-b border-[#1d4058] px-3.5 py-3">
                 <div className="flex items-center gap-2">
                   <History className="h-4 w-4 text-sky-200" />
@@ -1265,13 +1265,13 @@ export default function RosterWorkspace() {
               </header>
 
               {!records.length ? (
-                <div className="px-4 py-8 text-center">
+                <div className="flex min-h-[144px] flex-col items-center justify-center px-4 py-8 text-center">
                   <FileText className="mx-auto h-7 w-7 text-[#52758d]" />
                   <div className="mt-3 text-[10px] font-bold text-[#bdd1de]">No roster version saved</div>
-                  <div className="mt-1 text-[8px] text-[#58778c]">Upload the first PDF above.</div>
+                  <div className="mt-1 text-[8px] text-[#58778c]">Use Upload New Version to add the first PDF.</div>
                 </div>
               ) : (
-                <div className="max-h-[calc(100vh-290px)] min-h-[180px] space-y-2 overflow-y-auto p-2.5">
+                <div className="flex min-h-[144px] gap-2.5 overflow-x-auto p-2.5">
                   {records.map((item, index) => {
                     const selected = item.versionKey === record?.versionKey;
                     const editing = editingRemarkId === item.versionKey;
@@ -1283,7 +1283,7 @@ export default function RosterWorkspace() {
                         tabIndex={0}
                         onClick={() => setSelectedId(item.versionKey)}
                         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedId(item.versionKey); }}
-                        className={`theme-roster-version-card ${selected ? "is-selected" : ""} cursor-pointer rounded-xl border p-3 transition duration-200 ${selected
+                        className={`theme-roster-version-card ${selected ? "is-selected" : ""} min-w-[270px] flex-[0_0_270px] cursor-pointer rounded-xl border p-3 transition duration-200 ${selected
                           ? "border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] shadow-[0_0_0_1px_rgba(85,215,170,0.24),0_0_22px_rgba(38,199,129,0.18),0_12px_30px_rgba(0,0,0,0.22)]"
                           : "border-[#23465f] bg-[#091d2e] hover:border-[#37627e]"
                         }`}
