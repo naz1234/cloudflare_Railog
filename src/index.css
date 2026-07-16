@@ -4541,6 +4541,56 @@ html[data-app-theme="light"] .theme-roster-staff-empty {
   background: #fbfdff !important;
 }
 
+/* Light mode: stronger role colours for TOIL / AL / RD controller pills. */
+html[data-app-theme="light"] .theme-roster-leave-cell .theme-roster-name-pill {
+  background: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-cell .theme-roster-name-pill.is-dm {
+  background: #ddd6fe !important;
+  border-color: #8b5cf6 !important;
+  color: #4c1d95 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-cell .theme-roster-name-pill.is-tcc {
+  background: #a5f3fc !important;
+  border-color: #06b6d4 !important;
+  color: #164e63 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-cell .theme-roster-name-pill.is-tc {
+  background: #bfdbfe !important;
+  border-color: #3b82f6 !important;
+  color: #1e3a8a !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-cell .theme-roster-name-pill.is-dc {
+  background: #bbf7d0 !important;
+  border-color: #22c55e !important;
+  color: #14532d !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-cell .theme-roster-name-pill.is-efc {
+  background: #fde68a !important;
+  border-color: #eab308 !important;
+  color: #78350f !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-cell .theme-roster-name-pill.is-sc {
+  background: #fbcfe8 !important;
+  border-color: #ec4899 !important;
+  color: #831843 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-total {
+  background: #fce7f3 !important;
+  border-color: #ec4899 !important;
+  color: #831843 !important;
+}
+
 /* ========================================================================
    INSERTION PAGE — LIGHT GLASSMORPHISM
    Adapted from the supplied West Depot glass reference.
