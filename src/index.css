@@ -8205,33 +8205,35 @@ html[data-app-theme="light"] .theme-possession-header {
 
 /* TP1 movement windows: distinct light-mode palettes for Automatic and Manual. */
 html[data-app-theme="light"] .theme-tp1-movement-window[data-movement-mode="automatic"] {
-  --tp1-window-start: #f0fdf4;
-  --tp1-window-end: #e8f8ee;
-  --tp1-header-start: #dcfce7;
-  --tp1-header-end: #bbf7d0;
-  --tp1-flow-bg: #e5f7eb;
-  --tp1-panel-bg: #eefbf2;
-  --tp1-step-bg: #f8fffa;
-  --tp1-step-complete-bg: #eaf9ef;
-  --tp1-log-row-bg: #f5fdf7;
-  --tp1-border: #86efac;
-  --tp1-border-strong: #4ade80;
-  --tp1-shadow: rgba(22, 101, 52, 0.10);
+  --tp1-window-start: #d8f3e2;
+  --tp1-window-end: #c7e9d4;
+  --tp1-header-start: #b9e7ca;
+  --tp1-header-end: #a6ddb9;
+  --tp1-flow-bg: #cfead9;
+  --tp1-panel-bg: #d8efe1;
+  --tp1-step-bg: #e4f5ea;
+  --tp1-step-complete-bg: #bee4cc;
+  --tp1-log-row-bg: #d3ebdc;
+  --tp1-field-bg: #f1faf4;
+  --tp1-border: #4da56d;
+  --tp1-border-strong: #248b4e;
+  --tp1-shadow: rgba(22, 101, 52, 0.16);
 }
 
 html[data-app-theme="light"] .theme-tp1-movement-window[data-movement-mode="manual"] {
-  --tp1-window-start: #fffaf0;
-  --tp1-window-end: #fff3e0;
-  --tp1-header-start: #ffedd5;
-  --tp1-header-end: #fed7aa;
-  --tp1-flow-bg: #fff0dc;
-  --tp1-panel-bg: #fff7e8;
-  --tp1-step-bg: #fffdf8;
-  --tp1-step-complete-bg: #fff2df;
-  --tp1-log-row-bg: #fff9ef;
-  --tp1-border: #fdba74;
-  --tp1-border-strong: #fb923c;
-  --tp1-shadow: rgba(154, 52, 18, 0.10);
+  --tp1-window-start: #ffebc2;
+  --tp1-window-end: #ffdfa1;
+  --tp1-header-start: #ffd89a;
+  --tp1-header-end: #ffc86d;
+  --tp1-flow-bg: #ffe0a4;
+  --tp1-panel-bg: #ffe9bd;
+  --tp1-step-bg: #fff0ce;
+  --tp1-step-complete-bg: #ffd992;
+  --tp1-log-row-bg: #ffe5b0;
+  --tp1-field-bg: #fff7e5;
+  --tp1-border: #d39427;
+  --tp1-border-strong: #b86b0a;
+  --tp1-shadow: rgba(146, 64, 14, 0.16);
 }
 
 html[data-app-theme="light"] .theme-tp1-movement-window {
@@ -8270,6 +8272,14 @@ html[data-app-theme="light"] .theme-tp1-flow-step {
 html[data-app-theme="light"] .theme-tp1-flow-step.is-complete {
   background: var(--tp1-step-complete-bg) !important;
   border-color: var(--tp1-border-strong) !important;
+}
+
+html[data-app-theme="light"] .theme-tp1-movement-window :is(input, select, textarea),
+html[data-app-theme="light"] .theme-tp1-movement-window [class*="bg-[#061827]"] {
+  background: var(--tp1-field-bg) !important;
+  background-image: none !important;
+  border-color: var(--tp1-border) !important;
+  box-shadow: inset 0 1px 2px var(--tp1-shadow) !important;
 }
 
 html[data-app-theme="light"] .theme-tp1-movement-preview {
