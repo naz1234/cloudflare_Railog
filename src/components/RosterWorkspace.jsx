@@ -1231,7 +1231,7 @@ export default function RosterWorkspace() {
         ) : null}
 
         <div className="flex flex-col gap-3 p-3.5">
-          <aside className="grid items-stretch gap-2.5 lg:grid-cols-[300px_minmax(0,1fr)]">
+          <aside className="grid items-stretch gap-2.5 lg:w-fit lg:max-w-full lg:grid-cols-[300px_270px]">
             <section className="theme-roster-upload-panel h-full rounded-xl border border-[#294b63] bg-[#081b2a] p-2.5">
               <div className="flex items-center gap-1.5">
                 <Upload className="h-3.5 w-3.5 text-sky-200" />
