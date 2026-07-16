@@ -214,7 +214,7 @@ const SHIFT_STYLES = {
   },
 };
 
-function ActionButton({ children, icon: Icon, onClick, disabled = false, primary = false, danger = false, title }) {
+function ActionButton({ children, icon: Icon, onClick, disabled = false, primary = false, danger = false, title, compact = false }) {
   const className = danger
     ? "border-rose-400/35 bg-rose-500/10 text-rose-100 hover:bg-rose-500/20"
     : primary
@@ -226,9 +226,9 @@ function ActionButton({ children, icon: Icon, onClick, disabled = false, primary
       title={title}
       onClick={onClick}
       disabled={disabled}
-      className={`theme-roster-action-btn ${primary ? "is-primary" : ""} ${danger ? "is-danger" : ""} inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-3.5 text-[13px] font-bold transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 ${className}`}
+      className={`theme-roster-action-btn ${primary ? "is-primary" : ""} ${danger ? "is-danger" : ""} inline-flex items-center justify-center border font-bold transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 ${compact ? "h-9 gap-1.5 rounded-lg px-3 text-[11px]" : "h-11 gap-2 rounded-xl px-3.5 text-[13px]"} ${className}`}
     >
-      {Icon ? <Icon className="h-4 w-4" /> : null}
+      {Icon ? <Icon className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} /> : null}
       {children}
     </button>
   );
@@ -412,7 +412,7 @@ function groupRows(rows) {
     .filter((group) => group.rows.length);
 }
 
-function MiniButton({ icon: Icon, label, onClick, danger = false, confirm = false, disabled = false }) {
+function MiniButton({ icon: Icon, label, onClick, danger = false, confirm = false, disabled = false, compact = false }) {
   const tone = danger
     ? confirm
       ? "border-rose-300/60 bg-rose-500/25 text-rose-50"
@@ -425,9 +425,9 @@ function MiniButton({ icon: Icon, label, onClick, danger = false, confirm = fals
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
-      className={`theme-roster-mini-btn ${danger ? "is-danger" : ""} ${confirm ? "is-confirm" : ""} inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-[9px] font-bold transition disabled:cursor-not-allowed disabled:opacity-45 ${tone}`}
+      className={`theme-roster-mini-btn ${danger ? "is-danger" : ""} ${confirm ? "is-confirm" : ""} inline-flex items-center justify-center rounded-lg border font-bold transition disabled:cursor-not-allowed disabled:opacity-45 ${compact ? "h-7 gap-1 px-2 text-[8px]" : "h-8 gap-1.5 px-2.5 text-[9px]"} ${tone}`}
     >
-      {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
+      {Icon ? <Icon className={compact ? "h-3 w-3" : "h-3.5 w-3.5"} /> : null}
       <span>{confirm ? "Confirm" : label}</span>
     </button>
   );
@@ -1230,48 +1230,47 @@ export default function RosterWorkspace() {
           </div>
         ) : null}
 
-        <div className="flex flex-col gap-4 p-4">
-          <aside className="grid items-stretch gap-3 lg:grid-cols-[300px_minmax(0,1fr)]">
-            <section className="theme-roster-upload-panel h-full rounded-2xl border border-[#294b63] bg-[#081b2a] p-3.5">
-              <div className="flex items-center gap-2">
-                <Upload className="h-4 w-4 text-sky-200" />
-                <div>
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-white">Upload New Version</h3>
-                  <p className="mt-0.5 text-[10px] text-[#65859a]">Older versions stay available in this top section.</p>
-                </div>
+        <div className="flex flex-col gap-3 p-3.5">
+          <aside className="grid items-stretch gap-2.5 lg:grid-cols-[300px_minmax(0,1fr)]">
+            <section className="theme-roster-upload-panel h-full rounded-xl border border-[#294b63] bg-[#081b2a] p-2.5">
+              <div className="flex items-center gap-1.5">
+                <Upload className="h-3.5 w-3.5 text-sky-200" />
+                <h3 className="truncate text-[10px] font-black uppercase tracking-[0.1em] text-white">Upload New Version</h3>
               </div>
-              <label className="mt-3 block">
-                <span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.1em] text-[#8eb0c5]">Remark shown as pill</span>
-                <input
-                  value={uploadRemark}
-                  onChange={(event) => setUploadRemark(event.target.value)}
-                  placeholder="Example: Revised June roster"
-                  maxLength={80}
-                  className="h-10 w-full rounded-xl border border-[#2b506a] bg-[#061522] px-3 text-[11px] text-white outline-none focus:border-sky-400/60 placeholder:text-[#456277]"
-                />
-              </label>
-              <ActionButton icon={Upload} primary onClick={() => fileInputRef.current?.click()} disabled={processing}>
-                {processing ? "Reading PDF…" : "Upload Roster PDF"}
-              </ActionButton>
+              <div className="mt-2 grid items-end gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                <label className="block min-w-0">
+                  <span className="mb-1 block text-[9px] font-black uppercase tracking-[0.08em] text-[#8eb0c5]">Remark shown as pill</span>
+                  <input
+                    value={uploadRemark}
+                    onChange={(event) => setUploadRemark(event.target.value)}
+                    placeholder="Example: Revised June roster"
+                    maxLength={80}
+                    className="h-9 w-full min-w-0 rounded-lg border border-[#2b506a] bg-[#061522] px-2.5 text-[10px] text-white outline-none focus:border-sky-400/60 placeholder:text-[#456277]"
+                  />
+                </label>
+                <ActionButton compact icon={Upload} primary onClick={() => fileInputRef.current?.click()} disabled={processing}>
+                  {processing ? "Reading…" : "Upload PDF"}
+                </ActionButton>
+              </div>
             </section>
 
-            <section className="theme-roster-history-panel h-full min-w-0 overflow-hidden rounded-2xl border border-[#294b63] bg-[#081b2a]">
-              <header className="theme-roster-history-header flex items-center justify-between border-b border-[#1d4058] px-3.5 py-3">
-                <div className="flex items-center gap-2">
-                  <History className="h-4 w-4 text-sky-200" />
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-white">Saved Versions</h3>
+            <section className="theme-roster-history-panel h-full min-w-0 overflow-hidden rounded-xl border border-[#294b63] bg-[#081b2a]">
+              <header className="theme-roster-history-header flex items-center justify-between border-b border-[#1d4058] px-3 py-2">
+                <div className="flex items-center gap-1.5">
+                  <History className="h-3.5 w-3.5 text-sky-200" />
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.1em] text-white">Saved Versions</h3>
                 </div>
-                <span className="rounded-full border border-sky-300/25 bg-sky-400/10 px-2 py-0.5 text-[9px] font-black text-sky-100">{records.length}</span>
+                <span className="rounded-full border border-sky-300/25 bg-sky-400/10 px-1.5 py-px text-[8px] font-black text-sky-100">{records.length}</span>
               </header>
 
               {!records.length ? (
-                <div className="flex min-h-[144px] flex-col items-center justify-center px-4 py-8 text-center">
-                  <FileText className="mx-auto h-7 w-7 text-[#52758d]" />
-                  <div className="mt-3 text-[10px] font-bold text-[#bdd1de]">No roster version saved</div>
-                  <div className="mt-1 text-[8px] text-[#58778c]">Use Upload New Version to add the first PDF.</div>
+                <div className="flex min-h-[96px] flex-col items-center justify-center px-3 py-4 text-center">
+                  <FileText className="mx-auto h-5 w-5 text-[#52758d]" />
+                  <div className="mt-2 text-[9px] font-bold text-[#bdd1de]">No roster version saved</div>
+                  <div className="mt-0.5 text-[8px] text-[#58778c]">Use Upload New Version to add the first PDF.</div>
                 </div>
               ) : (
-                <div className="flex min-h-[144px] gap-2.5 overflow-x-auto p-2.5">
+                <div className="flex min-h-[96px] gap-2 overflow-x-auto p-2">
                   {records.map((item, index) => {
                     const selected = item.versionKey === record?.versionKey;
                     const editing = editingRemarkId === item.versionKey;
@@ -1283,26 +1282,26 @@ export default function RosterWorkspace() {
                         tabIndex={0}
                         onClick={() => setSelectedId(item.versionKey)}
                         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedId(item.versionKey); }}
-                        className={`theme-roster-version-card ${selected ? "is-selected" : ""} min-w-[270px] flex-[0_0_270px] cursor-pointer rounded-xl border p-3 transition duration-200 ${selected
+                        className={`theme-roster-version-card ${selected ? "is-selected" : ""} min-w-[245px] flex-[0_0_245px] cursor-pointer rounded-lg border p-2.5 transition duration-200 ${selected
                           ? "border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] shadow-[0_0_0_1px_rgba(85,215,170,0.24),0_0_22px_rgba(38,199,129,0.18),0_12px_30px_rgba(0,0,0,0.22)]"
                           : "border-[#23465f] bg-[#091d2e] hover:border-[#37627e]"
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <div className="truncate text-[12px] font-extrabold text-white">{item.fileName}</div>
-                            <div className="mt-1 text-[10px] text-[#6f8fa4]">Uploaded {dateTimeLabel(item.uploadedAt)}</div>
+                            <div className="truncate text-[11px] font-extrabold text-white">{item.fileName}</div>
+                            <div className="mt-0.5 text-[9px] text-[#6f8fa4]">Uploaded {dateTimeLabel(item.uploadedAt)}</div>
                           </div>
-                          {index === 0 ? <span className="theme-roster-latest-pill shrink-0 rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-emerald-100">Latest</span> : null}
+                          {index === 0 ? <span className="theme-roster-latest-pill shrink-0 rounded-full border border-emerald-300/30 bg-emerald-400/10 px-1.5 py-px text-[8px] font-black uppercase tracking-wide text-emerald-100">Latest</span> : null}
                         </div>
 
-                        <div className="mt-2 flex flex-wrap gap-1.5">
+                        <div className="mt-1.5 flex flex-wrap gap-1">
                           {item.remark ? (
-                            <span className="theme-roster-remark-pill max-w-full truncate rounded-full border border-amber-300/35 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-100">{item.remark}</span>
+                            <span className="theme-roster-remark-pill max-w-full truncate rounded-full border border-amber-300/35 bg-amber-400/10 px-1.5 py-px text-[9px] font-bold text-amber-100">{item.remark}</span>
                           ) : (
-                            <span className="theme-roster-no-remark-pill rounded-full border border-slate-300/20 bg-slate-400/[0.06] px-2 py-0.5 text-[10px] text-slate-300">No remark</span>
+                            <span className="theme-roster-no-remark-pill rounded-full border border-slate-300/20 bg-slate-400/[0.06] px-1.5 py-px text-[9px] text-slate-300">No remark</span>
                           )}
-                          <span className="theme-roster-personnel-pill rounded-full border border-[#315671] bg-[#0a253b] px-2 py-0.5 text-[10px] text-[#9fb9ca]">{item.parsed?.people?.length || 0} personnel</span>
+                          <span className="theme-roster-personnel-pill rounded-full border border-[#315671] bg-[#0a253b] px-1.5 py-px text-[9px] text-[#9fb9ca]">{item.parsed?.people?.length || 0} personnel</span>
                         </div>
 
                         {editing ? (
@@ -1319,16 +1318,16 @@ export default function RosterWorkspace() {
                               placeholder="Roster remark"
                               className="h-8 w-full rounded-lg border border-[#2b506a] bg-[#081b2a] px-2.5 text-[10px] text-white outline-none focus:border-sky-400/60"
                             />
-                            <div className="mt-2 flex gap-1.5">
-                              <MiniButton icon={Save} label="Save" onClick={() => saveRemarkEdit(item)} />
-                              <MiniButton icon={X} label="Cancel" onClick={() => setEditingRemarkId("")} />
+                            <div className="mt-1.5 flex gap-1">
+                              <MiniButton compact icon={Save} label="Save" onClick={() => saveRemarkEdit(item)} />
+                              <MiniButton compact icon={X} label="Cancel" onClick={() => setEditingRemarkId("")} />
                             </div>
                           </div>
                         ) : (
-                          <div className="mt-2 flex flex-wrap gap-1.5" onClick={(event) => event.stopPropagation()}>
-                            <MiniButton icon={Download} label="Download" onClick={() => handleDownload(item)} />
-                            <MiniButton icon={Pencil} label="Remark" onClick={() => startRemarkEdit(item)} />
-                            <MiniButton icon={Trash2} label="Delete" danger confirm={confirming} onClick={() => handleDeleteVersion(item)} />
+                          <div className="mt-1.5 flex flex-wrap gap-1" onClick={(event) => event.stopPropagation()}>
+                            <MiniButton compact icon={Download} label="Download" onClick={() => handleDownload(item)} />
+                            <MiniButton compact icon={Pencil} label="Remark" onClick={() => startRemarkEdit(item)} />
+                            <MiniButton compact icon={Trash2} label="Delete" danger confirm={confirming} onClick={() => handleDeleteVersion(item)} />
                           </div>
                         )}
                       </div>
@@ -1339,40 +1338,40 @@ export default function RosterWorkspace() {
             </section>
           </aside>
 
-          <main className="theme-roster-main min-w-0 rounded-2xl border border-[#294b63] bg-[#071827] p-3.5">
+          <main className="theme-roster-main min-w-0 rounded-2xl border border-[#294b63] bg-[#071827] p-3">
             {!record ? <EmptyRoster onUpload={() => fileInputRef.current?.click()} /> : (
-              <div className="space-y-4">
-                <section className="theme-roster-filter-panel theme-roster-ext-card rounded-[18px] border border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] p-3.5 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
-                  <div className="grid gap-3 md:grid-cols-[1fr_0.8fr_1.25fr]">
+              <div className="space-y-3">
+                <section className="theme-roster-filter-panel theme-roster-ext-card rounded-[16px] border border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] p-2.5 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
+                  <div className="grid gap-2.5 md:grid-cols-[1fr_0.8fr_1.25fr]">
                     <label className="block">
-                      <span className="mb-1.5 block text-[10px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Date</span>
+                      <span className="mb-1 block text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#afbed2]">Date</span>
                       <input
                         type="date"
                         value={selectedDate}
                         onChange={(event) => setSelectedDate(event.target.value)}
-                        className={`theme-roster-control theme-roster-ext-control is-date ${dateExists ? "is-valid" : "is-invalid"} h-11 w-full rounded-xl border bg-[#061a20] px-3 text-[12px] font-semibold text-white outline-none [color-scheme:dark] ${dateExists ? "border-[#376d60] focus:border-emerald-300/70" : "border-rose-400/70 focus:border-rose-300"}`}
+                        className={`theme-roster-control theme-roster-ext-control is-date ${dateExists ? "is-valid" : "is-invalid"} h-9 w-full rounded-lg border bg-[#061a20] px-2.5 text-[11px] font-semibold text-white outline-none [color-scheme:dark] ${dateExists ? "border-[#376d60] focus:border-emerald-300/70" : "border-rose-400/70 focus:border-rose-300"}`}
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-1.5 block text-[10px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Controller Type</span>
+                      <span className="mb-1 block text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#afbed2]">Controller Type</span>
                       <select
                         value={role}
                         onChange={(event) => setRole(event.target.value)}
-                        className="theme-roster-control theme-roster-ext-control h-11 w-full rounded-xl border border-[#376d60] bg-[#061a20] px-3 text-[12px] font-semibold text-white outline-none focus:border-emerald-300/70"
+                        className="theme-roster-control theme-roster-ext-control h-9 w-full rounded-lg border border-[#376d60] bg-[#061a20] px-2.5 text-[11px] font-semibold text-white outline-none focus:border-emerald-300/70"
                       >
                         <option value="ALL">All Controllers</option>
                         {ROSTER_ROLE_ORDER.filter((item) => parsed.roles.includes(item)).map((item) => <option key={item} value={item}>{item}</option>)}
                       </select>
                     </label>
                     <label className="block">
-                      <span className="mb-1.5 block text-[10px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Search Name / Duty</span>
+                      <span className="mb-1 block text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#afbed2]">Search Name / Duty</span>
                       <div className="relative">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#76d5ae]" />
                         <input
                           value={search}
                           onChange={(event) => setSearch(event.target.value)}
                           placeholder="Search controller…"
-                          className="theme-roster-control theme-roster-ext-control h-11 w-full rounded-xl border border-[#376d60] bg-[#061a20] pl-9 pr-3 text-[12px] text-white outline-none focus:border-emerald-300/70 placeholder:text-[#5d7f76]"
+                          className="theme-roster-control theme-roster-ext-control h-9 w-full rounded-lg border border-[#376d60] bg-[#061a20] pl-8 pr-2.5 text-[11px] text-white outline-none focus:border-emerald-300/70 placeholder:text-[#5d7f76]"
                         />
                       </div>
                     </label>
@@ -1393,13 +1392,13 @@ export default function RosterWorkspace() {
                   </div>
                 ) : null}
 
-                <div className="theme-roster-result-header flex items-center gap-3 rounded-[18px] border border-[#294b63] bg-[linear-gradient(90deg,#0a253a,#071827)] px-4 py-3.5">
-                  <div className="theme-roster-result-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sky-400/25 bg-sky-400/10 text-sky-200">
-                    <CalendarDays className="h-5 w-5" />
+                <div className="theme-roster-result-header flex items-center gap-2.5 rounded-[16px] border border-[#294b63] bg-[linear-gradient(90deg,#0a253a,#071827)] px-3 py-2.5">
+                  <div className="theme-roster-result-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-sky-400/25 bg-sky-400/10 text-sky-200">
+                    <CalendarDays className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="truncate text-[16px] font-extrabold text-white">{currentDateLabel}</div>
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[#8eabbc]">
+                    <div className="truncate text-[14px] font-extrabold text-white">{currentDateLabel}</div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-[#8eabbc]">
                       <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" /> {workingCount} working</span>
                       <span className="theme-roster-meta-dot">•</span>
                       <span>{role === "ALL" ? "All controller types" : `${role} only`}</span>
