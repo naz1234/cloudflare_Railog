@@ -25492,13 +25492,13 @@ function RoadRow({
                       <ActionTooltip
                         key={`${key}-${item.displayType}-${item.badgeText || ""}`}
                         message={<span className="theme-stabling-remark-tooltip-text">{label}</span>}
-                        placement="top"
+                        placement="bottom"
                         sideOffset={6}
                         wrapperClassName="w-full min-w-0"
                         contentStyle={tooltipStyle}
                       >
                         <span
-                          className="theme-stabling-remark block w-full truncate rounded-md px-1.5 py-0.5 text-center text-[11px] font-normal leading-tight text-white"
+                          className="theme-stabling-remark block w-full cursor-pointer truncate rounded-md px-1.5 py-0.5 text-center text-[11px] font-normal leading-tight text-white"
                           style={pillStyle}
                           aria-label={label}
                         >
