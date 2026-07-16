@@ -4271,6 +4271,276 @@ html[data-app-theme="light"] .theme-roster-leave-type.is-rd .theme-roster-leave-
   box-shadow: none !important;
 }
 
+/* Controller Roster: polished, high-contrast light theme.
+   Keep these overrides after the shared roster shift rules. */
+html[data-app-theme="light"] .theme-roster-shell {
+  background: #f3f6fa !important;
+  border-color: #aebfce !important;
+  box-shadow: 0 14px 34px rgba(30, 41, 59, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-topbar {
+  background: linear-gradient(135deg, #f8fbff 0%, #e9f1f8 100%) !important;
+  border-color: #b7c7d5 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-upload-panel,
+html[data-app-theme="light"] .theme-roster-history-panel {
+  background: #fbfdff !important;
+  border-color: #b8c7d5 !important;
+  box-shadow: 0 3px 10px rgba(30, 41, 59, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-history-header {
+  background: #edf3f8 !important;
+  border-color: #c8d4df !important;
+}
+
+html[data-app-theme="light"] .theme-roster-main {
+  background: #eef3f7 !important;
+  border-color: #b8c8d6 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-result-header {
+  background: linear-gradient(135deg, #eaf3fc, #f7fbff) !important;
+  border-color: #a9c1d5 !important;
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-result-header > div:last-child > div:first-child {
+  color: #102a43 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-result-header > div:last-child > div:last-child,
+html[data-app-theme="light"] .theme-roster-meta-dot {
+  color: #526b80 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-daily-board {
+  background: #e8eef4 !important;
+  border-color: #b5c5d3 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group {
+  box-shadow: 0 4px 12px rgba(30, 41, 59, 0.07) !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-early {
+  background: #fffdf5 !important;
+  border-color: #d6a814 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-early .theme-roster-horizontal-shift-cell {
+  background: #ffefb0 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-early .theme-roster-horizontal-role-cell {
+  background: #fffbeb !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-early :is(.theme-roster-horizontal-shift-cell, .theme-roster-horizontal-role-cell) {
+  border-color: #ead68a !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-early .theme-roster-horizontal-shift-title {
+  color: #713f12 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-early .theme-roster-time-pill {
+  background: #fef3c7 !important;
+  border-color: #eab308 !important;
+  color: #713f12 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-late {
+  background: #f5fbff !important;
+  border-color: #38a9df !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-late .theme-roster-horizontal-shift-cell {
+  background: #cfeeff !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-late .theme-roster-horizontal-role-cell {
+  background: #eef9ff !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-late :is(.theme-roster-horizontal-shift-cell, .theme-roster-horizontal-role-cell) {
+  border-color: #afd9ee !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-late .theme-roster-horizontal-shift-title {
+  color: #075985 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-late .theme-roster-time-pill {
+  background: #e0f2fe !important;
+  border-color: #38bdf8 !important;
+  color: #075985 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-night {
+  background: #f4f6fa !important;
+  border-color: #7f91a8 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-night .theme-roster-horizontal-shift-cell {
+  background: #dce4ee !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-night .theme-roster-horizontal-role-cell {
+  background: #f0f4f8 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-night :is(.theme-roster-horizontal-shift-cell, .theme-roster-horizontal-role-cell) {
+  border-color: #c5d0dc !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-night .theme-roster-horizontal-shift-title {
+  color: #334155 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-night .theme-roster-time-pill {
+  background: #e0e7ff !important;
+  border-color: #818cf8 !important;
+  color: #3730a3 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-extension {
+  background: #fffaf5 !important;
+  border-color: #fb923c !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-extension .theme-roster-horizontal-shift-cell {
+  background: #ffedd5 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-extension .theme-roster-horizontal-role-cell {
+  background: #fff7ed !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-extension .theme-roster-time-pill {
+  background: #ffedd5 !important;
+  border-color: #fb923c !important;
+  color: #9a3412 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-training {
+  background: #f2fdfb !important;
+  border-color: #2dd4bf !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-training .theme-roster-horizontal-shift-cell {
+  background: #ccfbf1 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-training .theme-roster-horizontal-role-cell {
+  background: #f0fdfa !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-training .theme-roster-time-pill {
+  background: #ccfbf1 !important;
+  border-color: #2dd4bf !important;
+  color: #115e59 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-rest {
+  background: #fff7f8 !important;
+  border-color: #fb7185 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-rest .theme-roster-horizontal-shift-cell {
+  background: #ffe4e6 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-rest .theme-roster-horizontal-role-cell {
+  background: #fff1f2 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-rest .theme-roster-time-pill {
+  background: #ffe4e6 !important;
+  border-color: #fb7185 !important;
+  color: #9f1239 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-shift-group.is-other .theme-roster-time-pill {
+  background: #f3e8ff !important;
+  border-color: #a855f7 !important;
+  color: #6b21a8 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-role-divider {
+  opacity: 0.62 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-horizontal-empty {
+  color: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-table {
+  background: #fbfdff !important;
+  border-color: #d6a9c1 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-table-header {
+  background: linear-gradient(90deg, #fce7f3 0%, #f1edff 52%, #e8f2ff 100%) !important;
+  border-color: #dbb7ca !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-table-header > div > div:last-child {
+  color: #6b214c !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-total {
+  background: #fff7fb !important;
+  border-color: #f0a9c9 !important;
+  color: #831843 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-list {
+  background: #fbfdff !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-row {
+  border-color: #d7e0e8 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-type.is-toil .theme-roster-leave-icon {
+  background: #fff7d6 !important;
+  border-color: #f4c84a !important;
+  color: #92400e !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-type.is-al .theme-roster-leave-icon {
+  background: #fce7f3 !important;
+  border-color: #f9a8d4 !important;
+  color: #9d174d !important;
+}
+
+html[data-app-theme="light"] .theme-roster-leave-type.is-rd .theme-roster-leave-icon {
+  background: #dbeafe !important;
+  border-color: #93c5fd !important;
+  color: #1d4ed8 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-schedule > section {
+  background: #f3f6fa !important;
+  border-color: #aebfce !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-schedule-header {
+  background: linear-gradient(135deg, #f8fbff, #e9f1f8) !important;
+  border-color: #b7c7d5 !important;
+}
+
+html[data-app-theme="light"] .theme-roster-staff-output,
+html[data-app-theme="light"] .theme-roster-staff-empty {
+  background: #fbfdff !important;
+}
+
 /* ========================================================================
    INSERTION PAGE — LIGHT GLASSMORPHISM
    Adapted from the supplied West Depot glass reference.
