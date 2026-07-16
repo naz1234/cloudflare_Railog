@@ -406,6 +406,58 @@ html[data-app-theme="light"] .theme-stabling-remark {
   font-weight: 400 !important;
 }
 
+/* Stabling remark tooltip: portal-based so it is never clipped by a train card. */
+[role="tooltip"]:has(.theme-stabling-remark-tooltip-text) {
+  max-width: min(360px, calc(100vw - 24px)) !important;
+  padding: 7px 10px !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  text-align: left !important;
+  white-space: normal !important;
+  pointer-events: none !important;
+}
+
+[role="tooltip"]:has(.theme-stabling-remark-tooltip-text) .theme-stabling-remark-tooltip-text {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+html[data-app-theme="dark"] [role="tooltip"]:has(.theme-stabling-remark-tooltip-text) {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.22),
+    #061522 72%
+  ) !important;
+  border-color: rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.88) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.38), 0 0 12px rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.20) !important;
+}
+
+html[data-app-theme="dark"] [role="tooltip"]:has(.theme-stabling-remark-tooltip-text) > svg {
+  fill: #061522 !important;
+  filter: drop-shadow(0 1px 0 rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.88)) !important;
+}
+
+html[data-app-theme="light"] [role="tooltip"]:has(.theme-stabling-remark-tooltip-text) {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.34),
+    rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.16)
+  ), #ffffff !important;
+  border-color: rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.96) !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16), 0 0 10px rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.14) !important;
+}
+
+html[data-app-theme="light"] [role="tooltip"]:has(.theme-stabling-remark-tooltip-text) > svg {
+  fill: #ffffff !important;
+  filter: drop-shadow(0 1px 0 rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.96)) !important;
+}
+
 html[data-app-theme="light"] .theme-stabling-train-card.is-empty {
   background: #f8fafc !important;
   border-color: #aebdcc !important;

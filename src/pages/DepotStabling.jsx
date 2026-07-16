@@ -25483,15 +25483,28 @@ function RoadRow({
                 >
                   {maintList.map((item) => {
                     const label = item.badgeText || item.displayType || item.typeKey || "Request";
+                    const pillStyle = getMainStablingRemarkPillStyle(item);
+                    const tooltipStyle = {
+                      "--stabling-tooltip-accent": pillStyle["--stabling-remark-accent"],
+                      "--stabling-tooltip-accent-rgb": pillStyle["--stabling-remark-accent-rgb"],
+                    };
                     return (
-                      <span
+                      <ActionTooltip
                         key={`${key}-${item.displayType}-${item.badgeText || ""}`}
-                        className="theme-stabling-remark block w-full truncate rounded-md px-1.5 py-0.5 text-center text-[11px] font-normal leading-tight text-white"
-                        style={getMainStablingRemarkPillStyle(item)}
-                        title={label}
+                        message={<span className="theme-stabling-remark-tooltip-text">{label}</span>}
+                        placement="top"
+                        sideOffset={6}
+                        wrapperClassName="w-full min-w-0"
+                        contentStyle={tooltipStyle}
                       >
-                        {label}
-                      </span>
+                        <span
+                          className="theme-stabling-remark block w-full truncate rounded-md px-1.5 py-0.5 text-center text-[11px] font-normal leading-tight text-white"
+                          style={pillStyle}
+                          aria-label={label}
+                        >
+                          {label}
+                        </span>
+                      </ActionTooltip>
                     );
                   })}
                 </div>
