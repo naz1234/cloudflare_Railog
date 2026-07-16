@@ -291,7 +291,7 @@ function HorizontalPersonPill({ person, entry, day }) {
 
 function ShiftGroup({ shiftKey, rows, day }) {
   const style = SHIFT_STYLES[shiftKey] || SHIFT_STYLES.other;
-  const label = shiftKey === "extension" && rows.length === 1 ? rows[0].entry.shiftLabel : style.label;
+  const label = style.label;
   const timeLabels = [...new Set(rows.map(({ entry }) => (
     entry.timeStart && entry.timeEnd
       ? `${entry.timeStart}–${entry.timeEnd}`
@@ -391,10 +391,24 @@ function SpecialLeaveTable({ rows, day }) {
   );
 }
 
+function rosterDisplayShiftKey(entry) {
+  if (entry?.shiftKey !== "extension") return entry?.shiftKey || "other";
+
+  const extensionLabel = String(entry.shiftLabel || "").toLowerCase();
+  if (extensionLabel.startsWith("early")) return "early";
+  if (extensionLabel.startsWith("late")) return "late";
+  if (extensionLabel.startsWith("night")) return "night";
+
+  const startHour = Number(String(entry.timeStart || "").split(":")[0]);
+  if (!Number.isFinite(startHour)) return "other";
+  if (startHour >= 18 || startHour < 5) return "night";
+  return startHour < 12 ? "early" : "late";
+}
+
 function groupRows(rows) {
-  const order = ["early", "late", "night", "extension", "training", "other", "rest"];
+  const order = ["early", "late", "night", "training", "other", "rest"];
   return order
-    .map((shiftKey) => ({ shiftKey, rows: rows.filter(({ entry }) => entry.shiftKey === shiftKey) }))
+    .map((shiftKey) => ({ shiftKey, rows: rows.filter(({ entry }) => rosterDisplayShiftKey(entry) === shiftKey) }))
     .filter((group) => group.rows.length);
 }
 
