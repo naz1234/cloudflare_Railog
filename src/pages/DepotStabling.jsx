@@ -7836,6 +7836,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         <span className="block w-full whitespace-pre-line text-left">
           {totalServiceText.slice(0, duplicateWarningStartIndex)}
           <span
+            className="theme-ttl-duplicate-warning"
             style={{
               color: "#dc2626",
               display: "block",
