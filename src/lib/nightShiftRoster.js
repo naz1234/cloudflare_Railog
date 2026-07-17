@@ -1,7 +1,10 @@
+const TARGET_STAFF_ID = "1000335";
 const TARGET_STAFF_PATTERN = /\bbin\s+jaafar\b/i;
+const ROSTER_CODE_PATTERN = /\b(?:N3-DC|NRDOT|L3-DC|E3-DC|WR|RDOT|OFF)\b/i;
 const DATE_HEADER_PATTERN = /^(\d{1,2})[./-](\d{1,2})[./-]?$/;
 const ROSTER_RANGE_PATTERN = /\bFor\s+(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+To\s+(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/i;
 const ROW_TOLERANCE = 2.5;
+const STAFF_ROW_DISTANCE = 32;
 
 function normalizeYear(value) {
   const year = Number(value);
@@ -54,6 +57,40 @@ function groupItemsByRow(items = [], tolerance = ROW_TOLERANCE) {
 
   rows.forEach((row) => row.items.sort((left, right) => left.x - right.x));
   return rows;
+}
+
+function getRowText(row) {
+  return row.items.map((item) => item.str).join(" ");
+}
+
+function rowHasTargetStaffId(row) {
+  return row.items.some((item) => String(item.str || "").replace(/\D/g, "") === TARGET_STAFF_ID)
+    || getRowText(row).replace(/\D/g, "").includes(TARGET_STAFF_ID);
+}
+
+function getTargetShiftRows(items = []) {
+  const rows = groupItemsByRow(items);
+  const staffIdRows = rows.filter(rowHasTargetStaffId);
+  const nameRows = rows.filter((row) => TARGET_STAFF_PATTERN.test(getRowText(row)));
+  const shiftRows = rows.filter((row) => ROSTER_CODE_PATTERN.test(getRowText(row)));
+  const targetRows = [];
+
+  const getNearestRow = (candidates, staffIdRow) => candidates
+    .map((row) => ({ row, distance: Math.abs(row.y - staffIdRow.y) }))
+    .filter(({ distance }) => distance <= STAFF_ROW_DISTANCE)
+    .sort((left, right) => left.distance - right.distance)[0]?.row;
+
+  staffIdRows.forEach((staffIdRow) => {
+    const nearestRow = getNearestRow(nameRows, staffIdRow)
+      || getNearestRow(shiftRows, staffIdRow);
+
+    if (nearestRow) targetRows.push(nearestRow);
+  });
+
+  return {
+    staffFound: staffIdRows.length > 0,
+    rows: Array.from(new Set(targetRows)),
+  };
 }
 
 function getDateHeaders(items = [], rosterRange, fallbackYear) {
@@ -122,11 +159,9 @@ export function parseBinJaafarRoster(pages = [], fallbackYear = new Date().getFu
       coveredDates.push(...headers.map((header) => header.date));
     }
 
-    const targetRows = groupItemsByRow(pageItems).filter((row) => (
-      TARGET_STAFF_PATTERN.test(row.items.map((item) => item.str).join(" "))
-    ));
-
-    if (targetRows.length) staffFound = true;
+    const target = getTargetShiftRows(pageItems);
+    const targetRows = target.rows;
+    if (target.staffFound) staffFound = true;
 
     targetRows.forEach((row) => {
       headers.forEach((header, index) => {
@@ -154,6 +189,7 @@ export function parseBinJaafarRoster(pages = [], fallbackYear = new Date().getFu
 
   return {
     staffName: "Bin Jaafar",
+    staffId: TARGET_STAFF_ID,
     staffFound,
     dateHeadersFound,
     rosterRange,
