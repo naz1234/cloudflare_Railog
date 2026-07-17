@@ -247,3 +247,66 @@ export function summarizeBinJaafarNightShifts(parsedRoster, selectedYear, select
     totalCount: entries.length,
   };
 }
+
+export function summarizeCombinedNightShiftRosters(parsedRosters = [], selectedYear, selectedMonth) {
+  const rosterSummaries = parsedRosters.map((parsedRoster) => (
+    summarizeBinJaafarNightShifts(parsedRoster, selectedYear, selectedMonth)
+  ));
+  const dateDetails = new Map();
+
+  rosterSummaries.forEach((summary, rosterIndex) => {
+    summary.entries.forEach((entry) => {
+      const current = dateDetails.get(entry.date) || {
+        date: entry.date,
+        codes: new Set(),
+        rosterIndexes: new Set(),
+      };
+      current.codes.add(entry.code);
+      current.rosterIndexes.add(rosterIndex);
+      dateDetails.set(entry.date, current);
+    });
+  });
+
+  const detectedDates = Array.from(dateDetails.keys()).sort();
+  const regularDates = detectedDates.filter((date) => dateDetails.get(date)?.codes.has("N3-DC"));
+  const rdotDates = detectedDates.filter((date) => dateDetails.get(date)?.codes.has("NRDOT"));
+  const sharedDates = detectedDates
+    .filter((date) => dateDetails.get(date)?.rosterIndexes.size > 1)
+    .map((date) => {
+      const details = dateDetails.get(date);
+      return {
+        date,
+        codes: Array.from(details.codes).sort(),
+        rosterIndexes: Array.from(details.rosterIndexes).sort((left, right) => left - right),
+        rosterCount: details.rosterIndexes.size,
+      };
+    });
+  const conflictingDates = detectedDates
+    .filter((date) => dateDetails.get(date)?.codes.size > 1)
+    .map((date) => ({
+      date,
+      codes: Array.from(dateDetails.get(date).codes).sort(),
+      rosterIndexes: Array.from(dateDetails.get(date).rosterIndexes).sort((left, right) => left - right),
+    }));
+  const rawNightShiftCount = rosterSummaries.reduce((total, summary) => total + summary.nightShiftCount, 0);
+  const rawRdotCount = rosterSummaries.reduce((total, summary) => total + summary.rdotCount, 0);
+
+  return {
+    rosterCount: parsedRosters.length,
+    rostersWithPeriod: rosterSummaries.filter((summary) => summary.periodFound).length,
+    rosterSummaries,
+    detectedDates,
+    firstDate: detectedDates[0] || "",
+    lastDate: detectedDates.at(-1) || "",
+    uniqueDutyDateCount: detectedDates.length,
+    nightShiftCount: regularDates.length,
+    rdotCount: rdotDates.length,
+    rawNightShiftCount,
+    rawRdotCount,
+    repeatedNightShiftCount: Math.max(0, rawNightShiftCount - regularDates.length),
+    repeatedRdotCount: Math.max(0, rawRdotCount - rdotDates.length),
+    sharedDates,
+    sharedNightShiftDates: sharedDates.filter((entry) => entry.codes.includes("N3-DC")),
+    conflictingDates,
+  };
+}
