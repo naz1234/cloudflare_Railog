@@ -91,6 +91,12 @@ html[data-app-theme="light"] body * {
   color: #000000 !important;
 }
 
+/* Preserve the TTL duplicate warning colour inside the portal tooltip. */
+html[data-app-theme="light"] [role="tooltip"] .theme-ttl-duplicate-warning {
+  color: #dc2626 !important;
+  -webkit-text-fill-color: #dc2626 !important;
+}
+
 html[data-app-theme="light"] input,
 html[data-app-theme="light"] textarea,
 html[data-app-theme="light"] select,
