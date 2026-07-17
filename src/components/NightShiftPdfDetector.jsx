@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, FileText, FileUp, Loader2, Moon, RotateCcw } from "lucide-react";
-import { GlobalWorkerOptions, getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { GlobalWorkerOptions, getDocument, Util } from "pdfjs-dist/legacy/build/pdf.mjs";
 // @ts-expect-error Vite resolves this worker module to a public asset URL.
 import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 import { parseBinJaafarRoster, summarizeBinJaafarNightShifts } from "@/lib/nightShiftRoster";
@@ -39,13 +39,15 @@ async function extractPdfPages(file) {
 
     for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
       const page = await document.getPage(pageNumber);
+      const viewport = page.getViewport({ scale: 1 });
       const content = await page.getTextContent();
       pages.push(content.items.flatMap((item) => {
         if (!("str" in item) || !String(item.str || "").trim()) return [];
+        const transform = Util.transform(viewport.transform, item.transform);
         return [{
           str: String(item.str || "").trim(),
-          x: Number(item.transform?.[4] || 0),
-          y: Number(item.transform?.[5] || 0),
+          x: Number(transform[4] || 0),
+          y: Number(transform[5] || 0),
           width: Number(item.width || 0),
           height: Number(item.height || 0),
         }];
@@ -98,7 +100,7 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
       const pages = await extractPdfPages(file);
       const parsed = parseBinJaafarRoster(pages, selectedYear);
       if (!parsed.staffFound) {
-        throw new Error("Bin Jaafar was not found in this roster.");
+        throw new Error("Staff ID 1000335 (Bin Jaafar) was not found in this roster.");
       }
       if (!parsed.dateHeadersFound) {
         throw new Error("Roster dates could not be detected in this PDF.");
@@ -141,7 +143,7 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
           </div>
           <div>
             <p className="text-[12px] font-semibold uppercase tracking-[0.22em] text-[#e7eef8]">Night Shift PDF Detector</p>
-            <p className="mt-1 text-[11px] text-[#9fb1c8]">Reads Bin Jaafar only. The original PDF stays on this device.</p>
+            <p className="mt-1 text-[11px] text-[#9fb1c8]">Reads staff ID 1000335 (Bin Jaafar) only. The original PDF stays on this device.</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -149,7 +151,7 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
             Selected: {periodLabel}
           </span>
           <span className="rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-semibold text-emerald-200">
-            Bin Jaafar only
+            1000335 · Bin Jaafar
           </span>
         </div>
       </div>
@@ -219,7 +221,7 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
           {status === "reading" && (
             <div className="flex min-h-[150px] flex-col items-center justify-center text-center">
               <Loader2 className="h-6 w-6 animate-spin text-sky-300" />
-              <p className="mt-2 text-[11px] text-[#a9bbcf]">Detecting Bin Jaafar shifts...</p>
+              <p className="mt-2 text-[11px] text-[#a9bbcf]">Detecting staff ID 1000335 shifts...</p>
             </div>
           )}
 
