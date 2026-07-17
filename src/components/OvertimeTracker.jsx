@@ -1928,11 +1928,11 @@ export default function OvertimeTracker() {
               <ListChecks className="h-[18px] w-[18px]" strokeWidth={1.9} />
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#c0cee0]">Records &amp; notes</p>
-              <p className="mt-1 text-[11px] text-[#9fb1c8]">RDOT and EXT count hours. NOTE is information only.</p>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.22em] text-[#c0cee0]">Records &amp; notes</p>
+              <p className="mt-1 text-[12px] text-[#9fb1c8]">RDOT and EXT count hours. NOTE is information only.</p>
             </div>
           </div>
-          <p className="rounded-full border border-[#2c5873] bg-[#0b2942]/90 px-3 py-1.5 text-[10px] font-semibold text-[#d3dfed] shadow-inner shadow-black/20">
+          <p className="rounded-full border border-[#2c5873] bg-[#0b2942]/90 px-3 py-1.5 text-[11px] font-semibold text-[#d3dfed] shadow-inner shadow-black/20">
             <span className="text-emerald-300">{visibleEntries.length}</span> entr{visibleEntries.length === 1 ? "y" : "ies"}
           </p>
         </div>
@@ -1941,7 +1941,7 @@ export default function OvertimeTracker() {
           {!visibleEntries.length ? (
             <div className="rounded-2xl border border-dashed border-[#294660] px-5 py-9 text-center">
               <Plus className="mx-auto h-5 w-5 text-[#8196ad]" />
-              <p className="mt-3 text-[13px] text-[#91a4bb]">No duty records or monthly notes for this month.</p>
+              <p className="mt-3 text-[14px] text-[#91a4bb]">No duty records or monthly notes for this month.</p>
             </div>
           ) : (
             <div className="max-h-[430px] space-y-1.5 overflow-y-auto pr-1 [scrollbar-color:#315574_transparent] [scrollbar-width:thin]">
@@ -1950,19 +1950,19 @@ export default function OvertimeTracker() {
                   const note = entry.item;
                   return (
                     <div key={entry.key} className="flex flex-wrap items-center gap-2 rounded-[13px] border border-[#2f6659] bg-[radial-gradient(circle_at_8%_20%,rgba(50,218,151,0.11),transparent_46%),linear-gradient(145deg,rgba(11,40,43,0.92),rgba(6,23,39,0.98))] px-2.5 py-2 shadow-[0_6px_18px_rgba(38,199,129,0.08)] transition hover:border-[#55d7aa]/50 hover:shadow-[0_8px_20px_rgba(38,199,129,0.12)] sm:flex-nowrap">
-                      <div className="flex h-8 w-[58px] shrink-0 items-center justify-center rounded-[9px] border border-[#55d7aa]/35 bg-[#1dbd79]/10 px-2 text-[10px] font-semibold text-[#76d5ae] shadow-[0_0_14px_rgba(38,199,129,0.10)]">
+                      <div className="flex h-8 w-[58px] shrink-0 items-center justify-center rounded-[9px] border border-[#55d7aa]/35 bg-[#1dbd79]/10 px-2 text-[11px] font-semibold text-[#76d5ae] shadow-[0_0_14px_rgba(38,199,129,0.10)]">
                         NOTE
                       </div>
                       <div className="min-w-[150px] flex-1">
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                          <p className="text-[12px] font-semibold text-[#f1f5fb]">{formatDate(note.date)}</p>
-                          <span className="text-[9px] font-semibold uppercase tracking-[0.11em] text-[#76d5ae]">Monthly note</span>
+                          <p className="text-[13px] font-semibold text-[#f1f5fb]">{formatDate(note.date)}</p>
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.11em] text-[#76d5ae]">Monthly note</span>
                         </div>
-                        <p className="mt-0.5 line-clamp-2 whitespace-pre-wrap break-words text-[11px] leading-[1.35] text-[#b5c2d3]">{note.note}</p>
+                        <p className="mt-0.5 line-clamp-2 whitespace-pre-wrap break-words text-[12px] leading-[1.35] text-[#b5c2d3]">{note.note}</p>
                       </div>
                       <div className="ml-auto min-w-[62px] shrink-0 border-r border-[#2f6659]/75 pr-3 text-right">
                         <MessageSquareText className="ml-auto h-3.5 w-3.5 text-[#76d5ae]" />
-                        <p className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.11em] text-[#76d5ae]">No hours</p>
+                        <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.11em] text-[#76d5ae]">No hours</p>
                       </div>
                       <button
                         type="button"
@@ -1987,7 +1987,7 @@ export default function OvertimeTracker() {
                 const record = entry.item;
                 return (
                   <div key={entry.key} className="flex flex-wrap items-center gap-2 rounded-[13px] border border-[#274b67] bg-[linear-gradient(145deg,rgba(10,35,58,0.82),rgba(7,27,45,0.90))] px-2.5 py-2 shadow-[0_6px_16px_rgba(0,0,0,0.10)] transition hover:border-[#3b6788] hover:bg-[#0c2943] sm:flex-nowrap">
-                    <div className={`flex h-8 w-[58px] shrink-0 items-center justify-center rounded-[9px] border px-2 text-[10px] font-semibold ${record.type === "RDOT"
+                    <div className={`flex h-8 w-[58px] shrink-0 items-center justify-center rounded-[9px] border px-2 text-[11px] font-semibold ${record.type === "RDOT"
                       ? "border-[#5b56c8]/50 bg-[#252459]/55 text-[#8f94ff]"
                       : "border-amber-400/30 bg-amber-500/10 text-amber-200"
                     }`}>
@@ -1995,20 +1995,20 @@ export default function OvertimeTracker() {
                     </div>
                     <div className="min-w-[150px] flex-1">
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                        <p className="text-[12px] font-semibold text-[#f1f5fb]">{formatDate(record.date)}</p>
-                        <span className="text-[11px] text-[#79a9d2]">{record.startTime} – {record.endTime}</span>
-                        <span className={`rounded-full border px-1.5 py-[2px] text-[8px] font-semibold uppercase tracking-[0.09em] ${record.dayType === "RAMADAN"
+                        <p className="text-[13px] font-semibold text-[#f1f5fb]">{formatDate(record.date)}</p>
+                        <span className="text-[12px] text-[#79a9d2]">{record.startTime} – {record.endTime}</span>
+                        <span className={`rounded-full border px-1.5 py-[2px] text-[9px] font-semibold uppercase tracking-[0.09em] ${record.dayType === "RAMADAN"
                           ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-200"
                           : "border-sky-400/20 bg-sky-500/[0.08] text-sky-200"
                         }`}>
                           {record.dayType === "RAMADAN" ? "Ramadhan" : "Normal"}
                         </span>
                       </div>
-                      {record.remark && <p className="mt-0.5 truncate text-[11px] leading-[1.35] text-[#b5c2d3]">{record.remark}</p>}
+                      {record.remark && <p className="mt-0.5 truncate text-[12px] leading-[1.35] text-[#b5c2d3]">{record.remark}</p>}
                     </div>
                     <div className="ml-auto min-w-[62px] shrink-0 border-r border-[#294660] pr-3 text-right">
-                      <p className="text-[15px] font-semibold leading-none text-emerald-300">{Number(record.hours).toFixed(1)}</p>
-                      <p className="mt-0.5 text-[8px] uppercase tracking-[0.11em] text-[#8ea1b8]">Hours</p>
+                      <p className="text-[16px] font-semibold leading-none text-emerald-300">{Number(record.hours).toFixed(1)}</p>
+                      <p className="mt-0.5 text-[9px] uppercase tracking-[0.11em] text-[#8ea1b8]">Hours</p>
                     </div>
                     <button
                       type="button"
