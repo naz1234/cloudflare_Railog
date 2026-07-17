@@ -1744,6 +1744,8 @@ const MAINT_STYLES = {
 
 const PST_STORAGE_KEY = "pstTrainPrepState_v1";
 const PST_LIVE_RECORD_KEY = "pst-train-prep-main";
+const PST_LIVE_SCOPE_VERSION = 2;
+const PST_LIVE_SCOPE_KEY_PREFIX = `${PST_LIVE_RECORD_KEY}:v${PST_LIVE_SCOPE_VERSION}`;
 const PST_LIVE_SYNC_INTERVAL_MS = 5000;
 const PST_LIVE_LOCAL_EDIT_HOLD_MS = 30000;
 const PST_LIVE_POST_SAVE_HOLD_MS = 12000;
@@ -2088,8 +2090,8 @@ function normalizePSTPg2WorkState(source = {}) {
     logLines: sortPSTLogLinesByTime(Array.isArray(source?.logLines) ? source.logLines : []),
     taNameState: source?.taNameState && typeof source.taNameState === "object" ? source.taNameState : {},
     completedByNames: {
-      west: (source?.completedByNames?.west || source?.completedByWest || fallbackCompletedByNames.west || "").toString(),
-      east: (source?.completedByNames?.east || source?.completedByEast || fallbackCompletedByNames.east || "").toString(),
+      west: (source?.completedByNames?.west ?? source?.completedByWest ?? fallbackCompletedByNames.west ?? "").toString(),
+      east: (source?.completedByNames?.east ?? source?.completedByEast ?? fallbackCompletedByNames.east ?? "").toString(),
     },
   };
 }
@@ -3349,14 +3351,13 @@ function selectPSTLiveRecord(records = []) {
   const list = Array.isArray(records) ? records.filter(Boolean) : [];
   if (!list.length) return null;
 
-  const preferredRecords = list.filter((item) => (
+  const legacyRecords = list.filter((item) => (
     item?.stateKey === PST_LIVE_RECORD_KEY ||
     item?.recordKey === PST_LIVE_RECORD_KEY ||
     item?.key === PST_LIVE_RECORD_KEY
   ));
 
-  const candidates = preferredRecords.length ? preferredRecords : list;
-  return [...candidates].sort((a, b) => getPSTLiveRecordUpdatedMs(b) - getPSTLiveRecordUpdatedMs(a))[0] || null;
+  return [...legacyRecords].sort((a, b) => getPSTLiveRecordUpdatedMs(b) - getPSTLiveRecordUpdatedMs(a))[0] || null;
 }
 
 function loadSavedPSTState() {
@@ -3437,6 +3438,296 @@ function buildPSTLivePayload(state = {}) {
     pg2Stabling: normalized.pg2Stabling || (state?.pg2Stabling ? normalizePSTPg2Stabling(state.pg2Stabling) : null),
     pg2WorkState: normalized.pg2WorkState || (state?.pg2WorkState ? normalizePSTPg2WorkState(state.pg2WorkState) : null),
     updatedAt: new Date().toISOString(),
+  };
+}
+
+function getPSTLiveRecordKey(record = {}) {
+  return (record?.recordKey || record?.stateKey || record?.key || "").toString();
+}
+
+function getPSTLiveDepotForRoad(road = "") {
+  if (WEST_ROADS.includes(road)) return "west";
+  if (EAST_ROADS.includes(road)) return "east";
+  return "";
+}
+
+function getPSTLiveCellScopeKey(page = "pg1", road = "", blockIndex = 0) {
+  const normalizedPage = page === "pg2" ? "pg2" : "pg1";
+  const depot = getPSTLiveDepotForRoad(road);
+  const normalizedBlockIndex = Number(blockIndex);
+  if (!depot || !Number.isInteger(normalizedBlockIndex) || normalizedBlockIndex < 0 || normalizedBlockIndex >= NUM_BLOCKS) return "";
+  return `${PST_LIVE_SCOPE_KEY_PREFIX}:cell:${normalizedPage}:${depot}:${road}:${normalizedBlockIndex}`;
+}
+
+function getPSTLiveActiveScopeKey(depot = "west") {
+  const normalizedDepot = depot === "east" ? "east" : depot === "west" ? "west" : "";
+  return normalizedDepot ? `${PST_LIVE_SCOPE_KEY_PREFIX}:active:${normalizedDepot}` : "";
+}
+
+function getPSTLiveCompletedScopeKey(page = "pg1", depot = "west") {
+  const normalizedPage = page === "pg2" ? "pg2" : "pg1";
+  const normalizedDepot = depot === "east" ? "east" : depot === "west" ? "west" : "";
+  return normalizedDepot ? `${PST_LIVE_SCOPE_KEY_PREFIX}:completed:${normalizedPage}:${normalizedDepot}` : "";
+}
+
+function parsePSTLiveScopeKey(value = "") {
+  const key = value.toString();
+  const prefix = `${PST_LIVE_SCOPE_KEY_PREFIX}:`;
+  if (!key.startsWith(prefix)) return null;
+
+  const parts = key.slice(prefix.length).split(":");
+  if (parts[0] === "cell" && parts.length === 5) {
+    const [, page, depot, road, blockValue] = parts;
+    const blockIndex = Number(blockValue);
+    const expectedDepot = getPSTLiveDepotForRoad(road);
+    if ((page !== "pg1" && page !== "pg2") || !expectedDepot || depot !== expectedDepot) return null;
+    if (!Number.isInteger(blockIndex) || blockIndex < 0 || blockIndex >= NUM_BLOCKS) return null;
+    return { key, kind: "cell", page, depot, road, blockIndex };
+  }
+
+  if (parts[0] === "active" && parts.length === 2) {
+    const depot = parts[1];
+    if (depot !== "west" && depot !== "east") return null;
+    return { key, kind: "active", depot };
+  }
+
+  if (parts[0] === "completed" && parts.length === 3) {
+    const [, page, depot] = parts;
+    if ((page !== "pg1" && page !== "pg2") || (depot !== "west" && depot !== "east")) return null;
+    return { key, kind: "completed", page, depot };
+  }
+
+  return null;
+}
+
+function getPSTLiveCellState(state = {}, cellKey = "") {
+  if (!Object.prototype.hasOwnProperty.call(state || {}, cellKey)) return {};
+  return { [cellKey]: state[cellKey] };
+}
+
+function getPSTLiveCellLogLines(logLines = [], cellKey = "") {
+  const validKeys = new Set([`pst-${cellKey}`, `prep-${cellKey}`]);
+  return sortPSTLogLinesByTime((Array.isArray(logLines) ? logLines : []).filter((entry) => validKeys.has(entry?.key)));
+}
+
+function buildPSTLiveScopeRecords(state = {}, updatedAt = new Date().toISOString()) {
+  const normalized = normalizePSTLiveState(state);
+  const activePg = normalized.activePg || normalizePSTPgByDepot(state?.activePg || {});
+  const pg2Stabling = normalized.pg2Stabling || cloneInsertionStablingState({}, {});
+  const pg2WorkState = normalized.pg2WorkState || {
+    pstState: {},
+    prepState: {},
+    logLines: [],
+    taNameState: {},
+    completedByNames: { west: "", east: "" },
+  };
+  const records = [];
+
+  ["pg1", "pg2"].forEach((page) => {
+    const pageState = page === "pg2" ? pg2WorkState : normalized;
+
+    [...WEST_ROADS, ...EAST_ROADS].forEach((road) => {
+      const depot = getPSTLiveDepotForRoad(road);
+      const pg2DepotData = depot === "west" ? pg2Stabling?.westData : pg2Stabling?.eastData;
+      const pg2Blocks = page === "pg2" ? normalizeStablingBlocks(pg2DepotData?.[road]) : null;
+
+      for (let blockIndex = 0; blockIndex < NUM_BLOCKS; blockIndex += 1) {
+        const cellKey = `${road}-${blockIndex}`;
+        const recordKey = getPSTLiveCellScopeKey(page, road, blockIndex);
+        const record = {
+          stateKey: recordKey,
+          recordKey,
+          scopeVersion: PST_LIVE_SCOPE_VERSION,
+          scopeType: "cell",
+          scopePage: page,
+          scopeDepot: depot,
+          scopeRoad: road,
+          scopeBlockIndex: blockIndex,
+          pstState: getPSTLiveCellState(pageState.pstState, cellKey),
+          prepState: getPSTLiveCellState(pageState.prepState, cellKey),
+          logLines: getPSTLiveCellLogLines(pageState.logLines, cellKey),
+          taNameState: getPSTLiveCellState(pageState.taNameState, cellKey),
+          updatedAt,
+        };
+
+        if (page === "pg2") record.stablingBlock = pg2Blocks[blockIndex];
+        records.push(record);
+      }
+    });
+  });
+
+  ["west", "east"].forEach((depot) => {
+    const activeRecordKey = getPSTLiveActiveScopeKey(depot);
+    records.push({
+      stateKey: activeRecordKey,
+      recordKey: activeRecordKey,
+      scopeVersion: PST_LIVE_SCOPE_VERSION,
+      scopeType: "active",
+      scopeDepot: depot,
+      activePgValue: normalizePSTPg(activePg?.[depot]),
+      updatedAt,
+    });
+
+    ["pg1", "pg2"].forEach((page) => {
+      const completedRecordKey = getPSTLiveCompletedScopeKey(page, depot);
+      const completedByNames = page === "pg2" ? pg2WorkState.completedByNames : normalized.completedByNames;
+      records.push({
+        stateKey: completedRecordKey,
+        recordKey: completedRecordKey,
+        scopeVersion: PST_LIVE_SCOPE_VERSION,
+        scopeType: "completed",
+        scopePage: page,
+        scopeDepot: depot,
+        completedByName: (completedByNames?.[depot] || "").toString(),
+        updatedAt,
+      });
+    });
+  });
+
+  return records;
+}
+
+function buildPSTLiveScopeRecordMap(state = {}, updatedAt = new Date().toISOString()) {
+  return new Map(buildPSTLiveScopeRecords(state, updatedAt).map((record) => [record.recordKey, record]));
+}
+
+function getPSTLiveScopeRecordSignature(record = {}) {
+  const {
+    id,
+    createdAt,
+    created_date,
+    updatedAt,
+    updated_date,
+    ...content
+  } = record || {};
+  return JSON.stringify(content);
+}
+
+function getChangedPSTLiveScopeKeys(previousState = {}, nextState = {}) {
+  const previousRecords = buildPSTLiveScopeRecordMap(previousState, "");
+  const nextRecords = buildPSTLiveScopeRecordMap(nextState, "");
+  const changedKeys = [];
+
+  nextRecords.forEach((nextRecord, key) => {
+    const previousRecord = previousRecords.get(key);
+    if (!previousRecord || getPSTLiveScopeRecordSignature(previousRecord) !== getPSTLiveScopeRecordSignature(nextRecord)) {
+      changedKeys.push(key);
+    }
+  });
+
+  return changedKeys;
+}
+
+function buildPSTLiveStateFromRecords(records = []) {
+  const list = Array.isArray(records) ? records.filter(Boolean) : [];
+  const legacyRecord = selectPSTLiveRecord(list);
+  const legacy = legacyRecord ? normalizePSTLiveState(legacyRecord) : null;
+  const state = {
+    pstState: { ...(legacy?.pstState || {}) },
+    prepState: { ...(legacy?.prepState || {}) },
+    logLines: [...(legacy?.logLines || [])],
+    taNameState: { ...(legacy?.taNameState || {}) },
+    completedByNames: {
+      west: (legacy?.completedByNames?.west || "").toString(),
+      east: (legacy?.completedByNames?.east || "").toString(),
+    },
+    activePg: normalizePSTPgByDepot(legacy?.activePg || {}),
+    pg2Stabling: cloneInsertionStablingState(
+      legacy?.pg2Stabling?.westData || {},
+      legacy?.pg2Stabling?.eastData || {}
+    ),
+    pg2WorkState: {
+      pstState: { ...(legacy?.pg2WorkState?.pstState || {}) },
+      prepState: { ...(legacy?.pg2WorkState?.prepState || {}) },
+      logLines: [...(legacy?.pg2WorkState?.logLines || [])],
+      taNameState: { ...(legacy?.pg2WorkState?.taNameState || {}) },
+      completedByNames: {
+        west: (legacy?.pg2WorkState?.completedByNames?.west || "").toString(),
+        east: (legacy?.pg2WorkState?.completedByNames?.east || "").toString(),
+      },
+    },
+    updatedAt: legacy?.updatedAt || "",
+  };
+  const latestByScope = {};
+  const scopeRecordMap = {};
+  let latestUpdatedMs = getPSTLiveRecordUpdatedMs(legacyRecord || {});
+  let latestUpdatedAt = state.updatedAt;
+
+  list.forEach((record) => {
+    const recordKey = getPSTLiveRecordKey(record);
+    const scope = parsePSTLiveScopeKey(recordKey);
+    if (!scope) return;
+
+    const current = latestByScope[recordKey];
+    if (!current || getPSTLiveRecordUpdatedMs(record) >= getPSTLiveRecordUpdatedMs(current)) {
+      latestByScope[recordKey] = record;
+    }
+  });
+
+  Object.entries(latestByScope).forEach(([recordKey, record]) => {
+    const scope = parsePSTLiveScopeKey(recordKey);
+    if (!scope) return;
+    if (record?.id) scopeRecordMap[recordKey] = record.id;
+
+    const recordUpdatedMs = getPSTLiveRecordUpdatedMs(record);
+    if (recordUpdatedMs >= latestUpdatedMs) {
+      latestUpdatedMs = recordUpdatedMs;
+      latestUpdatedAt = (record?.updatedAt || record?.updated_date || record?.createdAt || record?.created_date || latestUpdatedAt).toString();
+    }
+
+    if (scope.kind === "cell") {
+      const cellKey = `${scope.road}-${scope.blockIndex}`;
+      const target = scope.page === "pg2" ? state.pg2WorkState : state;
+      ["pstState", "prepState", "taNameState"].forEach((field) => {
+        delete target[field][cellKey];
+        if (Object.prototype.hasOwnProperty.call(record?.[field] || {}, cellKey)) {
+          target[field][cellKey] = record[field][cellKey];
+        }
+      });
+
+      const cellLogKeys = new Set([`pst-${cellKey}`, `prep-${cellKey}`]);
+      target.logLines = [
+        ...target.logLines.filter((entry) => !cellLogKeys.has(entry?.key)),
+        ...(Array.isArray(record?.logLines) ? record.logLines.filter((entry) => cellLogKeys.has(entry?.key)) : []),
+      ];
+
+      if (scope.page === "pg2" && Object.prototype.hasOwnProperty.call(record || {}, "stablingBlock")) {
+        const dataKey = scope.depot === "west" ? "westData" : "eastData";
+        const blocks = normalizeStablingBlocks(state.pg2Stabling?.[dataKey]?.[scope.road]);
+        blocks[scope.blockIndex] = normalizeStablingBlocks([record.stablingBlock])[0];
+        state.pg2Stabling[dataKey][scope.road] = blocks;
+      }
+      return;
+    }
+
+    if (scope.kind === "active") {
+      const value = Object.prototype.hasOwnProperty.call(record || {}, "activePgValue")
+        ? record.activePgValue
+        : record?.activePg?.[scope.depot];
+      if (value !== undefined) state.activePg[scope.depot] = normalizePSTPg(value);
+      return;
+    }
+
+    const completedByName = Object.prototype.hasOwnProperty.call(record || {}, "completedByName")
+      ? record.completedByName
+      : record?.completedByNames?.[scope.depot];
+    if (completedByName !== undefined) {
+      const targetCompletedBy = scope.page === "pg2"
+        ? state.pg2WorkState.completedByNames
+        : state.completedByNames;
+      targetCompletedBy[scope.depot] = (completedByName || "").toString();
+    }
+  });
+
+  state.logLines = sortPSTLogLinesByTime(state.logLines);
+  state.pg2WorkState.logLines = sortPSTLogLinesByTime(state.pg2WorkState.logLines);
+  state.updatedAt = latestUpdatedAt;
+
+  return {
+    state,
+    legacyRecordId: legacyRecord?.id || null,
+    scopeRecordMap,
+    hasRecords: Boolean(legacyRecord || Object.keys(latestByScope).length),
   };
 }
 
@@ -16309,9 +16600,14 @@ export default function DepotStablingPage() {
   const stablingLocalEditUntilRef = useRef(0);
 
   const pstLiveRecordIdRef = useRef(null);
+  const pstLiveScopeRecordMapRef = useRef({});
   const pstLiveAutoSaveTimerRef = useRef(null);
   const pstLiveSavingRef = useRef(false);
   const pstLivePendingSaveRef = useRef(false);
+  const pstLiveDirtyScopeKeysRef = useRef(new Set());
+  const pstLiveSnapshotRef = useRef(null);
+  const pstLivePendingSnapshotRef = useRef(null);
+  const savePSTLiveToDbRef = useRef(null);
   const pstLivePollingRef = useRef(false);
   const pstLiveLocalEditUntilRef = useRef(0);
   const pstLiveApplyingRemoteRef = useRef(false);
@@ -16426,6 +16722,9 @@ export default function DepotStablingPage() {
     // Mark this render as a remote application so the state-change effect does not
     // immediately write the same remote snapshot back with a new timestamp.
     pstLiveApplyingRemoteRef.current = true;
+    const appliedSnapshot = buildPSTLivePayload(normalized);
+    pstLiveSnapshotRef.current = appliedSnapshot;
+    pstLivePendingSnapshotRef.current = appliedSnapshot;
     pstStateRef.current = normalized.pstState;
     prepStateRef.current = normalized.prepState;
     pstLogLinesRef.current = normalized.logLines;
@@ -16472,8 +16771,17 @@ export default function DepotStablingPage() {
     );
   }, []);
 
-  const savePSTLiveToDb = useCallback(async (state) => {
+  const savePSTLiveToDb = useCallback(async () => {
+    if (pstLiveSavingRef.current) return;
+
     const entity = getPSTTrainPrepEntity();
+    const scopeKeys = Array.from(pstLiveDirtyScopeKeysRef.current);
+    if (scopeKeys.length === 0) {
+      pstLivePendingSaveRef.current = false;
+      return;
+    }
+
+    const state = pstLivePendingSnapshotRef.current || pstLiveSnapshotRef.current || {};
     const payload = buildPSTLivePayload(state);
     const payloadUpdatedMs = Date.parse(payload.updatedAt || "") || Date.now();
     pstLiveLocalUpdatedAtRef.current = Math.max(pstLiveLocalUpdatedAtRef.current || 0, payloadUpdatedMs);
@@ -16497,18 +16805,33 @@ export default function DepotStablingPage() {
       return;
     }
 
+    scopeKeys.forEach((key) => pstLiveDirtyScopeKeysRef.current.delete(key));
     pstLiveSavingRef.current = true;
     setPstLiveSyncing(true);
+    const scopeRecords = buildPSTLiveScopeRecordMap(payload, payload.updatedAt);
 
     try {
-      if (pstLiveRecordIdRef.current) {
-        await entity.update(pstLiveRecordIdRef.current, payload);
-      } else {
-        const created = await entity.create(payload);
-        if (created?.id) pstLiveRecordIdRef.current = created.id;
+      // Each PG/cell and small metadata value owns a separate D1 record. A stale
+      // laptop therefore cannot replace unrelated PST / Train Prep cells.
+      for (const scopeKey of scopeKeys) {
+        const scopeRecord = scopeRecords.get(scopeKey);
+        if (!scopeRecord) continue;
+
+        const recordId = pstLiveScopeRecordMapRef.current[scopeKey];
+        if (recordId) {
+          try {
+            await entity.update(recordId, scopeRecord);
+          } catch (err) {
+            if (err?.status !== 404) throw err;
+            const created = await entity.create(scopeRecord);
+            if (created?.id) pstLiveScopeRecordMapRef.current[scopeKey] = created.id;
+          }
+        } else {
+          const created = await entity.create(scopeRecord);
+          if (created?.id) pstLiveScopeRecordMapRef.current[scopeKey] = created.id;
+        }
       }
 
-      const payloadUpdatedMs = Date.parse(payload.updatedAt || "");
       if (payloadUpdatedMs) {
         pstLiveRemoteUpdatedAtRef.current = Math.max(pstLiveRemoteUpdatedAtRef.current, payloadUpdatedMs);
       }
@@ -16518,6 +16841,7 @@ export default function DepotStablingPage() {
       setPstLiveDbReady(true);
       setPstLiveDebug("");
     } catch (err) {
+      scopeKeys.forEach((key) => pstLiveDirtyScopeKeysRef.current.add(key));
       const message = err?.message || err?.response?.data?.message || String(err);
       console.error("PST / Train Prep live save failed:", err);
       setPstLiveSyncError(true);
@@ -16525,17 +16849,35 @@ export default function DepotStablingPage() {
     } finally {
       // Keep a short hold after save so eventual DB reads do not bounce the UI back.
       pstLiveLocalEditUntilRef.current = Date.now() + PST_LIVE_POST_SAVE_HOLD_MS;
-      pstLivePendingSaveRef.current = false;
       pstLiveSavingRef.current = false;
       setPstLiveSyncing(false);
+
+      const hasQueuedScopes = pstLiveDirtyScopeKeysRef.current.size > 0;
+      pstLivePendingSaveRef.current = hasQueuedScopes;
+      if (hasQueuedScopes) {
+        if (pstLiveAutoSaveTimerRef.current) clearTimeout(pstLiveAutoSaveTimerRef.current);
+        pstLiveAutoSaveTimerRef.current = setTimeout(() => {
+          savePSTLiveToDbRef.current?.();
+        }, 1200);
+      }
     }
   }, []);
 
+  savePSTLiveToDbRef.current = savePSTLiveToDb;
+
   const schedulePSTLiveSave = useCallback((state) => {
     const payload = buildPSTLivePayload(state);
+    const previousSnapshot = pstLiveSnapshotRef.current;
+    const changedScopeKeys = previousSnapshot
+      ? getChangedPSTLiveScopeKeys(previousSnapshot, payload)
+      : buildPSTLiveScopeRecords(payload, "").map((record) => record.recordKey);
+    pstLiveSnapshotRef.current = payload;
+    pstLivePendingSnapshotRef.current = payload;
+
+    if (changedScopeKeys.length === 0) return;
+
     const payloadUpdatedMs = Date.parse(payload.updatedAt || "") || Date.now();
     pstLiveLocalUpdatedAtRef.current = Math.max(pstLiveLocalUpdatedAtRef.current || 0, payloadUpdatedMs);
-
     savePSTState(
       payload.pstState,
       payload.prepState,
@@ -16545,6 +16887,7 @@ export default function DepotStablingPage() {
       payload.updatedAt
     );
 
+    changedScopeKeys.forEach((key) => pstLiveDirtyScopeKeysRef.current.add(key));
     pstLivePendingSaveRef.current = true;
     pstLiveLocalEditUntilRef.current = Date.now() + PST_LIVE_LOCAL_EDIT_HOLD_MS;
 
@@ -16553,9 +16896,9 @@ export default function DepotStablingPage() {
     }
 
     pstLiveAutoSaveTimerRef.current = setTimeout(() => {
-      savePSTLiveToDb(payload);
+      savePSTLiveToDbRef.current?.();
     }, 1200);
-  }, [savePSTLiveToDb]);
+  }, []);
 
   const refreshPSTLiveFromDb = useCallback(async ({ showStatus = false } = {}) => {
     const entity = getPSTTrainPrepEntity();
@@ -16583,9 +16926,16 @@ export default function DepotStablingPage() {
 
     try {
       const records = await entity.list();
-      const record = selectPSTLiveRecord(records);
+      const {
+        state: remoteState,
+        legacyRecordId,
+        scopeRecordMap,
+        hasRecords,
+      } = buildPSTLiveStateFromRecords(records);
+      pstLiveRecordIdRef.current = legacyRecordId;
+      pstLiveScopeRecordMapRef.current = scopeRecordMap;
 
-      if (!record) {
+      if (!hasRecords) {
         const payload = buildPSTLivePayload({
           pstState: pstStateRef.current,
           prepState: prepStateRef.current,
@@ -16604,6 +16954,8 @@ export default function DepotStablingPage() {
         });
         const created = await entity.create(payload);
         if (created?.id) pstLiveRecordIdRef.current = created.id;
+        pstLiveSnapshotRef.current = payload;
+        pstLivePendingSnapshotRef.current = payload;
         const payloadUpdatedMs = Date.parse(payload.updatedAt || "");
         if (payloadUpdatedMs) {
           pstLiveRemoteUpdatedAtRef.current = Math.max(pstLiveRemoteUpdatedAtRef.current, payloadUpdatedMs);
@@ -16616,9 +16968,7 @@ export default function DepotStablingPage() {
         return;
       }
 
-      if (record?.id) pstLiveRecordIdRef.current = record.id;
-
-      applyPSTLiveState(record);
+      applyPSTLiveState(remoteState);
       setPstLiveLastSynced(new Date());
       setPstLiveSyncError(false);
       setPstLiveDbReady(true);
@@ -16676,6 +17026,10 @@ export default function DepotStablingPage() {
       },
     };
     const payload = buildPSTLivePayload(state);
+    if (!pstLiveSnapshotRef.current) {
+      pstLiveSnapshotRef.current = payload;
+      pstLivePendingSnapshotRef.current = payload;
+    }
 
     savePSTState(
       payload.pstState,
