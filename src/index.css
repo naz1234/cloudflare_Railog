@@ -7529,7 +7529,7 @@ html[data-app-theme="light"] .theme-movement-status[data-status="draft"] {
   position: absolute;
   z-index: 1;
   top: 50%;
-  left: 7px;
+  left: 11px;
   width: 15px;
   color: var(--movement-type-accent);
   font-size: 14px;
@@ -7563,11 +7563,13 @@ html[data-app-theme="light"] .theme-movement-status[data-status="draft"] {
 .theme-movement-sheet-table tbody td:nth-child(2) > select {
   position: relative;
   z-index: 2;
-  padding-left: 27px !important;
-  padding-right: 3px !important;
+  padding-left: 19px !important;
+  padding-right: 0 !important;
   color: var(--movement-type-text) !important;
   -webkit-text-fill-color: var(--movement-type-text) !important;
   background: transparent !important;
+  text-align: center;
+  text-align-last: center;
 }
 
 .theme-movement-sheet-table tbody td:nth-child(2):focus-within {
@@ -7629,6 +7631,7 @@ html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2) >
   color: #000000 !important;
   -webkit-text-fill-color: #000000 !important;
   background: #ffffff !important;
+  text-align: center;
 }
 
 @media (prefers-reduced-motion: reduce) {
