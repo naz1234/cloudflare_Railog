@@ -1945,11 +1945,14 @@ export default function OvertimeTracker() {
             </div>
           ) : (
             <div className="max-h-[430px] space-y-1.5 overflow-y-auto pr-1 [scrollbar-color:#315574_transparent] [scrollbar-width:thin]">
-              {visibleEntries.map((entry) => {
+              {visibleEntries.map((entry, index) => {
+                const showTypeSeparator = index > 0 && visibleEntries[index - 1].kind !== entry.kind;
+
                 if (entry.kind === "note") {
                   const note = entry.item;
                   return (
-                    <div key={entry.key} className="flex flex-wrap items-center gap-2 rounded-[13px] border border-[#2f6659] bg-[radial-gradient(circle_at_8%_20%,rgba(50,218,151,0.11),transparent_46%),linear-gradient(145deg,rgba(11,40,43,0.92),rgba(6,23,39,0.98))] px-2.5 py-2 shadow-[0_6px_18px_rgba(38,199,129,0.08)] transition hover:border-[#55d7aa]/50 hover:shadow-[0_8px_20px_rgba(38,199,129,0.12)] sm:flex-nowrap">
+                    <div key={entry.key} className={showTypeSeparator ? "border-t border-slate-300/80 pt-2 dark:border-[#3c6380]/80" : ""}>
+                      <div className="flex flex-wrap items-center gap-2 rounded-[13px] border border-[#2f6659] bg-[radial-gradient(circle_at_8%_20%,rgba(50,218,151,0.11),transparent_46%),linear-gradient(145deg,rgba(11,40,43,0.92),rgba(6,23,39,0.98))] px-2.5 py-2 shadow-[0_6px_18px_rgba(38,199,129,0.08)] transition hover:border-[#55d7aa]/50 hover:shadow-[0_8px_20px_rgba(38,199,129,0.12)] sm:flex-nowrap">
                       <div className="flex h-8 w-[58px] shrink-0 items-center justify-center rounded-[9px] border border-[#55d7aa]/35 bg-[#1dbd79]/10 px-2 text-[11px] font-semibold text-[#76d5ae] shadow-[0_0_14px_rgba(38,199,129,0.10)]">
                         NOTE
                       </div>
@@ -1981,12 +1984,14 @@ export default function OvertimeTracker() {
                         <Trash2 className="h-3 w-3" />
                       </button>
                     </div>
+                    </div>
                   );
                 }
 
                 const record = entry.item;
                 return (
-                  <div key={entry.key} className="flex flex-wrap items-center gap-2 rounded-[13px] border border-[#274b67] bg-[linear-gradient(145deg,rgba(10,35,58,0.82),rgba(7,27,45,0.90))] px-2.5 py-2 shadow-[0_6px_16px_rgba(0,0,0,0.10)] transition hover:border-[#3b6788] hover:bg-[#0c2943] sm:flex-nowrap">
+                  <div key={entry.key} className={showTypeSeparator ? "border-t border-slate-300/80 pt-2 dark:border-[#3c6380]/80" : ""}>
+                    <div className="flex flex-wrap items-center gap-2 rounded-[13px] border border-[#274b67] bg-[linear-gradient(145deg,rgba(10,35,58,0.82),rgba(7,27,45,0.90))] px-2.5 py-2 shadow-[0_6px_16px_rgba(0,0,0,0.10)] transition hover:border-[#3b6788] hover:bg-[#0c2943] sm:flex-nowrap">
                     <div className={`flex h-8 w-[58px] shrink-0 items-center justify-center rounded-[9px] border px-2 text-[11px] font-semibold ${record.type === "RDOT"
                       ? "border-[#5b56c8]/50 bg-[#252459]/55 text-[#8f94ff]"
                       : "border-amber-400/30 bg-amber-500/10 text-amber-200"
@@ -2026,6 +2031,7 @@ export default function OvertimeTracker() {
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
+                  </div>
                   </div>
                 );
               })}
