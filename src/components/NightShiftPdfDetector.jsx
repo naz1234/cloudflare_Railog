@@ -261,7 +261,7 @@ function CombinedNightShiftSummary({ rosters, selectedYear, selectedMonth, perio
   const hasDetectedDuties = summary.detectedDates.length > 0;
 
   return (
-    <article className="overflow-hidden rounded-[20px] border border-emerald-400/30 bg-[radial-gradient(circle_at_0%_0%,rgba(16,185,129,0.10),transparent_32%),linear-gradient(145deg,rgba(8,35,48,0.98),rgba(5,24,39,0.99))] shadow-[0_14px_34px_rgba(0,0,0,0.24)]" aria-live="polite">
+    <article className="overflow-hidden rounded-[20px] border border-emerald-400/30 bg-[radial-gradient(circle_at_0%_0%,rgba(16,185,129,0.10),transparent_32%),linear-gradient(145deg,rgba(8,35,48,0.98),rgba(5,24,39,0.99))] shadow-[0_14px_34px_rgba(0,0,0,0.24)]" aria-label="Combined PDF night-shift summary" aria-live="polite">
       <div className="flex flex-col gap-3 border-b border-[#294963] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-400/30 bg-emerald-500/10 text-emerald-200">
