@@ -19,6 +19,56 @@ import {
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 const MAX_PDF_SIZE = MAX_PERSISTED_PDF_SIZE;
+const ROSTER_WINDOW_THEMES = [
+  {
+    name: "blue",
+    accent: "#7dd3fc",
+    border: "rgba(56,189,248,0.42)",
+    background: "radial-gradient(circle at 10% 0%,rgba(14,165,233,0.14),transparent 35%),linear-gradient(145deg,rgba(8,39,63,0.98),rgba(5,23,39,0.99))",
+    headerBackground: "linear-gradient(90deg,rgba(14,165,233,0.12),rgba(7,24,40,0.35))",
+    panelBorder: "rgba(56,189,248,0.28)",
+    panelBackground: "rgba(7,31,51,0.88)",
+    accentBackground: "rgba(14,165,233,0.09)",
+    entryBorder: "rgba(96,165,250,0.34)",
+    entryBackground: "rgba(37,99,235,0.15)",
+  },
+  {
+    name: "violet",
+    accent: "#c4b5fd",
+    border: "rgba(167,139,250,0.44)",
+    background: "radial-gradient(circle at 10% 0%,rgba(139,92,246,0.16),transparent 36%),linear-gradient(145deg,rgba(31,26,61,0.98),rgba(11,19,39,0.99))",
+    headerBackground: "linear-gradient(90deg,rgba(139,92,246,0.14),rgba(13,20,42,0.35))",
+    panelBorder: "rgba(167,139,250,0.30)",
+    panelBackground: "rgba(25,23,52,0.88)",
+    accentBackground: "rgba(139,92,246,0.10)",
+    entryBorder: "rgba(167,139,250,0.36)",
+    entryBackground: "rgba(109,40,217,0.15)",
+  },
+  {
+    name: "teal",
+    accent: "#5eead4",
+    border: "rgba(45,212,191,0.42)",
+    background: "radial-gradient(circle at 10% 0%,rgba(20,184,166,0.15),transparent 36%),linear-gradient(145deg,rgba(7,48,55,0.98),rgba(5,25,38,0.99))",
+    headerBackground: "linear-gradient(90deg,rgba(20,184,166,0.13),rgba(7,27,39,0.35))",
+    panelBorder: "rgba(45,212,191,0.28)",
+    panelBackground: "rgba(7,37,46,0.88)",
+    accentBackground: "rgba(20,184,166,0.09)",
+    entryBorder: "rgba(45,212,191,0.34)",
+    entryBackground: "rgba(13,148,136,0.14)",
+  },
+  {
+    name: "rose",
+    accent: "#fda4af",
+    border: "rgba(251,113,133,0.40)",
+    background: "radial-gradient(circle at 10% 0%,rgba(244,63,94,0.13),transparent 36%),linear-gradient(145deg,rgba(55,25,45,0.98),rgba(12,21,39,0.99))",
+    headerBackground: "linear-gradient(90deg,rgba(244,63,94,0.12),rgba(20,20,41,0.35))",
+    panelBorder: "rgba(251,113,133,0.27)",
+    panelBackground: "rgba(43,23,42,0.88)",
+    accentBackground: "rgba(244,63,94,0.08)",
+    entryBorder: "rgba(251,113,133,0.32)",
+    entryBackground: "rgba(190,24,93,0.13)",
+  },
+];
 
 function formatFileSize(bytes = 0) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
@@ -129,16 +179,40 @@ function NightShiftRosterWindow({
   );
   const fileName = roster.fileName || roster.file?.name || "Night-Shift-Roster.pdf";
   const savedAcrossLaptops = Boolean(roster.id);
+  const windowTheme = ROSTER_WINDOW_THEMES[index % ROSTER_WINDOW_THEMES.length];
 
   return (
-    <article className="overflow-hidden rounded-[20px] border border-[#315574] bg-[linear-gradient(145deg,rgba(10,34,56,0.96),rgba(6,24,41,0.98))] shadow-[0_14px_34px_rgba(0,0,0,0.22)]">
-      <div className="flex flex-col gap-3 border-b border-[#294963] px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <article
+      className="overflow-hidden rounded-[20px] border"
+      data-window-theme={windowTheme.name}
+      style={{
+        borderColor: windowTheme.border,
+        background: windowTheme.background,
+        boxShadow: `inset 3px 0 0 ${windowTheme.accent}, 0 14px 34px rgba(0,0,0,0.22)`,
+      }}
+    >
+      <div
+        className="flex flex-col gap-3 border-b px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between"
+        style={{ borderColor: windowTheme.panelBorder, background: windowTheme.headerBackground }}
+      >
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-sky-400/25 bg-sky-500/10 text-sky-200">
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border"
+            style={{
+              borderColor: windowTheme.border,
+              background: windowTheme.accentBackground,
+              color: windowTheme.accent,
+            }}
+          >
             <FileText className="h-4 w-4" />
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#7f98b2]">PDF {index + 1} · separate result window</p>
+            <p
+              className="text-[9px] font-semibold uppercase tracking-[0.16em]"
+              style={{ color: windowTheme.accent }}
+            >
+              PDF {index + 1} · separate result window
+            </p>
             <p className="mt-0.5 truncate text-[12px] font-semibold text-[#edf4fb]" title={fileName}>{fileName}</p>
             <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#849bb5]">
               {formatFileSize(roster.size || roster.file?.size || 0)} · {savedAcrossLaptops ? "saved across laptops" : "local copy only"}
@@ -167,7 +241,11 @@ function NightShiftRosterWindow({
       </div>
 
       <div className="grid gap-3 p-3 lg:grid-cols-[.72fr_1.28fr]">
-        <div className="rounded-2xl border border-[#2b506c] bg-[#081d30]/82 p-3.5" aria-live="polite">
+        <div
+          className="rounded-2xl border p-3.5"
+          style={{ borderColor: windowTheme.panelBorder, background: windowTheme.panelBackground }}
+          aria-live="polite"
+        >
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#dce8f6]">Selected month result</p>
 
           {!summary.periodFound ? (
@@ -179,17 +257,28 @@ function NightShiftRosterWindow({
             </div>
           ) : (
             <div className="mt-3">
-              <div className="flex items-end justify-between gap-3 rounded-xl border border-sky-400/25 bg-sky-500/[0.07] p-3">
+              <div
+                className="flex items-end justify-between gap-3 rounded-xl border p-3"
+                style={{ borderColor: windowTheme.border, background: windowTheme.accentBackground }}
+              >
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.13em] text-[#92a9c2]">Normal night shifts</p>
-                  <p className="mt-1 text-[30px] font-semibold leading-none text-sky-200">{summary.nightShiftCount}</p>
+                  <p
+                    className="mt-1 text-[30px] font-semibold leading-none"
+                    style={{ color: windowTheme.accent }}
+                  >
+                    {summary.nightShiftCount}
+                  </p>
                   <p className="mt-1.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#7f98b2]">N3-DC only · by shift start date</p>
                 </div>
                 <CheckCircle2 className="h-5 w-5 text-emerald-300" />
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
-                <div className="rounded-xl border border-indigo-400/25 bg-indigo-500/10 p-2.5">
-                  <p className="text-[16px] font-semibold text-indigo-200">{summary.nightShiftCount}</p>
+                <div
+                  className="rounded-xl border p-2.5"
+                  style={{ borderColor: windowTheme.entryBorder, background: windowTheme.entryBackground }}
+                >
+                  <p className="text-[16px] font-semibold" style={{ color: windowTheme.accent }}>{summary.nightShiftCount}</p>
                   <p className="mt-0.5 text-[9px] uppercase tracking-[0.11em] text-[#9eaed0]">N3-DC · counted</p>
                 </div>
                 <div className="rounded-xl border border-amber-400/25 bg-amber-500/10 p-2.5">
@@ -206,11 +295,21 @@ function NightShiftRosterWindow({
           )}
         </div>
 
-        <div className="rounded-2xl border border-[#2b506c] bg-[#081d30]/82 p-3.5">
+        <div
+          className="rounded-2xl border p-3.5"
+          style={{ borderColor: windowTheme.panelBorder, background: windowTheme.panelBackground }}
+        >
           <div className="flex items-center justify-between gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#dce8f6]">Detected overnight dates</p>
             {summary.periodFound && (
-              <span className="rounded-full border border-[#34536d] bg-[#0b2942] px-2.5 py-1 text-[9px] font-semibold text-[#b9c9da]">
+              <span
+                className="rounded-full border px-2.5 py-1 text-[9px] font-semibold"
+                style={{
+                  borderColor: windowTheme.border,
+                  background: windowTheme.accentBackground,
+                  color: windowTheme.accent,
+                }}
+              >
                 {summary.nightShiftCount} N3-DC · {summary.rdotCount} NRDOT
               </span>
             )}
@@ -225,13 +324,17 @@ function NightShiftRosterWindow({
               {summary.entries.map((entry) => (
                 <div
                   key={`${entry.date}-${entry.code}`}
-                  className={`rounded-xl border px-2.5 py-2 ${entry.code === "NRDOT"
-                    ? "border-amber-400/30 bg-amber-500/10"
-                    : "border-indigo-400/25 bg-indigo-500/10"
-                  }`}
+                  className={`rounded-xl border px-2.5 py-2 ${entry.code === "NRDOT" ? "border-amber-400/30 bg-amber-500/10" : ""}`}
+                  style={entry.code === "NRDOT" ? undefined : {
+                    borderColor: windowTheme.entryBorder,
+                    background: windowTheme.entryBackground,
+                  }}
                 >
                   <p className="text-[11px] font-semibold text-[#eef4fb]">{formatEntryDate(entry.date)}</p>
-                  <p className={`mt-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] ${entry.code === "NRDOT" ? "text-amber-200" : "text-indigo-200"}`}>
+                  <p
+                    className={`mt-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] ${entry.code === "NRDOT" ? "text-amber-200" : ""}`}
+                    style={entry.code === "NRDOT" ? undefined : { color: windowTheme.accent }}
+                  >
                     {entry.code}
                   </p>
                 </div>
