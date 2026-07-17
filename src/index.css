@@ -7625,6 +7625,12 @@ html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2) >
   -webkit-text-fill-color: var(--movement-type-text) !important;
 }
 
+.theme-movement-sheet-table tbody td:nth-child(2) > select option {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  background: #ffffff !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .theme-movement-sheet-table tbody td:nth-child(2)::before {
     animation: none !important;
