@@ -175,6 +175,9 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
       return;
     }
 
+    const previousFile = uploadedFile;
+    const previousParsedRoster = parsedRoster;
+    const previousSavedRecord = savedRecord;
     setUploadedFile(file);
     setParsedRoster(null);
     setSavedRecord(null);
@@ -198,9 +201,12 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
         setCloudMessage(`${saveError?.message || "Cloud save failed."} The result is available only on this laptop until you retry.`);
       }
     } catch (error) {
-      setParsedRoster(null);
+      setUploadedFile(previousFile);
+      setParsedRoster(previousParsedRoster);
+      setSavedRecord(previousSavedRecord);
       setStatus("error");
-      setCloudStatus(savedRecord ? "ready" : "error");
+      setCloudStatus("ready");
+      setCloudMessage("");
       setMessage(error?.message || "This PDF could not be read. Please use the exported roster PDF.");
     } finally {
       if (inputRef.current) inputRef.current.value = "";
@@ -282,7 +288,7 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
           <button
             type="button"
             disabled={isBusy}
-            onClick={restoreFromCloud}
+            onClick={cloudStatus === "error" ? handleRetryCloud : restoreFromCloud}
             title="Refresh the saved PDF from shared cloud storage"
             className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-semibold transition disabled:cursor-wait disabled:opacity-70 ${cloudStatus === "error"
             ? "border-amber-400/30 bg-amber-500/10 text-amber-200"
