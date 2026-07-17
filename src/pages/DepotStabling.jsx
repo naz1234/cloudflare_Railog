@@ -5330,7 +5330,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     : null;
   const canAutoInsertTid = Boolean(key && !inserted && !suppressAutoInsert && autoTid !== null && autoScheduledTime);
   const isTidDropEligible = Boolean(key && !inserted);
-  const insertTrainTooltip = "Insert this train using the entered TID or remark";
+  const insertTrainTooltip = "Log this insertion using the entered TID or remark";
   const resetCardTooltip = "Reset this card and return to Add TID";
   const undoInsertionTooltip = "Undo this train insertion";
 
@@ -5932,7 +5932,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   aria-label={insertTrainTooltip}
                   className={`theme-insertion-insert-button ${hasTidRemark ? "has-input" : ""} h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-all`}
                 >
-                  Insert Train
+                  Log Insertion
                 </button>
               </ActionTooltip>
             )}
