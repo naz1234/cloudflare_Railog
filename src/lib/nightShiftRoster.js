@@ -260,9 +260,13 @@ export function summarizeCombinedNightShiftRosters(parsedRosters = [], selectedY
         date: entry.date,
         codes: new Set(),
         rosterIndexes: new Set(),
+        codeRosterIndexes: new Map(),
       };
       current.codes.add(entry.code);
       current.rosterIndexes.add(rosterIndex);
+      const codeRosterIndexes = current.codeRosterIndexes.get(entry.code) || new Set();
+      codeRosterIndexes.add(rosterIndex);
+      current.codeRosterIndexes.set(entry.code, codeRosterIndexes);
       dateDetails.set(entry.date, current);
     });
   });
@@ -279,6 +283,9 @@ export function summarizeCombinedNightShiftRosters(parsedRosters = [], selectedY
         codes: Array.from(details.codes).sort(),
         rosterIndexes: Array.from(details.rosterIndexes).sort((left, right) => left - right),
         rosterCount: details.rosterIndexes.size,
+        codeRosterCounts: Object.fromEntries(
+          Array.from(details.codeRosterIndexes, ([code, rosterIndexes]) => [code, rosterIndexes.size])
+        ),
       };
     });
   const conflictingDates = detectedDates
@@ -306,7 +313,7 @@ export function summarizeCombinedNightShiftRosters(parsedRosters = [], selectedY
     repeatedNightShiftCount: Math.max(0, rawNightShiftCount - regularDates.length),
     repeatedRdotCount: Math.max(0, rawRdotCount - rdotDates.length),
     sharedDates,
-    sharedNightShiftDates: sharedDates.filter((entry) => entry.codes.includes("N3-DC")),
+    sharedNightShiftDates: sharedDates.filter((entry) => (entry.codeRosterCounts["N3-DC"] || 0) > 1),
     conflictingDates,
   };
 }
