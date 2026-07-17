@@ -1,7 +1,7 @@
 import { base44 } from "@/api/base44Client";
+import { NIGHT_SHIFT_ROSTER_PARSER_VERSION } from "@/lib/nightShiftRoster";
 
 const RECORD_KEY = "overtime-night-shift-roster-v1";
-const PARSER_VERSION = 1;
 
 // Cloudflare D1 limits a string or complete row to 2,000,000 bytes. Base64
 // increases the PDF size by roughly one third, so this leaves room for the
@@ -126,7 +126,7 @@ export async function saveNightShiftRoster({ file, parsed }) {
     size: Number(file.size || 0),
     fileBase64: await blobToBase64(file),
     parsed: parsed || null,
-    parserVersion: PARSER_VERSION,
+    parserVersion: NIGHT_SHIFT_ROSTER_PARSER_VERSION,
     uploadedAt: now,
     updatedAt: now,
   };
