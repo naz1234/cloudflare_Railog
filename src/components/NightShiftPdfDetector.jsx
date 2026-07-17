@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, Cloud, Download, FileText, FileUp, Loader2, Moon, RefreshCw, Trash2 } from "lucide-react";
+import { AlertTriangle, CalendarRange, CheckCircle2, Cloud, Download, FileText, FileUp, Files, GitCompareArrows, Loader2, Moon, RefreshCw, Trash2 } from "lucide-react";
 import { GlobalWorkerOptions, getDocument, Util } from "pdfjs-dist/legacy/build/pdf.mjs";
 // @ts-expect-error Vite resolves this worker module to a public asset URL.
 import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
@@ -7,6 +7,7 @@ import {
   NIGHT_SHIFT_ROSTER_PARSER_VERSION,
   parseBinJaafarRoster,
   summarizeBinJaafarNightShifts,
+  summarizeCombinedNightShiftRosters,
 } from "@/lib/nightShiftRoster";
 import {
   deleteSavedNightShiftRoster,
@@ -36,6 +37,16 @@ function formatEntryDate(date) {
   return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
+  }).format(new Date(year, month - 1, day));
+}
+
+function formatFullEntryDate(date) {
+  if (!date) return "No dates";
+  const [year, month, day] = String(date).split("-").map(Number);
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   }).format(new Date(year, month - 1, day));
 }
 
@@ -234,6 +245,154 @@ function NightShiftRosterWindow({
           )}
         </div>
       </div>
+    </article>
+  );
+}
+
+function CombinedNightShiftSummary({ rosters, selectedYear, selectedMonth, periodLabel }) {
+  const summary = useMemo(
+    () => summarizeCombinedNightShiftRosters(
+      rosters.map((roster) => roster.parsed),
+      selectedYear,
+      selectedMonth
+    ),
+    [rosters, selectedMonth, selectedYear]
+  );
+  const hasDetectedDuties = summary.detectedDates.length > 0;
+
+  return (
+    <article className="overflow-hidden rounded-[20px] border border-emerald-400/30 bg-[radial-gradient(circle_at_0%_0%,rgba(16,185,129,0.10),transparent_32%),linear-gradient(145deg,rgba(8,35,48,0.98),rgba(5,24,39,0.99))] shadow-[0_14px_34px_rgba(0,0,0,0.24)]" aria-live="polite">
+      <div className="flex flex-col gap-3 border-b border-[#294963] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-400/30 bg-emerald-500/10 text-emerald-200">
+            <GitCompareArrows className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-emerald-300/80">Combined summary · all PDF windows</p>
+            <p className="mt-0.5 text-[13px] font-semibold text-[#edf8f4]">Date overlap and unique night-shift count</p>
+            <p className="mt-0.5 text-[10px] text-[#8fa9b4]">The same duty date is counted once, even when it appears in more than one PDF.</p>
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <span className="rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1.5 text-[9px] font-semibold text-emerald-100">
+            {summary.rosterCount} PDFs compared
+          </span>
+          <span className="rounded-full border border-sky-400/25 bg-sky-500/10 px-3 py-1.5 text-[9px] font-semibold text-sky-100">
+            {summary.rostersWithPeriod} of {summary.rosterCount} contain {periodLabel}
+          </span>
+        </div>
+      </div>
+
+      {!hasDetectedDuties ? (
+        <div className="m-3.5 flex min-h-[120px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#315574] bg-[#081d30]/55 px-4 text-center">
+          <CalendarRange className="h-6 w-6 text-[#58738f]" />
+          <p className="mt-2 text-[11px] font-semibold text-[#b3c3d3]">No overnight duties to combine for {periodLabel}</p>
+          <p className="mt-1 text-[10px] text-[#7f95ad]">The summary will update automatically when at least one PDF contains N3-DC or NRDOT dates.</p>
+        </div>
+      ) : (
+        <div className="p-3.5">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-2xl border border-sky-400/25 bg-sky-500/[0.07] p-3.5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#92a9c2]">Unique night shifts</p>
+                <Moon className="h-4 w-4 text-sky-300" />
+              </div>
+              <p className="mt-2 text-[30px] font-semibold leading-none text-sky-200">{summary.nightShiftCount}</p>
+              <p className="mt-2 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#7f98b2]">N3-DC · duplicate dates removed</p>
+            </div>
+
+            <div className="rounded-2xl border border-indigo-400/25 bg-indigo-500/[0.08] p-3.5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#a6acd0]">Detected date range</p>
+                <CalendarRange className="h-4 w-4 text-indigo-300" />
+              </div>
+              <p className="mt-2 text-[13px] font-semibold leading-snug text-[#eef1ff]">
+                {formatFullEntryDate(summary.firstDate)}
+                <span className="mx-1.5 text-indigo-300">→</span>
+                {formatFullEntryDate(summary.lastDate)}
+              </p>
+              <p className="mt-2 text-[9px] uppercase tracking-[0.1em] text-[#8f97bd]">{summary.uniqueDutyDateCount} unique overnight duty dates</p>
+            </div>
+
+            <div className="rounded-2xl border border-violet-400/25 bg-violet-500/[0.08] p-3.5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#aaa4cb]">Same dates in PDFs</p>
+                <Files className="h-4 w-4 text-violet-300" />
+              </div>
+              <p className="mt-2 text-[30px] font-semibold leading-none text-violet-200">{summary.sharedDates.length}</p>
+              <p className="mt-2 text-[9px] uppercase tracking-[0.1em] text-[#9189b5]">{summary.sharedNightShiftDates.length} repeated N3-DC dates</p>
+            </div>
+
+            <div className="rounded-2xl border border-amber-400/25 bg-amber-500/[0.08] p-3.5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#b8aa8f]">NRDOT separate</p>
+                <CheckCircle2 className="h-4 w-4 text-amber-300" />
+              </div>
+              <p className="mt-2 text-[30px] font-semibold leading-none text-amber-200">{summary.rdotCount}</p>
+              <p className="mt-2 text-[9px] uppercase tracking-[0.1em] text-[#a29273]">Not added to night-shift total</p>
+            </div>
+          </div>
+
+          <div className="mt-3 grid gap-3 lg:grid-cols-[1.35fr_.65fr]">
+            <div className="rounded-2xl border border-[#2b506c] bg-[#081d30]/82 p-3.5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#dce8f6]">Same overnight dates found</p>
+                <span className="text-[9px] text-[#849bb5]">Matched by full date</span>
+              </div>
+
+              {summary.sharedDates.length ? (
+                <div className="mt-3 grid max-h-[170px] grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3 xl:grid-cols-5 [scrollbar-color:#315574_transparent] [scrollbar-width:thin]">
+                  {summary.sharedDates.map((entry) => (
+                    <div key={entry.date} className="rounded-xl border border-violet-400/25 bg-violet-500/[0.08] px-2.5 py-2">
+                      <p className="text-[11px] font-semibold text-[#eef4fb]">{formatEntryDate(entry.date)}</p>
+                      <p className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-violet-200">{entry.codes.join(" / ")}</p>
+                      <p className="mt-1 text-[8px] uppercase tracking-[0.08em] text-[#8798ad]">
+                        {entry.rosterIndexes.map((index) => `PDF ${index + 1}`).join(" + ")}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-3 flex min-h-[90px] items-center justify-center rounded-xl border border-dashed border-emerald-400/20 bg-emerald-500/[0.04] px-4 text-center">
+                  <p className="text-[10px] text-emerald-200">No overnight date appears in more than one PDF.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-[#2b506c] bg-[#081d30]/82 p-3.5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#dce8f6]">Night-shift count check</p>
+              <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-sky-400/20 bg-sky-500/[0.05] px-2 py-4 text-center">
+                <div>
+                  <p className="text-[22px] font-semibold text-sky-100">{summary.rawNightShiftCount}</p>
+                  <p className="text-[8px] uppercase tracking-[0.08em] text-[#8198ae]">Across PDFs</p>
+                </div>
+                <span className="text-[17px] text-[#65819a]">−</span>
+                <div>
+                  <p className="text-[22px] font-semibold text-violet-200">{summary.repeatedNightShiftCount}</p>
+                  <p className="text-[8px] uppercase tracking-[0.08em] text-[#8198ae]">Repeated</p>
+                </div>
+                <span className="text-[17px] text-[#65819a]">=</span>
+                <div>
+                  <p className="text-[22px] font-semibold text-emerald-200">{summary.nightShiftCount}</p>
+                  <p className="text-[8px] uppercase tracking-[0.08em] text-[#8198ae]">Unique</p>
+                </div>
+              </div>
+              <p className="mt-2 text-[9px] leading-relaxed text-[#8fa4bc]">Each N3-DC shift start date is counted once across all uploaded PDFs.</p>
+            </div>
+          </div>
+
+          {summary.conflictingDates.length > 0 && (
+            <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/10 p-3" role="status">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                <p className="text-[10px] leading-relaxed text-amber-100">
+                  Different duty codes were found on {summary.conflictingDates.map((entry) => `${formatEntryDate(entry.date)} (${entry.codes.join(" / ")})`).join(", ")}. Review those dates in the PDF windows above.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </article>
   );
 }
@@ -575,6 +734,15 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
             />
           );
         })}
+
+        {rosters.length >= 2 && (
+          <CombinedNightShiftSummary
+            rosters={rosters}
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            periodLabel={periodLabel}
+          />
+        )}
       </div>
     </section>
   );
