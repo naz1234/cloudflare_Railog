@@ -1,13 +1,19 @@
-import { useMemo, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, Download, FileText, FileUp, Loader2, Moon, RotateCcw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, CheckCircle2, Cloud, Download, FileText, FileUp, Loader2, Moon, RefreshCw, Trash2 } from "lucide-react";
 import { GlobalWorkerOptions, getDocument, Util } from "pdfjs-dist/legacy/build/pdf.mjs";
 // @ts-expect-error Vite resolves this worker module to a public asset URL.
 import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 import { parseBinJaafarRoster, summarizeBinJaafarNightShifts } from "@/lib/nightShiftRoster";
+import {
+  deleteSavedNightShiftRoster,
+  loadSavedNightShiftRoster,
+  MAX_PERSISTED_PDF_SIZE,
+  saveNightShiftRoster,
+} from "@/lib/nightShiftRosterStorage";
 
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
-const MAX_PDF_SIZE = 20 * 1024 * 1024;
+const MAX_PDF_SIZE = MAX_PERSISTED_PDF_SIZE;
 
 function formatFileSize(bytes = 0) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
@@ -69,12 +75,28 @@ async function extractPdfPages(file) {
   }
 }
 
+async function parseNightShiftPdf(file, fallbackYear) {
+  const pages = await extractPdfPages(file);
+  const parsed = parseBinJaafarRoster(pages, fallbackYear);
+  if (!parsed.staffFound) {
+    throw new Error("Staff ID 1000335 (Bin Jaafar) was not found in this roster.");
+  }
+  if (!parsed.dateHeadersFound) {
+    throw new Error("Roster dates could not be detected in this PDF.");
+  }
+  return parsed;
+}
+
 export default function NightShiftPdfDetector({ selectedYear, selectedMonth, className = "" }) {
   const inputRef = useRef(null);
+  const fallbackYearRef = useRef(selectedYear);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [parsedRoster, setParsedRoster] = useState(null);
-  const [status, setStatus] = useState("idle");
+  const [savedRecord, setSavedRecord] = useState(null);
+  const [status, setStatus] = useState("loading");
   const [message, setMessage] = useState("");
+  const [cloudStatus, setCloudStatus] = useState("loading");
+  const [cloudMessage, setCloudMessage] = useState("");
   const periodLabel = useMemo(
     () => getPeriodLabel(selectedYear, selectedMonth),
     [selectedMonth, selectedYear]
@@ -89,6 +111,55 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
     () => getCoveredPeriodLabel(parsedRoster?.coveredDates),
     [parsedRoster]
   );
+  const isBusy = status === "loading"
+    || status === "reading"
+    || cloudStatus === "saving"
+    || cloudStatus === "deleting";
+  const cloudStatusLabel = cloudStatus === "loading"
+    ? "Loading cloud"
+    : cloudStatus === "saving"
+      ? "Saving cloud"
+      : cloudStatus === "deleting"
+        ? "Deleting cloud"
+        : cloudStatus === "error"
+          ? "Cloud sync issue"
+          : savedRecord
+            ? "Saved across laptops"
+            : "Cloud ready";
+
+  const restoreFromCloud = useCallback(async () => {
+    setStatus("loading");
+    setCloudStatus("loading");
+    setMessage("");
+    setCloudMessage("");
+
+    try {
+      const record = await loadSavedNightShiftRoster();
+      if (!record) {
+        setUploadedFile(null);
+        setParsedRoster(null);
+        setSavedRecord(null);
+        setStatus("idle");
+        setCloudStatus("ready");
+        return;
+      }
+
+      const parsed = record.parsed || await parseNightShiftPdf(record.file, fallbackYearRef.current);
+      setUploadedFile(record.file);
+      setParsedRoster(parsed);
+      setSavedRecord({ ...record, parsed });
+      setStatus("ready");
+      setCloudStatus("ready");
+    } catch (error) {
+      setStatus("idle");
+      setCloudStatus("error");
+      setCloudMessage(error?.message || "Unable to load the saved PDF from shared storage.");
+    }
+  }, []);
+
+  useEffect(() => {
+    restoreFromCloud();
+  }, [restoreFromCloud]);
 
   const handleFile = async (file) => {
     if (!file) return;
@@ -100,29 +171,36 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
     }
     if (file.size > MAX_PDF_SIZE) {
       setStatus("error");
-      setMessage("The PDF is larger than 20 MB. Please upload a smaller roster file.");
+      setMessage(`The PDF is larger than ${formatFileSize(MAX_PDF_SIZE)}. Please upload a smaller roster file for shared cloud storage.`);
       return;
     }
 
     setUploadedFile(file);
     setParsedRoster(null);
+    setSavedRecord(null);
     setStatus("reading");
     setMessage("");
+    setCloudStatus("saving");
+    setCloudMessage("");
 
     try {
-      const pages = await extractPdfPages(file);
-      const parsed = parseBinJaafarRoster(pages, selectedYear);
-      if (!parsed.staffFound) {
-        throw new Error("Staff ID 1000335 (Bin Jaafar) was not found in this roster.");
-      }
-      if (!parsed.dateHeadersFound) {
-        throw new Error("Roster dates could not be detected in this PDF.");
-      }
+      const parsed = await parseNightShiftPdf(file, selectedYear);
       setParsedRoster(parsed);
       setStatus("ready");
+
+      try {
+        const saved = await saveNightShiftRoster({ file, parsed });
+        setUploadedFile(saved.file || file);
+        setSavedRecord(saved);
+        setCloudStatus("ready");
+      } catch (saveError) {
+        setCloudStatus("error");
+        setCloudMessage(`${saveError?.message || "Cloud save failed."} The result is available only on this laptop until you retry.`);
+      }
     } catch (error) {
       setParsedRoster(null);
       setStatus("error");
+      setCloudStatus(savedRecord ? "ready" : "error");
       setMessage(error?.message || "This PDF could not be read. Please use the exported roster PDF.");
     } finally {
       if (inputRef.current) inputRef.current.value = "";
@@ -134,17 +212,52 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
     const url = URL.createObjectURL(uploadedFile);
     const link = document.createElement("a");
     link.href = url;
-    link.download = uploadedFile.name;
+    link.download = uploadedFile.name || savedRecord?.fileName || "Night-Shift-Roster.pdf";
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
-  const handleReset = () => {
-    setUploadedFile(null);
-    setParsedRoster(null);
-    setStatus("idle");
-    setMessage("");
-    if (inputRef.current) inputRef.current.value = "";
+  const handleRetryCloud = async () => {
+    if (!uploadedFile || !parsedRoster) {
+      await restoreFromCloud();
+      return;
+    }
+
+    setCloudStatus("saving");
+    setCloudMessage("");
+
+    try {
+      const saved = await saveNightShiftRoster({ file: uploadedFile, parsed: parsedRoster });
+      setUploadedFile(saved.file || uploadedFile);
+      setSavedRecord(saved);
+      setCloudStatus("ready");
+    } catch (error) {
+      setSavedRecord(null);
+      setCloudStatus("error");
+      setCloudMessage(`${error?.message || "Cloud save failed."} The result is still available only on this laptop.`);
+    }
+  };
+
+  const handleReset = async () => {
+    const confirmed = window.confirm("Delete this overtime roster PDF from shared cloud storage? Other laptops will stop loading it after refresh. This cannot be undone.");
+    if (!confirmed) return;
+
+    setCloudStatus("deleting");
+    setCloudMessage("");
+
+    try {
+      await deleteSavedNightShiftRoster();
+      setUploadedFile(null);
+      setParsedRoster(null);
+      setSavedRecord(null);
+      setStatus("idle");
+      setMessage("");
+      setCloudStatus("ready");
+      if (inputRef.current) inputRef.current.value = "";
+    } catch (error) {
+      setCloudStatus("error");
+      setCloudMessage(error?.message || "Unable to delete the shared PDF.");
+    }
   };
 
   return (
@@ -156,7 +269,7 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
           </div>
           <div>
             <p className="text-[12px] font-semibold uppercase tracking-[0.22em] text-[#e7eef8]">Night Shift PDF Detector</p>
-            <p className="mt-1 text-[11px] text-[#9fb1c8]">Reads staff ID 1000335 (Bin Jaafar) only. The original PDF stays on this device.</p>
+            <p className="mt-1 text-[11px] text-[#9fb1c8]">Reads staff ID 1000335 (Bin Jaafar) only. The PDF is saved for access on your other laptops.</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -166,6 +279,20 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
           <span className="rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-semibold text-emerald-200">
             1000335 · Bin Jaafar
           </span>
+          <button
+            type="button"
+            disabled={isBusy}
+            onClick={restoreFromCloud}
+            title="Refresh the saved PDF from shared cloud storage"
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-semibold transition disabled:cursor-wait disabled:opacity-70 ${cloudStatus === "error"
+            ? "border-amber-400/30 bg-amber-500/10 text-amber-200"
+            : savedRecord
+              ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-200 hover:border-emerald-300/50"
+              : "border-sky-400/25 bg-sky-500/10 text-sky-100 hover:border-sky-300/50"
+          }`}>
+            {isBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Cloud className="h-3 w-3" />}
+            {cloudStatusLabel}
+          </button>
           {parsedRoster?.dateAdjustmentMonths === 1 && (
             <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1.5 text-[10px] font-semibold text-amber-200">
               Monthly roster → next month
@@ -179,7 +306,7 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
           <div className="flex items-center justify-between gap-2">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#dce8f6]">Upload roster PDF</p>
-              <p className="mt-1 text-[10px] text-[#8fa4bc]">Maximum 20 MB · processed in your browser</p>
+              <p className="mt-1 text-[10px] text-[#8fa4bc]">Maximum {formatFileSize(MAX_PDF_SIZE)} · saved to shared cloud storage</p>
             </div>
             <FileText className="h-4 w-4 text-sky-300" />
           </div>
@@ -189,23 +316,32 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
             type="file"
             accept="application/pdf,.pdf"
             className="hidden"
+            disabled={isBusy}
             onChange={(event) => handleFile(event.target.files?.[0])}
           />
 
           <button
             type="button"
-            disabled={status === "reading"}
+            disabled={isBusy}
             onClick={() => inputRef.current?.click()}
             className="mt-3 flex min-h-[72px] w-full items-center justify-center gap-2 rounded-xl border border-dashed border-sky-400/40 bg-sky-500/[0.06] px-3 text-[12px] font-semibold text-sky-100 transition hover:border-sky-300/65 hover:bg-sky-500/10 disabled:cursor-wait disabled:opacity-60"
           >
-            {status === "reading" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
-            {status === "reading" ? "Reading roster..." : uploadedFile ? "Upload another PDF" : "Choose roster PDF"}
+            {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
+            {status === "loading"
+              ? "Loading saved PDF..."
+              : status === "reading" || cloudStatus === "saving"
+                ? "Reading and saving PDF..."
+                : uploadedFile
+                  ? "Upload another PDF"
+                  : "Choose roster PDF"}
           </button>
 
           {uploadedFile && (
             <div className="mt-3 rounded-xl border border-[#294963] bg-[#081d30]/80 p-2.5">
               <p className="truncate text-[11px] font-semibold text-[#e5eef8]" title={uploadedFile.name}>{uploadedFile.name}</p>
-              <p className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-[#849bb5]">{formatFileSize(uploadedFile.size)}</p>
+              <p className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-[#849bb5]">
+                {formatFileSize(uploadedFile.size)} · {savedRecord ? "saved across laptops" : "local copy only"}
+              </p>
               <div className="mt-2.5 flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -216,11 +352,30 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
                 </button>
                 <button
                   type="button"
+                  disabled={isBusy}
                   onClick={handleReset}
-                  className="flex h-8 items-center gap-1.5 rounded-lg border border-[#34536d] px-3 text-[10px] font-semibold text-[#b7c7d9] transition hover:border-[#5d7ea5] hover:bg-[#102c47]"
+                  className="flex h-8 items-center gap-1.5 rounded-lg border border-red-400/25 bg-red-500/[0.06] px-3 text-[10px] font-semibold text-red-200 transition hover:border-red-300/50 hover:bg-red-500/10 disabled:cursor-wait disabled:opacity-50"
                 >
-                  <RotateCcw className="h-3.5 w-3.5" /> Clear
+                  <Trash2 className="h-3.5 w-3.5" /> Delete cloud PDF
                 </button>
+              </div>
+            </div>
+          )}
+
+          {cloudStatus === "error" && cloudMessage && (
+            <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/10 p-2.5" role="status">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] leading-relaxed text-amber-100">{cloudMessage}</p>
+                  <button
+                    type="button"
+                    onClick={handleRetryCloud}
+                    className="mt-2 inline-flex h-7 items-center gap-1.5 rounded-lg border border-amber-300/30 bg-amber-500/10 px-2.5 text-[9px] font-semibold text-amber-100 transition hover:border-amber-200/55 hover:bg-amber-500/15"
+                  >
+                    <RefreshCw className="h-3 w-3" /> {uploadedFile && parsedRoster ? "Retry cloud save" : "Retry cloud load"}
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -229,17 +384,24 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
         <div className="rounded-2xl border border-[#2b506c] bg-[#0a2238]/88 p-3.5" aria-live="polite">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#dce8f6]">Selected month result</p>
 
+          {status === "loading" && (
+            <div className="flex min-h-[150px] flex-col items-center justify-center text-center">
+              <Loader2 className="h-6 w-6 animate-spin text-sky-300" />
+              <p className="mt-2 text-[11px] text-[#a9bbcf]">Loading the saved PDF from shared storage...</p>
+            </div>
+          )}
+
           {status === "idle" && (
             <div className="flex min-h-[150px] flex-col items-center justify-center text-center">
               <Moon className="h-6 w-6 text-[#58738f]" />
-              <p className="mt-2 text-[11px] text-[#8fa4bc]">Upload a roster to calculate {periodLabel}.</p>
+              <p className="mt-2 text-[11px] text-[#8fa4bc]">Upload a roster to calculate {periodLabel} and save it for your other laptops.</p>
             </div>
           )}
 
           {status === "reading" && (
             <div className="flex min-h-[150px] flex-col items-center justify-center text-center">
               <Loader2 className="h-6 w-6 animate-spin text-sky-300" />
-              <p className="mt-2 text-[11px] text-[#a9bbcf]">Detecting staff ID 1000335 shifts...</p>
+              <p className="mt-2 text-[11px] text-[#a9bbcf]">Detecting staff ID 1000335 shifts and preparing cloud storage...</p>
             </div>
           )}
 
