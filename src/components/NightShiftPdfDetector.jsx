@@ -3,7 +3,11 @@ import { AlertTriangle, CheckCircle2, Cloud, Download, FileText, FileUp, Loader2
 import { GlobalWorkerOptions, getDocument, Util } from "pdfjs-dist/legacy/build/pdf.mjs";
 // @ts-expect-error Vite resolves this worker module to a public asset URL.
 import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
-import { parseBinJaafarRoster, summarizeBinJaafarNightShifts } from "@/lib/nightShiftRoster";
+import {
+  NIGHT_SHIFT_ROSTER_PARSER_VERSION,
+  parseBinJaafarRoster,
+  summarizeBinJaafarNightShifts,
+} from "@/lib/nightShiftRoster";
 import {
   deleteSavedNightShiftRoster,
   loadSavedNightShiftRoster,
@@ -33,15 +37,6 @@ function formatEntryDate(date) {
     day: "2-digit",
     month: "short",
   }).format(new Date(year, month - 1, day));
-}
-
-function getCoveredPeriodLabel(dates = []) {
-  const periods = Array.from(new Set(dates.map((date) => String(date).slice(0, 7))));
-  if (!periods.length) return "the detected month";
-  return periods.map((period) => {
-    const [year, month] = period.split("-").map(Number);
-    return getPeriodLabel(year, month - 1);
-  }).join(" and ");
 }
 
 async function extractPdfPages(file) {
@@ -107,10 +102,6 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
       : null,
     [parsedRoster, selectedMonth, selectedYear]
   );
-  const coveredPeriodLabel = useMemo(
-    () => getCoveredPeriodLabel(parsedRoster?.coveredDates),
-    [parsedRoster]
-  );
   const isBusy = status === "loading"
     || status === "reading"
     || cloudStatus === "saving"
@@ -144,12 +135,30 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
         return;
       }
 
-      const parsed = record.parsed || await parseNightShiftPdf(record.file, fallbackYearRef.current);
-      setUploadedFile(record.file);
+      const needsParserRefresh = !record.parsed
+        || record.parserVersion !== NIGHT_SHIFT_ROSTER_PARSER_VERSION;
+      const parsed = needsParserRefresh
+        ? await parseNightShiftPdf(record.file, fallbackYearRef.current)
+        : record.parsed;
+      let currentRecord = { ...record, parsed };
+      let refreshError = null;
+
+      if (needsParserRefresh) {
+        try {
+          currentRecord = await saveNightShiftRoster({ file: record.file, parsed });
+        } catch (error) {
+          refreshError = error;
+        }
+      }
+
+      setUploadedFile(currentRecord.file || record.file);
       setParsedRoster(parsed);
-      setSavedRecord({ ...record, parsed });
+      setSavedRecord(currentRecord);
       setStatus("ready");
-      setCloudStatus("ready");
+      setCloudStatus(refreshError ? "error" : "ready");
+      setCloudMessage(refreshError
+        ? `${refreshError?.message || "Cloud refresh failed."} The corrected result is available, and you can retry updating the shared copy.`
+        : "");
     } catch (error) {
       setStatus("idle");
       setCloudStatus("error");
@@ -299,11 +308,6 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
             {isBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Cloud className="h-3 w-3" />}
             {cloudStatusLabel}
           </button>
-          {parsedRoster?.dateAdjustmentMonths === 1 && (
-            <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1.5 text-[10px] font-semibold text-amber-200">
-              Monthly roster → next month
-            </span>
-          )}
         </div>
       </div>
 
@@ -424,11 +428,7 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
             <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/10 p-3" role="status">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
-                <p className="text-[11px] leading-relaxed text-amber-100">
-                  {parsedRoster?.dateAdjustmentMonths === 1
-                    ? `This monthly roster is counted in ${coveredPeriodLabel}. Select that month to view the shifts.`
-                    : `This roster does not contain ${periodLabel}.`}
-                </p>
+                <p className="text-[11px] leading-relaxed text-amber-100">This roster does not contain {periodLabel}.</p>
               </div>
             </div>
           )}
