@@ -1,0 +1,48 @@
+{
+  "name": "NightShiftRosterFile",
+  "type": "object",
+  "properties": {
+    "recordKey": {
+      "type": "string",
+      "description": "Singleton key for the shared overtime night-shift roster"
+    },
+    "fileName": {
+      "type": "string",
+      "description": "Original roster PDF file name"
+    },
+    "mimeType": {
+      "type": "string",
+      "description": "Original roster PDF MIME type"
+    },
+    "size": {
+      "type": "number",
+      "description": "Original roster PDF size in bytes"
+    },
+    "fileBase64": {
+      "type": "string",
+      "description": "Original roster PDF encoded for Cloudflare D1 storage"
+    },
+    "parsed": {
+      "type": "object",
+      "description": "Parsed Bin Jaafar night-shift roster data",
+      "additionalProperties": true
+    },
+    "parserVersion": {
+      "type": "number",
+      "description": "Parser version used for the stored result"
+    },
+    "uploadedAt": {
+      "type": "string",
+      "description": "Original upload timestamp"
+    },
+    "updatedAt": {
+      "type": "string",
+      "description": "Last cloud update timestamp"
+    }
+  },
+  "required": [
+    "recordKey",
+    "fileName",
+    "fileBase64"
+  ]
+}
