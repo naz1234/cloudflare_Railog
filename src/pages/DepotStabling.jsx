@@ -19387,7 +19387,6 @@ export default function DepotStablingPage() {
                   </span>
                   <div>
                     <h2 id="protected-shortcut-login-title" className="text-sm font-black text-white">Protected pages</h2>
-                    <p className="mt-0.5 text-[10px] text-[#7eb8e0]">Enter the admin details to show ODO, ALM, OVT and ADM.</p>
                   </div>
                 </div>
                 <button
