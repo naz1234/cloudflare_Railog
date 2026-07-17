@@ -3586,6 +3586,21 @@ function saveLocalStablingState(westData = {}, eastData = {}, updatedAt = new Da
   } catch {}
 }
 
+function getStablingRoadKey(depot = "west", road = "") {
+  const normalizedDepot = depot === "east" ? "east" : "west";
+  const validRoads = normalizedDepot === "east" ? EAST_ROADS : WEST_ROADS;
+  return validRoads.includes(road) ? `${normalizedDepot}_${road}` : "";
+}
+
+function buildStablingSaveEntries(westData = {}, eastData = {}, roadKeys = [], updatedAt = new Date().toISOString()) {
+  const requestedRoadKeys = new Set(Array.from(roadKeys || []).filter(Boolean));
+
+  return [
+    ...WEST_ROADS.map((road) => ({ depot: "west", road, blocks: westData?.[road], updatedAt })),
+    ...EAST_ROADS.map((road) => ({ depot: "east", road, blocks: eastData?.[road], updatedAt })),
+  ].filter((entry) => requestedRoadKeys.has(getStablingRoadKey(entry.depot, entry.road)));
+}
+
 function buildStablingMoveState({ westData = {}, eastData = {}, depot = "west", road = "", blockIndex = 0, trainId = "" } = {}) {
   const targetDepot = depot === "east" ? "east" : "west";
   const nextWest = normalizeStablingDepotData(westData, WEST_ROADS);
@@ -16285,6 +16300,9 @@ export default function DepotStablingPage() {
   const isEditingStablingRef = useRef(false);
   const isSavingRef = useRef(false);
   const pendingSaveRef = useRef(false);
+  const pendingStablingRoadKeysRef = useRef(new Set());
+  const pendingStablingSnapshotRef = useRef({ west: westData, east: eastData });
+  const saveToDbRef = useRef(null);
   const pollInProgressRef = useRef(false);
   const stablingLocalUpdatedAtRef = useRef(loadLocalStablingState().updatedMs || 0);
   const stablingRemoteUpdatedAtRef = useRef(0);
@@ -17110,32 +17128,30 @@ export default function DepotStablingPage() {
     };
   }, []);
 
-  const saveToDb = useCallback(async (west, east) => {
+  const saveToDb = useCallback(async () => {
+    if (isSavingRef.current) return;
+
+    const roadKeys = Array.from(pendingStablingRoadKeysRef.current);
+    if (roadKeys.length === 0) {
+      pendingSaveRef.current = false;
+      return;
+    }
+
+    roadKeys.forEach((key) => pendingStablingRoadKeysRef.current.delete(key));
+    const { west, east } = pendingStablingSnapshotRef.current;
     isSavingRef.current = true;
     setSaving(true);
 
     const saveUpdatedAt = new Date().toISOString();
-    const allEntries = [
-      ...WEST_ROADS.map((road) => ({
-        depot: "west",
-        road,
-        blocks: west[road],
-        updatedAt: saveUpdatedAt,
-      })),
-      ...EAST_ROADS.map((road) => ({
-        depot: "east",
-        road,
-        blocks: east[road],
-        updatedAt: saveUpdatedAt,
-      })),
-    ];
+    const changedEntries = buildStablingSaveEntries(west, east, roadKeys, saveUpdatedAt);
 
     saveLocalStablingState(west, east, saveUpdatedAt);
 
     try {
-      // Save sequentially to avoid overwhelming the server with concurrent requests
-      for (const entry of allEntries) {
-        const key = `${entry.depot}_${entry.road}`;
+      // Save only roads changed by this browser. Uploading every road here lets a
+      // stale laptop overwrite unrelated edits made on another laptop.
+      for (const entry of changedEntries) {
+        const key = getStablingRoadKey(entry.depot, entry.road);
         if (existingMapRef.current[key]) {
           try {
             await base44.entities.DepotStabling.update(existingMapRef.current[key], entry);
@@ -17159,28 +17175,43 @@ export default function DepotStablingPage() {
       setSyncError(false);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
+      roadKeys.forEach((key) => pendingStablingRoadKeysRef.current.add(key));
       console.error("Save failed:", err);
       setSyncError(true);
       stablingLocalEditUntilRef.current = Date.now() + STABLING_LOCAL_EDIT_HOLD_MS;
     } finally {
-      pendingSaveRef.current = false;
       isSavingRef.current = false;
       setSaving(false);
+
+      const hasQueuedRoads = pendingStablingRoadKeysRef.current.size > 0;
+      pendingSaveRef.current = hasQueuedRoads;
+      if (hasQueuedRoads) {
+        if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+        autoSaveTimer.current = setTimeout(() => {
+          saveToDbRef.current?.();
+        }, 1500);
+      }
     }
   }, []);
 
+  saveToDbRef.current = saveToDb;
+
   const scheduleAutoSave = useCallback(
-    (west, east) => {
+    (west, east, roadKeys) => {
       // Keep the newest edit available immediately after a browser refresh,
       // while the existing debounced D1 live save continues in the background.
       markStablingLocalEdit(west, east);
+      Array.from(roadKeys || [])
+        .filter(Boolean)
+        .forEach((key) => pendingStablingRoadKeysRef.current.add(key));
+      pendingStablingSnapshotRef.current = { west, east };
       pendingSaveRef.current = true;
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
       autoSaveTimer.current = setTimeout(() => {
-        saveToDb(west, east);
+        saveToDbRef.current?.();
       }, 1500);
     },
-    [markStablingLocalEdit, saveToDb]
+    [markStablingLocalEdit]
   );
 
   const handleStablingEditStart = useCallback(() => {
@@ -17265,7 +17296,9 @@ export default function DepotStablingPage() {
     setWestData(nextWest);
     setEastData(nextEast);
     markStablingLocalEdit(nextWest, nextEast);
-    scheduleAutoSave(nextWest, nextEast);
+    const changedRoadKeys = new Set([getStablingRoadKey(targetDepot, road)]);
+    clearedCells.forEach((cell) => changedRoadKeys.add(getStablingRoadKey(cell.depot, cell.road)));
+    scheduleAutoSave(nextWest, nextEast, changedRoadKeys);
   };
 
   const updateExtraRemark = (depot, road, blockIndex, value) => {
@@ -17287,7 +17320,7 @@ export default function DepotStablingPage() {
       westDataRef.current = newWest;
       eastDataRef.current = newEast;
 
-      scheduleAutoSave(newWest, newEast);
+      scheduleAutoSave(newWest, newEast, [getStablingRoadKey(depot, road)]);
 
       return updated;
     });
@@ -17316,7 +17349,7 @@ export default function DepotStablingPage() {
       const newEast = depot === "east" ? updated : eastDataRef.current;
       westDataRef.current = newWest;
       eastDataRef.current = newEast;
-      scheduleAutoSave(newWest, newEast);
+      scheduleAutoSave(newWest, newEast, roads.map((road) => getStablingRoadKey(depot, road)));
 
       return updated;
     });
