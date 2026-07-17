@@ -1759,6 +1759,8 @@ const ADM_SESSION_KEY = "admAdminUnlocked_v1";
 const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
 const OVT_SESSION_KEY = "ovtOvertimeUnlocked_v1";
 const ODO_SESSION_KEY = "odoReadingUnlocked_v1";
+const PROTECTED_SHORTCUTS_SESSION_KEY = "protectedShortcutsUnlocked_v1";
+const PROTECTED_SHORTCUT_KEYS = new Set(["odo", "alarm", "overtime", "admin"]);
 const ADM_LOGIN_ID = "admin";
 const ADM_LOGIN_PASSWORD = "921016";
 const ADMIN_NOTES_STORAGE_KEY = "admModernNotes_v1";
@@ -15487,11 +15489,22 @@ export default function DepotStablingPage() {
     return "stabling";
   };
   const [activeTab, setActiveTab] = useState(() => getTabFromPath(location.pathname));
+  const [protectedShortcutCredentials, setProtectedShortcutCredentials] = useState({ id: "", password: "" });
+  const [protectedShortcutError, setProtectedShortcutError] = useState("");
+  const [isProtectedShortcutLoginOpen, setIsProtectedShortcutLoginOpen] = useState(false);
+  const [areProtectedShortcutsUnlocked, setAreProtectedShortcutsUnlocked] = useState(() => {
+    try {
+      return sessionStorage.getItem(PROTECTED_SHORTCUTS_SESSION_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
   const [adminCredentials, setAdminCredentials] = useState({ id: "", password: "" });
   const [adminError, setAdminError] = useState("");
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(() => {
     try {
-      return sessionStorage.getItem(ADM_SESSION_KEY) === "true";
+      return sessionStorage.getItem(ADM_SESSION_KEY) === "true"
+        || sessionStorage.getItem(PROTECTED_SHORTCUTS_SESSION_KEY) === "true";
     } catch {
       return false;
     }
@@ -15500,7 +15513,8 @@ export default function DepotStablingPage() {
   const [alarmError, setAlarmError] = useState("");
   const [isAlarmUnlocked, setIsAlarmUnlocked] = useState(() => {
     try {
-      return sessionStorage.getItem(ALM_SESSION_KEY) === "true";
+      return sessionStorage.getItem(ALM_SESSION_KEY) === "true"
+        || sessionStorage.getItem(PROTECTED_SHORTCUTS_SESSION_KEY) === "true";
     } catch {
       return false;
     }
@@ -15509,7 +15523,8 @@ export default function DepotStablingPage() {
   const [overtimeError, setOvertimeError] = useState("");
   const [isOvertimeUnlocked, setIsOvertimeUnlocked] = useState(() => {
     try {
-      return sessionStorage.getItem(OVT_SESSION_KEY) === "true";
+      return sessionStorage.getItem(OVT_SESSION_KEY) === "true"
+        || sessionStorage.getItem(PROTECTED_SHORTCUTS_SESSION_KEY) === "true";
     } catch {
       return false;
     }
@@ -15518,7 +15533,8 @@ export default function DepotStablingPage() {
   const [odoError, setOdoError] = useState("");
   const [isOdoUnlocked, setIsOdoUnlocked] = useState(() => {
     try {
-      return sessionStorage.getItem(ODO_SESSION_KEY) === "true";
+      return sessionStorage.getItem(ODO_SESSION_KEY) === "true"
+        || sessionStorage.getItem(PROTECTED_SHORTCUTS_SESSION_KEY) === "true";
     } catch {
       return false;
     }
@@ -15686,6 +15702,92 @@ export default function DepotStablingPage() {
     scrollTarget.scrollTo({ left: nextLeft, behavior: "smooth" });
   }, []);
 
+  const closeProtectedShortcutLogin = useCallback(() => {
+    setIsProtectedShortcutLoginOpen(false);
+    setProtectedShortcutCredentials({ id: "", password: "" });
+    setProtectedShortcutError("");
+  }, []);
+
+  const handleProtectedShortcutLogin = useCallback((event) => {
+    event.preventDefault();
+    const loginId = String(protectedShortcutCredentials.id || "").trim();
+    const loginPassword = String(protectedShortcutCredentials.password || "");
+
+    if (loginId === ADM_LOGIN_ID && loginPassword === ADM_LOGIN_PASSWORD) {
+      setAreProtectedShortcutsUnlocked(true);
+      setIsProtectedShortcutLoginOpen(false);
+      setProtectedShortcutCredentials({ id: "", password: "" });
+      setProtectedShortcutError("");
+      setIsOdoUnlocked(true);
+      setIsAlarmUnlocked(true);
+      setIsOvertimeUnlocked(true);
+      setIsAdminUnlocked(true);
+      setOdoError("");
+      setAlarmError("");
+      setOvertimeError("");
+      setAdminError("");
+      try {
+        sessionStorage.setItem(PROTECTED_SHORTCUTS_SESSION_KEY, "true");
+        sessionStorage.setItem(ODO_SESSION_KEY, "true");
+        sessionStorage.setItem(ALM_SESSION_KEY, "true");
+        sessionStorage.setItem(OVT_SESSION_KEY, "true");
+        sessionStorage.setItem(ADM_SESSION_KEY, "true");
+      } catch {}
+      return;
+    }
+
+    setAreProtectedShortcutsUnlocked(false);
+    setProtectedShortcutError("Invalid admin ID or password.");
+    try { sessionStorage.removeItem(PROTECTED_SHORTCUTS_SESSION_KEY); } catch {}
+  }, [protectedShortcutCredentials]);
+
+  const lockProtectedShortcuts = useCallback(() => {
+    setAreProtectedShortcutsUnlocked(false);
+    setIsProtectedShortcutLoginOpen(false);
+    setProtectedShortcutCredentials({ id: "", password: "" });
+    setProtectedShortcutError("");
+    setIsOdoUnlocked(false);
+    setIsAlarmUnlocked(false);
+    setIsOvertimeUnlocked(false);
+    setIsAdminUnlocked(false);
+    setOdoCredentials({ id: "", password: "" });
+    setAlarmCredentials({ id: "", password: "" });
+    setOvertimeCredentials({ id: "", password: "" });
+    setAdminCredentials({ id: "", password: "" });
+    setOdoError("");
+    setAlarmError("");
+    setOvertimeError("");
+    setAdminError("");
+    setAlarmSearch("");
+    try {
+      sessionStorage.removeItem(PROTECTED_SHORTCUTS_SESSION_KEY);
+      sessionStorage.removeItem(ODO_SESSION_KEY);
+      sessionStorage.removeItem(ALM_SESSION_KEY);
+      sessionStorage.removeItem(OVT_SESSION_KEY);
+      sessionStorage.removeItem(ADM_SESSION_KEY);
+    } catch {}
+
+    if (PROTECTED_SHORTCUT_KEYS.has(activeTab)) {
+      setActiveTab("stabling");
+      const targetHash = "#/depot-stabling";
+      if (window.location.hash !== targetHash) {
+        window.location.hash = targetHash;
+      }
+      window.setTimeout(() => window.location.reload(), 0);
+    }
+  }, [activeTab]);
+
+  const handleProtectedShortcutToggle = useCallback(() => {
+    if (areProtectedShortcutsUnlocked) {
+      lockProtectedShortcuts();
+      return;
+    }
+
+    setProtectedShortcutCredentials({ id: "", password: "" });
+    setProtectedShortcutError("");
+    setIsProtectedShortcutLoginOpen(true);
+  }, [areProtectedShortcutsUnlocked, lockProtectedShortcuts]);
+
   const handleAdminLogin = useCallback((event) => {
     event.preventDefault();
     const loginId = String(adminCredentials.id || "").trim();
@@ -15705,14 +15807,11 @@ export default function DepotStablingPage() {
   }, [adminCredentials]);
 
   const handleAdminLogout = useCallback(() => {
-    setIsAdminUnlocked(false);
-    setAdminCredentials({ id: "", password: "" });
-    setAdminError("");
+    lockProtectedShortcuts();
     setAdminNotesLoading(false);
     setAdminNotesSaving(false);
     setAdminNotesLiveStatus("Local cache ready");
-    try { sessionStorage.removeItem(ADM_SESSION_KEY); } catch {}
-  }, []);
+  }, [lockProtectedShortcuts]);
 
   const handleAlarmLogin = useCallback((event) => {
     event.preventDefault();
@@ -15733,12 +15832,8 @@ export default function DepotStablingPage() {
   }, [alarmCredentials]);
 
   const handleAlarmLogout = useCallback(() => {
-    setIsAlarmUnlocked(false);
-    setAlarmCredentials({ id: "", password: "" });
-    setAlarmError("");
-    setAlarmSearch("");
-    try { sessionStorage.removeItem(ALM_SESSION_KEY); } catch {}
-  }, []);
+    lockProtectedShortcuts();
+  }, [lockProtectedShortcuts]);
 
   const handleOvertimeLogin = useCallback((event) => {
     event.preventDefault();
@@ -15759,11 +15854,8 @@ export default function DepotStablingPage() {
   }, [overtimeCredentials]);
 
   const handleOvertimeLogout = useCallback(() => {
-    setIsOvertimeUnlocked(false);
-    setOvertimeCredentials({ id: "", password: "" });
-    setOvertimeError("");
-    try { sessionStorage.removeItem(OVT_SESSION_KEY); } catch {}
-  }, []);
+    lockProtectedShortcuts();
+  }, [lockProtectedShortcuts]);
 
   const handleOdoLogin = useCallback((event) => {
     event.preventDefault();
@@ -15784,11 +15876,8 @@ export default function DepotStablingPage() {
   }, [odoCredentials]);
 
   const handleOdoLogout = useCallback(() => {
-    setIsOdoUnlocked(false);
-    setOdoCredentials({ id: "", password: "" });
-    setOdoError("");
-    try { sessionStorage.removeItem(ODO_SESSION_KEY); } catch {}
-  }, []);
+    lockProtectedShortcuts();
+  }, [lockProtectedShortcuts]);
 
   const loadAdminNotesLive = useCallback(async () => {
     const entity = getAdminNoteEntity();
@@ -15953,6 +16042,17 @@ export default function DepotStablingPage() {
       localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isSidebarCollapsed));
     } catch {}
   }, [isSidebarCollapsed]);
+
+  useEffect(() => {
+    if (!isProtectedShortcutLoginOpen) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") closeProtectedShortcutLogin();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [closeProtectedShortcutLogin, isProtectedShortcutLoginOpen]);
 
   useEffect(() => {
     adminNotesCurrentRef.current = adminNotes;
@@ -19190,7 +19290,9 @@ export default function DepotStablingPage() {
                 </svg>
               ),
             },
-          ].map(({ key, label, code, to }) => {
+          ]
+            .filter(({ key }) => !PROTECTED_SHORTCUT_KEYS.has(key) || areProtectedShortcutsUnlocked)
+            .map(({ key, label, code, to }) => {
             const isActive = activeTab === key;
             const bottomShortcutClass = key === "odo" ? " mt-auto" : "";
             const navClass = isSidebarCollapsed
@@ -19239,8 +19341,124 @@ export default function DepotStablingPage() {
                 {!isSidebarCollapsed && <span>{label}</span>}
               </button>
             );
-          })}
+            })}
+
+          <button
+            type="button"
+            onClick={handleProtectedShortcutToggle}
+            aria-expanded={areProtectedShortcutsUnlocked}
+            aria-haspopup={areProtectedShortcutsUnlocked ? undefined : "dialog"}
+            title={areProtectedShortcutsUnlocked ? "Hide and lock protected pages" : "Show protected pages"}
+            className={`${areProtectedShortcutsUnlocked ? "" : "mt-auto"} flex w-full items-center py-2.5 text-xs font-semibold text-[#7eb8e0] transition hover:bg-[#0f2d4a] hover:text-white ${isSidebarCollapsed ? "justify-center rounded-lg px-1" : "justify-between rounded-lg border border-[#1a3a56] bg-[#071828]/60 px-3"}`}
+          >
+            {!isSidebarCollapsed && (
+              <span className="text-[10px] font-bold uppercase tracking-wide">
+                {areProtectedShortcutsUnlocked ? "Hide protected" : "Protected pages"}
+              </span>
+            )}
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              {areProtectedShortcutsUnlocked
+                ? <path d="M18 15l-6-6-6 6" />
+                : <path d="M6 9l6 6 6-6" />}
+            </svg>
+          </button>
         </aside>
+
+        {isProtectedShortcutLoginOpen && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#020b14]/80 px-4 backdrop-blur-sm"
+            role="presentation"
+            onMouseDown={closeProtectedShortcutLogin}
+          >
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="protected-shortcut-login-title"
+              className="w-full max-w-sm overflow-hidden rounded-2xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_24px_80px_rgba(0,0,0,0.65)]"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-start justify-between border-b border-[#1a3a56] px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#2b4f6b] bg-[#0c2e4a] text-[#8bd5ff]">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="4" y="10" width="16" height="11" rx="2" />
+                      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                    </svg>
+                  </span>
+                  <div>
+                    <h2 id="protected-shortcut-login-title" className="text-sm font-black text-white">Protected pages</h2>
+                    <p className="mt-0.5 text-[10px] text-[#7eb8e0]">Enter the admin details to show ODO, ALM, OVT and ADM.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeProtectedShortcutLogin}
+                  aria-label="Close protected pages login"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-[#7eb8e0] transition hover:bg-[#0f2d4a] hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleProtectedShortcutLogin} className="space-y-4 px-5 py-5">
+                <label className="block">
+                  <span className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-[#7eb8e0]">Admin ID</span>
+                  <input
+                    type="text"
+                    value={protectedShortcutCredentials.id}
+                    onChange={(event) => {
+                      setProtectedShortcutCredentials((current) => ({ ...current, id: event.target.value }));
+                      if (protectedShortcutError) setProtectedShortcutError("");
+                    }}
+                    autoComplete="username"
+                    autoFocus
+                    required
+                    className="w-full rounded-xl border border-[#2b4f6b] bg-[#041523] px-3.5 py-2.5 text-sm text-white outline-none transition placeholder:text-[#486b84] focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/20"
+                    placeholder="Admin ID"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-[#7eb8e0]">Password</span>
+                  <input
+                    type="password"
+                    value={protectedShortcutCredentials.password}
+                    onChange={(event) => {
+                      setProtectedShortcutCredentials((current) => ({ ...current, password: event.target.value }));
+                      if (protectedShortcutError) setProtectedShortcutError("");
+                    }}
+                    autoComplete="current-password"
+                    required
+                    className="w-full rounded-xl border border-[#2b4f6b] bg-[#041523] px-3.5 py-2.5 text-sm text-white outline-none transition placeholder:text-[#486b84] focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/20"
+                    placeholder="Password"
+                  />
+                </label>
+
+                {protectedShortcutError && (
+                  <p role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300">
+                    {protectedShortcutError}
+                  </p>
+                )}
+
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={closeProtectedShortcutLogin}
+                    className="rounded-lg border border-[#2b4f6b] px-4 py-2 text-xs font-bold text-[#9bc7e4] transition hover:bg-[#0f2d4a] hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded-lg border border-[#4f8ef7] bg-[#1d4f8f] px-4 py-2 text-xs font-black text-white shadow-[0_0_18px_rgba(79,142,247,0.18)] transition hover:bg-[#2863ad] active:scale-95"
+                  >
+                    Unlock pages
+                  </button>
+                </div>
+              </form>
+            </section>
+          </div>
+        )}
 
         {/* Main Content */}
         <main ref={mainContentScrollRef} className="flex-1 min-w-0 overflow-auto">
