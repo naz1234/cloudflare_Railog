@@ -102,12 +102,12 @@ async function listRawRecords() {
   return sortNewest(records);
 }
 
-export async function loadSavedNightShiftRoster() {
+export async function loadSavedNightShiftRosters() {
   const records = await listRawRecords();
-  return records.length ? hydrateRecord(records[0]) : null;
+  return records.map(hydrateRecord);
 }
 
-export async function saveNightShiftRoster({ file, parsed }) {
+export async function saveNightShiftRoster({ file, parsed, recordId = "" }) {
   if (!file || typeof file.arrayBuffer !== "function") {
     throw new Error("The original PDF is unavailable for cloud storage.");
   }
@@ -116,8 +116,6 @@ export async function saveNightShiftRoster({ file, parsed }) {
   }
 
   const entity = requireRosterEntity();
-  const records = await listRawRecords();
-  const existing = records[0] || null;
   const now = new Date().toISOString();
   const payload = {
     recordKey: RECORD_KEY,
@@ -131,20 +129,16 @@ export async function saveNightShiftRoster({ file, parsed }) {
     updatedAt: now,
   };
 
-  const saved = existing?.id
-    ? await entity.update(existing.id, payload)
+  const saved = recordId
+    ? await entity.update(recordId, payload)
     : await entity.create(payload);
 
   return hydrateRecord(saved);
 }
 
-export async function deleteSavedNightShiftRoster() {
+export async function deleteSavedNightShiftRoster(recordId) {
+  if (!recordId) return { deleted: 0 };
   const entity = requireRosterEntity();
-  const records = await listRawRecords();
-
-  for (const record of records) {
-    if (record?.id) await entity.delete(record.id);
-  }
-
-  return { deleted: records.length };
+  await entity.delete(recordId);
+  return { deleted: 1 };
 }
