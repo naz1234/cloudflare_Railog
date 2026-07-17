@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { Banknote, Calculator, CalendarDays, Check, Clock3, Download, FilePlus2, ListChecks, Loader2, MessageSquareText, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
+import NightShiftPdfDetector from "@/components/NightShiftPdfDetector";
 
 const OVERTIME_STORAGE_KEY = "ovtOvertimeRecords_v1";
 const OVERTIME_NOTE_STORAGE_KEY = "ovtMonthlyNotes_v1";
@@ -2050,6 +2051,12 @@ export default function OvertimeTracker() {
           )}
         </div>
       </section>
+
+      <NightShiftPdfDetector
+        selectedYear={selectedYear}
+        selectedMonth={selectedMonth}
+        className="lg:col-span-2"
+      />
     </div>
   );
 }
