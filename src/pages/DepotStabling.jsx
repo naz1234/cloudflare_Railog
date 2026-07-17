@@ -12512,7 +12512,7 @@ function TrainMovementContent() {
         }}
       >
         <div className="mb-1 flex items-center justify-between gap-1.5">
-          <span className={`movement-flow-step-label ${step.complete ? "movement-flow-step-label-complete" : "movement-flow-step-label-next"} inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.07em]`} style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: "#ffffff", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
+          <span className={`movement-flow-step-label ${step.complete ? "movement-flow-step-label-complete" : "movement-flow-step-label-next"} inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.07em]`} style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: "#ffffff", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
             <span className="movement-flow-step-number flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal text-white" style={{ borderColor: step.complete ? `${accent}80` : "#31516b", color: "#ffffff" }}>{index + 1}</span>
             <span className="truncate text-white">{step.label}</span>
           </span>
