@@ -1759,6 +1759,8 @@ const ADM_SESSION_KEY = "admAdminUnlocked_v1";
 const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
 const OVT_SESSION_KEY = "ovtOvertimeUnlocked_v1";
 const ODO_SESSION_KEY = "odoReadingUnlocked_v1";
+const PROTECTED_SHORTCUTS_SESSION_KEY = "protectedShortcutsUnlocked_v1";
+const PROTECTED_SHORTCUT_KEYS = new Set(["odo", "alarm", "overtime", "admin"]);
 const ADM_LOGIN_ID = "admin";
 const ADM_LOGIN_PASSWORD = "921016";
 const ADMIN_NOTES_STORAGE_KEY = "admModernNotes_v1";
@@ -12296,1222 +12298,9 @@ function TrainMovementContent() {
         label: "PST Performed",
         visible: automaticTrainPrepReady,
         complete: automaticPstReady,
-        render: () => renderTp1TimeInput("pstPerformedTime"),
-      },
-      {
-        key: "completedByDc",
-        label: "Completed By DC",
-        visible: automaticPstReady,
-        complete: automaticCompletedDcReady,
-        render: () => (
-          <input
-            type="text"
-            value={modeForm.completedByDc || ""}
-            onFocus={() => focusFlowInput(getTp1FlowInputKey("completedByDc", movementType))}
-            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-            onChange={(e) => {
-              updateTp1ModeForm(movementType, "completedByDc", e.target.value);
-              scheduleFlowInputSettled(getTp1FlowInputKey("completedByDc", movementType));
-            }}
-            onBlur={() => blurFlowInput(getTp1FlowInputKey("completedByDc", movementType))}
-            placeholder="DC name"
-            className={inputClass}
-          />
-        ),
-      },
-      {
-        key: "cmmsNumber",
-        label: "CMMS Number :",
-        visible: automaticCompletedDcReady,
-        complete: automaticCmmsReady,
-        render: () => (
-          <input
-            type="text"
-            value={modeForm.cmmsNumber || ""}
-            onFocus={() => focusFlowInput(getTp1FlowInputKey("cmmsNumber", movementType))}
-            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-            onChange={(e) => {
-              updateTp1ModeForm(movementType, "cmmsNumber", e.target.value.replace(/[^0-9A-Za-z/-]/g, ""));
-              scheduleFlowInputSettled(getTp1FlowInputKey("cmmsNumber", movementType));
-            }}
-            onBlur={() => blurFlowInput(getTp1FlowInputKey("cmmsNumber", movementType))}
-            placeholder="4969"
-            className={inputClass}
-          />
-        ),
-      },
-      {
-        key: "nextWashText",
-        label: "Next Wash Optional",
-        visible: automaticCmmsReady,
-        complete: Boolean(String(modeForm.nextWashText || "").trim()),
-        render: () => (
-          <input
-            type="text"
-            maxLength={19}
-            value={modeForm.nextWashText || ""}
-            onFocus={() => focusFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
-            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-            onChange={(e) => {
-              updateTp1ModeForm(movementType, "nextWashText", e.target.value);
-              scheduleFlowInputSettled(getTp1FlowInputKey("nextWashText", movementType));
-            }}
-            onBlur={() => blurFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
-            placeholder="28-05-2026 12:23:00"
-            className={inputClass}
-          />
-        ),
-      },
-    ];
-
-    const manualTrainSetReady = Boolean(normalizeMovementTrain(modeForm.trainSet)) && isTp1FlowFieldSettled("trainSet");
-    const manualPlanReady = manualTrainSetReady && Boolean(modeForm.planStatus);
-    const manualTrAtTp1Ready = manualPlanReady && isTp1TimeReadyForMode("trAtTp1");
-    const manualShunterReady = manualTrAtTp1Ready && Boolean(modeForm.shunterName);
-    const manualFromTp1Ready = manualShunterReady && isTp1TimeReadyForMode("fromTp1");
-    const manualToManualReady = manualFromTp1Ready && isTp1TimeReadyForMode("toManual");
-    const manualCmmsReady = manualToManualReady && Boolean(String(modeForm.cmmsNumber || "").trim()) && isTp1FlowFieldSettled("cmmsNumber");
-
-    const manualFlowSteps = [
-      {
-        key: "trainSet",
-        label: "Train Set going to workshop",
-        visible: true,
-        complete: manualTrainSetReady,
-        render: () => (
-          <div className={glowInputBoxClass}>
-            <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
-            <input
-              value={modeForm.trainSet || ""}
-              onFocus={() => focusFlowInput(getTp1FlowInputKey("trainSet", movementType))}
-              onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-              onChange={(e) => {
-                updateTp1ModeForm(movementType, "trainSet", e.target.value.replace(/\D/g, ""));
-                scheduleFlowInputSettled(getTp1FlowInputKey("trainSet", movementType));
-              }}
-              onBlur={() => blurFlowInput(getTp1FlowInputKey("trainSet", movementType))}
-              placeholder="19"
-              className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
-            />
-          </div>
-        ),
-      },
-      {
-        key: "planStatus",
-        label: "Plan / Unplanned",
-        visible: manualTrainSetReady,
-        complete: manualPlanReady,
-        render: () => (
-          <select
-            value={modeForm.planStatus || "Planned"}
-            onChange={(e) => updateTp1ModeForm(movementType, "planStatus", e.target.value)}
-            className={inputClass}
-          >
-            <option value="Planned">Planned</option>
-            <option value="Unplanned">Unplanned</option>
-          </select>
-        ),
-      },
-      {
-        key: "trAtTp1",
-        label: "TR at TP1",
-        visible: manualPlanReady,
-        complete: manualTrAtTp1Ready,
-        render: () => renderTp1TimeInput("trAtTp1"),
-      },
-      {
-        key: "shunterName",
-        label: "Shunter Name",
-        visible: manualTrAtTp1Ready,
-        complete: manualShunterReady,
-        render: () => (
-          <select
-            value={modeForm.shunterName || ""}
-            onChange={(e) => updateTp1ModeForm(movementType, "shunterName", e.target.value)}
-            className={inputClass}
-          >
-            <option value="">Select Shunter</option>
-            {SHUNTER_NAME_OPTIONS.map((name) => (
-              <option key={name} value={name}>{name}</option>
-            ))}
-          </select>
-        ),
-      },
-      {
-        key: "fromTp1",
-        label: "Time start moving from TP1",
-        visible: manualShunterReady,
-        complete: manualFromTp1Ready,
-        render: () => renderTp1TimeInput("fromTp1"),
-      },
-      {
-        key: "toManual",
-        label: "Time arrival to Manual Area",
-        visible: manualFromTp1Ready,
-        complete: manualToManualReady,
-        render: () => renderTp1TimeInput("toManual"),
-      },
-      {
-        key: "cmmsNumber",
-        label: "CMMS Number :",
-        visible: manualToManualReady,
-        complete: manualCmmsReady,
-        render: () => (
-          <input
-            type="text"
-            value={modeForm.cmmsNumber || ""}
-            onFocus={() => focusFlowInput(getTp1FlowInputKey("cmmsNumber", movementType))}
-            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-            onChange={(e) => {
-              updateTp1ModeForm(movementType, "cmmsNumber", e.target.value.replace(/[^0-9A-Za-z/-]/g, ""));
-              scheduleFlowInputSettled(getTp1FlowInputKey("cmmsNumber", movementType));
-            }}
-            onBlur={() => blurFlowInput(getTp1FlowInputKey("cmmsNumber", movementType))}
-            placeholder="4969"
-            className={inputClass}
-          />
-        ),
-      },
-      {
-        key: "nextWashText",
-        label: "Next Wash Optional",
-        visible: manualCmmsReady,
-        complete: Boolean(String(modeForm.nextWashText || "").trim()),
-        render: () => (
-          <input
-            type="text"
-            maxLength={19}
-            value={modeForm.nextWashText || ""}
-            onFocus={() => focusFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
-            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-            onChange={(e) => {
-              updateTp1ModeForm(movementType, "nextWashText", e.target.value);
-              scheduleFlowInputSettled(getTp1FlowInputKey("nextWashText", movementType));
-            }}
-            onBlur={() => blurFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
-            placeholder="28-05-2026 12:23:00"
-            className={inputClass}
-          />
-        ),
-      },
-    ];
-
-    const visibleFlowSteps = (isAutomatic ? automaticFlowSteps : manualFlowSteps).filter((step) => step.visible);
-    const tp1RequiredReady = isAutomatic ? automaticCmmsReady : manualCmmsReady;
-    const tp1ClearTarget = movementType;
-    const isTp1ConfirmingClear = tp1ConfirmClearTarget === tp1ClearTarget;
-    const tp1LogPillButtonClass = "flex min-w-[78px] items-center justify-center gap-1 rounded-full border px-3 py-1 text-[10px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.02] hover:text-white";
-
-    const renderTp1FlowStepCard = (step, index) => (
-      <div
-        key={step.key}
-        className={`theme-tp1-flow-step ${step.complete ? "is-complete" : "is-next"} rounded-xl border p-2 transition-all`}
-        style={{
-          borderColor: step.complete ? `${accent}70` : "#1e4060",
-          background: step.complete ? `linear-gradient(135deg, ${accent}14, #061827 82%)` : "#061827",
-          boxShadow: step.complete ? `0 0 10px ${accent}12, inset 0 1px 0 rgba(255,255,255,0.05)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
-        }}
-      >
-        <div className="mb-1 flex items-center justify-between gap-1.5">
-          <span className={`movement-flow-step-label ${step.complete ? "movement-flow-step-label-complete" : "movement-flow-step-label-next"} inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.07em]`} style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: "#ffffff", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
-            <span className="movement-flow-step-number flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal text-white" style={{ borderColor: step.complete ? `${accent}80` : "#31516b", color: "#ffffff" }}>{index + 1}</span>
-            <span className="truncate text-white">{step.label}</span>
-          </span>
-          <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>{step.complete ? "DONE" : "NEXT"}</span>
-        </div>
-        {step.render()}
-      </div>
-    );
-
-    const renderTp1FlowRows = (items) => (
-      <div className="grid gap-y-2">
-        {items.reduce((rows, _step, index) => {
-          if (index % 2 === 0) rows.push(items.slice(index, index + 2));
-          return rows;
-        }, []).map((pair, pairIndex) => {
-          const leftToRight = pairIndex % 2 === 0;
-          const firstIndex = pairIndex * 2;
-          const secondIndex = firstIndex + 1;
-          const first = pair[0];
-          const second = pair[1];
-          const leftStep = leftToRight ? first : second;
-          const rightStep = leftToRight ? second : first;
-          const leftIndex = leftToRight ? firstIndex : secondIndex;
-          const rightIndex = leftToRight ? secondIndex : firstIndex;
-          const arrow = second ? (leftToRight ? "→" : "←") : "";
-
-          return (
-            <div key={`movement-flow-row-${movementType}-${pairIndex}`} className="grid grid-cols-[minmax(0,1fr)_24px_minmax(0,1fr)] items-center gap-x-1.5">
-              <div>{leftStep ? renderTp1FlowStepCard(leftStep, leftIndex) : null}</div>
-              <div className="flex items-center justify-center">
-                <span
-                  className="flex h-6 w-6 items-center justify-center rounded-full border text-[17px] font-black leading-none"
-                  style={{
-                    opacity: arrow ? 1 : 0,
-                    borderColor: `${accent}55`,
-                    backgroundColor: `${accent}10`,
-                    color: accent,
-                  }}
-                >
-                  {arrow || "→"}
-                </span>
-              </div>
-              <div>{rightStep ? renderTp1FlowStepCard(rightStep, rightIndex) : null}</div>
-            </div>
-          );
-        })}
-      </div>
-    );
-
-    return (
-      <section
-        className="theme-tp1-movement-window overflow-hidden rounded-xl border shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]"
-        data-movement-mode={movementType}
-        style={{
-          borderColor: `${accent}55`,
-          background: "linear-gradient(180deg,#071e33 0%,#061827 100%)",
-          boxShadow: `0 0 24px ${accent}16, inset 0 1px 0 rgba(255,255,255,0.05)`,
-        }}
-      >
-        <div className="theme-tp1-movement-header flex flex-wrap items-center justify-between gap-2.5 border-b px-4 py-3" style={{ borderColor: `${accent}35`, background: `linear-gradient(90deg, ${accent}1f, transparent)` }}>
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: `${accent}24`, color: accent, boxShadow: `0 0 14px ${accent}22` }}>
-              <MovementIcon type="train" color={accent} />
-            </div>
-            <div>
-              <h2 className="text-[16px] font-black leading-tight text-white">{modeTitle}</h2>
-              <p className="mt-0.5 text-[11px] font-medium" style={{ color: accent }}>{modeSubtitle}</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="rounded-md border px-2 py-1 text-[10px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}1c`, color: accent }}>
-              {modeEntries.length} entries
-            </span>
-            <button
-              type="button"
-              onClick={isAutomatic ? resetTp1AutomaticFlow : resetTp1ManualFlow}
-              className="inline-flex items-center rounded-md border px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] transition-all hover:scale-[1.03]"
-              style={{ borderColor: "rgba(248,113,113,0.75)", backgroundColor: "rgba(127,29,29,0.30)", color: "#fecaca" }}
-              title={isAutomatic ? "Reset Automatic Flow" : "Reset Manual Flow"}
-            >
-              Reset
-            </button>
-          </div>
-        </div>
-
-        <div className="theme-tp1-movement-body grid gap-3 p-4">
-          <div className="theme-tp1-movement-flow rounded-xl border border-[#1e4060] bg-[#031827] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-            <div className="mb-2 flex justify-end">
-              <span className="rounded-full border px-2 py-0.5 text-[9px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}16`, color: accent }}>
-                L ↔ R
-              </span>
-            </div>
-            {renderTp1FlowRows(visibleFlowSteps)}
-          </div>
-
-          <div className="theme-tp1-movement-preview rounded-xl border border-[#1e4060] bg-[#041727] p-3">
-            <div className="mb-2 flex flex-wrap items-center justify-start gap-1.5">
-              <p className="mr-0.5 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
-              <button
-                type="button"
-                onClick={() => copyTp1MovementPreview(movementType)}
-                className="inline-flex items-center gap-1 rounded-md border border-[#2f6084] bg-[#0a2236] px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-[#9fd3f6] transition-all hover:border-[#58a6ff] hover:text-white"
-              >
-                <MovementIcon type="copy" color="currentColor" />
-                {getCopyFeedbackLabel(`tp1-preview-${movementType}`, "Copy")}
-              </button>
-              <button
-                type="button"
-                onClick={() => addTp1MovementLog(movementType)}
-                disabled={!tp1RequiredReady}
-                className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-white transition-all enabled:hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-35"
-                style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
-                title={tp1RequiredReady ? `Add ${modeTitle} Log` : "Complete all required fields first"}
-              >
-                <span className="text-[11px] leading-none">+</span> Add to Log
-              </button>
-            </div>
-            <pre className="max-h-44 overflow-auto whitespace-pre-wrap font-mono text-[12px] font-medium leading-[1.35] text-[#c8d8ea]">{buildTp1MovementText({ preview: true, movementType })}</pre>
-          </div>
-
-          <section className="theme-tp1-movement-log overflow-hidden rounded-xl border border-[#1e4060] bg-[#03111d]">
-            <div className="theme-tp1-movement-log-header flex flex-wrap items-center justify-between gap-2 border-b border-[#12304a] px-3 py-2">
-              <div>
-                <h4 className="text-[12px] font-black uppercase tracking-wide text-white">{isAutomatic ? "Automatic Area Log" : "Manual Area Log"}</h4>
-                <p className="text-[10px] font-semibold text-[#8ea8c0]">{modeEntries.length} entries</p>
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => copyTp1MovementLogs(movementType)}
-                  className={tp1LogPillButtonClass}
-                  style={{ borderColor: `${accent}70`, color: "#ffffff", background: `linear-gradient(135deg, ${accent}3f, rgba(6,24,39,0.94))` }}
-                >
-                  <MovementIcon type="copy" color="currentColor" />{getCopyFeedbackLabel(`tp1-all-${movementType}`, "Copy All")}
-                </button>
-                {isAutomatic && (
-                  <button
-                    type="button"
-                    onClick={handleDownloadTp1AutomaticExcel}
-                    className={tp1LogPillButtonClass}
-                    style={{ borderColor: "rgba(74,222,128,0.86)", color: "#ffffff", background: "linear-gradient(135deg, rgba(34,197,94,0.42), rgba(6,24,39,0.94))", boxShadow: "0 0 14px rgba(34,197,94,0.35), inset 0 1px 0 rgba(255,255,255,0.08)" }}
-                    title="Download Automatic Area PST / Train Prep Excel"
-                  >
-                    <MovementIcon type="download" color="currentColor" />Excel
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => clearTp1MovementLogs(movementType)}
-                  className={tp1LogPillButtonClass}
-                  style={{ borderColor: isTp1ConfirmingClear ? "rgba(248,113,113,0.95)" : `${accent}70`, color: "#ffffff", background: isTp1ConfirmingClear ? "linear-gradient(135deg, rgba(220,38,38,0.86), rgba(127,29,29,0.92))" : `linear-gradient(135deg, ${accent}3f, rgba(6,24,39,0.94))` }}
-                >
-                  <MovementIcon type="trash" color="currentColor" />{isTp1ConfirmingClear ? "Confirm Clear" : "Clear"}
-                </button>
-              </div>
-            </div>
-
-            <div className="theme-tp1-movement-log-body min-h-[120px]">
-              {modeEntries.length === 0 ? (
-                <div className="flex min-h-[120px] items-center justify-center px-3 text-center text-[11px] font-semibold text-[#7eb8e0]">
-                  No {isAutomatic ? "automatic area" : "manual area"} movement log yet.
-                </div>
-              ) : (
-                modeEntries.map((entry) => (
-                  <div key={entry.id} className="theme-tp1-movement-log-entry group flex items-start gap-2 border-b border-[#12304a]/55 px-3 py-2 last:border-b-0">
-                    <pre className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono text-[12px] font-semibold leading-[1.32] tracking-[-0.01em] text-[#f4f8ff]">{sortTp1MovementTextLinesByTime(entry.text)}</pre>
-                    <button
-                      type="button"
-                      onClick={() => removeTp1MovementLog(entry.id)}
-                      title="Delete this log"
-                      aria-label="Delete this log"
-                      className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-transparent text-red-400 opacity-80 transition-all hover:border-red-500/60 hover:bg-red-950/35 hover:text-red-300 group-hover:opacity-100"
-                    >
-                      <MovementIcon type="trash" color="currentColor" />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-        </div>
-      </section>
-    );
-  };
-
-
-  return (
-    <div className="theme-train-movement-page grid w-full gap-3 xl:grid-cols-2">
-      {renderTp1MovementWindow("automatic")}
-      {renderTp1MovementWindow("manual")}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-
-function buildPSTExportLinesFromVisibleState({
-  westData = {},
-  eastData = {},
-  pstState = {},
-  prepState = {},
-  logLines = [],
-} = {}) {
-  // Excel export must follow the visible PST / Train Prep table, not only the saved logLines.
-  // This prevents a refreshed or synced screen from exporting an incomplete Excel file.
-  const existingPstByKey = new Map(
-    (Array.isArray(logLines) ? logLines : [])
-      .filter((entry) => entry?.type === "PST" && entry?.key)
-      .map((entry) => [entry.key, entry])
-  );
-  const existingPrepByKey = new Map(
-    (Array.isArray(logLines) ? logLines : [])
-      .filter((entry) => entry?.type === "Prep" && entry?.key)
-      .map((entry) => [entry.key, entry])
-  );
-
-  const exportLines = [];
-
-  const collectDepot = (depot, roads, data) => {
-    roads.forEach((road) => {
-      const blocks = Array.isArray(data?.[road]) ? data[road] : [];
-
-      blocks.forEach((block, bi) => {
-        const cellKey = `${road}-${bi}`;
-        const trainKey = padTrainId(normalizeTrainId(block?.trainId || ""));
-        if (!trainKey) return;
-
-        const depotLabel = depot === "west" ? "WD" : "ED";
-        const roadFormatted = road.replace(/^(WD|ED)-/, `${depotLabel}\u2013`);
-
-        const pst = pstState?.[cellKey];
-        const pstMatchesTrain = !pst?.trainKey || padTrainId(normalizeTrainId(pst.trainKey)) === trainKey;
-        // Export PST to Excel as soon as the user first clicks PST (confirming) so completion time is available immediately.
-        // Second click only changes the on-screen status to ✓ PST and remains a reference/confirmation step.
-        if ((pst?.done || pst?.confirming) && pstMatchesTrain) {
-          const logKey = `pst-${cellKey}`;
-          const oldEntry = existingPstByKey.get(logKey);
-          const oldTrainKey = padTrainId(normalizeTrainId(oldEntry?.trainKey || ""));
-          const sameTrain = oldTrainKey === trainKey;
-
-          const startTime = pst.startTime || (sameTrain ? oldEntry?.startTime : "") || "";
-          const endTime = pst.endTime || (sameTrain ? oldEntry?.endTime : "") || "";
-          const alarmStatus = pst.alarmStatus || (sameTrain ? oldEntry?.alarmStatus : "") || "no_alarm";
-          const alarmText = alarmStatus === "alarm" ? " Alarm reported." : " No alarm reported.";
-          const generatedText = `${startTime} hrs \u2013 PST commenced at ${roadFormatted} for ${trainKey}. Completed at ${endTime} hrs.${alarmText}`;
-
-          exportLines.push({
-            ...(sameTrain ? oldEntry : {}),
-            key: logKey,
-            text: sameTrain && oldEntry?.text ? oldEntry.text : generatedText,
-            type: "PST",
-            depot,
-            road,
-            trainKey,
-            startTime,
-            endTime,
-            alarmStatus,
-          });
-        }
-
-        const prep = prepState?.[cellKey];
-        const prepMatchesTrain = !prep?.trainKey || padTrainId(normalizeTrainId(prep.trainKey)) === trainKey;
-        if (prep?.done && prepMatchesTrain) {
-          const logKey = `prep-${cellKey}`;
-          const oldEntry = existingPrepByKey.get(logKey);
-          const oldTrainKey = padTrainId(normalizeTrainId(oldEntry?.trainKey || ""));
-          const sameTrain = oldTrainKey === trainKey;
-
-          const endTime = prep.endTime || prep.time || (sameTrain ? (oldEntry?.endTime || oldEntry?.time || oldEntry?.startTime) : "") || "";
-          const taName = (prep.taName || (sameTrain ? oldEntry?.taName : "") || "").toString().trim();
-          const formattedTaName = formatTACompletedBy(taName);
-          const taStr = formattedTaName ? ` Performed by ${formattedTaName}` : "";
-          const generatedText = `${endTime} hrs \u2013  ${trainKey} Train preparation completed at ${roadFormatted}.${taStr}`;
-
-          exportLines.push({
-            ...(sameTrain ? oldEntry : {}),
-            key: logKey,
-            text: generatedText,
-            type: "Prep",
-            depot,
-            road,
-            trainKey,
-            startTime: "",
-            time: endTime,
-            endTime,
-            taName,
-          });
-        }
-      });
-    });
-  };
-
-  collectDepot("west", WEST_ROADS, westData);
-  collectDepot("east", EAST_ROADS, eastData);
-
-  return sortPSTLogLinesByTime(exportLines);
-}
-
-
-function PSTTabContent
-({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug, westPg = "pg1", eastPg = "pg1", onPSTPgChange, onRefreshPSTPg2, onClearPSTPg2Trains, westPSTStablingEditable = false, eastPSTStablingEditable = false, onEditablePSTTrainIdChange }) {
-  const [downloadingExcelDepot, setDownloadingExcelDepot] = useState("");
-  const safeCompletedByNames = completedByNames || { west: "", east: "" };
-  const sortedLogLines = sortPSTLogLinesByTime(logLines);
-  const exportLogLines = buildPSTExportLinesFromVisibleState({
-    westData,
-    eastData,
-    pstState,
-    prepState,
-    logLines: sortedLogLines,
-  });
-
-  const handleCompletedByChange = (depot, value) => {
-    onCompletedByChange?.(depot, value);
-  };
-
-  const handleDownloadExcel = (depot) => {
-    if (downloadingExcelDepot) return;
-
-    const isCombinedDepot = depot === "combined" || depot === "all" || depot === "";
-    const normalizedDepot = depot === "west" || depot === "east" ? depot : "";
-    const downloadKey = isCombinedDepot ? "combined" : normalizedDepot;
-    const depotLabel = isCombinedDepot ? "Combined West + East Depot" : normalizedDepot === "west" ? "West Depot" : "East Depot";
-    const completedEntries = (exportLogLines || [])
-      .filter((entry) => {
-        if (!isPSTLogEntry(entry) && !isTrainPrepLogEntry(entry)) return false;
-        return isCombinedDepot || getPSTDepotFromEntry(entry) === normalizedDepot;
-      });
-    const pstEntries = completedEntries.filter(isPSTLogEntry);
-
-    if (completedEntries.length === 0) {
-      alert(`No completed PST or Train Prep log to export for ${depotLabel} yet.`);
-      return;
-    }
-
-    const completedBy = normalizeCompletedByNames(safeCompletedByNames);
-    const hasWestPST = pstEntries.some((entry) => getPSTDepotFromEntry(entry) === "west");
-    const hasEastPST = pstEntries.some((entry) => getPSTDepotFromEntry(entry) === "east");
-
-    if (!isCombinedDepot && pstEntries.length > 0 && !completedBy[normalizedDepot]) {
-      alert(`Please enter ${depotLabel} completed by name before downloading the Excel file.`);
-      return;
-    }
-
-    if (isCombinedDepot && hasWestPST && !completedBy.west) {
-      alert("Please enter West Depot completed by name before downloading the combined Excel file.");
-      return;
-    }
-
-    if (isCombinedDepot && hasEastPST && !completedBy.east) {
-      alert("Please enter East Depot completed by name before downloading the combined Excel file.");
-      return;
-    }
-
-    try { localStorage.setItem("pstExcelCompletedByNames", JSON.stringify(completedBy)); } catch {}
-    setDownloadingExcelDepot(downloadKey);
-
-    try {
-      downloadPSTExcelExport(exportLogLines, completedBy, normalizedDepot);
-    } catch (error) {
-      console.error("PST Excel export failed:", error);
-      alert("Unable to create Excel export. Please try again.");
-    } finally {
-      setDownloadingExcelDepot("");
-    }
-  };
-
-
-  const liveStatusText = pstLiveStatusText || "PST Local only";
-  const liveStatusTitle = /local/i.test(liveStatusText)
-    ? "PST LOCAL"
-    : /issue/i.test(liveStatusText)
-    ? "PST SYNC"
-    : "PST LIVE";
-  const liveStatusSubtext =
-    liveStatusText
-      .replace(/^PST\s+Live\s*/i, "")
-      .replace(/^PST\s*/i, "")
-      .replace(/^synced/i, "Synced")
-      .replace(/^syncing/i, "Syncing")
-      .replace(/^ready/i, "Ready")
-      .replace(/^local/i, "Local")
-      .replace(/^sync issue/i, "Sync issue")
-      .trim() || liveStatusText;
-  const isLiveHealthy = !/local|issue/i.test(liveStatusText);
-  const liveAccent = isLiveHealthy ? "#22c55e" : "#f59e0b";
-
-  return (
-    <div className="flex flex-col lg:flex-row gap-5 w-fit items-start">
-      <div className="flex flex-col gap-5 min-w-0 shrink-0">
-        <div className="space-y-5 min-w-0">
-          <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" activePg={westPg} onPgChange={(pg) => onPSTPgChange?.("west", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("west")} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearPg2Trains={westPSTStablingEditable ? () => onClearPSTPg2Trains?.("west") : null} stablingEditable={westPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} />
-          <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" activePg={eastPg} onPgChange={(pg) => onPSTPgChange?.("east", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("east")} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearPg2Trains={eastPSTStablingEditable ? () => onClearPSTPg2Trains?.("east") : null} stablingEditable={eastPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} />
-        </div>
-
-      <div className="w-full max-w-[960px]">
-        <div
-          data-pst-live-status-class={pstLiveStatusClass || ""}
-          className="theme-pst-live-panel mb-3 flex flex-col gap-4 rounded-2xl border px-5 py-4 lg:flex-row lg:items-center lg:justify-between"
-          style={{
-            background: "linear-gradient(135deg, rgba(7,24,40,0.98) 0%, rgba(8,38,61,0.94) 48%, rgba(6,18,31,0.98) 100%)",
-            borderColor: "rgba(79,142,247,0.28)",
-            boxShadow: "0 18px 34px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.06)",
-          }}
-        >
-          <div className="flex min-w-[170px] items-center gap-3 lg:border-r lg:border-[#2b4f6b]/70 lg:pr-5">
-            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ background: `${liveAccent}22` }}>
-              <span className="absolute inline-flex h-10 w-10 rounded-full opacity-35 animate-ping" style={{ backgroundColor: liveAccent }} />
-              <span
-                className="relative h-5 w-5 rounded-full border"
-                style={{
-                  backgroundColor: liveAccent,
-                  borderColor: `${liveAccent}aa`,
-                  boxShadow: `0 0 18px ${liveAccent}aa`,
-                }}
-              />
-            </div>
-            <div className="min-w-0">
-              <div className="whitespace-nowrap text-[15px] font-medium uppercase leading-none tracking-wide" style={{ color: liveAccent }}>
-                {liveStatusTitle}
-              </div>
-              <div className="mt-1 whitespace-nowrap text-[12px] font-normal text-slate-300">
-                {liveStatusSubtext}
-              </div>
-              {pstLiveDebug && (
-                <div className="mt-1 max-w-[260px] text-[10px] font-semibold leading-tight text-amber-300/85">
-                  {pstLiveDebug}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:justify-center">
-            <div className="flex shrink-0 items-center gap-2 whitespace-nowrap lg:pr-3">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7da9ff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-              <span className="whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.16em] text-blue-200">
-                Completed By
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <label className="flex flex-col gap-1">
-                <span className="text-[11px] font-medium tracking-wide text-[#58a6ff]">West Depot</span>
-                <input
-                  type="text"
-                  value={safeCompletedByNames.west}
-                  onChange={(e) => handleCompletedByChange("west", e.target.value)}
-                  placeholder="West name"
-                  className="h-9 w-full rounded-xl border px-3 text-[12px] font-normal outline-none transition-all sm:w-40"
-                  style={{
-                    background: "linear-gradient(180deg,#071d31,#061827)",
-                    borderColor: "rgba(88,166,255,0.42)",
-                    color: "#e2eaf4",
-                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
-                  }}
-                />
-              </label>
-
-              <label className="flex flex-col gap-1">
-                <span className="text-[11px] font-medium tracking-wide text-purple-300">East Depot</span>
-                <input
-                  type="text"
-                  value={safeCompletedByNames.east}
-                  onChange={(e) => handleCompletedByChange("east", e.target.value)}
-                  placeholder="East name"
-                  className="h-10 w-full rounded-xl border px-3 text-[13px] font-bold outline-none transition-all sm:w-40"
-                  style={{
-                    background: "linear-gradient(180deg,#071d31,#061827)",
-                    borderColor: "rgba(192,132,252,0.48)",
-                    color: "#e2eaf4",
-                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
-                  }}
-                />
-              </label>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2 lg:border-l lg:border-[#2b4f6b]/70 lg:pl-6">
-            <button
-              onClick={() => handleDownloadExcel("west")}
-              disabled={Boolean(downloadingExcelDepot)}
-              className="removal-summary-tooltip-trigger relative z-50 overflow-visible theme-pst-excel-button theme-pst-excel-west flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
-              style={{
-                background: "linear-gradient(135deg, rgba(37,99,235,0.18), rgba(30,64,175,0.22))",
-                borderColor: "rgba(88,166,255,0.62)",
-                color: "#bfdbfe",
-                boxShadow: "0 0 18px rgba(59,130,246,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
-              }}
-              aria-label="Download WD PST and Train Prep Excel report to paste into the official ELOG"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              {downloadingExcelDepot === "west" ? "Preparing..." : "West Excel"}
-              <RemovalSummaryTooltip
-                message="Download WD PST and Train Prep Excel report to paste into the official ELOG"
-                placement="top"
-              />
-            </button>
-
-            <button
-              onClick={() => handleDownloadExcel("east")}
-              disabled={Boolean(downloadingExcelDepot)}
-              className="removal-summary-tooltip-trigger relative z-50 overflow-visible theme-pst-excel-button theme-pst-excel-east flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
-              style={{
-                background: "linear-gradient(135deg, rgba(147,51,234,0.18), rgba(88,28,135,0.22))",
-                borderColor: "rgba(192,132,252,0.62)",
-                color: "#e9d5ff",
-                boxShadow: "0 0 18px rgba(168,85,247,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
-              }}
-              aria-label="Download ED PST and Train Prep Excel report to paste into the official ELOG"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              {downloadingExcelDepot === "east" ? "Preparing..." : "East Excel"}
-              <RemovalSummaryTooltip
-                message="Download ED PST and Train Prep Excel report to paste into the official ELOG"
-                placement="top"
-              />
-            </button>
-
-
-            <button
-              onClick={() => handleDownloadExcel("combined")}
-              disabled={Boolean(downloadingExcelDepot)}
-              className="removal-summary-tooltip-trigger relative z-50 overflow-visible theme-pst-excel-button theme-pst-excel-combined flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
-              style={{
-                background: "linear-gradient(135deg, rgba(20,184,166,0.18), rgba(14,116,144,0.22))",
-                borderColor: "rgba(94,234,212,0.58)",
-                color: "#ccfbf1",
-                boxShadow: "0 0 18px rgba(20,184,166,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
-              }}
-              aria-label="Download combined WD and ED PST and Train Prep Excel report to paste into the official ELOG"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              {downloadingExcelDepot === "combined" ? "Preparing..." : "Combined Excel"}
-              <RemovalSummaryTooltip
-                message="Download combined WD and ED PST and Train Prep Excel report to paste into the official ELOG"
-                placement="top"
-              />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-      <div className="pst-train-prep-log-font-bump w-full max-w-[900px] overflow-visible lg:w-[900px] lg:max-w-[900px] lg:shrink-0 lg:self-start lg:sticky lg:top-4">
-        <style>{`
-        /* PST / Train Prep Log output: auto-height, wider width, compact header */
-        .pst-train-prep-log-font-bump {
-          height: auto !important;
-          min-height: 0;
-        }
-
-        .pst-train-prep-log-font-bump .pst-log-shell {
-          width: 100%;
-          height: auto !important;
-          min-height: 0;
-        }
-
-        .pst-train-prep-log-font-bump .pst-log-scroll {
-          min-height: 0;
-        }
-
-        .pst-train-prep-log-font-bump .pst-plain-main-title {
-          font-size: 14px !important;
-          line-height: 1.04 !important;
-        }
-
-        .pst-train-prep-log-font-bump .pst-plain-main-count {
-          font-size: 11px !important;
-        }
-
-        .pst-train-prep-log-font-bump .pst-plain-depot-title {
-          font-size: 13px !important;
-          line-height: 1.05 !important;
-        }
-
-        .pst-train-prep-log-font-bump .pst-plain-count {
-          font-size: 13px !important;
-        }
-
-        .pst-train-prep-log-font-bump .pst-plain-button {
-          font-size: 12px !important;
-        }
-
-        .pst-train-prep-log-font-bump .pst-plain-title {
-          font-size: 13px !important;
-          line-height: 1.1 !important;
-        }
-
-        .pst-train-prep-log-font-bump .pst-plain-summary,
-        .pst-train-prep-log-font-bump .pst-plain-train,
-        .pst-train-prep-log-font-bump .pst-plain-row-text,
-        .pst-train-prep-log-font-bump .pst-plain-empty {
-          font-size: 13px !important;
-          line-height: 1.45 !important;
-        }
-
-        .pst-train-prep-log-font-bump .pst-log-scroll::-webkit-scrollbar {
-          width: 8px;
-        }
-
-        .pst-train-prep-log-font-bump .pst-log-scroll::-webkit-scrollbar-track {
-          background: rgba(7,24,40,0.9);
-          border-radius: 999px;
-        }
-
-        .pst-train-prep-log-font-bump .pst-log-scroll::-webkit-scrollbar-thumb {
-          background: rgba(88,166,255,0.38);
-          border-radius: 999px;
-        }
-      `}</style>
-        <PSTLogOutput logLines={sortedLogLines} onRemove={onRemoveLog} onClearDepot={onClearDepotLog} />
-      </div>
-    </div>
-  );
-}
-
-// ── Possession tab content (uses DepotStabling shared header + sidebar) ──────
-function parsePossessionTimeTo24(raw) {
-  if (!raw) return "";
-  const clean = String(raw).trim();
-
-  const isValid = (hour, minute) => hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
-
-  const h24 = clean.match(/^(\d{1,2}):(\d{2})$/);
-  if (h24) {
-    const hour = Number(h24[1]);
-    const minute = Number(h24[2]);
-    if (!isValid(hour, minute)) return "";
-    return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-  }
-
-  // Backward compatibility for old saved data only. The input fields below no longer accept AM/PM text.
-  const h12 = clean.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-  if (h12) {
-    let hour = Number(h12[1]);
-    const minute = Number(h12[2]);
-    const period = h12[3].toUpperCase();
-    if (hour < 1 || hour > 12 || minute < 0 || minute > 59) return "";
-    if (period === "AM" && hour === 12) hour = 0;
-    if (period === "PM" && hour !== 12) hour += 12;
-    return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-  }
-
-  return "";
-}
-
-function fmtPossession24(raw) { const t = parsePossessionTimeTo24(raw); return t ? `${t} hrs` : ""; }
-function cleanPossessionAccessNo(raw) { return raw.replace(/,/g, ""); }
-
-function formatPossessionTimeInput(raw, previousValue = "") {
-  const value = String(raw || "").toUpperCase();
-
-  // If user backspaces the auto colon from 12:, keep 12 instead of immediately forcing 12: again.
-  if (previousValue?.endsWith(":") && value === previousValue.slice(0, -1)) return value;
-
-  const digits = value.replace(/[^0-9]/g, "").slice(0, 4);
-  if (digits.length <= 1) return digits;
-  if (digits.length === 2) return `${digits}:`;
-  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
-}
-
-// ── Dark-themed shared primitives ─────────────────────────────────────────────
-
-function PossessionCopyBtn({ text, disabled }) {
-  const [copied, setCopied] = useState(false);
-  const handle = () => {
-    if (disabled || !text) return;
-    navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <button onClick={handle} disabled={disabled || !text}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#1e3a56] bg-[#0a1e2e] text-[#7eb8e0] hover:bg-[#0f2d4a] hover:border-[#2b4f6b] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-      {copied ? <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-      {copied ? "Copied!" : "Copy Output"}
-    </button>
-  );
-}
-
-const POSSESSION_FIELD = ({ label, children }) => (
-  <div>
-    <label className="block text-[10px] font-semibold text-[#4a8ab5] tracking-widest uppercase mb-1">{label}</label>
-    {children}
-  </div>
-);
-
-const possessionInputCls = "w-full rounded-lg border border-[#1e3a56] bg-[#071828] px-3 py-2 text-xs text-[#c8d8ea] outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] transition-all placeholder:text-[#2b4f6b]";
-
-const POSSESSION_INPUT = ({ value, onChange, placeholder, className = "" }) => (
-  <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || ""}
-    className={`${possessionInputCls} ${className}`} />
-);
-
-const POSSESSION_SELECT = ({ value, onChange, children, className = "" }) => (
-  <select value={value} onChange={(e) => onChange(e.target.value)}
-    className={`${possessionInputCls} ${className}`}>
-    {children}
-  </select>
-);
-
-const POSSESSION_TIME_INPUT = ({ value, onChange, placeholder = "e.g. 04:17", className = "" }) => (
-  <input
-    value={value}
-    onChange={(e) => onChange(formatPossessionTimeInput(e.target.value, value))}
-    placeholder={placeholder}
-    inputMode="numeric"
-    maxLength={5}
-    autoComplete="off"
-    className={`${possessionInputCls} font-mono tracking-wide ${className}`}
-  />
-);
-
-const POSSESSION_TEXTAREA = ({ value, onChange, placeholder, rows = 2 }) => (
-  <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || ""} rows={rows}
-    className="w-full rounded-lg border border-[#1e3a56] bg-[#071828] px-3 py-2 text-xs text-[#c8d8ea] outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] transition-all placeholder:text-[#2b4f6b] resize-none" />
-);
-
-// ── Shared card/header styles ─────────────────────────────────────────────────
-const possessionCardCls = "bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shadow-md overflow-hidden";
-const possessionHeaderCls = "theme-possession-header border-b border-[#1a3a56] px-4 py-3 flex items-center justify-between";
-const possessionHeaderStyle = { background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" };
-
-const POSSESSION_LIVE_SYNC_INTERVAL_MS = 5000;
-const POSSESSION_LIVE_SAVE_DEBOUNCE_MS = 650;
-const POSSESSION_LIVE_LOCAL_EDIT_HOLD_MS = 12000;
-
-function getPossessionLiveEntity() {
-  return base44?.entities?.PossessionLive || null;
-}
-
-function isPossessionLiveEntityReady(entity = getPossessionLiveEntity()) {
-  return Boolean(entity && typeof entity.filter === "function" && typeof entity.create === "function" && typeof entity.update === "function");
-}
-
-function getPossessionRecordUpdatedMs(record = {}) {
-  const parsed = Date.parse(record?.updatedAt || record?.updated_date || record?.createdAt || record?.created_date || "");
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function pickLatestPossessionRecord(records = []) {
-  return [...(Array.isArray(records) ? records : [])].sort((a, b) => getPossessionRecordUpdatedMs(b) - getPossessionRecordUpdatedMs(a))[0] || null;
-}
-
-function usePossessionLiveState(stateKey, state, setState, normalizeState = (value) => value) {
-  const stateRef = useRef(state);
-  const normalizeRef = useRef(normalizeState);
-  const recordIdRef = useRef(null);
-  const loadedRef = useRef(false);
-  const lastSyncedJsonRef = useRef("");
-  const lastRemoteUpdatedRef = useRef(0);
-  const localEditUntilRef = useRef(0);
-  const saveTimerRef = useRef(null);
-
-  stateRef.current = state;
-  normalizeRef.current = normalizeState;
-
-  useEffect(() => {
-    let active = true;
-    let intervalId = null;
-    const entity = getPossessionLiveEntity();
-
-    const applyRecord = (record) => {
-      if (!active || !record) return;
-      const normalized = normalizeRef.current(record.data);
-      const serialized = JSON.stringify(normalized);
-      recordIdRef.current = record.id || recordIdRef.current;
-      lastSyncedJsonRef.current = serialized;
-      lastRemoteUpdatedRef.current = Math.max(lastRemoteUpdatedRef.current, getPossessionRecordUpdatedMs(record));
-      setState(normalized);
-    };
-
-    const fetchRemote = async (initial = false) => {
-      if (!isPossessionLiveEntityReady(entity)) {
-        loadedRef.current = true;
-        if (!lastSyncedJsonRef.current) lastSyncedJsonRef.current = JSON.stringify(stateRef.current);
-        return;
-      }
-
-      try {
-        const records = await entity.filter({ stateKey });
-        if (!active) return;
-        const record = pickLatestPossessionRecord(records);
-
-        if (!record) {
-          if (!initial) return;
-          const now = new Date().toISOString();
-          const current = normalizeRef.current(stateRef.current);
-          const created = await entity.create({ stateKey, data: current, updatedAt: now });
-          if (!active) return;
-          recordIdRef.current = created?.id || null;
-          lastSyncedJsonRef.current = JSON.stringify(current);
-          lastRemoteUpdatedRef.current = getPossessionRecordUpdatedMs(created) || Date.parse(now);
-          return;
-        }
-
-        const remoteUpdated = getPossessionRecordUpdatedMs(record);
-        if (initial || (remoteUpdated > lastRemoteUpdatedRef.current && Date.now() >= localEditUntilRef.current)) {
-          applyRecord(record);
-        }
-      } catch (error) {
-        console.warn(`Possession live load failed for ${stateKey}:`, error);
-        if (!lastSyncedJsonRef.current) lastSyncedJsonRef.current = JSON.stringify(stateRef.current);
-      } finally {
-        if (initial) loadedRef.current = true;
-      }
-    };
-
-    fetchRemote(true);
-    intervalId = window.setInterval(() => fetchRemote(false), POSSESSION_LIVE_SYNC_INTERVAL_MS);
-
-    return () => {
-      active = false;
-      if (intervalId) window.clearInterval(intervalId);
-      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
-    };
-  }, [setState, stateKey]);
-
-  useEffect(() => {
-    if (!loadedRef.current) return undefined;
-    const normalized = normalizeRef.current(state);
-    const serialized = JSON.stringify(normalized);
-    if (serialized === lastSyncedJsonRef.current) return undefined;
-
-    localEditUntilRef.current = Date.now() + POSSESSION_LIVE_LOCAL_EDIT_HOLD_MS;
-    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
-
-    saveTimerRef.current = window.setTimeout(async () => {
-      const entity = getPossessionLiveEntity();
-      if (!isPossessionLiveEntityReady(entity)) return;
-
-      const current = normalizeRef.current(stateRef.current);
-      const currentJson = JSON.stringify(current);
-      const now = new Date().toISOString();
-
-      try {
-        let recordId = recordIdRef.current;
-        if (!recordId) {
-          const records = await entity.filter({ stateKey });
-          const existing = pickLatestPossessionRecord(records);
-          recordId = existing?.id || null;
-          if (existing) {
-            recordIdRef.current = recordId;
-            lastRemoteUpdatedRef.current = Math.max(lastRemoteUpdatedRef.current, getPossessionRecordUpdatedMs(existing));
-          }
-        }
-
-        const savedRecord = recordId
-          ? await entity.update(recordId, { stateKey, data: current, updatedAt: now })
-          : await entity.create({ stateKey, data: current, updatedAt: now });
-
-        recordIdRef.current = savedRecord?.id || recordId || recordIdRef.current;
-        lastSyncedJsonRef.current = currentJson;
-        lastRemoteUpdatedRef.current = getPossessionRecordUpdatedMs(savedRecord) || Date.parse(now);
-      } catch (error) {
-        console.warn(`Possession live save failed for ${stateKey}:`, error);
-      }
-    }, POSSESSION_LIVE_SAVE_DEBOUNCE_MS);
-
-    return () => {
-      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
-    };
-  }, [state, stateKey]);
-}
-
-// ── Section 1: Possession Log ─────────────────────────────────────────────────
-const POSSESSION_LOG_KEY = "possessionLog_v2";
-
-const defaultEntry = () => ({ picName: "", picId: "", description: "", accessNo: "", issueTime: "", accessPoint: "", accessAuthTime: "", scd: "Yes", scdLoc: "", scdApplyTime: "", scdRemTime: "", handbackTime: "" });
-
-function generateEntryOutput(f) {
-  const access = cleanPossessionAccessNo(f.accessNo);
-  const lines = [];
-  if (f.picName || f.picId) lines.push(`PIC - ${f.picName}${f.picId ? ` (${f.picId})` : ""}`);
-  if (f.description) lines.push(f.description);
-  lines.push("");
-  const accessPoint = String(f.accessPoint || "").trim();
-  const accessAuthT = fmtPossession24(f.accessAuthTime);
-  if (f.scd !== "No" && accessAuthT && accessPoint) {
-    lines.push(`${accessAuthT} – PIC${f.picName ? ` ${f.picName}` : ""} authorized to access ${accessPoint} and start apply the SCD.`);
-  }
-  if (f.scd === "Yes" && (f.scdApplyTime || f.scdRemTime || f.scdLoc)) {
-    const applyT = fmtPossession24(f.scdApplyTime); const remT = fmtPossession24(f.scdRemTime);
-    let scdLine = "";
-    if (applyT) scdLine += `${applyT} - SCD applied${f.scdLoc ? ` at ${f.scdLoc}` : ""}.`;
-    if (remT) scdLine += ` At ${remT} SCD confirmed removed.`;
-    if (scdLine) lines.push(scdLine);
-  }
-  const issueT = fmtPossession24(f.issueTime);
-  if (issueT && access) lines.push(`${issueT} - CMMS updated to ISSUED (Access #${access})`);
-  const handbackT = fmtPossession24(f.handbackTime);
-  if (handbackT && access) lines.push(`${handbackT} - CMMS updated to COMP (Access #${access})`);
-  return lines.join("\n");
-}
-
-function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
-  const set = (field) => (val) => onChange({ ...entry, [field]: val });
-  return (
-    <div className="rounded-xl border border-[#1e3a56] overflow-hidden bg-[#071828]">
-      <div className="theme-possession-header border-b border-[#1e3a56] px-3 py-2 flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-        <span className="text-[11px] font-black text-[#7eb8e0] tracking-widest uppercase">Access Entry {index + 1}</span>
-        {canRemove && (
-          <button onClick={onRemove} className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border border-red-800/50 text-red-400 hover:bg-red-950/40 transition-colors">
-            <X className="w-3 h-3" /> Remove
-          </button>
-        )}
-      </div>
-      <div className="p-3 space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <POSSESSION_FIELD label="PIC Name"><POSSESSION_INPUT value={entry.picName} onChange={set("picName")} placeholder="Full name" /></POSSESSION_FIELD>
-          <POSSESSION_FIELD label="PIC ID"><POSSESSION_INPUT value={entry.picId} onChange={set("picId")} placeholder="e.g. FLOW_8545" /></POSSESSION_FIELD>
-        </div>
-        <POSSESSION_FIELD label="Description"><POSSESSION_TEXTAREA value={entry.description} onChange={set("description")} placeholder="Work description..." rows={2} /></POSSESSION_FIELD>
-        <div className="grid grid-cols-2 gap-3">
-          <POSSESSION_FIELD label="Access No."><POSSESSION_INPUT value={entry.accessNo || ""} onChange={set("accessNo")} placeholder="e.g. 268,216" /></POSSESSION_FIELD>
-          <POSSESSION_FIELD label="Issue Time"><POSSESSION_TIME_INPUT value={entry.issueTime || ""} onChange={set("issueTime")} placeholder="e.g. 04:17" /></POSSESSION_FIELD>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <POSSESSION_FIELD label="Access Point"><POSSESSION_INPUT value={entry.accessPoint || ""} onChange={set("accessPoint")} placeholder="e.g. DOOR B01" /></POSSESSION_FIELD>
-          <POSSESSION_FIELD label="Access Authorized Time"><POSSESSION_TIME_INPUT value={entry.accessAuthTime || ""} onChange={set("accessAuthTime")} placeholder="e.g. 18:10" /></POSSESSION_FIELD>
-        </div>
-        <div>
-          <label className="block text-[10px] font-semibold text-[#4a8ab5] tracking-widest uppercase mb-1">SCD?</label>
-          <div className="flex gap-1.5">
-            {["Yes", "No"].map((opt) => (
-              <button key={opt} type="button" onClick={() => set("scd")(opt)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-semibold border transition-all ${entry.scd === opt ? "bg-[#0f2d4a] text-[#c8d8ea] border-[#4f8ef7]" : "bg-[#071828] text-[#4a8ab5] border-[#1e3a56] hover:border-[#2b4f6b] hover:text-[#c8d8ea]"}`}>
-                {opt}
-              </button>
-            ))}
-          </div>
-        </div>
-        {entry.scd === "Yes" && (
-          <div className="space-y-3 rounded-xl border border-amber-800/40 bg-amber-950/20 p-3">
-            <POSSESSION_FIELD label="SCD Location"><POSSESSION_INPUT value={entry.scdLoc} onChange={set("scdLoc")} placeholder="e.g. Building A" /></POSSESSION_FIELD>
-            <div className="grid grid-cols-2 gap-3">
-              <POSSESSION_FIELD label="SCD Apply Time"><POSSESSION_TIME_INPUT value={entry.scdApplyTime} onChange={set("scdApplyTime")} placeholder="e.g. 04:17" /></POSSESSION_FIELD>
-              <POSSESSION_FIELD label="SCD Remove Time"><POSSESSION_TIME_INPUT value={entry.scdRemTime} onChange={set("scdRemTime")} placeholder="e.g. 02:10" /></POSSESSION_FIELD>
-            </div>
-          </div>
-        )}
-        <POSSESSION_FIELD label="Handback Time"><POSSESSION_TIME_INPUT value={entry.handbackTime} onChange={set("handbackTime")} placeholder="e.g. 08:19" /></POSSESSION_FIELD>
-      </div>
-    </div>
-  );
-}
-
-function PossessionLog() {
-  const [entries, setEntries] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(POSSESSION_LOG_KEY) || "null");
-      return Array.isArray(saved) && saved.length > 0
-        ? saved.map((entry) => ({ ...defaultEntry(), ...entry }))
-        : [defaultEntry()];
-    }
-    catch { return [defaultEntry()]; }
-  });
-  useEffect(() => { localStorage.setItem(POSSESSION_LOG_KEY, JSON.stringify(entries)); }, [entries]);
-  usePossessionLiveState(
-    "possession-log",
-    entries,
-    setEntries,
-    (value) => Array.isArray(value) && value.length > 0
-      ? value.map((entry) => ({ ...defaultEntry(), ...(entry || {}) }))
-      : [defaultEntry()]
-  );
-  const updateEntry = (i, val) => setEntries((prev) => prev.map((e, idx) => idx === i ? val : e));
-  const addEntry = () => setEntries((prev) => [...prev, defaultEntry()]);
-  const removeEntry = (i) => setEntries((prev) => prev.filter((_, idx) => idx !== i));
-  const clear = () => { setEntries([defaultEntry()]); localStorage.removeItem(POSSESSION_LOG_KEY); };
-  const output = entries.map(generateEntryOutput).join("\n\n");
-
-  return (
-    <div className="grid grid-cols-[1fr_1fr] gap-4 items-start">
-      <div className={possessionCardCls}>
-        <div className={possessionHeaderCls} style={possessionHeaderStyle}>
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center"><FileText className="w-3.5 h-3.5 text-[#4f8ef7]" /></div>
-            <div>
-              <h2 className="text-sm font-bold text-white">Possession Log</h2>
+        render:
+... 60776 bytes omitted ...
+    <h2 className="text-sm font-bold text-white">Possession Log</h2>
               <p className="text-[10px] text-[#4a8ab5]">{entries.length} access {entries.length === 1 ? "entry" : "entries"}</p>
             </div>
           </div>
@@ -15487,11 +14276,22 @@ export default function DepotStablingPage() {
     return "stabling";
   };
   const [activeTab, setActiveTab] = useState(() => getTabFromPath(location.pathname));
+  const [protectedShortcutCredentials, setProtectedShortcutCredentials] = useState({ id: "", password: "" });
+  const [protectedShortcutError, setProtectedShortcutError] = useState("");
+  const [isProtectedShortcutLoginOpen, setIsProtectedShortcutLoginOpen] = useState(false);
+  const [areProtectedShortcutsUnlocked, setAreProtectedShortcutsUnlocked] = useState(() => {
+    try {
+      return sessionStorage.getItem(PROTECTED_SHORTCUTS_SESSION_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
   const [adminCredentials, setAdminCredentials] = useState({ id: "", password: "" });
   const [adminError, setAdminError] = useState("");
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(() => {
     try {
-      return sessionStorage.getItem(ADM_SESSION_KEY) === "true";
+      return sessionStorage.getItem(ADM_SESSION_KEY) === "true"
+        || sessionStorage.getItem(PROTECTED_SHORTCUTS_SESSION_KEY) === "true";
     } catch {
       return false;
     }
@@ -15500,7 +14300,8 @@ export default function DepotStablingPage() {
   const [alarmError, setAlarmError] = useState("");
   const [isAlarmUnlocked, setIsAlarmUnlocked] = useState(() => {
     try {
-      return sessionStorage.getItem(ALM_SESSION_KEY) === "true";
+      return sessionStorage.getItem(ALM_SESSION_KEY) === "true"
+        || sessionStorage.getItem(PROTECTED_SHORTCUTS_SESSION_KEY) === "true";
     } catch {
       return false;
     }
@@ -15509,7 +14310,8 @@ export default function DepotStablingPage() {
   const [overtimeError, setOvertimeError] = useState("");
   const [isOvertimeUnlocked, setIsOvertimeUnlocked] = useState(() => {
     try {
-      return sessionStorage.getItem(OVT_SESSION_KEY) === "true";
+      return sessionStorage.getItem(OVT_SESSION_KEY) === "true"
+        || sessionStorage.getItem(PROTECTED_SHORTCUTS_SESSION_KEY) === "true";
     } catch {
       return false;
     }
@@ -15518,7 +14320,8 @@ export default function DepotStablingPage() {
   const [odoError, setOdoError] = useState("");
   const [isOdoUnlocked, setIsOdoUnlocked] = useState(() => {
     try {
-      return sessionStorage.getItem(ODO_SESSION_KEY) === "true";
+      return sessionStorage.getItem(ODO_SESSION_KEY) === "true"
+        || sessionStorage.getItem(PROTECTED_SHORTCUTS_SESSION_KEY) === "true";
     } catch {
       return false;
     }
@@ -15686,6 +14489,92 @@ export default function DepotStablingPage() {
     scrollTarget.scrollTo({ left: nextLeft, behavior: "smooth" });
   }, []);
 
+  const closeProtectedShortcutLogin = useCallback(() => {
+    setIsProtectedShortcutLoginOpen(false);
+    setProtectedShortcutCredentials({ id: "", password: "" });
+    setProtectedShortcutError("");
+  }, []);
+
+  const handleProtectedShortcutLogin = useCallback((event) => {
+    event.preventDefault();
+    const loginId = String(protectedShortcutCredentials.id || "").trim();
+    const loginPassword = String(protectedShortcutCredentials.password || "");
+
+    if (loginId === ADM_LOGIN_ID && loginPassword === ADM_LOGIN_PASSWORD) {
+      setAreProtectedShortcutsUnlocked(true);
+      setIsProtectedShortcutLoginOpen(false);
+      setProtectedShortcutCredentials({ id: "", password: "" });
+      setProtectedShortcutError("");
+      setIsOdoUnlocked(true);
+      setIsAlarmUnlocked(true);
+      setIsOvertimeUnlocked(true);
+      setIsAdminUnlocked(true);
+      setOdoError("");
+      setAlarmError("");
+      setOvertimeError("");
+      setAdminError("");
+      try {
+        sessionStorage.setItem(PROTECTED_SHORTCUTS_SESSION_KEY, "true");
+        sessionStorage.setItem(ODO_SESSION_KEY, "true");
+        sessionStorage.setItem(ALM_SESSION_KEY, "true");
+        sessionStorage.setItem(OVT_SESSION_KEY, "true");
+        sessionStorage.setItem(ADM_SESSION_KEY, "true");
+      } catch {}
+      return;
+    }
+
+    setAreProtectedShortcutsUnlocked(false);
+    setProtectedShortcutError("Invalid admin ID or password.");
+    try { sessionStorage.removeItem(PROTECTED_SHORTCUTS_SESSION_KEY); } catch {}
+  }, [protectedShortcutCredentials]);
+
+  const lockProtectedShortcuts = useCallback(() => {
+    setAreProtectedShortcutsUnlocked(false);
+    setIsProtectedShortcutLoginOpen(false);
+    setProtectedShortcutCredentials({ id: "", password: "" });
+    setProtectedShortcutError("");
+    setIsOdoUnlocked(false);
+    setIsAlarmUnlocked(false);
+    setIsOvertimeUnlocked(false);
+    setIsAdminUnlocked(false);
+    setOdoCredentials({ id: "", password: "" });
+    setAlarmCredentials({ id: "", password: "" });
+    setOvertimeCredentials({ id: "", password: "" });
+    setAdminCredentials({ id: "", password: "" });
+    setOdoError("");
+    setAlarmError("");
+    setOvertimeError("");
+    setAdminError("");
+    setAlarmSearch("");
+    try {
+      sessionStorage.removeItem(PROTECTED_SHORTCUTS_SESSION_KEY);
+      sessionStorage.removeItem(ODO_SESSION_KEY);
+      sessionStorage.removeItem(ALM_SESSION_KEY);
+      sessionStorage.removeItem(OVT_SESSION_KEY);
+      sessionStorage.removeItem(ADM_SESSION_KEY);
+    } catch {}
+
+    if (PROTECTED_SHORTCUT_KEYS.has(activeTab)) {
+      setActiveTab("stabling");
+      const targetHash = "#/depot-stabling";
+      if (window.location.hash !== targetHash) {
+        window.location.hash = targetHash;
+      }
+      window.setTimeout(() => window.location.reload(), 0);
+    }
+  }, [activeTab]);
+
+  const handleProtectedShortcutToggle = useCallback(() => {
+    if (areProtectedShortcutsUnlocked) {
+      lockProtectedShortcuts();
+      return;
+    }
+
+    setProtectedShortcutCredentials({ id: "", password: "" });
+    setProtectedShortcutError("");
+    setIsProtectedShortcutLoginOpen(true);
+  }, [areProtectedShortcutsUnlocked, lockProtectedShortcuts]);
+
   const handleAdminLogin = useCallback((event) => {
     event.preventDefault();
     const loginId = String(adminCredentials.id || "").trim();
@@ -15705,14 +14594,11 @@ export default function DepotStablingPage() {
   }, [adminCredentials]);
 
   const handleAdminLogout = useCallback(() => {
-    setIsAdminUnlocked(false);
-    setAdminCredentials({ id: "", password: "" });
-    setAdminError("");
+    lockProtectedShortcuts();
     setAdminNotesLoading(false);
     setAdminNotesSaving(false);
     setAdminNotesLiveStatus("Local cache ready");
-    try { sessionStorage.removeItem(ADM_SESSION_KEY); } catch {}
-  }, []);
+  }, [lockProtectedShortcuts]);
 
   const handleAlarmLogin = useCallback((event) => {
     event.preventDefault();
@@ -15733,12 +14619,8 @@ export default function DepotStablingPage() {
   }, [alarmCredentials]);
 
   const handleAlarmLogout = useCallback(() => {
-    setIsAlarmUnlocked(false);
-    setAlarmCredentials({ id: "", password: "" });
-    setAlarmError("");
-    setAlarmSearch("");
-    try { sessionStorage.removeItem(ALM_SESSION_KEY); } catch {}
-  }, []);
+    lockProtectedShortcuts();
+  }, [lockProtectedShortcuts]);
 
   const handleOvertimeLogin = useCallback((event) => {
     event.preventDefault();
@@ -15759,11 +14641,8 @@ export default function DepotStablingPage() {
   }, [overtimeCredentials]);
 
   const handleOvertimeLogout = useCallback(() => {
-    setIsOvertimeUnlocked(false);
-    setOvertimeCredentials({ id: "", password: "" });
-    setOvertimeError("");
-    try { sessionStorage.removeItem(OVT_SESSION_KEY); } catch {}
-  }, []);
+    lockProtectedShortcuts();
+  }, [lockProtectedShortcuts]);
 
   const handleOdoLogin = useCallback((event) => {
     event.preventDefault();
@@ -15784,11 +14663,8 @@ export default function DepotStablingPage() {
   }, [odoCredentials]);
 
   const handleOdoLogout = useCallback(() => {
-    setIsOdoUnlocked(false);
-    setOdoCredentials({ id: "", password: "" });
-    setOdoError("");
-    try { sessionStorage.removeItem(ODO_SESSION_KEY); } catch {}
-  }, []);
+    lockProtectedShortcuts();
+  }, [lockProtectedShortcuts]);
 
   const loadAdminNotesLive = useCallback(async () => {
     const entity = getAdminNoteEntity();
@@ -15953,6 +14829,17 @@ export default function DepotStablingPage() {
       localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isSidebarCollapsed));
     } catch {}
   }, [isSidebarCollapsed]);
+
+  useEffect(() => {
+    if (!isProtectedShortcutLoginOpen) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") closeProtectedShortcutLogin();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [closeProtectedShortcutLogin, isProtectedShortcutLoginOpen]);
 
   useEffect(() => {
     adminNotesCurrentRef.current = adminNotes;
@@ -19190,7 +18077,9 @@ export default function DepotStablingPage() {
                 </svg>
               ),
             },
-          ].map(({ key, label, code, to }) => {
+          ]
+            .filter(({ key }) => !PROTECTED_SHORTCUT_KEYS.has(key) || areProtectedShortcutsUnlocked)
+            .map(({ key, label, code, to }) => {
             const isActive = activeTab === key;
             const bottomShortcutClass = key === "odo" ? " mt-auto" : "";
             const navClass = isSidebarCollapsed
@@ -19239,8 +18128,124 @@ export default function DepotStablingPage() {
                 {!isSidebarCollapsed && <span>{label}</span>}
               </button>
             );
-          })}
+            })}
+
+          <button
+            type="button"
+            onClick={handleProtectedShortcutToggle}
+            aria-expanded={areProtectedShortcutsUnlocked}
+            aria-haspopup={areProtectedShortcutsUnlocked ? undefined : "dialog"}
+            title={areProtectedShortcutsUnlocked ? "Hide and lock protected pages" : "Show protected pages"}
+            className={`${areProtectedShortcutsUnlocked ? "" : "mt-auto"} flex w-full items-center py-2.5 text-xs font-semibold text-[#7eb8e0] transition hover:bg-[#0f2d4a] hover:text-white ${isSidebarCollapsed ? "justify-center rounded-lg px-1" : "justify-between rounded-lg border border-[#1a3a56] bg-[#071828]/60 px-3"}`}
+          >
+            {!isSidebarCollapsed && (
+              <span className="text-[10px] font-bold uppercase tracking-wide">
+                {areProtectedShortcutsUnlocked ? "Hide protected" : "Protected pages"}
+              </span>
+            )}
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              {areProtectedShortcutsUnlocked
+                ? <path d="M18 15l-6-6-6 6" />
+                : <path d="M6 9l6 6 6-6" />}
+            </svg>
+          </button>
         </aside>
+
+        {isProtectedShortcutLoginOpen && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#020b14]/80 px-4 backdrop-blur-sm"
+            role="presentation"
+            onMouseDown={closeProtectedShortcutLogin}
+          >
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="protected-shortcut-login-title"
+              className="w-full max-w-sm overflow-hidden rounded-2xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_24px_80px_rgba(0,0,0,0.65)]"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-start justify-between border-b border-[#1a3a56] px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#2b4f6b] bg-[#0c2e4a] text-[#8bd5ff]">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="4" y="10" width="16" height="11" rx="2" />
+                      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                    </svg>
+                  </span>
+                  <div>
+                    <h2 id="protected-shortcut-login-title" className="text-sm font-black text-white">Protected pages</h2>
+                    <p className="mt-0.5 text-[10px] text-[#7eb8e0]">Enter the admin details to show ODO, ALM, OVT and ADM.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeProtectedShortcutLogin}
+                  aria-label="Close protected pages login"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-[#7eb8e0] transition hover:bg-[#0f2d4a] hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleProtectedShortcutLogin} className="space-y-4 px-5 py-5">
+                <label className="block">
+                  <span className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-[#7eb8e0]">Admin ID</span>
+                  <input
+                    type="text"
+                    value={protectedShortcutCredentials.id}
+                    onChange={(event) => {
+                      setProtectedShortcutCredentials((current) => ({ ...current, id: event.target.value }));
+                      if (protectedShortcutError) setProtectedShortcutError("");
+                    }}
+                    autoComplete="username"
+                    autoFocus
+                    required
+                    className="w-full rounded-xl border border-[#2b4f6b] bg-[#041523] px-3.5 py-2.5 text-sm text-white outline-none transition placeholder:text-[#486b84] focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/20"
+                    placeholder="Admin ID"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-[#7eb8e0]">Password</span>
+                  <input
+                    type="password"
+                    value={protectedShortcutCredentials.password}
+                    onChange={(event) => {
+                      setProtectedShortcutCredentials((current) => ({ ...current, password: event.target.value }));
+                      if (protectedShortcutError) setProtectedShortcutError("");
+                    }}
+                    autoComplete="current-password"
+                    required
+                    className="w-full rounded-xl border border-[#2b4f6b] bg-[#041523] px-3.5 py-2.5 text-sm text-white outline-none transition placeholder:text-[#486b84] focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/20"
+                    placeholder="Password"
+                  />
+                </label>
+
+                {protectedShortcutError && (
+                  <p role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300">
+                    {protectedShortcutError}
+                  </p>
+                )}
+
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={closeProtectedShortcutLogin}
+                    className="rounded-lg border border-[#2b4f6b] px-4 py-2 text-xs font-bold text-[#9bc7e4] transition hover:bg-[#0f2d4a] hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded-lg border border-[#4f8ef7] bg-[#1d4f8f] px-4 py-2 text-xs font-black text-white shadow-[0_0_18px_rgba(79,142,247,0.18)] transition hover:bg-[#2863ad] active:scale-95"
+                  >
+                    Unlock pages
+                  </button>
+                </div>
+              </form>
+            </section>
+          </div>
+        )}
 
         {/* Main Content */}
         <main ref={mainContentScrollRef} className="flex-1 min-w-0 overflow-auto">
