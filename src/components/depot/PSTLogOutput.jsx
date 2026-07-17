@@ -250,7 +250,10 @@ function getPrepSectionText(prepLines = [], depotLabel = "") {
 
 function formatELogTime(value = "") {
   const digits = value.toString().replace(/\D/g, "").slice(0, 4);
-  return digits ? `${digits.padStart(4, "0")}H` : "----H";
+  if (!digits) return "--:--H";
+
+  const paddedTime = digits.padStart(4, "0");
+  return `${paddedTime.slice(0, 2)}:${paddedTime.slice(2)}H`;
 }
 
 function getELogLocationTitle(location = "") {
