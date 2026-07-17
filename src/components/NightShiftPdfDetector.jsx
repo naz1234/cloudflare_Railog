@@ -29,6 +29,15 @@ function formatEntryDate(date) {
   }).format(new Date(year, month - 1, day));
 }
 
+function getCoveredPeriodLabel(dates = []) {
+  const periods = Array.from(new Set(dates.map((date) => String(date).slice(0, 7))));
+  if (!periods.length) return "the detected month";
+  return periods.map((period) => {
+    const [year, month] = period.split("-").map(Number);
+    return getPeriodLabel(year, month - 1);
+  }).join(" and ");
+}
+
 async function extractPdfPages(file) {
   const data = new Uint8Array(await file.arrayBuffer());
   const loadingTask = getDocument({ data });
@@ -75,6 +84,10 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
       ? summarizeBinJaafarNightShifts(parsedRoster, selectedYear, selectedMonth)
       : null,
     [parsedRoster, selectedMonth, selectedYear]
+  );
+  const coveredPeriodLabel = useMemo(
+    () => getCoveredPeriodLabel(parsedRoster?.coveredDates),
+    [parsedRoster]
   );
 
   const handleFile = async (file) => {
@@ -153,6 +166,11 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
           <span className="rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-semibold text-emerald-200">
             1000335 · Bin Jaafar
           </span>
+          {parsedRoster?.dateAdjustmentMonths === 1 && (
+            <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1.5 text-[10px] font-semibold text-amber-200">
+              Monthly roster → next month
+            </span>
+          )}
         </div>
       </div>
 
@@ -238,7 +256,11 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
             <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/10 p-3" role="status">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
-                <p className="text-[11px] leading-relaxed text-amber-100">This roster does not contain {periodLabel}.</p>
+                <p className="text-[11px] leading-relaxed text-amber-100">
+                  {parsedRoster?.dateAdjustmentMonths === 1
+                    ? `This monthly roster is counted in ${coveredPeriodLabel}. Select that month to view the shifts.`
+                    : `This roster does not contain ${periodLabel}.`}
+                </p>
               </div>
             </div>
           )}

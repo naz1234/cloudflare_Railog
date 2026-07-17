@@ -3,6 +3,7 @@ const TARGET_STAFF_PATTERN = /\bbin\s+jaafar\b/i;
 const ROSTER_CODE_PATTERN = /\b(?:N3-DC|NRDOT|L3-DC|E3-DC|WR|RDOT|OFF)\b/i;
 const DATE_HEADER_PATTERN = /^(\d{1,2})[./-](\d{1,2})[./-]?$/;
 const ROSTER_RANGE_PATTERN = /\bFor\s+(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+To\s+(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/i;
+const MONTHLY_OCCL3_PATTERN = /\bRoster\s+OCC\s+Line\s+3\s+Dispatching\b/i;
 const ROW_TOLERANCE = 2.5;
 const STAFF_ROW_DISTANCE = 32;
 
@@ -14,6 +15,14 @@ function normalizeYear(value) {
 
 function getIsoDate(year, month, day) {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function shiftYearMonth(year, month, offset) {
+  const shiftedMonthIndex = (Number(year) * 12) + (Number(month) - 1) + Number(offset || 0);
+  return {
+    year: Math.floor(shiftedMonthIndex / 12),
+    month: ((shiftedMonthIndex % 12) + 12) % 12 + 1,
+  };
 }
 
 function parseRosterRange(items = []) {
@@ -37,6 +46,11 @@ function parseRosterRange(items = []) {
       year: endYear,
     },
   };
+}
+
+function isFollowingMonthRoster(items = [], rosterRange = null) {
+  if (rosterRange) return false;
+  return MONTHLY_OCCL3_PATTERN.test(items.map((item) => item.str).join(" "));
 }
 
 function groupItemsByRow(items = [], tolerance = ROW_TOLERANCE) {
@@ -93,7 +107,13 @@ function getTargetShiftRows(items = []) {
   };
 }
 
-function getDateHeaders(items = [], rosterRange, fallbackYear, targetRowY = null) {
+function getDateHeaders(
+  items = [],
+  rosterRange,
+  fallbackYear,
+  targetRowY = null,
+  monthOffset = 0
+) {
   const headerRows = groupItemsByRow(
     items.filter((item) => DATE_HEADER_PATTERN.test(item.str)),
     1.5
@@ -129,13 +149,14 @@ function getDateHeaders(items = [], rosterRange, fallbackYear, targetRowY = null
         year += 1;
       }
       previousMonth = month;
+      const adjustedPeriod = shiftYearMonth(year, month, monthOffset);
 
       return {
         x: item.x,
         day,
-        month,
-        year,
-        date: getIsoDate(year, month, day),
+        month: adjustedPeriod.month,
+        year: adjustedPeriod.year,
+        date: getIsoDate(adjustedPeriod.year, adjustedPeriod.month, day),
       };
     })
     .filter(Boolean)
@@ -163,10 +184,13 @@ export function parseBinJaafarRoster(pages = [], fallbackYear = new Date().getFu
   let staffFound = false;
   let dateHeadersFound = false;
   let rosterRange = null;
+  let dateAdjustmentMonths = 0;
 
   pages.forEach((pageItems = [], pageIndex) => {
     const pageRange = parseRosterRange(pageItems);
     rosterRange ||= pageRange;
+    const pageMonthOffset = isFollowingMonthRoster(pageItems, pageRange || rosterRange) ? 1 : 0;
+    dateAdjustmentMonths = Math.max(dateAdjustmentMonths, pageMonthOffset);
     const target = getTargetShiftRows(pageItems);
     const targetRows = target.rows;
     if (target.staffFound) staffFound = true;
@@ -176,7 +200,8 @@ export function parseBinJaafarRoster(pages = [], fallbackYear = new Date().getFu
         pageItems,
         pageRange || rosterRange,
         fallbackYear,
-        row.y
+        row.y,
+        pageMonthOffset
       );
       if (headers.length) {
         dateHeadersFound = true;
@@ -212,6 +237,7 @@ export function parseBinJaafarRoster(pages = [], fallbackYear = new Date().getFu
     staffFound,
     dateHeadersFound,
     rosterRange,
+    dateAdjustmentMonths,
     coveredDates: Array.from(new Set(coveredDates)).sort(),
     entries: uniqueEntries,
   };
