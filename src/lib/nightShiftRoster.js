@@ -93,12 +93,26 @@ function getTargetShiftRows(items = []) {
   };
 }
 
-function getDateHeaders(items = [], rosterRange, fallbackYear) {
+function getDateHeaders(items = [], rosterRange, fallbackYear, targetRowY = null) {
   const headerRows = groupItemsByRow(
     items.filter((item) => DATE_HEADER_PATTERN.test(item.str)),
     1.5
   );
-  const headerRow = headerRows.sort((left, right) => right.items.length - left.items.length)[0];
+  const largestHeaderSize = Math.max(0, ...headerRows.map((row) => row.items.length));
+  const viableHeaderRows = headerRows.filter((row) => (
+    row.items.length >= Math.max(2, Math.floor(largestHeaderSize * 0.6))
+  ));
+  const rowsAboveTarget = Number.isFinite(targetRowY)
+    ? viableHeaderRows.filter((row) => row.y < targetRowY)
+    : [];
+  const candidateRows = rowsAboveTarget.length ? rowsAboveTarget : viableHeaderRows;
+  const headerRow = candidateRows.sort((left, right) => {
+    if (Number.isFinite(targetRowY)) {
+      return Math.abs(targetRowY - left.y) - Math.abs(targetRowY - right.y)
+        || right.items.length - left.items.length;
+    }
+    return right.items.length - left.items.length;
+  })[0];
   if (!headerRow || headerRow.items.length < 2) return [];
 
   let year = rosterRange?.start?.year || Number(fallbackYear) || new Date().getFullYear();
@@ -153,17 +167,22 @@ export function parseBinJaafarRoster(pages = [], fallbackYear = new Date().getFu
   pages.forEach((pageItems = [], pageIndex) => {
     const pageRange = parseRosterRange(pageItems);
     rosterRange ||= pageRange;
-    const headers = getDateHeaders(pageItems, pageRange || rosterRange, fallbackYear);
-    if (headers.length) {
-      dateHeadersFound = true;
-      coveredDates.push(...headers.map((header) => header.date));
-    }
-
     const target = getTargetShiftRows(pageItems);
     const targetRows = target.rows;
     if (target.staffFound) staffFound = true;
 
     targetRows.forEach((row) => {
+      const headers = getDateHeaders(
+        pageItems,
+        pageRange || rosterRange,
+        fallbackYear,
+        row.y
+      );
+      if (headers.length) {
+        dateHeadersFound = true;
+        coveredDates.push(...headers.map((header) => header.date));
+      }
+
       headers.forEach((header, index) => {
         const code = getCellCode(row.items, headers, index);
         let type = null;
