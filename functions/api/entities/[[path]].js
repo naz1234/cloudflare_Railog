@@ -8,6 +8,7 @@ const ALLOWED_ENTITIES = new Set([
   'PSTTrainPrep',
   'PossessionLive',
   'RosterFile',
+  'NightShiftRosterFile',
   'RemovalListRow',
   'MainlineTrainRow',
   'BookmarkLink',
