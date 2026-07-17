@@ -7499,6 +7499,140 @@ html[data-app-theme="light"] .theme-movement-status[data-status="draft"] {
   border-color: #94a3b8 !important;
 }
 
+/* Movement type selector: compact, semantic motion without changing table size. */
+.theme-movement-sheet-table tbody td:nth-child(2) {
+  --movement-type-accent: #fbbf24;
+  --movement-type-fill: rgba(245, 158, 11, 0.12);
+  --movement-type-text: #fde68a;
+  --movement-type-surface: #061827;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, var(--movement-type-fill) 0%, transparent 84%), var(--movement-type-surface) !important;
+  box-shadow: inset 2px 0 0 var(--movement-type-accent);
+  transition: background 180ms ease, box-shadow 180ms ease;
+}
+
+.theme-movement-sheet-table tbody td:nth-child(2):has(> select option[value="insertion"]:checked) {
+  --movement-type-accent: #4ade80;
+  --movement-type-fill: rgba(34, 197, 94, 0.12);
+  --movement-type-text: #bbf7d0;
+}
+
+.theme-movement-sheet-table tbody td:nth-child(2):has(> select option[value="removal"]:checked) {
+  --movement-type-accent: #fb7185;
+  --movement-type-fill: rgba(244, 63, 94, 0.12);
+  --movement-type-text: #fecdd3;
+}
+
+.theme-movement-sheet-table tbody td:nth-child(2)::before {
+  content: "⇄";
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 7px;
+  width: 15px;
+  color: var(--movement-type-accent);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 0 7px var(--movement-type-accent);
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: movement-type-swap 2.8s ease-in-out infinite;
+}
+
+.theme-movement-sheet-table tbody td:nth-child(2):has(> select option[value="insertion"]:checked)::before {
+  content: "→";
+  animation-name: movement-type-enter;
+}
+
+.theme-movement-sheet-table tbody td:nth-child(2):has(> select option[value="removal"]:checked)::before {
+  content: "←";
+  animation-name: movement-type-exit;
+}
+
+.theme-movement-sheet-table tbody tr:nth-child(2n) td:nth-child(2)::before {
+  animation-delay: -0.35s;
+}
+
+.theme-movement-sheet-table tbody tr:nth-child(3n) td:nth-child(2)::before {
+  animation-delay: -0.7s;
+}
+
+.theme-movement-sheet-table tbody td:nth-child(2) > select {
+  position: relative;
+  z-index: 2;
+  padding-left: 27px !important;
+  padding-right: 3px !important;
+  color: var(--movement-type-text) !important;
+  -webkit-text-fill-color: var(--movement-type-text) !important;
+  background: transparent !important;
+}
+
+.theme-movement-sheet-table tbody td:nth-child(2):focus-within {
+  background: linear-gradient(90deg, var(--movement-type-fill) 0%, transparent 92%), var(--movement-type-surface) !important;
+  box-shadow: inset 2px 0 0 var(--movement-type-accent), inset 0 0 0 1px var(--movement-type-accent);
+}
+
+@keyframes movement-type-swap {
+  0%, 100% { transform: translate(-1.5px, -50%); opacity: 0.72; }
+  50% { transform: translate(1.5px, -50%); opacity: 1; }
+}
+
+@keyframes movement-type-enter {
+  0%, 12% { transform: translate(-5px, -50%); opacity: 0.18; }
+  48% { opacity: 1; }
+  82%, 100% { transform: translate(3px, -50%); opacity: 0.74; }
+}
+
+@keyframes movement-type-exit {
+  0%, 12% { transform: translate(5px, -50%); opacity: 0.18; }
+  48% { opacity: 1; }
+  82%, 100% { transform: translate(-3px, -50%); opacity: 0.74; }
+}
+
+html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2) {
+  --movement-type-accent: #d97706;
+  --movement-type-fill: rgba(245, 158, 11, 0.16);
+  --movement-type-text: #78350f;
+  --movement-type-surface: #ffffff;
+}
+
+html[data-app-theme="light"] .theme-movement-sheet-table tbody tr:nth-child(even) td:nth-child(2) {
+  --movement-type-surface: #f8fafc;
+}
+
+html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2):has(> select option[value="insertion"]:checked) {
+  --movement-type-accent: #16a34a;
+  --movement-type-fill: rgba(34, 197, 94, 0.15);
+  --movement-type-text: #14532d;
+}
+
+html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2):has(> select option[value="removal"]:checked) {
+  --movement-type-accent: #e11d48;
+  --movement-type-fill: rgba(244, 63, 94, 0.14);
+  --movement-type-text: #881337;
+}
+
+html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2)::before {
+  color: var(--movement-type-accent) !important;
+  -webkit-text-fill-color: var(--movement-type-accent) !important;
+}
+
+html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2) > select {
+  color: var(--movement-type-text) !important;
+  -webkit-text-fill-color: var(--movement-type-text) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-movement-sheet-table tbody td:nth-child(2)::before {
+    animation: none !important;
+    transform: translateY(-50%);
+    opacity: 1;
+  }
+}
+
 /* Movement log output */
 html[data-app-theme="light"] .theme-movement-log-output {
   color: #0f172a !important;
