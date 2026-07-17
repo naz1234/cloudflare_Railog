@@ -269,31 +269,37 @@ export default function NightShiftPdfDetector({ selectedYear, selectedMonth, cla
             <div className="mt-3">
               <div className="flex items-end justify-between gap-3 rounded-xl border border-sky-400/25 bg-sky-500/[0.07] p-3">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.13em] text-[#92a9c2]">Night duties</p>
-                  <p className="mt-1 text-[30px] font-semibold leading-none text-sky-200">{summary.totalCount}</p>
+                  <p className="text-[10px] uppercase tracking-[0.13em] text-[#92a9c2]">Normal night shifts</p>
+                  <p className="mt-1 text-[30px] font-semibold leading-none text-sky-200">{summary.nightShiftCount}</p>
+                  <p className="mt-1.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#7f98b2]">N3-DC only · by shift start date</p>
                 </div>
                 <CheckCircle2 className="h-5 w-5 text-emerald-300" />
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <div className="rounded-xl border border-indigo-400/25 bg-indigo-500/10 p-2.5">
-                  <p className="text-[16px] font-semibold text-indigo-200">{summary.regularCount}</p>
-                  <p className="mt-0.5 text-[9px] uppercase tracking-[0.11em] text-[#9eaed0]">N3-DC</p>
+                  <p className="text-[16px] font-semibold text-indigo-200">{summary.nightShiftCount}</p>
+                  <p className="mt-0.5 text-[9px] uppercase tracking-[0.11em] text-[#9eaed0]">N3-DC · counted</p>
                 </div>
                 <div className="rounded-xl border border-amber-400/25 bg-amber-500/10 p-2.5">
                   <p className="text-[16px] font-semibold text-amber-200">{summary.rdotCount}</p>
-                  <p className="mt-0.5 text-[9px] uppercase tracking-[0.11em] text-[#b6a98c]">NRDOT</p>
+                  <p className="mt-0.5 text-[9px] uppercase tracking-[0.11em] text-[#b6a98c]">NRDOT · separate</p>
                 </div>
               </div>
+              {summary.rdotCount > 0 && (
+                <p className="mt-2 text-[9px] leading-relaxed text-[#8fa4bc]">
+                  NRDOT is shown for reference and is not added to the night-shift count. All overnight duties: {summary.overnightDutyCount}.
+                </p>
+              )}
             </div>
           )}
         </div>
 
         <div className="rounded-2xl border border-[#2b506c] bg-[#0a2238]/88 p-3.5">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#dce8f6]">Detected night dates</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#dce8f6]">Detected overnight dates</p>
             {summary?.periodFound && (
               <span className="rounded-full border border-[#34536d] bg-[#0b2942] px-2.5 py-1 text-[9px] font-semibold text-[#b9c9da]">
-                {summary.totalCount} found
+                {summary.nightShiftCount} N3-DC · {summary.rdotCount} NRDOT
               </span>
             )}
           </div>

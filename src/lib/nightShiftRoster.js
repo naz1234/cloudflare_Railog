@@ -259,6 +259,8 @@ export function summarizeBinJaafarNightShifts(parsedRoster, selectedYear, select
     entries,
     regularEntries,
     rdotEntries,
+    nightShiftCount: regularEntries.length,
+    overnightDutyCount: entries.length,
     regularCount: regularEntries.length,
     rdotCount: rdotEntries.length,
     totalCount: entries.length,
