@@ -437,17 +437,17 @@ html[data-app-theme="dark"] .theme-stabling-remark {
 html[data-app-theme="dark"] [role="tooltip"]:has(.theme-stabling-remark-tooltip-text) {
   background: linear-gradient(
     135deg,
-    rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.22),
-    #061522 72%
-  ) !important;
-  border-color: rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.88) !important;
-  color: #f8fafc !important;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.38), 0 0 12px rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.20) !important;
+    rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.34),
+    rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.16)
+  ), #ffffff !important;
+  border-color: rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.96) !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16), 0 0 10px rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.14) !important;
 }
 
 html[data-app-theme="dark"] [role="tooltip"]:has(.theme-stabling-remark-tooltip-text) svg {
   fill: rgb(var(--stabling-tooltip-accent-rgb, 79, 142, 247)) !important;
-  filter: drop-shadow(0 1px 0 rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.88)) !important;
+  filter: drop-shadow(0 1px 0 rgba(var(--stabling-tooltip-accent-rgb, 79, 142, 247), 0.96)) !important;
 }
 
 html[data-app-theme="light"] [role="tooltip"]:has(.theme-stabling-remark-tooltip-text) {
