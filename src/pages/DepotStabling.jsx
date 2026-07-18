@@ -4125,12 +4125,13 @@ function requestColorDistance(first, second) {
   );
 }
 
-function buildDistinctRequestGroupColorMap(values = []) {
+function buildDistinctRequestGroupColorMap(values = [], options = {}) {
+  const includeGeneric = options.includeGeneric === true;
   const keys = Array.from(
     new Set(
       values
         .map((value) => normalizeRequestGroupColorKey(value))
-        .filter((value) => value && isSpecificRequestGroup(value))
+        .filter((value) => value && (includeGeneric || isSpecificRequestGroup(value)))
     )
   ).sort((a, b) => hashRequestGroupKey(a) - hashRequestGroupKey(b) || a.localeCompare(b));
 
@@ -4203,6 +4204,9 @@ function buildMaintenanceMap(requests, mainStablingKeys = new Set()) {
     ) || "Request"
   );
   const requestGroupColors = buildDistinctRequestGroupColorMap(requestDisplayTypes);
+  const requestRemarkColors = buildDistinctRequestGroupColorMap(requestDisplayTypes, {
+    includeGeneric: true,
+  });
 
   (requests || []).forEach((req) => {
     const key = normalizeTrainId(req.trainId);
@@ -4246,6 +4250,10 @@ function buildMaintenanceMap(requests, mainStablingKeys = new Set()) {
     const groupColorAccent = usesGroupColor
       ? requestGroupColors[requestGroupColorKey] || getCustomRequestColor(requestGroupColorKey)
       : "";
+    // Main-stabling pills use the complete normalized remark label, including
+    // generic categories, so colour identity is independent of request type.
+    const remarkColorAccent =
+      requestRemarkColors[requestGroupColorKey] || getCustomRequestColor(requestGroupColorKey);
     const styles = usesGroupColor
       ? getCustomRequestStyle(requestGroupColorKey, groupColorAccent)
       : getKnownMaintenanceStyle(typeKey) || getCustomRequestStyle(displayType);
@@ -4267,6 +4275,7 @@ function buildMaintenanceMap(requests, mainStablingKeys = new Set()) {
       usesGroupColor,
       requestGroupColorKey,
       groupColorAccent,
+      remarkColorAccent,
       ...styles,
     });
   });
@@ -4444,7 +4453,8 @@ function getMainStablingRemarkPillStyle(item = null) {
   const visual = getStablingRequestVisual(item);
   const accent = visual?.accent || getRequestAccent(item) || "#4f8ef7";
   const isWashRemark = getStablingRequestCategory(item) === "wash";
-  const lightModeAccent = isWashRemark ? "#8afc3f" : accent;
+  const lightModeAccent =
+    item?.remarkColorAccent || (isWashRemark ? "#8afc3f" : accent);
   const lightModeAccentRgb = requestColorRgb(lightModeAccent);
   const lightModeVariables = {
     "--stabling-remark-accent": lightModeAccent,
