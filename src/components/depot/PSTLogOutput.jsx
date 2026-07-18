@@ -546,7 +546,7 @@ function ELogStyleButton({ active, children, onClick, tooltip }) {
   );
 }
 
-export default function PSTLogOutput({ logLines, onClearDepot }) {
+export default function PSTLogOutput({ logLines, onClearDepot, depot = "" }) {
   const safeLogLines = Array.isArray(logLines) ? logLines : [];
   const westLines = safeLogLines.filter((line) => line.depot === "west");
   const eastLines = safeLogLines.filter((line) => line.depot === "east");
@@ -1011,22 +1011,26 @@ export default function PSTLogOutput({ logLines, onClearDepot }) {
       </div>
 
       <div className="pst-clean-cards">
-        <DepotLogCard
-          depotLabel="West"
-          lines={westLines}
-          onClearDepot={() => onClearDepot?.("west")}
-          logStyle={logStyle}
-          westPSTTotal={westPSTTotal}
-          eastPSTTotal={eastPSTTotal}
-        />
-        <DepotLogCard
-          depotLabel="East"
-          lines={eastLines}
-          onClearDepot={() => onClearDepot?.("east")}
-          logStyle={logStyle}
-          westPSTTotal={westPSTTotal}
-          eastPSTTotal={eastPSTTotal}
-        />
+        {(!depot || depot === "west") && (
+          <DepotLogCard
+            depotLabel="West"
+            lines={westLines}
+            onClearDepot={() => onClearDepot?.("west")}
+            logStyle={logStyle}
+            westPSTTotal={westPSTTotal}
+            eastPSTTotal={eastPSTTotal}
+          />
+        )}
+        {(!depot || depot === "east") && (
+          <DepotLogCard
+            depotLabel="East"
+            lines={eastLines}
+            onClearDepot={() => onClearDepot?.("east")}
+            logStyle={logStyle}
+            westPSTTotal={westPSTTotal}
+            eastPSTTotal={eastPSTTotal}
+          />
+        )}
       </div>
     </section>
   );
