@@ -13222,11 +13222,136 @@ function PSTTabContent
   const isLiveHealthy = !/local|issue/i.test(liveStatusText);
   const liveAccent = isLiveHealthy ? "#22c55e" : "#f59e0b";
 
+  const renderDepotControls = (depot) => {
+    const isWestDepot = depot === "west";
+    const depotLabel = isWestDepot ? "West Depot" : "East Depot";
+    const depotShortLabel = isWestDepot ? "WD" : "ED";
+    const depotExcelLabel = isWestDepot ? "West Excel" : "East Excel";
+    const inputAccent = isWestDepot ? "#58a6ff" : "#c084fc";
+    const depotExcelStyle = isWestDepot
+      ? {
+          background: "linear-gradient(135deg, rgba(37,99,235,0.18), rgba(30,64,175,0.22))",
+          borderColor: "rgba(88,166,255,0.62)",
+          color: "#bfdbfe",
+          boxShadow: "0 0 18px rgba(59,130,246,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
+        }
+      : {
+          background: "linear-gradient(135deg, rgba(147,51,234,0.18), rgba(88,28,135,0.22))",
+          borderColor: "rgba(192,132,252,0.62)",
+          color: "#e9d5ff",
+          boxShadow: "0 0 18px rgba(168,85,247,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
+        };
+
+    return (
+      <div
+        data-pst-live-status-class={pstLiveStatusClass || ""}
+        className="theme-pst-live-panel flex w-full flex-col gap-4 rounded-2xl border px-5 py-4 lg:w-[420px] lg:shrink-0"
+        style={{
+          background: "linear-gradient(135deg, rgba(7,24,40,0.98) 0%, rgba(8,38,61,0.94) 48%, rgba(6,18,31,0.98) 100%)",
+          borderColor: "rgba(79,142,247,0.28)",
+          boxShadow: "0 18px 34px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.06)",
+        }}
+      >
+        <div className="flex items-center gap-3 border-b border-[#2b4f6b]/70 pb-4">
+          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: `${liveAccent}22` }}>
+            <span className="absolute inline-flex h-9 w-9 animate-ping rounded-full opacity-35" style={{ backgroundColor: liveAccent }} />
+            <span
+              className="relative h-4 w-4 rounded-full border"
+              style={{
+                backgroundColor: liveAccent,
+                borderColor: `${liveAccent}aa`,
+                boxShadow: `0 0 16px ${liveAccent}aa`,
+              }}
+            />
+          </div>
+          <div className="min-w-0">
+            <div className="whitespace-nowrap text-[14px] font-medium uppercase leading-none tracking-wide" style={{ color: liveAccent }}>
+              {liveStatusTitle}
+            </div>
+            <div className="mt-1 text-[11px] font-normal text-slate-300">{liveStatusSubtext}</div>
+            {pstLiveDebug && (
+              <div className="mt-1 max-w-[300px] text-[10px] font-semibold leading-tight text-amber-300/85">
+                {pstLiveDebug}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[11px] font-medium uppercase tracking-[0.14em]" style={{ color: inputAccent }}>
+            Completed By — {depotLabel}
+          </span>
+          <input
+            type="text"
+            value={safeCompletedByNames[depot] || ""}
+            onChange={(event) => handleCompletedByChange(depot, event.target.value)}
+            placeholder={`${depotLabel} name`}
+            className="h-10 w-full rounded-xl border px-3 text-[13px] font-semibold outline-none transition-all"
+            style={{
+              background: "linear-gradient(180deg,#071d31,#061827)",
+              borderColor: `${inputAccent}78`,
+              color: "#e2eaf4",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+            }}
+          />
+        </label>
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <button
+            onClick={() => handleDownloadExcel(depot)}
+            disabled={Boolean(downloadingExcelDepot)}
+            className={`removal-summary-tooltip-trigger theme-pst-excel-button theme-pst-excel-${depot} relative z-50 flex h-10 w-full items-center justify-center gap-2 overflow-visible rounded-xl border px-4 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50`}
+            style={depotExcelStyle}
+            aria-label={`Download ${depotShortLabel} PST and Train Prep Excel report to paste into the official ELOG`}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            {downloadingExcelDepot === depot ? "Preparing..." : depotExcelLabel}
+            <RemovalSummaryTooltip
+              message={`Download ${depotShortLabel} PST and Train Prep Excel report to paste into the official ELOG`}
+              placement="top"
+            />
+          </button>
+
+          <button
+            onClick={() => handleDownloadExcel("combined")}
+            disabled={Boolean(downloadingExcelDepot)}
+            className="removal-summary-tooltip-trigger theme-pst-excel-button theme-pst-excel-combined relative z-50 flex h-10 w-full items-center justify-center gap-2 overflow-visible rounded-xl border px-4 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+            style={{
+              background: "linear-gradient(135deg, rgba(20,184,166,0.18), rgba(14,116,144,0.22))",
+              borderColor: "rgba(94,234,212,0.58)",
+              color: "#ccfbf1",
+              boxShadow: "0 0 18px rgba(20,184,166,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
+            }}
+            aria-label="Download combined WD and ED PST and Train Prep Excel report to paste into the official ELOG"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            {downloadingExcelDepot === "combined" ? "Preparing..." : "Combined Excel"}
+            <RemovalSummaryTooltip
+              message="Download combined WD and ED PST and Train Prep Excel report to paste into the official ELOG"
+              placement="top"
+            />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="flex w-fit flex-col items-start gap-5">
-      <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-start">
-        <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" activePg={westPg} onPgChange={(pg) => onPSTPgChange?.("west", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("west")} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearPg2Trains={westPSTStablingEditable ? () => onClearPSTPg2Trains?.("west") : null} stablingEditable={westPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} />
-        <div className="pst-train-prep-log-font-bump w-full max-w-[900px] overflow-visible lg:sticky lg:top-4 lg:w-[900px] lg:max-w-[900px] lg:shrink-0 lg:self-start">
+    <div className="flex w-fit flex-col items-start gap-7">
+      <div className="flex w-full flex-col gap-3">
+        <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-start">
+          <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" activePg={westPg} onPgChange={(pg) => onPSTPgChange?.("west", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("west")} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearPg2Trains={westPSTStablingEditable ? () => onClearPSTPg2Trains?.("west") : null} stablingEditable={westPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} />
+          {renderDepotControls("west")}
+        </div>
+        <div className="pst-train-prep-log-font-bump w-full overflow-visible">
           <style>{`
           /* PST / Train Prep Log output: auto-height, wider width, compact header */
           .pst-train-prep-log-font-bump {
@@ -13297,174 +13422,13 @@ function PSTTabContent
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-start">
-        <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" activePg={eastPg} onPgChange={(pg) => onPSTPgChange?.("east", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("east")} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearPg2Trains={eastPSTStablingEditable ? () => onClearPSTPg2Trains?.("east") : null} stablingEditable={eastPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} />
-        <div className="pst-train-prep-log-font-bump w-full max-w-[900px] overflow-visible lg:sticky lg:top-4 lg:w-[900px] lg:max-w-[900px] lg:shrink-0 lg:self-start">
-          <PSTLogOutput depot="east" logLines={sortedLogLines} onClearDepot={onClearDepotLog} />
+      <div className="flex w-full flex-col gap-3">
+        <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-start">
+          <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" activePg={eastPg} onPgChange={(pg) => onPSTPgChange?.("east", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("east")} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearPg2Trains={eastPSTStablingEditable ? () => onClearPSTPg2Trains?.("east") : null} stablingEditable={eastPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} />
+          {renderDepotControls("east")}
         </div>
-      </div>
-
-      <div className="w-full max-w-[960px]">
-        <div
-          data-pst-live-status-class={pstLiveStatusClass || ""}
-          className="theme-pst-live-panel mb-3 flex flex-col gap-4 rounded-2xl border px-5 py-4 lg:flex-row lg:items-center lg:justify-between"
-          style={{
-            background: "linear-gradient(135deg, rgba(7,24,40,0.98) 0%, rgba(8,38,61,0.94) 48%, rgba(6,18,31,0.98) 100%)",
-            borderColor: "rgba(79,142,247,0.28)",
-            boxShadow: "0 18px 34px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.06)",
-          }}
-        >
-          <div className="flex min-w-[170px] items-center gap-3 lg:border-r lg:border-[#2b4f6b]/70 lg:pr-5">
-            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ background: `${liveAccent}22` }}>
-              <span className="absolute inline-flex h-10 w-10 rounded-full opacity-35 animate-ping" style={{ backgroundColor: liveAccent }} />
-              <span
-                className="relative h-5 w-5 rounded-full border"
-                style={{
-                  backgroundColor: liveAccent,
-                  borderColor: `${liveAccent}aa`,
-                  boxShadow: `0 0 18px ${liveAccent}aa`,
-                }}
-              />
-            </div>
-            <div className="min-w-0">
-              <div className="whitespace-nowrap text-[15px] font-medium uppercase leading-none tracking-wide" style={{ color: liveAccent }}>
-                {liveStatusTitle}
-              </div>
-              <div className="mt-1 whitespace-nowrap text-[12px] font-normal text-slate-300">
-                {liveStatusSubtext}
-              </div>
-              {pstLiveDebug && (
-                <div className="mt-1 max-w-[260px] text-[10px] font-semibold leading-tight text-amber-300/85">
-                  {pstLiveDebug}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:justify-center">
-            <div className="flex shrink-0 items-center gap-2 whitespace-nowrap lg:pr-3">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7da9ff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-              <span className="whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.16em] text-blue-200">
-                Completed By
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <label className="flex flex-col gap-1">
-                <span className="text-[11px] font-medium tracking-wide text-[#58a6ff]">West Depot</span>
-                <input
-                  type="text"
-                  value={safeCompletedByNames.west}
-                  onChange={(e) => handleCompletedByChange("west", e.target.value)}
-                  placeholder="West name"
-                  className="h-9 w-full rounded-xl border px-3 text-[12px] font-normal outline-none transition-all sm:w-40"
-                  style={{
-                    background: "linear-gradient(180deg,#071d31,#061827)",
-                    borderColor: "rgba(88,166,255,0.42)",
-                    color: "#e2eaf4",
-                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
-                  }}
-                />
-              </label>
-
-              <label className="flex flex-col gap-1">
-                <span className="text-[11px] font-medium tracking-wide text-purple-300">East Depot</span>
-                <input
-                  type="text"
-                  value={safeCompletedByNames.east}
-                  onChange={(e) => handleCompletedByChange("east", e.target.value)}
-                  placeholder="East name"
-                  className="h-10 w-full rounded-xl border px-3 text-[13px] font-bold outline-none transition-all sm:w-40"
-                  style={{
-                    background: "linear-gradient(180deg,#071d31,#061827)",
-                    borderColor: "rgba(192,132,252,0.48)",
-                    color: "#e2eaf4",
-                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
-                  }}
-                />
-              </label>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2 lg:border-l lg:border-[#2b4f6b]/70 lg:pl-6">
-            <button
-              onClick={() => handleDownloadExcel("west")}
-              disabled={Boolean(downloadingExcelDepot)}
-              className="removal-summary-tooltip-trigger relative z-50 overflow-visible theme-pst-excel-button theme-pst-excel-west flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
-              style={{
-                background: "linear-gradient(135deg, rgba(37,99,235,0.18), rgba(30,64,175,0.22))",
-                borderColor: "rgba(88,166,255,0.62)",
-                color: "#bfdbfe",
-                boxShadow: "0 0 18px rgba(59,130,246,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
-              }}
-              aria-label="Download WD PST and Train Prep Excel report to paste into the official ELOG"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              {downloadingExcelDepot === "west" ? "Preparing..." : "West Excel"}
-              <RemovalSummaryTooltip
-                message="Download WD PST and Train Prep Excel report to paste into the official ELOG"
-                placement="top"
-              />
-            </button>
-
-            <button
-              onClick={() => handleDownloadExcel("east")}
-              disabled={Boolean(downloadingExcelDepot)}
-              className="removal-summary-tooltip-trigger relative z-50 overflow-visible theme-pst-excel-button theme-pst-excel-east flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
-              style={{
-                background: "linear-gradient(135deg, rgba(147,51,234,0.18), rgba(88,28,135,0.22))",
-                borderColor: "rgba(192,132,252,0.62)",
-                color: "#e9d5ff",
-                boxShadow: "0 0 18px rgba(168,85,247,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
-              }}
-              aria-label="Download ED PST and Train Prep Excel report to paste into the official ELOG"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              {downloadingExcelDepot === "east" ? "Preparing..." : "East Excel"}
-              <RemovalSummaryTooltip
-                message="Download ED PST and Train Prep Excel report to paste into the official ELOG"
-                placement="top"
-              />
-            </button>
-
-
-            <button
-              onClick={() => handleDownloadExcel("combined")}
-              disabled={Boolean(downloadingExcelDepot)}
-              className="removal-summary-tooltip-trigger relative z-50 overflow-visible theme-pst-excel-button theme-pst-excel-combined flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-5 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
-              style={{
-                background: "linear-gradient(135deg, rgba(20,184,166,0.18), rgba(14,116,144,0.22))",
-                borderColor: "rgba(94,234,212,0.58)",
-                color: "#ccfbf1",
-                boxShadow: "0 0 18px rgba(20,184,166,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
-              }}
-              aria-label="Download combined WD and ED PST and Train Prep Excel report to paste into the official ELOG"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              {downloadingExcelDepot === "combined" ? "Preparing..." : "Combined Excel"}
-              <RemovalSummaryTooltip
-                message="Download combined WD and ED PST and Train Prep Excel report to paste into the official ELOG"
-                placement="top"
-              />
-            </button>
-          </div>
+        <div className="pst-train-prep-log-font-bump w-full overflow-visible">
+          <PSTLogOutput depot="east" logLines={sortedLogLines} onClearDepot={onClearDepotLog} />
         </div>
       </div>
     </div>
