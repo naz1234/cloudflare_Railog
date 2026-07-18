@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { GlobalWorkerOptions, getDocument, Util } from "pdfjs-dist/legacy/build/pdf.mjs";
+// @ts-expect-error Vite resolves this worker module to a public asset URL.
+import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 import {
   AlertCircle,
   CalendarDays,
@@ -39,46 +42,10 @@ import {
   updateRosterRemark,
 } from "./roster/rosterStorage";
 
-const PDFJS_VERSION = "3.11.174";
-const PDFJS_SCRIPT = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.js`;
-const PDFJS_WORKER = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.js`;
-
-let pdfJsPromise = null;
+GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 function loadPdfJs() {
-  if (window.pdfjsLib?.getDocument) {
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
-    return Promise.resolve(window.pdfjsLib);
-  }
-  if (pdfJsPromise) return pdfJsPromise;
-
-  pdfJsPromise = new Promise((resolve, reject) => {
-    const existing = document.querySelector(`script[data-railog-pdfjs="${PDFJS_VERSION}"]`);
-    const finish = () => {
-      if (!window.pdfjsLib?.getDocument) {
-        reject(new Error("The PDF reader could not be loaded. Check the internet connection and try again."));
-        return;
-      }
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
-      resolve(window.pdfjsLib);
-    };
-
-    if (existing) {
-      existing.addEventListener("load", finish, { once: true });
-      existing.addEventListener("error", () => reject(new Error("Unable to load the PDF reader.")), { once: true });
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = PDFJS_SCRIPT;
-    script.async = true;
-    script.dataset.railogPdfjs = PDFJS_VERSION;
-    script.onload = finish;
-    script.onerror = () => reject(new Error("Unable to load the PDF reader."));
-    document.head.appendChild(script);
-  });
-
-  return pdfJsPromise;
+  return Promise.resolve({ getDocument, Util });
 }
 
 function bytesToLabel(size = 0) {
