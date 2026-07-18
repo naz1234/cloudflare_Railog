@@ -402,9 +402,9 @@ html[data-app-theme="light"] .theme-stabling-train-card:not(.has-request):not(.i
 /* Main Stabling: use flat pastel category pills in light mode.
    Each remark keeps its own request accent, including multiple remarks on one train. */
 html[data-app-theme="light"] .theme-stabling-remark {
-  background: rgba(var(--stabling-remark-accent-rgb, 79, 142, 247), 0.34) !important;
-  border: 1px solid rgba(var(--stabling-remark-accent-rgb, 79, 142, 247), 0.96) !important;
-  box-shadow: 0 1px 3px rgba(var(--stabling-remark-accent-rgb, 79, 142, 247), 0.20) !important;
+  background: rgba(var(--stabling-remark-accent-rgb, 79, 142, 247), 0.42) !important;
+  border: 1px solid rgb(var(--stabling-remark-accent-rgb, 79, 142, 247)) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12) !important;
   color: #0f172a !important;
   -webkit-text-fill-color: #0f172a !important;
   text-shadow: none !important;
