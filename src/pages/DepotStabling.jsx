@@ -15710,6 +15710,38 @@ function AlarmContent({ search = "" }) {
   );
 }
 
+function HeaderDateTime() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    let intervalId;
+    const delayUntilNextMinute = 60000 - (Date.now() % 60000) + 50;
+    const timeoutId = window.setTimeout(() => {
+      setNow(new Date());
+      intervalId = window.setInterval(() => setNow(new Date()), 60000);
+    }, delayUntilNextMinute);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      if (intervalId) window.clearInterval(intervalId);
+    };
+  }, []);
+
+  const timeLabel = now.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const dateLabel = now.toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+  return <span className="text-[10px] text-[#7eb8e0]">{timeLabel} • {dateLabel}</span>;
+}
+
 
 export default function DepotStablingPage() {
   const [appTheme, setAppTheme] = useState(() => loadAppTheme());
@@ -19476,7 +19508,7 @@ export default function DepotStablingPage() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 bg-[#071828] border border-[#1a3a56] px-3 py-1.5 rounded-lg">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span className="text-[10px] text-[#7eb8e0]">{new Date().toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}</span>
+              <HeaderDateTime />
             </div>
             <button
               type="button"
