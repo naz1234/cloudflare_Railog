@@ -13223,12 +13223,86 @@ function PSTTabContent
   const liveAccent = isLiveHealthy ? "#22c55e" : "#f59e0b";
 
   return (
-    <div className="flex flex-col lg:flex-row gap-5 w-fit items-start">
-      <div className="flex flex-col gap-5 min-w-0 shrink-0">
-        <div className="space-y-5 min-w-0">
-          <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" activePg={westPg} onPgChange={(pg) => onPSTPgChange?.("west", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("west")} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearPg2Trains={westPSTStablingEditable ? () => onClearPSTPg2Trains?.("west") : null} stablingEditable={westPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} />
-          <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" activePg={eastPg} onPgChange={(pg) => onPSTPgChange?.("east", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("east")} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearPg2Trains={eastPSTStablingEditable ? () => onClearPSTPg2Trains?.("east") : null} stablingEditable={eastPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} />
+    <div className="flex w-fit flex-col items-start gap-5">
+      <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-start">
+        <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" activePg={westPg} onPgChange={(pg) => onPSTPgChange?.("west", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("west")} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearPg2Trains={westPSTStablingEditable ? () => onClearPSTPg2Trains?.("west") : null} stablingEditable={westPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} />
+        <div className="pst-train-prep-log-font-bump w-full max-w-[900px] overflow-visible lg:sticky lg:top-4 lg:w-[900px] lg:max-w-[900px] lg:shrink-0 lg:self-start">
+          <style>{`
+          /* PST / Train Prep Log output: auto-height, wider width, compact header */
+          .pst-train-prep-log-font-bump {
+            height: auto !important;
+            min-height: 0;
+          }
+  
+          .pst-train-prep-log-font-bump .pst-log-shell {
+            width: 100%;
+            height: auto !important;
+            min-height: 0;
+          }
+  
+          .pst-train-prep-log-font-bump .pst-log-scroll {
+            min-height: 0;
+          }
+  
+          .pst-train-prep-log-font-bump .pst-plain-main-title {
+            font-size: 14px !important;
+            line-height: 1.04 !important;
+          }
+  
+          .pst-train-prep-log-font-bump .pst-plain-main-count {
+            font-size: 11px !important;
+          }
+  
+          .pst-train-prep-log-font-bump .pst-plain-depot-title {
+            font-size: 13px !important;
+            line-height: 1.05 !important;
+          }
+  
+          .pst-train-prep-log-font-bump .pst-plain-count {
+            font-size: 13px !important;
+          }
+  
+          .pst-train-prep-log-font-bump .pst-plain-button {
+            font-size: 12px !important;
+          }
+  
+          .pst-train-prep-log-font-bump .pst-plain-title {
+            font-size: 13px !important;
+            line-height: 1.1 !important;
+          }
+  
+          .pst-train-prep-log-font-bump .pst-plain-summary,
+          .pst-train-prep-log-font-bump .pst-plain-train,
+          .pst-train-prep-log-font-bump .pst-plain-row-text,
+          .pst-train-prep-log-font-bump .pst-plain-empty {
+            font-size: 13px !important;
+            line-height: 1.45 !important;
+          }
+  
+          .pst-train-prep-log-font-bump .pst-log-scroll::-webkit-scrollbar {
+            width: 8px;
+          }
+  
+          .pst-train-prep-log-font-bump .pst-log-scroll::-webkit-scrollbar-track {
+            background: rgba(7,24,40,0.9);
+            border-radius: 999px;
+          }
+  
+          .pst-train-prep-log-font-bump .pst-log-scroll::-webkit-scrollbar-thumb {
+            background: rgba(88,166,255,0.38);
+            border-radius: 999px;
+          }
+        `}</style>
+          <PSTLogOutput depot="west" logLines={sortedLogLines} onClearDepot={onClearDepotLog} />
         </div>
+      </div>
+
+      <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-start">
+        <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" activePg={eastPg} onPgChange={(pg) => onPSTPgChange?.("east", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("east")} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearPg2Trains={eastPSTStablingEditable ? () => onClearPSTPg2Trains?.("east") : null} stablingEditable={eastPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} />
+        <div className="pst-train-prep-log-font-bump w-full max-w-[900px] overflow-visible lg:sticky lg:top-4 lg:w-[900px] lg:max-w-[900px] lg:shrink-0 lg:self-start">
+          <PSTLogOutput depot="east" logLines={sortedLogLines} onClearDepot={onClearDepotLog} />
+        </div>
+      </div>
 
       <div className="w-full max-w-[960px]">
         <div
@@ -13392,77 +13466,6 @@ function PSTTabContent
             </button>
           </div>
         </div>
-      </div>
-    </div>
-
-      <div className="pst-train-prep-log-font-bump w-full max-w-[900px] overflow-visible lg:w-[900px] lg:max-w-[900px] lg:shrink-0 lg:self-start lg:sticky lg:top-4">
-        <style>{`
-        /* PST / Train Prep Log output: auto-height, wider width, compact header */
-        .pst-train-prep-log-font-bump {
-          height: auto !important;
-          min-height: 0;
-        }
-
-        .pst-train-prep-log-font-bump .pst-log-shell {
-          width: 100%;
-          height: auto !important;
-          min-height: 0;
-        }
-
-        .pst-train-prep-log-font-bump .pst-log-scroll {
-          min-height: 0;
-        }
-
-        .pst-train-prep-log-font-bump .pst-plain-main-title {
-          font-size: 14px !important;
-          line-height: 1.04 !important;
-        }
-
-        .pst-train-prep-log-font-bump .pst-plain-main-count {
-          font-size: 11px !important;
-        }
-
-        .pst-train-prep-log-font-bump .pst-plain-depot-title {
-          font-size: 13px !important;
-          line-height: 1.05 !important;
-        }
-
-        .pst-train-prep-log-font-bump .pst-plain-count {
-          font-size: 13px !important;
-        }
-
-        .pst-train-prep-log-font-bump .pst-plain-button {
-          font-size: 12px !important;
-        }
-
-        .pst-train-prep-log-font-bump .pst-plain-title {
-          font-size: 13px !important;
-          line-height: 1.1 !important;
-        }
-
-        .pst-train-prep-log-font-bump .pst-plain-summary,
-        .pst-train-prep-log-font-bump .pst-plain-train,
-        .pst-train-prep-log-font-bump .pst-plain-row-text,
-        .pst-train-prep-log-font-bump .pst-plain-empty {
-          font-size: 13px !important;
-          line-height: 1.45 !important;
-        }
-
-        .pst-train-prep-log-font-bump .pst-log-scroll::-webkit-scrollbar {
-          width: 8px;
-        }
-
-        .pst-train-prep-log-font-bump .pst-log-scroll::-webkit-scrollbar-track {
-          background: rgba(7,24,40,0.9);
-          border-radius: 999px;
-        }
-
-        .pst-train-prep-log-font-bump .pst-log-scroll::-webkit-scrollbar-thumb {
-          background: rgba(88,166,255,0.38);
-          border-radius: 999px;
-        }
-      `}</style>
-        <PSTLogOutput logLines={sortedLogLines} onRemove={onRemoveLog} onClearDepot={onClearDepotLog} />
       </div>
     </div>
   );
