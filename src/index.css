@@ -2572,23 +2572,23 @@ html[data-app-theme="light"] .theme-maintenance-pending-icon svg * {
 .theme-maintenance-pending-icon {
   transform-origin: center;
   will-change: transform, filter;
-  animation: maintenance-pending-pulse 0.9s ease-in-out infinite;
+  animation: maintenance-pending-pulse 1.2s ease-in-out infinite;
 }
 
 .theme-maintenance-pending-icon > svg {
   transform-origin: center;
   will-change: transform;
-  animation: maintenance-pending-hourglass-flip 0.9s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  animation: maintenance-pending-hourglass-flip 1.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
 .theme-maintenance-train-row:nth-child(2n) .theme-maintenance-pending-icon,
 .theme-maintenance-train-row:nth-child(2n) .theme-maintenance-pending-icon > svg {
-  animation-delay: -0.18s;
+  animation-delay: -0.24s;
 }
 
 .theme-maintenance-train-row:nth-child(3n) .theme-maintenance-pending-icon,
 .theme-maintenance-train-row:nth-child(3n) .theme-maintenance-pending-icon > svg {
-  animation-delay: -0.36s;
+  animation-delay: -0.48s;
 }
 
 @keyframes maintenance-pending-pulse {
