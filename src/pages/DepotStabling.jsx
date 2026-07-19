@@ -2700,6 +2700,10 @@ const TID_PRESETS = {
 
 const TRAIN_REM_PRESET_LABELS = ["9am", "7pm", "12am", "Fri", "Sat", "PH"];
 
+function getTrainRemRequiredServiceCount(label = "9am") {
+  return ["Fri", "Sat"].includes(label) ? 20 : 40;
+}
+
 const TID_TIME_MAP = {
   west: {
     "9am":  { 212:"08:59",214:"09:05",216:"09:11",218:"09:17",220:"09:23",102:"09:29",104:"09:35",106:"09:41",108:"09:47",110:"09:53" },
@@ -3103,12 +3107,39 @@ function collectTrainRemTrainIdsForDepotCopy(
   return trainIds;
 }
 
+function collectTrainRemCachedPresetRemovalTrainIds(
+  trainRemState = {},
+  label = "7pm",
+  activeTimetable = null
+) {
+  const safeLabel = TRAIN_REM_PRESET_LABELS.includes(label) ? label : "7pm";
+  const cachedPresetState = mergeTrainRemCombinedMorningReferenceState({
+    ...trainRemState,
+    selectedPreset: {
+      ...trainRemState?.selectedPreset,
+      west: safeLabel,
+      east: safeLabel,
+    },
+    rows: {
+      ...trainRemState?.rows,
+      west: getTrainRemCachedPresetRows(trainRemState, "west", safeLabel),
+      east: getTrainRemCachedPresetRows(trainRemState, "east", safeLabel),
+    },
+  }, activeTimetable);
+
+  return Array.from(new Set(
+    ["west", "east"].flatMap((depot) => (
+      collectTrainRemTrainIdsForDepotCopy(cachedPresetState, depot, activeTimetable)
+    ))
+  ));
+}
+
 function collectTrainRemReferenceInServiceRows(trainRemState = {}, activeTimetable = null) {
   const selectedPreset = trainRemState?.selectedPreset?.west || "9am";
   if (!TRAIN_REM_LEGACY_COMBINED_PRESET_LABELS.has(selectedPreset)) return [];
 
   // The combined 9am and 7pm tables include mainline reference TIDs as well as
-  // scheduled depot removals. TTL represents the in-service fleet, so retain
+  // scheduled depot removals. SVC represents the in-service fleet, so retain
   // every populated reference row even when depot-copy output filters it out.
   const referenceTidSet = new Set(getTrainRemReferenceTids(selectedPreset, activeTimetable));
   const rows = normalizeTrainRemRowsForPreset(
@@ -8028,6 +8059,18 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const referenceInServiceTrainIds = useMemo(() => (
     collectTrainRemReferenceInServiceTrainIds(trainRemState, activeTimetable)
   ), [activeTimetable, trainRemState]);
+  const priorRemovalInServiceTrainIds = useMemo(() => {
+    const selectedPreset = trainRemState?.selectedPreset?.west || "9am";
+    if (selectedPreset !== "12am") return [];
+
+    // At 12am, these trains are still in service even though they were already
+    // removed from the mainline during the cached 7pm removal operation.
+    return collectTrainRemCachedPresetRemovalTrainIds(
+      trainRemState,
+      "7pm",
+      activeTimetable
+    );
+  }, [activeTimetable, trainRemState]);
   const mainlineInServiceRows = useMemo(() => (
     collectTrainRemMainlineInServiceRows(trainRemState, activeTimetable)
   ), [activeTimetable, trainRemState]);
@@ -8185,7 +8228,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const totalServiceSummary = useMemo(() => {
     const trackedTrainIds = Array.from(
       new Set(
-        [...westDepotCopyTrainIds, ...eastDepotCopyTrainIds, ...referenceInServiceTrainIds]
+        [
+          ...westDepotCopyTrainIds,
+          ...eastDepotCopyTrainIds,
+          ...referenceInServiceTrainIds,
+          ...priorRemovalInServiceTrainIds,
+        ]
           .map((trainId) => normalizeTrainId(trainId))
           .filter(Boolean)
       )
@@ -8222,11 +8270,18 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   }, [
     eastDepotCopyTrainIds,
     maintenanceMap,
+    priorRemovalInServiceTrainIds,
     referenceInServiceTrainIds,
     westDepotCopyTrainIds,
   ]);
   const totalServiceTrainCount = totalServiceSummary.inServiceTrainIds.length;
   const totalTrackedTrainCount = totalServiceSummary.trackedTrainIds.length;
+  const selectedServicePreset = trainRemState?.selectedPreset?.west || "9am";
+  const requiredServiceTrainCount = getTrainRemRequiredServiceCount(selectedServicePreset);
+  const serviceTrainDifference = totalServiceTrainCount - requiredServiceTrainCount;
+  const serviceTrainAvailabilityText = serviceTrainDifference >= 0
+    ? `${serviceTrainDifference} extra trains available at West / East Depot.`
+    : `${Math.abs(serviceTrainDifference)} trains below the required service level of ${requiredServiceTrainCount}.`;
   const duplicateServiceTrainDetailText = duplicateServiceTrainDetails
     .map((item) => item.detailText)
     .join("\n");
@@ -8237,7 +8292,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     .map((item) => `${padTrainId(item.trainId)} (${item.remarks.join(" / ")})`)
     .join(", ");
   const totalServiceText = [
-    `Total ${totalServiceTrainCount} trains in service.`,
+    `${totalServiceTrainCount} unique trains in service.`,
+    serviceTrainAvailabilityText,
     ...(totalServiceSummary.unfitTrainDetails.length
       ? [
           `Total ${totalTrackedTrainCount} unique trains before unfit filtering.`,
@@ -8489,7 +8545,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                           : "0 0 12px rgba(245,158,11,0.12)",
                     }}
                   >
-                    TTL : {totalServiceTrainCount}
+                    SVC : {totalServiceTrainCount}
                   </button>
                 </ActionTooltip>
               )}
