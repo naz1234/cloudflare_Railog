@@ -8245,7 +8245,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         ]
       : []),
     ...(hasServiceTrainDuplicate
-      ? ["but :", duplicateServiceWarningText, duplicateServiceTrainDetailText]
+      ? ["", "but :", duplicateServiceWarningText, duplicateServiceTrainDetailText]
       : []),
   ].join("\n");
   const duplicateWarningStartIndex = totalServiceText.indexOf(duplicateServiceWarningText);
