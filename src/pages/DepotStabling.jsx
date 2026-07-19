@@ -3103,7 +3103,7 @@ function collectTrainRemTrainIdsForDepotCopy(
   return trainIds;
 }
 
-function collectTrainRemReferenceInServiceTrainIds(trainRemState = {}, activeTimetable = null) {
+function collectTrainRemReferenceInServiceRows(trainRemState = {}, activeTimetable = null) {
   const selectedPreset = trainRemState?.selectedPreset?.west || "9am";
   if (!TRAIN_REM_LEGACY_COMBINED_PRESET_LABELS.has(selectedPreset)) return [];
 
@@ -3117,21 +3117,35 @@ function collectTrainRemReferenceInServiceTrainIds(trainRemState = {}, activeTim
     selectedPreset,
     activeTimetable
   );
-  const seen = new Set();
-  const trainIds = [];
+  const referenceRows = [];
 
   rows.forEach((row, index) => {
     if (!isTrainRemReferenceOnlyIndex("west", selectedPreset, index, activeTimetable)) return;
 
     const tid = normalizeTrainRemTidValue(row?.tid || "");
     const trainKey = padTrainId(normalizeTrainId(row?.trainId || ""));
-    if (!referenceTidSet.has(tid) || !trainKey || seen.has(trainKey)) return;
+    if (!referenceTidSet.has(tid) || !trainKey) return;
 
-    seen.add(trainKey);
-    trainIds.push(trainKey);
+    referenceRows.push({ trainId: trainKey, tid });
   });
 
-  return trainIds;
+  return referenceRows;
+}
+
+function collectTrainRemReferenceInServiceTrainIds(trainRemState = {}, activeTimetable = null) {
+  const referenceRows = collectTrainRemReferenceInServiceRows(trainRemState, activeTimetable);
+
+  return Array.from(new Set(referenceRows.map((row) => row.trainId)));
+}
+
+function collectTrainRemMainlineInServiceRows(trainRemState = {}, activeTimetable = null) {
+  const selectedPreset = trainRemState?.selectedPreset?.west || "9am";
+
+  return collectTrainRemReferenceInServiceRows(trainRemState, activeTimetable)
+    .filter((row) => (
+      !getTrainRemScheduleMatch(activeTimetable, "west", selectedPreset, row.tid)
+      && !getTrainRemScheduleMatch(activeTimetable, "east", selectedPreset, row.tid)
+    ));
 }
 
 function buildTrainRemRowsFromPreset(depot, label, existingRows = []) {
@@ -8014,27 +8028,36 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const referenceInServiceTrainIds = useMemo(() => (
     collectTrainRemReferenceInServiceTrainIds(trainRemState, activeTimetable)
   ), [activeTimetable, trainRemState]);
+  const mainlineInServiceRows = useMemo(() => (
+    collectTrainRemMainlineInServiceRows(trainRemState, activeTimetable)
+  ), [activeTimetable, trainRemState]);
+  const mainlineInServiceTrainIds = useMemo(() => (
+    Array.from(new Set(mainlineInServiceRows.map((row) => normalizeTrainId(row.trainId)).filter(Boolean)))
+  ), [mainlineInServiceRows]);
   const westDepotCopyCount = westDepotCopyTrainIds.length;
   const eastDepotCopyCount = eastDepotCopyTrainIds.length;
-  const duplicateDepotTrainIds = useMemo(() => {
-    const eastDepotTrainIdSet = new Set(
-      eastDepotCopyTrainIds
-        .map((trainId) => normalizeTrainId(trainId))
-        .filter(Boolean)
-    );
+  const duplicateServiceTrainIds = useMemo(() => {
+    const locationGroupCounts = new Map();
 
-    return Array.from(
-      new Set(
-        westDepotCopyTrainIds
-          .map((trainId) => normalizeTrainId(trainId))
-          .filter((trainId) => trainId && eastDepotTrainIdSet.has(trainId))
-      )
-    ).sort((a, b) => (
+    [westDepotCopyTrainIds, eastDepotCopyTrainIds, mainlineInServiceTrainIds]
+      .forEach((trainIds) => {
+        const locationTrainIds = new Set(
+          trainIds.map((trainId) => normalizeTrainId(trainId)).filter(Boolean)
+        );
+        locationTrainIds.forEach((trainId) => {
+          locationGroupCounts.set(trainId, (locationGroupCounts.get(trainId) || 0) + 1);
+        });
+      });
+
+    return Array.from(locationGroupCounts.entries())
+      .filter(([, locationCount]) => locationCount > 1)
+      .map(([trainId]) => trainId)
+      .sort((a, b) => (
       Number(a.replace(/\D/g, "")) - Number(b.replace(/\D/g, ""))
-    ));
-  }, [eastDepotCopyTrainIds, westDepotCopyTrainIds]);
-  const hasDepotTrainDuplicate = duplicateDepotTrainIds.length > 0;
-  const duplicateDepotTrainDetails = useMemo(() => {
+      ));
+  }, [eastDepotCopyTrainIds, mainlineInServiceTrainIds, westDepotCopyTrainIds]);
+  const hasServiceTrainDuplicate = duplicateServiceTrainIds.length > 0;
+  const duplicateServiceTrainDetails = useMemo(() => {
     const eastStablingSourceData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
     const westRemovalRows = collectTrainRemRowsForDepotCopy(
       trainRemState,
@@ -8085,6 +8108,24 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       return locationMap;
     };
 
+    const buildMainlineLocationMap = (rows = []) => {
+      const locationMap = new Map();
+
+      rows.forEach((row) => {
+        const trainId = normalizeTrainId(row?.trainId || "");
+        const tid = normalizeTrainRemTidValue(row?.tid || "");
+        if (!trainId || !tid) return;
+
+        const location = `TID ${tid.padStart(3, "0")}`;
+        const currentLocations = locationMap.get(trainId) || [];
+        if (!currentLocations.includes(location)) {
+          locationMap.set(trainId, [...currentLocations, location]);
+        }
+      });
+
+      return locationMap;
+    };
+
     const westRemovalLocationMap = buildRemovalLocationMap(westRemovalRows);
     const eastRemovalLocationMap = buildRemovalLocationMap(eastRemovalRows);
     const westStablingLocationMap = buildStablingLocationMap(westData, WEST_ROADS);
@@ -8092,6 +8133,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       eastStablingSourceData,
       EAST_ROADS
     );
+    const mainlineLocationMap = buildMainlineLocationMap(mainlineInServiceRows);
+    const westTrainIdSet = new Set(westDepotCopyTrainIds.map((trainId) => normalizeTrainId(trainId)));
+    const eastTrainIdSet = new Set(eastDepotCopyTrainIds.map((trainId) => normalizeTrainId(trainId)));
+    const mainlineTrainIdSet = new Set(mainlineInServiceTrainIds);
     const formatDepotLocations = (trainId, stablingMap, removalMap) => {
       const locations = [
         ...(stablingMap.get(trainId) || []),
@@ -8100,26 +8145,42 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       return locations.length ? locations.join(" + ") : "Listed";
     };
 
-    return duplicateDepotTrainIds.map((trainId) => ({
-      trainId,
-      westLocation: formatDepotLocations(
+    return duplicateServiceTrainIds.map((trainId) => {
+      const locations = [
+        ...(westTrainIdSet.has(trainId)
+          ? [{ label: "West", location: formatDepotLocations(trainId, westStablingLocationMap, westRemovalLocationMap) }]
+          : []),
+        ...(eastTrainIdSet.has(trainId)
+          ? [{ label: "East", location: formatDepotLocations(trainId, eastStablingLocationMap, eastRemovalLocationMap) }]
+          : []),
+        ...(mainlineTrainIdSet.has(trainId)
+          ? [{ label: "Mainline", location: (mainlineLocationMap.get(trainId) || ["Listed"]).join(" + ") }]
+          : []),
+      ];
+      const [primaryLocation, ...duplicateLocations] = locations;
+      const primaryText = primaryLocation?.label === "West"
+        ? `at ${primaryLocation.location}`
+        : `at ${primaryLocation?.label}: ${primaryLocation?.location}`;
+      const duplicateText = duplicateLocations
+        .map((item) => `${item.label}: ${item.location}`)
+        .join(" and ");
+
+      return {
         trainId,
-        westStablingLocationMap,
-        westRemovalLocationMap
-      ),
-      eastLocation: formatDepotLocations(
-        trainId,
-        eastStablingLocationMap,
-        eastRemovalLocationMap
-      ),
-    }));
+        detailText: `${padTrainId(trainId)} — ${primaryText} , but written at ${duplicateText}`,
+      };
+    });
   }, [
     activeTimetable,
-    duplicateDepotTrainIds,
+    duplicateServiceTrainIds,
     eastData,
+    eastDepotCopyTrainIds,
     eastStablingData,
+    mainlineInServiceRows,
+    mainlineInServiceTrainIds,
     trainRemState,
     westData,
+    westDepotCopyTrainIds,
   ]);
   const totalServiceSummary = useMemo(() => {
     const trackedTrainIds = Array.from(
@@ -8166,12 +8227,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   ]);
   const totalServiceTrainCount = totalServiceSummary.inServiceTrainIds.length;
   const totalTrackedTrainCount = totalServiceSummary.trackedTrainIds.length;
-  const duplicateDepotTrainDetailText = duplicateDepotTrainDetails
-    .map((item) => (
-      `${padTrainId(item.trainId)} — at ${item.westLocation} , but written at East: ${item.eastLocation}`
-    ))
+  const duplicateServiceTrainDetailText = duplicateServiceTrainDetails
+    .map((item) => item.detailText)
     .join("\n");
-  const duplicateDepotWarningText = duplicateDepotTrainDetails.length === 1
+  const duplicateServiceWarningText = duplicateServiceTrainDetails.length === 1
     ? "Please check the following duplicate listing:"
     : "Please check the following duplicate listings:";
   const unfitTrainDetailText = totalServiceSummary.unfitTrainDetails
@@ -8185,12 +8244,12 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
           `Unfit / Not Fit Train : ${unfitTrainDetailText}`,
         ]
       : []),
-    ...(hasDepotTrainDuplicate
-      ? ["but :", duplicateDepotWarningText, duplicateDepotTrainDetailText]
+    ...(hasServiceTrainDuplicate
+      ? ["but :", duplicateServiceWarningText, duplicateServiceTrainDetailText]
       : []),
   ].join("\n");
-  const duplicateWarningStartIndex = totalServiceText.indexOf(duplicateDepotWarningText);
-  const totalServiceTooltipContent = hasDepotTrainDuplicate && duplicateWarningStartIndex >= 0
+  const duplicateWarningStartIndex = totalServiceText.indexOf(duplicateServiceWarningText);
+  const totalServiceTooltipContent = hasServiceTrainDuplicate && duplicateWarningStartIndex >= 0
     ? (
         <span className="block w-full whitespace-pre-line text-left">
           {totalServiceText.slice(0, duplicateWarningStartIndex)}
@@ -8203,7 +8262,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               textAlign: "left",
             }}
           >
-            {duplicateDepotWarningText}
+            {duplicateServiceWarningText}
           </span>
           <span
             style={{
@@ -8216,7 +8275,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               width: "100%",
             }}
           >
-            {duplicateDepotTrainDetailText}
+            {duplicateServiceTrainDetailText}
           </span>
         </span>
       )
@@ -8404,28 +8463,28 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     type="button"
                     onClick={handleCopyTotalService}
                     aria-label={totalServiceText}
-                    className={`theme-train-rem-ttl ${totalServiceCopyStatus === "copied" ? "is-copied" : totalServiceCopyStatus === "failed" ? "is-error" : hasDepotTrainDuplicate ? "is-duplicate" : ""} inline-flex h-6 select-none items-center justify-center rounded-md border px-1.5 text-[10px] font-normal tracking-wide outline-none transition-all hover:-translate-y-0.5 focus-visible:ring-1 ${hasDepotTrainDuplicate ? "focus-visible:ring-red-300/70" : "focus-visible:ring-amber-300/70"}`}
+                    className={`theme-train-rem-ttl ${totalServiceCopyStatus === "copied" ? "is-copied" : totalServiceCopyStatus === "failed" ? "is-error" : hasServiceTrainDuplicate ? "is-duplicate" : ""} inline-flex h-6 select-none items-center justify-center rounded-md border px-1.5 text-[10px] font-normal tracking-wide outline-none transition-all hover:-translate-y-0.5 focus-visible:ring-1 ${hasServiceTrainDuplicate ? "focus-visible:ring-red-300/70" : "focus-visible:ring-amber-300/70"}`}
                     style={{
                       background: totalServiceCopyStatus === "copied"
                         ? "rgba(34,197,94,0.18)"
-                        : totalServiceCopyStatus === "failed" || hasDepotTrainDuplicate
+                        : totalServiceCopyStatus === "failed" || hasServiceTrainDuplicate
                           ? "rgba(127,29,29,0.50)"
                           : "rgba(245,158,11,0.13)",
                       borderColor: totalServiceCopyStatus === "copied"
                         ? "rgba(34,197,94,0.48)"
-                        : totalServiceCopyStatus === "failed" || hasDepotTrainDuplicate
+                        : totalServiceCopyStatus === "failed" || hasServiceTrainDuplicate
                           ? "rgba(248,113,113,0.72)"
                           : "rgba(251,191,36,0.50)",
                       color: totalServiceCopyStatus === "copied"
                         ? "#86efac"
                         : totalServiceCopyStatus === "failed"
                           ? "#fca5a5"
-                          : hasDepotTrainDuplicate
+                          : hasServiceTrainDuplicate
                             ? "#fecaca"
                             : "#fde68a",
                       boxShadow: totalServiceCopyStatus === "copied"
                         ? "0 0 12px rgba(34,197,94,0.16)"
-                        : hasDepotTrainDuplicate
+                        : hasServiceTrainDuplicate
                           ? "0 0 14px rgba(239,68,68,0.28)"
                           : "0 0 12px rgba(245,158,11,0.12)",
                     }}
