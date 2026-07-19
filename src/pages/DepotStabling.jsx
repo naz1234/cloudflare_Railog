@@ -3102,6 +3102,38 @@ function collectTrainRemTrainIdsForDepotCopy(
 
   return trainIds;
 }
+
+function collectTrainRem9amInServiceTrainIds(trainRemState = {}, activeTimetable = null) {
+  const selectedPreset = trainRemState?.selectedPreset?.west || "9am";
+  if (selectedPreset !== "9am") return [];
+
+  // The combined 9am table includes the mainline reference TIDs as well as
+  // scheduled depot removals. TTL represents the in-service fleet, so retain
+  // every populated reference row even when depot-copy output filters it out.
+  const referenceTidSet = new Set(getTrainRemReferenceTids("9am", activeTimetable));
+  const rows = normalizeTrainRemRowsForPreset(
+    trainRemState?.rows?.west,
+    "west",
+    "9am",
+    activeTimetable
+  );
+  const seen = new Set();
+  const trainIds = [];
+
+  rows.forEach((row, index) => {
+    if (!isTrainRemReferenceOnlyIndex("west", "9am", index, activeTimetable)) return;
+
+    const tid = normalizeTrainRemTidValue(row?.tid || "");
+    const trainKey = padTrainId(normalizeTrainId(row?.trainId || ""));
+    if (!referenceTidSet.has(tid) || !trainKey || seen.has(trainKey)) return;
+
+    seen.add(trainKey);
+    trainIds.push(trainKey);
+  });
+
+  return trainIds;
+}
+
 function buildTrainRemRowsFromPreset(depot, label, existingRows = []) {
   const preset = TID_PRESETS[depot].find((item) => item.label === label);
   const tids = getTrainRemPresetRowTids(depot, label, preset?.tids || []);
@@ -7979,6 +8011,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const eastDepotCopyTrainIds = useMemo(() => (
     getDepotCopyTrainIds("east", trainRemState)
   ), [getDepotCopyTrainIds, trainRemState]);
+  const nineAmInServiceTrainIds = useMemo(() => (
+    collectTrainRem9amInServiceTrainIds(trainRemState, activeTimetable)
+  ), [activeTimetable, trainRemState]);
   const westDepotCopyCount = westDepotCopyTrainIds.length;
   const eastDepotCopyCount = eastDepotCopyTrainIds.length;
   const duplicateDepotTrainIds = useMemo(() => {
@@ -8086,27 +8121,16 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     trainRemState,
     westData,
   ]);
-  const automaticAreaSummary = useMemo(() => {
-    const eastStablingSourceData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
-    const stablingTrainIdSet = new Set(
-      [
-        ...collectStablingTrainIds(westData, WEST_ROADS),
-        ...collectStablingTrainIds(eastStablingSourceData, EAST_ROADS),
-      ]
-        .map((trainId) => normalizeTrainId(trainId))
-        .filter(Boolean)
-    );
-    const automaticAreaTrainIds = Array.from(
+  const totalServiceSummary = useMemo(() => {
+    const trackedTrainIds = Array.from(
       new Set(
-        [...westDepotCopyTrainIds, ...eastDepotCopyTrainIds]
+        [...westDepotCopyTrainIds, ...eastDepotCopyTrainIds, ...nineAmInServiceTrainIds]
           .map((trainId) => normalizeTrainId(trainId))
           .filter(Boolean)
       )
     );
-    const unfitTrainDetails = automaticAreaTrainIds
+    const unfitTrainDetails = trackedTrainIds
       .map((trainId) => {
-        if (!stablingTrainIdSet.has(trainId)) return null;
-
         const maintenanceRemarks = Array.isArray(maintenanceMap?.[trainId])
           ? maintenanceMap[trainId]
           : [];
@@ -8116,7 +8140,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               .flatMap((item) => (
                 [item?.badgeText, item?.displayType, item?.typeKey, item?.remark]
                   .map((value) => String(value || "").trim())
-                  .filter((value) => value && /\bUNFIT\b/i.test(value))
+                  .filter((value) => value && (
+                    /\bUNFIT\b/i.test(value) ||
+                    /\bNOT[\s/_-]*FIT\b/i.test(value)
+                  ))
               ))
           )
         );
@@ -8128,19 +8155,17 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         Number(a.trainId.replace(/\D/g, "")) - Number(b.trainId.replace(/\D/g, ""))
       ));
     const unfitTrainIdSet = new Set(unfitTrainDetails.map((item) => item.trainId));
-    const inServiceTrainIds = automaticAreaTrainIds.filter((trainId) => !unfitTrainIdSet.has(trainId));
+    const inServiceTrainIds = trackedTrainIds.filter((trainId) => !unfitTrainIdSet.has(trainId));
 
-    return { automaticAreaTrainIds, inServiceTrainIds, unfitTrainDetails };
+    return { trackedTrainIds, inServiceTrainIds, unfitTrainDetails };
   }, [
-    eastData,
     eastDepotCopyTrainIds,
-    eastStablingData,
     maintenanceMap,
-    westData,
+    nineAmInServiceTrainIds,
     westDepotCopyTrainIds,
   ]);
-  const totalServiceTrainCount = automaticAreaSummary.inServiceTrainIds.length;
-  const totalAutomaticAreaTrainCount = automaticAreaSummary.automaticAreaTrainIds.length;
+  const totalServiceTrainCount = totalServiceSummary.inServiceTrainIds.length;
+  const totalTrackedTrainCount = totalServiceSummary.trackedTrainIds.length;
   const duplicateDepotTrainDetailText = duplicateDepotTrainDetails
     .map((item) => (
       `${padTrainId(item.trainId)} — West: ${item.westLocation} | East: ${item.eastLocation}`
@@ -8149,15 +8174,15 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const duplicateDepotWarningText = duplicateDepotTrainDetails.length === 1
     ? "Please check the following duplicate listing:"
     : "Please check the following duplicate listings:";
-  const unfitTrainDetailText = automaticAreaSummary.unfitTrainDetails
+  const unfitTrainDetailText = totalServiceSummary.unfitTrainDetails
     .map((item) => `${padTrainId(item.trainId)} (${item.remarks.join(" / ")})`)
     .join(", ");
   const totalServiceText = [
     `Total ${totalServiceTrainCount} trains in service.`,
-    ...(automaticAreaSummary.unfitTrainDetails.length
+    ...(totalServiceSummary.unfitTrainDetails.length
       ? [
-          `Total ${totalAutomaticAreaTrainCount} trains at automatic area.`,
-          `Unfit Train : ${unfitTrainDetailText}`,
+          `Total ${totalTrackedTrainCount} unique trains before unfit filtering.`,
+          `Unfit / Not Fit Train : ${unfitTrainDetailText}`,
         ]
       : []),
     ...(hasDepotTrainDuplicate
