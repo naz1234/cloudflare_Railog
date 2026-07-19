@@ -8512,3 +8512,39 @@ html[data-app-theme="light"] .theme-tp1-movement-log-entry {
   background: var(--tp1-log-row-bg) !important;
   border-color: var(--tp1-border) !important;
 }
+
+/* PST PG1 / PG2 selector: keep the active page unmistakable without
+   animating inactive controls or affecting the Insertion tab selector. */
+@keyframes theme-pst-pg-selected-attention {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    filter: brightness(1);
+    outline-offset: 1px;
+  }
+
+  50% {
+    transform: translateY(-1px) scale(1.07);
+    filter: brightness(1.16);
+    outline-offset: 4px;
+  }
+}
+
+.theme-pst-section .theme-insertion-pg-button.is-selected {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+  animation: theme-pst-pg-selected-attention 1.55s ease-in-out infinite !important;
+  will-change: transform, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-pst-section .theme-insertion-pg-button.is-selected {
+    animation: none !important;
+    transform: none !important;
+    filter: none !important;
+    outline-offset: 2px;
+    will-change: auto;
+  }
+}
