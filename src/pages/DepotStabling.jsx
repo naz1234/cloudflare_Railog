@@ -5407,6 +5407,21 @@ function getActiveInsertionEntryForCell(insertionLog = [], road, bi, trainKey = 
   return entry;
 }
 
+function isInsertionLogEntryActiveForStabling(entry = {}, stablingData = {}) {
+  const keyMatch = String(entry?.key || "").match(/^ins-(.+)-(\d+)$/);
+  if (!keyMatch) return false;
+
+  const [, road, blockIndexValue] = keyMatch;
+  const blockIndex = Number(blockIndexValue);
+  const currentTrainKey = normalizeTrainId(stablingData?.[road]?.[blockIndex]?.trainId || "");
+  if (!currentTrainKey) return false;
+
+  // Match the validation used by the insertion grid so the text output cannot
+  // include a saved entry for a train that has left or been replaced.
+  const entryTrainKey = normalizeTrainId(entry?.trainKey || "");
+  return !entryTrainKey || entryTrainKey === currentTrainKey;
+}
+
 const INSERTION_PANEL_COLORS = {
   shell: "#071622",
   shellBorder: "#1f3b50",
@@ -19367,9 +19382,13 @@ export default function DepotStablingPage() {
 
   const westInsertionSourceLog = westInsertionPg === "pg2" ? pg2InsertionLog : insertionLog;
   const eastInsertionSourceLog = eastInsertionPg === "pg2" ? pg2InsertionLog : insertionLog;
+  const westInsertionSourceData = westInsertionPg === "pg2" ? pg2Stabling.westData : westData;
+  const eastInsertionSourceData = eastInsertionPg === "pg2" ? pg2Stabling.eastData : eastData;
   const activeInsertionLog = sortInsertionLogByTime([
-    ...getInsertionEntriesForDepot(westInsertionSourceLog, "west"),
-    ...getInsertionEntriesForDepot(eastInsertionSourceLog, "east"),
+    ...getInsertionEntriesForDepot(westInsertionSourceLog, "west")
+      .filter((entry) => isInsertionLogEntryActiveForStabling(entry, westInsertionSourceData)),
+    ...getInsertionEntriesForDepot(eastInsertionSourceLog, "east")
+      .filter((entry) => isInsertionLogEntryActiveForStabling(entry, eastInsertionSourceData)),
   ]);
 
   const updateActiveInsertionPgForDepot = (depot, pg) => {
