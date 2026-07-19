@@ -9819,21 +9819,53 @@ function formatMovementExcelOperation(value = "") {
   return "Swapping";
 }
 
-function getMovementExcelStatus(row = {}) {
+function getMovementExcelValidation(row = {}) {
   const operation = row.operation || "swapping";
-  const train = normalizeMovementTrain(row.trainId);
-  const time = normalizeMovementCustomTimeInput(row.time);
-  const replacementInput = operation === "swapping" ? row.replacedBy : "";
-  const hasAnyInput = Boolean(train || time || row.tid || row.reason || replacementInput || row.notes);
-  if (!hasAnyInput) return "Draft";
-  return buildMovementExcelLogLine(row) ? "Added" : "Missing";
+  const trainInput = String(row.trainId || row.train || "").trim();
+  const train = normalizeMovementTrain(trainInput);
+  const tidInput = String(row.tid || "").trim();
+  const tid = tidInput.replace(/\D/g, "");
+  const time = String(row.time || "").trim();
+  const reason = String(row.reason || "").trim();
+  const replacementInput = operation === "swapping" ? String(row.replacedBy || "").trim() : "";
+  const replacement = normalizeMovementTrain(replacementInput);
+  const notes = String(row.notes || "").trim();
+  const hasAnyInput = Boolean(trainInput || time || tidInput || reason || replacementInput || notes);
+
+  if (!hasAnyInput) return { status: "Draft", issues: [], isComplete: false };
+
+  const issues = [];
+  if (!train) issues.push({ field: "train", message: "Train number is required." });
+  if (!time) {
+    issues.push({ field: "time", message: "Time is required." });
+  } else if (!isCompleteMovementTimeInput(time)) {
+    issues.push({ field: "time", message: "Time must be in HH:MM format (00:00-23:59)." });
+  }
+
+  if (operation === "swapping") {
+    if (!/^\d{3}$/.test(tid)) issues.push({ field: "tid", message: "TID must be exactly 3 digits." });
+    if (!reason) issues.push({ field: "reason", message: "Reason is required." });
+    if (!replacement) issues.push({ field: "replacedBy", message: "Replacement train is required." });
+  } else if (tidInput && !/^\d{3}$/.test(tid)) {
+    issues.push({ field: "tid", message: "TID must be exactly 3 digits." });
+  }
+
+  return {
+    status: issues.length ? "Incomplete" : "Added",
+    issues,
+    isComplete: issues.length === 0,
+  };
+}
+
+function getMovementExcelStatus(row = {}) {
+  return getMovementExcelValidation(row).status;
 }
 
 function getMovementExcelStatusStyle(status = "Draft") {
   if (status === "Added") {
     return { borderColor: "rgba(34,197,94,0.72)", background: "rgba(22,101,52,0.28)", color: "#86efac" };
   }
-  if (status === "Missing") {
+  if (status === "Incomplete") {
     return { borderColor: "rgba(248,113,113,0.70)", background: "rgba(127,29,29,0.26)", color: "#fecaca" };
   }
   return { borderColor: "rgba(148,163,184,0.48)", background: "rgba(51,65,85,0.22)", color: "#cbd5e1" };
@@ -9846,6 +9878,9 @@ function buildMovementExcelRemarkSuffix(value = "") {
 }
 
 function buildMovementExcelLogLine(row = {}) {
+  const validation = getMovementExcelValidation(row);
+  if (!validation.isComplete) return "";
+
   const operation = row.operation || "swapping";
   const train = normalizeMovementTrain(row.trainId || row.train);
   const tid = String(row.tid || "").replace(/\D/g, "").trim();
@@ -9853,8 +9888,6 @@ function buildMovementExcelLogLine(row = {}) {
   const depotLabel = getMovementDepotLabel(row.depot);
   const tidPart = tid ? ` (TID ${tid})` : "";
   const notes = String(row.notes || "").trim();
-
-  if (!train || !isCompleteMovementTimeInput(time)) return "";
 
   if (operation === "insertion") {
     const track = getMovementTrack(row.depot);
@@ -9869,7 +9902,6 @@ function buildMovementExcelLogLine(row = {}) {
 
   const replacement = normalizeMovementTrain(row.replacedBy);
   const reason = String(row.reason || "").trim();
-  if (!/^\d{3}$/.test(tid) || !replacement || !reason) return "";
   const notesSuffix = buildMovementExcelRemarkSuffix(notes);
   return `${time} hrs – ${train} (${tid}) removed from mainline to ${depotLabel} stabling due to ${reason}. Replaced by ${replacement}.${notesSuffix}`;
 }
@@ -10219,7 +10251,7 @@ function TrainMovementExcelSheet() {
   const copySingleRow = async (row) => {
     const line = buildMovementExcelLogLine(row);
     if (!line) {
-      showFeedback("Row missing data");
+      showFeedback("Row incomplete");
       return;
     }
     await copyText(line);
@@ -10230,7 +10262,7 @@ function TrainMovementExcelSheet() {
     markTrainMovementExcelLocalEdit();
     const line = buildMovementExcelLogLine(row);
     if (!line) {
-      showFeedback("Row missing data");
+      showFeedback("Row incomplete");
       return;
     }
 
@@ -10328,7 +10360,7 @@ function TrainMovementExcelSheet() {
                 <th
                   key={heading || "remove"}
                   className="border border-[#245171] bg-[#0b2b45] px-2 py-1.5 text-center font-black"
-                  style={{ width: [42, 90, 92, 74, 66, 194, 94, 76, 82][index] }}
+                  style={{ width: [42, 90, 92, 74, 66, 194, 94, 76, 96][index] }}
                 >
                   {heading ? heading : <Trash2 size={12} className="mx-auto text-red-200" />}
                 </th>
@@ -10337,7 +10369,9 @@ function TrainMovementExcelSheet() {
           </thead>
           <tbody>
             {rows.map((row) => {
-              const status = getMovementExcelStatus(row);
+              const validation = getMovementExcelValidation(row);
+              const status = validation.status;
+              const statusTooltip = validation.issues.map((issue) => issue.message).join("\n");
               const statusStyle = getMovementExcelStatusStyle(status);
               const operationAccent = row.operation === "insertion" ? "#22c55e" : row.operation === "removal" ? "#ef4444" : "#f59e0b";
 
@@ -10364,14 +10398,14 @@ function TrainMovementExcelSheet() {
                   <td className={cellClass}>
                     <div className="flex items-center px-2">
                       <span className="text-[12px] font-bold text-[#58a6ff]">T</span>
-                      <input value={row.trainId} onChange={(e) => updateRow(row.id, "trainId", e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="25" className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[12px] font-medium text-white outline-none placeholder:text-[#45677f]" />
+                      <input value={row.trainId} onChange={(e) => updateRow(row.id, "trainId", e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="25" aria-invalid={validation.issues.some((issue) => issue.field === "train")} className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[12px] font-medium text-white outline-none placeholder:text-[#45677f]" />
                     </div>
                   </td>
                   <td className={cellClass}>
-                    <input value={row.tid} onChange={(e) => updateRow(row.id, "tid", e.target.value.replace(/\D/g, "").slice(0, 3))} placeholder="111" className={tableInputClass} />
+                    <input value={row.tid} onChange={(e) => updateRow(row.id, "tid", e.target.value.replace(/\D/g, "").slice(0, 3))} placeholder="111" aria-invalid={validation.issues.some((issue) => issue.field === "tid")} className={tableInputClass} />
                   </td>
                   <td className={cellClass}>
-                    <input value={row.reason} onChange={(e) => updateRow(row.id, "reason", e.target.value)} placeholder={row.operation === "swapping" ? "RST PM / CM" : "Remark"} className={tableInputClass} />
+                    <input value={row.reason} onChange={(e) => updateRow(row.id, "reason", e.target.value)} placeholder={row.operation === "swapping" ? "RST PM / CM" : "Remark"} aria-invalid={validation.issues.some((issue) => issue.field === "reason")} className={tableInputClass} />
                   </td>
                   <td className={row.operation !== "swapping" ? "theme-movement-na-cell border border-[#173653] bg-[#334155] align-middle" : cellClass}>
                     {row.operation !== "swapping" ? (
@@ -10381,15 +10415,33 @@ function TrainMovementExcelSheet() {
                     ) : (
                       <div className="flex items-center px-2">
                         <span className="text-[12px] font-bold text-[#58a6ff]">T</span>
-                        <input value={row.replacedBy} onChange={(e) => updateRow(row.id, "replacedBy", e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="30" className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[12px] font-medium text-white outline-none placeholder:text-[#45677f]" />
+                        <input value={row.replacedBy} onChange={(e) => updateRow(row.id, "replacedBy", e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="30" aria-invalid={validation.issues.some((issue) => issue.field === "replacedBy")} className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[12px] font-medium text-white outline-none placeholder:text-[#45677f]" />
                       </div>
                     )}
                   </td>
                   <td className={cellClass}>
-                    <input value={row.time} onChange={(e) => updateRow(row.id, "time", cleanMovementCustomTimeInput(e.target.value))} onBlur={(e) => updateRow(row.id, "time", normalizeMovementCustomTimeInput(e.target.value))} placeholder="00:00" className={`${tableInputClass} font-mono`} />
+                    <input value={row.time} onChange={(e) => updateRow(row.id, "time", cleanMovementCustomTimeInput(e.target.value))} placeholder="00:00" aria-invalid={validation.issues.some((issue) => issue.field === "time")} className={`${tableInputClass} font-mono`} />
                   </td>
                   <td className="theme-movement-status-cell border border-[#173653] bg-[#061827] px-1.5 text-center">
-                    <span data-status={status.toLowerCase()} className="theme-movement-status inline-flex min-w-[58px] justify-center rounded-md border px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em]" style={statusStyle}>{status}</span>
+                    <ActionTooltip
+                      message={statusTooltip}
+                      placement="top"
+                      align="end"
+                      wrapperClassName="cursor-help justify-center rounded-md outline-none focus-visible:ring-2 focus-visible:ring-red-300/70"
+                      contentStyle={{ whiteSpace: "pre-line" }}
+                      triggerProps={{
+                        tabIndex: 0,
+                        "aria-label": `${status}. ${statusTooltip.replace(/\n/g, " ")}`,
+                      }}
+                    >
+                      <span
+                        data-status={status.toLowerCase()}
+                        className="theme-movement-status inline-flex min-w-[72px] justify-center rounded-md border px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.06em]"
+                        style={statusStyle}
+                      >
+                        {status}
+                      </span>
+                    </ActionTooltip>
                   </td>
                 </tr>
               );

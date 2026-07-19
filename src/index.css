@@ -7541,7 +7541,7 @@ html[data-app-theme="light"] .theme-movement-status[data-status="added"] {
   border-color: #22c55e !important;
 }
 
-html[data-app-theme="light"] .theme-movement-status[data-status="missing"] {
+html[data-app-theme="light"] .theme-movement-status[data-status="incomplete"] {
   color: #991b1b !important;
   background: #fee2e2 !important;
   border-color: #ef4444 !important;
@@ -7551,6 +7551,24 @@ html[data-app-theme="light"] .theme-movement-status[data-status="draft"] {
   color: #334155 !important;
   background: #e2e8f0 !important;
   border-color: #94a3b8 !important;
+}
+
+.theme-movement-status[data-status="incomplete"] {
+  animation: movement-incomplete-attention 1.4s ease-in-out infinite;
+  will-change: filter, box-shadow, transform;
+}
+
+@keyframes movement-incomplete-attention {
+  0%, 100% {
+    filter: brightness(1);
+    box-shadow: 0 0 0 0 rgba(248, 113, 113, 0);
+    transform: scale(1);
+  }
+  50% {
+    filter: brightness(1.18);
+    box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.16), 0 0 12px rgba(248, 113, 113, 0.38);
+    transform: scale(1.025);
+  }
 }
 
 /* Movement type selector: compact, semantic motion without changing table size. */
@@ -7693,6 +7711,14 @@ html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2) >
     animation: none !important;
     transform: translateY(-50%);
     opacity: 1;
+  }
+
+  .theme-movement-status[data-status="incomplete"] {
+    animation: none !important;
+    filter: none;
+    box-shadow: none;
+    transform: none;
+    will-change: auto;
   }
 }
 
