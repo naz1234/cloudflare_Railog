@@ -136,8 +136,16 @@ function isExtensionDutyCode(dutyCode = "") {
   return /(?:^|-)EXT?(?:TC|TCC|DC|DM|EFC|SC)?(?:-|$)/.test(normalized);
 }
 
-function extensionShiftLabel(start = "") {
+function extensionShiftLabel(start = "", end = "") {
   const startMinutes = timeToMinutes(start);
+  const endMinutes = timeToMinutes(end);
+
+  // A before-dawn extension that continues through the afternoon belongs with
+  // the Early Shift team. It remains an extension entry, so its badge is kept.
+  if (startMinutes < 5 * 60 && endMinutes >= 12 * 60 && endMinutes < 18 * 60) {
+    return "Early Extension Shift";
+  }
+
   if (startMinutes >= 18 * 60 || startMinutes < 5 * 60) return "Night Extension Shift";
   if (startMinutes < 12 * 60) return "Early Extension Shift";
   return "Late Extension Shift";
@@ -155,7 +163,7 @@ function repairExtensionEntry(entry, fallbackRole = "") {
       })()
     : false;
   if (!isExtensionDutyCode(source) && !hasTwelveHourRange) return entry;
-  const shiftLabel = extensionShiftLabel(entry.timeStart || "");
+  const shiftLabel = extensionShiftLabel(entry.timeStart || "", entry.timeEnd || "");
   if (entry.shiftKey === "extension" && entry.shiftLabel === shiftLabel) return entry;
   return { ...entry, shiftKey: "extension", shiftLabel, role: entry.role || fallbackRole, isWorking: true, isRest: false };
 }
@@ -296,7 +304,7 @@ function shiftFromTimes(start, end, dutyCode = "") {
   if (duration >= 11 * 60 || isExtensionDutyCode(dutyCode)) {
     return {
       shiftKey: "extension",
-      shiftLabel: extensionShiftLabel(start),
+      shiftLabel: extensionShiftLabel(start, end),
     };
   }
   if (startMinutes >= 21 * 60 || startMinutes < 5 * 60) return { shiftKey: "night", shiftLabel: "Night Shift" };
