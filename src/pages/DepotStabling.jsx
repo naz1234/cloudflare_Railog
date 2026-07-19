@@ -8292,7 +8292,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     .map((item) => `${padTrainId(item.trainId)} (${item.remarks.join(" / ")})`)
     .join(", ");
   const totalServiceText = [
-    `${totalServiceTrainCount} unique trains in service.`,
+    `Total trains in service: ${totalServiceTrainCount}`,
     serviceTrainAvailabilityText,
     ...(totalServiceSummary.unfitTrainDetails.length
       ? [
