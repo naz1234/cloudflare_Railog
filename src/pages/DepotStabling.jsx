@@ -21505,8 +21505,6 @@ function getRequestedActionSummaryRowsFromRequests(requests = []) {
   const seen = new Set();
 
   (Array.isArray(requests) ? requests : []).forEach((request) => {
-    if (isUnfitTrainRequest(request)) return;
-
     const key = normalizeTrainId(request?.trainId);
     const requestType = getTrainRequestDisplayType(request);
     const requestKey = normalizeRequestIdentity(requestType);
@@ -21533,6 +21531,7 @@ function buildRequestedActionSummaryLines(rows = []) {
   const cm = createRequestedSummaryBucket();
   const tlc = createRequestedSummaryBucket();
   const deepCleaning = createRequestedSummaryBucket();
+  const otherGroups = new Map();
   let cmActivityLabel = "RST CM";
 
   (Array.isArray(rows) ? rows : []).forEach((row) => {
@@ -21566,6 +21565,17 @@ function buildRequestedActionSummaryLines(rows = []) {
       appendRequestedSummaryTrain(cm, row);
       const requestedCmLabel = formatRequestedSummaryCmActivityLabel(requestType);
       if (requestedCmLabel !== "RST CM") cmActivityLabel = requestedCmLabel;
+    }
+
+    // Preserve the existing special sentences above, then group every other
+    // user-entered request label so no requested train disappears from summary.
+    if (!hasInbound && !hasPm && !hasCm && !hasTlc) {
+      const label = cleanRequestLabel(requestType) || "Request";
+      const groupKey = normalizeRequestIdentity(label) || "REQUEST";
+      if (!otherGroups.has(groupKey)) {
+        otherGroups.set(groupKey, { label, bucket: createRequestedSummaryBucket() });
+      }
+      appendRequestedSummaryTrain(otherGroups.get(groupKey).bucket, row);
     }
   });
 
@@ -21602,6 +21612,21 @@ function buildRequestedActionSummaryLines(rows = []) {
   if (tlcList) {
     lines.push(`${tlcList} requested for TLC team.`);
   }
+
+  otherGroups.forEach(({ label, bucket }) => {
+    const trainList = joinRequestedSummaryTrainList(bucket.trains);
+    if (!trainList) return;
+
+    const verb = bucket.trains.length === 1 ? "was" : "were";
+    const normalizedLabel = normalizeRequestIdentity(label);
+    if (!normalizedLabel || normalizedLabel === "REQUEST") {
+      lines.push(`${trainList} ${verb} requested.`);
+      return;
+    }
+
+    const sentenceEnd = /[.!?]$/.test(label) ? "" : ".";
+    lines.push(`${trainList} ${verb} requested for ${label}${sentenceEnd}`);
+  });
 
   return lines;
 }
