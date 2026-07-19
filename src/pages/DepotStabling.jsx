@@ -5502,6 +5502,7 @@ function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2,
               <button
                 type="button"
                 onClick={() => onPgChange?.(pg)}
+                aria-pressed={selected}
                 aria-label={tooltipMessage || defaultTooltip}
                 title={tooltipMessage ? undefined : defaultTooltip}
                 className={`theme-insertion-pg-button ${selected ? "is-selected" : ""} rounded-full px-3 py-1 transition-all`}
