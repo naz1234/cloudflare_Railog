@@ -8168,7 +8168,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const totalTrackedTrainCount = totalServiceSummary.trackedTrainIds.length;
   const duplicateDepotTrainDetailText = duplicateDepotTrainDetails
     .map((item) => (
-      `${padTrainId(item.trainId)} — West: ${item.westLocation} | East: ${item.eastLocation}`
+      `${padTrainId(item.trainId)} — at ${item.westLocation} , but written at East: ${item.eastLocation}`
     ))
     .join("\n");
   const duplicateDepotWarningText = duplicateDepotTrainDetails.length === 1
@@ -8186,7 +8186,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         ]
       : []),
     ...(hasDepotTrainDuplicate
-      ? ["", duplicateDepotWarningText, duplicateDepotTrainDetailText]
+      ? ["but :", duplicateDepotWarningText, duplicateDepotTrainDetailText]
       : []),
   ].join("\n");
   const duplicateWarningStartIndex = totalServiceText.indexOf(duplicateDepotWarningText);
