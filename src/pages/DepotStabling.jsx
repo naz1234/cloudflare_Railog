@@ -3103,25 +3103,25 @@ function collectTrainRemTrainIdsForDepotCopy(
   return trainIds;
 }
 
-function collectTrainRem9amInServiceTrainIds(trainRemState = {}, activeTimetable = null) {
+function collectTrainRemReferenceInServiceTrainIds(trainRemState = {}, activeTimetable = null) {
   const selectedPreset = trainRemState?.selectedPreset?.west || "9am";
-  if (selectedPreset !== "9am") return [];
+  if (!TRAIN_REM_LEGACY_COMBINED_PRESET_LABELS.has(selectedPreset)) return [];
 
-  // The combined 9am table includes the mainline reference TIDs as well as
+  // The combined 9am and 7pm tables include mainline reference TIDs as well as
   // scheduled depot removals. TTL represents the in-service fleet, so retain
   // every populated reference row even when depot-copy output filters it out.
-  const referenceTidSet = new Set(getTrainRemReferenceTids("9am", activeTimetable));
+  const referenceTidSet = new Set(getTrainRemReferenceTids(selectedPreset, activeTimetable));
   const rows = normalizeTrainRemRowsForPreset(
     trainRemState?.rows?.west,
     "west",
-    "9am",
+    selectedPreset,
     activeTimetable
   );
   const seen = new Set();
   const trainIds = [];
 
   rows.forEach((row, index) => {
-    if (!isTrainRemReferenceOnlyIndex("west", "9am", index, activeTimetable)) return;
+    if (!isTrainRemReferenceOnlyIndex("west", selectedPreset, index, activeTimetable)) return;
 
     const tid = normalizeTrainRemTidValue(row?.tid || "");
     const trainKey = padTrainId(normalizeTrainId(row?.trainId || ""));
@@ -8011,8 +8011,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const eastDepotCopyTrainIds = useMemo(() => (
     getDepotCopyTrainIds("east", trainRemState)
   ), [getDepotCopyTrainIds, trainRemState]);
-  const nineAmInServiceTrainIds = useMemo(() => (
-    collectTrainRem9amInServiceTrainIds(trainRemState, activeTimetable)
+  const referenceInServiceTrainIds = useMemo(() => (
+    collectTrainRemReferenceInServiceTrainIds(trainRemState, activeTimetable)
   ), [activeTimetable, trainRemState]);
   const westDepotCopyCount = westDepotCopyTrainIds.length;
   const eastDepotCopyCount = eastDepotCopyTrainIds.length;
@@ -8124,7 +8124,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const totalServiceSummary = useMemo(() => {
     const trackedTrainIds = Array.from(
       new Set(
-        [...westDepotCopyTrainIds, ...eastDepotCopyTrainIds, ...nineAmInServiceTrainIds]
+        [...westDepotCopyTrainIds, ...eastDepotCopyTrainIds, ...referenceInServiceTrainIds]
           .map((trainId) => normalizeTrainId(trainId))
           .filter(Boolean)
       )
@@ -8161,7 +8161,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   }, [
     eastDepotCopyTrainIds,
     maintenanceMap,
-    nineAmInServiceTrainIds,
+    referenceInServiceTrainIds,
     westDepotCopyTrainIds,
   ]);
   const totalServiceTrainCount = totalServiceSummary.inServiceTrainIds.length;
