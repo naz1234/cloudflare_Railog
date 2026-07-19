@@ -7,6 +7,7 @@ export default function ActionTooltip({
   sideOffset = 7,
   wrapperClassName = "",
   contentStyle = null,
+  triggerProps = {},
   children,
 }) {
   if (!message) return children;
@@ -21,7 +22,7 @@ export default function ActionTooltip({
     >
       <TooltipPrimitive.Root>
         <TooltipPrimitive.Trigger asChild>
-          <span className={`inline-flex ${wrapperClassName}`.trim()}>
+          <span {...triggerProps} className={`inline-flex ${wrapperClassName}`.trim()}>
             {children}
           </span>
         </TooltipPrimitive.Trigger>
