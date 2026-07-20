@@ -2041,6 +2041,21 @@ function normalizePSTPgByDepot(value = {}) {
   };
 }
 
+function normalizeAPUMismatchTrainIds(value = {}) {
+  const normalizeDepotTrainIds = (trainIds = []) => Array.from(
+    new Set(
+      (Array.isArray(trainIds) ? trainIds : [])
+        .map((trainId) => padTrainId(normalizeTrainId(trainId)))
+        .filter(Boolean)
+    )
+  ).sort((left, right) => left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" }));
+
+  return {
+    west: normalizeDepotTrainIds(value?.west),
+    east: normalizeDepotTrainIds(value?.east),
+  };
+}
+
 function loadPSTActivePg() {
   try {
     if (typeof localStorage === "undefined") return { west: "pg1", east: "pg1" };
@@ -2093,6 +2108,9 @@ function normalizePSTPg2WorkState(source = {}) {
       west: (source?.completedByNames?.west ?? source?.completedByWest ?? fallbackCompletedByNames.west ?? "").toString(),
       east: (source?.completedByNames?.east ?? source?.completedByEast ?? fallbackCompletedByNames.east ?? "").toString(),
     },
+    apuMismatchTrainIds: normalizeAPUMismatchTrainIds(
+      source?.apuMismatchTrainIds || source?.apuMismatchByDepot || {}
+    ),
   };
 }
 
@@ -3392,6 +3410,7 @@ function normalizePSTLiveState(source = {}) {
     logLines: source?.pg2LogLines,
     taNameState: source?.pg2TaNameState,
     completedByNames: source?.pg2CompletedByNames,
+    apuMismatchTrainIds: source?.pg2ApuMismatchTrainIds,
   };
   const hasPg2Work = Boolean(
     source?.pg2WorkState ||
@@ -3400,7 +3419,8 @@ function normalizePSTLiveState(source = {}) {
     source?.pg2PrepState ||
     source?.pg2LogLines ||
     source?.pg2TaNameState ||
-    source?.pg2CompletedByNames
+    source?.pg2CompletedByNames ||
+    source?.pg2ApuMismatchTrainIds
   );
 
   return {
@@ -3412,6 +3432,9 @@ function normalizePSTLiveState(source = {}) {
       west: (source?.completedByNames?.west || source?.completedByWest || "").toString(),
       east: (source?.completedByNames?.east || source?.completedByEast || "").toString(),
     },
+    apuMismatchTrainIds: normalizeAPUMismatchTrainIds(
+      source?.apuMismatchTrainIds || source?.apuMismatchByDepot || {}
+    ),
     activePg: hasActivePg ? normalizePSTPgByDepot(source?.activePg || source?.pstActivePg || {}) : null,
     pg2Stabling: hasPg2Stabling ? normalizePSTPg2Stabling(pg2StablingSource) : null,
     pg2WorkState: hasPg2Work ? normalizePSTPg2WorkState(pg2WorkSource) : null,
@@ -3449,6 +3472,7 @@ function loadSavedPSTState() {
         logLines: [],
         taNameState: {},
         completedByNames: fallbackCompletedByNames,
+        apuMismatchTrainIds: normalizeAPUMismatchTrainIds(),
       };
     }
 
@@ -3466,15 +3490,25 @@ function loadSavedPSTState() {
       logLines: [],
       taNameState: {},
       completedByNames: fallbackCompletedByNames,
+      apuMismatchTrainIds: normalizeAPUMismatchTrainIds(),
     };
   }
 }
 
-function savePSTState(pstState, prepState, logLines, taNameState, completedByNames = { west: "", east: "" }, updatedAt = new Date().toISOString()) {
+function savePSTState(
+  pstState,
+  prepState,
+  logLines,
+  taNameState,
+  completedByNames = { west: "", east: "" },
+  updatedAt = new Date().toISOString(),
+  apuMismatchTrainIds = { west: [], east: [] }
+) {
   const normalizedCompletedByNames = {
     west: (completedByNames?.west || "").toString(),
     east: (completedByNames?.east || "").toString(),
   };
+  const normalizedAPUMismatchTrainIds = normalizeAPUMismatchTrainIds(apuMismatchTrainIds);
 
   try {
     localStorage.setItem(
@@ -3485,6 +3519,7 @@ function savePSTState(pstState, prepState, logLines, taNameState, completedByNam
         logLines: sortPSTLogLinesByTime(logLines),
         taNameState,
         completedByNames: normalizedCompletedByNames,
+        apuMismatchTrainIds: normalizedAPUMismatchTrainIds,
         updatedAt,
       })
     );
@@ -3511,6 +3546,7 @@ function buildPSTLivePayload(state = {}) {
     logLines: normalized.logLines,
     taNameState: normalized.taNameState,
     completedByNames: normalized.completedByNames,
+    apuMismatchTrainIds: normalized.apuMismatchTrainIds,
     activePg: normalized.activePg || normalizePSTPgByDepot(state?.activePg || {}),
     pg2Stabling: normalized.pg2Stabling || (state?.pg2Stabling ? normalizePSTPg2Stabling(state.pg2Stabling) : null),
     pg2WorkState: normalized.pg2WorkState || (state?.pg2WorkState ? normalizePSTPg2WorkState(state.pg2WorkState) : null),
@@ -3597,6 +3633,7 @@ function buildPSTLiveScopeRecords(state = {}, updatedAt = new Date().toISOString
     logLines: [],
     taNameState: {},
     completedByNames: { west: "", east: "" },
+    apuMismatchTrainIds: { west: [], east: [] },
   };
   const records = [];
 
@@ -3648,6 +3685,9 @@ function buildPSTLiveScopeRecords(state = {}, updatedAt = new Date().toISOString
     ["pg1", "pg2"].forEach((page) => {
       const completedRecordKey = getPSTLiveCompletedScopeKey(page, depot);
       const completedByNames = page === "pg2" ? pg2WorkState.completedByNames : normalized.completedByNames;
+      const apuMismatchTrainIds = page === "pg2"
+        ? pg2WorkState.apuMismatchTrainIds
+        : normalized.apuMismatchTrainIds;
       records.push({
         stateKey: completedRecordKey,
         recordKey: completedRecordKey,
@@ -3656,6 +3696,7 @@ function buildPSTLiveScopeRecords(state = {}, updatedAt = new Date().toISOString
         scopePage: page,
         scopeDepot: depot,
         completedByName: (completedByNames?.[depot] || "").toString(),
+        apuMismatchTrainIds: normalizeAPUMismatchTrainIds(apuMismatchTrainIds)[depot],
         updatedAt,
       });
     });
@@ -3708,6 +3749,7 @@ function buildPSTLiveStateFromRecords(records = []) {
       west: (legacy?.completedByNames?.west || "").toString(),
       east: (legacy?.completedByNames?.east || "").toString(),
     },
+    apuMismatchTrainIds: normalizeAPUMismatchTrainIds(legacy?.apuMismatchTrainIds),
     activePg: normalizePSTPgByDepot(legacy?.activePg || {}),
     pg2Stabling: cloneInsertionStablingState(
       legacy?.pg2Stabling?.westData || {},
@@ -3722,6 +3764,9 @@ function buildPSTLiveStateFromRecords(records = []) {
         west: (legacy?.pg2WorkState?.completedByNames?.west || "").toString(),
         east: (legacy?.pg2WorkState?.completedByNames?.east || "").toString(),
       },
+      apuMismatchTrainIds: normalizeAPUMismatchTrainIds(
+        legacy?.pg2WorkState?.apuMismatchTrainIds
+      ),
     },
     updatedAt: legacy?.updatedAt || "",
   };
@@ -3793,6 +3838,15 @@ function buildPSTLiveStateFromRecords(records = []) {
         ? state.pg2WorkState.completedByNames
         : state.completedByNames;
       targetCompletedBy[scope.depot] = (completedByName || "").toString();
+    }
+
+    if (Object.prototype.hasOwnProperty.call(record || {}, "apuMismatchTrainIds")) {
+      const targetAPUMismatchTrainIds = scope.page === "pg2"
+        ? state.pg2WorkState.apuMismatchTrainIds
+        : state.apuMismatchTrainIds;
+      targetAPUMismatchTrainIds[scope.depot] = normalizeAPUMismatchTrainIds({
+        [scope.depot]: record.apuMismatchTrainIds,
+      })[scope.depot];
     }
   });
 
@@ -13341,11 +13395,167 @@ function buildPSTExportLinesFromVisibleState({
   return sortPSTLogLinesByTime(exportLines);
 }
 
+function buildAPUMismatchChecklistLog(trainIds = []) {
+  const normalizedTrainIds = normalizeAPUMismatchTrainIds({ west: trainIds }).west;
+  return normalizedTrainIds
+    .map((trainId) => `${trainId} APU Missmatch alarm\nSR:`)
+    .join("\n\n");
+}
+
+function APUMismatchChecklist({
+  depot = "west",
+  data = {},
+  selectedTrainIds = [],
+  onSelectedTrainIdsChange,
+}) {
+  const [copyStatus, setCopyStatus] = useState("");
+  const isWestDepot = depot === "west";
+  const depotShortLabel = isWestDepot ? "WD" : "ED";
+  const accent = isWestDepot ? "#38bdf8" : "#c084fc";
+  const roads = isWestDepot ? WEST_ROADS : EAST_ROADS;
+  const normalizedSelectedTrainIds = normalizeAPUMismatchTrainIds({
+    [depot]: selectedTrainIds,
+  })[depot];
+  const availableTrainIds = Array.from(new Set([
+    ...collectStablingTrainIds(data, roads),
+    ...normalizedSelectedTrainIds,
+  ])).sort((left, right) => left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" }));
+  const selectedTrainIdSet = new Set(normalizedSelectedTrainIds);
+  const generatedLog = buildAPUMismatchChecklistLog(normalizedSelectedTrainIds);
+
+  useEffect(() => {
+    setCopyStatus("");
+  }, [generatedLog]);
+
+  const toggleTrain = (trainId) => {
+    const nextSelected = new Set(normalizedSelectedTrainIds);
+    if (nextSelected.has(trainId)) nextSelected.delete(trainId);
+    else nextSelected.add(trainId);
+    onSelectedTrainIdsChange?.(Array.from(nextSelected));
+  };
+
+  const copyGeneratedLog = async () => {
+    const copied = await copyTextToClipboard(generatedLog).catch(() => false);
+    setCopyStatus(copied ? "copied" : "failed");
+    window.setTimeout(() => setCopyStatus(""), 1800);
+  };
+
+  return (
+    <section
+      className="theme-apu-mismatch-panel w-full overflow-hidden rounded-2xl border lg:w-[420px]"
+      data-depot={depot}
+      style={{
+        background: "linear-gradient(145deg, rgba(7,24,40,0.98), rgba(6,31,50,0.96))",
+        borderColor: `${accent}55`,
+        boxShadow: `0 16px 30px rgba(0,0,0,0.30), 0 0 18px ${accent}12, inset 0 1px 0 rgba(255,255,255,0.05)`,
+      }}
+    >
+      <div className="theme-apu-mismatch-header flex items-center justify-between gap-3 border-b px-4 py-3" style={{ borderColor: `${accent}38` }}>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
+            style={{ backgroundColor: `${accent}18`, borderColor: `${accent}55`, color: accent }}
+          >
+            <ClipboardCheck size={16} />
+          </span>
+          <div className="min-w-0">
+            <h3 className="truncate text-[13px] font-semibold uppercase tracking-[0.08em] text-white">
+              {depotShortLabel} APU Missmatch Checklist
+            </h3>
+            <p className="mt-0.5 text-[10px] font-medium text-slate-400">Tick trains showing an APU alarm</p>
+          </div>
+        </div>
+        <span
+          className="theme-apu-mismatch-count shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold"
+          style={{ borderColor: `${accent}66`, backgroundColor: `${accent}16`, color: accent }}
+        >
+          {normalizedSelectedTrainIds.length} selected
+        </span>
+      </div>
+
+      <div className="grid gap-3 p-4">
+        {availableTrainIds.length > 0 ? (
+          <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5">
+            {availableTrainIds.map((trainId) => {
+              const isSelected = selectedTrainIdSet.has(trainId);
+              return (
+                <button
+                  key={`${depot}-apu-mismatch-${trainId}`}
+                  type="button"
+                  onClick={() => toggleTrain(trainId)}
+                  aria-pressed={isSelected}
+                  className={`theme-apu-mismatch-train ${isSelected ? "is-selected" : ""} flex h-8 items-center justify-center gap-1 rounded-lg border text-[11px] font-semibold transition-all hover:-translate-y-0.5`}
+                  style={{
+                    backgroundColor: isSelected ? `${accent}2a` : "rgba(8,31,50,0.92)",
+                    borderColor: isSelected ? `${accent}cc` : "rgba(64,111,145,0.58)",
+                    color: isSelected ? "#ffffff" : "#b8cce0",
+                    boxShadow: isSelected ? `0 0 12px ${accent}28, inset 0 1px 0 rgba(255,255,255,0.08)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
+                  }}
+                >
+                  <span
+                    className="flex h-3.5 w-3.5 items-center justify-center rounded-full border"
+                    style={{ borderColor: isSelected ? accent : "#496b84", backgroundColor: isSelected ? accent : "transparent" }}
+                  >
+                    {isSelected && <Check size={10} strokeWidth={3} />}
+                  </span>
+                  {trainId}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="theme-apu-mismatch-empty rounded-xl border border-dashed border-[#31516b] px-3 py-4 text-center text-[11px] font-medium text-slate-400">
+            No trains available in {depotShortLabel} stabling.
+          </div>
+        )}
+
+        <div className="theme-apu-mismatch-output overflow-hidden rounded-xl border border-[#244761] bg-[#03111d]">
+          <div className="theme-apu-mismatch-output-header flex items-center justify-between gap-2 border-b border-[#244761] px-3 py-2">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: accent }}>
+              Generated Log
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={copyGeneratedLog}
+                disabled={!generatedLog}
+                className="theme-apu-mismatch-copy inline-flex h-7 items-center gap-1 rounded-md border px-2 text-[10px] font-semibold transition-all enabled:hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
+                style={{ borderColor: `${accent}77`, backgroundColor: `${accent}18`, color: "#ffffff" }}
+              >
+                <Copy size={12} />
+                {copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Retry" : "Copy Log"}
+              </button>
+              <button
+                type="button"
+                onClick={() => onSelectedTrainIdsChange?.([])}
+                disabled={normalizedSelectedTrainIds.length === 0}
+                className="theme-apu-mismatch-clear inline-flex h-7 items-center gap-1 rounded-md border border-red-400/50 bg-red-950/25 px-2 text-[10px] font-semibold text-red-200 transition-all enabled:hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Trash2 size={12} /> Clear
+              </button>
+            </div>
+          </div>
+          {generatedLog ? (
+            <pre className="theme-apu-mismatch-log max-h-52 min-h-[88px] overflow-auto whitespace-pre-wrap px-3 py-2.5 font-mono text-[12px] font-semibold leading-[1.45] text-slate-100">
+              {generatedLog}
+            </pre>
+          ) : (
+            <div className="theme-apu-mismatch-placeholder flex min-h-[88px] items-center justify-center px-3 py-2 text-center text-[11px] font-medium text-slate-500">
+              Tick one or more trains to generate the APU Missmatch log.
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 
 function PSTTabContent
-({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug, westPg = "pg1", eastPg = "pg1", onPSTPgChange, onRefreshPSTPg2, onClearPSTPg2Trains, westPSTStablingEditable = false, eastPSTStablingEditable = false, onEditablePSTTrainIdChange }) {
+({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, apuMismatchTrainIds, onAPUMismatchTrainIdsChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug, westPg = "pg1", eastPg = "pg1", onPSTPgChange, onRefreshPSTPg2, onClearPSTPg2Trains, westPSTStablingEditable = false, eastPSTStablingEditable = false, onEditablePSTTrainIdChange }) {
   const [downloadingExcelDepot, setDownloadingExcelDepot] = useState("");
   const safeCompletedByNames = completedByNames || { west: "", east: "" };
+  const safeAPUMismatchTrainIds = normalizeAPUMismatchTrainIds(apuMismatchTrainIds);
   const sortedLogLines = sortPSTLogLinesByTime(logLines);
   const exportLogLines = buildPSTExportLinesFromVisibleState({
     westData,
@@ -13551,7 +13761,15 @@ function PSTTabContent
     <div className="flex w-fit flex-col items-start gap-7">
       <div className="grid w-fit grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[max-content_420px] lg:items-start">
         <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" activePg={westPg} onPgChange={(pg) => onPSTPgChange?.("west", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("west")} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearPg2Trains={westPSTStablingEditable ? () => onClearPSTPg2Trains?.("west") : null} stablingEditable={westPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} />
-        {renderDepotControls("west")}
+        <div className="flex w-full flex-col gap-3 lg:w-[420px]">
+          {renderDepotControls("west")}
+          <APUMismatchChecklist
+            depot="west"
+            data={westData}
+            selectedTrainIds={safeAPUMismatchTrainIds.west}
+            onSelectedTrainIdsChange={(trainIds) => onAPUMismatchTrainIdsChange?.("west", trainIds)}
+          />
+        </div>
         <div className="pst-train-prep-log-font-bump w-full overflow-visible lg:col-start-1">
           <style>{`
           /* PST / Train Prep Log output: auto-height, wider width, compact header */
@@ -13625,7 +13843,15 @@ function PSTTabContent
 
       <div className="grid w-fit grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[max-content_420px] lg:items-start">
         <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" activePg={eastPg} onPgChange={(pg) => onPSTPgChange?.("east", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("east")} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearPg2Trains={eastPSTStablingEditable ? () => onClearPSTPg2Trains?.("east") : null} stablingEditable={eastPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} />
-        {renderDepotControls("east")}
+        <div className="flex w-full flex-col gap-3 lg:w-[420px]">
+          {renderDepotControls("east")}
+          <APUMismatchChecklist
+            depot="east"
+            data={eastData}
+            selectedTrainIds={safeAPUMismatchTrainIds.east}
+            onSelectedTrainIdsChange={(trainIds) => onAPUMismatchTrainIdsChange?.("east", trainIds)}
+          />
+        </div>
         <div className="pst-train-prep-log-font-bump w-full overflow-visible lg:col-start-1">
           <PSTLogOutput depot="east" logLines={sortedLogLines} onClearDepot={onClearDepotLog} />
         </div>
@@ -15938,6 +16164,9 @@ export default function DepotStablingPage() {
   const [pstLogLines, setPstLogLines] = useState(savedPST.logLines);
   const [taNameState, setTaNameState] = useState(savedPST.taNameState || {});
   const [pstCompletedByNames, setPstCompletedByNames] = useState(savedPST.completedByNames || { west: "", east: "" });
+  const [pstAPUMismatchTrainIds, setPstAPUMismatchTrainIds] = useState(
+    savedPST.apuMismatchTrainIds || { west: [], east: [] }
+  );
   const [activePSTPg, setActivePSTPg] = useState(() => loadPSTActivePg());
   const [pstPg2Stabling, setPstPg2Stabling] = useState(() => loadPSTPg2Stabling(westData, eastData));
   const savedPSTPg2 = loadPSTPg2WorkState();
@@ -15946,6 +16175,9 @@ export default function DepotStablingPage() {
   const [pstPg2LogLines, setPstPg2LogLines] = useState(savedPSTPg2.logLines);
   const [taNamePg2State, setTaNamePg2State] = useState(savedPSTPg2.taNameState || {});
   const [pstPg2CompletedByNames, setPstPg2CompletedByNames] = useState(savedPSTPg2.completedByNames || { west: "", east: "" });
+  const [pstPg2APUMismatchTrainIds, setPstPg2APUMismatchTrainIds] = useState(
+    savedPSTPg2.apuMismatchTrainIds || { west: [], east: [] }
+  );
   const [pstLiveLoaded, setPstLiveLoaded] = useState(false);
   const [pstLiveSyncing, setPstLiveSyncing] = useState(false);
   const [pstLiveLastSynced, setPstLiveLastSynced] = useState(null);
@@ -15980,8 +16212,9 @@ export default function DepotStablingPage() {
       logLines: pstPg2LogLines,
       taNameState: taNamePg2State,
       completedByNames: pstPg2CompletedByNames,
+      apuMismatchTrainIds: pstPg2APUMismatchTrainIds,
     });
-  }, [pstPg2State, prepPg2State, pstPg2LogLines, taNamePg2State, pstPg2CompletedByNames]);
+  }, [pstPg2State, prepPg2State, pstPg2LogLines, taNamePg2State, pstPg2CompletedByNames, pstPg2APUMismatchTrainIds]);
   useEffect(() => { saveTidInputs(tidInputs); }, [tidInputs]);
   useEffect(() => { saveInsertionActivePg(activeInsertionPg); }, [activeInsertionPg]);
   useEffect(() => { saveInsertionPg2Stabling(pg2Stabling); }, [pg2Stabling]);
@@ -16824,6 +17057,7 @@ export default function DepotStablingPage() {
   const pstLogLinesRef = useRef(pstLogLines);
   const taNameStateRef = useRef(taNameState);
   const pstCompletedByNamesRef = useRef(pstCompletedByNames);
+  const pstAPUMismatchTrainIdsRef = useRef(pstAPUMismatchTrainIds);
   const activePSTPgRef = useRef(activePSTPg);
   const pstPg2StablingRef = useRef(pstPg2Stabling);
   const pstPg2StateRef = useRef(pstPg2State);
@@ -16831,6 +17065,7 @@ export default function DepotStablingPage() {
   const pstPg2LogLinesRef = useRef(pstPg2LogLines);
   const taNamePg2StateRef = useRef(taNamePg2State);
   const pstPg2CompletedByNamesRef = useRef(pstPg2CompletedByNames);
+  const pstPg2APUMismatchTrainIdsRef = useRef(pstPg2APUMismatchTrainIds);
   const pstLiveLocalUpdatedAtRef = useRef(Date.parse(savedPST.updatedAt || "") || 0);
   const pstLiveRemoteUpdatedAtRef = useRef(0);
 
@@ -16855,6 +17090,7 @@ export default function DepotStablingPage() {
   useEffect(() => { pstLogLinesRef.current = pstLogLines; }, [pstLogLines]);
   useEffect(() => { taNameStateRef.current = taNameState; }, [taNameState]);
   useEffect(() => { pstCompletedByNamesRef.current = pstCompletedByNames; }, [pstCompletedByNames]);
+  useEffect(() => { pstAPUMismatchTrainIdsRef.current = pstAPUMismatchTrainIds; }, [pstAPUMismatchTrainIds]);
   useEffect(() => { activePSTPgRef.current = activePSTPg; }, [activePSTPg]);
   useEffect(() => { pstPg2StablingRef.current = pstPg2Stabling; }, [pstPg2Stabling]);
   useEffect(() => { pstPg2StateRef.current = pstPg2State; }, [pstPg2State]);
@@ -16862,6 +17098,7 @@ export default function DepotStablingPage() {
   useEffect(() => { pstPg2LogLinesRef.current = pstPg2LogLines; }, [pstPg2LogLines]);
   useEffect(() => { taNamePg2StateRef.current = taNamePg2State; }, [taNamePg2State]);
   useEffect(() => { pstPg2CompletedByNamesRef.current = pstPg2CompletedByNames; }, [pstPg2CompletedByNames]);
+  useEffect(() => { pstPg2APUMismatchTrainIdsRef.current = pstPg2APUMismatchTrainIds; }, [pstPg2APUMismatchTrainIds]);
   useEffect(() => { insertionLogRef.current = insertionLog; }, [insertionLog]);
   useEffect(() => { tidInputsRef.current = tidInputs; }, [tidInputs]);
   useEffect(() => { activeInsertionPgRef.current = activeInsertionPg; }, [activeInsertionPg]);
@@ -16938,12 +17175,14 @@ export default function DepotStablingPage() {
     pstLogLinesRef.current = normalized.logLines;
     taNameStateRef.current = normalized.taNameState;
     pstCompletedByNamesRef.current = normalized.completedByNames;
+    pstAPUMismatchTrainIdsRef.current = normalized.apuMismatchTrainIds;
 
     setPstState(normalized.pstState);
     setPrepState(normalized.prepState);
     setPstLogLines(normalized.logLines);
     setTaNameState(normalized.taNameState);
     setPstCompletedByNames(normalized.completedByNames);
+    setPstAPUMismatchTrainIds(normalized.apuMismatchTrainIds);
 
     if (normalized.activePg) {
       activePSTPgRef.current = normalized.activePg;
@@ -16961,11 +17200,13 @@ export default function DepotStablingPage() {
       pstPg2LogLinesRef.current = normalized.pg2WorkState.logLines;
       taNamePg2StateRef.current = normalized.pg2WorkState.taNameState;
       pstPg2CompletedByNamesRef.current = normalized.pg2WorkState.completedByNames;
+      pstPg2APUMismatchTrainIdsRef.current = normalized.pg2WorkState.apuMismatchTrainIds;
       setPstPg2State(normalized.pg2WorkState.pstState);
       setPrepPg2State(normalized.pg2WorkState.prepState);
       setPstPg2LogLines(normalized.pg2WorkState.logLines);
       setTaNamePg2State(normalized.pg2WorkState.taNameState);
       setPstPg2CompletedByNames(normalized.pg2WorkState.completedByNames);
+      setPstPg2APUMismatchTrainIds(normalized.pg2WorkState.apuMismatchTrainIds);
       savePSTPg2WorkState(normalized.pg2WorkState);
     }
 
@@ -16975,7 +17216,8 @@ export default function DepotStablingPage() {
       normalized.logLines,
       normalized.taNameState,
       normalized.completedByNames,
-      normalized.updatedAt
+      normalized.updatedAt,
+      normalized.apuMismatchTrainIds
     );
   }, []);
 
@@ -17000,7 +17242,8 @@ export default function DepotStablingPage() {
       payload.logLines,
       payload.taNameState,
       payload.completedByNames,
-      payload.updatedAt
+      payload.updatedAt,
+      payload.apuMismatchTrainIds
     );
 
     if (!isPSTTrainPrepEntityReady(entity)) {
@@ -17092,7 +17335,8 @@ export default function DepotStablingPage() {
       payload.logLines,
       payload.taNameState,
       payload.completedByNames,
-      payload.updatedAt
+      payload.updatedAt,
+      payload.apuMismatchTrainIds
     );
 
     changedScopeKeys.forEach((key) => pstLiveDirtyScopeKeysRef.current.add(key));
@@ -17150,6 +17394,7 @@ export default function DepotStablingPage() {
           logLines: pstLogLinesRef.current,
           taNameState: taNameStateRef.current,
           completedByNames: pstCompletedByNamesRef.current,
+          apuMismatchTrainIds: pstAPUMismatchTrainIdsRef.current,
           activePg: activePSTPgRef.current,
           pg2Stabling: pstPg2StablingRef.current,
           pg2WorkState: {
@@ -17158,6 +17403,7 @@ export default function DepotStablingPage() {
             logLines: pstPg2LogLinesRef.current,
             taNameState: taNamePg2StateRef.current,
             completedByNames: pstPg2CompletedByNamesRef.current,
+            apuMismatchTrainIds: pstPg2APUMismatchTrainIdsRef.current,
           },
         });
         const created = await entity.create(payload);
@@ -17223,6 +17469,7 @@ export default function DepotStablingPage() {
       logLines: pstLogLines,
       taNameState,
       completedByNames: pstCompletedByNames,
+      apuMismatchTrainIds: pstAPUMismatchTrainIds,
       activePg: activePSTPg,
       pg2Stabling: pstPg2Stabling,
       pg2WorkState: {
@@ -17231,6 +17478,7 @@ export default function DepotStablingPage() {
         logLines: pstPg2LogLines,
         taNameState: taNamePg2State,
         completedByNames: pstPg2CompletedByNames,
+        apuMismatchTrainIds: pstPg2APUMismatchTrainIds,
       },
     };
     const payload = buildPSTLivePayload(state);
@@ -17245,12 +17493,13 @@ export default function DepotStablingPage() {
       payload.logLines,
       payload.taNameState,
       payload.completedByNames,
-      payload.updatedAt
+      payload.updatedAt,
+      payload.apuMismatchTrainIds
     );
 
     if (!pstLiveLoaded) return;
     schedulePSTLiveSave(payload);
-  }, [pstState, prepState, pstLogLines, taNameState, pstCompletedByNames, activePSTPg, pstPg2Stabling, pstPg2State, prepPg2State, pstPg2LogLines, taNamePg2State, pstPg2CompletedByNames, pstLiveLoaded, schedulePSTLiveSave]);
+  }, [pstState, prepState, pstLogLines, taNameState, pstCompletedByNames, pstAPUMismatchTrainIds, activePSTPg, pstPg2Stabling, pstPg2State, prepPg2State, pstPg2LogLines, taNamePg2State, pstPg2CompletedByNames, pstPg2APUMismatchTrainIds, pstLiveLoaded, schedulePSTLiveSave]);
 
   useEffect(() => {
     return () => {
@@ -17265,6 +17514,15 @@ export default function DepotStablingPage() {
     setPstCompletedByNames((prev) => ({
       ...prev,
       [depot]: value,
+    }));
+  }, [markPSTLiveLocalEdit]);
+
+  const handleAPUMismatchTrainIdsChange = useCallback((depot, trainIds) => {
+    markPSTLiveLocalEdit();
+    const normalizedDepot = normalizeDepotKey(depot);
+    setPstAPUMismatchTrainIds((previous) => normalizeAPUMismatchTrainIds({
+      ...previous,
+      [normalizedDepot]: trainIds,
     }));
   }, [markPSTLiveLocalEdit]);
 
@@ -18882,7 +19140,8 @@ export default function DepotStablingPage() {
         nextLogLines,
         taNameStateRef.current,
         pstCompletedByNamesRef.current,
-        updatedAt
+        updatedAt,
+        pstAPUMismatchTrainIdsRef.current
       );
 
       const livePayload = buildPSTLivePayload({
@@ -18891,6 +19150,7 @@ export default function DepotStablingPage() {
         logLines: nextLogLines,
         taNameState: taNameStateRef.current,
         completedByNames: pstCompletedByNamesRef.current,
+        apuMismatchTrainIds: pstAPUMismatchTrainIdsRef.current,
         activePg: activePSTPgRef.current,
         pg2Stabling: pstPg2StablingRef.current,
         pg2WorkState: {
@@ -18899,6 +19159,7 @@ export default function DepotStablingPage() {
           logLines: pstPg2LogLinesRef.current,
           taNameState: taNamePg2StateRef.current,
           completedByNames: pstPg2CompletedByNamesRef.current,
+          apuMismatchTrainIds: pstPg2APUMismatchTrainIdsRef.current,
         },
       });
       if (pstLiveLoaded) schedulePSTLiveSave(livePayload);
@@ -19187,7 +19448,14 @@ export default function DepotStablingPage() {
     });
   }, [markPSTLiveLocalEdit]);
 
-  const commitPSTPg2WorkState = useCallback((nextPstState, nextPrepState, nextLogLines, nextTaNameState = taNamePg2StateRef.current, nextCompletedByNames = pstPg2CompletedByNamesRef.current) => {
+  const commitPSTPg2WorkState = useCallback((
+    nextPstState,
+    nextPrepState,
+    nextLogLines,
+    nextTaNameState = taNamePg2StateRef.current,
+    nextCompletedByNames = pstPg2CompletedByNamesRef.current,
+    nextAPUMismatchTrainIds = pstPg2APUMismatchTrainIdsRef.current
+  ) => {
     markPSTLiveLocalEdit();
     const sortedLog = sortPSTLogLinesByTime(nextLogLines);
     pstPg2StateRef.current = nextPstState;
@@ -19195,11 +19463,13 @@ export default function DepotStablingPage() {
     pstPg2LogLinesRef.current = sortedLog;
     taNamePg2StateRef.current = nextTaNameState;
     pstPg2CompletedByNamesRef.current = nextCompletedByNames;
+    pstPg2APUMismatchTrainIdsRef.current = nextAPUMismatchTrainIds;
     setPstPg2State(nextPstState);
     setPrepPg2State(nextPrepState);
     setPstPg2LogLines(sortedLog);
     setTaNamePg2State(nextTaNameState);
     setPstPg2CompletedByNames(nextCompletedByNames);
+    setPstPg2APUMismatchTrainIds(nextAPUMismatchTrainIds);
 
     const pg2WorkState = {
       pstState: nextPstState,
@@ -19207,6 +19477,7 @@ export default function DepotStablingPage() {
       logLines: sortedLog,
       taNameState: nextTaNameState,
       completedByNames: nextCompletedByNames,
+      apuMismatchTrainIds: nextAPUMismatchTrainIds,
     };
     savePSTPg2WorkState(pg2WorkState);
 
@@ -19216,6 +19487,7 @@ export default function DepotStablingPage() {
       logLines: pstLogLinesRef.current,
       taNameState: taNameStateRef.current,
       completedByNames: pstCompletedByNamesRef.current,
+      apuMismatchTrainIds: pstAPUMismatchTrainIdsRef.current,
       activePg: activePSTPgRef.current,
       pg2Stabling: pstPg2StablingRef.current,
       pg2WorkState,
@@ -19226,7 +19498,8 @@ export default function DepotStablingPage() {
       livePayload.logLines,
       livePayload.taNameState,
       livePayload.completedByNames,
-      livePayload.updatedAt
+      livePayload.updatedAt,
+      livePayload.apuMismatchTrainIds
     );
     if (pstLiveLoaded) schedulePSTLiveSave(livePayload);
   }, [markPSTLiveLocalEdit, pstLiveLoaded, schedulePSTLiveSave]);
@@ -19404,6 +19677,22 @@ export default function DepotStablingPage() {
     commitPSTPg2WorkState(pstPg2StateRef.current, prepPg2StateRef.current, pstPg2LogLinesRef.current, taNamePg2StateRef.current, nextCompletedByNames);
   }, [commitPSTPg2WorkState]);
 
+  const handlePg2APUMismatchTrainIdsChange = useCallback((depot, trainIds) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    const nextAPUMismatchTrainIds = normalizeAPUMismatchTrainIds({
+      ...pstPg2APUMismatchTrainIdsRef.current,
+      [normalizedDepot]: trainIds,
+    });
+    commitPSTPg2WorkState(
+      pstPg2StateRef.current,
+      prepPg2StateRef.current,
+      pstPg2LogLinesRef.current,
+      taNamePg2StateRef.current,
+      pstPg2CompletedByNamesRef.current,
+      nextAPUMismatchTrainIds
+    );
+  }, [commitPSTPg2WorkState]);
+
   const handleClearPSTPg2DepotPSTOnly = useCallback((depot) => {
     const nextPstState = removePSTSectionKeys(pstPg2StateRef.current, depot);
     const nextLogLines = pstPg2LogLinesRef.current.filter((line) => !(line.depot === depot && line.type === "PST"));
@@ -19486,6 +19775,11 @@ export default function DepotStablingPage() {
     else handleCompletedByChange(depot, value);
   }, [handleCompletedByChange, handlePg2CompletedByChange, isActivePSTPg2Depot]);
 
+  const handleActiveAPUMismatchTrainIdsChange = useCallback((depot, trainIds) => {
+    if (isActivePSTPg2Depot(depot)) handlePg2APUMismatchTrainIdsChange(depot, trainIds);
+    else handleAPUMismatchTrainIdsChange(depot, trainIds);
+  }, [handleAPUMismatchTrainIdsChange, handlePg2APUMismatchTrainIdsChange, isActivePSTPg2Depot]);
+
   const handleActiveClearDepotPSTOnly = useCallback((depot) => {
     if (isActivePSTPg2Depot(depot)) handleClearPSTPg2DepotPSTOnly(depot);
     else handleClearDepotPSTOnly(depot);
@@ -19543,6 +19837,10 @@ export default function DepotStablingPage() {
     west: westPSTIsPg2 ? (pstPg2CompletedByNames?.west || "") : (pstCompletedByNames?.west || ""),
     east: eastPSTIsPg2 ? (pstPg2CompletedByNames?.east || "") : (pstCompletedByNames?.east || ""),
   };
+  const activePSTAPUMismatchTrainIds = normalizeAPUMismatchTrainIds({
+    west: westPSTIsPg2 ? pstPg2APUMismatchTrainIds?.west : pstAPUMismatchTrainIds?.west,
+    east: eastPSTIsPg2 ? pstPg2APUMismatchTrainIds?.east : pstAPUMismatchTrainIds?.east,
+  });
 
   const handleAddRequest = async (reqData) => {
     const created = await base44.entities.MaintenanceRequest.create(reqData);
@@ -20339,6 +20637,8 @@ export default function DepotStablingPage() {
             onTaNameChange={handleActiveTaNameChange}
             completedByNames={activePSTCompletedByNames}
             onCompletedByChange={handleActiveCompletedByChange}
+            apuMismatchTrainIds={activePSTAPUMismatchTrainIds}
+            onAPUMismatchTrainIdsChange={handleActiveAPUMismatchTrainIdsChange}
             pstLiveStatusText={pstLiveStatusText}
             pstLiveStatusClass={pstLiveStatusClass}
             pstLiveDebug={pstLiveDebug}

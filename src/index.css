@@ -2005,6 +2005,101 @@ html[data-app-theme="light"] .theme-pst-live-panel .theme-pst-excel-button:hover
   filter: brightness(0.98);
 }
 
+/* APU Missmatch checklist — keep the PST companion panel clear in light mode. */
+html[data-app-theme="light"] .theme-apu-mismatch-panel {
+  background: linear-gradient(145deg, #ffffff 0%, #eef3f7 100%) !important;
+  background-image: linear-gradient(145deg, #ffffff 0%, #eef3f7 100%) !important;
+  border-color: #aebdcc !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.10), inset 0 1px 0 #ffffff !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-panel :is(h3, p, span, button, pre, div) {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-header,
+html[data-app-theme="light"] .theme-apu-mismatch-output-header {
+  border-color: #b7c4d1 !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-count {
+  background: #e0f2fe !important;
+  border-color: #7db8dd !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-panel[data-depot="east"] .theme-apu-mismatch-count {
+  background: #f3e8ff !important;
+  border-color: #bd8fe0 !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-train {
+  background: #ffffff !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-train.is-selected {
+  background: #dbeafe !important;
+  border-color: #3b82c4 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 196, 0.13) !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-panel[data-depot="east"] .theme-apu-mismatch-train.is-selected {
+  background: #f3e8ff !important;
+  border-color: #a855d1 !important;
+  box-shadow: 0 0 0 2px rgba(168, 85, 209, 0.12) !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-train > span {
+  background: #ffffff !important;
+  border-color: #73889a !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-train.is-selected > span {
+  background: #2563a8 !important;
+  border-color: #2563a8 !important;
+  color: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-panel[data-depot="east"] .theme-apu-mismatch-train.is-selected > span {
+  background: #9333b8 !important;
+  border-color: #9333b8 !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-train.is-selected svg {
+  color: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-output {
+  background: #ffffff !important;
+  border-color: #aebdcc !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-copy {
+  background: #e0f2fe !important;
+  border-color: #78aeda !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-panel[data-depot="east"] .theme-apu-mismatch-copy {
+  background: #f3e8ff !important;
+  border-color: #b794e8 !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-clear {
+  background: #fee2e2 !important;
+  border-color: #ef8d8d !important;
+  color: #000000 !important;
+}
+
+html[data-app-theme="light"] .theme-apu-mismatch-empty {
+  background: #f8fafc !important;
+  border-color: #aebdcc !important;
+}
+
 
 /* Inbound / Outbound flow: remove the last dark NEXT label in light mode. */
 html[data-app-theme="light"] .theme-train-movement-page .movement-flow-step-label-next {
