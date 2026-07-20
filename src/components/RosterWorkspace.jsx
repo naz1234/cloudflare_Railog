@@ -17,7 +17,6 @@ import {
   Plus,
   RotateCcw,
   Save,
-  Search,
   ShieldCheck,
   Trash2,
   Upload,
@@ -848,7 +847,6 @@ export default function RosterWorkspace() {
   const [confirmDeleteId, setConfirmDeleteId] = useState("");
   const [selectedDate, setSelectedDate] = useState(() => localDateInputValue());
   const [role, setRole] = useState("ALL");
-  const [search, setSearch] = useState("");
   const [syncStatus, setSyncStatus] = useState("Connecting to Cloudflare D1…");
 
   const record = useMemo(
@@ -961,7 +959,6 @@ export default function RosterWorkspace() {
     if (!parsed) return;
     setSelectedDate(localDateInputValue());
     setRole("ALL");
-    setSearch("");
   }, [record?.versionKey]);
 
   useEffect(() => {
@@ -1014,16 +1011,14 @@ export default function RosterWorkspace() {
     day: typeof selectedDateRef === "number" ? selectedDateRef : null,
     role,
     includeRest: false,
-    search,
-  }), [parsed, selectedDateRef, role, search]);
+  }), [parsed, selectedDateRef, role]);
 
   const allDateRows = useMemo(() => queryRoster(parsed, {
     dateKey: typeof selectedDateRef === "string" ? selectedDateRef : null,
     day: typeof selectedDateRef === "number" ? selectedDateRef : null,
     role,
     includeRest: true,
-    search,
-  }), [parsed, selectedDateRef, role, search]);
+  }), [parsed, selectedDateRef, role]);
 
   const specialLeaveRows = useMemo(
     () => allDateRows.filter(({ entry }) => Boolean(getSpecialLeaveType(entry))),
@@ -1198,8 +1193,8 @@ export default function RosterWorkspace() {
         ) : null}
 
         <div className="flex flex-col gap-3 p-3.5">
-          <aside className="grid items-stretch gap-2.5 lg:w-fit lg:max-w-full lg:grid-cols-[300px_270px]">
-            <section className="theme-roster-upload-panel h-full rounded-xl border border-[#294b63] bg-[#081b2a] p-2.5">
+          <aside className="grid w-full items-stretch gap-2.5 lg:grid-cols-2 xl:grid-cols-[300px_minmax(270px,1fr)_360px]">
+            <section className="theme-roster-upload-panel h-full min-w-0 rounded-xl border border-[#294b63] bg-[#081b2a] p-2.5">
               <div className="flex items-center gap-1.5">
                 <Upload className="h-3.5 w-3.5 text-sky-200" />
                 <h3 className="truncate text-[10px] font-black uppercase tracking-[0.1em] text-white">Upload New Version</h3>
@@ -1303,48 +1298,42 @@ export default function RosterWorkspace() {
                 </div>
               )}
             </section>
+            <section className="theme-roster-filter-panel theme-roster-ext-card h-full min-w-0 rounded-xl border border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] p-2.5 shadow-[0_10px_28px_rgba(0,0,0,0.16)] lg:col-span-2 xl:col-span-1">
+              <div className="flex items-center gap-1.5">
+                <CalendarDays className="h-3.5 w-3.5 text-emerald-200" />
+                <h3 className="truncate text-[10px] font-black uppercase tracking-[0.1em] text-white">Roster View</h3>
+              </div>
+              <p className="mt-1 text-[8px] text-[#789d8f]">Select the date and controller type shown below.</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <label className="block min-w-0">
+                  <span className="mb-1 block text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#afbed2]">Date</span>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(event) => setSelectedDate(event.target.value)}
+                    disabled={!record}
+                    className={`theme-roster-control theme-roster-ext-control is-date h-9 w-full rounded-lg border bg-[#061a20] px-2.5 text-[11px] font-semibold text-white outline-none [color-scheme:dark] disabled:cursor-not-allowed disabled:opacity-50 ${!record ? "border-[#376d60]" : dateExists ? "is-valid border-[#376d60] focus:border-emerald-300/70" : "is-invalid border-rose-400/70 focus:border-rose-300"}`}
+                  />
+                </label>
+                <label className="block min-w-0">
+                  <span className="mb-1 block text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#afbed2]">Controller Type</span>
+                  <select
+                    value={role}
+                    onChange={(event) => setRole(event.target.value)}
+                    disabled={!record}
+                    className="theme-roster-control theme-roster-ext-control h-9 w-full rounded-lg border border-[#376d60] bg-[#061a20] px-2.5 text-[11px] font-semibold text-white outline-none focus:border-emerald-300/70 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="ALL">All Controllers</option>
+                    {ROSTER_ROLE_ORDER.filter((item) => (parsed?.roles || []).includes(item)).map((item) => <option key={item} value={item}>{item}</option>)}
+                  </select>
+                </label>
+              </div>
+            </section>
           </aside>
 
           <main className="theme-roster-main min-w-0 rounded-2xl border border-[#294b63] bg-[#071827] p-3">
             {!record ? <EmptyRoster onUpload={() => fileInputRef.current?.click()} /> : (
               <div className="space-y-3">
-                <section className="theme-roster-filter-panel theme-roster-ext-card rounded-[16px] border border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] p-2.5 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
-                  <div className="grid gap-2.5 md:grid-cols-[1fr_0.8fr_1.25fr]">
-                    <label className="block">
-                      <span className="mb-1 block text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#afbed2]">Date</span>
-                      <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(event) => setSelectedDate(event.target.value)}
-                        className={`theme-roster-control theme-roster-ext-control is-date ${dateExists ? "is-valid" : "is-invalid"} h-9 w-full rounded-lg border bg-[#061a20] px-2.5 text-[11px] font-semibold text-white outline-none [color-scheme:dark] ${dateExists ? "border-[#376d60] focus:border-emerald-300/70" : "border-rose-400/70 focus:border-rose-300"}`}
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="mb-1 block text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#afbed2]">Controller Type</span>
-                      <select
-                        value={role}
-                        onChange={(event) => setRole(event.target.value)}
-                        className="theme-roster-control theme-roster-ext-control h-9 w-full rounded-lg border border-[#376d60] bg-[#061a20] px-2.5 text-[11px] font-semibold text-white outline-none focus:border-emerald-300/70"
-                      >
-                        <option value="ALL">All Controllers</option>
-                        {ROSTER_ROLE_ORDER.filter((item) => parsed.roles.includes(item)).map((item) => <option key={item} value={item}>{item}</option>)}
-                      </select>
-                    </label>
-                    <label className="block">
-                      <span className="mb-1 block text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#afbed2]">Search Name / Duty</span>
-                      <div className="relative">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#76d5ae]" />
-                        <input
-                          value={search}
-                          onChange={(event) => setSearch(event.target.value)}
-                          placeholder="Search controller…"
-                          className="theme-roster-control theme-roster-ext-control h-9 w-full rounded-lg border border-[#376d60] bg-[#061a20] pl-8 pr-2.5 text-[11px] text-white outline-none focus:border-emerald-300/70 placeholder:text-[#5d7f76]"
-                        />
-                      </div>
-                    </label>
-                  </div>
-                </section>
-
                 {!selectedDateParts ? (
                   <div className="theme-roster-date-alert is-warning flex items-center gap-2 rounded-xl border border-amber-400/35 bg-amber-400/10 px-3 py-2.5 text-[10px] font-semibold text-amber-100">
                     <AlertCircle className="h-4 w-4 shrink-0" /> Enter a valid date to view the roster.
@@ -1389,7 +1378,7 @@ export default function RosterWorkspace() {
                   <div className="theme-roster-empty-result rounded-2xl border border-dashed border-[#315671] bg-[#081b2a] px-5 py-10 text-center">
                     <Users className="mx-auto h-7 w-7 text-[#52758d]" />
                     <div className="mt-3 text-[11px] font-bold text-[#bdd1de]">No matching controller found</div>
-                    <div className="mt-1 text-[9px] text-[#58778c]">Change the controller type or search.</div>
+                    <div className="mt-1 text-[9px] text-[#58778c]">Choose another controller type.</div>
                   </div>
                 )}
 
