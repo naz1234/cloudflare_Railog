@@ -350,6 +350,11 @@ function errorMessage(error) {
 }
 
 export async function saveRoster({ file, parsed, remark = "" }) {
+  const existingRecords = await readLocalRosters();
+  if (existingRecords.length) {
+    throw new Error("Remove the current roster before uploading a new PDF.");
+  }
+
   const localRecord = buildLocalRecord({ file, parsed, remark });
   await writeLocalRoster(localRecord);
 

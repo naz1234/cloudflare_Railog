@@ -11,7 +11,6 @@ import {
   Database,
   Download,
   FileText,
-  History,
   LoaderCircle,
   Pencil,
   Plus,
@@ -832,11 +831,9 @@ function rosterListSignature(records = []) {
 export default function RosterWorkspace() {
   const fileInputRef = useRef(null);
   const recordsRef = useRef([]);
-  const selectedIdRef = useRef("");
   const processingRef = useRef(false);
   const upgradedVersionsRef = useRef(new Set());
   const [records, setRecords] = useState([]);
-  const [selectedId, setSelectedId] = useState("");
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
@@ -849,19 +846,12 @@ export default function RosterWorkspace() {
   const [role, setRole] = useState("ALL");
   const [syncStatus, setSyncStatus] = useState("Connecting to Cloudflare D1…");
 
-  const record = useMemo(
-    () => records.find((item) => item.versionKey === selectedId) || records[0] || null,
-    [records, selectedId],
-  );
+  const record = records[0] || null;
   const parsed = record?.parsed || null;
 
   useEffect(() => {
     recordsRef.current = records;
   }, [records]);
-
-  useEffect(() => {
-    selectedIdRef.current = selectedId;
-  }, [selectedId]);
 
   useEffect(() => {
     processingRef.current = processing;
@@ -875,20 +865,17 @@ export default function RosterWorkspace() {
         const restored = repairRosterVersions(savedRecords);
         setRecords(restored);
         recordsRef.current = restored;
-        const latestId = restored[0]?.versionKey || "";
-        setSelectedId(latestId);
-        selectedIdRef.current = latestId;
         if (!restored.length) {
           setSyncStatus("Live storage ready · no roster uploaded");
-        } else if (restored.some((item) => item.cloudSynced === false)) {
-          setSyncStatus("Roster history ready · some versions are local only");
+        } else if (restored[0]?.cloudSynced === false) {
+          setSyncStatus("Current roster ready locally · cloud sync unavailable");
         } else {
-          setSyncStatus(`${restored.length} saved version${restored.length === 1 ? "" : "s"} · live sync ready`);
+          setSyncStatus("Current roster ready · live sync");
         }
       })
       .catch((storageError) => {
         if (active) {
-          setError(storageError.message || "Unable to restore the saved roster versions.");
+          setError(storageError.message || "Unable to restore the current roster.");
           setSyncStatus("Cloud sync unavailable");
         }
       })
@@ -907,29 +894,25 @@ export default function RosterWorkspace() {
         const refreshed = repairRosterVersions(await loadSavedRosters());
         if (!active) return;
         const oldRecords = recordsRef.current;
-        const oldLatestId = oldRecords[0]?.versionKey || "";
-        const newLatestId = refreshed[0]?.versionKey || "";
+        const oldCurrentId = oldRecords[0]?.versionKey || "";
+        const newCurrentId = refreshed[0]?.versionKey || "";
         const changed = rosterListSignature(refreshed) !== rosterListSignature(oldRecords);
 
         if (changed) {
           setRecords(refreshed);
           recordsRef.current = refreshed;
-          const currentSelected = selectedIdRef.current;
-          const selectedStillExists = refreshed.some((item) => item.versionKey === currentSelected);
-          const followLatest = !currentSelected || currentSelected === oldLatestId || !selectedStillExists;
-          const nextSelected = followLatest ? newLatestId : currentSelected;
-          setSelectedId(nextSelected);
-          selectedIdRef.current = nextSelected;
-          if (newLatestId && newLatestId !== oldLatestId) {
-            setNotice("A newer roster version was loaded and placed at the top.");
+          if (newCurrentId && newCurrentId !== oldCurrentId) {
+            setNotice("The current roster was refreshed from live storage.");
           }
         }
 
-        setSyncStatus(refreshed.length
-          ? `${refreshed.length} saved version${refreshed.length === 1 ? "" : "s"} · live sync ready`
-          : "Live storage ready · no roster uploaded");
+        setSyncStatus(!refreshed.length
+          ? "Live storage ready · no roster uploaded"
+          : refreshed[0]?.cloudSynced === false
+            ? "Current roster ready locally · cloud sync unavailable"
+            : "Current roster ready · live sync");
       } catch {
-        if (active) setSyncStatus("Local roster history ready · cloud sync unavailable");
+        if (active) setSyncStatus("Current roster ready locally · cloud sync unavailable");
       }
     };
 
@@ -1037,6 +1020,11 @@ export default function RosterWorkspace() {
     setError("");
     setNotice("");
     if (!file) return;
+    if (recordsRef.current.length) {
+      setError("Remove the current roster before uploading a new PDF.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
     if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
       setError("Please upload the OCC roster in PDF format.");
       return;
@@ -1048,21 +1036,16 @@ export default function RosterWorkspace() {
       const arrayBuffer = await file.arrayBuffer();
       const parsedRoster = await parseRosterPdf(arrayBuffer, file.name, pdfjsLib);
       const saved = { ...await saveRoster({ file, parsed: parsedRoster, remark: uploadRemark }), parsed: ensureRosterNames(parsedRoster) };
-      const nextRecords = sortRosterVersions([
-        saved,
-        ...recordsRef.current.filter((item) => item.versionKey !== saved.versionKey),
-      ]);
+      const nextRecords = [saved];
       setRecords(nextRecords);
       recordsRef.current = nextRecords;
-      setSelectedId(saved.versionKey);
-      selectedIdRef.current = saved.versionKey;
       setUploadRemark("");
       setSyncStatus(saved.cloudSynced === false
-        ? "New version saved locally · cloud sync unavailable"
-        : `${nextRecords.length} saved version${nextRecords.length === 1 ? "" : "s"} · live sync ready`);
+        ? "Current roster saved locally · cloud sync unavailable"
+        : "Current roster ready · live sync");
       setNotice(saved.cloudSynced === false
-        ? `${parsedRoster.people.length} personnel detected. This version is currently saved only in this browser.`
-        : `New roster version saved at the top with ${parsedRoster.people.length} personnel.`);
+        ? `${parsedRoster.people.length} personnel detected. The current roster is saved only in this browser.`
+        : `Current roster uploaded with ${parsedRoster.people.length} personnel.`);
     } catch (fileError) {
       console.error("Roster PDF import failed:", fileError);
       setError(fileError.message || "Unable to read this roster PDF.");
@@ -1074,7 +1057,7 @@ export default function RosterWorkspace() {
 
   const handleDownload = (targetRecord) => {
     if (!targetRecord?.fileBlob) {
-      setError("The original PDF is unavailable for this roster version.");
+      setError("The original PDF is unavailable for the current roster.");
       return;
     }
     const url = URL.createObjectURL(targetRecord.fileBlob);
@@ -1087,33 +1070,40 @@ export default function RosterWorkspace() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  const handleDeleteVersion = async (targetRecord) => {
+  const handleRemoveRoster = async (targetRecord) => {
     if (confirmDeleteId !== targetRecord.versionKey) {
       setConfirmDeleteId(targetRecord.versionKey);
       window.setTimeout(() => setConfirmDeleteId((current) => current === targetRecord.versionKey ? "" : current), 4000);
       return;
     }
 
-    try {
-      const result = await deleteSavedRoster(targetRecord);
-      const nextRecords = recordsRef.current.filter((item) => item.versionKey !== targetRecord.versionKey);
-      setRecords(nextRecords);
-      recordsRef.current = nextRecords;
-      if (selectedIdRef.current === targetRecord.versionKey) {
-        const nextSelected = nextRecords[0]?.versionKey || "";
-        setSelectedId(nextSelected);
-        selectedIdRef.current = nextSelected;
+    const targets = recordsRef.current.length ? [...recordsRef.current] : [targetRecord];
+    const outcomes = await Promise.all(targets.map(async (item) => {
+      try {
+        const result = await deleteSavedRoster(item);
+        const sharedDeleteFailed = Boolean(item.cloudId && !result.cloudDeleted);
+        return { item, failed: sharedDeleteFailed, error: sharedDeleteFailed ? result.error : "" };
+      } catch (deleteError) {
+        return { item, failed: true, error: deleteError.message || "Unable to remove this roster." };
       }
-      setConfirmDeleteId("");
-      setError("");
-      setSyncStatus(nextRecords.length
-        ? `${nextRecords.length} saved version${nextRecords.length === 1 ? "" : "s"} · live sync ready`
-        : "Live storage ready · no roster uploaded");
-      setNotice(result.cloudDeleted ? "Roster version deleted from shared history." : "Roster version deleted from this browser.");
-      if (!result.cloudDeleted && result.error) setError(result.error);
-    } catch (deleteError) {
-      setError(deleteError.message || "Unable to delete this roster version.");
+    }));
+    const remaining = outcomes.filter((outcome) => outcome.failed).map((outcome) => outcome.item);
+
+    setRecords(remaining);
+    recordsRef.current = remaining;
+    setConfirmDeleteId("");
+    setEditingRemarkId("");
+    setEditingRemark("");
+    setError("");
+
+    if (remaining.length) {
+      setSyncStatus("Current roster removal needs attention");
+      setError(outcomes.find((outcome) => outcome.failed)?.error || "Unable to remove the current roster from shared storage.");
+      return;
     }
+
+    setSyncStatus("Live storage ready · no roster uploaded");
+    setNotice("Current roster removed. You can now upload a new PDF.");
   };
 
   const startRemarkEdit = (targetRecord) => {
@@ -1131,7 +1121,7 @@ export default function RosterWorkspace() {
       recordsRef.current = nextRecords;
       setEditingRemarkId("");
       setEditingRemark("");
-      setNotice(updated.cloudSynced === false ? "Remark saved locally." : "Remark saved to the shared roster version.");
+      setNotice(updated.cloudSynced === false ? "Remark saved locally." : "Remark saved to the current roster.");
       if (updated.cloudSynced === false && updated.syncError) setError(updated.syncError);
     } catch (remarkError) {
       setError(remarkError.message || "Unable to save the roster remark.");
@@ -1142,7 +1132,7 @@ export default function RosterWorkspace() {
   if (loading) {
     return (
       <div className="theme-roster-loading flex min-h-[280px] items-center justify-center rounded-2xl border border-[#294b63] bg-[#071827]">
-        <div className="flex items-center gap-2 text-[11px] font-semibold text-[#8fb0c7]"><LoaderCircle className="h-4 w-4 animate-spin" /> Restoring roster history…</div>
+        <div className="flex items-center gap-2 text-[11px] font-semibold text-[#8fb0c7]"><LoaderCircle className="h-4 w-4 animate-spin" /> Restoring current roster…</div>
       </div>
     );
   }
@@ -1171,7 +1161,7 @@ export default function RosterWorkspace() {
                   <Database className="h-2.5 w-2.5" /> Live D1
                 </span>
               </div>
-              <p className="mt-1 text-[10px] text-[#7898ad]">Upload and manage roster versions above. The selected roster output is shown below.</p>
+              <p className="mt-1 text-[10px] text-[#7898ad]">Keep one roster PDF at a time. Remove the current roster before uploading the next one.</p>
             </div>
           </div>
           <div className="theme-roster-sync-badge flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.07] px-3 py-2 text-[9px] font-semibold text-emerald-100">
@@ -1193,112 +1183,8 @@ export default function RosterWorkspace() {
         ) : null}
 
         <div className="flex flex-col gap-3 p-3.5">
-          <aside className="grid w-full items-stretch gap-2.5 lg:grid-cols-2 xl:grid-cols-[300px_minmax(270px,1fr)_360px]">
-            <section className="theme-roster-upload-panel h-full min-w-0 rounded-xl border border-[#294b63] bg-[#081b2a] p-2.5">
-              <div className="flex items-center gap-1.5">
-                <Upload className="h-3.5 w-3.5 text-sky-200" />
-                <h3 className="truncate text-[10px] font-black uppercase tracking-[0.1em] text-white">Upload New Version</h3>
-              </div>
-              <div className="mt-2 grid items-end gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                <label className="block min-w-0">
-                  <span className="mb-1 block text-[9px] font-black uppercase tracking-[0.08em] text-[#8eb0c5]">Remark shown as pill</span>
-                  <input
-                    value={uploadRemark}
-                    onChange={(event) => setUploadRemark(event.target.value)}
-                    placeholder="Example: Revised June roster"
-                    maxLength={80}
-                    className="h-9 w-full min-w-0 rounded-lg border border-[#2b506a] bg-[#061522] px-2.5 text-[10px] text-white outline-none focus:border-sky-400/60 placeholder:text-[#456277]"
-                  />
-                </label>
-                <ActionButton compact icon={Upload} primary onClick={() => fileInputRef.current?.click()} disabled={processing}>
-                  {processing ? "Reading…" : "Upload PDF"}
-                </ActionButton>
-              </div>
-            </section>
-
-            <section className="theme-roster-history-panel h-full min-w-0 overflow-hidden rounded-xl border border-[#294b63] bg-[#081b2a]">
-              <header className="theme-roster-history-header flex items-center justify-between border-b border-[#1d4058] px-3 py-2">
-                <div className="flex items-center gap-1.5">
-                  <History className="h-3.5 w-3.5 text-sky-200" />
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.1em] text-white">Saved Versions</h3>
-                </div>
-                <span className="rounded-full border border-sky-300/25 bg-sky-400/10 px-1.5 py-px text-[8px] font-black text-sky-100">{records.length}</span>
-              </header>
-
-              {!records.length ? (
-                <div className="flex min-h-[96px] flex-col items-center justify-center px-3 py-4 text-center">
-                  <FileText className="mx-auto h-5 w-5 text-[#52758d]" />
-                  <div className="mt-2 text-[9px] font-bold text-[#bdd1de]">No roster version saved</div>
-                  <div className="mt-0.5 text-[8px] text-[#58778c]">Use Upload New Version to add the first PDF.</div>
-                </div>
-              ) : (
-                <div className="flex min-h-[96px] gap-2 overflow-x-auto p-2">
-                  {records.map((item, index) => {
-                    const selected = item.versionKey === record?.versionKey;
-                    const editing = editingRemarkId === item.versionKey;
-                    const confirming = confirmDeleteId === item.versionKey;
-                    return (
-                      <div
-                        key={item.versionKey}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => setSelectedId(item.versionKey)}
-                        onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedId(item.versionKey); }}
-                        className={`theme-roster-version-card ${selected ? "is-selected" : ""} min-w-[245px] flex-[0_0_245px] cursor-pointer rounded-lg border p-2.5 transition duration-200 ${selected
-                          ? "border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] shadow-[0_0_0_1px_rgba(85,215,170,0.24),0_0_22px_rgba(38,199,129,0.18),0_12px_30px_rgba(0,0,0,0.22)]"
-                          : "border-[#23465f] bg-[#091d2e] hover:border-[#37627e]"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="truncate text-[11px] font-extrabold text-white">{item.fileName}</div>
-                            <div className="mt-0.5 text-[9px] text-[#6f8fa4]">Uploaded {dateTimeLabel(item.uploadedAt)}</div>
-                          </div>
-                          {index === 0 ? <span className="theme-roster-latest-pill shrink-0 rounded-full border border-emerald-300/30 bg-emerald-400/10 px-1.5 py-px text-[8px] font-black uppercase tracking-wide text-emerald-100">Latest</span> : null}
-                        </div>
-
-                        <div className="mt-1.5 flex flex-wrap gap-1">
-                          {item.remark ? (
-                            <span className="theme-roster-remark-pill max-w-full truncate rounded-full border border-amber-300/35 bg-amber-400/10 px-1.5 py-px text-[9px] font-bold text-amber-100">{item.remark}</span>
-                          ) : (
-                            <span className="theme-roster-no-remark-pill rounded-full border border-slate-300/20 bg-slate-400/[0.06] px-1.5 py-px text-[9px] text-slate-300">No remark</span>
-                          )}
-                          <span className="theme-roster-personnel-pill rounded-full border border-[#315671] bg-[#0a253b] px-1.5 py-px text-[9px] text-[#9fb9ca]">{item.parsed?.people?.length || 0} personnel</span>
-                        </div>
-
-                        {editing ? (
-                          <div className="theme-roster-remark-editor mt-2 rounded-lg border border-[#315671] bg-[#061522] p-2" onClick={(event) => event.stopPropagation()}>
-                            <input
-                              autoFocus
-                              value={editingRemark}
-                              onChange={(event) => setEditingRemark(event.target.value)}
-                              onKeyDown={(event) => {
-                                if (event.key === "Enter") saveRemarkEdit(item);
-                                if (event.key === "Escape") setEditingRemarkId("");
-                              }}
-                              maxLength={80}
-                              placeholder="Roster remark"
-                              className="h-8 w-full rounded-lg border border-[#2b506a] bg-[#081b2a] px-2.5 text-[10px] text-white outline-none focus:border-sky-400/60"
-                            />
-                            <div className="mt-1.5 flex gap-1">
-                              <MiniButton compact icon={Save} label="Save" onClick={() => saveRemarkEdit(item)} />
-                              <MiniButton compact icon={X} label="Cancel" onClick={() => setEditingRemarkId("")} />
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="mt-1.5 flex flex-wrap gap-1" onClick={(event) => event.stopPropagation()}>
-                            <MiniButton compact icon={Download} label="Download" onClick={() => handleDownload(item)} />
-                            <MiniButton compact icon={Pencil} label="Remark" onClick={() => startRemarkEdit(item)} />
-                            <MiniButton compact icon={Trash2} label="Delete" danger confirm={confirming} onClick={() => handleDeleteVersion(item)} />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-            <section className="theme-roster-filter-panel theme-roster-ext-card h-full min-w-0 rounded-xl border border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] p-2.5 shadow-[0_10px_28px_rgba(0,0,0,0.16)] lg:col-span-2 xl:col-span-1">
+          <aside className="grid w-full items-stretch gap-2.5 lg:grid-cols-[360px_minmax(0,1fr)]">
+            <section className="theme-roster-filter-panel theme-roster-ext-card h-full min-w-0 rounded-xl border border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] p-2.5 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
               <div className="flex items-center gap-1.5">
                 <CalendarDays className="h-3.5 w-3.5 text-emerald-200" />
                 <h3 className="truncate text-[10px] font-black uppercase tracking-[0.1em] text-white">Roster View</h3>
@@ -1329,6 +1215,89 @@ export default function RosterWorkspace() {
                 </label>
               </div>
             </section>
+
+            <section className="theme-roster-history-panel h-full min-w-0 overflow-hidden rounded-xl border border-[#294b63] bg-[#081b2a]">
+              <header className="theme-roster-history-header flex items-center justify-between border-b border-[#1d4058] px-3 py-2">
+                <div className="flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5 text-sky-200" />
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.1em] text-white">Current Roster</h3>
+                </div>
+                <span className={`rounded-full border px-1.5 py-px text-[8px] font-black uppercase tracking-wide ${record ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-100" : "border-slate-300/20 bg-slate-400/[0.06] text-slate-300"}`}>
+                  {record ? "Active" : "Empty"}
+                </span>
+              </header>
+
+              {!record ? (
+                <div className="theme-roster-upload-panel p-2.5">
+                  <div className="grid items-end gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                    <label className="block min-w-0">
+                      <span className="mb-1 block text-[9px] font-black uppercase tracking-[0.08em] text-[#8eb0c5]">Remark shown as pill</span>
+                      <input
+                        value={uploadRemark}
+                        onChange={(event) => setUploadRemark(event.target.value)}
+                        placeholder="Example: Revised July roster"
+                        maxLength={80}
+                        className="h-9 w-full min-w-0 rounded-lg border border-[#2b506a] bg-[#061522] px-2.5 text-[10px] text-white outline-none focus:border-sky-400/60 placeholder:text-[#456277]"
+                      />
+                    </label>
+                    <ActionButton compact icon={Upload} primary onClick={() => fileInputRef.current?.click()} disabled={processing}>
+                      {processing ? "Reading…" : "Upload PDF"}
+                    </ActionButton>
+                  </div>
+                  <p className="mt-2 text-[8px] leading-4 text-[#58778c]">Only one roster is stored. Remove it before uploading a replacement.</p>
+                </div>
+              ) : (
+                <div className="p-2.5">
+                  <div className="theme-roster-version-card is-selected rounded-lg border border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] p-2.5 shadow-[0_0_0_1px_rgba(85,215,170,0.24),0_0_22px_rgba(38,199,129,0.18),0_12px_30px_rgba(0,0,0,0.22)]">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate text-[11px] font-extrabold text-white">{record.fileName}</div>
+                        <div className="mt-0.5 text-[9px] text-[#6f8fa4]">Uploaded {dateTimeLabel(record.uploadedAt)}</div>
+                      </div>
+                      <span className="theme-roster-personnel-pill shrink-0 rounded-full border border-[#315671] bg-[#0a253b] px-1.5 py-px text-[9px] text-[#9fb9ca]">{record.parsed?.people?.length || 0} personnel</span>
+                    </div>
+
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {record.remark ? (
+                        <span className="theme-roster-remark-pill max-w-full truncate rounded-full border border-amber-300/35 bg-amber-400/10 px-1.5 py-px text-[9px] font-bold text-amber-100">{record.remark}</span>
+                      ) : (
+                        <span className="theme-roster-no-remark-pill rounded-full border border-slate-300/20 bg-slate-400/[0.06] px-1.5 py-px text-[9px] text-slate-300">No remark</span>
+                      )}
+                    </div>
+
+                    {editingRemarkId === record.versionKey ? (
+                      <div className="theme-roster-remark-editor mt-2 rounded-lg border border-[#315671] bg-[#061522] p-2">
+                        <input
+                          autoFocus
+                          value={editingRemark}
+                          onChange={(event) => setEditingRemark(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") saveRemarkEdit(record);
+                            if (event.key === "Escape") setEditingRemarkId("");
+                          }}
+                          maxLength={80}
+                          placeholder="Roster remark"
+                          className="h-8 w-full rounded-lg border border-[#2b506a] bg-[#081b2a] px-2.5 text-[10px] text-white outline-none focus:border-sky-400/60"
+                        />
+                        <div className="mt-1.5 flex gap-1">
+                          <MiniButton compact icon={Save} label="Save" onClick={() => saveRemarkEdit(record)} />
+                          <MiniButton compact icon={X} label="Cancel" onClick={() => setEditingRemarkId("")} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap gap-1">
+                          <MiniButton compact icon={Download} label="Download" onClick={() => handleDownload(record)} />
+                          <MiniButton compact icon={Pencil} label="Remark" onClick={() => startRemarkEdit(record)} />
+                          <MiniButton compact icon={Trash2} label="Remove" danger confirm={confirmDeleteId === record.versionKey} onClick={() => handleRemoveRoster(record)} />
+                        </div>
+                        <span className="text-[8px] text-[#58778c]">Remove this roster before uploading another PDF.</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </section>
           </aside>
 
           <main className="theme-roster-main min-w-0 rounded-2xl border border-[#294b63] bg-[#071827] p-3">
@@ -1343,7 +1312,7 @@ export default function RosterWorkspace() {
                     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                     <div>
                       <div className="text-[12px] font-bold">{currentDateLabel} does not exist in this roster.</div>
-                      <div className="mt-0.5 text-[11px] text-rose-200/75">This uploaded roster contains dates for {rosterCoverageLabel}. Enter another date or select a different roster version.</div>
+                      <div className="mt-0.5 text-[11px] text-rose-200/75">This uploaded roster contains dates for {rosterCoverageLabel}. Enter another date or upload a roster that covers this date.</div>
                     </div>
                   </div>
                 ) : null}
@@ -1367,7 +1336,7 @@ export default function RosterWorkspace() {
                   <div className="theme-roster-empty-result is-error rounded-2xl border border-dashed border-rose-400/30 bg-rose-500/[0.04] px-5 py-10 text-center">
                     <CalendarDays className="mx-auto h-7 w-7 text-rose-300/70" />
                     <div className="mt-3 text-[11px] font-bold text-rose-100">Date not available in this roster</div>
-                    <div className="mt-1 text-[9px] text-rose-200/65">Enter a date included in {rosterCoverageLabel} or select another roster version.</div>
+                    <div className="mt-1 text-[9px] text-rose-200/65">Enter a date included in {rosterCoverageLabel} or upload a roster that includes this date.</div>
                   </div>
                 ) : (groupedRows.length || specialLeaveRows.length) ? (
                   <div className="theme-roster-daily-board space-y-3 rounded-[22px] border p-3">
