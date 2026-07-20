@@ -6,6 +6,7 @@ import {
   ArrowUpDown,
   ChevronDown,
   ClipboardCheck,
+  ClipboardCopy,
   ClipboardList,
   Copy,
   Filter,
