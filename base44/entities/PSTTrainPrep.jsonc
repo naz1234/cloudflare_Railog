@@ -43,6 +43,11 @@
       "description": "West/East completed-by names for Excel export",
       "additionalProperties": true
     },
+    "apuMismatchTrainIds": {
+      "type": "object",
+      "description": "West/East APU Missmatch checklist train IDs",
+      "additionalProperties": true
+    },
     "updatedAt": {
       "type": "string",
       "description": "Last PST / Train Prep state update timestamp"
