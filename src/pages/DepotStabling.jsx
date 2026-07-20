@@ -13372,15 +13372,23 @@ function APUMismatchChecklist({
   const depotShortLabel = isWestDepot ? "WD" : "ED";
   const accent = isWestDepot ? "#38bdf8" : "#c084fc";
   const roads = isWestDepot ? WEST_ROADS : EAST_ROADS;
-  const normalizedSelectedTrainIds = normalizeAPUMismatchTrainIds({
+  const savedSelectedTrainIds = normalizeAPUMismatchTrainIds({
     [depot]: selectedTrainIds,
   })[depot];
-  const availableTrainIds = Array.from(new Set([
-    ...collectStablingTrainIds(data, roads),
-    ...normalizedSelectedTrainIds,
-  ])).sort((left, right) => left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" }));
+  const availableTrainIds = collectStablingTrainIds(data, roads)
+    .sort((left, right) => left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" }));
+  const availableTrainIdSet = new Set(availableTrainIds);
+  const normalizedSelectedTrainIds = savedSelectedTrainIds
+    .filter((trainId) => availableTrainIdSet.has(trainId));
+  const savedSelectionKey = savedSelectedTrainIds.join("|");
+  const visibleSelectionKey = normalizedSelectedTrainIds.join("|");
   const selectedTrainIdSet = new Set(normalizedSelectedTrainIds);
   const generatedLog = buildAPUMismatchChecklistLog(normalizedSelectedTrainIds);
+
+  useEffect(() => {
+    if (savedSelectionKey === visibleSelectionKey) return;
+    onSelectedTrainIdsChange?.(normalizedSelectedTrainIds);
+  }, [normalizedSelectedTrainIds, onSelectedTrainIdsChange, savedSelectionKey, visibleSelectionKey]);
 
   useEffect(() => {
     setCopyStatus("");
