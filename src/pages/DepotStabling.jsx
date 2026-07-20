@@ -22954,7 +22954,7 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
   };
 
   return (
-    <div className="w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[12px] leading-snug text-[#eaf4ff]">
+    <div className="theme-request-type-summary w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[12px] leading-snug text-[#eaf4ff]">
       <div className="mb-1.5 flex w-full items-center justify-between gap-2">
         <h2 className="text-[11px] font-black uppercase tracking-widest text-white">
           Request Type Summary
