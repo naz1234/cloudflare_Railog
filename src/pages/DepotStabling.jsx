@@ -22069,14 +22069,29 @@ function buildRequestedActionSummaryLines(rows = []) {
     if (!trainList) return;
 
     const verb = bucket.trains.length === 1 ? "was" : "were";
-    const normalizedLabel = normalizeRequestIdentity(label);
+    const cleanLabel = cleanRequestLabel(label);
+    const normalizedLabel = normalizeRequestIdentity(cleanLabel);
     if (!normalizedLabel || normalizedLabel === "REQUEST") {
       lines.push(`${trainList} ${verb} requested.`);
       return;
     }
 
-    const sentenceEnd = /[.!?]$/.test(label) ? "" : ".";
-    lines.push(`${trainList} ${verb} requested for ${label}${sentenceEnd}`);
+    if (normalizedLabel === "LOW MILEAGE") {
+      lines.push(`${trainList}: low mileage.`);
+      return;
+    }
+
+    const washMatch = cleanLabel.match(/^WASH(?:\s+(.+))?$/i);
+    if (washMatch) {
+      const washDate = cleanRequestLabel(washMatch[1] || "").replace(/[.!?]+$/, "");
+      lines.push(washDate
+        ? `${trainList} ${verb} requested for washing on ${washDate}.`
+        : `${trainList} ${verb} requested for washing.`);
+      return;
+    }
+
+    const sentenceEnd = /[.!?]$/.test(cleanLabel) ? "" : ".";
+    lines.push(`${trainList} ${verb} requested for ${cleanLabel}${sentenceEnd}`);
   });
 
   return lines;
