@@ -22081,6 +22081,26 @@ function buildRequestedActionSummaryLines(rows = []) {
       return;
     }
 
+    const isNoWashRestriction = /^(?:DONT|DON T|DO NOT|NO) WASH\b/.test(normalizedLabel);
+    if (isNoWashRestriction) {
+      const rawRestrictionDetails = cleanLabel
+        .replace(/^(?:DON.?T|DO\s+NOT|NO)\s+WASH\b/i, "")
+        .trim();
+      const restrictionDetails = rawRestrictionDetails
+        .replace(
+          /^(\d+(?:\.\d+)?)\s*(?:HOURS?|HRS?)\b/i,
+          (_, value) => `for ${value} ${Number(value) === 1 ? "hour" : "hours"}`
+        )
+        .replace(/\s*\(\s*/g, " (")
+        .replace(/\s*\)\s*/g, ")")
+        .replace(/[.!?]+(?=\))/g, "")
+        .replace(/[.!?]+$/, "")
+        .trim();
+
+      lines.push(`${trainList}: Do not wash${restrictionDetails ? ` ${restrictionDetails}` : ""}.`);
+      return;
+    }
+
     const washMatch = cleanLabel.match(/^WASH(?:\s+(.+))?$/i);
     if (washMatch) {
       const washDate = cleanRequestLabel(washMatch[1] || "").replace(/[.!?]+$/, "");
