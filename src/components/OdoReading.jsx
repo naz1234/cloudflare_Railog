@@ -1,4 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { GlobalWorkerOptions, getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+// @ts-expect-error Vite resolves this worker module to a public asset URL.
+import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 import {
   ArrowUpDown,
   ChevronDown,
@@ -11,10 +14,145 @@ import {
   Search,
   SlidersHorizontal,
   Trash2,
+  Upload,
 } from "lucide-react";
 
 const TRAINSETS = Array.from({ length: 47 }, (_, i) => `TS${String(i + 1).padStart(2, "0")}`);
 const ODO_STORAGE_KEY = "odoReadingState_v1";
+const CMMS_ROW_Y_TOLERANCE = 2.5;
+const CMMS_DATE_PATTERN = /([A-Z][a-z]{2}\s+\d{1,2},\s+\d{4},\s+\d{1,2}:\d{2}\s+(?:AM|PM))/g;
+const CMMS_MONTHS = {
+  Jan: "January",
+  Feb: "February",
+  Mar: "March",
+  Apr: "April",
+  May: "May",
+  Jun: "June",
+  Jul: "July",
+  Aug: "August",
+  Sep: "September",
+  Oct: "October",
+  Nov: "November",
+  Dec: "December",
+};
+
+GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+
+function formatCmmsReportTimestamp(value = "") {
+  const match = /^([A-Z][a-z]{2})\s+(\d{1,2}),\s+(\d{4}),\s+(\d{1,2}):(\d{2})\s+(AM|PM)$/i.exec(value.trim());
+  if (!match) return "";
+
+  const [, monthKey, dayText, yearText, hourText, minuteText, meridiemText] = match;
+  const month = CMMS_MONTHS[monthKey.slice(0, 1).toUpperCase() + monthKey.slice(1, 3).toLowerCase()];
+  if (!month) return "";
+
+  let hour = Number(hourText);
+  const meridiem = meridiemText.toUpperCase();
+  if (meridiem === "AM" && hour === 12) hour = 0;
+  if (meridiem === "PM" && hour !== 12) hour += 12;
+
+  return `${Number(dayText)} ${month} ${yearText.slice(-2)}, ${String(hour).padStart(2, "0")}:${minuteText} hrs.`;
+}
+
+function formatTrainsetList(trainsets = []) {
+  if (!trainsets.length) return "None";
+  if (trainsets.length === 1) return trainsets[0];
+  if (trainsets.length === 2) return `${trainsets[0]} and ${trainsets[1]}`;
+  return `${trainsets.slice(0, -1).join(", ")}, and ${trainsets.at(-1)}`;
+}
+
+function buildCmmsOutput(report) {
+  if (!report) return "";
+  return [
+    "L3 Train CMMS Status:",
+    `Report - ${report.reportTimestamp}`,
+    "",
+    `Operation: ${report.operationCount} trains`,
+    "",
+    `Maintenance: ${report.maintenanceCount} trains`,
+    `Trainsets under Maintenance: ${formatTrainsetList(report.maintenanceTrainsets)}.`,
+  ].join("\n");
+}
+
+function groupCmmsTextRows(items = []) {
+  const rows = [];
+
+  items.forEach((item) => {
+    const text = String(item?.str || "").trim();
+    if (!text) return;
+
+    const x = Number(item?.transform?.[4] || 0);
+    const y = Number(item?.transform?.[5] || 0);
+    let row = rows.find((candidate) => Math.abs(candidate.y - y) <= CMMS_ROW_Y_TOLERANCE);
+    if (!row) {
+      row = { y, items: [] };
+      rows.push(row);
+    }
+    row.items.push({ x, text });
+  });
+
+  return rows
+    .sort((left, right) => right.y - left.y)
+    .map((row) => row.items.sort((left, right) => left.x - right.x).map((item) => item.text).join(" "));
+}
+
+async function parseCmmsHandoverPdf(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const documentTask = getDocument({ data: arrayBuffer });
+  const pdf = await documentTask.promise;
+  const records = [];
+
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const textContent = await page.getTextContent();
+    const lines = groupCmmsTextRows(textContent.items);
+
+    lines.forEach((line) => {
+      const trainMatch = line.match(/\bT(\d{4})\b/i);
+      const statusMatch = line.match(/\b(Operation|Maintenance)\s*$/i);
+      if (!trainMatch || !statusMatch) return;
+
+      const dateMatches = [...line.matchAll(CMMS_DATE_PATTERN)];
+      const endDate = dateMatches.at(-1)?.[1] || "";
+      const trainDigits = trainMatch[1];
+      records.push({
+        trainNumber: `T${trainDigits.slice(-2)}`,
+        status: statusMatch[1].toLowerCase(),
+        endDate,
+      });
+    });
+  }
+
+  const uniqueRecords = [...new Map(records.map((record) => [record.trainNumber, record])).values()]
+    .sort((left, right) => Number(left.trainNumber.slice(1)) - Number(right.trainNumber.slice(1)));
+
+  if (!uniqueRecords.length) {
+    throw new Error("No CMMS train status rows were found in this PDF.");
+  }
+
+  const endDateCounts = new Map();
+  uniqueRecords.forEach(({ endDate }) => {
+    if (endDate) endDateCounts.set(endDate, (endDateCounts.get(endDate) || 0) + 1);
+  });
+  const commonEndDate = [...endDateCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] || "";
+  const reportTimestamp = formatCmmsReportTimestamp(commonEndDate);
+  if (!reportTimestamp) {
+    throw new Error("The CMMS report date and time could not be read from this PDF.");
+  }
+
+  const maintenanceTrainsets = uniqueRecords
+    .filter((record) => record.status === "maintenance")
+    .map((record) => record.trainNumber);
+
+  return {
+    fileName: file.name,
+    reportTimestamp,
+    operationCount: uniqueRecords.filter((record) => record.status === "operation").length,
+    maintenanceCount: maintenanceTrainsets.length,
+    maintenanceTrainsets,
+    totalCount: uniqueRecords.length,
+  };
+}
 
 function getNow() {
   const now = new Date();
@@ -139,7 +277,12 @@ export default function OdoReading() {
   const [outputSearch, setOutputSearch] = useState("");
   const [inputFilter, setInputFilter] = useState("all");
   const [outputFilter, setOutputFilter] = useState("all");
+  const [cmmsReport, setCmmsReport] = useState(null);
+  const [cmmsError, setCmmsError] = useState("");
+  const [cmmsReading, setCmmsReading] = useState(false);
+  const [cmmsCopied, setCmmsCopied] = useState(false);
   const inputRefs = useRef([]);
+  const cmmsFileInputRef = useRef(null);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(getNow()), 10000);
@@ -271,9 +414,36 @@ export default function OdoReading() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleCmmsUpload = async (file) => {
+    if (!file) return;
+    setCmmsError("");
+    setCmmsReading(true);
+
+    try {
+      if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+        throw new Error("Please upload the CMMS handover report in PDF format.");
+      }
+      setCmmsReport(await parseCmmsHandoverPdf(file));
+    } catch (error) {
+      console.error("CMMS handover PDF import failed:", error);
+      setCmmsReport(null);
+      setCmmsError(error.message || "Unable to read this CMMS handover PDF.");
+    } finally {
+      setCmmsReading(false);
+      if (cmmsFileInputRef.current) cmmsFileInputRef.current.value = "";
+    }
+  };
+
+  const handleCmmsCopy = () => {
+    if (!cmmsReport) return;
+    navigator.clipboard.writeText(buildCmmsOutput(cmmsReport));
+    setCmmsCopied(true);
+    setTimeout(() => setCmmsCopied(false), 2000);
+  };
+
   return (
     <div className="w-full min-w-0 text-slate-100">
-      <div className="grid w-fit max-w-full grid-cols-[minmax(400px,500px)_minmax(350px,460px)] items-start gap-1.5 overflow-x-auto">
+      <div className="grid w-fit max-w-full grid-cols-[minmax(400px,500px)_minmax(350px,460px)_minmax(340px,420px)] items-start gap-1.5 overflow-x-auto">
         {/* LEFT: ODO INPUT */}
         <section className="min-w-0 rounded-2xl border border-slate-700/80 bg-[#061423]/95 p-2 shadow-2xl shadow-black/30 md:p-3">
           <div className="mb-2 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
@@ -485,6 +655,108 @@ export default function OdoReading() {
             </div>
           </div>
 
+        </section>
+
+        {/* FAR RIGHT: CMMS OUTPUT */}
+        <section className="min-w-0 rounded-2xl border border-slate-700/80 bg-[#061423]/95 p-2 shadow-2xl shadow-black/30 md:p-3">
+          <input
+            ref={cmmsFileInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            className="hidden"
+            onChange={(event) => handleCmmsUpload(event.target.files?.[0])}
+          />
+
+          <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+            <SectionTitle
+              icon={ClipboardCopy}
+              title="CMMS Output"
+              subtitle={cmmsReport ? cmmsReport.reportTimestamp : "Upload train handover PDF"}
+            />
+
+            <button
+              type="button"
+              onClick={() => cmmsFileInputRef.current?.click()}
+              disabled={cmmsReading}
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-cyan-400/45 bg-cyan-500/15 px-3 text-xs font-black text-cyan-100 shadow-lg shadow-cyan-500/10 transition-all hover:border-cyan-300/70 hover:bg-cyan-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Upload className={`h-4 w-4 ${cmmsReading ? "animate-pulse" : ""}`} />
+              {cmmsReading ? "Reading…" : cmmsReport ? "Replace PDF" : "Upload PDF"}
+            </button>
+          </div>
+
+          {cmmsError ? (
+            <div className="mb-3 rounded-xl border border-rose-400/35 bg-rose-500/10 px-3 py-2.5 text-[11px] font-semibold leading-5 text-rose-100">
+              {cmmsError}
+            </div>
+          ) : null}
+
+          {!cmmsReport ? (
+            <button
+              type="button"
+              onClick={() => cmmsFileInputRef.current?.click()}
+              disabled={cmmsReading}
+              className="flex min-h-[220px] w-full flex-col items-center justify-center rounded-xl border border-dashed border-cyan-400/30 bg-cyan-500/[0.04] px-6 py-8 text-center transition hover:border-cyan-300/55 hover:bg-cyan-500/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/30 bg-cyan-500/10 text-cyan-200">
+                <ClipboardCopy className="h-6 w-6" />
+              </span>
+              <span className="mt-4 text-sm font-black text-slate-100">Upload CMMS handover PDF</span>
+              <span className="mt-1.5 max-w-[270px] text-[10px] font-medium leading-5 text-slate-400">
+                Generates the report time, Operation and Maintenance totals, and the maintenance trainset list.
+              </span>
+            </button>
+          ) : (
+            <>
+              <div className="mb-3 grid grid-cols-3 gap-2">
+                <div className="rounded-xl border border-sky-400/25 bg-sky-500/10 px-2 py-2.5 text-center">
+                  <div className="text-[9px] font-bold uppercase tracking-wide text-sky-200/75">Total</div>
+                  <div className="mt-1 text-xl font-black text-sky-100">{cmmsReport.totalCount}</div>
+                </div>
+                <div className="rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-2 py-2.5 text-center">
+                  <div className="text-[9px] font-bold uppercase tracking-wide text-emerald-200/75">Operation</div>
+                  <div className="mt-1 text-xl font-black text-emerald-100">{cmmsReport.operationCount}</div>
+                </div>
+                <div className="rounded-xl border border-amber-400/25 bg-amber-500/10 px-2 py-2.5 text-center">
+                  <div className="text-[9px] font-bold uppercase tracking-wide text-amber-200/75">Maintenance</div>
+                  <div className="mt-1 text-xl font-black text-amber-100">{cmmsReport.maintenanceCount}</div>
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-xl border border-cyan-400/25 bg-[#081827] shadow-inner shadow-black/20">
+                <div className="flex items-center justify-between gap-2 border-b border-cyan-400/20 bg-cyan-500/[0.08] px-3 py-2">
+                  <div className="min-w-0">
+                    <div className="truncate text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100">Generated CMMS Log</div>
+                    <div className="mt-0.5 truncate text-[9px] text-slate-500">{cmmsReport.fileName}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCmmsCopy}
+                    className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-[10px] font-black transition-all ${cmmsCopied ? "border-emerald-400/50 bg-emerald-500/20 text-emerald-100" : "border-cyan-400/40 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25"}`}
+                  >
+                    {cmmsCopied ? <ClipboardCheck className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    {cmmsCopied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+
+                <div className="space-y-4 px-3 py-3 text-[12px] leading-5 text-slate-200">
+                  <div>
+                    <div className="font-black text-cyan-100">L3 Train CMMS Status:</div>
+                    <div className="font-semibold italic text-slate-300">Report - {cmmsReport.reportTimestamp}</div>
+                  </div>
+                  <div>
+                    <span className="font-bold text-emerald-200">Operation:</span> {cmmsReport.operationCount} trains
+                  </div>
+                  <div>
+                    <div><span className="font-bold text-amber-200">Maintenance:</span> {cmmsReport.maintenanceCount} trains</div>
+                    <div className="mt-1 text-slate-300">
+                      <span className="font-semibold">Trainsets under Maintenance:</span> {formatTrainsetList(cmmsReport.maintenanceTrainsets)}.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </section>
       </div>
     </div>
