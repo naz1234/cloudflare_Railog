@@ -3125,33 +3125,6 @@ function collectTrainRemTrainIdsForDepotCopy(
   return trainIds;
 }
 
-function collectTrainRemCachedPresetRemovalTrainIds(
-  trainRemState = {},
-  label = "7pm",
-  activeTimetable = null
-) {
-  const safeLabel = TRAIN_REM_PRESET_LABELS.includes(label) ? label : "7pm";
-  const cachedPresetState = mergeTrainRemCombinedMorningReferenceState({
-    ...trainRemState,
-    selectedPreset: {
-      ...trainRemState?.selectedPreset,
-      west: safeLabel,
-      east: safeLabel,
-    },
-    rows: {
-      ...trainRemState?.rows,
-      west: getTrainRemCachedPresetRows(trainRemState, "west", safeLabel),
-      east: getTrainRemCachedPresetRows(trainRemState, "east", safeLabel),
-    },
-  }, activeTimetable);
-
-  return Array.from(new Set(
-    ["west", "east"].flatMap((depot) => (
-      collectTrainRemTrainIdsForDepotCopy(cachedPresetState, depot, activeTimetable)
-    ))
-  ));
-}
-
 function collectTrainRemReferenceInServiceRows(trainRemState = {}, activeTimetable = null) {
   const selectedPreset = trainRemState?.selectedPreset?.west || "9am";
   if (!TRAIN_REM_LEGACY_COMBINED_PRESET_LABELS.has(selectedPreset)) return [];
@@ -8113,18 +8086,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const referenceInServiceTrainIds = useMemo(() => (
     collectTrainRemReferenceInServiceTrainIds(trainRemState, activeTimetable)
   ), [activeTimetable, trainRemState]);
-  const priorRemovalInServiceTrainIds = useMemo(() => {
-    const selectedPreset = trainRemState?.selectedPreset?.west || "9am";
-    if (selectedPreset !== "12am") return [];
-
-    // At 12am, these trains are still in service even though they were already
-    // removed from the mainline during the cached 7pm removal operation.
-    return collectTrainRemCachedPresetRemovalTrainIds(
-      trainRemState,
-      "7pm",
-      activeTimetable
-    );
-  }, [activeTimetable, trainRemState]);
   const mainlineInServiceRows = useMemo(() => (
     collectTrainRemMainlineInServiceRows(trainRemState, activeTimetable)
   ), [activeTimetable, trainRemState]);
@@ -8286,7 +8247,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
           ...westDepotCopyTrainIds,
           ...eastDepotCopyTrainIds,
           ...referenceInServiceTrainIds,
-          ...priorRemovalInServiceTrainIds,
         ]
           .map((trainId) => normalizeTrainId(trainId))
           .filter(Boolean)
@@ -8324,7 +8284,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   }, [
     eastDepotCopyTrainIds,
     maintenanceMap,
-    priorRemovalInServiceTrainIds,
     referenceInServiceTrainIds,
     westDepotCopyTrainIds,
   ]);
