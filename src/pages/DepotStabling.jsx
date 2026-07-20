@@ -20388,6 +20388,8 @@ export default function DepotStablingPage() {
         activeTimetableType={selectedTimetableType}
       />
 
+      <RequestedTrainActionSummary requests={requests} />
+
       <TrainRequestedNotInRemoval
         requests={requests}
         trainRemState={trainRemCheckState}
@@ -22945,11 +22947,14 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
 
   return (
     <div className="w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[12px] leading-snug text-[#eaf4ff]">
-      <div className="mb-1.5 flex w-full items-center justify-end">
+      <div className="mb-1.5 flex w-full items-center justify-between gap-2">
+        <h2 className="text-[11px] font-black uppercase tracking-widest text-white">
+          Request Type Summary
+        </h2>
         <button
           type="button"
           onClick={handleCopySummary}
-          className="ml-auto inline-flex items-center gap-1 rounded-lg border border-[#2f6e9f] bg-[#0d2b45] px-2 py-1 text-[10px] font-semibold leading-none text-[#dff3ff] shadow-[0_0_10px_rgba(56,189,248,0.18)] transition hover:bg-[#123957] active:scale-95"
+          className="inline-flex items-center gap-1 rounded-lg border border-[#2f6e9f] bg-[#0d2b45] px-2 py-1 text-[10px] font-semibold leading-none text-[#dff3ff] shadow-[0_0_10px_rgba(56,189,248,0.18)] transition hover:bg-[#123957] active:scale-95"
           title="Copy requested summary"
         >
           {copied ? <ClipboardCheck className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
@@ -23105,10 +23110,6 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
             rows={actionOverviewRows}
             onManualTidChange={handleManualTidChange}
           />
-        </div>
-
-        <div className="min-w-0 max-w-[520px] flex-1">
-          <RequestedTrainActionSummary rows={actionOverviewRows} requests={requests} />
         </div>
       </div>
     </div>
