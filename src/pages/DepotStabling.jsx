@@ -22085,8 +22085,8 @@ function buildRequestedActionSummaryLines(rows = []) {
     if (washMatch) {
       const washDate = cleanRequestLabel(washMatch[1] || "").replace(/[.!?]+$/, "");
       lines.push(washDate
-        ? `${trainList} ${verb} requested for washing on ${washDate}.`
-        : `${trainList} ${verb} requested for washing.`);
+        ? `${trainList} ${verb} scheduled for washing on ${washDate}.`
+        : `${trainList} ${verb} scheduled for washing.`);
       return;
     }
 
