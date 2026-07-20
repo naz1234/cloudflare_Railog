@@ -13427,7 +13427,7 @@ function APUMismatchChecklist({
           </span>
           <div className="min-w-0">
             <h3 className="truncate text-[13px] font-semibold uppercase tracking-[0.08em] text-white">
-              {depotShortLabel} APU Missmatch Checklist
+              {depotShortLabel} APU Missmatch SR Generator
             </h3>
             <p className="mt-0.5 text-[10px] font-medium text-slate-400">Tick trains showing an APU alarm</p>
           </div>
