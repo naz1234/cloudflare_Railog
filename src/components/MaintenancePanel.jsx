@@ -975,6 +975,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       return typeSort || trainSort || statusSort;
     });
   const regularRequestGroups = groupRequestsByExactRemark(regularRequests);
+  const editingRequestGroup = regularRequestGroups.find((group) => group.key === editingGroupKey) || null;
+  const savingGroupTitle = Boolean(editingRequestGroup && savingGroupKey === editingRequestGroup.key);
   const hasWorkshopRequests = workshopRequests.length > 0;
   const buildWorkshopCopyText = () => {
     const trainList = workshopRequests
@@ -1048,9 +1050,15 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     }
   };
 
-  const saveGroupTitle = async (event, group) => {
+  const saveGroupTitle = async (event) => {
     event?.preventDefault();
+    const group = editingRequestGroup;
     const nextTitle = cleanRequestLabel(groupTitleDraft);
+
+    if (!group) {
+      setGroupEditError("This request group is no longer available.");
+      return;
+    }
 
     if (!nextTitle) {
       setGroupEditError("Parent title is required.");
@@ -1094,8 +1102,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
   const renderGroupedRequestCard = (group, options = {}) => {
     const { section = "pending", showStatus = false } = options;
-    const editingTitle = editingGroupKey === group.key;
-    const savingTitle = savingGroupKey === group.key;
     const confirmingDelete = confirmDeleteGroupKey === group.key;
     const deletingGroup = deletingGroupKey === group.key;
     const requestTypeLabel = displayType(group.items?.[0]) || group.label;
@@ -1106,103 +1112,34 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         key={`${section}-${group.key}`}
         className="space-y-[1px]"
       >
-        <form
-          onSubmit={(event) => saveGroupTitle(event, group)}
-          className={`theme-maintenance-request-card theme-maintenance-group-heading theme-train-rem-row-card theme-maintenance-summary-row grid w-full items-center gap-1 overflow-visible rounded-md border pl-3 pr-1.5 text-left leading-none ${
-            editingTitle
-              ? "h-[34px] grid-cols-[minmax(0,1fr)_52px_20px]"
-              : "h-[26px] grid-cols-[minmax(0,1fr)_42px_18px]"
-          }`}
+        <div
+          className="theme-maintenance-request-card theme-maintenance-group-heading theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] w-full grid-cols-[minmax(0,1fr)_18px_18px] items-center gap-1 overflow-visible rounded-md border pl-3 pr-1.5 text-left leading-none"
           style={cardVisual.card}
         >
-          {editingTitle ? (
-            <>
-              <input
-                autoFocus
-                type="text"
-                value={groupTitleDraft}
-                maxLength={80}
-                disabled={savingTitle}
-                onChange={(event) => {
-                  setGroupTitleDraft(event.target.value);
-                  setGroupEditError("");
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    event.preventDefault();
-                    cancelGroupTitleEdit();
-                  }
-                }}
-                aria-label={`Edit parent title for ${group.label}`}
-                placeholder="Enter parent title"
-                className="h-[26px] min-w-0 rounded-md border-2 border-amber-300 bg-amber-950/80 px-2 text-[11px] font-bold uppercase text-amber-50 outline-none shadow-[0_0_10px_rgba(252,211,77,0.35)] focus:border-amber-100 focus:ring-2 focus:ring-amber-300/70 disabled:cursor-wait disabled:opacity-70"
-              />
-              <button
-                type="submit"
-                disabled={savingTitle}
-                aria-label="Save parent title"
-                title="Save parent title"
-                className="inline-flex h-[24px] items-center justify-center gap-0.5 rounded-md border border-emerald-200 bg-emerald-500 px-1.5 text-[8px] font-black text-white shadow-[0_0_8px_rgba(52,211,153,0.35)] hover:bg-emerald-400 disabled:cursor-wait disabled:opacity-60"
-              >
-                <Check className="h-3 w-3" />
-                <span>{savingTitle ? "SAVING" : "SAVE"}</span>
-              </button>
-              <button
-                type="button"
-                disabled={savingTitle}
-                onClick={cancelGroupTitleEdit}
-                aria-label="Cancel parent title edit"
-                title="Cancel"
-                className="inline-flex h-[24px] w-[20px] items-center justify-center rounded-md border border-rose-300/70 bg-rose-500/25 text-rose-100 hover:bg-rose-500/45 disabled:cursor-wait disabled:opacity-60"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </>
-          ) : (
-            <>
-              <span className="min-w-0 truncate text-[12px] font-normal uppercase text-[#f8fbff]">
-                {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => beginGroupTitleEdit(group)}
-                disabled={Boolean(savingGroupKey || deletingGroupKey)}
-                aria-label={`Edit parent title for ${group.label}`}
-                title="Edit parent title"
-                className="justify-self-end inline-flex h-[20px] min-w-[40px] items-center justify-center gap-1 rounded-md border border-amber-200 bg-amber-400 px-1.5 text-[#2a1600] shadow-[0_0_8px_rgba(251,191,36,0.38)] hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:cursor-wait disabled:opacity-60"
-              >
-                <Pencil className="h-[10px] w-[10px]" />
-                <span className="text-[8px] font-black tracking-wide">EDIT</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => beginGroupDelete(group)}
-                disabled={Boolean(savingGroupKey || deletingGroupKey)}
-                aria-label={`Delete all ${group.items.length} requests in ${group.label}`}
-                title="Delete entire group"
-                className={`justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-rose-300/70 bg-rose-500/20 text-rose-200 hover:bg-rose-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/80 disabled:cursor-wait disabled:opacity-60 ${confirmingDelete ? "border-rose-200 bg-rose-500/45" : ""}`}
-              >
-                <X className="h-[11px] w-[11px]" />
-              </button>
-            </>
-          )}
-        </form>
-
-        {editingTitle && (
-          <div
-            aria-live="polite"
-            className="ml-[10px] flex min-h-[26px] items-center gap-1.5 rounded-md border border-amber-300/60 bg-amber-950/55 px-2 py-1 text-[9px] font-bold text-amber-100"
+          <span className="min-w-0 truncate text-[12px] font-normal uppercase text-[#f8fbff]">
+            {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => beginGroupTitleEdit(group)}
+            disabled={Boolean(savingGroupKey || deletingGroupKey)}
+            aria-label={`Edit parent title for ${group.label}`}
+            title="Edit parent title"
+            className="justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-amber-200/90 bg-amber-400/25 text-amber-200 shadow-[0_0_6px_rgba(251,191,36,0.28)] hover:bg-amber-400/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:cursor-wait disabled:opacity-60"
           >
-            <Pencil className="h-3 w-3 shrink-0 text-amber-300" />
-            <span>Editing parent title — type a new name, then press SAVE.</span>
-          </div>
-        )}
-
-        {editingTitle && groupEditError && (
-          <p className="ml-[10px] rounded border border-rose-400/35 bg-rose-950/35 px-2 py-1 text-[9px] font-semibold text-rose-200">
-            {groupEditError}
-          </p>
-        )}
+            <Pencil className="h-[9px] w-[9px]" />
+          </button>
+          <button
+            type="button"
+            onClick={() => beginGroupDelete(group)}
+            disabled={Boolean(savingGroupKey || deletingGroupKey)}
+            aria-label={`Delete all ${group.items.length} requests in ${group.label}`}
+            title="Delete entire group"
+            className={`justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-rose-300/70 bg-rose-500/20 text-rose-200 hover:bg-rose-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/80 disabled:cursor-wait disabled:opacity-60 ${confirmingDelete ? "border-rose-200 bg-rose-500/45" : ""}`}
+          >
+            <X className="h-[11px] w-[11px]" />
+          </button>
+        </div>
 
         {confirmingDelete && (
           <div className="ml-[10px] flex min-h-[28px] items-center gap-1.5 rounded-md border border-rose-400/45 bg-rose-950/45 px-2 py-1">
@@ -1487,6 +1424,97 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           </div>
         )}
       </div>
+
+      {editingRequestGroup && (
+        <div
+          className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70 p-4 backdrop-blur-[2px]"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) cancelGroupTitleEdit();
+          }}
+        >
+          <form
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="request-group-edit-title"
+            onSubmit={saveGroupTitle}
+            onMouseDown={(event) => event.stopPropagation()}
+            className="w-full max-w-[360px] rounded-2xl border border-amber-300/70 bg-[#0b1f33] p-4 text-white shadow-[0_24px_70px_rgba(0,0,0,0.65),0_0_24px_rgba(251,191,36,0.20)]"
+          >
+            <div className="flex items-start gap-3">
+              <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-amber-200/80 bg-amber-400/20 text-amber-200">
+                <Pencil className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 id="request-group-edit-title" className="text-[13px] font-black uppercase tracking-wider text-amber-100">
+                  Edit Parent Title
+                </h3>
+                <p className="mt-1 text-[10px] leading-relaxed text-[#8fb1c8]">
+                  Rename this heading for {editingRequestGroup.items.length} train{editingRequestGroup.items.length === 1 ? "" : "s"}. The original request type stays unchanged.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={savingGroupTitle}
+                onClick={cancelGroupTitleEdit}
+                aria-label="Close edit parent title popup"
+                title="Close"
+                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-rose-300/70 bg-rose-500/20 text-rose-100 hover:bg-rose-500/40 disabled:cursor-wait disabled:opacity-60"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            <label htmlFor="request-group-title-popup-input" className="mt-4 block text-[9px] font-black uppercase tracking-[0.16em] text-amber-200">
+              Parent title
+            </label>
+            <input
+              id="request-group-title-popup-input"
+              autoFocus
+              type="text"
+              value={groupTitleDraft}
+              maxLength={80}
+              disabled={savingGroupTitle}
+              onChange={(event) => {
+                setGroupTitleDraft(event.target.value);
+                setGroupEditError("");
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  cancelGroupTitleEdit();
+                }
+              }}
+              placeholder="Enter parent title"
+              className="mt-1.5 h-10 w-full rounded-lg border-2 border-amber-300 bg-[#061626] px-3 text-[12px] font-bold uppercase text-white outline-none shadow-[0_0_12px_rgba(252,211,77,0.20)] focus:border-amber-100 focus:ring-2 focus:ring-amber-300/60 disabled:cursor-wait disabled:opacity-70"
+            />
+
+            {groupEditError && (
+              <p aria-live="polite" className="mt-2 rounded-lg border border-rose-400/45 bg-rose-950/50 px-3 py-2 text-[10px] font-semibold text-rose-100">
+                {groupEditError}
+              </p>
+            )}
+
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                disabled={savingGroupTitle}
+                onClick={cancelGroupTitleEdit}
+                className="h-9 rounded-lg border border-slate-400/50 bg-slate-700/70 px-4 text-[10px] font-black uppercase text-slate-100 hover:bg-slate-600 disabled:cursor-wait disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={savingGroupTitle}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-500 px-4 text-[10px] font-black uppercase text-white shadow-[0_0_12px_rgba(52,211,153,0.28)] hover:bg-emerald-400 disabled:cursor-wait disabled:opacity-60"
+              >
+                <Check className="h-3.5 w-3.5" />
+                {savingGroupTitle ? "Saving…" : "Save Title"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
