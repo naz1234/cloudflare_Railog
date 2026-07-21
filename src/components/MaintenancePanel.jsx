@@ -1061,7 +1061,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     }
 
     if (!nextTitle) {
-      setGroupEditError("Parent title is required.");
+      setGroupEditError("Main title is required.");
       return;
     }
 
@@ -1071,7 +1071,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         normalizeRequestIdentity(candidate.label) === normalizeRequestIdentity(nextTitle)
     );
     if (duplicateGroup) {
-      setGroupEditError("That parent title already exists.");
+      setGroupEditError("That main title already exists.");
       return;
     }
 
@@ -1081,7 +1081,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     }
 
     if (typeof onRenameGroup !== "function") {
-      setGroupEditError("Parent title editing is unavailable.");
+      setGroupEditError("Main title editing is unavailable.");
       return;
     }
 
@@ -1123,8 +1123,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             type="button"
             onClick={() => beginGroupTitleEdit(group)}
             disabled={Boolean(savingGroupKey || deletingGroupKey)}
-            aria-label={`Edit parent title for ${group.label}`}
-            title="Edit parent title"
+            aria-label={`Edit main title for ${group.label}`}
+            title="Edit main title"
             className="justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-amber-200/90 bg-amber-400/25 text-amber-200 shadow-[0_0_6px_rgba(251,191,36,0.28)] hover:bg-amber-400/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:cursor-wait disabled:opacity-60"
           >
             <Pencil className="h-[9px] w-[9px]" />
@@ -1438,17 +1438,17 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             aria-labelledby="request-group-edit-title"
             onSubmit={saveGroupTitle}
             onMouseDown={(event) => event.stopPropagation()}
-            className="w-full max-w-[360px] rounded-2xl border border-amber-300/70 bg-[#0b1f33] p-4 text-white shadow-[0_24px_70px_rgba(0,0,0,0.65),0_0_24px_rgba(251,191,36,0.20)]"
+            className="w-full max-w-[360px] rounded-2xl border border-amber-300/70 bg-[#0b1f33] p-4 font-normal text-white shadow-[0_24px_70px_rgba(0,0,0,0.65),0_0_24px_rgba(251,191,36,0.20)]"
           >
             <div className="flex items-start gap-3">
               <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-amber-200/80 bg-amber-400/20 text-amber-200">
                 <Pencil className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 id="request-group-edit-title" className="text-[13px] font-black uppercase tracking-wider text-amber-100">
-                  Edit Parent Title
+                <h3 id="request-group-edit-title" className="text-[13px] font-normal uppercase tracking-wider text-amber-100">
+                  Edit Main Title
                 </h3>
-                <p className="mt-1 text-[10px] leading-relaxed text-[#8fb1c8]">
+                <p className="mt-1 text-[10px] font-normal leading-relaxed text-[#8fb1c8]">
                   Rename this heading for {editingRequestGroup.items.length} train{editingRequestGroup.items.length === 1 ? "" : "s"}. The original request type stays unchanged.
                 </p>
               </div>
@@ -1456,7 +1456,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 type="button"
                 disabled={savingGroupTitle}
                 onClick={cancelGroupTitleEdit}
-                aria-label="Close edit parent title popup"
+                aria-label="Close edit main title popup"
                 title="Close"
                 className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-rose-300/70 bg-rose-500/20 text-rose-100 hover:bg-rose-500/40 disabled:cursor-wait disabled:opacity-60"
               >
@@ -1464,8 +1464,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               </button>
             </div>
 
-            <label htmlFor="request-group-title-popup-input" className="mt-4 block text-[9px] font-black uppercase tracking-[0.16em] text-amber-200">
-              Parent title
+            <label htmlFor="request-group-title-popup-input" className="mt-4 block text-[9px] font-normal uppercase tracking-[0.16em] text-amber-200">
+              Main title
             </label>
             <input
               id="request-group-title-popup-input"
@@ -1484,12 +1484,12 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   cancelGroupTitleEdit();
                 }
               }}
-              placeholder="Enter parent title"
-              className="mt-1.5 h-10 w-full rounded-lg border-2 border-amber-300 bg-[#061626] px-3 text-[12px] font-bold uppercase text-white outline-none shadow-[0_0_12px_rgba(252,211,77,0.20)] focus:border-amber-100 focus:ring-2 focus:ring-amber-300/60 disabled:cursor-wait disabled:opacity-70"
+              placeholder="Enter main title"
+              className="mt-1.5 h-10 w-full rounded-lg border-2 border-amber-300 bg-[#061626] px-3 text-[12px] font-normal uppercase text-white outline-none shadow-[0_0_12px_rgba(252,211,77,0.20)] focus:border-amber-100 focus:ring-2 focus:ring-amber-300/60 disabled:cursor-wait disabled:opacity-70"
             />
 
             {groupEditError && (
-              <p aria-live="polite" className="mt-2 rounded-lg border border-rose-400/45 bg-rose-950/50 px-3 py-2 text-[10px] font-semibold text-rose-100">
+              <p aria-live="polite" className="mt-2 rounded-lg border border-rose-400/45 bg-rose-950/50 px-3 py-2 text-[10px] font-normal text-rose-100">
                 {groupEditError}
               </p>
             )}
@@ -1499,14 +1499,14 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 type="button"
                 disabled={savingGroupTitle}
                 onClick={cancelGroupTitleEdit}
-                className="h-9 rounded-lg border border-slate-400/50 bg-slate-700/70 px-4 text-[10px] font-black uppercase text-slate-100 hover:bg-slate-600 disabled:cursor-wait disabled:opacity-60"
+                className="h-9 rounded-lg border border-slate-400/50 bg-slate-700/70 px-4 text-[10px] font-normal uppercase text-slate-100 hover:bg-slate-600 disabled:cursor-wait disabled:opacity-60"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={savingGroupTitle}
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-500 px-4 text-[10px] font-black uppercase text-white shadow-[0_0_12px_rgba(52,211,153,0.28)] hover:bg-emerald-400 disabled:cursor-wait disabled:opacity-60"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-500 px-4 text-[10px] font-normal uppercase text-white shadow-[0_0_12px_rgba(52,211,153,0.28)] hover:bg-emerald-400 disabled:cursor-wait disabled:opacity-60"
               >
                 <Check className="h-3.5 w-3.5" />
                 {savingGroupTitle ? "Saving…" : "Save Title"}
