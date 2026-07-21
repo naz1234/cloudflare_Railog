@@ -14,6 +14,10 @@
       "type": "string",
       "description": "Legacy custom type text for older saved records"
     },
+    "groupTitle": {
+      "type": "string",
+      "description": "Optional editable parent title used to group train requests without changing their request type"
+    },
     "remark": {
       "type": "string",
       "description": "Optional remark"

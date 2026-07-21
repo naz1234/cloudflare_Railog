@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X } from "lucide-react";
+import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil } from "lucide-react";
 
 const MIN_VISIBLE_REQUEST_ROWS = 40;
 
@@ -638,7 +638,7 @@ function getRequestDisplayLabel(request = {}) {
   );
 }
 
-export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, stabledTrainIds = [], stabledTrainLocations = {} }) {
+export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, stabledTrainIds = [], stabledTrainLocations = {} }) {
   const [trainId, setTrainId] = useState("");
   const [requestType, setRequestType] = useState("");
   const [error, setError] = useState("");
@@ -646,6 +646,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const [excelWashPreview, setExcelWashPreview] = useState([]);
   const [excelUploadStatus, setExcelUploadStatus] = useState("");
   const [workshopCopyStatus, setWorkshopCopyStatus] = useState("");
+  const [editingGroupKey, setEditingGroupKey] = useState("");
+  const [groupTitleDraft, setGroupTitleDraft] = useState("");
+  const [savingGroupKey, setSavingGroupKey] = useState("");
+  const [groupEditError, setGroupEditError] = useState("");
 
   const handleAdd = () => {
     const trainIds = trainId.split(/[\s,]+/).map(normalizeTrainId).filter(Boolean);
@@ -919,7 +923,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     const groups = new Map();
 
     items.forEach((req) => {
-      const label = displayType(req) || "Request";
+      const label = cleanRequestLabel(req?.groupTitle) || displayType(req) || "Request";
       const key = normalizeRequestIdentity(label) || label.toUpperCase();
       if (!groups.has(key)) {
         groups.set(key, { key, label, items: [] });
@@ -991,25 +995,148 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     }
   };
 
+  const beginGroupTitleEdit = (group) => {
+    setEditingGroupKey(group.key);
+    setGroupTitleDraft(group.label);
+    setGroupEditError("");
+  };
+
+  const cancelGroupTitleEdit = () => {
+    if (savingGroupKey) return;
+    setEditingGroupKey("");
+    setGroupTitleDraft("");
+    setGroupEditError("");
+  };
+
+  const saveGroupTitle = async (event, group) => {
+    event?.preventDefault();
+    const nextTitle = cleanRequestLabel(groupTitleDraft);
+
+    if (!nextTitle) {
+      setGroupEditError("Parent title is required.");
+      return;
+    }
+
+    const duplicateGroup = regularRequestGroups.some(
+      (candidate) =>
+        candidate.key !== group.key &&
+        normalizeRequestIdentity(candidate.label) === normalizeRequestIdentity(nextTitle)
+    );
+    if (duplicateGroup) {
+      setGroupEditError("That parent title already exists.");
+      return;
+    }
+
+    if (nextTitle === group.label) {
+      cancelGroupTitleEdit();
+      return;
+    }
+
+    if (typeof onRenameGroup !== "function") {
+      setGroupEditError("Parent title editing is unavailable.");
+      return;
+    }
+
+    setSavingGroupKey(group.key);
+    setGroupEditError("");
+    try {
+      await onRenameGroup(group.items, nextTitle);
+      setEditingGroupKey("");
+      setGroupTitleDraft("");
+    } catch (renameError) {
+      console.error("Request parent title rename failed:", renameError);
+      setGroupEditError(renameError?.message || "Unable to rename parent title.");
+    } finally {
+      setSavingGroupKey("");
+    }
+  };
+
 
   const renderGroupedRequestCard = (group, options = {}) => {
     const { section = "pending", showStatus = false } = options;
-    const cardVisual = getMainStablingCompactCardStyle(group.label, group.label, requestGroupColors);
+    const editingTitle = editingGroupKey === group.key;
+    const savingTitle = savingGroupKey === group.key;
+    const requestTypeLabel = displayType(group.items?.[0]) || group.label;
+    const cardVisual = getMainStablingCompactCardStyle(requestTypeLabel, requestTypeLabel, requestGroupColors);
 
     return (
       <div
         key={`${section}-${group.key}`}
         className="space-y-[1px]"
       >
-        <div
-          className="theme-maintenance-request-card theme-maintenance-group-heading theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] w-full grid-cols-[minmax(0,1fr)_18px] items-center gap-1 overflow-hidden rounded-md border pl-3 pr-1.5 text-left leading-none transition-[border-color,background,box-shadow] duration-150"
+        <form
+          onSubmit={(event) => saveGroupTitle(event, group)}
+          className={`theme-maintenance-request-card theme-maintenance-group-heading theme-train-rem-row-card theme-maintenance-summary-row grid w-full items-center gap-1 overflow-visible rounded-md border pl-3 pr-1.5 text-left leading-none transition-[height,border-color,background,box-shadow] duration-150 ${
+            editingTitle
+              ? "h-[30px] grid-cols-[minmax(0,1fr)_20px_20px]"
+              : "h-[24px] grid-cols-[minmax(0,1fr)_18px]"
+          }`}
           style={cardVisual.card}
         >
-          <span className="min-w-0 truncate text-[12px] font-normal uppercase text-[#f8fbff]">
-            {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
-          </span>
-          <span className="justify-self-end text-[12px] font-bold leading-none text-[#a9bfd1]" aria-hidden="true">⌄</span>
-        </div>
+          {editingTitle ? (
+            <>
+              <input
+                autoFocus
+                type="text"
+                value={groupTitleDraft}
+                maxLength={80}
+                disabled={savingTitle}
+                onChange={(event) => {
+                  setGroupTitleDraft(event.target.value);
+                  setGroupEditError("");
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    cancelGroupTitleEdit();
+                  }
+                }}
+                aria-label={`Edit parent title for ${group.label}`}
+                className="h-[22px] min-w-0 rounded border border-cyan-300/70 bg-[#061626]/90 px-2 text-[11px] font-semibold uppercase text-white outline-none transition focus:border-cyan-200 focus:ring-1 focus:ring-cyan-300/60 disabled:cursor-wait disabled:opacity-70"
+              />
+              <button
+                type="submit"
+                disabled={savingTitle}
+                aria-label="Save parent title"
+                title="Save parent title"
+                className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-emerald-300/70 bg-emerald-500/20 text-emerald-200 transition hover:scale-110 hover:bg-emerald-500/35 disabled:cursor-wait disabled:opacity-60"
+              >
+                <Check className={`h-3 w-3 ${savingTitle ? "animate-pulse" : ""}`} />
+              </button>
+              <button
+                type="button"
+                disabled={savingTitle}
+                onClick={cancelGroupTitleEdit}
+                aria-label="Cancel parent title edit"
+                title="Cancel"
+                className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-rose-300/60 bg-rose-500/15 text-rose-200 transition hover:scale-110 hover:bg-rose-500/30 disabled:cursor-wait disabled:opacity-60"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="min-w-0 truncate text-[12px] font-normal uppercase text-[#f8fbff]">
+                {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => beginGroupTitleEdit(group)}
+                aria-label={`Edit parent title for ${group.label}`}
+                title="Edit parent title"
+                className="maintenance-group-edit-trigger justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-cyan-300/65 bg-cyan-400/15 text-cyan-200 hover:bg-cyan-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/80"
+              >
+                <Pencil className="h-[10px] w-[10px]" />
+              </button>
+            </>
+          )}
+        </form>
+
+        {editingTitle && groupEditError && (
+          <p className="ml-[10px] rounded border border-rose-400/35 bg-rose-950/35 px-2 py-1 text-[9px] font-semibold text-rose-200">
+            {groupEditError}
+          </p>
+        )}
 
         <div className="space-y-[1px]">
             {group.items.map((req) => {
@@ -1063,6 +1190,30 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
   return (
     <div className="theme-maintenance-panel relative overflow-visible bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shadow-md">
+      <style>{`
+        @keyframes maintenance-group-edit-breathe {
+          0%, 100% {
+            transform: scale(1) rotate(-5deg);
+            box-shadow: 0 0 0 rgba(34, 211, 238, 0);
+          }
+          50% {
+            transform: scale(1.13) rotate(4deg);
+            box-shadow: 0 0 9px rgba(34, 211, 238, 0.62);
+          }
+        }
+        .maintenance-group-edit-trigger {
+          animation: maintenance-group-edit-breathe 1.9s ease-in-out infinite;
+          transform-origin: center;
+        }
+        .maintenance-group-edit-trigger:hover {
+          animation-duration: 0.8s;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .maintenance-group-edit-trigger {
+            animation: none;
+          }
+        }
+      `}</style>
       {/* Header */}
       <div className="theme-maintenance-header flex items-center gap-2.5 px-4 py-3 border-b border-[#1a3a56] rounded-t-xl" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
         <div className="w-6 h-6 rounded-md bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center">

@@ -19815,8 +19815,59 @@ export default function DepotStablingPage() {
   });
 
   const handleAddRequest = async (reqData) => {
-    const created = await base44.entities.MaintenanceRequest.create(reqData);
+    const requestTypeKey = normalizeRequestIdentity(getTrainRequestDisplayType(reqData));
+    const inheritedGroupTitle = cleanRequestLabel(
+      requests.find(
+        (request) =>
+          normalizeRequestIdentity(getTrainRequestDisplayType(request)) === requestTypeKey &&
+          cleanRequestLabel(request?.groupTitle)
+      )?.groupTitle || ""
+    );
+    const payload = inheritedGroupTitle && !cleanRequestLabel(reqData?.groupTitle)
+      ? { ...reqData, groupTitle: inheritedGroupTitle }
+      : reqData;
+    const created = await base44.entities.MaintenanceRequest.create(payload);
     setRequests((prev) => [...prev, created]);
+  };
+
+  const handleRenameRequestGroup = async (groupItems = [], nextTitle = "") => {
+    const cleanTitle = cleanRequestLabel(nextTitle);
+    const editableItems = groupItems.filter((request) => request?.id);
+
+    if (!cleanTitle) throw new Error("Parent title is required.");
+    if (editableItems.length === 0) throw new Error("No saved trains were found in this group.");
+
+    const results = await Promise.allSettled(
+      editableItems.map((request) =>
+        base44.entities.MaintenanceRequest.update(request.id, { groupTitle: cleanTitle })
+      )
+    );
+    const updatedById = new Map();
+
+    results.forEach((result, index) => {
+      if (result.status !== "fulfilled") return;
+      const request = editableItems[index];
+      updatedById.set(request.id, {
+        ...request,
+        ...(result.value || {}),
+        groupTitle: cleanTitle,
+      });
+    });
+
+    if (updatedById.size > 0) {
+      setRequests((prev) =>
+        prev.map((request) => updatedById.get(request.id) || request)
+      );
+    }
+
+    const failedCount = results.length - updatedById.size;
+    if (failedCount > 0) {
+      throw new Error(
+        failedCount === results.length
+          ? "Unable to save the parent title."
+          : `Parent title saved for ${updatedById.size} train(s); ${failedCount} could not be updated.`
+      );
+    }
   };
 
   const handleRemoveRequest = async (id) => {
@@ -20449,6 +20500,7 @@ export default function DepotStablingPage() {
           onAdd={handleAddRequest}
           onRemove={handleRemoveRequest}
           onClearAll={handleClearAllRequests}
+          onRenameGroup={handleRenameRequestGroup}
           stabledTrainIds={Array.from(westStablingKeys)}
           stabledTrainLocations={getMainStablingLocations(westData, eastData)}
         />
