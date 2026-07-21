@@ -1108,10 +1108,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       >
         <form
           onSubmit={(event) => saveGroupTitle(event, group)}
-          className={`theme-maintenance-request-card theme-maintenance-group-heading theme-train-rem-row-card theme-maintenance-summary-row grid w-full items-center gap-1 overflow-visible rounded-md border pl-3 pr-1.5 text-left leading-none transition-[height,border-color,background,box-shadow] duration-150 ${
+          className={`theme-maintenance-request-card theme-maintenance-group-heading theme-train-rem-row-card theme-maintenance-summary-row grid w-full items-center gap-1 overflow-visible rounded-md border pl-3 pr-1.5 text-left leading-none ${
             editingTitle
-              ? "h-[30px] grid-cols-[minmax(0,1fr)_20px_20px]"
-              : "h-[24px] grid-cols-[minmax(0,1fr)_18px_18px]"
+              ? "h-[34px] grid-cols-[minmax(0,1fr)_52px_20px]"
+              : "h-[26px] grid-cols-[minmax(0,1fr)_42px_18px]"
           }`}
           style={cardVisual.card}
         >
@@ -1134,16 +1134,18 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   }
                 }}
                 aria-label={`Edit parent title for ${group.label}`}
-                className="h-[22px] min-w-0 rounded border border-cyan-300/70 bg-[#061626]/90 px-2 text-[11px] font-semibold uppercase text-white outline-none transition focus:border-cyan-200 focus:ring-1 focus:ring-cyan-300/60 disabled:cursor-wait disabled:opacity-70"
+                placeholder="Enter parent title"
+                className="h-[26px] min-w-0 rounded-md border-2 border-amber-300 bg-amber-950/80 px-2 text-[11px] font-bold uppercase text-amber-50 outline-none shadow-[0_0_10px_rgba(252,211,77,0.35)] focus:border-amber-100 focus:ring-2 focus:ring-amber-300/70 disabled:cursor-wait disabled:opacity-70"
               />
               <button
                 type="submit"
                 disabled={savingTitle}
                 aria-label="Save parent title"
                 title="Save parent title"
-                className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-emerald-300/70 bg-emerald-500/20 text-emerald-200 transition hover:scale-110 hover:bg-emerald-500/35 disabled:cursor-wait disabled:opacity-60"
+                className="inline-flex h-[24px] items-center justify-center gap-0.5 rounded-md border border-emerald-200 bg-emerald-500 px-1.5 text-[8px] font-black text-white shadow-[0_0_8px_rgba(52,211,153,0.35)] hover:bg-emerald-400 disabled:cursor-wait disabled:opacity-60"
               >
-                <Check className={`h-3 w-3 ${savingTitle ? "animate-pulse" : ""}`} />
+                <Check className="h-3 w-3" />
+                <span>{savingTitle ? "SAVING" : "SAVE"}</span>
               </button>
               <button
                 type="button"
@@ -1151,7 +1153,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 onClick={cancelGroupTitleEdit}
                 aria-label="Cancel parent title edit"
                 title="Cancel"
-                className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-rose-300/60 bg-rose-500/15 text-rose-200 transition hover:scale-110 hover:bg-rose-500/30 disabled:cursor-wait disabled:opacity-60"
+                className="inline-flex h-[24px] w-[20px] items-center justify-center rounded-md border border-rose-300/70 bg-rose-500/25 text-rose-100 hover:bg-rose-500/45 disabled:cursor-wait disabled:opacity-60"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -1167,9 +1169,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 disabled={Boolean(savingGroupKey || deletingGroupKey)}
                 aria-label={`Edit parent title for ${group.label}`}
                 title="Edit parent title"
-                className="maintenance-group-edit-trigger justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-cyan-300/65 bg-cyan-400/15 text-cyan-200 hover:bg-cyan-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/80 disabled:cursor-wait disabled:opacity-60"
+                className="justify-self-end inline-flex h-[20px] min-w-[40px] items-center justify-center gap-1 rounded-md border border-amber-200 bg-amber-400 px-1.5 text-[#2a1600] shadow-[0_0_8px_rgba(251,191,36,0.38)] hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:cursor-wait disabled:opacity-60"
               >
                 <Pencil className="h-[10px] w-[10px]" />
+                <span className="text-[8px] font-black tracking-wide">EDIT</span>
               </button>
               <button
                 type="button"
@@ -1177,13 +1180,23 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 disabled={Boolean(savingGroupKey || deletingGroupKey)}
                 aria-label={`Delete all ${group.items.length} requests in ${group.label}`}
                 title="Delete entire group"
-                className={`justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-rose-300/70 bg-rose-500/20 text-rose-200 transition hover:scale-110 hover:rotate-90 hover:bg-rose-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/80 disabled:cursor-wait disabled:opacity-60 ${confirmingDelete ? "animate-pulse border-rose-200 bg-rose-500/45" : ""}`}
+                className={`justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-rose-300/70 bg-rose-500/20 text-rose-200 hover:bg-rose-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/80 disabled:cursor-wait disabled:opacity-60 ${confirmingDelete ? "border-rose-200 bg-rose-500/45" : ""}`}
               >
                 <X className="h-[11px] w-[11px]" />
               </button>
             </>
           )}
         </form>
+
+        {editingTitle && (
+          <div
+            aria-live="polite"
+            className="ml-[10px] flex min-h-[26px] items-center gap-1.5 rounded-md border border-amber-300/60 bg-amber-950/55 px-2 py-1 text-[9px] font-bold text-amber-100"
+          >
+            <Pencil className="h-3 w-3 shrink-0 text-amber-300" />
+            <span>Editing parent title — type a new name, then press SAVE.</span>
+          </div>
+        )}
 
         {editingTitle && groupEditError && (
           <p className="ml-[10px] rounded border border-rose-400/35 bg-rose-950/35 px-2 py-1 text-[9px] font-semibold text-rose-200">
@@ -1273,30 +1286,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
   return (
     <div className="theme-maintenance-panel relative overflow-visible bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shadow-md">
-      <style>{`
-        @keyframes maintenance-group-edit-breathe {
-          0%, 100% {
-            transform: scale(1) rotate(-5deg);
-            box-shadow: 0 0 0 rgba(34, 211, 238, 0);
-          }
-          50% {
-            transform: scale(1.13) rotate(4deg);
-            box-shadow: 0 0 9px rgba(34, 211, 238, 0.62);
-          }
-        }
-        .maintenance-group-edit-trigger {
-          animation: maintenance-group-edit-breathe 1.9s ease-in-out infinite;
-          transform-origin: center;
-        }
-        .maintenance-group-edit-trigger:hover {
-          animation-duration: 0.8s;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .maintenance-group-edit-trigger {
-            animation: none;
-          }
-        }
-      `}</style>
       {/* Header */}
       <div className="theme-maintenance-header flex items-center gap-2.5 px-4 py-3 border-b border-[#1a3a56] rounded-t-xl" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
         <div className="w-6 h-6 rounded-md bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center">
