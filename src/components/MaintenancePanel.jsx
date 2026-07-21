@@ -1506,7 +1506,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               <button
                 type="submit"
                 disabled={savingGroupTitle}
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-500 px-4 text-[10px] font-normal uppercase text-white shadow-[0_0_12px_rgba(52,211,153,0.28)] hover:bg-emerald-400 disabled:cursor-wait disabled:opacity-60"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-400 bg-emerald-700 px-4 text-[10px] font-normal uppercase text-white shadow-[0_0_12px_rgba(5,150,105,0.24)] hover:bg-emerald-600 disabled:cursor-wait disabled:opacity-60"
               >
                 <Check className="h-3.5 w-3.5" />
                 {savingGroupTitle ? "Saving…" : "Save Title"}
