@@ -12,6 +12,7 @@ import PSTLogOutput from "../components/depot/PSTLogOutput";
 import InsertionLogOutput from "../components/depot/InsertionLogOutput";
 import OvertimeTracker from "../components/OvertimeTracker";
 import RosterWorkspace from "../components/RosterWorkspace";
+import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator";
 
 const DEFAULT_BOOKMARK_LINKS = [
   { title: "Outlook", url: "https://outlook.office.com", sortOrder: 0 },
@@ -20401,6 +20402,8 @@ export default function DepotStablingPage() {
       />
 
       <RequestedTrainActionSummary requests={requests} />
+
+      <OfficialEastExcelGenerator />
 
       <TrainRequestedNotInRemoval
         requests={requests}
