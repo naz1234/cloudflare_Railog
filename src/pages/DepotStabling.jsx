@@ -19870,6 +19870,35 @@ export default function DepotStablingPage() {
     }
   };
 
+  const handleDeleteRequestGroup = async (groupItems = []) => {
+    const requestIds = [...new Set(groupItems.map((request) => request?.id).filter(Boolean))];
+    if (requestIds.length === 0) throw new Error("No saved trains were found in this group.");
+
+    const results = await Promise.allSettled(
+      requestIds.map((id) => base44.entities.MaintenanceRequest.delete(id))
+    );
+    const deletedIds = new Set();
+
+    results.forEach((result, index) => {
+      if (result.status === "fulfilled" || result.reason?.status === 404) {
+        deletedIds.add(requestIds[index]);
+      }
+    });
+
+    if (deletedIds.size > 0) {
+      setRequests((prev) => prev.filter((request) => !deletedIds.has(request.id)));
+    }
+
+    const failedCount = requestIds.length - deletedIds.size;
+    if (failedCount > 0) {
+      throw new Error(
+        failedCount === requestIds.length
+          ? "Unable to delete this request group."
+          : `Deleted ${deletedIds.size} train(s); ${failedCount} could not be deleted.`
+      );
+    }
+  };
+
   const handleRemoveRequest = async (id) => {
     await base44.entities.MaintenanceRequest.delete(id).catch(() => {});
     setRequests((prev) => prev.filter((r) => r.id !== id));
@@ -20501,6 +20530,7 @@ export default function DepotStablingPage() {
           onRemove={handleRemoveRequest}
           onClearAll={handleClearAllRequests}
           onRenameGroup={handleRenameRequestGroup}
+          onDeleteGroup={handleDeleteRequestGroup}
           stabledTrainIds={Array.from(westStablingKeys)}
           stabledTrainLocations={getMainStablingLocations(westData, eastData)}
         />
