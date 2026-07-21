@@ -1113,7 +1113,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         className="space-y-[1px]"
       >
         <div
-          className="theme-maintenance-request-card theme-maintenance-group-heading theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] w-full grid-cols-[minmax(0,1fr)_18px_18px] items-center gap-1 overflow-visible rounded-md border pl-3 pr-1.5 text-left leading-none"
+          className="theme-maintenance-request-card theme-maintenance-group-heading theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] w-full grid-cols-[minmax(0,1fr)_15px_15px] items-center gap-1 overflow-visible rounded-md border pl-3 pr-1.5 text-left leading-none"
           style={cardVisual.card}
         >
           <span className="min-w-0 truncate text-[12px] font-normal uppercase text-[#f8fbff]">
@@ -1125,9 +1125,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             disabled={Boolean(savingGroupKey || deletingGroupKey)}
             aria-label={`Edit main title for ${group.label}`}
             title="Edit main title"
-            className="justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-amber-200/90 bg-amber-400/25 text-amber-200 shadow-[0_0_6px_rgba(251,191,36,0.28)] hover:bg-amber-400/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:cursor-wait disabled:opacity-60"
+            className="justify-self-end inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border border-amber-200/90 bg-amber-400/25 text-amber-200 shadow-[0_0_6px_rgba(251,191,36,0.28)] hover:bg-amber-400/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:cursor-wait disabled:opacity-60"
           >
-            <Pencil className="h-[9px] w-[9px]" />
+            <Pencil className="h-[9px] w-[9px] stroke-[3]" />
           </button>
           <button
             type="button"
@@ -1135,9 +1135,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             disabled={Boolean(savingGroupKey || deletingGroupKey)}
             aria-label={`Delete all ${group.items.length} requests in ${group.label}`}
             title="Delete entire group"
-            className={`justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-rose-300/70 bg-rose-500/20 text-rose-200 hover:bg-rose-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/80 disabled:cursor-wait disabled:opacity-60 ${confirmingDelete ? "border-rose-200 bg-rose-500/45" : ""}`}
+            className={`justify-self-end inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border border-rose-300/70 bg-rose-500/20 text-rose-200 hover:bg-rose-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/80 disabled:cursor-wait disabled:opacity-60 ${confirmingDelete ? "border-rose-200 bg-rose-500/45" : ""}`}
           >
-            <X className="h-[11px] w-[11px]" />
+            <X className="h-[9px] w-[9px] stroke-[3.5]" />
           </button>
         </div>
 
