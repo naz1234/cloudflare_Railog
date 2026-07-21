@@ -638,7 +638,7 @@ function getRequestDisplayLabel(request = {}) {
   );
 }
 
-export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, stabledTrainIds = [], stabledTrainLocations = {} }) {
+export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, onDeleteGroup, stabledTrainIds = [], stabledTrainLocations = {} }) {
   const [trainId, setTrainId] = useState("");
   const [requestType, setRequestType] = useState("");
   const [error, setError] = useState("");
@@ -650,6 +650,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const [groupTitleDraft, setGroupTitleDraft] = useState("");
   const [savingGroupKey, setSavingGroupKey] = useState("");
   const [groupEditError, setGroupEditError] = useState("");
+  const [confirmDeleteGroupKey, setConfirmDeleteGroupKey] = useState("");
+  const [deletingGroupKey, setDeletingGroupKey] = useState("");
+  const [groupDeleteError, setGroupDeleteError] = useState("");
 
   const handleAdd = () => {
     const trainIds = trainId.split(/[\s,]+/).map(normalizeTrainId).filter(Boolean);
@@ -996,6 +999,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   };
 
   const beginGroupTitleEdit = (group) => {
+    if (savingGroupKey || deletingGroupKey) return;
+    setConfirmDeleteGroupKey("");
+    setGroupDeleteError("");
     setEditingGroupKey(group.key);
     setGroupTitleDraft(group.label);
     setGroupEditError("");
@@ -1006,6 +1012,40 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     setEditingGroupKey("");
     setGroupTitleDraft("");
     setGroupEditError("");
+  };
+
+  const beginGroupDelete = (group) => {
+    if (savingGroupKey || deletingGroupKey) return;
+    setEditingGroupKey("");
+    setGroupTitleDraft("");
+    setGroupEditError("");
+    setConfirmDeleteGroupKey(group.key);
+    setGroupDeleteError("");
+  };
+
+  const cancelGroupDelete = () => {
+    if (deletingGroupKey) return;
+    setConfirmDeleteGroupKey("");
+    setGroupDeleteError("");
+  };
+
+  const deleteRequestGroup = async (group) => {
+    if (typeof onDeleteGroup !== "function") {
+      setGroupDeleteError("Group deletion is unavailable.");
+      return;
+    }
+
+    setDeletingGroupKey(group.key);
+    setGroupDeleteError("");
+    try {
+      await onDeleteGroup(group.items);
+      setConfirmDeleteGroupKey("");
+    } catch (deleteError) {
+      console.error("Request group deletion failed:", deleteError);
+      setGroupDeleteError(deleteError?.message || "Unable to delete this request group.");
+    } finally {
+      setDeletingGroupKey("");
+    }
   };
 
   const saveGroupTitle = async (event, group) => {
@@ -1056,6 +1096,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     const { section = "pending", showStatus = false } = options;
     const editingTitle = editingGroupKey === group.key;
     const savingTitle = savingGroupKey === group.key;
+    const confirmingDelete = confirmDeleteGroupKey === group.key;
+    const deletingGroup = deletingGroupKey === group.key;
     const requestTypeLabel = displayType(group.items?.[0]) || group.label;
     const cardVisual = getMainStablingCompactCardStyle(requestTypeLabel, requestTypeLabel, requestGroupColors);
 
@@ -1069,7 +1111,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           className={`theme-maintenance-request-card theme-maintenance-group-heading theme-train-rem-row-card theme-maintenance-summary-row grid w-full items-center gap-1 overflow-visible rounded-md border pl-3 pr-1.5 text-left leading-none transition-[height,border-color,background,box-shadow] duration-150 ${
             editingTitle
               ? "h-[30px] grid-cols-[minmax(0,1fr)_20px_20px]"
-              : "h-[24px] grid-cols-[minmax(0,1fr)_18px]"
+              : "h-[24px] grid-cols-[minmax(0,1fr)_18px_18px]"
           }`}
           style={cardVisual.card}
         >
@@ -1122,11 +1164,22 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               <button
                 type="button"
                 onClick={() => beginGroupTitleEdit(group)}
+                disabled={Boolean(savingGroupKey || deletingGroupKey)}
                 aria-label={`Edit parent title for ${group.label}`}
                 title="Edit parent title"
-                className="maintenance-group-edit-trigger justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-cyan-300/65 bg-cyan-400/15 text-cyan-200 hover:bg-cyan-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/80"
+                className="maintenance-group-edit-trigger justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-cyan-300/65 bg-cyan-400/15 text-cyan-200 hover:bg-cyan-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/80 disabled:cursor-wait disabled:opacity-60"
               >
                 <Pencil className="h-[10px] w-[10px]" />
+              </button>
+              <button
+                type="button"
+                onClick={() => beginGroupDelete(group)}
+                disabled={Boolean(savingGroupKey || deletingGroupKey)}
+                aria-label={`Delete all ${group.items.length} requests in ${group.label}`}
+                title="Delete entire group"
+                className={`justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-rose-300/70 bg-rose-500/20 text-rose-200 transition hover:scale-110 hover:rotate-90 hover:bg-rose-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/80 disabled:cursor-wait disabled:opacity-60 ${confirmingDelete ? "animate-pulse border-rose-200 bg-rose-500/45" : ""}`}
+              >
+                <X className="h-[11px] w-[11px]" />
               </button>
             </>
           )}
@@ -1135,6 +1188,36 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         {editingTitle && groupEditError && (
           <p className="ml-[10px] rounded border border-rose-400/35 bg-rose-950/35 px-2 py-1 text-[9px] font-semibold text-rose-200">
             {groupEditError}
+          </p>
+        )}
+
+        {confirmingDelete && (
+          <div className="ml-[10px] flex min-h-[28px] items-center gap-1.5 rounded-md border border-rose-400/45 bg-rose-950/45 px-2 py-1">
+            <span className="min-w-0 flex-1 truncate text-[9px] font-bold text-rose-100">
+              Delete all {group.items.length} train{group.items.length === 1 ? "" : "s"}?
+            </span>
+            <button
+              type="button"
+              disabled={deletingGroup}
+              onClick={() => deleteRequestGroup(group)}
+              className="rounded border border-rose-300/70 bg-rose-600 px-2 py-0.5 text-[9px] font-black uppercase text-white transition hover:bg-rose-500 disabled:cursor-wait disabled:opacity-60"
+            >
+              {deletingGroup ? "Deleting…" : "Delete"}
+            </button>
+            <button
+              type="button"
+              disabled={deletingGroup}
+              onClick={cancelGroupDelete}
+              className="rounded border border-slate-400/50 bg-slate-700/70 px-2 py-0.5 text-[9px] font-bold text-slate-100 transition hover:bg-slate-600 disabled:cursor-wait disabled:opacity-60"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
+        {confirmingDelete && groupDeleteError && (
+          <p className="ml-[10px] rounded border border-rose-400/35 bg-rose-950/35 px-2 py-1 text-[9px] font-semibold text-rose-200">
+            {groupDeleteError}
           </p>
         )}
 
