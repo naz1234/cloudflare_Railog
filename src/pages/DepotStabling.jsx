@@ -14827,7 +14827,8 @@ function HeaderBookmarkDropdown({
         <div className="relative h-full w-[170px]">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-cyan-200" />
           <input
-            type="search"
+            type="text"
+            role="searchbox"
             value={searchQuery}
             onChange={(event) => {
               const nextValue = event.target.value;
