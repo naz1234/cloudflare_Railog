@@ -4301,13 +4301,7 @@ function getKnownMaintenanceStyle(label = "") {
 function buildMaintenanceMap(requests, mainStablingKeys = new Set()) {
   const map = {};
   const workshopTrainKeys = new Set();
-  const requestDisplayTypes = (requests || []).map((req) =>
-    cleanRequestLabel(
-      req.requestType === "Other"
-        ? req.customType || "Other"
-        : req.requestType || "Request"
-    ) || "Request"
-  );
+  const requestDisplayTypes = (requests || []).map(getTrainRequestGroupDisplayTitle);
   const requestGroupColors = buildDistinctRequestGroupColorMap(requestDisplayTypes);
   const requestRemarkColors = buildDistinctRequestGroupColorMap(requestDisplayTypes, {
     includeGeneric: true,
@@ -4317,13 +4311,9 @@ function buildMaintenanceMap(requests, mainStablingKeys = new Set()) {
     const key = normalizeTrainId(req.trainId);
     if (!key) return;
 
-    const displayType = cleanRequestLabel(
-      req.requestType === "Other"
-        ? req.customType || "Other"
-        : req.requestType || "Request"
-    ) || "Request";
+    const requestType = getTrainRequestDisplayType(req);
 
-    if (isWorkshopRequestLabel(displayType)) {
+    if (isWorkshopRequestLabel(requestType)) {
       workshopTrainKeys.add(key);
     }
   });
@@ -4332,13 +4322,9 @@ function buildMaintenanceMap(requests, mainStablingKeys = new Set()) {
     const key = normalizeTrainId(req.trainId);
     if (!key) return;
 
-    const displayType = cleanRequestLabel(
-      req.requestType === "Other"
-        ? req.customType || "Other"
-        : req.requestType || "Request"
-    ) || "Request";
-    const typeKey = displayType;
-    const isWorkshop = isWorkshopRequestLabel(displayType);
+    const typeKey = getTrainRequestDisplayType(req);
+    const displayType = getTrainRequestGroupDisplayTitle(req);
+    const isWorkshop = isWorkshopRequestLabel(typeKey);
     const isSuppressedByWorkshop = workshopTrainKeys.has(key) && !isWorkshop;
     const isSuppressedByStabling = mainStablingKeys.has(key);
     const suppressionReason = isSuppressedByStabling
@@ -21204,6 +21190,10 @@ function getTrainRequestDisplayType(request = {}) {
   ) || "Request";
 }
 
+function getTrainRequestGroupDisplayTitle(request = {}) {
+  return cleanRequestLabel(request?.groupTitle) || getTrainRequestDisplayType(request);
+}
+
 function isUnfitTrainRequest(request = {}) {
   const displayType = normalizeRequestIdentity(getTrainRequestDisplayType(request));
   return displayType === "UNFIT" || displayType === "NOT FIT" || displayType === "NOTFIT" || displayType === "WORKSHOP UNFIT";
@@ -21442,7 +21432,7 @@ function getRequestNoteSummaryForTrain(requests = [], trainKey = "", options = {
     if (normalizeTrainId(request?.trainId) !== key) return;
     if (!includeTomorrowRequests && isTomorrowTrainRequest(request)) return;
 
-    const displayType = getTrainRequestDisplayType(request);
+    const displayType = getTrainRequestGroupDisplayTitle(request);
     const noteKey = normalizeRemarkText(displayType);
 
     if (!displayType || seen.has(noteKey)) return;
@@ -21461,7 +21451,7 @@ function getRequestNoteSummaryFromRequests(requests = []) {
   (requests || []).forEach((request) => {
     if (isUnfitTrainRequest(request)) return;
 
-    const displayType = getTrainRequestDisplayType(request);
+    const displayType = getTrainRequestGroupDisplayTitle(request);
     const noteKey = normalizeRemarkText(displayType);
 
     if (!displayType || seen.has(noteKey)) return;
@@ -22057,7 +22047,7 @@ function getRequestedActionSummaryRowsFromRequests(requests = []) {
 
   (Array.isArray(requests) ? requests : []).forEach((request) => {
     const key = normalizeTrainId(request?.trainId);
-    const requestType = getTrainRequestDisplayType(request);
+    const requestType = getTrainRequestGroupDisplayTitle(request);
     const requestKey = normalizeRequestIdentity(requestType);
     if (!key || !requestKey) return;
 
