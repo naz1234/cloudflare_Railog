@@ -5260,6 +5260,12 @@ const EAST_INSERTION_KEYWORD_REMARK_STYLES = {
     color: "#dbeafe",
     shadow: "0 0 11px rgba(96, 165, 250, 0.24), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
+  "DEEP CLEANING": {
+    bg: "rgba(249, 115, 22, 0.22)",
+    border: "#fb923c",
+    color: "#ffedd5",
+    shadow: "0 0 11px rgba(251, 146, 60, 0.24), inset 0 1px 0 rgba(255,255,255,0.06)",
+  },
   REQUEST: {
     bg: "rgba(250, 204, 21, 0.18)",
     border: "#facc15",
@@ -5361,9 +5367,10 @@ function getEastInsertionKeywordRemarkLabel(value = "") {
   if (noSpace === "3K1" || noSpace === "3K1INSERTION" || /\b3K1\b/.test(compact)) return "3K1";
   if (noSpace === "SW" || noSpace === "SW1" || noSpace === "SW2" || /\bSWEEP(?:ING)?\b/.test(compact)) return "SWEEP";
   if (/\bWASH(?:ING)?\b/.test(compact)) return "WASH";
+  if (/\bDEEP\b/.test(compact)) return "DEEP CLEANING";
   if (/\bPM\b/.test(compact)) return "PM";
   if (/\bCM\b/.test(compact)) return "CM";
-  if (noSpace === "GTOC" || /\bG\s*TO\s*C\b/.test(compact)) return "G TO C";
+  if (/\bG(?:\s*TO)?[\s/_-]*C\b/i.test(text)) return "G TO C";
   if (/\bREQUEST(?:ED)?\b|\bREQ\b/.test(compact)) return "REQUEST";
 
   return "";
