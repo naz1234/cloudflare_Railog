@@ -16,7 +16,9 @@ const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.s
 const WORKBOOK_PATH = "xl/workbook.xml";
 const WORKBOOK_RELS_PATH = "xl/_rels/workbook.xml.rels";
 const SHARED_STRINGS_PATH = "xl/sharedStrings.xml";
+const STYLES_PATH = "xl/styles.xml";
 const EAST_LOG_SHEET_NAME = "DC East E-LOG";
+const PST_SHEET_NAME = "PST & Train Prep";
 const XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace";
 
 const SHIFT_FIELDS = {
@@ -74,17 +76,17 @@ function relationshipIdForSheet(sheetNode) {
   return Array.from(sheetNode.attributes || []).find((attribute) => attribute.localName === "id")?.value || "";
 }
 
-function locateEastLogSheet(archive) {
+function locateWorkbookSheet(archive, sheetName) {
   const workbook = parseXml(archiveText(archive, WORKBOOK_PATH, "Excel workbook definition"), "Excel workbook definition");
   const sheetNode = Array.from(workbook.getElementsByTagNameNS("*", "sheet")).find(
-    (node) => String(node.getAttribute("name") || "").trim() === EAST_LOG_SHEET_NAME,
+    (node) => String(node.getAttribute("name") || "").trim() === sheetName,
   );
   if (!sheetNode) {
-    throw new Error(`The worksheet â€œ${EAST_LOG_SHEET_NAME}â€ was not found. Upload the East Depot official Excel file.`);
+    throw new Error(`The worksheet "${sheetName}" was not found. Upload the East Depot official Excel file.`);
   }
 
   const relationshipId = relationshipIdForSheet(sheetNode);
-  if (!relationshipId) throw new Error("The East Depot worksheet link could not be read.");
+  if (!relationshipId) throw new Error(`The worksheet link for "${sheetName}" could not be read.`);
 
   const relationships = parseXml(
     archiveText(archive, WORKBOOK_RELS_PATH, "Excel workbook relationships"),
@@ -94,11 +96,11 @@ function locateEastLogSheet(archive) {
     (node) => node.getAttribute("Id") === relationshipId,
   );
   const target = relationship?.getAttribute("Target") || "";
-  if (!target) throw new Error("The East Depot worksheet file could not be located.");
+  if (!target) throw new Error(`The worksheet file for "${sheetName}" could not be located.`);
 
   const sheetPath = normalizeArchivePath("xl", target);
-  const sheetXml = archiveText(archive, sheetPath, "East Depot worksheet");
-  return { sheetPath, sheetDocument: parseXml(sheetXml, "East Depot worksheet") };
+  const sheetXml = archiveText(archive, sheetPath, sheetName);
+  return { sheetPath, sheetDocument: parseXml(sheetXml, sheetName) };
 }
 
 function findCell(sheetDocument, reference) {
@@ -154,19 +156,74 @@ function columnNumber(reference) {
   return [...letters].reduce((total, letter) => total * 26 + letter.charCodeAt(0) - 64, 0);
 }
 
-function clearDailyEastLogRows(sheetDocument) {
+function cellsWithinRange(sheetDocument, startRow, endRow, startColumn, endColumn) {
+  const cells = [];
   Array.from(sheetDocument.getElementsByTagNameNS("*", "row")).forEach((row) => {
     const rowNumber = Number(row.getAttribute("r") || 0);
-    if (rowNumber < 9) return;
+    if (rowNumber < startRow || rowNumber > endRow) return;
 
     Array.from(row.getElementsByTagNameNS("*", "c")).forEach((cell) => {
-      const reference = cell.getAttribute("r") || "";
-      const cellColumn = columnNumber(reference);
-      if (cellColumn < 1 || cellColumn > 9) return;
-      while (cell.firstChild) cell.removeChild(cell.firstChild);
-      cell.removeAttribute("t");
+      const cellColumn = columnNumber(cell.getAttribute("r") || "");
+      if (cellColumn >= startColumn && cellColumn <= endColumn) cells.push(cell);
     });
   });
+  return cells;
+}
+
+function clearCells(cells) {
+  cells.forEach((cell) => {
+    while (cell.firstChild) cell.removeChild(cell.firstChild);
+    cell.removeAttribute("t");
+  });
+}
+
+function clearDailyEastLogRows(sheetDocument) {
+  clearCells(cellsWithinRange(sheetDocument, 9, 39, 1, 9));
+}
+
+function normalizeDailyEastLogRows(sheetDocument) {
+  Array.from(sheetDocument.getElementsByTagNameNS("*", "row")).forEach((row) => {
+    const rowNumber = Number(row.getAttribute("r") || 0);
+    if (rowNumber < 9 || rowNumber > 39) return;
+    row.setAttribute("ht", "39");
+    row.setAttribute("customHeight", "1");
+  });
+}
+
+function removeDailyEastLogFills(sheetDocument, stylesDocument) {
+  const cellXfs = stylesDocument.getElementsByTagNameNS("*", "cellXfs")[0];
+  if (!cellXfs) throw new Error("Excel cell styles could not be read.");
+
+  const styleElements = Array.from(cellXfs.childNodes).filter(
+    (node) => node.nodeType === 1 && node.localName === "xf",
+  );
+  const noFillStyleByOriginal = new Map();
+
+  cellsWithinRange(sheetDocument, 9, 39, 1, 9).forEach((cell) => {
+    const originalStyleId = Number(cell.getAttribute("s") || 0);
+    const originalStyle = styleElements[originalStyleId];
+    const fillId = Number(originalStyle?.getAttribute("fillId") || 0);
+    if (!originalStyle || fillId === 0) return;
+
+    if (!noFillStyleByOriginal.has(originalStyleId)) {
+      const noFillStyle = originalStyle.cloneNode(true);
+      noFillStyle.setAttribute("fillId", "0");
+      noFillStyle.removeAttribute("applyFill");
+      const replacementStyleId = styleElements.length + noFillStyleByOriginal.size;
+      cellXfs.appendChild(noFillStyle);
+      noFillStyleByOriginal.set(originalStyleId, replacementStyleId);
+    }
+    cell.setAttribute("s", String(noFillStyleByOriginal.get(originalStyleId)));
+  });
+
+  cellXfs.setAttribute(
+    "count",
+    String(Array.from(cellXfs.childNodes).filter((node) => node.nodeType === 1 && node.localName === "xf").length),
+  );
+}
+
+function clearPstTrainPrepRows(sheetDocument) {
+  clearCells(cellsWithinRange(sheetDocument, 3, 49, 1, 11));
 }
 
 function addLocalDays(date, dayCount) {
@@ -244,9 +301,11 @@ function triggerDownload(blob, fileName) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-async function generateOfficialEastWorkbook({ sourceFile, shift, controllerName, targetDay }) {
+async function generateOfficialEastWorkbook({ sourceFile, controllerName, targetDay }) {
   const archive = unzipSync(new Uint8Array(await sourceFile.arrayBuffer()));
-  const { sheetPath, sheetDocument } = locateEastLogSheet(archive);
+  const { sheetPath, sheetDocument } = locateWorkbookSheet(archive, EAST_LOG_SHEET_NAME);
+  const { sheetPath: pstSheetPath, sheetDocument: pstSheetDocument } = locateWorkbookSheet(archive, PST_SHEET_NAME);
+  const stylesDocument = parseXml(archiveText(archive, STYLES_PATH, "Excel styles"), "Excel styles");
   const strings = sharedStringValues(archive);
   const today = addLocalDays(new Date(), 0);
   const targetDate = addLocalDays(today, targetDay === "tomorrow" ? 1 : 0);
@@ -259,15 +318,20 @@ async function generateOfficialEastWorkbook({ sourceFile, shift, controllerName,
   const isNewOutputDate = dateKey(workbookDate) !== dateKey(targetDate);
   Object.entries(SHIFT_FIELDS).forEach(([shiftKey, field]) => {
     const existingName = existingShiftName(readCellText(sheetDocument, field.cell, archive, strings));
-    const nextName = shiftKey === shift ? controllerName.trim() : isNewOutputDate ? "" : existingName;
+    const nextName = shiftKey === "night" ? controllerName.trim() : isNewOutputDate ? "" : existingName;
     writeInlineString(sheetDocument, field.cell, `${field.label}\n${nextName}`);
   });
 
   writeInlineString(sheetDocument, "G3", officialDateLabel(targetDate));
   writeInlineString(sheetDocument, "I3", timetableForDate(targetDate));
   if (isNewOutputDate) clearDailyEastLogRows(sheetDocument);
+  normalizeDailyEastLogRows(sheetDocument);
+  removeDailyEastLogFills(sheetDocument, stylesDocument);
+  clearPstTrainPrepRows(pstSheetDocument);
 
   archive[sheetPath] = strToU8(new XMLSerializer().serializeToString(sheetDocument));
+  archive[pstSheetPath] = strToU8(new XMLSerializer().serializeToString(pstSheetDocument));
+  archive[STYLES_PATH] = strToU8(new XMLSerializer().serializeToString(stylesDocument));
   const outputBytes = zipSync(archive, { level: 6 });
   return {
     blob: new Blob([outputBytes], { type: XLSX_MIME }),
@@ -275,13 +339,14 @@ async function generateOfficialEastWorkbook({ sourceFile, shift, controllerName,
     targetDate,
     timetable: timetableForDate(targetDate),
     clearedDailyRows: isNewOutputDate,
+    clearedPstRows: true,
+    normalizedDailyRows: true,
   };
 }
 
 export default function OfficialEastExcelGenerator() {
   const fileInputRef = useRef(null);
   const [sourceFile, setSourceFile] = useState(null);
-  const [shift, setShift] = useState("early");
   const [controllerName, setControllerName] = useState("");
   const [targetDay, setTargetDay] = useState("tomorrow");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -322,7 +387,7 @@ export default function OfficialEastExcelGenerator() {
 
     setIsGenerating(true);
     try {
-      const result = await generateOfficialEastWorkbook({ sourceFile, shift, controllerName, targetDay });
+      const result = await generateOfficialEastWorkbook({ sourceFile, controllerName, targetDay });
       triggerDownload(result.blob, result.fileName);
       setGeneratedFile(result);
     } catch (generationError) {
@@ -410,7 +475,7 @@ export default function OfficialEastExcelGenerator() {
         </div>
       </div>
 
-      <div className="mt-3 grid gap-2.5 lg:grid-cols-[1.15fr_0.72fr_1fr]">
+      <div className="mt-3 grid gap-2.5 lg:grid-cols-[1.2fr_1fr]">
         <div className="official-panel rounded-lg border border-teal-400/20 p-2.5">
           <label className="official-label block text-[10px] font-black uppercase tracking-[0.15em]">Source East Excel</label>
           <input ref={fileInputRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={handleFileChange} className="hidden" />
@@ -428,21 +493,7 @@ export default function OfficialEastExcelGenerator() {
         </div>
 
         <div className="official-panel rounded-lg border border-teal-400/20 p-2.5">
-          <label htmlFor="official-east-shift" className="official-label block text-[10px] font-black uppercase tracking-[0.15em]">Shift</label>
-          <select
-            id="official-east-shift"
-            value={shift}
-            onChange={(event) => setShift(event.target.value)}
-            className="official-input mt-1.5 h-10 w-full rounded-lg border px-3 text-[11px] font-bold outline-none"
-          >
-            <option value="early">Early</option>
-            <option value="late">Late</option>
-            <option value="night">Night</option>
-          </select>
-        </div>
-
-        <div className="official-panel rounded-lg border border-teal-400/20 p-2.5">
-          <label htmlFor="official-east-controller" className="official-label block text-[10px] font-black uppercase tracking-[0.15em]">Controller name</label>
+          <label htmlFor="official-east-controller" className="official-label block text-[10px] font-black uppercase tracking-[0.15em]">Night shift controller name</label>
           <div className="relative mt-1.5">
             <UserRound className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-teal-300" />
             <input
@@ -495,7 +546,7 @@ export default function OfficialEastExcelGenerator() {
           </div>
           <p className="official-label mt-2 break-all text-[11px] font-medium" title={previewName}>File: {previewName}</p>
           <p className="official-label mt-1 text-[11px] font-medium">
-            Daily log rows are cleared automatically when the output date differs from the uploaded workbook date.
+            East log rows 9-39 use a uniform 39 height with no fill. PST entries in rows 3-49 are cleared; row 50 is preserved.
           </p>
         </div>
       </div>
@@ -510,7 +561,7 @@ export default function OfficialEastExcelGenerator() {
       {generatedFile && (
         <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold text-emerald-300">
           <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>{generatedFile.fileName} downloaded. {generatedFile.clearedDailyRows ? "The new East daily log is clean." : "Existing East daily rows were kept."}</span>
+          <span>{generatedFile.fileName} downloaded. Night shift is set, East rows are formatted, and PST entries are cleared without changing row 50.</span>
         </div>
       )}
 
@@ -525,7 +576,7 @@ export default function OfficialEastExcelGenerator() {
           className="inline-flex h-9 items-center gap-2 rounded-lg border border-teal-300/70 bg-gradient-to-r from-teal-600 to-cyan-600 px-4 text-[11px] font-black uppercase tracking-wide text-white shadow-[0_0_16px_rgba(20,184,166,0.28)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
         >
           {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-          {isGenerating ? "Generatingâ€¦" : "Generate Official Excel"}
+          {isGenerating ? "Generating..." : "Generate Official Excel"}
         </button>
       </div>
     </section>
