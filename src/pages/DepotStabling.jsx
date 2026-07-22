@@ -22223,6 +22223,56 @@ function buildRequestedActionSummaryLines(rows = []) {
   return lines;
 }
 
+const REQUESTED_ACTION_SUMMARY_GROUPS = [
+  {
+    key: "washing",
+    title: "Washing",
+    headingClass: "border-emerald-400/45 bg-emerald-500/12 text-emerald-200",
+    bulletClass: "text-emerald-300",
+  },
+  {
+    key: "pm",
+    title: "PM",
+    headingClass: "border-blue-400/45 bg-blue-500/12 text-blue-200",
+    bulletClass: "text-blue-300",
+  },
+  {
+    key: "cm",
+    title: "CM",
+    headingClass: "border-cyan-400/45 bg-cyan-500/12 text-cyan-200",
+    bulletClass: "text-cyan-300",
+  },
+  {
+    key: "others",
+    title: "Others",
+    headingClass: "border-slate-400/40 bg-slate-500/10 text-slate-200",
+    bulletClass: "text-slate-300",
+  },
+];
+
+function getRequestedActionSummaryGroupKey(line = "") {
+  const normalized = normalizeRequestIdentity(line);
+  if (/\bWASH(?:ING)?\b/.test(normalized)) return "washing";
+  if (/\bPM\b/.test(normalized)) return "pm";
+  if (/\bCM\b/.test(normalized) || normalized.includes("CLOSING SR")) return "cm";
+  return "others";
+}
+
+function groupRequestedActionSummaryLines(lines = []) {
+  const buckets = new Map(REQUESTED_ACTION_SUMMARY_GROUPS.map((group) => [group.key, []]));
+
+  (Array.isArray(lines) ? lines : []).forEach((line) => {
+    const text = String(line || "").trim();
+    if (!text) return;
+    const groupKey = getRequestedActionSummaryGroupKey(text);
+    buckets.get(groupKey)?.push(text);
+  });
+
+  return REQUESTED_ACTION_SUMMARY_GROUPS
+    .map((group) => ({ ...group, lines: buckets.get(group.key) || [] }))
+    .filter((group) => group.lines.length > 0);
+}
+
 const REQUESTED_TRAIN_MANUAL_TID_STORAGE_KEY = "requestedTrainManualTidByTrain";
 const REQUESTED_TRAIN_MANUAL_TID_SESSION_KEY = "requestedTrainManualTidByTrain_v2";
 
@@ -23034,9 +23084,15 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
     ? getRequestedActionSummaryRowsFromRequests(requests)
     : rows;
   const summaryLines = buildRequestedActionSummaryLines(summaryRows);
-  if (!summaryLines.length) return null;
+  const summaryGroups = groupRequestedActionSummaryLines(summaryLines);
+  if (!summaryGroups.length) return null;
 
-  const summaryText = summaryLines.map((line) => `• ${line}`).join("\n\n");
+  const summaryText = summaryGroups
+    .map((group) => [
+      group.title.toUpperCase(),
+      ...group.lines.map((line) => `• ${line}`),
+    ].join("\n"))
+    .join("\n\n");
 
   const handleCopySummary = async () => {
     const ok = await copyTextToClipboard(summaryText);
@@ -23065,15 +23121,28 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <div>
-        {summaryLines.map((line, index) => (
-          <div
-            key={`requested-action-summary-${index}`}
-            className={`flex items-start gap-2 ${index > 0 ? "mt-2" : ""}`}
-          >
-            <span className="shrink-0 leading-snug text-[#eaf4ff]">•</span>
-            <p className="m-0 min-w-0">{line}</p>
-          </div>
+      <div className="space-y-2.5">
+        {summaryGroups.map((group) => (
+          <section key={group.key} aria-labelledby={`requested-summary-${group.key}`}>
+            <div
+              id={`requested-summary-${group.key}`}
+              className={`inline-flex min-h-5 items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] ${group.headingClass}`}
+            >
+              <span>{group.title}</span>
+              <span className="text-[9px] font-normal opacity-75">{group.lines.length}</span>
+            </div>
+            <div className="mt-1.5 space-y-1.5 pl-1">
+              {group.lines.map((line, index) => (
+                <div
+                  key={`requested-action-summary-${group.key}-${index}`}
+                  className="flex items-start gap-2"
+                >
+                  <span className={`shrink-0 leading-snug ${group.bulletClass}`}>•</span>
+                  <p className="m-0 min-w-0">{line}</p>
+                </div>
+              ))}
+            </div>
+          </section>
         ))}
       </div>
     </div>
