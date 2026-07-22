@@ -22038,18 +22038,11 @@ function getRequestedSummaryBucketByLabel(groupMap, label = "RST") {
 }
 
 function formatRequestedSummaryPmActivityLabel(value = "") {
-  const normalized = normalizeRequestIdentity(value);
-  if (!normalized) return "RST";
+  const fullTitle = cleanRequestLabel(value)
+    .replace(/[.!?]+$/, "")
+    .trim();
 
-  const tokens = normalized.split(" ").filter(Boolean);
-  const pmIndex = tokens.indexOf("PM");
-  if (pmIndex < 0) return "RST";
-
-  const labelTokens = tokens
-    .slice(0, pmIndex)
-    .filter((token) => !TOMORROW_REQUEST_TOKENS.has(token) && token !== "MORNING" && token !== "MRNING" && token !== "TODAY");
-
-  return labelTokens.join(" ") || "RST";
+  return fullTitle || "RST PM";
 }
 
 function formatRequestedSummaryCmActivityLabel(value = "") {
@@ -22152,12 +22145,16 @@ function buildRequestedActionSummaryLines(rows = []) {
 
   morningPmGroups.forEach((bucket, activityLabel) => {
     const trainList = joinRequestedSummaryTrainList(bucket.trains);
-    if (trainList) lines.push(`${trainList} ${activityLabel} requested for morning PM activity.`);
+    if (!trainList) return;
+    const verb = bucket.trains.length === 1 ? "was" : "were";
+    lines.push(`${trainList} ${verb} requested for ${activityLabel}.`);
   });
 
   todayPmGroups.forEach((bucket, activityLabel) => {
     const trainList = joinRequestedSummaryTrainList(bucket.trains);
-    if (trainList) lines.push(`${trainList} ${activityLabel} requested for Today PM activity.`);
+    if (!trainList) return;
+    const verb = bucket.trains.length === 1 ? "was" : "were";
+    lines.push(`${trainList} ${verb} requested for ${activityLabel}.`);
   });
 
   const cmList = joinRequestedSummaryTrainList(cm.trains);
