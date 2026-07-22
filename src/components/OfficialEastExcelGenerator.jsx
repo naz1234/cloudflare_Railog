@@ -253,22 +253,19 @@ async function generateOfficialEastWorkbook({ sourceFile, shift, controllerName,
   const workbookDate = parseWorkbookDate(readCellText(sheetDocument, "G3", archive, strings), sourceFile.name);
 
   if (!workbookDate) {
-    throw new Error("The current date could not be read from the East Depot workbook.");
-  }
-  if (dateKey(workbookDate) !== dateKey(today)) {
-    throw new Error(`Upload todayâ€™s East Depot Excel file. This workbook is dated ${officialDateLabel(workbookDate)}.`);
+    throw new Error("The source date could not be read from the East Depot workbook.");
   }
 
-  const isTomorrow = targetDay === "tomorrow";
+  const isNewOutputDate = dateKey(workbookDate) !== dateKey(targetDate);
   Object.entries(SHIFT_FIELDS).forEach(([shiftKey, field]) => {
     const existingName = existingShiftName(readCellText(sheetDocument, field.cell, archive, strings));
-    const nextName = shiftKey === shift ? controllerName.trim() : isTomorrow ? "" : existingName;
+    const nextName = shiftKey === shift ? controllerName.trim() : isNewOutputDate ? "" : existingName;
     writeInlineString(sheetDocument, field.cell, `${field.label}\n${nextName}`);
   });
 
   writeInlineString(sheetDocument, "G3", officialDateLabel(targetDate));
   writeInlineString(sheetDocument, "I3", timetableForDate(targetDate));
-  if (isTomorrow) clearDailyEastLogRows(sheetDocument);
+  if (isNewOutputDate) clearDailyEastLogRows(sheetDocument);
 
   archive[sheetPath] = strToU8(new XMLSerializer().serializeToString(sheetDocument));
   const outputBytes = zipSync(archive, { level: 6 });
@@ -277,7 +274,7 @@ async function generateOfficialEastWorkbook({ sourceFile, shift, controllerName,
     fileName: outputFileName(sourceFile.name, targetDate),
     targetDate,
     timetable: timetableForDate(targetDate),
-    clearedDailyRows: isTomorrow,
+    clearedDailyRows: isNewOutputDate,
   };
 }
 
@@ -304,7 +301,7 @@ export default function OfficialEastExcelGenerator() {
     setError("");
     if (file && !/\.xlsx$/i.test(file.name)) {
       setSourceFile(null);
-      setError("Upload the current East Depot Excel file in .xlsx format.");
+      setError("Upload an East Depot source Excel file in .xlsx format.");
       event.target.value = "";
       return;
     }
@@ -315,7 +312,7 @@ export default function OfficialEastExcelGenerator() {
     setError("");
     setGeneratedFile(null);
     if (!sourceFile) {
-      setError("Upload todayâ€™s East Depot Excel file first.");
+      setError("Upload an East Depot source Excel file first.");
       return;
     }
     if (!controllerName.trim()) {
@@ -403,7 +400,7 @@ export default function OfficialEastExcelGenerator() {
               </span>
             </div>
             <p className="official-label mt-0.5 text-[11px] font-medium">
-              Create todayâ€™s or tomorrowâ€™s official DCE workbook without changing other worksheets.
+              Create today's or tomorrow's official DCE workbook from any valid East Depot source file.
             </p>
           </div>
         </div>
@@ -415,7 +412,7 @@ export default function OfficialEastExcelGenerator() {
 
       <div className="mt-3 grid gap-2.5 lg:grid-cols-[1.15fr_0.72fr_1fr]">
         <div className="official-panel rounded-lg border border-teal-400/20 p-2.5">
-          <label className="official-label block text-[10px] font-black uppercase tracking-[0.15em]">Current-date East Excel</label>
+          <label className="official-label block text-[10px] font-black uppercase tracking-[0.15em]">Source East Excel</label>
           <input ref={fileInputRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={handleFileChange} className="hidden" />
           <button
             type="button"
@@ -424,7 +421,7 @@ export default function OfficialEastExcelGenerator() {
           >
             <Upload className="h-4 w-4 shrink-0 text-teal-300" />
             <span className="min-w-0 flex-1 truncate text-[11px] font-bold">
-              {sourceFile?.name || "Upload todayâ€™s East Depot .xlsx"}
+              {sourceFile?.name || "Upload East Depot source .xlsx"}
             </span>
             <span className="text-[10px] font-black uppercase text-teal-300">{sourceFile ? "Replace" : "Choose"}</span>
           </button>
@@ -498,7 +495,7 @@ export default function OfficialEastExcelGenerator() {
           </div>
           <p className="official-label mt-2 break-all text-[11px] font-medium" title={previewName}>File: {previewName}</p>
           <p className="official-label mt-1 text-[11px] font-medium">
-            {targetDay === "tomorrow" ? "Tomorrow starts with clean East daily log rows." : "Today keeps existing East daily log rows."}
+            Daily log rows are cleared automatically when the output date differs from the uploaded workbook date.
           </p>
         </div>
       </div>
@@ -519,7 +516,7 @@ export default function OfficialEastExcelGenerator() {
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <p className="official-label max-w-3xl text-[11px] font-medium">
-          Friday, Saturday, and Sundayâ€“Thursday timetable codes are selected automatically from the output date.
+          Friday, Saturday, and Sunday-Thursday timetable codes are selected automatically from the output date.
         </p>
         <button
           type="button"
