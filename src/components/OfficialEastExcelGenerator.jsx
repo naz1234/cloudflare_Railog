@@ -346,7 +346,7 @@ export default function OfficialEastExcelGenerator() {
           --official-panel: rgba(4, 26, 39, 0.76);
           --official-input: #071b2c;
           --official-text: #ecfeff;
-          --official-muted: #8fc7cf;
+          --official-muted: #c2e8ec;
           --official-accent: #2dd4bf;
           --official-soft: rgba(45, 212, 191, 0.12);
           background: linear-gradient(135deg, var(--official-bg-start), var(--official-bg-end));
@@ -361,19 +361,25 @@ export default function OfficialEastExcelGenerator() {
           --official-panel: rgba(255, 255, 255, 0.84);
           --official-input: #ffffff;
           --official-text: #0f172a;
-          --official-muted: #476879;
+          --official-muted: #36576a;
           --official-accent: #0f766e;
           --official-soft: rgba(13, 148, 136, 0.10);
           box-shadow: 0 8px 20px rgba(13, 148, 136, 0.10), inset 0 1px 0 #ffffff;
         }
-        .official-east-excel-generator .official-panel { background: var(--official-panel); }
-        .official-east-excel-generator .official-label { color: var(--official-muted); }
+        .official-east-excel-generator .official-panel {
+          background: var(--official-panel);
+          border-color: color-mix(in srgb, var(--official-border) 48%, transparent);
+        }
+        .official-east-excel-generator .official-label {
+          color: var(--official-muted);
+          line-height: 1.45;
+        }
         .official-east-excel-generator .official-input {
           background: var(--official-input);
           border-color: color-mix(in srgb, var(--official-border) 72%, transparent);
           color: var(--official-text);
         }
-        .official-east-excel-generator .official-input::placeholder { color: var(--official-muted); opacity: .72; }
+        .official-east-excel-generator .official-input::placeholder { color: var(--official-muted); opacity: .92; }
         .official-east-excel-generator .official-input:focus { border-color: var(--official-accent); box-shadow: 0 0 0 2px var(--official-soft); }
         .official-east-excel-generator .official-day[data-active="true"] {
           border-color: var(--official-accent);
@@ -391,17 +397,17 @@ export default function OfficialEastExcelGenerator() {
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-[11px] font-black uppercase tracking-[0.16em]">Official Excel Generator</h2>
-              <span className="rounded-full border border-teal-400/40 bg-teal-400/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-teal-300">
+              <h2 className="text-[12px] font-black uppercase tracking-[0.16em]">Official Excel Generator</h2>
+              <span className="rounded-full border border-teal-400/40 bg-teal-400/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-teal-300">
                 East Depot
               </span>
             </div>
-            <p className="official-label mt-0.5 text-[10px] font-medium">
+            <p className="official-label mt-0.5 text-[11px] font-medium">
               Create todayâ€™s or tomorrowâ€™s official DCE workbook without changing other worksheets.
             </p>
           </div>
         </div>
-        <div className="official-panel inline-flex items-center gap-1.5 rounded-lg border border-teal-400/25 px-2 py-1 text-[9px] font-bold text-teal-300">
+        <div className="official-panel inline-flex items-center gap-1.5 rounded-lg border border-teal-400/25 px-2 py-1 text-[10px] font-bold text-teal-300">
           <ShieldCheck className="h-3 w-3" />
           Other tabs preserved
         </div>
@@ -409,7 +415,7 @@ export default function OfficialEastExcelGenerator() {
 
       <div className="mt-3 grid gap-2.5 lg:grid-cols-[1.15fr_0.72fr_1fr]">
         <div className="official-panel rounded-lg border border-teal-400/20 p-2.5">
-          <label className="official-label block text-[9px] font-black uppercase tracking-[0.15em]">Current-date East Excel</label>
+          <label className="official-label block text-[10px] font-black uppercase tracking-[0.15em]">Current-date East Excel</label>
           <input ref={fileInputRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={handleFileChange} className="hidden" />
           <button
             type="button"
@@ -417,20 +423,20 @@ export default function OfficialEastExcelGenerator() {
             className="official-input mt-1.5 flex h-10 w-full items-center gap-2 rounded-lg border px-3 text-left transition hover:border-teal-400"
           >
             <Upload className="h-4 w-4 shrink-0 text-teal-300" />
-            <span className="min-w-0 flex-1 truncate text-[10px] font-bold">
+            <span className="min-w-0 flex-1 truncate text-[11px] font-bold">
               {sourceFile?.name || "Upload todayâ€™s East Depot .xlsx"}
             </span>
-            <span className="text-[9px] font-black uppercase text-teal-300">{sourceFile ? "Replace" : "Choose"}</span>
+            <span className="text-[10px] font-black uppercase text-teal-300">{sourceFile ? "Replace" : "Choose"}</span>
           </button>
         </div>
 
         <div className="official-panel rounded-lg border border-teal-400/20 p-2.5">
-          <label htmlFor="official-east-shift" className="official-label block text-[9px] font-black uppercase tracking-[0.15em]">Shift</label>
+          <label htmlFor="official-east-shift" className="official-label block text-[10px] font-black uppercase tracking-[0.15em]">Shift</label>
           <select
             id="official-east-shift"
             value={shift}
             onChange={(event) => setShift(event.target.value)}
-            className="official-input mt-1.5 h-10 w-full rounded-lg border px-3 text-[10px] font-bold outline-none"
+            className="official-input mt-1.5 h-10 w-full rounded-lg border px-3 text-[11px] font-bold outline-none"
           >
             <option value="early">Early</option>
             <option value="late">Late</option>
@@ -439,7 +445,7 @@ export default function OfficialEastExcelGenerator() {
         </div>
 
         <div className="official-panel rounded-lg border border-teal-400/20 p-2.5">
-          <label htmlFor="official-east-controller" className="official-label block text-[9px] font-black uppercase tracking-[0.15em]">Controller name</label>
+          <label htmlFor="official-east-controller" className="official-label block text-[10px] font-black uppercase tracking-[0.15em]">Controller name</label>
           <div className="relative mt-1.5">
             <UserRound className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-teal-300" />
             <input
@@ -448,7 +454,7 @@ export default function OfficialEastExcelGenerator() {
               value={controllerName}
               onChange={(event) => setControllerName(event.target.value)}
               placeholder="Enter name"
-              className="official-input h-10 w-full rounded-lg border pl-9 pr-3 text-[10px] font-bold outline-none"
+              className="official-input h-10 w-full rounded-lg border pl-9 pr-3 text-[11px] font-bold outline-none"
             />
           </div>
         </div>
@@ -458,7 +464,7 @@ export default function OfficialEastExcelGenerator() {
         <div className="official-panel rounded-lg border border-teal-400/20 p-2.5">
           <div className="flex items-center gap-1.5">
             <CalendarDays className="h-3.5 w-3.5 text-teal-300" />
-            <span className="official-label text-[9px] font-black uppercase tracking-[0.15em]">Output date</span>
+            <span className="official-label text-[10px] font-black uppercase tracking-[0.15em]">Output date</span>
           </div>
           <div className="mt-1.5 grid grid-cols-2 gap-2">
             {["today", "tomorrow"].map((option) => {
@@ -472,8 +478,8 @@ export default function OfficialEastExcelGenerator() {
                   onClick={() => { setTargetDay(option); setGeneratedFile(null); setError(""); }}
                   className="official-day rounded-lg border border-teal-400/20 px-3 py-2 text-left transition hover:border-teal-400/60"
                 >
-                  <span className="block text-[10px] font-black uppercase">{option}</span>
-                  <span className="mt-0.5 block text-[9px] font-semibold opacity-80">{compactDateLabel(optionDate)}</span>
+                  <span className="block text-[11px] font-black uppercase">{option}</span>
+                  <span className="mt-0.5 block text-[10px] font-semibold">{compactDateLabel(optionDate)}</span>
                 </button>
               );
             })}
@@ -483,43 +489,43 @@ export default function OfficialEastExcelGenerator() {
         <div className="official-panel rounded-lg border border-teal-400/20 p-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="official-label text-[9px] font-black uppercase tracking-[0.15em]">Automatic timetable</p>
-              <p className="mt-1 text-[10px] font-black text-teal-300">{targetTimetable}</p>
+              <p className="official-label text-[10px] font-black uppercase tracking-[0.15em]">Automatic timetable</p>
+              <p className="mt-1 text-[11px] font-black text-teal-300">{targetTimetable}</p>
             </div>
-            <span className="rounded-md border border-teal-400/30 bg-teal-400/10 px-2 py-1 text-[9px] font-bold text-teal-300">
+            <span className="rounded-md border border-teal-400/30 bg-teal-400/10 px-2 py-1 text-[10px] font-bold text-teal-300">
               {officialDateLabel(targetDate)}
             </span>
           </div>
-          <p className="official-label mt-2 truncate text-[9px]" title={previewName}>File: {previewName}</p>
-          <p className="official-label mt-1 text-[9px]">
+          <p className="official-label mt-2 break-all text-[11px] font-medium" title={previewName}>File: {previewName}</p>
+          <p className="official-label mt-1 text-[11px] font-medium">
             {targetDay === "tomorrow" ? "Tomorrow starts with clean East daily log rows." : "Today keeps existing East daily log rows."}
           </p>
         </div>
       </div>
 
       {error && (
-        <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-rose-400/45 bg-rose-500/10 px-3 py-2 text-[10px] font-semibold text-rose-300">
+        <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-rose-400/45 bg-rose-500/10 px-3 py-2 text-[11px] font-semibold text-rose-300">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {generatedFile && (
-        <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-[10px] font-semibold text-emerald-300">
+        <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold text-emerald-300">
           <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>{generatedFile.fileName} downloaded. {generatedFile.clearedDailyRows ? "The new East daily log is clean." : "Existing East daily rows were kept."}</span>
         </div>
       )}
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="official-label text-[9px]">
+        <p className="official-label max-w-3xl text-[11px] font-medium">
           Friday, Saturday, and Sundayâ€“Thursday timetable codes are selected automatically from the output date.
         </p>
         <button
           type="button"
           onClick={handleGenerate}
           disabled={isGenerating}
-          className="inline-flex h-9 items-center gap-2 rounded-lg border border-teal-300/70 bg-gradient-to-r from-teal-600 to-cyan-600 px-4 text-[10px] font-black uppercase tracking-wide text-white shadow-[0_0_16px_rgba(20,184,166,0.28)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
+          className="inline-flex h-9 items-center gap-2 rounded-lg border border-teal-300/70 bg-gradient-to-r from-teal-600 to-cyan-600 px-4 text-[11px] font-black uppercase tracking-wide text-white shadow-[0_0_16px_rgba(20,184,166,0.28)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
         >
           {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
           {isGenerating ? "Generatingâ€¦" : "Generate Official Excel"}
