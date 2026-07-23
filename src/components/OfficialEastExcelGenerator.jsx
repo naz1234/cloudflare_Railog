@@ -189,6 +189,22 @@ function clearCells(cells) {
   });
 }
 
+function copyRowCellStyles(sheetDocument, sourceRowNumber, targetRowNumbers, startColumn, endColumn) {
+  const sourceStyles = new Map(
+    cellsWithinRange(sheetDocument, sourceRowNumber, sourceRowNumber, startColumn, endColumn).map((cell) => [
+      columnNumber(cell.getAttribute("r") || ""),
+      cell.getAttribute("s"),
+    ]),
+  );
+
+  targetRowNumbers.forEach((rowNumber) => {
+    cellsWithinRange(sheetDocument, rowNumber, rowNumber, startColumn, endColumn).forEach((cell) => {
+      const sourceStyle = sourceStyles.get(columnNumber(cell.getAttribute("r") || ""));
+      if (sourceStyle !== null && sourceStyle !== undefined) cell.setAttribute("s", sourceStyle);
+    });
+  });
+}
+
 function clearDailyEastLogRows(sheetDocument) {
   clearCells(cellsWithinRange(sheetDocument, 9, 39, 1, 9));
 }
@@ -279,11 +295,7 @@ function writeFirstEastRemovalLog(sheetDocument, targetDate, eastRemovalLog) {
     writeInlineString(sheetDocument, "D9", "Removal");
     writeInlineString(sheetDocument, "E9", summary);
 
-    const visibleLineCount = summary.split("\n").reduce(
-      (total, line) => total + Math.max(1, Math.ceil(line.length / 95)),
-      0,
-    );
-    setWorksheetRowHeight(sheetDocument, 9, Math.max(39, Math.min(409, Math.ceil(18 + visibleLineCount * 12.5))));
+    setWorksheetRowHeight(sheetDocument, 9, 280);
   }
 
   const reservedCategories = [
@@ -409,6 +421,7 @@ async function generateOfficialEastWorkbook({ sourceFile, controllerName, target
   if (isNewOutputDate) clearDailyEastLogRows(sheetDocument);
   normalizeDailyEastLogRows(sheetDocument);
   removeDailyEastLogFills(sheetDocument, stylesDocument);
+  copyRowCellStyles(sheetDocument, 10, [11, 12, 13], 1, 9);
   const addedEastRemovalLog = writeFirstEastRemovalLog(sheetDocument, targetDate, eastRemovalLog);
   clearPstTrainPrepRows(pstSheetDocument);
   clearAuthorityToProceedForm(authoritySheetDocument, targetDate);
@@ -546,7 +559,7 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-[12px] font-black uppercase tracking-[0.16em]">Official Excel Generator</h2>
+              <h2 className="text-[12px] font-black uppercase tracking-[0.16em]">Next Day Excel Generator</h2>
               <span className="rounded-full border border-teal-400/40 bg-teal-400/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-teal-300">
                 East Depot
               </span>
@@ -560,6 +573,11 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
           <ShieldCheck className="h-3 w-3" />
           Unrelated tabs preserved
         </div>
+      </div>
+
+      <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-400/45 bg-amber-500/10 px-3 py-2 text-[11px] font-semibold text-amber-200">
+        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>Use the previous day’s Excel file to preserve “New Notices and Briefing,” “Outstanding Faults,” “Active Restrictions,” and “Other Handover Notes.”</span>
       </div>
 
       <div className="mt-3 grid gap-2.5 lg:grid-cols-[1.2fr_1fr]">
@@ -633,7 +651,7 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
           </div>
           <p className="official-label mt-2 break-all text-[11px] font-medium" title={previewName}>File: {previewName}</p>
           <p className="official-label mt-1 text-[11px] font-medium">
-            East removal is written first, followed by four reserved category rows with blank Time and Summary cells. Authority entries are cleared and PST row 50 is preserved.
+            East removal uses height 280. Generated East rows use no fill with black text; reserved Time and Summary cells stay blank.
           </p>
         </div>
       </div>
