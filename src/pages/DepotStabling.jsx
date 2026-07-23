@@ -20485,6 +20485,13 @@ export default function DepotStablingPage() {
           activeTimetable,
           eastData,
         )}
+        westRemovalLog={buildTrainRemRemovalLog(
+          trainRemCheckState,
+          "west",
+          maintenanceMap,
+          activeTimetable,
+          westData,
+        )}
       />
 
       <TrainRequestedNotInRemoval
