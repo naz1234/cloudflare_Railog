@@ -17,7 +17,22 @@ const WORKBOOK_PATH = "xl/workbook.xml";
 const WORKBOOK_RELS_PATH = "xl/_rels/workbook.xml.rels";
 const SHARED_STRINGS_PATH = "xl/sharedStrings.xml";
 const STYLES_PATH = "xl/styles.xml";
-const EAST_LOG_SHEET_NAME = "DC East E-LOG";
+const DEPOT_CONFIGS = {
+  east: {
+    key: "east",
+    code: "DCE",
+    label: "East Depot",
+    fileLabel: "East",
+    sheetNames: ["DC East E-LOG", "DC East E-log"],
+  },
+  west: {
+    key: "west",
+    code: "DCW",
+    label: "West Depot",
+    fileLabel: "West",
+    sheetNames: ["DC West E-LOG", "DC West E-log"],
+  },
+};
 const PST_SHEET_NAME = "PST & Train Prep";
 const AUTHORITY_SHEET_NAME = "Authority to Proceed Form";
 const XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace";
@@ -77,14 +92,19 @@ function relationshipIdForSheet(sheetNode) {
   return Array.from(sheetNode.attributes || []).find((attribute) => attribute.localName === "id")?.value || "";
 }
 
-function locateWorkbookSheet(archive, sheetName) {
+function locateWorkbookSheet(archive, sheetNameOrNames) {
   const workbook = parseXml(archiveText(archive, WORKBOOK_PATH, "Excel workbook definition"), "Excel workbook definition");
+  const requestedNames = (Array.isArray(sheetNameOrNames) ? sheetNameOrNames : [sheetNameOrNames])
+    .map((name) => String(name || "").trim())
+    .filter(Boolean);
+  const normalizedNames = new Set(requestedNames.map((name) => name.toLowerCase()));
   const sheetNode = Array.from(workbook.getElementsByTagNameNS("*", "sheet")).find(
-    (node) => String(node.getAttribute("name") || "").trim() === sheetName,
+    (node) => normalizedNames.has(String(node.getAttribute("name") || "").trim().toLowerCase()),
   );
   if (!sheetNode) {
-    throw new Error(`The worksheet "${sheetName}" was not found. Upload the East Depot official Excel file.`);
+    throw new Error(`The worksheet "${requestedNames[0]}" was not found. Upload the matching official Depot Controller Excel file.`);
   }
+  const sheetName = String(sheetNode.getAttribute("name") || requestedNames[0]).trim();
 
   const relationshipId = relationshipIdForSheet(sheetNode);
   if (!relationshipId) throw new Error(`The worksheet link for "${sheetName}" could not be read.`);
@@ -205,11 +225,11 @@ function copyRowCellStyles(sheetDocument, sourceRowNumber, targetRowNumbers, sta
   });
 }
 
-function clearDailyEastLogRows(sheetDocument) {
+function clearDailyDepotLogRows(sheetDocument) {
   clearCells(cellsWithinRange(sheetDocument, 9, 39, 1, 9));
 }
 
-function normalizeDailyEastLogRows(sheetDocument) {
+function normalizeDailyDepotLogRows(sheetDocument) {
   Array.from(sheetDocument.getElementsByTagNameNS("*", "row")).forEach((row) => {
     const rowNumber = Number(row.getAttribute("r") || 0);
     if (rowNumber < 9 || rowNumber > 39) return;
@@ -218,7 +238,7 @@ function normalizeDailyEastLogRows(sheetDocument) {
   });
 }
 
-function removeDailyEastLogFills(sheetDocument, stylesDocument) {
+function removeDailyDepotLogFills(sheetDocument, stylesDocument) {
   const cellXfs = stylesDocument.getElementsByTagNameNS("*", "cellXfs")[0];
   if (!cellXfs) throw new Error("Excel cell styles could not be read.");
 
@@ -278,9 +298,9 @@ function setWorksheetRowHeight(sheetDocument, rowNumber, height) {
   row.setAttribute("customHeight", "1");
 }
 
-function writeFirstEastRemovalLog(sheetDocument, targetDate, eastRemovalLog) {
-  const entries = Array.isArray(eastRemovalLog?.entries) ? eastRemovalLog.entries : [];
-  const summary = String(eastRemovalLog?.text || "").replace(/\r\n/g, "\n").trim();
+function writeFirstDepotRemovalLog(sheetDocument, targetDate, removalLog, depotConfig) {
+  const entries = Array.isArray(removalLog?.entries) ? removalLog.entries : [];
+  const summary = String(removalLog?.text || "").replace(/\r\n/g, "\n").trim();
   const hasRemovalLog = entries.length > 0 && Boolean(summary);
 
   if (hasRemovalLog) {
@@ -288,10 +308,10 @@ function writeFirstEastRemovalLog(sheetDocument, targetDate, eastRemovalLog) {
     const timeFraction = timeTextToDayFraction(firstTime);
     clearCells(cellsWithinRange(sheetDocument, 9, 9, 1, 9));
 
-    writeInlineString(sheetDocument, "A9", `DCE-${dateStamp(targetDate)}-01`);
+    writeInlineString(sheetDocument, "A9", `${depotConfig.code}-${dateStamp(targetDate)}-01`);
     if (timeFraction === null) writeInlineString(sheetDocument, "B9", firstTime);
     else writeNumber(sheetDocument, "B9", timeFraction);
-    writeInlineString(sheetDocument, "C9", "East Depot");
+    writeInlineString(sheetDocument, "C9", depotConfig.label);
     writeInlineString(sheetDocument, "D9", "Removal");
     writeInlineString(sheetDocument, "E9", summary);
 
@@ -308,8 +328,8 @@ function writeFirstEastRemovalLog(sheetDocument, targetDate, eastRemovalLog) {
   reservedCategories.forEach((category, index) => {
     const rowNumber = 10 + index;
     const referenceNumber = String(index + 2).padStart(2, "0");
-    writeInlineString(sheetDocument, `A${rowNumber}`, `DCE-${dateStamp(targetDate)}-${referenceNumber}`);
-    writeInlineString(sheetDocument, `C${rowNumber}`, "East Depot");
+    writeInlineString(sheetDocument, `A${rowNumber}`, `${depotConfig.code}-${dateStamp(targetDate)}-${referenceNumber}`);
+    writeInlineString(sheetDocument, `C${rowNumber}`, depotConfig.label);
     writeInlineString(sheetDocument, `D${rowNumber}`, category);
   });
 
@@ -354,6 +374,16 @@ function timetableForDate(date) {
   return "L3FULLSUNTHU05300-0000H";
 }
 
+function detectDepotFromFileName(fileName) {
+  const normalized = String(fileName || "").trim();
+  const code = normalized.match(/(?:^|[^A-Z0-9])(DCE|DCW)-\d{8}(?:[^0-9]|$)/i)?.[1]?.toUpperCase();
+  if (code === "DCE") return DEPOT_CONFIGS.east;
+  if (code === "DCW") return DEPOT_CONFIGS.west;
+
+  const depotLabel = normalized.match(/Depot Controller\s+(East|West)\s+E-?log/i)?.[1]?.toLowerCase();
+  return depotLabel ? DEPOT_CONFIGS[depotLabel] || null : null;
+}
+
 function parseWorkbookDate(dayAndDateText, fileName) {
   const normalized = String(dayAndDateText || "").replace(/\s+/g, " ").trim();
   const monthPattern = MONTHS.join("|");
@@ -363,7 +393,7 @@ function parseWorkbookDate(dayAndDateText, fileName) {
     return new Date(Number(match[3]), monthIndex, Number(match[2]), 12, 0, 0, 0);
   }
 
-  const fileDate = String(fileName || "").match(/DCE-(\d{2})(\d{2})(\d{4})/i);
+  const fileDate = String(fileName || "").match(/DC[EW]-(\d{2})(\d{2})(\d{4})/i);
   if (fileDate) {
     return new Date(Number(fileDate[3]), Number(fileDate[2]) - 1, Number(fileDate[1]), 12, 0, 0, 0);
   }
@@ -374,10 +404,8 @@ function existingShiftName(cellText) {
   return String(cellText || "").replace(/^.*?Shift:\s*/is, "").trim();
 }
 
-function outputFileName(sourceName, targetDate) {
-  const stampedName = String(sourceName || "").replace(/DCE-\d{8}(?=\.xlsx$)/i, `DCE-${dateStamp(targetDate)}`);
-  if (stampedName !== sourceName && /\.xlsx$/i.test(stampedName)) return stampedName;
-  return `OPE-FO-023-01 A03 Line 3 Depot Controller East E-log_DCE-${dateStamp(targetDate)}.xlsx`;
+function outputFileName(targetDate, depotConfig) {
+  return `OPE-FO-023-01 A03 Line 3 Depot Controller ${depotConfig.fileLabel} E-log_${depotConfig.code}-${dateStamp(targetDate)}.xlsx`;
 }
 
 function triggerDownload(blob, fileName) {
@@ -391,9 +419,14 @@ function triggerDownload(blob, fileName) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-async function generateOfficialEastWorkbook({ sourceFile, controllerName, targetDay, eastRemovalLog }) {
+async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targetDay, removalLogs }) {
+  const depotConfig = detectDepotFromFileName(sourceFile.name);
+  if (!depotConfig) {
+    throw new Error("The filename must contain DCE-DDMMYYYY for East Depot or DCW-DDMMYYYY for West Depot.");
+  }
+
   const archive = unzipSync(new Uint8Array(await sourceFile.arrayBuffer()));
-  const { sheetPath, sheetDocument } = locateWorkbookSheet(archive, EAST_LOG_SHEET_NAME);
+  const { sheetPath, sheetDocument } = locateWorkbookSheet(archive, depotConfig.sheetNames);
   const { sheetPath: pstSheetPath, sheetDocument: pstSheetDocument } = locateWorkbookSheet(archive, PST_SHEET_NAME);
   const { sheetPath: authoritySheetPath, sheetDocument: authoritySheetDocument } = locateWorkbookSheet(
     archive,
@@ -418,11 +451,16 @@ async function generateOfficialEastWorkbook({ sourceFile, controllerName, target
 
   writeInlineString(sheetDocument, "G3", officialDateLabel(targetDate));
   writeInlineString(sheetDocument, "I3", timetableForDate(targetDate));
-  if (isNewOutputDate) clearDailyEastLogRows(sheetDocument);
-  normalizeDailyEastLogRows(sheetDocument);
-  removeDailyEastLogFills(sheetDocument, stylesDocument);
+  if (isNewOutputDate) clearDailyDepotLogRows(sheetDocument);
+  normalizeDailyDepotLogRows(sheetDocument);
+  removeDailyDepotLogFills(sheetDocument, stylesDocument);
   copyRowCellStyles(sheetDocument, 10, [11, 12, 13], 1, 9);
-  const addedEastRemovalLog = writeFirstEastRemovalLog(sheetDocument, targetDate, eastRemovalLog);
+  const addedDepotRemovalLog = writeFirstDepotRemovalLog(
+    sheetDocument,
+    targetDate,
+    removalLogs?.[depotConfig.key] || null,
+    depotConfig,
+  );
   clearPstTrainPrepRows(pstSheetDocument);
   clearAuthorityToProceedForm(authoritySheetDocument, targetDate);
 
@@ -433,20 +471,22 @@ async function generateOfficialEastWorkbook({ sourceFile, controllerName, target
   const outputBytes = zipSync(archive, { level: 6 });
   return {
     blob: new Blob([outputBytes], { type: XLSX_MIME }),
-    fileName: outputFileName(sourceFile.name, targetDate),
+    fileName: outputFileName(targetDate, depotConfig),
     targetDate,
+    depot: depotConfig,
     timetable: timetableForDate(targetDate),
     clearedDailyRows: isNewOutputDate,
     clearedPstRows: true,
     normalizedDailyRows: true,
     clearedAuthorityRows: true,
-    addedEastRemovalLog,
+    addedDepotRemovalLog,
   };
 }
 
-export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
+export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, westRemovalLog = null }) {
   const fileInputRef = useRef(null);
   const [sourceFile, setSourceFile] = useState(null);
+  const [sourceDepot, setSourceDepot] = useState(null);
   const [controllerName, setControllerName] = useState("");
   const [targetDay, setTargetDay] = useState("tomorrow");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -462,20 +502,29 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
     const file = event.target.files?.[0] || null;
     setGeneratedFile(null);
     setError("");
+    setSourceDepot(null);
     if (file && !/\.xlsx$/i.test(file.name)) {
       setSourceFile(null);
-      setError("Upload an East Depot source Excel file in .xlsx format.");
+      setError("Upload a Depot Controller source Excel file in .xlsx format.");
+      event.target.value = "";
+      return;
+    }
+    const detectedDepot = file ? detectDepotFromFileName(file.name) : null;
+    if (file && !detectedDepot) {
+      setSourceFile(null);
+      setError("Filename not recognized. Use DCE-DDMMYYYY for East Depot or DCW-DDMMYYYY for West Depot.");
       event.target.value = "";
       return;
     }
     setSourceFile(file);
+    setSourceDepot(detectedDepot);
   };
 
   const handleGenerate = async () => {
     setError("");
     setGeneratedFile(null);
     if (!sourceFile) {
-      setError("Upload an East Depot source Excel file first.");
+      setError("Upload an East or West Depot Controller source Excel file first.");
       return;
     }
     if (!controllerName.trim()) {
@@ -485,21 +534,26 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
 
     setIsGenerating(true);
     try {
-      const result = await generateOfficialEastWorkbook({ sourceFile, controllerName, targetDay, eastRemovalLog });
+      const result = await generateOfficialDepotWorkbook({
+        sourceFile,
+        controllerName,
+        targetDay,
+        removalLogs: { east: eastRemovalLog, west: westRemovalLog },
+      });
       triggerDownload(result.blob, result.fileName);
       setGeneratedFile(result);
     } catch (generationError) {
-      console.error("Official East Excel generation failed:", generationError);
-      setError(generationError?.message || "The official East Depot Excel file could not be generated.");
+      console.error("Official Depot Excel generation failed:", generationError);
+      setError(generationError?.message || "The official Depot Controller Excel file could not be generated.");
     } finally {
       setIsGenerating(false);
     }
   };
 
   return (
-    <section className="official-east-excel-generator w-full rounded-xl border px-3 py-3">
+    <section className="official-depot-excel-generator w-full rounded-xl border px-3 py-3">
       <style>{`
-        .official-east-excel-generator {
+        .official-depot-excel-generator {
           --official-bg-start: #062b32;
           --official-bg-end: #0a1f35;
           --official-border: rgba(45, 212, 191, 0.62);
@@ -518,7 +572,7 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
           color: var(--official-text);
           box-shadow: 0 8px 22px rgba(8, 145, 178, 0.16), inset 0 1px 0 rgba(255,255,255,0.05);
         }
-        html[data-app-theme="light"] .official-east-excel-generator {
+        html[data-app-theme="light"] .official-depot-excel-generator {
           --official-bg-start: #ecfeff;
           --official-bg-end: #f0fdfa;
           --official-border: #5eead4;
@@ -534,35 +588,35 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
           --official-warning-icon: #92400e;
           box-shadow: 0 8px 20px rgba(13, 148, 136, 0.10), inset 0 1px 0 #ffffff;
         }
-        .official-east-excel-generator .official-panel {
+        .official-depot-excel-generator .official-panel {
           background: var(--official-panel);
           border-color: color-mix(in srgb, var(--official-border) 48%, transparent);
         }
-        .official-east-excel-generator .official-label {
+        .official-depot-excel-generator .official-label {
           color: var(--official-muted);
           line-height: 1.45;
         }
-        .official-east-excel-generator .official-input {
+        .official-depot-excel-generator .official-input {
           background: var(--official-input);
           border-color: color-mix(in srgb, var(--official-border) 72%, transparent);
           color: var(--official-text);
         }
-        .official-east-excel-generator .official-warning {
+        .official-depot-excel-generator .official-warning {
           background: var(--official-warning-bg);
           border-color: var(--official-warning-border);
           color: var(--official-warning-text);
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
         }
-        .official-east-excel-generator .official-warning-icon { color: var(--official-warning-icon); }
-        .official-east-excel-generator .official-input::placeholder { color: var(--official-muted); opacity: .92; }
-        .official-east-excel-generator .official-input:focus { border-color: var(--official-accent); box-shadow: 0 0 0 2px var(--official-soft); }
-        .official-east-excel-generator .official-day[data-active="true"] {
+        .official-depot-excel-generator .official-warning-icon { color: var(--official-warning-icon); }
+        .official-depot-excel-generator .official-input::placeholder { color: var(--official-muted); opacity: .92; }
+        .official-depot-excel-generator .official-input:focus { border-color: var(--official-accent); box-shadow: 0 0 0 2px var(--official-soft); }
+        .official-depot-excel-generator .official-day[data-active="true"] {
           border-color: var(--official-accent);
           background: var(--official-soft);
           color: var(--official-text);
           box-shadow: 0 0 14px var(--official-soft);
         }
-        .official-east-excel-generator .official-day[data-active="false"] { color: var(--official-muted); }
+        .official-depot-excel-generator .official-day[data-active="false"] { color: var(--official-muted); }
       `}</style>
 
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -574,11 +628,11 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-[12px] font-black uppercase tracking-[0.16em]">Next Day Excel Generator</h2>
               <span className="rounded-full border border-teal-400/40 bg-teal-400/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-teal-300">
-                East Depot
+                {sourceDepot?.label || "Auto-detect"}
               </span>
             </div>
             <p className="official-label mt-0.5 text-[11px] font-medium">
-              Create today's or tomorrow's official DCE workbook from any valid East Depot source file.
+              Create today's or tomorrow's official Depot Controller workbook. East or West is detected from the filename.
             </p>
           </div>
         </div>
@@ -590,7 +644,7 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
 
       <div className="mt-3 grid gap-2.5 lg:grid-cols-[1.2fr_1fr]">
         <div className="official-panel rounded-lg border border-teal-400/20 p-2.5">
-          <label className="official-label block text-[10px] font-black uppercase tracking-[0.15em]">Source East Excel</label>
+          <label className="official-label block text-[10px] font-black uppercase tracking-[0.15em]">Source Depot Excel</label>
           <input ref={fileInputRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={handleFileChange} className="hidden" />
           <button
             type="button"
@@ -599,7 +653,7 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
           >
             <Upload className="h-4 w-4 shrink-0 text-teal-300" />
             <span className="min-w-0 flex-1 truncate text-[11px] font-bold">
-              {sourceFile?.name || "Upload East Depot source .xlsx"}
+              {sourceFile?.name || "Upload DCE or DCW source .xlsx"}
             </span>
             <span className="text-[10px] font-black uppercase text-teal-300">{sourceFile ? "Replace" : "Choose"}</span>
           </button>
@@ -668,7 +722,7 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
       {generatedFile && (
         <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold text-emerald-300">
           <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>{generatedFile.fileName} downloaded. Night shift and form dates are set, old Authority and PST entries are cleared, and the East removal log is placed first.</span>
+          <span>{generatedFile.fileName} downloaded for {generatedFile.depot.label}. Night shift and form dates are set, old Authority and PST entries are cleared, and the matching removal log is placed first.</span>
         </div>
       )}
 
