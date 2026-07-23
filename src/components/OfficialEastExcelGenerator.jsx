@@ -97,9 +97,10 @@ function locateWorkbookSheet(archive, sheetNameOrNames) {
   const requestedNames = (Array.isArray(sheetNameOrNames) ? sheetNameOrNames : [sheetNameOrNames])
     .map((name) => String(name || "").trim())
     .filter(Boolean);
-  const normalizedNames = new Set(requestedNames.map((name) => name.toLowerCase()));
+  const normalizeSheetName = (name) => String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const normalizedNames = new Set(requestedNames.map(normalizeSheetName));
   const sheetNode = Array.from(workbook.getElementsByTagNameNS("*", "sheet")).find(
-    (node) => normalizedNames.has(String(node.getAttribute("name") || "").trim().toLowerCase()),
+    (node) => normalizedNames.has(normalizeSheetName(node.getAttribute("name"))),
   );
   if (!sheetNode) {
     throw new Error(`The worksheet "${requestedNames[0]}" was not found. Upload the matching official Depot Controller Excel file.`);
