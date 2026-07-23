@@ -265,25 +265,43 @@ function setWorksheetRowHeight(sheetDocument, rowNumber, height) {
 function writeFirstEastRemovalLog(sheetDocument, targetDate, eastRemovalLog) {
   const entries = Array.isArray(eastRemovalLog?.entries) ? eastRemovalLog.entries : [];
   const summary = String(eastRemovalLog?.text || "").replace(/\r\n/g, "\n").trim();
-  if (!entries.length || !summary) return false;
+  const hasRemovalLog = entries.length > 0 && Boolean(summary);
 
-  const firstTime = String(entries[0]?.time || "").trim();
-  const timeFraction = timeTextToDayFraction(firstTime);
-  clearCells(cellsWithinRange(sheetDocument, 9, 9, 1, 9));
+  if (hasRemovalLog) {
+    const firstTime = String(entries[0]?.time || "").trim();
+    const timeFraction = timeTextToDayFraction(firstTime);
+    clearCells(cellsWithinRange(sheetDocument, 9, 9, 1, 9));
 
-  writeInlineString(sheetDocument, "A9", `DCE-${dateStamp(targetDate)}-01`);
-  if (timeFraction === null) writeInlineString(sheetDocument, "B9", firstTime);
-  else writeNumber(sheetDocument, "B9", timeFraction);
-  writeInlineString(sheetDocument, "C9", "East Depot");
-  writeInlineString(sheetDocument, "D9", "Removal");
-  writeInlineString(sheetDocument, "E9", summary);
+    writeInlineString(sheetDocument, "A9", `DCE-${dateStamp(targetDate)}-01`);
+    if (timeFraction === null) writeInlineString(sheetDocument, "B9", firstTime);
+    else writeNumber(sheetDocument, "B9", timeFraction);
+    writeInlineString(sheetDocument, "C9", "East Depot");
+    writeInlineString(sheetDocument, "D9", "Removal");
+    writeInlineString(sheetDocument, "E9", summary);
 
-  const visibleLineCount = summary.split("\n").reduce(
-    (total, line) => total + Math.max(1, Math.ceil(line.length / 95)),
-    0,
-  );
-  setWorksheetRowHeight(sheetDocument, 9, Math.max(39, Math.min(409, Math.ceil(18 + visibleLineCount * 12.5))));
-  return true;
+    const visibleLineCount = summary.split("\n").reduce(
+      (total, line) => total + Math.max(1, Math.ceil(line.length / 95)),
+      0,
+    );
+    setWorksheetRowHeight(sheetDocument, 9, Math.max(39, Math.min(409, Math.ceil(18 + visibleLineCount * 12.5))));
+  }
+
+  const reservedCategories = [
+    "Train Preparation",
+    "Points Functional Test",
+    "Internal Train Cleaning",
+    "Passenger Service Test",
+  ];
+  clearCells(cellsWithinRange(sheetDocument, 10, 13, 1, 9));
+  reservedCategories.forEach((category, index) => {
+    const rowNumber = 10 + index;
+    const referenceNumber = String(index + 2).padStart(2, "0");
+    writeInlineString(sheetDocument, `A${rowNumber}`, `DCE-${dateStamp(targetDate)}-${referenceNumber}`);
+    writeInlineString(sheetDocument, `C${rowNumber}`, "East Depot");
+    writeInlineString(sheetDocument, `D${rowNumber}`, category);
+  });
+
+  return hasRemovalLog;
 }
 
 function addLocalDays(date, dayCount) {
@@ -615,7 +633,7 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
           </div>
           <p className="official-label mt-2 break-all text-[11px] font-medium" title={previewName}>File: {previewName}</p>
           <p className="official-label mt-1 text-[11px] font-medium">
-            Authority entries are cleared and dated for the output day. East removal is written first with a readable row height; PST row 50 is preserved.
+            East removal is written first, followed by four reserved category rows with blank Time and Summary cells. Authority entries are cleared and PST row 50 is preserved.
           </p>
         </div>
       </div>
