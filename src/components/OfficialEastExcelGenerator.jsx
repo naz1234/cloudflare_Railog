@@ -457,8 +457,6 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
     () => addLocalDays(new Date(), targetDay === "tomorrow" ? 1 : 0),
     [targetDay],
   );
-  const targetTimetable = timetableForDate(targetDate);
-  const previewName = outputFileName(sourceFile?.name || "", targetDate);
 
   const handleFileChange = (event) => {
     const file = event.target.files?.[0] || null;
@@ -511,6 +509,10 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
           --official-muted: #c2e8ec;
           --official-accent: #2dd4bf;
           --official-soft: rgba(45, 212, 191, 0.12);
+          --official-warning-bg: #713f12;
+          --official-warning-border: #fbbf24;
+          --official-warning-text: #ffffff;
+          --official-warning-icon: #fde68a;
           background: linear-gradient(135deg, var(--official-bg-start), var(--official-bg-end));
           border-color: var(--official-border);
           color: var(--official-text);
@@ -526,6 +528,10 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
           --official-muted: #36576a;
           --official-accent: #0f766e;
           --official-soft: rgba(13, 148, 136, 0.10);
+          --official-warning-bg: #fef3c7;
+          --official-warning-border: #b45309;
+          --official-warning-text: #451a03;
+          --official-warning-icon: #92400e;
           box-shadow: 0 8px 20px rgba(13, 148, 136, 0.10), inset 0 1px 0 #ffffff;
         }
         .official-east-excel-generator .official-panel {
@@ -541,6 +547,13 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
           border-color: color-mix(in srgb, var(--official-border) 72%, transparent);
           color: var(--official-text);
         }
+        .official-east-excel-generator .official-warning {
+          background: var(--official-warning-bg);
+          border-color: var(--official-warning-border);
+          color: var(--official-warning-text);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+        }
+        .official-east-excel-generator .official-warning-icon { color: var(--official-warning-icon); }
         .official-east-excel-generator .official-input::placeholder { color: var(--official-muted); opacity: .92; }
         .official-east-excel-generator .official-input:focus { border-color: var(--official-accent); box-shadow: 0 0 0 2px var(--official-soft); }
         .official-east-excel-generator .official-day[data-active="true"] {
@@ -573,11 +586,6 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
           <ShieldCheck className="h-3 w-3" />
           Unrelated tabs preserved
         </div>
-      </div>
-
-      <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-400/45 bg-amber-500/10 px-3 py-2 text-[11px] font-semibold text-amber-200">
-        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        <span>Use the previous day’s Excel file to preserve “New Notices and Briefing,” “Outstanding Faults,” “Active Restrictions,” and “Other Handover Notes.”</span>
       </div>
 
       <div className="mt-3 grid gap-2.5 lg:grid-cols-[1.2fr_1fr]">
@@ -639,20 +647,14 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
           </div>
         </div>
 
-        <div className="official-panel rounded-lg border border-teal-400/20 p-2.5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p className="official-label text-[10px] font-black uppercase tracking-[0.15em]">Automatic timetable</p>
-              <p className="mt-1 text-[11px] font-black text-teal-300">{targetTimetable}</p>
-            </div>
-            <span className="rounded-md border border-teal-400/30 bg-teal-400/10 px-2 py-1 text-[10px] font-bold text-teal-300">
-              {officialDateLabel(targetDate)}
-            </span>
+        <div className="official-warning flex items-start gap-2 rounded-lg border p-3 text-[12px] font-semibold leading-relaxed">
+          <AlertTriangle className="official-warning-icon mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.15em]">Important notice</p>
+            <p className="mt-1">
+              Use the previous day’s Excel file to preserve “New Notices and Briefing,” “Outstanding Faults,” “Active Restrictions,” and “Other Handover Notes.”
+            </p>
           </div>
-          <p className="official-label mt-2 break-all text-[11px] font-medium" title={previewName}>File: {previewName}</p>
-          <p className="official-label mt-1 text-[11px] font-medium">
-            East removal uses height 280. Generated East rows use no fill with black text; reserved Time and Summary cells stay blank.
-          </p>
         </div>
       </div>
 
@@ -670,10 +672,7 @@ export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
         </div>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="official-label max-w-3xl text-[11px] font-medium">
-          Friday, Saturday, and Sunday-Thursday timetable codes are selected automatically from the output date.
-        </p>
+      <div className="mt-3 flex justify-end">
         <button
           type="button"
           onClick={handleGenerate}
