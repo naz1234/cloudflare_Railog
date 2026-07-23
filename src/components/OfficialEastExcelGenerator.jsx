@@ -609,6 +609,33 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
         }
         .official-depot-excel-generator .official-warning-icon { color: var(--official-warning-icon); }
+        @keyframes official-upload-pulse {
+          0%, 100% {
+            transform: translateY(0) scale(1);
+            box-shadow: 0 0 0 rgba(45, 212, 191, 0);
+          }
+          50% {
+            transform: translateY(-1px) scale(1.003);
+            box-shadow: 0 0 18px var(--official-soft);
+          }
+        }
+        .official-depot-excel-generator .official-upload-panel {
+          animation: official-upload-pulse 2.6s ease-in-out infinite;
+          transform-origin: center;
+          will-change: transform, box-shadow;
+        }
+        .official-depot-excel-generator .official-upload-panel:hover,
+        .official-depot-excel-generator .official-upload-panel:focus-within {
+          animation-play-state: paused;
+          border-color: var(--official-accent);
+          box-shadow: 0 0 18px var(--official-soft);
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .official-depot-excel-generator .official-upload-panel {
+            animation: none;
+            transform: none;
+          }
+        }
         .official-depot-excel-generator .official-input::placeholder { color: var(--official-muted); opacity: .92; }
         .official-depot-excel-generator .official-input:focus { border-color: var(--official-accent); box-shadow: 0 0 0 2px var(--official-soft); }
         .official-depot-excel-generator .official-day[data-active="true"] {
@@ -644,8 +671,8 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
       </div>
 
       <div className="mt-3 grid gap-2.5 lg:grid-cols-[1.2fr_1fr]">
-        <div className="official-panel rounded-lg border border-teal-400/20 p-2.5">
-          <label className="official-label block text-[10px] font-black uppercase tracking-[0.15em]">Source Depot Excel</label>
+        <div className="official-panel official-upload-panel rounded-lg border border-teal-400/20 p-2.5">
+          <label className="official-label block text-[10px] font-black uppercase tracking-[0.15em]">Add West / East log to convert New Log</label>
           <input ref={fileInputRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={handleFileChange} className="hidden" />
           <button
             type="button"
