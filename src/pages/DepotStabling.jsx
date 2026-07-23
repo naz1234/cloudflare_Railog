@@ -20477,7 +20477,15 @@ export default function DepotStablingPage() {
 
       <RequestedTrainActionSummary requests={requests} />
 
-      <OfficialEastExcelGenerator />
+      <OfficialEastExcelGenerator
+        eastRemovalLog={buildTrainRemRemovalLog(
+          trainRemCheckState,
+          "east",
+          maintenanceMap,
+          activeTimetable,
+          eastData,
+        )}
+      />
 
       <TrainRequestedNotInRemoval
         requests={requests}

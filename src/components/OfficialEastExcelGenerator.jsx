@@ -19,6 +19,7 @@ const SHARED_STRINGS_PATH = "xl/sharedStrings.xml";
 const STYLES_PATH = "xl/styles.xml";
 const EAST_LOG_SHEET_NAME = "DC East E-LOG";
 const PST_SHEET_NAME = "PST & Train Prep";
+const AUTHORITY_SHEET_NAME = "Authority to Proceed Form";
 const XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace";
 
 const SHIFT_FIELDS = {
@@ -137,7 +138,7 @@ function readCellText(sheetDocument, reference, archive, cachedSharedStrings) {
 
 function writeInlineString(sheetDocument, reference, value) {
   const cell = findCell(sheetDocument, reference);
-  if (!cell) throw new Error(`Required East Depot cell ${reference} was not found.`);
+  if (!cell) throw new Error(`Required Excel cell ${reference} was not found.`);
 
   while (cell.firstChild) cell.removeChild(cell.firstChild);
   cell.setAttribute("t", "inlineStr");
@@ -149,6 +150,17 @@ function writeInlineString(sheetDocument, reference, value) {
   textNode.textContent = value;
   inlineString.appendChild(textNode);
   cell.appendChild(inlineString);
+}
+
+function writeNumber(sheetDocument, reference, value) {
+  const cell = findCell(sheetDocument, reference);
+  if (!cell) throw new Error(`Required Excel cell ${reference} was not found.`);
+
+  while (cell.firstChild) cell.removeChild(cell.firstChild);
+  cell.removeAttribute("t");
+  const valueNode = sheetDocument.createElementNS(sheetDocument.documentElement.namespaceURI, "v");
+  valueNode.textContent = String(value);
+  cell.appendChild(valueNode);
 }
 
 function columnNumber(reference) {
@@ -226,6 +238,54 @@ function clearPstTrainPrepRows(sheetDocument) {
   clearCells(cellsWithinRange(sheetDocument, 3, 49, 1, 11));
 }
 
+function excelSerialForDate(date) {
+  return (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(1899, 11, 30)) / 86400000;
+}
+
+function clearAuthorityToProceedForm(sheetDocument, targetDate) {
+  writeNumber(sheetDocument, "C6", excelSerialForDate(targetDate));
+  clearCells(cellsWithinRange(sheetDocument, 10, 44, 2, 15));
+}
+
+function timeTextToDayFraction(value) {
+  const match = String(value || "").match(/(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+  return ((Number(match[1]) * 60) + Number(match[2])) / 1440;
+}
+
+function setWorksheetRowHeight(sheetDocument, rowNumber, height) {
+  const row = Array.from(sheetDocument.getElementsByTagNameNS("*", "row")).find(
+    (rowNode) => Number(rowNode.getAttribute("r") || 0) === rowNumber,
+  );
+  if (!row) throw new Error(`Required Excel row ${rowNumber} was not found.`);
+  row.setAttribute("ht", String(height));
+  row.setAttribute("customHeight", "1");
+}
+
+function writeFirstEastRemovalLog(sheetDocument, targetDate, eastRemovalLog) {
+  const entries = Array.isArray(eastRemovalLog?.entries) ? eastRemovalLog.entries : [];
+  const summary = String(eastRemovalLog?.text || "").replace(/\r\n/g, "\n").trim();
+  if (!entries.length || !summary) return false;
+
+  const firstTime = String(entries[0]?.time || "").trim();
+  const timeFraction = timeTextToDayFraction(firstTime);
+  clearCells(cellsWithinRange(sheetDocument, 9, 9, 1, 9));
+
+  writeInlineString(sheetDocument, "A9", `DCE-${dateStamp(targetDate)}-01`);
+  if (timeFraction === null) writeInlineString(sheetDocument, "B9", firstTime);
+  else writeNumber(sheetDocument, "B9", timeFraction);
+  writeInlineString(sheetDocument, "C9", "East Depot");
+  writeInlineString(sheetDocument, "D9", "Removal");
+  writeInlineString(sheetDocument, "E9", summary);
+
+  const visibleLineCount = summary.split("\n").reduce(
+    (total, line) => total + Math.max(1, Math.ceil(line.length / 95)),
+    0,
+  );
+  setWorksheetRowHeight(sheetDocument, 9, Math.max(39, Math.min(409, Math.ceil(18 + visibleLineCount * 12.5))));
+  return true;
+}
+
 function addLocalDays(date, dayCount) {
   const result = new Date(date);
   result.setHours(12, 0, 0, 0);
@@ -301,10 +361,14 @@ function triggerDownload(blob, fileName) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-async function generateOfficialEastWorkbook({ sourceFile, controllerName, targetDay }) {
+async function generateOfficialEastWorkbook({ sourceFile, controllerName, targetDay, eastRemovalLog }) {
   const archive = unzipSync(new Uint8Array(await sourceFile.arrayBuffer()));
   const { sheetPath, sheetDocument } = locateWorkbookSheet(archive, EAST_LOG_SHEET_NAME);
   const { sheetPath: pstSheetPath, sheetDocument: pstSheetDocument } = locateWorkbookSheet(archive, PST_SHEET_NAME);
+  const { sheetPath: authoritySheetPath, sheetDocument: authoritySheetDocument } = locateWorkbookSheet(
+    archive,
+    AUTHORITY_SHEET_NAME,
+  );
   const stylesDocument = parseXml(archiveText(archive, STYLES_PATH, "Excel styles"), "Excel styles");
   const strings = sharedStringValues(archive);
   const today = addLocalDays(new Date(), 0);
@@ -327,10 +391,13 @@ async function generateOfficialEastWorkbook({ sourceFile, controllerName, target
   if (isNewOutputDate) clearDailyEastLogRows(sheetDocument);
   normalizeDailyEastLogRows(sheetDocument);
   removeDailyEastLogFills(sheetDocument, stylesDocument);
+  const addedEastRemovalLog = writeFirstEastRemovalLog(sheetDocument, targetDate, eastRemovalLog);
   clearPstTrainPrepRows(pstSheetDocument);
+  clearAuthorityToProceedForm(authoritySheetDocument, targetDate);
 
   archive[sheetPath] = strToU8(new XMLSerializer().serializeToString(sheetDocument));
   archive[pstSheetPath] = strToU8(new XMLSerializer().serializeToString(pstSheetDocument));
+  archive[authoritySheetPath] = strToU8(new XMLSerializer().serializeToString(authoritySheetDocument));
   archive[STYLES_PATH] = strToU8(new XMLSerializer().serializeToString(stylesDocument));
   const outputBytes = zipSync(archive, { level: 6 });
   return {
@@ -341,10 +408,12 @@ async function generateOfficialEastWorkbook({ sourceFile, controllerName, target
     clearedDailyRows: isNewOutputDate,
     clearedPstRows: true,
     normalizedDailyRows: true,
+    clearedAuthorityRows: true,
+    addedEastRemovalLog,
   };
 }
 
-export default function OfficialEastExcelGenerator() {
+export default function OfficialEastExcelGenerator({ eastRemovalLog = null }) {
   const fileInputRef = useRef(null);
   const [sourceFile, setSourceFile] = useState(null);
   const [controllerName, setControllerName] = useState("");
@@ -387,7 +456,7 @@ export default function OfficialEastExcelGenerator() {
 
     setIsGenerating(true);
     try {
-      const result = await generateOfficialEastWorkbook({ sourceFile, controllerName, targetDay });
+      const result = await generateOfficialEastWorkbook({ sourceFile, controllerName, targetDay, eastRemovalLog });
       triggerDownload(result.blob, result.fileName);
       setGeneratedFile(result);
     } catch (generationError) {
@@ -471,7 +540,7 @@ export default function OfficialEastExcelGenerator() {
         </div>
         <div className="official-panel inline-flex items-center gap-1.5 rounded-lg border border-teal-400/25 px-2 py-1 text-[10px] font-bold text-teal-300">
           <ShieldCheck className="h-3 w-3" />
-          Other tabs preserved
+          Unrelated tabs preserved
         </div>
       </div>
 
@@ -546,7 +615,7 @@ export default function OfficialEastExcelGenerator() {
           </div>
           <p className="official-label mt-2 break-all text-[11px] font-medium" title={previewName}>File: {previewName}</p>
           <p className="official-label mt-1 text-[11px] font-medium">
-            East log rows 9-39 use a uniform 39 height with no fill. PST entries in rows 3-49 are cleared; row 50 is preserved.
+            Authority entries are cleared and dated for the output day. East removal is written first with a readable row height; PST row 50 is preserved.
           </p>
         </div>
       </div>
@@ -561,7 +630,7 @@ export default function OfficialEastExcelGenerator() {
       {generatedFile && (
         <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold text-emerald-300">
           <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>{generatedFile.fileName} downloaded. Night shift is set, East rows are formatted, and PST entries are cleared without changing row 50.</span>
+          <span>{generatedFile.fileName} downloaded. Night shift and form dates are set, old Authority and PST entries are cleared, and the East removal log is placed first.</span>
         </div>
       )}
 
