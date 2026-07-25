@@ -80,6 +80,13 @@ function TrainMovementContent() {`,
         'const toManual = tp1Form.toManual || "18:35"; const fromTp1 = subtractThreeMinutesFromHHMM(toManual) || "18:32";'
       );
 
+      code = replaceRequired(
+        code,
+        '`${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual Area at ${toManual} hrs.`',
+        '`${subtractThreeMinutesFromHHMM(toManual) || fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual Area at ${toManual} hrs.`',
+        'Manual Area displayed departure time'
+      );
+
       code = code.replace(
         /^\s*if\s*\(movementType\s*===\s*"manual"\s*&&\s*!isCompleteMovementTimeInput\(tp1Form\.fromTp1\)\)\s*missing\.push\("[^"]*TP1[^"]*HH:MM[^"]*"\);\r?\n?/m,
         ''
