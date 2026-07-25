@@ -87,6 +87,42 @@ export default function requestGroupVisibilityPlugin() {
         'MaintenancePanel visibility callback'
       );
 
+      code = replaceRequired(
+        code,
+        /      remark: "",\r?\n      badgeText: displayType,/,
+        `      remark: "",
+      hiddenAtStabling: req?.groupHidden === true,
+      badgeText: displayType,`,
+        'stabling remark visibility metadata'
+      );
+
+      code = replaceRequired(
+        code,
+        /  const maintenanceMap = buildMaintenanceMap\(requests, westStablingKeys\);/,
+        `  const maintenanceMap = buildMaintenanceMap(requests, westStablingKeys);
+  const stablingMaintenanceMap = Object.fromEntries(
+    Object.entries(maintenanceMap).map(([trainKey, items]) => [
+      trainKey,
+      (Array.isArray(items) ? items : []).filter((item) => !item.hiddenAtStabling),
+    ])
+  );`,
+        'stabling-only visible maintenance map'
+      );
+
+      code = replaceRequired(
+        code,
+        /(title="WEST DEPOT STABLING"[\s\S]*?maintenanceMap=)\{maintenanceMap\}/,
+        '$1{stablingMaintenanceMap}',
+        'West stabling visible remarks'
+      );
+
+      code = replaceRequired(
+        code,
+        /(title="EAST DEPOT STABLING"[\s\S]*?maintenanceMap=)\{maintenanceMap\}/,
+        '$1{stablingMaintenanceMap}',
+        'East stabling visible remarks'
+      );
+
       return { code, map: null };
     },
   };
