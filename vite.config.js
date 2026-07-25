@@ -5,13 +5,14 @@ import pstHeaderPlugin from './build/pstHeaderPlugin.js'
 import shunterNamePlugin from './build/shunterNamePlugin.js'
 import manualArrivalTimePlugin from './build/manualArrivalTimePlugin.js'
 import manualUnplannedSrPlugin from './build/manualUnplannedSrPlugin.js'
+import automaticExcelCompletedByPlugin from './build/automaticExcelCompletedByPlugin.js'
 import hideWeekdayTidTimePlugin from './build/hideWeekdayTidTimePlugin.js'
 
 // Cloudflare Pages build config.
 // The original Base44 Vite plugin was removed and replaced with a normal Vite alias.
 export default defineConfig({
   logLevel: 'error',
-  plugins: [pstHeaderPlugin(), shunterNamePlugin(), manualArrivalTimePlugin(), manualUnplannedSrPlugin(), hideWeekdayTidTimePlugin(), react()],
+  plugins: [pstHeaderPlugin(), shunterNamePlugin(), manualArrivalTimePlugin(), manualUnplannedSrPlugin(), automaticExcelCompletedByPlugin(), hideWeekdayTidTimePlugin(), react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
