@@ -103,6 +103,21 @@ export default function manualUnplannedSrPlugin() {
         'Manual Area Add to Log readiness'
       );
 
+      const tp1StepCardStart = code.indexOf('const renderTp1FlowStepCard');
+      const tp1StepCardEnd = code.indexOf('const renderTp1FlowRows', tp1StepCardStart);
+      if (tp1StepCardStart < 0 || tp1StepCardEnd < 0) {
+        throw new Error('[manual-unplanned-sr] Unable to locate the TP1 flow step renderer');
+      }
+
+      const tp1StepCard = code.slice(tp1StepCardStart, tp1StepCardEnd);
+      const animatedTp1StepCard = replaceRequired(
+        tp1StepCard,
+        /<span className="truncate text-white">\{step\.label\}<\/span>/,
+        '<span className={`truncate text-white ${step.key === "srNumber" && !step.complete ? "movement-flow-sr-label-attention" : ""}`}>{step.label}</span>',
+        'animated SR Number label'
+      );
+      code = code.slice(0, tp1StepCardStart) + animatedTp1StepCard + code.slice(tp1StepCardEnd);
+
       return { code, map: null };
     },
   };
