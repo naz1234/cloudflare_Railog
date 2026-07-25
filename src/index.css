@@ -8720,3 +8720,30 @@ html[data-app-theme="light"] .theme-train-movement-page .movement-flow-sr-label-
     will-change: auto;
   }
 }
+
+/* Train Request: animate the eye-off/minus status while stabling remarks are hidden. */
+@keyframes request-group-hidden-eye-attention {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 1px rgba(251, 113, 133, 0.55));
+  }
+  50% {
+    transform: scale(1.18);
+    filter: drop-shadow(0 0 4px rgba(251, 113, 133, 1));
+  }
+}
+
+.theme-maintenance-panel .request-group-hidden-eye {
+  transform-origin: center;
+  animation: request-group-hidden-eye-attention 1.25s ease-in-out infinite;
+  will-change: transform, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-maintenance-panel .request-group-hidden-eye {
+    animation: none;
+    transform: none;
+    filter: drop-shadow(0 0 2px rgba(251, 113, 133, 0.75));
+    will-change: auto;
+  }
+}
