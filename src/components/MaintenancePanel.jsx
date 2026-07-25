@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil } from "lucide-react";
+import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil, EyeOff } from "lucide-react";
 
 const MIN_VISIBLE_REQUEST_ROWS = 40;
 
@@ -638,7 +638,7 @@ function getRequestDisplayLabel(request = {}) {
   );
 }
 
-export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, onDeleteGroup, stabledTrainIds = [], stabledTrainLocations = {} }) {
+export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, onDeleteGroup, onToggleGroupHidden, stabledTrainIds = [], stabledTrainLocations = {} }) {
   const [trainId, setTrainId] = useState("");
   const [requestType, setRequestType] = useState("");
   const [error, setError] = useState("");
@@ -653,6 +653,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const [confirmDeleteGroupKey, setConfirmDeleteGroupKey] = useState("");
   const [deletingGroupKey, setDeletingGroupKey] = useState("");
   const [groupDeleteError, setGroupDeleteError] = useState("");
+  const [togglingGroupKey, setTogglingGroupKey] = useState("");
+  const [groupVisibilityError, setGroupVisibilityError] = useState({ key: "", message: "" });
 
   const handleAdd = () => {
     const trainIds = trainId.split(/[\s,]+/).map(normalizeTrainId).filter(Boolean);
@@ -944,6 +946,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             { numeric: true }
           )
         ),
+        hidden: group.items.length > 0 && group.items.every((request) => request?.groupHidden === true),
       }))
       .sort((a, b) => {
         const labelSort = a.label.localeCompare(b.label, undefined, { sensitivity: "base" });
@@ -1001,7 +1004,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   };
 
   const beginGroupTitleEdit = (group) => {
-    if (savingGroupKey || deletingGroupKey) return;
+    if (savingGroupKey || deletingGroupKey || togglingGroupKey) return;
     setConfirmDeleteGroupKey("");
     setGroupDeleteError("");
     setEditingGroupKey(group.key);
@@ -1017,7 +1020,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   };
 
   const beginGroupDelete = (group) => {
-    if (savingGroupKey || deletingGroupKey) return;
+    if (savingGroupKey || deletingGroupKey || togglingGroupKey) return;
     setEditingGroupKey("");
     setGroupTitleDraft("");
     setGroupEditError("");
@@ -1100,10 +1103,34 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   };
 
 
+  const toggleRequestGroupVisibility = async (group) => {
+    if (savingGroupKey || deletingGroupKey || togglingGroupKey) return;
+    if (typeof onToggleGroupHidden !== "function") {
+      setGroupVisibilityError({ key: group.key, message: "Group visibility sync is unavailable." });
+      return;
+    }
+
+    const nextHidden = !group.hidden;
+    setTogglingGroupKey(group.key);
+    setGroupVisibilityError({ key: "", message: "" });
+    try {
+      await onToggleGroupHidden(group.items, nextHidden);
+    } catch (visibilityError) {
+      console.error("Request group visibility update failed:", visibilityError);
+      setGroupVisibilityError({
+        key: group.key,
+        message: visibilityError?.message || `Unable to ${nextHidden ? "hide" : "unhide"} this request group.`,
+      });
+    } finally {
+      setTogglingGroupKey("");
+    }
+  };
+
   const renderGroupedRequestCard = (group, options = {}) => {
     const { section = "pending", showStatus = false } = options;
     const confirmingDelete = confirmDeleteGroupKey === group.key;
     const deletingGroup = deletingGroupKey === group.key;
+    const togglingGroup = togglingGroupKey === group.key;
     const requestTypeLabel = displayType(group.items?.[0]) || group.label;
     const cardVisual = getMainStablingCompactCardStyle(requestTypeLabel, requestTypeLabel, requestGroupColors);
 
@@ -1113,7 +1140,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         className="space-y-[1px]"
       >
         <div
-          className="theme-maintenance-request-card theme-maintenance-group-heading theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] w-full grid-cols-[minmax(0,1fr)_15px_15px] items-center gap-1 overflow-visible rounded-md border pl-3 pr-1.5 text-left leading-none"
+          className="theme-maintenance-request-card theme-maintenance-group-heading theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] w-full grid-cols-[minmax(0,1fr)_15px_15px_15px] items-center gap-1 overflow-visible rounded-md border pl-3 pr-1.5 text-left leading-none"
           style={cardVisual.card}
         >
           <span className="min-w-0 truncate text-[12px] font-normal uppercase text-[#f8fbff]">
@@ -1121,8 +1148,28 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           </span>
           <button
             type="button"
+            onClick={() => toggleRequestGroupVisibility(group)}
+            disabled={Boolean(savingGroupKey || deletingGroupKey || togglingGroupKey)}
+            aria-label={`${group.hidden ? "Unhide" : "Hide"} train rows for ${group.label}`}
+            title={group.hidden ? "Unhide group" : "Hide group"}
+            className={`justify-self-end inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border focus-visible:outline-none focus-visible:ring-2 disabled:cursor-wait disabled:opacity-60 ${
+              group.hidden
+                ? "border-emerald-300/80 bg-emerald-500/25 text-emerald-200 shadow-[0_0_6px_rgba(52,211,153,0.28)] hover:bg-emerald-500/45 focus-visible:ring-emerald-300/80"
+                : "border-rose-300/70 bg-rose-500/20 text-rose-200 hover:bg-rose-500/40 focus-visible:ring-rose-300/80"
+            }`}
+          >
+            {togglingGroup ? (
+              <span className="h-[8px] w-[8px] animate-pulse rounded-full bg-current" />
+            ) : group.hidden ? (
+              <Check className="h-[9px] w-[9px] stroke-[3.5]" />
+            ) : (
+              <EyeOff className="h-[9px] w-[9px] stroke-[3]" />
+            )}
+          </button>
+          <button
+            type="button"
             onClick={() => beginGroupTitleEdit(group)}
-            disabled={Boolean(savingGroupKey || deletingGroupKey)}
+            disabled={Boolean(savingGroupKey || deletingGroupKey || togglingGroupKey)}
             aria-label={`Edit main title for ${group.label}`}
             title="Edit main title"
             className="justify-self-end inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border border-amber-200/90 bg-amber-400/25 text-amber-200 shadow-[0_0_6px_rgba(251,191,36,0.28)] hover:bg-amber-400/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:cursor-wait disabled:opacity-60"
@@ -1132,7 +1179,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           <button
             type="button"
             onClick={() => beginGroupDelete(group)}
-            disabled={Boolean(savingGroupKey || deletingGroupKey)}
+            disabled={Boolean(savingGroupKey || deletingGroupKey || togglingGroupKey)}
             aria-label={`Delete all ${group.items.length} requests in ${group.label}`}
             title="Delete entire group"
             className={`justify-self-end inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border border-rose-300/70 bg-rose-500/20 text-rose-200 hover:bg-rose-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/80 disabled:cursor-wait disabled:opacity-60 ${confirmingDelete ? "border-rose-200 bg-rose-500/45" : ""}`}
@@ -1140,6 +1187,12 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             <X className="h-[9px] w-[9px] stroke-[3.5]" />
           </button>
         </div>
+
+        {groupVisibilityError.key === group.key && (
+          <p className="ml-[10px] rounded border border-rose-400/35 bg-rose-950/35 px-2 py-1 text-[9px] font-semibold text-rose-200">
+            {groupVisibilityError.message}
+          </p>
+        )}
 
         {confirmingDelete && (
           <div className="ml-[10px] flex min-h-[28px] items-center gap-1.5 rounded-md border border-rose-400/45 bg-rose-950/45 px-2 py-1">
@@ -1171,7 +1224,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           </p>
         )}
 
-        <div className="space-y-[1px]">
+        {!group.hidden && (
+          <div className="space-y-[1px]">
             {group.items.map((req) => {
               const chipLabel = getRequestChipTrainLabel(req);
 
@@ -1207,7 +1261,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 </div>
               );
             })}
-        </div>
+          </div>
+        )}
       </div>
     );
   };
