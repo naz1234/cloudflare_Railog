@@ -653,7 +653,7 @@ function RequestGroupVisibilityIcon({ hidden = false, className = "" }) {
       <path d="M2.5 11.5s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
       <circle cx="12" cy="11.5" r="2.4" />
       {hidden && <path d="M4 4 20 20" strokeWidth="2.2" />}
-      <circle cx="18.2" cy="18.1" r="4.2" fill="#071e33" />
+      <circle cx="18.2" cy="18.1" r="4.2" />
       {hidden ? (
         <path d="M16.1 18.1h4.2" strokeWidth="2.2" />
       ) : (
@@ -1177,18 +1177,14 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             disabled={Boolean(savingGroupKey || deletingGroupKey || togglingGroupKey)}
             aria-label={`${group.hidden ? "Show" : "Hide"} stabling remarks for ${group.label}`}
             title={group.hidden ? "Show remarks at stabling" : "Hide remarks at stabling"}
-            className={`justify-self-end inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border focus-visible:outline-none focus-visible:ring-2 disabled:cursor-wait disabled:opacity-60 ${
-              group.hidden
-                ? "border-rose-300/80 bg-rose-500/25 text-rose-200 shadow-[0_0_6px_rgba(244,63,94,0.30)] hover:bg-rose-500/45 focus-visible:ring-rose-300/80"
-                : "border-emerald-300/80 bg-emerald-500/25 text-emerald-200 shadow-[0_0_6px_rgba(52,211,153,0.28)] hover:bg-emerald-500/45 focus-visible:ring-emerald-300/80"
-            }`}
+            className="justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/90 disabled:cursor-wait disabled:opacity-60"
           >
             {togglingGroup ? (
               <span className="h-[8px] w-[8px] animate-pulse rounded-full bg-current" />
             ) : (
               <RequestGroupVisibilityIcon
                 hidden={group.hidden}
-                className={`h-[13px] w-[13px] ${group.hidden ? "request-group-hidden-eye" : ""}`}
+                className={`request-group-eye-status h-[18px] w-[18px] ${group.hidden ? "is-hidden" : "is-visible"}`}
               />
             )}
           </button>
