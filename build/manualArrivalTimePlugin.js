@@ -77,9 +77,9 @@ function TrainMovementContent() {`,
 
       code = replaceRequired(
         code,
-        /const\s+fromTp1\s*=\s*tp1Form\.fromTp1\s*\|\|\s*"18:30";\s*const\s+toManual\s*=\s*tp1Form\.toManual\s*\|\|\s*"18:35";/,
-        'const toManual = tp1Form.toManual || "18:35"; const fromTp1 = movementType === "manual" ? (subtractThreeMinutesFromHHMM(toManual) || "18:32") : (tp1Form.fromTp1 || "18:30");',
-        'Manual Area departure calculation'
+        /tp1Form\.fromTp1\s*\|\|\s*["']18:30["']/,
+        '(movementType === "manual" ? (subtractThreeMinutesFromHHMM(tp1Form.toManual || "18:35") || "18:32") : (tp1Form.fromTp1 || "18:30"))',
+        'Manual Area departure fallback'
       );
 
       code = code.replace(
