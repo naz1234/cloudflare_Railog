@@ -84,7 +84,7 @@ function TrainMovementContent() {`,
 
       code = replaceRequired(
         code,
-        / if \(movementType === "manual" && !isCompleteMovementTimeInput\(tp1Form\.fromTp1\)\) missing\.push\("From TP1 \(HH:MM\)"\);/,
+        /^\s*if \(movementType === "manual" && !isCompleteMovementTimeInput\(tp1Form\.fromTp1\)\) missing\.push\("(?:From TP1|Time start moving from TP1) \(HH:MM\)"\);\r?\n?/m,
         '',
         'obsolete Manual Area departure validation'
       );
