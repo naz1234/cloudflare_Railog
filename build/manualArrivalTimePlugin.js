@@ -55,6 +55,15 @@ function TrainMovementContent() {`,
         'automatic From TP1 form value'
       );
 
+      code = replaceRequired(
+        code,
+        /const fromTp1 = form\.fromTp1 \|\| "18:30";/,
+        `const fromTp1 = movementType === "manual"
+      ? subtractThreeMinutesFromHHMM(form.toManual)
+      : form.fromTp1 || "18:30";`,
+        'manual preview and output departure time'
+      );
+
       code = code.replace(
         /const manualToManualReady = [^\r\n]+;/,
         'const manualToManualReady = manualShunterReady && isCompleteMovementTimeInput(tp1Form.toManual);'
@@ -74,13 +83,15 @@ function TrainMovementContent() {`,
       );
 
       code = code.replace(
-        /^\s*if\s*\(movementType\s*===\s*"manual"\s*&&\s*!isCompleteMovementTimeInput\(tp1Form\.fromTp1\)\)\s*missing\.push\("[^"]*TP1[^"]*HH:MM[^"]*"\);\r?\n?/m,
+        /^\s*if\s*\(movementType\s*===\s*"manual"\s*&&\s*!isCompleteMovementTimeInput\((?:tp1Form|form)\.fromTp1\)\)\s*missing\.push\("[^"]*TP1[^"]*HH:MM[^"]*"\);\r?\n?/m,
         ''
       );
 
-      code = code.replace(
-        /fromTp1:\s*tp1Form\.fromTp1,\s*toManual:\s*tp1Form\.toManual,/,
-        'fromTp1: movementType === "manual" ? subtractThreeMinutesFromHHMM(tp1Form.toManual) : tp1Form.fromTp1, toManual: tp1Form.toManual,'
+      code = replaceRequired(
+        code,
+        /fromTp1:\s*form\.fromTp1,\s*toManual:\s*form\.toManual,/,
+        'fromTp1: movementType === "manual" ? subtractThreeMinutesFromHHMM(form.toManual) : form.fromTp1, toManual: form.toManual,',
+        'saved manual departure time'
       );
 
       code = code.replace(
