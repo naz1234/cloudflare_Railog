@@ -5,6 +5,7 @@ import '@/index.css'
 import '@/pstCompletionColors.css'
 import '@/referenceControlFontSize.css'
 import '@/insertionTidTimeVisibility.css'
+import '@/officialExcelGeneratorMotion.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />
