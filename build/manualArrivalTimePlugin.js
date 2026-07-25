@@ -42,16 +42,14 @@ function TrainMovementContent() {`,
         /\n  const captureMovementScrollPosition = \(\) => \{/,
         `
   useEffect(() => {
-    if (String(tp1Form.movementType || "").toLowerCase() !== "manual") return;
-
     const derivedFromTp1 = subtractThreeMinutesFromHHMM(tp1Form.toManual);
-    if (tp1Form.fromTp1 === derivedFromTp1) return;
+    if (!derivedFromTp1 || tp1Form.fromTp1 === derivedFromTp1) return;
 
     setTp1Form((previous) => ({
       ...previous,
       fromTp1: derivedFromTp1,
     }));
-  }, [tp1Form.movementType, tp1Form.toManual, tp1Form.fromTp1]);
+  }, [tp1Form.toManual, tp1Form.fromTp1]);
 
   const captureMovementScrollPosition = () => {`,
         'automatic From TP1 form value'
@@ -73,11 +71,6 @@ function TrainMovementContent() {`,
         render: () => renderTp1TimeInput("toManual"),
       },`,
         'manual flow time fields'
-      );
-
-      code = code.replace(
-        /const\s+fromTp1\s*=\s*tp1Form\.fromTp1\s*\|\|\s*"18:30";\s*const\s+toManual\s*=\s*tp1Form\.toManual\s*\|\|\s*"18:35";/,
-        'const toManual = tp1Form.toManual || "18:35"; const fromTp1 = subtractThreeMinutesFromHHMM(toManual) || "18:32";'
       );
 
       code = code.replace(
