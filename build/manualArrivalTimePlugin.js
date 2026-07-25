@@ -75,6 +75,27 @@ function TrainMovementContent() {`,
         'manual flow time fields'
       );
 
+      code = replaceRequired(
+        code,
+        /const fromTp1 = tp1Form\.fromTp1 \|\| "18:30"; const toManual = tp1Form\.toManual \|\| "18:35";/,
+        'const toManual = tp1Form.toManual || "18:35"; const fromTp1 = subtractThreeMinutesFromHHMM(toManual) || "18:32";',
+        'Manual Area preview departure calculation'
+      );
+
+      code = replaceRequired(
+        code,
+        / if \(movementType === "manual" && !isCompleteMovementTimeInput\(tp1Form\.fromTp1\)\) missing\.push\("From TP1 \(HH:MM\)"\);/,
+        '',
+        'obsolete Manual Area departure validation'
+      );
+
+      code = replaceRequired(
+        code,
+        /fromTp1: tp1Form\.fromTp1, toManual: tp1Form\.toManual,/,
+        'fromTp1: movementType === "manual" ? subtractThreeMinutesFromHHMM(tp1Form.toManual) : tp1Form.fromTp1, toManual: tp1Form.toManual,',
+        'saved Manual Area departure time'
+      );
+
       code = code.replace(
         'Fill From TP1 + to Manual',
         'Enter Manual Area arrival time'
