@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil, EyeOff } from "lucide-react";
+import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil } from "lucide-react";
 
 const MIN_VISIBLE_REQUEST_ROWS = 40;
 
@@ -638,6 +638,31 @@ function getRequestDisplayLabel(request = {}) {
   );
 }
 
+function RequestGroupVisibilityIcon({ hidden = false, className = "" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M2.5 11.5s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+      <circle cx="12" cy="11.5" r="2.4" />
+      {hidden && <path d="M4 4 20 20" strokeWidth="2.2" />}
+      <circle cx="18.2" cy="18.1" r="4.2" fill="#071e33" />
+      {hidden ? (
+        <path d="M16.1 18.1h4.2" strokeWidth="2.2" />
+      ) : (
+        <path d="m15.7 18.1 1.55 1.5 3-3.25" strokeWidth="2.2" />
+      )}
+    </svg>
+  );
+}
+
 export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, onDeleteGroup, onToggleGroupHidden, stabledTrainIds = [], stabledTrainLocations = {} }) {
   const [trainId, setTrainId] = useState("");
   const [requestType, setRequestType] = useState("");
@@ -1150,20 +1175,21 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             type="button"
             onClick={() => toggleRequestGroupVisibility(group)}
             disabled={Boolean(savingGroupKey || deletingGroupKey || togglingGroupKey)}
-            aria-label={`${group.hidden ? "Unhide" : "Hide"} train rows for ${group.label}`}
-            title={group.hidden ? "Unhide group" : "Hide group"}
+            aria-label={`${group.hidden ? "Show" : "Hide"} stabling remarks for ${group.label}`}
+            title={group.hidden ? "Show remarks at stabling" : "Hide remarks at stabling"}
             className={`justify-self-end inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border focus-visible:outline-none focus-visible:ring-2 disabled:cursor-wait disabled:opacity-60 ${
               group.hidden
-                ? "border-emerald-300/80 bg-emerald-500/25 text-emerald-200 shadow-[0_0_6px_rgba(52,211,153,0.28)] hover:bg-emerald-500/45 focus-visible:ring-emerald-300/80"
-                : "border-rose-300/70 bg-rose-500/20 text-rose-200 hover:bg-rose-500/40 focus-visible:ring-rose-300/80"
+                ? "border-rose-300/80 bg-rose-500/25 text-rose-200 shadow-[0_0_6px_rgba(244,63,94,0.30)] hover:bg-rose-500/45 focus-visible:ring-rose-300/80"
+                : "border-emerald-300/80 bg-emerald-500/25 text-emerald-200 shadow-[0_0_6px_rgba(52,211,153,0.28)] hover:bg-emerald-500/45 focus-visible:ring-emerald-300/80"
             }`}
           >
             {togglingGroup ? (
               <span className="h-[8px] w-[8px] animate-pulse rounded-full bg-current" />
-            ) : group.hidden ? (
-              <Check className="h-[9px] w-[9px] stroke-[3.5]" />
             ) : (
-              <EyeOff className="h-[9px] w-[9px] stroke-[3]" />
+              <RequestGroupVisibilityIcon
+                hidden={group.hidden}
+                className={`h-[13px] w-[13px] ${group.hidden ? "request-group-hidden-eye" : ""}`}
+              />
             )}
           </button>
           <button
@@ -1224,8 +1250,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           </p>
         )}
 
-        {!group.hidden && (
-          <div className="space-y-[1px]">
+        <div className="space-y-[1px]">
             {group.items.map((req) => {
               const chipLabel = getRequestChipTrainLabel(req);
 
@@ -1261,8 +1286,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 </div>
               );
             })}
-          </div>
-        )}
+        </div>
       </div>
     );
   };
