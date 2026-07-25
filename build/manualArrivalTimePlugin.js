@@ -75,16 +75,11 @@ function TrainMovementContent() {`,
         'manual flow time fields'
       );
 
-      code = code.replace(
-        /const\s+fromTp1\s*=\s*tp1Form\.fromTp1\s*\|\|\s*"18:30";\s*const\s+toManual\s*=\s*tp1Form\.toManual\s*\|\|\s*"18:35";/,
-        'const toManual = tp1Form.toManual || "18:35"; const fromTp1 = subtractThreeMinutesFromHHMM(toManual) || "18:32";'
-      );
-
       code = replaceRequired(
         code,
-        '`${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual Area at ${toManual} hrs.`',
-        '`${subtractThreeMinutesFromHHMM(toManual) || fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual Area at ${toManual} hrs.`',
-        'Manual Area displayed departure time'
+        /const\s+fromTp1\s*=\s*tp1Form\.fromTp1\s*\|\|\s*"18:30";\s*const\s+toManual\s*=\s*tp1Form\.toManual\s*\|\|\s*"18:35";/,
+        'const toManual = tp1Form.toManual || "18:35"; const fromTp1 = movementType === "manual" ? (subtractThreeMinutesFromHHMM(toManual) || "18:32") : (tp1Form.fromTp1 || "18:30");',
+        'Manual Area departure calculation'
       );
 
       code = code.replace(
