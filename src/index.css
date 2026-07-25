@@ -8721,29 +8721,43 @@ html[data-app-theme="light"] .theme-train-movement-page .movement-flow-sr-label-
   }
 }
 
-/* Train Request: animate the eye-off/minus status while stabling remarks are hidden. */
-@keyframes request-group-hidden-eye-attention {
-  0%, 100% {
+/* Train Request visibility: standalone eye icons using the awaiting-train glow rhythm. */
+@keyframes request-group-eye-awaiting-glow {
+  0%, 48%, 100% {
     transform: scale(1);
-    filter: drop-shadow(0 0 1px rgba(251, 113, 133, 0.55));
+    filter: brightness(1) drop-shadow(0 0 0 var(--request-group-eye-glow));
   }
-  50% {
-    transform: scale(1.18);
-    filter: drop-shadow(0 0 4px rgba(251, 113, 133, 1));
+  62% {
+    transform: scale(1.14);
+    filter: brightness(1.3) drop-shadow(0 0 5px var(--request-group-eye-glow));
+  }
+  78% {
+    transform: scale(1.03);
+    filter: brightness(1.1) drop-shadow(0 0 2px var(--request-group-eye-glow));
   }
 }
 
-.theme-maintenance-panel .request-group-hidden-eye {
+.theme-maintenance-panel .request-group-eye-status {
   transform-origin: center;
-  animation: request-group-hidden-eye-attention 1.25s ease-in-out infinite;
+  animation: request-group-eye-awaiting-glow 1.2s ease-in-out infinite;
   will-change: transform, filter;
 }
 
+.theme-maintenance-panel .request-group-eye-status.is-visible {
+  --request-group-eye-glow: rgba(34, 197, 94, 0.95);
+  color: #22c55e !important;
+}
+
+.theme-maintenance-panel .request-group-eye-status.is-hidden {
+  --request-group-eye-glow: rgba(251, 113, 133, 0.95);
+  color: #fb7185 !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .theme-maintenance-panel .request-group-hidden-eye {
+  .theme-maintenance-panel .request-group-eye-status {
     animation: none;
     transform: none;
-    filter: drop-shadow(0 0 2px rgba(251, 113, 133, 0.75));
+    filter: drop-shadow(0 0 3px var(--request-group-eye-glow));
     will-change: auto;
   }
 }
