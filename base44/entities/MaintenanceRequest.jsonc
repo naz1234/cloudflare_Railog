@@ -18,6 +18,10 @@
       "type": "string",
       "description": "Optional editable parent title used to group train requests without changing their request type"
     },
+    "groupHidden": {
+      "type": "boolean",
+      "description": "Shared visibility state for hiding or unhiding the train rows in a request group"
+    },
     "remark": {
       "type": "string",
       "description": "Optional remark"
