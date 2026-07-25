@@ -76,6 +76,21 @@ function TrainMovementContent() {`,
       );
 
       code = code.replace(
+        /const\s+fromTp1\s*=\s*tp1Form\.fromTp1\s*\|\|\s*"18:30";\s*const\s+toManual\s*=\s*tp1Form\.toManual\s*\|\|\s*"18:35";/,
+        'const toManual = tp1Form.toManual || "18:35"; const fromTp1 = subtractThreeMinutesFromHHMM(toManual) || "18:32";'
+      );
+
+      code = code.replace(
+        /^\s*if\s*\(movementType\s*===\s*"manual"\s*&&\s*!isCompleteMovementTimeInput\(tp1Form\.fromTp1\)\)\s*missing\.push\("[^"]*TP1[^"]*HH:MM[^"]*"\);\r?\n?/m,
+        ''
+      );
+
+      code = code.replace(
+        /fromTp1:\s*tp1Form\.fromTp1,\s*toManual:\s*tp1Form\.toManual,/,
+        'fromTp1: movementType === "manual" ? subtractThreeMinutesFromHHMM(tp1Form.toManual) : tp1Form.fromTp1, toManual: tp1Form.toManual,'
+      );
+
+      code = code.replace(
         'Fill From TP1 + to Manual',
         'Enter Manual Area arrival time'
       );
