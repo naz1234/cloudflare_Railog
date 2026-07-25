@@ -90,7 +90,7 @@ function TrainMovementContent() {`,
       code = replaceRequired(
         code,
         /fromTp1:\s*form\.fromTp1,\s*toManual:\s*form\.toManual,/,
-        'fromTp1: movementType === "manual" ? subtractThreeMinutesFromHHMM(form.toManual) : form.fromTp1, toManual: form.toManual,'
+        'fromTp1: movementType === "manual" ? subtractThreeMinutesFromHHMM(form.toManual) : form.fromTp1, toManual: form.toManual,',
         'saved manual departure time'
       );
 
