@@ -64,8 +64,41 @@ function normalizeTrainList(value) {
   return normalized;
 }
 
+const PLAN_MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function formatPlanDate(dayValue, monthValue) {
+  const day = Number(dayValue);
+  const month = Number(monthValue);
+  if (!Number.isInteger(day) || day < 1 || day > 31) return '';
+  if (!Number.isInteger(month) || month < 1 || month > 12) return '';
+  return `${String(day).padStart(2, '0')}-${PLAN_MONTH_LABELS[month - 1]}`;
+}
+
+function normalizePlanDate(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return '';
+
+  let match = text.match(/\b\d{4}[\/.\-](\d{1,2})[\/.\-](\d{1,2})\b/);
+  if (match) return formatPlanDate(match[2], match[1]);
+
+  match = text.match(/\b(\d{1,2})[\/.\-](\d{1,2})(?:[\/.\-]\d{2,4})?\b/);
+  if (match) return formatPlanDate(match[1], match[2]);
+
+  match = text.match(/\b(\d{1,2})\s*[\-\s]\s*([A-Za-z]{3,9})\b/);
+  if (match) {
+    const monthIndex = PLAN_MONTH_LABELS.findIndex(
+      (label) => label.toLowerCase() === match[2].slice(0, 3).toLowerCase()
+    );
+    return monthIndex >= 0 ? formatPlanDate(match[1], monthIndex + 1) : '';
+  }
+
+  return '';
+}
+
 function normalizeExtraction(raw = {}) {
   return {
+    eveningDate: normalizePlanDate(raw.eveningDate || raw.evening_date || raw['Evening Date']),
+    morningDate: normalizePlanDate(raw.morningDate || raw.morning_date || raw['Morning Date']),
     morningGToC: normalizeTrainList(raw.morningGToC || raw.morning_g_to_c || raw['Morning G to C']),
     eveningGToC: normalizeTrainList(raw.eveningGToC || raw.evening_g_to_c || raw['Evening G to C']),
     eveningPM: normalizeTrainList(raw.eveningPM || raw.evening_pm || raw['Evening PM']),
@@ -80,7 +113,11 @@ function listSignature(list = []) {
 function looksSuspicious(extraction) {
   const safe = extraction || {};
   const populated = Object.values(safe).filter((list) => Array.isArray(list) && list.length > 0);
-  if (populated.length === 0) return false;
+  if (populated.length === 0) return true;
+
+  const hasEveningEntries = (safe.eveningGToC || []).length > 0 || (safe.eveningPM || []).length > 0;
+  const hasMorningEntries = (safe.morningGToC || []).length > 0 || (safe.morningPM || []).length > 0;
+  if ((hasEveningEntries && !safe.eveningDate) || (hasMorningEntries && !safe.morningDate)) return true;
 
   const gToCCount = (safe.morningGToC || []).length + (safe.eveningGToC || []).length;
   const eveningPmSig = listSignature(safe.eveningPM || []);
@@ -136,13 +173,23 @@ function collectGeminiOutputText(responseBody) {
 
 const geminiExtractionPrompt = `
 You are reading a depot maintenance planning image/table.
-Extract ONLY these four fields and return valid JSON only:
+Extract ONLY these six fields and return valid JSON only:
 {
+  "eveningDate": "",
+  "morningDate": "",
   "morningGToC": [],
   "eveningGToC": [],
   "eveningPM": [],
   "morningPM": []
 }
+
+Date rules:
+- Read eveningDate from the date printed beside the lower Evening shift PM/S row.
+- Read morningDate from the date printed beside the lower Morning shift PM/S row.
+- Return each date as DD-MMM, for example 26-Jul.
+- The top Evening shift movement rows belong to eveningDate.
+- The top Morning shift movement rows belong to morningDate.
+- If a date is missing or unclear, return an empty string. Do not guess.
 
 Rules for TOP movement table:
 - Morning G to C and Evening G to C must come from the TOP movement table only.
@@ -158,6 +205,7 @@ Rules for BELOW information / S rows:
 - Evening PM comes only from the lower row labelled Evening shift / evening date.
 - Morning PM comes only from the lower row labelled Morning shift / morning date.
 - Extract train numbers from lower lists like TS25(Wk), TS44(Bwk), TS09(C)(Bwk).
+- If the same train appears more than once in one lower row, include it only once and preserve its first position.
 - Do NOT use the top table Notes column for PM.
 
 Formatting rules:
@@ -170,18 +218,20 @@ Formatting rules:
 
 Expected example for the provided layout:
 {
-  "morningGToC": ["36"],
-  "eveningGToC": ["04"],
-  "eveningPM": ["25", "30", "35", "44", "09"],
-  "morningPM": ["27", "08", "07", "38", "47", "21"]
+  "eveningDate": "26-Jul",
+  "morningDate": "27-Jul",
+  "morningGToC": ["01"],
+  "eveningGToC": ["27"],
+  "eveningPM": ["32", "33", "11"],
+  "morningPM": ["37", "06", "30", "32", "19"]
 }
-`;
+`
 
 async function runGeminiVision({ env, imageFile, arrayBuffer }) {
   const imageBytes = new Uint8Array(arrayBuffer);
   const base64 = uint8ArrayToBase64(imageBytes);
   const mediaType = imageFile.type && imageFile.type.startsWith('image/') ? imageFile.type : 'image/png';
-  const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const model = env.GEMINI_MODEL || 'gemini-3.6-flash';
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
 
   const response = await fetch(endpoint, {
@@ -205,7 +255,6 @@ async function runGeminiVision({ env, imageFile, arrayBuffer }) {
         },
       ],
       generationConfig: {
-        temperature: 0,
         maxOutputTokens: 800,
         responseMimeType: 'application/json',
       },
@@ -261,10 +310,20 @@ export async function onRequestPost({ request, env }) {
       return json({ success: false, error: 'No image uploaded.' }, 400);
     }
 
+    const mediaType = String(imageFile.type || '').toLowerCase();
+    if (!mediaType.startsWith('image/')) {
+      return json({ success: false, error: 'Please upload an image file.' }, 415);
+    }
+
     const arrayBuffer = await imageFile.arrayBuffer();
 
     if (!arrayBuffer.byteLength) {
       return json({ success: false, error: 'Uploaded image is empty.' }, 400);
+    }
+
+    const maxImageBytes = 10 * 1024 * 1024;
+    if (arrayBuffer.byteLength > maxImageBytes) {
+      return json({ success: false, error: 'The image is larger than 10 MB.' }, 413);
     }
 
     const result = await runGeminiVision({ env, imageFile, arrayBuffer });
