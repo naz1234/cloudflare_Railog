@@ -2,6 +2,7 @@ import { useState } from "react";
 import * as XLSX from "xlsx";
 import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil } from "lucide-react";
 import ActionTooltip from "./ActionTooltip";
+import MaintenanceImageSummary from "./MaintenanceImageSummary";
 
 const MIN_VISIBLE_REQUEST_ROWS = 40;
 
@@ -1499,6 +1500,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             </div>
           )}
         </div>
+
+        <MaintenanceImageSummary requests={requests} onAdd={onAdd} />
 
         <div>
           <label className={labelCls}>Train ID</label>

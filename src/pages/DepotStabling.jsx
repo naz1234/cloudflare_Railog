@@ -13,7 +13,6 @@ import InsertionLogOutput from "../components/depot/InsertionLogOutput";
 import OvertimeTracker from "../components/OvertimeTracker";
 import RosterWorkspace from "../components/RosterWorkspace";
 import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator";
-import MaintenanceImageSummary from "../components/MaintenanceImageSummary";
 
 const DEFAULT_BOOKMARK_LINKS = [
   { title: "Outlook", url: "https://outlook.office.com", sortOrder: 0 },
@@ -20505,7 +20504,6 @@ export default function DepotStablingPage() {
         activeTimetableType={selectedTimetableType}
       />
 
-      <MaintenanceImageSummary />
     </div>
 
     {/* RIGHT PANEL */}

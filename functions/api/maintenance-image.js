@@ -57,22 +57,23 @@ function looksSuspicious(extraction) {
   );
 }
 
-function toRequestItems(extraction) {
+export function toRequestItems(extraction) {
   const sections = [
-    ['morningGToC', 'Morning G to C'],
-    ['eveningGToC', 'Evening G to C'],
-    ['eveningPM', 'Evening PM'],
-    ['morningPM', 'Morning PM'],
+    ['eveningGToC', 'G-C', extraction.eveningDate],
+    ['morningGToC', 'G-C', extraction.morningDate],
+    ['eveningPM', 'RST PM', extraction.eveningDate],
+    ['morningPM', 'RST PM', extraction.morningDate],
   ];
 
-  return sections.flatMap(([key, requestType]) =>
-    (extraction[key] || []).map((trainId) => ({
+  return sections.flatMap(([key, label, date]) => {
+    const requestType = `${label}${date ? ` ${String(date).toUpperCase()}` : ''}`;
+    return (extraction[key] || []).map((trainId) => ({
       trainId,
       requestType,
       customType: '',
       remark: '',
-    }))
-  );
+    }));
+  });
 }
 
 function azureEndpoint(env) {
@@ -294,10 +295,10 @@ export async function onRequestPost({ request, env }) {
       provider: 'azure-document-intelligence',
       model: AZURE_MODEL,
       extraction,
-      items: uncertain ? [] : toRequestItems(extraction),
+      items: toRequestItems(extraction),
       uncertain,
       warning: uncertain
-        ? 'Azure read the table, but some rows could not be confirmed. Check the generated details before copying.'
+        ? 'Azure read the table, but some rows could not be confirmed. Review the generated details carefully before adding them.'
         : '',
     });
   } catch (error) {
