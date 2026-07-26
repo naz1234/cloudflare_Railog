@@ -91,36 +91,51 @@ export default function requestGroupVisibilityPlugin() {
         code,
         /      remark: "",\r?\n      badgeText: displayType,/,
         `      remark: "",
-      hiddenAtStabling: req?.groupHidden === true,
+      hiddenByRequestGroup: req?.groupHidden === true,
       badgeText: displayType,`,
-        'stabling remark visibility metadata'
+        'request group visibility metadata'
       );
 
       code = replaceRequired(
         code,
         /  const maintenanceMap = buildMaintenanceMap\(requests, westStablingKeys\);/,
         `  const maintenanceMap = buildMaintenanceMap(requests, westStablingKeys);
-  const stablingMaintenanceMap = Object.fromEntries(
+  const visibleRequestMaintenanceMap = Object.fromEntries(
     Object.entries(maintenanceMap).map(([trainKey, items]) => [
       trainKey,
-      (Array.isArray(items) ? items : []).filter((item) => !item.hiddenAtStabling),
+      (Array.isArray(items) ? items : []).filter((item) => !item.hiddenByRequestGroup),
     ])
-  );`,
-        'stabling-only visible maintenance map'
+  );
+  const visibleRemovalRequests = requests.filter((request) => request?.groupHidden !== true);`,
+        'visible request maps for stabling and removal summary'
       );
 
       code = replaceRequired(
         code,
         /(title="WEST DEPOT STABLING"[\s\S]*?maintenanceMap=)\{maintenanceMap\}/,
-        '$1{stablingMaintenanceMap}',
+        '$1{visibleRequestMaintenanceMap}',
         'West stabling visible remarks'
       );
 
       code = replaceRequired(
         code,
         /(title="EAST DEPOT STABLING"[\s\S]*?maintenanceMap=)\{maintenanceMap\}/,
-        '$1{stablingMaintenanceMap}',
+        '$1{visibleRequestMaintenanceMap}',
         'East stabling visible remarks'
+      );
+
+      code = replaceRequired(
+        code,
+        /(<TrainRemPanel\r?\n        maintenanceMap=)\{maintenanceMap\}/,
+        '$1{visibleRequestMaintenanceMap}',
+        'Removal Summary visible remarks'
+      );
+
+      code = replaceRequired(
+        code,
+        /(<TrainRemPanel[\s\S]*?\r?\n        requests=)\{requests\}/,
+        '$1{visibleRemovalRequests}',
+        'Removal Summary PDF visible requests'
       );
 
       return { code, map: null };
