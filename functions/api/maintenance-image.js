@@ -113,7 +113,11 @@ function listSignature(list = []) {
 function looksSuspicious(extraction) {
   const safe = extraction || {};
   const populated = Object.values(safe).filter((list) => Array.isArray(list) && list.length > 0);
-  if (populated.length === 0) return false;
+  if (populated.length === 0) return true;
+
+  const hasEveningEntries = (safe.eveningGToC || []).length > 0 || (safe.eveningPM || []).length > 0;
+  const hasMorningEntries = (safe.morningGToC || []).length > 0 || (safe.morningPM || []).length > 0;
+  if ((hasEveningEntries && !safe.eveningDate) || (hasMorningEntries && !safe.morningDate)) return true;
 
   const gToCCount = (safe.morningGToC || []).length + (safe.eveningGToC || []).length;
   const eveningPmSig = listSignature(safe.eveningPM || []);
@@ -307,10 +311,20 @@ export async function onRequestPost({ request, env }) {
       return json({ success: false, error: 'No image uploaded.' }, 400);
     }
 
+    const mediaType = String(imageFile.type || '').toLowerCase();
+    if (!mediaType.startsWith('image/')) {
+      return json({ success: false, error: 'Please upload an image file.' }, 415);
+    }
+
     const arrayBuffer = await imageFile.arrayBuffer();
 
     if (!arrayBuffer.byteLength) {
       return json({ success: false, error: 'Uploaded image is empty.' }, 400);
+    }
+
+    const maxImageBytes = 10 * 1024 * 1024;
+    if (arrayBuffer.byteLength > maxImageBytes) {
+      return json({ success: false, error: 'The image is larger than 10 MB.' }, 413);
     }
 
     const result = await runGeminiVision({ env, imageFile, arrayBuffer });
