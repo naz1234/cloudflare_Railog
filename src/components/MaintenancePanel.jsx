@@ -1,6 +1,7 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
 import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil } from "lucide-react";
+import ActionTooltip from "./ActionTooltip";
 
 const MIN_VISIBLE_REQUEST_ROWS = 40;
 
@@ -1289,43 +1290,61 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           <span className="min-w-0 truncate text-[12px] font-normal uppercase text-[#f8fbff]">
             {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
           </span>
-          <button
-            type="button"
-            onClick={() => toggleRequestGroupVisibility(group)}
-            disabled={Boolean(savingGroupKey || deletingGroupKey || togglingGroupKey)}
-            aria-label={`${group.hidden ? "Show" : "Hide"} stabling remarks for ${group.label}`}
-            title={group.hidden ? "Show remarks at stabling" : "Hide remarks at stabling"}
-            className="justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/90 disabled:cursor-wait disabled:opacity-60"
+          <ActionTooltip
+            message={group.hidden ? "Show remarks at stabling" : "Hide remarks at stabling"}
+            placement="top"
+            sideOffset={6}
+            wrapperClassName="justify-self-end"
           >
-            {togglingGroup ? (
-              <span className="h-[8px] w-[8px] animate-pulse rounded-full bg-current" />
-            ) : (
-              <RequestGroupVisibilityIcon
-                hidden={group.hidden}
-                className={`request-group-eye-status h-[18px] w-[18px] ${group.hidden ? "is-hidden" : "is-visible"}`}
-              />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => beginGroupTitleEdit(group)}
-            disabled={Boolean(savingGroupKey || deletingGroupKey || togglingGroupKey)}
-            aria-label={`Edit main title for ${group.label}`}
-            title="Edit main title"
-            className="justify-self-end inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border border-amber-200/90 bg-amber-400/25 text-amber-200 shadow-[0_0_6px_rgba(251,191,36,0.28)] hover:bg-amber-400/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:cursor-wait disabled:opacity-60"
+            <button
+              type="button"
+              onClick={() => toggleRequestGroupVisibility(group)}
+              disabled={Boolean(savingGroupKey || deletingGroupKey || togglingGroupKey)}
+              aria-label={`${group.hidden ? "Show" : "Hide"} stabling remarks for ${group.label}`}
+              className="justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/90 disabled:cursor-wait disabled:opacity-60"
+            >
+              {togglingGroup ? (
+                <span className="h-[8px] w-[8px] animate-pulse rounded-full bg-current" />
+              ) : (
+                <RequestGroupVisibilityIcon
+                  hidden={group.hidden}
+                  className={`request-group-eye-status h-[18px] w-[18px] ${group.hidden ? "is-hidden" : "is-visible"}`}
+                />
+              )}
+            </button>
+          </ActionTooltip>
+          <ActionTooltip
+            message={"Edit main title and train list"}
+            placement="top"
+            sideOffset={6}
+            wrapperClassName="justify-self-end"
           >
-            <Pencil className="h-[9px] w-[9px] stroke-[3]" />
-          </button>
-          <button
-            type="button"
-            onClick={() => beginGroupDelete(group)}
-            disabled={Boolean(savingGroupKey || deletingGroupKey || togglingGroupKey)}
-            aria-label={`Delete all ${group.items.length} requests in ${group.label}`}
-            title="Delete entire group"
-            className={`justify-self-end inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border border-rose-300/70 bg-rose-500/20 text-rose-200 hover:bg-rose-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/80 disabled:cursor-wait disabled:opacity-60 ${confirmingDelete ? "border-rose-200 bg-rose-500/45" : ""}`}
+            <button
+              type="button"
+              onClick={() => beginGroupTitleEdit(group)}
+              disabled={Boolean(savingGroupKey || deletingGroupKey || togglingGroupKey)}
+              aria-label={`Edit main title for ${group.label}`}
+              className="justify-self-end inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border border-amber-200/90 bg-amber-400/25 text-amber-200 shadow-[0_0_6px_rgba(251,191,36,0.28)] hover:bg-amber-400/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:cursor-wait disabled:opacity-60"
+            >
+              <Pencil className="h-[9px] w-[9px] stroke-[3]" />
+            </button>
+          </ActionTooltip>
+          <ActionTooltip
+            message={"Delete entire group"}
+            placement="top"
+            sideOffset={6}
+            wrapperClassName="justify-self-end"
           >
-            <X className="h-[9px] w-[9px] stroke-[3.5]" />
-          </button>
+            <button
+              type="button"
+              onClick={() => beginGroupDelete(group)}
+              disabled={Boolean(savingGroupKey || deletingGroupKey || togglingGroupKey)}
+              aria-label={`Delete all ${group.items.length} requests in ${group.label}`}
+              className={`justify-self-end inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border border-rose-300/70 bg-rose-500/20 text-rose-200 hover:bg-rose-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/80 disabled:cursor-wait disabled:opacity-60 ${confirmingDelete ? "border-rose-200 bg-rose-500/45" : ""}`}
+            >
+              <X className="h-[9px] w-[9px] stroke-[3.5]" />
+            </button>
+          </ActionTooltip>
         </div>
 
         {groupVisibilityError.key === group.key && (
