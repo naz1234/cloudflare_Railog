@@ -1291,7 +1291,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
           </span>
           <ActionTooltip
-            message={group.hidden ? "Show remarks at stabling" : "Hide remarks at stabling"}
+            message={group.hidden ? "Show remarks at stabling, Removal Summary and PDF" : "Hide remarks at stabling, Removal Summary and PDF"}
             placement="top"
             sideOffset={6}
             wrapperClassName="justify-self-end"
@@ -1300,7 +1300,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               type="button"
               onClick={() => toggleRequestGroupVisibility(group)}
               disabled={Boolean(savingGroupKey || deletingGroupKey || togglingGroupKey)}
-              aria-label={`${group.hidden ? "Show" : "Hide"} stabling remarks for ${group.label}`}
+              aria-label={`${group.hidden ? "Show" : "Hide"} remarks for ${group.label} at stabling, Removal Summary and PDF`}
               className="justify-self-end inline-flex h-[18px] w-[18px] items-center justify-center border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/90 disabled:cursor-wait disabled:opacity-60"
             >
               {togglingGroup ? (
