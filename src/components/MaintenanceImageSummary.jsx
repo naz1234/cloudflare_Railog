@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Image as ImageIcon, Loader2, Upload, X } from "lucide-react";
+import { ChevronRight, Image as ImageIcon, Loader2, Upload, X } from "lucide-react";
 
 const EMPTY_EXTRACTION = {
   eveningDate: "",
@@ -247,7 +247,7 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
   };
 
   return (
-    <section className="w-full rounded-xl border border-[#1e4060] bg-[#071e33] p-2 text-slate-100 shadow-inner">
+    <section className="w-full overflow-hidden rounded-2xl border border-violet-500/70 bg-[radial-gradient(circle_at_12%_28%,rgba(109,40,217,0.22),transparent_34%),linear-gradient(145deg,#0b1228_0%,#101531_58%,#11152d_100%)] p-2.5 text-slate-100 shadow-[0_0_18px_rgba(139,92,246,0.15)]">
       <style>{`
         @keyframes sabri-reader-add-glow {
           0%, 100% { box-shadow: 0 0 4px rgba(52, 211, 153, 0.42), 0 0 8px rgba(52, 211, 153, 0.22); }
@@ -263,55 +263,62 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
           .sabri-reader-add-glow, .sabri-reader-clear-glow { animation: none; }
         }
       `}</style>
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-cyan-500/60 bg-cyan-400/10 text-cyan-300">
-            <ImageIcon className="h-4 w-4" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="text-[11px] font-normal uppercase tracking-[1.3px] text-cyan-100">
-              Sabri Train IMG Reader
-            </h2>
-            <p className="mt-0.5 text-[10px] font-normal leading-snug text-[#4a8ab5]">
-              Upload, review, then add the detected G to C and PM trains.
-            </p>
-          </div>
+      <div className="grid grid-cols-[58px_minmax(0,1fr)_18px] items-center gap-2.5">
+        <div className="relative flex h-[78px] w-[58px] items-center justify-center rounded-2xl border border-violet-500/30 bg-[linear-gradient(145deg,rgba(35,25,84,0.95),rgba(20,24,61,0.96))] shadow-[inset_0_0_18px_rgba(139,92,246,0.18)]">
+          <ImageIcon className="h-8 w-8 text-violet-300" strokeWidth={1.6} />
+          <span className="absolute left-2 top-2 h-3 w-3 rounded-tl-md border-l-2 border-t-2 border-violet-400" aria-hidden="true" />
+          <span className="absolute right-2 top-2 h-3 w-3 rounded-tr-md border-r-2 border-t-2 border-violet-400" aria-hidden="true" />
+          <span className="absolute bottom-2 left-2 h-3 w-3 rounded-bl-md border-b-2 border-l-2 border-violet-400" aria-hidden="true" />
+          <span className="absolute bottom-2 right-2 h-3 w-3 rounded-br-md border-b-2 border-r-2 border-violet-400" aria-hidden="true" />
         </div>
 
-        <div className="flex w-full items-center gap-1.5">
-          {fileName && (
-            <button
-              type="button"
-              onClick={clearSelection}
-              className="sabri-reader-clear-glow inline-flex h-7 flex-1 items-center justify-center gap-1 rounded-full border border-rose-400/80 bg-rose-500/15 px-2 text-[10px] font-normal text-rose-100 transition hover:bg-rose-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
-            >
-              <X className="h-3 w-3" />
-              Clear All
-            </button>
-          )}
+        <div className="min-w-0 border-l border-violet-300/20 pl-2.5">
+          <h2 className="text-[14px] font-normal leading-tight text-white">Sabri IMG Reader</h2>
+          <p className="mt-1 text-[10px] font-normal leading-[1.45] text-slate-400">
+            Upload, review, then add the detected <span className="text-violet-300">G to C</span> and <span className="text-violet-300">PM</span> trains.
+          </p>
 
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={analysing}
-            className="inline-flex h-7 flex-1 items-center justify-center gap-1.5 rounded-full border border-cyan-400 bg-cyan-500/20 px-2 text-[10px] font-normal text-cyan-100 shadow-sm transition hover:bg-cyan-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 disabled:cursor-wait disabled:opacity-65"
+            className="mt-2 inline-flex h-8 w-full items-center justify-center overflow-hidden rounded-xl border border-violet-400/70 bg-[linear-gradient(90deg,rgba(76,29,149,0.92),rgba(147,51,234,0.88))] text-[11px] font-normal text-white shadow-[0_0_12px_rgba(168,85,247,0.28)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-wait disabled:opacity-65"
           >
-            {analysing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-            {analysing ? "Reading image..." : fileName ? "Replace image" : "Upload image"}
+            <span className="inline-flex h-8 w-9 items-center justify-center border-r border-violet-200/20 bg-[#2d185c]/70">
+              {analysing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            </span>
+            <span className="flex-1 px-2 text-center">
+              {analysing ? "Reading..." : fileName ? "Replace Image" : "Upload Image"}
+            </span>
           </button>
-
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/bmp,image/tiff,.tif,.tiff"
-            onChange={handleFileChange}
-            className="sr-only"
-          />
         </div>
+
+        <span className="inline-flex h-7 w-7 -translate-x-1 items-center justify-center rounded-full bg-[#1b1d3d] text-slate-400" aria-hidden="true">
+          <ChevronRight className="h-4 w-4" />
+        </span>
+
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/bmp,image/tiff,.tif,.tiff"
+          onChange={handleFileChange}
+          className="sr-only"
+        />
       </div>
 
       {fileName && (
-        <div className="mt-2 break-all rounded-lg border border-[#27516d] bg-[#091828] px-2 py-1.5 text-[10px] font-normal text-slate-200">
+        <button
+          type="button"
+          onClick={clearSelection}
+          className="sabri-reader-clear-glow mt-2 inline-flex h-7 w-full items-center justify-center gap-1 rounded-full border border-rose-400/80 bg-rose-500/15 px-2 text-[10px] font-normal text-rose-100 transition hover:bg-rose-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+        >
+          <X className="h-3 w-3" />
+          Clear All
+        </button>
+      )}
+
+      {fileName && (
+        <div className="mt-2 break-all rounded-lg border border-violet-500/30 bg-[#12142d] px-2 py-1.5 text-[10px] font-normal text-slate-200">
           <span>Selected image:</span> {fileName}
         </div>
       )}
@@ -332,19 +339,19 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
       )}
 
       {extraction && (
-        <div className="mt-2 overflow-hidden rounded-xl border border-[#2b6282] bg-[#071828]">
-          <div className="flex items-center gap-2 border-b border-[#21445d] bg-[#0c2e4a] px-2 py-1.5">
-            <span className="text-[10px] font-normal uppercase tracking-[1.2px] text-cyan-100">
+        <div className="mt-2 overflow-hidden rounded-xl border border-violet-500/40 bg-[#0d1026]">
+          <div className="flex items-center gap-2 border-b border-violet-500/25 bg-[#211746] px-2 py-1.5">
+            <span className="text-[10px] font-normal uppercase tracking-[1.2px] text-violet-100">
               Review generated details
             </span>
           </div>
-          <div className="max-h-80 divide-y divide-[#21445d] overflow-y-auto">
+          <div className="max-h-80 divide-y divide-violet-500/20 overflow-y-auto">
             {requestGroups.map((group) => {
               const availableItems = group.items.filter(isRequestAvailable);
               const isAddingGroup = addingGroupKey === group.key;
 
               return (
-                <div key={group.key} className="bg-[#071828]">
+                <div key={group.key} className="bg-[#0d1026]">
                   <div className="grid min-h-[58px] grid-cols-[minmax(0,1fr)_58px]">
                     <div className="min-w-0 px-2.5 py-2">
                       <div className="text-[12px] font-normal leading-5 text-white">{group.title}</div>
@@ -355,7 +362,7 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-center border-l border-[#21445d] px-1.5 py-2">
+                    <div className="flex items-center justify-center border-l border-violet-500/20 px-1.5 py-2">
                       <button
                         type="button"
                         onClick={() => handleAddGroup(group)}
