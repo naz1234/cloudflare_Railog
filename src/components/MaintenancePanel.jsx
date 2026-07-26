@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil, ChevronRight } from "lucide-react";
+import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil } from "lucide-react";
 import ActionTooltip from "./ActionTooltip";
 import MaintenanceImageSummary from "./MaintenanceImageSummary";
 
@@ -672,6 +672,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const [confirmClear, setConfirmClear] = useState(false);
   const [excelWashPreview, setExcelWashPreview] = useState([]);
   const [excelUploadStatus, setExcelUploadStatus] = useState("");
+  const [excelWashFileName, setExcelWashFileName] = useState("");
+  const [isAddingExcelWash, setIsAddingExcelWash] = useState(false);
+  const [excelWashAdded, setExcelWashAdded] = useState(false);
   const [workshopCopyStatus, setWorkshopCopyStatus] = useState("");
   const [editingGroupKey, setEditingGroupKey] = useState("");
   const [groupTitleDraft, setGroupTitleDraft] = useState("");
@@ -719,6 +722,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       setError("");
       setExcelUploadStatus("Reading Excel...");
       setExcelWashPreview([]);
+      setExcelWashFileName(file.name);
+      setExcelWashAdded(false);
 
       const buffer = await file.arrayBuffer();
       const workbook = XLSX.read(buffer, {
@@ -766,6 +771,22 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         setExcelUploadStatus("No wash trains detected.");
         return;
       }
+      setExcelWashPreview(detected);
+      setExcelUploadStatus(`${detected.length} wash trains detected. Review and choose Add or Clear All.`);
+    } catch (uploadError) {
+      console.error("Wash Excel upload error:", uploadError);
+      setExcelUploadStatus("Unable to read Excel file.");
+    } finally {
+      event.target.value = "";
+    }
+  };
+
+  const handleAddExcelWashPreview = async () => {
+    if (excelWashPreview.length === 0 || isAddingExcelWash || excelWashAdded) return;
+
+    try {
+      setIsAddingExcelWash(true);
+      setExcelUploadStatus("Adding reviewed wash trains...");
 
       const getExistingWashRequests = (item) =>
         requests.filter((req) => {
@@ -779,15 +800,15 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           normalizeRequestIdentity(getRequestDisplayLabel(req)) === normalizeRequestIdentity(item.requestType)
         );
 
-      const washRequestsToReplace = detected
+      const washRequestsToReplace = excelWashPreview
         .flatMap((item) => getExistingWashRequests(item))
         .filter((req, index, all) => req?.id && all.findIndex((item) => item?.id === req.id) === index)
-        .filter((req) => !detected.some((item) =>
+        .filter((req) => !excelWashPreview.some((item) =>
           normalizeTrainId(req.trainId || "") === item.trainId &&
           normalizeRequestIdentity(getRequestDisplayLabel(req)) === normalizeRequestIdentity(item.requestType)
         ));
 
-      const newWashItems = detected.filter((item) => !alreadyExists(item));
+      const newWashItems = excelWashPreview.filter((item) => !alreadyExists(item));
 
       for (const req of washRequestsToReplace) {
         await onRemove(req.id);
@@ -797,23 +818,30 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         await onAdd(item);
       }
 
-      setExcelWashPreview(detected);
-
+      setExcelWashAdded(true);
       const replacedText = washRequestsToReplace.length > 0 ? ` ${washRequestsToReplace.length} old WASH remark replaced.` : "";
 
       if (newWashItems.length === 0) {
-        setExcelUploadStatus(`${detected.length} wash trains detected. All already exist.${replacedText}`);
-      } else if (newWashItems.length < detected.length) {
-        setExcelUploadStatus(`${newWashItems.length} new wash trains added. ${detected.length - newWashItems.length} already existed.${replacedText}`);
+        setExcelUploadStatus(`${excelWashPreview.length} wash trains reviewed. All already exist.${replacedText}`);
+      } else if (newWashItems.length < excelWashPreview.length) {
+        setExcelUploadStatus(`${newWashItems.length} wash trains added. ${excelWashPreview.length - newWashItems.length} already existed.${replacedText}`);
       } else {
         setExcelUploadStatus(`${newWashItems.length} wash trains added.${replacedText}`);
       }
-    } catch (uploadError) {
-      console.error("Wash Excel upload error:", uploadError);
-      setExcelUploadStatus("Unable to read Excel file.");
+    } catch (addError) {
+      console.error("Wash Excel add error:", addError);
+      setExcelUploadStatus("Unable to add the reviewed wash trains.");
     } finally {
-      event.target.value = "";
+      setIsAddingExcelWash(false);
     }
+  };
+
+  const handleClearExcelWashReview = () => {
+    setExcelWashPreview([]);
+    setExcelUploadStatus("");
+    setExcelWashFileName("");
+    setExcelWashAdded(false);
+    setIsAddingExcelWash(false);
   };
 
   const displayType = (req) => getRequestDisplayLabel(req) || "Request";
@@ -1457,7 +1485,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
       {/* Input Form */}
       <div className="border-b border-[#1a3a56] p-2.5 space-y-2">
-        <div className="overflow-hidden rounded-xl border border-cyan-400/70 bg-[radial-gradient(circle_at_12%_30%,rgba(8,145,178,0.20),transparent_34%),linear-gradient(145deg,#06172a_0%,#071e33_58%,#09213a_100%)] p-2 shadow-[0_0_14px_rgba(34,211,238,0.10)]">
+        <div data-testid="cmms-wash-review-card" className="overflow-hidden rounded-xl border border-cyan-400/70 bg-[radial-gradient(circle_at_12%_30%,rgba(8,145,178,0.20),transparent_34%),linear-gradient(145deg,#06172a_0%,#071e33_58%,#09213a_100%)] p-2 shadow-[0_0_14px_rgba(34,211,238,0.10)]">
           <div className="flex min-w-0 items-center gap-2">
             <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-500/30 bg-[linear-gradient(145deg,rgba(8,47,73,0.95),rgba(6,31,56,0.95))] shadow-[inset_0_0_12px_rgba(14,165,233,0.14)]">
               <FileSpreadsheet className="h-4 w-4 text-cyan-100" strokeWidth={1.6} />
@@ -1467,22 +1495,18 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             </div>
 
             <div className="min-w-0 flex-1">
-              <div className="text-[11px] font-semibold leading-tight text-white">Upload Excel</div>
+              <div className="text-[11px] font-semibold leading-tight text-white">Wash Excell from CMMS</div>
               <p className="mt-0.5 text-[9px] font-normal leading-snug text-slate-400">
-                Train Number will be added as <span className="text-cyan-300">Wash + Next Wash date.</span>
+                Upload, review, then add <span className="text-cyan-300">Wash + Next Wash date.</span>
               </p>
             </div>
-
-            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#10263b] text-slate-400" aria-hidden="true">
-              <ChevronRight className="h-3 w-3" />
-            </span>
           </div>
 
           <label className="mt-1.5 inline-flex h-7 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-cyan-400/70 bg-[linear-gradient(90deg,rgba(8,80,104,0.96),rgba(13,148,136,0.85))] text-[10px] font-normal text-white shadow-[0_0_9px_rgba(34,211,238,0.18)] transition hover:brightness-110 active:scale-[0.98]">
             <span className="inline-flex h-7 w-8 items-center justify-center border-r border-cyan-200/20 bg-[#082b45]/80">
               <Upload className="h-3.5 w-3.5" />
             </span>
-            <span className="flex-1 px-2 text-center">Upload Excel</span>
+            <span className="flex-1 px-2 text-center">Upload Wash Excel</span>
             <input
               type="file"
               accept=".xlsx,.xls"
@@ -1493,20 +1517,48 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
           {excelUploadStatus && (
             <div className="mt-2 rounded-lg border border-[#1e4060] bg-[#091828] px-2 py-1 text-[10px] text-[#c8d8ea]">
+              {excelWashFileName && (
+                <div className="mb-0.5 truncate text-[9px] text-cyan-300" title={excelWashFileName}>
+                  {excelWashFileName}
+                </div>
+              )}
               {excelUploadStatus}
             </div>
           )}
 
           {excelWashPreview.length > 0 && (
-            <div className="mt-2 flex max-h-20 flex-wrap gap-1.5 overflow-y-auto pr-1">
-              {excelWashPreview.map((item, index) => (
-                <span
-                  key={`${item.trainId}-${item.requestType}-${index}`}
-                  className="inline-flex items-center rounded-full border border-[#ADD8E6] bg-[#091828] px-2 py-0.5 text-[10px] font-semibold text-[#ADD8E6]"
+            <div className="mt-2 space-y-2">
+              <div className="flex max-h-20 flex-wrap gap-1.5 overflow-y-auto pr-1">
+                {excelWashPreview.map((item, index) => (
+                  <span
+                    key={`${item.trainId}-${item.requestType}-${index}`}
+                    className="inline-flex items-center rounded-full border border-[#ADD8E6] bg-[#091828] px-2 py-0.5 text-[10px] font-semibold text-[#ADD8E6]"
+                  >
+                    {item.trainId} • {item.requestType}
+                  </span>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleClearExcelWashReview}
+                  disabled={isAddingExcelWash}
+                  className="inline-flex h-7 items-center justify-center gap-1 rounded-lg border border-rose-400/80 bg-rose-950/45 text-[10px] font-semibold text-rose-100 shadow-[0_0_9px_rgba(251,113,133,0.28)] transition hover:bg-rose-900/60 active:scale-[0.98] disabled:cursor-default disabled:border-rose-800/50 disabled:text-rose-400 disabled:shadow-none"
                 >
-                  {item.trainId} • {item.requestType}
-                </span>
-              ))}
+                  <X className="h-3 w-3" />
+                  Clear All
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddExcelWashPreview}
+                  disabled={isAddingExcelWash || excelWashAdded}
+                  className="inline-flex h-7 items-center justify-center gap-1 rounded-lg border border-emerald-300/80 bg-emerald-700/70 text-[10px] font-semibold text-white shadow-[0_0_10px_rgba(52,211,153,0.34)] transition hover:bg-emerald-600/80 active:scale-[0.98] disabled:cursor-default disabled:border-emerald-600/50 disabled:bg-emerald-950/55 disabled:text-emerald-300 disabled:shadow-none"
+                >
+                  {excelWashAdded ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                  {isAddingExcelWash ? "Adding..." : excelWashAdded ? "Added" : "Add"}
+                </button>
+              </div>
             </div>
           )}
         </div>
