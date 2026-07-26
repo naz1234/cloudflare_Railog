@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Check, Copy, Image as ImageIcon, Loader2, Upload, X } from "lucide-react";
+import { Image as ImageIcon, Loader2, Upload, X } from "lucide-react";
 
 const EMPTY_EXTRACTION = {
   eveningDate: "",
@@ -103,23 +103,6 @@ export function buildMaintenanceImageSummary(extraction = EMPTY_EXTRACTION) {
   ].join("\n");
 }
 
-async function copyText(text) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
-
-  const textarea = document.createElement("textarea");
-  textarea.value = text;
-  textarea.setAttribute("readonly", "");
-  textarea.style.position = "fixed";
-  textarea.style.left = "-9999px";
-  document.body.appendChild(textarea);
-  textarea.select();
-  document.execCommand("copy");
-  document.body.removeChild(textarea);
-}
-
 export default function MaintenanceImageSummary({ requests = [], onAdd }) {
   const inputRef = useRef(null);
   const analysisIdRef = useRef(0);
@@ -130,9 +113,6 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
   const [addedKeys, setAddedKeys] = useState(() => new Set());
   const [addMessage, setAddMessage] = useState({ key: "", type: "", text: "" });
   const [message, setMessage] = useState({ type: "", text: "" });
-  const [copied, setCopied] = useState(false);
-
-  const summary = extraction ? buildMaintenanceImageSummary(extraction) : "";
 
   const clearSelection = () => {
     analysisIdRef.current += 1;
@@ -143,7 +123,6 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
     setAddMessage({ key: "", type: "", text: "" });
     setAddedKeys(new Set());
     setAddingGroupKey("");
-    setCopied(false);
     setAnalysing(false);
   };
 
@@ -171,7 +150,6 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
     setMessage({ type: "", text: "" });
     setAddMessage({ key: "", type: "", text: "" });
     setAddedKeys(new Set());
-    setCopied(false);
     setAnalysing(true);
     const analysisId = analysisIdRef.current + 1;
     analysisIdRef.current = analysisId;
@@ -196,7 +174,7 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
       setExtraction(normalizedExtraction);
       setMessage({
         type: payload.warning ? "warning" : "success",
-        text: payload.warning || "Azure table OCR read the image successfully. Review the generated details before adding them.",
+        text: "Review and Confirm or Clear All",
       });
     } catch (error) {
       if (analysisId !== analysisIdRef.current) return;
@@ -212,18 +190,6 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
   const handleFileChange = (event) => {
     const file = event.target.files?.[0] || null;
     analyseImage(file);
-  };
-
-  const handleCopy = async () => {
-    if (!summary) return;
-
-    try {
-      await copyText(summary);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
-    } catch {
-      setMessage({ type: "error", text: "Unable to copy. Please select and copy the generated details manually." });
-    }
   };
 
   const existingRequestKeys = new Set(
@@ -282,6 +248,21 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
 
   return (
     <section className="w-full rounded-xl border border-[#1e4060] bg-[#071e33] p-2 text-slate-100 shadow-inner">
+      <style>{`
+        @keyframes sabri-reader-add-glow {
+          0%, 100% { box-shadow: 0 0 4px rgba(52, 211, 153, 0.42), 0 0 8px rgba(52, 211, 153, 0.22); }
+          50% { box-shadow: 0 0 8px rgba(52, 211, 153, 0.95), 0 0 16px rgba(52, 211, 153, 0.58); }
+        }
+        @keyframes sabri-reader-clear-glow {
+          0%, 100% { box-shadow: 0 0 4px rgba(244, 63, 94, 0.42), 0 0 8px rgba(244, 63, 94, 0.22); }
+          50% { box-shadow: 0 0 8px rgba(244, 63, 94, 0.95), 0 0 16px rgba(244, 63, 94, 0.58); }
+        }
+        .sabri-reader-add-glow { animation: sabri-reader-add-glow 1.7s ease-in-out infinite; }
+        .sabri-reader-clear-glow { animation: sabri-reader-clear-glow 1.7s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .sabri-reader-add-glow, .sabri-reader-clear-glow { animation: none; }
+        }
+      `}</style>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-cyan-500/60 bg-cyan-400/10 text-cyan-300">
@@ -289,7 +270,7 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
           </span>
           <div className="min-w-0">
             <h2 className="text-[11px] font-normal uppercase tracking-[1.3px] text-cyan-100">
-              Train Plan Image Reader
+              Sabri Train IMG Reader
             </h2>
             <p className="mt-0.5 text-[10px] font-normal leading-snug text-[#4a8ab5]">
               Upload, review, then add the detected G to C and PM trains.
@@ -302,7 +283,7 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
             <button
               type="button"
               onClick={clearSelection}
-              className="inline-flex h-7 flex-1 items-center justify-center gap-1 rounded-full border border-rose-500/60 bg-rose-500/10 px-2 text-[10px] font-normal text-rose-200 transition hover:bg-rose-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+              className="sabri-reader-clear-glow inline-flex h-7 flex-1 items-center justify-center gap-1 rounded-full border border-rose-400/80 bg-rose-500/15 px-2 text-[10px] font-normal text-rose-100 transition hover:bg-rose-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
             >
               <X className="h-3 w-3" />
               Clear All
@@ -352,18 +333,10 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
 
       {extraction && (
         <div className="mt-2 overflow-hidden rounded-xl border border-[#2b6282] bg-[#071828]">
-          <div className="flex items-center justify-between gap-2 border-b border-[#21445d] bg-[#0c2e4a] px-2 py-1.5">
+          <div className="flex items-center gap-2 border-b border-[#21445d] bg-[#0c2e4a] px-2 py-1.5">
             <span className="text-[10px] font-normal uppercase tracking-[1.2px] text-cyan-100">
               Review generated details
             </span>
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="inline-flex h-6 items-center gap-1 rounded-full border border-cyan-500 px-2 text-[10px] font-normal text-cyan-100 transition hover:bg-cyan-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
-            >
-              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-              {copied ? "Copied" : "Copy"}
-            </button>
           </div>
           <div className="max-h-80 divide-y divide-[#21445d] overflow-y-auto">
             {requestGroups.map((group) => {
@@ -387,7 +360,9 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
                         type="button"
                         onClick={() => handleAddGroup(group)}
                         disabled={Boolean(addingGroupKey) || availableItems.length === 0}
-                        className="inline-flex min-h-7 w-full items-center justify-center gap-1 rounded-full border border-emerald-400/70 bg-emerald-500/20 px-1 py-1 text-[10px] font-normal text-emerald-100 transition hover:bg-emerald-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+                        className={`inline-flex min-h-7 w-full items-center justify-center gap-1 rounded-full border border-emerald-400/80 bg-emerald-500/20 px-1 py-1 text-[10px] font-normal text-emerald-100 transition hover:bg-emerald-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:cursor-not-allowed disabled:opacity-50 ${
+                          !addingGroupKey && availableItems.length > 0 ? "sabri-reader-add-glow" : ""
+                        }`}
                       >
                         {isAddingGroup && <Loader2 className="h-3 w-3 animate-spin" />}
                         {isAddingGroup
