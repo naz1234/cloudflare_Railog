@@ -210,15 +210,11 @@ function formatTrainCount(totalCount = 0) {
   return `${totalCount} train${totalCount !== 1 ? "s" : ""}`;
 }
 
-function buildPSTNoteBlock(westTotal = 0, eastTotal = 0) {
-  return [
-    "Note: DC checked the train status and confirmed that the HVAC was enabled, Maximum Speed was set to “None,” and CC was localized and operational.",
-    `DC checked and confirmed that PST was completed successfully for ${formatTrainCount(westTotal)} at West Depot.`,
-    `DC cross-checked and confirmed that PST was completed successfully for ${formatTrainCount(eastTotal)} at East Depot.`,
-  ].join("\n");
+function buildPSTNoteBlock() {
+  return "Note: DC checked the train status and confirmed that the HVAC was enabled, Maximum Speed was set to “None,” and CC was localized and operational.";
 }
 
-function getPSTSectionText(pstLines = [], depotLabel = "", westTotal = 0, eastTotal = 0) {
+function getPSTSectionText(pstLines = [], depotLabel = "") {
   if (!pstLines.length) return "";
   const groupedLines = buildGroupedPSTLogLines(pstLines);
   return [
@@ -226,7 +222,7 @@ function getPSTSectionText(pstLines = [], depotLabel = "", westTotal = 0, eastTo
     "",
     ...groupedLines.map((group) => group.text),
     "",
-    buildPSTNoteBlock(westTotal, eastTotal),
+    buildPSTNoteBlock(),
   ]
     .filter((line) => line !== null && line !== undefined)
     .join("\n")
@@ -300,12 +296,7 @@ function buildELog2Text(pstLines = [], depotLabel = "") {
     return [group.title, ...lines].join("\n");
   });
 
-  const totalTrains = getUniqueTrainKeys(pstLines, getPSTTrainKey).length;
-
-  const noteBlock = [
-    'Note: DC checked train status - HVAC enabled, Maximum Speed "None", CC - localized/operational.',
-    `DC's checked PST completed successfully for ${depotLabel || "the selected"} Depot trains. Total trains ${totalTrains}.`,
-  ].join("\n");
+  const noteBlock = 'Note: DC checked train status - HVAC enabled, Maximum Speed "None", CC - localized/operational.';
 
   return [...sections, noteBlock].join("\n\n");
 }
@@ -474,12 +465,12 @@ function SectionTextBlock({ title, text, emptyText, variant = "pst" }) {
   );
 }
 
-function DepotLogCard({ depotLabel, lines = [], onClearDepot, logStyle = ELOG_1, westPSTTotal = 0, eastPSTTotal = 0 }) {
+function DepotLogCard({ depotLabel, lines = [], onClearDepot, logStyle = ELOG_1 }) {
   const pstLines = lines.filter(isPSTEntry);
   const prepLines = lines.filter(isPrepEntry);
   const pstText = logStyle === ELOG_2
     ? buildELog2Text(pstLines, depotLabel)
-    : getPSTSectionText(pstLines, depotLabel, westPSTTotal, eastPSTTotal);
+    : getPSTSectionText(pstLines, depotLabel);
   const prepText = getPrepSectionText(prepLines, depotLabel);
   const hasEntries = lines.length > 0;
   const dotColor = depotLabel.toLowerCase() === "west" ? "#d946ef" : "#22d3ee";
@@ -550,8 +541,6 @@ export default function PSTLogOutput({ logLines, onClearDepot, depot = "" }) {
   const safeLogLines = Array.isArray(logLines) ? logLines : [];
   const westLines = safeLogLines.filter((line) => line.depot === "west");
   const eastLines = safeLogLines.filter((line) => line.depot === "east");
-  const westPSTTotal = westLines.filter(isPSTEntry).length;
-  const eastPSTTotal = eastLines.filter(isPSTEntry).length;
   const [logStyle, setLogStyle] = useState(() => {
     try {
       return localStorage.getItem(PST_LOG_STYLE_STORAGE_KEY) === ELOG_2 ? ELOG_2 : ELOG_1;
@@ -1017,8 +1006,6 @@ export default function PSTLogOutput({ logLines, onClearDepot, depot = "" }) {
             lines={westLines}
             onClearDepot={() => onClearDepot?.("west")}
             logStyle={logStyle}
-            westPSTTotal={westPSTTotal}
-            eastPSTTotal={eastPSTTotal}
           />
         )}
         {(!depot || depot === "east") && (
@@ -1027,8 +1014,6 @@ export default function PSTLogOutput({ logLines, onClearDepot, depot = "" }) {
             lines={eastLines}
             onClearDepot={() => onClearDepot?.("east")}
             logStyle={logStyle}
-            westPSTTotal={westPSTTotal}
-            eastPSTTotal={eastPSTTotal}
           />
         )}
       </div>
