@@ -102,13 +102,17 @@ export default function MaintenanceImageSummary() {
   const analyseImage = async (file) => {
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      setMessage({ type: "error", text: "Please upload a PNG, JPG, WEBP, or another image file." });
+    const supportedImageType = ["image/png", "image/jpeg", "image/bmp", "image/tiff"].includes(
+      String(file.type || "").toLowerCase()
+    );
+    const supportedImageName = /\.(?:png|jpe?g|bmp|tiff?)$/i.test(file.name || "");
+    if (!supportedImageType && !supportedImageName) {
+      setMessage({ type: "error", text: "Please upload a PNG, JPG, BMP, or TIFF image." });
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      setMessage({ type: "error", text: "The image is larger than 10 MB. Please upload a smaller image." });
+    if (file.size > 4 * 1024 * 1024) {
+      setMessage({ type: "error", text: "The image is larger than the Azure Free F0 limit of 4 MB." });
       return;
     }
 
@@ -135,7 +139,7 @@ export default function MaintenanceImageSummary() {
       setExtraction(normalizeExtraction(payload.extraction));
       setMessage({
         type: payload.warning ? "warning" : "success",
-        text: payload.warning || "Image read successfully. Check the generated details before copying.",
+        text: payload.warning || "Azure table OCR read the image successfully. Check the generated details before copying.",
       });
     } catch (error) {
       setMessage({
@@ -176,7 +180,7 @@ export default function MaintenanceImageSummary() {
               Train Plan Image Reader
             </h2>
             <p className="mt-0.5 text-[10px] text-slate-600 dark:text-slate-300">
-              Upload the PM planning image to extract G to C and PM train lists by date.
+              Upload the full PM planning image. Azure table OCR extracts G to C and PM train lists by date.
             </p>
           </div>
         </div>
@@ -206,7 +210,7 @@ export default function MaintenanceImageSummary() {
           <input
             ref={inputRef}
             type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif,image/bmp"
+            accept="image/png,image/jpeg,image/bmp,image/tiff,.tif,.tiff"
             onChange={handleFileChange}
             className="sr-only"
           />
