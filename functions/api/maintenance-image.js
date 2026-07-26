@@ -231,7 +231,7 @@ async function runGeminiVision({ env, imageFile, arrayBuffer }) {
   const imageBytes = new Uint8Array(arrayBuffer);
   const base64 = uint8ArrayToBase64(imageBytes);
   const mediaType = imageFile.type && imageFile.type.startsWith('image/') ? imageFile.type : 'image/png';
-  const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const model = env.GEMINI_MODEL || 'gemini-3.6-flash';
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
 
   const response = await fetch(endpoint, {
@@ -255,7 +255,6 @@ async function runGeminiVision({ env, imageFile, arrayBuffer }) {
         },
       ],
       generationConfig: {
-        temperature: 0,
         maxOutputTokens: 800,
         responseMimeType: 'application/json',
       },
