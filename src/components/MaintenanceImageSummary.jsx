@@ -341,7 +341,7 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
       {extraction && (
         <div className="mt-2 overflow-hidden rounded-xl border border-violet-500/40 bg-[#0d1026]">
           <div className="flex items-center gap-2 border-b border-violet-500/25 bg-[#211746] px-2 py-1.5">
-            <span className="text-[10px] font-normal uppercase tracking-[1.2px] text-violet-100">
+            <span className="text-[9px] font-normal uppercase tracking-[1.2px] text-violet-100">
               Review generated details
             </span>
           </div>
@@ -354,8 +354,8 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
                 <div key={group.key} className="bg-[#0d1026]">
                   <div className="grid min-h-[58px] grid-cols-[minmax(0,1fr)_58px]">
                     <div className="min-w-0 px-2.5 py-2">
-                      <div className="text-[12px] font-normal leading-5 text-white">{group.title}</div>
-                      <div className="mt-0.5 break-words text-[12px] font-normal leading-5 text-slate-200">
+                      <div className="text-[11px] font-normal leading-5 text-white">{group.title}</div>
+                      <div className="mt-0.5 break-words text-[11px] font-normal leading-5 text-slate-200">
                         {group.items.length > 0
                           ? group.items.map((item) => item.trainId).join(", ")
                           : "No train detected"}
@@ -367,7 +367,7 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
                         type="button"
                         onClick={() => handleAddGroup(group)}
                         disabled={Boolean(addingGroupKey) || availableItems.length === 0}
-                        className={`inline-flex min-h-7 w-full items-center justify-center gap-1 rounded-full border border-emerald-400/80 bg-emerald-500/20 px-1 py-1 text-[10px] font-normal text-emerald-100 transition hover:bg-emerald-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:cursor-not-allowed disabled:opacity-50 ${
+                        className={`inline-flex min-h-7 w-full items-center justify-center gap-1 rounded-full border border-emerald-400/80 bg-emerald-500/20 px-1 py-1 text-[9px] font-normal text-emerald-100 transition hover:bg-emerald-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:cursor-not-allowed disabled:opacity-50 ${
                           !addingGroupKey && availableItems.length > 0 ? "sabri-reader-add-glow" : ""
                         }`}
                       >
@@ -386,7 +386,7 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
                   {addMessage.key === group.key && addMessage.text && (
                     <div
                       role="status"
-                      className={`border-t px-2.5 py-1.5 text-[10px] font-normal leading-relaxed ${
+                      className={`border-t px-2.5 py-1.5 text-[9px] font-normal leading-relaxed ${
                         addMessage.type === "error"
                           ? "border-rose-500/60 bg-rose-500/10 text-rose-100"
                           : "border-emerald-500/60 bg-emerald-500/10 text-emerald-100"
