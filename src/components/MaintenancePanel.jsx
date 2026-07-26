@@ -680,6 +680,11 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const [groupDeleteError, setGroupDeleteError] = useState("");
   const [togglingGroupKey, setTogglingGroupKey] = useState("");
   const [groupVisibilityError, setGroupVisibilityError] = useState({ key: "", message: "" });
+  const [groupTrainDraft, setGroupTrainDraft] = useState("");
+  const [addingGroupTrains, setAddingGroupTrains] = useState(false);
+  const [removingGroupTrainId, setRemovingGroupTrainId] = useState("");
+  const [groupTrainMessage, setGroupTrainMessage] = useState({ type: "", text: "" });
+  const [groupCopyStatus, setGroupCopyStatus] = useState("");
 
   const handleAdd = () => {
     const trainIds = trainId.split(/[\s,]+/).map(normalizeTrainId).filter(Boolean);
@@ -1005,6 +1010,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const regularRequestGroups = groupRequestsByExactRemark(regularRequests);
   const editingRequestGroup = regularRequestGroups.find((group) => group.key === editingGroupKey) || null;
   const savingGroupTitle = Boolean(editingRequestGroup && savingGroupKey === editingRequestGroup.key);
+  const groupEditorBusy = savingGroupTitle || addingGroupTrains || Boolean(removingGroupTrainId);
   const hasWorkshopRequests = workshopRequests.length > 0;
   const buildWorkshopCopyText = () => {
     const trainList = workshopRequests
@@ -1029,19 +1035,25 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   };
 
   const beginGroupTitleEdit = (group) => {
-    if (savingGroupKey || deletingGroupKey || togglingGroupKey) return;
+    if (savingGroupKey || deletingGroupKey || togglingGroupKey || addingGroupTrains || removingGroupTrainId) return;
     setConfirmDeleteGroupKey("");
     setGroupDeleteError("");
     setEditingGroupKey(group.key);
     setGroupTitleDraft(group.label);
     setGroupEditError("");
+    setGroupTrainDraft("");
+    setGroupTrainMessage({ type: "", text: "" });
+    setGroupCopyStatus("");
   };
 
   const cancelGroupTitleEdit = () => {
-    if (savingGroupKey) return;
+    if (savingGroupKey || addingGroupTrains || removingGroupTrainId) return;
     setEditingGroupKey("");
     setGroupTitleDraft("");
     setGroupEditError("");
+    setGroupTrainDraft("");
+    setGroupTrainMessage({ type: "", text: "" });
+    setGroupCopyStatus("");
   };
 
   const beginGroupDelete = (group) => {
@@ -1075,6 +1087,112 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       setGroupDeleteError(deleteError?.message || "Unable to delete this request group.");
     } finally {
       setDeletingGroupKey("");
+    }
+  };
+
+  const buildEditingGroupTrainCopyText = () => {
+    if (!editingRequestGroup) return "";
+    const trainLabels = editingRequestGroup.items
+      .map((request) => getRequestChipTrainLabel(request))
+      .filter(Boolean);
+    return [
+      `${editingRequestGroup.label} (Total ${trainLabels.length} train${trainLabels.length === 1 ? "" : "s"})`,
+      ...trainLabels,
+    ].join("\n");
+  };
+
+  const copyEditingGroupTrainList = async () => {
+    const copyText = buildEditingGroupTrainCopyText();
+    if (!copyText) return;
+
+    try {
+      await navigator.clipboard.writeText(copyText);
+      setGroupCopyStatus("copied");
+    } catch (copyError) {
+      console.error("Request group train copy failed:", copyError);
+      setGroupCopyStatus("failed");
+    } finally {
+      setTimeout(() => setGroupCopyStatus(""), 1600);
+    }
+  };
+
+  const addTrainsToEditingGroup = async () => {
+    const group = editingRequestGroup;
+    if (!group || typeof onAdd !== "function") {
+      setGroupTrainMessage({ type: "error", text: "Adding trains is unavailable." });
+      return;
+    }
+
+    const requestedTrainIds = [...new Set(
+      groupTrainDraft.split(/[\s,]+/).map(normalizeTrainId).filter(Boolean)
+    )];
+    if (requestedTrainIds.length === 0) {
+      setGroupTrainMessage({ type: "error", text: "Enter at least one train ID." });
+      return;
+    }
+
+    const sourceRequest = group.items?.[0] || {};
+    const sourceTypeKey = normalizeRequestIdentity(displayType(sourceRequest));
+    const alreadyHasRequestType = (trainIdToCheck) => requests.some((request) =>
+      normalizeTrainId(request?.trainId || "") === trainIdToCheck &&
+      normalizeRequestIdentity(displayType(request)) === sourceTypeKey
+    );
+    const newTrainIds = requestedTrainIds.filter((trainIdToCheck) => !alreadyHasRequestType(trainIdToCheck));
+    const skippedTrainIds = requestedTrainIds.filter(alreadyHasRequestType);
+
+    if (newTrainIds.length === 0) {
+      setGroupTrainMessage({ type: "error", text: "Every entered train already has this request type." });
+      return;
+    }
+
+    setAddingGroupTrains(true);
+    setGroupTrainMessage({ type: "", text: "" });
+    const results = await Promise.allSettled(
+      newTrainIds.map((newTrainId) => onAdd({
+        trainId: newTrainId,
+        requestType: sourceRequest.requestType || displayType(sourceRequest),
+        customType: sourceRequest.customType || "",
+        remark: sourceRequest.remark || "",
+        groupTitle: group.label,
+        groupHidden: group.hidden,
+      }))
+    );
+    const addedCount = results.filter((result) => result.status === "fulfilled").length;
+    const failedCount = results.length - addedCount;
+
+    if (addedCount > 0) setGroupTrainDraft("");
+    setGroupTrainMessage({
+      type: failedCount > 0 ? "error" : "success",
+      text: [
+        addedCount > 0 ? `Added ${addedCount} train${addedCount === 1 ? "" : "s"}.` : "",
+        skippedTrainIds.length > 0 ? `Skipped existing: ${skippedTrainIds.join(", ")}.` : "",
+        failedCount > 0 ? `${failedCount} could not be added.` : "",
+      ].filter(Boolean).join(" "),
+    });
+    setAddingGroupTrains(false);
+  };
+
+  const removeTrainFromEditingGroup = async (request) => {
+    if (!request?.id || typeof onRemove !== "function") {
+      setGroupTrainMessage({ type: "error", text: "Removing this train is unavailable." });
+      return;
+    }
+
+    const trainLabel = getRequestChipTrainLabel(request);
+    setRemovingGroupTrainId(request.id);
+    setGroupTrainMessage({ type: "", text: "" });
+    try {
+      await onRemove(request.id);
+      setGroupTrainMessage({ type: "success", text: `${trainLabel} removed.` });
+      if (editingRequestGroup?.items?.length === 1) {
+        setEditingGroupKey("");
+        setGroupTitleDraft("");
+      }
+    } catch (removeError) {
+      console.error("Request group train removal failed:", removeError);
+      setGroupTrainMessage({ type: "error", text: removeError?.message || `Unable to remove ${trainLabel}.` });
+    } finally {
+      setRemovingGroupTrainId("");
     }
   };
 
@@ -1513,7 +1631,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             aria-labelledby="request-group-edit-title"
             onSubmit={saveGroupTitle}
             onMouseDown={(event) => event.stopPropagation()}
-            className="w-full max-w-[360px] rounded-2xl border border-amber-300/70 bg-[#0b1f33] p-4 font-normal text-white shadow-[0_24px_70px_rgba(0,0,0,0.65),0_0_24px_rgba(251,191,36,0.20)]"
+            className="max-h-[90vh] w-full max-w-[430px] overflow-y-auto rounded-2xl border border-amber-300/70 bg-[#0b1f33] p-4 font-normal text-white shadow-[0_24px_70px_rgba(0,0,0,0.65),0_0_24px_rgba(251,191,36,0.20)]"
           >
             <div className="flex items-start gap-3">
               <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-amber-200/80 bg-amber-400/20 text-amber-200">
@@ -1529,7 +1647,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               </div>
               <button
                 type="button"
-                disabled={savingGroupTitle}
+                disabled={groupEditorBusy}
                 onClick={cancelGroupTitleEdit}
                 aria-label="Close edit main title popup"
                 title="Close"
@@ -1548,7 +1666,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               type="text"
               value={groupTitleDraft}
               maxLength={80}
-              disabled={savingGroupTitle}
+              disabled={groupEditorBusy}
               onChange={(event) => {
                 setGroupTitleDraft(event.target.value);
                 setGroupEditError("");
@@ -1569,10 +1687,101 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               </p>
             )}
 
+            <section className="mt-4 rounded-xl border border-[#31516b] bg-[#071827] p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-[10px] font-normal uppercase tracking-[0.14em] text-[#b9d7ec]">
+                    Train List ({editingRequestGroup.items.length})
+                  </h4>
+                  <p className="mt-0.5 text-[9px] font-normal text-[#6f94ae]">Add or remove trains in this main-title group.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={copyEditingGroupTrainList}
+                  disabled={groupEditorBusy}
+                  className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-lg border border-sky-400/65 bg-sky-500/15 px-2 text-[9px] font-normal uppercase text-sky-100 hover:bg-sky-500/30 disabled:cursor-wait disabled:opacity-60"
+                >
+                  <Copy className="h-3 w-3" />
+                  {groupCopyStatus === "copied" ? "Copied" : groupCopyStatus === "failed" ? "Copy failed" : "Copy train list"}
+                </button>
+              </div>
+
+              <div className="mt-2 grid max-h-36 grid-cols-2 gap-1.5 overflow-y-auto pr-1">
+                {editingRequestGroup.items.map((request) => {
+                  const trainLabel = getRequestChipTrainLabel(request);
+                  const removing = removingGroupTrainId === request.id;
+                  return (
+                    <div
+                      key={request.id || trainLabel}
+                      className="flex h-7 items-center justify-between gap-2 rounded-lg border border-[#31516b] bg-[#0b2238] pl-2.5 pr-1 text-[10px] text-white"
+                    >
+                      <span className="truncate font-normal">{trainLabel}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeTrainFromEditingGroup(request)}
+                        disabled={groupEditorBusy}
+                        aria-label={`Remove ${trainLabel} from ${editingRequestGroup.label}`}
+                        title={`Remove ${trainLabel}`}
+                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-rose-300/70 bg-rose-500/20 text-rose-100 hover:bg-rose-500/45 disabled:cursor-wait disabled:opacity-60"
+                      >
+                        {removing ? <span className="h-2 w-2 animate-pulse rounded-full bg-current" /> : <X className="h-3 w-3" />}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <label htmlFor="request-group-add-trains" className="mt-3 block text-[9px] font-normal uppercase tracking-[0.14em] text-emerald-200">
+                Add train
+              </label>
+              <div className="mt-1.5 flex gap-2">
+                <input
+                  id="request-group-add-trains"
+                  type="text"
+                  value={groupTrainDraft}
+                  disabled={groupEditorBusy}
+                  onChange={(event) => {
+                    setGroupTrainDraft(event.target.value);
+                    setGroupTrainMessage({ type: "", text: "" });
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      addTrainsToEditingGroup();
+                    }
+                  }}
+                  placeholder="Example: T15, T28"
+                  className="h-9 min-w-0 flex-1 rounded-lg border border-emerald-400/65 bg-[#061626] px-3 text-[11px] font-normal uppercase text-white outline-none focus:border-emerald-200 focus:ring-2 focus:ring-emerald-400/35 disabled:cursor-wait disabled:opacity-70"
+                />
+                <button
+                  type="button"
+                  onClick={addTrainsToEditingGroup}
+                  disabled={groupEditorBusy || !groupTrainDraft.trim()}
+                  className="inline-flex h-9 shrink-0 items-center justify-center gap-1 rounded-lg border border-emerald-400 bg-emerald-700 px-3 text-[9px] font-normal uppercase text-white hover:bg-emerald-600 disabled:cursor-wait disabled:opacity-60"
+                >
+                  <Plus className="h-3 w-3" />
+                  {addingGroupTrains ? "Adding…" : "Add"}
+                </button>
+              </div>
+
+              {groupTrainMessage.text && (
+                <p
+                  aria-live="polite"
+                  className={`mt-2 rounded-lg border px-2.5 py-1.5 text-[9px] font-normal ${
+                    groupTrainMessage.type === "success"
+                      ? "border-emerald-400/45 bg-emerald-950/35 text-emerald-100"
+                      : "border-rose-400/45 bg-rose-950/45 text-rose-100"
+                  }`}
+                >
+                  {groupTrainMessage.text}
+                </p>
+              )}
+            </section>
+
             <div className="mt-4 flex items-center justify-end gap-2">
               <button
                 type="button"
-                disabled={savingGroupTitle}
+                disabled={groupEditorBusy}
                 onClick={cancelGroupTitleEdit}
                 className="h-9 rounded-lg border border-slate-400/50 bg-slate-700/70 px-4 text-[10px] font-normal uppercase text-slate-100 hover:bg-slate-600 disabled:cursor-wait disabled:opacity-60"
               >
@@ -1580,7 +1789,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               </button>
               <button
                 type="submit"
-                disabled={savingGroupTitle}
+                disabled={groupEditorBusy}
                 className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-400 bg-emerald-700 px-4 text-[10px] font-normal uppercase text-white shadow-[0_0_12px_rgba(5,150,105,0.24)] hover:bg-emerald-600 disabled:cursor-wait disabled:opacity-60"
               >
                 <Check className="h-3.5 w-3.5" />
