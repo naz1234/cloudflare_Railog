@@ -282,6 +282,68 @@ function removeDailyDepotLogFills(sheetDocument, stylesDocument) {
   );
 }
 
+function forceBlackFontForCells(sheetDocument, stylesDocument, references) {
+  const fonts = stylesDocument.getElementsByTagNameNS("*", "fonts")[0];
+  const cellXfs = stylesDocument.getElementsByTagNameNS("*", "cellXfs")[0];
+  if (!fonts || !cellXfs) throw new Error("Excel font styles could not be read.");
+
+  const fontElements = Array.from(fonts.childNodes).filter(
+    (node) => node.nodeType === 1 && node.localName === "font",
+  );
+  const styleElements = Array.from(cellXfs.childNodes).filter(
+    (node) => node.nodeType === 1 && node.localName === "xf",
+  );
+  const blackStyleByOriginal = new Map();
+
+  references.forEach((reference) => {
+    const cell = findCell(sheetDocument, reference);
+    if (!cell) throw new Error(`Required Excel cell ${reference} was not found.`);
+
+    const originalStyleId = Number(cell.getAttribute("s") || 0);
+    if (!blackStyleByOriginal.has(originalStyleId)) {
+      const originalStyle = styleElements[originalStyleId] || styleElements[0];
+      const originalFontId = Number(originalStyle?.getAttribute("fontId") || 0);
+      const originalFont = fontElements[originalFontId] || fontElements[0];
+      if (!originalStyle || !originalFont) throw new Error("Excel font styles could not be normalized.");
+
+      const blackFont = originalFont.cloneNode(true);
+      let colorNode = Array.from(blackFont.childNodes).find(
+        (node) => node.nodeType === 1 && node.localName === "color",
+      );
+      if (!colorNode) {
+        colorNode = stylesDocument.createElementNS(stylesDocument.documentElement.namespaceURI, "color");
+        const insertBeforeNode = Array.from(blackFont.childNodes).find(
+          (node) => node.nodeType === 1 && ["sz", "u", "vertAlign", "scheme"].includes(node.localName),
+        );
+        blackFont.insertBefore(colorNode, insertBeforeNode || null);
+      }
+      Array.from(colorNode.attributes).forEach((attribute) => colorNode.removeAttributeNode(attribute));
+      colorNode.setAttribute("rgb", "FF000000");
+
+      const blackFontId = fontElements.length + blackStyleByOriginal.size;
+      fonts.appendChild(blackFont);
+
+      const blackStyle = originalStyle.cloneNode(true);
+      blackStyle.setAttribute("fontId", String(blackFontId));
+      blackStyle.setAttribute("applyFont", "1");
+      const blackStyleId = styleElements.length + blackStyleByOriginal.size;
+      cellXfs.appendChild(blackStyle);
+      blackStyleByOriginal.set(originalStyleId, blackStyleId);
+    }
+
+    cell.setAttribute("s", String(blackStyleByOriginal.get(originalStyleId)));
+  });
+
+  fonts.setAttribute(
+    "count",
+    String(Array.from(fonts.childNodes).filter((node) => node.nodeType === 1 && node.localName === "font").length),
+  );
+  cellXfs.setAttribute(
+    "count",
+    String(Array.from(cellXfs.childNodes).filter((node) => node.nodeType === 1 && node.localName === "xf").length),
+  );
+}
+
 function clearPstTrainPrepRows(sheetDocument) {
   clearCells(cellsWithinRange(sheetDocument, 3, 49, 1, 11));
 }
@@ -476,6 +538,7 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
     removalLogs?.[depotConfig.key] || null,
     depotConfig,
   );
+  forceBlackFontForCells(sheetDocument, stylesDocument, ["D9", "D10", "D11", "D12", "D13"]);
   clearPstTrainPrepRows(pstSheetDocument);
   clearAuthorityToProceedForm(authoritySheetDocument, targetDate);
 
