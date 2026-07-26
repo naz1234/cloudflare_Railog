@@ -1,109 +1,36 @@
+import { extractMaintenancePlan } from '../lib/maintenance-plan-parser.js';
+
+const AZURE_API_VERSION = '2024-11-30';
+const AZURE_MODEL = 'prebuilt-layout';
+const MAX_FREE_TIER_IMAGE_BYTES = 4 * 1024 * 1024;
+const POLL_INTERVAL_MS = 1100;
+const POLL_TIMEOUT_MS = 30000;
+
 const jsonHeaders = {
   'Content-Type': 'application/json; charset=utf-8',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Cache-Control': 'no-store',
 };
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: jsonHeaders });
 }
 
-function stripCodeFence(text = '') {
-  return text
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/```$/i, '')
-    .trim();
+function sleep(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-function extractJsonObject(text = '') {
-  const cleanText = stripCodeFence(text);
+function isSameOriginBrowserRequest(request) {
+  const origin = request.headers.get('Origin');
+  if (!origin) return false;
 
   try {
-    return JSON.parse(cleanText);
+    if (new URL(origin).origin !== new URL(request.url).origin) return false;
   } catch {
-    const start = cleanText.indexOf('{');
-    const end = cleanText.lastIndexOf('}');
-    if (start >= 0 && end > start) {
-      try {
-        return JSON.parse(cleanText.slice(start, end + 1));
-      } catch {
-        return null;
-      }
-    }
+    return false;
   }
 
-  return null;
-}
-
-function trainNumberFromText(value) {
-  const text = String(value ?? '').toUpperCase().trim();
-  if (!text) return '';
-
-  const match = text.match(/(?:TS|T)?\s*0*(\d{1,3})\b/);
-  if (!match) return '';
-
-  const number = Number(match[1]);
-  if (!Number.isFinite(number) || number <= 0) return '';
-
-  return String(number).padStart(2, '0');
-}
-
-function normalizeTrainList(value) {
-  const source = Array.isArray(value) ? value : String(value ?? '').split(/[,\n]/);
-  const normalized = [];
-  const seen = new Set();
-
-  source.forEach((item) => {
-    const train = trainNumberFromText(item);
-    if (!train || seen.has(train)) return;
-    seen.add(train);
-    normalized.push(train);
-  });
-
-  return normalized;
-}
-
-const PLAN_MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-function formatPlanDate(dayValue, monthValue) {
-  const day = Number(dayValue);
-  const month = Number(monthValue);
-  if (!Number.isInteger(day) || day < 1 || day > 31) return '';
-  if (!Number.isInteger(month) || month < 1 || month > 12) return '';
-  return `${String(day).padStart(2, '0')}-${PLAN_MONTH_LABELS[month - 1]}`;
-}
-
-function normalizePlanDate(value) {
-  const text = String(value ?? '').trim();
-  if (!text) return '';
-
-  let match = text.match(/\b\d{4}[\/.\-](\d{1,2})[\/.\-](\d{1,2})\b/);
-  if (match) return formatPlanDate(match[2], match[1]);
-
-  match = text.match(/\b(\d{1,2})[\/.\-](\d{1,2})(?:[\/.\-]\d{2,4})?\b/);
-  if (match) return formatPlanDate(match[1], match[2]);
-
-  match = text.match(/\b(\d{1,2})\s*[\-\s]\s*([A-Za-z]{3,9})\b/);
-  if (match) {
-    const monthIndex = PLAN_MONTH_LABELS.findIndex(
-      (label) => label.toLowerCase() === match[2].slice(0, 3).toLowerCase()
-    );
-    return monthIndex >= 0 ? formatPlanDate(match[1], monthIndex + 1) : '';
-  }
-
-  return '';
-}
-
-function normalizeExtraction(raw = {}) {
-  return {
-    eveningDate: normalizePlanDate(raw.eveningDate || raw.evening_date || raw['Evening Date']),
-    morningDate: normalizePlanDate(raw.morningDate || raw.morning_date || raw['Morning Date']),
-    morningGToC: normalizeTrainList(raw.morningGToC || raw.morning_g_to_c || raw['Morning G to C']),
-    eveningGToC: normalizeTrainList(raw.eveningGToC || raw.evening_g_to_c || raw['Evening G to C']),
-    eveningPM: normalizeTrainList(raw.eveningPM || raw.evening_pm || raw['Evening PM']),
-    morningPM: normalizeTrainList(raw.morningPM || raw.morning_pm || raw['Morning PM']),
-  };
+  const fetchSite = String(request.headers.get('Sec-Fetch-Site') || '').toLowerCase();
+  return !fetchSite || fetchSite === 'same-origin' || fetchSite === 'none';
 }
 
 function listSignature(list = []) {
@@ -112,25 +39,22 @@ function listSignature(list = []) {
 
 function looksSuspicious(extraction) {
   const safe = extraction || {};
-  const populated = Object.values(safe).filter((list) => Array.isArray(list) && list.length > 0);
+  const lists = [safe.eveningGToC, safe.morningGToC, safe.eveningPM, safe.morningPM].filter(Array.isArray);
+  const populated = lists.filter((list) => list.length > 0);
   if (populated.length === 0) return true;
 
   const hasEveningEntries = (safe.eveningGToC || []).length > 0 || (safe.eveningPM || []).length > 0;
   const hasMorningEntries = (safe.morningGToC || []).length > 0 || (safe.morningPM || []).length > 0;
   if ((hasEveningEntries && !safe.eveningDate) || (hasMorningEntries && !safe.morningDate)) return true;
+  if (safe.eveningDate && safe.eveningDate === safe.morningDate) return true;
 
-  const gToCCount = (safe.morningGToC || []).length + (safe.eveningGToC || []).length;
   const eveningPmSig = listSignature(safe.eveningPM || []);
   const morningPmSig = listSignature(safe.morningPM || []);
+  if (eveningPmSig && eveningPmSig === morningPmSig) return true;
 
-  if (gToCCount === 0 && eveningPmSig && eveningPmSig === morningPmSig) return true;
-
-  if (populated.length >= 3) {
-    const firstSignature = listSignature(populated[0]);
-    if (populated.every((list) => listSignature(list) === firstSignature)) return true;
-  }
-
-  return false;
+  return populated.length >= 3 && populated.every(
+    (list) => listSignature(list) === listSignature(populated[0])
+  );
 }
 
 function toRequestItems(extraction) {
@@ -151,143 +75,163 @@ function toRequestItems(extraction) {
   );
 }
 
-function uint8ArrayToBase64(bytes) {
-  let binary = '';
-  const chunkSize = 0x8000;
-
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-  }
-
-  return btoa(binary);
-}
-
-function collectGeminiOutputText(responseBody) {
-  const parts = responseBody?.candidates?.[0]?.content?.parts || [];
-  return parts
-    .map((part) => (typeof part?.text === 'string' ? part.text : ''))
-    .filter(Boolean)
-    .join('\n')
-    .trim();
-}
-
-const geminiExtractionPrompt = `
-You are reading a depot maintenance planning image/table.
-Extract ONLY these six fields and return valid JSON only:
-{
-  "eveningDate": "",
-  "morningDate": "",
-  "morningGToC": [],
-  "eveningGToC": [],
-  "eveningPM": [],
-  "morningPM": []
-}
-
-Date rules:
-- Read eveningDate from the date printed beside the lower Evening shift PM/S row.
-- Read morningDate from the date printed beside the lower Morning shift PM/S row.
-- Return each date as DD-MMM, for example 26-Jul.
-- The top Evening shift movement rows belong to eveningDate.
-- The top Morning shift movement rows belong to morningDate.
-- If a date is missing or unclear, return an empty string. Do not guess.
-
-Rules for TOP movement table:
-- Morning G to C and Evening G to C must come from the TOP movement table only.
-- Include only rows where From Building is exactly G and To Building is exactly C.
-- Use only the Train column as the train number.
-- Do NOT use From track, To track, dates, row numbers, building letters, or Notes as train numbers.
-- Morning/Evening is decided by the By Time column.
-- Example: Train 4, From Building G, To Building C, By Time Evening shift => eveningGToC ["04"].
-- Example: Train 36, From Building G, To Building C, By Time Morning shift => morningGToC ["36"].
-
-Rules for BELOW information / S rows:
-- Evening PM and Morning PM must ALWAYS come from the BELOW information/summary section only.
-- Evening PM comes only from the lower row labelled Evening shift / evening date.
-- Morning PM comes only from the lower row labelled Morning shift / morning date.
-- Extract train numbers from lower lists like TS25(Wk), TS44(Bwk), TS09(C)(Bwk).
-- If the same train appears more than once in one lower row, include it only once and preserve its first position.
-- Do NOT use the top table Notes column for PM.
-
-Formatting rules:
-- Remove T or TS prefix.
-- Keep two digits for single-digit trains, for example Train 4 becomes "04" and TS09 becomes "09".
-- Preserve the order from the image.
-- If a field is not found or unclear, return an empty array for that field.
-- Do not guess.
-- Return JSON only. No markdown. No explanation.
-
-Expected example for the provided layout:
-{
-  "eveningDate": "26-Jul",
-  "morningDate": "27-Jul",
-  "morningGToC": ["01"],
-  "eveningGToC": ["27"],
-  "eveningPM": ["32", "33", "11"],
-  "morningPM": ["37", "06", "30", "32", "19"]
-}
-`
-
-async function runGeminiVision({ env, imageFile, arrayBuffer }) {
-  const imageBytes = new Uint8Array(arrayBuffer);
-  const base64 = uint8ArrayToBase64(imageBytes);
-  const mediaType = imageFile.type && imageFile.type.startsWith('image/') ? imageFile.type : 'image/png';
-  const model = env.GEMINI_MODEL || 'gemini-3.6-flash';
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'x-goog-api-key': env.GEMINI_API_KEY,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            { text: geminiExtractionPrompt },
-            {
-              inline_data: {
-                mime_type: mediaType,
-                data: base64,
-              },
-            },
-          ],
-        },
-      ],
-      generationConfig: {
-        maxOutputTokens: 800,
-        responseMimeType: 'application/json',
-      },
-    }),
-  });
-
-  const responseText = await response.text();
-  let responseBody = null;
+function azureEndpoint(env) {
+  const configuredValue = String(env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || '').trim();
+  let url;
 
   try {
-    responseBody = JSON.parse(responseText);
+    url = new URL(configuredValue);
   } catch {
-    responseBody = null;
+    throw Object.assign(new Error('The Azure OCR endpoint in Cloudflare is invalid.'), { status: 503 });
   }
 
-  if (!response.ok) {
-    const message = responseBody?.error?.message || responseText || 'Gemini request failed.';
-    throw new Error(message);
+  if (url.protocol !== 'https:') {
+    throw Object.assign(new Error('The Azure OCR endpoint must use HTTPS.'), { status: 503 });
   }
 
-  const blockReason = responseBody?.promptFeedback?.blockReason;
-  if (blockReason) {
-    throw new Error(`Gemini blocked the request: ${blockReason}`);
+  url.pathname = url.pathname.replace(/\/+$/, '');
+  url.search = '';
+  url.hash = '';
+  return url;
+}
+
+async function readAzureBody(response) {
+  const text = await response.text();
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { rawMessage: text };
+  }
+}
+
+function azureErrorMessage(body, fallback) {
+  return body?.error?.innererror?.message
+    || body?.error?.message
+    || body?.rawMessage
+    || fallback;
+}
+
+async function azureFetch(input, init, deadline) {
+  const remaining = deadline - Date.now();
+  if (remaining <= 0) {
+    throw Object.assign(new Error('Azure OCR is taking too long. Please try the image again.'), { status: 504 });
   }
 
-  const text = collectGeminiOutputText(responseBody) || responseText;
-  const parsed = extractJsonObject(text) || {};
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), remaining);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error?.name === 'AbortError' || Date.now() >= deadline) {
+      throw Object.assign(new Error('Azure OCR is taking too long. Please try the image again.'), { status: 504 });
+    }
+    throw Object.assign(new Error('Unable to reach Azure OCR. Please try again.'), { status: 502 });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
+async function runAzureLayout({ env, mediaType, arrayBuffer }) {
+  const deadline = Date.now() + POLL_TIMEOUT_MS;
+  const endpoint = azureEndpoint(env);
+  const apiKey = String(env.AZURE_DOCUMENT_INTELLIGENCE_KEY || '').trim();
+  const analyzeUrl = new URL(
+    `${endpoint.pathname.replace(/\/+$/, '')}/documentintelligence/documentModels/${AZURE_MODEL}:analyze`,
+    endpoint.origin
+  );
+  analyzeUrl.searchParams.set('api-version', AZURE_API_VERSION);
+  const startResponse = await azureFetch(analyzeUrl, {
+    method: 'POST',
+    headers: {
+      'Ocp-Apim-Subscription-Key': apiKey,
+      'Content-Type': mediaType,
+    },
+    body: arrayBuffer,
+  }, deadline);
+  const startBody = await readAzureBody(startResponse);
+
+  if (!startResponse.ok) {
+    if (startResponse.status === 401 || startResponse.status === 403) {
+      throw Object.assign(new Error('Azure OCR rejected the configured endpoint or key. Check the Cloudflare secrets and redeploy.'), { status: 503 });
+    }
+    if (startResponse.status === 429) {
+      throw Object.assign(new Error('Azure Free F0 is temporarily busy or its quota was reached. Wait and try again.'), { status: 503 });
+    }
+    throw Object.assign(
+      new Error(azureErrorMessage(startBody, `Azure OCR request failed (${startResponse.status}).`)),
+      { status: startResponse.status >= 500 ? 502 : 422 }
+    );
+  }
+
+  const operationLocation = startResponse.headers.get('Operation-Location');
+  if (!operationLocation) throw new Error('Azure OCR did not return an operation location.');
+  let operationUrl;
+  try {
+    operationUrl = new URL(operationLocation);
+  } catch {
+    throw Object.assign(new Error('Azure OCR returned an invalid operation location.'), { status: 502 });
+  }
+  if (operationUrl.protocol !== 'https:' || operationUrl.origin !== endpoint.origin) {
+    throw Object.assign(new Error('Azure OCR returned an unexpected operation location.'), { status: 502 });
+  }
+
+  const retryAfterSeconds = Number(startResponse.headers.get('Retry-After'));
+  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+    await sleep(Math.min(3000, Math.max(POLL_INTERVAL_MS, retryAfterSeconds * 1000)));
+  }
+
+  while (Date.now() < deadline) {
+    const resultResponse = await azureFetch(operationUrl, {
+      headers: { 'Ocp-Apim-Subscription-Key': apiKey },
+    }, deadline);
+    const resultBody = await readAzureBody(resultResponse);
+
+    if (resultResponse.status === 429 || resultResponse.status === 503) {
+      const retryAfter = Number(resultResponse.headers.get('Retry-After'));
+      await sleep(Number.isFinite(retryAfter) && retryAfter > 0
+        ? Math.min(3000, Math.max(POLL_INTERVAL_MS, retryAfter * 1000))
+        : POLL_INTERVAL_MS);
+      continue;
+    }
+
+    if (!resultResponse.ok) {
+      if (resultResponse.status === 401 || resultResponse.status === 403) {
+        throw Object.assign(new Error('Azure OCR rejected the configured key while retrieving the result.'), { status: 503 });
+      }
+      throw Object.assign(
+        new Error(azureErrorMessage(resultBody, `Unable to retrieve Azure OCR result (${resultResponse.status}).`)),
+        { status: resultResponse.status >= 500 ? 502 : 422 }
+      );
+    }
+
+    const status = String(resultBody?.status || '').toLowerCase();
+    if (status === 'succeeded') return resultBody.analyzeResult || {};
+    if (status === 'failed' || status === 'canceled') {
+      throw Object.assign(new Error(azureErrorMessage(resultBody, 'Azure OCR could not analyse this image.')), { status: 422 });
+    }
+
+    await sleep(POLL_INTERVAL_MS);
+  }
+
+  throw Object.assign(new Error('Azure OCR is taking too long. Please try the image again.'), { status: 504 });
+}
+
+function mediaTypeForImage(imageFile) {
+  const declaredType = String(imageFile.type || '').toLowerCase();
+  const supportedTypes = new Set(['image/png', 'image/jpeg', 'image/bmp', 'image/tiff']);
+  if (supportedTypes.has(declaredType)) return declaredType;
+
+  const extension = String(imageFile.name || '').toLowerCase().match(/\.([a-z0-9]+)$/)?.[1];
   return {
-    model,
-    text,
-    extraction: normalizeExtraction(parsed),
-  };
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    bmp: 'image/bmp',
+    tif: 'image/tiff',
+    tiff: 'image/tiff',
+  }[extension] || '';
 }
 
 export async function onRequestOptions() {
@@ -295,10 +239,19 @@ export async function onRequestOptions() {
 }
 
 export async function onRequestPost({ request, env }) {
-  if (!env.GEMINI_API_KEY) {
+  if (!isSameOriginBrowserRequest(request)) {
+    return json({ success: false, error: 'This OCR endpoint only accepts uploads from the Rail Log application.' }, 403);
+  }
+
+  const missingConfiguration = [
+    !env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT && 'AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT',
+    !env.AZURE_DOCUMENT_INTELLIGENCE_KEY && 'AZURE_DOCUMENT_INTELLIGENCE_KEY',
+  ].filter(Boolean);
+
+  if (missingConfiguration.length) {
     return json({
       success: false,
-      error: 'Gemini API key is missing. Add GEMINI_API_KEY in Cloudflare Pages Variables and secrets, then redeploy.',
+      error: `Azure OCR is not configured. Add ${missingConfiguration.join(' and ')} in Cloudflare Variables and Secrets, then redeploy.`,
     }, 500);
   }
 
@@ -310,46 +263,48 @@ export async function onRequestPost({ request, env }) {
       return json({ success: false, error: 'No image uploaded.' }, 400);
     }
 
-    const mediaType = String(imageFile.type || '').toLowerCase();
-    if (!mediaType.startsWith('image/')) {
-      return json({ success: false, error: 'Please upload an image file.' }, 415);
+    const mediaType = mediaTypeForImage(imageFile);
+    if (!mediaType) {
+      return json({ success: false, error: 'Please upload a PNG, JPG, BMP, or TIFF image.' }, 415);
     }
 
     const arrayBuffer = await imageFile.arrayBuffer();
-
     if (!arrayBuffer.byteLength) {
       return json({ success: false, error: 'Uploaded image is empty.' }, 400);
     }
 
-    const maxImageBytes = 10 * 1024 * 1024;
-    if (arrayBuffer.byteLength > maxImageBytes) {
-      return json({ success: false, error: 'The image is larger than 10 MB.' }, 413);
+    if (arrayBuffer.byteLength > MAX_FREE_TIER_IMAGE_BYTES) {
+      return json({ success: false, error: 'The image is larger than the Azure Free F0 limit of 4 MB.' }, 413);
     }
 
-    const result = await runGeminiVision({ env, imageFile, arrayBuffer });
-    const extraction = result.extraction;
-    const uncertain = looksSuspicious(extraction);
-    const items = uncertain ? [] : toRequestItems(extraction);
+    const analyzeResult = await runAzureLayout({ env, mediaType, arrayBuffer });
+    const parsed = extractMaintenancePlan(analyzeResult);
+    if (!parsed.recognized) {
+      return json({
+        success: false,
+        error: 'Azure read the image, but could not identify the train-plan table. Upload a clear image showing the complete table.',
+      }, 422);
+    }
+
+    const extraction = parsed.extraction;
+    const uncertain = parsed.uncertain || looksSuspicious(extraction);
 
     return json({
       success: true,
-      provider: 'gemini',
-      model: result.model,
+      provider: 'azure-document-intelligence',
+      model: AZURE_MODEL,
       extraction,
-      items,
+      items: uncertain ? [] : toRequestItems(extraction),
       uncertain,
       warning: uncertain
-        ? 'Gemini result looks duplicated/uncertain. Edit the preview first, then add.'
+        ? 'Azure read the table, but some rows could not be confirmed. Check the generated details before copying.'
         : '',
-      rawText: {
-        gemini: result.text,
-      },
     });
   } catch (error) {
-    console.error('Maintenance image Gemini error:', error);
+    console.error('Maintenance image Azure OCR error:', error);
     return json({
       success: false,
-      error: error?.message || 'Unable to analyse uploaded image.',
-    }, 500);
+      error: error?.message || 'Unable to analyse the uploaded image with Azure OCR.',
+    }, error?.status || 500);
   }
 }
