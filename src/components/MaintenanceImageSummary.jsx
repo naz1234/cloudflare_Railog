@@ -128,7 +128,6 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
   const [analysing, setAnalysing] = useState(false);
   const [addingGroupKey, setAddingGroupKey] = useState("");
   const [addedKeys, setAddedKeys] = useState(() => new Set());
-  const [selectedKeys, setSelectedKeys] = useState(() => new Set());
   const [addMessage, setAddMessage] = useState({ key: "", type: "", text: "" });
   const [message, setMessage] = useState({ type: "", text: "" });
   const [copied, setCopied] = useState(false);
@@ -143,7 +142,6 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
     setMessage({ type: "", text: "" });
     setAddMessage({ key: "", type: "", text: "" });
     setAddedKeys(new Set());
-    setSelectedKeys(new Set());
     setAddingGroupKey("");
     setCopied(false);
     setAnalysing(false);
@@ -173,7 +171,6 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
     setMessage({ type: "", text: "" });
     setAddMessage({ key: "", type: "", text: "" });
     setAddedKeys(new Set());
-    setSelectedKeys(new Set());
     setCopied(false);
     setAnalysing(true);
     const analysisId = analysisIdRef.current + 1;
@@ -243,39 +240,9 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
   };
   const requestGroups = extraction ? buildRequestGroups(extraction) : [];
 
-  const toggleRequestItem = (item) => {
-    if (!isRequestAvailable(item)) return;
-    const key = requestKey(item);
-    setSelectedKeys((current) => {
-      const next = new Set(current);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
-
-  const toggleRequestGroup = (group) => {
-    const availableKeys = group.items
-      .filter(isRequestAvailable)
-      .map(requestKey);
-    if (availableKeys.length === 0) return;
-
-    setSelectedKeys((current) => {
-      const next = new Set(current);
-      const allSelected = availableKeys.every((key) => next.has(key));
-      availableKeys.forEach((key) => {
-        if (allSelected) next.delete(key);
-        else next.add(key);
-      });
-      return next;
-    });
-  };
-
   const handleAddGroup = async (group) => {
     if (typeof onAdd !== "function" || addingGroupKey) return;
-    const selectedItems = group.items.filter((item) =>
-      isRequestAvailable(item) && selectedKeys.has(requestKey(item))
-    );
+    const selectedItems = group.items.filter(isRequestAvailable);
 
     if (selectedItems.length === 0) return;
 
@@ -295,11 +262,6 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
 
     if (successfulKeys.length > 0) {
       setAddedKeys((current) => new Set([...current, ...successfulKeys]));
-      setSelectedKeys((current) => {
-        const next = new Set(current);
-        successfulKeys.forEach((key) => next.delete(key));
-        return next;
-      });
     }
 
     if (failedCount > 0) {
@@ -312,7 +274,7 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
       setAddMessage({
         key: group.key,
         type: "success",
-        text: `${successfulKeys.length} selected train${successfulKeys.length === 1 ? "" : "s"} added.`,
+        text: `${successfulKeys.length} train${successfulKeys.length === 1 ? "" : "s"} added from ${group.title}.`,
       });
     }
     setAddingGroupKey("");
@@ -403,84 +365,46 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
               {copied ? "Copied" : "Copy"}
             </button>
           </div>
-          <div className="max-h-80 space-y-2 overflow-y-auto p-2">
+          <div className="max-h-80 divide-y divide-[#21445d] overflow-y-auto">
             {requestGroups.map((group) => {
               const availableItems = group.items.filter(isRequestAvailable);
-              const selectedItems = availableItems.filter((item) => selectedKeys.has(requestKey(item)));
-              const allSelected = availableItems.length > 0 && selectedItems.length === availableItems.length;
               const isAddingGroup = addingGroupKey === group.key;
 
               return (
-                <div key={group.key} className="rounded-lg border border-[#21445d] bg-[#091828] p-2">
-                  <label className="flex cursor-pointer items-center gap-2 text-[12px] font-normal text-white">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      disabled={availableItems.length === 0 || Boolean(addingGroupKey)}
-                      onChange={() => toggleRequestGroup(group)}
-                      className="h-3.5 w-3.5 rounded border-cyan-500 bg-[#071828] accent-cyan-500"
-                    />
-                    <span>{group.title}</span>
-                  </label>
+                <div key={group.key} className="bg-[#071828]">
+                  <div className="grid min-h-[58px] grid-cols-[minmax(0,1fr)_58px]">
+                    <div className="min-w-0 px-2.5 py-2">
+                      <div className="text-[12px] font-normal leading-5 text-white">{group.title}</div>
+                      <div className="mt-0.5 break-words text-[12px] font-normal leading-5 text-slate-200">
+                        {group.items.length > 0
+                          ? group.items.map((item) => item.trainId).join(", ")
+                          : "No train detected"}
+                      </div>
+                    </div>
 
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {group.items.length === 0 ? (
-                      <span className="text-[12px] font-normal text-slate-400">No train detected</span>
-                    ) : group.items.map((item) => {
-                      const key = requestKey(item);
-                      const available = isRequestAvailable(item);
-                      const selected = selectedKeys.has(key);
-
-                      return (
-                        <label
-                          key={key}
-                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[12px] font-normal transition ${
-                            available
-                              ? selected
-                                ? "cursor-pointer border-cyan-400 bg-cyan-500/20 text-white"
-                                : "cursor-pointer border-[#2b6282] bg-[#071e33] text-slate-200 hover:border-cyan-500"
-                              : "cursor-default border-emerald-500/40 bg-emerald-500/10 text-emerald-200 opacity-75"
-                          }`}
-                        >
-                          {available ? (
-                            <input
-                              type="checkbox"
-                              checked={selected}
-                              disabled={Boolean(addingGroupKey)}
-                              onChange={() => toggleRequestItem(item)}
-                              className="h-3 w-3 rounded border-cyan-500 bg-[#071828] accent-cyan-500"
-                            />
-                          ) : (
-                            <Check className="h-3 w-3" />
-                          )}
-                          {item.trainId}
-                        </label>
-                      );
-                    })}
+                    <div className="flex items-center justify-center border-l border-[#21445d] px-1.5 py-2">
+                      <button
+                        type="button"
+                        onClick={() => handleAddGroup(group)}
+                        disabled={Boolean(addingGroupKey) || availableItems.length === 0}
+                        className="inline-flex min-h-7 w-full items-center justify-center gap-1 rounded-full border border-emerald-400/70 bg-emerald-500/20 px-1 py-1 text-[10px] font-normal text-emerald-100 transition hover:bg-emerald-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isAddingGroup && <Loader2 className="h-3 w-3 animate-spin" />}
+                        {isAddingGroup
+                          ? "Adding"
+                          : group.items.length === 0
+                            ? "—"
+                            : availableItems.length === 0
+                              ? "Added"
+                              : "Add"}
+                      </button>
+                    </div>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleAddGroup(group)}
-                    disabled={Boolean(addingGroupKey) || selectedItems.length === 0}
-                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-full border border-emerald-400/70 bg-emerald-500/20 py-1.5 text-[11px] font-normal text-emerald-100 transition hover:bg-emerald-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isAddingGroup && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                    {isAddingGroup
-                      ? "Adding selected..."
-                      : group.items.length === 0
-                        ? "No trains"
-                        : availableItems.length === 0
-                        ? "Already added"
-                        : selectedItems.length === 0
-                          ? "Select trains"
-                          : "Add selected"}
-                  </button>
 
                   {addMessage.key === group.key && addMessage.text && (
                     <div
                       role="status"
-                      className={`mt-2 rounded-lg border px-2 py-1.5 text-[10px] font-normal leading-relaxed ${
+                      className={`border-t px-2.5 py-1.5 text-[10px] font-normal leading-relaxed ${
                         addMessage.type === "error"
                           ? "border-rose-500/60 bg-rose-500/10 text-rose-100"
                           : "border-emerald-500/60 bg-emerald-500/10 text-emerald-100"
