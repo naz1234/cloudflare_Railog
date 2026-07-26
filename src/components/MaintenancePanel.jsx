@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil } from "lucide-react";
+import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil, ChevronRight } from "lucide-react";
 import ActionTooltip from "./ActionTooltip";
 import MaintenanceImageSummary from "./MaintenanceImageSummary";
 
@@ -1457,28 +1457,38 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
       {/* Input Form */}
       <div className="border-b border-[#1a3a56] p-2.5 space-y-2">
-        <div className="rounded-xl border border-[#1e4060] bg-[#071e33] p-2 shadow-inner">
-          <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">
-                <FileSpreadsheet className="w-3.5 h-3.5 text-[#4f8ef7]" />
-                Upload Excel
-              </div>
-              <p className="mt-0.5 text-[10px] leading-snug text-[#4a8ab5]">
-                Train Number will be added as Wash + Next Wash date.
-              </p>
+        <div className="overflow-hidden rounded-2xl border border-cyan-400/70 bg-[radial-gradient(circle_at_12%_30%,rgba(8,145,178,0.20),transparent_34%),linear-gradient(145deg,#06172a_0%,#071e33_58%,#09213a_100%)] p-2.5 shadow-[0_0_18px_rgba(34,211,238,0.12)]">
+          <div className="grid grid-cols-[58px_minmax(0,1fr)_18px] items-center gap-2.5">
+            <div className="relative flex h-[68px] w-[58px] items-center justify-center rounded-2xl border border-cyan-500/30 bg-[linear-gradient(145deg,rgba(8,47,73,0.95),rgba(6,31,56,0.95))] shadow-[inset_0_0_18px_rgba(14,165,233,0.14)]">
+              <FileSpreadsheet className="h-8 w-8 text-cyan-100" strokeWidth={1.6} />
+              <span className="absolute bottom-1.5 left-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-md border border-cyan-400/30 bg-cyan-500/25 px-1 text-[11px] font-semibold text-cyan-200">
+                X
+              </span>
             </div>
 
-            <label className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[#2b4f6b] bg-[#10263b] px-2.5 py-1 text-[10px] font-bold text-[#c8d8ea] transition-all hover:bg-[#1a3a5c] active:scale-[0.98]">
-              <Upload className="w-3 h-3" />
-              Excel
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleWashExcelUpload}
-                className="hidden"
-              />
-            </label>
+            <div className="min-w-0 border-l border-cyan-300/20 pl-2.5">
+              <div className="text-[14px] font-semibold leading-tight text-white">Upload Excel</div>
+              <p className="mt-1 text-[10px] font-normal leading-[1.45] text-slate-400">
+                Train Number will be added as <span className="text-cyan-300">Wash + Next Wash date.</span>
+              </p>
+
+              <label className="mt-2 inline-flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-cyan-400/70 bg-[linear-gradient(90deg,rgba(8,80,104,0.96),rgba(13,148,136,0.85))] text-[11px] font-normal text-white shadow-[0_0_12px_rgba(34,211,238,0.20)] transition hover:brightness-110 active:scale-[0.98]">
+                <span className="inline-flex h-8 w-9 items-center justify-center border-r border-cyan-200/20 bg-[#082b45]/80">
+                  <Upload className="h-4 w-4" />
+                </span>
+                <span className="flex-1 px-2 text-center">Upload Excel</span>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleWashExcelUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            <span className="inline-flex h-7 w-7 -translate-x-1 items-center justify-center rounded-full bg-[#10263b] text-slate-400" aria-hidden="true">
+              <ChevronRight className="h-4 w-4" />
+            </span>
           </div>
 
           {excelUploadStatus && (
