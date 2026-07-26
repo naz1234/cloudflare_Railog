@@ -247,7 +247,7 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
   };
 
   return (
-    <section className="w-full overflow-hidden rounded-2xl border border-violet-500/70 bg-[radial-gradient(circle_at_12%_28%,rgba(109,40,217,0.22),transparent_34%),linear-gradient(145deg,#0b1228_0%,#101531_58%,#11152d_100%)] p-2.5 text-slate-100 shadow-[0_0_18px_rgba(139,92,246,0.15)]">
+    <section className="w-full overflow-hidden rounded-xl border border-violet-500/70 bg-[radial-gradient(circle_at_12%_28%,rgba(109,40,217,0.22),transparent_34%),linear-gradient(145deg,#0b1228_0%,#101531_58%,#11152d_100%)] p-2 text-slate-100 shadow-[0_0_14px_rgba(139,92,246,0.13)]">
       <style>{`
         @keyframes sabri-reader-add-glow {
           0%, 100% { box-shadow: 0 0 4px rgba(52, 211, 153, 0.42), 0 0 8px rgba(52, 211, 153, 0.22); }
@@ -263,48 +263,48 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
           .sabri-reader-add-glow, .sabri-reader-clear-glow { animation: none; }
         }
       `}</style>
-      <div className="grid grid-cols-[58px_minmax(0,1fr)_18px] items-center gap-2.5">
-        <div className="relative flex h-[78px] w-[58px] items-center justify-center rounded-2xl border border-violet-500/30 bg-[linear-gradient(145deg,rgba(35,25,84,0.95),rgba(20,24,61,0.96))] shadow-[inset_0_0_18px_rgba(139,92,246,0.18)]">
-          <ImageIcon className="h-8 w-8 text-violet-300" strokeWidth={1.6} />
-          <span className="absolute left-2 top-2 h-3 w-3 rounded-tl-md border-l-2 border-t-2 border-violet-400" aria-hidden="true" />
-          <span className="absolute right-2 top-2 h-3 w-3 rounded-tr-md border-r-2 border-t-2 border-violet-400" aria-hidden="true" />
-          <span className="absolute bottom-2 left-2 h-3 w-3 rounded-bl-md border-b-2 border-l-2 border-violet-400" aria-hidden="true" />
-          <span className="absolute bottom-2 right-2 h-3 w-3 rounded-br-md border-b-2 border-r-2 border-violet-400" aria-hidden="true" />
+      <div className="flex min-w-0 items-center gap-2">
+        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-violet-500/30 bg-[linear-gradient(145deg,rgba(35,25,84,0.95),rgba(20,24,61,0.96))] shadow-[inset_0_0_12px_rgba(139,92,246,0.18)]">
+          <ImageIcon className="h-4 w-4 text-violet-300" strokeWidth={1.6} />
+          <span className="absolute left-1 top-1 h-1.5 w-1.5 rounded-tl-sm border-l border-t border-violet-400" aria-hidden="true" />
+          <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-tr-sm border-r border-t border-violet-400" aria-hidden="true" />
+          <span className="absolute bottom-1 left-1 h-1.5 w-1.5 rounded-bl-sm border-b border-l border-violet-400" aria-hidden="true" />
+          <span className="absolute bottom-1 right-1 h-1.5 w-1.5 rounded-br-sm border-b border-r border-violet-400" aria-hidden="true" />
         </div>
 
-        <div className="min-w-0 border-l border-violet-300/20 pl-2.5">
-          <h2 className="text-[14px] font-normal leading-tight text-white">Sabri IMG Reader</h2>
-          <p className="mt-1 text-[10px] font-normal leading-[1.45] text-slate-400">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[11px] font-normal leading-tight text-white">Sabri IMG Reader</h2>
+          <p className="mt-0.5 text-[9px] font-normal leading-snug text-slate-400">
             Upload, review, then add the detected <span className="text-violet-300">G to C</span> and <span className="text-violet-300">PM</span> trains.
           </p>
-
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={analysing}
-            className="mt-2 inline-flex h-8 w-full items-center justify-center overflow-hidden rounded-xl border border-violet-400/70 bg-[linear-gradient(90deg,rgba(76,29,149,0.92),rgba(147,51,234,0.88))] text-[11px] font-normal text-white shadow-[0_0_12px_rgba(168,85,247,0.28)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-wait disabled:opacity-65"
-          >
-            <span className="inline-flex h-8 w-9 items-center justify-center border-r border-violet-200/20 bg-[#2d185c]/70">
-              {analysing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            </span>
-            <span className="flex-1 px-2 text-center">
-              {analysing ? "Reading..." : fileName ? "Replace Image" : "Upload Image"}
-            </span>
-          </button>
         </div>
 
-        <span className="inline-flex h-7 w-7 -translate-x-1 items-center justify-center rounded-full bg-[#1b1d3d] text-slate-400" aria-hidden="true">
-          <ChevronRight className="h-4 w-4" />
+        <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#1b1d3d] text-slate-400" aria-hidden="true">
+          <ChevronRight className="h-3 w-3" />
         </span>
-
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/bmp,image/tiff,.tif,.tiff"
-          onChange={handleFileChange}
-          className="sr-only"
-        />
       </div>
+
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={analysing}
+        className="mt-1.5 inline-flex h-7 w-full items-center justify-center overflow-hidden rounded-lg border border-violet-400/70 bg-[linear-gradient(90deg,rgba(76,29,149,0.92),rgba(147,51,234,0.88))] text-[10px] font-normal text-white shadow-[0_0_9px_rgba(168,85,247,0.24)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-wait disabled:opacity-65"
+      >
+        <span className="inline-flex h-7 w-8 items-center justify-center border-r border-violet-200/20 bg-[#2d185c]/70">
+          {analysing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+        </span>
+        <span className="flex-1 px-2 text-center">
+          {analysing ? "Reading..." : fileName ? "Replace Image" : "Upload Image"}
+        </span>
+      </button>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/bmp,image/tiff,.tif,.tiff"
+        onChange={handleFileChange}
+        className="sr-only"
+      />
 
       {fileName && (
         <button
