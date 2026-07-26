@@ -36,6 +36,17 @@ const DEPOT_CONFIGS = {
 const PST_SHEET_NAME = "PST & Train Prep";
 const AUTHORITY_SHEET_NAME = "Authority to Proceed Form";
 const XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace";
+const POINTS_FUNCTIONAL_TEST_SUMMARIES = {
+  west: "Point functional test for the automatic area completed, except SA08 and SA06, which were not performed due to being blocked in reverse position.",
+  east: [
+    "Point Functional Test completed for the automatic area.",
+    "",
+    "* SA08 remained blocked in the normal direction and was restricted from all testing.",
+    "* SA10 could not be unblocked via ATS; therefore, the test was not performed. The block indication remained blinking after the unblock command. SR#10121125, dated 13 June 2026.",
+    "",
+    "The Point Functional Test Form was updated accordingly.",
+  ].join("\n"),
+};
 
 const SHIFT_FIELDS = {
   early: { cell: "B3", label: "Early Shift:" },
@@ -334,6 +345,9 @@ function writeFirstDepotRemovalLog(sheetDocument, targetDate, removalLog, depotC
     writeInlineString(sheetDocument, `D${rowNumber}`, category);
   });
 
+  writeInlineString(sheetDocument, "E11", POINTS_FUNCTIONAL_TEST_SUMMARIES[depotConfig.key]);
+  setWorksheetRowHeight(sheetDocument, 11, depotConfig.key === "east" ? 180 : 75);
+
   return hasRemovalLog;
 }
 
@@ -574,20 +588,25 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
           box-shadow: 0 8px 22px rgba(8, 145, 178, 0.16), inset 0 1px 0 rgba(255,255,255,0.05);
         }
         html[data-app-theme="light"] .official-depot-excel-generator {
-          --official-bg-start: #ecfeff;
-          --official-bg-end: #f0fdfa;
+          --official-bg-start: #0b3a41;
+          --official-bg-end: #123047;
           --official-border: #5eead4;
-          --official-panel: rgba(255, 255, 255, 0.84);
-          --official-input: #ffffff;
-          --official-text: #0f172a;
-          --official-muted: #36576a;
-          --official-accent: #0f766e;
-          --official-soft: rgba(13, 148, 136, 0.10);
-          --official-warning-bg: #fef3c7;
-          --official-warning-border: #b45309;
-          --official-warning-text: #451a03;
-          --official-warning-icon: #92400e;
-          box-shadow: 0 8px 20px rgba(13, 148, 136, 0.10), inset 0 1px 0 #ffffff;
+          --official-panel: rgba(5, 31, 43, 0.82);
+          --official-input: #082335;
+          --official-text: #ffffff;
+          --official-muted: #ffffff;
+          --official-accent: #5eead4;
+          --official-soft: rgba(45, 212, 191, 0.16);
+          --official-warning-bg: #713f12;
+          --official-warning-border: #fbbf24;
+          --official-warning-text: #ffffff;
+          --official-warning-icon: #fde68a;
+          box-shadow: 0 8px 20px rgba(13, 148, 136, 0.14), inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        .official-depot-excel-generator :is(h1, h2, h3, p, label, span, button, input),
+        html[data-app-theme="light"] body .official-depot-excel-generator :is(h1, h2, h3, p, label, span, button, input) {
+          color: #ffffff !important;
+          -webkit-text-fill-color: #ffffff !important;
         }
         .official-depot-excel-generator .official-panel {
           background: var(--official-panel);
@@ -636,7 +655,7 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
             transform: none;
           }
         }
-        .official-depot-excel-generator .official-input::placeholder { color: var(--official-muted); opacity: .92; }
+        .official-depot-excel-generator .official-input::placeholder { color: #ffffff; opacity: .82; }
         .official-depot-excel-generator .official-input:focus { border-color: var(--official-accent); box-shadow: 0 0 0 2px var(--official-soft); }
         .official-depot-excel-generator .official-day[data-active="true"] {
           border-color: var(--official-accent);
