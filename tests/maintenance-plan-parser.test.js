@@ -6,7 +6,7 @@ import {
   extractPrefixedTrainList,
   normalizePlanDate,
 } from '../functions/lib/maintenance-plan-parser.js';
-import { onRequestPost } from '../functions/api/maintenance-image.js';
+import { onRequestPost, toRequestItems } from '../functions/api/maintenance-image.js';
 
 function cell(rowIndex, columnIndex, content, extra = {}) {
   return { rowIndex, columnIndex, content, ...extra };
@@ -198,6 +198,25 @@ test('maps Azure word confidence to a consumed train cell', () => {
   ]);
 });
 
+test('builds date-preserving Train Request items from reviewed OCR results', () => {
+  assert.deepEqual(toRequestItems({
+    eveningDate: '26-Jul',
+    morningDate: '27-Jul',
+    eveningGToC: ['27'],
+    morningGToC: ['01'],
+    eveningPM: ['32', '33', '11'],
+    morningPM: ['37', '06'],
+  }), [
+    { trainId: '27', requestType: 'G-C 26-JUL', customType: '', remark: '' },
+    { trainId: '01', requestType: 'G-C 27-JUL', customType: '', remark: '' },
+    { trainId: '32', requestType: 'RST PM 26-JUL', customType: '', remark: '' },
+    { trainId: '33', requestType: 'RST PM 26-JUL', customType: '', remark: '' },
+    { trainId: '11', requestType: 'RST PM 26-JUL', customType: '', remark: '' },
+    { trainId: '37', requestType: 'RST PM 27-JUL', customType: '', remark: '' },
+    { trainId: '06', requestType: 'RST PM 27-JUL', customType: '', remark: '' },
+  ]);
+});
+
 test('returns a clear configuration error before sending an image', async () => {
   const response = await onRequestPost({
     request: new Request('https://example.test/api/maintenance-image', {
@@ -257,6 +276,18 @@ test('uses Azure prebuilt-layout and returns the parsed extraction', { concurren
       eveningPM: ['32', '33', '11'],
       morningPM: ['37', '06', '30', '32', '19'],
     });
+    assert.deepEqual(payload.items, [
+      { trainId: '27', requestType: 'G-C 26-JUL', customType: '', remark: '' },
+      { trainId: '01', requestType: 'G-C 27-JUL', customType: '', remark: '' },
+      { trainId: '32', requestType: 'RST PM 26-JUL', customType: '', remark: '' },
+      { trainId: '33', requestType: 'RST PM 26-JUL', customType: '', remark: '' },
+      { trainId: '11', requestType: 'RST PM 26-JUL', customType: '', remark: '' },
+      { trainId: '37', requestType: 'RST PM 27-JUL', customType: '', remark: '' },
+      { trainId: '06', requestType: 'RST PM 27-JUL', customType: '', remark: '' },
+      { trainId: '30', requestType: 'RST PM 27-JUL', customType: '', remark: '' },
+      { trainId: '32', requestType: 'RST PM 27-JUL', customType: '', remark: '' },
+      { trainId: '19', requestType: 'RST PM 27-JUL', customType: '', remark: '' },
+    ]);
     assert.equal(calls.length, 2);
     assert.match(calls[0].url, /prebuilt-layout:analyze\?api-version=2024-11-30$/);
     assert.equal(calls[0].init.headers['Ocp-Apim-Subscription-Key'], 'test-key');
