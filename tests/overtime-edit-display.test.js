@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const overtimeTrackerPath = new URL('../src/components/OvertimeTracker.jsx', import.meta.url);
 
-test('edit timing selector bypasses cached option text and renders the controlled saved timing', () => {
+test('edit timing selector keeps Radix dropdown support and renders the controlled saved timing', () => {
   const source = readFileSync(overtimeTrackerPath, 'utf8');
 
   assert.match(
@@ -13,7 +13,7 @@ test('edit timing selector bypasses cached option text and renders the controlle
   );
   assert.match(
     source,
-    /<span data-testid="selected-duty-timing"[^>]*>\s*\{getTimingLabel\(resolvedDraftTiming\.startTime, resolvedDraftTiming\.endTime, draft\.type === "EXTENSION"\)\}\s*<\/span>/
+    /<SelectValue asChild>\s*<span data-testid="selected-duty-timing"[^>]*>\s*\{getTimingLabel\(resolvedDraftTiming\.startTime, resolvedDraftTiming\.endTime, draft\.type === "EXTENSION"\)\}\s*<\/span>\s*<\/SelectValue>/
   );
-  assert.doesNotMatch(source, /<SelectValue placeholder="Select time">/);
+  assert.match(source, /<SelectContent[\s\S]*?draftTimingOptions\.map/);
 });

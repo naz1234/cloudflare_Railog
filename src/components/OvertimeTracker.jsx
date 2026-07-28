@@ -1818,9 +1818,11 @@ export default function OvertimeTracker() {
                     className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[13px] font-medium text-[#eff5fc] shadow-none outline-none transition duration-150 hover:border-[#5579a0] hover:bg-[#15324f] focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/25 data-[state=open]:border-[#777eff] data-[state=open]:bg-[#15324f] data-[state=open]:ring-2 data-[state=open]:ring-[#646cff]/25 [&>svg]:text-[#9fb2c9] [&>svg]:opacity-100"
                     aria-label="Time"
                   >
-                    <span data-testid="selected-duty-timing" className="min-w-0 truncate text-left">
-                      {getTimingLabel(resolvedDraftTiming.startTime, resolvedDraftTiming.endTime, draft.type === "EXTENSION")}
-                    </span>
+                    <SelectValue asChild>
+                      <span data-testid="selected-duty-timing" className="min-w-0 truncate text-left">
+                        {getTimingLabel(resolvedDraftTiming.startTime, resolvedDraftTiming.endTime, draft.type === "EXTENSION")}
+                      </span>
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent
                     position="item-aligned"
