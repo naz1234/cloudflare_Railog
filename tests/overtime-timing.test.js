@@ -27,6 +27,17 @@ test('restores cloud snake_case start and end times', () => {
   });
 });
 
+test('keeps the exact saved RDOT and Extension timing pairs', () => {
+  assert.deepEqual(resolveRecordTiming({ startTime: '23:00', endTime: '07:30' }), {
+    startTime: '23:00',
+    endTime: '07:30',
+  });
+  assert.deepEqual(resolveRecordTiming({ startTime: '19:00', endTime: '07:00' }), {
+    startTime: '19:00',
+    endTime: '07:00',
+  });
+});
+
 test('invalid edit placeholders preserve the last saved timing', () => {
   assert.deepEqual(resolveRecordTiming(
     { startTime: '-', endTime: 'undefined' },
