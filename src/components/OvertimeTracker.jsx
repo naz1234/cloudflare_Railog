@@ -1489,26 +1489,48 @@ export default function OvertimeTracker() {
           </div>
         </label>
 
-        <label className="mt-2.5 block rounded-[16px] border border-[#31506b] bg-[linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
-          <div className="flex items-center justify-between gap-3">
-            <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#a9bad0]">
-              <span className="flex h-7 w-7 items-center justify-center rounded-[9px] border border-violet-400/25 bg-violet-500/[0.10] text-violet-200">
-                <CalendarDays className="h-3.5 w-3.5" strokeWidth={1.9} />
+        <label
+          data-testid="night-days-allowance-summary"
+          className="mt-2.5 block overflow-hidden rounded-[16px] border border-[#3d5475] bg-[radial-gradient(circle_at_8%_20%,rgba(139,92,246,0.14),transparent_42%),radial-gradient(circle_at_92%_80%,rgba(16,185,129,0.10),transparent_38%),linear-gradient(145deg,rgba(12,40,65,0.94),rgba(8,29,49,0.99))] shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]"
+        >
+          <div className="flex items-center justify-between gap-3 border-b border-[#31506b]/80 px-3 py-2.5">
+            <span className="flex min-w-0 items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#d5e4f3]">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-violet-400/25 bg-violet-500/[0.10] text-violet-200 shadow-[0_0_16px_rgba(139,92,246,0.10)]">
+                <CalendarDays className="h-4 w-4" strokeWidth={1.9} />
               </span>
-              Night days
+              Night Days with Expected Allowance
             </span>
-            <span className="rounded-full border border-emerald-400/20 bg-emerald-500/[0.07] px-2 py-1 text-[9px] font-medium text-[#b8c9db]">
-              Fixed rate: <span className="font-semibold text-emerald-300">SAR {formatMoney(NIGHT_ALLOWANCE_RATE)}</span> / night
+            <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-500/[0.07] px-2 py-1 text-[9px] font-medium text-[#b8c9db]">
+              Rate: <span className="font-semibold text-emerald-300">SAR {formatMoney(NIGHT_ALLOWANCE_RATE)}</span> / night
             </span>
           </div>
-          <input
-            type="text"
-            inputMode="numeric"
-            value={allowanceDraft.nightDays}
-            onChange={(event) => handleAllowanceFieldChange("nightDays", sanitizeIntegerInput(event.target.value))}
-            placeholder="0"
-            className="mt-2 h-10 w-full rounded-[11px] border border-[#35536e] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none placeholder:text-[#70859e] transition hover:border-[#456681] focus:border-emerald-400/65 focus:ring-2 focus:ring-emerald-400/15"
-          />
+
+          <div className="grid grid-cols-2 divide-x divide-[#31506b]/80">
+            <div className="min-w-0 px-3 py-3">
+              <p className="text-[9px] uppercase tracking-[0.12em] text-[#8fa6be]">Night days</p>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={allowanceDraft.nightDays}
+                onChange={(event) => handleAllowanceFieldChange("nightDays", sanitizeIntegerInput(event.target.value))}
+                placeholder="0"
+                className="mt-1.5 h-9 w-full rounded-[10px] border border-[#405f7c] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none placeholder:text-[#70859e] transition hover:border-[#52728e] focus:border-emerald-400/65 focus:ring-2 focus:ring-emerald-400/15"
+              />
+            </div>
+
+            <div className="flex min-w-0 items-center gap-2.5 px-3 py-3">
+              <Banknote className="h-4 w-4 shrink-0 text-emerald-300" strokeWidth={1.9} />
+              <div className="min-w-0">
+                <p className="text-[9px] uppercase tracking-[0.12em] text-[#8fa6be]">Expected allowance</p>
+                <p className="mt-1 truncate text-[16px] font-semibold leading-none text-emerald-200" title={`SAR ${formatMoney(allowanceResult.nightAllowance)}`}>
+                  SAR {formatMoney(allowanceResult.nightAllowance)}
+                </p>
+                <p className="mt-1 text-[9px] text-[#7890aa]">
+                  {allowanceResult.nightDays} {allowanceResult.nightDays === 1 ? "night" : "nights"} × SAR {formatMoney(NIGHT_ALLOWANCE_RATE)}
+                </p>
+              </div>
+            </div>
+          </div>
         </label>
 
         <div
@@ -1547,18 +1569,6 @@ export default function OvertimeTracker() {
                 </p>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div className="mt-2.5 flex items-center gap-3 rounded-[16px] border border-[#31506b] bg-[radial-gradient(circle_at_8%_35%,rgba(45,145,255,0.12),transparent_42%),linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-sky-400/25 bg-sky-500/[0.10] text-sky-200">
-            <CalendarDays className="h-5 w-5" strokeWidth={1.9} />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[9px] font-semibold uppercase leading-relaxed tracking-[0.12em] text-[#a9bad0]">
-              Night allowance should receive ({allowanceResult.nightDays} {allowanceResult.nightDays === 1 ? "day" : "days"})
-            </p>
-            <p className="mt-1 text-[16px] font-semibold text-[#e6f1fc]">SAR {formatMoney(allowanceResult.nightAllowance)}</p>
           </div>
         </div>
 
