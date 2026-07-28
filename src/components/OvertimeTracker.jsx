@@ -1511,28 +1511,41 @@ export default function OvertimeTracker() {
           />
         </label>
 
-        <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-          <div className="flex min-h-[88px] items-center gap-3 rounded-[16px] border border-[#31506b] bg-[radial-gradient(circle_at_12%_20%,rgba(45,145,255,0.13),transparent_48%),linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-sky-400/25 bg-sky-500/[0.10] text-sky-200 shadow-[0_0_16px_rgba(56,189,248,0.10)]">
-              <Clock3 className="h-5 w-5" strokeWidth={1.9} />
+        <div
+          data-testid="recorded-hours-expected-ot-summary"
+          className="mt-2.5 overflow-hidden rounded-[16px] border border-[#365779] bg-[radial-gradient(circle_at_8%_20%,rgba(45,145,255,0.14),transparent_40%),radial-gradient(circle_at_92%_80%,rgba(139,92,246,0.14),transparent_42%),linear-gradient(145deg,rgba(12,40,65,0.94),rgba(8,29,49,0.99))] shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]"
+        >
+          <div className="flex items-center gap-2.5 border-b border-[#31506b]/80 px-3 py-2.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-sky-400/25 bg-sky-500/[0.10] text-sky-200 shadow-[0_0_16px_rgba(56,189,248,0.10)]">
+              <Clock3 className="h-4 w-4" strokeWidth={1.9} />
             </span>
             <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#a9bad0]">Recorded hours</p>
-              <p className="mt-1.5 text-[20px] font-semibold leading-none text-white">{allowanceResult.overtimeHours.toFixed(1)}</p>
-              <p className="mt-1 text-[9px] uppercase tracking-[0.12em] text-[#88a0b9]">Hours</p>
+              <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#d5e4f3]">
+                Recorded Hour with Expected OT Amount
+              </p>
+              <p className="mt-0.5 text-[9px] leading-snug text-[#8fa6be]">Calculated from the recorded overtime entries.</p>
             </div>
           </div>
 
-          <div className="flex min-h-[88px] items-center gap-3 rounded-[16px] border border-[#395170] bg-[radial-gradient(circle_at_12%_20%,rgba(139,92,246,0.14),transparent_48%),linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-violet-400/25 bg-violet-500/[0.10] text-violet-200 shadow-[0_0_16px_rgba(139,92,246,0.10)]">
-              <Calculator className="h-5 w-5" strokeWidth={1.9} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#a9bad0]">Expected OT</p>
-              <p className="mt-1.5 truncate text-[15px] font-semibold leading-none text-[#7dd3fc]" title={`SAR ${formatMoney(allowanceResult.expectedOvertime)}`}>
-                SAR {formatMoney(allowanceResult.expectedOvertime)}
-              </p>
-              <p className="mt-1 text-[9px] uppercase tracking-[0.12em] text-[#88a0b9]">Amount</p>
+          <div className="grid grid-cols-2 divide-x divide-[#31506b]/80">
+            <div className="flex min-w-0 items-center gap-2.5 px-3 py-3">
+              <Clock3 className="h-4 w-4 shrink-0 text-sky-300" strokeWidth={1.9} />
+              <div className="min-w-0">
+                <p className="text-[9px] uppercase tracking-[0.12em] text-[#8fa6be]">Recorded hours</p>
+                <p className="mt-1 text-[19px] font-semibold leading-none text-white">
+                  {allowanceResult.overtimeHours.toFixed(1)} <span className="text-[9px] font-medium uppercase tracking-[0.1em] text-[#8fa6be]">hrs</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex min-w-0 items-center gap-2.5 px-3 py-3">
+              <Calculator className="h-4 w-4 shrink-0 text-violet-300" strokeWidth={1.9} />
+              <div className="min-w-0">
+                <p className="text-[9px] uppercase tracking-[0.12em] text-[#8fa6be]">Expected OT amount</p>
+                <p className="mt-1 truncate text-[15px] font-semibold leading-none text-[#7dd3fc]" title={`SAR ${formatMoney(allowanceResult.expectedOvertime)}`}>
+                  SAR {formatMoney(allowanceResult.expectedOvertime)}
+                </p>
+              </div>
             </div>
           </div>
         </div>
