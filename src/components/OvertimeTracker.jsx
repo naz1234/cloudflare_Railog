@@ -1,7 +1,7 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Banknote, Calculator, CalendarDays, Check, Clock3, Download, FilePlus2, ListChecks, Loader2, MessageSquareText, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import NightShiftPdfDetector from "@/components/NightShiftPdfDetector";
 import { resolveRecordTiming } from "@/lib/overtimeTiming";
 
@@ -1806,51 +1806,32 @@ export default function OvertimeTracker() {
 
               <label className="block">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9eafc5]">Time</span>
-                <Select
+                <select
                   key={`duty-time-${editingId || "new"}-${draftTimingValue}`}
+                  data-testid="duty-timing-select"
                   value={draftTimingValue}
-                  onValueChange={(timingValue) => {
+                  onChange={(event) => {
+                    const timingValue = event.target.value;
                     const [startTime, endTime] = timingValue.split("|");
                     setDraft((current) => ({ ...current, startTime, endTime }));
                   }}
+                  aria-label="Time"
+                  className="mt-1.5 h-10 w-full cursor-pointer rounded-xl border border-[#294660] bg-[#102840] px-3 text-[13px] font-medium text-[#eff5fc] shadow-none outline-none transition duration-150 hover:border-[#5579a0] hover:bg-[#15324f] focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/25"
                 >
-                  <SelectTrigger
-                    className="mt-1.5 h-10 w-full rounded-xl border border-[#294660] bg-[#102840] px-3 text-[13px] font-medium text-[#eff5fc] shadow-none outline-none transition duration-150 hover:border-[#5579a0] hover:bg-[#15324f] focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff]/25 data-[state=open]:border-[#777eff] data-[state=open]:bg-[#15324f] data-[state=open]:ring-2 data-[state=open]:ring-[#646cff]/25 [&>svg]:text-[#9fb2c9] [&>svg]:opacity-100"
-                    aria-label="Time"
-                  >
-                    <span data-testid="selected-duty-timing" className="min-w-0 truncate text-left">
+                  {!draftTimingIsPreset && (
+                    <option value={draftTimingValue}>
                       {getTimingLabel(resolvedDraftTiming.startTime, resolvedDraftTiming.endTime, draft.type === "EXTENSION")}
-                    </span>
-                  </SelectTrigger>
-                  <SelectContent
-                    position="item-aligned"
-                    className="z-[100] min-w-[var(--radix-select-trigger-width)] rounded-xl border border-[#3b5874] bg-[#0b2238] p-1.5 text-[#eaf2fb] shadow-[0_14px_36px_rgba(0,0,0,0.48)]"
-                  >
-                    {!draftTimingIsPreset && (
-                      <SelectItem
-                        value={draftTimingValue}
-                        className="cursor-pointer rounded-lg px-3 py-2.5 text-[13px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
-                      >
-                        {getTimingLabel(resolvedDraftTiming.startTime, resolvedDraftTiming.endTime, draft.type === "EXTENSION")}
-                      </SelectItem>
-                    )}
-                    {draftTimingOptions.map((option, index) => {
-                      const timingValue = getTimingValue(option.startTime, option.endTime);
-                      const showPairSeparator = draft.dayType === "NORMAL" && draft.type === "EXTENSION" && (index === 2 || index === 4);
-                      return (
-                        <Fragment key={timingValue}>
-                          {showPairSeparator && <SelectSeparator className="mx-2 my-1.5 bg-[#2d4a65]" />}
-                          <SelectItem
-                            value={timingValue}
-                            className="cursor-pointer rounded-lg px-3 py-2.5 text-[13px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
-                          >
-                            {getTimingLabel(option.startTime, option.endTime, draft.type === "EXTENSION")}
-                          </SelectItem>
-                        </Fragment>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                    </option>
+                  )}
+                  {draftTimingOptions.map((option) => {
+                    const timingValue = getTimingValue(option.startTime, option.endTime);
+                    return (
+                      <option key={timingValue} value={timingValue}>
+                        {getTimingLabel(option.startTime, option.endTime, draft.type === "EXTENSION")}
+                      </option>
+                    );
+                  })}
+                </select>
               </label>
 
               <div>
