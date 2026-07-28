@@ -10825,6 +10825,7 @@ function TrainMovementContent() {
     "LEO",
     "FARAS",
     "MIRAN",
+    "WENDELL",
   ];
 
   const TP1_AUTOMATIC_STABLING_OPTIONS = [
