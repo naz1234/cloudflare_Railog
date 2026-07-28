@@ -4,17 +4,19 @@ import { readFileSync } from 'node:fs';
 
 const overtimeTrackerPath = new URL('../src/components/OvertimeTracker.jsx', import.meta.url);
 
-test('edit timing uses a native controlled dropdown with the saved timing value', () => {
+test('edit timing uses the standard styled dropdown without injecting legacy options', () => {
   const source = readFileSync(overtimeTrackerPath, 'utf8');
 
   assert.match(
     source,
-    /<select\s+key=\{`duty-time-\$\{editingId \|\| "new"\}-\$\{draftTimingValue\}`\}\s+data-testid="duty-timing-select"\s+value=\{draftTimingValue\}/
+    /key=\{`duty-time-\$\{editingId \|\| "new"\}-\$\{draft\.type\}-\$\{draft\.dayType\}`\}/
   );
   assert.match(
     source,
-    /onChange=\{\(event\) => \{\s*const timingValue = event\.target\.value;\s*const \[startTime, endTime\] = timingValue\.split\("\|"\);/
+    /<SelectValue placeholder="Select time">\s*\{getTimingLabel\(resolvedDraftTiming\.startTime, resolvedDraftTiming\.endTime, draft\.type === "EXTENSION"\)\}\s*<\/SelectValue>/
   );
-  assert.match(source, /draftTimingOptions\.map\(\(option\) => \{/);
-  assert.match(source, /<option key=\{timingValue\} value=\{timingValue\}>/);
+  assert.match(source, /position="popper"\s+viewportClassName="!h-auto max-h-\[360px\]"/);
+  assert.match(source, /draftTimingOptions\.map\(\(option, index\) => \{/);
+  assert.match(source, /index === 2 \|\| index === 4/);
+  assert.doesNotMatch(source, /!draftTimingIsPreset/);
 });
