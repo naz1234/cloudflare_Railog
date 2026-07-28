@@ -24,7 +24,7 @@ const NORMAL_TIMING_OPTIONS = {
   EXTENSION: [
     { startTime: "07:00", endTime: "19:00" },
     { startTime: "19:00", endTime: "07:00" },
-    { startTime: "15:00", endTime: "23:00" },
+    { startTime: "15:00", endTime: "03:00" },
     { startTime: "03:00", endTime: "15:00" },
     { startTime: "23:00", endTime: "11:00" },
     { startTime: "11:00", endTime: "23:00" },
@@ -69,7 +69,19 @@ function getTimingValue(startTime, endTime) {
   return `${startTime}|${endTime}`;
 }
 
-function getTimingLabel(startTime, endTime) {
+function formatTimeWithMeridiem(time = "") {
+  const [hours, minutes] = String(time).split(":").map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return String(time || "");
+
+  const displayHours = hours % 12 || 12;
+  const meridiem = hours >= 12 ? "PM" : "AM";
+  return `${displayHours}:${String(minutes).padStart(2, "0")} ${meridiem}`;
+}
+
+function getTimingLabel(startTime, endTime, showMeridiem = false) {
+  if (showMeridiem) {
+    return `${formatTimeWithMeridiem(startTime)} – ${formatTimeWithMeridiem(endTime)}`;
+  }
   return `${startTime} – ${endTime}`;
 }
 
@@ -1806,7 +1818,7 @@ export default function OvertimeTracker() {
                         value={draftTimingValue}
                         className="cursor-pointer rounded-lg px-3 py-2.5 text-[13px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
                       >
-                        {getTimingLabel(draft.startTime, draft.endTime)} (previous)
+                        {getTimingLabel(draft.startTime, draft.endTime, draft.type === "EXTENSION")}
                       </SelectItem>
                     )}
                     {draftTimingOptions.map((option, index) => {
@@ -1819,7 +1831,7 @@ export default function OvertimeTracker() {
                             value={timingValue}
                             className="cursor-pointer rounded-lg px-3 py-2.5 text-[13px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
                           >
-                            {getTimingLabel(option.startTime, option.endTime)}
+                            {getTimingLabel(option.startTime, option.endTime, draft.type === "EXTENSION")}
                           </SelectItem>
                         </Fragment>
                       );
