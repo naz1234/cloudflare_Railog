@@ -4,16 +4,17 @@ import { readFileSync } from 'node:fs';
 
 const overtimeTrackerPath = new URL('../src/components/OvertimeTracker.jsx', import.meta.url);
 
-test('edit timing selector bypasses cached option text and renders the controlled saved timing', () => {
+test('edit timing uses a native controlled dropdown with the saved timing value', () => {
   const source = readFileSync(overtimeTrackerPath, 'utf8');
 
   assert.match(
     source,
-    /key=\{`duty-time-\$\{editingId \|\| "new"\}-\$\{draftTimingValue\}`\}/
+    /<select\s+key=\{`duty-time-\$\{editingId \|\| "new"\}-\$\{draftTimingValue\}`\}\s+data-testid="duty-timing-select"\s+value=\{draftTimingValue\}/
   );
   assert.match(
     source,
-    /<span data-testid="selected-duty-timing"[^>]*>\s*\{getTimingLabel\(resolvedDraftTiming\.startTime, resolvedDraftTiming\.endTime, draft\.type === "EXTENSION"\)\}\s*<\/span>/
+    /onChange=\{\(event\) => \{\s*const timingValue = event\.target\.value;\s*const \[startTime, endTime\] = timingValue\.split\("\|"\);/
   );
-  assert.doesNotMatch(source, /<SelectValue placeholder="Select time">/);
+  assert.match(source, /draftTimingOptions\.map\(\(option\) => \{/);
+  assert.match(source, /<option key=\{timingValue\} value=\{timingValue\}>/);
 });
