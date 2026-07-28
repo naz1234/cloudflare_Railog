@@ -3,6 +3,7 @@ import { Banknote, Calculator, CalendarDays, Check, Clock3, Download, FilePlus2,
 import { base44 } from "@/api/base44Client";
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import NightShiftPdfDetector from "@/components/NightShiftPdfDetector";
+import { resolveRecordTiming } from "@/lib/overtimeTiming";
 
 const OVERTIME_STORAGE_KEY = "ovtOvertimeRecords_v1";
 const OVERTIME_NOTE_STORAGE_KEY = "ovtMonthlyNotes_v1";
@@ -166,8 +167,7 @@ function normalizeRecord(record = {}) {
     : getLocalDateValue();
   const dayType = normalizeDayType(record.dayType || record.day_type);
   const defaultTiming = getDefaultTiming(type, dayType);
-  const startTime = /^\d{2}:\d{2}$/.test(String(record.startTime || "")) ? String(record.startTime) : defaultTiming.startTime;
-  const endTime = /^\d{2}:\d{2}$/.test(String(record.endTime || "")) ? String(record.endTime) : defaultTiming.endTime;
+  const { startTime, endTime } = resolveRecordTiming(record, defaultTiming);
 
   return {
     id: String(record.id || `ovt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`),
@@ -709,12 +709,16 @@ export default function OvertimeTracker() {
     };
   }, [noteCloudReady, refreshCloudNotes]);
 
-  const draftHours = useMemo(
-    () => calculateOvertimeHours(draft.startTime, draft.endTime, draft.type, draft.dayType),
+  const resolvedDraftTiming = useMemo(
+    () => resolveRecordTiming(draft, getDefaultTiming(draft.type, draft.dayType)),
     [draft.startTime, draft.endTime, draft.type, draft.dayType]
   );
+  const draftHours = useMemo(
+    () => calculateOvertimeHours(resolvedDraftTiming.startTime, resolvedDraftTiming.endTime, draft.type, draft.dayType),
+    [resolvedDraftTiming, draft.type, draft.dayType]
+  );
   const draftTimingOptions = getTimingOptions(draft.dayType, draft.type);
-  const draftTimingValue = getTimingValue(draft.startTime, draft.endTime);
+  const draftTimingValue = getTimingValue(resolvedDraftTiming.startTime, resolvedDraftTiming.endTime);
   const draftTimingIsPreset = draftTimingOptions.some(
     (option) => getTimingValue(option.startTime, option.endTime) === draftTimingValue
   );
@@ -870,13 +874,18 @@ export default function OvertimeTracker() {
 
   const handleSave = async (event) => {
     event.preventDefault();
-    if (!draft.date || !draft.startTime || !draft.endTime || saving) return;
+    if (!draft.date || saving) return;
 
     const now = new Date().toISOString();
     const existing = editingId ? records.find((record) => record.id === editingId) : null;
+    const existingTiming = resolveRecordTiming(existing, getDefaultTiming(draft.type, draft.dayType));
+    const saveTiming = resolveRecordTiming(draft, existingTiming);
+    if (!saveTiming.startTime || !saveTiming.endTime) return;
     const payload = normalizeRecord({
       ...(existing || {}),
       ...draft,
+      startTime: saveTiming.startTime,
+      endTime: saveTiming.endTime,
       id: editingId || `ovt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       createdAt: existing?.createdAt || now,
       updatedAt: now,
@@ -922,14 +931,15 @@ export default function OvertimeTracker() {
   };
 
   const handleEdit = (record) => {
-    setEditingId(record.id);
+    const normalizedRecord = normalizeRecord(record);
+    setEditingId(normalizedRecord.id);
     setDraft({
-      date: record.date,
-      dayType: record.dayType,
-      type: record.type,
-      startTime: record.startTime,
-      endTime: record.endTime,
-      remark: record.remark,
+      date: normalizedRecord.date,
+      dayType: normalizedRecord.dayType,
+      type: normalizedRecord.type,
+      startTime: normalizedRecord.startTime,
+      endTime: normalizedRecord.endTime,
+      remark: normalizedRecord.remark,
     });
   };
 
@@ -1818,7 +1828,7 @@ export default function OvertimeTracker() {
                         value={draftTimingValue}
                         className="cursor-pointer rounded-lg px-3 py-2.5 text-[13px] font-medium text-[#dbe8f6] transition-colors data-[highlighted]:bg-[#5963f2] data-[highlighted]:text-white data-[state=checked]:bg-[#303b78] data-[state=checked]:text-white"
                       >
-                        {getTimingLabel(draft.startTime, draft.endTime, draft.type === "EXTENSION")}
+                        {getTimingLabel(resolvedDraftTiming.startTime, resolvedDraftTiming.endTime, draft.type === "EXTENSION")}
                       </SelectItem>
                     )}
                     {draftTimingOptions.map((option, index) => {
