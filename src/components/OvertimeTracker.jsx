@@ -794,13 +794,6 @@ export default function OvertimeTracker() {
   [notesForYear, selectedMonth]);
 
   const visibleEntries = useMemo(() => [
-    ...visibleRecords.map((record) => ({
-      key: `record-${record.id}`,
-      kind: "record",
-      date: record.date,
-      createdAt: record.createdAt,
-      item: record,
-    })),
     ...visibleNotes.map((note) => ({
       key: `note-${note.id}`,
       kind: "note",
@@ -808,7 +801,14 @@ export default function OvertimeTracker() {
       createdAt: note.createdAt,
       item: note,
     })),
-  ].sort((a, b) => a.date.localeCompare(b.date) || String(a.createdAt || "").localeCompare(String(b.createdAt || ""))),
+    ...visibleRecords.map((record) => ({
+      key: `record-${record.id}`,
+      kind: "record",
+      date: record.date,
+      createdAt: record.createdAt,
+      item: record,
+    })),
+  ],
   [visibleNotes, visibleRecords]);
 
   const annualHours = useMemo(
@@ -1982,10 +1982,12 @@ export default function OvertimeTracker() {
           ) : (
             <div className="max-h-[430px] space-y-2.5 overflow-y-auto pr-1 [scrollbar-color:#315574_transparent] [scrollbar-width:thin]">
               {visibleEntries.map((entry, index) => {
-                const showTypeSeparator = index > 0 && visibleEntries[index - 1].kind !== entry.kind;
-                const entrySeparator = showTypeSeparator ? (
-                  <div aria-hidden="true" className="mb-2.5 pt-2.5">
-                    <div className="h-1.5 rounded-full border border-sky-300/35 bg-sky-400/20 shadow-[0_2px_10px_rgba(14,165,233,0.14)]" />
+                const showSectionSeparator = index === 0 || visibleEntries[index - 1].kind !== entry.kind;
+                const sectionLabel = entry.kind === "note" ? "Notes" : "EXT / RDOT";
+                const entrySeparator = showSectionSeparator ? (
+                  <div className="flex items-center gap-2 pb-0.5 pt-1" aria-label={`${sectionLabel} section`}>
+                    <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.16em] text-sky-200">{sectionLabel}</span>
+                    <div aria-hidden="true" className="h-px flex-1 bg-sky-300/35" />
                   </div>
                 ) : null;
 
