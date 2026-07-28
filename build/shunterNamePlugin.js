@@ -8,7 +8,7 @@ export default function shunterNamePlugin() {
         return null;
       }
 
-      const optionListPattern = /  const SHUNTER_NAME_OPTIONS = \[\n([\s\S]*?)\n  \];/;
+      const optionListPattern = /  const SHUNTER_NAME_OPTIONS = \[\r?\n([\s\S]*?)\r?\n  \];/;
       const optionListMatch = source.match(optionListPattern);
 
       if (!optionListMatch) {
