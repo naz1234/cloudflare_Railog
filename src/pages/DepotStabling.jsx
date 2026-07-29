@@ -11718,51 +11718,36 @@ function TrainMovementContent() {
       : getTp1MovementType();
     const form = getTp1ModeForm(movementType);
     const train = normalizeMovementTrain(form.trainSet);
-    const displayTrain = train || "T19";
+    const displayTrain = train || (preview ? "T19" : "Train");
     const planStatus = form.planStatus || "Planned";
-    const shunterName = (form.shunterName || "ALVIN").trim();
+    const shunterName = (form.shunterName || (preview ? "ALVIN" : "")).trim();
     const shunterNameForLog = formatTp1ShunterNameForLog(shunterName) || shunterName;
-    const trAtTp1 = form.trAtTp1 || "18:20";
-    const shunterAuth = addMinutesToHHMM(trAtTp1, 1);
-    const trLocalized = form.trLocalized || "18:28";
+    const trAtTp1 = form.trAtTp1 || (preview ? "18:20" : "");
+    const shunterAuth = trAtTp1 ? addMinutesToHHMM(trAtTp1, 1) : "";
+    const trLocalized = form.trLocalized || (preview ? "18:28" : "");
     const trainPrepCompletedTime = form.trainPrepCompletedTime || "";
     const pstPerformedTime = form.pstPerformedTime || "";
     const pstCompletedTime = pstPerformedTime ? addMinutesToHHMM(pstPerformedTime, 6) : "";
     const selectedAutomaticStablingRoad = formatTp1RoadForLog(form.automaticStablingRoad);
     const stablingRoad = selectedAutomaticStablingRoad || findTp1TrainStablingRoad(train || displayTrain) || "Automatic Area";
-    const fromTp1 = form.fromTp1 || "18:30";
-    const toManual = form.toManual || "18:35";
+    const fromTp1 = form.fromTp1 || (preview ? "18:30" : "");
+    const toManual = form.toManual || (preview ? "18:35" : "");
     const nextWashSuffix = getTp1NextWashSuffix(form);
     const cmmsNumber = String(form.cmmsNumber || "").replace(/[^0-9A-Za-z/-]/g, "").trim();
 
-    if (!preview) {
-      const missing = [];
-      if (!train) missing.push(movementType === "manual" ? "Train Set going to workshop" : "Train Set (from workshop)");
-      if (!form.planStatus) missing.push("Plan / Unplanned");
-      if (!isCompleteMovementTimeInput(form.trAtTp1)) missing.push(movementType === "automatic" ? "Time arrival at TP1 (HH:MM)" : "TR at TP1 (HH:MM)");
-      if (!form.shunterName) missing.push("Shunter Name");
-      if (movementType === "automatic" && !isCompleteMovementTimeInput(form.trLocalized)) missing.push("Time Train Localized (HH:MM)");
-      if (movementType === "automatic" && !form.automaticStablingRoad) missing.push("Parking location");
-      if (movementType === "automatic" && !isCompleteMovementTimeInput(form.trainPrepCompletedTime)) missing.push("Time Train Prep Completed (HH:MM)");
-      if (movementType === "automatic" && !isCompleteMovementTimeInput(form.pstPerformedTime)) missing.push("Time PST Performed (HH:MM)");
-      if (movementType === "automatic" && !cmmsNumber) missing.push("CMMS Number");
-      if (movementType === "manual" && !isCompleteMovementTimeInput(form.fromTp1)) missing.push("Time start moving from TP1 (HH:MM)");
-      if (movementType === "manual" && !isCompleteMovementTimeInput(form.toManual)) missing.push("Time arrival to Manual Area (HH:MM)");
-      if (movementType === "manual" && !cmmsNumber) missing.push("CMMS Number");
-
-      if (missing.length) {
-        alert(`Please complete: ${missing.join(", ")}.`);
-        return null;
-      }
-    }
-
     if (movementType === "automatic") {
       const titleLine = `${displayTrain}: ${planStatus} movement to Automatic Area.${nextWashSuffix}`;
-      const timedLines = [
-        `${trAtTp1} hrs – ${displayTrain} arrived at TP1 with Shunter ${shunterNameForLog} onboard.`,
-        `${shunterAuth} hrs – ${displayTrain} authorized to prepare the train, conduct a brake self-test, and localize the train.`,
-        `${trLocalized} hrs – ${displayTrain} localized at TP1.`,
-      ];
+      const timedLines = [];
+
+      if (trAtTp1) {
+        const shunterSuffix = shunterNameForLog ? ` with Shunter ${shunterNameForLog} onboard` : "";
+        timedLines.push(`${trAtTp1} hrs – ${displayTrain} arrived at TP1${shunterSuffix}.`);
+        timedLines.push(`${shunterAuth} hrs – ${displayTrain} authorized to prepare the train, conduct a brake self-test, and localize the train.`);
+      }
+
+      if (trLocalized) {
+        timedLines.push(`${trLocalized} hrs – ${displayTrain} localized at TP1.`);
+      }
 
       if (trainPrepCompletedTime) {
         timedLines.push(`${trainPrepCompletedTime} hrs – ${displayTrain} Train preparation completed at ${stablingRoad} by Shunter ${shunterNameForLog}.`);
@@ -11789,9 +11774,9 @@ function TrainMovementContent() {
     return [
       `${displayTrain}: ${planStatus} movement to Manual Area.${nextWashSuffix}`,
       ...sortTp1TimedLogLines([
-        `${trAtTp1} hrs – ${displayTrain} arrived at TP1.`,
-        `${shunterAuth} hrs – ${displayTrain} was authorized to prepare the train. Shunter ${shunterNameForLog} onboard.`,
-        `${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual Area at ${toManual} hrs.`,
+        ...(trAtTp1 ? [`${trAtTp1} hrs – ${displayTrain} arrived at TP1.`] : []),
+        ...(shunterAuth ? [`${shunterAuth} hrs – ${displayTrain} was authorized to prepare the train.${shunterNameForLog ? ` Shunter ${shunterNameForLog} onboard.` : ""}`] : []),
+        ...(fromTp1 ? [`${fromTp1} hrs – ${displayTrain} departed from TP1${toManual ? ` and arrived at the Manual Area at ${toManual} hrs` : ""}.`] : []),
         ...(manualCmmsHandoverLine ? [manualCmmsHandoverLine] : []),
       ]),
     ].join("\n");
@@ -13176,7 +13161,6 @@ function TrainMovementContent() {
     ];
 
     const visibleFlowSteps = (isAutomatic ? automaticFlowSteps : manualFlowSteps).filter((step) => step.visible);
-    const tp1RequiredReady = isAutomatic ? automaticCmmsReady : manualCmmsReady;
     const tp1ClearTarget = movementType;
     const isTp1ConfirmingClear = tp1ConfirmClearTarget === tp1ClearTarget;
     const tp1LogPillButtonClass = "flex min-w-[78px] items-center justify-center gap-1 rounded-full border px-3 py-1 text-[10px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.02] hover:text-white";
@@ -13303,10 +13287,9 @@ function TrainMovementContent() {
               <button
                 type="button"
                 onClick={() => addTp1MovementLog(movementType)}
-                disabled={!tp1RequiredReady}
-                className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-white transition-all enabled:hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-35"
+                className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-white transition-all hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                 style={{ borderColor: `${accent}9a`, backgroundColor: `${accent}33` }}
-                title={tp1RequiredReady ? `Add ${modeTitle} Log` : "Complete all required fields first"}
+                title={`Add current ${modeTitle} details to the log`}
               >
                 <span className="text-[11px] leading-none">+</span> Add to Log
               </button>

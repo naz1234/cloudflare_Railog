@@ -35,14 +35,6 @@ export default function manualUnplannedSrPlugin() {
 
       code = replaceRequired(
         code,
-        /      if \(movementType === "manual" && !cmmsNumber\) missing\.push\("CMMS Number"\);/,
-        `      if (movementType === "manual" && !cmmsNumber) missing.push("CMMS Number");
-      if (isUnplannedManualMovement && !srNumber) missing.push("SR Number");`,
-        'SR validation'
-      );
-
-      code = replaceRequired(
-        code,
         /      cmmsNumber,\r?\n      l3ReportUpdatedToMaintenance:/,
         `      cmmsNumber,
       srNumber: isUnplannedManualMovement ? srNumber : "",
@@ -96,13 +88,6 @@ export default function manualUnplannedSrPlugin() {
         label: "Next Wash Optional",
         visible: manualSrReady,`,
         'Manual Area SR input step'
-      );
-
-      code = replaceRequired(
-        code,
-        /const tp1RequiredReady = isAutomatic \? automaticCmmsReady : manualCmmsReady;/,
-        'const tp1RequiredReady = isAutomatic ? automaticCmmsReady : manualSrReady;',
-        'Manual Area Add to Log readiness'
       );
 
       const tp1StepCardStart = code.indexOf('const renderTp1FlowStepCard');
