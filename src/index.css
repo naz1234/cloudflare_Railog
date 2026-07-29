@@ -8917,6 +8917,20 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-ne
   box-shadow: none !important;
 }
 
+/* Keep reference rows compact and state-led: completed rows read as one green
+   block, while unassigned rows no longer fall back to the legacy zebra fill. */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot] .theme-insertion-reference-row .theme-insertion-reference-row-cell {
+  background: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot] .theme-insertion-reference-row.is-used:not(.is-duplicate) .theme-insertion-reference-row-cell {
+  background: linear-gradient(90deg, #dcfce7 0%, #ecfdf5 100%) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot] .theme-insertion-reference-row.is-duplicate .theme-insertion-reference-row-cell {
+  background: linear-gradient(90deg, #fef3c7 0%, #fff7ed 100%) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .theme-insertion-page .theme-insertion-reference-progress-assigned {
     transition: none !important;
