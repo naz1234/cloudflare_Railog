@@ -773,6 +773,8 @@ export default function OvertimeTracker() {
     () => calculateAllowanceResult(allowanceDraft, selectedMonthSummary.hours),
     [allowanceDraft, selectedMonthSummary.hours]
   );
+  const allowancePanelHeaderClass = "flex min-h-[49px] items-center gap-2.5 border-b border-[#31506b]/80 px-3 py-2.5";
+  const allowancePanelTitleClass = "text-[10px] font-semibold uppercase leading-[1.35] tracking-[0.12em] text-[#d5e4f3]";
 
   const monthAllowanceStatuses = useMemo(() => MONTHS.map((_, monthIndex) => {
     const savedCheck = getLatestAllowanceCheck(allowanceChecks, selectedYear, monthIndex + 1);
@@ -1442,7 +1444,7 @@ export default function OvertimeTracker() {
               <Calculator className="h-5 w-5" strokeWidth={1.9} />
             </div>
             <div className="min-w-0">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.20em] text-[#eef5fc]">Allowance check</p>
+              <p className={allowancePanelTitleClass}>Allowance check</p>
               <p className="mt-1 text-[11px] leading-relaxed text-[#9fb1c8]">
                 Uses {MONTHS[selectedMonth].slice(0, 3)} {selectedYear} recorded hours.
               </p>
@@ -1453,45 +1455,49 @@ export default function OvertimeTracker() {
           </span>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2.5">
-          <label className="rounded-[16px] border border-[#31506b] bg-[linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
-            <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#a9bad0]">
-              <span className="flex h-7 w-7 items-center justify-center rounded-[9px] border border-emerald-400/20 bg-emerald-500/[0.08] text-emerald-200">
-                <Banknote className="h-3.5 w-3.5" strokeWidth={1.9} />
-              </span>
-              Basic salary
+        <div
+          data-testid="salary-bases-summary"
+          className="mt-4 overflow-hidden rounded-[16px] border border-[#31506b] bg-[linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]"
+        >
+          <div className={allowancePanelHeaderClass}>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-emerald-400/20 bg-emerald-500/[0.08] text-emerald-200">
+              <Banknote className="h-4 w-4" strokeWidth={1.9} />
             </span>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={allowanceDraft.basicSalary}
-              onChange={(event) => handleAllowanceFieldChange("basicSalary", sanitizeDecimalInput(event.target.value))}
-              className="mt-2 h-10 w-full rounded-[11px] border border-[#35536e] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none transition hover:border-[#456681] focus:border-emerald-400/65 focus:ring-2 focus:ring-emerald-400/15"
-            />
-          </label>
+            <p className={allowancePanelTitleClass}>Basic Salary and Salary + Laundry</p>
+          </div>
+          <div className="grid grid-cols-2 divide-x divide-[#31506b]/80">
+            <label className="min-w-0 p-3">
+              <span className="text-[9px] font-medium uppercase tracking-[0.12em] text-[#8fa6be]">Basic salary</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={allowanceDraft.basicSalary}
+                onChange={(event) => handleAllowanceFieldChange("basicSalary", sanitizeDecimalInput(event.target.value))}
+                className="mt-2 h-10 w-full rounded-[11px] border border-[#35536e] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none transition hover:border-[#456681] focus:border-emerald-400/65 focus:ring-2 focus:ring-emerald-400/15"
+              />
+            </label>
 
-          <label className="rounded-[16px] border border-[#31506b] bg-[linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
-            <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#a9bad0]">
-              <span className="flex h-7 w-7 items-center justify-center rounded-[9px] border border-sky-400/20 bg-sky-500/[0.08] text-sky-200">
-                <ListChecks className="h-3.5 w-3.5" strokeWidth={1.9} />
-              </span>
-              Salary + laundry
-            </span>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={allowanceDraft.salaryWithLaundry}
-              onChange={(event) => handleAllowanceFieldChange("salaryWithLaundry", sanitizeDecimalInput(event.target.value))}
-              className="mt-2 h-10 w-full rounded-[11px] border border-[#35536e] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none transition hover:border-[#456681] focus:border-emerald-400/65 focus:ring-2 focus:ring-emerald-400/15"
-            />
-          </label>
+            <label className="min-w-0 p-3">
+              <span className="text-[9px] font-medium uppercase tracking-[0.12em] text-[#8fa6be]">Salary + laundry</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={allowanceDraft.salaryWithLaundry}
+                onChange={(event) => handleAllowanceFieldChange("salaryWithLaundry", sanitizeDecimalInput(event.target.value))}
+                className="mt-2 h-10 w-full rounded-[11px] border border-[#35536e] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none transition hover:border-[#456681] focus:border-emerald-400/65 focus:ring-2 focus:ring-emerald-400/15"
+              />
+            </label>
+          </div>
         </div>
 
-        <label className="mt-2.5 block rounded-[16px] border border-emerald-400/35 bg-[radial-gradient(circle_at_8%_0%,rgba(16,185,129,0.18),transparent_52%),linear-gradient(145deg,rgba(7,52,48,0.94),rgba(6,27,40,0.98))] p-3 shadow-[0_10px_26px_rgba(5,150,105,0.10),inset_0_1px_0_rgba(255,255,255,0.035)]">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200">
-            Salary received in {MONTHS[salaryPeriod.monthIndex]}
-          </span>
-          <div className="relative mt-2">
+        <div className="mt-2.5 overflow-hidden rounded-[16px] border border-emerald-400/35 bg-[radial-gradient(circle_at_8%_0%,rgba(16,185,129,0.18),transparent_52%),linear-gradient(145deg,rgba(7,52,48,0.94),rgba(6,27,40,0.98))] shadow-[0_10px_26px_rgba(5,150,105,0.10),inset_0_1px_0_rgba(255,255,255,0.035)]">
+          <div className={allowancePanelHeaderClass}>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-emerald-400/25 bg-emerald-500/[0.10] text-emerald-200">
+              <Banknote className="h-4 w-4" strokeWidth={1.9} />
+            </span>
+            <p className={allowancePanelTitleClass}>Salary received in {MONTHS[salaryPeriod.monthIndex]}</p>
+          </div>
+          <label className="relative block p-3">
             <input
               type="text"
               inputMode="decimal"
@@ -1505,19 +1511,19 @@ export default function OvertimeTracker() {
                 <Check className="h-4 w-4" strokeWidth={2.4} />
               </span>
             )}
-          </div>
-        </label>
+          </label>
+        </div>
 
         <label
           data-testid="night-days-allowance-summary"
           className="mt-2.5 block overflow-hidden rounded-[16px] border border-[#3d5475] bg-[radial-gradient(circle_at_8%_20%,rgba(139,92,246,0.14),transparent_42%),radial-gradient(circle_at_92%_80%,rgba(16,185,129,0.10),transparent_38%),linear-gradient(145deg,rgba(12,40,65,0.94),rgba(8,29,49,0.99))] shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]"
         >
-          <div className="flex items-center justify-between gap-3 border-b border-[#31506b]/80 px-3 py-2.5">
-            <span className="flex min-w-0 items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#d5e4f3]">
+          <div className={`${allowancePanelHeaderClass} justify-between`}>
+            <span className="flex min-w-0 items-center gap-2">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-violet-400/25 bg-violet-500/[0.10] text-violet-200 shadow-[0_0_16px_rgba(139,92,246,0.10)]">
                 <CalendarDays className="h-4 w-4" strokeWidth={1.9} />
               </span>
-              Night Days with Expected Allowance
+              <span className={allowancePanelTitleClass}>Night Days with Expected Allowance</span>
             </span>
             <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-500/[0.07] px-2 py-1 text-[9px] font-medium text-[#b8c9db]">
               Rate: <span className="font-semibold text-emerald-300">SAR {formatMoney(NIGHT_ALLOWANCE_RATE)}</span> / night
@@ -1556,12 +1562,12 @@ export default function OvertimeTracker() {
           data-testid="recorded-hours-expected-ot-summary"
           className="mt-2.5 overflow-hidden rounded-[16px] border border-[#365779] bg-[radial-gradient(circle_at_8%_20%,rgba(45,145,255,0.14),transparent_40%),radial-gradient(circle_at_92%_80%,rgba(139,92,246,0.14),transparent_42%),linear-gradient(145deg,rgba(12,40,65,0.94),rgba(8,29,49,0.99))] shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]"
         >
-          <div className="flex items-center gap-2.5 border-b border-[#31506b]/80 px-3 py-2.5">
+          <div className={allowancePanelHeaderClass}>
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-sky-400/25 bg-sky-500/[0.10] text-sky-200 shadow-[0_0_16px_rgba(56,189,248,0.10)]">
               <Clock3 className="h-4 w-4" strokeWidth={1.9} />
             </span>
             <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#d5e4f3]">
+              <p className={allowancePanelTitleClass}>
                 Recorded Hour with Expected OT Amount
               </p>
               <p className="mt-0.5 text-[9px] leading-snug text-[#8fa6be]">Calculated from the recorded overtime entries.</p>
@@ -1591,14 +1597,14 @@ export default function OvertimeTracker() {
           </div>
         </div>
 
-        <div className="mt-2.5 flex items-center gap-3 rounded-[16px] border border-[#3d4e73] bg-[radial-gradient(circle_at_8%_35%,rgba(139,92,246,0.13),transparent_42%),linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] p-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-violet-400/25 bg-violet-500/[0.10] text-violet-200">
-            <Banknote className="h-5 w-5" strokeWidth={1.9} />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[9px] font-semibold uppercase leading-relaxed tracking-[0.12em] text-[#a9bad0]">
-              Remaining for overtime
-            </p>
+        <div className="mt-2.5 overflow-hidden rounded-[16px] border border-[#3d4e73] bg-[radial-gradient(circle_at_8%_35%,rgba(139,92,246,0.13),transparent_42%),linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))]">
+          <div className={allowancePanelHeaderClass}>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-violet-400/25 bg-violet-500/[0.10] text-violet-200">
+              <Banknote className="h-4 w-4" strokeWidth={1.9} />
+            </span>
+            <p className={allowancePanelTitleClass}>Remaining for overtime</p>
+          </div>
+          <div className="min-w-0 px-3 py-3">
             <p className="text-[9px] leading-relaxed text-[#7f95ad]">After deduct night + laundry allowance</p>
             <p className="mt-1 text-[16px] font-semibold text-[#7dd3fc]">
               {allowanceResult.hasSalaryReceived ? `SAR ${formatMoney(allowanceResult.remainingForOvertime)}` : "Waiting"}
@@ -1606,7 +1612,7 @@ export default function OvertimeTracker() {
           </div>
         </div>
 
-        <div className={`mt-2.5 rounded-[18px] border p-3.5 transition ${allowanceResult.status === "EXTRA"
+        <div className={`mt-2.5 overflow-hidden rounded-[18px] border transition ${allowanceResult.status === "EXTRA"
           ? "border-emerald-400/35 bg-[radial-gradient(circle_at_0%_0%,rgba(16,185,129,0.20),transparent_48%),linear-gradient(145deg,rgba(5,63,55,0.88),rgba(6,34,45,0.98))] shadow-[0_10px_28px_rgba(5,150,105,0.12)]"
           : allowanceResult.status === "SHORT"
             ? "border-[#7d3f4a] bg-[radial-gradient(circle_at_10%_20%,rgba(248,113,113,0.16),transparent_50%),linear-gradient(145deg,rgba(58,20,29,0.95),rgba(18,17,30,0.98))] shadow-[0_10px_28px_rgba(185,28,28,0.14)]"
@@ -1614,8 +1620,8 @@ export default function OvertimeTracker() {
               ? "border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] shadow-[0_10px_28px_rgba(38,199,129,0.14)]"
               : "border-[#31506b] bg-[linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))]"
         }`}>
-          <div className="flex items-start gap-3">
-            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border ${allowanceResult.status === "EXTRA"
+          <div className={allowancePanelHeaderClass}>
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border ${allowanceResult.status === "EXTRA"
               ? "border-emerald-300/35 bg-emerald-500/20 text-emerald-100"
               : allowanceResult.status === "SHORT"
                 ? "border-red-300/35 bg-red-500/10 text-red-200 shadow-[0_0_18px_rgba(239,68,68,0.14)]"
@@ -1624,18 +1630,14 @@ export default function OvertimeTracker() {
                   : "border-[#3c5871] bg-[#102b46] text-[#91a5bd]"
             }`}>
               {allowanceResult.status === "CORRECT" || allowanceResult.status === "EXTRA"
-                ? <Check className="h-5 w-5" strokeWidth={2.3} />
-                : <Banknote className="h-5 w-5" strokeWidth={1.9} />}
+                ? <Check className="h-4 w-4" strokeWidth={2.3} />
+                : <Banknote className="h-4 w-4" strokeWidth={1.9} />}
             </span>
-            <div className="min-w-0 flex-1">
-              <p className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${allowanceResult.status === "CORRECT"
-                ? "text-[#76d5ae]"
-                : allowanceResult.status === "SHORT"
-                  ? "text-red-300"
-                  : "text-[#e7f1fb]"
-              }`}>
-                {allowanceResult.status === "WAITING" ? "Waiting for salary input" : `Allowance ${allowanceResult.status.toLowerCase()}`}
-              </p>
+            <p className={allowancePanelTitleClass}>
+              {allowanceResult.status === "WAITING" ? "Waiting for salary input" : `Allowance ${allowanceResult.status.toLowerCase()}`}
+            </p>
+          </div>
+          <div className="min-w-0 px-3 py-3">
               {allowanceResult.hasSalaryReceived && (
                 <p className={`mt-1.5 text-[18px] font-semibold ${allowanceResult.status === "CORRECT"
                   ? "text-white"
@@ -1662,7 +1664,6 @@ export default function OvertimeTracker() {
               }`}>
                 Night allowance: {allowanceResult.nightDays} night days × SAR {formatMoney(NIGHT_ALLOWANCE_RATE)} = SAR {formatMoney(allowanceResult.nightAllowance)}. Remaining OT: received salary − (salary + laundry) − night allowance.
               </p>
-            </div>
           </div>
         </div>
 
