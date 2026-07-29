@@ -13116,14 +13116,14 @@ function TrainMovementContent() {
             <span className={`theme-tp1-maint-report-check flex h-4 w-4 shrink-0 items-center justify-center rounded border ${manualL3ReportUpdated ? "border-emerald-300 bg-emerald-500 text-white" : "border-[#41647f] bg-[#0a2236] text-transparent"}`}>
               <Check size={11} strokeWidth={3} />
             </span>
-            <span>{manualL3ReportUpdated ? "L3 report already updated" : "Tick if already updated"}</span>
+            <span>Tick IF No need add "Hand Over Process"</span>
           </button>
         ),
       },
       {
         key: "l3ReportUpdatedBy",
-        label: "Confirmed By (Optional)",
-        visible: manualCmmsReady && manualL3ReportUpdated,
+        label: "Confirmed by (Optional)",
+        visible: manualCmmsReady,
         complete: Boolean(String(modeForm.l3ReportUpdatedBy || "").trim()),
         render: () => (
           <input

@@ -61,6 +61,8 @@ test("confirmed-by names are normalized for the generated sentence", () => {
 test("the Manual Area flow wires the maintenance-report tick and confirmation field", () => {
   assert.match(depotStablingSource, /label: "L3 Report Updated to MAINT"/);
   assert.match(depotStablingSource, /role="checkbox"/);
-  assert.match(depotStablingSource, /label: "Confirmed By \(Optional\)"/);
+  assert.match(depotStablingSource, /Tick IF No need add "Hand Over Process"/);
+  assert.match(depotStablingSource, /label: "Confirmed by \(Optional\)"/);
+  assert.match(depotStablingSource, /label: "Confirmed by \(Optional\)",\s*visible: manualCmmsReady,/);
   assert.match(depotStablingSource, /buildTp1ManualCmmsHandoverLine\(\{/);
 });
