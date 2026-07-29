@@ -2116,6 +2116,24 @@ html[data-app-theme="light"] .theme-train-movement-page .movement-flow-step-labe
   color: #000000 !important;
 }
 
+/* Keep the two converted washing sessions visually distinct. */
+.theme-washing-session[data-session="1"] .theme-washing-log-body {
+  background: linear-gradient(180deg, #0a2238 0%, #081b2e 100%);
+}
+
+.theme-washing-session[data-session="2"] .theme-washing-log-body {
+  background: linear-gradient(180deg, #08251c 0%, #071d17 100%);
+}
+
+.theme-washing-session[data-session="1"] .theme-washing-log-total {
+  background: linear-gradient(180deg, #0d3554 0%, #092640 100%);
+}
+
+.theme-washing-session[data-session="2"] .theme-washing-log-total {
+  background: linear-gradient(180deg, #0b3927 0%, #07291d 100%);
+  border-color: rgba(16, 185, 129, 0.32);
+}
+
 /* Train Washing workspace light-mode cleanup.
    Dark mode keeps the original navy and emerald design. */
 html[data-app-theme="light"] .theme-train-washing-page,
@@ -2272,6 +2290,27 @@ html[data-app-theme="light"] .theme-washing-log-total {
 html[data-app-theme="light"] .theme-washing-log-total-green {
   background: linear-gradient(180deg, #effcf5 0%, #d9f3e5 100%) !important;
   background-image: linear-gradient(180deg, #effcf5 0%, #d9f3e5 100%) !important;
+}
+
+html[data-app-theme="light"] .theme-washing-session[data-session="1"] .theme-washing-log-body {
+  background: linear-gradient(180deg, #f4faff 0%, #e8f4fd 100%) !important;
+  background-image: linear-gradient(180deg, #f4faff 0%, #e8f4fd 100%) !important;
+}
+
+html[data-app-theme="light"] .theme-washing-session[data-session="2"] .theme-washing-log-body {
+  background: linear-gradient(180deg, #f2fbf6 0%, #e4f6eb 100%) !important;
+  background-image: linear-gradient(180deg, #f2fbf6 0%, #e4f6eb 100%) !important;
+}
+
+html[data-app-theme="light"] .theme-washing-session[data-session="1"] .theme-washing-log-total {
+  background: linear-gradient(180deg, #e5f3fd 0%, #d5eaf8 100%) !important;
+  background-image: linear-gradient(180deg, #e5f3fd 0%, #d5eaf8 100%) !important;
+}
+
+html[data-app-theme="light"] .theme-washing-session[data-session="2"] .theme-washing-log-total {
+  background: linear-gradient(180deg, #e6f7ed 0%, #d5efdf 100%) !important;
+  background-image: linear-gradient(180deg, #e6f7ed 0%, #d5efdf 100%) !important;
+  border-color: #86c9a2 !important;
 }
 
 html[data-app-theme="light"] .theme-train-washing-page svg,

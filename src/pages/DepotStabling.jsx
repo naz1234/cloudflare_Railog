@@ -20587,9 +20587,11 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "washing" && (
-          <div className="grid w-full gap-5 xl:w-1/2">
+          <div className="theme-washing-workspace grid w-full items-start gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.85fr)]">
             <TrainWashing />
-            <TrainWashingDocxExport />
+            <div className="min-w-0">
+              <TrainWashingDocxExport />
+            </div>
           </div>
         )}
 
