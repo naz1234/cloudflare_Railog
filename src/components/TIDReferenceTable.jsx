@@ -1247,14 +1247,6 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               const isUpcoming = nextIndex >= 0 && idx >= nextIndex;
               const remarkStyle = getRemarkStyle(remark || "");
 
-              const rowBackground = isActive
-                ? accent.rowGradient
-                : remark
-                  ? remarkStyle.rowBackground
-                  : idx % 2 === 0
-                    ? "rgba(8, 32, 52, 0.58)"
-                    : "rgba(6, 24, 39, 0.68)";
-
               const rowDragKey = `${depotType}:${tid}`;
               const isDraggingSource = activeDragKey === rowDragKey;
               const isHovered = hoveredRowKey === rowDragKey && !isDraggingSource;
@@ -1263,14 +1255,22 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               const isUsed = Boolean(isWeekday && remark && usedTidKeys.has(String(tid)));
               const isDuplicate = Boolean(isUsed && duplicateTidKeys.has(String(tid)));
               const showUpcomingDivider = isWeekday && nextIndex >= 0 && idx === nextIndex;
+              const rowBackground = isDuplicate
+                ? "linear-gradient(90deg, rgba(245, 158, 11, 0.20) 0%, rgba(120, 53, 15, 0.12) 100%)"
+                : isUsed
+                  ? "linear-gradient(90deg, rgba(16, 185, 129, 0.22) 0%, rgba(6, 78, 59, 0.16) 100%)"
+                  : isActive
+                    ? accent.rowGradient
+                    : "rgba(6, 24, 39, 0.68)";
 
               /** @type {React.CSSProperties} */
               const commonCellStyle = {
-                padding: isWeekday ? "5px 6px" : "2px 6px",
+                padding: "1px 6px",
                 textAlign: "center",
+                lineHeight: "16px",
                 background: rowBackground,
                 borderBottom: idx === rows.length - 1 ? "none" : "1px solid rgba(125, 184, 224, 0.13)",
-                opacity: isPast && !isActive ? 0.46 : 1,
+                opacity: isUsed ? 1 : isPast && !isActive ? 0.46 : 1,
                 boxShadow: isRaised
                   ? `inset 0 1px 0 ${interactionColor}, inset 0 -1px 0 ${interactionColor}, inset 0 0 13px color-mix(in srgb, ${interactionColor} 22%, transparent)`
                   : "none",
@@ -1327,6 +1327,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                       });
                     }}
                     style={{
+                      lineHeight: "16px",
                       cursor: isDraggingSource ? "grabbing" : "grab",
                       touchAction: "none",
                       userSelect: "none",
@@ -1358,17 +1359,11 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                       style={{
                         ...commonCellStyle,
                         textAlign: isWeekday ? "left" : "center",
-                        borderLeft: isRaised
-                          ? `2px solid ${interactionColor}`
-                          : isNext
-                            ? `3px solid ${accent.accent}`
-                            : `3px solid ${remark ? remarkStyle.sideColor : "transparent"}`,
+                        borderLeft: "none",
                         borderRight: "1px solid rgba(125, 184, 224, 0.10)",
                         boxShadow: isRaised
-                          ? `${commonCellStyle.boxShadow}, inset 8px 0 16px color-mix(in srgb, ${interactionColor} 24%, transparent)`
-                          : isNext
-                            ? `inset 10px 0 20px ${accent.glow}`
-                            : "none",
+                          ? commonCellStyle.boxShadow
+                          : "none",
                       }}
                     >
                       <div
@@ -1389,9 +1384,9 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                             title={isDuplicate ? `TID ${tid} is duplicated in stabling` : `TID ${tid} label already used in stabling`}
                             style={{
                               display: "inline-flex",
-                              width: 18,
-                              height: 18,
-                              flex: "0 0 18px",
+                              width: 16,
+                              height: 16,
+                              flex: "0 0 16px",
                               alignItems: "center",
                               justifyContent: "center",
                               borderRadius: 999,
@@ -1404,10 +1399,10 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                                 : "0 0 8px rgba(88, 201, 107, 0.55)",
                             }}
                           >
-                            <Check size={12} strokeWidth={3.5} color="#ffffff" />
+                            <Check size={11} strokeWidth={3.5} color="#ffffff" />
                           </span>
                         ) : (
-                          <span className="theme-insertion-reference-used-placeholder" aria-hidden="true" style={{ width: 18, height: 18, flex: "0 0 18px" }} />
+                          <span className="theme-insertion-reference-used-placeholder" aria-hidden="true" style={{ width: 16, height: 16, flex: "0 0 16px" }} />
                         ))}
 
                         <span
@@ -1444,7 +1439,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                               display: "inline-flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              padding: "2px 7px",
+                              padding: "0 7px",
                               borderRadius: 999,
                               fontSize: 10,
                               lineHeight: "12px",
