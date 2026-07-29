@@ -1502,16 +1502,16 @@ function TrainWashingDocxExport() {
   return (
     <div className="theme-wash-docx-export w-full rounded-2xl border border-[#2b4f6b] bg-[#071828] p-5 text-slate-100 shadow-xl">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="mb-1 flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-950/40 text-cyan-200 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
-              <FileSpreadsheet size={18} />
-            </div>
-            <h1 className="text-lg font-black uppercase tracking-[0.22em] text-white">Convert CMMS excell to printable DOCX</h1>
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-950/40 text-cyan-200 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
+            <FileSpreadsheet size={18} />
           </div>
-          <p className="text-xs text-slate-400">
-            Upload Excel wash records, group by <span className="text-cyan-200">Next Wash</span> date, then download the printable DOCX.
-          </p>
+          <div className="min-w-0">
+            <h2 className="text-sm font-black leading-tight text-white tracking-widest uppercase">Convert CMMS excell to printable DOCX</h2>
+            <p className="text-[10px] text-[#4a8ab5]">
+              Upload Excel wash records, group by <span className="text-cyan-200">Next Wash</span> date, then download the printable DOCX.
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
