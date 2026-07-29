@@ -13,6 +13,7 @@ import InsertionLogOutput from "../components/depot/InsertionLogOutput";
 import OvertimeTracker from "../components/OvertimeTracker";
 import RosterWorkspace from "../components/RosterWorkspace";
 import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator";
+import { summarizeInsertionTidUsage } from "../lib/insertionTidUsage";
 
 const DEFAULT_BOOKMARK_LINKS = [
   { title: "Outlook", url: "https://outlook.office.com", sortOrder: 0 },
@@ -9191,10 +9192,9 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
       return { usedTidKeys: [], duplicateTidKeys: [] };
     }
 
-    const usageCounts = new Map();
-    const assistRemarks = new Set(["Early Rem", "Late Rem", "ED", "ED (7pm)"]);
+    const assignedTids = [];
 
-    const collectUsedTids = (section = {}, roads = [], depot = "west") => {
+    const collectUsedTids = (section = {}, roads = []) => {
       const sectionData = section?.data || {};
       const sectionLog = Array.isArray(section?.insertionLog) ? section.insertionLog : [];
 
@@ -9211,34 +9211,21 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
             : 0;
           if (!tid) return;
 
-          const assistRemark = typeof getTidAssistRemark === "function"
-            ? getTidAssistRemark(tid, depot)
-            : "";
-
-          if (assistRemarks.has(assistRemark)) {
-            const key = String(tid);
-            usageCounts.set(key, (usageCounts.get(key) || 0) + 1);
-          }
+          assignedTids.push(tid);
         });
       });
     };
 
-    collectUsedTids(westSection, WEST_ROADS, "west");
-    collectUsedTids(eastSection, EAST_ROADS, "east");
+    collectUsedTids(westSection, WEST_ROADS);
+    collectUsedTids(eastSection, EAST_ROADS);
 
-    return {
-      usedTidKeys: Array.from(usageCounts.keys()),
-      duplicateTidKeys: Array.from(usageCounts.entries())
-        .filter(([, count]) => count > 1)
-        .map(([tid]) => tid),
-    };
+    return summarizeInsertionTidUsage(assignedTids);
   }, [
     isWeekdayActiveTimetable,
     westSection?.data,
     westSection?.insertionLog,
     eastSection?.data,
     eastSection?.insertionLog,
-    getTidAssistRemark,
   ]);
   const insertionAssistDuplicateTidKeySet = useMemo(
     () => new Set(insertionAssistTidUsage.duplicateTidKeys.map((tid) => String(tid))),

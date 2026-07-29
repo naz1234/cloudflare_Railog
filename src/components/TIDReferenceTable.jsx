@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Check } from "lucide-react";
 import ActionTooltip from "./ActionTooltip";
+import { countAssignedInsertionRows, isInsertionTidAssigned } from "../lib/insertionTidUsage";
 
 const WEEKDAY_EAST_ROWS = [
   { tid: 201, remark: "Late Rem", time: "05:24" },
@@ -891,9 +892,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
   const activeIndex = getActiveIndex(rows, nowMinutes);
   const isWeekday = dayLabel === "Weekday";
   const displayDayLabel = isScheduleOverride ? `${dayLabel} Override` : dayLabel;
-  const assignedCount = isWeekday
-    ? rows.filter(({ tid, remark }) => Boolean(remark && usedTidKeys.has(String(tid)))).length
-    : 0;
+  const assignedCount = countAssignedInsertionRows(rows, usedTidKeys, isWeekday);
   const remainingCount = Math.max(rows.length - assignedCount, 0);
   const assignedPercent = rows.length > 0 ? (assignedCount / rows.length) * 100 : 0;
   const [hoveredRowKey, setHoveredRowKey] = useState("");
@@ -1252,7 +1251,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               const isHovered = hoveredRowKey === rowDragKey && !isDraggingSource;
               const isRaised = isHovered || isDraggingSource;
               const interactionColor = remark ? remarkStyle.sideColor : accent.accent;
-              const isUsed = Boolean(isWeekday && remark && usedTidKeys.has(String(tid)));
+              const isUsed = isInsertionTidAssigned(tid, usedTidKeys, isWeekday);
               const isDuplicate = Boolean(isUsed && duplicateTidKeys.has(String(tid)));
               const showUpcomingDivider = isWeekday && nextIndex >= 0 && idx === nextIndex;
               const rowBackground = isDuplicate
