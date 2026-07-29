@@ -1507,7 +1507,7 @@ function TrainWashingDocxExport() {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-950/40 text-cyan-200 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
               <FileSpreadsheet size={18} />
             </div>
-            <h1 className="text-lg font-black uppercase tracking-[0.22em] text-white">Train Washing DOCX Export</h1>
+            <h1 className="text-lg font-black uppercase tracking-[0.22em] text-white">Convert CMMS excell to printable DOCX</h1>
           </div>
           <p className="text-xs text-slate-400">
             Upload Excel wash records, group by <span className="text-cyan-200">Next Wash</span> date, then download the printable DOCX.
