@@ -1485,9 +1485,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
       {/* Input Form */}
       <div className="border-b border-[#1a3a56] p-2.5 space-y-2">
-        <div data-testid="cmms-wash-review-card" className="overflow-hidden rounded-xl border border-cyan-400/70 bg-[radial-gradient(circle_at_12%_30%,rgba(8,145,178,0.20),transparent_34%),linear-gradient(145deg,#06172a_0%,#071e33_58%,#09213a_100%)] p-2 shadow-[0_0_14px_rgba(34,211,238,0.10)]">
+        <div data-testid="cmms-wash-review-card" className="theme-maintenance-upload-card theme-maintenance-upload-card--wash overflow-hidden rounded-xl border border-cyan-400/70 bg-[radial-gradient(circle_at_12%_30%,rgba(8,145,178,0.20),transparent_34%),linear-gradient(145deg,#06172a_0%,#071e33_58%,#09213a_100%)] p-2 shadow-[0_0_14px_rgba(34,211,238,0.10)]">
           <div className="flex min-w-0 items-center gap-2">
-            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-500/30 bg-[linear-gradient(145deg,rgba(8,47,73,0.95),rgba(6,31,56,0.95))] shadow-[inset_0_0_12px_rgba(14,165,233,0.14)]">
+            <div className="theme-maintenance-upload-icon relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-500/30 bg-[linear-gradient(145deg,rgba(8,47,73,0.95),rgba(6,31,56,0.95))] shadow-[inset_0_0_12px_rgba(14,165,233,0.14)]">
               <FileSpreadsheet className="h-4 w-4 text-cyan-100" strokeWidth={1.6} />
               <span className="absolute -bottom-0.5 -left-0.5 inline-flex h-3.5 min-w-3.5 items-center justify-center rounded border border-cyan-400/30 bg-cyan-500/25 px-0.5 text-[8px] font-semibold text-cyan-200">
                 X
@@ -1496,14 +1496,14 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
             <div className="min-w-0 flex-1">
               <div className="text-[11px] font-semibold leading-tight text-white">Wash Excell from CMMS</div>
-              <p className="mt-0.5 text-[9px] font-normal leading-snug text-slate-400">
-                Upload, review, then add <span className="text-cyan-300">Wash + Next Wash date.</span>
+              <p className="theme-maintenance-upload-description mt-0.5 text-[9px] font-normal leading-snug text-slate-400">
+                Upload, review, then add <span className="theme-maintenance-upload-accent text-cyan-300">Wash + Next Wash date.</span>
               </p>
             </div>
           </div>
 
-          <label className="mt-1.5 inline-flex h-7 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-cyan-400/70 bg-[linear-gradient(90deg,rgba(8,80,104,0.96),rgba(13,148,136,0.85))] text-[10px] font-normal text-white shadow-[0_0_9px_rgba(34,211,238,0.18)] transition hover:brightness-110 active:scale-[0.98]">
-            <span className="inline-flex h-7 w-8 items-center justify-center border-r border-cyan-200/20 bg-[#082b45]/80">
+          <label className="theme-maintenance-upload-button mt-1.5 inline-flex h-7 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-cyan-400/70 bg-[linear-gradient(90deg,rgba(8,80,104,0.96),rgba(13,148,136,0.85))] text-[10px] font-normal text-white shadow-[0_0_9px_rgba(34,211,238,0.18)] transition hover:brightness-110 active:scale-[0.98]">
+            <span className="theme-maintenance-upload-button-icon inline-flex h-7 w-8 items-center justify-center border-r border-cyan-200/20 bg-[#082b45]/80">
               <Upload className="h-3.5 w-3.5" />
             </span>
             <span className="flex-1 px-2 text-center">Upload Wash Excel</span>

@@ -558,6 +558,98 @@ html[data-app-theme="light"] .theme-maintenance-panel :is(
   background-image: none !important;
 }
 
+/* Maintenance upload tools keep their cyan/violet identity while using
+   light surfaces and accessible button contrast in light mode. */
+html[data-app-theme="light"] .theme-maintenance-upload-card {
+  color: #0f172a !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 3px 10px rgba(15, 23, 42, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-card--wash {
+  background: linear-gradient(145deg, #ecfeff 0%, #e0f2fe 58%, #f8fafc 100%) !important;
+  background-image: linear-gradient(145deg, #ecfeff 0%, #e0f2fe 58%, #f8fafc 100%) !important;
+  border-color: #0891b2 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-card--image {
+  background: linear-gradient(145deg, #faf5ff 0%, #ede9fe 58%, #f8fafc 100%) !important;
+  background-image: linear-gradient(145deg, #faf5ff 0%, #ede9fe 58%, #f8fafc 100%) !important;
+  border-color: #7c3aed !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-card--wash .theme-maintenance-upload-icon {
+  background: linear-gradient(145deg, #cffafe, #dbeafe) !important;
+  background-image: linear-gradient(145deg, #cffafe, #dbeafe) !important;
+  border-color: #22a9c5 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-card--image .theme-maintenance-upload-icon {
+  background: linear-gradient(145deg, #ede9fe, #f3e8ff) !important;
+  background-image: linear-gradient(145deg, #ede9fe, #f3e8ff) !important;
+  border-color: #8b5cf6 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-card--wash .theme-maintenance-upload-icon :is(svg, span) {
+  color: #0e7490 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-card--image .theme-maintenance-upload-icon :is(svg, span) {
+  color: #6d28d9 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-description {
+  color: #334155 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-card--wash .theme-maintenance-upload-accent {
+  color: #0e7490 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-card--image .theme-maintenance-upload-accent {
+  color: #6d28d9 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-chevron {
+  background: #ede9fe !important;
+  color: #6d28d9 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-card--image :is(
+  [class*="bg-[#12142d]"],
+  [class*="bg-[#0d1026]"],
+  [class*="bg-[#211746]"]
+) {
+  background: #ffffff !important;
+  background-image: none !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-button,
+html[data-app-theme="light"] .theme-maintenance-upload-button * {
+  color: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-card--wash .theme-maintenance-upload-button {
+  background: linear-gradient(90deg, #0e7490, #0f766e) !important;
+  background-image: linear-gradient(90deg, #0e7490, #0f766e) !important;
+  border-color: #0891b2 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-card--wash .theme-maintenance-upload-button-icon {
+  background: #155e75 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-card--image .theme-maintenance-upload-button {
+  background: linear-gradient(90deg, #6d28d9, #7e22ce) !important;
+  background-image: linear-gradient(90deg, #6d28d9, #7e22ce) !important;
+  border-color: #7c3aed !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-upload-card--image .theme-maintenance-upload-button-icon {
+  background: #581c87 !important;
+}
+
 
 /* Maintenance request rows now follow the Removal Summary row style.
    The colour sits in the bordered gradient card itself, so there is no
