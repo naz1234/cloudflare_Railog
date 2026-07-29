@@ -57,10 +57,10 @@ function TrainMovementContent() {`,
 
       code = replaceRequired(
         code,
-        /const fromTp1 = form\.fromTp1 \|\| "18:30";/,
+        /const fromTp1 = form\.fromTp1 \|\| \(preview \? "18:30" : ""\);/,
         `const fromTp1 = movementType === "manual"
-      ? subtractThreeMinutesFromHHMM(form.toManual)
-      : form.fromTp1 || "18:30";`,
+      ? subtractThreeMinutesFromHHMM(form.toManual) || (preview ? "18:30" : "")
+      : form.fromTp1 || (preview ? "18:30" : "");`,
         'manual preview and output departure time'
       );
 
