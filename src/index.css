@@ -9104,3 +9104,308 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-de
     transition: none !important;
   }
 }
+
+/* Insertion stabling grid redesign. Keep this block after the earlier insertion
+   theme layers so its compact layout and explicit light colours win the cascade. */
+.theme-insertion-page .theme-insertion-stabling-summary {
+  background: linear-gradient(180deg, #0c263a 0%, #081a2a 100%);
+  border-color: #27465d;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.theme-insertion-page .theme-insertion-stabling-summary-stat + .theme-insertion-stabling-summary-stat {
+  border-color: #203e54;
+}
+
+.theme-insertion-page .theme-insertion-stabling-summary-label {
+  color: #88a3b8 !important;
+}
+
+.theme-insertion-page .theme-insertion-stabling-summary-stat.is-trains :is(.theme-insertion-stabling-summary-icon, .theme-insertion-stabling-summary-value) {
+  color: #4ade80 !important;
+}
+
+.theme-insertion-page .theme-insertion-stabling-summary-stat.is-assigned :is(.theme-insertion-stabling-summary-icon, .theme-insertion-stabling-summary-value) {
+  color: #dbeafe !important;
+}
+
+.theme-insertion-page .theme-insertion-stabling-summary-stat.is-pending :is(.theme-insertion-stabling-summary-icon, .theme-insertion-stabling-summary-value) {
+  color: #fb923c !important;
+}
+
+.theme-insertion-page .theme-insertion-stabling-summary-stat.is-empty :is(.theme-insertion-stabling-summary-icon, .theme-insertion-stabling-summary-value) {
+  color: #94a3b8 !important;
+}
+
+.theme-insertion-page .theme-insertion-stabling-summary-icon {
+  stroke: currentColor !important;
+}
+
+.theme-insertion-page .theme-insertion-card-header {
+  min-width: 0;
+}
+
+.theme-insertion-page .theme-insertion-card.has-train .theme-insertion-train-id {
+  padding-right: 27px !important;
+}
+
+.theme-insertion-page .theme-insertion-card-request-slot > div:first-child,
+.theme-insertion-page .theme-insertion-card-request-slot > div:last-child,
+.theme-insertion-page .theme-insertion-card-request-spacer > div:first-child,
+.theme-insertion-page .theme-insertion-card-request-spacer > div:last-child,
+.theme-insertion-page .theme-insertion-card-request-divider {
+  display: none !important;
+}
+
+.theme-insertion-page .theme-insertion-card-request-list {
+  flex-wrap: nowrap !important;
+  overflow: hidden !important;
+}
+
+.theme-insertion-page .theme-insertion-card-request-pill {
+  flex: 0 1 auto;
+  height: 18px;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-shadow: none !important;
+}
+
+.theme-insertion-page .theme-insertion-card-request-more {
+  flex: 0 0 auto;
+  color: #cbd5e1 !important;
+  background: #10283b !important;
+  border-color: #31546b !important;
+}
+
+.theme-insertion-page .theme-insertion-card-refresh-trigger {
+  position: absolute !important;
+  top: 4px;
+  right: 4px;
+  z-index: 6;
+}
+
+.theme-insertion-page .theme-insertion-card-refresh {
+  display: inline-grid !important;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  padding: 0 !important;
+  border: 1px solid #31546b !important;
+  border-radius: 999px;
+  background: #10283b !important;
+  color: #9fc2d8 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+
+.theme-insertion-page .theme-insertion-card-refresh svg {
+  width: 13px;
+  height: 13px;
+  stroke: currentColor !important;
+}
+
+.theme-insertion-page .theme-insertion-card-refresh:is(:hover, :focus-visible) {
+  border-color: #67b7e1 !important;
+  color: #e0f2fe !important;
+  background: #15364e !important;
+}
+
+.theme-insertion-page .theme-insertion-ta-name-shell {
+  min-height: 18px;
+  padding: 1px 4px !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.theme-insertion-page .theme-insertion-ta-name-input {
+  color: #cbd5e1 !important;
+  font-weight: 500 !important;
+}
+
+.theme-insertion-page .theme-insertion-ta-name-input::placeholder {
+  color: #6f899e !important;
+  opacity: 1 !important;
+}
+
+.theme-insertion-page .theme-insertion-card.is-empty {
+  background: rgba(7, 24, 39, 0.52) !important;
+  border: 1px solid rgba(87, 113, 135, 0.36) !important;
+  box-shadow: none !important;
+}
+
+.theme-insertion-page .theme-insertion-card.is-empty .theme-insertion-card-header {
+  min-height: 72px;
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.theme-insertion-page .theme-insertion-card.is-empty .theme-insertion-train-id {
+  padding: 0 !important;
+  color: #6f899e !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em;
+  text-align: center !important;
+}
+
+.theme-insertion-page .theme-insertion-empty-action {
+  color: #6f899e !important;
+}
+
+.theme-insertion-page .theme-insertion-empty-action-icon {
+  color: #7693aa !important;
+  border-color: #35556c !important;
+  background: rgba(11, 34, 51, 0.72) !important;
+}
+
+.theme-insertion-page .theme-insertion-empty-action:is(:hover, :focus-visible) {
+  color: #bae6fd !important;
+}
+
+.theme-insertion-page .theme-insertion-empty-action:is(:hover, :focus-visible) .theme-insertion-empty-action-icon {
+  color: #bae6fd !important;
+  border-color: #38bdf8 !important;
+  background: rgba(14, 116, 144, 0.2) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-stabling-summary {
+  background: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%) !important;
+  border-color: #d7e2ea !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-stabling-summary-stat + .theme-insertion-stabling-summary-stat {
+  border-color: #dfe8ef !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-stabling-summary-label {
+  color: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-stabling-summary-stat.is-trains :is(.theme-insertion-stabling-summary-icon, .theme-insertion-stabling-summary-value) {
+  color: #15803d !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-stabling-summary-stat.is-assigned :is(.theme-insertion-stabling-summary-icon, .theme-insertion-stabling-summary-value) {
+  color: #1e3a5f !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-stabling-summary-stat.is-pending :is(.theme-insertion-stabling-summary-icon, .theme-insertion-stabling-summary-value) {
+  color: #c2410c !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-stabling-summary-stat.is-empty :is(.theme-insertion-stabling-summary-icon, .theme-insertion-stabling-summary-value) {
+  color: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card-request-pill {
+  color: #0f172a !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card-request-pill[data-remark="PM"] {
+  color: #1e3a8a !important;
+  background: #dbeafe !important;
+  border-color: #60a5fa !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card-request-pill[data-remark="WASH"] {
+  color: #065f46 !important;
+  background: #d1fae5 !important;
+  border-color: #34d399 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card-request-pill[data-remark="G TO C"],
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card-request-pill[data-remark="SWEEP"] {
+  color: #6b21a8 !important;
+  background: #f3e8ff !important;
+  border-color: #c084fc !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card-request-pill[data-remark="CM"],
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card-request-pill[data-remark="3K1"] {
+  color: #115e59 !important;
+  background: #ccfbf1 !important;
+  border-color: #2dd4bf !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card-request-pill[data-remark="DEEP CLEANING"] {
+  color: #9a3412 !important;
+  background: #ffedd5 !important;
+  border-color: #fb923c !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card-request-pill[data-remark="REQUEST"] {
+  color: #854d0e !important;
+  background: #fef9c3 !important;
+  border-color: #eab308 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card-request-more {
+  color: #475569 !important;
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card .theme-insertion-card-refresh {
+  color: #475569 !important;
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card .theme-insertion-card-refresh:is(:hover, :focus-visible) {
+  color: #0369a1 !important;
+  background: #e0f2fe !important;
+  border-color: #7dd3fc !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-empty {
+  background: #f8fafc !important;
+  border: 1px solid #dbe4ec !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-empty .theme-insertion-train-id,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card .theme-insertion-empty-action {
+  color: #718096 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card .theme-insertion-empty-action-icon {
+  color: #64748b !important;
+  border-color: #cbd5e1 !important;
+  background: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card .theme-insertion-ta-name-shell {
+  background: transparent !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.theme-insertion-ta-name-input {
+  color: #475569 !important;
+  font-weight: 500 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.theme-insertion-ta-name-input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+@media (max-width: 640px) {
+  .theme-insertion-page .theme-insertion-stabling-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .theme-insertion-page .theme-insertion-stabling-summary-stat:nth-child(3) {
+    border-top: 1px solid #203e54;
+    border-left: 0;
+  }
+
+  .theme-insertion-page .theme-insertion-stabling-summary-stat:nth-child(4) {
+    border-top: 1px solid #203e54;
+  }
+
+  html[data-app-theme="light"] .theme-insertion-page .theme-insertion-stabling-summary-stat:nth-child(3),
+  html[data-app-theme="light"] .theme-insertion-page .theme-insertion-stabling-summary-stat:nth-child(4) {
+    border-top-color: #dfe8ef !important;
+  }
+}
