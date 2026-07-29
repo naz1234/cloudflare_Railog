@@ -230,20 +230,20 @@ export default function TrainWashing() {
 
   return (
     <div className="theme-train-washing-page space-y-5">
-      {/* Excel Upload Window */}
+      {/* Excel Upload + Converted Log Window */}
       <div className="theme-washing-panel bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-md overflow-hidden">
-        <div className="theme-washing-header theme-washing-header-blue px-5 py-4 border-b border-[#1a3a56] flex items-center justify-between" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-          <div className="flex items-center gap-3">
+        <div className="theme-washing-header theme-washing-header-blue flex flex-col gap-3 border-b border-[#1a3a56] px-5 py-4 lg:flex-row lg:items-center lg:justify-between" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+          <div className="flex min-w-0 items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center">
               <Droplets className="w-4 h-4 text-[#4f8ef7]" />
             </div>
-            <div>
-              <h2 className="text-sm font-black text-white tracking-widest uppercase">Train Washing Log</h2>
+            <div className="min-w-0">
+              <h2 className="text-sm font-black leading-tight text-white tracking-widest uppercase">Convert Completed Washing Records from Excel to ELOG</h2>
               <p className="text-[10px] text-[#4a8ab5]">Excel upload only — columns: Train Number, Last Wash</p>
             </div>
           </div>
           {excelSessions.length > 0 && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 lg:shrink-0 lg:justify-end">
               <span className="text-[10px] font-bold text-emerald-300 bg-emerald-900/40 border border-emerald-700/50 px-2.5 py-1 rounded-full">{totalExcel} trains</span>
               <CopyBtn text={excelFullText} />
               <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#1e3a56] bg-[#0a1e2e] text-[#7eb8e0] hover:bg-[#0f2d4a] transition-colors">
@@ -267,37 +267,41 @@ export default function TrainWashing() {
           <p className="text-sm font-semibold text-[#7eb8e0]">{excelFileName ? `✓ ${excelFileName}` : "Drop Excel file here or click to upload"}</p>
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => { processFile(e.target.files[0]); e.target.value = ""; }} />
         </div>
-      </div>
 
-      {/* Excel Log Output */}
-      {excelSessions.length > 0 && excelSessions.map((session, si) => (
-        <div key={`excel-${si}`} className="theme-washing-panel theme-washing-log-panel bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-md overflow-hidden">
-          <div className="theme-washing-header theme-washing-session-header px-5 py-3 border-b border-[#1a3a56] flex items-center justify-between" data-session={si + 1} style={session.headerStyle}>
-            <div className="flex items-center gap-2.5">
-              <span className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-black text-white">{si + 1}</span>
-              <span className="text-xs font-black text-white tracking-widest uppercase">{session.label}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${session.badgeCls}`}>{session.records.length} trains</span>
-              <CopyBtn text={sessionText(session)} />
-            </div>
-          </div>
-          <div className="theme-washing-log-body px-5 py-4 space-y-1">
-            {session.records.map((r, i) => (
-              <p key={i} className="font-mono text-xs text-[#c8d8ea] leading-relaxed">{buildLine(r)}</p>
+        {/* Converted Excel Log Output */}
+        {excelSessions.length > 0 && (
+          <div className="border-t border-[#1a3a56]">
+            {excelSessions.map((session, si) => (
+              <section key={`excel-${si}`} className={si > 0 ? "border-t border-[#1a3a56]" : ""}>
+                <div className="theme-washing-header theme-washing-session-header px-5 py-3 border-b border-[#1a3a56] flex items-center justify-between" data-session={si + 1} style={session.headerStyle}>
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-black text-white">{si + 1}</span>
+                    <span className="text-xs font-black text-white tracking-widest uppercase">{session.label}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${session.badgeCls}`}>{session.records.length} trains</span>
+                    <CopyBtn text={sessionText(session)} />
+                  </div>
+                </div>
+                <div className="theme-washing-log-body px-5 py-4 space-y-1">
+                  {session.records.map((r, i) => (
+                    <p key={i} className="font-mono text-xs text-[#c8d8ea] leading-relaxed">{buildLine(r)}</p>
+                  ))}
+                </div>
+                <div className="theme-washing-log-total px-5 py-3 border-t border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+                  <p className="font-mono text-xs font-bold text-[#7eb8e0]">Total: {session.records.length} trains washed at the automatic wash plant.</p>
+                </div>
+              </section>
             ))}
           </div>
-          <div className="theme-washing-log-total px-5 py-3 border-t border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-            <p className="font-mono text-xs font-bold text-[#7eb8e0]">Total: {session.records.length} trains washed at the automatic wash plant.</p>
-          </div>
-        </div>
-      ))}
+        )}
 
-      {excelSessions.length === 0 && excelFileName && (
-        <div className="bg-amber-950/40 border border-amber-700/60 rounded-xl px-5 py-4 text-sm text-amber-300 font-semibold">
-          ⚠ No records found. Ensure the file has "Train Number" and "Last Wash" columns.
-        </div>
-      )}
+        {excelSessions.length === 0 && excelFileName && (
+          <div className="mx-5 mb-4 rounded-xl border border-amber-700/60 bg-amber-950/40 px-5 py-4 text-sm font-semibold text-amber-300">
+            ⚠ No records found. Ensure the file has "Train Number" and "Last Wash" columns.
+          </div>
+        )}
+      </div>
 
       {/* Manual Entry + Manual Log Output Window */}
       <div className="theme-washing-panel theme-washing-manual-panel bg-[#0b1f33] rounded-2xl border border-[#2b4f6b] shadow-md overflow-hidden">
