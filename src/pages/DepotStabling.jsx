@@ -21,6 +21,7 @@ import {
   shouldApplyTrainMovementRemoteSnapshot,
   upsertTrainMovementLiveRecord,
 } from "../lib/trainMovementLiveSync";
+import { buildTp1ManualCmmsHandoverLine } from "../lib/tp1ManualHandover";
 
 const DEFAULT_BOOKMARK_LINKS = [
   { title: "Outlook", url: "https://outlook.office.com", sortOrder: 0 },
@@ -10861,6 +10862,8 @@ function TrainMovementContent() {
     pstPerformedTime: "",
     completedByDc: "",
     cmmsNumber: "",
+    l3ReportUpdatedToMaintenance: false,
+    l3ReportUpdatedBy: "",
     nextWashText: "",
     nextWashDate: "",
     nextWashTime: "",
@@ -11374,6 +11377,8 @@ function TrainMovementContent() {
         pstPerformedTime: "",
         completedByDc: "",
         cmmsNumber: "",
+        l3ReportUpdatedToMaintenance: false,
+        l3ReportUpdatedBy: "",
         nextWashText: "",
         nextWashDate: "",
         nextWashTime: "",
@@ -11398,6 +11403,8 @@ function TrainMovementContent() {
         fromTp1: "",
         toManual: "",
         cmmsNumber: "",
+        l3ReportUpdatedToMaintenance: false,
+        l3ReportUpdatedBy: "",
         nextWashText: "",
         nextWashDate: "",
         nextWashTime: "",
@@ -11772,13 +11779,20 @@ function TrainMovementContent() {
       return [titleLine, ...sortTp1TimedLogLines(timedLines)].join("\n");
     }
 
+    const manualCmmsHandoverLine = buildTp1ManualCmmsHandoverLine({
+      time: toManual,
+      cmmsNumber,
+      l3ReportUpdatedToMaintenance: Boolean(form.l3ReportUpdatedToMaintenance),
+      confirmedBy: form.l3ReportUpdatedBy,
+    });
+
     return [
       `${displayTrain}: ${planStatus} movement to Manual Area.${nextWashSuffix}`,
       ...sortTp1TimedLogLines([
         `${trAtTp1} hrs – ${displayTrain} arrived at TP1.`,
         `${shunterAuth} hrs – ${displayTrain} was authorized to prepare the train. Shunter ${shunterNameForLog} onboard.`,
         `${fromTp1} hrs – ${displayTrain} departed from TP1 and arrived at the Manual Area at ${toManual} hrs.`,
-        ...(cmmsNumber ? [`${toManual} hrs – CMMS Hand Over Completed. Handover #${cmmsNumber}.`] : []),
+        ...(manualCmmsHandoverLine ? [manualCmmsHandoverLine] : []),
       ]),
     ].join("\n");
   };
@@ -11816,6 +11830,8 @@ function TrainMovementContent() {
       fromTp1: form.fromTp1,
       toManual: form.toManual,
       cmmsNumber: form.cmmsNumber || "",
+      l3ReportUpdatedToMaintenance: Boolean(form.l3ReportUpdatedToMaintenance),
+      l3ReportUpdatedBy: form.l3ReportUpdatedBy || "",
       nextWashText: form.nextWashText || "",
       createdAt: now.toISOString(),
       text,
@@ -11836,6 +11852,8 @@ function TrainMovementContent() {
           trainPrepCompletedTime: "",
           pstPerformedTime: "",
           cmmsNumber: "",
+          l3ReportUpdatedToMaintenance: false,
+          l3ReportUpdatedBy: "",
           nextWashText: "",
           nextWashDate: "",
           nextWashTime: "",
@@ -12991,6 +13009,7 @@ function TrainMovementContent() {
     const manualFromTp1Ready = manualShunterReady && isTp1TimeReadyForMode("fromTp1");
     const manualToManualReady = manualFromTp1Ready && isTp1TimeReadyForMode("toManual");
     const manualCmmsReady = manualToManualReady && Boolean(String(modeForm.cmmsNumber || "").trim()) && isTp1FlowFieldSettled("cmmsNumber");
+    const manualL3ReportUpdated = Boolean(modeForm.l3ReportUpdatedToMaintenance);
 
     const manualFlowSteps = [
       {
@@ -13088,6 +13107,46 @@ function TrainMovementContent() {
             }}
             onBlur={() => blurFlowInput(getTp1FlowInputKey("cmmsNumber", movementType))}
             placeholder="4969"
+            className={inputClass}
+          />
+        ),
+      },
+      {
+        key: "l3ReportUpdatedToMaintenance",
+        label: "L3 Report Updated to MAINT",
+        visible: manualCmmsReady,
+        complete: manualL3ReportUpdated,
+        render: () => (
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={manualL3ReportUpdated}
+            onClick={() => {
+              const isChecked = !manualL3ReportUpdated;
+              updateTp1ModeForm(movementType, "l3ReportUpdatedToMaintenance", isChecked);
+              if (!isChecked) updateTp1ModeForm(movementType, "l3ReportUpdatedBy", "");
+            }}
+            className={`theme-tp1-maint-report-toggle flex h-8 w-full items-center gap-2 rounded-lg border px-2 text-left text-[11px] font-medium transition-all ${manualL3ReportUpdated ? "is-checked border-emerald-400/80 bg-emerald-950/35 text-emerald-100 shadow-[0_0_12px_rgba(34,197,94,0.22)]" : "border-[#1e4060] bg-[#061827] text-[#9fb5c8]"}`}
+          >
+            <span className={`theme-tp1-maint-report-check flex h-4 w-4 shrink-0 items-center justify-center rounded border ${manualL3ReportUpdated ? "border-emerald-300 bg-emerald-500 text-white" : "border-[#41647f] bg-[#0a2236] text-transparent"}`}>
+              <Check size={11} strokeWidth={3} />
+            </span>
+            <span>{manualL3ReportUpdated ? "L3 report already updated" : "Tick if already updated"}</span>
+          </button>
+        ),
+      },
+      {
+        key: "l3ReportUpdatedBy",
+        label: "Confirmed By (Optional)",
+        visible: manualCmmsReady && manualL3ReportUpdated,
+        complete: Boolean(String(modeForm.l3ReportUpdatedBy || "").trim()),
+        render: () => (
+          <input
+            type="text"
+            maxLength={60}
+            value={modeForm.l3ReportUpdatedBy || ""}
+            onChange={(event) => updateTp1ModeForm(movementType, "l3ReportUpdatedBy", event.target.value)}
+            placeholder="e.g. Siraj"
             className={inputClass}
           />
         ),

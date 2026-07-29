@@ -43,8 +43,10 @@ export default function manualUnplannedSrPlugin() {
 
       code = replaceRequired(
         code,
-        /        \.\.\.\(cmmsNumber \? \[`\$\{toManual\} hrs – CMMS Hand Over Completed\. Handover #\$\{cmmsNumber\}\.`\] : \[\]\),/,
-        '        ...(cmmsNumber ? [`${toManual} hrs – CMMS Hand Over Completed. Handover #${cmmsNumber}${isUnplannedManualMovement ? ` with SR #${srNumber}` : ""}.`] : []),',
+        /      cmmsNumber,\r?\n      l3ReportUpdatedToMaintenance:/,
+        `      cmmsNumber,
+      srNumber: isUnplannedManualMovement ? srNumber : "",
+      l3ReportUpdatedToMaintenance:`,
         'Manual Area handover log text'
       );
 
