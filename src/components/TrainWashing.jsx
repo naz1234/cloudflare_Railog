@@ -272,7 +272,11 @@ export default function TrainWashing() {
         {excelSessions.length > 0 && (
           <div className="border-t border-[#1a3a56]">
             {excelSessions.map((session, si) => (
-              <section key={`excel-${si}`} className={si > 0 ? "border-t border-[#1a3a56]" : ""}>
+              <section
+                key={`excel-${si}`}
+                className={`theme-washing-session theme-washing-session-${si + 1} ${si > 0 ? "border-t border-[#1a3a56]" : ""}`}
+                data-session={si + 1}
+              >
                 <div className="theme-washing-header theme-washing-session-header px-5 py-3 border-b border-[#1a3a56] flex items-center justify-between" data-session={si + 1} style={session.headerStyle}>
                   <div className="flex items-center gap-2.5">
                     <span className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-black text-white">{si + 1}</span>
@@ -288,7 +292,7 @@ export default function TrainWashing() {
                     <p key={i} className="font-mono text-xs text-[#c8d8ea] leading-relaxed">{buildLine(r)}</p>
                   ))}
                 </div>
-                <div className="theme-washing-log-total px-5 py-3 border-t border-[#1a3a56]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+                <div className="theme-washing-log-total px-5 py-3 border-t border-[#1a3a56]">
                   <p className="font-mono text-xs font-bold text-[#7eb8e0]">Total: {session.records.length} trains washed at the automatic wash plant.</p>
                 </div>
               </section>
