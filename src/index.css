@@ -8800,3 +8800,125 @@ html[data-app-theme="light"] .theme-train-movement-page .movement-flow-sr-label-
     will-change: auto;
   }
 }
+
+/* Insertion TID reference redesign: keep the denser command-board layout readable in light mode. */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot-title,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-train-id,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-time-value {
+  color: #172b3f !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot-subtitle {
+  color: #526579 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot-icon {
+  background: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(15, 43, 68, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-summary {
+  background: linear-gradient(180deg, #f8fbff 0%, #edf4f9 100%) !important;
+  border-color: #d3e0ea !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-stat-label {
+  color: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-stat.is-assigned .theme-insertion-reference-stat-value {
+  color: #047857 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-stat.is-assigned .theme-insertion-reference-stat-icon {
+  color: #047857 !important;
+  background: #d1fae5 !important;
+  border-color: #6ee7b7 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="west"] .theme-insertion-reference-stat.is-remaining .theme-insertion-reference-stat-value,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="west"] .theme-insertion-reference-stat.is-remaining .theme-insertion-reference-stat-icon {
+  color: #0369a1 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="east"] .theme-insertion-reference-stat.is-remaining .theme-insertion-reference-stat-value,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="east"] .theme-insertion-reference-stat.is-remaining .theme-insertion-reference-stat-icon {
+  color: #7e22ce !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-progress {
+  background: #dbeafe !important;
+  box-shadow: inset 0 1px 2px rgba(15, 43, 68, 0.12) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-progress-assigned {
+  background: linear-gradient(90deg, #10b981, #34d399) !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-section-cell {
+  background: #eef4f8 !important;
+  border-color: #d5e1ea !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-section-line {
+  background: #c5d3de !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="west"] .theme-insertion-reference-section-label {
+  color: #0369a1 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="east"] .theme-insertion-reference-section-label {
+  color: #7e22ce !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-service-empty {
+  color: #94a3b8 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-service-pill[data-service="Early Rem"] {
+  color: #166534 !important;
+  background: #dcfce7 !important;
+  border-color: #86efac !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-service-pill[data-service="Late Rem"] {
+  color: #92400e !important;
+  background: #fef3c7 !important;
+  border-color: #fcd34d !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-service-pill[data-service="ED (7pm)"] {
+  color: #6b21a8 !important;
+  background: #f3e8ff !important;
+  border-color: #d8b4fe !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-service-pill[data-service="ED"] {
+  color: #9f1239 !important;
+  background: #ffe4e6 !important;
+  border-color: #fda4af !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="west"] .theme-insertion-reference-row.is-next .theme-insertion-reference-time-value {
+  color: #0369a1 !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-depot[data-depot="east"] .theme-insertion-reference-row.is-next .theme-insertion-reference-time-value {
+  color: #7e22ce !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-next-badge {
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-insertion-page .theme-insertion-reference-progress-assigned {
+    transition: none !important;
+  }
+}

@@ -887,9 +887,15 @@ function ScheduleWarningBanner({ selectedLabel, todayLabel, onSwitchToToday }) {
 
 function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedule, isScheduleOverride, onTidDragStart, activeDragKey = "", usedTidKeys = new Set(), duplicateTidKeys = new Set(), timeOffsetMinutes = 0, onTimeOffsetChange }) {
   const accent = DEPOT_ACCENTS[depotType];
+  const nextIndex = getNextIndex(rows, nowMinutes);
   const activeIndex = getActiveIndex(rows, nowMinutes);
   const isWeekday = dayLabel === "Weekday";
   const displayDayLabel = isScheduleOverride ? `${dayLabel} Override` : dayLabel;
+  const assignedCount = isWeekday
+    ? rows.filter(({ tid, remark }) => Boolean(remark && usedTidKeys.has(String(tid)))).length
+    : 0;
+  const remainingCount = Math.max(rows.length - assignedCount, 0);
+  const assignedPercent = rows.length > 0 ? (assignedCount / rows.length) * 100 : 0;
   const [hoveredRowKey, setHoveredRowKey] = useState("");
 
   return (
@@ -914,17 +920,18 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
           alignItems: "center",
           justifyContent: "space-between",
           gap: 8,
-          padding: "8px 9px 7px",
+          padding: "10px 11px 9px",
           background: accent.headerGradient,
           borderBottom: `1px solid ${accent.border}`,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
           <div
+            className="theme-insertion-reference-depot-icon"
             style={{
-              width: 30,
-              height: 30,
-              borderRadius: 10,
+              width: 34,
+              height: 34,
+              borderRadius: 11,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -935,17 +942,18 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               flexShrink: 0,
             }}
           >
-            <TrainIcon size={16} />
+            <TrainIcon size={18} />
           </div>
 
           <div style={{ minWidth: 0 }}>
             <div
+              className="theme-insertion-reference-depot-title"
               style={{
                 color: "#e5f3ff",
-                fontSize: 12,
-                lineHeight: "15px",
-                fontWeight: 400,
-                letterSpacing: "0.12em",
+                fontSize: 14,
+                lineHeight: "17px",
+                fontWeight: 800,
+                letterSpacing: "0.11em",
                 textTransform: "uppercase",
                 whiteSpace: "nowrap",
               }}
@@ -953,11 +961,12 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               {title}
             </div>
             <div
+              className="theme-insertion-reference-depot-subtitle"
               style={{
                 color: isScheduleOverride ? "#fbbf24" : accent.text,
-                fontSize: 8,
+                fontSize: 9,
                 lineHeight: "12px",
-                fontWeight: 400,
+                fontWeight: 700,
                 letterSpacing: "0.16em",
                 textTransform: "uppercase",
                 marginTop: 1,
@@ -973,11 +982,11 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
           className={`theme-insertion-reference-depot-chip ${isScheduleOverride ? "is-override" : ""}`}
           style={{
             color: isScheduleOverride ? "#fbbf24" : accent.accent,
-            fontSize: 8,
-            fontWeight: 400,
+            fontSize: 9,
+            fontWeight: 700,
             letterSpacing: "0.10em",
             textTransform: "uppercase",
-            padding: "4px 6px",
+            padding: "5px 8px",
             borderRadius: 999,
             background: isScheduleOverride ? "rgba(245, 158, 11, 0.16)" : accent.accentSoft,
             border: isScheduleOverride ? "1px solid rgba(251, 191, 36, 0.38)" : `1px solid ${accent.border}`,
@@ -988,7 +997,133 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
         </div>
       </div>
 
-      <div style={{ padding: 7 }}>
+      {isWeekday && rows.length > 0 && (
+        <div
+          className="theme-insertion-reference-summary"
+          role="group"
+          aria-label={`${assignedCount} TIDs assigned and ${remainingCount} remaining`}
+          style={{
+            margin: "8px 8px 0",
+            padding: "9px 10px 8px",
+            borderRadius: 11,
+            background: "linear-gradient(180deg, rgba(10, 37, 60, 0.88), rgba(7, 28, 46, 0.96))",
+            border: "1px solid rgba(125, 184, 224, 0.16)",
+            boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.04)",
+          }}
+        >
+          <div
+            className="theme-insertion-reference-summary-stats"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: 8,
+              alignItems: "center",
+            }}
+          >
+            <div
+              className="theme-insertion-reference-stat is-assigned"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}
+            >
+              <span
+                className="theme-insertion-reference-stat-icon"
+                style={{
+                  width: 24,
+                  height: 24,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flex: "0 0 24px",
+                  borderRadius: 999,
+                  color: "#d1fae5",
+                  background: "rgba(16, 185, 129, 0.18)",
+                  border: "1px solid rgba(110, 231, 183, 0.48)",
+                }}
+              >
+                <Check size={14} strokeWidth={3} />
+              </span>
+              <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                <span
+                  className="theme-insertion-reference-stat-value"
+                  style={{ color: "#6ee7b7", fontSize: 18, lineHeight: "18px", fontWeight: 800, fontVariantNumeric: "tabular-nums" }}
+                >
+                  {assignedCount}
+                </span>
+                <span
+                  className="theme-insertion-reference-stat-label"
+                  style={{ color: "#9fb8cb", fontSize: 8, lineHeight: "11px", fontWeight: 700, letterSpacing: "0.13em", textTransform: "uppercase" }}
+                >
+                  Assigned
+                </span>
+              </span>
+            </div>
+
+            <div
+              className="theme-insertion-reference-stat is-remaining"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}
+            >
+              <span
+                className="theme-insertion-reference-stat-icon"
+                style={{
+                  width: 24,
+                  height: 24,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flex: "0 0 24px",
+                  borderRadius: 999,
+                  color: accent.accent,
+                  background: accent.accentSoft,
+                  border: `1px solid ${accent.border}`,
+                }}
+              >
+                <ClockIcon size={14} />
+              </span>
+              <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                <span
+                  className="theme-insertion-reference-stat-value"
+                  style={{ color: accent.accent, fontSize: 18, lineHeight: "18px", fontWeight: 800, fontVariantNumeric: "tabular-nums" }}
+                >
+                  {remainingCount}
+                </span>
+                <span
+                  className="theme-insertion-reference-stat-label"
+                  style={{ color: "#9fb8cb", fontSize: 8, lineHeight: "11px", fontWeight: 700, letterSpacing: "0.13em", textTransform: "uppercase" }}
+                >
+                  Remaining
+                </span>
+              </span>
+            </div>
+          </div>
+
+          <div
+            className="theme-insertion-reference-progress"
+            aria-hidden="true"
+            style={{
+              height: 5,
+              display: "flex",
+              overflow: "hidden",
+              marginTop: 8,
+              borderRadius: 999,
+              background: "rgba(56, 189, 248, 0.32)",
+              boxShadow: "inset 0 1px 2px rgba(0, 0, 0, 0.34)",
+            }}
+          >
+            <span
+              className="theme-insertion-reference-progress-assigned"
+              style={{
+                width: `${assignedPercent}%`,
+                minWidth: assignedCount > 0 ? 4 : 0,
+                borderRadius: 999,
+                background: "linear-gradient(90deg, #34d399, #6ee7b7)",
+                boxShadow: "0 0 10px rgba(52, 211, 153, 0.30)",
+                transition: "width 220ms ease",
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div style={{ padding: 8 }}>
         <table
           className="theme-insertion-reference-table"
           style={{
@@ -997,18 +1132,19 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
             borderCollapse: "separate",
             borderSpacing: 0,
             overflow: "hidden",
-            borderRadius: 10,
+            borderRadius: 11,
             border: "1px solid rgba(125, 184, 224, 0.16)",
             background: "rgba(6, 24, 39, 0.74)",
           }}
         >
+          <caption className="sr-only">{title} {displayDayLabel} TID schedule</caption>
           <thead>
             <tr>
               <th
                 className="theme-insertion-reference-table-header"
                 style={{
-                  width: isWeekday ? "60%" : "68%",
-                  padding: "6px 5px",
+                  width: isWeekday ? "29%" : "68%",
+                  padding: "7px 5px",
                   textAlign: "center",
                   color: accent.text,
                   fontSize: 10,
@@ -1021,14 +1157,34 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                 }}
               >
                 <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                  <HashIcon size={10} /> TID
+                  {isWeekday ? <TrainIcon size={11} /> : <HashIcon size={10} />} {isWeekday ? "TRAIN" : "TID"}
                 </span>
               </th>
+              {isWeekday && (
+                <th
+                  className="theme-insertion-reference-table-header theme-insertion-reference-service-header"
+                  style={{
+                    width: "39%",
+                    padding: "7px 5px",
+                    textAlign: "center",
+                    color: accent.text,
+                    fontSize: 10,
+                    fontWeight: 400,
+                    letterSpacing: "0.13em",
+                    textTransform: "uppercase",
+                    background: "linear-gradient(180deg, rgba(12,46,74,0.94), rgba(7,30,51,0.96))",
+                    borderBottom: "1px solid rgba(125, 184, 224, 0.16)",
+                    borderRight: "1px solid rgba(125, 184, 224, 0.12)",
+                  }}
+                >
+                  Service
+                </th>
+              )}
               <th
                 className="theme-insertion-reference-table-header"
                 style={{
-                  width: isWeekday ? "40%" : "32%",
-                  padding: "6px 5px",
+                  width: "32%",
+                  padding: "7px 5px",
                   textAlign: "center",
                   color: accent.text,
                   fontSize: 10,
@@ -1086,7 +1242,9 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
           <tbody>
             {rows.map(({ tid, remark, time }, idx) => {
               const isActive = idx === activeIndex;
+              const isNext = idx === nextIndex;
               const isPast = withinSchedule && idx < activeIndex;
+              const isUpcoming = nextIndex >= 0 && idx >= nextIndex;
               const remarkStyle = getRemarkStyle(remark || "");
 
               const rowBackground = isActive
@@ -1104,9 +1262,11 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               const interactionColor = remark ? remarkStyle.sideColor : accent.accent;
               const isUsed = Boolean(isWeekday && remark && usedTidKeys.has(String(tid)));
               const isDuplicate = Boolean(isUsed && duplicateTidKeys.has(String(tid)));
+              const showUpcomingDivider = isWeekday && nextIndex >= 0 && idx === nextIndex;
 
+              /** @type {React.CSSProperties} */
               const commonCellStyle = {
-                padding: isWeekday ? "3px 6px" : "1px 6px",
+                padding: isWeekday ? "5px 6px" : "2px 6px",
                 textAlign: "center",
                 background: rowBackground,
                 borderBottom: idx === rows.length - 1 ? "none" : "1px solid rgba(125, 184, 224, 0.13)",
@@ -1118,168 +1278,235 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               };
 
               return (
-                <tr
-                  key={tid}
-                  className={`theme-insertion-reference-row ${isActive ? "is-active" : ""} ${remark ? "has-remark" : ""} ${isPast ? "is-past" : ""} ${isRaised ? "is-raised" : ""}`}
-                  title={isDuplicate ? `TID ${tid} is used on more than one stabling card.` : isUsed ? `TID ${tid} label is already used in stabling. Hold and drag to use it again.` : `Hold and drag TID ${tid} to a train card`}
-                  onMouseEnter={() => setHoveredRowKey(rowDragKey)}
-                  onMouseLeave={() => setHoveredRowKey((currentKey) => currentKey === rowDragKey ? "" : currentKey)}
-                  onPointerDown={(event) => {
-                    if (event.button !== undefined && event.button !== 0) return;
-                    event.preventDefault();
-                    try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch {}
-                    onTidDragStart?.({
-                      tid,
-                      remark: remark || "",
-                      displayRemark: getDisplayAssistRemark(remark || ""),
-                      time,
-                      depotType,
-                      sourceKey: rowDragKey,
-                      pointerId: event.pointerId,
-                      clientX: event.clientX,
-                      clientY: event.clientY,
-                    });
-                  }}
-                  style={{
-                    cursor: isDraggingSource ? "grabbing" : "grab",
-                    touchAction: "none",
-                    userSelect: "none",
-                    transform: isDraggingSource
-                      ? "scale(1.026) translateY(-4px)"
-                      : isHovered
-                        ? "scale(1.018) translateY(-3px)"
-                        : "none",
-                    filter: isDraggingSource
-                      ? `brightness(1.20) drop-shadow(0 0 10px ${interactionColor})`
-                      : isHovered
-                        ? `brightness(1.14) drop-shadow(0 0 8px ${interactionColor})`
-                        : "none",
-                    outline: isRaised ? `1px solid ${interactionColor}` : "1px solid transparent",
-                    outlineOffset: -1,
-                    boxShadow: isDraggingSource
-                      ? `0 0 0 1px ${interactionColor}, 0 0 22px color-mix(in srgb, ${interactionColor} 72%, transparent), 0 10px 22px rgba(0,0,0,0.36)`
-                      : isHovered
-                        ? `0 0 0 1px ${interactionColor}, 0 0 17px color-mix(in srgb, ${interactionColor} 62%, transparent), 0 8px 18px rgba(0,0,0,0.30)`
-                        : "none",
-                    position: "relative",
-                    zIndex: isDraggingSource ? 6 : isHovered ? 4 : 1,
-                    transition: "transform 170ms ease, filter 170ms ease, box-shadow 170ms ease, outline-color 170ms ease",
-                    willChange: "transform, filter, box-shadow",
-                  }}
-                >
-                  <td
-                    className="theme-insertion-reference-row-cell theme-insertion-reference-tid-cell"
-                    style={{
-                      ...commonCellStyle,
-                      textAlign: isWeekday ? "left" : "center",
-                      borderLeft: isRaised
-                        ? `2px solid ${interactionColor}`
-                        : isActive
-                          ? `3px solid ${accent.accent}`
-                          : `3px solid ${remark ? remarkStyle.sideColor : "transparent"}`,
-                      borderRight: "1px solid rgba(125, 184, 224, 0.10)",
-                      boxShadow: isRaised
-                        ? `${commonCellStyle.boxShadow}, inset 8px 0 16px color-mix(in srgb, ${interactionColor} 24%, transparent)`
-                        : isActive
-                          ? `inset 10px 0 20px ${accent.glow}`
-                          : "none",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: isWeekday ? "flex" : "inline-flex",
-                        alignItems: "center",
-                        justifyContent: isWeekday ? "flex-start" : "center",
-                        gap: 5,
-                        width: isWeekday ? "100%" : "auto",
-                        maxWidth: "100%",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {isUsed && (
-                        <span
-                          aria-label={isDuplicate ? `TID ${tid} is duplicated in stabling` : `TID ${tid} label already used in stabling`}
-                          title={isDuplicate ? `TID ${tid} is duplicated in stabling` : `TID ${tid} label already used in stabling`}
-                          style={{
-                            display: "inline-flex",
-                            width: 18,
-                            height: 18,
-                            flex: "0 0 18px",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            borderRadius: 999,
-                            border: isDuplicate
-                              ? "1px solid rgba(253, 186, 116, 0.92)"
-                              : "1px solid rgba(110, 231, 183, 0.80)",
-                            background: isDuplicate ? "#f59e0b" : "#58c96b",
-                            boxShadow: isDuplicate
-                              ? "0 0 9px rgba(245, 158, 11, 0.68)"
-                              : "0 0 8px rgba(88, 201, 107, 0.55)",
-                          }}
-                        >
-                          <Check size={12} strokeWidth={3.5} color="#ffffff" />
-                        </span>
-                      )}
-
-                      <span
+                <React.Fragment key={tid}>
+                  {showUpcomingDivider && (
+                    <tr className="theme-insertion-reference-section-row">
+                      <td
+                        className="theme-insertion-reference-section-cell"
+                        colSpan={isWeekday ? 3 : 2}
                         style={{
-                          color: isActive ? "#ffffff" : "#e0f2fe",
-                          fontSize: 12,
-                          lineHeight: "14px",
-                          fontWeight: 400,
-                          letterSpacing: "0.05em",
-                          fontVariantNumeric: "tabular-nums",
-                          minWidth: isWeekday ? 24 : "auto",
-                          textAlign: isWeekday ? "right" : "center",
+                          padding: "8px 10px 6px",
+                          background: "rgba(4, 19, 32, 0.96)",
+                          borderBottom: "1px solid rgba(125, 184, 224, 0.14)",
                         }}
                       >
-                        {tid}
-                      </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                          <span className="theme-insertion-reference-section-line" style={{ height: 1, flex: 1, background: "rgba(125, 184, 224, 0.22)" }} />
+                          <span
+                            className="theme-insertion-reference-section-label"
+                            style={{ display: "inline-flex", alignItems: "center", gap: 5, color: accent.accent, fontSize: 9, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase" }}
+                          >
+                            <ClockIcon size={11} /> Upcoming
+                          </span>
+                          <span className="theme-insertion-reference-section-line" style={{ height: 1, flex: 1, background: "rgba(125, 184, 224, 0.22)" }} />
+                        </div>
+                      </td>
+                    </tr>
+                  )}
 
-                      {remark && (
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            padding: "1px 5px",
-                            borderRadius: 999,
-                            fontSize: isWeekday ? 12 : 7,
-                            lineHeight: isWeekday ? "14px" : "9px",
-                            fontWeight: 400,
-                            letterSpacing: "0.03em",
-                            color: remarkStyle.color,
-                            background: remarkStyle.backgroundColor,
-                            border: `1px solid ${remarkStyle.borderColor}`,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {getDisplayAssistRemark(remark)}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-
-                  <td
-                    className="theme-insertion-reference-row-cell theme-insertion-reference-time-cell"
+                  <tr
+                    className={`theme-insertion-reference-row ${isActive ? "is-active" : ""} ${isNext ? "is-next" : ""} ${isUpcoming ? "is-upcoming" : ""} ${remark ? "has-remark" : ""} ${isUsed ? "is-used" : ""} ${isDuplicate ? "is-duplicate" : ""} ${isPast ? "is-past" : ""} ${isRaised ? "is-raised" : ""}`}
+                    aria-current={isNext ? "true" : undefined}
+                    title={isDuplicate ? `TID ${tid} is used on more than one stabling card.` : isUsed ? `TID ${tid} label is already used in stabling. Hold and drag to use it again.` : `Hold and drag TID ${tid} to a train card`}
+                    onMouseEnter={() => setHoveredRowKey(rowDragKey)}
+                    onMouseLeave={() => setHoveredRowKey((currentKey) => currentKey === rowDragKey ? "" : currentKey)}
+                    onPointerDown={(event) => {
+                      if (event.button !== undefined && event.button !== 0) return;
+                      event.preventDefault();
+                      try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch {}
+                      onTidDragStart?.({
+                        tid,
+                        remark: remark || "",
+                        displayRemark: getDisplayAssistRemark(remark || ""),
+                        time,
+                        depotType,
+                        sourceKey: rowDragKey,
+                        pointerId: event.pointerId,
+                        clientX: event.clientX,
+                        clientY: event.clientY,
+                      });
+                    }}
                     style={{
-                      ...commonCellStyle,
-                      color: isActive ? accent.accent : "#dbeafe",
-                      fontSize: 12,
-                      lineHeight: "14px",
-                      fontWeight: 400,
-                      letterSpacing: "0.06em",
-                      fontVariantNumeric: "tabular-nums",
-                      textShadow: isRaised
-                        ? `0 0 10px ${interactionColor}`
-                        : isActive
-                          ? `0 0 14px ${accent.glow}`
+                      cursor: isDraggingSource ? "grabbing" : "grab",
+                      touchAction: "none",
+                      userSelect: "none",
+                      transform: isDraggingSource
+                        ? "scale(1.026) translateY(-4px)"
+                        : isHovered
+                          ? "scale(1.018) translateY(-3px)"
                           : "none",
-                      borderRight: isRaised ? `2px solid ${interactionColor}` : "none",
+                      filter: isDraggingSource
+                        ? `brightness(1.20) drop-shadow(0 0 10px ${interactionColor})`
+                        : isHovered
+                          ? `brightness(1.14) drop-shadow(0 0 8px ${interactionColor})`
+                          : "none",
+                      outline: isRaised ? `1px solid ${interactionColor}` : "1px solid transparent",
+                      outlineOffset: -1,
+                      boxShadow: isDraggingSource
+                        ? `0 0 0 1px ${interactionColor}, 0 0 22px color-mix(in srgb, ${interactionColor} 72%, transparent), 0 10px 22px rgba(0,0,0,0.36)`
+                        : isHovered
+                          ? `0 0 0 1px ${interactionColor}, 0 0 17px color-mix(in srgb, ${interactionColor} 62%, transparent), 0 8px 18px rgba(0,0,0,0.30)`
+                          : "none",
+                      position: "relative",
+                      zIndex: isDraggingSource ? 6 : isHovered ? 4 : 1,
+                      transition: "transform 170ms ease, filter 170ms ease, box-shadow 170ms ease, outline-color 170ms ease",
+                      willChange: "transform, filter, box-shadow",
                     }}
                   >
-                    {time}
-                  </td>
-                </tr>
+                    <td
+                      className="theme-insertion-reference-row-cell theme-insertion-reference-tid-cell"
+                      style={{
+                        ...commonCellStyle,
+                        textAlign: isWeekday ? "left" : "center",
+                        borderLeft: isRaised
+                          ? `2px solid ${interactionColor}`
+                          : isNext
+                            ? `3px solid ${accent.accent}`
+                            : `3px solid ${remark ? remarkStyle.sideColor : "transparent"}`,
+                        borderRight: "1px solid rgba(125, 184, 224, 0.10)",
+                        boxShadow: isRaised
+                          ? `${commonCellStyle.boxShadow}, inset 8px 0 16px color-mix(in srgb, ${interactionColor} 24%, transparent)`
+                          : isNext
+                            ? `inset 10px 0 20px ${accent.glow}`
+                            : "none",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: isWeekday ? "flex" : "inline-flex",
+                          alignItems: "center",
+                          justifyContent: isWeekday ? "flex-start" : "center",
+                          gap: 5,
+                          width: isWeekday ? "100%" : "auto",
+                          maxWidth: "100%",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {isWeekday && (isUsed ? (
+                          <span
+                            className="theme-insertion-reference-used-icon"
+                            aria-label={isDuplicate ? `TID ${tid} is duplicated in stabling` : `TID ${tid} label already used in stabling`}
+                            title={isDuplicate ? `TID ${tid} is duplicated in stabling` : `TID ${tid} label already used in stabling`}
+                            style={{
+                              display: "inline-flex",
+                              width: 18,
+                              height: 18,
+                              flex: "0 0 18px",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              borderRadius: 999,
+                              border: isDuplicate
+                                ? "1px solid rgba(253, 186, 116, 0.92)"
+                                : "1px solid rgba(110, 231, 183, 0.80)",
+                              background: isDuplicate ? "#f59e0b" : "#58c96b",
+                              boxShadow: isDuplicate
+                                ? "0 0 9px rgba(245, 158, 11, 0.68)"
+                                : "0 0 8px rgba(88, 201, 107, 0.55)",
+                            }}
+                          >
+                            <Check size={12} strokeWidth={3.5} color="#ffffff" />
+                          </span>
+                        ) : (
+                          <span className="theme-insertion-reference-used-placeholder" aria-hidden="true" style={{ width: 18, height: 18, flex: "0 0 18px" }} />
+                        ))}
+
+                        <span
+                          className="theme-insertion-reference-train-id"
+                          style={{
+                            color: isActive ? "#ffffff" : "#e0f2fe",
+                            fontSize: 12,
+                            lineHeight: "14px",
+                            fontWeight: isNext ? 800 : 500,
+                            letterSpacing: "0.05em",
+                            fontVariantNumeric: "tabular-nums",
+                            minWidth: isWeekday ? 24 : "auto",
+                            textAlign: isWeekday ? "right" : "center",
+                          }}
+                        >
+                          {tid}
+                        </span>
+                      </div>
+                    </td>
+
+                    {isWeekday && (
+                      <td
+                        className="theme-insertion-reference-row-cell theme-insertion-reference-service-cell"
+                        style={{
+                          ...commonCellStyle,
+                          borderRight: "1px solid rgba(125, 184, 224, 0.10)",
+                        }}
+                      >
+                        {remark ? (
+                          <span
+                            className="theme-insertion-reference-service-pill"
+                            data-service={normalizeAssistRemark(remark)}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: "2px 7px",
+                              borderRadius: 999,
+                              fontSize: 10,
+                              lineHeight: "12px",
+                              fontWeight: 700,
+                              letterSpacing: "0.03em",
+                              color: remarkStyle.color,
+                              background: remarkStyle.backgroundColor,
+                              border: `1px solid ${remarkStyle.borderColor}`,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {getDisplayAssistRemark(remark)}
+                          </span>
+                        ) : (
+                          <span className="theme-insertion-reference-service-empty" aria-label="No service label" style={{ color: "#567086", fontSize: 11 }}>—</span>
+                        )}
+                      </td>
+                    )}
+
+                    <td
+                      className="theme-insertion-reference-row-cell theme-insertion-reference-time-cell"
+                      style={{
+                        ...commonCellStyle,
+                        color: isNext ? accent.accent : "#dbeafe",
+                        fontSize: 12,
+                        lineHeight: "14px",
+                        fontWeight: isNext ? 800 : 500,
+                        letterSpacing: "0.06em",
+                        fontVariantNumeric: "tabular-nums",
+                        textShadow: isRaised
+                          ? `0 0 10px ${interactionColor}`
+                          : isNext
+                            ? `0 0 14px ${accent.glow}`
+                            : "none",
+                        borderRight: isRaised ? `2px solid ${interactionColor}` : "none",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap" }}>
+                        <span className="theme-insertion-reference-time-value">{time}</span>
+                        {isNext && (
+                          <span
+                            className="theme-insertion-reference-next-badge"
+                            style={{
+                              padding: "2px 4px",
+                              borderRadius: 999,
+                              color: accent.accent,
+                              background: accent.accentSoft,
+                              border: `1px solid ${accent.border}`,
+                              fontSize: 7,
+                              lineHeight: "9px",
+                              fontWeight: 800,
+                              letterSpacing: "0.08em",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            Next
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                </React.Fragment>
               );
             })}
           </tbody>
