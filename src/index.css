@@ -7673,6 +7673,56 @@ html[data-app-theme="light"] .theme-movement-sheet-action {
   box-shadow: 0 1px 4px rgba(37,99,235,0.10) !important;
 }
 
+/* Keep the row-creation action easy to spot without changing its compact size. */
+@keyframes movement-add-row-attention {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(56, 189, 248, 0));
+  }
+  50% {
+    transform: translateY(-1px) scale(1.045);
+    filter: brightness(1.18) drop-shadow(0 0 6px rgba(56, 189, 248, 0.88));
+  }
+}
+
+@keyframes movement-add-row-icon-attention {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.28);
+  }
+}
+
+.theme-movement-add-row-attention {
+  transform-origin: center;
+  animation: movement-add-row-attention 1.55s ease-in-out infinite;
+  will-change: transform, filter;
+}
+
+.theme-movement-add-row-attention svg {
+  transform-origin: center;
+  animation: movement-add-row-icon-attention 1.55s ease-in-out infinite;
+  will-change: transform;
+}
+
+html[data-app-theme="light"] .theme-movement-add-row-attention {
+  --movement-add-row-static-glow: rgba(2, 132, 199, 0.42);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-movement-add-row-attention,
+  .theme-movement-add-row-attention svg {
+    animation: none !important;
+    transform: none !important;
+    will-change: auto;
+  }
+
+  .theme-movement-add-row-attention {
+    filter: drop-shadow(0 0 3px var(--movement-add-row-static-glow, rgba(56, 189, 248, 0.55)));
+  }
+}
+
 html[data-app-theme="light"] .theme-movement-sheet-clear {
   color: #991b1b !important;
   background: #fff1f2 !important;

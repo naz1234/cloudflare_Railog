@@ -10540,7 +10540,7 @@ function TrainMovementExcelSheet() {
           )}
           <span className={`theme-movement-live-status rounded-lg border px-2 py-1 text-[10px] font-bold ${!liveDbReady || liveSyncError ? "is-warning" : "is-ready"} ${liveStatusClass}`}>{liveStatusText}</span>
           <span className="theme-movement-ready-count rounded-lg border border-[#2b4f6b] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#8ea8c0]">{readyCount} added</span>
-          <button type="button" onClick={addRow} className="theme-movement-sheet-action inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
+          <button type="button" onClick={addRow} className="theme-movement-sheet-action theme-movement-add-row-attention inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
             <Plus size={12} />Add Row
           </button>
           <button type="button" onClick={copyAllRows} className="theme-movement-sheet-action inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
