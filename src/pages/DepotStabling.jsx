@@ -14,6 +14,13 @@ import OvertimeTracker from "../components/OvertimeTracker";
 import RosterWorkspace from "../components/RosterWorkspace";
 import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator";
 import { summarizeInsertionTidUsage } from "../lib/insertionTidUsage";
+import {
+  createLatestTrainMovementSaveQueue,
+  getTrainMovementLiveRecordUpdatedMs,
+  selectTrainMovementExcelLiveRecord,
+  shouldApplyTrainMovementRemoteSnapshot,
+  upsertTrainMovementLiveRecord,
+} from "../lib/trainMovementLiveSync";
 
 const DEFAULT_BOOKMARK_LINKS = [
   { title: "Outlook", url: "https://outlook.office.com", sortOrder: 0 },
@@ -9756,10 +9763,12 @@ function normalizeMovementTrain(value) {
 
 const TRAIN_MOVEMENT_EXCEL_KEY = "trainMovementExcelRows_v1";
 const TRAIN_MOVEMENT_EXCEL_LOG_KEY = "trainMovementExcelLogRows_v1";
+const TRAIN_MOVEMENT_EXCEL_LIVE_LOCAL_UPDATED_KEY = "trainMovementExcelLocalUpdatedAt_v1";
+const TRAIN_MOVEMENT_EXCEL_LIVE_DIRTY_KEY = "trainMovementExcelLiveDirty_v1";
 const TRAIN_MOVEMENT_EXCEL_LIVE_RECORD_KEY = "main";
 const TRAIN_MOVEMENT_EXCEL_LIVE_SYNC_INTERVAL_MS = 5000;
-const TRAIN_MOVEMENT_EXCEL_LIVE_LOCAL_EDIT_HOLD_MS = 2500;
-const TRAIN_MOVEMENT_EXCEL_LIVE_POST_SAVE_HOLD_MS = 1200;
+const TRAIN_MOVEMENT_EXCEL_LIVE_LOCAL_EDIT_HOLD_MS = 30000;
+const TRAIN_MOVEMENT_EXCEL_LIVE_POST_SAVE_HOLD_MS = 12000;
 
 function getTrainMovementExcelLiveEntity() {
   return base44?.entities?.TrainMovementExcelLive || null;
@@ -9875,6 +9884,29 @@ function saveTrainMovementExcelLogRows(rows = []) {
   try { localStorage.setItem(TRAIN_MOVEMENT_EXCEL_LOG_KEY, JSON.stringify(rows || [])); } catch {}
 }
 
+function loadTrainMovementExcelLocalUpdatedMs() {
+  try {
+    const value = Number(localStorage.getItem(TRAIN_MOVEMENT_EXCEL_LIVE_LOCAL_UPDATED_KEY));
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function saveTrainMovementExcelLocalUpdatedAt(value = Date.now()) {
+  const timestamp = Number(value);
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return;
+  try { localStorage.setItem(TRAIN_MOVEMENT_EXCEL_LIVE_LOCAL_UPDATED_KEY, String(timestamp)); } catch {}
+}
+
+function loadTrainMovementExcelDirty() {
+  try { return localStorage.getItem(TRAIN_MOVEMENT_EXCEL_LIVE_DIRTY_KEY) === "1"; } catch { return false; }
+}
+
+function saveTrainMovementExcelDirty(isDirty) {
+  try { localStorage.setItem(TRAIN_MOVEMENT_EXCEL_LIVE_DIRTY_KEY, isDirty ? "1" : "0"); } catch {}
+}
+
 function getDefaultTrainMovementExcelRows() {
   return Array.from({ length: 6 }, () => createTrainMovementExcelRow());
 }
@@ -9892,7 +9924,7 @@ function normalizeTrainMovementExcelLiveState(source = {}) {
     recordKey: source.recordKey || source.stateKey || TRAIN_MOVEMENT_EXCEL_LIVE_RECORD_KEY,
     rows: normalizedRows.length ? normalizedRows : getDefaultTrainMovementExcelRows(),
     logRows: normalizedLogRows,
-    updatedAt: source.updatedAt || source.updated_date || source.updatedAt || "",
+    updatedAt: source.updated_date || source.updated_at || source.updatedAt || "",
   };
 }
 
@@ -9904,10 +9936,6 @@ function buildTrainMovementExcelLivePayload(state = {}) {
     logRows: sortTrainMovementExcelLogRows(normalized.logRows).slice(0, 120),
     updatedAt: state.updatedAt || new Date().toISOString(),
   };
-}
-
-function selectTrainMovementExcelLiveRecord(records = []) {
-  return (records || []).find((item) => item?.recordKey === TRAIN_MOVEMENT_EXCEL_LIVE_RECORD_KEY || item?.stateKey === TRAIN_MOVEMENT_EXCEL_LIVE_RECORD_KEY) || (records || [])[0] || null;
 }
 
 function sortTrainMovementExcelLogRows(rows = []) {
@@ -10018,6 +10046,7 @@ function buildMovementExcelLogLine(row = {}) {
 function TrainMovementExcelSheet() {
   const [rows, setRows] = useState(() => loadTrainMovementExcelRows());
   const [logRows, setLogRows] = useState(() => loadTrainMovementExcelLogRows());
+  const [initialLiveDirty] = useState(() => loadTrainMovementExcelDirty());
   const [feedback, setFeedback] = useState("");
   const [confirmClearTarget, setConfirmClearTarget] = useState("");
   const [liveLoaded, setLiveLoaded] = useState(false);
@@ -10033,9 +10062,14 @@ function TrainMovementExcelSheet() {
   const trainMovementExcelPendingSaveRef = useRef(false);
   const trainMovementExcelPollingRef = useRef(false);
   const trainMovementExcelLocalEditUntilRef = useRef(0);
-  const trainMovementExcelApplyingRemoteRef = useRef(false);
-  const trainMovementExcelLocalUpdatedAtRef = useRef(0);
+  const trainMovementExcelLocalUpdatedAtRef = useRef(loadTrainMovementExcelLocalUpdatedMs());
   const trainMovementExcelRemoteUpdatedAtRef = useRef(0);
+  const trainMovementExcelLocalRevisionRef = useRef(initialLiveDirty ? 1 : 0);
+  const trainMovementExcelSavedRevisionRef = useRef(0);
+  const trainMovementExcelDirtyRef = useRef(initialLiveDirty);
+  const trainMovementExcelInputFocusedRef = useRef(false);
+  const trainMovementExcelSaveWorkerRef = useRef(null);
+  const trainMovementExcelSaveQueueRef = useRef(null);
   const rowsRef = useRef(rows);
   const logRowsRef = useRef(logRows);
 
@@ -10044,37 +10078,70 @@ function TrainMovementExcelSheet() {
 
   const markTrainMovementExcelLocalEdit = useCallback(() => {
     const now = Date.now();
-    trainMovementExcelLocalUpdatedAtRef.current = now;
+    trainMovementExcelLocalRevisionRef.current += 1;
+    trainMovementExcelDirtyRef.current = true;
+    saveTrainMovementExcelDirty(true);
     trainMovementExcelLocalEditUntilRef.current = now + TRAIN_MOVEMENT_EXCEL_LIVE_LOCAL_EDIT_HOLD_MS;
   }, []);
 
-  const applyTrainMovementExcelLiveState = useCallback((incomingState) => {
-    const normalized = normalizeTrainMovementExcelLiveState(incomingState);
-    const incomingUpdatedMs = Date.parse(normalized.updatedAt || "");
-    const localUpdatedMs = trainMovementExcelLocalUpdatedAtRef.current || 0;
+  const getTrainMovementExcelSaveQueue = useCallback(() => {
+    if (!trainMovementExcelSaveQueueRef.current) {
+      trainMovementExcelSaveQueueRef.current = createLatestTrainMovementSaveQueue(
+        (job) => trainMovementExcelSaveWorkerRef.current(job),
+        ({ isBusy, isRunning }) => {
+          trainMovementExcelPendingSaveRef.current = isBusy;
+          trainMovementExcelSavingRef.current = isRunning;
+          setLiveSyncing(isBusy);
+        },
+      );
+    }
+    return trainMovementExcelSaveQueueRef.current;
+  }, []);
 
-    if (Date.now() < trainMovementExcelLocalEditUntilRef.current) return;
-    if (localUpdatedMs && (!incomingUpdatedMs || incomingUpdatedMs + 1000 < localUpdatedMs)) return;
+  const applyTrainMovementExcelLiveState = useCallback((incomingState, pollRevision) => {
+    const normalized = normalizeTrainMovementExcelLiveState(incomingState);
+    const incomingUpdatedMs = Date.parse(normalized.updatedAt || "") || 0;
+    const localUpdatedMs = trainMovementExcelLocalUpdatedAtRef.current || 0;
+    const currentRevision = trainMovementExcelLocalRevisionRef.current;
+    const saveQueueBusy = Boolean(trainMovementExcelSaveQueueRef.current?.isBusy());
+
+    if (!shouldApplyTrainMovementRemoteSnapshot({
+      now: Date.now(),
+      localEditUntil: trainMovementExcelLocalEditUntilRef.current,
+      localUpdatedMs,
+      incomingUpdatedMs,
+      pollRevision: pollRevision ?? currentRevision,
+      currentRevision,
+      hasUnsavedLocalEdits: trainMovementExcelDirtyRef.current || currentRevision > trainMovementExcelSavedRevisionRef.current,
+      isSaveBusy: saveQueueBusy || trainMovementExcelPendingSaveRef.current || trainMovementExcelSavingRef.current,
+      isInputFocused: trainMovementExcelInputFocusedRef.current,
+    })) return false;
 
     if (incomingUpdatedMs) {
       trainMovementExcelRemoteUpdatedAtRef.current = Math.max(trainMovementExcelRemoteUpdatedAtRef.current, incomingUpdatedMs);
       trainMovementExcelLocalUpdatedAtRef.current = Math.max(trainMovementExcelLocalUpdatedAtRef.current || 0, incomingUpdatedMs);
+      saveTrainMovementExcelLocalUpdatedAt(trainMovementExcelLocalUpdatedAtRef.current);
     }
 
-    trainMovementExcelApplyingRemoteRef.current = true;
+    trainMovementExcelSavedRevisionRef.current = currentRevision;
+    trainMovementExcelDirtyRef.current = false;
+    saveTrainMovementExcelDirty(false);
     rowsRef.current = normalized.rows;
     logRowsRef.current = normalized.logRows;
     setRows(normalized.rows);
     setLogRows(normalized.logRows);
     saveTrainMovementExcelRows(normalized.rows);
     saveTrainMovementExcelLogRows(normalized.logRows);
+    return true;
   }, []);
 
-  const saveTrainMovementExcelLiveToDb = useCallback(async (state) => {
+  const saveTrainMovementExcelLiveToDb = useCallback(async ({ payload: queuedPayload, revision }) => {
     const entity = getTrainMovementExcelLiveEntity();
-    const payload = buildTrainMovementExcelLivePayload(state);
-    const payloadUpdatedMs = Date.parse(payload.updatedAt || "") || Date.now();
-    trainMovementExcelLocalUpdatedAtRef.current = Math.max(trainMovementExcelLocalUpdatedAtRef.current || 0, payloadUpdatedMs);
+    const payloadUpdatedMs = Math.max(Date.now(), Date.parse(queuedPayload.updatedAt || "") || 0);
+    const payload = {
+      ...queuedPayload,
+      updatedAt: new Date(payloadUpdatedMs).toISOString(),
+    };
 
     saveTrainMovementExcelRows(payload.rows);
     saveTrainMovementExcelLogRows(payload.logRows);
@@ -10082,23 +10149,27 @@ function TrainMovementExcelSheet() {
     if (!isTrainMovementExcelLiveEntityReady(entity)) {
       setLiveDbReady(false);
       setLiveSyncError(true);
-      trainMovementExcelPendingSaveRef.current = false;
-      return;
+      throw new Error("Train Movement Excel live entity is unavailable.");
     }
 
-    trainMovementExcelSavingRef.current = true;
-    setLiveSyncing(true);
-
     try {
-      if (trainMovementExcelRecordIdRef.current) {
-        await entity.update(trainMovementExcelRecordIdRef.current, payload);
-      } else {
-        const created = await entity.create(payload);
-        if (created?.id) trainMovementExcelRecordIdRef.current = created.id;
-      }
+      const saved = await upsertTrainMovementLiveRecord({
+        entity,
+        recordId: trainMovementExcelRecordIdRef.current,
+        payload,
+        recordKey: TRAIN_MOVEMENT_EXCEL_LIVE_RECORD_KEY,
+      });
+      if (saved.recordId) trainMovementExcelRecordIdRef.current = saved.recordId;
 
-      if (payloadUpdatedMs) {
-        trainMovementExcelRemoteUpdatedAtRef.current = Math.max(trainMovementExcelRemoteUpdatedAtRef.current, payloadUpdatedMs);
+      const committedUpdatedMs = getTrainMovementLiveRecordUpdatedMs(saved.record) || payloadUpdatedMs;
+      trainMovementExcelRemoteUpdatedAtRef.current = Math.max(trainMovementExcelRemoteUpdatedAtRef.current, committedUpdatedMs);
+
+      trainMovementExcelSavedRevisionRef.current = Math.max(trainMovementExcelSavedRevisionRef.current, revision);
+      if (trainMovementExcelSavedRevisionRef.current >= trainMovementExcelLocalRevisionRef.current) {
+        trainMovementExcelLocalUpdatedAtRef.current = committedUpdatedMs;
+        saveTrainMovementExcelLocalUpdatedAt(committedUpdatedMs);
+        trainMovementExcelDirtyRef.current = false;
+        saveTrainMovementExcelDirty(false);
       }
 
       setLiveLastSynced(new Date());
@@ -10107,23 +10178,30 @@ function TrainMovementExcelSheet() {
     } catch (err) {
       console.error("Train Movement Excel live save failed:", err);
       setLiveSyncError(true);
+      trainMovementExcelDirtyRef.current = true;
+      saveTrainMovementExcelDirty(true);
+      throw err;
     } finally {
       trainMovementExcelLocalEditUntilRef.current = Date.now() + TRAIN_MOVEMENT_EXCEL_LIVE_POST_SAVE_HOLD_MS;
-      trainMovementExcelPendingSaveRef.current = false;
-      trainMovementExcelSavingRef.current = false;
-      setLiveSyncing(false);
     }
   }, []);
 
+  trainMovementExcelSaveWorkerRef.current = saveTrainMovementExcelLiveToDb;
+
   const scheduleTrainMovementExcelLiveSave = useCallback((state) => {
-    const payload = buildTrainMovementExcelLivePayload(state);
-    const payloadUpdatedMs = Date.parse(payload.updatedAt || "") || Date.now();
-    trainMovementExcelLocalUpdatedAtRef.current = Math.max(trainMovementExcelLocalUpdatedAtRef.current || 0, payloadUpdatedMs);
+    const revision = trainMovementExcelLocalRevisionRef.current;
+    const payloadUpdatedMs = Math.max(Date.now(), (trainMovementExcelLocalUpdatedAtRef.current || 0) + 1);
+    const payload = buildTrainMovementExcelLivePayload({
+      ...state,
+      updatedAt: new Date(payloadUpdatedMs).toISOString(),
+    });
 
     saveTrainMovementExcelRows(payload.rows);
     saveTrainMovementExcelLogRows(payload.logRows);
 
     trainMovementExcelPendingSaveRef.current = true;
+    trainMovementExcelDirtyRef.current = true;
+    saveTrainMovementExcelDirty(true);
     trainMovementExcelLocalEditUntilRef.current = Date.now() + TRAIN_MOVEMENT_EXCEL_LIVE_LOCAL_EDIT_HOLD_MS;
 
     if (trainMovementExcelAutoSaveTimerRef.current) {
@@ -10131,9 +10209,10 @@ function TrainMovementExcelSheet() {
     }
 
     trainMovementExcelAutoSaveTimerRef.current = setTimeout(() => {
-      saveTrainMovementExcelLiveToDb(payload);
+      trainMovementExcelAutoSaveTimerRef.current = null;
+      getTrainMovementExcelSaveQueue().enqueue({ payload, revision });
     }, 650);
-  }, [saveTrainMovementExcelLiveToDb]);
+  }, [getTrainMovementExcelSaveQueue]);
 
   const refreshTrainMovementExcelLiveFromDb = useCallback(async ({ showStatus = false } = {}) => {
     const entity = getTrainMovementExcelLiveEntity();
@@ -10144,16 +10223,31 @@ function TrainMovementExcelSheet() {
       return;
     }
 
+    const hasUnsavedLocalEdits = trainMovementExcelDirtyRef.current
+      || trainMovementExcelLocalRevisionRef.current > trainMovementExcelSavedRevisionRef.current;
+    const saveQueueBusy = Boolean(trainMovementExcelSaveQueueRef.current?.isBusy());
+
+    if (hasUnsavedLocalEdits) {
+      if (!trainMovementExcelPendingSaveRef.current && !saveQueueBusy) {
+        scheduleTrainMovementExcelLiveSave({ rows: rowsRef.current, logRows: logRowsRef.current });
+      }
+      setLiveLoaded(true);
+      return;
+    }
+
     if (
       Date.now() < trainMovementExcelLocalEditUntilRef.current ||
+      trainMovementExcelInputFocusedRef.current ||
       trainMovementExcelSavingRef.current ||
       trainMovementExcelPendingSaveRef.current ||
+      saveQueueBusy ||
       trainMovementExcelPollingRef.current
     ) {
       return;
     }
 
     trainMovementExcelPollingRef.current = true;
+    const pollRevision = trainMovementExcelLocalRevisionRef.current;
     if (showStatus) setLiveSyncing(true);
 
     try {
@@ -10161,30 +10255,23 @@ function TrainMovementExcelSheet() {
       const record = selectTrainMovementExcelLiveRecord(records);
 
       if (!record) {
-        const payload = buildTrainMovementExcelLivePayload({
-          rows: rowsRef.current,
-          logRows: logRowsRef.current,
-        });
-        const created = await entity.create(payload);
-        if (created?.id) trainMovementExcelRecordIdRef.current = created.id;
-
-        const payloadUpdatedMs = Date.parse(payload.updatedAt || "");
-        if (payloadUpdatedMs) {
-          trainMovementExcelRemoteUpdatedAtRef.current = Math.max(trainMovementExcelRemoteUpdatedAtRef.current, payloadUpdatedMs);
+        const changedWhilePolling = pollRevision !== trainMovementExcelLocalRevisionRef.current
+          || trainMovementExcelDirtyRef.current
+          || trainMovementExcelInputFocusedRef.current;
+        if (!changedWhilePolling) {
+          scheduleTrainMovementExcelLiveSave({ rows: rowsRef.current, logRows: logRowsRef.current });
         }
-
-        setLiveLastSynced(new Date());
-        setLiveSyncError(false);
-        setLiveDbReady(true);
         setLiveLoaded(true);
         return;
       }
 
       if (record?.id) trainMovementExcelRecordIdRef.current = record.id;
-      applyTrainMovementExcelLiveState(record);
-      setLiveLastSynced(new Date());
-      setLiveSyncError(false);
-      setLiveDbReady(true);
+      const applied = applyTrainMovementExcelLiveState(record, pollRevision);
+      if (applied) {
+        setLiveLastSynced(new Date());
+        setLiveSyncError(false);
+        setLiveDbReady(true);
+      }
       setLiveLoaded(true);
     } catch (err) {
       console.error("Train Movement Excel live sync failed:", err);
@@ -10192,9 +10279,9 @@ function TrainMovementExcelSheet() {
       setLiveLoaded(true);
     } finally {
       trainMovementExcelPollingRef.current = false;
-      if (showStatus) setLiveSyncing(false);
+      if (showStatus && !trainMovementExcelSaveQueueRef.current?.isBusy()) setLiveSyncing(false);
     }
-  }, [applyTrainMovementExcelLiveState]);
+  }, [applyTrainMovementExcelLiveState, scheduleTrainMovementExcelLiveSave]);
 
   useEffect(() => {
     saveTrainMovementExcelRows(rows);
@@ -10251,12 +10338,11 @@ function TrainMovementExcelSheet() {
     saveTrainMovementExcelRows(rows);
     saveTrainMovementExcelLogRows(logRows);
 
-    if (trainMovementExcelApplyingRemoteRef.current) {
-      trainMovementExcelApplyingRemoteRef.current = false;
-      return;
-    }
-
     if (!liveLoaded) return;
+    if (
+      !trainMovementExcelDirtyRef.current &&
+      trainMovementExcelLocalRevisionRef.current <= trainMovementExcelSavedRevisionRef.current
+    ) return;
     scheduleTrainMovementExcelLiveSave(payload);
   }, [rows, logRows, liveLoaded, scheduleTrainMovementExcelLiveSave]);
 
@@ -10301,24 +10387,29 @@ function TrainMovementExcelSheet() {
 
   const updateRow = (id, field, value) => {
     markTrainMovementExcelLocalEdit();
-    setRows((prev) => prev.map((row) => {
-      if (row.id !== id) return row;
+    setRows((prev) => {
+      const nextRows = prev.map((row) => {
+        if (row.id !== id) return row;
 
-      const next = { ...row, [field]: value };
-      if (field === "operation" || field === "depot") {
-        const operation = field === "operation" ? value : next.operation;
-        const depot = field === "depot" ? value : next.depot;
-        const generated = createTrainMovementExcelRow({ operation, depot });
-        next.operation = operation;
-        next.depot = depot;
-        next.from = generated.from;
-        next.to = generated.to;
-        next.road = generated.road;
-        next.track = generated.track;
-        if (operation !== "swapping") next.replacedBy = "";
-      }
-      return next;
-    }));
+        const next = { ...row, [field]: value };
+        if (field === "operation" || field === "depot") {
+          const operation = field === "operation" ? value : next.operation;
+          const depot = field === "depot" ? value : next.depot;
+          const generated = createTrainMovementExcelRow({ operation, depot });
+          next.operation = operation;
+          next.depot = depot;
+          next.from = generated.from;
+          next.to = generated.to;
+          next.road = generated.road;
+          next.track = generated.track;
+          if (operation !== "swapping") next.replacedBy = "";
+        }
+        return next;
+      });
+      rowsRef.current = nextRows;
+      saveTrainMovementExcelRows(nextRows);
+      return nextRows;
+    });
   };
 
   const addRow = () => {
@@ -10461,7 +10552,15 @@ function TrainMovementExcelSheet() {
         </div>
       </div>
 
-      <div className="overflow-x-auto p-3">
+      <div
+        className="overflow-x-auto p-3"
+        onFocusCapture={() => { trainMovementExcelInputFocusedRef.current = true; }}
+        onBlurCapture={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            trainMovementExcelInputFocusedRef.current = false;
+          }
+        }}
+      >
         <table className="theme-movement-sheet-table w-full min-w-[740px] border-collapse table-fixed text-left">
           <thead>
             <tr className="text-[10px] uppercase tracking-[0.12em] text-[#9fd3f6]">
