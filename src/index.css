@@ -9353,6 +9353,15 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card .theme-
   border-color: #cbd5e1 !important;
 }
 
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card > .theme-insertion-card-refresh-trigger {
+  z-index: 8 !important;
+  pointer-events: auto !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card-refresh-trigger > .theme-insertion-card-refresh {
+  pointer-events: auto !important;
+}
+
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card .theme-insertion-card-refresh:is(:hover, :focus-visible) {
   color: #0369a1 !important;
   background: #e0f2fe !important;
