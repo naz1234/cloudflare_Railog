@@ -651,32 +651,32 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
           box-shadow: 0 8px 22px rgba(8, 145, 178, 0.16), inset 0 1px 0 rgba(255,255,255,0.05);
         }
         html[data-app-theme="light"] .official-depot-excel-generator {
-          --official-bg-start: #0b3a41;
-          --official-bg-end: #123047;
-          --official-border: #5eead4;
-          --official-panel: rgba(5, 31, 43, 0.82);
-          --official-input: #082335;
-          --official-text: #ffffff;
-          --official-muted: #ffffff;
-          --official-accent: #5eead4;
-          --official-soft: rgba(45, 212, 191, 0.16);
-          --official-warning-bg: #713f12;
-          --official-warning-border: #fbbf24;
-          --official-warning-text: #ffffff;
-          --official-warning-icon: #fde68a;
-          box-shadow: 0 8px 20px rgba(13, 148, 136, 0.14), inset 0 1px 0 rgba(255,255,255,0.08);
+          --official-bg-start: #f0fdfa;
+          --official-bg-end: #ecfeff;
+          --official-border: #14b8a6;
+          --official-panel: rgba(255, 255, 255, 0.86);
+          --official-input: #ffffff;
+          --official-text: #0f2733;
+          --official-muted: #425f6b;
+          --official-accent: #0f766e;
+          --official-soft: rgba(13, 148, 136, 0.12);
+          --official-warning-bg: #fffbeb;
+          --official-warning-border: #d97706;
+          --official-warning-text: #78350f;
+          --official-warning-icon: #b45309;
+          box-shadow: 0 8px 20px rgba(13, 148, 136, 0.12), inset 0 1px 0 rgba(255,255,255,0.82);
         }
-        .official-depot-excel-generator :is(h1, h2, h3, p, label, span, button, input),
-        html[data-app-theme="light"] body .official-depot-excel-generator :is(h1, h2, h3, p, label, span, button, input) {
-          color: #ffffff !important;
-          -webkit-text-fill-color: #ffffff !important;
+        .official-depot-excel-generator :is(h1, h2, h3, p, label, span, button, input) {
+          color: var(--official-text) !important;
+          -webkit-text-fill-color: var(--official-text) !important;
         }
         .official-depot-excel-generator .official-panel {
           background: var(--official-panel);
           border-color: color-mix(in srgb, var(--official-border) 48%, transparent);
         }
         .official-depot-excel-generator .official-label {
-          color: var(--official-muted);
+          color: var(--official-muted) !important;
+          -webkit-text-fill-color: var(--official-muted) !important;
           line-height: 1.45;
         }
         .official-depot-excel-generator .official-input {
@@ -690,7 +690,18 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
           color: var(--official-warning-text);
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
         }
+        .official-depot-excel-generator .official-warning :is(p, span) {
+          color: var(--official-warning-text) !important;
+          -webkit-text-fill-color: var(--official-warning-text) !important;
+        }
         .official-depot-excel-generator .official-warning-icon { color: var(--official-warning-icon); }
+        .official-depot-excel-generator .official-generate-button {
+          color: #ffffff !important;
+          -webkit-text-fill-color: #ffffff !important;
+        }
+        html[data-app-theme="light"] .official-depot-excel-generator svg.text-teal-300 {
+          color: var(--official-accent) !important;
+        }
         @keyframes official-upload-pulse {
           0%, 100% {
             transform: translateY(0) scale(1);
@@ -718,7 +729,7 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
             transform: none;
           }
         }
-        .official-depot-excel-generator .official-input::placeholder { color: #ffffff; opacity: .82; }
+        .official-depot-excel-generator .official-input::placeholder { color: var(--official-muted); opacity: .78; }
         .official-depot-excel-generator .official-input:focus { border-color: var(--official-accent); box-shadow: 0 0 0 2px var(--official-soft); }
         .official-depot-excel-generator .official-day[data-active="true"] {
           border-color: var(--official-accent);
@@ -841,7 +852,7 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
           type="button"
           onClick={handleGenerate}
           disabled={isGenerating}
-          className="inline-flex h-9 items-center gap-2 rounded-lg border border-teal-300/70 bg-gradient-to-r from-teal-600 to-cyan-600 px-4 text-[11px] font-black uppercase tracking-wide text-white shadow-[0_0_16px_rgba(20,184,166,0.28)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
+          className="official-generate-button inline-flex h-9 items-center gap-2 rounded-lg border border-teal-300/70 bg-gradient-to-r from-teal-600 to-cyan-600 px-4 text-[11px] font-black uppercase tracking-wide text-white shadow-[0_0_16px_rgba(20,184,166,0.28)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
         >
           {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
           {isGenerating ? "Generating..." : "Generate Official Excel"}
