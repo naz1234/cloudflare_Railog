@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { CheckCircle2, FileSpreadsheet, FileText, Image as ImageIcon, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Download, Search, ArrowUp, ArrowDown, Check, Sun, Moon } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, FileText, Image as ImageIcon, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Download, Search, ArrowUp, ArrowDown, Check, Sun, Moon, TrainFront, Clock3 } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
@@ -5324,24 +5324,6 @@ function getInsertionTidBigPillStyle(assistStyle = null, depot = "west") {
   };
 }
 
-function getInsertionTidAssistMiniPillStyle(assistStyle = null) {
-  const style = assistStyle || INSERTION_DEFAULT_REMARK_PILL_STYLE;
-
-  return {
-    width: "min(74px, calc(100% - 8px))",
-    minHeight: 16,
-    padding: "1px 5px",
-    borderRadius: 999,
-    background: style.bg || "rgba(148, 163, 184, 0.16)",
-    border: `1px solid ${style.border || "rgba(148, 163, 184, 0.36)"}`,
-    color: style.color || "#ffffff",
-    boxShadow: style.shadow || "inset 0 1px 0 rgba(255,255,255,0.06)",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  };
-}
-
 const EAST_INSERTION_TIME_PILL_STYLE = {
   bg: "rgba(30, 41, 59, 0.72)",
   border: "#64748b",
@@ -5371,6 +5353,29 @@ function getEastInsertionKeywordRemarkLabel(value = "") {
   return "";
 }
 
+function getInsertionKeywordRemarkLabels(value = "") {
+  const text = String(value || "").trim();
+  if (!text) return [];
+
+  const compact = text.toUpperCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+  const noSpace = compact.replace(/[()\s]/g, "");
+  const labels = [];
+  const add = (label) => {
+    if (!labels.includes(label)) labels.push(label);
+  };
+
+  if (noSpace === "3K1" || noSpace === "3K1INSERTION" || /\b3K1\b/.test(compact)) add("3K1");
+  if (/^(?:SW|SW1|SW2)$/.test(noSpace) || /\bSW(?:1|2)?\b|\bSWEEP(?:ING)?\b/.test(compact)) add("SWEEP");
+  if (/\bWASH(?:ING)?\b/.test(compact)) add("WASH");
+  if (/\bDEEP\b/.test(compact)) add("DEEP CLEANING");
+  if (/\bPM\b/.test(compact)) add("PM");
+  if (/\bCM\b/.test(compact)) add("CM");
+  if (/\bG(?:\s*TO)?[\s/_-]*C\b/i.test(text)) add("G TO C");
+  if (/\bREQUEST(?:ED)?\b|\bREQ\b/.test(compact)) add("REQUEST");
+
+  return labels;
+}
+
 function getEastInsertionPillStyle(style = null, width = 78) {
   const base = style || INSERTION_DEFAULT_REMARK_PILL_STYLE;
   return {
@@ -5380,6 +5385,29 @@ function getEastInsertionPillStyle(style = null, width = 78) {
     padding: "2px 6px",
     fontSize: 11,
     lineHeight: "14px",
+  };
+}
+
+function getInsertionStatusChipStyle(label = "") {
+  const normalizedLabel = getEastInsertionKeywordRemarkLabel(label) || String(label || "").trim().toUpperCase();
+  const style = EAST_INSERTION_KEYWORD_REMARK_STYLES[normalizedLabel] || INSERTION_DEFAULT_REMARK_PILL_STYLE;
+  const widthByLabel = {
+    PM: 34,
+    CM: 34,
+    WASH: 46,
+    "G TO C": 54,
+    "3K1": 40,
+    REQUEST: 58,
+    "DEEP CLEANING": 84,
+  };
+
+  return {
+    ...getEastInsertionPillStyle(style, widthByLabel[normalizedLabel] || 52),
+    minHeight: 18,
+    padding: "1px 5px",
+    fontSize: 10,
+    lineHeight: "14px",
+    boxShadow: "none",
   };
 }
 
@@ -5712,10 +5740,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     : null;
   const insertedTidAssistDisplayRemark = getInsertionAssistRemarkDisplayLabel(insertedTidAssistRemark);
   const hasInsertedTidAssistDisplayRemark = Boolean(insertedTid && insertedTidAssistDisplayRemark);
-  const insertedTidAssistMiniPillStyle = getInsertionTidAssistMiniPillStyle(insertedTidRemarkStyle);
-  const useLargerWeekdayAssistRemark = Boolean(
-    isWeekdayActive && ["Early Rem", "Late Rem", "ED", "ED (7pm)"].includes(insertedTidAssistRemark)
-  );
   const insertedRemarkStyle = inserted?.remark ? getInsertionRemarkStyle(inserted.remark) : null;
   const insertedPlainRemark = inserted && !inserted.isSweeping && !insertedTid
     ? String(inserted.remark ?? parsedInsertedTid ?? "").trim()
@@ -5731,33 +5755,33 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     insertedTidAssistRemark ||
     ""
   );
-  const eastInsertionRemarkPillLabel = useUnifiedInsertionCardStyle
-    ? getEastInsertionKeywordRemarkLabel(eastInsertionRemarkSource)
-    : "";
-  const insertedTidAssistKeywordLabel = getEastInsertionKeywordRemarkLabel(insertedTidAssistRemark);
-  const insertedPlainKeywordLabel = getEastInsertionKeywordRemarkLabel(insertedPlainRemark);
   const is3K1InsertionCard = Boolean(getEastInsertionKeywordRemarkLabel(eastInsertionRemarkSource) === "3K1");
   const isEast3K1InsertionCard = is3K1InsertionCard;
   // The 3K1 special card already shows 3K1 in the main big pill.
   // Do not duplicate another 3K1 pill in the remark section for West or East.
   const suppressDuplicate3K1RemarkPill = is3K1InsertionCard;
-  const visibleInsertionRemarkList = key
-    ? maintList
-        .map((item) => getEastInsertionKeywordRemarkLabel(item.badgeText || item.displayType))
-        .filter((label) => label && !(suppressDuplicate3K1RemarkPill && label === "3K1"))
+  const maintenanceRemarkList = key
+    ? Array.from(new Set(maintList
+        .flatMap((item) => getInsertionKeywordRemarkLabels(item.badgeText || item.displayType))
+        .filter((label) => !(suppressDuplicate3K1RemarkPill && label === "3K1"))))
     : [];
-  const hasMiddleInsertionRemark = Boolean(
-    key && (
-      visibleInsertionRemarkList.length > 0 ||
-      (insertedTidAssistKeywordLabel && !(suppressDuplicate3K1RemarkPill && insertedTidAssistKeywordLabel === "3K1")) ||
-      (hasInsertedPlainRemark && insertedPlainKeywordLabel && !(suppressDuplicate3K1RemarkPill && insertedPlainKeywordLabel === "3K1"))
-    )
-  );
+  const insertionOwnedStatusRemarks = [
+    ...getInsertionKeywordRemarkLabels(insertedTidAssistRemark),
+    ...getInsertionKeywordRemarkLabels(insertedPlainRemark),
+  ].filter((label) => !(suppressDuplicate3K1RemarkPill && label === "3K1"));
+  const insertionOwnedStatusRemarkSet = new Set(insertionOwnedStatusRemarks);
+  const insertionStatusRemarkList = Array.from(new Set([
+    ...insertionOwnedStatusRemarks,
+    ...maintenanceRemarkList,
+  ]));
+  const displayedInsertionStatusRemarks = insertionStatusRemarkList.length > 2
+    ? insertionStatusRemarkList.slice(0, 1)
+    : insertionStatusRemarkList.slice(0, 2);
+  const hiddenInsertionStatusCount = insertionStatusRemarkList.length - displayedInsertionStatusRemarks.length;
+  const hasMiddleInsertionRemark = Boolean(key && insertionStatusRemarkList.length > 0);
   const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
   const insertedTidBigPillStyle = getInsertionTidBigPillStyle(insertedTidRemarkStyle, autoTidDepot);
-  const insertionDoneCardMinHeight = hasMiddleInsertionRemark && hasInsertedTidAssistDisplayRemark
-    ? 138
-    : ((insertedTid || hasInsertedPlainRemark) ? 126 : 130);
+  const insertionDoneCardMinHeight = (insertedTid || hasInsertedPlainRemark) ? 112 : 116;
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
   const isInsertionDone = Boolean(inserted && !inserted.isSweeping);
@@ -5855,7 +5879,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         ? "linear-gradient(145deg, #0b2930 0%, #0a1c2b 58%, #071523 100%)"
         : key
           ? "linear-gradient(145deg, #0d2a42 0%, #0a1d30 52%, #071827 100%)"
-          : "rgba(7, 24, 39, 0.30)";
+          : "rgba(7, 24, 39, 0.18)";
   // Keep the card frame calm and symmetric. State colour remains in the
   // card surface and detail pills, with no reserved side-rail spacing.
   const insCardBorder = expired
@@ -5864,7 +5888,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
       ? "1px solid #6d4b20"
       : key
         ? `1px solid ${INSERTION_PANEL_COLORS.cardBorder}`
-        : `1px dashed ${INSERTION_PANEL_COLORS.emptyBorder}`;
+        : "1px solid rgba(48, 75, 96, 0.34)";
   const insCardGlow = isDuplicateInsertedTid
     ? "0 0 0 2px rgba(245, 158, 11, 0.18), 0 0 18px rgba(245, 158, 11, 0.58), 0 8px 22px rgba(0, 0, 0, 0.24)"
     : key && !expired
@@ -5880,21 +5904,18 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   };
   const insRowLine = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
   const insertionCardDividerBorder = "1px solid rgba(255, 255, 255, 0.08)";
-  // Base minimum per card state. When the row contains PM/Wash/etc.,
-  // no-remark cards reserve the same compact middle slot through reserveMiddleInsertionRemark.
-  const middleInsertionRemarkContentHeight = rowMaintenanceSlotHeight > 0
-    ? rowMaintenanceSlotHeight
-    : 0;
-  const middleInsertionRemarkSlotMinHeight = rowMaintenanceSlotHeight > 0
-    ? middleInsertionRemarkContentHeight + 10
-    : 0;
+  const middleInsertionRemarkContentHeight = Math.max(
+    rowMaintenanceSlotHeight > 0 ? rowMaintenanceSlotHeight : 0,
+    hasMiddleInsertionRemark ? 18 : 0
+  );
+  const middleInsertionRemarkSlotMinHeight = middleInsertionRemarkContentHeight + (hasMiddleInsertionRemark ? 4 : 0);
   const ownInsertionCardMinHeightBase = inserted?.isSweeping
     ? 158
     : isEast3K1InsertionCard
       ? 142
       : isInsertionDone
         ? insertionDoneCardMinHeight
-        : 98;
+        : 90;
   const ownInsertionCardMinHeight = Math.max(ownInsertionCardMinHeightBase, rowCardMinHeight);
   const shouldStretchInsertionCard = Boolean(
     inserted?.isSweeping ||
@@ -5931,7 +5952,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           // Symmetric horizontal padding keeps every pill, field and action on the
           // same visual centre line in both light and dark mode.
           padding: useUnifiedInsertionCardStyle
-            ? (inserted?.isSweeping ? "8px 4px" : isInsertionDone ? "6px 3px" : "8px 4px")
+            ? (inserted?.isSweeping ? "7px 5px" : isInsertionDone ? "6px 5px" : "7px 5px")
             : (isInsertionDone ? "6px 5px" : "8px 7px"),
           background: insCardBg,
           border: insCardBorder,
@@ -5956,43 +5977,61 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             : undefined,
         }}
       >
-        <div className="flex w-full flex-col items-center gap-1">
+        <div className="theme-insertion-card-header flex w-full flex-col items-center gap-1">
           {stablingEditable ? (
-            <input
-              type="text"
-              value={isTrainIdEditing ? val : (key ? formatTrainNumberOnly(val) : val)}
-              onFocus={(e) => {
-                setIsTrainIdEditing(true);
-                requestAnimationFrame(() => e.currentTarget.select());
-              }}
-              onBlur={() => setIsTrainIdEditing(false)}
-              onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
-              placeholder="Train ID"
-              className="h-7 w-full border-0 px-1.5 text-center text-[15px] font-black uppercase outline-none placeholder:text-[10px] placeholder:text-[#47637a]"
-              style={{
-                borderBottomColor: key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine,
-                backgroundColor: "transparent",
-                color: key ? trainColor : "#6f899f",
-                letterSpacing: key ? "0.04em" : undefined,
-                borderRadius: 0,
-              }}
-            />
+            key || isTrainIdEditing ? (
+              <input
+                type="text"
+                value={isTrainIdEditing ? val : formatTrainNumberOnly(val)}
+                autoFocus={!key}
+                onFocus={(e) => {
+                  setIsTrainIdEditing(true);
+                  requestAnimationFrame(() => e.currentTarget.select());
+                }}
+                onBlur={() => setIsTrainIdEditing(false)}
+                onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
+                aria-label="Train ID"
+                placeholder="Train ID"
+                className="theme-insertion-train-id h-7 w-full border-0 px-1.5 text-left text-[15px] font-black uppercase outline-none placeholder:text-[9px] placeholder:text-[#587187]"
+                style={{
+                  borderBottomColor: key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine,
+                  backgroundColor: "transparent",
+                  color: key ? trainColor : "#6f899f",
+                  letterSpacing: key ? "0.04em" : undefined,
+                  borderRadius: 0,
+                }}
+              />
+            ) : (
+              <button
+                type="button"
+                className="theme-insertion-empty-action flex w-full flex-1 flex-col items-center justify-center gap-1.5 rounded-lg text-[9px] font-semibold uppercase tracking-[0.08em] transition-colors"
+                onClick={() => setIsTrainIdEditing(true)}
+                aria-label={`Add train to ${road}, block ${bi + 1}`}
+              >
+                <span className="theme-insertion-empty-action-icon inline-flex h-7 w-7 items-center justify-center rounded-full border" aria-hidden="true">
+                  <Plus className="h-4 w-4" />
+                </span>
+                <span>Add Train</span>
+              </button>
+            )
           ) : (
             <div
-              className="w-full text-center font-black leading-none"
+              className="theme-insertion-train-id w-full text-left font-black leading-none"
               style={{
-                fontSize: key ? (isInsertionDone ? 15 : 18) : 13,
+                fontSize: key ? (isInsertionDone ? 15 : 18) : 10,
                 color: key ? trainColor : "#587187",
-                letterSpacing: key ? (isInsertionDone ? "0.05em" : "0.04em") : undefined,
+                letterSpacing: key ? (isInsertionDone ? "0.05em" : "0.04em") : "0.08em",
+                padding: key ? "3px 3px 0" : "7px 3px 0",
+                textTransform: key ? undefined : "uppercase",
               }}
             >
-              {displayVal || "—"}
+              {displayVal || "Empty"}
             </div>
           )}
           {key && (
             hasMiddleInsertionRemark ? (
               <div
-                className="flex w-full flex-col items-center gap-1"
+                className="theme-insertion-card-request-slot flex w-full flex-col items-center gap-1"
                 style={{ minHeight: middleInsertionRemarkSlotMinHeight }}
               >
                 <div
@@ -6005,70 +6044,52 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 />
 
                 <div
-                  className="flex w-full shrink-0 flex-col items-center justify-start gap-1.5"
+                  className="theme-insertion-card-request-list flex w-full shrink-0 flex-row flex-wrap items-start justify-center gap-1"
                   style={{
                     height: middleInsertionRemarkContentHeight,
                     minHeight: middleInsertionRemarkContentHeight,
                     maxHeight: middleInsertionRemarkContentHeight,
-                    marginTop: 2,
+                    alignContent: "flex-start",
                     overflow: "visible",
                   }}
+                  aria-label={`Train ${displayVal} remarks: ${insertionStatusRemarkList.join(", ")}`}
                 >
-                  {rowMaintenanceSlotHeight > 0 && maintList.map((item) => {
-                    const maintText = item.badgeText || item.displayType;
-                    const eastMaintPillLabel = useUnifiedInsertionCardStyle
-                      ? getEastInsertionKeywordRemarkLabel(maintText)
-                      : "";
+                  {displayedInsertionStatusRemarks.map((label) => {
+                    const isUndoableInsertionStatus = insertionOwnedStatusRemarkSet.has(label);
+                    const statusChipProps = {
+                      className: `theme-insertion-card-request-pill inline-flex min-w-0 items-center justify-center truncate text-center font-semibold${isUndoableInsertionStatus ? " cursor-pointer outline-none transition-all hover:brightness-125 focus-visible:brightness-125" : ""}`,
+                      "data-remark": label,
+                      style: getInsertionStatusChipStyle(label),
+                      title: isUndoableInsertionStatus ? undoInsertionTooltip : label,
+                    };
 
-                    if (suppressDuplicate3K1RemarkPill && eastMaintPillLabel === "3K1") return null;
-
-                    return eastMaintPillLabel ? (
-                      <span
-                        key={`${item.displayType}-${item.badgeText || ""}`}
-                        className="inline-flex min-w-0 max-w-full cursor-default select-none items-center justify-center self-center text-center text-[11px] font-normal leading-tight"
-                        style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[eastMaintPillLabel], 82)}
-                        aria-label={`${eastMaintPillLabel} maintenance remark`}
+                    return isUndoableInsertionStatus ? (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={handleInsertedUndoClick}
+                        aria-label={`${undoInsertionTooltip}: ${label}`}
+                        {...statusChipProps}
                       >
-                        {eastMaintPillLabel}
+                        {label}
+                      </button>
+                    ) : (
+                      <span key={label} {...statusChipProps}>
+                        {label}
                       </span>
-                    ) : null;
+                    );
                   })}
 
-                  {key && insertedTidAssistRemark && !hasInsertedPlainRemark && insertedTidAssistKeywordLabel && !(suppressDuplicate3K1RemarkPill && insertedTidAssistKeywordLabel === "3K1") && (
-                    <ActionTooltip
-                      message={undoInsertionTooltip}
-                      placement="top"
-                      wrapperClassName="max-w-full self-center"
+                  {hiddenInsertionStatusCount > 0 && (
+                    <span
+                      className="theme-insertion-card-request-more inline-flex h-[18px] min-w-[28px] items-center justify-center rounded-full border px-1 text-[9px] font-bold"
+                      title={insertionStatusRemarkList.slice(displayedInsertionStatusRemarks.length).join(", ")}
+                      aria-label={`${hiddenInsertionStatusCount} more remarks: ${insertionStatusRemarkList.slice(displayedInsertionStatusRemarks.length).join(", ")}`}
                     >
-                      <button
-                        type="button"
-                        onClick={handleInsertedUndoClick}
-                        className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${useLargerWeekdayAssistRemark ? "text-[12px]" : "text-[11px]"}`}
-                        style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedTidAssistKeywordLabel], 82)}
-                        aria-label={undoInsertionTooltip}
-                      >
-                        {insertedTidAssistKeywordLabel}
-                      </button>
-                    </ActionTooltip>
+                      +{hiddenInsertionStatusCount}
+                    </span>
                   )}
 
-                  {key && hasInsertedPlainRemark && insertedPlainKeywordLabel && !(suppressDuplicate3K1RemarkPill && insertedPlainKeywordLabel === "3K1") && (
-                    <ActionTooltip
-                      message={undoInsertionTooltip}
-                      placement="top"
-                      wrapperClassName="max-w-full self-center"
-                    >
-                      <button
-                        type="button"
-                        onClick={handleInsertedUndoClick}
-                        className={`inline-flex min-w-0 max-w-full items-center justify-center self-center text-center text-[12px] font-normal leading-tight outline-none transition-all hover:brightness-125 focus-visible:brightness-125 ${maintList.length > 0 ? "mt-1" : "mt-[3px]"}`}
-                        style={getEastInsertionPillStyle(EAST_INSERTION_KEYWORD_REMARK_STYLES[insertedPlainKeywordLabel], 82)}
-                        aria-label={undoInsertionTooltip}
-                      >
-                        {insertedPlainKeywordLabel}
-                      </button>
-                    </ActionTooltip>
-                  )}
                 </div>
                 <div
                   className="w-full"
@@ -6080,7 +6101,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               </div>
             ) : reserveMiddleInsertionRemark ? (
               <div
-                className="flex w-full flex-col items-center"
+                className="theme-insertion-card-request-spacer flex w-full flex-col items-center"
                 style={{ minHeight: middleInsertionRemarkSlotMinHeight }}
               >
                 <div
@@ -6112,7 +6133,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               </div>
             ) : (
               <div
-                className="w-full"
+                className="theme-insertion-card-request-divider w-full"
                 style={{
                   borderTop: key ? insertionCardDividerBorder : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`,
                   opacity: key ? 1 : 0.82,
@@ -6124,14 +6145,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           {key && inserted?.isSweeping && (
             isEastInsertionCard ? (
               <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                <ActionTooltip message={resetCardTooltip} placement="top">
+                <ActionTooltip message={resetCardTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger">
                   <button
                     type="button"
                     onClick={handleSpecialCardRefresh}
                     className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
                     aria-label={resetCardTooltip}
                   >
-                  -- Refresh --
+                    <Undo2 className="h-3 w-3" aria-hidden="true" />
                   </button>
                 </ActionTooltip>
                 <div
@@ -6215,7 +6236,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </div>
                 </div>
                 <div className="w-full px-1">
-                  <div className="flex w-full flex-col items-center justify-center rounded-lg border border-purple-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(168,85,247,0.22)]">
+                  <div className="theme-insertion-ta-name-shell flex w-full flex-col items-center justify-center rounded-lg border border-purple-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(168,85,247,0.22)]">
                                         <input
                       type="text"
                       maxLength={40}
@@ -6231,14 +6252,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               </div>
             ) : (
             <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-              <ActionTooltip message={resetCardTooltip} placement="top">
+                <ActionTooltip message={resetCardTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger">
                 <button
                   type="button"
                   onClick={handleSpecialCardRefresh}
                   className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
                   aria-label={resetCardTooltip}
                 >
-                -- Refresh --
+                  <Undo2 className="h-3 w-3" aria-hidden="true" />
                 </button>
               </ActionTooltip>
               <div
@@ -6322,7 +6343,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               </div>
               <div className="w-full px-1">
-                <div className="flex w-full flex-col items-center justify-center rounded-lg border border-purple-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(168,85,247,0.22)]">
+                <div className="theme-insertion-ta-name-shell flex w-full flex-col items-center justify-center rounded-lg border border-purple-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(168,85,247,0.22)]">
                                     <input
                     type="text"
                     maxLength={40}
@@ -6380,14 +6401,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             {inserted && !inserted.isSweeping && (
               isEast3K1InsertionCard ? (
                 <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                  <ActionTooltip message={resetCardTooltip} placement="top">
+                <ActionTooltip message={resetCardTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger">
                     <button
                       type="button"
                       onClick={handleSpecialCardRefresh}
-                      className="text-[10px] font-normal leading-none text-cyan-100/90 transition-all hover:text-white focus-visible:text-white"
+                      className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-cyan-100/90 transition-all hover:text-white focus-visible:text-white"
                       aria-label={resetCardTooltip}
                     >
-                    -- Refresh --
+                      <Undo2 className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </ActionTooltip>
                   <div
@@ -6436,7 +6457,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     </div>
                   </div>
                   <div className="w-full px-1">
-                    <div className="flex w-full flex-col items-center justify-center rounded-lg border border-cyan-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(20,216,189,0.22)]">
+                    <div className="theme-insertion-ta-name-shell flex w-full flex-col items-center justify-center rounded-lg border border-cyan-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(20,216,189,0.22)]">
                                             <input
                         type="text"
                         maxLength={40}
@@ -6452,14 +6473,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               ) : useUnifiedInsertionCardStyle ? (
                 <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                  <ActionTooltip message={resetCardTooltip} placement="top">
+                <ActionTooltip message={resetCardTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger">
                     <button
                       type="button"
                       onClick={handleSpecialCardRefresh}
                       className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
                       aria-label={resetCardTooltip}
                     >
-                    -- Refresh --
+                      <Undo2 className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </ActionTooltip>
 
@@ -6552,7 +6573,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   )}
 
                   <div className="w-full px-1">
-                    <div className="flex w-full flex-col items-center justify-center rounded-lg border border-sky-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(56,189,248,0.20)]">
+                    <div className="theme-insertion-ta-name-shell flex w-full flex-col items-center justify-center rounded-lg border border-sky-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(56,189,248,0.20)]">
                                             <input
                         type="text"
                         maxLength={40}
@@ -6570,14 +6591,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               <>
                 {insertedTid ? (
                   <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                    <ActionTooltip message={resetCardTooltip} placement="top">
+                <ActionTooltip message={resetCardTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger">
                       <button
                         type="button"
                         onClick={handleSpecialCardRefresh}
                         className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
                         aria-label={resetCardTooltip}
                       >
-                      -- Refresh --
+                        <Undo2 className="h-3 w-3" aria-hidden="true" />
                       </button>
                     </ActionTooltip>
                     <div
@@ -6635,7 +6656,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       </div>
                     </div>
                     <div className="w-full px-1">
-                      <div className="flex w-full flex-col items-center justify-center rounded-lg border border-sky-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(56,189,248,0.20)]">
+                      <div className="theme-insertion-ta-name-shell flex w-full flex-col items-center justify-center rounded-lg border border-sky-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(56,189,248,0.20)]">
                                                 <input
                           type="text"
                           maxLength={40}
@@ -6651,14 +6672,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </div>
               ) : hasInsertedPlainRemark ? (
                 <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                  <ActionTooltip message={resetCardTooltip} placement="top">
+                <ActionTooltip message={resetCardTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger">
                     <button
                       type="button"
                       onClick={handleSpecialCardRefresh}
                       className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-slate-200/90 transition-all hover:text-white focus-visible:text-white"
                       aria-label={resetCardTooltip}
                     >
-                    -- Refresh --
+                      <Undo2 className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </ActionTooltip>
                   <div
@@ -6692,7 +6713,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     />
                   </div>
                   <div className="w-full px-1">
-                    <div className="flex w-full flex-col items-center justify-center rounded-lg border border-slate-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(96,165,250,0.18)]">
+                    <div className="theme-insertion-ta-name-shell flex w-full flex-col items-center justify-center rounded-lg border border-slate-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(96,165,250,0.18)]">
                                             <input
                         type="text"
                         maxLength={40}
@@ -6708,14 +6729,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               ) : (
                 <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                  <ActionTooltip message={resetCardTooltip} placement="top">
+                <ActionTooltip message={resetCardTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger">
                     <button
                       type="button"
                       onClick={handleSpecialCardRefresh}
                       className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-slate-200/90 transition-all hover:text-white focus-visible:text-white"
                       aria-label={resetCardTooltip}
                     >
-                    -- Refresh --
+                      <Undo2 className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </ActionTooltip>
                   <div
@@ -6749,7 +6770,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     />
                   </div>
                   <div className="w-full px-1">
-                    <div className="flex w-full flex-col items-center justify-center rounded-lg border border-slate-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(96,165,250,0.18)]">
+                    <div className="theme-insertion-ta-name-shell flex w-full flex-col items-center justify-center rounded-lg border border-slate-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(96,165,250,0.18)]">
                                             <input
                         type="text"
                         maxLength={40}
@@ -6941,6 +6962,29 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
       return Boolean(getActiveInsertionEntryForCell(insertionLog, road, bi, trainKey));
     })
   );
+  const insertionSummary = roads.reduce((summary, road) => {
+    blockIndices.forEach((bi) => {
+      const trainKey = normalizeTrainId(data[road]?.[bi]?.trainId || "");
+      if (!trainKey) return;
+
+      summary.trains += 1;
+      const entry = getActiveInsertionEntryForCell(insertionLog, road, bi, trainKey);
+      if (!entry) return;
+
+      summary.completed += 1;
+      const entryTid = Number(String(entry.tid ?? "").replace(/\D/g, ""));
+      const entryDepot = WEST_ROADS.includes(road) ? "west" : "east";
+      const isScheduledTid = Boolean(
+        entryTid &&
+        typeof getTidScheduledTime === "function" &&
+        getTidScheduledTime(entryTid, entryDepot, { allowFallback: false })
+      );
+      if (isScheduledTid) summary.tidAssigned += 1;
+    });
+    return summary;
+  }, { trains: 0, completed: 0, tidAssigned: 0 });
+  const insertionSummaryEmpty = Math.max(0, (roads.length * blockIndices.length) - insertionSummary.trains);
+  const insertionSummaryPending = Math.max(0, insertionSummary.trains - insertionSummary.completed);
   const handleClearAllTid = () => {
     roads.forEach((road) => {
       blockIndices.forEach((bi) => {
@@ -7052,6 +7096,40 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
           </div>
         }
       />
+      <div
+        className="theme-insertion-stabling-summary mb-3 grid grid-cols-4 overflow-hidden rounded-xl border"
+        role="group"
+        aria-label={`${insertionSummary.trains} trains, ${insertionSummary.tidAssigned} TIDs assigned, ${insertionSummaryPending} pending, ${insertionSummaryEmpty} empty slots`}
+      >
+        <div className="theme-insertion-stabling-summary-stat is-trains flex items-center justify-center gap-2.5 px-3 py-2.5">
+          <TrainFront className="theme-insertion-stabling-summary-icon h-5 w-5" aria-hidden="true" />
+          <div className="text-left leading-none">
+            <div className="theme-insertion-stabling-summary-value text-[18px] font-black tabular-nums">{insertionSummary.trains}</div>
+            <div className="theme-insertion-stabling-summary-label mt-1 text-[9px] font-bold uppercase tracking-[0.11em]">Trains</div>
+          </div>
+        </div>
+        <div className="theme-insertion-stabling-summary-stat is-assigned flex items-center justify-center gap-2.5 border-l px-3 py-2.5">
+          <ClipboardCheck className="theme-insertion-stabling-summary-icon h-5 w-5" aria-hidden="true" />
+          <div className="text-left leading-none">
+            <div className="theme-insertion-stabling-summary-value text-[18px] font-black tabular-nums">{insertionSummary.tidAssigned}</div>
+            <div className="theme-insertion-stabling-summary-label mt-1 text-[9px] font-bold uppercase tracking-[0.11em]">TID assigned</div>
+          </div>
+        </div>
+        <div className="theme-insertion-stabling-summary-stat is-pending flex items-center justify-center gap-2.5 border-l px-3 py-2.5">
+          <Clock3 className="theme-insertion-stabling-summary-icon h-5 w-5" aria-hidden="true" />
+          <div className="text-left leading-none">
+            <div className="theme-insertion-stabling-summary-value text-[18px] font-black tabular-nums">{insertionSummaryPending}</div>
+            <div className="theme-insertion-stabling-summary-label mt-1 text-[9px] font-bold uppercase tracking-[0.11em]">Pending</div>
+          </div>
+        </div>
+        <div className="theme-insertion-stabling-summary-stat is-empty flex items-center justify-center gap-2.5 border-l px-3 py-2.5">
+          <Plus className="theme-insertion-stabling-summary-icon h-5 w-5" aria-hidden="true" />
+          <div className="text-left leading-none">
+            <div className="theme-insertion-stabling-summary-value text-[18px] font-black tabular-nums">{insertionSummaryEmpty}</div>
+            <div className="theme-insertion-stabling-summary-label mt-1 text-[9px] font-bold uppercase tracking-[0.11em]">Empty</div>
+          </div>
+        </div>
+      </div>
       <div className="theme-insertion-table-wrap overflow-x-auto rounded-xl border" style={{ borderColor: INSERTION_PANEL_COLORS.gridLine }}>
         <table className="theme-insertion-table border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 880, maxWidth: 880, width: 880 }}>
           <thead>
@@ -7073,25 +7151,32 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
               const rowLine = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
               const insertionRoadPill = INSERTION_ROAD_PILLS[road];
               // Keep every card within the same stabling road at one uniform height.
-              // Also reserve one shared maintenance-pill area across the row so a card
-              // without PM/Wash/etc. still matches the height of cards with remarks.
-              const rowMaxMaintenanceCount = blockIndices.reduce((maxCount, blockIndex) => {
+              // Also reserve one shared status-chip line across the road so cards with
+              // combinations such as WASH + PM stay aligned with their neighbours.
+              const rowMaxStatusCount = blockIndices.reduce((maxCount, blockIndex) => {
                 const rowBlock = data[road]?.[blockIndex];
                 const rowTrainKey = normalizeTrainId(rowBlock?.trainId || "");
-                const rowMaintenanceCount = rowTrainKey
-                  ? (maintenanceMap[rowTrainKey] || []).reduce((count, item) => {
-                      const maintText = item.badgeText || item.displayType;
-                      return getEastInsertionKeywordRemarkLabel(maintText) ? count + 1 : count;
-                    }, 0)
-                  : 0;
-                return Math.max(maxCount, rowMaintenanceCount);
+                if (!rowTrainKey) return maxCount;
+
+                const rowEntry = getActiveInsertionEntryForCell(insertionLog, road, blockIndex, rowTrainKey);
+                const rowEntryTid = Number(String(rowEntry?.tid ?? "").replace(/\D/g, ""));
+                const rowEntryDepot = WEST_ROADS.includes(road) ? "west" : "east";
+                const rowAssistRemark = rowEntryTid && typeof getTidAssistRemark === "function"
+                  ? getTidAssistRemark(rowEntryTid, rowEntryDepot)
+                  : "";
+                const rowEntrySource = String(rowEntry?.remark || rowEntry?.inputValue || rowAssistRemark || "");
+                const rowIs3K1Insertion = getEastInsertionKeywordRemarkLabel(rowEntrySource) === "3K1";
+                const rowStatusLabels = new Set([
+                  ...(maintenanceMap[rowTrainKey] || []).flatMap((item) => (
+                    getInsertionKeywordRemarkLabels(item.badgeText || item.displayType)
+                  )),
+                  ...getInsertionKeywordRemarkLabels(rowAssistRemark),
+                  ...(rowEntry?.isSweeping ? [] : getInsertionKeywordRemarkLabels(rowEntry?.remark)),
+                ]);
+                if (rowIs3K1Insertion) rowStatusLabels.delete("3K1");
+                return Math.max(maxCount, rowStatusLabels.size);
               }, 0);
-              const rowMaintenanceSlotHeight = rowMaxMaintenanceCount > 0
-                ? (rowMaxMaintenanceCount * 20) + ((rowMaxMaintenanceCount - 1) * 6)
-                : 0;
-              // The maintenance slot is already reserved evenly for every card in the row.
-              // Add it only once; the previous calculation counted extra maintenance height again,
-              // which made completed TID rows noticeably taller than their visible content.
+              const rowMaintenanceSlotHeight = rowMaxStatusCount > 0 ? 18 : 0;
               const rowBaseMinHeight = blockIndices.reduce((maxHeight, blockIndex) => {
                 const rowBlock = data[road]?.[blockIndex];
                 const rowTrainKey = normalizeTrainId(rowBlock?.trainId || "");
@@ -7111,12 +7196,12 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
                   String(rowEntry.remark ?? rowEntryTid ?? "").trim()
                 );
                 const baseHeight = rowEntry?.isSweeping
-                  ? 194
+                  ? 184
                   : rowEntry
-                    ? (rowHasValidTid ? 126 : rowHasPlainRemark ? 146 : 130)
-                    : 98;
+                    ? (rowHasValidTid ? 112 : rowHasPlainRemark ? 126 : 116)
+                    : 90;
                 return Math.max(maxHeight, baseHeight);
-              }, 98);
+              }, 90);
               const rowCardMinHeight = rowBaseMinHeight + rowMaintenanceSlotHeight;
               const labelCell = (
                 <td className="theme-insertion-road-label text-center align-middle text-[12px] font-black tracking-tight uppercase" style={{ background: INSERTION_PANEL_COLORS.header, color: "#d6e7f4", borderTop: ri === 0 ? "none" : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderBottom: rowLine, borderRight: labelSide === "left" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderLeft: labelSide === "right" ? `1px solid ${INSERTION_PANEL_COLORS.gridLine}` : undefined, whiteSpace: "nowrap", width: 68, minWidth: 68, letterSpacing: "0.025em", borderTopLeftRadius: labelSide === "left" && ri === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && ri === 0 ? 12 : undefined, borderBottomLeftRadius: labelSide === "left" && ri === roads.length - 1 ? 12 : undefined, borderBottomRightRadius: labelSide === "right" && ri === roads.length - 1 ? 12 : undefined }}>
@@ -7140,7 +7225,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
                     const borderBottom = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
                     const borderBottomRightRadius = labelSide === "left" && isLastRow && isLastBlock ? 12 : undefined;
                     const borderBottomLeftRadius = labelSide === "right" && isLastRow && i === 0 ? 12 : undefined;
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onInsertionTaNameUpdate={onInsertionTaNameUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} reserveMiddleInsertionRemark={rowMaxMaintenanceCount > 0} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onInsertionTaNameUpdate={onInsertionTaNameUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} reserveMiddleInsertionRemark={rowMaxStatusCount > 0} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
