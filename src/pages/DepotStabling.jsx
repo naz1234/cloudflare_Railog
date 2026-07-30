@@ -5977,6 +5977,18 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             : undefined,
         }}
       >
+        {key && inserted && (
+          <ActionTooltip message={resetCardTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger">
+            <button
+              type="button"
+              onClick={handleSpecialCardRefresh}
+              className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
+              aria-label={resetCardTooltip}
+            >
+              <Undo2 className="h-3 w-3" aria-hidden="true" />
+            </button>
+          </ActionTooltip>
+        )}
         <div className="theme-insertion-card-header flex w-full flex-col items-center gap-1">
           {stablingEditable ? (
             key || isTrainIdEditing ? (
@@ -6145,16 +6157,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           {key && inserted?.isSweeping && (
             isEastInsertionCard ? (
               <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                <ActionTooltip message={resetCardTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger">
-                  <button
-                    type="button"
-                    onClick={handleSpecialCardRefresh}
-                    className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
-                    aria-label={resetCardTooltip}
-                  >
-                    <Undo2 className="h-3 w-3" aria-hidden="true" />
-                  </button>
-                </ActionTooltip>
                 <div
                   className="theme-insertion-sweep-pill rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                   style={{
@@ -6252,16 +6254,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               </div>
             ) : (
             <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                <ActionTooltip message={resetCardTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger">
-                <button
-                  type="button"
-                  onClick={handleSpecialCardRefresh}
-                  className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-purple-200/90 transition-all hover:text-white focus-visible:text-white"
-                  aria-label={resetCardTooltip}
-                >
-                  <Undo2 className="h-3 w-3" aria-hidden="true" />
-                </button>
-              </ActionTooltip>
               <div
                 className="theme-insertion-sweep-pill rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                 style={{
@@ -6401,16 +6393,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             {inserted && !inserted.isSweeping && (
               isEast3K1InsertionCard ? (
                 <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                <ActionTooltip message={resetCardTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger">
-                    <button
-                      type="button"
-                      onClick={handleSpecialCardRefresh}
-                      className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-cyan-100/90 transition-all hover:text-white focus-visible:text-white"
-                      aria-label={resetCardTooltip}
-                    >
-                      <Undo2 className="h-3 w-3" aria-hidden="true" />
-                    </button>
-                  </ActionTooltip>
                   <div
                     className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                     style={{
@@ -6473,17 +6455,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               ) : useUnifiedInsertionCardStyle ? (
                 <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                <ActionTooltip message={resetCardTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger">
-                    <button
-                      type="button"
-                      onClick={handleSpecialCardRefresh}
-                      className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
-                      aria-label={resetCardTooltip}
-                    >
-                      <Undo2 className="h-3 w-3" aria-hidden="true" />
-                    </button>
-                  </ActionTooltip>
-
                   {insertedTid ? (
                     <div
                       className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
@@ -6591,16 +6562,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               <>
                 {insertedTid ? (
                   <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                <ActionTooltip message={resetCardTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger">
-                      <button
-                        type="button"
-                        onClick={handleSpecialCardRefresh}
-                        className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
-                        aria-label={resetCardTooltip}
-                      >
-                        <Undo2 className="h-3 w-3" aria-hidden="true" />
-                      </button>
-                    </ActionTooltip>
                     <div
                       className="rounded-lg border px-2 py-1.5 text-center font-normal leading-tight"
                       style={{
@@ -6672,16 +6633,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   </div>
               ) : hasInsertedPlainRemark ? (
                 <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                <ActionTooltip message={resetCardTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger">
-                    <button
-                      type="button"
-                      onClick={handleSpecialCardRefresh}
-                      className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-slate-200/90 transition-all hover:text-white focus-visible:text-white"
-                      aria-label={resetCardTooltip}
-                    >
-                      <Undo2 className="h-3 w-3" aria-hidden="true" />
-                    </button>
-                  </ActionTooltip>
                   <div
                     className="theme-insertion-time-pill inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
                     style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
@@ -6729,16 +6680,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 </div>
               ) : (
                 <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
-                <ActionTooltip message={resetCardTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger">
-                    <button
-                      type="button"
-                      onClick={handleSpecialCardRefresh}
-                      className="theme-insertion-card-refresh text-[10px] font-normal leading-none text-slate-200/90 transition-all hover:text-white focus-visible:text-white"
-                      aria-label={resetCardTooltip}
-                    >
-                      <Undo2 className="h-3 w-3" aria-hidden="true" />
-                    </button>
-                  </ActionTooltip>
                   <div
                     className="theme-insertion-time-pill inline-flex items-center justify-center gap-1 text-center font-normal leading-tight"
                     style={getEastInsertionPillStyle(EAST_INSERTION_TIME_PILL_STYLE, 82)}
