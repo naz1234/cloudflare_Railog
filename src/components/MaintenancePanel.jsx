@@ -3,6 +3,7 @@ import * as XLSX from "xlsx";
 import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil } from "lucide-react";
 import ActionTooltip from "./ActionTooltip";
 import MaintenanceImageSummary from "./MaintenanceImageSummary";
+import { sortRequestsByStatusThenTrain } from "../utils/maintenanceRequestSort";
 
 const MIN_VISIBLE_REQUEST_ROWS = 40;
 
@@ -999,12 +1000,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     return [...groups.values()]
       .map((group) => ({
         ...group,
-        items: [...group.items].sort((a, b) =>
-          normalizeTrainCompareKey(a.trainId || "").localeCompare(
-            normalizeTrainCompareKey(b.trainId || ""),
-            undefined,
-            { numeric: true }
-          )
+        items: sortRequestsByStatusThenTrain(
+          group.items,
+          (request) => getCrossOutInfo(request).reason,
+          (request) => normalizeTrainCompareKey(request.trainId || ""),
         ),
         hidden: group.items.length > 0 && group.items.every((request) => request?.groupHidden === true),
       }))
