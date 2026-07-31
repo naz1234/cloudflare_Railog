@@ -31,7 +31,30 @@ test("selected PST and insertion PG controls reuse the Add Row animation", () =>
     depotStablingSource,
     /theme-insertion-pg-button \$\{selected \? "is-selected theme-movement-add-row-attention" : ""\}/,
   );
+  assert.match(
+    depotStablingSource,
+    /style=\{selected \? undefined : \{ color: "#7eb8e0", background: "transparent" \}\}/,
+  );
   assert.doesNotMatch(themeStyles, /@keyframes theme-pg-selected-attention/);
+});
+
+test("the shared attention class owns the complete Add Row button style", () => {
+  assert.match(
+    themeStyles,
+    /\.theme-movement-add-row-attention \{[\s\S]*?height: 1\.75rem !important;[\s\S]*?border: 1px solid #2f6084 !important;[\s\S]*?border-radius: 9999px !important;[\s\S]*?background: #0a2236 !important;[\s\S]*?font-weight: 700 !important;/,
+  );
+  assert.match(
+    themeStyles,
+    /html\[data-app-theme="light"\] \.theme-movement-add-row-attention \{[\s\S]*?border-color: #60a5fa !important;[\s\S]*?background: #ffffff !important;[\s\S]*?color: #0f172a !important;/,
+  );
+  assert.match(
+    themeStyles,
+    /html\[data-app-theme="light"\] :is\([\s\S]*?\.theme-insertion-page[\s\S]*?\.theme-pst-section[\s\S]*?\) \{[\s\S]*?border: 1px solid #60a5fa !important;[\s\S]*?background: #ffffff !important;[\s\S]*?font-weight: 700 !important;/,
+  );
+  assert.doesNotMatch(
+    themeStyles,
+    /:is\(\.theme-pst-section, \.theme-insertion-section\) \.theme-insertion-pg-button\.is-selected/,
+  );
 });
 
 test("the Add Row animation includes a reduced-motion fallback", () => {
