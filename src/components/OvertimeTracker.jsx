@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Banknote, Calculator, CalendarDays, Check, Clock3, Download, FilePlus2, ListChecks, Loader2, MessageSquareText, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowRight, Banknote, BarChart3, Calculator, CalendarDays, Check, CircleDollarSign, Clock3, Download, FilePlus2, ListChecks, Loader2, MessageSquareText, Moon, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import NightShiftPdfDetector from "@/components/NightShiftPdfDetector";
@@ -482,6 +482,10 @@ export default function OvertimeTracker() {
   const allowanceDirtyRef = useRef(false);
   const allowanceDraftRef = useRef(allowanceDraft);
   const allowanceChecksRef = useRef(allowanceChecks);
+  const allowancePendingSavesRef = useRef(/** @type {Map<string, ReturnType<typeof createAllowanceDraft>>} */ (new Map()));
+  const allowanceRetryTimerRef = useRef(/** @type {number | null} */ (null));
+  const timelineScrollRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const activeMonthButtonRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
 
   const overtimeEntity = base44?.entities?.OvertimeRecord || null;
   const overtimeNoteEntity = base44?.entities?.OvertimeMonthlyNote || null;
@@ -530,6 +534,12 @@ export default function OvertimeTracker() {
     allowanceDirtyRef.current = allowanceDirty;
   }, [allowanceDirty]);
 
+  useEffect(() => () => {
+    if (allowanceRetryTimerRef.current !== null) {
+      window.clearTimeout(allowanceRetryTimerRef.current);
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -568,7 +578,7 @@ export default function OvertimeTracker() {
 
   const refreshCloudAllowanceChecks = useCallback(async ({ migrateLocal = false, silent = false } = {}) => {
     if (!allowanceCloudReady || allowanceSyncInProgressRef.current) return;
-    if (silent && allowanceDirtyRef.current) return;
+    if (silent && (allowanceDirtyRef.current || allowancePendingSavesRef.current.size > 0)) return;
 
     allowanceSyncInProgressRef.current = true;
     if (!silent) setAllowanceSyncStatus("Syncing...");
@@ -602,7 +612,7 @@ export default function OvertimeTracker() {
         normalizedRemote = dedupeAllowanceChecks(remoteChecks);
       }
 
-      if (!allowanceDirtyRef.current) {
+      if (!allowanceDirtyRef.current && allowancePendingSavesRef.current.size === 0) {
         setAllowanceChecks(normalizedRemote);
       }
       setAllowanceSyncStatus("Live cloud");
@@ -764,7 +774,14 @@ export default function OvertimeTracker() {
       : createAllowanceDraft(selectedYear, selectedMonth));
   }, [activeAllowanceCheck?.id, activeAllowanceCheck?.updatedAt, allowanceDirty, selectedMonth, selectedYear]);
 
-  const selectedMonthSummary = monthSummaries[selectedMonth] || { hours: 0 };
+  const selectedMonthSummary = monthSummaries[selectedMonth] || {
+    month: MONTHS[selectedMonth],
+    count: 0,
+    rdotCount: 0,
+    extensionCount: 0,
+    hours: 0,
+    noteCount: 0,
+  };
   const salaryPeriod = useMemo(
     () => getNextMonthPeriod(selectedYear, selectedMonth),
     [selectedMonth, selectedYear]
@@ -773,18 +790,33 @@ export default function OvertimeTracker() {
     () => calculateAllowanceResult(allowanceDraft, selectedMonthSummary.hours),
     [allowanceDraft, selectedMonthSummary.hours]
   );
-  const allowancePanelHeaderClass = "flex min-h-[49px] items-center gap-2.5 border-b border-[#31506b]/80 px-3 py-2.5";
-  const allowancePanelTitleClass = "text-[10px] font-semibold uppercase leading-[1.35] tracking-[0.12em] text-[#d5e4f3]";
-
-  const monthAllowanceStatuses = useMemo(() => MONTHS.map((_, monthIndex) => {
-    const savedCheck = getLatestAllowanceCheck(allowanceChecks, selectedYear, monthIndex + 1);
-    return calculateAllowanceResult(savedCheck || {}, monthSummaries[monthIndex]?.hours || 0).status;
-  }), [allowanceChecks, monthSummaries, selectedYear]);
+  const expectedSalary = useMemo(
+    () => roundCurrency(
+      parseAmount(allowanceDraft.salaryWithLaundry)
+      + allowanceResult.nightAllowance
+      + allowanceResult.expectedOvertime
+    ),
+    [allowanceDraft.salaryWithLaundry, allowanceResult.expectedOvertime, allowanceResult.nightAllowance]
+  );
+  const timelineMaxHours = useMemo(
+    () => Math.max(1, ...monthSummaries.map((summary) => Number(summary.hours || 0))),
+    [monthSummaries]
+  );
 
   const monthNightTotals = useMemo(() => MONTHS.map((_, monthIndex) => {
     const savedCheck = getLatestAllowanceCheck(allowanceChecks, selectedYear, monthIndex + 1);
     return Math.max(0, Math.trunc(parseAmount(savedCheck?.nightDays)));
   }), [allowanceChecks, selectedYear]);
+
+  useEffect(() => {
+    const scrollRegion = timelineScrollRef.current;
+    const activeMonthButton = activeMonthButtonRef.current;
+    if (!scrollRegion || !activeMonthButton) return;
+
+    const centeredLeft = activeMonthButton.offsetLeft
+      - ((scrollRegion.clientWidth - activeMonthButton.offsetWidth) / 2);
+    scrollRegion.scrollTo({ left: Math.max(0, centeredLeft), behavior: "auto" });
+  }, [selectedMonth, selectedYear]);
 
   const visibleRecords = useMemo(() => recordsForYear
     .filter((record) => Number(record.date.slice(5, 7)) === selectedMonth + 1)
@@ -1037,18 +1069,33 @@ export default function OvertimeTracker() {
   };
 
   const saveAllowanceDraft = useCallback(async (draftSnapshot) => {
+    const queuedWorkYear = Number(draftSnapshot.workYear) || selectedYear;
+    const queuedWorkMonth = Number(draftSnapshot.workMonth) || (selectedMonth + 1);
+    const queuedPeriodKey = `${queuedWorkYear}-${queuedWorkMonth}`;
+    allowancePendingSavesRef.current.set(queuedPeriodKey, {
+      ...draftSnapshot,
+      workYear: queuedWorkYear,
+      workMonth: queuedWorkMonth,
+    });
+
     if (allowanceSyncInProgressRef.current) {
-      window.setTimeout(() => {
-        if (allowanceDirtyRef.current) {
-          void saveAllowanceDraft(draftSnapshot);
-        }
-      }, 350);
+      if (allowanceRetryTimerRef.current === null) {
+        allowanceRetryTimerRef.current = window.setTimeout(() => {
+          allowanceRetryTimerRef.current = null;
+          const pendingSnapshot = allowancePendingSavesRef.current.values().next().value;
+          if (!pendingSnapshot) return;
+          void saveAllowanceDraft(pendingSnapshot);
+        }, 350);
+      }
       return;
     }
 
+    const nextPendingEntry = allowancePendingSavesRef.current.entries().next().value;
+    const [nextPeriodKey, nextSnapshot] = nextPendingEntry || [queuedPeriodKey, draftSnapshot];
+    allowancePendingSavesRef.current.delete(nextPeriodKey);
     const normalizedDraftSnapshot = {
-      ...draftSnapshot,
-      nightAllowance: String(calculateNightAllowance(draftSnapshot.nightDays)),
+      ...nextSnapshot,
+      nightAllowance: String(calculateNightAllowance(nextSnapshot.nightDays)),
     };
     const workYear = Number(normalizedDraftSnapshot.workYear) || selectedYear;
     const workMonth = Number(normalizedDraftSnapshot.workMonth) || (selectedMonth + 1);
@@ -1123,6 +1170,14 @@ export default function OvertimeTracker() {
       allowanceDirtyRef.current = false;
     } finally {
       allowanceSyncInProgressRef.current = false;
+      const pendingSnapshot = allowancePendingSavesRef.current.values().next().value;
+      if (pendingSnapshot) {
+        if (allowanceRetryTimerRef.current !== null) {
+          window.clearTimeout(allowanceRetryTimerRef.current);
+          allowanceRetryTimerRef.current = null;
+        }
+        void saveAllowanceDraft(pendingSnapshot);
+      }
     }
   }, [allowanceCloudReady, allowanceEntity, selectedMonth, selectedYear]);
 
@@ -1203,495 +1258,451 @@ export default function OvertimeTracker() {
     URL.revokeObjectURL(url);
   };
 
-  return (
-    <div className="theme-overtime-page grid gap-3 lg:grid-cols-[minmax(0,1.28fr)_minmax(360px,0.92fr)]">
-      <div className="min-w-0 space-y-4">
-        <section className="min-w-0 overflow-hidden rounded-[24px] border border-[#2b4c68] bg-[radial-gradient(circle_at_8%_0%,rgba(66,135,255,0.13),transparent_32%),radial-gradient(circle_at_92%_0%,rgba(111,80,255,0.13),transparent_30%),linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_22px_60px_rgba(0,0,0,0.32)] backdrop-blur-xl sm:p-5">
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div className="flex min-w-0 items-center gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-[#5d7cff]/35 bg-[linear-gradient(145deg,#2e9df1,#6752f4)] text-white shadow-[0_8px_24px_rgba(71,97,255,0.30)]">
-                <CalendarDays className="h-5 w-5" strokeWidth={2} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#afc0d7]">Yearly overview</p>
-                <h3 className="mt-1.5 truncate text-[19px] font-semibold leading-tight text-[#f5f8ff] sm:text-[21px]">
-                  Monthly Extension &amp; RDOT Record
-                </h3>
-              </div>
-            </div>
+  const allowanceStatusHeadline = allowanceResult.status === "CORRECT"
+    ? "Correct amount"
+    : allowanceResult.status === "SHORT"
+      ? `SAR ${formatMoney(allowanceResult.difference)} short`
+      : allowanceResult.status === "EXTRA"
+        ? `SAR ${formatMoney(allowanceResult.difference)} extra`
+        : "Waiting for salary input";
+  const allowanceStatusDescription = allowanceResult.status === "WAITING"
+    ? `Enter the ${MONTHS[salaryPeriod.monthIndex]} salary to compare it with the forecast.`
+    : `${MONTHS[salaryPeriod.monthIndex]} ${salaryPeriod.year} salary compared with ${MONTHS[selectedMonth]} allowances.`;
+  const allowanceStatusCardClass = allowanceResult.status === "CORRECT"
+    ? "border-emerald-400/35 bg-emerald-500/[0.08]"
+    : allowanceResult.status === "SHORT"
+      ? "border-rose-400/40 bg-rose-500/[0.08]"
+      : allowanceResult.status === "EXTRA"
+        ? "border-amber-400/40 bg-amber-500/[0.08]"
+        : "border-[#365779] bg-[#0b2137]/70";
+  const forecastBreakdown = [
+    {
+      label: "Salary + laundry",
+      value: parseAmount(allowanceDraft.salaryWithLaundry),
+      helper: "Payroll basis",
+    },
+    {
+      label: "Night allowance",
+      value: allowanceResult.nightAllowance,
+      helper: `${allowanceResult.nightDays} nights × SAR ${formatMoney(NIGHT_ALLOWANCE_RATE)}`,
+    },
+    {
+      label: "Expected overtime",
+      value: allowanceResult.expectedOvertime,
+      helper: `${allowanceResult.overtimeHours.toFixed(1)} recorded hrs`,
+    },
+  ];
+  const annualSummaryItems = [
+    { label: "Total hours", value: annualHours.toFixed(1), detail: "", Icon: Clock3, tone: "text-cyan-300" },
+    { label: "RDOT", value: annualRdotCount, detail: "", Icon: ArrowRight, tone: "text-violet-300" },
+    { label: "Extensions", value: annualExtensionCount, detail: "", Icon: Clock3, tone: "text-[#a99cff]" },
+    { label: "Highest night days", value: highestNightShift.total, detail: highestNightShift.monthLabel, Icon: Moon, tone: "text-emerald-300" },
+    { label: "Highest extensions", value: highestExtensionOnly.total, detail: highestExtensionOnly.monthLabel, Icon: Clock3, tone: "text-amber-300" },
+    { label: "Highest RDOT", value: highestRdotOnly.total, detail: highestRdotOnly.monthLabel, Icon: ArrowRight, tone: "text-sky-300" },
+  ];
 
-            <div className="flex shrink-0 items-center gap-2.5">
+  const handleMonthSelect = (monthIndex) => {
+    flushAllowanceBeforePeriodChange();
+    setSelectedMonth(monthIndex);
+    const monthDate = `${selectedYear}-${String(monthIndex + 1).padStart(2, "0")}-01`;
+    if (!editingId) resetDraft(monthDate);
+    resetNoteDraft(monthDate);
+  };
+
+  return (
+    <div className="theme-overtime-page grid gap-3 lg:grid-cols-10">
+      <section
+        data-testid="pay-forecast-hero"
+        className="overtime-forecast-hero min-w-0 overflow-hidden rounded-[24px] border border-[#315574] bg-[radial-gradient(circle_at_8%_0%,rgba(16,185,129,0.12),transparent_32%),radial-gradient(circle_at_92%_8%,rgba(45,145,255,0.10),transparent_30%),linear-gradient(145deg,rgba(8,29,48,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_20px_55px_rgba(0,0,0,0.28)] sm:p-5 lg:col-span-10"
+      >
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-emerald-400/30 bg-emerald-500/10 text-emerald-200 shadow-[0_8px_24px_rgba(16,185,129,0.14)]">
+              <CircleDollarSign aria-hidden="true" className="h-5 w-5" strokeWidth={1.9} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#9fb1c8]">Payroll forecast</p>
+              <h2 className="mt-1 text-[20px] font-semibold leading-tight text-[#f5f8ff] sm:text-[24px]">
+                {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} Pay Forecast
+              </h2>
+              <p className="mt-1 text-[12px] text-[#91a6be]">
+                Forecast from {MONTHS[selectedMonth]} overtime and night-shift records.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
             <select
               value={selectedYear}
               onChange={(event) => handleYearChange(event.target.value)}
-              className="h-10 min-w-[92px] rounded-xl border border-[#294660] bg-[#0b2137] px-3 text-[12px] font-semibold text-[#eef5ff] outline-none transition focus:border-[#6a72ff] focus:ring-2 focus:ring-[#6a72ff]/20"
+              className="h-11 min-w-[92px] rounded-xl border border-[#365779] bg-[#0b2137] px-3 text-[13px] font-semibold text-[#eef5ff] outline-none transition focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/15"
               aria-label="Overtime year"
-              style={{ colorScheme: "dark" }}
             >
               {availableYears.map((year) => <option key={year} value={year}>{year}</option>)}
             </select>
             <button
               type="button"
               onClick={handleAddNextYear}
-              className="flex h-10 items-center gap-1.5 rounded-xl border border-[#294660] bg-[#0b2137] px-3 text-[11px] font-medium text-[#dce8f7] transition hover:border-[#5776a0] hover:bg-[#102b46]"
-              title={`Add and open ${selectedYear + 1}`}
-              aria-label={`Add year ${selectedYear + 1}`}
+              className="flex h-11 items-center gap-1.5 rounded-xl border border-[#365779] bg-[#0b2137] px-3 text-[12px] font-semibold text-[#dce8f7] transition hover:border-[#577a98] hover:bg-[#102b46] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
+              title={"Add and open " + (selectedYear + 1)}
+              aria-label={"Add year " + (selectedYear + 1)}
             >
-              <Plus className="h-3.5 w-3.5" /> Year
+              <Plus aria-hidden="true" className="h-4 w-4" /> Year
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const recordEntry = document.getElementById("overtime-record-entry");
+                if (!recordEntry) return;
+                recordEntry.focus({ preventScroll: true });
+                recordEntry.scrollIntoView({
+                  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+                  block: "start",
+                });
+              }}
+              className="flex h-11 items-center gap-1.5 rounded-xl border border-cyan-400/55 bg-cyan-500/10 px-3.5 text-[12px] font-semibold text-cyan-100 transition hover:border-cyan-300 hover:bg-cyan-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
+            >
+              <Plus aria-hidden="true" className="h-4 w-4" /> Add entry
             </button>
             <button
               type="button"
               onClick={exportCsv}
               disabled={!recordsForYear.length}
-              className="flex h-10 items-center gap-2 rounded-xl border border-[#294660] bg-[#0b2137] px-3.5 text-[11px] font-medium text-[#dce8f7] transition hover:border-[#5776a0] hover:bg-[#102b46] disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-11 items-center gap-2 rounded-xl border border-[#365779] bg-[#0b2137] px-3.5 text-[12px] font-semibold text-[#dce8f7] transition hover:border-[#577a98] hover:bg-[#102b46] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <Download className="h-3.5 w-3.5" /> Export
+              <Download aria-hidden="true" className="h-4 w-4" /> Export
             </button>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
+          <div className="overtime-cockpit-subpanel min-w-0 rounded-[20px] border border-[#315574] bg-[#071c30]/[72%] p-4 sm:p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[12px] font-medium text-[#a9bbcf]">Expected salary</p>
+                <p
+                  className="overtime-cockpit-money mt-2 break-words text-[clamp(2rem,5vw,3.75rem)] font-semibold leading-none tracking-[-0.035em] text-emerald-300"
+                  aria-live="polite"
+                  aria-label={"Expected salary, SAR " + formatMoney(expectedSalary)}
+                >
+                  SAR {formatMoney(expectedSalary)}
+                </p>
+              </div>
+              <span className="overtime-cockpit-selection inline-flex items-center gap-1.5 rounded-full border border-violet-400/35 bg-violet-500/10 px-3 py-1.5 text-[11px] font-semibold text-violet-200">
+                {MONTHS[selectedMonth].slice(0, 3).toUpperCase()} {selectedYear}
+                <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
+                {MONTHS[salaryPeriod.monthIndex].slice(0, 3).toUpperCase()} {salaryPeriod.year}
+              </span>
             </div>
+
+            <div className="mt-5 grid gap-2.5 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-stretch">
+              {forecastBreakdown.map((item, index) => (
+                <Fragment key={item.label}>
+                  {index > 0 && <span aria-hidden="true" className="hidden items-center text-[22px] text-[#758ba4] md:flex">+</span>}
+                  <div className="overtime-cockpit-subpanel rounded-[15px] border border-[#2d4d68] bg-[#0b2137]/75 p-3">
+                    <p className="text-[11px] text-[#8fa6be]">{item.label}</p>
+                    <p className={["mt-1.5 text-[18px] font-semibold", index === 0 ? "text-white" : "overtime-cockpit-money text-emerald-300"].join(" ")}>
+                      SAR {formatMoney(item.value)}
+                    </p>
+                    <p className="mt-1 text-[10px] text-[#7890aa]">{item.helper}</p>
+                  </div>
+                </Fragment>
+              ))}
+            </div>
+
+            <p className="mt-3 text-[11px] leading-relaxed text-[#8399b1]">
+              Expected salary = salary + laundry + night allowance + overtime estimate.
+            </p>
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
-            {monthSummaries.map((summary, monthIndex) => {
-            const active = selectedMonth === monthIndex;
-            const allowanceStatus = active ? allowanceResult.status : monthAllowanceStatuses[monthIndex];
-            const totalNights = active ? allowanceResult.nightDays : monthNightTotals[monthIndex];
-            const allowanceStatusLabel = allowanceStatus === "CORRECT"
-              ? "Correct allowance amount"
-              : allowanceStatus === "SHORT"
-                ? "Allowance amount is short"
-                : allowanceStatus === "EXTRA"
-                  ? "Allowance amount is extra"
-                  : "";
-            const monthCardClass = allowanceStatus === "CORRECT"
-              ? `border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] ${active
-                ? "shadow-[0_0_0_1px_rgba(85,215,170,0.24),0_0_22px_rgba(38,199,129,0.18),0_12px_30px_rgba(0,0,0,0.22)]"
-                : "shadow-[0_10px_28px_rgba(38,199,129,0.10)] hover:-translate-y-0.5 hover:border-[#418577] hover:shadow-[0_14px_32px_rgba(38,199,129,0.14)]"}`
-              : allowanceStatus === "WAITING"
-                ? active
-                  ? "border-[#8169ff] bg-[radial-gradient(circle_at_20%_0%,rgba(117,92,255,0.24),transparent_42%),linear-gradient(145deg,rgba(26,43,76,0.98),rgba(8,27,47,0.99))] shadow-[0_0_0_1px_rgba(129,105,255,0.30),0_0_22px_rgba(89,62,255,0.22),0_12px_30px_rgba(0,0,0,0.22)]"
-                  : "border-[#294b66] bg-[linear-gradient(145deg,rgba(12,35,57,0.94),rgba(6,23,39,0.98))] shadow-[0_10px_28px_rgba(0,0,0,0.16)] hover:-translate-y-0.5 hover:border-[#467493] hover:bg-[#0c2a44] hover:shadow-[0_14px_32px_rgba(0,0,0,0.24)]"
-                : `border-[#7d3f4a] bg-[radial-gradient(circle_at_10%_20%,rgba(248,113,113,0.16),transparent_50%),linear-gradient(145deg,rgba(58,20,29,0.95),rgba(18,17,30,0.98))] ${active
-                  ? "shadow-[0_0_0_1px_rgba(248,113,113,0.22),0_0_22px_rgba(185,28,28,0.18),0_12px_30px_rgba(0,0,0,0.22)]"
-                  : "shadow-[0_10px_28px_rgba(185,28,28,0.11)] hover:-translate-y-0.5 hover:border-[#9a4c59] hover:shadow-[0_14px_32px_rgba(185,28,28,0.15)]"}`;
-            const monthIconClass = allowanceStatus === "CORRECT"
-              ? "border border-[#55d7aa]/25 bg-[#1dbd79]/10 text-[#76d5ae] shadow-[0_0_14px_rgba(38,199,129,0.12)]"
-              : allowanceStatus === "WAITING"
-                ? active
-                  ? "bg-[#5b4bd6]/45 text-[#d5d2ff]"
-                  : "bg-[#123859] text-[#8dc7f4]"
-                : "border border-red-300/20 bg-red-500/10 text-red-200 shadow-[0_0_14px_rgba(239,68,68,0.12)]";
-            const monthDividerClass = allowanceStatus === "CORRECT"
-              ? "bg-[#3f776b]/70"
-              : allowanceStatus === "WAITING"
-                ? active ? "bg-[#695dde]/70" : "bg-[#3a566f]"
-                : "bg-[#7b4650]/70";
-            const monthRuleClass = allowanceStatus === "CORRECT"
-              ? "border-[#315f56]/70"
-              : allowanceStatus === "WAITING"
-                ? "border-[#284761]/70"
-                : "border-[#70404a]/70";
-            return (
-                <button
-                key={summary.month}
+          <div className="overtime-cockpit-subpanel min-w-0 rounded-[20px] border border-[#315574] bg-[#071c30]/[72%] p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <label htmlFor="overtime-salary-received" className="text-[12px] font-semibold text-[#dbe7f4]">
+                  Actual salary received
+                </label>
+                <p className="mt-1 text-[10px] text-[#7f95ad]">Enter the full {MONTHS[salaryPeriod.monthIndex]} salary.</p>
+              </div>
+              <span className="overtime-cockpit-subpanel rounded-full border border-[#365779] bg-[#0b2137] px-2.5 py-1 text-[10px] font-semibold text-[#aebfd1]">
+                {MONTHS[selectedMonth].slice(0, 3)} work → {MONTHS[salaryPeriod.monthIndex].slice(0, 3)} salary
+              </span>
+            </div>
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
+              <input
+                id="overtime-salary-received"
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                value={formatAmountInput(allowanceDraft.salaryReceived)}
+                onChange={(event) => handleAllowanceFieldChange("salaryReceived", sanitizeDecimalInput(event.target.value))}
+                placeholder={"Enter " + MONTHS[salaryPeriod.monthIndex] + " salary"}
+                className="h-12 w-full rounded-[12px] border border-cyan-400/60 bg-[#102b46] px-3 text-[15px] font-semibold text-[#f4f8fd] outline-none transition placeholder:text-[#7890aa] hover:border-cyan-300 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/20"
+              />
+              <button
                 type="button"
-                aria-pressed={active}
-                title={allowanceStatusLabel || undefined}
-                onClick={() => {
-                  flushAllowanceBeforePeriodChange();
-                  setSelectedMonth(monthIndex);
-                  if (!editingId) resetDraft(`${selectedYear}-${String(monthIndex + 1).padStart(2, "0")}-01`);
-                  resetNoteDraft(`${selectedYear}-${String(monthIndex + 1).padStart(2, "0")}-01`);
-                }}
-                className={`min-h-[128px] rounded-[18px] border px-3 py-2.5 text-left transition duration-200 ${monthCardClass}`}
+                disabled={!allowanceResult.hasSalaryReceived}
+                onClick={() => void saveAllowanceDraft({ ...allowanceDraft })}
+                className="h-12 rounded-[12px] border border-cyan-300/60 bg-cyan-400 px-5 text-[13px] font-semibold text-[#061827] shadow-[0_8px_20px_rgba(34,211,238,0.16)] transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <div className="flex items-center gap-2.5">
-                  <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] ${monthIconClass}`}>
-                    <CalendarDays className="h-3.5 w-3.5" strokeWidth={1.9} />
+                Compare
+              </button>
+            </div>
+
+            <div
+              id="overtime-comparison-result"
+              data-status={allowanceResult.status.toLowerCase()}
+              className={["mt-3 rounded-[15px] border px-3.5 py-3", allowanceStatusCardClass].join(" ")}
+              role="status"
+              aria-live="polite"
+            >
+              <div className="flex items-start gap-2.5">
+                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-current/25">
+                  {allowanceResult.status === "CORRECT"
+                    ? <Check aria-hidden="true" className="h-4 w-4" strokeWidth={2.2} />
+                    : <Banknote aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[14px] font-semibold text-white">{allowanceStatusHeadline}</p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-[#9eb0c4]">{allowanceStatusDescription}</p>
+                </div>
+              </div>
+            </div>
+
+            <details data-testid="salary-bases-summary" className="mt-3 overflow-hidden rounded-[15px] border border-[#315574] bg-[#0b2137]/65">
+              <summary className="cursor-pointer px-3.5 py-3 text-[11px] font-semibold text-[#d9e5f2] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400/50">
+                Basic Salary and Salary + Laundry
+              </summary>
+              <div className="grid grid-cols-1 gap-3 border-t border-[#315574]/80 p-3 sm:grid-cols-2">
+                <label htmlFor="overtime-basic-salary" className="min-w-0">
+                  <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#8fa6be]">Basic salary</span>
+                  <input
+                    id="overtime-basic-salary"
+                    type="text"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    value={allowanceDraft.basicSalary}
+                    onChange={(event) => handleAllowanceFieldChange("basicSalary", sanitizeDecimalInput(event.target.value))}
+                    className="mt-1.5 h-11 w-full rounded-[10px] border border-[#405f7c] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none focus:border-cyan-400/65 focus:ring-2 focus:ring-cyan-400/15"
+                  />
+                </label>
+                <label htmlFor="overtime-salary-laundry" className="min-w-0">
+                  <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#8fa6be]">Salary + laundry</span>
+                  <input
+                    id="overtime-salary-laundry"
+                    type="text"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    value={allowanceDraft.salaryWithLaundry}
+                    onChange={(event) => handleAllowanceFieldChange("salaryWithLaundry", sanitizeDecimalInput(event.target.value))}
+                    className="mt-1.5 h-11 w-full rounded-[10px] border border-[#405f7c] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none focus:border-cyan-400/65 focus:ring-2 focus:ring-cyan-400/15"
+                  />
+                </label>
+              </div>
+            </details>
+
+            <p
+              className={["mt-3 flex items-center gap-1.5 text-[10px]", allowanceSyncStatus === "Live cloud" ? "text-emerald-300" : allowanceSyncStatus === "Saving live..." ? "text-sky-300" : "text-amber-300"].join(" ")}
+              role="status"
+              aria-live="polite"
+            >
+              <span aria-hidden="true" className={["h-1.5 w-1.5 rounded-full", allowanceSyncStatus === "Live cloud" ? "bg-emerald-400" : allowanceSyncStatus === "Saving live..." ? "bg-sky-400" : "bg-amber-400"].join(" ")} />
+              {allowanceSyncStatus}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section
+        data-testid="overtime-activity-timeline"
+        className="overtime-timeline min-w-0 overflow-hidden rounded-[24px] border border-[#315574] bg-[radial-gradient(circle_at_8%_0%,rgba(45,145,255,0.10),transparent_34%),linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.25)] sm:p-5 lg:col-span-7"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-[13px] border border-cyan-400/30 bg-cyan-500/10 text-cyan-200">
+              <BarChart3 aria-hidden="true" className="h-5 w-5" strokeWidth={1.9} />
+            </span>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#93a8c0]">Yearly overview</p>
+              <h3 className="mt-1 text-[18px] font-semibold text-[#eff5fc]">{selectedYear} Activity Timeline</h3>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-[#9eb0c4]" aria-label="Activity legend">
+            <span className="inline-flex items-center gap-1.5"><i aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-emerald-400" />Has activity</span>
+            <span className="inline-flex items-center gap-1.5"><i aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-rose-400" />No activity</span>
+          </div>
+        </div>
+
+        <div
+          ref={timelineScrollRef}
+          className="mt-5 overflow-x-auto pb-2 [scrollbar-color:#315574_transparent] [scrollbar-width:thin]"
+          role="region"
+          aria-label={"Scrollable " + selectedYear + " monthly overtime timeline"}
+          tabIndex={0}
+        >
+          <div className="grid min-w-[900px] grid-cols-[72px_repeat(12,minmax(62px,1fr))] gap-x-1.5">
+            <div
+              aria-hidden="true"
+              className="overtime-timeline-labels sticky left-0 z-20 grid grid-rows-[32px_142px_repeat(3,38px)] bg-[#071c30] pr-2 text-[12px] font-medium text-[#9fb1c8] shadow-[10px_0_14px_-14px_rgba(0,0,0,0.9)]"
+            >
+              <span />
+              <span className="flex items-end gap-1.5 pb-4"><Clock3 className="h-3.5 w-3.5 text-cyan-300" />Hours</span>
+              <span className="flex items-center gap-1.5 border-t border-[#294b66]/80"><ArrowRight className="h-3.5 w-3.5 text-violet-300" />RDOT</span>
+              <span className="flex items-center gap-1.5 border-t border-[#294b66]/80"><Clock3 className="h-3.5 w-3.5 text-cyan-300" />EXT</span>
+              <span className="flex items-center gap-1.5 border-t border-[#294b66]/80"><Moon className="h-3.5 w-3.5 text-emerald-300" />Nights</span>
+            </div>
+            {monthSummaries.map((summary, monthIndex) => {
+              const active = selectedMonth === monthIndex;
+              const totalNights = active ? allowanceResult.nightDays : monthNightTotals[monthIndex];
+              const barHeight = summary.hours > 0 ? Math.max(8, Math.round((summary.hours / timelineMaxHours) * 100)) : 2;
+              const hasActivity = summary.hours > 0
+                || summary.rdotCount > 0
+                || summary.extensionCount > 0
+                || totalNights > 0;
+              const activityLabel = hasActivity ? "Has activity" : "No activity";
+              const activityDotClass = hasActivity ? "bg-emerald-400" : "bg-rose-400";
+
+              return (
+                <button
+                  key={summary.month}
+                  ref={active ? activeMonthButtonRef : null}
+                  type="button"
+                  aria-pressed={active}
+                  aria-label={[summary.month, selectedYear, summary.hours.toFixed(1) + " hours", summary.rdotCount + " RDOT", summary.extensionCount + " extensions", totalNights + " night days", activityLabel].join(", ")}
+                  onClick={() => handleMonthSelect(monthIndex)}
+                  className={[
+                    "group grid min-w-0 grid-rows-[32px_142px_repeat(3,38px)] overflow-hidden rounded-[12px] border text-center transition focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70",
+                    active ? "overtime-cockpit-selection border-[#8169ff] bg-violet-500/[0.10] shadow-[0_0_0_1px_rgba(129,105,255,0.24),0_10px_24px_rgba(39,27,104,0.20)]" : "border-transparent hover:border-[#365779] hover:bg-[#0b2137]/55",
+                  ].join(" ")}
+                >
+                  <span className={["flex items-center justify-center text-[12px] font-semibold", active ? "text-violet-200" : "text-[#cbd7e5]"].join(" ")}>{summary.month.slice(0, 3).toUpperCase()}</span>
+                  <span className="flex min-h-0 flex-col justify-end px-1 pb-4">
+                    <strong className={["text-[12px] font-semibold", active ? "text-violet-200" : "text-[#eef5ff]"].join(" ")}>{summary.hours.toFixed(1)}</strong>
+                    <span className="mt-1 flex h-[88px] items-end justify-center">
+                      <i
+                        aria-hidden="true"
+                        className={["overtime-cockpit-bar block w-full max-w-[24px] rounded-t-[4px] transition-all", active ? "bg-[linear-gradient(180deg,#9b87ff,#6d5ce7)]" : summary.hours > 0 ? "bg-[linear-gradient(180deg,#67e8f9,#22a9c8)]" : "bg-rose-400"].join(" ")}
+                        style={{ height: String(barHeight) + "%" }}
+                      />
+                    </span>
+                    <span aria-hidden="true" className="relative mt-2 block h-px w-full bg-[#315574]">
+                      <i className={["overtime-activity-dot absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-[#071c30]", active ? "bg-violet-400" : activityDotClass].join(" ")} />
+                    </span>
                   </span>
-                  <p className="text-[12px] font-semibold text-[#f4f7fc]">{summary.month.slice(0, 3).toUpperCase()}</p>
-                  {allowanceStatus !== "WAITING" && <span className="sr-only">{allowanceStatusLabel}</span>}
-                </div>
-
-                <div className="mt-2.5 grid grid-cols-[1fr_auto_1fr] items-center">
-                  <div className="text-center">
-                    <span className="block text-[21px] font-medium leading-none text-white">{summary.rdotCount}</span>
-                    <span className="mt-1 block text-[9px] font-medium text-[#aebbd0]">RDOT</span>
-                  </div>
-                  <div className={`mx-2 h-9 w-px ${monthDividerClass}`} />
-                  <div className="text-center">
-                    <span className="block text-[21px] font-medium leading-none text-white">{summary.extensionCount}</span>
-                    <span className="mt-1 block text-[9px] font-medium text-[#aebbd0]">EXT</span>
-                  </div>
-                </div>
-
-                <div className={`mt-2.5 border-t pt-2 text-[13px] font-medium text-white ${monthRuleClass}`}>
-                  <p className="grid grid-cols-[74px_8px_1fr] items-baseline">
-                    <span>Total Hour</span>
-                    <span>:</span>
-                    <span>{summary.hours.toFixed(1)} hrs</span>
-                  </p>
-                  <p className="mt-1 grid grid-cols-[74px_8px_1fr] items-baseline">
-                    <span>Total Night</span>
-                    <span>:</span>
-                    <span>{totalNights}</span>
-                  </p>
-                </div>
+                  <span className="flex items-center justify-center border-t border-[#294b66]/80 text-[11px] font-semibold text-[#eef5ff]">{summary.rdotCount}</span>
+                  <span className="flex items-center justify-center border-t border-[#294b66]/80 text-[11px] font-semibold text-[#eef5ff]">{summary.extensionCount}</span>
+                  <span className="flex items-center justify-center border-t border-[#294b66]/80 text-[11px] font-semibold text-[#eef5ff]">{totalNights}</span>
                 </button>
-            );
+              );
             })}
           </div>
-        </section>
+        </div>
 
-        <section className="min-w-0 overflow-hidden rounded-[24px] border border-[#274660] bg-[radial-gradient(circle_at_0%_100%,rgba(37,117,181,0.12),transparent_38%),radial-gradient(circle_at_100%_0%,rgba(92,64,195,0.11),transparent_34%),linear-gradient(145deg,rgba(8,28,47,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_18px_52px_rgba(0,0,0,0.26)] sm:p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#92a9c3]">Annual summary</p>
-              <h4 className="mt-1 text-[15px] font-semibold text-[#eef5ff]">Performance overview</h4>
-            </div>
-            <span className="rounded-full border border-[#345671] bg-[#0c2943]/85 px-3 py-1 text-[10px] font-semibold text-[#c4d6ea] shadow-inner shadow-black/20">
-              {selectedYear}
-            </span>
-          </div>
+        <p className="overtime-cockpit-subpanel mt-3 flex items-start gap-2 rounded-[12px] border border-[#294b66] bg-[#0b2137]/55 px-3 py-2.5 text-[11px] leading-relaxed text-[#91a6be]">
+          <ArrowRight aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" />
+          {MONTHS[selectedMonth]} overtime hours and night days are included in {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} salary.
+        </p>
+      </section>
 
-          <div className="mt-4 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
-            <div className="flex min-h-[82px] items-center gap-3.5 rounded-[18px] border border-[#265779] bg-[radial-gradient(circle_at_10%_20%,rgba(41,144,255,0.12),transparent_50%),linear-gradient(145deg,rgba(10,35,58,0.96),rgba(6,23,39,0.98))] px-4 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#49a9ee]/35 bg-[#168ee4]/12 text-[#66b9f5] shadow-[0_0_18px_rgba(58,160,235,0.15)]">
-                <Clock3 className="h-6 w-6" strokeWidth={1.8} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#afbed2]">Annual total RDOT</p>
-                <p className="mt-1.5 text-[22px] font-semibold leading-none text-white">{annualRdotCount}</p>
-              </div>
-            </div>
-
-            <div className="flex min-h-[82px] items-center gap-3.5 rounded-[18px] border border-[#4d447e] bg-[radial-gradient(circle_at_10%_20%,rgba(133,91,255,0.14),transparent_50%),linear-gradient(145deg,rgba(20,30,61,0.96),rgba(7,22,40,0.98))] px-4 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#9b85ff]/35 bg-[#7865ff]/12 text-[#a99cff] shadow-[0_0_18px_rgba(126,91,255,0.16)]">
-                <Clock3 className="h-6 w-6" strokeWidth={1.8} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#afbed2]">Annual total Extension</p>
-                <p className="mt-1.5 text-[22px] font-semibold leading-none text-white">{annualExtensionCount}</p>
-              </div>
-            </div>
-
-            <div className="flex min-h-[82px] items-center gap-3.5 rounded-[18px] border border-[#315f6b] bg-[radial-gradient(circle_at_10%_20%,rgba(55,213,187,0.12),transparent_50%),linear-gradient(145deg,rgba(9,37,53,0.96),rgba(6,23,39,0.98))] px-4 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#54d6c6]/35 bg-[#20bba8]/10 text-[#76ddd0] shadow-[0_0_18px_rgba(55,201,184,0.14)]">
-                <Clock3 className="h-6 w-6" strokeWidth={1.8} />
-              </div>
-              <div className="min-w-0">
-                <p className="max-w-[190px] text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">
-                  Annual total hours for RDOT + EXT
-                </p>
-                <p className="mt-1.5 text-[22px] font-semibold leading-none text-white">{annualHours.toFixed(1)}</p>
-              </div>
-            </div>
-
-            <div className="flex min-h-[82px] items-center gap-3.5 rounded-[18px] border border-[#66552d] bg-[radial-gradient(circle_at_10%_20%,rgba(255,187,52,0.13),transparent_50%),linear-gradient(145deg,rgba(42,35,24,0.92),rgba(7,23,39,0.98))] px-4 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#f2be58]/35 bg-[#d99616]/10 text-[#f1bf61] shadow-[0_0_18px_rgba(226,161,38,0.14)]">
-                <CalendarDays className="h-6 w-6" strokeWidth={1.8} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Highest performed night shift</p>
-                <p className="mt-1.5 text-[17px] font-semibold leading-none text-white">Total {highestNightShift.total}</p>
-                <p
-                  className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[#9fb2c9]"
-                  title={highestNightShift.fullMonthLabel}
-                >
-                  {highestNightShift.total > 0 ? `at ${highestNightShift.monthLabel}` : highestNightShift.monthLabel}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex min-h-[82px] items-center gap-3.5 rounded-[18px] border border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] px-4 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#55d7aa]/35 bg-[#1dbd79]/10 text-[#76d5ae] shadow-[0_0_18px_rgba(38,199,129,0.14)]">
-                <ListChecks className="h-6 w-6" strokeWidth={1.8} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Highest performed EXT only</p>
-                <p className="mt-1.5 text-[17px] font-semibold leading-none text-white">Total {highestExtensionOnly.total}</p>
-                <p
-                  className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[#9fb2c9]"
-                  title={highestExtensionOnly.fullMonthLabel}
-                >
-                  {highestExtensionOnly.total > 0 ? `at ${highestExtensionOnly.monthLabel}` : highestExtensionOnly.monthLabel}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex min-h-[82px] items-center gap-3.5 rounded-[18px] border border-[#315d78] bg-[radial-gradient(circle_at_10%_20%,rgba(54,167,244,0.13),transparent_50%),linear-gradient(145deg,rgba(10,36,58,0.95),rgba(6,23,39,0.98))] px-4 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)] sm:col-span-2 xl:col-span-1">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#5ab6ef]/35 bg-[#2499e3]/10 text-[#70c7f3] shadow-[0_0_18px_rgba(46,157,226,0.14)]">
-                <ListChecks className="h-6 w-6" strokeWidth={1.8} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.15em] text-[#afbed2]">Highest performed RDOT only</p>
-                <p className="mt-1.5 text-[17px] font-semibold leading-none text-white">Total {highestRdotOnly.total}</p>
-                <p
-                  className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[#9fb2c9]"
-                  title={highestRdotOnly.fullMonthLabel}
-                >
-                  {highestRdotOnly.total > 0 ? `at ${highestRdotOnly.monthLabel}` : highestRdotOnly.monthLabel}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <aside className="min-w-0 self-start overflow-hidden rounded-[24px] border border-[#315574] bg-[radial-gradient(circle_at_12%_0%,rgba(16,185,129,0.14),transparent_34%),radial-gradient(circle_at_92%_8%,rgba(45,145,255,0.10),transparent_32%),linear-gradient(145deg,rgba(8,29,48,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_20px_55px_rgba(0,0,0,0.28)] sm:p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-emerald-400/30 bg-[linear-gradient(145deg,rgba(16,185,129,0.28),rgba(5,73,65,0.72))] text-emerald-200 shadow-[0_8px_24px_rgba(16,185,129,0.18)]">
-              <Calculator className="h-5 w-5" strokeWidth={1.9} />
-            </div>
-            <div className="min-w-0">
-              <p className={allowancePanelTitleClass}>Allowance check</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-[#9fb1c8]">
-                Uses {MONTHS[selectedMonth].slice(0, 3)} {selectedYear} recorded hours.
-              </p>
-            </div>
-          </div>
-          <span className="shrink-0 rounded-full border border-emerald-400/25 bg-emerald-500/[0.08] px-2.5 py-1 text-[10px] font-semibold text-emerald-200 shadow-[inset_0_0_12px_rgba(16,185,129,0.05)]">
-            {MONTHS[salaryPeriod.monthIndex].slice(0, 3)} Salary
+      <aside
+        data-testid="selected-month-snapshot"
+        className="overtime-snapshot min-w-0 overflow-hidden rounded-[24px] border border-[#315574] bg-[radial-gradient(circle_at_8%_0%,rgba(111,80,255,0.12),transparent_34%),linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.25)] sm:p-5 lg:col-span-3"
+      >
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-[13px] border border-violet-400/30 bg-violet-500/10 text-violet-200">
+            <CalendarDays aria-hidden="true" className="h-5 w-5" strokeWidth={1.9} />
           </span>
-        </div>
-
-        <div
-          data-testid="salary-bases-summary"
-          className="mt-4 overflow-hidden rounded-[16px] border border-[#31506b] bg-[linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]"
-        >
-          <div className={allowancePanelHeaderClass}>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-emerald-400/20 bg-emerald-500/[0.08] text-emerald-200">
-              <Banknote className="h-4 w-4" strokeWidth={1.9} />
-            </span>
-            <p className={allowancePanelTitleClass}>Basic Salary and Salary + Laundry</p>
-          </div>
-          <div className="grid grid-cols-2 divide-x divide-[#31506b]/80">
-            <label className="min-w-0 p-3">
-              <span className="text-[9px] font-medium uppercase tracking-[0.12em] text-[#8fa6be]">Basic salary</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={allowanceDraft.basicSalary}
-                onChange={(event) => handleAllowanceFieldChange("basicSalary", sanitizeDecimalInput(event.target.value))}
-                className="mt-2 h-10 w-full rounded-[11px] border border-[#35536e] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none transition hover:border-[#456681] focus:border-emerald-400/65 focus:ring-2 focus:ring-emerald-400/15"
-              />
-            </label>
-
-            <label className="min-w-0 p-3">
-              <span className="text-[9px] font-medium uppercase tracking-[0.12em] text-[#8fa6be]">Salary + laundry</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={allowanceDraft.salaryWithLaundry}
-                onChange={(event) => handleAllowanceFieldChange("salaryWithLaundry", sanitizeDecimalInput(event.target.value))}
-                className="mt-2 h-10 w-full rounded-[11px] border border-[#35536e] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none transition hover:border-[#456681] focus:border-emerald-400/65 focus:ring-2 focus:ring-emerald-400/15"
-              />
-            </label>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#93a8c0]">Selected month</p>
+            <h3 className="mt-1 text-[18px] font-semibold text-[#eff5fc]">{MONTHS[selectedMonth]} Snapshot</h3>
           </div>
         </div>
 
-        <div className="mt-2.5 overflow-hidden rounded-[16px] border border-emerald-400/35 bg-[radial-gradient(circle_at_8%_0%,rgba(16,185,129,0.18),transparent_52%),linear-gradient(145deg,rgba(7,52,48,0.94),rgba(6,27,40,0.98))] shadow-[0_10px_26px_rgba(5,150,105,0.10),inset_0_1px_0_rgba(255,255,255,0.035)]">
-          <div className={allowancePanelHeaderClass}>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-emerald-400/25 bg-emerald-500/[0.10] text-emerald-200">
-              <Banknote className="h-4 w-4" strokeWidth={1.9} />
-            </span>
-            <p className={allowancePanelTitleClass}>Salary received in {MONTHS[salaryPeriod.monthIndex]}</p>
+        <div className="mt-5 border-b border-[#315574]/80 pb-4">
+          <p className="text-[clamp(2.5rem,5vw,3.5rem)] font-semibold leading-none tracking-[-0.03em] text-violet-300">{allowanceResult.overtimeHours.toFixed(1)}</p>
+          <p className="mt-1 text-[12px] text-[#91a6be]">recorded overtime hours</p>
+        </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="overtime-cockpit-subpanel rounded-[13px] border border-[#2d4d68] bg-[#0b2137]/65 p-3">
+            <p className="text-[12px] text-[#8fa6be]">RDOT</p>
+            <p className="mt-1 text-[18px] font-semibold text-white">{selectedMonthSummary.rdotCount || 0}</p>
           </div>
-          <label className="relative block p-3">
+          <div className="overtime-cockpit-subpanel rounded-[13px] border border-[#2d4d68] bg-[#0b2137]/65 p-3">
+            <p className="text-[12px] text-[#8fa6be]">Extensions</p>
+            <p className="mt-1 text-[18px] font-semibold text-white">{selectedMonthSummary.extensionCount || 0}</p>
+          </div>
+          <label htmlFor="overtime-night-days" data-testid="night-days-allowance-summary" className="overtime-cockpit-subpanel rounded-[13px] border border-[#2d4d68] bg-[#0b2137]/65 p-3">
+            <span className="text-[12px] text-[#8fa6be]">Night days</span>
             <input
+              id="overtime-night-days"
               type="text"
-              inputMode="decimal"
-              value={formatAmountInput(allowanceDraft.salaryReceived)}
-              onChange={(event) => handleAllowanceFieldChange("salaryReceived", sanitizeDecimalInput(event.target.value))}
-              placeholder={`Enter ${MONTHS[salaryPeriod.monthIndex]} salary`}
-              className="h-11 w-full rounded-[12px] border border-emerald-400/75 bg-[linear-gradient(135deg,rgba(220,252,231,0.98),rgba(167,243,208,0.92))] px-3 pr-11 text-[15px] font-normal text-[#07131f] caret-[#07131f] shadow-[0_0_0_1px_rgba(52,211,153,0.12),0_0_14px_rgba(16,185,129,0.20)] outline-none transition placeholder:text-[#44534f]/65 hover:border-emerald-300 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-400/20"
+              inputMode="numeric"
+              autoComplete="off"
+              value={allowanceDraft.nightDays}
+              onChange={(event) => handleAllowanceFieldChange("nightDays", sanitizeIntegerInput(event.target.value))}
+              placeholder="0"
+              className="mt-1.5 h-11 w-full rounded-[9px] border border-[#405f7c] bg-[#102b46] px-2.5 text-[15px] font-semibold text-[#f4f8fd] outline-none focus:border-violet-400/70 focus:ring-2 focus:ring-violet-400/15"
             />
-            {allowanceResult.hasSalaryReceived && (
-              <span className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-emerald-600 text-white shadow-[0_5px_14px_rgba(5,150,105,0.28)]">
-                <Check className="h-4 w-4" strokeWidth={2.4} />
-              </span>
-            )}
           </label>
-        </div>
-
-        <label
-          data-testid="night-days-allowance-summary"
-          className="mt-2.5 block overflow-hidden rounded-[16px] border border-[#3d5475] bg-[radial-gradient(circle_at_8%_20%,rgba(139,92,246,0.14),transparent_42%),radial-gradient(circle_at_92%_80%,rgba(16,185,129,0.10),transparent_38%),linear-gradient(145deg,rgba(12,40,65,0.94),rgba(8,29,49,0.99))] shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]"
-        >
-          <div className={`${allowancePanelHeaderClass} justify-between`}>
-            <span className="flex min-w-0 items-center gap-2">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-violet-400/25 bg-violet-500/[0.10] text-violet-200 shadow-[0_0_16px_rgba(139,92,246,0.10)]">
-                <CalendarDays className="h-4 w-4" strokeWidth={1.9} />
-              </span>
-              <span className={allowancePanelTitleClass}>Night Days with Expected Allowance</span>
-            </span>
-            <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-500/[0.07] px-2 py-1 text-[9px] font-medium text-[#b8c9db]">
-              Rate: <span className="font-semibold text-emerald-300">SAR {formatMoney(NIGHT_ALLOWANCE_RATE)}</span> / night
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 divide-x divide-[#31506b]/80">
-            <div className="min-w-0 px-3 py-3">
-              <p className="text-[9px] uppercase tracking-[0.12em] text-[#8fa6be]">Night days</p>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={allowanceDraft.nightDays}
-                onChange={(event) => handleAllowanceFieldChange("nightDays", sanitizeIntegerInput(event.target.value))}
-                placeholder="0"
-                className="mt-1.5 h-9 w-full rounded-[10px] border border-[#405f7c] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none placeholder:text-[#70859e] transition hover:border-[#52728e] focus:border-emerald-400/65 focus:ring-2 focus:ring-emerald-400/15"
-              />
-            </div>
-
-            <div className="flex min-w-0 items-center gap-2.5 px-3 py-3">
-              <Banknote className="h-4 w-4 shrink-0 text-emerald-300" strokeWidth={1.9} />
-              <div className="min-w-0">
-                <p className="text-[9px] uppercase tracking-[0.12em] text-[#8fa6be]">Expected allowance</p>
-                <p className="mt-1 truncate text-[16px] font-semibold leading-none text-emerald-200" title={`SAR ${formatMoney(allowanceResult.nightAllowance)}`}>
-                  SAR {formatMoney(allowanceResult.nightAllowance)}
-                </p>
-                <p className="mt-1 text-[9px] text-[#7890aa]">
-                  {allowanceResult.nightDays} {allowanceResult.nightDays === 1 ? "night" : "nights"} × SAR {formatMoney(NIGHT_ALLOWANCE_RATE)}
-                </p>
-              </div>
-            </div>
-          </div>
-        </label>
-
-        <div
-          data-testid="recorded-hours-expected-ot-summary"
-          className="mt-2.5 overflow-hidden rounded-[16px] border border-[#365779] bg-[radial-gradient(circle_at_8%_20%,rgba(45,145,255,0.14),transparent_40%),radial-gradient(circle_at_92%_80%,rgba(139,92,246,0.14),transparent_42%),linear-gradient(145deg,rgba(12,40,65,0.94),rgba(8,29,49,0.99))] shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]"
-        >
-          <div className={allowancePanelHeaderClass}>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-sky-400/25 bg-sky-500/[0.10] text-sky-200 shadow-[0_0_16px_rgba(56,189,248,0.10)]">
-              <Clock3 className="h-4 w-4" strokeWidth={1.9} />
-            </span>
-            <div className="min-w-0">
-              <p className={allowancePanelTitleClass}>
-                Recorded Hour with Expected OT Amount
-              </p>
-              <p className="mt-0.5 text-[9px] leading-snug text-[#8fa6be]">Calculated from the recorded overtime entries.</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 divide-x divide-[#31506b]/80">
-            <div className="flex min-w-0 items-center gap-2.5 px-3 py-3">
-              <Clock3 className="h-4 w-4 shrink-0 text-sky-300" strokeWidth={1.9} />
-              <div className="min-w-0">
-                <p className="text-[9px] uppercase tracking-[0.12em] text-[#8fa6be]">Recorded hours</p>
-                <p className="mt-1 text-[19px] font-semibold leading-none text-white">
-                  {allowanceResult.overtimeHours.toFixed(1)} <span className="text-[9px] font-medium uppercase tracking-[0.1em] text-[#8fa6be]">hrs</span>
-                </p>
-              </div>
-            </div>
-
-            <div className="flex min-w-0 items-center gap-2.5 px-3 py-3">
-              <Calculator className="h-4 w-4 shrink-0 text-violet-300" strokeWidth={1.9} />
-              <div className="min-w-0">
-                <p className="text-[9px] uppercase tracking-[0.12em] text-[#8fa6be]">Expected OT amount</p>
-                <p className="mt-1 truncate text-[15px] font-semibold leading-none text-[#7dd3fc]" title={`SAR ${formatMoney(allowanceResult.expectedOvertime)}`}>
-                  SAR {formatMoney(allowanceResult.expectedOvertime)}
-                </p>
-              </div>
-            </div>
+          <div className="overtime-cockpit-subpanel rounded-[13px] border border-[#2d4d68] bg-[#0b2137]/65 p-3">
+            <p className="text-[12px] text-[#8fa6be]">Night rate</p>
+            <p className="mt-1 text-[15px] font-semibold text-white">SAR {formatMoney(NIGHT_ALLOWANCE_RATE)}</p>
+            <p className="mt-1 text-[11px] text-[#7890aa]">per night</p>
           </div>
         </div>
 
-        <div className="mt-2.5 overflow-hidden rounded-[16px] border border-[#3d4e73] bg-[radial-gradient(circle_at_8%_35%,rgba(139,92,246,0.13),transparent_42%),linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))]">
-          <div className={allowancePanelHeaderClass}>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-violet-400/25 bg-violet-500/[0.10] text-violet-200">
-              <Banknote className="h-4 w-4" strokeWidth={1.9} />
-            </span>
-            <p className={allowancePanelTitleClass}>Remaining for overtime</p>
+        <div data-testid="recorded-hours-expected-ot-summary" className="overtime-cockpit-subpanel mt-3 space-y-2 rounded-[15px] border border-[#365779] bg-[#0b2137]/65 p-3.5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="inline-flex items-center gap-2 text-[11px] text-[#afbed2]"><Calculator aria-hidden="true" className="h-4 w-4 text-cyan-300" />Expected overtime</span>
+            <strong className="overtime-cockpit-money text-[15px] text-emerald-300">SAR {formatMoney(allowanceResult.expectedOvertime)}</strong>
           </div>
-          <div className="min-w-0 px-3 py-3">
-            <p className="text-[9px] leading-relaxed text-[#7f95ad]">After deduct night + laundry allowance</p>
-            <p className="mt-1 text-[16px] font-semibold text-[#7dd3fc]">
-              {allowanceResult.hasSalaryReceived ? `SAR ${formatMoney(allowanceResult.remainingForOvertime)}` : "Waiting"}
-            </p>
+          <div className="flex items-center justify-between gap-3">
+            <span className="inline-flex items-center gap-2 text-[11px] text-[#afbed2]"><Moon aria-hidden="true" className="h-4 w-4 text-violet-300" />Night allowance</span>
+            <strong className="overtime-cockpit-money text-[15px] text-emerald-300">SAR {formatMoney(allowanceResult.nightAllowance)}</strong>
           </div>
         </div>
 
-        <div className={`mt-2.5 overflow-hidden rounded-[18px] border transition ${allowanceResult.status === "EXTRA"
-          ? "border-emerald-400/35 bg-[radial-gradient(circle_at_0%_0%,rgba(16,185,129,0.20),transparent_48%),linear-gradient(145deg,rgba(5,63,55,0.88),rgba(6,34,45,0.98))] shadow-[0_10px_28px_rgba(5,150,105,0.12)]"
-          : allowanceResult.status === "SHORT"
-            ? "border-[#7d3f4a] bg-[radial-gradient(circle_at_10%_20%,rgba(248,113,113,0.16),transparent_50%),linear-gradient(145deg,rgba(58,20,29,0.95),rgba(18,17,30,0.98))] shadow-[0_10px_28px_rgba(185,28,28,0.14)]"
-            : allowanceResult.status === "CORRECT"
-              ? "border-[#2f6659] bg-[radial-gradient(circle_at_10%_20%,rgba(50,218,151,0.13),transparent_50%),linear-gradient(145deg,rgba(11,40,43,0.94),rgba(6,23,39,0.98))] shadow-[0_10px_28px_rgba(38,199,129,0.14)]"
-              : "border-[#31506b] bg-[linear-gradient(145deg,rgba(12,40,65,0.92),rgba(8,29,49,0.98))]"
-        }`}>
-          <div className={allowancePanelHeaderClass}>
-            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border ${allowanceResult.status === "EXTRA"
-              ? "border-emerald-300/35 bg-emerald-500/20 text-emerald-100"
-              : allowanceResult.status === "SHORT"
-                ? "border-red-300/35 bg-red-500/10 text-red-200 shadow-[0_0_18px_rgba(239,68,68,0.14)]"
-                : allowanceResult.status === "CORRECT"
-                  ? "border-[#55d7aa]/35 bg-[#1dbd79]/10 text-[#76d5ae] shadow-[0_0_18px_rgba(38,199,129,0.14)]"
-                  : "border-[#3c5871] bg-[#102b46] text-[#91a5bd]"
-            }`}>
-              {allowanceResult.status === "CORRECT" || allowanceResult.status === "EXTRA"
-                ? <Check className="h-4 w-4" strokeWidth={2.3} />
-                : <Banknote className="h-4 w-4" strokeWidth={1.9} />}
-            </span>
-            <p className={allowancePanelTitleClass}>
-              {allowanceResult.status === "WAITING" ? "Waiting for salary input" : `Allowance ${allowanceResult.status.toLowerCase()}`}
-            </p>
-          </div>
-          <div className="min-w-0 px-3 py-3">
-              {allowanceResult.hasSalaryReceived && (
-                <p className={`mt-1.5 text-[18px] font-semibold ${allowanceResult.status === "CORRECT"
-                  ? "text-white"
-                  : allowanceResult.status === "SHORT"
-                    ? "text-red-100"
-                    : "text-white"
-                }`}>
-                  {allowanceResult.status === "CORRECT" ? "Correct amount" : `SAR ${formatMoney(allowanceResult.difference)}`}
-                </p>
-              )}
-              <p className={`mt-1.5 text-[10px] leading-relaxed ${allowanceResult.status === "CORRECT"
-                ? "text-[#b9cec4]"
-                : allowanceResult.status === "SHORT"
-                  ? "text-[#e8b6be]"
-                  : "text-[#a4b6ca]"
-              }`}>
-                {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} salary checks {MONTHS[selectedMonth]} night and overtime allowances.
-              </p>
-              <p className={`mt-1 text-[9px] leading-relaxed ${allowanceResult.status === "CORRECT"
-                ? "text-[#88a99b]"
-                : allowanceResult.status === "SHORT"
-                  ? "text-[#c88b94]"
-                  : "text-[#8298b0]"
-              }`}>
-                Night allowance: {allowanceResult.nightDays} night days × SAR {formatMoney(NIGHT_ALLOWANCE_RATE)} = SAR {formatMoney(allowanceResult.nightAllowance)}. Remaining OT: received salary − (salary + laundry) − night allowance.
-              </p>
-          </div>
-        </div>
-
-        <p className={`mt-2.5 flex items-center justify-center gap-1.5 text-center text-[10px] ${allowanceSyncStatus === "Live cloud"
-          ? "text-emerald-300"
-          : allowanceSyncStatus === "Saving live..."
-            ? "text-sky-300"
-            : "text-amber-300"
-        }`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${allowanceSyncStatus === "Live cloud"
-            ? "bg-emerald-400 shadow-[0_0_9px_rgba(52,211,153,0.75)]"
-            : allowanceSyncStatus === "Saving live..."
-              ? "bg-sky-400"
-              : "bg-amber-400"
-          }`} />
-          {allowanceSyncStatus}
+        <p className="mt-3 rounded-[12px] border border-violet-400/25 bg-violet-500/[0.08] px-3 py-2.5 text-[11px] leading-relaxed text-violet-200">
+          {MONTHS[selectedMonth]} work is included in {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} salary.
         </p>
       </aside>
 
-      <section className="h-full min-w-0 overflow-hidden rounded-[24px] border border-[#315574] bg-[radial-gradient(circle_at_8%_0%,rgba(45,145,255,0.14),transparent_34%),radial-gradient(circle_at_92%_4%,rgba(112,77,255,0.13),transparent_32%),linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_20px_55px_rgba(0,0,0,0.30)] sm:p-5">
+      <section
+        data-testid="overtime-annual-summary"
+        className="overtime-annual-summary min-w-0 overflow-hidden rounded-[24px] border border-[#315574] bg-[linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_16px_42px_rgba(0,0,0,0.22)] sm:p-5 lg:col-span-10"
+      >
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-[13px] border border-cyan-400/30 bg-cyan-500/10 text-cyan-200">
+            <BarChart3 aria-hidden="true" className="h-5 w-5" strokeWidth={1.9} />
+          </span>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#93a8c0]">Annual overview</p>
+            <h3 className="mt-1 text-[18px] font-semibold text-[#eff5fc]">{selectedYear} Annual Summary</h3>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-6">
+          {annualSummaryItems.map(({ label, value, detail, Icon, tone }) => (
+            <div key={label} className="overtime-cockpit-subpanel rounded-[15px] border border-[#2d4d68] bg-[#0b2137]/65 p-3">
+              <Icon aria-hidden="true" className={["h-4 w-4", tone].join(" ")} />
+              <p className="mt-3 text-[24px] font-semibold leading-none text-white">{value}</p>
+              <p className="mt-1.5 text-[12px] text-[#91a6be]">{label}</p>
+              {detail && <p className={["mt-1 text-[11px] font-semibold uppercase tracking-[0.1em]", tone].join(" ")}>{detail}</p>}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="overtime-record-entry" aria-labelledby="overtime-record-entry-title" tabIndex={-1} className="h-full min-w-0 scroll-mt-4 overflow-hidden rounded-[24px] border border-[#315574] bg-[radial-gradient(circle_at_8%_0%,rgba(45,145,255,0.14),transparent_34%),radial-gradient(circle_at_92%_4%,rgba(112,77,255,0.13),transparent_32%),linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_20px_55px_rgba(0,0,0,0.30)] outline-none focus:ring-2 focus:ring-cyan-400/70 focus:ring-offset-2 focus:ring-offset-[#061827] sm:p-5 lg:col-span-6">
         <div className="flex items-start gap-3.5">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] border border-[#6d72ff]/35 bg-[linear-gradient(145deg,#2697e9,#6b4ff3)] text-white shadow-[0_8px_22px_rgba(67,83,235,0.28)]">
             <FilePlus2 className="h-[18px] w-[18px]" strokeWidth={1.9} />
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#c0cee0]">
+            <h3 id="overtime-record-entry-title" className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#c0cee0]">
               {editingNoteId ? "Edit monthly note" : editingId ? "Edit duty record" : "New record"}
-            </p>
+            </h3>
             <p className="mt-1 text-[11px] text-[#9fb1c8]">
               Add a duty record or a separate monthly note below.
             </p>
@@ -1962,7 +1973,7 @@ export default function OvertimeTracker() {
         </div>
       </section>
 
-      <section className="h-full min-w-0 overflow-hidden rounded-[24px] border border-[#315574] bg-[radial-gradient(circle_at_92%_0%,rgba(45,145,255,0.12),transparent_34%),radial-gradient(circle_at_5%_100%,rgba(81,67,205,0.09),transparent_34%),linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] shadow-[0_20px_55px_rgba(0,0,0,0.30)]">
+      <section className="h-full min-w-0 overflow-hidden rounded-[24px] border border-[#315574] bg-[radial-gradient(circle_at_92%_0%,rgba(45,145,255,0.12),transparent_34%),radial-gradient(circle_at_5%_100%,rgba(81,67,205,0.09),transparent_34%),linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] shadow-[0_20px_55px_rgba(0,0,0,0.30)] lg:col-span-4">
         <div className="flex items-start justify-between gap-3 px-4 pb-2.5 pt-4 sm:px-5 sm:pt-5">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] border border-[#4fa9dc]/35 bg-[linear-gradient(145deg,#17678f,#16456f)] text-[#dff6ff] shadow-[0_8px_22px_rgba(13,94,145,0.22)]">
@@ -2097,7 +2108,7 @@ export default function OvertimeTracker() {
       <NightShiftPdfDetector
         selectedYear={selectedYear}
         selectedMonth={selectedMonth}
-        className="lg:col-span-2"
+        className="lg:col-span-10"
       />
     </div>
   );
