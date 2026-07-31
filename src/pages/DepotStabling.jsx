@@ -10845,6 +10845,13 @@ function isCompleteMovementTimeInput(value) {
   return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
 }
 
+const TP1_MAINT_REPORT_CONFIRMERS = ["Siraj", "Rayan"];
+
+function normalizeTp1MaintReportConfirmer(value = "") {
+  const normalizedValue = String(value || "").trim().toLowerCase();
+  return TP1_MAINT_REPORT_CONFIRMERS.find((name) => name.toLowerCase() === normalizedValue) || "";
+}
+
 function TrainMovementContent() {
   const createDefaultMovementForms = () => ({
     insertion: {
@@ -11760,6 +11767,7 @@ function TrainMovementContent() {
     const toManual = form.toManual || (preview ? "18:35" : "");
     const nextWashSuffix = getTp1NextWashSuffix(form);
     const cmmsNumber = String(form.cmmsNumber || "").replace(/[^0-9A-Za-z/-]/g, "").trim();
+    const l3ReportUpdatedBy = normalizeTp1MaintReportConfirmer(form.l3ReportUpdatedBy);
 
     if (movementType === "automatic") {
       const titleLine = `${displayTrain}: ${planStatus} movement to Automatic Area.${nextWashSuffix}`;
@@ -11793,8 +11801,8 @@ function TrainMovementContent() {
     const manualCmmsHandoverLine = buildTp1ManualCmmsHandoverLine({
       time: toManual,
       cmmsNumber,
-      l3ReportUpdatedToMaintenance: Boolean(form.l3ReportUpdatedToMaintenance),
-      confirmedBy: form.l3ReportUpdatedBy,
+      l3ReportUpdatedToMaintenance: Boolean(l3ReportUpdatedBy),
+      confirmedBy: l3ReportUpdatedBy,
     });
 
     return [
@@ -11824,6 +11832,7 @@ function TrainMovementContent() {
     const selectedAutomaticStablingRoad = formatTp1RoadForLog(form.automaticStablingRoad);
     const stablingRoad = movementType === "automatic" ? (selectedAutomaticStablingRoad || findTp1TrainStablingRoad(normalizedTrain) || "Automatic Area") : "";
     const pstPerformedTime = form.pstPerformedTime || "";
+    const l3ReportUpdatedBy = normalizeTp1MaintReportConfirmer(form.l3ReportUpdatedBy);
     const entry = {
       id: `tp1-movement-${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
       type: movementType,
@@ -11841,8 +11850,8 @@ function TrainMovementContent() {
       fromTp1: form.fromTp1,
       toManual: form.toManual,
       cmmsNumber: form.cmmsNumber || "",
-      l3ReportUpdatedToMaintenance: Boolean(form.l3ReportUpdatedToMaintenance),
-      l3ReportUpdatedBy: form.l3ReportUpdatedBy || "",
+      l3ReportUpdatedToMaintenance: Boolean(l3ReportUpdatedBy),
+      l3ReportUpdatedBy,
       nextWashText: form.nextWashText || "",
       createdAt: now.toISOString(),
       text,
@@ -13020,7 +13029,8 @@ function TrainMovementContent() {
     const manualFromTp1Ready = manualShunterReady && isTp1TimeReadyForMode("fromTp1");
     const manualToManualReady = manualFromTp1Ready && isTp1TimeReadyForMode("toManual");
     const manualCmmsReady = manualToManualReady && Boolean(String(modeForm.cmmsNumber || "").trim()) && isTp1FlowFieldSettled("cmmsNumber");
-    const manualL3ReportUpdated = Boolean(modeForm.l3ReportUpdatedToMaintenance);
+    const manualL3ReportUpdatedBy = normalizeTp1MaintReportConfirmer(modeForm.l3ReportUpdatedBy);
+    const manualL3ReportUpdated = Boolean(manualL3ReportUpdatedBy);
 
     const manualFlowSteps = [
       {
@@ -13124,42 +13134,25 @@ function TrainMovementContent() {
       },
       {
         key: "l3ReportUpdatedToMaintenance",
-        label: "L3 Report Updated to MAINT",
+        label: "If Siraj/Rayan confirm No need update.",
         visible: manualCmmsReady,
         complete: manualL3ReportUpdated,
         render: () => (
-          <button
-            type="button"
-            role="checkbox"
-            aria-checked={manualL3ReportUpdated}
-            onClick={() => {
-              const isChecked = !manualL3ReportUpdated;
-              updateTp1ModeForm(movementType, "l3ReportUpdatedToMaintenance", isChecked);
-              if (!isChecked) updateTp1ModeForm(movementType, "l3ReportUpdatedBy", "");
+          <select
+            aria-label="Confirmed by"
+            value={manualL3ReportUpdatedBy}
+            onChange={(event) => {
+              const confirmedBy = event.target.value;
+              updateTp1ModeForm(movementType, "l3ReportUpdatedBy", confirmedBy);
+              updateTp1ModeForm(movementType, "l3ReportUpdatedToMaintenance", Boolean(confirmedBy));
             }}
-            className={`theme-tp1-maint-report-toggle flex h-8 w-full items-center gap-2 rounded-lg border px-2 text-left text-[11px] font-medium transition-all ${manualL3ReportUpdated ? "is-checked border-emerald-400/80 bg-emerald-950/35 text-emerald-100 shadow-[0_0_12px_rgba(34,197,94,0.22)]" : "border-[#1e4060] bg-[#061827] text-[#9fb5c8]"}`}
-          >
-            <span className={`theme-tp1-maint-report-check flex h-4 w-4 shrink-0 items-center justify-center rounded border ${manualL3ReportUpdated ? "border-emerald-300 bg-emerald-500 text-white" : "border-[#41647f] bg-[#0a2236] text-transparent"}`}>
-              <Check size={11} strokeWidth={3} />
-            </span>
-            <span>Tick IF No need add "Hand Over Process"</span>
-          </button>
-        ),
-      },
-      {
-        key: "l3ReportUpdatedBy",
-        label: "Confirmed by (Optional)",
-        visible: manualCmmsReady,
-        complete: Boolean(String(modeForm.l3ReportUpdatedBy || "").trim()),
-        render: () => (
-          <input
-            type="text"
-            maxLength={60}
-            value={modeForm.l3ReportUpdatedBy || ""}
-            onChange={(event) => updateTp1ModeForm(movementType, "l3ReportUpdatedBy", event.target.value)}
-            placeholder="e.g. Siraj"
             className={inputClass}
-          />
+          >
+            <option value="">Confirmed by</option>
+            {TP1_MAINT_REPORT_CONFIRMERS.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
         ),
       },
       {

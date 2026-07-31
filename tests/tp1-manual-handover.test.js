@@ -58,11 +58,12 @@ test("confirmed-by names are normalized for the generated sentence", () => {
   assert.equal(formatTp1HandoverConfirmedBy("  mohd SIRAJ  "), "Mohd Siraj");
 });
 
-test("the Manual Area flow wires the maintenance-report tick and confirmation field", () => {
-  assert.match(depotStablingSource, /label: "L3 Report Updated to MAINT"/);
-  assert.match(depotStablingSource, /role="checkbox"/);
-  assert.match(depotStablingSource, /Tick IF No need add "Hand Over Process"/);
-  assert.match(depotStablingSource, /label: "Confirmed by \(Optional\)"/);
-  assert.match(depotStablingSource, /label: "Confirmed by \(Optional\)",\s*visible: manualCmmsReady,/);
+test("the Manual Area flow combines maintenance confirmation into one dropdown step", () => {
+  assert.match(depotStablingSource, /label: "If Siraj\/Rayan confirm No need update\."/);
+  assert.match(depotStablingSource, /const TP1_MAINT_REPORT_CONFIRMERS = \["Siraj", "Rayan"\];/);
+  assert.match(depotStablingSource, /<select\s+aria-label="Confirmed by"/);
+  assert.match(depotStablingSource, /updateTp1ModeForm\(movementType, "l3ReportUpdatedToMaintenance", Boolean\(confirmedBy\)\)/);
+  assert.doesNotMatch(depotStablingSource, /label: "Confirmed by \(Optional\)"/);
+  assert.doesNotMatch(depotStablingSource, /Tick IF No need add "Hand Over Process"/);
   assert.match(depotStablingSource, /buildTp1ManualCmmsHandoverLine\(\{/);
 });
