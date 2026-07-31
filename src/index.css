@@ -7695,9 +7695,26 @@ html[data-app-theme="light"] .theme-movement-sheet-action {
 }
 
 .theme-movement-add-row-attention {
+  display: inline-flex !important;
+  height: 1.75rem !important;
+  align-items: center !important;
+  gap: 0.25rem !important;
+  border: 1px solid #2f6084 !important;
+  border-radius: 9999px !important;
+  background: #0a2236 !important;
+  padding: 0 0.75rem !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
   transform-origin: center;
   animation: movement-add-row-attention 1.55s ease-in-out infinite;
   will-change: transform, filter;
+}
+
+.theme-movement-add-row-attention:hover {
+  border-color: #58a6ff !important;
+  color: #ffffff !important;
 }
 
 .theme-movement-add-row-attention svg {
@@ -7707,7 +7724,33 @@ html[data-app-theme="light"] .theme-movement-sheet-action {
 }
 
 html[data-app-theme="light"] .theme-movement-add-row-attention {
+  border-color: #60a5fa !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.10) !important;
   --movement-add-row-static-glow: rgba(2, 132, 199, 0.42);
+}
+
+html[data-app-theme="light"] .theme-movement-add-row-attention:hover {
+  border-color: #60a5fa !important;
+  color: #0f172a !important;
+}
+
+/* Depot-specific light-theme rules are intentionally more specific, so the
+   selected PG button needs an equally specific shared-style override. */
+html[data-app-theme="light"] :is(
+  .theme-insertion-page .theme-insertion-section[data-depot] .theme-insertion-pg-button.is-selected.theme-movement-add-row-attention,
+  .theme-pst-section .theme-insertion-pg-switch > span .theme-insertion-pg-button.is-selected.theme-movement-add-row-attention
+) {
+  height: 1.75rem !important;
+  border: 1px solid #60a5fa !important;
+  border-radius: 9999px !important;
+  background: #ffffff !important;
+  padding: 0 0.75rem !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.10) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -8854,21 +8897,6 @@ html[data-app-theme="light"] .theme-tp1-movement-log-body {
 html[data-app-theme="light"] .theme-tp1-movement-log-entry {
   background: var(--tp1-log-row-bg) !important;
   border-color: var(--tp1-border) !important;
-}
-
-/* PST / Train Prep and Insertion PG1 / PG2 selectors reuse the Add Row
-   attention animation on the selected plan only. */
-:is(.theme-pst-section, .theme-insertion-section) .theme-insertion-pg-button.is-selected {
-  position: relative;
-  z-index: 1;
-  outline: 2px solid currentColor;
-  outline-offset: 1px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :is(.theme-pst-section, .theme-insertion-section) .theme-insertion-pg-button.is-selected {
-    outline-offset: 2px;
-  }
 }
 
 /* Manual Area: draw attention to the required SR number for unplanned moves. */
