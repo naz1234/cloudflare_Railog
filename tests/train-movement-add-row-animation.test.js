@@ -11,15 +11,27 @@ const themeStyles = readFileSync(
   "utf8",
 );
 
-test("only the movement Add Row action receives the attention animation hook", () => {
+test("the movement Add Row action keeps the attention animation hook", () => {
   assert.equal(
     (depotStablingSource.match(/theme-movement-add-row-attention/g) || []).length,
-    1,
+    2,
   );
   assert.match(
     depotStablingSource,
     /theme-movement-add-row-attention[^>]*>[\s\S]*?<Plus size=\{12\} \/>Add Row/,
   );
+});
+
+test("selected PST and insertion PG controls reuse the Add Row animation", () => {
+  assert.equal(
+    (depotStablingSource.match(/<InsertionPgHeaderControls/g) || []).length,
+    2,
+  );
+  assert.match(
+    depotStablingSource,
+    /theme-insertion-pg-button \$\{selected \? "is-selected theme-movement-add-row-attention" : ""\}/,
+  );
+  assert.doesNotMatch(themeStyles, /@keyframes theme-pg-selected-attention/);
 });
 
 test("the Add Row animation includes a reduced-motion fallback", () => {
