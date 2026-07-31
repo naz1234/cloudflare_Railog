@@ -33,3 +33,18 @@ test("light mode keeps the refresh control above the train input click layer", (
     /\.theme-insertion-card-refresh-trigger > \.theme-insertion-card-refresh \{\s*pointer-events: auto !important;/,
   );
 });
+
+test("sticky app header stays above insertion PG controls while scrolling", () => {
+  const headerZ = Number(
+    insertionSource.match(/<header className="app-top-header[^"]*z-\[(\d+)\]"/)?.[1],
+  );
+  const controlsStart = insertionSource.indexOf("function InsertionPgHeaderControls");
+  const controlsEnd = insertionSource.indexOf("function InsertionCell", controlsStart);
+  const controlsSource = insertionSource.slice(controlsStart, controlsEnd);
+  const controlZLevels = [...controlsSource.matchAll(/relative z-(\d+) inline-flex/g)]
+    .map((match) => Number(match[1]));
+
+  assert.ok(Number.isFinite(headerZ));
+  assert.ok(controlZLevels.length > 0);
+  assert.ok(controlZLevels.every((controlZ) => headerZ > controlZ));
+});

@@ -20142,7 +20142,7 @@ export default function DepotStablingPage() {
 
   return (
     <div className="app-shell min-h-screen font-inter bg-[#071828]">
-      <header className="app-top-header h-[56px] sticky top-0 z-20" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", borderBottom: "1px solid #1a3a56" }}>
+      <header className="app-top-header h-[56px] sticky top-0 z-[200]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", borderBottom: "1px solid #1a3a56" }}>
         <div className="w-full px-4 h-full flex items-center justify-start gap-6">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
