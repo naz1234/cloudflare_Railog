@@ -8856,39 +8856,18 @@ html[data-app-theme="light"] .theme-tp1-movement-log-entry {
   border-color: var(--tp1-border) !important;
 }
 
-/* PST / Train Prep and Insertion PG1 / PG2 selectors: keep the active
-   page unmistakable without animating inactive controls. */
-@keyframes theme-pg-selected-attention {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-    filter: brightness(1);
-    outline-offset: 1px;
-  }
-
-  50% {
-    transform: translateY(-1px) scale(1.07);
-    filter: brightness(1.16);
-    outline-offset: 4px;
-  }
-}
-
+/* PST / Train Prep and Insertion PG1 / PG2 selectors reuse the Add Row
+   attention animation on the selected plan only. */
 :is(.theme-pst-section, .theme-insertion-section) .theme-insertion-pg-button.is-selected {
   position: relative;
   z-index: 1;
   outline: 2px solid currentColor;
   outline-offset: 1px;
-  animation: theme-pg-selected-attention 1.55s ease-in-out infinite !important;
-  will-change: transform, filter;
 }
 
 @media (prefers-reduced-motion: reduce) {
   :is(.theme-pst-section, .theme-insertion-section) .theme-insertion-pg-button.is-selected {
-    animation: none !important;
-    transform: none !important;
-    filter: none !important;
     outline-offset: 2px;
-    will-change: auto;
   }
 }
 

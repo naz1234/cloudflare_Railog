@@ -5655,7 +5655,7 @@ function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2,
                 aria-pressed={selected}
                 aria-label={tooltipMessage || defaultTooltip}
                 title={tooltipMessage ? undefined : defaultTooltip}
-                className={`theme-insertion-pg-button ${selected ? "is-selected" : ""} rounded-full px-3 py-1 transition-all`}
+                className={`theme-insertion-pg-button ${selected ? "is-selected theme-movement-add-row-attention" : ""} rounded-full px-3 py-1 transition-all`}
                 style={selected ? MAIN_STABLING_BUTTON_PRIMARY : { color: "#7eb8e0", background: "transparent" }}
               >
                 {pg.toUpperCase()}
