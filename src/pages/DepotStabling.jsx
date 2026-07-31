@@ -13148,7 +13148,7 @@ function TrainMovementContent() {
             }}
             className={inputClass}
           >
-            <option value="">Confirmed by</option>
+            <option value="">Choose name if no update is needed</option>
             {TP1_MAINT_REPORT_CONFIRMERS.map((name) => (
               <option key={name} value={name}>{name}</option>
             ))}

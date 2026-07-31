@@ -62,6 +62,7 @@ test("the Manual Area flow combines maintenance confirmation into one dropdown s
   assert.match(depotStablingSource, /label: "If Siraj\/Rayan confirm No need update\."/);
   assert.match(depotStablingSource, /const TP1_MAINT_REPORT_CONFIRMERS = \["Siraj", "Rayan"\];/);
   assert.match(depotStablingSource, /<select\s+aria-label="Confirmed by"/);
+  assert.match(depotStablingSource, /<option value="">Choose name if no update is needed<\/option>/);
   assert.match(depotStablingSource, /updateTp1ModeForm\(movementType, "l3ReportUpdatedToMaintenance", Boolean\(confirmedBy\)\)/);
   assert.doesNotMatch(depotStablingSource, /label: "Confirmed by \(Optional\)"/);
   assert.doesNotMatch(depotStablingSource, /Tick IF No need add "Hand Over Process"/);
