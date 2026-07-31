@@ -59,7 +59,7 @@ test("confirmed-by names are normalized for the generated sentence", () => {
 });
 
 test("the Manual Area flow combines maintenance confirmation into one dropdown step", () => {
-  assert.match(depotStablingSource, /label: "If Siraj\/Rayan confirm No need update\."/);
+  assert.match(depotStablingSource, /label: "If No need update"/);
   assert.match(depotStablingSource, /const TP1_MAINT_REPORT_CONFIRMERS = \["Siraj", "Rayan"\];/);
   assert.match(depotStablingSource, /<select\s+aria-label="Confirmed by"/);
   assert.match(depotStablingSource, /<option value="">Choose name if no update is needed<\/option>/);
