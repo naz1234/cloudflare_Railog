@@ -1357,33 +1357,33 @@ export default function OvertimeTracker() {
       )}
       <section
         data-testid="pay-forecast-hero"
-        className="overtime-forecast-hero relative min-w-0 overflow-visible rounded-[18px] border border-[#315574] bg-[radial-gradient(circle_at_92%_8%,rgba(45,145,255,0.10),transparent_32%),linear-gradient(145deg,rgba(8,29,48,0.99),rgba(5,20,35,0.99))] px-4 py-5 shadow-[0_18px_48px_rgba(0,0,0,0.25)] sm:px-6 lg:col-span-10 lg:px-7 lg:py-5"
+        className="overtime-forecast-hero relative min-w-0 overflow-visible rounded-[18px] border border-[#315574] bg-[radial-gradient(circle_at_92%_8%,rgba(45,145,255,0.10),transparent_32%),linear-gradient(145deg,rgba(8,29,48,0.99),rgba(5,20,35,0.99))] px-4 py-4 shadow-[0_18px_48px_rgba(0,0,0,0.25)] sm:px-6 lg:col-span-10 lg:px-7 lg:py-4"
       >
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_1px_minmax(330px,0.9fr)] lg:items-center">
-          <div className="flex min-w-0 items-start gap-4 sm:gap-5">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-emerald-400/35 bg-[radial-gradient(circle_at_50%_30%,rgba(52,211,153,0.16),rgba(6,27,44,0.78))] text-emerald-200 shadow-[0_10px_28px_rgba(16,185,129,0.10)] sm:h-20 sm:w-20">
-              <WalletCards aria-hidden="true" className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={1.8} />
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_1px_minmax(330px,0.9fr)] lg:items-center">
+          <div className="flex min-w-0 items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-emerald-400/35 bg-[radial-gradient(circle_at_50%_30%,rgba(52,211,153,0.16),rgba(6,27,44,0.78))] text-emerald-200 shadow-[0_10px_28px_rgba(16,185,129,0.10)] sm:h-16 sm:w-16">
+              <WalletCards aria-hidden="true" className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={1.8} />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-[21px] font-semibold leading-tight text-[#f5f8ff] sm:text-[24px]">
+              <h2 className="text-[20px] font-semibold leading-tight text-[#f5f8ff] sm:text-[23px]">
                 {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} Pay Forecast
               </h2>
-              <p className="mt-2 text-[14px] text-[#a9bbcf]">Expected salary</p>
+              <p className="mt-1.5 text-[13px] text-[#a9bbcf]">Expected salary</p>
               <p
-                className="overtime-cockpit-money mt-1 break-words text-[clamp(2.4rem,5vw,4rem)] font-semibold leading-none tracking-[-0.035em] text-emerald-300"
+                className="overtime-cockpit-money mt-1 break-words text-[clamp(2.3375rem,calc(5vw-1px),3.9375rem)] font-semibold leading-none tracking-[-0.035em] text-emerald-300"
                 aria-live="polite"
                 aria-label={"Expected salary, SAR " + formatMoney(expectedSalary)}
               >
                 SAR {formatMoney(expectedSalary)}
               </p>
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-center">
+              <div className="mt-3 grid gap-2.5 sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-center">
                 {forecastBreakdown.map((item, index) => (
                   <Fragment key={item.label}>
-                    {index > 0 && <span aria-hidden="true" className="hidden text-[28px] font-light text-[#758ba4] sm:block">+</span>}
+                    {index > 0 && <span aria-hidden="true" className="hidden text-[27px] font-light text-[#758ba4] sm:block">+</span>}
                     <div className="min-w-0">
-                      <p className="text-[18px] font-semibold leading-tight text-[#eef3fa]">SAR {formatMoney(item.value)}</p>
-                      <p className="mt-1 text-[12px] text-[#8fa6be]">{item.label}</p>
+                      <p className="text-[17px] font-semibold leading-tight text-[#eef3fa]">SAR {formatMoney(item.value)}</p>
+                      <p className="mt-0.5 text-[11px] text-[#8fa6be]">{item.label}</p>
                     </div>
                   </Fragment>
                 ))}
@@ -1391,29 +1391,29 @@ export default function OvertimeTracker() {
             </div>
           </div>
 
-          <div aria-hidden="true" className="hidden h-full min-h-[165px] w-px bg-[#315574]/80 lg:block" />
+          <div aria-hidden="true" className="hidden h-full min-h-[145px] w-px bg-[#315574]/80 lg:block" />
 
           <div className="relative min-w-0">
             <div className="flex items-center justify-end gap-2">
-              <span className="overtime-cockpit-selection inline-flex items-center gap-1.5 rounded-[9px] border border-violet-400/45 bg-violet-500/10 px-3 py-1.5 text-[11px] font-semibold text-violet-200">
-                <CalendarDays aria-hidden="true" className="h-3.5 w-3.5" />
+              <span className="overtime-cockpit-selection inline-flex items-center gap-1.5 rounded-[9px] border border-violet-400/45 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold text-violet-200">
+                <CalendarDays aria-hidden="true" className="h-3 w-3" />
                 {MONTHS[selectedMonth].slice(0, 3).toUpperCase()} work
-                <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
+                <ArrowRight aria-hidden="true" className="h-3 w-3" />
                 {MONTHS[salaryPeriod.monthIndex].slice(0, 3).toUpperCase()} salary
               </span>
               <details data-testid="salary-bases-summary" className="group relative">
                 <summary
-                  className="overtime-salary-settings-trigger flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-[9px] border border-[#365779] bg-[#0b2137] text-[#9fb1c8] outline-none transition hover:border-cyan-400/60 hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-400/50 [&::-webkit-details-marker]:hidden"
+                  className="overtime-salary-settings-trigger flex h-7 w-7 cursor-pointer list-none items-center justify-center rounded-[9px] border border-[#365779] bg-[#0b2137] text-[#9fb1c8] outline-none transition hover:border-cyan-400/60 hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-400/50 [&::-webkit-details-marker]:hidden"
                   aria-label="Salary settings"
                   title="Basic Salary and Salary + Laundry"
                 >
-                  <Settings2 aria-hidden="true" className="h-4 w-4" />
+                  <Settings2 aria-hidden="true" className="h-3.5 w-3.5" />
                 </summary>
-                <div className="overtime-salary-settings-popover absolute right-0 top-10 z-30 w-[min(360px,calc(100vw-3rem))] rounded-[15px] border border-[#315574] bg-[#0b2137] p-3.5 shadow-[0_18px_45px_rgba(0,0,0,0.42)]">
-                  <p className="text-[12px] font-semibold text-[#e6eef8]">Basic Salary and Salary + Laundry</p>
+                <div className="overtime-salary-settings-popover absolute right-0 top-9 z-30 w-[min(360px,calc(100vw-3rem))] rounded-[15px] border border-[#315574] bg-[#0b2137] p-3.5 shadow-[0_18px_45px_rgba(0,0,0,0.42)]">
+                  <p className="text-[11px] font-semibold text-[#e6eef8]">Basic Salary and Salary + Laundry</p>
                   <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <label htmlFor="overtime-basic-salary" className="min-w-0">
-                      <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#8fa6be]">Basic salary</span>
+                      <span className="text-[9px] font-medium uppercase tracking-[0.12em] text-[#8fa6be]">Basic salary</span>
                       <input
                         id="overtime-basic-salary"
                         type="text"
@@ -1421,11 +1421,11 @@ export default function OvertimeTracker() {
                         autoComplete="off"
                         value={allowanceDraft.basicSalary}
                         onChange={(event) => handleAllowanceFieldChange("basicSalary", sanitizeDecimalInput(event.target.value))}
-                        className="mt-1.5 h-11 w-full rounded-[10px] border border-[#405f7c] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none focus:border-cyan-400/65 focus:ring-2 focus:ring-cyan-400/15"
+                        className="mt-1.5 h-10 w-full rounded-[10px] border border-[#405f7c] bg-[#102b46] px-3 text-[13px] font-semibold text-[#f4f8fd] outline-none focus:border-cyan-400/65 focus:ring-2 focus:ring-cyan-400/15"
                       />
                     </label>
                     <label htmlFor="overtime-salary-laundry" className="min-w-0">
-                      <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#8fa6be]">Salary + laundry</span>
+                      <span className="text-[9px] font-medium uppercase tracking-[0.12em] text-[#8fa6be]">Salary + laundry</span>
                       <input
                         id="overtime-salary-laundry"
                         type="text"
@@ -1433,7 +1433,7 @@ export default function OvertimeTracker() {
                         autoComplete="off"
                         value={allowanceDraft.salaryWithLaundry}
                         onChange={(event) => handleAllowanceFieldChange("salaryWithLaundry", sanitizeDecimalInput(event.target.value))}
-                        className="mt-1.5 h-11 w-full rounded-[10px] border border-[#405f7c] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none focus:border-cyan-400/65 focus:ring-2 focus:ring-cyan-400/15"
+                        className="mt-1.5 h-10 w-full rounded-[10px] border border-[#405f7c] bg-[#102b46] px-3 text-[13px] font-semibold text-[#f4f8fd] outline-none focus:border-cyan-400/65 focus:ring-2 focus:ring-cyan-400/15"
                       />
                     </label>
                   </div>
@@ -1441,11 +1441,11 @@ export default function OvertimeTracker() {
               </details>
             </div>
 
-            <label htmlFor="overtime-salary-received" className="mt-4 block text-[14px] font-medium text-[#c7d2df]">
+            <label htmlFor="overtime-salary-received" className="mt-3 block text-[13px] font-medium text-[#c7d2df]">
               Actual salary received
             </label>
 
-            <div className="mt-3 grid gap-2.5 sm:grid-cols-[1fr_auto]">
+            <div className="mt-2 grid gap-2.5 sm:grid-cols-[1fr_auto]">
               <input
                 id="overtime-salary-received"
                 type="text"
@@ -1454,13 +1454,13 @@ export default function OvertimeTracker() {
                 value={formatAmountInput(allowanceDraft.salaryReceived)}
                 onChange={(event) => handleAllowanceFieldChange("salaryReceived", sanitizeDecimalInput(event.target.value))}
                 placeholder={"Enter " + MONTHS[salaryPeriod.monthIndex] + " salary"}
-                className="h-12 w-full rounded-[10px] border border-[#47657f] bg-[#0b2137]/75 px-3 text-[15px] font-semibold text-[#f4f8fd] outline-none transition placeholder:text-[#7890aa] hover:border-cyan-400/70 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/20"
+                className="h-10 w-full rounded-[10px] border border-[#47657f] bg-[#0b2137]/75 px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none transition placeholder:text-[#7890aa] hover:border-cyan-400/70 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/20"
               />
               <button
                 type="button"
                 disabled={!allowanceResult.hasSalaryReceived}
                 onClick={() => void saveAllowanceDraft({ ...allowanceDraft })}
-                className="h-12 rounded-[10px] border border-cyan-300/70 bg-cyan-400 px-6 text-[13px] font-semibold text-[#061827] shadow-[0_8px_20px_rgba(34,211,238,0.16)] transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 disabled:cursor-not-allowed disabled:bg-cyan-400/55 disabled:text-[#061827]/70 disabled:opacity-100 sm:min-w-[132px]"
+                className="h-10 rounded-[10px] border border-cyan-300/70 bg-cyan-400 px-6 text-[12px] font-semibold text-[#061827] shadow-[0_8px_20px_rgba(34,211,238,0.16)] transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 disabled:cursor-not-allowed disabled:bg-cyan-400/55 disabled:text-[#061827]/70 disabled:opacity-100 sm:min-w-[132px]"
               >
                 Compare
               </button>
@@ -1469,7 +1469,7 @@ export default function OvertimeTracker() {
             <div
               id="overtime-comparison-result"
               data-status={allowanceResult.status.toLowerCase()}
-              className={["mt-4 inline-flex max-w-full items-center gap-2 rounded-[10px] border px-3 py-2 text-[12px]", allowanceStatusPillClass].join(" ")}
+              className={["mt-3 inline-flex max-w-full items-center gap-2 rounded-[10px] border px-3 py-1.5 text-[11px]", allowanceStatusPillClass].join(" ")}
               role="status"
               aria-live="polite"
             >
