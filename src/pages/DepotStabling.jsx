@@ -12847,9 +12847,9 @@ function TrainMovementContent() {
     const automaticShunterReady = automaticTrAtTp1Ready && Boolean(modeForm.shunterName);
     const automaticTrLocalizedReady = automaticShunterReady && isTp1TimeReadyForMode("trLocalized");
     const automaticStablingReady = automaticTrLocalizedReady && Boolean(modeForm.automaticStablingRoad);
-    const automaticTrainPrepReady = automaticStablingReady && isTp1TimeReadyForMode("trainPrepCompletedTime");
-    const automaticPstReady = automaticTrainPrepReady && isTp1TimeReadyForMode("pstPerformedTime");
-    const automaticCompletedDcReady = automaticPstReady && Boolean(String(modeForm.completedByDc || "").trim()) && isTp1FlowFieldSettled("completedByDc");
+    const automaticTrainPrepReady = isTp1TimeReadyForMode("trainPrepCompletedTime");
+    const automaticPstReady = isTp1TimeReadyForMode("pstPerformedTime");
+    const automaticCompletedDcReady = automaticStablingReady && Boolean(String(modeForm.completedByDc || "").trim()) && isTp1FlowFieldSettled("completedByDc");
     const automaticCmmsReady = automaticCompletedDcReady && Boolean(String(modeForm.cmmsNumber || "").trim()) && isTp1FlowFieldSettled("cmmsNumber");
 
     const automaticFlowSteps = [
@@ -12945,21 +12945,23 @@ function TrainMovementContent() {
       {
         key: "trainPrepCompletedTime",
         label: "Train Prep Completed",
-        visible: automaticStablingReady,
+        optional: true,
+        visible: automaticCmmsReady,
         complete: automaticTrainPrepReady,
         render: () => renderTp1TimeInput("trainPrepCompletedTime"),
       },
       {
         key: "pstPerformedTime",
         label: "PST Performed",
-        visible: automaticTrainPrepReady,
+        optional: true,
+        visible: automaticCmmsReady,
         complete: automaticPstReady,
         render: () => renderTp1TimeInput("pstPerformedTime"),
       },
       {
         key: "completedByDc",
         label: "Completed By DC",
-        visible: automaticPstReady,
+        visible: automaticStablingReady,
         complete: automaticCompletedDcReady,
         render: () => (
           <input

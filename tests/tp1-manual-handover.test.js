@@ -84,6 +84,29 @@ test("optional TP1 details are separated from the required movement flow", () =>
   assert.match(depotStablingSource, /step\.complete \? "DONE" : step\.optional \? "OPTIONAL" : "NEXT"/);
 });
 
+test("Automatic Area Train Prep and PST fields are optional details", () => {
+  assert.match(
+    depotStablingSource,
+    /label: "Train Prep Completed",\s+optional: true,\s+visible: automaticCmmsReady,/,
+  );
+  assert.match(
+    depotStablingSource,
+    /label: "PST Performed",\s+optional: true,\s+visible: automaticCmmsReady,/,
+  );
+  assert.match(
+    depotStablingSource,
+    /const automaticCompletedDcReady = automaticStablingReady &&/,
+  );
+  assert.doesNotMatch(
+    depotStablingSource,
+    /const automaticTrainPrepReady = automaticStablingReady &&/,
+  );
+  assert.doesNotMatch(
+    depotStablingSource,
+    /const automaticPstReady = automaticTrainPrepReady &&/,
+  );
+});
+
 test("the production arrival transform reads the nested Manual Area form", () => {
   const manualArrivalPluginSource = readFileSync(
     new URL("../build/manualArrivalTimePlugin.js", import.meta.url),
