@@ -83,3 +83,14 @@ test("optional TP1 details are separated from the required movement flow", () =>
   assert.match(depotStablingSource, /renderTp1FlowRows\(optionalFlowSteps, requiredFlowSteps\.length, "optional"\)/);
   assert.match(depotStablingSource, /step\.complete \? "DONE" : step\.optional \? "OPTIONAL" : "NEXT"/);
 });
+
+test("the production arrival transform reads the nested Manual Area form", () => {
+  const manualArrivalPluginSource = readFileSync(
+    new URL("../build/manualArrivalTimePlugin.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(manualArrivalPluginSource, /const manualForm = tp1Form\.manual \|\| \{\};/);
+  assert.match(manualArrivalPluginSource, /isCompleteMovementTimeInput\(modeForm\.toManual\)/);
+  assert.doesNotMatch(manualArrivalPluginSource, /isCompleteMovementTimeInput\(tp1Form\.toManual\)/);
+});
