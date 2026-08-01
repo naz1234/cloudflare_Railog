@@ -22,6 +22,13 @@ import {
   upsertTrainMovementLiveRecord,
 } from "../lib/trainMovementLiveSync";
 import { buildTp1ManualCmmsHandoverLine } from "../lib/tp1ManualHandover";
+import {
+  addOnBeforeRequestedSummaryTrailingDate,
+  formatRequestedSummaryEntryCount,
+  formatRequestedSummaryOtherAction,
+  normalizeRequestedSummaryDates,
+  removeRequestedSummaryLeadingSeparator,
+} from "../lib/requestedActionSummary";
 
 const DEFAULT_BOOKMARK_LINKS = [
   { title: "Outlook", url: "https://outlook.office.com", sortOrder: 0 },
@@ -22224,9 +22231,9 @@ function getRequestedSummaryBucketByLabel(groupMap, label = "RST") {
 }
 
 function formatRequestedSummaryPmActivityLabel(value = "") {
-  const fullTitle = cleanRequestLabel(value)
-    .replace(/[.!?]+$/, "")
-    .trim();
+  const fullTitle = addOnBeforeRequestedSummaryTrailingDate(
+    cleanRequestLabel(value).replace(/[.!?]+$/, "").trim()
+  );
 
   return fullTitle || "RST PM";
 }
@@ -22234,7 +22241,7 @@ function formatRequestedSummaryPmActivityLabel(value = "") {
 function formatRequestedSummaryCmActivityLabel(value = "") {
   const normalized = normalizeRequestIdentity(value);
   if (!normalized || normalized === "CM") return "RST CM";
-  return normalized;
+  return normalizeRequestedSummaryDates(cleanRequestLabel(value).replace(/[.!?]+$/, ""));
 }
 
 function getRequestedActionSummaryRowsFromRequests(requests = []) {
@@ -22321,53 +22328,48 @@ function buildRequestedActionSummaryLines(rows = []) {
   const inboundList = joinRequestedSummaryTrainList(inbound.trains);
 
   if (deepCleaningList) {
-    lines.push(`${deepCleaningList} performed Deep Cleaning.`);
+    lines.push(`${deepCleaningList} — deep cleaning completed.`);
   }
 
   if (inboundList) {
-    const verb = inbound.trains.length === 1 ? "was" : "were";
-    lines.push(`${inboundList} ${verb} requested for inbound movement G to C.`);
+    lines.push(`${inboundList} — inbound movement from G to C.`);
   }
 
   morningPmGroups.forEach((bucket, activityLabel) => {
     const trainList = joinRequestedSummaryTrainList(bucket.trains);
     if (!trainList) return;
-    const verb = bucket.trains.length === 1 ? "was" : "were";
-    lines.push(`${trainList} ${verb} requested for ${activityLabel}.`);
+    lines.push(`${trainList} — requested for ${activityLabel}.`);
   });
 
   todayPmGroups.forEach((bucket, activityLabel) => {
     const trainList = joinRequestedSummaryTrainList(bucket.trains);
     if (!trainList) return;
-    const verb = bucket.trains.length === 1 ? "was" : "were";
-    lines.push(`${trainList} ${verb} requested for ${activityLabel}.`);
+    lines.push(`${trainList} — requested for ${activityLabel}.`);
   });
 
   const cmList = joinRequestedSummaryTrainList(cm.trains);
   if (cmList) {
-    const verb = cm.trains.length === 1 ? "was" : "were";
-    lines.push(`${cmList} ${verb} requested for ${cmActivityLabel} activity. Closing SR.`);
+    lines.push(`${cmList} — requested for ${cmActivityLabel} activity; close the SR.`);
   }
 
   const tlcList = joinRequestedSummaryTrainList(tlc.trains);
   if (tlcList) {
-    lines.push(`${tlcList} requested for TLC team.`);
+    lines.push(`${tlcList} — requested for the TLC team.`);
   }
 
   otherGroups.forEach(({ label, bucket }) => {
     const trainList = joinRequestedSummaryTrainList(bucket.trains);
     if (!trainList) return;
 
-    const verb = bucket.trains.length === 1 ? "was" : "were";
     const cleanLabel = cleanRequestLabel(label);
     const normalizedLabel = normalizeRequestIdentity(cleanLabel);
     if (!normalizedLabel || normalizedLabel === "REQUEST") {
-      lines.push(`${trainList} ${verb} requested.`);
+      lines.push(`${trainList} — request recorded.`);
       return;
     }
 
     if (normalizedLabel === "LOW MILEAGE") {
-      lines.push(`${trainList}: low mileage.`);
+      lines.push(`${trainList} — low mileage.`);
       return;
     }
 
@@ -22387,21 +22389,23 @@ function buildRequestedActionSummaryLines(rows = []) {
         .replace(/[.!?]+$/, "")
         .trim();
 
-      lines.push(`${trainList}: Do not wash${restrictionDetails ? ` ${restrictionDetails}` : ""}.`);
+      lines.push(`${trainList} — do not wash${restrictionDetails ? ` ${restrictionDetails}` : ""}.`);
       return;
     }
 
     const washMatch = cleanLabel.match(/^WASH(?:\s+(.+))?$/i);
     if (washMatch) {
-      const washDate = cleanRequestLabel(washMatch[1] || "").replace(/[.!?]+$/, "");
+      const washDate = removeRequestedSummaryLeadingSeparator(
+        cleanRequestLabel(washMatch[1] || "").replace(/[.!?]+$/, ""),
+      );
       lines.push(washDate
-        ? `${trainList} ${verb} scheduled for washing on ${washDate}.`
-        : `${trainList} ${verb} scheduled for washing.`);
+        ? `${trainList} — scheduled for washing on ${washDate}.`
+        : `${trainList} — scheduled for washing.`);
       return;
     }
 
-    const sentenceEnd = /[.!?]$/.test(cleanLabel) ? "" : ".";
-    lines.push(`${trainList} ${verb} requested for ${cleanLabel}${sentenceEnd}`);
+    const action = formatRequestedSummaryOtherAction(cleanLabel);
+    lines.push(`${trainList} — ${action}.`);
   });
 
   return lines;
@@ -22428,7 +22432,7 @@ const REQUESTED_ACTION_SUMMARY_GROUPS = [
   },
   {
     key: "others",
-    title: "Others",
+    title: "Other Requests",
     headingClass: "border-slate-400/40 bg-slate-500/10 text-slate-200",
     bulletClass: "text-slate-300",
   },
@@ -23293,7 +23297,7 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
     <div className="theme-request-type-summary w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[12px] leading-snug text-[#eaf4ff]">
       <div className="mb-1.5 flex w-full items-center justify-between gap-2">
         <h2 className="text-[11px] font-black uppercase tracking-widest text-white">
-          Request Type Summary
+          Request Summary by Type
         </h2>
         <button
           type="button"
@@ -23313,7 +23317,9 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
               className={`inline-flex min-h-5 items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] ${group.headingClass}`}
             >
               <span>{group.title}</span>
-              <span className="text-[9px] font-normal opacity-75">{group.lines.length}</span>
+              <span className="text-[9px] font-normal opacity-75">
+                {formatRequestedSummaryEntryCount(group.lines.length)}
+              </span>
             </div>
             <div className="mt-1.5 space-y-1.5 pl-1">
               {group.lines.map((line, index) => (
