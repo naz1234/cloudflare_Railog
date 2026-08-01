@@ -21066,7 +21066,7 @@ export default function DepotStablingPage() {
               ) : (
                 <div className="space-y-3">
                   <div className="rounded-[20px] border border-[#1d4869] bg-[#061827]/90 p-3 shadow-[0_14px_42px_rgba(0,0,0,0.22)]">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2.5">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[10px] font-semibold tracking-[0.14em] text-[#bceaff]">
                         OVT
                       </div>
@@ -21075,6 +21075,7 @@ export default function DepotStablingPage() {
                         <h2 className="truncate text-[16px] font-normal leading-tight text-white">Overtime</h2>
                         <p className="mt-0.5 text-[10px] font-semibold text-emerald-300">Admin session unlocked for this browser tab.</p>
                       </div>
+                      <div id="overtime-toolbar-actions" className="order-3 flex w-full justify-end sm:order-none sm:w-auto" />
                       <button
                         type="button"
                         onClick={handleOvertimeLogout}

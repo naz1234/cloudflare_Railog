@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Banknote, BarChart3, Calculator, CalendarDays, Check, CircleDollarSign, Clock3, Download, FilePlus2, ListChecks, Loader2, MessageSquareText, Moon, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { ArrowRight, BarChart3, Calculator, CalendarDays, Clock3, Download, FilePlus2, ListChecks, Loader2, MessageSquareText, Moon, Pencil, Plus, Save, Settings2, Trash2, WalletCards, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import NightShiftPdfDetector from "@/components/NightShiftPdfDetector";
@@ -477,6 +478,7 @@ export default function OvertimeTracker() {
   const [allowanceDraft, setAllowanceDraft] = useState(() => createAllowanceDraft(today.getFullYear(), today.getMonth()));
   const [allowanceDirty, setAllowanceDirty] = useState(false);
   const [allowanceSyncStatus, setAllowanceSyncStatus] = useState("Local cache ready");
+  const [toolbarPortalTarget, setToolbarPortalTarget] = useState(/** @type {HTMLElement | null} */ (null));
   const noteSyncInProgressRef = useRef(false);
   const allowanceSyncInProgressRef = useRef(false);
   const allowanceDirtyRef = useRef(false);
@@ -538,6 +540,10 @@ export default function OvertimeTracker() {
     if (allowanceRetryTimerRef.current !== null) {
       window.clearTimeout(allowanceRetryTimerRef.current);
     }
+  }, []);
+
+  useEffect(() => {
+    setToolbarPortalTarget(document.getElementById("overtime-toolbar-actions"));
   }, []);
 
   useEffect(() => {
@@ -887,10 +893,6 @@ export default function OvertimeTracker() {
     setExtraYears((current) => current.includes(year) ? current : [...current, year]);
     if (!editingId) resetDraft(`${year}-${String(selectedMonth + 1).padStart(2, "0")}-01`);
     resetNoteDraft(`${year}-${String(selectedMonth + 1).padStart(2, "0")}-01`);
-  };
-
-  const handleAddNextYear = () => {
-    handleYearChange(selectedYear + 1);
   };
 
   const resetDraft = (date = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-01`) => {
@@ -1268,28 +1270,32 @@ export default function OvertimeTracker() {
   const allowanceStatusDescription = allowanceResult.status === "WAITING"
     ? `Enter the ${MONTHS[salaryPeriod.monthIndex]} salary to compare it with the forecast.`
     : `${MONTHS[salaryPeriod.monthIndex]} ${salaryPeriod.year} salary compared with ${MONTHS[selectedMonth]} allowances.`;
-  const allowanceStatusCardClass = allowanceResult.status === "CORRECT"
-    ? "border-emerald-400/35 bg-emerald-500/[0.08]"
+  const allowanceStatusPillClass = allowanceResult.status === "CORRECT"
+    ? "border-emerald-400/40 bg-emerald-500/[0.08] text-emerald-200"
     : allowanceResult.status === "SHORT"
-      ? "border-rose-400/40 bg-rose-500/[0.08]"
+      ? "border-rose-400/45 bg-rose-500/[0.08] text-rose-200"
       : allowanceResult.status === "EXTRA"
-        ? "border-amber-400/40 bg-amber-500/[0.08]"
-        : "border-[#365779] bg-[#0b2137]/70";
+        ? "border-cyan-400/40 bg-cyan-500/[0.08] text-cyan-200"
+        : "border-amber-400/45 bg-amber-500/[0.08] text-amber-200";
+  const allowanceStatusDotClass = allowanceResult.status === "CORRECT"
+    ? "bg-emerald-400"
+    : allowanceResult.status === "SHORT"
+      ? "bg-rose-400"
+      : allowanceResult.status === "EXTRA"
+        ? "bg-cyan-400"
+        : "bg-amber-400";
   const forecastBreakdown = [
     {
       label: "Salary + laundry",
       value: parseAmount(allowanceDraft.salaryWithLaundry),
-      helper: "Payroll basis",
     },
     {
       label: "Night allowance",
       value: allowanceResult.nightAllowance,
-      helper: `${allowanceResult.nightDays} nights × SAR ${formatMoney(NIGHT_ALLOWANCE_RATE)}`,
     },
     {
-      label: "Expected overtime",
+      label: "Overtime",
       value: allowanceResult.expectedOvertime,
-      helper: `${allowanceResult.overtimeHours.toFixed(1)} recorded hrs`,
     },
   ];
   const annualSummaryItems = [
@@ -1309,126 +1315,137 @@ export default function OvertimeTracker() {
     resetNoteDraft(monthDate);
   };
 
+  const handleAddEntryClick = () => {
+    const recordEntry = document.getElementById("overtime-record-entry");
+    if (!recordEntry) return;
+    recordEntry.focus({ preventScroll: true });
+    recordEntry.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "start",
+    });
+  };
+
   return (
     <div className="theme-overtime-page grid gap-3 lg:grid-cols-10">
+      {toolbarPortalTarget && createPortal(
+        <div className="theme-overtime-toolbar flex flex-wrap items-center justify-end gap-2">
+          <select
+            value={selectedYear}
+            onChange={(event) => handleYearChange(event.target.value)}
+            className="h-10 min-w-[108px] rounded-xl border border-[#365779] bg-[#0b2137] px-3 text-[13px] font-semibold text-[#eef5ff] outline-none transition focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/15"
+            aria-label="Overtime year"
+          >
+            {availableYears.map((year) => <option key={year} value={year}>{year}</option>)}
+          </select>
+          <button
+            type="button"
+            onClick={handleAddEntryClick}
+            className="flex h-10 items-center gap-2 rounded-xl border border-cyan-400/70 bg-transparent px-4 text-[12px] font-semibold text-cyan-100 transition hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
+          >
+            <Plus aria-hidden="true" className="h-4 w-4" /> Add entry
+          </button>
+          <button
+            type="button"
+            onClick={exportCsv}
+            disabled={!recordsForYear.length}
+            className="flex h-10 items-center gap-2 rounded-xl border border-[#365779] bg-[#0b2137] px-4 text-[12px] font-semibold text-[#dce8f7] transition hover:border-[#577a98] hover:bg-[#102b46] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Download aria-hidden="true" className="h-4 w-4" /> Export
+          </button>
+        </div>,
+        toolbarPortalTarget
+      )}
       <section
         data-testid="pay-forecast-hero"
-        className="overtime-forecast-hero min-w-0 overflow-hidden rounded-[24px] border border-[#315574] bg-[radial-gradient(circle_at_8%_0%,rgba(16,185,129,0.12),transparent_32%),radial-gradient(circle_at_92%_8%,rgba(45,145,255,0.10),transparent_30%),linear-gradient(145deg,rgba(8,29,48,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_20px_55px_rgba(0,0,0,0.28)] sm:p-5 lg:col-span-10"
+        className="overtime-forecast-hero relative min-w-0 overflow-visible rounded-[18px] border border-[#315574] bg-[radial-gradient(circle_at_92%_8%,rgba(45,145,255,0.10),transparent_32%),linear-gradient(145deg,rgba(8,29,48,0.99),rgba(5,20,35,0.99))] px-4 py-5 shadow-[0_18px_48px_rgba(0,0,0,0.25)] sm:px-6 lg:col-span-10 lg:px-7 lg:py-5"
       >
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-          <div className="flex min-w-0 items-center gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-emerald-400/30 bg-emerald-500/10 text-emerald-200 shadow-[0_8px_24px_rgba(16,185,129,0.14)]">
-              <CircleDollarSign aria-hidden="true" className="h-5 w-5" strokeWidth={1.9} />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_1px_minmax(330px,0.9fr)] lg:items-center">
+          <div className="flex min-w-0 items-start gap-4 sm:gap-5">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-emerald-400/35 bg-[radial-gradient(circle_at_50%_30%,rgba(52,211,153,0.16),rgba(6,27,44,0.78))] text-emerald-200 shadow-[0_10px_28px_rgba(16,185,129,0.10)] sm:h-20 sm:w-20">
+              <WalletCards aria-hidden="true" className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={1.8} />
             </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#9fb1c8]">Payroll forecast</p>
-              <h2 className="mt-1 text-[20px] font-semibold leading-tight text-[#f5f8ff] sm:text-[24px]">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[21px] font-semibold leading-tight text-[#f5f8ff] sm:text-[24px]">
                 {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} Pay Forecast
               </h2>
-              <p className="mt-1 text-[12px] text-[#91a6be]">
-                Forecast from {MONTHS[selectedMonth]} overtime and night-shift records.
+              <p className="mt-2 text-[14px] text-[#a9bbcf]">Expected salary</p>
+              <p
+                className="overtime-cockpit-money mt-1 break-words text-[clamp(2.4rem,5vw,4rem)] font-semibold leading-none tracking-[-0.035em] text-emerald-300"
+                aria-live="polite"
+                aria-label={"Expected salary, SAR " + formatMoney(expectedSalary)}
+              >
+                SAR {formatMoney(expectedSalary)}
               </p>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-center">
+                {forecastBreakdown.map((item, index) => (
+                  <Fragment key={item.label}>
+                    {index > 0 && <span aria-hidden="true" className="hidden text-[28px] font-light text-[#758ba4] sm:block">+</span>}
+                    <div className="min-w-0">
+                      <p className="text-[18px] font-semibold leading-tight text-[#eef3fa]">SAR {formatMoney(item.value)}</p>
+                      <p className="mt-1 text-[12px] text-[#8fa6be]">{item.label}</p>
+                    </div>
+                  </Fragment>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={selectedYear}
-              onChange={(event) => handleYearChange(event.target.value)}
-              className="h-11 min-w-[92px] rounded-xl border border-[#365779] bg-[#0b2137] px-3 text-[13px] font-semibold text-[#eef5ff] outline-none transition focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/15"
-              aria-label="Overtime year"
-            >
-              {availableYears.map((year) => <option key={year} value={year}>{year}</option>)}
-            </select>
-            <button
-              type="button"
-              onClick={handleAddNextYear}
-              className="flex h-11 items-center gap-1.5 rounded-xl border border-[#365779] bg-[#0b2137] px-3 text-[12px] font-semibold text-[#dce8f7] transition hover:border-[#577a98] hover:bg-[#102b46] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
-              title={"Add and open " + (selectedYear + 1)}
-              aria-label={"Add year " + (selectedYear + 1)}
-            >
-              <Plus aria-hidden="true" className="h-4 w-4" /> Year
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const recordEntry = document.getElementById("overtime-record-entry");
-                if (!recordEntry) return;
-                recordEntry.focus({ preventScroll: true });
-                recordEntry.scrollIntoView({
-                  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-                  block: "start",
-                });
-              }}
-              className="flex h-11 items-center gap-1.5 rounded-xl border border-cyan-400/55 bg-cyan-500/10 px-3.5 text-[12px] font-semibold text-cyan-100 transition hover:border-cyan-300 hover:bg-cyan-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
-            >
-              <Plus aria-hidden="true" className="h-4 w-4" /> Add entry
-            </button>
-            <button
-              type="button"
-              onClick={exportCsv}
-              disabled={!recordsForYear.length}
-              className="flex h-11 items-center gap-2 rounded-xl border border-[#365779] bg-[#0b2137] px-3.5 text-[12px] font-semibold text-[#dce8f7] transition hover:border-[#577a98] hover:bg-[#102b46] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Download aria-hidden="true" className="h-4 w-4" /> Export
-            </button>
-          </div>
-        </div>
+          <div aria-hidden="true" className="hidden h-full min-h-[165px] w-px bg-[#315574]/80 lg:block" />
 
-        <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
-          <div className="overtime-cockpit-subpanel min-w-0 rounded-[20px] border border-[#315574] bg-[#071c30]/[72%] p-4 sm:p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-[12px] font-medium text-[#a9bbcf]">Expected salary</p>
-                <p
-                  className="overtime-cockpit-money mt-2 break-words text-[clamp(2rem,5vw,3.75rem)] font-semibold leading-none tracking-[-0.035em] text-emerald-300"
-                  aria-live="polite"
-                  aria-label={"Expected salary, SAR " + formatMoney(expectedSalary)}
-                >
-                  SAR {formatMoney(expectedSalary)}
-                </p>
-              </div>
-              <span className="overtime-cockpit-selection inline-flex items-center gap-1.5 rounded-full border border-violet-400/35 bg-violet-500/10 px-3 py-1.5 text-[11px] font-semibold text-violet-200">
-                {MONTHS[selectedMonth].slice(0, 3).toUpperCase()} {selectedYear}
+          <div className="relative min-w-0">
+            <div className="flex items-center justify-end gap-2">
+              <span className="overtime-cockpit-selection inline-flex items-center gap-1.5 rounded-[9px] border border-violet-400/45 bg-violet-500/10 px-3 py-1.5 text-[11px] font-semibold text-violet-200">
+                <CalendarDays aria-hidden="true" className="h-3.5 w-3.5" />
+                {MONTHS[selectedMonth].slice(0, 3).toUpperCase()} work
                 <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
-                {MONTHS[salaryPeriod.monthIndex].slice(0, 3).toUpperCase()} {salaryPeriod.year}
+                {MONTHS[salaryPeriod.monthIndex].slice(0, 3).toUpperCase()} salary
               </span>
-            </div>
-
-            <div className="mt-5 grid gap-2.5 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-stretch">
-              {forecastBreakdown.map((item, index) => (
-                <Fragment key={item.label}>
-                  {index > 0 && <span aria-hidden="true" className="hidden items-center text-[22px] text-[#758ba4] md:flex">+</span>}
-                  <div className="overtime-cockpit-subpanel rounded-[15px] border border-[#2d4d68] bg-[#0b2137]/75 p-3">
-                    <p className="text-[11px] text-[#8fa6be]">{item.label}</p>
-                    <p className={["mt-1.5 text-[18px] font-semibold", index === 0 ? "text-white" : "overtime-cockpit-money text-emerald-300"].join(" ")}>
-                      SAR {formatMoney(item.value)}
-                    </p>
-                    <p className="mt-1 text-[10px] text-[#7890aa]">{item.helper}</p>
+              <details data-testid="salary-bases-summary" className="group relative">
+                <summary
+                  className="overtime-salary-settings-trigger flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-[9px] border border-[#365779] bg-[#0b2137] text-[#9fb1c8] outline-none transition hover:border-cyan-400/60 hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-400/50 [&::-webkit-details-marker]:hidden"
+                  aria-label="Salary settings"
+                  title="Basic Salary and Salary + Laundry"
+                >
+                  <Settings2 aria-hidden="true" className="h-4 w-4" />
+                </summary>
+                <div className="overtime-salary-settings-popover absolute right-0 top-10 z-30 w-[min(360px,calc(100vw-3rem))] rounded-[15px] border border-[#315574] bg-[#0b2137] p-3.5 shadow-[0_18px_45px_rgba(0,0,0,0.42)]">
+                  <p className="text-[12px] font-semibold text-[#e6eef8]">Basic Salary and Salary + Laundry</p>
+                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label htmlFor="overtime-basic-salary" className="min-w-0">
+                      <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#8fa6be]">Basic salary</span>
+                      <input
+                        id="overtime-basic-salary"
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        value={allowanceDraft.basicSalary}
+                        onChange={(event) => handleAllowanceFieldChange("basicSalary", sanitizeDecimalInput(event.target.value))}
+                        className="mt-1.5 h-11 w-full rounded-[10px] border border-[#405f7c] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none focus:border-cyan-400/65 focus:ring-2 focus:ring-cyan-400/15"
+                      />
+                    </label>
+                    <label htmlFor="overtime-salary-laundry" className="min-w-0">
+                      <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#8fa6be]">Salary + laundry</span>
+                      <input
+                        id="overtime-salary-laundry"
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        value={allowanceDraft.salaryWithLaundry}
+                        onChange={(event) => handleAllowanceFieldChange("salaryWithLaundry", sanitizeDecimalInput(event.target.value))}
+                        className="mt-1.5 h-11 w-full rounded-[10px] border border-[#405f7c] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none focus:border-cyan-400/65 focus:ring-2 focus:ring-cyan-400/15"
+                      />
+                    </label>
                   </div>
-                </Fragment>
-              ))}
+                </div>
+              </details>
             </div>
 
-            <p className="mt-3 text-[11px] leading-relaxed text-[#8399b1]">
-              Expected salary = salary + laundry + night allowance + overtime estimate.
-            </p>
-          </div>
+            <label htmlFor="overtime-salary-received" className="mt-4 block text-[14px] font-medium text-[#c7d2df]">
+              Actual salary received
+            </label>
 
-          <div className="overtime-cockpit-subpanel min-w-0 rounded-[20px] border border-[#315574] bg-[#071c30]/[72%] p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <label htmlFor="overtime-salary-received" className="text-[12px] font-semibold text-[#dbe7f4]">
-                  Actual salary received
-                </label>
-                <p className="mt-1 text-[10px] text-[#7f95ad]">Enter the full {MONTHS[salaryPeriod.monthIndex]} salary.</p>
-              </div>
-              <span className="overtime-cockpit-subpanel rounded-full border border-[#365779] bg-[#0b2137] px-2.5 py-1 text-[10px] font-semibold text-[#aebfd1]">
-                {MONTHS[selectedMonth].slice(0, 3)} work → {MONTHS[salaryPeriod.monthIndex].slice(0, 3)} salary
-              </span>
-            </div>
-
-            <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
+            <div className="mt-3 grid gap-2.5 sm:grid-cols-[1fr_auto]">
               <input
                 id="overtime-salary-received"
                 type="text"
@@ -1437,13 +1454,13 @@ export default function OvertimeTracker() {
                 value={formatAmountInput(allowanceDraft.salaryReceived)}
                 onChange={(event) => handleAllowanceFieldChange("salaryReceived", sanitizeDecimalInput(event.target.value))}
                 placeholder={"Enter " + MONTHS[salaryPeriod.monthIndex] + " salary"}
-                className="h-12 w-full rounded-[12px] border border-cyan-400/60 bg-[#102b46] px-3 text-[15px] font-semibold text-[#f4f8fd] outline-none transition placeholder:text-[#7890aa] hover:border-cyan-300 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/20"
+                className="h-12 w-full rounded-[10px] border border-[#47657f] bg-[#0b2137]/75 px-3 text-[15px] font-semibold text-[#f4f8fd] outline-none transition placeholder:text-[#7890aa] hover:border-cyan-400/70 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/20"
               />
               <button
                 type="button"
                 disabled={!allowanceResult.hasSalaryReceived}
                 onClick={() => void saveAllowanceDraft({ ...allowanceDraft })}
-                className="h-12 rounded-[12px] border border-cyan-300/60 bg-cyan-400 px-5 text-[13px] font-semibold text-[#061827] shadow-[0_8px_20px_rgba(34,211,238,0.16)] transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 disabled:cursor-not-allowed disabled:opacity-40"
+                className="h-12 rounded-[10px] border border-cyan-300/70 bg-cyan-400 px-6 text-[13px] font-semibold text-[#061827] shadow-[0_8px_20px_rgba(34,211,238,0.16)] transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 disabled:cursor-not-allowed disabled:bg-cyan-400/55 disabled:text-[#061827]/70 disabled:opacity-100 sm:min-w-[132px]"
               >
                 Compare
               </button>
@@ -1452,61 +1469,20 @@ export default function OvertimeTracker() {
             <div
               id="overtime-comparison-result"
               data-status={allowanceResult.status.toLowerCase()}
-              className={["mt-3 rounded-[15px] border px-3.5 py-3", allowanceStatusCardClass].join(" ")}
+              className={["mt-4 inline-flex max-w-full items-center gap-2 rounded-[10px] border px-3 py-2 text-[12px]", allowanceStatusPillClass].join(" ")}
               role="status"
               aria-live="polite"
             >
-              <div className="flex items-start gap-2.5">
-                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-current/25">
-                  {allowanceResult.status === "CORRECT"
-                    ? <Check aria-hidden="true" className="h-4 w-4" strokeWidth={2.2} />
-                    : <Banknote aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[14px] font-semibold text-white">{allowanceStatusHeadline}</p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-[#9eb0c4]">{allowanceStatusDescription}</p>
-                </div>
-              </div>
+              <span aria-hidden="true" className={["h-2.5 w-2.5 shrink-0 rounded-full", allowanceStatusDotClass].join(" ")} />
+              <span className="truncate font-semibold">{allowanceStatusHeadline}</span>
+              <span className="sr-only">. {allowanceStatusDescription}</span>
             </div>
 
-            <details data-testid="salary-bases-summary" className="mt-3 overflow-hidden rounded-[15px] border border-[#315574] bg-[#0b2137]/65">
-              <summary className="cursor-pointer px-3.5 py-3 text-[11px] font-semibold text-[#d9e5f2] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400/50">
-                Basic Salary and Salary + Laundry
-              </summary>
-              <div className="grid grid-cols-1 gap-3 border-t border-[#315574]/80 p-3 sm:grid-cols-2">
-                <label htmlFor="overtime-basic-salary" className="min-w-0">
-                  <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#8fa6be]">Basic salary</span>
-                  <input
-                    id="overtime-basic-salary"
-                    type="text"
-                    inputMode="decimal"
-                    autoComplete="off"
-                    value={allowanceDraft.basicSalary}
-                    onChange={(event) => handleAllowanceFieldChange("basicSalary", sanitizeDecimalInput(event.target.value))}
-                    className="mt-1.5 h-11 w-full rounded-[10px] border border-[#405f7c] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none focus:border-cyan-400/65 focus:ring-2 focus:ring-cyan-400/15"
-                  />
-                </label>
-                <label htmlFor="overtime-salary-laundry" className="min-w-0">
-                  <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#8fa6be]">Salary + laundry</span>
-                  <input
-                    id="overtime-salary-laundry"
-                    type="text"
-                    inputMode="decimal"
-                    autoComplete="off"
-                    value={allowanceDraft.salaryWithLaundry}
-                    onChange={(event) => handleAllowanceFieldChange("salaryWithLaundry", sanitizeDecimalInput(event.target.value))}
-                    className="mt-1.5 h-11 w-full rounded-[10px] border border-[#405f7c] bg-[#102b46] px-3 text-[14px] font-semibold text-[#f4f8fd] outline-none focus:border-cyan-400/65 focus:ring-2 focus:ring-cyan-400/15"
-                  />
-                </label>
-              </div>
-            </details>
-
             <p
-              className={["mt-3 flex items-center gap-1.5 text-[10px]", allowanceSyncStatus === "Live cloud" ? "text-emerald-300" : allowanceSyncStatus === "Saving live..." ? "text-sky-300" : "text-amber-300"].join(" ")}
+              className="sr-only"
               role="status"
               aria-live="polite"
             >
-              <span aria-hidden="true" className={["h-1.5 w-1.5 rounded-full", allowanceSyncStatus === "Live cloud" ? "bg-emerald-400" : allowanceSyncStatus === "Saving live..." ? "bg-sky-400" : "bg-amber-400"].join(" ")} />
               {allowanceSyncStatus}
             </p>
           </div>

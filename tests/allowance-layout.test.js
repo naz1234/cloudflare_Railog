@@ -6,6 +6,14 @@ const overtimeTrackerSource = readFileSync(
   new URL("../src/components/OvertimeTracker.jsx", import.meta.url),
   "utf8",
 );
+const depotStablingSource = readFileSync(
+  new URL("../src/pages/DepotStabling.jsx", import.meta.url),
+  "utf8",
+);
+const forecastHeroSource = overtimeTrackerSource.slice(
+  overtimeTrackerSource.indexOf('data-testid="pay-forecast-hero"'),
+  overtimeTrackerSource.indexOf('data-testid="overtime-activity-timeline"'),
+);
 
 test("Paycheck Cockpit presents a dynamic expected salary forecast", () => {
   assert.match(overtimeTrackerSource, /data-testid="pay-forecast-hero"/);
@@ -15,7 +23,13 @@ test("Paycheck Cockpit presents a dynamic expected salary forecast", () => {
     /parseAmount\(allowanceDraft\.salaryWithLaundry\)[\s\S]*allowanceResult\.nightAllowance[\s\S]*allowanceResult\.expectedOvertime/,
   );
   assert.match(overtimeTrackerSource, /\{MONTHS\[salaryPeriod\.monthIndex\]\} \{salaryPeriod\.year\} Pay Forecast/);
-  assert.match(overtimeTrackerSource, /Expected salary = salary \+ laundry \+ night allowance \+ overtime estimate\./);
+  assert.match(forecastHeroSource, /<WalletCards/);
+  assert.match(forecastHeroSource, /lg:grid-cols-\[minmax\(0,1\.45fr\)_1px_minmax\(330px,0\.9fr\)\]/);
+  assert.match(forecastHeroSource, /inline-flex max-w-full[\s\S]*allowanceStatusPillClass/);
+  assert.doesNotMatch(forecastHeroSource, /overtime-cockpit-subpanel/);
+  assert.doesNotMatch(forecastHeroSource, /aria-label="Overtime year"/);
+  assert.match(overtimeTrackerSource, /createPortal\([\s\S]*theme-overtime-toolbar/);
+  assert.match(depotStablingSource, /id="overtime-toolbar-actions"/);
 });
 
 test("year activity timeline keeps accessible month selection", () => {
