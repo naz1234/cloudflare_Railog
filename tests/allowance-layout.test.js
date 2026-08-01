@@ -65,8 +65,8 @@ test("year activity timeline keeps accessible month selection", () => {
   assert.match(overtimeTrackerSource, /lg:overflow-x-hidden/);
   assert.match(timelineSource, /<TrendingUp/);
   assert.match(timelineSource, /Overtime hours/);
-  assert.match(timelineSource, /grid-rows-\[34px_180px_repeat\(3,42px\)\]/);
-  assert.match(timelineSource, /h-\[126px\]/);
+  assert.match(timelineSource, /grid-rows-\[32px_152px_repeat\(3,34px\)\]/);
+  assert.match(timelineSource, /h-\[104px\]/);
   assert.match(timelineSource, /<Info/);
   assert.doesNotMatch(timelineSource, /Yearly overview/);
 });
@@ -98,6 +98,9 @@ test("selected month snapshot and annual summary use the existing derived data",
   assert.match(overtimeTrackerSource, /selectedMonthSummary\.extensionCount/);
   assert.match(snapshotSource, /grid-cols-\[28px_minmax\(0,1fr\)_auto\]/);
   assert.match(snapshotSource, /recorded-hours-expected-ot-summary[\s\S]*border-t border-dashed/);
+  assert.match(snapshotSource, /data-testid="night-days-allowance-summary"[\s\S]*className="h-9/);
+  assert.match(snapshotSource, /recorded-hours-expected-ot-summary" className="mt-2 space-y-2/);
+  assert.match(snapshotSource, /mt-3 rounded-\[10px\][\s\S]*py-2 text-\[11px\]/);
   assert.doesNotMatch(snapshotSource, /overtime-cockpit-subpanel/);
   assert.match(overtimeTrackerSource, /data-testid="overtime-annual-summary"/);
   assert.match(overtimeTrackerSource, /const annualSummaryItems = \[/);
