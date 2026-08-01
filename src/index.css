@@ -2710,6 +2710,71 @@ html[data-app-theme="light"] .theme-overtime-page svg {
   stroke: currentColor !important;
 }
 
+/* Stable light-mode hooks for the Overtime Paycheck Cockpit. */
+html[data-app-theme="light"] .theme-overtime-page :is(
+  .overtime-forecast-hero,
+  .overtime-timeline,
+  .overtime-snapshot,
+  .overtime-annual-summary
+) {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+  box-shadow: 0 9px 26px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page .overtime-cockpit-subpanel,
+html[data-app-theme="light"] .theme-overtime-page details[data-testid="salary-bases-summary"] {
+  background: #f8fafc !important;
+  background-image: none !important;
+  border-color: #b7c4d1 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page #overtime-comparison-result[data-status="waiting"] {
+  background: #f8fafc !important;
+  border-color: #b7c4d1 !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page #overtime-comparison-result[data-status="correct"] {
+  background: #f0fdf4 !important;
+  border-color: #86c9a7 !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page #overtime-comparison-result[data-status="short"] {
+  background: #fff1f2 !important;
+  border-color: #e39aa5 !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page #overtime-comparison-result[data-status="extra"] {
+  background: #fffbeb !important;
+  border-color: #d9bd73 !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page .overtime-cockpit-selection {
+  background: #eef2ff !important;
+  background-image: none !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.13), 0 7px 18px rgba(99, 102, 241, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page .overtime-cockpit-money {
+  color: #047857 !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page .overtime-cockpit-bar {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page .overtime-timeline-labels {
+  background: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-page .overtime-activity-dot {
+  --tw-ring-color: #ffffff !important;
+}
+
 /* Schedule-override warning and badges on the insertion TID reference panel. */
 html[data-app-theme="light"] .theme-insertion-reference-warning {
   background: linear-gradient(145deg, #fff7ed 0%, #fee2e2 100%) !important;

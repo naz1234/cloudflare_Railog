@@ -7,18 +7,58 @@ const overtimeTrackerSource = readFileSync(
   "utf8",
 );
 
-test("Allowance Check panels share one header title style", () => {
+test("Paycheck Cockpit presents a dynamic expected salary forecast", () => {
+  assert.match(overtimeTrackerSource, /data-testid="pay-forecast-hero"/);
+  assert.match(overtimeTrackerSource, /const expectedSalary = useMemo\(/);
   assert.match(
     overtimeTrackerSource,
-    /const allowancePanelTitleClass = "text-\[10px\] font-semibold uppercase leading-\[1\.35\] tracking-\[0\.12em\] text-\[#d5e4f3\]";/,
+    /parseAmount\(allowanceDraft\.salaryWithLaundry\)[\s\S]*allowanceResult\.nightAllowance[\s\S]*allowanceResult\.expectedOvertime/,
   );
-
-  const sharedTitleUses = overtimeTrackerSource.match(/className=\{allowancePanelTitleClass\}/g) || [];
-  assert.ok(sharedTitleUses.length >= 7, "all Allowance Check panel headers should use the shared title style");
+  assert.match(overtimeTrackerSource, /\{MONTHS\[salaryPeriod\.monthIndex\]\} \{salaryPeriod\.year\} Pay Forecast/);
+  assert.match(overtimeTrackerSource, /Expected salary = salary \+ laundry \+ night allowance \+ overtime estimate\./);
 });
 
-test("Basic Salary and Salary plus Laundry share one panel", () => {
+test("year activity timeline keeps accessible month selection", () => {
+  assert.match(overtimeTrackerSource, /data-testid="overtime-activity-timeline"/);
+  assert.match(overtimeTrackerSource, /monthSummaries\.map\(\(summary, monthIndex\) => \{/);
+  assert.match(overtimeTrackerSource, /aria-label="Activity legend"/);
+  assert.match(overtimeTrackerSource, /const hasActivity = summary\.hours > 0[\s\S]*totalNights > 0/);
+  assert.match(overtimeTrackerSource, /aria-pressed=\{active\}/);
+  assert.match(overtimeTrackerSource, /onClick=\{\(\) => handleMonthSelect\(monthIndex\)\}/);
+  assert.match(overtimeTrackerSource, /flushAllowanceBeforePeriodChange\(\);[\s\S]*setSelectedMonth\(monthIndex\)/);
+  assert.match(overtimeTrackerSource, /role="region"[\s\S]*monthly overtime timeline/);
+  assert.match(overtimeTrackerSource, /ref=\{timelineScrollRef\}/);
+  assert.match(overtimeTrackerSource, /ref=\{active \? activeMonthButtonRef : null\}/);
+});
+
+test("allowance saves retain the latest queued snapshot for every period during an in-flight sync", () => {
+  assert.match(overtimeTrackerSource, /const allowancePendingSavesRef = useRef/);
+  assert.match(overtimeTrackerSource, /const queuedPeriodKey = `\$\{queuedWorkYear\}-\$\{queuedWorkMonth\}`/);
+  assert.match(overtimeTrackerSource, /allowancePendingSavesRef\.current\.set\(queuedPeriodKey/);
+  assert.match(overtimeTrackerSource, /if \(allowanceSyncInProgressRef\.current\)[\s\S]*allowanceRetryTimerRef/);
+  assert.match(overtimeTrackerSource, /allowancePendingSavesRef\.current\.delete\(nextPeriodKey\)/);
+  assert.match(overtimeTrackerSource, /!allowanceDirtyRef\.current && allowancePendingSavesRef\.current\.size === 0/);
+  assert.match(overtimeTrackerSource, /finally \{[\s\S]*const pendingSnapshot = allowancePendingSavesRef\.current\.values\(\)\.next\(\)\.value[\s\S]*saveAllowanceDraft\(pendingSnapshot\)/);
+});
+
+test("salary and night inputs remain editable after the redesign", () => {
   assert.match(overtimeTrackerSource, /data-testid="salary-bases-summary"/);
   assert.match(overtimeTrackerSource, /Basic Salary and Salary \+ Laundry/);
-  assert.match(overtimeTrackerSource, /grid grid-cols-2 divide-x divide-\[#31506b\]\/80/);
+  assert.match(overtimeTrackerSource, /id="overtime-basic-salary"/);
+  assert.match(overtimeTrackerSource, /id="overtime-salary-laundry"/);
+  assert.match(overtimeTrackerSource, /id="overtime-salary-received"/);
+  assert.match(overtimeTrackerSource, /data-testid="night-days-allowance-summary"/);
+  assert.match(overtimeTrackerSource, /id="overtime-night-days"/);
+  assert.match(overtimeTrackerSource, /data-testid="recorded-hours-expected-ot-summary"/);
+});
+
+test("selected month snapshot and annual summary use the existing derived data", () => {
+  assert.match(overtimeTrackerSource, /data-testid="selected-month-snapshot"/);
+  assert.match(overtimeTrackerSource, /selectedMonthSummary\.rdotCount/);
+  assert.match(overtimeTrackerSource, /selectedMonthSummary\.extensionCount/);
+  assert.match(overtimeTrackerSource, /data-testid="overtime-annual-summary"/);
+  assert.match(overtimeTrackerSource, /const annualSummaryItems = \[/);
+  assert.match(overtimeTrackerSource, /highestNightShift\.total/);
+  assert.match(overtimeTrackerSource, /highestExtensionOnly\.total/);
+  assert.match(overtimeTrackerSource, /highestRdotOnly\.total/);
 });
