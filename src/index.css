@@ -8993,42 +8993,6 @@ html[data-app-theme="light"] .theme-tp1-movement-log-entry {
   border-color: var(--tp1-border) !important;
 }
 
-/* Manual Area: draw attention to the required SR number for unplanned moves. */
-@keyframes movement-flow-sr-label-glow {
-  0%, 100% {
-    text-shadow: 0 0 3px rgba(251, 191, 36, 0.45);
-    transform: scale(1);
-    filter: brightness(1);
-  }
-  50% {
-    text-shadow: 0 0 6px rgba(251, 191, 36, 1), 0 0 14px rgba(245, 158, 11, 0.9);
-    transform: scale(1.07);
-    filter: brightness(1.22);
-  }
-}
-
-.theme-train-movement-page .movement-flow-sr-label-attention {
-  display: inline-block;
-  color: #fef3c7 !important;
-  transform-origin: left center;
-  animation: movement-flow-sr-label-glow 1.35s ease-in-out infinite;
-  will-change: transform, filter, text-shadow;
-}
-
-html[data-app-theme="light"] .theme-train-movement-page .movement-flow-sr-label-attention {
-  color: #78350f !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .theme-train-movement-page .movement-flow-sr-label-attention {
-    animation: none;
-    transform: none;
-    filter: none;
-    text-shadow: 0 0 4px rgba(245, 158, 11, 0.7);
-    will-change: auto;
-  }
-}
-
 /* Train Request visibility: standalone eye icons using the awaiting-train glow rhythm. */
 @keyframes request-group-eye-awaiting-glow {
   0%, 48%, 100% {
