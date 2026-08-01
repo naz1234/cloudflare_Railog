@@ -1524,7 +1524,7 @@ export default function OvertimeTracker() {
             </span>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#93a8c0]">Yearly overview</p>
-              <h3 className="mt-1 text-[18px] font-semibold text-[#eff5fc]">{selectedYear} Activity Timeline</h3>
+              <h3 className="mt-1 text-[17px] font-semibold text-[#eff5fc]">{selectedYear} Activity Timeline</h3>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-[#9eb0c4]" aria-label="Activity legend">
@@ -1535,21 +1535,21 @@ export default function OvertimeTracker() {
 
         <div
           ref={timelineScrollRef}
-          className="mt-5 overflow-x-auto pb-2 [scrollbar-color:#315574_transparent] [scrollbar-width:thin]"
+          className="mt-4 overflow-x-auto pb-1 [scrollbar-color:#315574_transparent] [scrollbar-width:thin] lg:overflow-x-hidden"
           role="region"
           aria-label={"Scrollable " + selectedYear + " monthly overtime timeline"}
           tabIndex={0}
         >
-          <div className="grid min-w-[900px] grid-cols-[72px_repeat(12,minmax(62px,1fr))] gap-x-1.5">
+          <div className="grid min-w-[720px] grid-cols-[58px_repeat(12,minmax(0,1fr))] gap-x-1 lg:min-w-0">
             <div
               aria-hidden="true"
-              className="overtime-timeline-labels sticky left-0 z-20 grid grid-rows-[32px_142px_repeat(3,38px)] bg-[#071c30] pr-2 text-[12px] font-medium text-[#9fb1c8] shadow-[10px_0_14px_-14px_rgba(0,0,0,0.9)]"
+              className="overtime-timeline-labels sticky left-0 z-20 grid grid-rows-[28px_124px_repeat(3,34px)] bg-[#071c30] pr-1.5 text-[11px] font-medium text-[#9fb1c8] shadow-[10px_0_14px_-14px_rgba(0,0,0,0.9)]"
             >
               <span />
-              <span className="flex items-end gap-1.5 pb-4"><Clock3 className="h-3.5 w-3.5 text-cyan-300" />Hours</span>
-              <span className="flex items-center gap-1.5 border-t border-[#294b66]/80"><ArrowRight className="h-3.5 w-3.5 text-violet-300" />RDOT</span>
-              <span className="flex items-center gap-1.5 border-t border-[#294b66]/80"><Clock3 className="h-3.5 w-3.5 text-cyan-300" />EXT</span>
-              <span className="flex items-center gap-1.5 border-t border-[#294b66]/80"><Moon className="h-3.5 w-3.5 text-emerald-300" />Nights</span>
+              <span className="flex items-end gap-1 pb-3"><Clock3 className="h-3 w-3 text-cyan-300" />Hours</span>
+              <span className="flex items-center gap-1 border-t border-[#294b66]/80"><ArrowRight className="h-3 w-3 text-violet-300" />RDOT</span>
+              <span className="flex items-center gap-1 border-t border-[#294b66]/80"><Clock3 className="h-3 w-3 text-cyan-300" />EXT</span>
+              <span className="flex items-center gap-1 border-t border-[#294b66]/80"><Moon className="h-3 w-3 text-emerald-300" />Nights</span>
             </div>
             {monthSummaries.map((summary, monthIndex) => {
               const active = selectedMonth === monthIndex;
@@ -1571,17 +1571,17 @@ export default function OvertimeTracker() {
                   aria-label={[summary.month, selectedYear, summary.hours.toFixed(1) + " hours", summary.rdotCount + " RDOT", summary.extensionCount + " extensions", totalNights + " night days", activityLabel].join(", ")}
                   onClick={() => handleMonthSelect(monthIndex)}
                   className={[
-                    "group grid min-w-0 grid-rows-[32px_142px_repeat(3,38px)] overflow-hidden rounded-[12px] border text-center transition focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70",
+                    "group grid min-w-0 grid-rows-[28px_124px_repeat(3,34px)] overflow-hidden rounded-[10px] border text-center transition focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70",
                     active ? "overtime-cockpit-selection border-[#8169ff] bg-violet-500/[0.10] shadow-[0_0_0_1px_rgba(129,105,255,0.24),0_10px_24px_rgba(39,27,104,0.20)]" : "border-transparent hover:border-[#365779] hover:bg-[#0b2137]/55",
                   ].join(" ")}
                 >
-                  <span className={["flex items-center justify-center text-[12px] font-semibold", active ? "text-violet-200" : "text-[#cbd7e5]"].join(" ")}>{summary.month.slice(0, 3).toUpperCase()}</span>
-                  <span className="flex min-h-0 flex-col justify-end px-1 pb-4">
-                    <strong className={["text-[12px] font-semibold", active ? "text-violet-200" : "text-[#eef5ff]"].join(" ")}>{summary.hours.toFixed(1)}</strong>
-                    <span className="mt-1 flex h-[88px] items-end justify-center">
+                  <span className={["flex items-center justify-center text-[11px] font-semibold", active ? "text-violet-200" : "text-[#cbd7e5]"].join(" ")}>{summary.month.slice(0, 3).toUpperCase()}</span>
+                  <span className="flex min-h-0 flex-col justify-end px-0.5 pb-3">
+                    <strong className={["text-[11px] font-semibold", active ? "text-violet-200" : "text-[#eef5ff]"].join(" ")}>{summary.hours.toFixed(1)}</strong>
+                    <span className="mt-1 flex h-[76px] items-end justify-center">
                       <i
                         aria-hidden="true"
-                        className={["overtime-cockpit-bar block w-full max-w-[24px] rounded-t-[4px] transition-all", active ? "bg-[linear-gradient(180deg,#9b87ff,#6d5ce7)]" : summary.hours > 0 ? "bg-[linear-gradient(180deg,#67e8f9,#22a9c8)]" : "bg-rose-400"].join(" ")}
+                        className={["overtime-cockpit-bar block w-full max-w-[20px] rounded-t-[4px] transition-all", active ? "bg-[linear-gradient(180deg,#9b87ff,#6d5ce7)]" : summary.hours > 0 ? "bg-[linear-gradient(180deg,#67e8f9,#22a9c8)]" : "bg-rose-400"].join(" ")}
                         style={{ height: String(barHeight) + "%" }}
                       />
                     </span>
@@ -1598,7 +1598,7 @@ export default function OvertimeTracker() {
           </div>
         </div>
 
-        <p className="overtime-cockpit-subpanel mt-3 flex items-start gap-2 rounded-[12px] border border-[#294b66] bg-[#0b2137]/55 px-3 py-2.5 text-[11px] leading-relaxed text-[#91a6be]">
+        <p className="overtime-cockpit-subpanel mt-2.5 flex items-start gap-2 rounded-[12px] border border-[#294b66] bg-[#0b2137]/55 px-3 py-2 text-[11px] leading-relaxed text-[#91a6be]">
           <ArrowRight aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" />
           {MONTHS[selectedMonth]} overtime hours and night days are included in {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} salary.
         </p>

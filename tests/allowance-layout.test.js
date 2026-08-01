@@ -29,6 +29,8 @@ test("year activity timeline keeps accessible month selection", () => {
   assert.match(overtimeTrackerSource, /role="region"[\s\S]*monthly overtime timeline/);
   assert.match(overtimeTrackerSource, /ref=\{timelineScrollRef\}/);
   assert.match(overtimeTrackerSource, /ref=\{active \? activeMonthButtonRef : null\}/);
+  assert.match(overtimeTrackerSource, /min-w-\[720px\][^\n]*lg:min-w-0/);
+  assert.match(overtimeTrackerSource, /lg:overflow-x-hidden/);
 });
 
 test("allowance saves retain the latest queued snapshot for every period during an in-flight sync", () => {
