@@ -1648,31 +1648,31 @@ export default function OvertimeTracker() {
 
       <section
         data-testid="overtime-annual-summary"
-        className="overtime-annual-summary min-w-0 overflow-hidden rounded-[18px] border border-[#315574] bg-[linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_16px_42px_rgba(0,0,0,0.22)] sm:p-5 lg:col-span-10"
+        className="overtime-annual-summary min-w-0 overflow-hidden rounded-[18px] border border-[#315574] bg-[linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] p-3.5 shadow-[0_16px_42px_rgba(0,0,0,0.22)] sm:p-4 lg:col-span-10"
       >
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-[11px] border border-cyan-400/30 bg-cyan-500/10 text-cyan-200">
-            <BarChart3 aria-hidden="true" className="h-5 w-5" strokeWidth={1.9} />
+          <span className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-cyan-400/30 bg-cyan-500/10 text-cyan-200">
+            <BarChart3 aria-hidden="true" className="h-[18px] w-[18px]" strokeWidth={1.9} />
           </span>
-          <h3 className="text-[21px] font-semibold text-[#eff5fc]">{selectedYear} Annual Summary</h3>
+          <h3 className="text-[20px] font-semibold text-[#eff5fc]">{selectedYear} Annual Summary</h3>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-x-2 sm:grid-cols-3 lg:grid-cols-6 lg:gap-x-0">
+        <div className="mt-3 grid grid-cols-2 gap-x-2 sm:grid-cols-3 lg:grid-cols-6 lg:gap-x-0">
           {annualSummaryItems.map(({ label, value, detail, Icon, tone, badge }, index) => (
             <div
               key={label}
               className={[
-                "flex min-w-0 items-center gap-2 border-b border-[#315574]/65 px-2 py-3 lg:border-b-0 lg:px-2 lg:py-1 xl:gap-3 xl:px-4",
+                "flex min-w-0 items-center gap-2 border-b border-[#315574]/65 px-2 py-2 lg:border-b-0 lg:px-2 lg:py-0.5 xl:gap-3 xl:px-4",
                 index > 0 ? "lg:border-l lg:border-[#315574]/75" : "",
               ].join(" ")}
             >
-              <span className={["flex h-12 w-12 shrink-0 items-center justify-center rounded-full border", badge, tone].join(" ")}>
-                <Icon aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
+              <span className={["flex h-10 w-10 shrink-0 items-center justify-center rounded-full border", badge, tone].join(" ")}>
+                <Icon aria-hidden="true" className="h-[18px] w-[18px]" strokeWidth={1.8} />
               </span>
               <div className="min-w-0">
-                <p className="text-[32px] font-semibold leading-none text-[#f2f6fb]">{value}</p>
-                <p className="mt-1.5 text-[12px] leading-tight text-[#91a6be]">{label}</p>
-                {detail && <p className={["mt-1 text-[11px] font-semibold uppercase tracking-[0.1em]", tone].join(" ")}>{detail}</p>}
+                <p className="text-[31px] font-semibold leading-none text-[#f2f6fb]">{value}</p>
+                <p className="mt-0.5 text-[11px] leading-tight text-[#91a6be]">{label}</p>
+                {detail && <p className={["mt-0.5 text-[10px] font-semibold uppercase leading-tight tracking-[0.1em]", tone].join(" ")}>{detail}</p>}
               </div>
             </div>
           ))}

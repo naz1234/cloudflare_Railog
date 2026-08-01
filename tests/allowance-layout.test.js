@@ -111,5 +111,9 @@ test("selected month snapshot and annual summary use the existing derived data",
   assert.match(overtimeTrackerSource, /highestRdotOnly\.total/);
   assert.match(annualSummarySource, /lg:grid-cols-6/);
   assert.match(annualSummarySource, /lg:border-l/);
+  assert.match(annualSummarySource, /p-3\.5[\s\S]*sm:p-4/);
+  assert.match(annualSummarySource, /flex h-10 w-10 shrink-0/);
+  assert.match(annualSummarySource, /text-\[31px\][\s\S]*text-\[11px\][\s\S]*text-\[10px\]/);
+  assert.match(annualSummarySource, /lg:py-0\.5/);
   assert.doesNotMatch(annualSummarySource, /overtime-cockpit-subpanel/);
 });
