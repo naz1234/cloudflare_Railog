@@ -1491,7 +1491,7 @@ export default function OvertimeTracker() {
 
       <section
         data-testid="overtime-activity-timeline"
-        className="overtime-timeline min-w-0 overflow-hidden rounded-[18px] border border-[#315574] bg-[radial-gradient(circle_at_8%_0%,rgba(45,145,255,0.10),transparent_34%),linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.25)] sm:p-5 lg:col-span-7"
+        className="overtime-timeline min-w-0 overflow-hidden rounded-[18px] border border-[#315574] bg-[radial-gradient(circle_at_8%_0%,rgba(45,145,255,0.10),transparent_34%),linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.25)] lg:col-span-7"
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -1499,7 +1499,7 @@ export default function OvertimeTracker() {
               <TrendingUp aria-hidden="true" className="h-6 w-6 text-cyan-300" strokeWidth={1.9} />
               <h3 className="text-[20px] font-semibold text-[#eff5fc]">{selectedYear} Activity Timeline</h3>
             </div>
-            <p className="mt-3 inline-flex items-center gap-2.5 text-[12px] text-[#9eb0c4]">
+            <p className="mt-2 inline-flex items-center gap-2.5 text-[12px] text-[#9eb0c4]">
               <i aria-hidden="true" className="h-[3px] w-7 rounded-full bg-cyan-300" />
               Overtime hours
             </p>
@@ -1512,7 +1512,7 @@ export default function OvertimeTracker() {
 
         <div
           ref={timelineScrollRef}
-          className="mt-4 overflow-x-auto pb-1 [scrollbar-color:#315574_transparent] [scrollbar-width:thin] lg:overflow-x-hidden"
+          className="mt-3 overflow-x-auto pb-1 [scrollbar-color:#315574_transparent] [scrollbar-width:thin] lg:overflow-x-hidden"
           role="region"
           aria-label={"Scrollable " + selectedYear + " monthly overtime timeline"}
           tabIndex={0}
@@ -1520,7 +1520,7 @@ export default function OvertimeTracker() {
           <div className="grid min-w-[720px] grid-cols-[64px_repeat(12,minmax(0,1fr))] gap-x-1 lg:min-w-0">
             <div
               aria-hidden="true"
-              className="overtime-timeline-labels sticky left-0 z-20 grid grid-rows-[34px_180px_repeat(3,42px)] bg-[#071c30] pr-1.5 text-[12px] font-medium text-[#9fb1c8] shadow-[10px_0_14px_-14px_rgba(0,0,0,0.9)]"
+              className="overtime-timeline-labels sticky left-0 z-20 grid grid-rows-[32px_152px_repeat(3,34px)] bg-[#071c30] pr-1.5 text-[12px] font-medium text-[#9fb1c8] shadow-[10px_0_14px_-14px_rgba(0,0,0,0.9)]"
             >
               <span />
               <span />
@@ -1548,14 +1548,14 @@ export default function OvertimeTracker() {
                   aria-label={[summary.month, selectedYear, summary.hours.toFixed(1) + " hours", summary.rdotCount + " RDOT", summary.extensionCount + " extensions", totalNights + " night days", activityLabel].join(", ")}
                   onClick={() => handleMonthSelect(monthIndex)}
                   className={[
-                    "group grid min-w-0 grid-rows-[34px_180px_repeat(3,42px)] overflow-hidden rounded-[10px] border text-center transition focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70",
+                    "group grid min-w-0 grid-rows-[32px_152px_repeat(3,34px)] overflow-hidden rounded-[10px] border text-center transition focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70",
                     active ? "overtime-cockpit-selection border-[#8169ff] bg-violet-500/[0.10] shadow-[0_0_0_1px_rgba(129,105,255,0.24),0_10px_24px_rgba(39,27,104,0.20)]" : "border-transparent hover:border-[#365779] hover:bg-[#0b2137]/55",
                   ].join(" ")}
                 >
                   <span className={["flex items-center justify-center text-[12px] font-semibold", active ? "text-violet-200" : "text-[#cbd7e5]"].join(" ")}>{summary.month.slice(0, 3).toUpperCase()}</span>
-                  <span className="flex min-h-0 flex-col justify-end px-0.5 pb-4">
+                  <span className="flex min-h-0 flex-col justify-end px-0.5 pb-3">
                     <strong className={["text-[12px] font-semibold", active ? "text-violet-200" : "text-[#eef5ff]"].join(" ")}>{summary.hours.toFixed(1)}</strong>
-                    <span className="mt-1.5 flex h-[126px] items-end justify-center">
+                    <span className="mt-1.5 flex h-[104px] items-end justify-center">
                       <i
                         aria-hidden="true"
                         className={["overtime-cockpit-bar block w-full max-w-[24px] rounded-t-[4px] transition-all", active ? "bg-[linear-gradient(180deg,#9b87ff,#6d5ce7)]" : summary.hours > 0 ? "bg-[linear-gradient(180deg,#67e8f9,#22a9c8)]" : "bg-rose-400"].join(" ")}
@@ -1575,7 +1575,7 @@ export default function OvertimeTracker() {
           </div>
         </div>
 
-        <p className="overtime-cockpit-subpanel mt-3 flex items-start gap-2.5 rounded-[12px] border border-[#294b66] bg-[#0b2137]/55 px-3 py-2.5 text-[12px] leading-relaxed text-[#91a6be]">
+        <p className="overtime-cockpit-subpanel mt-2.5 flex items-start gap-2.5 rounded-[12px] border border-[#294b66] bg-[#0b2137]/55 px-3 py-2 text-[12px] leading-relaxed text-[#91a6be]">
           <Info aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" />
           {MONTHS[selectedMonth]} overtime hours and night days are included in {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} salary.
         </p>
@@ -1583,32 +1583,32 @@ export default function OvertimeTracker() {
 
       <aside
         data-testid="selected-month-snapshot"
-        className="overtime-snapshot min-w-0 overflow-hidden rounded-[18px] border border-[#315574] bg-[linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_16px_42px_rgba(0,0,0,0.22)] sm:p-5 lg:col-span-3"
+        className="overtime-snapshot min-w-0 overflow-hidden rounded-[18px] border border-[#315574] bg-[linear-gradient(145deg,rgba(9,30,50,0.99),rgba(5,20,35,0.99))] p-4 shadow-[0_16px_42px_rgba(0,0,0,0.22)] lg:col-span-3"
       >
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-[11px] border border-cyan-400/35 bg-cyan-500/10 text-cyan-200">
-            <CalendarDays aria-hidden="true" className="h-5 w-5" strokeWidth={1.9} />
+          <span className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-cyan-400/35 bg-cyan-500/10 text-cyan-200">
+            <CalendarDays aria-hidden="true" className="h-[18px] w-[18px]" strokeWidth={1.9} />
           </span>
           <h3 className="text-[20px] font-semibold text-[#eff5fc]">{MONTHS[selectedMonth]} Snapshot</h3>
         </div>
 
-        <div className="mt-5 border-b border-[#315574]/80 pb-4">
+        <div className="mt-3 border-b border-[#315574]/80 pb-3">
           <p className="text-[clamp(2.5rem,5vw,3.5rem)] font-semibold leading-none tracking-[-0.03em] text-violet-300">{allowanceResult.overtimeHours.toFixed(1)}</p>
           <p className="mt-1 text-[12px] text-[#91a6be]">recorded overtime hours</p>
         </div>
 
         <div className="mt-2">
-          <div className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 border-b border-[#315574]/70 py-3">
+          <div className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 border-b border-[#315574]/70 py-2">
             <Repeat2 aria-hidden="true" className="h-5 w-5 text-violet-300" strokeWidth={1.8} />
             <strong className="text-[15px] font-semibold text-[#eef5ff]">{selectedMonthSummary.rdotCount || 0}</strong>
             <span className="text-[12px] text-[#aebdd0]">RDOT</span>
           </div>
-          <div className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 border-b border-[#315574]/70 py-3">
+          <div className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 border-b border-[#315574]/70 py-2">
             <Clock3 aria-hidden="true" className="h-5 w-5 text-[#b9c8da]" strokeWidth={1.8} />
             <strong className="text-[15px] font-semibold text-[#eef5ff]">{selectedMonthSummary.extensionCount || 0}</strong>
             <span className="text-[12px] text-[#aebdd0]">Extensions</span>
           </div>
-          <label htmlFor="overtime-night-days" data-testid="night-days-allowance-summary" className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 border-b border-[#315574]/70 py-1.5">
+          <label htmlFor="overtime-night-days" data-testid="night-days-allowance-summary" className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 border-b border-[#315574]/70 py-1">
             <Moon aria-hidden="true" className="h-5 w-5 text-violet-300" strokeWidth={1.8} />
             <input
               id="overtime-night-days"
@@ -1619,29 +1619,29 @@ export default function OvertimeTracker() {
               value={allowanceDraft.nightDays}
               onChange={(event) => handleAllowanceFieldChange("nightDays", sanitizeIntegerInput(event.target.value))}
               placeholder="0"
-              className="h-11 w-20 rounded-[8px] border border-transparent bg-transparent px-0 text-[15px] font-semibold text-[#eef5ff] outline-none transition hover:border-[#405f7c] hover:bg-[#102b46]/50 hover:px-2.5 focus:border-violet-400/70 focus:bg-[#102b46] focus:px-2.5 focus:ring-2 focus:ring-violet-400/15"
+              className="h-9 w-20 rounded-[8px] border border-transparent bg-transparent px-0 text-[15px] font-semibold text-[#eef5ff] outline-none transition hover:border-[#405f7c] hover:bg-[#102b46]/50 hover:px-2.5 focus:border-violet-400/70 focus:bg-[#102b46] focus:px-2.5 focus:ring-2 focus:ring-violet-400/15"
             />
             <span className="text-[12px] text-[#aebdd0]">Night days</span>
           </label>
-          <div className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 py-3">
+          <div className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 py-2">
             <Banknote aria-hidden="true" className="h-5 w-5 text-[#b9c8da]" strokeWidth={1.8} />
             <p className="min-w-0 text-[15px] text-[#eef5ff]"><strong className="font-semibold">SAR {NIGHT_ALLOWANCE_RATE}</strong><span className="ml-1 text-[11px] text-[#8fa6be]">/ night</span></p>
             <span className="text-[12px] text-[#aebdd0]">Night rate</span>
           </div>
         </div>
 
-        <div data-testid="recorded-hours-expected-ot-summary" className="mt-3 space-y-3 border-t border-dashed border-[#45617b] pt-4">
+        <div data-testid="recorded-hours-expected-ot-summary" className="mt-2 space-y-2 border-t border-dashed border-[#45617b] pt-3">
           <div className="flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-2.5 text-[12px] text-[#c1cddd]"><i aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-full border border-cyan-400/40 bg-cyan-500/10 text-cyan-200"><Calculator className="h-4 w-4" /></i>Expected overtime</span>
+            <span className="inline-flex items-center gap-2.5 text-[12px] text-[#c1cddd]"><i aria-hidden="true" className="flex h-7 w-7 items-center justify-center rounded-full border border-cyan-400/40 bg-cyan-500/10 text-cyan-200"><Calculator className="h-3.5 w-3.5" /></i>Expected overtime</span>
             <strong className="overtime-cockpit-money text-[17px] text-emerald-300">SAR {formatMoney(allowanceResult.expectedOvertime)}</strong>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-2.5 text-[12px] text-[#c1cddd]"><i aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-full border border-violet-400/40 bg-violet-500/10 text-violet-200"><Moon className="h-4 w-4" /></i>Night allowance</span>
+            <span className="inline-flex items-center gap-2.5 text-[12px] text-[#c1cddd]"><i aria-hidden="true" className="flex h-7 w-7 items-center justify-center rounded-full border border-violet-400/40 bg-violet-500/10 text-violet-200"><Moon className="h-3.5 w-3.5" /></i>Night allowance</span>
             <strong className="overtime-cockpit-money text-[17px] text-emerald-300">SAR {formatMoney(allowanceResult.nightAllowance)}</strong>
           </div>
         </div>
 
-        <p className="mt-4 rounded-[10px] border border-violet-400/25 bg-violet-500/[0.08] px-3 py-2.5 text-[11px] leading-relaxed text-violet-200">
+        <p className="mt-3 rounded-[10px] border border-violet-400/25 bg-violet-500/[0.08] px-3 py-2 text-[11px] leading-relaxed text-violet-200">
           {MONTHS[selectedMonth]} work is included in {MONTHS[salaryPeriod.monthIndex]} {salaryPeriod.year} salary.
         </p>
       </aside>
