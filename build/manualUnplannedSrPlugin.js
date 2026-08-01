@@ -65,6 +65,7 @@ export default function manualUnplannedSrPlugin() {
         `      {
         key: "srNumber",
         label: "SR Number :",
+        applicable: manualSrRequired,
         visible: manualCmmsReady && manualSrRequired,
         complete: manualSrReady,
         render: () => (

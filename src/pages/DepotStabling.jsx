@@ -12033,6 +12033,7 @@ function TrainMovementContent() {
       {type === "copy" && <><rect x="9" y="9" width="11" height="11" rx="2"/><rect x="4" y="4" width="11" height="11" rx="2"/></>}
       {type === "download" && <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>}
       {type === "trash" && <><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></>}
+      {type === "check" && <polyline points="5 12 10 17 19 7"/>}
       {type === "swap" && <><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></>}
       {type === "in" && <><polyline points="5 12 12 5 19 12"/><line x1="12" y1="5" x2="12" y2="19"/></>}
       {type === "out" && <><polyline points="19 12 12 19 5 12"/><line x1="12" y1="5" x2="12" y2="19"/></>}
@@ -12950,20 +12951,20 @@ function TrainMovementContent() {
         ),
       },
       {
-        key: "trainPrepCompletedTime",
-        label: "Train Prep Completed",
-        optional: true,
-        visible: automaticCmmsReady,
-        complete: automaticTrainPrepReady,
-        render: () => renderTp1TimeInput("trainPrepCompletedTime"),
-      },
-      {
         key: "pstPerformedTime",
         label: "PST Performed",
         optional: true,
         visible: automaticCmmsReady,
         complete: automaticPstReady,
         render: () => renderTp1TimeInput("pstPerformedTime"),
+      },
+      {
+        key: "trainPrepCompletedTime",
+        label: "Train Prep Completed",
+        optional: true,
+        visible: automaticCmmsReady,
+        complete: automaticTrainPrepReady,
+        render: () => renderTp1TimeInput("trainPrepCompletedTime"),
       },
       {
         key: "completedByDc",
@@ -13191,33 +13192,71 @@ function TrainMovementContent() {
       },
     ];
 
-    const visibleFlowSteps = (isAutomatic ? automaticFlowSteps : manualFlowSteps).filter((step) => step.visible);
+    const allFlowSteps = isAutomatic ? automaticFlowSteps : manualFlowSteps;
+    const visibleFlowSteps = allFlowSteps.filter((step) => step.visible);
     const requiredFlowSteps = visibleFlowSteps.filter((step) => !step.optional);
     const optionalFlowSteps = visibleFlowSteps.filter((step) => step.optional);
+    const requiredProgressSteps = allFlowSteps.filter((step) => !step.optional && step.applicable !== false);
+    const requiredCompletedCount = requiredProgressSteps.filter((step) => step.complete).length;
+    const requiredTotalCount = requiredProgressSteps.length;
+    const currentRequiredStep = requiredProgressSteps.find((step) => !step.complete);
     const tp1ClearTarget = movementType;
     const isTp1ConfirmingClear = tp1ConfirmClearTarget === tp1ClearTarget;
     const tp1LogPillButtonClass = "flex min-w-[78px] items-center justify-center gap-1 rounded-full border px-3 py-1 text-[10px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.02] hover:text-white";
 
-    const renderTp1FlowStepCard = (step, index) => (
-      <div
-        key={step.key}
-        className={`theme-tp1-flow-step ${step.complete ? "is-complete" : "is-next"} rounded-xl border p-2 transition-all`}
-        style={{
-          borderColor: step.complete ? `${accent}70` : "#1e4060",
-          background: step.complete ? `linear-gradient(135deg, ${accent}14, #061827 82%)` : "#061827",
-          boxShadow: step.complete ? `0 0 10px ${accent}12, inset 0 1px 0 rgba(255,255,255,0.05)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
-        }}
-      >
-        <div className="mb-1 flex items-center justify-between gap-1.5">
-          <span className={`movement-flow-step-label ${step.complete ? "movement-flow-step-label-complete" : "movement-flow-step-label-next"} inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.07em]`} style={{ borderColor: step.complete ? `${accent}80` : "#244761", color: "#ffffff", backgroundColor: step.complete ? `${accent}10` : "#061827" }}>
-            <span className="movement-flow-step-number flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal text-white" style={{ borderColor: step.complete ? `${accent}80` : "#31516b", color: "#ffffff" }}>{index + 1}</span>
-            <span className="truncate text-white">{step.label}</span>
-          </span>
-          <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>{step.complete ? "DONE" : step.optional ? "OPTIONAL" : "NEXT"}</span>
+    const renderTp1FlowStepCard = (step, index) => {
+      const isCurrent = !step.optional && !step.complete && currentRequiredStep?.key === step.key;
+      const cardState = step.complete ? "is-complete" : isCurrent ? "is-current" : "is-pending";
+
+      return (
+        <div
+          key={step.key}
+          data-movement-step-state={step.complete ? "complete" : isCurrent ? "current" : "pending"}
+          className={`theme-tp1-flow-step ${cardState} h-full rounded-xl border p-2.5 transition-all`}
+          style={{
+            borderColor: step.complete ? `${accent}70` : isCurrent ? "#4f8ef7" : "#1e4060",
+            background: step.complete
+              ? `linear-gradient(135deg, ${accent}14, #061827 82%)`
+              : isCurrent
+              ? "linear-gradient(135deg, rgba(79,142,247,0.18), #061827 82%)"
+              : "#061827",
+            boxShadow: step.complete
+              ? `0 0 10px ${accent}12, inset 0 1px 0 rgba(255,255,255,0.05)`
+              : isCurrent
+              ? "0 0 0 1px rgba(79,142,247,0.48), 0 0 18px rgba(79,142,247,0.30), inset 0 1px 0 rgba(255,255,255,0.06)"
+              : "inset 0 1px 0 rgba(255,255,255,0.03)",
+          }}
+        >
+          <div className="mb-1.5 flex min-h-5 items-center justify-between gap-2">
+            <span className="movement-flow-step-label inline-flex min-w-0 items-center gap-2 text-[10px] font-black uppercase tracking-[0.07em] text-white">
+              <span
+                className="movement-flow-step-number flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[9px] font-black"
+                style={{ borderColor: step.complete ? accent : isCurrent ? "#4f8ef7" : "#31516b", color: step.complete ? accent : isCurrent ? "#7ab7ff" : "#8ea8c0" }}
+              >
+                {index + 1}
+              </span>
+              <span className="truncate">{step.label}</span>
+            </span>
+
+            {step.complete ? (
+              <span
+                aria-label="Completed"
+                title="Completed"
+                className="theme-tp1-step-check flex h-6 w-6 shrink-0 items-center justify-center rounded-full border"
+                style={{ borderColor: `${accent}85`, backgroundColor: `${accent}24`, color: accent, boxShadow: `0 0 10px ${accent}24` }}
+              >
+                <MovementIcon type="check" color="currentColor" />
+              </span>
+            ) : isCurrent ? (
+              <span className="theme-tp1-current-step-badge shrink-0 rounded-full border border-[#4f8ef7]/70 bg-[#123f73]/70 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.09em] text-[#7ab7ff]">
+                Current
+              </span>
+            ) : null}
+          </div>
+          {step.render()}
         </div>
-        {step.render()}
-      </div>
-    );
+      );
+    };
 
     const renderTp1FlowRows = (items, startIndex = 0, sectionKey = "required") => (
       <div className="grid gap-y-2">
@@ -13225,35 +13264,37 @@ function TrainMovementContent() {
           if (index % 2 === 0) rows.push(items.slice(index, index + 2));
           return rows;
         }, []).map((pair, pairIndex) => {
-          const absolutePairIndex = Math.floor(startIndex / 2) + pairIndex;
-          const leftToRight = absolutePairIndex % 2 === 0;
           const firstIndex = startIndex + pairIndex * 2;
           const secondIndex = firstIndex + 1;
           const first = pair[0];
           const second = pair[1];
-          const leftStep = leftToRight ? first : second;
-          const rightStep = leftToRight ? second : first;
-          const leftIndex = leftToRight ? firstIndex : secondIndex;
-          const rightIndex = leftToRight ? secondIndex : firstIndex;
-          const arrow = second ? (leftToRight ? "→" : "←") : "";
+
+          if (!second) {
+            return (
+              <div key={`movement-flow-row-${movementType}-${sectionKey}-${pairIndex}`}>
+                {renderTp1FlowStepCard(first, firstIndex)}
+              </div>
+            );
+          }
 
           return (
-            <div key={`movement-flow-row-${movementType}-${sectionKey}-${pairIndex}`} className="grid grid-cols-[minmax(0,1fr)_24px_minmax(0,1fr)] items-center gap-x-1.5">
-              <div>{leftStep ? renderTp1FlowStepCard(leftStep, leftIndex) : null}</div>
-              <div className="flex items-center justify-center">
-                <span
-                  className="flex h-6 w-6 items-center justify-center rounded-full border text-[17px] font-black leading-none"
-                  style={{
-                    opacity: arrow ? 1 : 0,
-                    borderColor: `${accent}55`,
-                    backgroundColor: `${accent}10`,
-                    color: accent,
-                  }}
-                >
-                  {arrow || "→"}
-                </span>
+            <div key={`movement-flow-row-${movementType}-${sectionKey}-${pairIndex}`} className="grid grid-cols-[minmax(0,1fr)_34px_minmax(0,1fr)] items-stretch gap-x-2">
+              <div>{renderTp1FlowStepCard(first, firstIndex)}</div>
+              <div className="theme-tp1-flow-connector flex min-h-[62px] items-center justify-center" aria-hidden="true">
+                <svg className="h-full w-full" viewBox="0 0 34 62" preserveAspectRatio="none">
+                  <path
+                    d="M1 18 H13 Q19 18 19 26 V36 Q19 44 33 44"
+                    fill="none"
+                    stroke={accent}
+                    strokeOpacity="0.62"
+                    strokeWidth="1.5"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  <circle cx="1" cy="18" r="2" fill={accent} fillOpacity="0.76" />
+                  <circle cx="33" cy="44" r="2" fill={accent} fillOpacity="0.76" />
+                </svg>
               </div>
-              <div>{rightStep ? renderTp1FlowStepCard(rightStep, rightIndex) : null}</div>
+              <div>{renderTp1FlowStepCard(second, secondIndex)}</div>
             </div>
           );
         })}
@@ -13262,7 +13303,7 @@ function TrainMovementContent() {
 
     return (
       <section
-        className="theme-tp1-movement-window overflow-hidden rounded-xl border shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]"
+        className="theme-tp1-movement-window flex h-full flex-col overflow-hidden rounded-xl border shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]"
         data-movement-mode={movementType}
         style={{
           borderColor: `${accent}55`,
@@ -13282,7 +13323,14 @@ function TrainMovementContent() {
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="rounded-md border px-2 py-1 text-[10px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}1c`, color: accent }}>
+            <span
+              aria-label={`${requiredCompletedCount} of ${requiredTotalCount} required fields complete`}
+              className="theme-tp1-required-progress rounded-full border px-3 py-1 text-[10px] font-black"
+              style={{ borderColor: `${accent}78`, backgroundColor: `${accent}1c`, color: accent, boxShadow: `0 0 12px ${accent}16` }}
+            >
+              {requiredCompletedCount}/{requiredTotalCount} required
+            </span>
+            <span className="rounded-full border px-3 py-1 text-[10px] font-black text-white" style={{ borderColor: "#31516b", backgroundColor: "rgba(6,24,39,0.72)" }}>
               {modeEntries.length} entries
             </span>
             <button
@@ -13297,40 +13345,37 @@ function TrainMovementContent() {
           </div>
         </div>
 
-        <div className="theme-tp1-movement-body grid gap-3 p-4">
-          <div className="theme-tp1-movement-flow rounded-xl border border-[#1e4060] bg-[#031827] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-            <div className="mb-2 flex justify-end">
-              <span className="rounded-full border px-2 py-0.5 text-[9px] font-black" style={{ borderColor: `${accent}55`, backgroundColor: `${accent}16`, color: accent }}>
-                L ↔ R
-              </span>
-            </div>
-            {renderTp1FlowRows(requiredFlowSteps)}
+        <div className="theme-tp1-movement-body grid flex-1 gap-3 p-4">
+          <div className="theme-tp1-movement-flow flex flex-col rounded-xl border border-[#1e4060] bg-[#031827] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+            <section aria-label="Required movement details" data-movement-flow-section="required">
+              <div className="theme-tp1-flow-section-heading mb-3 flex items-center gap-3">
+                <span className="text-[11px] font-black uppercase tracking-[0.11em]" style={{ color: accent }}>Required</span>
+                <span className="h-px min-w-8 flex-1" style={{ background: `linear-gradient(90deg, ${accent}55, transparent)` }} />
+              </div>
+              {renderTp1FlowRows(requiredFlowSteps)}
+            </section>
             {optionalFlowSteps.length > 0 && (
               <section
                 aria-label="Optional movement details"
                 data-movement-flow-section="optional"
-                className="theme-tp1-optional-flow-section mt-3 border-t border-dashed pt-3"
-                style={{ borderColor: `${accent}55` }}
+                className="theme-tp1-optional-flow-section mt-4 flex flex-1 flex-col rounded-xl border p-3 xl:min-h-[225px]"
+                style={{ borderColor: `${accent}55`, background: `linear-gradient(135deg, ${accent}10, rgba(3,17,29,0.78) 76%)`, boxShadow: `inset 0 1px 0 ${accent}12` }}
               >
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span
-                    className="theme-tp1-optional-flow-badge rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em]"
-                    style={{ borderColor: `${accent}70`, backgroundColor: `${accent}16`, color: accent }}
-                  >
-                    Optional
-                  </span>
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <span className="theme-tp1-optional-flow-badge text-[11px] font-black uppercase tracking-[0.11em]" style={{ color: accent }}>Optional</span>
                   <span className="theme-tp1-optional-flow-help text-[10px] font-semibold text-[#7eb8e0]">
                     Complete only when applicable
                   </span>
+                  <span className="h-px min-w-8 flex-1" style={{ background: `linear-gradient(90deg, ${accent}45, transparent)` }} />
                 </div>
                 {renderTp1FlowRows(optionalFlowSteps, requiredFlowSteps.length, "optional")}
               </section>
             )}
           </div>
 
-          <div className="theme-tp1-movement-preview rounded-xl border border-[#1e4060] bg-[#041727] p-3">
+          <div className="theme-tp1-movement-preview rounded-xl border border-[#1e4060] bg-[#041727] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
             <div className="mb-2 flex flex-wrap items-center justify-start gap-1.5">
-              <p className="mr-0.5 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4a8ab5]">Preview</p>
+              <p className="mr-0.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#58a6ff]">Preview</p>
               <button
                 type="button"
                 onClick={() => copyTp1MovementPreview(movementType)}

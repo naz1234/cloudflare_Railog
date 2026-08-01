@@ -78,10 +78,17 @@ test("optional TP1 details are separated from the required movement flow", () =>
   assert.match(depotStablingSource, /const requiredFlowSteps = visibleFlowSteps\.filter\(\(step\) => !step\.optional\);/);
   assert.match(depotStablingSource, /const optionalFlowSteps = visibleFlowSteps\.filter\(\(step\) => step\.optional\);/);
   assert.match(depotStablingSource, /data-movement-flow-section="optional"/);
+  assert.match(depotStablingSource, /data-movement-flow-section="required"/);
   assert.match(depotStablingSource, />\s*Optional\s*<\/span>/);
+  assert.match(depotStablingSource, />Required<\/span>/);
   assert.match(depotStablingSource, /Complete only when applicable/);
   assert.match(depotStablingSource, /renderTp1FlowRows\(optionalFlowSteps, requiredFlowSteps\.length, "optional"\)/);
-  assert.match(depotStablingSource, /step\.complete \? "DONE" : step\.optional \? "OPTIONAL" : "NEXT"/);
+  assert.match(depotStablingSource, /const requiredProgressSteps = allFlowSteps\.filter\(\(step\) => !step\.optional && step\.applicable !== false\);/);
+  assert.match(depotStablingSource, /\{requiredCompletedCount\}\/\{requiredTotalCount\} required/);
+  assert.match(depotStablingSource, /data-movement-step-state=/);
+  assert.match(depotStablingSource, /className="theme-tp1-step-check/);
+  assert.match(depotStablingSource, />\s*Current\s*<\/span>/);
+  assert.match(depotStablingSource, /if \(!second\) \{[\s\S]*renderTp1FlowStepCard\(first, firstIndex\)/);
 });
 
 test("Automatic Area Train Prep and PST fields are optional details", () => {
@@ -105,6 +112,20 @@ test("Automatic Area Train Prep and PST fields are optional details", () => {
     depotStablingSource,
     /const automaticPstReady = automaticTrainPrepReady &&/,
   );
+  assert.ok(
+    depotStablingSource.indexOf('key: "pstPerformedTime"') < depotStablingSource.indexOf('key: "trainPrepCompletedTime"'),
+    "PST Performed should appear before Train Prep Completed in the optional section",
+  );
+});
+
+test("Manual Area required progress counts SR only for Unplanned movement", () => {
+  const manualSrPluginSource = readFileSync(
+    new URL("../build/manualUnplannedSrPlugin.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(manualSrPluginSource, /applicable: manualSrRequired,/);
+  assert.match(manualSrPluginSource, /visible: manualCmmsReady && manualSrRequired,/);
 });
 
 test("the production arrival transform reads the nested Manual Area form", () => {
