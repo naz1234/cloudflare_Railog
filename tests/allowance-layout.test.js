@@ -14,6 +14,10 @@ const forecastHeroSource = overtimeTrackerSource.slice(
   overtimeTrackerSource.indexOf('data-testid="pay-forecast-hero"'),
   overtimeTrackerSource.indexOf('data-testid="overtime-activity-timeline"'),
 );
+const timelineSource = overtimeTrackerSource.slice(
+  overtimeTrackerSource.indexOf('data-testid="overtime-activity-timeline"'),
+  overtimeTrackerSource.indexOf('data-testid="selected-month-snapshot"'),
+);
 const snapshotSource = overtimeTrackerSource.slice(
   overtimeTrackerSource.indexOf('data-testid="selected-month-snapshot"'),
   overtimeTrackerSource.indexOf('data-testid="overtime-annual-summary"'),
@@ -53,6 +57,12 @@ test("year activity timeline keeps accessible month selection", () => {
   assert.match(overtimeTrackerSource, /ref=\{active \? activeMonthButtonRef : null\}/);
   assert.match(overtimeTrackerSource, /min-w-\[720px\][^\n]*lg:min-w-0/);
   assert.match(overtimeTrackerSource, /lg:overflow-x-hidden/);
+  assert.match(timelineSource, /<TrendingUp/);
+  assert.match(timelineSource, /Overtime hours/);
+  assert.match(timelineSource, /grid-rows-\[34px_180px_repeat\(3,42px\)\]/);
+  assert.match(timelineSource, /h-\[126px\]/);
+  assert.match(timelineSource, /<Info/);
+  assert.doesNotMatch(timelineSource, /Yearly overview/);
 });
 
 test("allowance saves retain the latest queued snapshot for every period during an in-flight sync", () => {
