@@ -38,12 +38,12 @@ test("Paycheck Cockpit presents a dynamic expected salary forecast", () => {
   assert.match(forecastHeroSource, /<WalletCards/);
   assert.match(forecastHeroSource, /lg:grid-cols-\[minmax\(0,1\.45fr\)_1px_minmax\(330px,0\.9fr\)\]/);
   assert.match(forecastHeroSource, /inline-flex max-w-full[\s\S]*allowanceStatusPillClass/);
-  assert.match(forecastHeroSource, /lg:py-4/);
-  assert.match(forecastHeroSource, /sm:h-16 sm:w-16/);
-  assert.match(forecastHeroSource, /min-h-\[145px\]/);
-  assert.match(forecastHeroSource, /id="overtime-salary-received"[\s\S]*className="h-10/);
-  assert.match(forecastHeroSource, /text-\[20px\][\s\S]*sm:text-\[23px\]/);
-  assert.match(forecastHeroSource, /clamp\(2\.3375rem,calc\(5vw-1px\),3\.9375rem\)/);
+  assert.match(forecastHeroSource, /lg:py-3/);
+  assert.match(forecastHeroSource, /sm:h-14 sm:w-14/);
+  assert.match(forecastHeroSource, /min-h-\[128px\]/);
+  assert.match(forecastHeroSource, /id="overtime-salary-received"[\s\S]*className="h-9/);
+  assert.match(forecastHeroSource, /text-\[19px\][\s\S]*sm:text-\[22px\]/);
+  assert.match(forecastHeroSource, /clamp\(2\.275rem,calc\(5vw-2px\),3\.875rem\)/);
   assert.doesNotMatch(forecastHeroSource, /overtime-cockpit-subpanel/);
   assert.doesNotMatch(forecastHeroSource, /aria-label="Overtime year"/);
   assert.match(overtimeTrackerSource, /createPortal\([\s\S]*theme-overtime-toolbar/);
