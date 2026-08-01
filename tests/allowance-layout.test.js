@@ -67,6 +67,8 @@ test("year activity timeline keeps accessible month selection", () => {
   assert.match(timelineSource, /Overtime hours/);
   assert.match(timelineSource, /grid-rows-\[32px_152px_repeat\(3,34px\)\]/);
   assert.match(timelineSource, /h-\[104px\]/);
+  assert.match(timelineSource, /overtime-timeline-labels grid[\s\S]*bg-transparent/);
+  assert.doesNotMatch(timelineSource, /overtime-timeline-labels[^\n]*(?:sticky|bg-\[#071c30\]|shadow-\[10px)/);
   assert.match(timelineSource, /<Info/);
   assert.doesNotMatch(timelineSource, /Yearly overview/);
 });
