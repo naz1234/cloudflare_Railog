@@ -1520,7 +1520,7 @@ export default function OvertimeTracker() {
           <div className="grid min-w-[720px] grid-cols-[64px_repeat(12,minmax(0,1fr))] gap-x-1 lg:min-w-0">
             <div
               aria-hidden="true"
-              className="overtime-timeline-labels sticky left-0 z-20 grid grid-rows-[32px_152px_repeat(3,34px)] bg-[#071c30] pr-1.5 text-[12px] font-medium text-[#9fb1c8] shadow-[10px_0_14px_-14px_rgba(0,0,0,0.9)]"
+              className="overtime-timeline-labels sticky left-0 z-20 grid grid-rows-[32px_152px_repeat(3,34px)] bg-[#071c30] pr-1.5 text-[12px] font-medium text-[#9fb1c8] shadow-[10px_0_14px_-14px_rgba(0,0,0,0.9)] lg:bg-transparent lg:shadow-none"
             >
               <span />
               <span />
