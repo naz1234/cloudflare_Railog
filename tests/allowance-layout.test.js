@@ -14,6 +14,14 @@ const forecastHeroSource = overtimeTrackerSource.slice(
   overtimeTrackerSource.indexOf('data-testid="pay-forecast-hero"'),
   overtimeTrackerSource.indexOf('data-testid="overtime-activity-timeline"'),
 );
+const snapshotSource = overtimeTrackerSource.slice(
+  overtimeTrackerSource.indexOf('data-testid="selected-month-snapshot"'),
+  overtimeTrackerSource.indexOf('data-testid="overtime-annual-summary"'),
+);
+const annualSummarySource = overtimeTrackerSource.slice(
+  overtimeTrackerSource.indexOf('data-testid="overtime-annual-summary"'),
+  overtimeTrackerSource.indexOf('id="overtime-record-entry"'),
+);
 
 test("Paycheck Cockpit presents a dynamic expected salary forecast", () => {
   assert.match(overtimeTrackerSource, /data-testid="pay-forecast-hero"/);
@@ -72,9 +80,15 @@ test("selected month snapshot and annual summary use the existing derived data",
   assert.match(overtimeTrackerSource, /data-testid="selected-month-snapshot"/);
   assert.match(overtimeTrackerSource, /selectedMonthSummary\.rdotCount/);
   assert.match(overtimeTrackerSource, /selectedMonthSummary\.extensionCount/);
+  assert.match(snapshotSource, /grid-cols-\[28px_minmax\(0,1fr\)_auto\]/);
+  assert.match(snapshotSource, /recorded-hours-expected-ot-summary[\s\S]*border-t border-dashed/);
+  assert.doesNotMatch(snapshotSource, /overtime-cockpit-subpanel/);
   assert.match(overtimeTrackerSource, /data-testid="overtime-annual-summary"/);
   assert.match(overtimeTrackerSource, /const annualSummaryItems = \[/);
   assert.match(overtimeTrackerSource, /highestNightShift\.total/);
   assert.match(overtimeTrackerSource, /highestExtensionOnly\.total/);
   assert.match(overtimeTrackerSource, /highestRdotOnly\.total/);
+  assert.match(annualSummarySource, /lg:grid-cols-6/);
+  assert.match(annualSummarySource, /lg:border-l/);
+  assert.doesNotMatch(annualSummarySource, /overtime-cockpit-subpanel/);
 });
