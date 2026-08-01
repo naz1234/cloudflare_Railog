@@ -68,3 +68,18 @@ test("the Manual Area flow combines maintenance confirmation into one dropdown s
   assert.doesNotMatch(depotStablingSource, /Tick IF No need add "Hand Over Process"/);
   assert.match(depotStablingSource, /buildTp1ManualCmmsHandoverLine\(\{/);
 });
+
+test("optional TP1 details are separated from the required movement flow", () => {
+  assert.equal(
+    (depotStablingSource.match(/label: "Next Wash Optional",\s+optional: true,/g) || []).length,
+    2,
+  );
+  assert.match(depotStablingSource, /label: "If No need update",\s+optional: true,/);
+  assert.match(depotStablingSource, /const requiredFlowSteps = visibleFlowSteps\.filter\(\(step\) => !step\.optional\);/);
+  assert.match(depotStablingSource, /const optionalFlowSteps = visibleFlowSteps\.filter\(\(step\) => step\.optional\);/);
+  assert.match(depotStablingSource, /data-movement-flow-section="optional"/);
+  assert.match(depotStablingSource, />\s*Optional\s*<\/span>/);
+  assert.match(depotStablingSource, /Complete only when applicable/);
+  assert.match(depotStablingSource, /renderTp1FlowRows\(optionalFlowSteps, requiredFlowSteps\.length, "optional"\)/);
+  assert.match(depotStablingSource, /step\.complete \? "DONE" : step\.optional \? "OPTIONAL" : "NEXT"/);
+});

@@ -61,7 +61,7 @@ export default function manualUnplannedSrPlugin() {
 
       code = replaceRequired(
         code,
-        /      \{\r?\n        key: "nextWashText",\r?\n        label: "Next Wash Optional",\r?\n        visible: manualCmmsReady,/,
+        /      \{\r?\n        key: "nextWashText",\r?\n        label: "Next Wash Optional",\r?\n        optional: true,\r?\n        visible: manualCmmsReady,/,
         `      {
         key: "srNumber",
         label: "SR Number :",
@@ -86,6 +86,7 @@ export default function manualUnplannedSrPlugin() {
       {
         key: "nextWashText",
         label: "Next Wash Optional",
+        optional: true,
         visible: manualSrReady,`,
         'Manual Area SR input step'
       );

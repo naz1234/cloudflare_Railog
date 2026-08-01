@@ -8905,6 +8905,20 @@ html[data-app-theme="light"] .theme-tp1-movement-flow {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
 }
 
+html[data-app-theme="light"] .theme-tp1-optional-flow-section {
+  border-color: var(--tp1-border-strong) !important;
+}
+
+html[data-app-theme="light"] .theme-tp1-optional-flow-badge {
+  background: #f8fafc !important;
+  border-color: #9fb0c0 !important;
+  color: #0f172a !important;
+}
+
+html[data-app-theme="light"] .theme-tp1-optional-flow-help {
+  color: #475569 !important;
+}
+
 html[data-app-theme="light"] .theme-tp1-flow-step {
   background: var(--tp1-step-bg) !important;
   background-image: none !important;

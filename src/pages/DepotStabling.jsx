@@ -13001,6 +13001,7 @@ function TrainMovementContent() {
       {
         key: "nextWashText",
         label: "Next Wash Optional",
+        optional: true,
         visible: automaticCmmsReady,
         complete: Boolean(String(modeForm.nextWashText || "").trim()),
         render: () => (
@@ -13135,6 +13136,7 @@ function TrainMovementContent() {
       {
         key: "l3ReportUpdatedToMaintenance",
         label: "If No need update",
+        optional: true,
         visible: manualCmmsReady,
         complete: manualL3ReportUpdated,
         render: () => (
@@ -13158,6 +13160,7 @@ function TrainMovementContent() {
       {
         key: "nextWashText",
         label: "Next Wash Optional",
+        optional: true,
         visible: manualCmmsReady,
         complete: Boolean(String(modeForm.nextWashText || "").trim()),
         render: () => (
@@ -13180,6 +13183,8 @@ function TrainMovementContent() {
     ];
 
     const visibleFlowSteps = (isAutomatic ? automaticFlowSteps : manualFlowSteps).filter((step) => step.visible);
+    const requiredFlowSteps = visibleFlowSteps.filter((step) => !step.optional);
+    const optionalFlowSteps = visibleFlowSteps.filter((step) => step.optional);
     const tp1ClearTarget = movementType;
     const isTp1ConfirmingClear = tp1ConfirmClearTarget === tp1ClearTarget;
     const tp1LogPillButtonClass = "flex min-w-[78px] items-center justify-center gap-1 rounded-full border px-3 py-1 text-[10px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:scale-[1.02] hover:text-white";
@@ -13199,20 +13204,21 @@ function TrainMovementContent() {
             <span className="movement-flow-step-number flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[8px] font-normal text-white" style={{ borderColor: step.complete ? `${accent}80` : "#31516b", color: "#ffffff" }}>{index + 1}</span>
             <span className="truncate text-white">{step.label}</span>
           </span>
-          <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>{step.complete ? "DONE" : "NEXT"}</span>
+          <span className="shrink-0 text-[9px] font-black" style={{ color: step.complete ? accent : "#4a8ab5" }}>{step.complete ? "DONE" : step.optional ? "OPTIONAL" : "NEXT"}</span>
         </div>
         {step.render()}
       </div>
     );
 
-    const renderTp1FlowRows = (items) => (
+    const renderTp1FlowRows = (items, startIndex = 0, sectionKey = "required") => (
       <div className="grid gap-y-2">
         {items.reduce((rows, _step, index) => {
           if (index % 2 === 0) rows.push(items.slice(index, index + 2));
           return rows;
         }, []).map((pair, pairIndex) => {
-          const leftToRight = pairIndex % 2 === 0;
-          const firstIndex = pairIndex * 2;
+          const absolutePairIndex = Math.floor(startIndex / 2) + pairIndex;
+          const leftToRight = absolutePairIndex % 2 === 0;
+          const firstIndex = startIndex + pairIndex * 2;
           const secondIndex = firstIndex + 1;
           const first = pair[0];
           const second = pair[1];
@@ -13223,7 +13229,7 @@ function TrainMovementContent() {
           const arrow = second ? (leftToRight ? "→" : "←") : "";
 
           return (
-            <div key={`movement-flow-row-${movementType}-${pairIndex}`} className="grid grid-cols-[minmax(0,1fr)_24px_minmax(0,1fr)] items-center gap-x-1.5">
+            <div key={`movement-flow-row-${movementType}-${sectionKey}-${pairIndex}`} className="grid grid-cols-[minmax(0,1fr)_24px_minmax(0,1fr)] items-center gap-x-1.5">
               <div>{leftStep ? renderTp1FlowStepCard(leftStep, leftIndex) : null}</div>
               <div className="flex items-center justify-center">
                 <span
@@ -13289,7 +13295,28 @@ function TrainMovementContent() {
                 L ↔ R
               </span>
             </div>
-            {renderTp1FlowRows(visibleFlowSteps)}
+            {renderTp1FlowRows(requiredFlowSteps)}
+            {optionalFlowSteps.length > 0 && (
+              <section
+                aria-label="Optional movement details"
+                data-movement-flow-section="optional"
+                className="theme-tp1-optional-flow-section mt-3 border-t border-dashed pt-3"
+                style={{ borderColor: `${accent}55` }}
+              >
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span
+                    className="theme-tp1-optional-flow-badge rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em]"
+                    style={{ borderColor: `${accent}70`, backgroundColor: `${accent}16`, color: accent }}
+                  >
+                    Optional
+                  </span>
+                  <span className="theme-tp1-optional-flow-help text-[10px] font-semibold text-[#7eb8e0]">
+                    Complete only when applicable
+                  </span>
+                </div>
+                {renderTp1FlowRows(optionalFlowSteps, requiredFlowSteps.length, "optional")}
+              </section>
+            )}
           </div>
 
           <div className="theme-tp1-movement-preview rounded-xl border border-[#1e4060] bg-[#041727] p-3">
