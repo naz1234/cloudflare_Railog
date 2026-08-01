@@ -117,3 +117,16 @@ test("the production arrival transform reads the nested Manual Area form", () =>
   assert.match(manualArrivalPluginSource, /isCompleteMovementTimeInput\(modeForm\.toManual\)/);
   assert.doesNotMatch(manualArrivalPluginSource, /isCompleteMovementTimeInput\(tp1Form\.toManual\)/);
 });
+
+test("the required SR Number step uses the normal non-animated label style", () => {
+  const manualSrPluginSource = readFileSync(
+    new URL("../build/manualUnplannedSrPlugin.js", import.meta.url),
+    "utf8",
+  );
+  const indexCssSource = readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
+
+  assert.match(manualSrPluginSource, /label: "SR Number :"/);
+  assert.doesNotMatch(manualSrPluginSource, /movement-flow-sr-label-attention/);
+  assert.doesNotMatch(indexCssSource, /movement-flow-sr-label-glow/);
+  assert.doesNotMatch(indexCssSource, /movement-flow-sr-label-attention/);
+});
