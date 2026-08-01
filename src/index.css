@@ -2724,16 +2724,22 @@ html[data-app-theme="light"] .theme-overtime-page :is(
 }
 
 html[data-app-theme="light"] .theme-overtime-page .overtime-cockpit-subpanel,
-html[data-app-theme="light"] .theme-overtime-page details[data-testid="salary-bases-summary"] {
+html[data-app-theme="light"] .theme-overtime-page .overtime-salary-settings-popover {
   background: #f8fafc !important;
   background-image: none !important;
   border-color: #b7c4d1 !important;
   box-shadow: none !important;
 }
 
+html[data-app-theme="light"] .theme-overtime-page .overtime-salary-settings-trigger {
+  background: #ffffff !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+}
+
 html[data-app-theme="light"] .theme-overtime-page #overtime-comparison-result[data-status="waiting"] {
-  background: #f8fafc !important;
-  border-color: #b7c4d1 !important;
+  background: #fffbeb !important;
+  border-color: #d9bd73 !important;
 }
 
 html[data-app-theme="light"] .theme-overtime-page #overtime-comparison-result[data-status="correct"] {
@@ -2747,8 +2753,8 @@ html[data-app-theme="light"] .theme-overtime-page #overtime-comparison-result[da
 }
 
 html[data-app-theme="light"] .theme-overtime-page #overtime-comparison-result[data-status="extra"] {
-  background: #fffbeb !important;
-  border-color: #d9bd73 !important;
+  background: #ecfeff !important;
+  border-color: #67c7d1 !important;
 }
 
 html[data-app-theme="light"] .theme-overtime-page .overtime-cockpit-selection {
@@ -2773,6 +2779,15 @@ html[data-app-theme="light"] .theme-overtime-page .overtime-timeline-labels {
 
 html[data-app-theme="light"] .theme-overtime-page .overtime-activity-dot {
   --tw-ring-color: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-overtime-toolbar :is(select, button) {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #9fb0c0 !important;
+  color: #000000 !important;
+  box-shadow: none !important;
+  color-scheme: light !important;
 }
 
 /* Schedule-override warning and badges on the insertion TID reference panel. */
