@@ -42,14 +42,18 @@ function TrainMovementContent() {`,
         /\n  const captureMovementScrollPosition = \(\) => \{/,
         `
   useEffect(() => {
-    const derivedFromTp1 = subtractThreeMinutesFromHHMM(tp1Form.toManual);
-    if (!derivedFromTp1 || tp1Form.fromTp1 === derivedFromTp1) return;
+    const manualForm = tp1Form.manual || {};
+    const derivedFromTp1 = subtractThreeMinutesFromHHMM(manualForm.toManual);
+    if (!derivedFromTp1 || manualForm.fromTp1 === derivedFromTp1) return;
 
     setTp1Form((previous) => ({
       ...previous,
-      fromTp1: derivedFromTp1,
+      manual: {
+        ...(previous.manual || {}),
+        fromTp1: derivedFromTp1,
+      },
     }));
-  }, [tp1Form.toManual, tp1Form.fromTp1]);
+  }, [tp1Form.manual?.toManual, tp1Form.manual?.fromTp1]);
 
   const captureMovementScrollPosition = () => {`,
         'automatic From TP1 form value'
@@ -66,7 +70,7 @@ function TrainMovementContent() {`,
 
       code = code.replace(
         /const manualToManualReady = [^\r\n]+;/,
-        'const manualToManualReady = manualShunterReady && isCompleteMovementTimeInput(tp1Form.toManual);'
+        'const manualToManualReady = manualShunterReady && isCompleteMovementTimeInput(modeForm.toManual);'
       );
 
       code = replaceRequired(
@@ -76,7 +80,7 @@ function TrainMovementContent() {`,
         key: "toManual",
         label: "Time arrival to Manual Area",
         visible: manualShunterReady,
-        complete: isCompleteMovementTimeInput(tp1Form.toManual),
+        complete: isCompleteMovementTimeInput(modeForm.toManual),
         render: () => renderTp1TimeInput("toManual"),
       },`,
         'manual flow time fields'
