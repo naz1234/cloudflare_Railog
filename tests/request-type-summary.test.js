@@ -49,10 +49,10 @@ test("workshop movement direction accepts common G-C and C-G spellings", () => {
 test("request summary UI uses the revised headings and concise sentence templates", () => {
   assert.match(depotStablingSource, /Request Summary by Type/);
   assert.match(depotStablingSource, /title: "Other Requests"/);
-  assert.match(depotStablingSource, /title: "Workshop In Movement"/);
-  assert.match(depotStablingSource, /title: "Workshop Out Movement"/);
-  assert.match(depotStablingSource, /workshop in movement from G to C/);
-  assert.match(depotStablingSource, /workshop out movement from C to G/);
+  assert.match(depotStablingSource, /title: "Workshop Movement"/);
+  assert.match(depotStablingSource, /workshop movement from G to C/);
+  assert.match(depotStablingSource, /workshop movement from C to G/);
+  assert.doesNotMatch(depotStablingSource, /title: "Workshop (?:In|Out) Movement"/);
   assert.match(depotStablingSource, /scheduled for washing on \$\{washDate\}/);
   assert.match(depotStablingSource, /formatRequestedSummaryEntryCount\(group\.lines\.length\)/);
   assert.doesNotMatch(depotStablingSource, /Request Type Summary/);
