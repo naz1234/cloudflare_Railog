@@ -26,6 +26,7 @@ import {
   addOnBeforeRequestedSummaryTrailingDate,
   formatRequestedSummaryEntryCount,
   formatRequestedSummaryOtherAction,
+  getRequestedSummaryWorkshopMovementDirection,
   normalizeRequestedSummaryDates,
   removeRequestedSummaryLeadingSeparator,
 } from "../lib/requestedActionSummary";
@@ -22314,7 +22315,8 @@ function getRequestedActionSummaryRowsFromRequests(requests = []) {
 }
 
 function buildRequestedActionSummaryLines(rows = []) {
-  const inbound = createRequestedSummaryBucket();
+  const workshopIn = createRequestedSummaryBucket();
+  const workshopOut = createRequestedSummaryBucket();
   const todayPmGroups = new Map();
   const morningPmGroups = new Map();
   const cm = createRequestedSummaryBucket();
@@ -22332,7 +22334,10 @@ function buildRequestedActionSummaryLines(rows = []) {
 
     const tokens = normalized.split(" ").filter(Boolean);
     const hasDeepCleaning = /(^| )DEEP CLEAN(?:ING)?( |$)/.test(normalized);
-    const hasInbound = tokens.includes("INBOUND") || normalized.includes("G TO C");
+    const workshopMovementDirection = getRequestedSummaryWorkshopMovementDirection(requestType);
+    const hasWorkshopIn = workshopMovementDirection === "in";
+    const hasWorkshopOut = workshopMovementDirection === "out";
+    const hasWorkshopMovement = hasWorkshopIn || hasWorkshopOut;
     const hasPm = tokens.includes("PM");
     const hasCm = tokens.includes("CM");
     const hasTlc = tokens.includes("TLC");
@@ -22343,7 +22348,8 @@ function buildRequestedActionSummaryLines(rows = []) {
       return;
     }
 
-    if (hasInbound) appendRequestedSummaryTrain(inbound, row);
+    if (hasWorkshopIn) appendRequestedSummaryTrain(workshopIn, row);
+    if (hasWorkshopOut) appendRequestedSummaryTrain(workshopOut, row);
     if (hasPm) {
       const activityLabel = formatRequestedSummaryPmActivityLabel(requestType);
       const activityGroups = isTomorrowPm ? morningPmGroups : todayPmGroups;
@@ -22358,7 +22364,7 @@ function buildRequestedActionSummaryLines(rows = []) {
 
     // Preserve the existing special sentences above, then group every other
     // user-entered request label so no requested train disappears from summary.
-    if (!hasInbound && !hasPm && !hasCm && !hasTlc) {
+    if (!hasWorkshopMovement && !hasPm && !hasCm && !hasTlc) {
       const label = cleanRequestLabel(requestType) || "Request";
       const groupKey = normalizeRequestIdentity(label) || "REQUEST";
       if (!otherGroups.has(groupKey)) {
@@ -22370,14 +22376,19 @@ function buildRequestedActionSummaryLines(rows = []) {
 
   const lines = [];
   const deepCleaningList = joinRequestedSummaryTrainList(deepCleaning.trains);
-  const inboundList = joinRequestedSummaryTrainList(inbound.trains);
+  const workshopInList = joinRequestedSummaryTrainList(workshopIn.trains);
+  const workshopOutList = joinRequestedSummaryTrainList(workshopOut.trains);
 
   if (deepCleaningList) {
     lines.push(`${deepCleaningList} — deep cleaning completed.`);
   }
 
-  if (inboundList) {
-    lines.push(`${inboundList} — inbound movement from G to C.`);
+  if (workshopInList) {
+    lines.push(`${workshopInList} — workshop in movement from G to C.`);
+  }
+
+  if (workshopOutList) {
+    lines.push(`${workshopOutList} — workshop out movement from C to G.`);
   }
 
   morningPmGroups.forEach((bucket, activityLabel) => {
@@ -22476,6 +22487,18 @@ const REQUESTED_ACTION_SUMMARY_GROUPS = [
     bulletClass: "text-cyan-300",
   },
   {
+    key: "workshop-in",
+    title: "Workshop In Movement",
+    headingClass: "border-violet-400/45 bg-violet-500/12 text-violet-200",
+    bulletClass: "text-violet-300",
+  },
+  {
+    key: "workshop-out",
+    title: "Workshop Out Movement",
+    headingClass: "border-amber-400/45 bg-amber-500/12 text-amber-200",
+    bulletClass: "text-amber-300",
+  },
+  {
     key: "others",
     title: "Other Requests",
     headingClass: "border-slate-400/40 bg-slate-500/10 text-slate-200",
@@ -22485,6 +22508,9 @@ const REQUESTED_ACTION_SUMMARY_GROUPS = [
 
 function getRequestedActionSummaryGroupKey(line = "") {
   const normalized = normalizeRequestIdentity(line);
+  const workshopMovementDirection = getRequestedSummaryWorkshopMovementDirection(line);
+  if (workshopMovementDirection === "in") return "workshop-in";
+  if (workshopMovementDirection === "out") return "workshop-out";
   if (/\bWASH(?:ING)?\b/.test(normalized)) return "washing";
   if (/\bPM\b/.test(normalized)) return "pm";
   if (/\bCM\b/.test(normalized) || normalized.includes("CLOSING SR")) return "cm";
