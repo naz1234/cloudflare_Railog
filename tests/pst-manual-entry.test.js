@@ -73,15 +73,29 @@ test("manual entry signatures detect duplicates regardless of train formatting",
   );
 });
 
-test("the manual-entry window is directly above and feeds the shared log output", () => {
-  const manualPanelIndex = depotStablingSource.indexOf("<PSTManualEntry");
-  const sharedOutputIndex = depotStablingSource.indexOf('<PSTLogOutput depot="west"', manualPanelIndex);
+test("West and East use separate manual-entry windows above their shared outputs", () => {
+  const westManualIndex = depotStablingSource.indexOf('<PSTManualEntry depot="west"');
+  const westOutputIndex = depotStablingSource.indexOf('<PSTLogOutput depot="west"', westManualIndex);
+  const eastManualIndex = depotStablingSource.indexOf('<PSTManualEntry depot="east"');
+  const eastOutputIndex = depotStablingSource.indexOf('<PSTLogOutput depot="east"', eastManualIndex);
 
-  assert.ok(manualPanelIndex >= 0, "expected the PST manual-entry panel");
-  assert.ok(sharedOutputIndex > manualPanelIndex, "manual-entry panel must appear above the shared output");
+  assert.ok(westManualIndex >= 0, "expected the West Depot manual-entry panel");
+  assert.ok(westOutputIndex > westManualIndex, "West manual entry must appear above the West output");
+  assert.ok(eastManualIndex >= 0, "expected the East Depot manual-entry panel");
+  assert.ok(eastOutputIndex > eastManualIndex, "East manual entry must appear above the East output");
   assert.match(depotStablingSource, /onAddManualLog=\{handleActiveAddManualPSTLog\}/);
   assert.match(depotStablingSource, /onRemoveManualLog=\{handleActiveRemoveManualPSTLog\}/);
   assert.match(depotStablingSource, /entry\?\.manualEntry &&[\s\S]*isPSTLogEntry\(entry\)[\s\S]*isTrainPrepLogEntry\(entry\)/);
-  assert.match(manualEntrySource, /PST &amp; Train Prep Manual Entry/);
-  assert.match(manualEntrySource, /Add manual single entries to the shared PST \/ Train Prep Log Output\./);
+  assert.match(manualEntrySource, /entry\?\.manualEntry && entry\?\.depot === normalizedDepot/);
+  assert.match(manualEntrySource, /\{depotLabel\} — PST &amp; Train Prep Manual Entry/);
+  assert.doesNotMatch(manualEntrySource, /aria-label="Manual entry depot"/);
+  assert.doesNotMatch(manualEntrySource, /<th>Depot<\/th>/);
+});
+
+test("PST completion is calculated and read-only while Train Prep completion remains editable", () => {
+  assert.match(manualEntrySource, /endTime: addMinutesToPSTManualTime\(startTime, 6\)/);
+  assert.match(manualEntrySource, /isPST \? <span className="pst-manual-calculated-time"/);
+  assert.match(manualEntrySource, /title="Calculated automatically at PST start time \+6 minutes"/);
+  assert.match(manualEntrySource, /aria-label=\{`\$\{depotLabel\} Train Prep completion time`\}/);
+  assert.doesNotMatch(manualEntrySource, /aria-label="Completion time"/);
 });
