@@ -9,6 +9,7 @@ import OdoReading from "../components/OdoReading";
 import TIDReferenceTable, { getTidReferenceRemark } from "../components/TIDReferenceTable";
 import ActionTooltip from "../components/ActionTooltip";
 import PSTLogOutput from "../components/depot/PSTLogOutput";
+import PSTManualEntry from "../components/depot/PSTManualEntry";
 import InsertionLogOutput from "../components/depot/InsertionLogOutput";
 import OvertimeTracker from "../components/OvertimeTracker";
 import RosterWorkspace from "../components/RosterWorkspace";
@@ -13575,7 +13576,14 @@ function buildPSTExportLinesFromVisibleState({
   collectDepot("west", WEST_ROADS, westData);
   collectDepot("east", EAST_ROADS, eastData);
 
-  return sortPSTLogLinesByTime(exportLines);
+  const existingExportKeys = new Set(exportLines.map((entry) => entry.key).filter(Boolean));
+  const manualLogLines = (Array.isArray(logLines) ? logLines : []).filter((entry) => (
+    entry?.manualEntry &&
+    (isPSTLogEntry(entry) || isTrainPrepLogEntry(entry)) &&
+    (!entry.key || !existingExportKeys.has(entry.key))
+  ));
+
+  return sortPSTLogLinesByTime([...exportLines, ...manualLogLines]);
 }
 
 function buildAPUMismatchChecklistLog(trainIds = []) {
@@ -13743,7 +13751,7 @@ function APUMismatchChecklist({
 
 
 function PSTTabContent
-({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, apuMismatchTrainIds, onAPUMismatchTrainIdsChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug, westPg = "pg1", eastPg = "pg1", onPSTPgChange, onRefreshPSTPg2, onClearPSTPg2Trains, westPSTStablingEditable = false, eastPSTStablingEditable = false, onEditablePSTTrainIdChange }) {
+({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onAddManualLog, onRemoveManualLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, apuMismatchTrainIds, onAPUMismatchTrainIdsChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug, westPg = "pg1", eastPg = "pg1", onPSTPgChange, onRefreshPSTPg2, onClearPSTPg2Trains, westPSTStablingEditable = false, eastPSTStablingEditable = false, onEditablePSTTrainIdChange }) {
   const [downloadingExcelDepot, setDownloadingExcelDepot] = useState("");
   const safeCompletedByNames = completedByNames || { west: "", east: "" };
   const safeAPUMismatchTrainIds = normalizeAPUMismatchTrainIds(apuMismatchTrainIds);
@@ -13953,6 +13961,7 @@ function PSTTabContent
       <div className="grid w-fit grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[max-content_420px] lg:items-start">
         <div className="flex min-w-0 flex-col gap-3">
           <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" activePg={westPg} onPgChange={(pg) => onPSTPgChange?.("west", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("west")} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearPg2Trains={westPSTStablingEditable ? () => onClearPSTPg2Trains?.("west") : null} stablingEditable={westPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} />
+          <PSTManualEntry logLines={sortedLogLines} onAddEntry={onAddManualLog} onRemoveEntry={onRemoveManualLog} />
           <div className="pst-train-prep-log-font-bump w-full overflow-visible">
             <style>{`
             /* PST / Train Prep Log output: auto-height, wider width, compact header */
@@ -19941,6 +19950,47 @@ export default function DepotStablingPage() {
   const isActivePSTPg2Depot = useCallback((depot) => getActivePSTPgForDepot(depot) === "pg2", [getActivePSTPgForDepot]);
   const isActivePSTPg2Road = useCallback((road) => getActivePSTPgForRoad(road) === "pg2", [getActivePSTPgForRoad]);
 
+  const handleActiveAddManualPSTLog = useCallback((entry) => {
+    const depot = normalizeDepotKey(entry?.depot);
+    const sourcePage = getActivePSTPgForDepot(depot);
+    const manualEntry = { ...entry, depot, sourcePage, manualEntry: true, source: "manual" };
+
+    if (sourcePage === "pg2") {
+      commitPSTPg2WorkState(
+        pstPg2StateRef.current,
+        prepPg2StateRef.current,
+        [...pstPg2LogLinesRef.current, manualEntry]
+      );
+      return;
+    }
+
+    markPSTLiveLocalEdit();
+    const nextLogLines = sortPSTLogLinesByTime([...pstLogLinesRef.current, manualEntry]);
+    pstLogLinesRef.current = nextLogLines;
+    setPstLogLines(nextLogLines);
+  }, [commitPSTPg2WorkState, getActivePSTPgForDepot, markPSTLiveLocalEdit]);
+
+  const handleActiveRemoveManualPSTLog = useCallback((entry) => {
+    const key = entry?.key;
+    if (!key) return;
+    const depot = normalizeDepotKey(entry?.depot);
+    const sourcePage = entry?.sourcePage || getActivePSTPgForDepot(depot);
+
+    if (sourcePage === "pg2") {
+      commitPSTPg2WorkState(
+        pstPg2StateRef.current,
+        prepPg2StateRef.current,
+        pstPg2LogLinesRef.current.filter((line) => line.key !== key)
+      );
+      return;
+    }
+
+    markPSTLiveLocalEdit();
+    const nextLogLines = pstLogLinesRef.current.filter((line) => line.key !== key);
+    pstLogLinesRef.current = nextLogLines;
+    setPstLogLines(nextLogLines);
+  }, [commitPSTPg2WorkState, getActivePSTPgForDepot, markPSTLiveLocalEdit]);
+
   const handleActivePSTTick = useCallback((road, bi, trainKey, alarmStatus = null) => {
     if (isActivePSTPg2Road(road)) handlePSTPg2Tick(road, bi, trainKey, alarmStatus);
     else handlePSTTick(road, bi, trainKey, alarmStatus);
@@ -20930,6 +20980,8 @@ export default function DepotStablingPage() {
             onPrepTick={handleActivePrepTick}
             onPrepCompletionTimeChange={handleActivePrepCompletionTimeChange}
             onRemoveLog={handleActiveRemovePSTLog}
+            onAddManualLog={handleActiveAddManualPSTLog}
+            onRemoveManualLog={handleActiveRemoveManualPSTLog}
             onClearDepotLog={handleActiveClearDepotPST}
             onClearDepotPSTOnly={handleActiveClearDepotPSTOnly}
             onClearDepotPrepOnly={handleActiveClearDepotPrepOnly}
