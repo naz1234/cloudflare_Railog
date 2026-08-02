@@ -28,6 +28,11 @@ test("maintenance upload tools expose dedicated light-theme hooks", () => {
   );
 });
 
+test("image reader uses the Train Request title", () => {
+  assert.match(imageReaderSource, />Train Req\. IMG Reader<\/h2>/);
+  assert.doesNotMatch(imageReaderSource, />Sabri IMG Reader<\/h2>/);
+});
+
 test("light mode uses light card surfaces with white upload-button content", () => {
   assert.match(
     themeStyles,
