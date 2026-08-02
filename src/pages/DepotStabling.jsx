@@ -22384,11 +22384,11 @@ function buildRequestedActionSummaryLines(rows = []) {
   }
 
   if (workshopInList) {
-    lines.push(`${workshopInList} — workshop in movement from G to C.`);
+    lines.push(`${workshopInList} — workshop movement from G to C.`);
   }
 
   if (workshopOutList) {
-    lines.push(`${workshopOutList} — workshop out movement from C to G.`);
+    lines.push(`${workshopOutList} — workshop movement from C to G.`);
   }
 
   morningPmGroups.forEach((bucket, activityLabel) => {
@@ -22487,16 +22487,10 @@ const REQUESTED_ACTION_SUMMARY_GROUPS = [
     bulletClass: "text-cyan-300",
   },
   {
-    key: "workshop-in",
-    title: "Workshop In Movement",
+    key: "workshop",
+    title: "Workshop Movement",
     headingClass: "border-violet-400/45 bg-violet-500/12 text-violet-200",
     bulletClass: "text-violet-300",
-  },
-  {
-    key: "workshop-out",
-    title: "Workshop Out Movement",
-    headingClass: "border-amber-400/45 bg-amber-500/12 text-amber-200",
-    bulletClass: "text-amber-300",
   },
   {
     key: "others",
@@ -22509,8 +22503,7 @@ const REQUESTED_ACTION_SUMMARY_GROUPS = [
 function getRequestedActionSummaryGroupKey(line = "") {
   const normalized = normalizeRequestIdentity(line);
   const workshopMovementDirection = getRequestedSummaryWorkshopMovementDirection(line);
-  if (workshopMovementDirection === "in") return "workshop-in";
-  if (workshopMovementDirection === "out") return "workshop-out";
+  if (workshopMovementDirection) return "workshop";
   if (/\bWASH(?:ING)?\b/.test(normalized)) return "washing";
   if (/\bPM\b/.test(normalized)) return "pm";
   if (/\bCM\b/.test(normalized) || normalized.includes("CLOSING SR")) return "cm";
