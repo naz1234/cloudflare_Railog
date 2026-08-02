@@ -70,6 +70,10 @@ test("the Manual Area flow combines maintenance confirmation into one dropdown s
 });
 
 test("optional TP1 details are separated from the required movement flow", () => {
+  const optionalSectionClass = depotStablingSource.match(
+    /data-movement-flow-section="optional"[\s\S]{0,200}?className="([^"]+)"/,
+  )?.[1] || "";
+
   assert.equal(
     (depotStablingSource.match(/label: "Next Wash Optional",\s+optional: true,/g) || []).length,
     2,
@@ -79,6 +83,8 @@ test("optional TP1 details are separated from the required movement flow", () =>
   assert.match(depotStablingSource, /const optionalFlowSteps = visibleFlowSteps\.filter\(\(step\) => step\.optional\);/);
   assert.match(depotStablingSource, /data-movement-flow-section="optional"/);
   assert.match(depotStablingSource, /data-movement-flow-section="required"/);
+  assert.ok(optionalSectionClass, "expected the optional movement section class");
+  assert.doesNotMatch(optionalSectionClass, /\bflex-1\b|\bmin-h-/);
   assert.match(depotStablingSource, />\s*Optional\s*<\/span>/);
   assert.match(depotStablingSource, />Required<\/span>/);
   assert.match(depotStablingSource, /Complete only when applicable/);

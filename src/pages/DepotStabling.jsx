@@ -13360,7 +13360,7 @@ function TrainMovementContent() {
               <section
                 aria-label="Optional movement details"
                 data-movement-flow-section="optional"
-                className="theme-tp1-optional-flow-section mt-4 flex flex-1 flex-col rounded-xl border p-3 xl:min-h-[225px]"
+                className="theme-tp1-optional-flow-section mt-4 flex flex-col rounded-xl border p-3"
                 style={{ borderColor: `${accent}55`, background: `linear-gradient(135deg, ${accent}10, rgba(3,17,29,0.78) 76%)`, boxShadow: `inset 0 1px 0 ${accent}12` }}
               >
                 <div className="mb-3 flex flex-wrap items-center gap-2">
