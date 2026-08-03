@@ -145,63 +145,63 @@ export default function RemovalPdfEditor({
         </div>
 
         {entries.length ? (
-          <div className="overflow-x-auto">
-            <table className="theme-swp-editor-table w-full min-w-[570px] table-fixed border-collapse">
+          <div className="min-w-0 overflow-x-hidden">
+            <table className="theme-swp-editor-table w-full min-w-0 table-fixed border-collapse">
               <thead>
                 <tr>
-                  <th className="w-[68px] px-2 py-2 text-center">Train</th>
-                  <th className="w-[72px] px-2 py-2 text-center">TID</th>
-                  <th className="w-[94px] px-2 py-2 text-center">Time</th>
-                  <th className="px-2 py-2 text-left">Remark</th>
-                  <th className="w-[54px] px-2 py-2 text-center">Remove</th>
+                  <th className="w-[54px] px-1 py-2 text-center">Train</th>
+                  <th className="w-[58px] px-1 py-2 text-center">TID</th>
+                  <th className="w-[86px] px-1 py-2 text-center">Time</th>
+                  <th className="px-1 py-2 text-left">Remark</th>
+                  <th className="w-[50px] px-1 py-2 text-center">Remove</th>
                 </tr>
               </thead>
               <tbody>
                 {entries.map((entry) => (
                   <tr key={entry.swpDraftId}>
-                    <td className="px-2 py-1.5">
+                    <td className="px-1 py-1.5">
                       <input
                         value={formatTrainNumber(entry)}
                         onChange={(event) => handleLogFieldChange(depot, entry.swpDraftId, "trainId", event.target.value)}
                         inputMode="numeric"
                         aria-label={`${label} train number for edited PDF`}
-                        className="theme-swp-editor-input h-8 w-full rounded-lg border border-[#2b5875] bg-[#071b2b] px-2 text-center text-[11px] font-bold text-white outline-none transition-colors focus:border-cyan-400"
+                        className="theme-swp-editor-input h-8 w-full rounded-lg border border-[#2b5875] bg-[#071b2b] px-1 text-center text-[11px] font-bold text-white outline-none transition-colors focus:border-cyan-400"
                         placeholder="00"
                       />
                     </td>
-                    <td className="px-2 py-1.5">
+                    <td className="px-1 py-1.5">
                       <input
                         value={entry.tid || ""}
                         onChange={(event) => handleLogFieldChange(depot, entry.swpDraftId, "tid", event.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
                         inputMode="numeric"
                         aria-label={`${label} T${formatTrainNumber(entry)} TID for edited PDF`}
-                        className="theme-swp-editor-input h-8 w-full rounded-lg border border-[#2b5875] bg-[#071b2b] px-2 text-center text-[10px] font-bold text-white outline-none transition-colors focus:border-cyan-400"
+                        className="theme-swp-editor-input h-8 w-full rounded-lg border border-[#2b5875] bg-[#071b2b] px-1 text-center text-[10px] font-bold text-white outline-none transition-colors focus:border-cyan-400"
                         placeholder="-"
                       />
                     </td>
-                    <td className="px-2 py-1.5">
+                    <td className="px-1 py-1.5">
                       <input
                         type="time"
                         value={entry.time || ""}
                         onChange={(event) => handleLogFieldChange(depot, entry.swpDraftId, "time", event.target.value)}
                         aria-label={`${label} T${formatTrainNumber(entry)} time for edited PDF`}
-                        className="theme-swp-editor-input h-8 w-full rounded-lg border border-[#2b5875] bg-[#071b2b] px-1.5 text-center text-[10px] font-bold text-white outline-none transition-colors focus:border-cyan-400"
+                        className="theme-swp-editor-input h-8 w-full rounded-lg border border-[#2b5875] bg-[#071b2b] px-1 text-center text-[10px] font-bold text-white outline-none transition-colors focus:border-cyan-400"
                       />
                     </td>
-                    <td className="px-2 py-1.5">
+                    <td className="px-1 py-1.5">
                       <input
                         value={entry.remark || ""}
                         onChange={(event) => handleLogFieldChange(depot, entry.swpDraftId, "remark", event.target.value)}
                         aria-label={`${label} T${formatTrainNumber(entry)} remark for edited PDF`}
-                        className="theme-swp-editor-input h-8 w-full rounded-lg border border-[#2b5875] bg-[#071b2b] px-2.5 text-[10px] font-semibold text-white outline-none transition-colors focus:border-cyan-400"
+                        className="theme-swp-editor-input h-8 w-full rounded-lg border border-[#2b5875] bg-[#071b2b] px-2 text-[10px] font-semibold text-white outline-none transition-colors focus:border-cyan-400"
                         placeholder="Remark"
                       />
                     </td>
-                    <td className="px-2 py-1.5 text-center">
+                    <td className="px-1 py-1.5 text-center">
                       <button
                         type="button"
                         onClick={() => handleLogRemove(depot, entry.swpDraftId)}
-                        className="theme-swp-editor-remove inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-400/45 bg-red-500/10 text-red-200 transition-colors hover:bg-red-500/25"
+                        className="theme-swp-editor-remove inline-flex h-7 w-7 items-center justify-center rounded-full border border-red-400/45 bg-red-500/10 text-red-200 transition-colors hover:bg-red-500/25"
                         aria-label={`Remove T${formatTrainNumber(entry)} from ${label} edited PDF table`}
                         title="Remove from edited PDF"
                       >
@@ -306,57 +306,57 @@ export default function RemovalPdfEditor({
                     <span className="text-[9px] font-bold text-[#7fa5bd]">{group.rows.length} {group.rows.length === 1 ? "train" : "trains"}</span>
                   </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="theme-swp-editor-table w-full min-w-[760px] table-fixed border-collapse">
+                  <div className="min-w-0 overflow-x-hidden">
+                    <table className="theme-swp-editor-table w-full min-w-0 table-fixed border-collapse">
                       <thead>
                         <tr>
-                          <th className="w-[76px] px-2 py-2 text-center">Train</th>
-                          <th className="w-[92px] px-2 py-2 text-center">TID</th>
-                          <th className="px-2 py-2 text-left">Remark request</th>
-                          <th className="w-[190px] px-2 py-2 text-left">Allocation</th>
-                          <th className="w-[54px] px-2 py-2 text-center">Remove</th>
+                          <th className="w-[60px] px-1 py-2 text-center">Train</th>
+                          <th className="w-[72px] px-1 py-2 text-center">TID</th>
+                          <th className="px-1 py-2 text-left">Remark request</th>
+                          <th className="w-[170px] px-1 py-2 text-left">Allocation</th>
+                          <th className="w-[50px] px-1 py-2 text-center">Remove</th>
                         </tr>
                       </thead>
                       <tbody>
                         {group.rows.map((row) => (
                           <tr key={row.swpDraftId}>
-                            <td className="px-2 py-1.5 text-center text-[12px] font-black text-white">T{formatTrainNumber(row)}</td>
-                            <td className="px-2 py-1.5">
+                            <td className="px-1 py-1.5 text-center text-[12px] font-black text-white">T{formatTrainNumber(row)}</td>
+                            <td className="px-1 py-1.5">
                               <input
                                 value={row.tid || ""}
                                 onChange={(event) => handleFieldChange(row.swpDraftId, "tid", event.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
                                 inputMode="numeric"
                                 aria-label={`T${formatTrainNumber(row)} TID for edited PDF`}
-                                className="theme-swp-editor-input h-8 w-full rounded-lg border border-[#2b5875] bg-[#071b2b] px-2 text-center text-[11px] font-bold text-white outline-none transition-colors focus:border-cyan-400"
+                                className="theme-swp-editor-input h-8 w-full rounded-lg border border-[#2b5875] bg-[#071b2b] px-1 text-center text-[11px] font-bold text-white outline-none transition-colors focus:border-cyan-400"
                                 placeholder="-"
                               />
                             </td>
-                            <td className="px-2 py-1.5">
+                            <td className="px-1 py-1.5">
                               <input
                                 value={row.requestType || ""}
                                 onChange={(event) => handleFieldChange(row.swpDraftId, "requestType", event.target.value)}
                                 aria-label={`T${formatTrainNumber(row)} remark for edited PDF`}
-                                className="theme-swp-editor-input h-8 w-full rounded-lg border border-[#2b5875] bg-[#071b2b] px-2.5 text-[10px] font-semibold text-white outline-none transition-colors focus:border-cyan-400"
+                                className="theme-swp-editor-input h-8 w-full rounded-lg border border-[#2b5875] bg-[#071b2b] px-2 text-[10px] font-semibold text-white outline-none transition-colors focus:border-cyan-400"
                                 placeholder="Remark request"
                               />
                             </td>
-                            <td className="px-2 py-1.5">
+                            <td className="px-1 py-1.5">
                               <select
                                 value={row.swpDraftActionValue}
                                 onChange={(event) => handleActionChange(row.swpDraftId, event.target.value)}
                                 aria-label={`T${formatTrainNumber(row)} allocation for edited PDF`}
-                                className="theme-swp-editor-select h-8 w-full rounded-lg border border-[#2b5875] bg-[#071b2b] px-2 text-[10px] font-bold text-white outline-none transition-colors focus:border-cyan-400"
+                                className="theme-swp-editor-select h-8 w-full rounded-lg border border-[#2b5875] bg-[#071b2b] px-1.5 text-[10px] font-bold text-white outline-none transition-colors focus:border-cyan-400"
                               >
                                 {getRemovalPdfDraftActionOptions(row).map((option) => (
                                   <option key={option.value} value={option.value}>{option.label}</option>
                                 ))}
                               </select>
                             </td>
-                            <td className="px-2 py-1.5 text-center">
+                            <td className="px-1 py-1.5 text-center">
                               <button
                                 type="button"
                                 onClick={() => handleRemove(row.swpDraftId)}
-                                className="theme-swp-editor-remove inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-400/45 bg-red-500/10 text-red-200 transition-colors hover:bg-red-500/25"
+                                className="theme-swp-editor-remove inline-flex h-7 w-7 items-center justify-center rounded-full border border-red-400/45 bg-red-500/10 text-red-200 transition-colors hover:bg-red-500/25"
                                 aria-label={`Remove T${formatTrainNumber(row)} from edited PDF`}
                                 title="Remove from edited PDF"
                               >
