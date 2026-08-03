@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import * as XLSX from "xlsx";
 import { Upload, Copy, ClipboardCheck, Trash2, Download, Droplets, PlusCircle, Clock } from "lucide-react";
+import CmmsMinusThreeConverter from "./CmmsMinusThreeConverter";
 
 const SESSION_BREAK = 15 * 60 + 30;
 
@@ -450,6 +451,9 @@ export default function TrainWashing() {
           </div>
         )}
       </div>
+
+      {/* Independent CMMS Next Wash converter below Manual Washing Entry. */}
+      <CmmsMinusThreeConverter />
 
       <div ref={bottomRef} />
     </div>

@@ -2533,6 +2533,29 @@ html[data-app-theme="light"] .theme-train-movement-page .movement-flow-step-labe
   border-color: rgba(16, 185, 129, 0.32);
 }
 
+.theme-washing-minus-three-table th {
+  color: #ede9fe;
+  background: #261d43;
+  border-bottom: 1px solid #65508f;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.theme-washing-minus-three-table td {
+  border-bottom: 1px solid rgba(101, 80, 143, 0.48);
+  font-size: 11px;
+}
+
+.theme-washing-minus-three-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.theme-washing-minus-three-table tbody tr:nth-child(even) {
+  background: rgba(139, 92, 246, 0.045);
+}
+
 /* Train Washing workspace light-mode cleanup.
    Dark mode keeps the original navy and emerald design. */
 html[data-app-theme="light"] .theme-train-washing-page,
@@ -2575,6 +2598,12 @@ html[data-app-theme="light"] .theme-washing-session-header[data-session="2"] {
   background-image: linear-gradient(180deg, #effcf5 0%, #d9f3e5 100%) !important;
 }
 
+html[data-app-theme="light"] .theme-washing-header-violet {
+  background: linear-gradient(180deg, #f5f3ff 0%, #e9e3fb 100%) !important;
+  background-image: linear-gradient(180deg, #f5f3ff 0%, #e9e3fb 100%) !important;
+  border-color: #b9a8dc !important;
+}
+
 html[data-app-theme="light"] .theme-washing-header > div > div:first-child,
 html[data-app-theme="light"] .theme-washing-upload-zone > div:first-child {
   background: #ffffff !important;
@@ -2594,6 +2623,17 @@ html[data-app-theme="light"] .theme-washing-upload-zone:hover,
 html[data-app-theme="light"] .theme-washing-upload-zone.is-dragging {
   background: #eff6ff !important;
   border-color: #4f8ef7 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-upload {
+  background: #fbfaff !important;
+  border-color: #ad9bd1 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-upload:hover,
+html[data-app-theme="light"] .theme-washing-minus-three-upload.is-dragging {
+  background: #f3efff !important;
+  border-color: #7c3aed !important;
 }
 
 html[data-app-theme="light"] .theme-train-washing-page :is(input, select, textarea),
@@ -2689,6 +2729,50 @@ html[data-app-theme="light"] .theme-washing-log-total {
 html[data-app-theme="light"] .theme-washing-log-total-green {
   background: linear-gradient(180deg, #effcf5 0%, #d9f3e5 100%) !important;
   background-image: linear-gradient(180deg, #effcf5 0%, #d9f3e5 100%) !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-table-wrap {
+  background: #ffffff !important;
+  border-color: #b9a8dc !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-table th {
+  color: #2e1065 !important;
+  -webkit-text-fill-color: #2e1065 !important;
+  background: #ede9fe !important;
+  border-color: #b9a8dc !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-table td {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  background: #ffffff !important;
+  border-color: #ddd6ee !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-table tbody tr:nth-child(even) td {
+  background: #faf8ff !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-download {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: #047857 !important;
+  border-color: #065f46 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-clear {
+  color: #991b1b !important;
+  -webkit-text-fill-color: #991b1b !important;
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-error {
+  color: #78350f !important;
+  -webkit-text-fill-color: #78350f !important;
+  background: #fffbeb !important;
+  border-color: #f59e0b !important;
 }
 
 html[data-app-theme="light"] .theme-washing-session[data-session="1"] .theme-washing-log-body {
