@@ -125,15 +125,24 @@ test("allocation transfers reconcile the linked West removal row in the edited c
   assert.equal(movedBackToSwap.westLog.entries.some((entry) => entry.trainId === "T02"), false);
 });
 
-test("removing a row affects only the draft export", () => {
+test("removing a requested allocation keeps its linked Removal Table row", () => {
   const source = createSourceData();
+  source.westLog.entries.push({
+    trainId: "T09",
+    tid: "104",
+    time: "09:39",
+    remark: "RST PM 03-AUG",
+  });
   const draft = createRemovalPdfDraft(source);
   const removedRow = draft.actionRows.find((row) => row.trainsetNumber === "09");
+  const westEntriesBefore = structuredClone(draft.westLog.entries);
   const edited = removeRemovalPdfDraftRow(draft, removedRow.swpDraftId);
   const exportedRows = buildRemovalPdfDraftExportRows(edited.actionRows);
 
   assert.equal(edited.actionRows.length, 3);
   assert.equal(exportedRows.some((row) => row.trainsetNumber === "09"), false);
+  assert.deepEqual(edited.westLog.entries, westEntriesBefore);
+  assert.equal(edited.westLog.entries.some((entry) => entry.trainId === "T09"), true);
   assert.equal(source.actionOverviewRows.some((row) => row.trainsetNumber === "09"), true);
 });
 
@@ -185,6 +194,7 @@ test("the SWP editor states that live and normal PDF data remain unchanged", () 
   assert.match(editorSource, /backgroundRoot\.inert = true/);
   assert.match(editorSource, /previousActiveElement\?\.focus/);
   assert.match(editorSource, /row\?\.trainsetNumber \|\| row\?\.trainId/);
+  assert.match(editorSource, /Deleting an allocation keeps its Removal Table entry\./);
 });
 
 test("the SWP button and editor have explicit light-mode contrast", () => {

@@ -284,7 +284,7 @@ export default function RemovalPdfEditor({
           <div className="mb-3 mt-5 flex flex-wrap items-end justify-between gap-2 border-t border-[#224a65] pt-4">
             <div>
               <h3 className="theme-swp-editor-section-title text-[11px] font-black uppercase tracking-[0.14em] text-white">Requested train allocation</h3>
-              <p className="mt-0.5 text-[9px] text-[#83a9c2]">Changing an action moves the train into that group and reconciles its linked West removal row. TID and remark are editable for this PDF copy.</p>
+              <p className="mt-0.5 text-[9px] text-[#83a9c2]">Changing an action moves the train into that group and reconciles its linked West removal row. Deleting an allocation keeps its Removal Table entry.</p>
             </div>
             <button
               type="button"
@@ -357,8 +357,8 @@ export default function RemovalPdfEditor({
                                 type="button"
                                 onClick={() => handleRemove(row.swpDraftId)}
                                 className="theme-swp-editor-remove inline-flex h-7 w-7 items-center justify-center rounded-full border border-red-400/45 bg-red-500/10 text-red-200 transition-colors hover:bg-red-500/25"
-                                aria-label={`Remove T${formatTrainNumber(row)} from edited PDF`}
-                                title="Remove from edited PDF"
+                                aria-label={`Remove T${formatTrainNumber(row)} from Requested Train Allocation only`}
+                                title="Remove from Requested Train Allocation only"
                               >
                                 <Trash2 size={13} />
                               </button>

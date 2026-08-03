@@ -265,18 +265,8 @@ export function updateRemovalPdfDraftRow(draft = {}, rowId = "", field = "", val
 
 export function removeRemovalPdfDraftRow(draft = {}, rowId = "") {
   const rows = Array.isArray(draft?.actionRows) ? draft.actionRows : [];
-  const targetRow = rows.find((row) => row?.swpDraftId === rowId);
   const actionRows = rows.filter((row) => row?.swpDraftId !== rowId);
-  const linkedLogEntryId = String(targetRow?.swpDraftLinkedLogEntryId || "");
-
-  if (!linkedLogEntryId) return { ...draft, actionRows };
-
-  const westLog = {
-    ...(draft?.westLog || {}),
-    entries: (Array.isArray(draft?.westLog?.entries) ? draft.westLog.entries : [])
-      .filter((entry) => entry?.swpDraftId !== linkedLogEntryId),
-  };
-  return { ...draft, westLog, actionRows };
+  return { ...draft, actionRows };
 }
 
 export function updateRemovalPdfDraftLogEntry(draft = {}, depot = "west", rowId = "", field = "", value = "") {
