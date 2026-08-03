@@ -8830,10 +8830,12 @@ html[data-app-theme="light"] .theme-train-rem-toolbar .theme-train-rem-pdf {
   box-shadow: 0 1px 4px rgba(8,145,178,0.12) !important;
 }
 
-html[data-app-theme="light"] .theme-train-rem-toolbar .theme-train-rem-png {
-  background: #dbeafe !important;
-  border-color: #3b82f6 !important;
-  box-shadow: 0 1px 4px rgba(37,99,235,0.12) !important;
+html[data-app-theme="light"] .theme-train-rem-toolbar .theme-train-rem-swp {
+  color: #581c87 !important;
+  -webkit-text-fill-color: #581c87 !important;
+  background: #f3e8ff !important;
+  border-color: #a855f7 !important;
+  box-shadow: 0 1px 4px rgba(126,34,206,0.14) !important;
 }
 
 html[data-app-theme="light"] .theme-train-rem-toolbar .theme-train-rem-export.is-done {
@@ -8960,6 +8962,212 @@ html[data-app-theme="light"] .theme-train-rem-table-header {
   background: #e5eef5 !important;
   background-image: linear-gradient(180deg, #eef5fa 0%, #e1ebf3 100%) !important;
   border-color: #a9bac8 !important;
+}
+
+/* SWP uses a disposable draft, so its editor stays visually separate from live Removal Summary data. */
+.theme-swp-editor-action-pill[data-action="needSwapping"] {
+  color: #fecaca;
+  background: rgba(239,68,68,0.13);
+  border-color: rgba(248,113,113,0.55);
+}
+
+.theme-swp-editor-action-pill[data-action="earlyShiftRem"] {
+  color: #fde68a;
+  background: rgba(250,204,21,0.12);
+  border-color: rgba(250,204,21,0.55);
+}
+
+.theme-swp-editor-action-pill[data-action="lateShiftRem"],
+.theme-swp-editor-action-pill[data-action="eosRemoval"] {
+  color: #bae6fd;
+  background: rgba(14,165,233,0.13);
+  border-color: rgba(56,189,248,0.55);
+}
+
+.theme-swp-editor-action-pill[data-action="removal"],
+.theme-swp-editor-action-pill[data-action^="custom:"] {
+  color: #e2e8f0;
+  background: rgba(100,116,139,0.18);
+  border-color: rgba(148,163,184,0.48);
+}
+
+.theme-swp-editor-table th {
+  color: #76a7c7;
+  background: #081c2c;
+  border-bottom: 1px solid #224a65;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.theme-swp-editor-table td {
+  border-bottom: 1px solid rgba(34,74,101,0.72);
+}
+
+.theme-swp-editor-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+html[data-app-theme="light"] .theme-swp-editor {
+  background: rgba(15,23,42,0.42) !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-window {
+  color: #0f172a !important;
+  background: #f8fafc !important;
+  border-color: #7dd3fc !important;
+  box-shadow: 0 26px 80px rgba(15,23,42,0.28) !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-header {
+  background: linear-gradient(180deg, #ffffff 0%, #eaf4fb 100%) !important;
+  border-color: #a9c3d4 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-header h2,
+html[data-app-theme="light"] .theme-swp-editor-section-title,
+html[data-app-theme="light"] .theme-swp-editor-depot-label {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-header p,
+html[data-app-theme="light"] .theme-swp-editor-section-title + p,
+html[data-app-theme="light"] .theme-swp-editor-footer > p {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-title-icon {
+  color: #0369a1 !important;
+  background: #e0f2fe !important;
+  border-color: #38bdf8 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-close,
+html[data-app-theme="light"] .theme-swp-editor-cancel {
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+  background: #ffffff !important;
+  border-color: #94a3b8 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-notice {
+  color: #14532d !important;
+  background: #ecfdf5 !important;
+  border-color: #4ade80 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-notice div,
+html[data-app-theme="light"] .theme-swp-editor-notice p {
+  color: #14532d !important;
+  -webkit-text-fill-color: #14532d !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-count {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  background: #ffffff !important;
+  border-color: #94a3b8 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-reset {
+  color: #78350f !important;
+  -webkit-text-fill-color: #78350f !important;
+  background: #fffbeb !important;
+  border-color: #f59e0b !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-group,
+html[data-app-theme="light"] .theme-swp-editor-empty {
+  background: #ffffff !important;
+  border-color: #b8cbd8 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-group-header {
+  background: #eaf2f7 !important;
+  border-color: #b8cbd8 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-group-header > span:last-child,
+html[data-app-theme="light"] .theme-swp-editor-empty p {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-action-pill[data-action="needSwapping"] {
+  color: #991b1b !important;
+  -webkit-text-fill-color: #991b1b !important;
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-action-pill[data-action="earlyShiftRem"] {
+  color: #713f12 !important;
+  -webkit-text-fill-color: #713f12 !important;
+  background: #fef9c3 !important;
+  border-color: #eab308 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-action-pill:is([data-action="lateShiftRem"], [data-action="eosRemoval"]) {
+  color: #075985 !important;
+  -webkit-text-fill-color: #075985 !important;
+  background: #e0f2fe !important;
+  border-color: #0ea5e9 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-action-pill:is([data-action="removal"], [data-action^="custom:"]) {
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+  background: #e2e8f0 !important;
+  border-color: #64748b !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-table th {
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+  background: #e2e8f0 !important;
+  border-color: #a9bac8 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-table td {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-table td:first-child {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-input,
+html[data-app-theme="light"] .theme-swp-editor-select {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  background: #ffffff !important;
+  border-color: #94a3b8 !important;
+  color-scheme: light;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-remove {
+  color: #991b1b !important;
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-footer {
+  background: #eef4f8 !important;
+  border-color: #a9c3d4 !important;
+}
+
+html[data-app-theme="light"] .theme-swp-editor-download {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: #047857 !important;
+  border-color: #065f46 !important;
+  box-shadow: 0 4px 12px rgba(4,120,87,0.18) !important;
 }
 
 /* PST cards: use solid black typography in light mode only. */
