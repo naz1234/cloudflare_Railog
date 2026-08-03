@@ -204,10 +204,17 @@ test("the SWP button and editor have explicit light-mode contrast", () => {
   assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-swp-editor-download/);
 });
 
+test("the SWP editor has explicit readable dark-mode contrast", () => {
+  assert.match(themeStyles, /\.theme-swp-editor-window\s*\{[^}]*color: #f8fafc;[^}]*background: #071a2a;/s);
+  assert.match(themeStyles, /\.theme-swp-editor-input::placeholder\s*\{[^}]*color: #b8cbd9;/s);
+  assert.match(themeStyles, /\.theme-swp-editor-table th\s*\{[^}]*color: #c5ebfb;/s);
+});
+
 test("the SWP editor tables fit their panels without horizontal minimum widths", () => {
   assert.doesNotMatch(editorSource, /min-w-\[(?:570|760)px\]/);
   assert.doesNotMatch(editorSource, /overflow-x-auto/);
   assert.match(editorSource, /theme-swp-editor-table w-full min-w-0 table-fixed/);
-  assert.match(editorSource, /w-\[54px\].*Train/);
-  assert.match(editorSource, /w-\[170px\].*Allocation/);
+  assert.match(editorSource, /max-w-\[1040px\]/);
+  assert.match(editorSource, /w-\[50px\].*Train/);
+  assert.match(editorSource, /w-\[155px\].*Allocation/);
 });

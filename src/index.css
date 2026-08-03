@@ -8965,6 +8965,102 @@ html[data-app-theme="light"] .theme-train-rem-table-header {
 }
 
 /* SWP uses a disposable draft, so its editor stays visually separate from live Removal Summary data. */
+.theme-swp-editor-window {
+  color: #f8fafc;
+  background: #071a2a;
+  border-color: #2f7597;
+}
+
+.theme-swp-editor-header {
+  background: linear-gradient(180deg, #0d314b 0%, #0a2940 100%);
+  border-color: #376986;
+}
+
+.theme-swp-editor-header h2,
+.theme-swp-editor-section-title,
+.theme-swp-editor-depot-label {
+  color: #f8fafc;
+}
+
+.theme-swp-editor-header p,
+.theme-swp-editor-section-title + p,
+.theme-swp-editor-footer > p {
+  color: #c4dbea;
+}
+
+.theme-swp-editor-title-icon {
+  color: #a5f3fc;
+  background: rgba(34,211,238,0.15);
+  border-color: #22d3ee;
+}
+
+.theme-swp-editor-close,
+.theme-swp-editor-cancel {
+  color: #f1f5f9;
+  background: #10283a;
+  border-color: #5b7890;
+}
+
+.theme-swp-editor-notice {
+  background: #0c332f;
+  border-color: #2dd4bf;
+}
+
+.theme-swp-editor-notice > div:first-child > div {
+  color: #a7f3d0;
+}
+
+.theme-swp-editor-notice p {
+  color: #d1fae5;
+}
+
+.theme-swp-editor-count {
+  color: #e6f6ff;
+  background: #123149;
+  border-color: #4d86a6;
+}
+
+.theme-swp-editor-group,
+.theme-swp-editor-empty {
+  background: #081c2d;
+  border-color: #376986;
+}
+
+.theme-swp-editor-group-header {
+  background: #12344d;
+  border-color: #376986;
+}
+
+.theme-swp-editor-group-count,
+.theme-swp-editor-empty p {
+  color: #c8dceb;
+}
+
+.theme-swp-editor-input,
+.theme-swp-editor-select {
+  min-width: 0;
+  color: #ffffff;
+  background: #0b2538;
+  border-color: #477c9c;
+  color-scheme: dark;
+}
+
+.theme-swp-editor-input::placeholder {
+  color: #b8cbd9;
+  opacity: 1;
+}
+
+.theme-swp-editor-remove {
+  color: #fecaca;
+  background: rgba(239,68,68,0.18);
+  border-color: #f87171;
+}
+
+.theme-swp-editor-footer {
+  background: #081a29;
+  border-color: #376986;
+}
+
 .theme-swp-editor-action-pill[data-action="needSwapping"] {
   color: #fecaca;
   background: rgba(239,68,68,0.13);
@@ -8992,17 +9088,23 @@ html[data-app-theme="light"] .theme-train-rem-table-header {
 }
 
 .theme-swp-editor-table th {
-  color: #76a7c7;
-  background: #081c2c;
-  border-bottom: 1px solid #224a65;
-  font-size: 9px;
+  color: #c5ebfb;
+  background: #0d2b41;
+  border-bottom: 1px solid #376986;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .theme-swp-editor-table td {
-  border-bottom: 1px solid rgba(34,74,101,0.72);
+  border-bottom: 1px solid rgba(55,105,134,0.82);
+}
+
+.theme-swp-editor-table th:last-child {
+  overflow: hidden;
+  font-size: 8px;
+  letter-spacing: 0;
 }
 
 .theme-swp-editor-table tbody tr:last-child td {
