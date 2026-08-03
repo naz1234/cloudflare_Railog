@@ -87,6 +87,37 @@ export function formatCmmsAdjustedText(value, deductionMinutes = 3) {
   return formatCmmsDateTimeText(value, -normalizeCmmsDeductionMinutes(deductionMinutes));
 }
 
+export function normalizeCmmsTrainId(value) {
+  const match = String(value ?? "").trim().match(/(\d{1,3})$/);
+  if (!match) return "";
+  const trainNumber = Number(match[1]) % 100;
+  if (!Number.isInteger(trainNumber) || trainNumber < 1 || trainNumber > 99) return "";
+  return pad2(trainNumber);
+}
+
+export function parseCmmsMaintenanceTrainIds(value) {
+  const seen = new Set();
+  return String(value ?? "")
+    .split(/[\s,;]+/)
+    .map(normalizeCmmsTrainId)
+    .filter((trainId) => {
+      if (!trainId || seen.has(trainId)) return false;
+      seen.add(trainId);
+      return true;
+    });
+}
+
+export function matchCmmsMaintenanceRows(rows, trainIds) {
+  const requestedIds = [...new Set((Array.isArray(trainIds) ? trainIds : []).map(normalizeCmmsTrainId).filter(Boolean))];
+  const requestedIdSet = new Set(requestedIds);
+  const matchedRows = (Array.isArray(rows) ? rows : []).filter((row) => requestedIdSet.has(normalizeCmmsTrainId(row.trainNumber)));
+  const matchedIdSet = new Set(matchedRows.map((row) => normalizeCmmsTrainId(row.trainNumber)));
+  return {
+    matchedRows,
+    unmatchedIds: requestedIds.filter((trainId) => !matchedIdSet.has(trainId)),
+  };
+}
+
 export function parseCmmsMinusThreeMatrix(matrix) {
   const rows = Array.isArray(matrix) ? matrix : [];
   const headerIndex = rows.findIndex((row, index) => {
