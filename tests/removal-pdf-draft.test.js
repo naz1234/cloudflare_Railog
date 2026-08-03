@@ -193,3 +193,11 @@ test("the SWP button and editor have explicit light-mode contrast", () => {
   assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-swp-editor-input/);
   assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-swp-editor-download/);
 });
+
+test("the SWP editor tables fit their panels without horizontal minimum widths", () => {
+  assert.doesNotMatch(editorSource, /min-w-\[(?:570|760)px\]/);
+  assert.doesNotMatch(editorSource, /overflow-x-auto/);
+  assert.match(editorSource, /theme-swp-editor-table w-full min-w-0 table-fixed/);
+  assert.match(editorSource, /w-\[54px\].*Train/);
+  assert.match(editorSource, /w-\[170px\].*Allocation/);
+});
