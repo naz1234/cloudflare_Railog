@@ -7,6 +7,9 @@ import {
   createCmmsMinusThreeWorkbook,
   formatCmmsAdjustedText,
   formatCmmsMinusThreeText,
+  matchCmmsMaintenanceRows,
+  normalizeCmmsTrainId,
+  parseCmmsMaintenanceTrainIds,
   parseCmmsMinusThreeMatrix,
 } from "../src/lib/cmmsMinusThreeConverter.js";
 
@@ -25,6 +28,25 @@ test("CMMS conversion handles a three-minute subtraction across midnight", () =>
 test("CMMS conversion supports either a two-minute or three-minute deduction", () => {
   assert.equal(formatCmmsAdjustedText(46237.39097222222, 2), "03-08-2026 09:21:00");
   assert.equal(formatCmmsAdjustedText(46237.39097222222, 3), "03-08-2026 09:20:00");
+});
+
+test("user-entered MAINT train IDs accept the requested space-separated format", () => {
+  assert.deepEqual(parseCmmsMaintenanceTrainIds("02 16 36 41 42"), ["02", "16", "36", "41", "42"]);
+  assert.deepEqual(parseCmmsMaintenanceTrainIds("T02, L3-MV-316; 336 36"), ["02", "16", "36"]);
+  assert.equal(normalizeCmmsTrainId("L3-MV-304"), "04");
+});
+
+test("submitted MAINT IDs match uploaded rows without using the source location", () => {
+  const rows = parseCmmsMinusThreeMatrix([
+    ["Train Number", "Description", "Next Wash", "Train Location"],
+    ["L3-MV-302", "Train Volume 302", 46237.39097222222, "OPE"],
+    ["L3-MV-316", "Train Volume 316", 46237.91458333333, "OPE"],
+    ["L3-MV-336", "Train Volume 336", 46237.62152777778, "MAINT"],
+  ]);
+  const result = matchCmmsMaintenanceRows(rows, parseCmmsMaintenanceTrainIds("02 16 41"));
+
+  assert.deepEqual(result.matchedRows.map((row) => row.trainNumber), ["L3-MV-302", "L3-MV-316"]);
+  assert.deepEqual(result.unmatchedIds, ["41"]);
 });
 
 test("CMMS rows are discovered by required headers and preserve source order", () => {
@@ -67,7 +89,9 @@ test("download workbook uses the selected deduction and only the supplied trains
     ["L3-MV-304", "Train Volume 304", 46237.39097222222, "OPE"],
     ["L3-MV-336", "Train Volume 336", 46237.91458333333, "MAINT"],
   ]);
-  const includedRows = rows.filter((row) => !row.isMaintenance);
+  const { matchedRows } = matchCmmsMaintenanceRows(rows, parseCmmsMaintenanceTrainIds("36"));
+  const matchedRowIds = new Set(matchedRows.map((row) => row.id));
+  const includedRows = rows.filter((row) => !matchedRowIds.has(row.id));
   const workbook = createCmmsMinusThreeWorkbook(includedRows, XLSX, 2);
   const bytes = XLSX.write(workbook, { type: "array", bookType: "xlsx", cellStyles: true });
   const reopened = XLSX.read(bytes, { type: "array", cellStyles: true, cellDates: false });
@@ -89,8 +113,11 @@ test("the converter window is below Manual Washing Entry and exposes upload, sel
   assert.ok(trainWashingSource.indexOf("Manual Washing Entry") < trainWashingSource.indexOf("<CmmsMinusThreeConverter />"));
   assert.match(converterSource, /Subtract 2 or 3 CMMS Time Entries/);
   assert.match(converterSource, /\[2, 3\]\.map/);
-  assert.match(converterSource, /not included because Train Location is/);
-  assert.match(converterSource, /Exclude MAINT/);
+  assert.match(converterSource, /placeholder="02 16 36 41 42"/);
+  assert.match(converterSource, /Submit MAINT trains/);
+  assert.match(converterSource, /was submitted as MAINT/);
+  assert.match(converterSource, /MAINT trains are entered by the user after upload/);
+  assert.doesNotMatch(converterSource, /result\.rows\.filter\(\(row\) => row\.isMaintenance\)/);
   assert.match(converterSource, /Converted Preview/);
   assert.match(converterSource, /Download Output Excel/);
   assert.match(converterSource, /Upload CMMS washing Excel/);

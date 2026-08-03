@@ -2580,6 +2580,11 @@ html[data-app-theme="light"] .theme-train-movement-page .movement-flow-step-labe
   background: rgba(120, 53, 15, 0.16);
 }
 
+.theme-washing-maint-input::placeholder {
+  color: #7f8fa3;
+  opacity: 1;
+}
+
 /* Train Washing workspace light-mode cleanup.
    Dark mode keeps the original navy and emerald design. */
 html[data-app-theme="light"] .theme-train-washing-page,
@@ -2801,6 +2806,29 @@ html[data-app-theme="light"] .theme-washing-minus-three-deduction[aria-pressed="
 html[data-app-theme="light"] .theme-washing-minus-three-secondary {
   background: #ffffff !important;
   border-color: #94a3b8 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-maint-submit {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: #b45309 !important;
+  background-image: none !important;
+  border-color: #92400e !important;
+}
+
+html[data-app-theme="light"] .theme-washing-maint-result {
+  background: #ecfdf5 !important;
+  border-color: #34d399 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-maint-result p {
+  color: #065f46 !important;
+  -webkit-text-fill-color: #065f46 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-maint-result p.text-amber-200 {
+  color: #92400e !important;
+  -webkit-text-fill-color: #92400e !important;
 }
 
 html[data-app-theme="light"] .theme-washing-minus-three-exclusions {
