@@ -1,6 +1,5 @@
 const EXCEL_EPOCH_UTC = Date.UTC(1899, 11, 30);
 const DAY_MS = 24 * 60 * 60 * 1000;
-const THREE_MINUTES_MS = 3 * 60 * 1000;
 
 function pad2(value) {
   return String(value).padStart(2, "0");
@@ -77,10 +76,15 @@ export function formatCmmsDateTimeText(value, minuteDelta = 0) {
 }
 
 export function formatCmmsMinusThreeText(value) {
-  const timestamp = cmmsDateValueToUtcMs(value);
-  if (!Number.isFinite(timestamp)) return "";
-  const date = new Date(timestamp - THREE_MINUTES_MS);
-  return `${pad2(date.getUTCDate())}-${pad2(date.getUTCMonth() + 1)}-${date.getUTCFullYear()} ${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())}:${pad2(date.getUTCSeconds())}`;
+  return formatCmmsAdjustedText(value, 3);
+}
+
+export function normalizeCmmsDeductionMinutes(value) {
+  return Number(value) === 2 ? 2 : 3;
+}
+
+export function formatCmmsAdjustedText(value, deductionMinutes = 3) {
+  return formatCmmsDateTimeText(value, -normalizeCmmsDeductionMinutes(deductionMinutes));
 }
 
 export function parseCmmsMinusThreeMatrix(matrix) {
@@ -99,12 +103,14 @@ export function parseCmmsMinusThreeMatrix(matrix) {
   const trainIndex = headers.indexOf("train number");
   const descriptionIndex = headers.indexOf("description");
   const nextWashIndex = headers.indexOf("next wash");
+  const trainLocationIndex = headers.indexOf("train location");
 
   return rows
     .slice(headerIndex + 1)
     .map((row, offset) => {
       const trainNumber = String(row?.[trainIndex] ?? "").trim();
       const description = String(row?.[descriptionIndex] ?? "").trim();
+      const trainLocation = trainLocationIndex >= 0 ? String(row?.[trainLocationIndex] ?? "").trim() : "";
       const nextWashValue = row?.[nextWashIndex];
       const nextWashText = formatCmmsDateTimeText(nextWashValue);
       const outputText = formatCmmsMinusThreeText(nextWashValue);
@@ -113,6 +119,8 @@ export function parseCmmsMinusThreeMatrix(matrix) {
         id: `${headerIndex + offset + 2}-${trainNumber}`,
         trainNumber,
         description,
+        trainLocation,
+        isMaintenance: /\bmaint(?:enance)?\b/i.test(trainLocation),
         nextWashValue,
         nextWashText,
         outputText,
@@ -137,10 +145,16 @@ export function findCmmsMinusThreeRows(workbook, xlsx) {
   throw new Error('No valid CMMS washing rows were found. Check the "Next Wash" column.');
 }
 
-export function createCmmsMinusThreeWorkbook(rows, xlsx) {
+export function createCmmsMinusThreeWorkbook(rows, xlsx, deductionMinutes = 3) {
+  const normalizedDeduction = normalizeCmmsDeductionMinutes(deductionMinutes);
   const data = [
-    ["Train Number", "Description", "Next Wash", "OUTPUT –3 Time"],
-    ...rows.map((row) => [row.trainNumber, row.description, row.nextWashValue, row.outputText]),
+    ["Train Number", "Description", "Next Wash", `OUTPUT –${normalizedDeduction} Time`],
+    ...rows.map((row) => [
+      row.trainNumber,
+      row.description,
+      row.nextWashValue,
+      formatCmmsAdjustedText(row.nextWashValue, normalizedDeduction),
+    ]),
   ];
   const sheet = xlsx.utils.aoa_to_sheet(data);
   sheet["!cols"] = [{ wch: 18 }, { wch: 23 }, { wch: 22 }, { wch: 24 }];
@@ -155,10 +169,11 @@ export function createCmmsMinusThreeWorkbook(rows, xlsx) {
       nextWashCell.z = "m/d/yy h:mm AM/PM";
     }
     if (outputCell) {
+      const outputText = formatCmmsAdjustedText(row.nextWashValue, normalizedDeduction);
       outputCell.t = "s";
       outputCell.z = "@";
-      outputCell.v = row.outputText;
-      outputCell.w = row.outputText;
+      outputCell.v = outputText;
+      outputCell.w = outputText;
     }
   });
 

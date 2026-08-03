@@ -2556,6 +2556,30 @@ html[data-app-theme="light"] .theme-train-movement-page .movement-flow-step-labe
   background: rgba(139, 92, 246, 0.045);
 }
 
+.theme-washing-minus-three-deduction {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.theme-washing-minus-three-deduction[aria-pressed="true"] {
+  color: #ffffff;
+  background: #6d28d9;
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+.theme-washing-minus-three-table tbody tr.is-excluded td {
+  color: #8092a5;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.theme-washing-minus-three-table tbody tr.is-maintenance td {
+  border-bottom-color: rgba(245, 158, 11, 0.34);
+}
+
+.theme-washing-minus-three-table tbody tr.is-maintenance.is-excluded td {
+  background: rgba(120, 53, 15, 0.16);
+}
+
 /* Train Washing workspace light-mode cleanup.
    Dark mode keeps the original navy and emerald design. */
 html[data-app-theme="light"] .theme-train-washing-page,
@@ -2754,10 +2778,61 @@ html[data-app-theme="light"] .theme-washing-minus-three-table tbody tr:nth-child
   background: #faf8ff !important;
 }
 
-html[data-app-theme="light"] .theme-washing-minus-three-download {
+html[data-app-theme="light"] .theme-washing-minus-three-controls {
+  background: #faf8ff !important;
+  border-color: #b9a8dc !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-deduction {
+  color: #4c1d95 !important;
+  -webkit-text-fill-color: #4c1d95 !important;
+  background: #ffffff !important;
+  border-color: #8b5cf6 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-deduction[aria-pressed="true"] {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: #6d28d9 !important;
+  border-color: #5b21b6 !important;
+  box-shadow: 0 0 0 2px rgba(109, 40, 217, 0.16) !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-secondary {
+  background: #ffffff !important;
+  border-color: #94a3b8 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-exclusions {
+  background: #fffbeb !important;
+  border-color: #d97706 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-exclusions :is(p, span, li) {
+  color: #78350f !important;
+  -webkit-text-fill-color: #78350f !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-table tbody tr.is-excluded td {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  background: #f1f5f9 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-table tbody tr.is-maintenance.is-excluded td {
+  background: #fff7ed !important;
+  border-color: #fdba74 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-minus-three-checkbox {
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-train-washing-page button.theme-washing-minus-three-download {
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
   background: #047857 !important;
+  background-image: none !important;
   border-color: #065f46 !important;
 }
 
