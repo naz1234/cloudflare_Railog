@@ -8,6 +8,7 @@ import {
   getRemovalPdfDraftGroups,
   removeRemovalPdfDraftLogEntry,
   removeRemovalPdfDraftRow,
+  resetRemovalPdfDraftActions,
   updateRemovalPdfDraftAction,
   updateRemovalPdfDraftLogEntry,
   updateRemovalPdfDraftRow,
@@ -118,22 +119,27 @@ test("changing allocation transfers the row to the selected group", () => {
   assert.equal(getRemovalPdfDraftGroups(edited.actionRows)[0].label, "Need Swapping");
 });
 
-test("allocation transfers reconcile the linked West removal row in the edited copy", () => {
+test("Requested Train Allocation changes never affect either Removal Table", () => {
   const draft = createRemovalPdfDraft(createSourceData());
+  const logsBefore = structuredClone({ westLog: draft.westLog, eastLog: draft.eastLog });
   const swapRow = draft.actionRows.find((row) => row.trainsetNumber === "02");
   const movedToRemoval = updateRemovalPdfDraftAction(draft, swapRow.swpDraftId, "earlyShiftRem");
-  const addedLogRow = movedToRemoval.westLog.entries.find((entry) => entry.trainId === "T02");
-
-  assert.ok(addedLogRow);
-  assert.equal(addedLogRow.tid, "219");
-  assert.equal(addedLogRow.remark, "G to C 3-Aug");
-
   const movedRow = movedToRemoval.actionRows.find((row) => row.swpDraftId === swapRow.swpDraftId);
-  const movedBackToSwap = updateRemovalPdfDraftAction(movedToRemoval, movedRow.swpDraftId, "needSwapping");
-  assert.equal(movedBackToSwap.westLog.entries.some((entry) => entry.trainId === "T02"), false);
+  const editedTid = updateRemovalPdfDraftRow(movedToRemoval, movedRow.swpDraftId, "tid", "999");
+  const editedRemark = updateRemovalPdfDraftRow(editedTid, movedRow.swpDraftId, "requestType", "Allocation only");
+  const removed = removeRemovalPdfDraftRow(editedRemark, movedRow.swpDraftId);
+  const removalRow = draft.actionRows.find((row) => row.trainsetNumber === "26");
+  const movedToSwapping = updateRemovalPdfDraftAction(draft, removalRow.swpDraftId, "needSwapping");
+
+  assert.equal(movedRow.group, "removal");
+  assert.deepEqual({ westLog: removed.westLog, eastLog: removed.eastLog }, logsBefore);
+  assert.deepEqual(
+    { westLog: movedToSwapping.westLog, eastLog: movedToSwapping.eastLog },
+    logsBefore,
+  );
 });
 
-test("removing a requested allocation keeps its linked Removal Table row", () => {
+test("removing a requested allocation keeps its existing Removal Table row", () => {
   const source = createSourceData();
   source.westLog.entries.push({
     trainId: "T09",
@@ -166,9 +172,10 @@ test("the edited PDF export preserves allocation separators and strips editor me
   assert.equal("swpDraftActionValue" in exportedTrainRows[0], false);
 });
 
-test("depot PDF rows can be edited or removed without mutating the source log", () => {
+test("Removal Table changes never affect Requested Train Allocation", () => {
   const source = createSourceData();
   const draft = createRemovalPdfDraft(source);
+  const actionRowsBefore = structuredClone(draft.actionRows);
   const westRow = draft.westLog.entries[0];
   const renamed = updateRemovalPdfDraftLogEntry(draft, "west", westRow.swpDraftId, "trainId", "7");
   const remarked = updateRemovalPdfDraftLogEntry(renamed, "west", westRow.swpDraftId, "remark", "Edited wash");
@@ -182,7 +189,29 @@ test("depot PDF rows can be edited or removed without mutating the source log", 
 
   const removed = removeRemovalPdfDraftLogEntry(remarked, "west", westRow.swpDraftId);
   assert.equal(removed.westLog.entries.length, 0);
+  assert.deepEqual(removed.actionRows, actionRowsBefore);
   assert.equal(source.westLog.entries.length, 1);
+});
+
+test("resetting allocations preserves edits made in Removal Tables", () => {
+  const draft = createRemovalPdfDraft(createSourceData());
+  const westRow = draft.westLog.entries[0];
+  const editedRemoval = updateRemovalPdfDraftLogEntry(
+    draft,
+    "west",
+    westRow.swpDraftId,
+    "remark",
+    "Keep this removal edit",
+  );
+  const changedAllocation = updateRemovalPdfDraftAction(
+    editedRemoval,
+    draft.actionRows[0].swpDraftId,
+    "earlyShiftRem",
+  );
+  const reset = resetRemovalPdfDraftActions(changedAllocation, draft);
+
+  assert.equal(reset.westLog.entries[0].remark, "Keep this removal edit");
+  assert.deepEqual(reset.actionRows, draft.actionRows);
 });
 
 test("East 9AM off-peak selection removes both depot schedules and preserves TID pairing", () => {
@@ -238,13 +267,15 @@ test("the Removal Summary toolbar opens SWP instead of downloading PNG", () => {
 test("the SWP editor states that live and normal PDF data remain unchanged", () => {
   assert.match(editorSource, /Changes here never update the Removal Summary, live records, or the normal PDF button\./);
   assert.match(editorSource, /Download edited PDF/);
-  assert.match(editorSource, /Reset from summary/);
+  assert.match(editorSource, /Reset allocations/);
   assert.match(editorSource, /Remove from edited PDF/);
   assert.match(editorSource, /Removal tables/);
   assert.match(editorSource, /backgroundRoot\.inert = true/);
   assert.match(editorSource, /previousActiveElement\?\.focus/);
   assert.match(editorSource, /row\?\.trainsetNumber \|\| row\?\.trainId/);
-  assert.match(editorSource, /Deleting an allocation keeps its Removal Table entry\./);
+  assert.match(editorSource, /Changing, editing, or removing an allocation does not change either Removal Table\./);
+  assert.match(editorSource, /Editing or removing a row here does not change Requested Train Allocation\./);
+  assert.doesNotMatch(editorSource, /reconciles its linked West removal row/);
   assert.match(editorSource, /ED 9AM REM/);
 });
 

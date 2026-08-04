@@ -22,7 +22,7 @@ export default function RemovalPdfEditor({
   draft,
   onDraftChange,
   onClose,
-  onReset,
+  onResetRequested,
   onDownload,
   onOpenEastNineAm,
   downloading = false,
@@ -241,7 +241,7 @@ export default function RemovalPdfEditor({
                 SWP PDF Editor
               </h2>
               <p className="mt-0.5 text-[11px] text-[#9cc5df]">
-                Review, remove, or transfer requested trains before downloading a separate PDF.
+                Review two independent sections before downloading a separate PDF.
               </p>
             </div>
           </div>
@@ -262,6 +262,7 @@ export default function RemovalPdfEditor({
             <div className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-200">Edited copy only</div>
             <p className="mt-0.5 text-[11px] leading-relaxed text-emerald-100/85">
               Changes here never update the Removal Summary, live records, or the normal PDF button.
+              <span className="mt-0.5 block">Removal Tables and Requested Train Allocation stay independent in this edited copy.</span>
             </p>
           </div>
           <div className="flex flex-wrap gap-1.5 text-[10px] font-bold uppercase tracking-[0.08em]">
@@ -274,7 +275,7 @@ export default function RemovalPdfEditor({
         <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-5">
           <div className="mb-3">
             <h3 className="theme-swp-editor-section-title text-[12px] font-black uppercase tracking-[0.14em] text-white">Removal tables</h3>
-            <p className="mt-0.5 text-[10px] text-[#83a9c2]">Edit or remove the West and East rows shown on the left side of this PDF copy.</p>
+            <p className="mt-0.5 text-[10px] text-[#83a9c2]">Editing or removing a row here does not change Requested Train Allocation.</p>
           </div>
 
           <div className="grid min-w-0 gap-2 xl:grid-cols-2">
@@ -285,14 +286,16 @@ export default function RemovalPdfEditor({
           <div className="mb-3 mt-5 flex flex-wrap items-end justify-between gap-2 border-t border-[#224a65] pt-4">
             <div>
               <h3 className="theme-swp-editor-section-title text-[12px] font-black uppercase tracking-[0.14em] text-white">Requested train allocation</h3>
-              <p className="mt-0.5 text-[10px] text-[#83a9c2]">Changing an action moves the train into that group and reconciles its linked West removal row. Deleting an allocation keeps its Removal Table entry.</p>
+              <p className="mt-0.5 text-[10px] text-[#83a9c2]">Changing, editing, or removing an allocation does not change either Removal Table.</p>
             </div>
             <button
               type="button"
-              onClick={onReset}
+              onClick={onResetRequested}
+              aria-label="Reset Requested Train Allocation only"
+              title="Reset Requested Train Allocation only"
               className="theme-swp-editor-reset inline-flex h-7 items-center gap-1.5 rounded-lg border border-amber-400/40 bg-amber-400/10 px-2.5 text-[9px] font-bold text-amber-200 transition-colors hover:bg-amber-400/20"
             >
-              <RotateCcw size={12} /> Reset from summary
+              <RotateCcw size={12} /> Reset allocations
             </button>
           </div>
 
