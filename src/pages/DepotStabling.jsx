@@ -23771,21 +23771,25 @@ function getTrainRemRemovalRemarkItems(row = {}, maintenanceMap = {}) {
     const clean = normalizeRemarkText(text);
     if (!text || seen.has(clean)) return;
 
+    const pillStyle = getRemovalPdfRemarkPillStyle(text, { colorCustom: true });
+
     seen.add(clean);
     items.push({
       text,
-      fill: getRemovalRemarkFillColor(text, item) || "#ffffff",
-      stroke: item?.badgeBorder || item?.badgeBg || "#000000",
+      fill: pillStyle.fill || "#ffffff",
+      stroke: pillStyle.stroke || "#000000",
     });
   });
 
   if (manualRemark) {
     const cleanManual = normalizeRemarkText(manualRemark);
     if (!seen.has(cleanManual)) {
+      const pillStyle = getRemovalPdfRemarkPillStyle(manualRemark);
+
       items.push({
         text: manualRemark,
-        fill: getRemovalRemarkFillColor(manualRemark, null) || "#ffffff",
-        stroke: "#000000",
+        fill: pillStyle.fill || "#ffffff",
+        stroke: pillStyle.stroke || "#000000",
       });
     }
   }
@@ -23805,34 +23809,24 @@ function getRequestedRemarkPillItems(value = "") {
     })
     .slice(0, 3)
     .map((remark) => {
-      const knownStyle = getKnownMaintenanceStyle(remark);
-      const customStyle = knownStyle ? null : getCustomRequestStyle(remark);
-      const fill =
-        getRemovalRemarkFillColor(remark, null) ||
-        knownStyle?.badgeBg ||
-        customStyle?.badgeBg ||
-        "#ffffff";
-      const stroke =
-        knownStyle?.badgeBorder ||
-        getTrainRemNoteOverrideColor(remark) ||
-        customStyle?.badgeBorder ||
-        fill ||
-        "#000000";
+      const pillStyle = getRemovalPdfRemarkPillStyle(remark, { colorCustom: true });
 
       return {
         text: remark,
-        fill,
-        stroke,
+        fill: pillStyle.fill || "#ffffff",
+        stroke: pillStyle.stroke || "#000000",
       };
     });
 }
 
-function getRemovalRemarkFillColor(remark = "", requestItem = null) {
+function getRemovalPdfRemarkPillStyle(remark = "", options = {}) {
   const noteOverrideColor = getTrainRemNoteOverrideColor(remark);
-  if (noteOverrideColor) return noteOverrideColor;
+  if (noteOverrideColor) {
+    return { fill: noteOverrideColor, stroke: noteOverrideColor };
+  }
 
   const clean = normalizeRemarkText(remark);
-  if (!clean || clean === "-") return "";
+  if (!clean || clean === "-") return { fill: "", stroke: "" };
 
   const text = clean.toUpperCase();
   const styleChecks = [
@@ -23854,13 +23848,30 @@ function getRemovalRemarkFillColor(remark = "", requestItem = null) {
   ];
 
   const matchedStyle = styleChecks.find(([keyword]) => text.includes(keyword))?.[1];
-  return (
-    matchedStyle?.badgeBg ||
-    matchedStyle?.cellBg ||
-    requestItem?.badgeBg ||
-    requestItem?.cellBg ||
-    ""
-  );
+  if (matchedStyle) {
+    return {
+      fill: matchedStyle.badgeBg || matchedStyle.cellBg || "",
+      stroke: matchedStyle.badgeBorder || matchedStyle.badgeBg || matchedStyle.cellBg || "",
+    };
+  }
+
+  if (options?.colorCustom === true) {
+    const customStyle = getCustomRequestStyle(remark);
+    return {
+      fill: customStyle.badgeBg || customStyle.cellBg || "",
+      stroke: customStyle.badgeBorder || customStyle.badgeBg || customStyle.cellBg || "",
+    };
+  }
+
+  return { fill: "", stroke: "" };
+}
+
+function getRemovalRemarkFillColor(remark = "", requestItem = null) {
+  const pillStyle = getRemovalPdfRemarkPillStyle(remark, {
+    colorCustom: Boolean(requestItem),
+  });
+
+  return pillStyle.fill || requestItem?.badgeBg || requestItem?.cellBg || "";
 }
 
 function getTrainStablingBlockNumber(stablingData = {}, trainKey = "") {
