@@ -438,6 +438,33 @@ test("the SWP button and editor have explicit light-mode contrast", () => {
   assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-swp-ed9-back/);
 });
 
+test("both PDF editors use the approved graphite amber and plum palette", () => {
+  assert.match(
+    themeStyles,
+    /\.theme-swp-editor-window\s*\{[^}]*background: #151a20;[^}]*border-color: #59616a;/s,
+  );
+  assert.match(
+    themeStyles,
+    /\.theme-swp-editor-notice\s*\{[^}]*background: #27231c;[^}]*border-color: #d5a64a;/s,
+  );
+  assert.match(
+    themeStyles,
+    /\.theme-swp-editor-download\s*\{[^}]*background: #8f5d14;[^}]*border-color: #d69a2d;/s,
+  );
+  assert.match(
+    themeStyles,
+    /\.theme-swp-ed9-open\s*\{[^}]*background: #6e557f;[^}]*border-color: #9172a7;/s,
+  );
+  assert.match(
+    themeStyles,
+    /\.theme-swp-paper \.theme-swp-paper-select:is\(\[data-action="lateShiftRem"\], \[data-action="eosRemoval"\]\)\s*\{[^}]*background-color: #b69ac8 !important;/s,
+  );
+  assert.doesNotMatch(editorSource, /emerald|cyan/);
+  assert.doesNotMatch(eastNineAmEditorSource, /emerald|cyan/);
+  assert.doesNotMatch(editorSource, /#020b13|#9cc5df|#789db5/);
+  assert.doesNotMatch(eastNineAmEditorSource, /#020b13|#9cc5df|#789db5/);
+});
+
 test("the SWP and ED editors render a fixed white PDF-style paper in both themes", () => {
   assert.match(editorSource, /theme-swp-paper-viewport/);
   assert.match(eastNineAmEditorSource, /theme-swp-paper-viewport/);
