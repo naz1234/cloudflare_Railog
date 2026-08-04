@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
-import { Download, FileSpreadsheet, Trash2, Upload } from "lucide-react";
+import { Download, FileSpreadsheet, Trash2, Undo2, Upload } from "lucide-react";
 import {
   buildCmmsMinusThreeFileName,
   createCmmsMinusThreeWorkbook,
@@ -16,6 +16,7 @@ export default function CmmsMinusThreeConverter() {
   const [manualExcludedRowIds, setManualExcludedRowIds] = useState([]);
   const [maintenanceTrainInput, setMaintenanceTrainInput] = useState("");
   const [submittedMaintenanceTrainIds, setSubmittedMaintenanceTrainIds] = useState([]);
+  const [previousMaintenanceTrainIds, setPreviousMaintenanceTrainIds] = useState(null);
   const [maintenanceInputError, setMaintenanceInputError] = useState("");
   const [deductionMinutes, setDeductionMinutes] = useState(3);
   const [fileName, setFileName] = useState("");
@@ -57,6 +58,7 @@ export default function CmmsMinusThreeConverter() {
     setManualExcludedRowIds([]);
     setMaintenanceTrainInput("");
     setSubmittedMaintenanceTrainIds([]);
+    setPreviousMaintenanceTrainIds(null);
     setMaintenanceInputError("");
     setDeductionMinutes(3);
     setFileName("");
@@ -79,6 +81,7 @@ export default function CmmsMinusThreeConverter() {
         setManualExcludedRowIds([]);
         setMaintenanceTrainInput("");
         setSubmittedMaintenanceTrainIds([]);
+        setPreviousMaintenanceTrainIds(null);
         setMaintenanceInputError("");
         setFileName(file.name);
       } catch (uploadError) {
@@ -87,6 +90,7 @@ export default function CmmsMinusThreeConverter() {
         setManualExcludedRowIds([]);
         setMaintenanceTrainInput("");
         setSubmittedMaintenanceTrainIds([]);
+        setPreviousMaintenanceTrainIds(null);
         setMaintenanceInputError("");
         setFileName(file.name);
         setError(uploadError?.message || "Unable to read this CMMS Excel file.");
@@ -97,6 +101,7 @@ export default function CmmsMinusThreeConverter() {
       setManualExcludedRowIds([]);
       setMaintenanceTrainInput("");
       setSubmittedMaintenanceTrainIds([]);
+      setPreviousMaintenanceTrainIds(null);
       setMaintenanceInputError("");
       setFileName(file.name);
       setError("Unable to read this CMMS Excel file.");
@@ -112,15 +117,19 @@ export default function CmmsMinusThreeConverter() {
       return;
     }
 
-    const submittedIdSet = new Set(trainIds);
+    setPreviousMaintenanceTrainIds([...submittedMaintenanceTrainIds]);
     setSubmittedMaintenanceTrainIds(trainIds);
     setMaintenanceTrainInput(trainIds.join(" "));
     setMaintenanceInputError("");
-    setManualExcludedRowIds((current) => current.filter((rowId) => {
-      const row = rows.find((item) => item.id === rowId);
-      return !row || !submittedIdSet.has(normalizeCmmsTrainId(row.trainNumber));
-    }));
-  }, [maintenanceTrainInput, rows]);
+  }, [maintenanceTrainInput, submittedMaintenanceTrainIds]);
+
+  const undoMaintenanceSubmission = useCallback(() => {
+    if (previousMaintenanceTrainIds === null) return;
+    setSubmittedMaintenanceTrainIds(previousMaintenanceTrainIds);
+    setMaintenanceTrainInput(previousMaintenanceTrainIds.join(" "));
+    setPreviousMaintenanceTrainIds(null);
+    setMaintenanceInputError("");
+  }, [previousMaintenanceTrainIds]);
 
   const toggleRowIncluded = useCallback((rowId) => {
     if (maintenanceRowIdSet.has(rowId)) return;
@@ -273,14 +282,31 @@ export default function CmmsMinusThreeConverter() {
               <p className="theme-washing-minus-three-error mb-3 rounded-lg border border-red-400/50 bg-red-500/10 px-3 py-2 text-xs text-red-100">{maintenanceInputError}</p>
             )}
 
-            {submittedMaintenanceTrainIds.length > 0 && (
+            {(submittedMaintenanceTrainIds.length > 0 || previousMaintenanceTrainIds !== null) && (
               <div className="theme-washing-maint-result mb-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5">
-                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-200">Submitted MAINT list</p>
-                <p className="mt-1 text-[11px] text-emerald-100">
-                  {maintenanceMatch.matchedRows.length} train{maintenanceMatch.matchedRows.length === 1 ? "" : "s"} matched and excluded: {maintenanceMatch.matchedRows.map((row) => `T${normalizeCmmsTrainId(row.trainNumber)}`).join(", ") || "None"}.
-                </p>
-                {maintenanceMatch.unmatchedIds.length > 0 && (
-                  <p className="mt-1 text-[11px] text-amber-200">No uploaded CMMS row found for: {maintenanceMatch.unmatchedIds.map((trainId) => `T${trainId}`).join(", ")}.</p>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-200">Submitted MAINT list</p>
+                  {previousMaintenanceTrainIds !== null && (
+                    <button
+                      type="button"
+                      onClick={undoMaintenanceSubmission}
+                      className="theme-washing-maint-undo inline-flex items-center gap-1.5 rounded-lg border border-cyan-300/60 bg-cyan-400/10 px-2.5 py-1 text-[10px] font-bold text-cyan-100 transition-colors hover:bg-cyan-400/20"
+                    >
+                      <Undo2 className="h-3.5 w-3.5" /> Undo MAINT submission
+                    </button>
+                  )}
+                </div>
+                {submittedMaintenanceTrainIds.length > 0 ? (
+                  <>
+                    <p className="mt-1 text-[11px] text-emerald-100">
+                      {maintenanceMatch.matchedRows.length} train{maintenanceMatch.matchedRows.length === 1 ? "" : "s"} matched and excluded: {maintenanceMatch.matchedRows.map((row) => `T${normalizeCmmsTrainId(row.trainNumber)}`).join(", ") || "None"}.
+                    </p>
+                    {maintenanceMatch.unmatchedIds.length > 0 && (
+                      <p className="mt-1 text-[11px] text-amber-200">No uploaded CMMS row found for: {maintenanceMatch.unmatchedIds.map((trainId) => `T${trainId}`).join(", ")}.</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="mt-1 text-[11px] text-emerald-100">No MAINT trains are currently submitted.</p>
                 )}
               </div>
             )}

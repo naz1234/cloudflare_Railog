@@ -122,3 +122,10 @@ test("the converter window is below Manual Washing Entry and exposes upload, sel
   assert.match(converterSource, /Download Output Excel/);
   assert.match(converterSource, /Upload CMMS washing Excel/);
 });
+
+test("a submitted MAINT list has a one-step undo that restores the previous list", () => {
+  assert.match(converterSource, /setPreviousMaintenanceTrainIds\(\[\.\.\.submittedMaintenanceTrainIds\]\)/);
+  assert.match(converterSource, /setSubmittedMaintenanceTrainIds\(previousMaintenanceTrainIds\)/);
+  assert.match(converterSource, /setMaintenanceTrainInput\(previousMaintenanceTrainIds\.join\(" "\)\)/);
+  assert.match(converterSource, /Undo MAINT submission/);
+});
