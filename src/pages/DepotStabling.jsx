@@ -20805,7 +20805,7 @@ export default function DepotStablingPage() {
   {activeTab === "stabling" && (
   <div
     ref={stablingHorizontalScrollRef}
-    className="grid gap-5 items-start overflow-x-auto scroll-smooth"
+    className="theme-stabling-workspace grid gap-3 items-start overflow-x-auto scroll-smooth"
     style={{ gridTemplateColumns: "960px auto" }}
   >
     {/* LEFT CONTENT - left aligned stabling tables */}
@@ -20903,7 +20903,7 @@ export default function DepotStablingPage() {
     </div>
 
     {/* RIGHT PANEL */}
-    <div className="flex items-start gap-5 sticky top-1 self-start mt-0 pt-0 w-fit">
+    <div className="theme-stabling-side-panels flex items-start gap-3 sticky top-1 self-start mt-0 pt-0 w-fit">
       <div
         className="maintenance-panel-shell"
         style={{ width: 276, minWidth: 276, flex: "0 0 276px" }}
