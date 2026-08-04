@@ -9236,6 +9236,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
           onResetRequested={handleTrainRemSwpRequestedReset}
           onDownload={handleTrainRemSwpDownload}
           onOpenEastNineAm={handleTrainRemEastNineAmOpen}
+          getRemarkStyle={(remark) => getRemovalPdfRemarkPillStyle(remark, { colorCustom: true })}
           downloading={trainRemSwpDownloading}
         />
       )}
@@ -9249,6 +9250,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         }}
         onReset={handleTrainRemEastNineAmReset}
         onDownload={handleTrainRemEastNineAmDownload}
+        getRemarkStyle={(remark) => getRemovalPdfRemarkPillStyle(remark, { colorCustom: true })}
         downloading={trainRemEastNineAmDownloading}
       />
     </>

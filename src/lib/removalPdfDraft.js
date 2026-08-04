@@ -95,6 +95,19 @@ function normalizeDraftTrainId(value = "") {
   return digits ? `T${digits.padStart(2, "0")}` : "";
 }
 
+function normalizeDraftTrainNumber(value = "") {
+  const digits = String(value || "").replace(/[^0-9]/g, "").slice(0, 2);
+  return digits ? digits.padStart(2, "0") : "";
+}
+
+function nextDraftIdentity(draft = {}, scope = "row") {
+  const sequence = Math.max(0, Number(draft?.swpDraftSequence || 0)) + 1;
+  return {
+    id: `swp-new-${scope}-${sequence}`,
+    sequence,
+  };
+}
+
 function createDraftRemarkPills(value = "", existingPills = []) {
   const text = String(value || "").trim();
   if (!text) return [];
@@ -158,6 +171,71 @@ export function createRemovalPdfDraft({ westLog = {}, eastLog = {}, actionOvervi
     westLog: clonedWestLog,
     eastLog: clonedEastLog,
     actionRows: sortDraftRows(actionRows),
+    swpDraftSequence: 0,
+  };
+}
+
+export function addRemovalPdfDraftLogEntry(draft = {}, depot = "west") {
+  const logKey = depot === "east" ? "eastLog" : "westLog";
+  const normalizedDepot = depot === "east" ? "east" : "west";
+  const currentLog = draft?.[logKey] || { depot: normalizedDepot, entries: [] };
+  const currentEntries = Array.isArray(currentLog?.entries) ? currentLog.entries : [];
+  const identity = nextDraftIdentity(draft, `${normalizedDepot}-log`);
+  const entry = {
+    trainId: "",
+    tid: "",
+    time: "",
+    remark: "",
+    remarkPills: [],
+    swpDraftId: identity.id,
+  };
+
+  return {
+    ...draft,
+    swpDraftSequence: identity.sequence,
+    [logKey]: {
+      ...currentLog,
+      depot: currentLog?.depot || normalizedDepot,
+      entries: [...currentEntries, entry],
+    },
+  };
+}
+
+export function addRemovalPdfDraftRow(draft = {}, actionValue = "needSwapping") {
+  const action = ACTION_DEFINITIONS.find((item) => item.value === actionValue) || ACTION_DEFINITIONS[0];
+  const rows = Array.isArray(draft?.actionRows) ? draft.actionRows : [];
+  const matchingSections = rows
+    .filter((row) => row?.swpDraftActionValue === action.value)
+    .map((row) => Number(row?.swpDraftSectionIndex || 0));
+  const highestSection = rows.reduce(
+    (highest, row) => Math.max(highest, Number(row?.swpDraftSectionIndex || 0)),
+    0,
+  );
+  const highestOrder = rows.reduce(
+    (highest, row) => Math.max(highest, Number(row?.swpDraftOrder || 0)),
+    -1,
+  );
+  const identity = nextDraftIdentity(draft, "requested");
+  const row = {
+    key: "",
+    trainsetNumber: "",
+    tid: "",
+    requestType: "",
+    group: action.group,
+    actionLabel: action.label,
+    actionType: action.actionType,
+    actionSymbol: action.actionSymbol,
+    actionStatus: `${action.label} ${action.actionSymbol}`,
+    swpDraftId: identity.id,
+    swpDraftOrder: highestOrder + 1,
+    swpDraftSectionIndex: matchingSections.length ? Math.min(...matchingSections) : highestSection + 1,
+    swpDraftActionValue: action.value,
+  };
+
+  return {
+    ...draft,
+    swpDraftSequence: identity.sequence,
+    actionRows: sortDraftRows([...rows, row]),
   };
 }
 
@@ -197,13 +275,22 @@ export function updateRemovalPdfDraftAction(draft = {}, rowId = "", actionValue 
 }
 
 export function updateRemovalPdfDraftRow(draft = {}, rowId = "", field = "", value = "") {
-  if (!["tid", "requestType"].includes(field)) return draft;
+  if (!["trainsetNumber", "tid", "requestType"].includes(field)) return draft;
 
   const stringValue = String(value ?? "");
   const rows = Array.isArray(draft?.actionRows) ? draft.actionRows : [];
-  const actionRows = rows.map((row) => (
-    row?.swpDraftId === rowId ? { ...row, [field]: stringValue } : row
-  ));
+  const actionRows = rows.map((row) => {
+    if (row?.swpDraftId !== rowId) return row;
+    if (field === "trainsetNumber") {
+      const trainsetNumber = normalizeDraftTrainNumber(stringValue);
+      return {
+        ...row,
+        trainsetNumber,
+        key: trainsetNumber ? `T${trainsetNumber}` : "",
+      };
+    }
+    return { ...row, [field]: stringValue };
+  });
 
   return { ...draft, actionRows };
 }
@@ -287,12 +374,15 @@ function stripDraftFields(row = {}) {
 export function buildRemovalPdfDraftExportLog(log = {}) {
   return {
     ...log,
-    entries: (Array.isArray(log?.entries) ? log.entries : []).map((entry) => stripDraftFields(entry)),
+    entries: (Array.isArray(log?.entries) ? log.entries : [])
+      .filter((entry) => normalizeDraftTrainId(entry?.trainId))
+      .map((entry) => stripDraftFields(entry)),
   };
 }
 
 export function buildRemovalPdfDraftExportRows(rows = []) {
-  const sortedRows = sortDraftRows(rows);
+  const sortedRows = sortDraftRows(rows)
+    .filter((row) => normalizeDraftTrainNumber(row?.trainsetNumber || row?.key));
   const exportRows = [];
   let previousActionValue = null;
   let previousSectionIndex = null;
