@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
+  addRemovalPdfDraftLogEntry,
+  addRemovalPdfDraftRow,
   buildRemovalPdfDraftExportLog,
   buildRemovalPdfDraftExportRows,
   createRemovalPdfDraft,
@@ -104,6 +106,96 @@ test("the SWP draft deeply snapshots the report inputs without changing the sour
   const edited = updateRemovalPdfDraftRow(draft, draft.actionRows[0].swpDraftId, "requestType", "Edited request");
   assert.equal(edited.actionRows[0].requestType, "Edited request");
   assert.deepEqual(source, sourceBefore);
+});
+
+test("Add creates independent blank Removal Table rows with unique draft IDs", () => {
+  const draft = createRemovalPdfDraft(createSourceData());
+  const draftBefore = structuredClone(draft);
+  const withWestRow = addRemovalPdfDraftLogEntry(draft, "west");
+  const westRow = withWestRow.westLog.entries.at(-1);
+  const withEastRow = addRemovalPdfDraftLogEntry(withWestRow, "east");
+  const eastRow = withEastRow.eastLog.entries.at(-1);
+
+  assert.deepEqual(
+    {
+      trainId: westRow.trainId,
+      tid: westRow.tid,
+      time: westRow.time,
+      remark: westRow.remark,
+      remarkPills: westRow.remarkPills,
+    },
+    { trainId: "", tid: "", time: "", remark: "", remarkPills: [] },
+  );
+  assert.equal(withWestRow.westLog.entries.length, draft.westLog.entries.length + 1);
+  assert.deepEqual(withWestRow.eastLog, draft.eastLog);
+  assert.deepEqual(withWestRow.actionRows, draft.actionRows);
+  assert.equal(withEastRow.eastLog.entries.length, draft.eastLog.entries.length + 1);
+  assert.deepEqual(withEastRow.westLog, withWestRow.westLog);
+  assert.deepEqual(withEastRow.actionRows, draft.actionRows);
+  assert.notEqual(westRow.swpDraftId, eastRow.swpDraftId);
+  assert.deepEqual(draft, draftBefore);
+});
+
+test("Add creates an editable requested row without changing either Removal Table", () => {
+  const draft = createRemovalPdfDraft(createSourceData());
+  const logsBefore = structuredClone({ westLog: draft.westLog, eastLog: draft.eastLog });
+  const withRequestedRow = addRemovalPdfDraftRow(draft);
+  const addedRow = withRequestedRow.actionRows.find((row) => row.swpDraftId.startsWith("swp-new-requested-"));
+
+  assert.ok(addedRow);
+  assert.equal(addedRow.trainsetNumber, "");
+  assert.equal(addedRow.tid, "");
+  assert.equal(addedRow.requestType, "");
+  assert.equal(addedRow.swpDraftActionValue, "needSwapping");
+  assert.equal(addedRow.actionLabel, "Need Swapping");
+  assert.deepEqual(
+    { westLog: withRequestedRow.westLog, eastLog: withRequestedRow.eastLog },
+    logsBefore,
+  );
+
+  const edited = updateRemovalPdfDraftRow(
+    withRequestedRow,
+    addedRow.swpDraftId,
+    "trainsetNumber",
+    "T7",
+  );
+  const editedRow = edited.actionRows.find((row) => row.swpDraftId === addedRow.swpDraftId);
+  const exportedRow = buildRemovalPdfDraftExportRows(edited.actionRows)
+    .find((row) => !row.isSeparator && row.trainsetNumber === "07");
+
+  assert.equal(editedRow.trainsetNumber, "07");
+  assert.equal(editedRow.key, "T07");
+  assert.ok(exportedRow);
+  assert.equal("swpDraftId" in exportedRow, false);
+  assert.deepEqual(draft.actionRows.length + 1, withRequestedRow.actionRows.length);
+});
+
+test("all Add operations use unique IDs across removal and requested rows", () => {
+  let draft = createRemovalPdfDraft(createSourceData());
+  draft = addRemovalPdfDraftLogEntry(draft, "west");
+  const westId = draft.westLog.entries.at(-1).swpDraftId;
+  draft = addRemovalPdfDraftLogEntry(draft, "east");
+  const eastId = draft.eastLog.entries.at(-1).swpDraftId;
+  draft = addRemovalPdfDraftRow(draft);
+  const requestedId = draft.actionRows.find((row) => row.swpDraftId.startsWith("swp-new-requested-"))?.swpDraftId;
+
+  assert.ok(requestedId);
+  assert.equal(new Set([westId, eastId, requestedId]).size, 3);
+});
+
+test("blank rows added in the editor are omitted from PDF exports", () => {
+  const draft = createRemovalPdfDraft(createSourceData());
+  const withBlankLogRow = addRemovalPdfDraftLogEntry(draft, "west");
+  const withBlankRequestedRow = addRemovalPdfDraftRow(withBlankLogRow);
+  const exportedLog = buildRemovalPdfDraftExportLog(withBlankRequestedRow.westLog);
+  const exportedRequestedRows = buildRemovalPdfDraftExportRows(withBlankRequestedRow.actionRows)
+    .filter((row) => !row.isSeparator);
+
+  assert.deepEqual(exportedLog.entries.map((row) => row.trainId), ["T18"]);
+  assert.deepEqual(
+    exportedRequestedRows.map((row) => row.trainsetNumber),
+    ["02", "21", "09", "26"],
+  );
 });
 
 test("changing allocation transfers the row to the selected group", () => {
@@ -256,6 +348,34 @@ test("the ED 9AM draft clones East removal and off-peak rows without requested a
   assert.deepEqual(offPeakRows, offPeakBefore);
 });
 
+test("ED 9AM Add keeps East removal and off-peak tables independent", () => {
+  const draft = createEastNineAmRemovalPdfDraft({
+    eastLog: {
+      depot: "east",
+      entries: [{ trainId: "T08", tid: "112", time: "09:05", remark: "Wash 4-Aug" }],
+    },
+    offPeakRows: [{ trainId: "T03", tid: "101", time: "", remark: "-" }],
+  });
+  const draftBefore = structuredClone(draft);
+  const withEastRow = addRemovalPdfDraftLogEntry(draft, "east");
+  const eastAddedId = withEastRow.eastLog.entries.at(-1).swpDraftId;
+
+  assert.equal(withEastRow.eastLog.entries.length, 2);
+  assert.deepEqual(withEastRow.westLog, draft.westLog);
+  assert.deepEqual(withEastRow.actionRows, []);
+  assert.equal(withEastRow.draftType, "eastNineAmOffPeak");
+
+  const withOffPeakRow = addRemovalPdfDraftLogEntry(withEastRow, "west");
+  const offPeakAddedId = withOffPeakRow.westLog.entries.at(-1).swpDraftId;
+
+  assert.equal(withOffPeakRow.westLog.entries.length, 2);
+  assert.deepEqual(withOffPeakRow.eastLog, withEastRow.eastLog);
+  assert.deepEqual(withOffPeakRow.actionRows, []);
+  assert.equal(withOffPeakRow.draftType, "eastNineAmOffPeak");
+  assert.notEqual(eastAddedId, offPeakAddedId);
+  assert.deepEqual(draft, draftBefore);
+});
+
 test("the Removal Summary toolbar opens SWP instead of downloading PNG", () => {
   assert.match(depotStablingSource, /aria-label="Open SWP PDF Editor"/);
   assert.match(depotStablingSource, /<Pencil size=\{12\} \/>\s*SWP/);
@@ -264,19 +384,30 @@ test("the Removal Summary toolbar opens SWP instead of downloading PNG", () => {
   assert.doesNotMatch(depotStablingSource, /handleTrainRemPngDownload|downloadCombinedRemovalPng|theme-train-rem-png/);
 });
 
-test("the SWP editor states that live and normal PDF data remain unchanged", () => {
+test("the SWP editor preserves draft independence and accessible modal behavior", () => {
   assert.match(editorSource, /Changes here never update the Removal Summary, live records, or the normal PDF button\./);
+  assert.match(editorSource, /Removal Tables and Requested Train Allocation stay independent in this edited copy\./);
   assert.match(editorSource, /Download edited PDF/);
-  assert.match(editorSource, /Reset allocations/);
   assert.match(editorSource, /Remove from edited PDF/);
-  assert.match(editorSource, /Removal tables/);
+  assert.match(editorSource, /role="dialog"/);
+  assert.match(editorSource, /aria-modal="true"/);
   assert.match(editorSource, /backgroundRoot\.inert = true/);
   assert.match(editorSource, /previousActiveElement\?\.focus/);
   assert.match(editorSource, /row\?\.trainsetNumber \|\| row\?\.trainId/);
-  assert.match(editorSource, /Changing, editing, or removing an allocation does not change either Removal Table\./);
-  assert.match(editorSource, /Editing or removing a row here does not change Requested Train Allocation\./);
   assert.doesNotMatch(editorSource, /reconciles its linked West removal row/);
   assert.match(editorSource, /ED 9AM REM/);
+});
+
+test("the SWP editor uses a paper preview with Add, Remove, and Allocation controls", () => {
+  assert.match(editorSource, /className="theme-swp-paper"[^>]*data-pdf-page/);
+  assert.match(editorSource, />DEPOT REMOVAL SUMMARY</);
+  assert.match(editorSource, /aria-label=\{`Add \$\{label\} removal row`\}/);
+  assert.match(editorSource, /aria-label="Add requested train allocation row"/);
+  assert.match(editorSource, /data-pdf-control="add"/);
+  assert.match(editorSource, /data-pdf-control="remove"/);
+  assert.match(editorSource, /<select[\s\S]*?data-pdf-control="allocation"[\s\S]*?getRemovalPdfDraftActionOptions\(row\)\.map/);
+  assert.match(editorSource, /onChange=\{\(event\) => handleFieldChange\(row\.swpDraftId, "trainsetNumber", event\.target\.value\)\}/);
+  assert.match(editorSource, /REQUESTED TRAIN - Total: \{rowCount\}/);
 });
 
 test("ED 9AM REM opens a separate editor and omits requested train allocation", () => {
@@ -284,10 +415,18 @@ test("ED 9AM REM opens a separate editor and omits requested train allocation", 
   assert.match(depotStablingSource, /collectTrainRemMainlineInServiceRows\(nineAmState, activeTimetable\)/);
   assert.match(depotStablingSource, /layout: "eastNineAmOffPeak"/);
   assert.match(depotStablingSource, /east-depot-9am-removal-\$\{dateStamp\}\.pdf/);
-  assert.match(eastNineAmEditorSource, /Removal tables/);
-  assert.match(eastNineAmEditorSource, /Off peak tables/);
+  assert.match(eastNineAmEditorSource, /className="theme-swp-paper theme-swp-paper-ed9"[^>]*data-pdf-page/);
+  assert.match(eastNineAmEditorSource, /EAST DEPOT 9AM REMOVAL &amp; OFF-PEAK TRAINS/);
+  assert.match(eastNineAmEditorSource, /label: "East Depot Removal"/);
+  assert.match(eastNineAmEditorSource, /label: "Off-Peak Trains"/);
+  assert.match(eastNineAmEditorSource, /aria-label=\{`Add \$\{label\} row`\}/);
+  assert.match(eastNineAmEditorSource, /data-pdf-control="add"/);
+  assert.match(eastNineAmEditorSource, /data-pdf-control="remove"/);
   assert.match(eastNineAmEditorSource, /Download ED 9AM REM PDF/);
-  assert.doesNotMatch(eastNineAmEditorSource, /Requested train allocation/);
+  assert.match(eastNineAmEditorSource, /backgroundRoot\.inert = true/);
+  assert.match(eastNineAmEditorSource, /previousActiveElement\?\.focus/);
+  assert.doesNotMatch(eastNineAmEditorSource, /Requested train allocation/i);
+  assert.doesNotMatch(eastNineAmEditorSource, /data-pdf-control="allocation"/);
 });
 
 test("the SWP button and editor have explicit light-mode contrast", () => {
@@ -299,19 +438,22 @@ test("the SWP button and editor have explicit light-mode contrast", () => {
   assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-swp-ed9-back/);
 });
 
-test("the SWP editor has explicit readable dark-mode contrast", () => {
-  assert.match(themeStyles, /\.theme-swp-editor-window\s*\{[^}]*color: #f8fafc;[^}]*background: #071a2a;/s);
-  assert.match(themeStyles, /\.theme-swp-editor-input::placeholder\s*\{[^}]*color: #b8cbd9;/s);
-  assert.match(themeStyles, /\.theme-swp-editor-table th\s*\{[^}]*color: #c5ebfb;/s);
+test("the SWP and ED editors render a fixed white PDF-style paper in both themes", () => {
+  assert.match(editorSource, /theme-swp-paper-viewport/);
+  assert.match(eastNineAmEditorSource, /theme-swp-paper-viewport/);
+  assert.match(themeStyles, /\.theme-swp-paper\s*\{[^}]*color: #111827;[^}]*background: #ffffff;[^}]*font-family: Arial, Helvetica, sans-serif;/s);
+  assert.match(themeStyles, /\.theme-swp-paper-layout\s*\{[^}]*display: grid;[^}]*grid-template-columns:/s);
+  assert.match(themeStyles, /\.theme-swp-paper-ed9-layout\s*\{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/s);
+  assert.match(themeStyles, /\.theme-swp-paper \.theme-swp-paper-table th,[\s\S]*?background: #ffffff !important;[\s\S]*?border: 1px solid #202020 !important;/);
+  assert.match(themeStyles, /\.theme-swp-paper \.theme-swp-paper-select/);
+  assert.match(themeStyles, /\.theme-swp-paper \.theme-swp-paper-remove/);
 });
 
-test("the SWP editor tables fit their panels without horizontal minimum widths", () => {
-  assert.doesNotMatch(editorSource, /min-w-\[(?:570|760)px\]/);
-  assert.doesNotMatch(editorSource, /overflow-x-auto/);
-  assert.match(editorSource, /theme-swp-editor-table w-full min-w-0 table-fixed/);
-  assert.match(editorSource, /max-w-\[1040px\]/);
-  assert.match(editorSource, /w-\[50px\].*Train/);
-  assert.match(editorSource, /w-\[155px\].*Allocation/);
+test("the PDF-style paper preserves its layout through a scrollable narrow viewport", () => {
+  assert.match(editorSource, /theme-swp-paper-viewport min-h-0 flex-1 overflow-auto/);
+  assert.match(eastNineAmEditorSource, /theme-swp-paper-viewport min-h-0 flex-1 overflow-auto/);
+  assert.match(themeStyles, /\.theme-swp-paper\s*\{[^}]*min-width: 940px;[^}]*max-width: 1160px;/s);
+  assert.match(themeStyles, /@media \(max-width: 760px\)[\s\S]*?\.theme-swp-paper \{ min-width: 900px;/);
 });
 
 test("identical custom remarks use one PDF pill color in removal and requested tables", () => {
