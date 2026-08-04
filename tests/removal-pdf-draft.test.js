@@ -313,3 +313,19 @@ test("the SWP editor tables fit their panels without horizontal minimum widths",
   assert.match(editorSource, /w-\[50px\].*Train/);
   assert.match(editorSource, /w-\[155px\].*Allocation/);
 });
+
+test("identical custom remarks use one PDF pill color in removal and requested tables", () => {
+  assert.match(depotStablingSource, /function getRemovalPdfRemarkPillStyle\(remark = "", options = \{\}\)/);
+  assert.match(
+    depotStablingSource,
+    /const pillStyle = getRemovalPdfRemarkPillStyle\(text, \{ colorCustom: true \}\);/,
+  );
+  assert.match(
+    depotStablingSource,
+    /const pillStyle = getRemovalPdfRemarkPillStyle\(remark, \{ colorCustom: true \}\);/,
+  );
+  assert.doesNotMatch(
+    depotStablingSource,
+    /stroke: item\?\.badgeBorder \|\| item\?\.badgeBg \|\| "#000000"/,
+  );
+});
