@@ -24,6 +24,7 @@ export default function RemovalPdfEditor({
   onClose,
   onReset,
   onDownload,
+  onOpenEastNineAm,
   downloading = false,
 }) {
   const dialogRef = useRef(null);
@@ -382,13 +383,20 @@ export default function RemovalPdfEditor({
 
         <footer className="theme-swp-editor-footer flex flex-wrap items-center justify-between gap-2 border-t border-[#23506d] bg-[#061421] px-4 py-3 sm:px-5">
           <p className="text-[10px] leading-relaxed text-[#789db5]">The downloaded filename includes “edited” so it stays separate from the normal report.</p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
               className="theme-swp-editor-cancel inline-flex h-9 items-center rounded-lg border border-slate-500/50 bg-slate-900/40 px-4 text-[10px] font-bold text-slate-200 hover:bg-slate-800/70"
             >
               Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onOpenEastNineAm}
+              className="theme-swp-ed9-open inline-flex h-9 items-center gap-2 rounded-lg border border-violet-300/55 bg-violet-500/20 px-4 text-[10px] font-black uppercase tracking-[0.08em] text-violet-100 shadow-[0_0_18px_rgba(139,92,246,0.16)] transition-all hover:-translate-y-0.5 hover:bg-violet-500/30"
+            >
+              <FileText size={14} /> ED 9AM REM
             </button>
             <button
               type="button"

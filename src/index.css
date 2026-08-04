@@ -9248,6 +9248,18 @@ html[data-app-theme="light"] .theme-train-rem-table-header {
   border-color: #376986;
 }
 
+.theme-swp-ed9-open {
+  color: #f3e8ff;
+  background: rgba(139,92,246,0.22);
+  border-color: #c084fc;
+}
+
+.theme-swp-ed9-back {
+  color: #e2e8f0;
+  background: #10283a;
+  border-color: #5b7890;
+}
+
 .theme-swp-editor-action-pill[data-action="needSwapping"] {
   color: #fecaca;
   background: rgba(239,68,68,0.13);
@@ -9457,6 +9469,21 @@ html[data-app-theme="light"] .theme-swp-editor-download {
   background: #047857 !important;
   border-color: #065f46 !important;
   box-shadow: 0 4px 12px rgba(4,120,87,0.18) !important;
+}
+
+html[data-app-theme="light"] .theme-swp-ed9-open {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: #6d28d9 !important;
+  border-color: #5b21b6 !important;
+  box-shadow: 0 4px 12px rgba(109,40,217,0.2) !important;
+}
+
+html[data-app-theme="light"] .theme-swp-ed9-back {
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+  background: #ffffff !important;
+  border-color: #94a3b8 !important;
 }
 
 /* PST cards: use solid black typography in light mode only. */

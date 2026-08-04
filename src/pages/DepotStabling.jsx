@@ -15,6 +15,7 @@ import OvertimeTracker from "../components/OvertimeTracker";
 import RosterWorkspace from "../components/RosterWorkspace";
 import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator";
 import RemovalPdfEditor from "../components/depot/RemovalPdfEditor";
+import EastNineAmRemovalPdfEditor from "../components/depot/EastNineAmRemovalPdfEditor";
 import { summarizeInsertionTidUsage } from "../lib/insertionTidUsage";
 import {
   createLatestTrainMovementSaveQueue,
@@ -29,6 +30,10 @@ import {
   buildRemovalPdfDraftExportRows,
   createRemovalPdfDraft,
 } from "../lib/removalPdfDraft";
+import {
+  createEastNineAmRemovalPdfDraft,
+  selectEastNineAmOffPeakRows,
+} from "../lib/eastNineAmRemoval";
 import {
   addOnBeforeRequestedSummaryTrailingDate,
   formatRequestedSummaryEntryCount,
@@ -3187,12 +3192,17 @@ function collectTrainRemReferenceInServiceTrainIds(trainRemState = {}, activeTim
 
 function collectTrainRemMainlineInServiceRows(trainRemState = {}, activeTimetable = null) {
   const selectedPreset = trainRemState?.selectedPreset?.west || "9am";
+  const getScheduledTids = (depot) => {
+    const config = getTrainRemPresetConfig(depot, selectedPreset, activeTimetable);
+    const timedTids = Object.keys(config?.timeMap || {});
+    return timedTids.length ? timedTids : (config?.tids || []);
+  };
 
-  return collectTrainRemReferenceInServiceRows(trainRemState, activeTimetable)
-    .filter((row) => (
-      !getTrainRemScheduleMatch(activeTimetable, "west", selectedPreset, row.tid)
-      && !getTrainRemScheduleMatch(activeTimetable, "east", selectedPreset, row.tid)
-    ));
+  return selectEastNineAmOffPeakRows(
+    collectTrainRemReferenceInServiceRows(trainRemState, activeTimetable),
+    getScheduledTids("west"),
+    getScheduledTids("east"),
+  );
 }
 
 function buildTrainRemRowsFromPreset(depot, label, existingRows = []) {
@@ -7257,6 +7267,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const [trainRemPdfStatus, setTrainRemPdfStatus] = useState({ west: false, east: false });
   const [trainRemSwpDraft, setTrainRemSwpDraft] = useState(null);
   const [trainRemSwpDownloading, setTrainRemSwpDownloading] = useState(false);
+  const [trainRemEastNineAmDraft, setTrainRemEastNineAmDraft] = useState(null);
+  const [trainRemEastNineAmDownloading, setTrainRemEastNineAmDownloading] = useState(false);
   const [trainRemUndoCount, setTrainRemUndoCount] = useState(0);
   const [westDepotCopyStatus, setWestDepotCopyStatus] = useState("");
   const [eastDepotCopyStatus, setEastDepotCopyStatus] = useState("");
@@ -8067,6 +8079,47 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     return createRemovalPdfDraft({ westLog, eastLog, actionOverviewRows });
   };
 
+  const createTrainRemEastNineAmDraft = () => {
+    const latestTrainRemState = trainRemStateRef.current || trainRemState;
+    const westRows = getTrainRemCachedPresetRows(latestTrainRemState, "west", "9am");
+    const eastRows = getTrainRemCachedPresetRows(latestTrainRemState, "east", "9am");
+    const nineAmState = {
+      ...latestTrainRemState,
+      selectedPreset: { west: "9am", east: "9am" },
+      rows: { west: westRows, east: eastRows },
+    };
+    const latestEastData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
+    const eastLog = buildTrainRemRemovalLog(
+      nineAmState,
+      "east",
+      maintenanceMap,
+      activeTimetable,
+      latestEastData,
+    );
+    const sourceRowByTid = new Map(
+      westRows.map((row) => [normalizeTrainRemTidValue(row?.tid), row]),
+    );
+    const offPeakRows = collectTrainRemMainlineInServiceRows(nineAmState, activeTimetable)
+      .map((serviceRow) => {
+        const sourceRow = sourceRowByTid.get(normalizeTrainRemTidValue(serviceRow?.tid)) || {};
+        const requestItem = getTrainRemRemovalRequestItem(sourceRow, maintenanceMap);
+        const remarkPills = getTrainRemRemovalRemarkItems(sourceRow, maintenanceMap);
+        const remark = remarkPills.map((item) => item.text).join(" / ")
+          || getTrainRemRemovalRemark(sourceRow, maintenanceMap);
+
+        return {
+          trainId: serviceRow.trainId,
+          tid: serviceRow.tid,
+          time: "",
+          remark,
+          remarkPills,
+          remarkFill: getRemovalRemarkFillColor(remark, requestItem),
+        };
+      });
+
+    return createEastNineAmRemovalPdfDraft({ eastLog, offPeakRows });
+  };
+
   const handleTrainRemSwpOpen = (event = null) => {
     event?.preventDefault?.();
     event?.stopPropagation?.();
@@ -8075,6 +8128,14 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
   const handleTrainRemSwpReset = () => {
     setTrainRemSwpDraft(createTrainRemSwpDraft());
+  };
+
+  const handleTrainRemEastNineAmOpen = () => {
+    setTrainRemEastNineAmDraft(createTrainRemEastNineAmDraft());
+  };
+
+  const handleTrainRemEastNineAmReset = () => {
+    setTrainRemEastNineAmDraft(createTrainRemEastNineAmDraft());
   };
 
   const handleTrainRemSwpDownload = () => {
@@ -8095,6 +8156,23 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       alert("Unable to create the edited removal PDF. Please try again.");
     } finally {
       setTimeout(() => setTrainRemSwpDownloading(false), 500);
+    }
+  };
+
+  const handleTrainRemEastNineAmDownload = () => {
+    if (!trainRemEastNineAmDraft || trainRemEastNineAmDownloading) return;
+
+    setTrainRemEastNineAmDownloading(true);
+    try {
+      downloadEastNineAmRemovalPdf(
+        buildRemovalPdfDraftExportLog(trainRemEastNineAmDraft.eastLog),
+        buildRemovalPdfDraftExportLog(trainRemEastNineAmDraft.westLog),
+      );
+    } catch (error) {
+      console.error("East Depot 9AM removal PDF export failed:", error);
+      alert("Unable to create the East Depot 9AM removal PDF. Please try again.");
+    } finally {
+      setTimeout(() => setTrainRemEastNineAmDownloading(false), 500);
     }
   };
 
@@ -9144,13 +9222,28 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         </div>
       </section>
 
-      <RemovalPdfEditor
-        draft={trainRemSwpDraft}
-        onDraftChange={setTrainRemSwpDraft}
-        onClose={() => setTrainRemSwpDraft(null)}
-        onReset={handleTrainRemSwpReset}
-        onDownload={handleTrainRemSwpDownload}
-        downloading={trainRemSwpDownloading}
+      {!trainRemEastNineAmDraft && (
+        <RemovalPdfEditor
+          draft={trainRemSwpDraft}
+          onDraftChange={setTrainRemSwpDraft}
+          onClose={() => setTrainRemSwpDraft(null)}
+          onReset={handleTrainRemSwpReset}
+          onDownload={handleTrainRemSwpDownload}
+          onOpenEastNineAm={handleTrainRemEastNineAmOpen}
+          downloading={trainRemSwpDownloading}
+        />
+      )}
+      <EastNineAmRemovalPdfEditor
+        draft={trainRemEastNineAmDraft}
+        onDraftChange={setTrainRemEastNineAmDraft}
+        onBack={() => setTrainRemEastNineAmDraft(null)}
+        onClose={() => {
+          setTrainRemEastNineAmDraft(null);
+          setTrainRemSwpDraft(null);
+        }}
+        onReset={handleTrainRemEastNineAmReset}
+        onDownload={handleTrainRemEastNineAmDownload}
+        downloading={trainRemEastNineAmDownloading}
       />
     </>
   );
@@ -24234,6 +24327,7 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
   // West and East are stacked on the left, while REQUESTED TRAIN uses
   // the full right column with the same table sizing and font treatment.
   const stackMorningDepots = options?.stackMorningDepots !== false;
+  const eastNineAmOffPeakLayout = options?.layout === "eastNineAmOffPeak";
   const pageWidth = 841.89;
   const pageHeight = 595.28;
   const marginX = 22;
@@ -24404,11 +24498,18 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
   let ops = "";
   ops += rect(0, 0, pageWidth, pageHeight, { fill: "#ffffff", stroke: "" });
 
-  ops += pdfText("DEPOT REMOVAL SUMMARY", marginX, yFromTop(titleTop), {
+  ops += pdfText(
+    eastNineAmOffPeakLayout
+      ? "EAST DEPOT 9AM REMOVAL & OFF-PEAK TRAINS"
+      : "DEPOT REMOVAL SUMMARY",
+    marginX,
+    yFromTop(titleTop),
+    {
     size: 14,
     color: "#000000",
     font: "F2",
-  });
+    },
+  );
   // Keep the main title clean. Section headings below provide the visual
   // separation, so the previous full-page rule is intentionally removed.
 
@@ -24735,7 +24836,7 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
   const drawRemovalColumn = (log = {}, x, sideLabel, optionsForTable = {}) => {
     const rows = Array.isArray(log?.entries) ? log.entries : [];
     const title = sideLabel === "west" ? "WEST DEPOT" : "EAST DEPOT";
-    const sectionTitle = `${title} - Total: ${rows.length}`;
+    const sectionTitle = optionsForTable.sectionTitle || `${title} - Total: ${rows.length}`;
     const activeTableTop = optionsForTable.tableTop ?? tableTop;
     const activeColumnTitleTop = optionsForTable.columnTitleTop ?? columnTitleTop;
     const activeRowHeight = optionsForTable.rowHeight ?? rightRowHeight;
@@ -25019,7 +25120,27 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
 
   const rightColumnX = marginX + columnWidth + gutter;
 
-  if (stackMorningDepots) {
+  if (eastNineAmOffPeakLayout) {
+    const largestTableCount = Math.max(westRowCount, eastRowCount, 1);
+    const eastNineAmRowHeight = Math.max(
+      9,
+      Math.min(22, (leftAvailableHeight - headerHeight) / largestTableCount),
+    );
+    drawRemovalColumn(westLog, marginX, "east", {
+      tableTop,
+      columnTitleTop,
+      rowHeight: eastNineAmRowHeight,
+      fontReferenceRowHeight: eastNineAmRowHeight,
+      sectionTitle: `EAST DEPOT REMOVAL - Total: ${westRows.length}`,
+    });
+    drawRemovalColumn(eastLog, rightColumnX, "west", {
+      tableTop,
+      columnTitleTop,
+      rowHeight: eastNineAmRowHeight,
+      fontReferenceRowHeight: eastNineAmRowHeight,
+      sectionTitle: `OFF-PEAK TRAINS - Total: ${eastRows.length}`,
+    });
+  } else if (stackMorningDepots) {
     drawRemovalColumn(westLog, marginX, "west", {
       tableTop,
       columnTitleTop,
@@ -25101,6 +25222,16 @@ function downloadEditedCombinedRemovalPdf(westLog = {}, eastLog = {}, options = 
   const dateStamp = new Date().toISOString().slice(0, 10);
   const blob = buildCombinedRemovalPdfBlob(westLog, eastLog, options);
   downloadClientBlob(blob, `west-east-depot-removal-edited-${dateStamp}.pdf`);
+}
+
+function downloadEastNineAmRemovalPdf(eastLog = {}, offPeakLog = {}) {
+  const dateStamp = new Date().toISOString().slice(0, 10);
+  const blob = buildCombinedRemovalPdfBlob(eastLog, offPeakLog, {
+    layout: "eastNineAmOffPeak",
+    stackMorningDepots: false,
+    actionOverviewRows: [],
+  });
+  downloadClientBlob(blob, `east-depot-9am-removal-${dateStamp}.pdf`);
 }
 
 function RemovalDepotLogCard({ log, combinedLogs = null }) {

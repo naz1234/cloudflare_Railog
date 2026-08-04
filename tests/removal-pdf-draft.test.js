@@ -12,6 +12,10 @@ import {
   updateRemovalPdfDraftLogEntry,
   updateRemovalPdfDraftRow,
 } from "../src/lib/removalPdfDraft.js";
+import {
+  createEastNineAmRemovalPdfDraft,
+  selectEastNineAmOffPeakRows,
+} from "../src/lib/eastNineAmRemoval.js";
 
 const depotStablingSource = readFileSync(
   new URL("../src/pages/DepotStabling.jsx", import.meta.url),
@@ -19,6 +23,10 @@ const depotStablingSource = readFileSync(
 );
 const editorSource = readFileSync(
   new URL("../src/components/depot/RemovalPdfEditor.jsx", import.meta.url),
+  "utf8",
+);
+const eastNineAmEditorSource = readFileSync(
+  new URL("../src/components/depot/EastNineAmRemovalPdfEditor.jsx", import.meta.url),
   "utf8",
 );
 const themeStyles = readFileSync(
@@ -177,6 +185,48 @@ test("depot PDF rows can be edited or removed without mutating the source log", 
   assert.equal(source.westLog.entries.length, 1);
 });
 
+test("East 9AM off-peak selection removes both depot schedules and preserves TID pairing", () => {
+  const referenceTids = [
+    101, 102, 103, 104, 105, 106, 107, 108, 109, 110,
+    111, 112, 113, 114, 115, 116, 117, 118, 119, 120,
+    201, 202, 203, 204, 205, 206, 207, 208, 209, 210,
+    211, 212, 213, 214, 215, 216, 217, 218, 219, 220,
+  ];
+  const referenceRows = referenceTids.map((tid, index) => ({ trainId: `T${String(index + 1).padStart(2, "0")}`, tid }));
+  const westRemovalTids = [212, 214, 216, 218, 220, 102, 104, 106, 108, 110];
+  const eastRemovalTids = [112, 114, 116, 118, 120, 202, 204, 206, 208, 210];
+  const offPeakRows = selectEastNineAmOffPeakRows(referenceRows, westRemovalTids, eastRemovalTids);
+
+  assert.deepEqual(
+    offPeakRows.map((row) => row.tid),
+    ["101", "103", "105", "107", "109", "111", "113", "115", "117", "119", "201", "203", "205", "207", "209", "211", "213", "215", "217", "219"],
+  );
+  assert.equal(offPeakRows[0].trainId, "T01");
+  assert.equal(offPeakRows.at(-1).trainId, "T39");
+});
+
+test("the ED 9AM draft clones East removal and off-peak rows without requested allocation", () => {
+  const eastLog = {
+    depot: "east",
+    entries: [{ trainId: "T08", tid: "112", time: "09:05", remark: "Wash 4-Aug" }],
+  };
+  const offPeakRows = [
+    { trainId: "T03", tid: "101", remark: "-" },
+    { trainId: "T29", tid: "207", remark: "RST PM 04-AUG" },
+  ];
+  const eastBefore = structuredClone(eastLog);
+  const offPeakBefore = structuredClone(offPeakRows);
+  const draft = createEastNineAmRemovalPdfDraft({ eastLog, offPeakRows });
+
+  assert.equal(draft.draftType, "eastNineAmOffPeak");
+  assert.deepEqual(draft.actionRows, []);
+  assert.deepEqual(draft.eastLog.entries.map((row) => row.tid), ["112"]);
+  assert.deepEqual(draft.westLog.entries.map((row) => row.tid), ["101", "207"]);
+  assert.notEqual(draft.eastLog.entries[0], eastLog.entries[0]);
+  assert.deepEqual(eastLog, eastBefore);
+  assert.deepEqual(offPeakRows, offPeakBefore);
+});
+
 test("the Removal Summary toolbar opens SWP instead of downloading PNG", () => {
   assert.match(depotStablingSource, /aria-label="Open SWP PDF Editor"/);
   assert.match(depotStablingSource, /<Pencil size=\{12\} \/>\s*SWP/);
@@ -195,6 +245,18 @@ test("the SWP editor states that live and normal PDF data remain unchanged", () 
   assert.match(editorSource, /previousActiveElement\?\.focus/);
   assert.match(editorSource, /row\?\.trainsetNumber \|\| row\?\.trainId/);
   assert.match(editorSource, /Deleting an allocation keeps its Removal Table entry\./);
+  assert.match(editorSource, /ED 9AM REM/);
+});
+
+test("ED 9AM REM opens a separate editor and omits requested train allocation", () => {
+  assert.match(depotStablingSource, /createTrainRemEastNineAmDraft/);
+  assert.match(depotStablingSource, /collectTrainRemMainlineInServiceRows\(nineAmState, activeTimetable\)/);
+  assert.match(depotStablingSource, /layout: "eastNineAmOffPeak"/);
+  assert.match(depotStablingSource, /east-depot-9am-removal-\$\{dateStamp\}\.pdf/);
+  assert.match(eastNineAmEditorSource, /Removal tables/);
+  assert.match(eastNineAmEditorSource, /Off peak tables/);
+  assert.match(eastNineAmEditorSource, /Download ED 9AM REM PDF/);
+  assert.doesNotMatch(eastNineAmEditorSource, /Requested train allocation/);
 });
 
 test("the SWP button and editor have explicit light-mode contrast", () => {
@@ -202,6 +264,8 @@ test("the SWP button and editor have explicit light-mode contrast", () => {
   assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-swp-editor-window/);
   assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-swp-editor-input/);
   assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-swp-editor-download/);
+  assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-swp-ed9-open/);
+  assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-swp-ed9-back/);
 });
 
 test("the SWP editor has explicit readable dark-mode contrast", () => {
