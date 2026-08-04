@@ -2831,6 +2831,17 @@ html[data-app-theme="light"] .theme-washing-maint-result p.text-amber-200 {
   -webkit-text-fill-color: #92400e !important;
 }
 
+html[data-app-theme="light"] .theme-washing-maint-undo {
+  color: #0e4f66 !important;
+  -webkit-text-fill-color: #0e4f66 !important;
+  background: #ffffff !important;
+  border-color: #0891b2 !important;
+}
+
+html[data-app-theme="light"] .theme-washing-maint-undo:hover {
+  background: #ecfeff !important;
+}
+
 html[data-app-theme="light"] .theme-washing-minus-three-exclusions {
   background: #fffbeb !important;
   border-color: #d97706 !important;
