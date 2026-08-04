@@ -255,24 +255,24 @@ export default function RemovalPdfEditor({
   };
 
   return createPortal(
-    <div className="theme-swp-editor fixed inset-0 z-[20000] flex bg-[#020b13]/90 p-2 backdrop-blur-sm sm:p-4" role="presentation">
+    <div className="theme-swp-editor fixed inset-0 z-[20000] flex p-2 backdrop-blur-sm sm:p-4" role="presentation">
       <section
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="swp-pdf-editor-title"
         tabIndex={-1}
-        className="theme-swp-editor-window mx-auto flex h-full w-full max-w-[1280px] flex-col overflow-hidden rounded-2xl border border-cyan-400/35 bg-[#071827] shadow-[0_28px_90px_rgba(0,0,0,0.58)]"
+        className="theme-swp-editor-window mx-auto flex h-full w-full max-w-[1280px] flex-col overflow-hidden rounded-2xl border shadow-[0_28px_90px_rgba(0,0,0,0.58)]"
         data-pdf-editor="swp"
       >
-        <header className="theme-swp-editor-header flex flex-wrap items-center justify-between gap-3 border-b border-[#23506d] bg-[#0a2940] px-4 py-3 sm:px-5">
+        <header className="theme-swp-editor-header flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="theme-swp-editor-title-icon flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-cyan-400/40 bg-cyan-400/10 text-cyan-200">
+            <span className="theme-swp-editor-title-icon flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border">
               <FileText size={18} />
             </span>
             <div className="min-w-0">
               <h2 id="swp-pdf-editor-title" className="text-[14px] font-black uppercase tracking-[0.16em] text-white">SWP PDF Editor</h2>
-              <p className="mt-0.5 text-[11px] text-[#9cc5df]">Edit directly in a preview that follows the downloaded PDF layout.</p>
+              <p className="mt-0.5 text-[11px]">Edit directly in a preview that follows the downloaded PDF layout.</p>
             </div>
           </div>
           <button
@@ -286,10 +286,10 @@ export default function RemovalPdfEditor({
           </button>
         </header>
 
-        <div className="theme-swp-editor-notice mx-3 mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-400/35 bg-emerald-400/10 px-3 py-2 sm:mx-5">
+        <div className="theme-swp-editor-notice mx-3 mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 sm:mx-5">
           <div>
-            <div className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-200">Edited copy only</div>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-emerald-100/85">
+            <div className="text-[11px] font-black uppercase tracking-[0.12em]">Edited copy only</div>
+            <p className="mt-0.5 text-[11px] leading-relaxed">
               Changes here never update the Removal Summary, live records, or the normal PDF button.
               <span className="mt-0.5 block">Removal Tables and Requested Train Allocation stay independent in this edited copy.</span>
             </p>
@@ -432,14 +432,14 @@ export default function RemovalPdfEditor({
           </article>
         </div>
 
-        <footer className="theme-swp-editor-footer flex flex-wrap items-center justify-between gap-2 border-t border-[#23506d] bg-[#061421] px-4 py-3 sm:px-5">
-          <p className="text-[10px] leading-relaxed text-[#789db5]">The downloaded filename includes “edited” so it stays separate from the normal report.</p>
+        <footer className="theme-swp-editor-footer flex flex-wrap items-center justify-between gap-2 border-t px-4 py-3 sm:px-5">
+          <p className="text-[10px] leading-relaxed">The downloaded filename includes “edited” so it stays separate from the normal report.</p>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <button type="button" onClick={onClose} className="theme-swp-editor-cancel inline-flex h-9 items-center rounded-lg border px-4 text-[10px] font-bold">Cancel</button>
             <button type="button" onClick={onOpenEastNineAm} className="theme-swp-ed9-open inline-flex h-9 items-center gap-2 rounded-lg border px-4 text-[10px] font-black uppercase tracking-[0.08em] transition-all hover:-translate-y-0.5">
               <FileText size={14} /> ED 9AM REM
             </button>
-            <button type="button" onClick={onDownload} disabled={downloading} className="theme-swp-editor-download inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-300/55 bg-emerald-500/20 px-4 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100 transition-all hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60">
+            <button type="button" onClick={onDownload} disabled={downloading} className="theme-swp-editor-download inline-flex h-9 items-center gap-2 rounded-lg border px-4 text-[10px] font-black uppercase tracking-[0.08em] transition-all hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60">
               <Download size={14} /> {downloading ? "Preparing..." : "Download edited PDF"}
             </button>
           </div>
