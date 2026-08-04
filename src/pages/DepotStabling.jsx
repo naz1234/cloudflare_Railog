@@ -29,6 +29,7 @@ import {
   buildRemovalPdfDraftExportLog,
   buildRemovalPdfDraftExportRows,
   createRemovalPdfDraft,
+  resetRemovalPdfDraftActions,
 } from "../lib/removalPdfDraft";
 import {
   createEastNineAmRemovalPdfDraft,
@@ -8126,8 +8127,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     setTrainRemSwpDraft(createTrainRemSwpDraft());
   };
 
-  const handleTrainRemSwpReset = () => {
-    setTrainRemSwpDraft(createTrainRemSwpDraft());
+  const handleTrainRemSwpRequestedReset = () => {
+    const sourceDraft = createTrainRemSwpDraft();
+    setTrainRemSwpDraft((currentDraft) => (
+      currentDraft
+        ? resetRemovalPdfDraftActions(currentDraft, sourceDraft)
+        : sourceDraft
+    ));
   };
 
   const handleTrainRemEastNineAmOpen = () => {
@@ -9227,7 +9233,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
           draft={trainRemSwpDraft}
           onDraftChange={setTrainRemSwpDraft}
           onClose={() => setTrainRemSwpDraft(null)}
-          onReset={handleTrainRemSwpReset}
+          onResetRequested={handleTrainRemSwpRequestedReset}
           onDownload={handleTrainRemSwpDownload}
           onOpenEastNineAm={handleTrainRemEastNineAmOpen}
           downloading={trainRemSwpDownloading}

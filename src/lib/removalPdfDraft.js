@@ -145,17 +145,12 @@ export function createRemovalPdfDraft({ westLog = {}, eastLog = {}, actionOvervi
 
     const actionValue = getRemovalPdfDraftActionValue(row);
     const trainKey = String(row?.trainsetNumber || row?.key || row?.label || "train").replace(/[^a-z0-9]+/gi, "-");
-    const normalizedTrainId = normalizeDraftTrainId(row?.trainsetNumber || row?.key || row?.label);
-    const linkedWestEntry = row?.group === "removal"
-      ? clonedWestLog.entries.find((entry) => normalizeDraftTrainId(entry?.trainId) === normalizedTrainId)
-      : null;
     actionRows.push({
       ...row,
       swpDraftId: `swp-${sourceIndex}-${trainKey || "train"}`,
       swpDraftOrder: sourceIndex,
       swpDraftSectionIndex: sectionIndex,
       swpDraftActionValue: actionValue,
-      swpDraftLinkedLogEntryId: linkedWestEntry?.swpDraftId || "",
     });
   });
 
@@ -183,38 +178,6 @@ export function updateRemovalPdfDraftAction(draft = {}, rowId = "", actionValue 
   ) + 1;
   const targetSection = targetSections.length ? Math.min(...targetSections) : fallbackSection;
 
-  let westLog = draft?.westLog || cloneRemovalLog({}, "west");
-  let linkedLogEntryId = String(targetRow?.swpDraftLinkedLogEntryId || "");
-  const westEntries = Array.isArray(westLog?.entries) ? westLog.entries : [];
-  const existingLinkedEntry = westEntries.find((entry) => entry?.swpDraftId === linkedLogEntryId);
-
-  if (action.group === "removal" && targetRow?.group !== "removal") {
-    if (!existingLinkedEntry) {
-      linkedLogEntryId = `swp-west-added-${rowId}`;
-      const remark = String(targetRow?.requestType || "").trim();
-      westLog = {
-        ...westLog,
-        entries: [
-          ...westEntries,
-          {
-            swpDraftId: linkedLogEntryId,
-            trainId: normalizeDraftTrainId(targetRow?.trainsetNumber || targetRow?.key),
-            tid: String(targetRow?.tid || ""),
-            time: "",
-            remark,
-            remarkPills: createDraftRemarkPills(remark),
-          },
-        ],
-      };
-    }
-  } else if (action.group !== "removal" && targetRow?.group === "removal" && linkedLogEntryId) {
-    westLog = {
-      ...westLog,
-      entries: westEntries.filter((entry) => entry?.swpDraftId !== linkedLogEntryId),
-    };
-    linkedLogEntryId = "";
-  }
-
   const actionRows = rows.map((row) => {
     if (row?.swpDraftId !== rowId) return row;
 
@@ -227,11 +190,10 @@ export function updateRemovalPdfDraftAction(draft = {}, rowId = "", actionValue 
       actionStatus: `${action.label} ${action.actionSymbol}`,
       swpDraftActionValue: action.value,
       swpDraftSectionIndex: targetSection,
-      swpDraftLinkedLogEntryId: linkedLogEntryId,
     };
   });
 
-  return { ...draft, westLog, actionRows: sortDraftRows(actionRows) };
+  return { ...draft, actionRows: sortDraftRows(actionRows) };
 }
 
 export function updateRemovalPdfDraftRow(draft = {}, rowId = "", field = "", value = "") {
@@ -239,28 +201,11 @@ export function updateRemovalPdfDraftRow(draft = {}, rowId = "", field = "", val
 
   const stringValue = String(value ?? "");
   const rows = Array.isArray(draft?.actionRows) ? draft.actionRows : [];
-  const targetRow = rows.find((row) => row?.swpDraftId === rowId);
   const actionRows = rows.map((row) => (
     row?.swpDraftId === rowId ? { ...row, [field]: stringValue } : row
   ));
 
-  const linkedLogEntryId = String(targetRow?.swpDraftLinkedLogEntryId || "");
-  if (!linkedLogEntryId) return { ...draft, actionRows };
-
-  const westLog = {
-    ...(draft?.westLog || {}),
-    entries: (Array.isArray(draft?.westLog?.entries) ? draft.westLog.entries : []).map((entry) => {
-      if (entry?.swpDraftId !== linkedLogEntryId) return entry;
-      if (field === "tid") return { ...entry, tid: stringValue };
-      return {
-        ...entry,
-        remark: stringValue,
-        remarkPills: createDraftRemarkPills(stringValue, entry?.remarkPills),
-      };
-    }),
-  };
-
-  return { ...draft, westLog, actionRows };
+  return { ...draft, actionRows };
 }
 
 export function removeRemovalPdfDraftRow(draft = {}, rowId = "") {
@@ -296,11 +241,15 @@ export function removeRemovalPdfDraftLogEntry(draft = {}, depot = "west", rowId 
   const currentLog = draft?.[logKey] || {};
   const entries = (Array.isArray(currentLog?.entries) ? currentLog.entries : [])
     .filter((entry) => entry?.swpDraftId !== rowId);
-  const actionRows = (Array.isArray(draft?.actionRows) ? draft.actionRows : []).map((row) => (
-    row?.swpDraftLinkedLogEntryId === rowId ? { ...row, swpDraftLinkedLogEntryId: "" } : row
-  ));
 
-  return { ...draft, [logKey]: { ...currentLog, entries }, actionRows };
+  return { ...draft, [logKey]: { ...currentLog, entries } };
+}
+
+export function resetRemovalPdfDraftActions(draft = {}, sourceDraft = {}) {
+  const actionRows = (Array.isArray(sourceDraft?.actionRows) ? sourceDraft.actionRows : [])
+    .map((row) => ({ ...row }));
+
+  return { ...draft, actionRows };
 }
 
 export function getRemovalPdfDraftGroups(rows = []) {
