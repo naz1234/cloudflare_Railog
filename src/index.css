@@ -9783,6 +9783,11 @@ html[data-app-theme="light"] .theme-swp-ed9-back {
   font-size: 9px;
 }
 
+[data-pdf-editor="swp"] .theme-swp-paper-table {
+  --swp-editor-table-font-size: 11px;
+  font-size: var(--swp-editor-table-font-size);
+}
+
 .theme-swp-paper .theme-swp-paper-table th,
 .theme-swp-paper .theme-swp-paper-table td,
 html[data-app-theme="light"] .theme-swp-paper .theme-swp-paper-table th,
@@ -9811,6 +9816,10 @@ html[data-app-theme="light"] .theme-swp-paper .theme-swp-paper-table th {
 .theme-swp-paper .theme-swp-paper-table th.theme-swp-paper-tid,
 .theme-swp-paper .theme-swp-paper-table th.theme-swp-paper-time {
   text-align: center;
+}
+
+html [data-pdf-editor="swp"] .theme-swp-paper .theme-swp-paper-table th {
+  font-size: var(--swp-editor-table-font-size);
 }
 
 .theme-swp-paper-no { width: 31px; }
@@ -9858,6 +9867,10 @@ html[data-app-theme="light"] .theme-swp-paper .theme-swp-editor-input.theme-swp-
   box-shadow: 0 0 0 1px rgba(183,121,31,0.2);
 }
 
+html [data-pdf-editor="swp"] .theme-swp-paper .theme-swp-editor-input.theme-swp-paper-cell-input {
+  font-size: var(--swp-editor-table-font-size);
+}
+
 .theme-swp-paper .theme-swp-paper-remark-input,
 html[data-app-theme="light"] .theme-swp-paper .theme-swp-paper-remark-input {
   padding-inline: 7px !important;
@@ -9902,7 +9915,7 @@ html[data-app-theme="light"] .theme-swp-paper .theme-swp-paper-remark-input {
   border: 1px solid #87929d !important;
   border-radius: 5px;
   outline: none;
-  font-size: 8px;
+  font-size: var(--swp-editor-table-font-size);
   font-weight: 700;
   line-height: 1;
   text-align: left;
@@ -9993,7 +10006,7 @@ html[data-app-theme="light"] .theme-swp-paper .theme-swp-paper-remark-input {
   border: 0 !important;
   border-radius: 4px;
   outline: none;
-  font-size: 8px;
+  font-size: var(--swp-editor-table-font-size);
   font-weight: 700;
   line-height: 1;
   text-align: left;
