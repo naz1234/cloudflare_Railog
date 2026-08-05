@@ -9123,7 +9123,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                             onBlur={() => handleTrainRemTrainIdBlur(depot, index)}
                             placeholder="ID"
                             title={referenceOnly ? rowStatusTitle : isDuplicateTrainId ? "Duplicate Train ID detected" : ""}
-                            className={`h-full min-w-0 border-0 bg-transparent text-center text-[11px] outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${showOffPeakStablingRemove ? "pl-1 pr-4" : "px-1"} ${hasDuplicateValue ? "font-normal" : "font-bold"} ${referenceOnly ? "cursor-default" : ""}`}
+                            className={`h-full min-w-0 border-0 bg-transparent px-1 text-center text-[11px] outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${hasDuplicateValue ? "font-normal" : "font-bold"} ${referenceOnly ? "cursor-default" : ""}`}
                             style={{ color: trainIdTextColor }}
                           />
 
