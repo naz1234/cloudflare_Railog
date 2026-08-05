@@ -9202,8 +9202,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
                           {showOffPeakStablingRemove && (
                             <span
-                              className="absolute top-1/2 z-[60] -translate-y-1/2"
-                              style={{ left: "calc(18% - 17px)" }}
+                              className="absolute top-1/2 z-[60]"
+                              style={{ left: "18%", transform: "translate(-50%, -50%)" }}
                             >
                               <ActionTooltip
                                 message={offPeakStablingMatch.tooltip}
