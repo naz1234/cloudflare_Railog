@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Download, FileText, Plus, RotateCcw, Trash2, X } from "lucide-react";
+import { Check, ChevronDown, Download, FileText, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import {
   addRemovalPdfDraftLogEntry,
   addRemovalPdfDraftRow,
@@ -23,6 +23,142 @@ function formatTrainNumber(row = {}) {
 function formatTrainAria(row = {}) {
   const trainNumber = formatTrainNumber(row);
   return trainNumber ? `T${trainNumber}` : "new train";
+}
+
+function AllocationSelect({ row, onChange }) {
+  const options = getRemovalPdfDraftActionOptions(row);
+  const selectedIndex = Math.max(0, options.findIndex((option) => option.value === row.swpDraftActionValue));
+  const selectedOption = options[selectedIndex] || options[0];
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(selectedIndex);
+  const [placement, setPlacement] = useState("bottom");
+  const controlId = useId().replace(/:/g, "");
+  const triggerRef = useRef(null);
+  const menuRef = useRef(null);
+  const optionRefs = useRef([]);
+
+  const openMenu = (nextIndex = selectedIndex) => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    const menuHeight = options.length * 27 + 10;
+    const spaceBelow = rect ? window.innerHeight - rect.bottom : menuHeight;
+    setPlacement(spaceBelow < menuHeight && (rect?.top || 0) > menuHeight ? "top" : "bottom");
+    setActiveIndex(Math.max(0, nextIndex));
+    setOpen(true);
+  };
+
+  const chooseOption = (option) => {
+    onChange(option.value);
+    setOpen(false);
+    window.requestAnimationFrame(() => triggerRef.current?.focus());
+  };
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const handlePointerDown = (event) => {
+      if (!triggerRef.current?.contains(event.target) && !menuRef.current?.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    optionRefs.current[activeIndex]?.focus();
+  }, [activeIndex, open]);
+
+  const handleKeyDown = (event) => {
+    if (!open && ["ArrowDown", "ArrowUp", "Enter", " "].includes(event.key)) {
+      event.preventDefault();
+      openMenu(event.key === "ArrowUp" ? options.length - 1 : selectedIndex);
+      return;
+    }
+    if (!open) return;
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+      triggerRef.current?.focus();
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveIndex((index) => (index + 1) % options.length);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveIndex((index) => (index - 1 + options.length) % options.length);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      setActiveIndex(0);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      setActiveIndex(options.length - 1);
+    } else if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      chooseOption(options[activeIndex]);
+    } else if (event.key === "Tab") {
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div
+      className="theme-swp-allocation"
+      data-open={open ? "true" : "false"}
+      data-placement={placement}
+      onKeyDown={handleKeyDown}
+    >
+      <button
+        ref={triggerRef}
+        type="button"
+        className="theme-swp-allocation-trigger"
+        data-action={selectedOption?.value || "removal"}
+        data-pdf-control="allocation"
+        aria-label={`${formatTrainAria(row)} allocation for edited PDF`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={`${controlId}-menu`}
+        onClick={() => (open ? setOpen(false) : openMenu())}
+      >
+        <span className="theme-swp-allocation-dot" aria-hidden="true" />
+        <span className="theme-swp-allocation-label">{selectedOption?.label || "Allocation"}</span>
+        <ChevronDown className="theme-swp-allocation-chevron" size={12} aria-hidden="true" />
+      </button>
+
+      {open && (
+        <div
+          ref={menuRef}
+          id={`${controlId}-menu`}
+          role="listbox"
+          aria-label={`${formatTrainAria(row)} allocation options`}
+          className="theme-swp-allocation-menu"
+        >
+          {options.map((option, index) => {
+            const selected = option.value === selectedOption?.value;
+            return (
+              <button
+                key={option.value}
+                ref={(element) => { optionRefs.current[index] = element; }}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                tabIndex={index === activeIndex ? 0 : -1}
+                className="theme-swp-allocation-option"
+                data-action={option.value}
+                data-active={index === activeIndex ? "true" : "false"}
+                onMouseEnter={() => setActiveIndex(index)}
+                onClick={() => chooseOption(option)}
+              >
+                <span className="theme-swp-allocation-dot" aria-hidden="true" />
+                <span>{option.label}</span>
+                {selected && <Check className="theme-swp-allocation-check" size={12} aria-hidden="true" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function RemovalPdfEditor({
@@ -393,19 +529,11 @@ export default function RemovalPdfEditor({
                             placeholder="Remark request"
                           />
                         </td>
-                        <td>
-                          <select
-                            value={row.swpDraftActionValue}
-                            onChange={(event) => handleActionChange(row.swpDraftId, event.target.value)}
-                            aria-label={`${formatTrainAria(row)} allocation for edited PDF`}
-                            className="theme-swp-editor-select theme-swp-paper-select"
-                            data-action={row.swpDraftActionValue}
-                            data-pdf-control="allocation"
-                          >
-                            {getRemovalPdfDraftActionOptions(row).map((option) => (
-                              <option key={option.value} value={option.value}>{option.label}</option>
-                            ))}
-                          </select>
+                        <td className="theme-swp-paper-allocation-cell">
+                          <AllocationSelect
+                            row={row}
+                            onChange={(actionValue) => handleActionChange(row.swpDraftId, actionValue)}
+                          />
                         </td>
                         <td className="theme-swp-paper-control-cell">
                           <button
