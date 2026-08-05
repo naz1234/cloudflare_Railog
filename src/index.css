@@ -1020,11 +1020,32 @@ html[data-app-theme="light"] .theme-train-rem-table-cell {
   border-color: #bdc9d4 !important;
 }
 
+@keyframes train-rem-offpeak-remove-attention {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: var(--train-rem-offpeak-remove-shadow);
+  }
+
+  50% {
+    transform: scale(1.14);
+    box-shadow:
+      var(--train-rem-offpeak-remove-shadow),
+      0 0 0 3px rgba(251,113,133,0.18),
+      0 0 9px var(--train-rem-offpeak-remove-glow);
+  }
+}
+
 .theme-train-rem-offpeak-remove {
+  --train-rem-offpeak-remove-shadow: 0 0 0 1px rgba(251,113,133,0.12), 0 1px 4px rgba(0,0,0,0.28);
+  --train-rem-offpeak-remove-glow: rgba(251,113,133,0.68);
   color: #fecaca;
   background: #4a1720;
   border-color: #fb7185;
-  box-shadow: 0 0 0 1px rgba(251,113,133,0.12), 0 1px 4px rgba(0,0,0,0.28);
+  box-shadow: var(--train-rem-offpeak-remove-shadow);
+  animation: train-rem-offpeak-remove-attention 1.2s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform, box-shadow;
 }
 
 .theme-train-rem-offpeak-remove:hover,
@@ -1032,14 +1053,17 @@ html[data-app-theme="light"] .theme-train-rem-table-cell {
   color: #ffffff;
   background: #be123c;
   border-color: #fda4af;
+  animation-play-state: paused;
   outline: none;
 }
 
 html[data-app-theme="light"] .theme-train-rem-offpeak-remove {
+  --train-rem-offpeak-remove-shadow: 0 1px 3px rgba(127,29,29,0.16);
+  --train-rem-offpeak-remove-glow: rgba(225,29,72,0.48);
   color: #991b1b !important;
   background: #fff1f2 !important;
   border-color: #e11d48 !important;
-  box-shadow: 0 1px 3px rgba(127,29,29,0.16) !important;
+  box-shadow: var(--train-rem-offpeak-remove-shadow);
 }
 
 html[data-app-theme="light"] .theme-train-rem-offpeak-remove:hover,
@@ -1047,6 +1071,13 @@ html[data-app-theme="light"] .theme-train-rem-offpeak-remove:focus-visible {
   color: #ffffff !important;
   background: #be123c !important;
   border-color: #9f1239 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-train-rem-offpeak-remove {
+    animation: none !important;
+    will-change: auto;
+  }
 }
 
 html[data-app-theme="light"] .theme-train-rem-row-card {

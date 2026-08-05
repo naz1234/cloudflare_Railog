@@ -75,6 +75,15 @@ test("the compact remove button has explicit dark and light mode contrast", () =
   assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-train-rem-offpeak-remove\s*\{[^}]*background: #fff1f2 !important;[^}]*border-color: #e11d48 !important;/s);
 });
 
+test("the remove button uses an attention animation with a reduced-motion fallback", () => {
+  assert.match(themeStyles, /@keyframes train-rem-offpeak-remove-attention\s*\{/);
+  assert.match(themeStyles, /animation: train-rem-offpeak-remove-attention 1\.2s ease-in-out infinite;/);
+  assert.match(
+    themeStyles,
+    /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\.theme-train-rem-offpeak-remove\s*\{[\s\S]*?animation: none !important;/,
+  );
+});
+
 test("the overlaid remove button does not shift the Train ID away from center", () => {
   assert.match(
     depotStablingSource,
