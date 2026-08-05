@@ -74,3 +74,14 @@ test("the compact remove button has explicit dark and light mode contrast", () =
   assert.match(themeStyles, /\.theme-train-rem-offpeak-remove\s*\{[^}]*background: #4a1720;[^}]*border-color: #fb7185;/s);
   assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-train-rem-offpeak-remove\s*\{[^}]*background: #fff1f2 !important;[^}]*border-color: #e11d48 !important;/s);
 });
+
+test("the overlaid remove button does not shift the Train ID away from center", () => {
+  assert.match(
+    depotStablingSource,
+    /value=\{row\.trainId\}[\s\S]*?className=\{`[^`]*px-1 text-center[^`]*`\}/,
+  );
+  assert.doesNotMatch(
+    depotStablingSource,
+    /showOffPeakStablingRemove \? "pl-1 pr-4"/,
+  );
+});
