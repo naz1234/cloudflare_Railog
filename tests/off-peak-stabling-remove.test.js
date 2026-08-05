@@ -71,8 +71,9 @@ test("Removal Summary uses stabling-only data and clears only the off-peak Train
 });
 
 test("the compact remove button has explicit dark and light mode contrast", () => {
-  assert.match(themeStyles, /\.theme-train-rem-offpeak-remove\s*\{[^}]*background: #4a1720;[^}]*border-color: #fb7185;/s);
-  assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-train-rem-offpeak-remove\s*\{[^}]*background: #fff1f2 !important;[^}]*border-color: #e11d48 !important;/s);
+  assert.match(themeStyles, /\.theme-train-rem-offpeak-remove\s*\{[^}]*color: #ffffff;[^}]*background: #941c24;[^}]*border-color: rgba\(252,165,165,0\.85\);/s);
+  assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-train-rem-offpeak-remove\s*\{[^}]*color: #ffffff !important;[^}]*background: #941c24 !important;[^}]*border-color: rgba\(252,165,165,0\.85\) !important;/s);
+  assert.match(themeStyles, /\.theme-train-rem-offpeak-remove:hover,[\s\S]*?background: #c92a35;/);
 });
 
 test("the remove button uses an attention animation with a reduced-motion fallback", () => {

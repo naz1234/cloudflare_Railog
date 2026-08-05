@@ -1031,17 +1031,17 @@ html[data-app-theme="light"] .theme-train-rem-table-cell {
     transform: scale(1.14);
     box-shadow:
       var(--train-rem-offpeak-remove-shadow),
-      0 0 0 3px rgba(251,113,133,0.18),
+      0 0 0 3px rgba(252,165,165,0.2),
       0 0 9px var(--train-rem-offpeak-remove-glow);
   }
 }
 
 .theme-train-rem-offpeak-remove {
-  --train-rem-offpeak-remove-shadow: 0 0 0 1px rgba(251,113,133,0.12), 0 1px 4px rgba(0,0,0,0.28);
-  --train-rem-offpeak-remove-glow: rgba(251,113,133,0.68);
-  color: #fecaca;
-  background: #4a1720;
-  border-color: #fb7185;
+  --train-rem-offpeak-remove-shadow: 0 0 6px rgba(148,28,36,0.5);
+  --train-rem-offpeak-remove-glow: rgba(148,28,36,0.72);
+  color: #ffffff;
+  background: #941c24;
+  border-color: rgba(252,165,165,0.85);
   box-shadow: var(--train-rem-offpeak-remove-shadow);
   animation: train-rem-offpeak-remove-attention 1.2s ease-in-out infinite;
   transform-origin: center;
@@ -1051,26 +1051,26 @@ html[data-app-theme="light"] .theme-train-rem-table-cell {
 .theme-train-rem-offpeak-remove:hover,
 .theme-train-rem-offpeak-remove:focus-visible {
   color: #ffffff;
-  background: #be123c;
-  border-color: #fda4af;
+  background: #c92a35;
+  border-color: #fca5a5;
   animation-play-state: paused;
   outline: none;
 }
 
 html[data-app-theme="light"] .theme-train-rem-offpeak-remove {
-  --train-rem-offpeak-remove-shadow: 0 1px 3px rgba(127,29,29,0.16);
-  --train-rem-offpeak-remove-glow: rgba(225,29,72,0.48);
-  color: #991b1b !important;
-  background: #fff1f2 !important;
-  border-color: #e11d48 !important;
+  --train-rem-offpeak-remove-shadow: 0 0 6px rgba(148,28,36,0.5);
+  --train-rem-offpeak-remove-glow: rgba(148,28,36,0.72);
+  color: #ffffff !important;
+  background: #941c24 !important;
+  border-color: rgba(252,165,165,0.85) !important;
   box-shadow: var(--train-rem-offpeak-remove-shadow);
 }
 
 html[data-app-theme="light"] .theme-train-rem-offpeak-remove:hover,
 html[data-app-theme="light"] .theme-train-rem-offpeak-remove:focus-visible {
   color: #ffffff !important;
-  background: #be123c !important;
-  border-color: #9f1239 !important;
+  background: #c92a35 !important;
+  border-color: #fca5a5 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
