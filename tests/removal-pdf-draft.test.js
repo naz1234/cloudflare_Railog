@@ -405,7 +405,12 @@ test("the SWP editor uses a paper preview with Add, Remove, and Allocation contr
   assert.match(editorSource, /aria-label="Add requested train allocation row"/);
   assert.match(editorSource, /data-pdf-control="add"/);
   assert.match(editorSource, /data-pdf-control="remove"/);
-  assert.match(editorSource, /<select[\s\S]*?data-pdf-control="allocation"[\s\S]*?getRemovalPdfDraftActionOptions\(row\)\.map/);
+  assert.match(editorSource, /function AllocationSelect\(\{ row, onChange \}\)/);
+  assert.match(editorSource, /role="listbox"/);
+  assert.match(editorSource, /role="option"/);
+  assert.match(editorSource, /aria-selected=\{selected\}/);
+  assert.match(editorSource, /data-open=\{open \? "true" : "false"\}/);
+  assert.match(editorSource, /data-pdf-control="allocation"/);
   assert.match(editorSource, /onChange=\{\(event\) => handleFieldChange\(row\.swpDraftId, "trainsetNumber", event\.target\.value\)\}/);
   assert.match(editorSource, /REQUESTED TRAIN - Total: \{rowCount\}/);
 });
@@ -455,10 +460,9 @@ test("both PDF editors use the approved graphite amber and plum palette", () => 
     themeStyles,
     /\.theme-swp-ed9-open\s*\{[^}]*background: #6e557f;[^}]*border-color: #9172a7;/s,
   );
-  assert.match(
-    themeStyles,
-    /\.theme-swp-paper \.theme-swp-paper-select:is\(\[data-action="lateShiftRem"\], \[data-action="eosRemoval"\]\)\s*\{[^}]*background-color: #b69ac8 !important;/s,
-  );
+  assert.match(themeStyles, /\.theme-swp-allocation \[data-action="needSwapping"\] \.theme-swp-allocation-dot\s*\{[^}]*background: #e5484d;/s);
+  assert.match(themeStyles, /\.theme-swp-allocation \[data-action="lateShiftRem"\] \.theme-swp-allocation-dot\s*\{[^}]*background: #0284c7;/s);
+  assert.match(themeStyles, /\.theme-swp-allocation\[data-open="true"\]\s*\{[^}]*z-index: 100;/s);
   assert.doesNotMatch(editorSource, /emerald|cyan/);
   assert.doesNotMatch(eastNineAmEditorSource, /emerald|cyan/);
   assert.doesNotMatch(editorSource, /#020b13|#9cc5df|#789db5/);
@@ -472,7 +476,8 @@ test("the SWP and ED editors render a fixed white PDF-style paper in both themes
   assert.match(themeStyles, /\.theme-swp-paper-layout\s*\{[^}]*display: grid;[^}]*grid-template-columns:/s);
   assert.match(themeStyles, /\.theme-swp-paper-ed9-layout\s*\{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/s);
   assert.match(themeStyles, /\.theme-swp-paper \.theme-swp-paper-table th,[\s\S]*?background: #ffffff !important;[\s\S]*?border: 1px solid #202020 !important;/);
-  assert.match(themeStyles, /\.theme-swp-paper \.theme-swp-paper-select/);
+  assert.match(themeStyles, /\.theme-swp-allocation-trigger/);
+  assert.match(themeStyles, /\.theme-swp-allocation-menu/);
   assert.match(themeStyles, /\.theme-swp-paper \.theme-swp-paper-remove/);
 });
 
