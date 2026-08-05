@@ -481,6 +481,26 @@ test("the SWP and ED editors render a fixed white PDF-style paper in both themes
   assert.match(themeStyles, /\.theme-swp-paper \.theme-swp-paper-remove/);
 });
 
+test("SWP editor tables use one larger font size without changing PDF generation", () => {
+  assert.match(
+    themeStyles,
+    /\[data-pdf-editor="swp"\] \.theme-swp-paper-table\s*\{[^}]*--swp-editor-table-font-size: 11px;[^}]*font-size: var\(--swp-editor-table-font-size\);/s,
+  );
+  assert.match(
+    themeStyles,
+    /html \[data-pdf-editor="swp"\] \.theme-swp-paper \.theme-swp-paper-table th\s*\{[^}]*font-size: var\(--swp-editor-table-font-size\);/s,
+  );
+  assert.match(
+    themeStyles,
+    /html \[data-pdf-editor="swp"\] \.theme-swp-paper \.theme-swp-editor-input\.theme-swp-paper-cell-input\s*\{[^}]*font-size: var\(--swp-editor-table-font-size\);/s,
+  );
+  assert.match(themeStyles, /\.theme-swp-allocation-trigger\s*\{[^}]*font-size: var\(--swp-editor-table-font-size\);/s);
+  assert.match(themeStyles, /\.theme-swp-allocation-option\s*\{[^}]*font-size: var\(--swp-editor-table-font-size\);/s);
+  assert.match(depotStablingSource, /function buildCombinedRemovalPdfPage/);
+  assert.doesNotMatch(depotStablingSource, /--swp-editor-table-font-size/);
+  assert.doesNotMatch(eastNineAmEditorSource, /--swp-editor-table-font-size/);
+});
+
 test("the PDF-style paper preserves its layout through a scrollable narrow viewport", () => {
   assert.match(editorSource, /theme-swp-paper-viewport min-h-0 flex-1 overflow-auto/);
   assert.match(eastNineAmEditorSource, /theme-swp-paper-viewport min-h-0 flex-1 overflow-auto/);
