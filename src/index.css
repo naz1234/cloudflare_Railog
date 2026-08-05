@@ -1020,6 +1020,35 @@ html[data-app-theme="light"] .theme-train-rem-table-cell {
   border-color: #bdc9d4 !important;
 }
 
+.theme-train-rem-offpeak-remove {
+  color: #fecaca;
+  background: #4a1720;
+  border-color: #fb7185;
+  box-shadow: 0 0 0 1px rgba(251,113,133,0.12), 0 1px 4px rgba(0,0,0,0.28);
+}
+
+.theme-train-rem-offpeak-remove:hover,
+.theme-train-rem-offpeak-remove:focus-visible {
+  color: #ffffff;
+  background: #be123c;
+  border-color: #fda4af;
+  outline: none;
+}
+
+html[data-app-theme="light"] .theme-train-rem-offpeak-remove {
+  color: #991b1b !important;
+  background: #fff1f2 !important;
+  border-color: #e11d48 !important;
+  box-shadow: 0 1px 3px rgba(127,29,29,0.16) !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-offpeak-remove:hover,
+html[data-app-theme="light"] .theme-train-rem-offpeak-remove:focus-visible {
+  color: #ffffff !important;
+  background: #be123c !important;
+  border-color: #9f1239 !important;
+}
+
 html[data-app-theme="light"] .theme-train-rem-row-card {
   background: #ffffff !important;
   border-color: #a9b8c6 !important;

@@ -36,6 +36,10 @@ import {
   selectEastNineAmOffPeakRows,
 } from "../lib/eastNineAmRemoval";
 import {
+  getOffPeakStablingMatch,
+  shouldShowOffPeakStablingRemove,
+} from "../lib/trainRemOffPeakStabling";
+import {
   addOnBeforeRequestedSummaryTrailingDate,
   formatRequestedSummaryEntryCount,
   formatRequestedSummaryOtherAction,
@@ -8210,6 +8214,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
     return Array.from(new Set([...removalTrainIds, ...stablingTrainIds]));
   }, [activeTimetable, eastData, eastStablingData, trainRemState, westData]);
+  const westStablingTrainIds = useMemo(() => (
+    collectStablingTrainIds(westData, WEST_ROADS)
+  ), [westData]);
+  const eastStablingTrainIds = useMemo(() => {
+    const sourceData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
+    return collectStablingTrainIds(sourceData, EAST_ROADS);
+  }, [eastData, eastStablingData]);
 
   const westDepotCopyTrainIds = useMemo(() => (
     getDepotCopyTrainIds("west", trainRemState)
@@ -8985,6 +8996,16 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       ? "Reference only — excluded from removal log and PDF"
                       : "";
                 const hasTrainId = (row.trainId || "").toString().trim() !== "";
+                const offPeakStablingMatch = getOffPeakStablingMatch(
+                  row.trainId,
+                  westStablingTrainIds,
+                  eastStablingTrainIds
+                );
+                const showOffPeakStablingRemove = shouldShowOffPeakStablingRemove({
+                  selectedPreset,
+                  referenceDisplayOnly,
+                  stablingMatch: offPeakStablingMatch,
+                });
                 const duplicateKey = getTrainRemDuplicateKey(row.trainId);
                 const isDuplicateTrainId = Boolean(
                   duplicateKey &&
@@ -9074,7 +9095,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     <tr>
                       <td colSpan={4} className="theme-train-rem-table-cell bg-[#071828] px-1 py-[1px]">
                         <div
-                          className={`theme-train-rem-row-card grid h-[22px] items-center overflow-hidden rounded-md border transition-[border-color,background,box-shadow] duration-150 ${hasDuplicateValue ? "is-duplicate" : ""} ${isNineAmReferenceTid ? "is-9am-exact-tid-row" : ""} ${isNineAmSpecialTid ? "is-9am-special-tid-row" : ""} ${isNineAmOtherTid ? "is-9am-other-tid-row" : ""} ${isOtherPresetThemedRow ? "is-other-preset-themed-row" : ""} ${isExtendedEastPresetRow ? "is-combined-east-preset-row" : ""}`}
+                          className={`theme-train-rem-row-card relative grid h-[22px] items-center overflow-hidden rounded-md border transition-[border-color,background,box-shadow] duration-150 ${hasDuplicateValue ? "is-duplicate" : ""} ${isNineAmReferenceTid ? "is-9am-exact-tid-row" : ""} ${isNineAmSpecialTid ? "is-9am-special-tid-row" : ""} ${isNineAmOtherTid ? "is-9am-other-tid-row" : ""} ${isOtherPresetThemedRow ? "is-other-preset-themed-row" : ""} ${isExtendedEastPresetRow ? "is-combined-east-preset-row" : ""}`}
                           data-preset={selectedPreset}
                           data-tid={cleanTid}
                           style={{
@@ -9102,7 +9123,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                             onBlur={() => handleTrainRemTrainIdBlur(depot, index)}
                             placeholder="ID"
                             title={referenceOnly ? rowStatusTitle : isDuplicateTrainId ? "Duplicate Train ID detected" : ""}
-                            className={`h-full min-w-0 border-0 bg-transparent px-1 text-center text-[11px] outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${hasDuplicateValue ? "font-normal" : "font-bold"} ${referenceOnly ? "cursor-default" : ""}`}
+                            className={`h-full min-w-0 border-0 bg-transparent text-center text-[11px] outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${showOffPeakStablingRemove ? "pl-1 pr-4" : "px-1"} ${hasDuplicateValue ? "font-normal" : "font-bold"} ${referenceOnly ? "cursor-default" : ""}`}
                             style={{ color: trainIdTextColor }}
                           />
 
@@ -9178,6 +9199,37 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                               boxShadow: remarkCellBoxShadow,
                             }}
                           />
+
+                          {showOffPeakStablingRemove && (
+                            <span
+                              className="absolute top-1/2 z-[60] -translate-y-1/2"
+                              style={{ left: "calc(18% - 17px)" }}
+                            >
+                              <ActionTooltip
+                                message={offPeakStablingMatch.tooltip}
+                                placement="top"
+                                align="start"
+                                wrapperClassName="shrink-0"
+                              >
+                                <button
+                                  type="button"
+                                  data-off-peak-stabling-remove={offPeakStablingMatch.depotCodes.join("-")}
+                                  aria-label={offPeakStablingMatch.tooltip}
+                                  className="theme-train-rem-offpeak-remove inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border transition-colors"
+                                  onMouseDown={(event) => event.preventDefault()}
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    handleTrainRemEditStart();
+                                    updateTrainRemCell(depot, index, "trainId", "");
+                                    handleTrainRemEditEnd();
+                                  }}
+                                >
+                                  <X size={9} strokeWidth={2.8} aria-hidden="true" />
+                                </button>
+                              </ActionTooltip>
+                            </span>
+                          )}
                         </div>
                       </td>
                     </tr>
