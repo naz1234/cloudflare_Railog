@@ -37,7 +37,7 @@ import {
 } from "../lib/eastNineAmRemoval";
 import {
   getOffPeakStablingMatch,
-  shouldShowOffPeakStablingRemove,
+  shouldShowRemovalTidStablingRemove,
 } from "../lib/trainRemOffPeakStabling";
 import {
   addOnBeforeRequestedSummaryTrailingDate,
@@ -9001,9 +9001,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   westStablingTrainIds,
                   eastStablingTrainIds
                 );
-                const showOffPeakStablingRemove = shouldShowOffPeakStablingRemove({
+                const showRemovalTidStablingRemove = shouldShowRemovalTidStablingRemove({
                   selectedPreset,
-                  referenceDisplayOnly,
+                  referenceOnly,
                   stablingMatch: offPeakStablingMatch,
                 });
                 const duplicateKey = getTrainRemDuplicateKey(row.trainId);
@@ -9200,7 +9200,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                             }}
                           />
 
-                          {showOffPeakStablingRemove && (
+                          {showRemovalTidStablingRemove && (
                             <span
                               className="absolute top-1/2 z-[60]"
                               style={{ left: "18%", transform: "translate(-50%, -50%)" }}
@@ -9213,7 +9213,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                               >
                                 <button
                                   type="button"
-                                  data-off-peak-stabling-remove={offPeakStablingMatch.depotCodes.join("-")}
+                                  data-removal-tid-stabling-remove={offPeakStablingMatch.depotCodes.join("-")}
                                   aria-label={offPeakStablingMatch.tooltip}
                                   className="theme-train-rem-offpeak-remove inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border transition-colors"
                                   onMouseDown={(event) => event.preventDefault()}

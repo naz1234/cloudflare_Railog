@@ -36,13 +36,13 @@ export function getOffPeakStablingMatch(trainId = "", westTrainIds = [], eastTra
   };
 }
 
-export function shouldShowOffPeakStablingRemove({
+export function shouldShowRemovalTidStablingRemove({
   selectedPreset = "",
-  referenceDisplayOnly = false,
+  referenceOnly = false,
   stablingMatch = null,
 } = {}) {
   return Boolean(
-    referenceDisplayOnly
+    referenceOnly
     && OFF_PEAK_PRESET_LABELS.has(String(selectedPreset || ""))
     && stablingMatch?.depotCodes?.length
   );

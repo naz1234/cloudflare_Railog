@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   getOffPeakStablingMatch,
-  shouldShowOffPeakStablingRemove,
+  shouldShowRemovalTidStablingRemove,
 } from "../src/lib/trainRemOffPeakStabling.js";
 
 const depotStablingSource = readFileSync(
@@ -46,28 +46,35 @@ test("a train found in both stabling depots reports both locations once", () => 
   );
 });
 
-test("the remove control is limited to true 9am and 7pm off-peak rows", () => {
+test("the stabling-conflict control is limited to 9am and 7pm Removal TID rows", () => {
   const stablingMatch = getOffPeakStablingMatch("T03", ["T03"], []);
 
-  assert.equal(shouldShowOffPeakStablingRemove({ selectedPreset: "9am", referenceDisplayOnly: true, stablingMatch }), true);
-  assert.equal(shouldShowOffPeakStablingRemove({ selectedPreset: "7pm", referenceDisplayOnly: true, stablingMatch }), true);
-  assert.equal(shouldShowOffPeakStablingRemove({ selectedPreset: "12am", referenceDisplayOnly: true, stablingMatch }), false);
-  assert.equal(shouldShowOffPeakStablingRemove({ selectedPreset: "9am", referenceDisplayOnly: false, stablingMatch }), false);
-  assert.equal(shouldShowOffPeakStablingRemove({ selectedPreset: "9am", referenceDisplayOnly: true, stablingMatch: null }), false);
+  assert.equal(shouldShowRemovalTidStablingRemove({ selectedPreset: "9am", referenceOnly: true, stablingMatch }), true);
+  assert.equal(shouldShowRemovalTidStablingRemove({ selectedPreset: "7pm", referenceOnly: true, stablingMatch }), true);
+  assert.equal(shouldShowRemovalTidStablingRemove({ selectedPreset: "12am", referenceOnly: true, stablingMatch }), false);
+  assert.equal(shouldShowRemovalTidStablingRemove({ selectedPreset: "9am", referenceOnly: false, stablingMatch }), false);
+  assert.equal(shouldShowRemovalTidStablingRemove({ selectedPreset: "9am", referenceOnly: true, stablingMatch: null }), false);
 });
 
-test("Removal Summary uses stabling-only data and clears only the off-peak Train ID", () => {
+test("Removal Summary uses stabling-only data and clears only the selected Removal TID row", () => {
   assert.match(depotStablingSource, /collectStablingTrainIds\(westData, WEST_ROADS\)/);
   assert.match(
     depotStablingSource,
     /Object\.keys\(eastData \|\| \{\}\)\.length \? eastData : eastStablingData/,
   );
   assert.match(depotStablingSource, /getOffPeakStablingMatch\([\s\S]*?westStablingTrainIds,[\s\S]*?eastStablingTrainIds/);
-  assert.match(depotStablingSource, /shouldShowOffPeakStablingRemove\(\{[\s\S]*?selectedPreset,[\s\S]*?referenceDisplayOnly,/);
-  assert.match(depotStablingSource, /data-off-peak-stabling-remove=\{offPeakStablingMatch\.depotCodes\.join\("-"\)\}/);
+  assert.match(depotStablingSource, /shouldShowRemovalTidStablingRemove\(\{[\s\S]*?selectedPreset,[\s\S]*?referenceOnly,/);
+  assert.match(depotStablingSource, /data-removal-tid-stabling-remove=\{offPeakStablingMatch\.depotCodes\.join\("-"\)\}/);
   assert.match(depotStablingSource, /message=\{offPeakStablingMatch\.tooltip\}/);
   assert.match(depotStablingSource, /updateTrainRemCell\(depot, index, "trainId", ""\)/);
-  assert.doesNotMatch(depotStablingSource, /data-off-peak-stabling-remove[\s\S]{0,900}setWestData|data-off-peak-stabling-remove[\s\S]{0,900}setEastData/);
+  assert.doesNotMatch(depotStablingSource, /data-removal-tid-stabling-remove[\s\S]{0,900}setWestData|data-removal-tid-stabling-remove[\s\S]{0,900}setEastData/);
+});
+
+test("Removal TID stabling conflicts reuse the PR 279 button and clear only the chosen row", () => {
+  assert.match(depotStablingSource, /showRemovalTidStablingRemove = shouldShowRemovalTidStablingRemove/);
+  assert.match(depotStablingSource, /className="theme-train-rem-offpeak-remove[^"\n]*"/);
+  assert.match(depotStablingSource, /showRemovalTidStablingRemove[\s\S]*?updateTrainRemCell\(depot, index, "trainId", ""\)/);
+  assert.doesNotMatch(depotStablingSource, /data-removal-tid-stabling-remove[\s\S]{0,900}setWestData|data-removal-tid-stabling-remove[\s\S]{0,900}setEastData/);
 });
 
 test("the compact remove button has explicit dark and light mode contrast", () => {
