@@ -13249,10 +13249,10 @@ function TrainMovementContent() {
               <span
                 aria-label="Completed"
                 title="Completed"
-                className="theme-tp1-step-check flex h-6 w-6 shrink-0 items-center justify-center rounded-full border"
+                className="theme-tp1-step-check flex h-5 w-5 shrink-0 items-center justify-center rounded-full border"
                 style={{ borderColor: accent, backgroundColor: accent, color: "#041727", boxShadow: `0 0 12px ${accent}3d` }}
               >
-                <MovementIcon type="check" color="currentColor" />
+                <MovementIcon type="check" color="currentColor" size={13} />
               </span>
             ) : isCurrent ? (
               <span className="theme-tp1-current-step-badge shrink-0 rounded-full border border-[#4f8ef7]/70 bg-[#123f73]/70 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.09em] text-[#7ab7ff]">
@@ -13296,9 +13296,9 @@ function TrainMovementContent() {
           }
 
           return (
-            <div key={`movement-flow-row-${movementType}-${sectionKey}-${pairIndex}`} className="grid grid-cols-[minmax(0,1fr)_44px_minmax(0,1fr)] items-stretch gap-x-2">
+            <div key={`movement-flow-row-${movementType}-${sectionKey}-${pairIndex}`} className="grid grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-stretch gap-x-1.5">
               <div className="my-0.5">{renderTp1FlowStepCard(first, firstIndex)}</div>
-              <div className="theme-tp1-flow-connector relative min-h-[56px]" aria-hidden="true">
+              <div className="theme-tp1-flow-connector relative min-h-[52px]" aria-hidden="true">
                 <svg className="absolute inset-0 h-full w-full" viewBox="0 0 34 62" preserveAspectRatio="none">
                   <path
                     d="M17 0 V62"
@@ -13328,7 +13328,7 @@ function TrainMovementContent() {
 
     return (
       <section
-        className="theme-tp1-movement-window flex h-full flex-col overflow-hidden rounded-2xl border shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]"
+        className="theme-tp1-movement-window flex h-full flex-col overflow-hidden rounded-xl border shadow-[0_14px_30px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]"
         data-movement-mode={movementType}
         style={{
           borderColor: `${accent}55`,
@@ -13336,32 +13336,32 @@ function TrainMovementContent() {
           boxShadow: `0 0 24px ${accent}16, inset 0 1px 0 rgba(255,255,255,0.05)`,
         }}
       >
-        <div className="theme-tp1-movement-header flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4" style={{ borderColor: `${accent}35`, background: `linear-gradient(90deg, ${accent}1f, transparent)` }}>
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: `${accent}24`, color: accent, boxShadow: `0 0 16px ${accent}28` }}>
-              <MovementIcon type="train" color={accent} size={21} />
+        <div className="theme-tp1-movement-header flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2.5" style={{ borderColor: `${accent}35`, background: `linear-gradient(90deg, ${accent}1f, transparent)` }}>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: `${accent}24`, color: accent, boxShadow: `0 0 12px ${accent}24` }}>
+              <MovementIcon type="train" color={accent} />
             </div>
             <div>
-              <h2 className="text-[19px] font-black leading-tight text-white">{modeTitle}</h2>
-              <p className="mt-0.5 text-[12px] font-semibold" style={{ color: accent }}>{modeSubtitle}</p>
+              <h2 className="text-[15px] font-black leading-tight text-white">{modeTitle}</h2>
+              <p className="mt-0.5 text-[9px] font-semibold" style={{ color: accent }}>{modeSubtitle}</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <span
               aria-label={`${requiredCompletedCount} of ${requiredTotalCount} required fields complete`}
-              className="theme-tp1-required-progress rounded-lg border px-4 py-2 text-[11px] font-black"
+              className="theme-tp1-required-progress rounded-md border px-2.5 py-1 text-[9px] font-black"
               style={{ borderColor: `${accent}78`, backgroundColor: `${accent}1c`, color: accent, boxShadow: `0 0 12px ${accent}16` }}
             >
               {requiredCompletedCount}/{requiredTotalCount} required
             </span>
-            <span className="rounded-lg border px-4 py-2 text-[11px] font-black text-white" style={{ borderColor: "#31516b", backgroundColor: "rgba(6,24,39,0.72)" }}>
+            <span className="rounded-md border px-2.5 py-1 text-[9px] font-black text-white" style={{ borderColor: "#31516b", backgroundColor: "rgba(6,24,39,0.72)" }}>
               {modeEntries.length} entries
             </span>
             <button
               type="button"
               onClick={isAutomatic ? resetTp1AutomaticFlow : resetTp1ManualFlow}
-              className="inline-flex items-center rounded-lg border px-4 py-2 text-[11px] font-black uppercase tracking-[0.08em] transition-all hover:scale-[1.03]"
+              className="inline-flex items-center rounded-md border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.08em] transition-all hover:scale-[1.03]"
               style={{ borderColor: "rgba(248,113,113,0.75)", backgroundColor: "rgba(127,29,29,0.30)", color: "#fecaca" }}
               title={isAutomatic ? "Reset Automatic Flow" : "Reset Manual Flow"}
             >
@@ -13372,9 +13372,9 @@ function TrainMovementContent() {
 
         <div className="theme-tp1-movement-body grid flex-1 gap-0 p-0">
           <div className="theme-tp1-movement-flow flex flex-col border-0 bg-transparent p-0 shadow-none">
-            <section className="px-5 pt-4" aria-label="Required movement details" data-movement-flow-section="required">
-              <div className="theme-tp1-flow-section-heading mb-3 flex items-center gap-3">
-                <span className="text-[12px] font-black uppercase tracking-[0.11em]" style={{ color: accent }}>Required</span>
+            <section className="px-4 pt-3" aria-label="Required movement details" data-movement-flow-section="required">
+              <div className="theme-tp1-flow-section-heading mb-2.5 flex items-center gap-2.5">
+                <span className="text-[10px] font-black uppercase tracking-[0.11em]" style={{ color: accent }}>Required</span>
                 <span className="h-px min-w-8 flex-1" style={{ background: `linear-gradient(90deg, ${accent}55, transparent)` }} />
               </div>
               {renderTp1FlowRows(requiredFlowSteps)}
@@ -13383,11 +13383,11 @@ function TrainMovementContent() {
               <section
                 aria-label="Optional movement details"
                 data-movement-flow-section="optional"
-                className="theme-tp1-optional-flow-section mt-4 flex min-h-[180px] flex-col rounded-xl border px-5 py-4"
+                className="theme-tp1-optional-flow-section mt-3 flex min-h-[180px] flex-col rounded-xl border px-4 py-3"
                 style={{ borderColor: `${accent}55`, background: `linear-gradient(135deg, ${accent}10, rgba(3,17,29,0.78) 76%)`, boxShadow: `inset 0 1px 0 ${accent}12` }}
               >
-                <div className="mb-3 flex flex-wrap items-center gap-3">
-                  <span className="theme-tp1-optional-flow-badge text-[12px] font-black uppercase tracking-[0.11em]" style={{ color: accent }}>Optional</span>
+                <div className="mb-2.5 flex flex-wrap items-center gap-2.5">
+                  <span className="theme-tp1-optional-flow-badge text-[10px] font-black uppercase tracking-[0.11em]" style={{ color: accent }}>Optional</span>
                   <span className="h-px min-w-8 flex-1" style={{ background: `linear-gradient(90deg, ${accent}45, transparent)` }} />
                 </div>
                 {renderTp1FlowRows(optionalFlowSteps, requiredFlowSteps.length, "optional")}
@@ -13395,9 +13395,9 @@ function TrainMovementContent() {
             )}
           </div>
 
-          <div className="theme-tp1-movement-preview border-0 bg-transparent px-5 py-4 shadow-none">
+          <div className="theme-tp1-movement-preview border-0 bg-transparent px-4 py-3 shadow-none">
             <div className="mb-2 flex flex-wrap items-center justify-start gap-1.5">
-              <p className="mr-0.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#58a6ff]">Preview</p>
+              <p className="mr-0.5 text-[11px] font-black uppercase tracking-[0.12em] text-[#58a6ff]">Preview</p>
               <button
                 type="button"
                 onClick={() => copyTp1MovementPreview(movementType)}
@@ -13416,7 +13416,7 @@ function TrainMovementContent() {
                 <span className="text-[11px] leading-none">+</span> Add to Log
               </button>
             </div>
-            <pre className="theme-tp1-movement-preview-text max-h-44 overflow-auto whitespace-pre-wrap rounded-xl border border-[#1e4060] bg-[#041727] p-3 font-mono text-[12px] font-medium leading-[1.35] text-[#c8d8ea]">{buildTp1MovementText({ preview: true, movementType })}</pre>
+            <pre className="theme-tp1-movement-preview-text max-h-44 overflow-auto whitespace-pre-wrap rounded-lg border border-[#1e4060] bg-[#041727] p-2.5 font-mono text-[11px] font-medium leading-[1.35] text-[#c8d8ea]">{buildTp1MovementText({ preview: true, movementType })}</pre>
           </div>
 
           <section className="theme-tp1-movement-log overflow-hidden rounded-xl border border-[#1e4060] bg-[#03111d]">

@@ -96,6 +96,25 @@ test("optional TP1 details are separated from the required movement flow", () =>
   assert.match(depotStablingSource, /if \(!second\) \{[\s\S]*renderTp1FlowStepCard\(first, firstIndex\)/);
 });
 
+test("Area Movement mock styling keeps the controls compact", () => {
+  assert.match(
+    depotStablingSource,
+    /theme-tp1-movement-header[^"\n]*gap-2[^"\n]*px-4 py-2\.5/,
+  );
+  assert.match(depotStablingSource, /className="flex h-8 w-8 items-center justify-center rounded-lg"/);
+  assert.match(depotStablingSource, /<h2 className="text-\[15px\] font-black/);
+  assert.match(
+    depotStablingSource,
+    /theme-tp1-required-progress[^"\n]*px-2\.5 py-1 text-\[9px\]/,
+  );
+  assert.match(
+    depotStablingSource,
+    /className="inline-flex items-center rounded-md border px-2\.5 py-1 text-\[9px\] font-black uppercase/,
+  );
+  assert.doesNotMatch(depotStablingSource, /theme-tp1-movement-header[^"\n]*px-5 py-4/);
+  assert.doesNotMatch(depotStablingSource, /<h2 className="text-\[19px\]/);
+});
+
 test("Automatic Area Train Prep and PST fields are optional details", () => {
   assert.match(
     depotStablingSource,
