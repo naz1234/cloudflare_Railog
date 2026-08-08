@@ -12203,14 +12203,15 @@ function TrainMovementContent() {
     return <>{entry.text}</>;
   };
 
-  const MovementIcon = ({ type = "train", color = "currentColor" }) => (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+  const MovementIcon = ({ type = "train", color = "currentColor", size = 15 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       {type === "train" && <><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M8 21l2-3"/><path d="M16 21l-2-3"/><path d="M8 8h8"/><path d="M8 13h.01"/><path d="M16 13h.01"/></>}
       {type === "clock" && <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>}
       {type === "copy" && <><rect x="9" y="9" width="11" height="11" rx="2"/><rect x="4" y="4" width="11" height="11" rx="2"/></>}
       {type === "download" && <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>}
       {type === "trash" && <><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></>}
       {type === "check" && <polyline points="5 12 10 17 19 7"/>}
+      {type === "calendar" && <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 10h18"/></>}
       {type === "swap" && <><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></>}
       {type === "in" && <><polyline points="5 12 12 5 19 12"/><line x1="12" y1="5" x2="12" y2="19"/></>}
       {type === "out" && <><polyline points="19 12 12 19 5 12"/><line x1="12" y1="5" x2="12" y2="19"/></>}
@@ -12980,9 +12981,9 @@ function TrainMovementContent() {
     const modeSubtitle = isAutomatic ? "Automatic Area log generator" : "Manual Area log generator";
     const modeForm = getTp1ModeForm(movementType);
     const modeEntries = sortTp1MovementEntries(tp1Entries.filter((entry) => entry.type === movementType));
-    const inputClass = "h-8 w-full rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] focus:border-[#4f8ef7]";
-    const glowInputBoxClass = "flex h-8 items-center gap-1.5 rounded-lg border border-[#2f7bc4] bg-[#061827] px-2 shadow-[0_0_12px_rgba(79,142,247,0.25),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all focus-within:border-[#7ab7ff] focus-within:shadow-[0_0_16px_rgba(79,142,247,0.42),inset_0_1px_0_rgba(255,255,255,0.08)]";
-    const timeInputBoxClass = "flex h-8 w-full items-center gap-1.5 rounded-lg border border-[#1e4060] bg-[#061827] px-2 text-[11px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-all focus-within:border-[#4f8ef7]";
+    const inputClass = "theme-tp1-inline-field-control h-5 w-full border-0 bg-transparent px-0 text-[13px] font-semibold text-white outline-none placeholder:text-[#5f7890]";
+    const glowInputBoxClass = "theme-tp1-inline-field flex h-5 items-center gap-2 border-0 bg-transparent px-0 shadow-none";
+    const timeInputBoxClass = "theme-tp1-inline-field flex h-5 w-full items-center gap-2 border-0 bg-transparent px-0 text-[13px] font-semibold text-white shadow-none";
 
     const renderTp1TimeInput = (field, disabled = false) => {
       const fieldKey = getTp1FlowInputKey(field, movementType);
@@ -13017,9 +13018,9 @@ function TrainMovementContent() {
             }}
             placeholder="00:00"
             disabled={disabled}
-            className="h-full min-w-0 flex-1 bg-transparent text-[11px] font-medium text-white outline-none placeholder:text-[#31516b] disabled:cursor-not-allowed"
+            className="theme-tp1-inline-field-control h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] font-semibold text-white outline-none placeholder:text-[#5f7890] disabled:cursor-not-allowed"
           />
-          <span className="shrink-0 text-[10px] font-medium text-[#8ea8c0]">hrs</span>
+          <span className="shrink-0 text-[11px] font-semibold text-[#9bb3ca]">hrs</span>
         </div>
       );
     };
@@ -13028,9 +13029,9 @@ function TrainMovementContent() {
 
     const automaticTrainSetReady = Boolean(normalizeMovementTrain(modeForm.trainSet)) && isTp1FlowFieldSettled("trainSet");
     const automaticPlanReady = automaticTrainSetReady && Boolean(modeForm.planStatus);
-    const automaticTrAtTp1Ready = automaticPlanReady && isTp1TimeReadyForMode("trAtTp1");
-    const automaticShunterReady = automaticTrAtTp1Ready && Boolean(modeForm.shunterName);
-    const automaticTrLocalizedReady = automaticShunterReady && isTp1TimeReadyForMode("trLocalized");
+    const automaticShunterReady = automaticPlanReady && Boolean(modeForm.shunterName);
+    const automaticTrAtTp1Ready = automaticShunterReady && isTp1TimeReadyForMode("trAtTp1");
+    const automaticTrLocalizedReady = automaticTrAtTp1Ready && isTp1TimeReadyForMode("trLocalized");
     const automaticStablingReady = automaticTrLocalizedReady && Boolean(modeForm.automaticStablingRoad);
     const automaticTrainPrepReady = isTp1TimeReadyForMode("trainPrepCompletedTime");
     const automaticPstReady = isTp1TimeReadyForMode("pstPerformedTime");
@@ -13056,7 +13057,7 @@ function TrainMovementContent() {
               }}
               onBlur={() => blurFlowInput(getTp1FlowInputKey("trainSet", movementType))}
               placeholder="19"
-              className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
+              className="theme-tp1-inline-field-control h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] font-semibold text-white outline-none placeholder:text-[#5f7890]"
             />
           </div>
         ),
@@ -13078,16 +13079,9 @@ function TrainMovementContent() {
         ),
       },
       {
-        key: "trAtTp1",
-        label: "Time arrival at TP1",
-        visible: automaticPlanReady,
-        complete: automaticTrAtTp1Ready,
-        render: () => renderTp1TimeInput("trAtTp1"),
-      },
-      {
         key: "shunterName",
         label: "Shunter Name",
-        visible: automaticTrAtTp1Ready,
+        visible: automaticPlanReady,
         complete: automaticShunterReady,
         render: () => (
           <select
@@ -13103,9 +13097,16 @@ function TrainMovementContent() {
         ),
       },
       {
+        key: "trAtTp1",
+        label: "Time arrival at TP1",
+        visible: automaticShunterReady,
+        complete: automaticTrAtTp1Ready,
+        render: () => renderTp1TimeInput("trAtTp1"),
+      },
+      {
         key: "trLocalized",
         label: "TR Localized",
-        visible: automaticShunterReady,
+        visible: automaticTrAtTp1Ready,
         complete: automaticTrLocalizedReady,
         render: () => renderTp1TimeInput("trLocalized"),
       },
@@ -13192,29 +13193,32 @@ function TrainMovementContent() {
         visible: automaticCmmsReady,
         complete: Boolean(String(modeForm.nextWashText || "").trim()),
         render: () => (
-          <input
-            type="text"
-            maxLength={19}
-            value={modeForm.nextWashText || ""}
-            onFocus={() => focusFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
-            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-            onChange={(e) => {
-              updateTp1ModeForm(movementType, "nextWashText", e.target.value);
-              scheduleFlowInputSettled(getTp1FlowInputKey("nextWashText", movementType));
-            }}
-            onBlur={() => blurFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
-            placeholder="28-05-2026 12:23:00"
-            className={inputClass}
-          />
+          <div className="theme-tp1-inline-field flex h-5 items-center gap-2 text-[#9bb3ca]">
+            <MovementIcon type="calendar" color="currentColor" />
+            <input
+              type="text"
+              maxLength={19}
+              value={modeForm.nextWashText || ""}
+              onFocus={() => focusFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
+              onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+              onChange={(e) => {
+                updateTp1ModeForm(movementType, "nextWashText", e.target.value);
+                scheduleFlowInputSettled(getTp1FlowInputKey("nextWashText", movementType));
+              }}
+              onBlur={() => blurFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
+              placeholder="28-05-2026 12:23:00"
+              className={`${inputClass} min-w-0 flex-1`}
+            />
+          </div>
         ),
       },
     ];
 
     const manualTrainSetReady = Boolean(normalizeMovementTrain(modeForm.trainSet)) && isTp1FlowFieldSettled("trainSet");
     const manualPlanReady = manualTrainSetReady && Boolean(modeForm.planStatus);
-    const manualTrAtTp1Ready = manualPlanReady && isTp1TimeReadyForMode("trAtTp1");
-    const manualShunterReady = manualTrAtTp1Ready && Boolean(modeForm.shunterName);
-    const manualFromTp1Ready = manualShunterReady && isTp1TimeReadyForMode("fromTp1");
+    const manualShunterReady = manualPlanReady && Boolean(modeForm.shunterName);
+    const manualTrAtTp1Ready = manualShunterReady && isTp1TimeReadyForMode("trAtTp1");
+    const manualFromTp1Ready = manualTrAtTp1Ready && isTp1TimeReadyForMode("fromTp1");
     const manualToManualReady = manualFromTp1Ready && isTp1TimeReadyForMode("toManual");
     const manualCmmsReady = manualToManualReady && Boolean(String(modeForm.cmmsNumber || "").trim()) && isTp1FlowFieldSettled("cmmsNumber");
     const manualL3ReportUpdatedBy = normalizeTp1MaintReportConfirmer(modeForm.l3ReportUpdatedBy);
@@ -13239,7 +13243,7 @@ function TrainMovementContent() {
               }}
               onBlur={() => blurFlowInput(getTp1FlowInputKey("trainSet", movementType))}
               placeholder="19"
-              className="h-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-white outline-none placeholder:text-[#31516b]"
+              className="theme-tp1-inline-field-control h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] font-semibold text-white outline-none placeholder:text-[#5f7890]"
             />
           </div>
         ),
@@ -13261,16 +13265,9 @@ function TrainMovementContent() {
         ),
       },
       {
-        key: "trAtTp1",
-        label: "TR at TP1",
-        visible: manualPlanReady,
-        complete: manualTrAtTp1Ready,
-        render: () => renderTp1TimeInput("trAtTp1"),
-      },
-      {
         key: "shunterName",
         label: "Shunter Name",
-        visible: manualTrAtTp1Ready,
+        visible: manualPlanReady,
         complete: manualShunterReady,
         render: () => (
           <select
@@ -13286,9 +13283,16 @@ function TrainMovementContent() {
         ),
       },
       {
+        key: "trAtTp1",
+        label: "TR at TP1",
+        visible: manualShunterReady,
+        complete: manualTrAtTp1Ready,
+        render: () => renderTp1TimeInput("trAtTp1"),
+      },
+      {
         key: "fromTp1",
         label: "Time start moving from TP1",
-        visible: manualShunterReady,
+        visible: manualTrAtTp1Ready,
         complete: manualFromTp1Ready,
         render: () => renderTp1TimeInput("fromTp1"),
       },
@@ -13351,20 +13355,23 @@ function TrainMovementContent() {
         visible: manualCmmsReady,
         complete: Boolean(String(modeForm.nextWashText || "").trim()),
         render: () => (
-          <input
-            type="text"
-            maxLength={19}
-            value={modeForm.nextWashText || ""}
-            onFocus={() => focusFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
-            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-            onChange={(e) => {
-              updateTp1ModeForm(movementType, "nextWashText", e.target.value);
-              scheduleFlowInputSettled(getTp1FlowInputKey("nextWashText", movementType));
-            }}
-            onBlur={() => blurFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
-            placeholder="28-05-2026 12:23:00"
-            className={inputClass}
-          />
+          <div className="theme-tp1-inline-field flex h-5 items-center gap-2 text-[#9bb3ca]">
+            <MovementIcon type="calendar" color="currentColor" />
+            <input
+              type="text"
+              maxLength={19}
+              value={modeForm.nextWashText || ""}
+              onFocus={() => focusFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
+              onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+              onChange={(e) => {
+                updateTp1ModeForm(movementType, "nextWashText", e.target.value);
+                scheduleFlowInputSettled(getTp1FlowInputKey("nextWashText", movementType));
+              }}
+              onBlur={() => blurFlowInput(getTp1FlowInputKey("nextWashText", movementType))}
+              placeholder="28-05-2026 12:23:00"
+              className={`${inputClass} min-w-0 flex-1`}
+            />
+          </div>
         ),
       },
     ];
@@ -13389,25 +13396,25 @@ function TrainMovementContent() {
         <div
           key={step.key}
           data-movement-step-state={step.complete ? "complete" : isCurrent ? "current" : "pending"}
-          className={`theme-tp1-flow-step ${cardState} h-full rounded-xl border p-2.5 transition-all`}
+          className={`theme-tp1-flow-step ${cardState} rounded-xl border p-2 transition-all focus-within:ring-2 focus-within:ring-[#4f8ef7]/55`}
           style={{
-            borderColor: step.complete ? `${accent}70` : isCurrent ? "#4f8ef7" : "#1e4060",
+            borderColor: isCurrent ? "#4f8ef7" : "#31516b",
             background: step.complete
-              ? `linear-gradient(135deg, ${accent}14, #061827 82%)`
+              ? `linear-gradient(135deg, ${accent}08, #071b2d 86%)`
               : isCurrent
               ? "linear-gradient(135deg, rgba(79,142,247,0.18), #061827 82%)"
-              : "#061827",
+              : "#071b2d",
             boxShadow: step.complete
-              ? `0 0 10px ${accent}12, inset 0 1px 0 rgba(255,255,255,0.05)`
+              ? "inset 0 1px 0 rgba(255,255,255,0.05)"
               : isCurrent
               ? "0 0 0 1px rgba(79,142,247,0.48), 0 0 18px rgba(79,142,247,0.30), inset 0 1px 0 rgba(255,255,255,0.06)"
               : "inset 0 1px 0 rgba(255,255,255,0.03)",
           }}
         >
-          <div className="mb-1.5 flex min-h-5 items-center justify-between gap-2">
-            <span className="movement-flow-step-label inline-flex min-w-0 items-center gap-2 text-[10px] font-black uppercase tracking-[0.07em] text-white">
+          <div className="mb-0.5 flex min-h-5 items-center justify-between gap-2">
+            <span className="movement-flow-step-label inline-flex min-w-0 items-center gap-2 text-[11px] font-black uppercase tracking-[0.06em] text-white">
               <span
-                className="movement-flow-step-number flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[9px] font-black"
+                className="movement-flow-step-number flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-black"
                 style={{ borderColor: step.complete ? accent : isCurrent ? "#4f8ef7" : "#31516b", color: step.complete ? accent : isCurrent ? "#7ab7ff" : "#8ea8c0" }}
               >
                 {index + 1}
@@ -13419,10 +13426,10 @@ function TrainMovementContent() {
               <span
                 aria-label="Completed"
                 title="Completed"
-                className="theme-tp1-step-check flex h-6 w-6 shrink-0 items-center justify-center rounded-full border"
-                style={{ borderColor: `${accent}85`, backgroundColor: `${accent}24`, color: accent, boxShadow: `0 0 10px ${accent}24` }}
+                className="theme-tp1-step-check flex h-5 w-5 shrink-0 items-center justify-center rounded-full border"
+                style={{ borderColor: accent, backgroundColor: accent, color: "#041727", boxShadow: `0 0 12px ${accent}3d` }}
               >
-                <MovementIcon type="check" color="currentColor" />
+                <MovementIcon type="check" color="currentColor" size={13} />
               </span>
             ) : isCurrent ? (
               <span className="theme-tp1-current-step-badge shrink-0 rounded-full border border-[#4f8ef7]/70 bg-[#123f73]/70 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.09em] text-[#7ab7ff]">
@@ -13435,48 +13442,66 @@ function TrainMovementContent() {
       );
     };
 
-    const renderTp1FlowRows = (items, startIndex = 0, sectionKey = "required") => (
-      <div className="grid gap-y-2">
-        {items.reduce((rows, _step, index) => {
+    const renderTp1FlowRows = (items, startIndex = 0, sectionKey = "required") => {
+      const rowPairs = items.reduce((rows, _step, index) => {
           if (index % 2 === 0) rows.push(items.slice(index, index + 2));
           return rows;
-        }, []).map((pair, pairIndex) => {
+        }, []);
+
+      return (
+        <div className="grid gap-y-0">
+          {rowPairs.map((pair, pairIndex) => {
           const firstIndex = startIndex + pairIndex * 2;
           const secondIndex = firstIndex + 1;
           const first = pair[0];
           const second = pair[1];
+          const leftToRight = pairIndex % 2 === 0;
 
           if (!second) {
             return (
-              <div key={`movement-flow-row-${movementType}-${sectionKey}-${pairIndex}`}>
+              <div key={`movement-flow-row-${movementType}-${sectionKey}-${pairIndex}`} className="relative my-0.5">
+                {pairIndex > 0 && (
+                  <span
+                    className="theme-tp1-flow-connector absolute -top-2 left-1/2 h-2 w-px -translate-x-1/2"
+                    aria-hidden="true"
+                    style={{ backgroundColor: accent, opacity: 0.5 }}
+                  />
+                )}
                 {renderTp1FlowStepCard(first, firstIndex)}
               </div>
             );
           }
 
           return (
-            <div key={`movement-flow-row-${movementType}-${sectionKey}-${pairIndex}`} className="grid grid-cols-[minmax(0,1fr)_34px_minmax(0,1fr)] items-stretch gap-x-2">
-              <div>{renderTp1FlowStepCard(first, firstIndex)}</div>
-              <div className="theme-tp1-flow-connector flex min-h-[62px] items-center justify-center" aria-hidden="true">
-                <svg className="h-full w-full" viewBox="0 0 34 62" preserveAspectRatio="none">
+            <div key={`movement-flow-row-${movementType}-${sectionKey}-${pairIndex}`} className="grid grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-stretch gap-x-1.5">
+              <div className="my-0.5">{renderTp1FlowStepCard(first, firstIndex)}</div>
+              <div className="theme-tp1-flow-connector relative min-h-[52px]" aria-hidden="true">
+                <svg className="absolute inset-0 h-full w-full" viewBox="0 0 34 62" preserveAspectRatio="none">
                   <path
-                    d="M1 18 H13 Q19 18 19 26 V36 Q19 44 33 44"
+                    d="M17 0 V62"
                     fill="none"
                     stroke={accent}
-                    strokeOpacity="0.62"
-                    strokeWidth="1.5"
+                    strokeOpacity="0.34"
+                    strokeWidth="1.25"
                     vectorEffect="non-scaling-stroke"
                   />
-                  <circle cx="1" cy="18" r="2" fill={accent} fillOpacity="0.76" />
-                  <circle cx="33" cy="44" r="2" fill={accent} fillOpacity="0.76" />
+                  <path
+                    d={leftToRight ? "M0 18 H11 Q17 18 17 25 V37 Q17 44 23 44 H34" : "M34 18 H23 Q17 18 17 25 V37 Q17 44 11 44 H0"}
+                    fill="none"
+                    stroke={accent}
+                    strokeOpacity="0.72"
+                    strokeWidth="1.6"
+                    vectorEffect="non-scaling-stroke"
+                  />
                 </svg>
               </div>
-              <div>{renderTp1FlowStepCard(second, secondIndex)}</div>
+              <div className="my-0.5">{renderTp1FlowStepCard(second, secondIndex)}</div>
             </div>
           );
-        })}
-      </div>
-    );
+          })}
+        </div>
+      );
+    };
 
     return (
       <section
@@ -13488,32 +13513,32 @@ function TrainMovementContent() {
           boxShadow: `0 0 24px ${accent}16, inset 0 1px 0 rgba(255,255,255,0.05)`,
         }}
       >
-        <div className="theme-tp1-movement-header flex flex-wrap items-center justify-between gap-2.5 border-b px-4 py-3" style={{ borderColor: `${accent}35`, background: `linear-gradient(90deg, ${accent}1f, transparent)` }}>
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: `${accent}24`, color: accent, boxShadow: `0 0 14px ${accent}22` }}>
+        <div className="theme-tp1-movement-header flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2.5" style={{ borderColor: `${accent}35`, background: `linear-gradient(90deg, ${accent}1f, transparent)` }}>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: `${accent}24`, color: accent, boxShadow: `0 0 12px ${accent}24` }}>
               <MovementIcon type="train" color={accent} />
             </div>
             <div>
-              <h2 className="text-[16px] font-black leading-tight text-white">{modeTitle}</h2>
-              <p className="mt-0.5 text-[11px] font-medium" style={{ color: accent }}>{modeSubtitle}</p>
+              <h2 className="text-[15px] font-black leading-tight text-white">{modeTitle}</h2>
+              <p className="mt-0.5 text-[9px] font-semibold" style={{ color: accent }}>{modeSubtitle}</p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
             <span
               aria-label={`${requiredCompletedCount} of ${requiredTotalCount} required fields complete`}
-              className="theme-tp1-required-progress rounded-full border px-3 py-1 text-[10px] font-black"
+              className="theme-tp1-required-progress rounded-md border px-2.5 py-1 text-[9px] font-black"
               style={{ borderColor: `${accent}78`, backgroundColor: `${accent}1c`, color: accent, boxShadow: `0 0 12px ${accent}16` }}
             >
               {requiredCompletedCount}/{requiredTotalCount} required
             </span>
-            <span className="rounded-full border px-3 py-1 text-[10px] font-black text-white" style={{ borderColor: "#31516b", backgroundColor: "rgba(6,24,39,0.72)" }}>
+            <span className="rounded-md border px-2.5 py-1 text-[9px] font-black text-white" style={{ borderColor: "#31516b", backgroundColor: "rgba(6,24,39,0.72)" }}>
               {modeEntries.length} entries
             </span>
             <button
               type="button"
               onClick={isAutomatic ? resetTp1AutomaticFlow : resetTp1ManualFlow}
-              className="inline-flex items-center rounded-md border px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] transition-all hover:scale-[1.03]"
+              className="inline-flex items-center rounded-md border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.08em] transition-all hover:scale-[1.03]"
               style={{ borderColor: "rgba(248,113,113,0.75)", backgroundColor: "rgba(127,29,29,0.30)", color: "#fecaca" }}
               title={isAutomatic ? "Reset Automatic Flow" : "Reset Manual Flow"}
             >
@@ -13522,11 +13547,11 @@ function TrainMovementContent() {
           </div>
         </div>
 
-        <div className="theme-tp1-movement-body grid flex-1 gap-3 p-4">
-          <div className="theme-tp1-movement-flow flex flex-col rounded-xl border border-[#1e4060] bg-[#031827] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-            <section aria-label="Required movement details" data-movement-flow-section="required">
-              <div className="theme-tp1-flow-section-heading mb-3 flex items-center gap-3">
-                <span className="text-[11px] font-black uppercase tracking-[0.11em]" style={{ color: accent }}>Required</span>
+        <div className="theme-tp1-movement-body grid flex-1 gap-0 p-0">
+          <div className="theme-tp1-movement-flow flex flex-col border-0 bg-transparent p-0 shadow-none">
+            <section className="px-4 pt-3" aria-label="Required movement details" data-movement-flow-section="required">
+              <div className="theme-tp1-flow-section-heading mb-2.5 flex items-center gap-2.5">
+                <span className="text-[10px] font-black uppercase tracking-[0.11em]" style={{ color: accent }}>Required</span>
                 <span className="h-px min-w-8 flex-1" style={{ background: `linear-gradient(90deg, ${accent}55, transparent)` }} />
               </div>
               {renderTp1FlowRows(requiredFlowSteps)}
@@ -13535,14 +13560,11 @@ function TrainMovementContent() {
               <section
                 aria-label="Optional movement details"
                 data-movement-flow-section="optional"
-                className="theme-tp1-optional-flow-section mt-4 flex flex-col rounded-xl border p-3"
+                className="theme-tp1-optional-flow-section mt-3 flex flex-col rounded-xl border px-4 py-3"
                 style={{ borderColor: `${accent}55`, background: `linear-gradient(135deg, ${accent}10, rgba(3,17,29,0.78) 76%)`, boxShadow: `inset 0 1px 0 ${accent}12` }}
               >
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <span className="theme-tp1-optional-flow-badge text-[11px] font-black uppercase tracking-[0.11em]" style={{ color: accent }}>Optional</span>
-                  <span className="theme-tp1-optional-flow-help text-[10px] font-semibold text-[#7eb8e0]">
-                    Complete only when applicable
-                  </span>
+                <div className="mb-2.5 flex flex-wrap items-center gap-2.5">
+                  <span className="theme-tp1-optional-flow-badge text-[10px] font-black uppercase tracking-[0.11em]" style={{ color: accent }}>Optional</span>
                   <span className="h-px min-w-8 flex-1" style={{ background: `linear-gradient(90deg, ${accent}45, transparent)` }} />
                 </div>
                 {renderTp1FlowRows(optionalFlowSteps, requiredFlowSteps.length, "optional")}
@@ -13550,9 +13572,9 @@ function TrainMovementContent() {
             )}
           </div>
 
-          <div className="theme-tp1-movement-preview rounded-xl border border-[#1e4060] bg-[#041727] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+          <div className="theme-tp1-movement-preview border-0 bg-transparent px-4 py-3 shadow-none">
             <div className="mb-2 flex flex-wrap items-center justify-start gap-1.5">
-              <p className="mr-0.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#58a6ff]">Preview</p>
+              <p className="mr-0.5 text-[11px] font-black uppercase tracking-[0.12em] text-[#58a6ff]">Preview</p>
               <button
                 type="button"
                 onClick={() => copyTp1MovementPreview(movementType)}
@@ -13571,7 +13593,7 @@ function TrainMovementContent() {
                 <span className="text-[11px] leading-none">+</span> Add to Log
               </button>
             </div>
-            <pre className="max-h-44 overflow-auto whitespace-pre-wrap font-mono text-[12px] font-medium leading-[1.35] text-[#c8d8ea]">{buildTp1MovementText({ preview: true, movementType })}</pre>
+            <pre className="theme-tp1-movement-preview-text max-h-44 overflow-auto whitespace-pre-wrap rounded-lg border border-[#1e4060] bg-[#041727] p-2.5 font-mono text-[11px] font-medium leading-[1.35] text-[#c8d8ea]">{buildTp1MovementText({ preview: true, movementType })}</pre>
           </div>
 
           <section className="theme-tp1-movement-log overflow-hidden rounded-xl border border-[#1e4060] bg-[#03111d]">

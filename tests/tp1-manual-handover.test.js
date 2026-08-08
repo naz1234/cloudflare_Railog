@@ -87,7 +87,12 @@ test("optional TP1 details are separated from the required movement flow", () =>
   assert.doesNotMatch(optionalSectionClass, /\bflex-1\b|\bmin-h-/);
   assert.match(depotStablingSource, />\s*Optional\s*<\/span>/);
   assert.match(depotStablingSource, />Required<\/span>/);
-  assert.match(depotStablingSource, /Complete only when applicable/);
+  assert.doesNotMatch(depotStablingSource, /Complete only when applicable/);
+  assert.equal(
+    (depotStablingSource.match(/<MovementIcon\s+type="calendar"\s+color="currentColor"\s*\/>/g) || []).length,
+    2,
+    "both Next Wash fields should show a calendar icon",
+  );
   assert.match(depotStablingSource, /renderTp1FlowRows\(optionalFlowSteps, requiredFlowSteps\.length, "optional"\)/);
   assert.match(depotStablingSource, /const requiredProgressSteps = allFlowSteps\.filter\(\(step\) => !step\.optional && step\.applicable !== false\);/);
   assert.match(depotStablingSource, /\{requiredCompletedCount\}\/\{requiredTotalCount\} required/);
@@ -95,6 +100,25 @@ test("optional TP1 details are separated from the required movement flow", () =>
   assert.match(depotStablingSource, /className="theme-tp1-step-check/);
   assert.match(depotStablingSource, />\s*Current\s*<\/span>/);
   assert.match(depotStablingSource, /if \(!second\) \{[\s\S]*renderTp1FlowStepCard\(first, firstIndex\)/);
+});
+
+test("Area Movement mock styling keeps the controls compact", () => {
+  assert.match(
+    depotStablingSource,
+    /theme-tp1-movement-header[^"\n]*gap-2[^"\n]*px-4 py-2\.5/,
+  );
+  assert.match(depotStablingSource, /className="flex h-8 w-8 items-center justify-center rounded-lg"/);
+  assert.match(depotStablingSource, /<h2 className="text-\[15px\] font-black/);
+  assert.match(
+    depotStablingSource,
+    /theme-tp1-required-progress[^"\n]*px-2\.5 py-1 text-\[9px\]/,
+  );
+  assert.match(
+    depotStablingSource,
+    /className="inline-flex items-center rounded-md border px-2\.5 py-1 text-\[9px\] font-black uppercase/,
+  );
+  assert.doesNotMatch(depotStablingSource, /theme-tp1-movement-header[^"\n]*px-5 py-4/);
+  assert.doesNotMatch(depotStablingSource, /<h2 className="text-\[19px\]/);
 });
 
 test("Automatic Area Train Prep and PST fields are optional details", () => {
@@ -142,7 +166,45 @@ test("the production arrival transform reads the nested Manual Area form", () =>
 
   assert.match(manualArrivalPluginSource, /const manualForm = tp1Form\.manual \|\| \{\};/);
   assert.match(manualArrivalPluginSource, /isCompleteMovementTimeInput\(modeForm\.toManual\)/);
+  assert.match(
+    manualArrivalPluginSource,
+    /const manualToManualReady = manualTrAtTp1Ready && isCompleteMovementTimeInput\(modeForm\.toManual\);/,
+  );
+  assert.match(manualArrivalPluginSource, /visible: manualTrAtTp1Ready,/);
   assert.doesNotMatch(manualArrivalPluginSource, /isCompleteMovementTimeInput\(tp1Form\.toManual\)/);
+});
+
+test("Automatic and Manual required flows place Shunter before TP1 arrival", () => {
+  assert.match(
+    depotStablingSource,
+    /const automaticShunterReady = automaticPlanReady && Boolean\(modeForm\.shunterName\);/,
+  );
+  assert.match(
+    depotStablingSource,
+    /const automaticTrAtTp1Ready = automaticShunterReady && isTp1TimeReadyForMode\("trAtTp1"\);/,
+  );
+  assert.match(
+    depotStablingSource,
+    /const manualShunterReady = manualPlanReady && Boolean\(modeForm\.shunterName\);/,
+  );
+  assert.match(
+    depotStablingSource,
+    /const manualTrAtTp1Ready = manualShunterReady && isTp1TimeReadyForMode\("trAtTp1"\);/,
+  );
+
+  const automaticFlowStart = depotStablingSource.indexOf("const automaticFlowSteps = [");
+  const manualFlowStart = depotStablingSource.indexOf("const manualFlowSteps = [");
+  const automaticFlowSource = depotStablingSource.slice(automaticFlowStart, manualFlowStart);
+  const manualFlowSource = depotStablingSource.slice(manualFlowStart, depotStablingSource.indexOf("const allFlowSteps", manualFlowStart));
+
+  assert.ok(
+    automaticFlowSource.indexOf('key: "shunterName"') < automaticFlowSource.indexOf('key: "trAtTp1"'),
+    "Automatic Area should show Shunter before TP1 arrival",
+  );
+  assert.ok(
+    manualFlowSource.indexOf('key: "shunterName"') < manualFlowSource.indexOf('key: "trAtTp1"'),
+    "Manual Area should show Shunter before TP1 arrival",
+  );
 });
 
 test("the required SR Number step uses the normal non-animated label style", () => {

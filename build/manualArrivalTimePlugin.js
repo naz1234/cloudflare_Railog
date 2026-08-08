@@ -70,16 +70,16 @@ function TrainMovementContent() {`,
 
       code = code.replace(
         /const manualToManualReady = [^\r\n]+;/,
-        'const manualToManualReady = manualShunterReady && isCompleteMovementTimeInput(modeForm.toManual);'
+        'const manualToManualReady = manualTrAtTp1Ready && isCompleteMovementTimeInput(modeForm.toManual);'
       );
 
       code = replaceRequired(
         code,
-        /      \{\r?\n        key: "fromTp1",\r?\n        label: "Time start moving from TP1",\r?\n        visible: manualShunterReady,\r?\n        complete: manualFromTp1Ready,\r?\n        render: \(\) => renderTp1TimeInput\("fromTp1"\),\r?\n      \},\r?\n      \{\r?\n        key: "toManual",\r?\n        label: "Time arrival to Manual Area",\r?\n        visible: manualFromTp1Ready,\r?\n        complete: manualToManualReady,\r?\n        render: \(\) => renderTp1TimeInput\("toManual"\),\r?\n      \},/,
+        /      \{\r?\n        key: "fromTp1",\r?\n        label: "Time start moving from TP1",\r?\n        visible: manualTrAtTp1Ready,\r?\n        complete: manualFromTp1Ready,\r?\n        render: \(\) => renderTp1TimeInput\("fromTp1"\),\r?\n      \},\r?\n      \{\r?\n        key: "toManual",\r?\n        label: "Time arrival to Manual Area",\r?\n        visible: manualFromTp1Ready,\r?\n        complete: manualToManualReady,\r?\n        render: \(\) => renderTp1TimeInput\("toManual"\),\r?\n      \},/,
         `      {
         key: "toManual",
         label: "Time arrival to Manual Area",
-        visible: manualShunterReady,
+        visible: manualTrAtTp1Ready,
         complete: isCompleteMovementTimeInput(modeForm.toManual),
         render: () => renderTp1TimeInput("toManual"),
       },`,

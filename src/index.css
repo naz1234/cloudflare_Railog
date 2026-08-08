@@ -10311,10 +10311,17 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-body
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-flow {
-  background: var(--tp1-flow-bg) !important;
+  background: transparent !important;
   background-image: none !important;
-  border-color: var(--tp1-border) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-window [data-movement-flow-section="required"] {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-window .theme-tp1-optional-flow-section {
@@ -10340,8 +10347,13 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-wind
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-window .theme-tp1-flow-step.is-complete {
-  background: var(--tp1-step-complete-bg) !important;
-  border-color: var(--tp1-border-strong) !important;
+  background: var(--tp1-step-bg) !important;
+  border-color: var(--tp1-border) !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-window .theme-tp1-flow-step.is-pending {
+  background: var(--tp1-step-bg) !important;
+  border-color: var(--tp1-border) !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-window .theme-tp1-flow-step.is-current {
@@ -10360,10 +10372,14 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-current-step-
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-step-check {
-  background: rgba(255, 255, 255, 0.72) !important;
+  background: var(--tp1-border-strong) !important;
   border-color: var(--tp1-border-strong) !important;
-  color: var(--tp1-border-strong) !important;
-  box-shadow: 0 1px 4px var(--tp1-shadow) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px var(--tp1-shadow) !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-step-check svg {
+  color: #ffffff !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-required-progress {
@@ -10407,7 +10423,30 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-wind
   box-shadow: inset 0 1px 2px var(--tp1-shadow) !important;
 }
 
+html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-window .theme-tp1-inline-field,
+html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-window .theme-tp1-inline-field-control {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-window .theme-tp1-inline-field-control {
+  color: #172b3f !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-window .theme-tp1-inline-field-control::placeholder {
+  color: #64748b !important;
+}
+
 html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-preview {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-preview-text {
   background: var(--tp1-panel-bg) !important;
   background-image: none !important;
   border-color: var(--tp1-border) !important;
