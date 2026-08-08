@@ -79,3 +79,26 @@ export function formatRequestedSummaryEntryCount(value = 0) {
   const count = Math.max(0, Number(value) || 0);
   return `${count} ${count === 1 ? "entry" : "entries"}`;
 }
+
+export function getRequestedSummaryWorkshopMovementDirection(value = "") {
+  const normalized = normalizeRequestedSummaryIdentity(value);
+  if (!normalized) return "";
+
+  if (
+    normalized.includes("OUTBOUND") ||
+    /(?:^| )C(?: TO)? G(?: |$)/.test(normalized) ||
+    normalized.includes("C2G")
+  ) {
+    return "out";
+  }
+
+  if (
+    normalized.includes("INBOUND") ||
+    /(?:^| )G(?: TO)? C(?: |$)/.test(normalized) ||
+    normalized.includes("G2C")
+  ) {
+    return "in";
+  }
+
+  return "";
+}

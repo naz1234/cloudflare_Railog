@@ -5,6 +5,7 @@ import {
   addOnBeforeRequestedSummaryTrailingDate,
   formatRequestedSummaryEntryCount,
   formatRequestedSummaryOtherAction,
+  getRequestedSummaryWorkshopMovementDirection,
   normalizeRequestedSummaryDates,
   removeRequestedSummaryLeadingSeparator,
 } from "../src/lib/requestedActionSummary.js";
@@ -36,10 +37,22 @@ test("request summary badges explain that they count entries", () => {
   assert.equal(formatRequestedSummaryEntryCount(7), "7 entries");
 });
 
+test("workshop movement direction accepts common G-C and C-G spellings", () => {
+  assert.equal(getRequestedSummaryWorkshopMovementDirection("INBOUND (G to C)"), "in");
+  assert.equal(getRequestedSummaryWorkshopMovementDirection("G-C 2-AUG"), "in");
+  assert.equal(getRequestedSummaryWorkshopMovementDirection("G–C Movement"), "in");
+  assert.equal(getRequestedSummaryWorkshopMovementDirection("OUTBOUND (C to G)"), "out");
+  assert.equal(getRequestedSummaryWorkshopMovementDirection("C-G 2-AUG"), "out");
+  assert.equal(getRequestedSummaryWorkshopMovementDirection("RST PM"), "");
+});
+
 test("request summary UI uses the revised headings and concise sentence templates", () => {
   assert.match(depotStablingSource, /Request Summary by Type/);
   assert.match(depotStablingSource, /title: "Other Requests"/);
-  assert.match(depotStablingSource, /inbound movement from G to C/);
+  assert.match(depotStablingSource, /title: "Workshop Movement"/);
+  assert.match(depotStablingSource, /workshop movement from G to C/);
+  assert.match(depotStablingSource, /workshop movement from C to G/);
+  assert.doesNotMatch(depotStablingSource, /title: "Workshop (?:In|Out) Movement"/);
   assert.match(depotStablingSource, /scheduled for washing on \$\{washDate\}/);
   assert.match(depotStablingSource, /formatRequestedSummaryEntryCount\(group\.lines\.length\)/);
   assert.doesNotMatch(depotStablingSource, /Request Type Summary/);

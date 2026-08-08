@@ -273,7 +273,7 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <h2 className="text-[11px] font-normal leading-tight text-white">Sabri IMG Reader</h2>
+          <h2 className="text-[11px] font-normal leading-tight text-white">Train Req. IMG Reader</h2>
           <p className="theme-maintenance-upload-description mt-0.5 text-[9px] font-normal leading-snug text-slate-400">
             Upload, review, then add the detected <span className="theme-maintenance-upload-accent text-violet-300">G to C</span> and <span className="theme-maintenance-upload-accent text-violet-300">PM</span> trains.
           </p>
