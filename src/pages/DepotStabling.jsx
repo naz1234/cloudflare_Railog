@@ -25,6 +25,7 @@ import {
   upsertTrainMovementLiveRecord,
 } from "../lib/trainMovementLiveSync";
 import { buildTp1ManualCmmsHandoverLine } from "../lib/tp1ManualHandover";
+import { cleanTp1TrainSetInput, isCompleteTp1TrainSetInput } from "../lib/tp1TrainSet";
 import {
   buildRemovalPdfDraftExportLog,
   buildRemovalPdfDraftExportRows,
@@ -13027,7 +13028,7 @@ function TrainMovementContent() {
 
     const isTp1TimeReadyForMode = (field) => isCompleteMovementTimeInput(modeForm[field]) && isTp1FlowFieldSettled(field);
 
-    const automaticTrainSetReady = Boolean(normalizeMovementTrain(modeForm.trainSet)) && isTp1FlowFieldSettled("trainSet");
+    const automaticTrainSetReady = isCompleteTp1TrainSetInput(modeForm.trainSet) && isTp1FlowFieldSettled("trainSet");
     const automaticPlanReady = automaticTrainSetReady && Boolean(modeForm.planStatus);
     const automaticShunterReady = automaticPlanReady && Boolean(modeForm.shunterName);
     const automaticTrAtTp1Ready = automaticShunterReady && isTp1TimeReadyForMode("trAtTp1");
@@ -13048,11 +13049,14 @@ function TrainMovementContent() {
           <div className={glowInputBoxClass}>
             <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
             <input
+              type="text"
+              inputMode="numeric"
+              maxLength={2}
               value={modeForm.trainSet || ""}
               onFocus={() => focusFlowInput(getTp1FlowInputKey("trainSet", movementType))}
               onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
               onChange={(e) => {
-                updateTp1ModeForm(movementType, "trainSet", e.target.value.replace(/\D/g, ""));
+                updateTp1ModeForm(movementType, "trainSet", cleanTp1TrainSetInput(e.target.value));
                 scheduleFlowInputSettled(getTp1FlowInputKey("trainSet", movementType));
               }}
               onBlur={() => blurFlowInput(getTp1FlowInputKey("trainSet", movementType))}
@@ -13214,7 +13218,7 @@ function TrainMovementContent() {
       },
     ];
 
-    const manualTrainSetReady = Boolean(normalizeMovementTrain(modeForm.trainSet)) && isTp1FlowFieldSettled("trainSet");
+    const manualTrainSetReady = isCompleteTp1TrainSetInput(modeForm.trainSet) && isTp1FlowFieldSettled("trainSet");
     const manualPlanReady = manualTrainSetReady && Boolean(modeForm.planStatus);
     const manualShunterReady = manualPlanReady && Boolean(modeForm.shunterName);
     const manualTrAtTp1Ready = manualShunterReady && isTp1TimeReadyForMode("trAtTp1");
@@ -13234,11 +13238,14 @@ function TrainMovementContent() {
           <div className={glowInputBoxClass}>
             <span className="text-[12px] font-medium text-[#4f8ef7]">T</span>
             <input
+              type="text"
+              inputMode="numeric"
+              maxLength={2}
               value={modeForm.trainSet || ""}
               onFocus={() => focusFlowInput(getTp1FlowInputKey("trainSet", movementType))}
               onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
               onChange={(e) => {
-                updateTp1ModeForm(movementType, "trainSet", e.target.value.replace(/\D/g, ""));
+                updateTp1ModeForm(movementType, "trainSet", cleanTp1TrainSetInput(e.target.value));
                 scheduleFlowInputSettled(getTp1FlowInputKey("trainSet", movementType));
               }}
               onBlur={() => blurFlowInput(getTp1FlowInputKey("trainSet", movementType))}
