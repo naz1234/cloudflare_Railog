@@ -40,3 +40,14 @@ test("Automatic and Manual Train Set controls share the two-digit gate", () => {
     2,
   );
 });
+
+test("Train Set keeps the same keyed flow slot when later steps hide", () => {
+  assert.equal(
+    (depotStablingSource.match(/key=\{`movement-flow-first-slot-\$\{first\.key\}`\} className="my-0\.5"/g) || []).length,
+    2,
+  );
+  assert.match(
+    depotStablingSource,
+    /if \(!second\) \{[\s\S]*?movement-flow-first-slot-\$\{first\.key\}[\s\S]*?return \([\s\S]*?grid grid-cols-\[minmax\(0,1fr\)_40px_minmax\(0,1fr\)\][\s\S]*?movement-flow-first-slot-\$\{first\.key\}/,
+  );
+});
