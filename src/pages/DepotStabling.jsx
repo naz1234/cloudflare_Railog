@@ -13466,23 +13466,26 @@ function TrainMovementContent() {
 
           if (!second) {
             return (
-              <div key={`movement-flow-row-${movementType}-${sectionKey}-${pairIndex}`} className="relative my-0.5">
+              <div key={`movement-flow-row-${movementType}-${sectionKey}-${pairIndex}`} className="relative">
                 {pairIndex > 0 && (
                   <span
+                    key={`movement-flow-single-connector-${pairIndex}`}
                     className="theme-tp1-flow-connector absolute -top-2 left-1/2 h-2 w-px -translate-x-1/2"
                     aria-hidden="true"
                     style={{ backgroundColor: accent, opacity: 0.5 }}
                   />
                 )}
-                {renderTp1FlowStepCard(first, firstIndex)}
+                <div key={`movement-flow-first-slot-${first.key}`} className="my-0.5">
+                  {renderTp1FlowStepCard(first, firstIndex)}
+                </div>
               </div>
             );
           }
 
           return (
             <div key={`movement-flow-row-${movementType}-${sectionKey}-${pairIndex}`} className="grid grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-stretch gap-x-1.5">
-              <div className="my-0.5">{renderTp1FlowStepCard(first, firstIndex)}</div>
-              <div className="theme-tp1-flow-connector relative min-h-[52px]" aria-hidden="true">
+              <div key={`movement-flow-first-slot-${first.key}`} className="my-0.5">{renderTp1FlowStepCard(first, firstIndex)}</div>
+              <div key={`movement-flow-pair-connector-${pairIndex}`} className="theme-tp1-flow-connector relative min-h-[52px]" aria-hidden="true">
                 <svg className="absolute inset-0 h-full w-full" viewBox="0 0 34 62" preserveAspectRatio="none">
                   <path
                     d="M17 0 V62"
@@ -13502,7 +13505,7 @@ function TrainMovementContent() {
                   />
                 </svg>
               </div>
-              <div className="my-0.5">{renderTp1FlowStepCard(second, secondIndex)}</div>
+              <div key={`movement-flow-second-slot-${second.key}`} className="my-0.5">{renderTp1FlowStepCard(second, secondIndex)}</div>
             </div>
           );
           })}
