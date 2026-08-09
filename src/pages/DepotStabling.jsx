@@ -40,6 +40,7 @@ import {
   getOffPeakStablingMatch,
   shouldShowRemovalTidStablingRemove,
 } from "../lib/trainRemOffPeakStabling";
+import { getSwappingAutoFillFields } from "../lib/trainMovementSwapAutoFill";
 import {
   addOnBeforeRequestedSummaryTrailingDate,
   formatRequestedSummaryEntryCount,
@@ -10036,6 +10037,9 @@ function createTrainMovementExcelRow(overrides = {}) {
     time: "",
     notes: "",
     status: "Draft",
+    swapAutoFillTrainKey: "",
+    swapTidManualOverride: false,
+    swapReasonManualOverride: false,
     ...overrides,
   };
 }
@@ -10255,12 +10259,32 @@ function buildMovementExcelLogLine(row = {}) {
   return `${time} hrs – ${train} (${tid}) removed from mainline to ${depotLabel} stabling due to ${reason}. Replaced by ${replacement}.${notesSuffix}`;
 }
 
-function TrainMovementExcelSheet() {
+function resolveTrainMovementSwappingAutoFill({
+  row = {},
+  requests = [],
+  trainRemState = {},
+  activeTimetable = null,
+} = {}) {
+  const removalRows = collectTrainRemRowsForDepotCopy(
+    trainRemState,
+    row.depot === "east" ? "east" : "west",
+    activeTimetable,
+  );
+
+  return getSwappingAutoFillFields({
+    trainId: row.trainId,
+    removalRows,
+    reason: getRequestNoteSummaryForTrain(requests, row.trainId),
+  });
+}
+
+function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTimetable = null }) {
   const [rows, setRows] = useState(() => loadTrainMovementExcelRows());
   const [logRows, setLogRows] = useState(() => loadTrainMovementExcelLogRows());
   const [initialLiveDirty] = useState(() => loadTrainMovementExcelDirty());
   const [feedback, setFeedback] = useState("");
   const [confirmClearTarget, setConfirmClearTarget] = useState("");
+  const [editingSwapCell, setEditingSwapCell] = useState("");
   const [liveLoaded, setLiveLoaded] = useState(false);
   const [liveSyncing, setLiveSyncing] = useState(false);
   const [liveLastSynced, setLiveLastSynced] = useState(null);
@@ -10282,11 +10306,17 @@ function TrainMovementExcelSheet() {
   const trainMovementExcelInputFocusedRef = useRef(false);
   const trainMovementExcelSaveWorkerRef = useRef(null);
   const trainMovementExcelSaveQueueRef = useRef(null);
+  const swapEditInputRefs = useRef(new Map());
   const rowsRef = useRef(rows);
   const logRowsRef = useRef(logRows);
 
   useEffect(() => { rowsRef.current = rows; }, [rows]);
   useEffect(() => { logRowsRef.current = logRows; }, [logRows]);
+  useEffect(() => {
+    if (!editingSwapCell) return undefined;
+    const frame = requestAnimationFrame(() => swapEditInputRefs.current.get(editingSwapCell)?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [editingSwapCell]);
 
   const markTrainMovementExcelLocalEdit = useCallback(() => {
     const now = Date.now();
@@ -10295,6 +10325,43 @@ function TrainMovementExcelSheet() {
     saveTrainMovementExcelDirty(true);
     trainMovementExcelLocalEditUntilRef.current = now + TRAIN_MOVEMENT_EXCEL_LIVE_LOCAL_EDIT_HOLD_MS;
   }, []);
+
+  const getSwappingAutoFillForRow = useCallback((row) => (
+    resolveTrainMovementSwappingAutoFill({ row, requests, trainRemState, activeTimetable })
+  ), [activeTimetable, requests, trainRemState]);
+
+  useEffect(() => {
+    let changed = false;
+
+    setRows((prev) => {
+      const nextRows = prev.map((row) => {
+        const currentTrainKey = normalizeTrainId(row.trainId);
+        if (
+          row.operation !== "swapping"
+          || !row.swapAutoFillTrainKey
+          || row.swapAutoFillTrainKey !== currentTrainKey
+        ) {
+          return row;
+        }
+
+        const autoFill = getSwappingAutoFillForRow(row);
+        if (!autoFill.trainKey) return row;
+
+        const nextTid = row.swapTidManualOverride ? row.tid : autoFill.tid;
+        const nextReason = row.swapReasonManualOverride ? row.reason : autoFill.reason;
+        if (nextTid === row.tid && nextReason === row.reason) return row;
+
+        changed = true;
+        return { ...row, tid: nextTid, reason: nextReason };
+      });
+
+      if (!changed) return prev;
+      markTrainMovementExcelLocalEdit();
+      rowsRef.current = nextRows;
+      saveTrainMovementExcelRows(nextRows);
+      return nextRows;
+    });
+  }, [getSwappingAutoFillForRow, markTrainMovementExcelLocalEdit]);
 
   const getTrainMovementExcelSaveQueue = useCallback(() => {
     if (!trainMovementExcelSaveQueueRef.current) {
@@ -10597,13 +10664,30 @@ function TrainMovementExcelSheet() {
     }
   };
 
-  const updateRow = (id, field, value) => {
+  const getSwapCellKey = (rowId, field) => `${rowId}:${field}`;
+
+  const beginSwapCellEdit = (rowId, field) => {
+    const editKey = getSwapCellKey(rowId, field);
+    setEditingSwapCell(editKey);
+  };
+
+  const finishSwapCellEdit = (rowId, field) => {
+    const editKey = getSwapCellKey(rowId, field);
+    setEditingSwapCell((current) => current === editKey ? "" : current);
+  };
+
+  const updateRow = (id, field, value, options = {}) => {
     markTrainMovementExcelLocalEdit();
     setRows((prev) => {
       const nextRows = prev.map((row) => {
         if (row.id !== id) return row;
 
         const next = { ...row, [field]: value };
+        if (next.operation === "swapping" && options.manualSwapOverride) {
+          if (field === "tid") next.swapTidManualOverride = true;
+          if (field === "reason") next.swapReasonManualOverride = true;
+        }
+
         if (field === "operation" || field === "depot") {
           const operation = field === "operation" ? value : next.operation;
           const depot = field === "depot" ? value : next.depot;
@@ -10614,8 +10698,26 @@ function TrainMovementExcelSheet() {
           next.to = generated.to;
           next.road = generated.road;
           next.track = generated.track;
-          if (operation !== "swapping") next.replacedBy = "";
+          if (operation !== "swapping") {
+            next.replacedBy = "";
+            next.swapAutoFillTrainKey = "";
+            next.swapTidManualOverride = false;
+            next.swapReasonManualOverride = false;
+          }
         }
+
+        if (
+          next.operation === "swapping"
+          && (field === "trainId" || field === "operation" || field === "depot")
+        ) {
+          const autoFill = getSwappingAutoFillForRow(next);
+          next.tid = autoFill.tid;
+          next.reason = autoFill.reason;
+          next.swapAutoFillTrainKey = autoFill.trainKey;
+          next.swapTidManualOverride = false;
+          next.swapReasonManualOverride = false;
+        }
+
         return next;
       });
       rowsRef.current = nextRows;
@@ -10794,6 +10896,11 @@ function TrainMovementExcelSheet() {
               const statusTooltip = validation.issues.map((issue) => issue.message).join("\n");
               const statusStyle = getMovementExcelStatusStyle(status);
               const operationAccent = row.operation === "insertion" ? "#22c55e" : row.operation === "removal" ? "#ef4444" : "#f59e0b";
+              const isSwapping = row.operation === "swapping";
+              const tidEditKey = getSwapCellKey(row.id, "tid");
+              const reasonEditKey = getSwapCellKey(row.id, "reason");
+              const isTidEditing = editingSwapCell === tidEditKey;
+              const isReasonEditing = editingSwapCell === reasonEditKey;
 
               return (
                 <tr key={row.id} className="group text-[12px] text-[#eaf4ff]">
@@ -10822,10 +10929,76 @@ function TrainMovementExcelSheet() {
                     </div>
                   </td>
                   <td className={cellClass}>
-                    <input value={row.tid} onChange={(e) => updateRow(row.id, "tid", e.target.value.replace(/\D/g, "").slice(0, 3))} placeholder="111" aria-invalid={validation.issues.some((issue) => issue.field === "tid")} className={tableInputClass} />
+                    {isSwapping ? (
+                      <div className="flex min-w-0 items-center gap-0.5 pr-1">
+                        <input
+                          ref={(node) => {
+                            if (node) swapEditInputRefs.current.set(tidEditKey, node);
+                            else swapEditInputRefs.current.delete(tidEditKey);
+                          }}
+                          value={row.tid}
+                          onChange={(e) => updateRow(row.id, "tid", e.target.value.replace(/\D/g, "").slice(0, 3), { manualSwapOverride: true })}
+                          onBlur={() => finishSwapCellEdit(row.id, "tid")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
+                          }}
+                          readOnly={!isTidEditing}
+                          placeholder={row.swapAutoFillTrainKey ? "Not found" : "Auto"}
+                          aria-label="Swapping TID"
+                          aria-invalid={validation.issues.some((issue) => issue.field === "tid")}
+                          data-auto-filled={!row.swapTidManualOverride ? "true" : "false"}
+                          className={`${tableInputClass} ${isTidEditing ? "bg-[#0d2b43]" : "cursor-default"}`}
+                        />
+                        <ActionTooltip message="Edit or add TID manually" placement="top" align="center">
+                          <button
+                            type="button"
+                            onClick={() => beginSwapCellEdit(row.id, "tid")}
+                            className="theme-movement-swap-edit inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-amber-400/55 bg-amber-500/10 text-amber-200 transition hover:border-amber-300 hover:bg-amber-400/20 hover:text-white"
+                            aria-label="Edit or add TID manually"
+                          >
+                            <Pencil size={10} />
+                          </button>
+                        </ActionTooltip>
+                      </div>
+                    ) : (
+                      <input value={row.tid} onChange={(e) => updateRow(row.id, "tid", e.target.value.replace(/\D/g, "").slice(0, 3))} placeholder="111" aria-invalid={validation.issues.some((issue) => issue.field === "tid")} className={tableInputClass} />
+                    )}
                   </td>
                   <td className={cellClass}>
-                    <input value={row.reason} onChange={(e) => updateRow(row.id, "reason", e.target.value)} placeholder={row.operation === "swapping" ? "RST PM / CM" : "Remark"} aria-invalid={validation.issues.some((issue) => issue.field === "reason")} className={tableInputClass} />
+                    {isSwapping ? (
+                      <div className="flex min-w-0 items-center gap-0.5 pr-1">
+                        <input
+                          ref={(node) => {
+                            if (node) swapEditInputRefs.current.set(reasonEditKey, node);
+                            else swapEditInputRefs.current.delete(reasonEditKey);
+                          }}
+                          value={row.reason}
+                          onChange={(e) => updateRow(row.id, "reason", e.target.value, { manualSwapOverride: true })}
+                          onBlur={() => finishSwapCellEdit(row.id, "reason")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
+                          }}
+                          readOnly={!isReasonEditing}
+                          placeholder={row.swapAutoFillTrainKey ? "No request found" : "Auto from Train Request"}
+                          aria-label="Swapping Reason or Remark"
+                          aria-invalid={validation.issues.some((issue) => issue.field === "reason")}
+                          data-auto-filled={!row.swapReasonManualOverride ? "true" : "false"}
+                          className={`${tableInputClass} ${isReasonEditing ? "bg-[#0d2b43]" : "cursor-default"}`}
+                        />
+                        <ActionTooltip message="Edit or add Reason / Remark manually" placement="top" align="center">
+                          <button
+                            type="button"
+                            onClick={() => beginSwapCellEdit(row.id, "reason")}
+                            className="theme-movement-swap-edit inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-amber-400/55 bg-amber-500/10 text-amber-200 transition hover:border-amber-300 hover:bg-amber-400/20 hover:text-white"
+                            aria-label="Edit or add Reason or Remark manually"
+                          >
+                            <Pencil size={10} />
+                          </button>
+                        </ActionTooltip>
+                      </div>
+                    ) : (
+                      <input value={row.reason} onChange={(e) => updateRow(row.id, "reason", e.target.value)} placeholder="Remark" aria-invalid={validation.issues.some((issue) => issue.field === "reason")} className={tableInputClass} />
+                    )}
                   </td>
                   <td className={row.operation !== "swapping" ? "theme-movement-na-cell border border-[#173653] bg-[#334155] align-middle" : cellClass}>
                     {row.operation !== "swapping" ? (
@@ -20951,7 +21124,11 @@ export default function DepotStablingPage() {
       />
 
 
-      <TrainMovementExcelSheet />
+      <TrainMovementExcelSheet
+        requests={requests}
+        trainRemState={trainRemCheckState}
+        activeTimetable={activeTimetable}
+      />
 
       <RemovalLogOutputFromTrainRem
         trainRemState={trainRemCheckState}
