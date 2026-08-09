@@ -10270,10 +10270,15 @@ function resolveTrainMovementSwappingAutoFill({
     row.depot === "east" ? "east" : "west",
     activeTimetable,
   );
+  const fallbackRemovalRows = collectTrainRemReferenceInServiceRows(
+    trainRemState,
+    activeTimetable,
+  );
 
   return getSwappingAutoFillFields({
     trainId: row.trainId,
     removalRows,
+    fallbackRemovalRows,
     reason: getRequestNoteSummaryForTrain(requests, row.trainId),
   });
 }

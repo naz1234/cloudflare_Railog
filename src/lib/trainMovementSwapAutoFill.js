@@ -15,15 +15,23 @@ export function getSwappingTidFromRemovalRows(rows = [], trainId = "") {
   return String(match?.tid || "").replace(/\D/g, "").slice(0, 3);
 }
 
-export function getSwappingAutoFillFields({ trainId = "", removalRows = [], reason = "" } = {}) {
+export function getSwappingAutoFillFields({
+  trainId = "",
+  removalRows = [],
+  fallbackRemovalRows = [],
+  reason = "",
+} = {}) {
   const trainKey = normalizeLookupTrainId(trainId, true);
   if (!trainKey) {
     return { trainKey: "", tid: "", reason: "" };
   }
 
+  const primaryRows = Array.isArray(removalRows) ? removalRows : [];
+  const fallbackRows = Array.isArray(fallbackRemovalRows) ? fallbackRemovalRows : [];
+
   return {
     trainKey,
-    tid: getSwappingTidFromRemovalRows(removalRows, trainId),
+    tid: getSwappingTidFromRemovalRows([...primaryRows, ...fallbackRows], trainId),
     reason: String(reason || "").trim(),
   };
 }
