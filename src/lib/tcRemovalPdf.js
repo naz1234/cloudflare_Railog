@@ -37,12 +37,18 @@ export function getTcActiveTimetableRemovalTime(
     : Array.isArray(depotRemoval?.entries)
       ? depotRemoval.entries
       : [];
+  const exactEntry = entries.find((entry) => normalizeTcTid(entry?.tid) === tidKey);
+  if (exactEntry?.timetableTime !== undefined
+    && exactEntry?.timetableTime !== null
+    && String(exactEntry.timetableTime).trim()) {
+    return normalizeTcTimetableTime(exactEntry.timetableTime);
+  }
+
   const presetTime = preset?.timeMap?.[tidKey];
   if (presetTime !== undefined && presetTime !== null && String(presetTime).trim()) {
     return normalizeTcTimetableTime(presetTime);
   }
 
-  const exactEntry = entries.find((entry) => normalizeTcTid(entry?.tid) === tidKey);
   return normalizeTcTimetableTime(exactEntry?.time);
 }
 

@@ -11,25 +11,25 @@ const activeTimetable = {
     removal: {
       west: {
         entries: [
-          { tid: "212", time: "09:03" },
-          { tid: "214", time: "09:09" },
+          { tid: "212", time: "09:08", timetableTime: "09:03" },
+          { tid: "214", time: "09:14", timetableTime: "09:09" },
         ],
         presets: {
           "9am": {
             entries: [
-              { tid: "212", time: "09:03" },
-              { tid: "214", time: "09:09" },
+              { tid: "212", time: "09:08", timetableTime: "09:03" },
+              { tid: "214", time: "09:14", timetableTime: "09:09" },
             ],
-            timeMap: { 212: "09:03", 214: "09:09" },
+            timeMap: { 212: "09:08", 214: "09:14" },
           },
         },
       },
       east: {
-        entries: [{ tid: "112", time: "09:05" }],
+        entries: [{ tid: "112", time: "09:10", timetableTime: "09:05" }],
         presets: {
           "9am": {
-            entries: [{ tid: "112", time: "09:05" }],
-            timeMap: { 112: "09:05" },
+            entries: [{ tid: "112", time: "09:10", timetableTime: "09:05" }],
+            timeMap: { 112: "09:10" },
           },
         },
       },
@@ -37,10 +37,44 @@ const activeTimetable = {
   },
 };
 
-test("TC removal time comes from the matching active timetable depot", () => {
+test("TC removal time comes from the raw active timetable value", () => {
   assert.equal(getTcActiveTimetableRemovalTime(activeTimetable, "west", "9am", "212"), "09:03");
   assert.equal(getTcActiveTimetableRemovalTime(activeTimetable, "east", "9am", "112"), "09:05");
   assert.equal(getTcActiveTimetableRemovalTime(activeTimetable, "east", "9am", "212"), "");
+});
+
+test("TC ignores the depot-arrival offset stored for Removal Summary", () => {
+  assert.equal(activeTimetable.parsedData.removal.west.presets["9am"].timeMap[212], "09:08");
+  assert.equal(getTcActiveTimetableRemovalTime(activeTimetable, "west", "9am", "212"), "09:03");
+});
+
+test("TC 12am output keeps West TID 122 and 123 at their raw timetable times", () => {
+  const twelveAmTimetable = {
+    parsedData: {
+      removal: {
+        west: {
+          presets: {
+            "12am": {
+              entries: [
+                { tid: "122", time: "00:08", timetableTime: "00:03" },
+                { tid: "123", time: "00:14", timetableTime: "00:09" },
+              ],
+              timeMap: { 122: "00:08", 123: "00:14" },
+            },
+          },
+        },
+      },
+    },
+  };
+
+  const result = buildTcRemovalPdfLog({
+    entries: [
+      { trainId: "43", tid: "122", time: "00:08" },
+      { trainId: "34", tid: "123", time: "00:14" },
+    ],
+  }, twelveAmTimetable, "west", "12am");
+
+  assert.deepEqual(result.entries.map((entry) => entry.time), ["00:03", "00:09"]);
 });
 
 test("TC log replaces Removal Summary timing instead of falling back to it", () => {
@@ -81,4 +115,7 @@ test("PDF toolbar exposes DC and TC choices and TC uses removal-only layout", ()
   assert.match(source, />TC PDF</);
   assert.match(source, /layout:\s*"tcRemovalOnly"/);
   assert.match(source, /buildTcRemovalPdfLog\(/);
+  assert.match(source, /const TIMETABLE_PARSE_VERSION = 6;/);
+  assert.match(source, /const timetableTime = formatSecondsAsTime\(excelTimeToSeconds\(row\[westArrivalIndex\]\)\)/);
+  assert.match(source, /const timetableTime = formatSecondsAsTime\(excelTimeToSeconds\(row\[eastArrivalIndex\]\)\)/);
 });
