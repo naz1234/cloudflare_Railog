@@ -69,7 +69,7 @@ const TIMETABLE_TYPES = [
 const ACTIVE_TIMETABLE_TYPE_KEY = "activeTimetableType_v1";
 const LOCAL_TIMETABLE_RECORDS_KEY = "storedTimetableRecords_v1";
 const EAST_INSERTION_TIME_OFFSET_KEY = "eastInsertionTimeOffsetMinutes_v1";
-const TIMETABLE_PARSE_VERSION = 5;
+const TIMETABLE_PARSE_VERSION = 6;
 const APP_THEME_KEY = "l3DcTheme_v1";
 const NINE_AM_HIGHLIGHT_TIDS = new Set(["112", "114", "116", "118", "120", "202", "204", "206", "208", "210"]);
 const NINE_AM_SPECIAL_TIDS = new Set(["207", "209", "211"]);
@@ -660,18 +660,36 @@ function parseTimetableWorkbook(arrayBuffer, timetableType = "weekday", fileName
 
       if (isWestRemovalRemark(rightRemark)) {
         const platformTime = formatExcelTimeValue(row[westArrivalIndex]);
+        const timetableTime = formatSecondsAsTime(excelTimeToSeconds(row[westArrivalIndex]));
         // Arrival 3A1P2 is the platform time. Removal reaches West Depot 4m30s later.
         const time = formatDepotMovementStartTime(row[westArrivalIndex], "west", "removal");
         const label = classifyRemovalPresetFromTime(timetableType, platformTime);
-        pushTimetableEntry(parsed.removal.west, { tid, did: eastDid, time, remark: rightRemark, label, sheetName });
+        pushTimetableEntry(parsed.removal.west, {
+          tid,
+          did: eastDid,
+          time,
+          timetableTime,
+          remark: rightRemark,
+          label,
+          sheetName,
+        });
       }
 
       if (isEastRemovalRemark(leftRemark)) {
         const platformTime = formatExcelTimeValue(row[eastArrivalIndex]);
+        const timetableTime = formatSecondsAsTime(excelTimeToSeconds(row[eastArrivalIndex]));
         // Arrival 3K1P1 is the platform time. Removal reaches East Depot 5m22s later.
         const time = formatDepotMovementStartTime(row[eastArrivalIndex], "east", "removal");
         const label = classifyRemovalPresetFromTime(timetableType, platformTime);
-        pushTimetableEntry(parsed.removal.east, { tid, did: westDid, time, remark: leftRemark, label, sheetName });
+        pushTimetableEntry(parsed.removal.east, {
+          tid,
+          did: westDid,
+          time,
+          timetableTime,
+          remark: leftRemark,
+          label,
+          sheetName,
+        });
       }
     });
   });
