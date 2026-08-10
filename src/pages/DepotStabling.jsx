@@ -13,6 +13,7 @@ import PSTManualEntry from "../components/depot/PSTManualEntry";
 import InsertionLogOutput from "../components/depot/InsertionLogOutput";
 import OvertimeTracker from "../components/OvertimeTracker";
 import RosterWorkspace from "../components/RosterWorkspace";
+import ChecklistWorkspace from "../components/ChecklistWorkspace";
 import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator";
 import RemovalPdfEditor from "../components/depot/RemovalPdfEditor";
 import EastNineAmRemovalPdfEditor from "../components/depot/EastNineAmRemovalPdfEditor";
@@ -1799,7 +1800,7 @@ const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
 const OVT_SESSION_KEY = "ovtOvertimeUnlocked_v1";
 const ODO_SESSION_KEY = "odoReadingUnlocked_v1";
 const PROTECTED_SHORTCUTS_SESSION_KEY = "protectedShortcutsUnlocked_v1";
-const PROTECTED_SHORTCUT_KEYS = new Set(["odo", "alarm", "overtime", "admin"]);
+const PROTECTED_SHORTCUT_KEYS = new Set(["odo", "alarm", "overtime", "checklist", "admin"]);
 const ADM_LOGIN_ID = "admin";
 const ADM_LOGIN_PASSWORD = "921016";
 const ADMIN_NOTES_STORAGE_KEY = "admModernNotes_v1";
@@ -16823,6 +16824,7 @@ export default function DepotStablingPage() {
     if (path === "/alarm") return "alarm";
     if (path === "/overtime" || path === "/ovt" || path === "/ot") return "overtime";
     if (path === "/roster" || path === "/ros") return "roster";
+    if (path === "/checklist" || path === "/chk") return "checklist";
     if (path === "/admin" || path === "/adm") return "admin";
     return "stabling";
   };
@@ -20888,6 +20890,19 @@ export default function DepotStablingPage() {
               ),
             },
             {
+              key: "checklist",
+              label: "Checklist",
+              code: "CHK",
+              to: "/checklist",
+              icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="4" y="3" width="16" height="18" rx="2"/>
+                  <path d="M8 8l1.5 1.5L12 7"/><path d="M8 14l1.5 1.5L12 13"/>
+                  <path d="M14 9h3M14 15h3"/>
+                </svg>
+              ),
+            },
+            {
               key: "admin",
               label: "Admin",
               code: "ADM",
@@ -21622,6 +21637,42 @@ export default function DepotStablingPage() {
             <div className="mx-auto w-full max-w-[1680px]">
               <RosterWorkspace />
             </div>
+          </div>
+        )}
+
+        {activeTab === "checklist" && (
+          <div className="w-full px-2 pb-10 pt-3">
+            {areProtectedShortcutsUnlocked ? (
+              <ChecklistWorkspace />
+            ) : (
+              <div className="mx-auto flex min-h-[420px] w-full max-w-[620px] items-center justify-center">
+                <section className="w-full max-w-[390px] overflow-hidden rounded-[24px] border border-[#23506f]/80 bg-[#061827]/95 shadow-[0_20px_70px_rgba(0,0,0,0.38)]">
+                  <div className="border-b border-[#1a3a56]/80 bg-gradient-to-br from-[#0d3455] via-[#08223a] to-[#061827] px-5 py-5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#4f8ef7]/40 bg-[#0f2d4a] text-[11px] font-semibold tracking-[0.18em] text-[#bceaff]">CHK</div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.24em] text-[#6db6e8]">Protected page</p>
+                        <h2 className="mt-1 text-[18px] font-semibold text-white">Duty Checklist</h2>
+                      </div>
+                    </div>
+                    <p className="mt-4 text-[11px] leading-relaxed text-[#8dc7ed]">Unlock the protected pages to view and update the shared duty checklist.</p>
+                  </div>
+                  <div className="p-5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProtectedShortcutCredentials({ id: "", password: "" });
+                        setProtectedShortcutError("");
+                        setIsProtectedShortcutLoginOpen(true);
+                      }}
+                      className="flex h-10 w-full items-center justify-center rounded-xl border border-[#4f8ef7]/60 bg-[#1b5f93] text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-[0_0_22px_rgba(79,142,247,0.22)] transition hover:bg-[#2476b4] active:scale-[0.99]"
+                    >
+                      Unlock protected pages
+                    </button>
+                  </div>
+                </section>
+              </div>
+            )}
           </div>
         )}
 

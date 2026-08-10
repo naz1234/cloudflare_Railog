@@ -1,0 +1,29 @@
+{
+  "name": "ChecklistRecord",
+  "type": "object",
+  "properties": {
+    "scopeKey": {
+      "type": "string",
+      "description": "Unique date and shift key, for example 2026-08-10:late"
+    },
+    "date": {
+      "type": "string",
+      "description": "Duty date in YYYY-MM-DD format"
+    },
+    "shift": {
+      "type": "string",
+      "enum": ["early", "late", "night"]
+    },
+    "shiftLabel": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "description": "Shared checklist items and their completion status"
+    },
+    "updatedAt": {
+      "type": "string"
+    }
+  },
+  "required": ["scopeKey", "date", "shift", "items"]
+}
