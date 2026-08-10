@@ -42,6 +42,7 @@ import {
   shouldShowRemovalTidStablingRemove,
 } from "../lib/trainRemOffPeakStabling";
 import { getSwappingAutoFillFields } from "../lib/trainMovementSwapAutoFill";
+import { buildTcRemovalPdfLog } from "../lib/tcRemovalPdf";
 import {
   addOnBeforeRequestedSummaryTrailingDate,
   formatRequestedSummaryEntryCount,
@@ -7273,6 +7274,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const [trainRemDebug, setTrainRemDebug] = useState("");
   const [trainRemFocusedTrainIdCell, setTrainRemFocusedTrainIdCell] = useState(null);
   const [trainRemPdfStatus, setTrainRemPdfStatus] = useState({ west: false, east: false });
+  const [trainRemPdfMenuDepot, setTrainRemPdfMenuDepot] = useState(null);
   const [trainRemSwpDraft, setTrainRemSwpDraft] = useState(null);
   const [trainRemSwpDownloading, setTrainRemSwpDownloading] = useState(false);
   const [trainRemEastNineAmDraft, setTrainRemEastNineAmDraft] = useState(null);
@@ -7288,6 +7290,23 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     trainRemStateRef.current = trainRemState;
     onTrainRemStateChange?.(trainRemState);
   }, [trainRemState, onTrainRemStateChange]);
+
+  useEffect(() => {
+    if (!trainRemPdfMenuDepot) return undefined;
+
+    const closePdfMenu = (event) => {
+      if (event.type === "keydown" && event.key !== "Escape") return;
+      if (event.type === "pointerdown" && event.target?.closest?.("[data-train-rem-pdf-menu]")) return;
+      setTrainRemPdfMenuDepot(null);
+    };
+
+    document.addEventListener("pointerdown", closePdfMenu);
+    document.addEventListener("keydown", closePdfMenu);
+    return () => {
+      document.removeEventListener("pointerdown", closePdfMenu);
+      document.removeEventListener("keydown", closePdfMenu);
+    };
+  }, [trainRemPdfMenuDepot]);
 
   const trainRemMapRef = useRef({});
   const trainRemAutoSaveTimerRef = useRef(null);
@@ -8021,7 +8040,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     ? "border-amber-600/50 bg-amber-950/30 text-amber-300"
     : "border-emerald-600/50 bg-emerald-950/30 text-emerald-300";
 
-  const handleTrainRemPdfDownload = (depot, event = null) => {
+  const handleTrainRemPdfDownload = (depot, event = null, outputType = "dc") => {
     event?.preventDefault?.();
     event?.stopPropagation?.();
 
@@ -8032,34 +8051,51 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       const latestEastData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
       const westLog = buildTrainRemRemovalLog(latestTrainRemState, "west", maintenanceMap, activeTimetable, westData);
       const eastLog = buildTrainRemRemovalLog(latestTrainRemState, "east", maintenanceMap, activeTimetable, latestEastData);
-      const swappingRows = getRemovalPdfSwappingRows({
-        requests,
-        trainRemState: latestTrainRemState,
-        westData,
-        eastData: latestEastData,
-        activeTimetable,
-      });
-      const actionOverviewRows = getRemovalPdfActionOverviewRows({
-        requests,
-        trainRemState: latestTrainRemState,
-        westData,
-        eastData: latestEastData,
-        activeTimetable,
-        activeTimetableType,
-      });
+      const isTcOutput = outputType === "tc";
 
-      // Keep the file download as the first action in the click handler.
-      // Some browsers/PWA views can ignore the download when a state update runs first.
-      // Keep the PDF arrangement identical for every preset:
-      // West above East on the left, Requested Train on the right.
-      const stackMorningDepots = true;
+      if (isTcOutput) {
+        if (!getActiveTimetableParsedData(activeTimetable)) {
+          alert("Upload or select an active timetable before creating the TC PDF.");
+          return;
+        }
 
-      downloadCombinedRemovalPdf(westLog, eastLog, {
-        swappingRows,
-        actionOverviewRows,
-        stackMorningDepots,
-      });
+        const westPreset = latestTrainRemState?.selectedPreset?.west || "9am";
+        const eastPreset = latestTrainRemState?.selectedPreset?.east || westPreset;
+        const tcWestLog = buildTcRemovalPdfLog(westLog, activeTimetable, "west", westPreset);
+        const tcEastLog = buildTcRemovalPdfLog(eastLog, activeTimetable, "east", eastPreset);
+
+        // TC output contains only the two depot removal tables. Every timing is
+        // replaced by the exact active-timetable value; Removal Summary timing
+        // and its destination-block adjustment are intentionally not reused.
+        downloadTcCombinedRemovalPdf(tcWestLog, tcEastLog);
+      } else {
+        const swappingRows = getRemovalPdfSwappingRows({
+          requests,
+          trainRemState: latestTrainRemState,
+          westData,
+          eastData: latestEastData,
+          activeTimetable,
+        });
+        const actionOverviewRows = getRemovalPdfActionOverviewRows({
+          requests,
+          trainRemState: latestTrainRemState,
+          westData,
+          eastData: latestEastData,
+          activeTimetable,
+          activeTimetableType,
+        });
+
+        // DC keeps the current output unchanged: West and East stacked on the
+        // left, with the requested-train section on the right.
+        downloadCombinedRemovalPdf(westLog, eastLog, {
+          swappingRows,
+          actionOverviewRows,
+          stackMorningDepots: true,
+        });
+      }
+
       setTrainRemPdfStatus((prev) => ({ ...prev, [depot]: true }));
+      setTrainRemPdfMenuDepot(null);
       setTimeout(() => {
         setTrainRemPdfStatus((prev) => ({ ...prev, [depot]: false }));
       }, 700);
@@ -8651,6 +8687,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     const duplicateCounts = getTrainRemDuplicateCounts();
     const duplicateTidCounts = getTrainRemTidDuplicateCounts();
     const pdfActive = Boolean(trainRemPdfStatus?.[depot]);
+    const pdfMenuOpen = trainRemPdfMenuDepot === depot;
+    const tcPdfAvailable = Boolean(getActiveTimetableParsedData(activeTimetable));
     const activeTimetableLabel = getTimetableTypeLabel(activeTimetableType);
     const timetablePresetNotice = isTrainRemPresetMismatchWithTimetable(activeTimetableType, selectedPreset)
       ? `Currently timetable ${activeTimetableLabel} is used`
@@ -8710,27 +8748,70 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                 </ActionTooltip>
               )}
 
-              <ActionTooltip
-                message="Download removal summary as PDF"
-                placement="top"
-                align="end"
-              >
-                <button
-                  type="button"
-                  onClick={(event) => handleTrainRemPdfDownload(depot, event)}
-                  className={`theme-train-rem-export theme-train-rem-pdf ${pdfActive ? "is-done" : ""} inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5`}
-                  style={{
-                    background: pdfActive ? "rgba(34,197,94,0.18)" : "rgba(6,212,232,0.14)",
-                    borderColor: pdfActive ? "rgba(34,197,94,0.48)" : "rgba(34,211,238,0.55)",
-                    color: pdfActive ? "#86efac" : "#b6f3ff",
-                    boxShadow: pdfActive ? "0 0 12px rgba(34,197,94,0.16)" : "0 0 12px rgba(34,211,238,0.16)",
-                  }}
-                  aria-label="Download removal summary as PDF"
+              <div data-train-rem-pdf-menu className="relative">
+                <ActionTooltip
+                  message="Choose DC or TC PDF output"
+                  placement="top"
+                  align="end"
                 >
-                  <FileText size={12} />
-                  {pdfActive ? "Done" : "PDF"}
-                </button>
-              </ActionTooltip>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setTrainRemPdfMenuDepot((current) => current === depot ? null : depot);
+                    }}
+                    className={`theme-train-rem-export theme-train-rem-pdf ${pdfActive ? "is-done" : ""} inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5`}
+                    style={{
+                      background: pdfActive ? "rgba(34,197,94,0.18)" : "rgba(6,212,232,0.14)",
+                      borderColor: pdfActive ? "rgba(34,197,94,0.48)" : "rgba(34,211,238,0.55)",
+                      color: pdfActive ? "#86efac" : "#b6f3ff",
+                      boxShadow: pdfActive ? "0 0 12px rgba(34,197,94,0.16)" : "0 0 12px rgba(34,211,238,0.16)",
+                    }}
+                    aria-label="Choose removal PDF output"
+                    aria-haspopup="menu"
+                    aria-expanded={pdfMenuOpen}
+                  >
+                    <FileText size={12} />
+                    {pdfActive ? "Done" : "PDF"}
+                    <ChevronDown size={10} className={`transition-transform ${pdfMenuOpen ? "rotate-180" : ""}`} />
+                  </button>
+                </ActionTooltip>
+
+                {pdfMenuOpen && (
+                  <div
+                    role="menu"
+                    className="theme-train-rem-pdf-menu absolute right-0 top-[calc(100%+5px)] z-[100] w-[178px] overflow-hidden rounded-xl border border-[#315574] bg-[#061827] p-1.5 text-left shadow-[0_16px_38px_rgba(0,0,0,0.55)]"
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={(event) => handleTrainRemPdfDownload(depot, event, "dc")}
+                      className="flex w-full items-center gap-2 rounded-lg border border-transparent px-2 py-2 text-left transition hover:border-cyan-400/35 hover:bg-cyan-400/10"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-cyan-400/35 bg-cyan-400/10 text-[9px] font-black text-cyan-200">DC</span>
+                      <span className="min-w-0">
+                        <span className="block text-[10px] font-semibold text-white">DC PDF</span>
+                        <span className="mt-0.5 block text-[8px] leading-tight text-[#7eb8e0]">Current complete output</span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={!tcPdfAvailable}
+                      onClick={(event) => handleTrainRemPdfDownload(depot, event, "tc")}
+                      title={tcPdfAvailable ? "Depot removal only using active timetable timing" : "Upload or select an active timetable first"}
+                      className="mt-1 flex w-full items-center gap-2 rounded-lg border border-transparent px-2 py-2 text-left transition hover:border-violet-400/35 hover:bg-violet-400/10 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-violet-400/35 bg-violet-400/10 text-[9px] font-black text-violet-200">TC</span>
+                      <span className="min-w-0">
+                        <span className="block text-[10px] font-semibold text-white">TC PDF</span>
+                        <span className="mt-0.5 block text-[8px] leading-tight text-[#9e91c9]">West + East · timetable times</span>
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <ActionTooltip
                 message="Open an editable SWP PDF copy"
@@ -24664,6 +24745,7 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
   // the full right column with the same table sizing and font treatment.
   const stackMorningDepots = options?.stackMorningDepots !== false;
   const eastNineAmOffPeakLayout = options?.layout === "eastNineAmOffPeak";
+  const tcRemovalOnlyLayout = options?.layout === "tcRemovalOnly";
   const pageWidth = 841.89;
   const pageHeight = 595.28;
   const marginX = 22;
@@ -24837,6 +24919,8 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
   ops += pdfText(
     eastNineAmOffPeakLayout
       ? "EAST DEPOT 9AM REMOVAL & OFF-PEAK TRAINS"
+      : tcRemovalOnlyLayout
+        ? "TC DEPOT REMOVAL SUMMARY"
       : "DEPOT REMOVAL SUMMARY",
     marginX,
     yFromTop(titleTop),
@@ -25476,6 +25560,26 @@ function buildCombinedRemovalPdfPage(westLog = {}, eastLog = {}, options = {}) {
       fontReferenceRowHeight: eastNineAmRowHeight,
       sectionTitle: `OFF-PEAK TRAINS - Total: ${eastRows.length}`,
     });
+  } else if (tcRemovalOnlyLayout) {
+    const largestTableCount = Math.max(westRowCount, eastRowCount, 1);
+    const tcRowHeight = Math.max(
+      9,
+      Math.min(22, (leftAvailableHeight - headerHeight) / largestTableCount),
+    );
+    drawRemovalColumn(westLog, marginX, "west", {
+      tableTop,
+      columnTitleTop,
+      rowHeight: tcRowHeight,
+      fontReferenceRowHeight: tcRowHeight,
+      contentFontBoost: 2,
+    });
+    drawRemovalColumn(eastLog, rightColumnX, "east", {
+      tableTop,
+      columnTitleTop,
+      rowHeight: tcRowHeight,
+      fontReferenceRowHeight: tcRowHeight,
+      contentFontBoost: 2,
+    });
   } else if (stackMorningDepots) {
     drawRemovalColumn(westLog, marginX, "west", {
       tableTop,
@@ -25552,6 +25656,16 @@ function downloadCombinedRemovalPdf(westLog = {}, eastLog = {}, options = {}) {
   const dateStamp = new Date().toISOString().slice(0, 10);
   const blob = buildCombinedRemovalPdfBlob(westLog, eastLog, options);
   downloadClientBlob(blob, `west-east-depot-removal-${dateStamp}.pdf`);
+}
+
+function downloadTcCombinedRemovalPdf(westLog = {}, eastLog = {}) {
+  const dateStamp = new Date().toISOString().slice(0, 10);
+  const blob = buildCombinedRemovalPdfBlob(westLog, eastLog, {
+    layout: "tcRemovalOnly",
+    stackMorningDepots: false,
+    actionOverviewRows: [],
+  });
+  downloadClientBlob(blob, `tc-west-east-depot-removal-${dateStamp}.pdf`);
 }
 
 function downloadEditedCombinedRemovalPdf(westLog = {}, eastLog = {}, options = {}) {
