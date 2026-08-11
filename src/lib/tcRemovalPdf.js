@@ -67,6 +67,9 @@ export function buildTcRemovalPdfLog(
         presetLabel,
         entry?.tid,
       ),
+      remark: "",
+      remarkPills: [],
+      remarkFill: "",
       __tcOriginalIndex: index,
     }))
     .sort((left, right) => {
