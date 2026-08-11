@@ -159,14 +159,14 @@ export default function MaspoTrainMovementChecker() {
             <TrainFront className="h-7 w-7" />
           </span>
           <div className="min-w-0">
-            <h2 className="text-lg font-black leading-tight text-white sm:text-xl">Check Train Maspo TR movement</h2>
-            <p className="mt-1 text-[11px] font-medium text-[#b4cadb] sm:text-xs">Upload MASPO Excel logs and check one train across every workbook and worksheet.</p>
+            <h2 className="text-[15px] font-black leading-tight text-white">Check Train Maspo TR movement</h2>
+            <p className="mt-0.5 text-[9px] font-semibold text-[#b4cadb]">Upload MASPO Excel logs and check one train across every workbook and worksheet.</p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           {analysis && (
-            <div className="theme-maspo-train-checker-summary flex min-h-12 flex-wrap items-center overflow-hidden rounded-xl border border-[#315978] bg-[#041522] text-[11px] font-bold text-sky-100">
+            <div className="theme-maspo-train-checker-summary flex min-h-12 flex-wrap items-center overflow-hidden rounded-xl border border-[#315978] bg-[#041522] text-[9px] font-black text-sky-100">
               <span className="flex items-center gap-2 px-4 py-3"><CalendarDays className="h-4 w-4 text-cyan-300" /> {analysis.parsedWorkbookCount} Excel {analysis.parsedWorkbookCount === 1 ? "file" : "files"}</span>
               <span className="border-l border-[#315978] px-4 py-3">{timeline.length} {analysis.train} {timeline.length === 1 ? "entry" : "entries"} found</span>
             </div>
@@ -175,7 +175,7 @@ export default function MaspoTrainMovementChecker() {
             <button
               type="button"
               onClick={clearChecker}
-              className="theme-maspo-train-checker-clear inline-flex h-12 items-center gap-2 rounded-xl border border-red-400/55 bg-red-500/10 px-4 text-[11px] font-black text-red-300 transition-colors hover:bg-red-500/20"
+              className="theme-maspo-train-checker-clear inline-flex h-12 items-center gap-2 rounded-xl border border-red-400/55 bg-red-500/10 px-4 text-[9px] font-black text-red-300 transition-colors hover:bg-red-500/20"
             >
               <X className="h-4 w-4" /> Clear
             </button>
@@ -204,9 +204,9 @@ export default function MaspoTrainMovementChecker() {
               {archiveFile ? <FileArchive className="h-7 w-7" /> : <Upload className="h-7 w-7" />}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-black text-white sm:text-base">{archiveFile?.name || "Upload ZIP, RAR, or Excel"}</span>
-              <span className="mt-2 block text-[11px] leading-relaxed text-[#a5bfd2]">Excel names, sheet names, and column positions may differ.</span>
-              <span className="mt-0.5 block text-[11px] leading-relaxed text-[#a5bfd2]">Files are analyzed in this browser and are not saved.</span>
+              <span className="block truncate text-[13px] font-semibold text-white">{archiveFile?.name || "Upload ZIP, RAR, or Excel"}</span>
+              <span className="mt-2 block text-[10px] leading-relaxed text-[#a5bfd2]">Excel names, sheet names, and column positions may differ.</span>
+              <span className="mt-0.5 block text-[10px] leading-relaxed text-[#a5bfd2]">Files are analyzed in this browser and are not saved.</span>
             </span>
           </button>
           <input
@@ -228,14 +228,14 @@ export default function MaspoTrainMovementChecker() {
                   <CloudDownload className="h-5 w-5" />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-xs font-black text-white">Need to download the MASPO folder?</p>
-                  <p className="mt-1 text-[10px] leading-relaxed text-[#9eb5ca]">OneDrive saves the folder as a ZIP file. Upload that ZIP here.</p>
+                  <p className="text-[11px] font-semibold text-white">Need to download the MASPO folder?</p>
+                  <p className="mt-1 text-[9px] leading-relaxed text-[#9eb5ca]">OneDrive saves the folder as a ZIP file. Upload that ZIP here.</p>
                 </div>
               </div>
               <DialogPrimitive.Trigger asChild>
                 <button
                   type="button"
-                  className="theme-maspo-train-checker-guide-button inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-sky-400/55 bg-sky-500/10 px-4 text-[10px] font-black text-sky-100 transition-colors hover:bg-sky-500/25"
+                  className="theme-maspo-train-checker-guide-button inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-sky-400/55 bg-sky-500/10 px-4 text-[9px] font-black text-sky-100 transition-colors hover:bg-sky-500/25"
                   aria-label="Open picture guide for downloading the MASPO ZIP file from OneDrive"
                 >
                   <CircleHelp className="h-4 w-4" /> View download guide
@@ -247,8 +247,8 @@ export default function MaspoTrainMovementChecker() {
               <DialogPrimitive.Overlay className="fixed inset-0 z-[300] bg-[#020b14]/85 backdrop-blur-sm data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
               <DialogPrimitive.Content className="theme-maspo-download-guide fixed left-1/2 top-1/2 z-[310] grid max-h-[94vh] w-[calc(100vw-1rem)] max-w-[1520px] -translate-x-1/2 -translate-y-1/2 gap-3 overflow-hidden rounded-2xl border border-[#3d6e98] bg-[#03111d] p-3 text-white shadow-[0_28px_90px_rgba(0,0,0,0.62)] focus:outline-none sm:p-4">
                 <div className="pr-10 text-left">
-                  <DialogPrimitive.Title className="theme-maspo-download-guide-title text-sm font-black text-white sm:text-base">How to download the MASPO ZIP</DialogPrimitive.Title>
-                  <DialogPrimitive.Description className="theme-maspo-download-guide-description mt-1 text-[10px] leading-relaxed text-[#9eb5ca] sm:text-xs">
+                  <DialogPrimitive.Title className="theme-maspo-download-guide-title text-[15px] font-black text-white">How to download the MASPO ZIP</DialogPrimitive.Title>
+                  <DialogPrimitive.Description className="theme-maspo-download-guide-description mt-1 text-[10px] leading-relaxed text-[#9eb5ca]">
                     Follow steps 4–6, then return to this checker and upload the ZIP file from Downloads.
                   </DialogPrimitive.Description>
                 </div>
@@ -269,14 +269,14 @@ export default function MaspoTrainMovementChecker() {
               </DialogPrimitive.Content>
             </DialogPrimitive.Portal>
           </DialogPrimitive.Root>
-          <p className="mt-3 text-[10px] text-[#8eabc0]">
+          <p className="mt-3 text-[9px] text-[#8eabc0]">
             RAR extraction license details: <a href="/THIRD_PARTY_NOTICES.txt" target="_blank" rel="noreferrer" className="font-bold text-sky-300 underline decoration-sky-500/50 underline-offset-2">third-party notices</a>.
           </p>
         </div>
 
         <form onSubmit={runAnalysis} className="theme-maspo-train-checker-controls flex min-w-0 flex-col justify-between gap-5 rounded-xl border border-[#315978] bg-[linear-gradient(145deg,#062039,#03111d)] p-4 sm:p-5">
           <div>
-            <label htmlFor="maspo-train-query" className="text-[11px] font-black uppercase tracking-[0.18em] text-sky-200">Train set</label>
+            <label htmlFor="maspo-train-query" className="text-[10px] font-black uppercase tracking-[0.11em] text-sky-200">Train set</label>
             <div className="theme-maspo-train-checker-query relative mt-3 min-w-0">
               <span className="pointer-events-none absolute inset-y-0 left-0 flex w-14 items-center justify-center border-r border-[#315978] text-sky-300">
                 <Search className="h-5 w-5" />
@@ -298,7 +298,7 @@ export default function MaspoTrainMovementChecker() {
                   setAnalysis(null);
                 }}
                 placeholder="07 or TS07"
-                className="h-14 w-full min-w-0 rounded-xl border border-[#315978] bg-[#031522] pl-[4.25rem] pr-12 text-base font-black uppercase text-white outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20"
+                className="h-14 w-full min-w-0 rounded-xl border border-[#315978] bg-[#031522] pl-[4.25rem] pr-12 text-[13px] font-semibold uppercase text-white outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20"
               />
               {trainInput && (
                 <button type="button" onClick={clearTrainQuery} disabled={working} className="theme-maspo-train-checker-query-clear absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#86a9c2] transition-colors hover:text-red-300 disabled:opacity-50" aria-label="Clear train set">
@@ -306,14 +306,14 @@ export default function MaspoTrainMovementChecker() {
                 </button>
               )}
             </div>
-            <p id="maspo-train-query-help" className="mt-2 text-[10px] font-semibold text-[#91aec2]">
+            <p id="maspo-train-query-help" className="mt-2 text-[9px] font-semibold text-[#91aec2]">
               Search example: 07 &bull; 7 &bull; T07 &bull; TS07
             </p>
           </div>
           <button
             type="submit"
             disabled={working || !archiveFile || !normalizeMaspoTrainQuery(trainInput)}
-            className="theme-maspo-train-checker-submit inline-flex h-12 items-center justify-center gap-3 rounded-xl border border-cyan-400/65 bg-[linear-gradient(100deg,rgba(8,145,178,0.32),rgba(14,116,144,0.5))] px-4 text-sm font-black text-white transition-all hover:bg-cyan-500/35 disabled:cursor-not-allowed disabled:opacity-45"
+            className="theme-maspo-train-checker-submit inline-flex h-12 items-center justify-center gap-3 rounded-xl border border-cyan-400/65 bg-[linear-gradient(100deg,rgba(8,145,178,0.32),rgba(14,116,144,0.5))] px-4 text-[11px] font-semibold text-white transition-all hover:bg-cyan-500/35 disabled:cursor-not-allowed disabled:opacity-45"
           >
             {working ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
             {working ? "Checking logs..." : "Check movement"}
@@ -323,7 +323,7 @@ export default function MaspoTrainMovementChecker() {
 
       <div aria-live="polite" className="px-4 pb-4">
         {error && (
-          <div role="alert" className="theme-maspo-train-checker-error flex items-start gap-2 rounded-xl border border-amber-400/45 bg-amber-500/10 px-3 py-2.5 text-xs font-semibold text-amber-200">
+          <div role="alert" className="theme-maspo-train-checker-error flex items-start gap-2 rounded-xl border border-amber-400/45 bg-amber-500/10 px-3 py-2.5 text-[10px] font-semibold text-amber-200">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -338,14 +338,14 @@ export default function MaspoTrainMovementChecker() {
                 </span>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-lg font-black uppercase leading-tight tracking-tight text-white sm:text-xl">{analysis.train} Movement Check</h3>
+                    <h3 className="text-[15px] font-black uppercase leading-tight text-white">{analysis.train} Movement Check</h3>
                     {latest && (
-                      <span className={`rounded-md border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.1em] ${statusStyle(latest.status)}`}>
+                      <span className={`rounded-md border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.08em] ${statusStyle(latest.status)}`}>
                         {latest.status}
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 text-xs font-medium text-[#c2ccd4]">
+                  <p className="mt-0.5 text-[10px] font-semibold text-[#c2ccd4]">
                     {timeline.length} {timeline.length === 1 ? "movement" : "movements"} found
                   </p>
                 </div>
@@ -354,12 +354,12 @@ export default function MaspoTrainMovementChecker() {
                 <button
                   type="button"
                   onClick={copySummary}
-                  className="theme-maspo-train-checker-copy inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#2a3a45] bg-[#071018] px-3.5 text-xs font-bold text-white transition-colors hover:border-cyan-400/45 hover:bg-[#0a1821]"
+                  className="theme-maspo-train-checker-copy inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#2a3a45] bg-[#071018] px-3.5 text-[10px] font-semibold text-white transition-colors hover:border-cyan-400/45 hover:bg-[#0a1821]"
                 >
                   {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   {copied ? "Copied" : "Copy"}
                 </button>
-                <span className="theme-maspo-train-checker-chronological inline-flex h-9 items-center gap-2 rounded-lg border border-[#2a3a45] bg-[#071018] px-3.5 text-xs font-bold text-white">
+                <span className="theme-maspo-train-checker-chronological inline-flex h-9 items-center gap-2 rounded-lg border border-[#2a3a45] bg-[#071018] px-3.5 text-[10px] font-semibold text-white">
                   <ArrowUpDown className="h-4 w-4" /> Chronological
                 </span>
               </div>
@@ -370,29 +370,29 @@ export default function MaspoTrainMovementChecker() {
                 <section aria-labelledby="maspo-latest-movement-heading" className="theme-maspo-train-checker-latest mt-3 rounded-xl border border-[#24343f] bg-[linear-gradient(120deg,#07131b,#030a10)] p-3.5 shadow-none">
                   <div className="grid grid-cols-2 gap-y-4 lg:grid-cols-[minmax(160px,1fr)_minmax(125px,0.8fr)_minmax(115px,0.75fr)_minmax(190px,1.2fr)_minmax(95px,auto)_minmax(175px,1fr)] lg:items-center">
                     <div className="col-span-2 min-w-0 pr-3 lg:col-span-1">
-                      <p id="maspo-latest-movement-heading" className="text-[11px] font-black uppercase tracking-[0.08em] text-cyan-300">Latest Movement</p>
-                      <p className="mt-2 break-words text-xl font-black leading-none text-white">{latest.route || "Route not stated"}</p>
+                      <p id="maspo-latest-movement-heading" className="text-[10px] font-black uppercase tracking-[0.11em] text-cyan-300">Latest Movement</p>
+                      <p className="mt-2 break-words text-[15px] font-black leading-none text-white">{latest.route || "Route not stated"}</p>
                     </div>
                     <div className="theme-maspo-train-checker-latest-metric min-w-0 border-l border-[#24343f] px-3">
-                      <p className="flex items-center gap-2 text-xs font-bold text-white"><CalendarDays className="h-4 w-4 shrink-0 text-[#d5e0e8]" /> {latest.dateRangeDisplay || latest.dateDisplay || "Date not stated"}</p>
+                      <p className="flex items-center gap-2 text-[11px] font-semibold text-white"><CalendarDays className="h-4 w-4 shrink-0 text-[#d5e0e8]" /> {latest.dateRangeDisplay || latest.dateDisplay || "Date not stated"}</p>
                       <p className="mt-1.5 pl-6 text-[9px] font-bold uppercase tracking-[0.1em] text-[#8c9ba6]">Date</p>
                     </div>
                     <div className="theme-maspo-train-checker-latest-metric min-w-0 border-l border-[#24343f] px-3">
-                      <p className="flex items-center gap-2 text-xs font-bold text-white"><Clock3 className="h-4 w-4 shrink-0 text-[#d5e0e8]" /> {latest.timeRange || "Time not stated"}</p>
+                      <p className="flex items-center gap-2 text-[11px] font-semibold text-white"><Clock3 className="h-4 w-4 shrink-0 text-[#d5e0e8]" /> {latest.timeRange || "Time not stated"}</p>
                       <p className="mt-1.5 pl-6 text-[9px] font-bold uppercase tracking-[0.1em] text-[#8c9ba6]">Time</p>
                     </div>
                     <div className="theme-maspo-train-checker-latest-metric col-span-2 min-w-0 border-l border-[#24343f] px-3 lg:col-span-1">
-                      <p className="flex items-center gap-2 text-xs font-bold text-white"><MapPin className="h-4 w-4 shrink-0 text-[#d5e0e8]" /> <span className="break-words">{latest.areaDetail || "Area flow not stated"}</span></p>
+                      <p className="flex items-center gap-2 text-[11px] font-semibold text-white"><MapPin className="h-4 w-4 shrink-0 text-[#d5e0e8]" /> <span className="break-words">{latest.areaDetail || "Area flow not stated"}</span></p>
                       <p className="mt-1.5 pl-6 text-[9px] font-bold uppercase tracking-[0.1em] text-[#8c9ba6]">Area flow</p>
                     </div>
                     <div className="self-center text-center">
-                      <span className="inline-flex rounded-md border border-blue-500/55 bg-blue-950/65 px-2.5 py-1.5 text-[11px] font-bold text-blue-100">{latest.planStatus || "Plan not stated"}</span>
+                      <span className="inline-flex rounded-md border border-blue-500/55 bg-blue-950/65 px-2.5 py-1.5 text-[10px] font-semibold text-blue-100">{latest.planStatus || "Plan not stated"}</span>
                       <p className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.1em] text-[#8c9ba6]">Type</p>
                     </div>
                     <div className="theme-maspo-train-checker-reference col-span-2 flex min-w-0 items-center border-l border-[#24343f] pl-3 lg:col-span-1">
                       <div className="min-w-0 flex-1">
                         <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#8c9ba6]">Movement ref</p>
-                        <p className="mt-1.5 break-all font-mono text-xs font-bold text-cyan-300">{latest.reference}</p>
+                        <p className="mt-1.5 break-all font-mono text-[11px] font-semibold text-cyan-300">{latest.reference}</p>
                       </div>
                       <button type="button" onClick={() => copyReference(latest.reference)} className="theme-maspo-train-checker-ref-copy inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#2a3a45] bg-[#071018] text-[#d5e0e8] transition-colors hover:border-cyan-400/45 hover:text-cyan-200" aria-label={`Copy movement reference ${latest.reference}`}>
                         {copiedReference === latest.reference ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -420,16 +420,16 @@ export default function MaspoTrainMovementChecker() {
                         {timeline.map((record, index) => {
                           const sourceLabel = `${displaySourceName(record.fileName)} · ${record.sheetName} · Row ${record.rowNumber}`;
                           return (
-                            <tr key={record.id} title={`Source: ${sourceLabel}`} className="theme-maspo-train-checker-history-row border-t border-[#24343f] bg-[#030a10] text-xs text-white">
-                              <td className="border-r border-[#24343f] px-3 py-3.5 text-center"><span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-cyan-600 px-2 text-xs font-black text-white shadow-[0_0_12px_rgba(8,145,178,0.28)]">{String(index + 1).padStart(2, "0")}</span></td>
+                            <tr key={record.id} title={`Source: ${sourceLabel}`} className="theme-maspo-train-checker-history-row border-t border-[#24343f] bg-[#030a10] text-[11px] text-white">
+                              <td className="border-r border-[#24343f] px-3 py-3.5 text-center"><span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-cyan-600 px-2 text-[10px] font-black text-white shadow-[0_0_12px_rgba(8,145,178,0.28)]">{String(index + 1).padStart(2, "0")}</span></td>
                               <td className="whitespace-nowrap border-r border-[#24343f] px-3 py-3.5 font-medium"><span className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-[#d5e0e8]" />{record.dateRangeDisplay || record.dateDisplay || "Date not stated"}</span><span className="sr-only">Source: {sourceLabel}</span></td>
-                              <td className="border-r border-[#24343f] px-3 py-3.5 text-sm font-bold">{record.route || "Route not stated"}</td>
-                              <td className="border-r border-[#24343f] px-3 py-3.5 text-sm font-medium">{record.areaDetail || "Area flow not stated"}</td>
-                              <td className="border-r border-[#24343f] px-3 py-3.5"><span className="inline-flex rounded-md border border-emerald-700/65 bg-emerald-950/75 px-2.5 py-1.5 text-[11px] font-bold text-emerald-100">{record.planStatus || "Plan not stated"}</span></td>
+                              <td className="border-r border-[#24343f] px-3 py-3.5 font-semibold">{record.route || "Route not stated"}</td>
+                              <td className="border-r border-[#24343f] px-3 py-3.5 font-medium">{record.areaDetail || "Area flow not stated"}</td>
+                              <td className="border-r border-[#24343f] px-3 py-3.5"><span className="inline-flex rounded-md border border-emerald-700/65 bg-emerald-950/75 px-2.5 py-1.5 text-[10px] font-semibold text-emerald-100">{record.planStatus || "Plan not stated"}</span></td>
                               <td className="whitespace-nowrap border-r border-[#24343f] px-3 py-3.5 font-medium"><span className="flex items-center gap-2"><Clock3 className="h-4 w-4 text-[#d5e0e8]" />{record.timeRange || "Time not stated"}</span></td>
                               <td className="px-3 py-3.5">
                                 <div className="flex items-center justify-between gap-3">
-                                  <span className="break-all font-mono text-xs font-medium text-cyan-300">{record.reference}</span>
+                                  <span className="break-all font-mono text-[11px] font-medium text-cyan-300">{record.reference}</span>
                                   <button type="button" onClick={() => copyReference(record.reference)} className="theme-maspo-train-checker-ref-copy inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#2a3a45] bg-[#071018] text-[#d5e0e8] transition-colors hover:border-cyan-400/45 hover:text-cyan-200" aria-label={`Copy movement reference ${record.reference}`}>
                                     {copiedReference === record.reference ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                                   </button>
@@ -443,7 +443,7 @@ export default function MaspoTrainMovementChecker() {
                   </div>
                 </section>
 
-                <div className="theme-maspo-train-checker-note mt-3 flex items-start gap-3 rounded-xl border border-[#24343f] bg-[#030a10] px-4 py-3 text-xs leading-relaxed text-[#c2ccd4]">
+                <div className="theme-maspo-train-checker-note mt-3 flex items-start gap-3 rounded-xl border border-[#24343f] bg-[#030a10] px-4 py-3 text-[10px] leading-relaxed text-[#c2ccd4]">
                   <Info className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400" />
                   <p><span className="font-black text-white">Note:</span> Results prioritize detailed MASPO movement entries. Handover logs may provide supporting status but do not replace a matched movement reference.</p>
                 </div>
@@ -451,8 +451,8 @@ export default function MaspoTrainMovementChecker() {
             ) : (
               <div className="flex min-h-28 flex-col items-center justify-center gap-2 px-4 py-6 text-center">
                 <FileSpreadsheet className="h-6 w-6 text-[#6689a3]" />
-                <p className="text-xs font-bold text-[#9eb5ca]">No matching MASPO movement record was found.</p>
-                <p className="text-[10px] text-[#6f91aa]">{analysis.parsedWorkbookCount} Excel workbooks and {analysis.sheetsScanned} worksheets were checked.</p>
+                <p className="text-[11px] font-semibold text-[#9eb5ca]">No matching MASPO movement record was found.</p>
+                <p className="text-[9px] text-[#6f91aa]">{analysis.parsedWorkbookCount} Excel workbooks and {analysis.sheetsScanned} worksheets were checked.</p>
               </div>
             )}
 
