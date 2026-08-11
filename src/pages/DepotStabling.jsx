@@ -8715,7 +8715,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
     return (
       <div className="theme-train-rem-depot-card relative overflow-visible rounded-xl border border-[#2b4f6b] bg-[#071828] shadow-md">
-        <div className="theme-train-rem-header theme-train-rem-toolbar relative z-30 rounded-t-xl border-b border-[#1a3a56] px-2 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
+        <div
+          className={`theme-train-rem-header theme-train-rem-toolbar relative ${pdfMenuOpen ? "z-[120]" : "z-30"} rounded-t-xl border-b border-[#1a3a56] px-2 py-2`}
+          style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}
+        >
           <div className="flex items-start justify-between gap-2">
             <div>
               {depot !== "west" && <div className="text-[10px] font-normal text-white uppercase tracking-widest">{title}</div>}
