@@ -13959,8 +13959,10 @@ function TrainMovementContent() {
     <div className="theme-train-movement-page grid w-full gap-3 xl:grid-cols-2">
       {renderTp1MovementWindow("automatic")}
       {renderTp1MovementWindow("manual")}
-      <div className="col-span-full min-w-0">
-        <MaspoTrainMovementChecker />
+      <div className="col-span-full flex min-w-0 justify-center px-0 sm:px-3 xl:px-6">
+        <div className="w-full min-w-0 max-w-[1180px]">
+          <MaspoTrainMovementChecker />
+        </div>
       </div>
     </div>
   );
