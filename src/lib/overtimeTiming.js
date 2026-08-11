@@ -39,41 +39,43 @@ function firstValidTime(values = []) {
 }
 
 export function resolveRecordTiming(record = {}, fallback = {}) {
+  const source = record && typeof record === "object" ? record : {};
+  const fallbackSource = fallback && typeof fallback === "object" ? fallback : {};
   const rangeCandidates = [
-    record.timing,
-    record.time,
-    record.timeRange,
-    record.time_range,
-    record.dutyTime,
-    record.duty_time,
-    record.shiftTime,
-    record.shift_time,
-    record.startTime,
-    record.start_time,
+    source.timing,
+    source.time,
+    source.timeRange,
+    source.time_range,
+    source.dutyTime,
+    source.duty_time,
+    source.shiftTime,
+    source.shift_time,
+    source.startTime,
+    source.start_time,
   ];
   const storedRange = rangeCandidates
     .map(parseStoredTimingRange)
     .find(Boolean);
 
   const startTime = firstValidTime([
-    record.startTime,
-    record.start_time,
-    record.start,
-    record.timeStart,
-    record.time_start,
+    source.startTime,
+    source.start_time,
+    source.start,
+    source.timeStart,
+    source.time_start,
     storedRange?.startTime,
-    fallback.startTime,
-    fallback.start_time,
+    fallbackSource.startTime,
+    fallbackSource.start_time,
   ]);
   const endTime = firstValidTime([
-    record.endTime,
-    record.end_time,
-    record.end,
-    record.timeEnd,
-    record.time_end,
+    source.endTime,
+    source.end_time,
+    source.end,
+    source.timeEnd,
+    source.time_end,
     storedRange?.endTime,
-    fallback.endTime,
-    fallback.end_time,
+    fallbackSource.endTime,
+    fallbackSource.end_time,
   ]);
 
   return { startTime, endTime };
