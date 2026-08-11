@@ -23,7 +23,7 @@ const deployedNotices = readFileSync(
   "utf8",
 );
 
-test("MASPO checker is full-width below Automatic and Manual movement windows", () => {
+test("MASPO checker is centered below Automatic and Manual movement windows", () => {
   const automaticIndex = depotStablingSource.indexOf('renderTp1MovementWindow("automatic")');
   const manualIndex = depotStablingSource.indexOf('renderTp1MovementWindow("manual")', automaticIndex);
   const checkerIndex = depotStablingSource.indexOf("<MaspoTrainMovementChecker />", manualIndex);
@@ -32,8 +32,8 @@ test("MASPO checker is full-width below Automatic and Manual movement windows", 
   assert.ok(manualIndex > automaticIndex, "Manual Area Movement should follow Automatic Area Movement");
   assert.ok(checkerIndex > manualIndex, "MASPO checker should follow both movement windows");
   assert.match(
-    depotStablingSource.slice(manualIndex, checkerIndex + 80),
-    /col-span-full min-w-0[\s\S]*?<MaspoTrainMovementChecker \/>/,
+    depotStablingSource.slice(manualIndex, checkerIndex + 120),
+    /col-span-full flex min-w-0 justify-center[\s\S]*?w-full min-w-0 max-w-\[1180px\][\s\S]*?<MaspoTrainMovementChecker \/>/,
   );
 });
 
