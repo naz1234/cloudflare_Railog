@@ -77,16 +77,32 @@ test("TC 12am output keeps West TID 122 and 123 at their raw timetable times", (
   assert.deepEqual(result.entries.map((entry) => entry.time), ["00:03", "00:09"]);
 });
 
-test("TC log replaces Removal Summary timing instead of falling back to it", () => {
+test("TC log replaces Removal Summary timing and clears all remarks", () => {
   const result = buildTcRemovalPdfLog({
     entries: [
-      { trainId: "18", tid: "212", time: "10:44", remark: "Wash" },
-      { trainId: "04", tid: "214", time: "10:45", remark: "PM" },
+      {
+        trainId: "18",
+        tid: "212",
+        time: "10:44",
+        remark: "Wash",
+        remarkPills: [{ text: "Wash", fill: "#bbf7d0" }],
+        remarkFill: "#bbf7d0",
+      },
+      {
+        trainId: "04",
+        tid: "214",
+        time: "10:45",
+        remark: "PM",
+        remarkPills: [{ text: "PM", fill: "#f0abfc" }],
+        remarkFill: "#f0abfc",
+      },
     ],
   }, activeTimetable, "west", "9am");
 
   assert.deepEqual(result.entries.map((entry) => entry.time), ["09:03", "09:09"]);
-  assert.deepEqual(result.entries.map((entry) => entry.remark), ["Wash", "PM"]);
+  assert.deepEqual(result.entries.map((entry) => entry.remark), ["", ""]);
+  assert.deepEqual(result.entries.map((entry) => entry.remarkPills), [[], []]);
+  assert.deepEqual(result.entries.map((entry) => entry.remarkFill), ["", ""]);
 });
 
 test("TC log leaves time blank when the TID is not in the active timetable", () => {
