@@ -352,7 +352,7 @@ export function normalizeMaspoTrainQuery(value = "") {
   return {
     number,
     digits: String(number),
-    label: `T${number}`,
+    label: `T${String(number).padStart(2, "0")}`,
   };
 }
 

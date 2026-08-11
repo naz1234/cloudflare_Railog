@@ -28,7 +28,7 @@ test("treats two-digit and prefixed values as the same train set", () => {
   const trainSeven = {
     number: 7,
     digits: "7",
-    label: "T7",
+    label: "T07",
   };
 
   ["07", "7", "T07", "TS07"].forEach((value) => {
@@ -316,6 +316,8 @@ test("rejects another train's detailed row when its narrative reuses the queried
   assert.equal(analysis.latest.reference, "MASPO-070826-11");
 
   const output = formatMaspoMovementSummary(analysis);
+  assert.equal(analysis.train, "T07");
+  assert.match(output, /^T07 movement check/);
   assert.doesNotMatch(output, /Route not stated/);
   assert.doesNotMatch(output, /MASPO-(?:050826-12|060826-12|090826-07)/);
 });
