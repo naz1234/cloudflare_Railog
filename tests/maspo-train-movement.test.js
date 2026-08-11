@@ -245,6 +245,81 @@ test("ignores train faults and never borrows another train's route or completion
   assert.equal(targetDetail.status, "Movement logged");
 });
 
+test("rejects another train's detailed row when its narrative reuses the queried train", () => {
+  const analysis = analyzeMaspoMovementSources([{
+    fileName: "Line 3 MASPO E-log_August.xlsx",
+    sheets: [{
+      sheetName: "QUA-FO-00035",
+      rows: [
+        ["OCC Reference Number", "Time", "Location", "Category", "Summary"],
+        [
+          "MASPO-050826-12",
+          "2105H",
+          "MACR",
+          "Shunting (G to C7) TS09 Planned",
+          "2113H - Route set from TP1 to the manual area for T07.\n2128H - Movement completed for TS09.",
+        ],
+        [
+          "MASPO-060826-11",
+          "2049H",
+          "MACR",
+          "Shunting (G to C7) TS07 Planned",
+          "2049H - TS07 handed over at TP1.\n2112H - SCD removed and the manual yard area is clear.",
+        ],
+        [
+          "MASPO-060826-12",
+          "2208H",
+          "MACR",
+          "Shunting (G to C7) TS06 Planned",
+          "2217H - Route set from TP1 to the manual area for T07.\n2236H - Movement completed for TS06.",
+        ],
+        [
+          "MASPO-060826-13",
+          "2330H",
+          "MACR",
+          "Handover",
+          "Completed Movements:\n- TS07 G to C7 (Planned)",
+        ],
+        [
+          "MASPO-070826-10",
+          "2217H",
+          "MACR",
+          "Shunting (C07 to G) TS07 Unplanned",
+          "2217H - Movement authorized for TS07.\n2240H - Informed DC and EFC movement completed for TS07.",
+        ],
+        [
+          "MASPO-070826-11",
+          "2300H",
+          "MACR",
+          "Handover",
+          "Completed Movements:\n- TS07 C7 to G (Unplanned)",
+        ],
+        [
+          "MASPO-090826-07",
+          "1133H",
+          "MACR",
+          "TS33 Shuting G to C7 Planned",
+          "1138H - Route set from TP1 to the manual area for T7.\n1154H - Movement completed for TS33.",
+        ],
+      ],
+    }],
+  }], "T7");
+
+  assert.deepEqual(
+    analysis.records.map((record) => record.reference),
+    ["MASPO-060826-11", "MASPO-060826-13", "MASPO-070826-10", "MASPO-070826-11"],
+  );
+  assert.deepEqual(
+    analysis.timeline.map((record) => record.reference),
+    ["MASPO-060826-11", "MASPO-070826-10"],
+  );
+  assert.equal(analysis.latest.reference, "MASPO-070826-11");
+
+  const output = formatMaspoMovementSummary(analysis);
+  assert.doesNotMatch(output, /Route not stated/);
+  assert.doesNotMatch(output, /MASPO-(?:050826-12|060826-12|090826-07)/);
+});
+
 test("prefers the mapped reference and resets rollover when the reference date advances", () => {
   const analysis = analyzeMaspoMovementSources([{
     fileName: "renamed.xlsx",

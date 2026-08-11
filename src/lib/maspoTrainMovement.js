@@ -389,6 +389,8 @@ export function scanMaspoSheetRows({
 
     const category = findCategory(cells, headerMap);
     const summary = findSummary(cells, headerMap, reference, category);
+    const categoryHasNamedTrain = new RegExp(ANY_TRAIN_SOURCE, "i").test(category);
+    if (categoryHasNamedTrain && !trainPattern.test(category)) return;
     const combinedText = `${category}\n${summary}`;
     const detailed = isDetailedMovement(category, combinedText, trainPattern);
     const summaryCandidates = getTargetLineCandidates(summary, trainPattern);
