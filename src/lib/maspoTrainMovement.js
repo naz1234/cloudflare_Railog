@@ -563,7 +563,7 @@ export function analyzeMaspoMovementSources(sources = [], trainQuery = "") {
   const timeline = timelineRecords.map((record) => {
     return corroboratedDetails.has(record.id) ? { ...record, status: "Completed" } : record;
   });
-  const latest = records.at(-1) || null;
+  const latest = timeline.at(-1) || records.at(-1) || null;
 
   return {
     train: normalizedTrain.label,

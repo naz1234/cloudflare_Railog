@@ -162,7 +162,7 @@ test("reconstructs T27 inbound and overnight outbound movements with MASPO refer
   assert.equal(outbound.timeRange, "0059H–0140H");
   assert.equal(outbound.planStatus, "Unplanned");
 
-  assert.equal(analysis.latest.reference, "MASPO-080826-01");
+  assert.equal(analysis.latest.reference, "MASPO-070826-14");
   assert.equal(analysis.latest.status, "Completed");
 });
 
@@ -313,11 +313,12 @@ test("rejects another train's detailed row when its narrative reuses the queried
     analysis.timeline.map((record) => record.reference),
     ["MASPO-060826-11", "MASPO-070826-10"],
   );
-  assert.equal(analysis.latest.reference, "MASPO-070826-11");
+  assert.equal(analysis.latest.reference, "MASPO-070826-10");
 
   const output = formatMaspoMovementSummary(analysis);
   assert.equal(analysis.train, "T07");
   assert.match(output, /^T07 movement check/);
+  assert.match(output, /Latest status:[^\n]*Ref: MASPO-070826-10/);
   assert.doesNotMatch(output, /Route not stated/);
   assert.doesNotMatch(output, /MASPO-(?:050826-12|060826-12|090826-07)/);
 });
