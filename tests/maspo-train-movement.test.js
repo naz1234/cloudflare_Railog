@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   analyzeMaspoMovementSources,
   buildMaspoTrainPattern,
+  describeMaspoAreaFlow,
   formatMaspoMovementSummary,
   isSupportedMaspoSpreadsheet,
   normalizeMaspoTrainQuery,
@@ -28,6 +29,12 @@ test("accepts current Excel formats and rejects unrelated files", () => {
   assert.equal(isSupportedMaspoSpreadsheet("logs/book.XLSM"), true);
   assert.equal(isSupportedMaspoSpreadsheet("logs/book.xlsb"), true);
   assert.equal(isSupportedMaspoSpreadsheet("notes.csv"), false);
+});
+
+test("describes G and C directions using the requested operational areas", () => {
+  assert.equal(describeMaspoAreaFlow("G", "C4"), "Automatic area → Workshop");
+  assert.equal(describeMaspoAreaFlow("C10", "G"), "Manual area → Automatic area");
+  assert.equal(describeMaspoAreaFlow("C4", "C7"), "");
 });
 
 test("finds pending T31 records when workbook names, sheet names, and columns differ", () => {
@@ -60,7 +67,8 @@ test("finds pending T31 records when workbook names, sheet names, and columns di
   assert.equal(analysis.timeline.length, 2);
   assert.equal(analysis.latest.reference, "MASPO-080826-02");
   assert.equal(analysis.latest.status, "Pending");
-  assert.equal(analysis.latest.route, "G/TP1 → C10");
+  assert.equal(analysis.latest.route, "G → C10");
+  assert.equal(analysis.latest.areaDetail, "Automatic area → Workshop");
   assert.equal(analysis.latest.planStatus, "Planned");
 });
 
@@ -126,14 +134,16 @@ test("reconstructs T27 inbound and overnight outbound movements with MASPO refer
 
   const inbound = analysis.timeline[0];
   assert.equal(inbound.reference, "MASPO-070826-05");
-  assert.equal(inbound.route, "G/TP1 → C4");
+  assert.equal(inbound.route, "G → C4");
+  assert.equal(inbound.areaDetail, "Automatic area → Workshop");
   assert.equal(inbound.status, "Completed");
   assert.equal(inbound.timeRange, "1119H–1140H");
   assert.equal(inbound.planStatus, "Planned");
 
   const outbound = analysis.timeline[1];
   assert.equal(outbound.reference, "MASPO-070826-14");
-  assert.equal(outbound.route, "C4 → G/TP1");
+  assert.equal(outbound.route, "C4 → G");
+  assert.equal(outbound.areaDetail, "Manual area → Automatic area");
   assert.equal(outbound.status, "Completed");
   assert.equal(outbound.date, "2026-08-08");
   assert.equal(outbound.timeRange, "0059H–0140H");
@@ -161,7 +171,9 @@ test("formatted output includes MASPO refs and never includes authority-to-proce
   }], "T27");
 
   const output = formatMaspoMovementSummary(analysis);
+  assert.match(output, /C4 → G — Manual area → Automatic area/);
   assert.match(output, /Ref: MASPO-070826-14/);
+  assert.doesNotMatch(output, /G\/TP1/);
   assert.doesNotMatch(output, /authority to proceed/i);
   assert.doesNotMatch(output, /MA1001/i);
 });
@@ -270,12 +282,12 @@ test("keeps status and route paired when one row has completed and pending secti
   assert.equal(analysis.records.length, 2);
   assert.deepEqual(
     analysis.records.map((record) => [record.route, record.status]),
-    [["G/TP1 → C4", "Completed"], ["C4 → G/TP1", "Pending"]],
+    [["G → C4", "Completed"], ["C4 → G", "Pending"]],
   );
   assert.equal(analysis.latest.status, "Pending");
 });
 
-test("preserves an overnight time span, canonicalizes TP1, and sorts by the row event time", () => {
+test("preserves an overnight time span, displays TP1 as G, and sorts by the row event time", () => {
   const analysis = analyzeMaspoMovementSources([{
     fileName: "overnight.xlsx",
     sheets: [{
@@ -305,7 +317,8 @@ test("preserves an overnight time span, canonicalizes TP1, and sorts by the row 
   }], "T27");
 
   const overnight = analysis.records.find((record) => record.reference === "MASPO-070826-10");
-  assert.equal(overnight.route, "G/TP1 → C4");
+  assert.equal(overnight.route, "G → C4");
+  assert.equal(overnight.areaDetail, "Automatic area → Workshop");
   assert.equal(overnight.timeRange, "2355H–0010H");
   assert.equal(overnight.date, "2026-08-07");
   assert.equal(overnight.endDate, "2026-08-08");

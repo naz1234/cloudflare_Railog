@@ -54,6 +54,8 @@ test("movement results use one chronological vertical flow", () => {
   assert.match(checkerSource, /aria-current=\{isLatestMovement \? "step" : undefined\}/);
   assert.match(checkerSource, /theme-maspo-train-checker-flow-node/);
   assert.match(checkerSource, /theme-maspo-train-checker-flow-record/);
+  assert.match(checkerSource, /Area flow/);
+  assert.match(checkerSource, /record\.areaDetail/);
   assert.match(checkerSource, />Latest<\/span>/);
   assert.doesNotMatch(checkerSource, /md:grid-cols-2/);
 
@@ -84,6 +86,7 @@ test("MASPO checker has scoped light-theme surfaces and primary actions", () => 
   assert.match(themeStyles, /\.theme-maspo-train-checker-record/);
   assert.match(themeStyles, /\.theme-maspo-train-checker-flow-node\.is-latest/);
   assert.match(themeStyles, /\.theme-maspo-train-checker-flow-record\.is-latest/);
+  assert.match(themeStyles, /\.theme-maspo-train-checker-area-detail/);
   assert.match(themeStyles, /\.theme-maspo-train-checker input:focus-visible/);
 });
 
