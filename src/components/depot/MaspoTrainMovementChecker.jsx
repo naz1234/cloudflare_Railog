@@ -3,6 +3,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
   AlertCircle,
   Archive,
+  CalendarDays,
   CheckCircle2,
   CircleHelp,
   Clock3,
@@ -315,37 +316,84 @@ export default function MaspoTrainMovementChecker() {
             </div>
 
             {timeline.length ? (
-              <div className="grid gap-2 p-3 md:grid-cols-2">
-                {timeline.map((record) => (
-                  <article key={record.id} className="theme-maspo-train-checker-record min-w-0 rounded-xl border border-[#284b66] bg-[#051a2a] p-3">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="break-words text-sm font-black text-white">{record.route || "Route not stated"}</p>
-                        <p className="mt-1 text-[10px] font-semibold text-[#9eb5ca]">
-                          {[record.dateRangeDisplay || record.dateDisplay, record.timeRange, record.planStatus].filter(Boolean).join(" · ") || "Date and time not stated"}
-                        </p>
-                      </div>
-                      <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-black ${statusStyle(record.status)}`}>
-                        {record.status}
-                      </span>
-                    </div>
-
-                    <div className="theme-maspo-train-checker-reference mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#315978] bg-[#041522] px-3 py-2">
-                      <div>
-                        <p className="text-[8px] font-black uppercase tracking-[0.12em] text-sky-300">Reference number</p>
-                        <p className="mt-0.5 font-mono text-xs font-black text-white">{record.reference}</p>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[9px] font-semibold text-[#86a9c2]">
-                        <Clock3 className="h-3 w-3" /> Row {record.rowNumber}
-                      </div>
-                    </div>
-
-                    <p className="mt-2 flex min-w-0 items-center gap-1.5 truncate text-[9px] text-[#7899b1]" title={`${record.fileName} · ${record.sheetName}`}>
-                      <FileSpreadsheet className="h-3 w-3 shrink-0" />
-                      <span className="truncate">{displaySourceName(record.fileName)} · {record.sheetName}</span>
+              <div className="theme-maspo-train-checker-flow p-3">
+                <div className="mb-3 flex flex-wrap items-end justify-between gap-2 px-1">
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.12em] text-sky-100">Movement flow</p>
+                    <p className="mt-0.5 text-[9px] font-semibold text-[#7899b1]">
+                      {timeline.length} {timeline.length === 1 ? "record" : "records"} · Oldest to latest
                     </p>
-                  </article>
-                ))}
+                  </div>
+                  <span className="rounded-full border border-sky-400/35 bg-sky-500/10 px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.1em] text-sky-200">
+                    Chronological
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <span aria-hidden="true" className="theme-maspo-train-checker-flow-line absolute bottom-5 left-[15px] top-5 w-px bg-sky-400/45 sm:left-[17px]" />
+                  <ol className="space-y-2" aria-label={`Chronological movement history for ${analysis.train}`}>
+                    {timeline.map((record, index) => {
+                      const isLatestMovement = index === timeline.length - 1;
+                      const displayDate = record.dateRangeDisplay || record.dateDisplay || "Date not stated";
+                      return (
+                        <li
+                          key={record.id}
+                          aria-current={isLatestMovement ? "step" : undefined}
+                          aria-label={`Movement ${index + 1} of ${timeline.length}`}
+                          className="relative pl-10 sm:pl-12"
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={`theme-maspo-train-checker-flow-node absolute left-0 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border text-[10px] font-black sm:h-9 sm:w-9 ${isLatestMovement ? "is-latest border-cyan-200 bg-cyan-400 text-[#032033] shadow-[0_0_18px_rgba(34,211,238,0.7)]" : "border-sky-400/65 bg-[#071e33] text-sky-100"}`}
+                          >
+                            {index + 1}
+                          </span>
+
+                          <article className={`theme-maspo-train-checker-record theme-maspo-train-checker-flow-record min-w-0 rounded-xl border bg-[#051a2a] p-3 ${isLatestMovement ? "is-latest border-cyan-300/70 shadow-[0_0_18px_rgba(34,211,238,0.12)]" : "border-[#284b66]"}`}>
+                            <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(175px,0.8fr)_minmax(220px,1.35fr)_minmax(170px,0.9fr)_auto] lg:items-center">
+                              <div className="min-w-0">
+                                <p className="flex items-center gap-1.5 text-[10px] font-black text-sky-100">
+                                  <CalendarDays className="h-3.5 w-3.5 shrink-0 text-sky-300" />
+                                  <span className="break-words">{displayDate}</span>
+                                </p>
+                                <p className="mt-1 pl-5 text-[10px] font-semibold text-[#9eb5ca]">{record.timeRange || "Time not stated"}</p>
+                              </div>
+
+                              <div className="min-w-0">
+                                <p className="break-words text-sm font-black text-white">{record.route || "Route not stated"}</p>
+                                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                  <span className="text-[9px] font-semibold text-[#9eb5ca]">{record.planStatus || "Plan not stated"}</span>
+                                  {isLatestMovement && (
+                                    <span className="rounded-full border border-cyan-300/55 bg-cyan-400/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.1em] text-cyan-200">Latest</span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="theme-maspo-train-checker-reference min-w-0 rounded-lg border border-[#315978] bg-[#041522] px-3 py-2">
+                                <p className="text-[8px] font-black uppercase tracking-[0.12em] text-sky-300">Reference number</p>
+                                <p className="mt-0.5 break-all font-mono text-xs font-black text-white">{record.reference}</p>
+                              </div>
+
+                              <span className={`w-fit shrink-0 rounded-full border px-2.5 py-0.5 text-[9px] font-black lg:justify-self-end ${statusStyle(record.status)}`}>
+                                {record.status}
+                              </span>
+                            </div>
+
+                            <div className="mt-2 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-[#23445f] pt-2 text-[9px] text-[#7899b1]">
+                              <p className="flex min-w-0 items-center gap-1.5" title={`${record.fileName} · ${record.sheetName}`}>
+                                <FileSpreadsheet className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{displaySourceName(record.fileName)} · {record.sheetName}</span>
+                              </p>
+                              <p className="flex shrink-0 items-center gap-1.5 font-semibold text-[#86a9c2]">
+                                <Clock3 className="h-3 w-3" /> Row {record.rowNumber}
+                              </p>
+                            </div>
+                          </article>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
               </div>
             ) : (
               <div className="flex min-h-28 flex-col items-center justify-center gap-2 px-4 py-6 text-center">

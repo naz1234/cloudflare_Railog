@@ -10587,6 +10587,29 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-check
   border-color: #d69e2e !important;
 }
 
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-flow-line {
+  background: #75a9c9 !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-flow-node {
+  color: #075985 !important;
+  background: #eef8fd !important;
+  border-color: #4f96bd !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-flow-node.is-latest {
+  color: #ffffff !important;
+  background: #0891b2 !important;
+  border-color: #0e7490 !important;
+  box-shadow: 0 0 18px rgba(8, 145, 178, 0.38) !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-flow-record.is-latest {
+  background: #f0fbff !important;
+  border-color: #0891b2 !important;
+  box-shadow: 0 0 18px rgba(8, 145, 178, 0.16) !important;
+}
+
 html[data-app-theme="light"] .theme-maspo-download-guide {
   color: #172b3f !important;
   background: #eaf5fb !important;

@@ -45,6 +45,25 @@ test("checker exposes RAR, ZIP, and Excel upload with the requested title", () =
   assert.doesNotMatch(checkerSource, /authority to proceed/i);
 });
 
+test("movement results use one chronological vertical flow", () => {
+  assert.match(checkerSource, /Movement flow/);
+  assert.match(checkerSource, /Oldest to latest/);
+  assert.match(checkerSource, /<ol className="space-y-2" aria-label=\{`Chronological movement history/);
+  assert.match(checkerSource, /timeline\.map\(\(record, index\)/);
+  assert.match(checkerSource, /index === timeline\.length - 1/);
+  assert.match(checkerSource, /aria-current=\{isLatestMovement \? "step" : undefined\}/);
+  assert.match(checkerSource, /theme-maspo-train-checker-flow-node/);
+  assert.match(checkerSource, /theme-maspo-train-checker-flow-record/);
+  assert.match(checkerSource, />Latest<\/span>/);
+  assert.doesNotMatch(checkerSource, /md:grid-cols-2/);
+
+  const flowIndex = checkerSource.indexOf("Movement flow");
+  const flowSource = checkerSource.slice(flowIndex);
+  assert.ok(flowSource.indexOf("displayDate") < flowSource.indexOf("record.route"));
+  assert.ok(flowSource.indexOf("record.route") < flowSource.indexOf("Reference number"));
+  assert.ok(flowSource.indexOf("Reference number") < flowSource.indexOf("record.status"));
+});
+
 test("archive reader lazy-loads raw RAR extraction and applies size limits", () => {
   assert.match(archiveReaderSource, /await import\("unrarit"\)/);
   assert.match(archiveReaderSource, /unrarRaw\(bytes\)/);
@@ -63,6 +82,8 @@ test("MASPO checker has scoped light-theme surfaces and primary actions", () => 
   assert.match(themeStyles, /\.theme-maspo-train-checker-submit/);
   assert.match(themeStyles, /\.theme-maspo-train-checker-copy/);
   assert.match(themeStyles, /\.theme-maspo-train-checker-record/);
+  assert.match(themeStyles, /\.theme-maspo-train-checker-flow-node\.is-latest/);
+  assert.match(themeStyles, /\.theme-maspo-train-checker-flow-record\.is-latest/);
   assert.match(themeStyles, /\.theme-maspo-train-checker input:focus-visible/);
 });
 
