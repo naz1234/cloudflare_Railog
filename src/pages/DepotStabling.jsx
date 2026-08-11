@@ -13960,7 +13960,7 @@ function TrainMovementContent() {
       {renderTp1MovementWindow("automatic")}
       {renderTp1MovementWindow("manual")}
       <div className="col-span-full flex min-w-0 justify-center">
-        <div className="w-full min-w-0 xl:w-[calc(50%-0.375rem)]">
+        <div className="w-full min-w-0 xl:w-[650px]">
           <MaspoTrainMovementChecker />
         </div>
       </div>
