@@ -47,3 +47,13 @@ test('invalid edit placeholders preserve the last saved timing', () => {
     endTime: '03:00',
   });
 });
+
+test('new duty records use the default timing when there is no existing record', () => {
+  assert.deepEqual(resolveRecordTiming(null, {
+    startTime: '07:00',
+    endTime: '15:30',
+  }), {
+    startTime: '07:00',
+    endTime: '15:30',
+  });
+});
