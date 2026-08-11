@@ -33,7 +33,7 @@ test("MASPO checker is centered below Automatic and Manual movement windows", ()
   assert.ok(checkerIndex > manualIndex, "MASPO checker should follow both movement windows");
   assert.match(
     depotStablingSource.slice(manualIndex, checkerIndex + 120),
-    /col-span-full flex min-w-0 justify-center[\s\S]*?w-full min-w-0 xl:w-\[650px\][\s\S]*?<MaspoTrainMovementChecker \/>/,
+    /col-span-full flex min-w-0 justify-center[\s\S]*?w-full min-w-0 max-w-\[980px\][\s\S]*?<MaspoTrainMovementChecker \/>/,
   );
 });
 
@@ -77,10 +77,10 @@ test("movement results use the reference-inspired latest card and chronological 
   assert.match(checkerSource, /copyReference\(latest\.reference\)/);
   assert.match(checkerSource, />Movement History<\/h4>/);
   assert.match(checkerSource, /<table[\s\S]*?aria-label=\{`Chronological movement history/);
-  assert.match(checkerSource, /min-w-\[1040px\]/);
-  assert.match(checkerSource, /sm:text-\[30px\]/);
-  assert.match(checkerSource, /h-\[72px\] w-\[72px\]/);
-  assert.match(checkerSource, /px-5 py-6 text-center/);
+  assert.match(checkerSource, /min-w-\[880px\]/);
+  assert.match(checkerSource, /sm:text-xl/);
+  assert.match(checkerSource, /h-12 w-12/);
+  assert.match(checkerSource, /px-3 py-3\.5 text-center/);
   assert.match(checkerSource, /border-r border-\[#24343f\]/);
   assert.match(checkerSource, /timeline\.map\(\(record, index\) =>/);
   assert.match(checkerSource, /String\(index \+ 1\)\.padStart\(2, "0"\)/);
