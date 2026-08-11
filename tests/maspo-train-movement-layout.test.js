@@ -41,7 +41,7 @@ test("checker exposes RAR, ZIP, and Excel upload with the requested title", () =
   assert.match(checkerSource, /Check Train Maspo TR movement/);
   assert.match(checkerSource, /accept="\.zip,\.rar,\.xlsx,\.xls,\.xlsm,\.xlsb/);
   assert.match(checkerSource, /Files are analyzed in this browser and are not saved/);
-  assert.match(checkerSource, /Reference number/);
+  assert.match(checkerSource, /Movement ref/);
   assert.doesNotMatch(checkerSource, /authority to proceed/i);
 });
 
@@ -52,27 +52,25 @@ test("train-set control explains equivalent 07 input formats", () => {
   assert.doesNotMatch(checkerSource, /Same train set:[^\n]*707/);
 });
 
-test("movement results use one chronological vertical flow", () => {
+test("movement results use the reference-inspired latest card and chronological history table", () => {
   assert.match(checkerSource, /\{analysis\.train\} Movement Check/);
-  assert.match(checkerSource, /Latest Movement:/);
-  assert.match(checkerSource, /Movement flow/);
-  assert.match(checkerSource, /Oldest to latest/);
-  assert.match(checkerSource, /<ol className="space-y-2" aria-label=\{`Chronological movement history/);
+  assert.match(checkerSource, /id="maspo-latest-movement-heading"/);
+  assert.match(checkerSource, /theme-maspo-train-checker-latest/);
+  assert.match(checkerSource, /latest\.dateRangeDisplay/);
+  assert.match(checkerSource, /latest\.timeRange/);
+  assert.match(checkerSource, /latest\.areaDetail/);
+  assert.match(checkerSource, /latest\.planStatus/);
+  assert.match(checkerSource, /copyReference\(latest\.reference\)/);
+  assert.match(checkerSource, />Movement History<\/h4>/);
+  assert.match(checkerSource, /Oldest → Latest/);
+  assert.match(checkerSource, /<table[\s\S]*?aria-label=\{`Chronological movement history/);
+  assert.match(checkerSource, /min-w-\[1040px\]/);
   assert.match(checkerSource, /timeline\.map\(\(record, index\)/);
-  assert.match(checkerSource, /index === timeline\.length - 1/);
-  assert.match(checkerSource, /aria-current=\{isLatestMovement \? "step" : undefined\}/);
-  assert.match(checkerSource, /theme-maspo-train-checker-flow-node/);
-  assert.match(checkerSource, /theme-maspo-train-checker-flow-record/);
-  assert.match(checkerSource, /Area flow/);
-  assert.match(checkerSource, /record\.areaDetail/);
-  assert.match(checkerSource, />Latest<\/span>/);
-  assert.doesNotMatch(checkerSource, /md:grid-cols-2/);
-
-  const flowIndex = checkerSource.indexOf("Movement flow");
-  const flowSource = checkerSource.slice(flowIndex);
-  assert.ok(flowSource.indexOf("displayDate") < flowSource.indexOf("record.route"));
-  assert.ok(flowSource.indexOf("record.route") < flowSource.indexOf("Reference number"));
-  assert.ok(flowSource.indexOf("Reference number") < flowSource.indexOf("record.status"));
+  assert.match(checkerSource, /String\(index \+ 1\)\.padStart\(2, "0"\)/);
+  assert.match(checkerSource, /displaySourceName\(record\.fileName\)/);
+  assert.match(checkerSource, /copyReference\(record\.reference\)/);
+  assert.match(checkerSource, /Handover logs may provide supporting status/);
+  assert.doesNotMatch(checkerSource, /theme-maspo-train-checker-flow-node/);
 });
 
 test("archive reader lazy-loads raw RAR extraction and applies size limits", () => {
@@ -92,10 +90,11 @@ test("MASPO checker has scoped light-theme surfaces and primary actions", () => 
   assert.match(themeStyles, /\.theme-maspo-train-checker-header/);
   assert.match(themeStyles, /\.theme-maspo-train-checker-submit/);
   assert.match(themeStyles, /\.theme-maspo-train-checker-copy/);
-  assert.match(themeStyles, /\.theme-maspo-train-checker-record/);
-  assert.match(themeStyles, /\.theme-maspo-train-checker-flow-node\.is-latest/);
-  assert.match(themeStyles, /\.theme-maspo-train-checker-flow-record\.is-latest/);
-  assert.match(themeStyles, /\.theme-maspo-train-checker-area-detail/);
+  assert.match(themeStyles, /\.theme-maspo-train-checker-latest/);
+  assert.match(themeStyles, /\.theme-maspo-train-checker-history-heading/);
+  assert.match(themeStyles, /\.theme-maspo-train-checker-history-row/);
+  assert.match(themeStyles, /\.theme-maspo-train-checker-ref-copy/);
+  assert.match(themeStyles, /\.theme-maspo-train-checker-chronological/);
   assert.match(themeStyles, /\.theme-maspo-train-checker input:focus-visible/);
 });
 
