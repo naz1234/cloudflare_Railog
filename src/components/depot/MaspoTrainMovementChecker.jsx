@@ -1,15 +1,18 @@
-import { useCallback, useRef, useState } from "react";
+import { Fragment, useCallback, useRef, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
   AlertCircle,
   Archive,
+  ArrowUpDown,
   CalendarDays,
   CheckCircle2,
   CircleHelp,
   Clock3,
   Copy,
   FileSpreadsheet,
+  Info,
   Loader2,
+  MapPin,
   Search,
   TrainFront,
   Upload,
@@ -60,6 +63,7 @@ export default function MaspoTrainMovementChecker() {
   const [dragging, setDragging] = useState(false);
   const [working, setWorking] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedReference, setCopiedReference] = useState("");
 
   const selectFile = useCallback((file) => {
     if (!file) return;
@@ -68,6 +72,7 @@ export default function MaspoTrainMovementChecker() {
     setAnalysis(null);
     setError("");
     setCopied(false);
+    setCopiedReference("");
   }, []);
 
   const clearChecker = useCallback(() => {
@@ -79,6 +84,7 @@ export default function MaspoTrainMovementChecker() {
     setDragging(false);
     setWorking(false);
     setCopied(false);
+    setCopiedReference("");
     if (fileInputRef.current) fileInputRef.current.value = "";
     window.requestAnimationFrame(() => uploadButtonRef.current?.focus());
   }, []);
@@ -100,6 +106,7 @@ export default function MaspoTrainMovementChecker() {
     setError("");
     setAnalysis(null);
     setCopied(false);
+    setCopiedReference("");
     try {
       const nextAnalysis = await analyzeMaspoArchive(archiveFile, trainInput);
       if (analysisRequestRef.current !== requestId) return;
@@ -119,6 +126,15 @@ export default function MaspoTrainMovementChecker() {
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
   }, [analysis]);
+
+  const copyReference = useCallback(async (reference) => {
+    if (!reference) return;
+    await copyText(reference);
+    setCopiedReference(reference);
+    window.setTimeout(() => {
+      setCopiedReference((current) => current === reference ? "" : current);
+    }, 1800);
+  }, []);
 
   const latest = analysis?.latest || null;
   const timeline = analysis?.timeline || [];
@@ -294,116 +310,137 @@ export default function MaspoTrainMovementChecker() {
         )}
 
         {analysis && (
-          <div className="theme-maspo-train-checker-results overflow-hidden rounded-xl border border-[#315978] bg-[#03111d]">
-            <div className="theme-maspo-train-checker-results-header flex flex-col gap-3 border-b border-[#23445f] bg-[#071e33] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-sm font-black text-white">{analysis.train} Movement Check</h3>
-                  {latest && (
-                    <span className={`rounded-full border px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] ${statusStyle(latest.status)}`}>
-                      {latest.status}
-                    </span>
-                  )}
+          <div className="theme-maspo-train-checker-results overflow-hidden rounded-2xl border border-[#2379a8] bg-[#03111d] p-3 shadow-[0_18px_42px_rgba(0,0,0,0.3)]">
+            <div className="theme-maspo-train-checker-results-header flex flex-col gap-4 rounded-xl border border-[#1d638d] bg-[linear-gradient(135deg,#06233a,#041522)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-cyan-400/55 bg-cyan-500/10 text-cyan-200 shadow-[0_0_20px_rgba(34,211,238,0.14)]">
+                  <TrainFront className="h-6 w-6" />
+                </span>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <h3 className="text-lg font-black text-white sm:text-xl">{analysis.train} Movement Check</h3>
+                    {latest && (
+                      <span className={`rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.1em] ${statusStyle(latest.status)}`}>
+                        {latest.status}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-[11px] font-semibold text-[#b2c9da]">
+                    {timeline.length} {timeline.length === 1 ? "movement" : "movements"} found
+                  </p>
                 </div>
-                <p className="mt-1 text-[10px] text-[#9eb5ca]">
-                  {latest ? `Latest Movement: ${latest.route || "Route not stated"} · ${latest.reference}` : `No matching MASPO reference for ${analysis.train}.`}
-                </p>
               </div>
-              <button
-                type="button"
-                onClick={copySummary}
-                className="theme-maspo-train-checker-copy inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-sky-400/55 bg-sky-500/15 px-3 text-[10px] font-bold text-sky-100 transition-colors hover:bg-sky-500/25"
-              >
-                {copied ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? "Copied" : "Copy result"}
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={copySummary}
+                  className="theme-maspo-train-checker-copy inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-sky-400/55 bg-sky-500/10 px-4 text-[11px] font-black text-sky-100 transition-colors hover:bg-sky-500/20"
+                >
+                  {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? "Copied" : "Copy result"}
+                </button>
+                <span className="theme-maspo-train-checker-chronological inline-flex h-10 items-center gap-2 rounded-xl border border-sky-400/45 bg-sky-500/10 px-4 text-[11px] font-black text-sky-100">
+                  <ArrowUpDown className="h-4 w-4" /> Chronological
+                </span>
+              </div>
             </div>
 
-            {timeline.length ? (
-              <div className="theme-maspo-train-checker-flow p-3">
-                <div className="mb-3 flex flex-wrap items-end justify-between gap-2 px-1">
-                  <div>
-                    <p className="text-[11px] font-black uppercase tracking-[0.12em] text-sky-100">Movement flow</p>
-                    <p className="mt-0.5 text-[9px] font-semibold text-[#7899b1]">
-                      {timeline.length} {timeline.length === 1 ? "record" : "records"} · Oldest to latest
-                    </p>
+            {timeline.length && latest ? (
+              <>
+                <section aria-labelledby="maspo-latest-movement-heading" className="theme-maspo-train-checker-latest mt-3 rounded-xl border border-cyan-400/80 bg-[linear-gradient(120deg,rgba(3,28,43,0.98),rgba(4,20,34,0.98))] p-4 shadow-[0_0_24px_rgba(34,211,238,0.12)]">
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.2fr)_minmax(145px,0.75fr)_minmax(170px,0.8fr)_minmax(220px,1.25fr)_auto_minmax(210px,1fr)] xl:items-center">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-cyan-400/75 bg-cyan-500/10 text-cyan-100 shadow-[0_0_20px_rgba(34,211,238,0.16)]"><TrainFront className="h-7 w-7" /></span>
+                      <div className="min-w-0">
+                        <p id="maspo-latest-movement-heading" className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">Latest Movement</p>
+                        <p className="mt-1 break-words text-2xl font-black text-white sm:text-3xl">{latest.route || "Route not stated"}</p>
+                      </div>
+                    </div>
+                    <div className="theme-maspo-train-checker-latest-metric min-w-0 border-t border-[#20506d] pt-3 md:border-l md:border-t-0 md:pl-4 md:pt-0">
+                      <p className="flex items-center gap-2 text-xs font-black text-white"><CalendarDays className="h-4 w-4 shrink-0 text-sky-300" /> {latest.dateRangeDisplay || latest.dateDisplay || "Date not stated"}</p>
+                      <p className="mt-1 pl-6 text-[8px] font-black uppercase tracking-[0.12em] text-[#7899b1]">Date</p>
+                    </div>
+                    <div className="theme-maspo-train-checker-latest-metric min-w-0 border-t border-[#20506d] pt-3 md:border-l md:border-t-0 md:pl-4 md:pt-0">
+                      <p className="flex items-center gap-2 text-xs font-black text-white"><Clock3 className="h-4 w-4 shrink-0 text-sky-300" /> {latest.timeRange || "Time not stated"}</p>
+                      <p className="mt-1 pl-6 text-[8px] font-black uppercase tracking-[0.12em] text-[#7899b1]">Time</p>
+                    </div>
+                    <div className="theme-maspo-train-checker-latest-metric min-w-0 border-t border-[#20506d] pt-3 md:border-l md:border-t-0 md:pl-4 md:pt-0">
+                      <p className="flex items-center gap-2 text-xs font-black text-white"><MapPin className="h-4 w-4 shrink-0 text-sky-300" /> <span className="break-words">{latest.areaDetail || "Area flow not stated"}</span></p>
+                      <p className="mt-1 pl-6 text-[8px] font-black uppercase tracking-[0.12em] text-[#7899b1]">Area flow</p>
+                    </div>
+                    <span className="w-fit rounded-xl border border-blue-400/65 bg-blue-500/10 px-3 py-2 text-[11px] font-black text-blue-100">{latest.planStatus || "Plan not stated"}</span>
+                    <div className="theme-maspo-train-checker-reference flex min-w-0 items-stretch overflow-hidden rounded-xl border border-[#315978] bg-[#041522]">
+                      <div className="min-w-0 flex-1 px-3 py-2.5">
+                        <p className="text-[8px] font-black uppercase tracking-[0.12em] text-sky-300">Movement ref</p>
+                        <p className="mt-1 break-all font-mono text-xs font-black text-cyan-300">{latest.reference}</p>
+                      </div>
+                      <button type="button" onClick={() => copyReference(latest.reference)} className="theme-maspo-train-checker-ref-copy inline-flex w-11 shrink-0 items-center justify-center border-l border-[#315978] text-sky-200 transition-colors hover:bg-sky-500/15" aria-label={`Copy movement reference ${latest.reference}`}>
+                        {copiedReference === latest.reference ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
-                  <span className="rounded-full border border-sky-400/35 bg-sky-500/10 px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.1em] text-sky-200">
-                    Chronological
-                  </span>
-                </div>
+                </section>
 
-                <div className="relative">
-                  <span aria-hidden="true" className="theme-maspo-train-checker-flow-line absolute bottom-5 left-[15px] top-5 w-px bg-sky-400/45 sm:left-[17px]" />
-                  <ol className="space-y-2" aria-label={`Chronological movement history for ${analysis.train}`}>
-                    {timeline.map((record, index) => {
-                      const isLatestMovement = index === timeline.length - 1;
-                      const displayDate = record.dateRangeDisplay || record.dateDisplay || "Date not stated";
-                      return (
-                        <li
-                          key={record.id}
-                          aria-current={isLatestMovement ? "step" : undefined}
-                          aria-label={`Movement ${index + 1} of ${timeline.length}`}
-                          className="relative pl-10 sm:pl-12"
-                        >
-                          <span
-                            aria-hidden="true"
-                            className={`theme-maspo-train-checker-flow-node absolute left-0 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border text-[10px] font-black sm:h-9 sm:w-9 ${isLatestMovement ? "is-latest border-cyan-200 bg-cyan-400 text-[#032033] shadow-[0_0_18px_rgba(34,211,238,0.7)]" : "border-sky-400/65 bg-[#071e33] text-sky-100"}`}
-                          >
-                            {index + 1}
-                          </span>
-
-                          <article className={`theme-maspo-train-checker-record theme-maspo-train-checker-flow-record min-w-0 rounded-xl border bg-[#051a2a] p-3 ${isLatestMovement ? "is-latest border-cyan-300/70 shadow-[0_0_18px_rgba(34,211,238,0.12)]" : "border-[#284b66]"}`}>
-                            <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(175px,0.8fr)_minmax(220px,1.35fr)_minmax(170px,0.9fr)_auto] lg:items-center">
-                              <div className="min-w-0">
-                                <p className="flex items-center gap-1.5 text-[10px] font-black text-sky-100">
-                                  <CalendarDays className="h-3.5 w-3.5 shrink-0 text-sky-300" />
-                                  <span className="break-words">{displayDate}</span>
-                                </p>
-                                <p className="mt-1 pl-5 text-[10px] font-semibold text-[#9eb5ca]">{record.timeRange || "Time not stated"}</p>
-                              </div>
-
-                              <div className="min-w-0">
-                                <p className="break-words text-sm font-black text-white">{record.route || "Route not stated"}</p>
-                                {record.areaDetail && (
-                                  <p className="theme-maspo-train-checker-area-detail mt-1 break-words text-[9px] font-bold text-cyan-200">
-                                    <span className="uppercase tracking-[0.08em] text-cyan-300/80">Area flow</span> · {record.areaDetail}
-                                  </p>
-                                )}
-                                <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                                  <span className="text-[9px] font-semibold text-[#9eb5ca]">{record.planStatus || "Plan not stated"}</span>
-                                  {isLatestMovement && (
-                                    <span className="rounded-full border border-cyan-300/55 bg-cyan-400/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.1em] text-cyan-200">Latest</span>
-                                  )}
+                <section aria-labelledby="maspo-movement-history-heading" className="theme-maspo-train-checker-history mt-3 overflow-hidden rounded-xl border border-[#245e83] bg-[#041522]">
+                  <div className="theme-maspo-train-checker-history-heading flex flex-wrap items-center justify-between gap-3 border-b border-[#315978] bg-[#062039] px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full border border-sky-400/45 bg-sky-500/10 text-sky-200"><TrainFront className="h-4 w-4" /></span>
+                      <h4 id="maspo-movement-history-heading" className="text-xs font-black uppercase tracking-[0.04em] text-white">Movement History</h4>
+                    </div>
+                    <p className="flex items-center gap-1.5 text-[10px] font-bold text-[#9eb5ca]">Oldest → Latest <ArrowUpDown className="h-3.5 w-3.5" /></p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[1040px] border-collapse text-left" aria-label={`Chronological movement history for ${analysis.train}`}>
+                      <thead className="theme-maspo-train-checker-history-columns bg-[#07243d] text-[9px] font-black uppercase tracking-[0.12em] text-[#9fc4dd]">
+                        <tr>
+                          <th scope="col" className="w-20 border-r border-[#23445f] px-4 py-3 text-center">No.</th>
+                          <th scope="col" className="px-4 py-3">Date</th>
+                          <th scope="col" className="px-4 py-3">From → To</th>
+                          <th scope="col" className="px-4 py-3">Area flow</th>
+                          <th scope="col" className="px-4 py-3">Movement type</th>
+                          <th scope="col" className="px-4 py-3">Time</th>
+                          <th scope="col" className="px-4 py-3">Movement ref</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {timeline.map((record, index) => (
+                          <Fragment key={record.id}>
+                            <tr className="theme-maspo-train-checker-history-row border-t border-[#23445f] bg-[#041522] text-xs text-white">
+                              <td className="border-r border-[#23445f] px-4 py-3 text-center"><span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-sky-500 px-2 font-black text-white shadow-[0_0_14px_rgba(14,165,233,0.42)]">{String(index + 1).padStart(2, "0")}</span></td>
+                              <td className="whitespace-nowrap px-4 py-3 font-bold"><span className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-sky-300" />{record.dateRangeDisplay || record.dateDisplay || "Date not stated"}</span></td>
+                              <td className="px-4 py-3 text-sm font-black">{record.route || "Route not stated"}</td>
+                              <td className="px-4 py-3 font-semibold">{record.areaDetail || "Area flow not stated"}</td>
+                              <td className="px-4 py-3"><span className="inline-flex rounded-lg border border-blue-400/65 bg-blue-500/10 px-2.5 py-1 font-black text-blue-100">{record.planStatus || "Plan not stated"}</span></td>
+                              <td className="whitespace-nowrap px-4 py-3 font-black"><span className="flex items-center gap-2"><Clock3 className="h-4 w-4 text-sky-300" />{record.timeRange || "Time not stated"}</span></td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className="break-all font-mono font-black text-cyan-300">{record.reference}</span>
+                                  <button type="button" onClick={() => copyReference(record.reference)} className="theme-maspo-train-checker-ref-copy inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#315978] text-sky-200 transition-colors hover:bg-sky-500/15" aria-label={`Copy movement reference ${record.reference}`}>
+                                    {copiedReference === record.reference ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                                  </button>
                                 </div>
-                              </div>
+                              </td>
+                            </tr>
+                            <tr className="theme-maspo-train-checker-history-source border-t border-[#17364d] bg-[#031522]">
+                              <td aria-hidden="true" className="border-r border-[#23445f]" />
+                              <td colSpan={6} className="px-4 py-2 text-[9px] font-semibold text-[#7fa3bb]">
+                                <span className="flex min-w-0 items-center gap-2" title={`${record.fileName} · ${record.sheetName} · Row ${record.rowNumber}`}>
+                                  <FileSpreadsheet className="h-3.5 w-3.5 shrink-0 text-sky-300" /><span className="truncate">{displaySourceName(record.fileName)}</span><span aria-hidden="true">•</span><span>{record.sheetName}</span><span aria-hidden="true">•</span><span>Row {record.rowNumber}</span>
+                                </span>
+                              </td>
+                            </tr>
+                          </Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
 
-                              <div className="theme-maspo-train-checker-reference min-w-0 rounded-lg border border-[#315978] bg-[#041522] px-3 py-2">
-                                <p className="text-[8px] font-black uppercase tracking-[0.12em] text-sky-300">Reference number</p>
-                                <p className="mt-0.5 break-all font-mono text-xs font-black text-white">{record.reference}</p>
-                              </div>
-
-                              <span className={`w-fit shrink-0 rounded-full border px-2.5 py-0.5 text-[9px] font-black lg:justify-self-end ${statusStyle(record.status)}`}>
-                                {record.status}
-                              </span>
-                            </div>
-
-                            <div className="mt-2 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-[#23445f] pt-2 text-[9px] text-[#7899b1]">
-                              <p className="flex min-w-0 items-center gap-1.5" title={`${record.fileName} · ${record.sheetName}`}>
-                                <FileSpreadsheet className="h-3 w-3 shrink-0" />
-                                <span className="truncate">{displaySourceName(record.fileName)} · {record.sheetName}</span>
-                              </p>
-                              <p className="flex shrink-0 items-center gap-1.5 font-semibold text-[#86a9c2]">
-                                <Clock3 className="h-3 w-3" /> Row {record.rowNumber}
-                              </p>
-                            </div>
-                          </article>
-                        </li>
-                      );
-                    })}
-                  </ol>
+                <div className="theme-maspo-train-checker-note mt-3 flex items-start gap-2 rounded-xl border border-[#245e83] bg-[#041522] px-4 py-3 text-[10px] text-[#9eb5ca]">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
+                  <p><span className="font-black text-white">Note:</span> Results prioritize detailed MASPO movement entries. Handover logs may provide supporting status but do not replace a matched movement reference.</p>
                 </div>
-              </div>
+              </>
             ) : (
               <div className="flex min-h-28 flex-col items-center justify-center gap-2 px-4 py-6 text-center">
                 <FileSpreadsheet className="h-6 w-6 text-[#6689a3]" />

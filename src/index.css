@@ -10525,13 +10525,69 @@ html[data-app-theme="light"] .theme-train-movement-page :is(
   .theme-maspo-train-checker-controls,
   .theme-maspo-train-checker-results,
   .theme-maspo-train-checker-results-header,
-  .theme-maspo-train-checker-record,
+  .theme-maspo-train-checker-latest,
+  .theme-maspo-train-checker-history,
+  .theme-maspo-train-checker-history-heading,
+  .theme-maspo-train-checker-history-row,
+  .theme-maspo-train-checker-history-source,
+  .theme-maspo-train-checker-note,
   .theme-maspo-train-checker-reference
 ) {
   background: #eef8fd !important;
   background-image: none !important;
   border-color: #5b9ec5 !important;
   box-shadow: 0 1px 4px rgba(14, 87, 130, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-latest {
+  background: linear-gradient(135deg, #f8fdff 0%, #e5f5fb 100%) !important;
+  background-image: linear-gradient(135deg, #f8fdff 0%, #e5f5fb 100%) !important;
+  border-color: #0891b2 !important;
+  box-shadow: 0 0 20px rgba(8, 145, 178, 0.14) !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-latest-metric {
+  border-color: #8abbd6 !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page :is(
+  .theme-maspo-train-checker-history-heading,
+  .theme-maspo-train-checker-history-columns
+) {
+  background: #d7edf8 !important;
+  background-image: none !important;
+  border-color: #5b9ec5 !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-history-row {
+  background: #f8fcff !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-history-source {
+  background: #eaf5fb !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-chronological {
+  color: #075985 !important;
+  background: #e1f2fb !important;
+  border-color: #5b9ec5 !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page :is(
+  .theme-maspo-train-checker-chronological,
+  .theme-maspo-train-checker-note
+) svg {
+  color: #075985 !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-ref-copy {
+  color: #075985 !important;
+  background: #ffffff !important;
+  border-color: #5b9ec5 !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-ref-copy svg {
+  color: #075985 !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-upload.is-dragging {
@@ -10585,34 +10641,6 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-check
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-warning {
   background: #fff7d6 !important;
   border-color: #d69e2e !important;
-}
-
-html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-flow-line {
-  background: #75a9c9 !important;
-}
-
-html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-flow-node {
-  color: #075985 !important;
-  background: #eef8fd !important;
-  border-color: #4f96bd !important;
-}
-
-html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-flow-node.is-latest {
-  color: #ffffff !important;
-  background: #0891b2 !important;
-  border-color: #0e7490 !important;
-  box-shadow: 0 0 18px rgba(8, 145, 178, 0.38) !important;
-}
-
-html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-flow-record.is-latest {
-  background: #f0fbff !important;
-  border-color: #0891b2 !important;
-  box-shadow: 0 0 18px rgba(8, 145, 178, 0.16) !important;
-}
-
-html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-area-detail,
-html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-area-detail span {
-  color: #0369a1 !important;
 }
 
 html[data-app-theme="light"] .theme-maspo-download-guide {
