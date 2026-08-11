@@ -57,7 +57,7 @@ test("checker header follows the supplied summary and search-panel design", () =
   assert.match(checkerSource, /parsedWorkbookCount === 1 \? "file" : "files"/);
   assert.match(checkerSource, /\{timeline\.length\} \{analysis\.train\}/);
   assert.match(checkerSource, /timeline\.length === 1 \? "entry" : "entries"/);
-  assert.match(checkerSource, /<FileArchive className="h-7 w-7"/);
+  assert.match(checkerSource, /<FileArchive className="h-5 w-5"/);
   assert.match(checkerSource, /<CloudDownload className="h-5 w-5"/);
   assert.match(checkerSource, /theme-maspo-train-checker-query/);
   assert.match(checkerSource, /aria-label="Clear train set"/);
@@ -68,12 +68,27 @@ test("MASPO typography matches the movement panel scale", () => {
   assert.match(depotStablingSource, /<h2 className="text-\[15px\] font-black leading-tight text-white">\{modeTitle\}<\/h2>/);
   assert.match(depotStablingSource, /<p className="mt-0\.5 text-\[9px\] font-semibold" style=\{\{ color: accent \}\}>\{modeSubtitle\}<\/p>/);
   assert.match(checkerSource, /<h2 className="text-\[15px\] font-black leading-tight text-white">Check Train Maspo TR movement<\/h2>/);
-  assert.match(checkerSource, /<p className="mt-0\.5 text-\[9px\] font-semibold text-\[#b4cadb\]">Upload MASPO Excel logs/);
+  assert.match(checkerSource, /<p className="mt-0\.5 text-\[9px\] font-semibold text-violet-200\/85">Upload MASPO Excel logs/);
   assert.match(checkerSource, /block truncate text-\[13px\] font-semibold text-white">\{archiveFile\?\.name \|\| "Upload ZIP, RAR, or Excel"\}<\/span>/);
-  assert.match(checkerSource, /pl-\[4\.25rem\] pr-12 text-\[13px\] font-semibold uppercase/);
+  assert.match(checkerSource, /h-full min-w-0 flex-1 border-0 bg-transparent px-0 text-\[13px\] font-semibold uppercase/);
   assert.match(checkerSource, /\{analysis\.train\} Movement Check<\/h3>/);
   assert.match(checkerSource, /theme-maspo-train-checker-history-row[^\n]*text-\[11px\]/);
   assert.doesNotMatch(checkerSource, /text-(?:base|lg|xl)|sm:text-(?:xs|sm|base|lg|xl)/);
+});
+
+test("MASPO controls use four equal plum movement cards", () => {
+  assert.match(checkerSource, /grid auto-rows-fr gap-3 p-4 sm:p-5 md:grid-cols-2/);
+  assert.equal(checkerSource.match(/min-h-\[96px\]/g)?.length, 4);
+  assert.match(checkerSource, /theme-maspo-train-checker-upload[^\n]*md:col-start-1 md:row-start-1/);
+  assert.match(checkerSource, /theme-maspo-train-checker-guide[^\n]*md:col-start-1 md:row-start-2/);
+  assert.match(checkerSource, /theme-maspo-train-checker-controls[^\n]*md:col-start-2 md:row-start-1/);
+  assert.match(checkerSource, /theme-maspo-train-checker-submit[^\n]*md:col-start-2 md:row-start-2/);
+  assert.match(checkerSource, />1<\/span>[\s\S]*?Train set/);
+  assert.match(checkerSource, />Current<\/span>/);
+  assert.match(checkerSource, /border-violet-500\/70 bg-\[#100b1a\]/);
+  assert.doesNotMatch(checkerSource, /pl-\[4\.25rem\]/);
+  assert.match(themeStyles, /compact plum workspace/);
+  assert.match(themeStyles, /background: #7c3aed !important/);
 });
 
 test("movement results use the reference-inspired latest card and chronological history table", () => {
