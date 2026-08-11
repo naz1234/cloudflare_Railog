@@ -10505,6 +10505,85 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-log-
   border-color: var(--tp1-border) !important;
 }
 
+/* MASPO train checker: a full-width blue workspace below the two TP1 windows. */
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker {
+  background: linear-gradient(180deg, #ddecf7 0%, #cfe4f2 100%) !important;
+  background-image: linear-gradient(180deg, #ddecf7 0%, #cfe4f2 100%) !important;
+  border-color: #367ca8 !important;
+  box-shadow: 0 10px 24px rgba(14, 87, 130, 0.14), inset 0 1px 0 #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-header {
+  background: linear-gradient(180deg, #b9ddf2 0%, #9dcce8 100%) !important;
+  background-image: linear-gradient(180deg, #b9ddf2 0%, #9dcce8 100%) !important;
+  border-color: #367ca8 !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page :is(
+  .theme-maspo-train-checker-upload,
+  .theme-maspo-train-checker-controls,
+  .theme-maspo-train-checker-results,
+  .theme-maspo-train-checker-results-header,
+  .theme-maspo-train-checker-record,
+  .theme-maspo-train-checker-reference
+) {
+  background: #eef8fd !important;
+  background-image: none !important;
+  border-color: #5b9ec5 !important;
+  box-shadow: 0 1px 4px rgba(14, 87, 130, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-upload.is-dragging {
+  background: #d7f0ff !important;
+  border-color: #0284c7 !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker input:focus-visible {
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.28) !important;
+  outline: 2px solid transparent !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker a {
+  color: #075985 !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page :is(
+  .theme-maspo-train-checker-submit,
+  .theme-maspo-train-checker-copy
+) {
+  background: #0369a1 !important;
+  border-color: #075985 !important;
+  color: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page :is(
+  .theme-maspo-train-checker-submit,
+  .theme-maspo-train-checker-copy
+) :is(svg, span) {
+  color: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-clear {
+  background: #fff1f2 !important;
+  border-color: #e58b98 !important;
+  color: #991b1b !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-clear svg {
+  color: #991b1b !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-error {
+  background: #fff7d6 !important;
+  border-color: #d69e2e !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-warning {
+  background: #fff7d6 !important;
+  border-color: #d69e2e !important;
+}
+
 /* Train Request visibility: standalone eye icons using the awaiting-train glow rhythm. */
 @keyframes request-group-eye-awaiting-glow {
   0%, 48%, 100% {
