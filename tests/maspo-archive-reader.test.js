@@ -75,7 +75,8 @@ test("analyzes nested Excel workbooks from a ZIP and ignores temporary files", a
   assert.equal(analysis.parsedWorkbookCount, 1);
   assert.equal(analysis.sheetsScanned, 1);
   assert.equal(analysis.latest.reference, "MASPO-080826-02");
-  assert.equal(analysis.latest.route, "G/TP1 → C10");
+  assert.equal(analysis.latest.route, "G → C10");
+  assert.equal(analysis.latest.areaDetail, "Automatic area → Workshop");
   assert.match(analysis.summaryText, /Ref: MASPO-080826-02/);
 });
 
@@ -101,7 +102,8 @@ test("analyzes a real non-solid RAR5 archive containing a nested workbook", asyn
   );
   assert.equal(analysis.parsedWorkbookCount, 1);
   assert.equal(analysis.latest.reference, "MASPO-080826-02");
-  assert.equal(analysis.latest.route, "G/TP1 → C10");
+  assert.equal(analysis.latest.route, "G → C10");
+  assert.equal(analysis.latest.areaDetail, "Automatic area → Workshop");
 });
 
 test("rejects a solid RAR5 header before loading the decoder", async () => {

@@ -10610,6 +10610,11 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-check
   box-shadow: 0 0 18px rgba(8, 145, 178, 0.16) !important;
 }
 
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-area-detail,
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-area-detail span {
+  color: #0369a1 !important;
+}
+
 html[data-app-theme="light"] .theme-maspo-download-guide {
   color: #172b3f !important;
   background: #eaf5fb !important;

@@ -361,6 +361,11 @@ export default function MaspoTrainMovementChecker() {
 
                               <div className="min-w-0">
                                 <p className="break-words text-sm font-black text-white">{record.route || "Route not stated"}</p>
+                                {record.areaDetail && (
+                                  <p className="theme-maspo-train-checker-area-detail mt-1 break-words text-[9px] font-bold text-cyan-200">
+                                    <span className="uppercase tracking-[0.08em] text-cyan-300/80">Area flow</span> · {record.areaDetail}
+                                  </p>
+                                )}
                                 <div className="mt-1 flex flex-wrap items-center gap-1.5">
                                   <span className="text-[9px] font-semibold text-[#9eb5ca]">{record.planStatus || "Plan not stated"}</span>
                                   {isLatestMovement && (

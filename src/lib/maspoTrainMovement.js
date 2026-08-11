@@ -251,8 +251,10 @@ function normalizeEndpoint(value = "") {
   return compact;
 }
 
-function displayEndpoint(value = "") {
-  return value === "G" ? "G/TP1" : value;
+export function describeMaspoAreaFlow(from = "", to = "") {
+  if (from === "G" && /^C\d+$/i.test(to)) return "Automatic area → Workshop";
+  if (/^C\d+$/i.test(from) && to === "G") return "Manual area → Automatic area";
+  return "";
 }
 
 function findRoute(text, trainPattern) {
@@ -274,7 +276,7 @@ function findRoute(text, trainPattern) {
   return {
     from,
     to,
-    route: from && to ? `${displayEndpoint(from)} → ${displayEndpoint(to)}` : "",
+    route: from && to ? `${from} → ${to}` : "",
   };
 }
 
@@ -459,6 +461,7 @@ export function scanMaspoSheetRows({
         from: route.from,
         to: route.to,
         route: route.route,
+        areaDetail: describeMaspoAreaFlow(route.from, route.to),
         date,
         endDate,
         dateDisplay,
@@ -585,17 +588,21 @@ export function formatMaspoMovementSummary(analysis = {}) {
 
   timeline.forEach((record) => {
     const route = record.route || "Route not stated";
+    const areaDetail = record.areaDetail || describeMaspoAreaFlow(record.from, record.to);
+    const area = areaDetail ? ` — ${areaDetail}` : "";
     const status = record.status || "Recorded";
     const plan = record.planStatus ? ` (${record.planStatus})` : "";
     const displayDate = record.dateRangeDisplay || record.dateDisplay || "";
     const date = displayDate ? `${displayDate}, ` : "";
     const time = record.timeRange ? `${date}${record.timeRange}` : (displayDate || "Time not stated");
-    lines.push(`- ${route} — ${status}${plan} — ${time} — Ref: ${record.reference}`);
+    lines.push(`- ${route}${area} — ${status}${plan} — ${time} — Ref: ${record.reference}`);
   });
 
   if (latest) {
     const latestRoute = latest.route ? `, ${latest.route}` : "";
-    lines.push(`Latest status: ${latest.status || "Recorded"}${latestRoute} — Ref: ${latest.reference}`);
+    const latestAreaDetail = latest.areaDetail || describeMaspoAreaFlow(latest.from, latest.to);
+    const latestArea = latestAreaDetail ? ` — ${latestAreaDetail}` : "";
+    lines.push(`Latest status: ${latest.status || "Recorded"}${latestRoute}${latestArea} — Ref: ${latest.reference}`);
   }
 
   return lines.join("\n");
