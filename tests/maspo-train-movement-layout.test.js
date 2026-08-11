@@ -64,6 +64,18 @@ test("checker header follows the supplied summary and search-panel design", () =
   assert.match(checkerSource, /onClick=\{clearTrainQuery\}/);
 });
 
+test("MASPO typography matches the movement panel scale", () => {
+  assert.match(depotStablingSource, /<h2 className="text-\[15px\] font-black leading-tight text-white">\{modeTitle\}<\/h2>/);
+  assert.match(depotStablingSource, /<p className="mt-0\.5 text-\[9px\] font-semibold" style=\{\{ color: accent \}\}>\{modeSubtitle\}<\/p>/);
+  assert.match(checkerSource, /<h2 className="text-\[15px\] font-black leading-tight text-white">Check Train Maspo TR movement<\/h2>/);
+  assert.match(checkerSource, /<p className="mt-0\.5 text-\[9px\] font-semibold text-\[#b4cadb\]">Upload MASPO Excel logs/);
+  assert.match(checkerSource, /block truncate text-\[13px\] font-semibold text-white">\{archiveFile\?\.name \|\| "Upload ZIP, RAR, or Excel"\}<\/span>/);
+  assert.match(checkerSource, /pl-\[4\.25rem\] pr-12 text-\[13px\] font-semibold uppercase/);
+  assert.match(checkerSource, /\{analysis\.train\} Movement Check<\/h3>/);
+  assert.match(checkerSource, /theme-maspo-train-checker-history-row[^\n]*text-\[11px\]/);
+  assert.doesNotMatch(checkerSource, /text-(?:base|lg|xl)|sm:text-(?:xs|sm|base|lg|xl)/);
+});
+
 test("movement results use the reference-inspired latest card and chronological history table", () => {
   assert.match(checkerSource, /\{analysis\.train\} Movement Check/);
   assert.match(checkerSource, /theme-maspo-train-checker-results-reference/);
@@ -78,7 +90,7 @@ test("movement results use the reference-inspired latest card and chronological 
   assert.match(checkerSource, />Movement History<\/h4>/);
   assert.match(checkerSource, /<table[\s\S]*?aria-label=\{`Chronological movement history/);
   assert.match(checkerSource, /min-w-\[880px\]/);
-  assert.match(checkerSource, /sm:text-xl/);
+  assert.match(checkerSource, /<h3 className="text-\[15px\] font-black uppercase leading-tight text-white">/);
   assert.match(checkerSource, /h-12 w-12/);
   assert.match(checkerSource, /px-3 py-3\.5 text-center/);
   assert.match(checkerSource, /border-r border-\[#24343f\]/);
