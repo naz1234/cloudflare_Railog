@@ -53,6 +53,8 @@ test("train-set control explains equivalent 07 input formats", () => {
 });
 
 test("movement results use one chronological vertical flow", () => {
+  assert.match(checkerSource, /\{analysis\.train\} Movement Check/);
+  assert.match(checkerSource, /Latest Movement:/);
   assert.match(checkerSource, /Movement flow/);
   assert.match(checkerSource, /Oldest to latest/);
   assert.match(checkerSource, /<ol className="space-y-2" aria-label=\{`Chronological movement history/);
