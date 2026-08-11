@@ -8068,9 +8068,24 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     try {
       const latestTrainRemState = trainRemStateRef.current || trainRemState;
       const latestEastData = Object.keys(eastData || {}).length ? eastData : eastStablingData;
-      const westLog = buildTrainRemRemovalLog(latestTrainRemState, "west", maintenanceMap, activeTimetable, westData);
-      const eastLog = buildTrainRemRemovalLog(latestTrainRemState, "east", maintenanceMap, activeTimetable, latestEastData);
       const isTcOutput = outputType === "tc";
+      const removalLogOptions = isTcOutput ? { includeUntimedEntries: true } : undefined;
+      const westLog = buildTrainRemRemovalLog(
+        latestTrainRemState,
+        "west",
+        maintenanceMap,
+        activeTimetable,
+        westData,
+        removalLogOptions,
+      );
+      const eastLog = buildTrainRemRemovalLog(
+        latestTrainRemState,
+        "east",
+        maintenanceMap,
+        activeTimetable,
+        latestEastData,
+        removalLogOptions,
+      );
 
       if (isTcOutput) {
         if (!getActiveTimetableParsedData(activeTimetable)) {
@@ -24323,8 +24338,16 @@ function adjustRemovalOutputTimeForDestinationBlock(time = "", stablingData = {}
     : cleanTime;
 }
 
-function getTrainRemRemovalEntries(trainRemState = {}, depot = "west", maintenanceMap = {}, activeTimetable = null, stablingData = {}) {
+function getTrainRemRemovalEntries(
+  trainRemState = {},
+  depot = "west",
+  maintenanceMap = {},
+  activeTimetable = null,
+  stablingData = {},
+  options = {},
+) {
   const safeDepot = depot === "east" ? "east" : "west";
+  const includeUntimedEntries = options?.includeUntimedEntries === true;
   const selectedPreset = trainRemState?.selectedPreset?.[safeDepot] || "9am";
   const westSelectedPreset = trainRemState?.selectedPreset?.west || "9am";
   const useCombinedReference = isTrainRemCombinedReferencePreset("west", westSelectedPreset);
@@ -24402,7 +24425,7 @@ function getTrainRemRemovalEntries(trainRemState = {}, depot = "west", maintenan
   return candidates
     .map(({ row, tid, time, originalIndex }) => {
       const key = normalizeTrainId(row?.trainId);
-      if (!key || !time) return null;
+      if (!key || (!time && !includeUntimedEntries)) return null;
 
       // Removal output only: trains assigned to destination Block 6 or Block 7
       // require one additional minute. Keep the saved timetable/input time unchanged.
@@ -24435,7 +24458,14 @@ function getTrainRemRemovalEntries(trainRemState = {}, depot = "west", maintenan
     .map(({ sortMinutes, originalIndex, ...entry }) => entry);
 }
 
-function buildTrainRemRemovalLog(trainRemState = {}, depot = "west", maintenanceMap = {}, activeTimetable = null, stablingData = {}) {
+function buildTrainRemRemovalLog(
+  trainRemState = {},
+  depot = "west",
+  maintenanceMap = {},
+  activeTimetable = null,
+  stablingData = {},
+  options = {},
+) {
   const config = depot === "east"
     ? {
         depot,
@@ -24456,7 +24486,14 @@ function buildTrainRemRemovalLog(trainRemState = {}, depot = "west", maintenance
         copyLabel: "Copy West Log",
       };
 
-  const entries = getTrainRemRemovalEntries(trainRemState, config.depot, maintenanceMap, activeTimetable, stablingData);
+  const entries = getTrainRemRemovalEntries(
+    trainRemState,
+    config.depot,
+    maintenanceMap,
+    activeTimetable,
+    stablingData,
+    options,
+  );
   const trainWord = entries.length === 1 ? "train" : "trains";
   const trainList = formatTrainList(entries.map((entry) => entry.trainId));
 
@@ -24465,11 +24502,12 @@ function buildTrainRemRemovalLog(trainRemState = {}, depot = "west", maintenance
         `Removal from ${config.source} to ${config.depotLabel}: ${entries.length} ${trainWord} completed.`,
         `Trains: ${trainList}.`,
         "",
-        ...entries.map((entry) =>
-          entry.tid
-            ? `${entry.time} hrs – ${entry.trainId} (TID ${entry.tid}) removed from mainline to ${config.depotLabel}.`
-            : `${entry.time} hrs – ${entry.trainId} removed from mainline to ${config.depotLabel}.`
-        ),
+        ...entries.map((entry) => {
+          const timePrefix = entry.time ? `${entry.time} hrs – ` : "";
+          return entry.tid
+            ? `${timePrefix}${entry.trainId} (TID ${entry.tid}) removed from mainline to ${config.depotLabel}.`
+            : `${timePrefix}${entry.trainId} removed from mainline to ${config.depotLabel}.`;
+        }),
       ]
     : [];
 
