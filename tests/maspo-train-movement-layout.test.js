@@ -48,8 +48,20 @@ test("checker exposes RAR, ZIP, and Excel upload with the requested title", () =
 test("train-set control explains equivalent 07 input formats", () => {
   assert.match(checkerSource, /placeholder="07 or TS07"/);
   assert.match(checkerSource, /aria-describedby="maspo-train-query-help"/);
-  assert.match(checkerSource, /Same train set: 07 · 7 · T07 · TS07/);
-  assert.doesNotMatch(checkerSource, /Same train set:[^\n]*707/);
+  assert.match(checkerSource, /Search example: 07 &bull; 7 &bull; T07 &bull; TS07/);
+  assert.doesNotMatch(checkerSource, /Search example:[^\n]*707/);
+});
+
+test("checker header follows the supplied summary and search-panel design", () => {
+  assert.match(checkerSource, /theme-maspo-train-checker-summary/);
+  assert.match(checkerSource, /parsedWorkbookCount === 1 \? "file" : "files"/);
+  assert.match(checkerSource, /\{timeline\.length\} \{analysis\.train\}/);
+  assert.match(checkerSource, /timeline\.length === 1 \? "entry" : "entries"/);
+  assert.match(checkerSource, /<FileArchive className="h-7 w-7"/);
+  assert.match(checkerSource, /<CloudDownload className="h-5 w-5"/);
+  assert.match(checkerSource, /theme-maspo-train-checker-query/);
+  assert.match(checkerSource, /aria-label="Clear train set"/);
+  assert.match(checkerSource, /onClick=\{clearTrainQuery\}/);
 });
 
 test("movement results use the reference-inspired latest card and chronological history table", () => {
@@ -88,6 +100,8 @@ test("archive reader lazy-loads raw RAR extraction and applies size limits", () 
 test("MASPO checker has scoped light-theme surfaces and primary actions", () => {
   assert.match(themeStyles, /html\[data-app-theme="light"\][\s\S]*?\.theme-maspo-train-checker \{/);
   assert.match(themeStyles, /\.theme-maspo-train-checker-header/);
+  assert.match(themeStyles, /\.theme-maspo-train-checker-summary/);
+  assert.match(themeStyles, /\.theme-maspo-train-checker-query-clear/);
   assert.match(themeStyles, /\.theme-maspo-train-checker-submit/);
   assert.match(themeStyles, /\.theme-maspo-train-checker-copy/);
   assert.match(themeStyles, /\.theme-maspo-train-checker-latest/);

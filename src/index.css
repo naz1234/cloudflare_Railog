@@ -10523,6 +10523,7 @@ html[data-app-theme="light"] .theme-train-movement-page :is(
   .theme-maspo-train-checker-upload,
   .theme-maspo-train-checker-guide,
   .theme-maspo-train-checker-controls,
+  .theme-maspo-train-checker-summary,
   .theme-maspo-train-checker-results,
   .theme-maspo-train-checker-results-header,
   .theme-maspo-train-checker-latest,
@@ -10537,6 +10538,16 @@ html[data-app-theme="light"] .theme-train-movement-page :is(
   background-image: none !important;
   border-color: #5b9ec5 !important;
   box-shadow: 0 1px 4px rgba(14, 87, 130, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-summary span + span,
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-query > span {
+  border-color: #5b9ec5 !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-query-clear,
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-query-clear svg {
+  color: #075985 !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-latest {
