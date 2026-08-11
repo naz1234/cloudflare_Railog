@@ -298,7 +298,7 @@ export default function MaspoTrainMovementChecker() {
             <div className="theme-maspo-train-checker-results-header flex flex-col gap-3 border-b border-[#23445f] bg-[#071e33] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-sm font-black text-white">{analysis.train} movement result</h3>
+                  <h3 className="text-sm font-black text-white">{analysis.train} Movement Check</h3>
                   {latest && (
                     <span className={`rounded-full border px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] ${statusStyle(latest.status)}`}>
                       {latest.status}
@@ -306,7 +306,7 @@ export default function MaspoTrainMovementChecker() {
                   )}
                 </div>
                 <p className="mt-1 text-[10px] text-[#9eb5ca]">
-                  {latest ? `${latest.route || "Route not stated"} · Latest ref ${latest.reference}` : `No matching MASPO reference for ${analysis.train}.`}
+                  {latest ? `Latest Movement: ${latest.route || "Route not stated"} · ${latest.reference}` : `No matching MASPO reference for ${analysis.train}.`}
                 </p>
               </div>
               <button

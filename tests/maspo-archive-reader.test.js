@@ -77,7 +77,8 @@ test("analyzes nested Excel workbooks from a ZIP and ignores temporary files", a
   assert.equal(analysis.latest.reference, "MASPO-080826-02");
   assert.equal(analysis.latest.route, "G → C10");
   assert.equal(analysis.latest.areaDetail, "Automatic area → Workshop");
-  assert.match(analysis.summaryText, /Ref: MASPO-080826-02/);
+  assert.match(analysis.summaryText, /08-Aug-2026 \| G → C10 \| 0730H \| Pending \(Planned\) \| MASPO-080826-02/);
+  assert.match(analysis.summaryText, /Latest Movement: G → C10 \| 08-Aug-2026 0730H \| MASPO-080826-02/);
 });
 
 test("rejects an archive without a supported Excel workbook", async () => {

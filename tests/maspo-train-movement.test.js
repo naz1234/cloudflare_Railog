@@ -184,8 +184,9 @@ test("formatted output includes MASPO refs and never includes authority-to-proce
   }], "T27");
 
   const output = formatMaspoMovementSummary(analysis);
-  assert.match(output, /C4 → G — Manual area → Automatic area/);
-  assert.match(output, /Ref: MASPO-070826-14/);
+  assert.match(output, /^T27 Movement Check/);
+  assert.match(output, /07-Aug-2026 \| C4 → G \| 0059H–0140H \| Completed \(Unplanned\) \| MASPO-070826-14/);
+  assert.match(output, /Latest Movement: C4 → G \| 07-Aug-2026 0140H \| MASPO-070826-14/);
   assert.doesNotMatch(output, /G\/TP1/);
   assert.doesNotMatch(output, /authority to proceed/i);
   assert.doesNotMatch(output, /MA1001/i);
@@ -317,10 +318,14 @@ test("rejects another train's detailed row when its narrative reuses the queried
 
   const output = formatMaspoMovementSummary(analysis);
   assert.equal(analysis.train, "T07");
-  assert.match(output, /^T07 movement check/);
-  assert.match(output, /Latest status:[^\n]*Ref: MASPO-070826-10/);
-  assert.doesNotMatch(output, /Route not stated/);
-  assert.doesNotMatch(output, /MASPO-(?:050826-12|060826-12|090826-07)/);
+  assert.equal(output, [
+    "T07 Movement Check",
+    "",
+    "06-Aug-2026 | G → C7 | 2049H–2112H | Completed (Planned) | MASPO-060826-11",
+    "07-Aug-2026 | C7 → G | 2217H–2240H | Completed (Unplanned) | MASPO-070826-10",
+    "",
+    "Latest Movement: C7 → G | 07-Aug-2026 2240H | MASPO-070826-10",
+  ].join("\n"));
 });
 
 test("prefers the mapped reference and resets rollover when the reference date advances", () => {
