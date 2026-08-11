@@ -113,6 +113,21 @@ test("TC log leaves time blank when the TID is not in the active timetable", () 
   assert.equal(result.entries[0].time, "");
 });
 
+test("TC log retains an extra removal train without a TID or timetable time", () => {
+  const result = buildTcRemovalPdfLog({
+    entries: [{ trainId: "12", tid: "", time: "" }],
+  }, activeTimetable, "east", "12am");
+
+  assert.deepEqual(result.entries, [{
+    trainId: "12",
+    tid: "",
+    time: "",
+    remark: "",
+    remarkPills: [],
+    remarkFill: "",
+  }]);
+});
+
 test("TC log is sorted by active timetable timing with unmatched trains last", () => {
   const result = buildTcRemovalPdfLog({
     entries: [
@@ -131,6 +146,8 @@ test("PDF toolbar exposes DC and TC choices and TC uses removal-only layout", ()
   assert.match(source, />TC PDF</);
   assert.match(source, /layout:\s*"tcRemovalOnly"/);
   assert.match(source, /buildTcRemovalPdfLog\(/);
+  assert.match(source, /isTcOutput \? \{ includeUntimedEntries: true \} : undefined/);
+  assert.match(source, /!key \|\| \(!time && !includeUntimedEntries\)/);
   assert.match(source, /const TIMETABLE_PARSE_VERSION = 6;/);
   assert.match(source, /const timetableTime = formatSecondsAsTime\(excelTimeToSeconds\(row\[westArrivalIndex\]\)\)/);
   assert.match(source, /const timetableTime = formatSecondsAsTime\(excelTimeToSeconds\(row\[eastArrivalIndex\]\)\)/);
