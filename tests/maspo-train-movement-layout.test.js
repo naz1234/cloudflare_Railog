@@ -45,6 +45,13 @@ test("checker exposes RAR, ZIP, and Excel upload with the requested title", () =
   assert.doesNotMatch(checkerSource, /authority to proceed/i);
 });
 
+test("train-set control explains equivalent 07 input formats", () => {
+  assert.match(checkerSource, /placeholder="07 or TS07"/);
+  assert.match(checkerSource, /aria-describedby="maspo-train-query-help"/);
+  assert.match(checkerSource, /Same train set: 07 · 7 · T07 · TS07/);
+  assert.doesNotMatch(checkerSource, /Same train set:[^\n]*707/);
+});
+
 test("movement results use one chronological vertical flow", () => {
   assert.match(checkerSource, /Movement flow/);
   assert.match(checkerSource, /Oldest to latest/);

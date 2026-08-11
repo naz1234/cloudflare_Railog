@@ -482,7 +482,7 @@ export function scanMaspoSheetRows({
 
 export function analyzeMaspoMovementSources(sources = [], trainQuery = "") {
   const normalizedTrain = normalizeMaspoTrainQuery(trainQuery);
-  if (!normalizedTrain) throw new Error("Enter a valid train number, such as T31 or TS27.");
+  if (!normalizedTrain) throw new Error("Enter a valid train set, such as 07 or TS07.");
 
   const allRecords = [];
   let sheetsScanned = 0;

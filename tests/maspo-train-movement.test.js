@@ -24,6 +24,19 @@ test("normalizes train input and matches common MASPO train variants", () => {
   assert.doesNotMatch("TS270", pattern);
 });
 
+test("treats two-digit and prefixed values as the same train set", () => {
+  const trainSeven = {
+    number: 7,
+    digits: "7",
+    label: "T7",
+  };
+
+  ["07", "7", "T07", "TS07"].forEach((value) => {
+    assert.deepEqual(normalizeMaspoTrainQuery(value), trainSeven);
+  });
+  assert.equal(normalizeMaspoTrainQuery("707").label, "T707");
+});
+
 test("accepts current Excel formats and rejects unrelated files", () => {
   assert.equal(isSupportedMaspoSpreadsheet("logs/book.xlsx"), true);
   assert.equal(isSupportedMaspoSpreadsheet("logs/book.XLSM"), true);
