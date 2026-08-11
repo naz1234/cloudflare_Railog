@@ -345,7 +345,10 @@ export function isSupportedMaspoSpreadsheet(name = "") {
 }
 
 export function normalizeMaspoTrainQuery(value = "") {
-  const digits = String(value || "").match(/\d{1,3}/)?.[0] || "";
+  const source = String(value || "").trim();
+  const compact = source.toUpperCase().replace(/[\s-]/g, "");
+  const numericQuickEntry = compact.match(/^7(\d{2})$/);
+  const digits = numericQuickEntry?.[1] || source.match(/\d{1,3}/)?.[0] || "";
   if (!digits) return null;
   const number = Number(digits);
   if (!Number.isInteger(number) || number < 1 || number > 999) return null;
@@ -482,7 +485,7 @@ export function scanMaspoSheetRows({
 
 export function analyzeMaspoMovementSources(sources = [], trainQuery = "") {
   const normalizedTrain = normalizeMaspoTrainQuery(trainQuery);
-  if (!normalizedTrain) throw new Error("Enter a valid train number, such as T31 or TS27.");
+  if (!normalizedTrain) throw new Error("Enter a valid train set, such as 07, TS07, or 707.");
 
   const allRecords = [];
   let sheetsScanned = 0;
