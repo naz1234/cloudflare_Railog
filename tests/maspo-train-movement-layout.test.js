@@ -33,7 +33,7 @@ test("MASPO checker is centered below Automatic and Manual movement windows", ()
   assert.ok(checkerIndex > manualIndex, "MASPO checker should follow both movement windows");
   assert.match(
     depotStablingSource.slice(manualIndex, checkerIndex + 120),
-    /col-span-full flex min-w-0 justify-center[\s\S]*?w-full min-w-0 max-w-\[1180px\][\s\S]*?<MaspoTrainMovementChecker \/>/,
+    /col-span-full flex min-w-0 justify-center[\s\S]*?w-full min-w-0 xl:w-\[calc\(50%-0\.375rem\)\][\s\S]*?<MaspoTrainMovementChecker \/>/,
   );
 });
 
