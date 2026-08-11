@@ -135,3 +135,9 @@ test("PDF toolbar exposes DC and TC choices and TC uses removal-only layout", ()
   assert.match(source, /const timetableTime = formatSecondsAsTime\(excelTimeToSeconds\(row\[westArrivalIndex\]\)\)/);
   assert.match(source, /const timetableTime = formatSecondsAsTime\(excelTimeToSeconds\(row\[eastArrivalIndex\]\)\)/);
 });
+
+test("open PDF menu stays above Removal Summary row controls", () => {
+  const source = readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
+  assert.match(source, /pdfMenuOpen \? "z-\[120\]" : "z-30"/);
+  assert.match(source, /className="absolute top-1\/2 z-\[60\]"/);
+});
