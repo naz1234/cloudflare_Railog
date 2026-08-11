@@ -10505,18 +10505,18 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-log-
   border-color: var(--tp1-border) !important;
 }
 
-/* MASPO train checker: a full-width blue workspace below the two TP1 windows. */
+/* MASPO train checker: a compact plum workspace below the two TP1 windows. */
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker {
-  background: linear-gradient(180deg, #ddecf7 0%, #cfe4f2 100%) !important;
-  background-image: linear-gradient(180deg, #ddecf7 0%, #cfe4f2 100%) !important;
-  border-color: #367ca8 !important;
-  box-shadow: 0 10px 24px rgba(14, 87, 130, 0.14), inset 0 1px 0 #ffffff !important;
+  background: linear-gradient(180deg, #f5f0fb 0%, #eadff7 100%) !important;
+  background-image: linear-gradient(180deg, #f5f0fb 0%, #eadff7 100%) !important;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 10px 24px rgba(109, 40, 217, 0.13), inset 0 1px 0 #ffffff !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-header {
-  background: linear-gradient(180deg, #b9ddf2 0%, #9dcce8 100%) !important;
-  background-image: linear-gradient(180deg, #b9ddf2 0%, #9dcce8 100%) !important;
-  border-color: #367ca8 !important;
+  background: linear-gradient(180deg, #eadcf8 0%, #dac5f1 100%) !important;
+  background-image: linear-gradient(180deg, #eadcf8 0%, #dac5f1 100%) !important;
+  border-color: #8b5cf6 !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page :is(
@@ -10534,86 +10534,86 @@ html[data-app-theme="light"] .theme-train-movement-page :is(
   .theme-maspo-train-checker-note,
   .theme-maspo-train-checker-reference
 ) {
-  background: #eef8fd !important;
+  background: #fbf8ff !important;
   background-image: none !important;
-  border-color: #5b9ec5 !important;
-  box-shadow: 0 1px 4px rgba(14, 87, 130, 0.10) !important;
+  border-color: #a78bfa !important;
+  box-shadow: 0 1px 4px rgba(109, 40, 217, 0.10) !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-summary span + span,
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-query > span {
-  border-color: #5b9ec5 !important;
+  border-color: #a78bfa !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-query-clear,
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-query-clear svg {
-  color: #075985 !important;
+  color: #6d28d9 !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-latest {
-  background: linear-gradient(135deg, #f8fdff 0%, #e5f5fb 100%) !important;
-  background-image: linear-gradient(135deg, #f8fdff 0%, #e5f5fb 100%) !important;
-  border-color: #0891b2 !important;
-  box-shadow: 0 0 20px rgba(8, 145, 178, 0.14) !important;
+  background: linear-gradient(135deg, #fdfaff 0%, #f1e9fb 100%) !important;
+  background-image: linear-gradient(135deg, #fdfaff 0%, #f1e9fb 100%) !important;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.14) !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-latest-metric {
-  border-color: #8abbd6 !important;
+  border-color: #c4b5fd !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page :is(
   .theme-maspo-train-checker-history-heading,
   .theme-maspo-train-checker-history-columns
 ) {
-  background: #d7edf8 !important;
+  background: #eee7f8 !important;
   background-image: none !important;
-  border-color: #5b9ec5 !important;
+  border-color: #a78bfa !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-history-row {
-  background: #f8fcff !important;
+  background: #fdfbff !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-history-source {
-  background: #eaf5fb !important;
+  background: #f3edfb !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-chronological {
-  color: #075985 !important;
-  background: #e1f2fb !important;
-  border-color: #5b9ec5 !important;
+  color: #6d28d9 !important;
+  background: #f0e8fb !important;
+  border-color: #a78bfa !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page :is(
   .theme-maspo-train-checker-chronological,
   .theme-maspo-train-checker-note
 ) svg {
-  color: #075985 !important;
+  color: #6d28d9 !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-ref-copy {
-  color: #075985 !important;
+  color: #6d28d9 !important;
   background: #ffffff !important;
-  border-color: #5b9ec5 !important;
+  border-color: #a78bfa !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-ref-copy svg {
-  color: #075985 !important;
+  color: #6d28d9 !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-upload.is-dragging {
-  background: #d7f0ff !important;
-  border-color: #0284c7 !important;
+  background: #eee7ff !important;
+  border-color: #7c3aed !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker input:focus-visible {
-  border-color: #0284c7 !important;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.28) !important;
+  border-color: #7c3aed !important;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.24) !important;
   outline: 2px solid transparent !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker a {
-  color: #075985 !important;
+  color: #6d28d9 !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page :is(
@@ -10621,8 +10621,8 @@ html[data-app-theme="light"] .theme-train-movement-page :is(
   .theme-maspo-train-checker-guide-button,
   .theme-maspo-train-checker-copy
 ) {
-  background: #0369a1 !important;
-  border-color: #075985 !important;
+  background: #7c3aed !important;
+  border-color: #6d28d9 !important;
   color: #ffffff !important;
 }
 
@@ -10632,6 +10632,17 @@ html[data-app-theme="light"] .theme-train-movement-page :is(
   .theme-maspo-train-checker-copy
 ) :is(svg, span) {
   color: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker .theme-maspo-train-checker-submit:disabled {
+  background: #ddd0f7 !important;
+  border-color: #a78bfa !important;
+  color: #4c1d95 !important;
+  opacity: 0.68;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker .theme-maspo-train-checker-submit:disabled :is(svg, span) {
+  color: #4c1d95 !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-clear {
@@ -10655,30 +10666,30 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-check
 }
 
 html[data-app-theme="light"] .theme-maspo-download-guide {
-  color: #172b3f !important;
-  background: #eaf5fb !important;
+  color: #2f1d46 !important;
+  background: #f5f0fb !important;
   background-image: none !important;
-  border-color: #367ca8 !important;
-  box-shadow: 0 28px 90px rgba(14, 55, 82, 0.38) !important;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 28px 90px rgba(61, 30, 92, 0.32) !important;
 }
 
 html[data-app-theme="light"] .theme-maspo-download-guide-title {
-  color: #12324b !important;
+  color: #2f1d46 !important;
 }
 
 html[data-app-theme="light"] .theme-maspo-download-guide-description {
-  color: #48677c !important;
+  color: #66527d !important;
 }
 
 html[data-app-theme="light"] .theme-maspo-download-guide-frame {
   background: #ffffff !important;
-  border-color: #75a9c9 !important;
+  border-color: #a78bfa !important;
 }
 
 html[data-app-theme="light"] .theme-maspo-download-guide-close {
-  color: #27465c !important;
+  color: #4c1d95 !important;
   background: #ffffff !important;
-  border-color: #75a9c9 !important;
+  border-color: #a78bfa !important;
 }
 
 html[data-app-theme="light"] .theme-maspo-download-guide-close:hover {
