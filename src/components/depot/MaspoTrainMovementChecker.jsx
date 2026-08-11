@@ -90,7 +90,7 @@ export default function MaspoTrainMovementChecker() {
       return;
     }
     if (!normalizeMaspoTrainQuery(trainInput)) {
-      setError("Enter a valid train set, such as 07, TS07, or 707.");
+      setError("Enter a valid train set, such as 07 or TS07.");
       return;
     }
 
@@ -266,12 +266,12 @@ export default function MaspoTrainMovementChecker() {
                   setError("");
                   setAnalysis(null);
                 }}
-                placeholder="07, TS07, or 707"
+                placeholder="07 or TS07"
                 className="h-9 min-w-0 flex-1 rounded-lg border border-[#315978] bg-[#071e33] px-3 text-sm font-bold uppercase text-white outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20"
               />
             </div>
             <p id="maspo-train-query-help" className="mt-1.5 text-[9px] font-semibold text-[#7899b1]">
-              Same train set: 07 · 7 · T07 · TS07 · 707
+              Same train set: 07 · 7 · T07 · TS07
             </p>
           </div>
           <button
