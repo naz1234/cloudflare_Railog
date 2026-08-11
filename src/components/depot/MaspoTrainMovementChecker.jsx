@@ -1,8 +1,10 @@
 import { useCallback, useRef, useState } from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
   AlertCircle,
   Archive,
   CheckCircle2,
+  CircleHelp,
   Clock3,
   Copy,
   FileSpreadsheet,
@@ -188,6 +190,54 @@ export default function MaspoTrainMovementChecker() {
               event.target.value = "";
             }}
           />
+          <DialogPrimitive.Root>
+            <div className="theme-maspo-train-checker-guide mt-2 flex flex-col gap-2 rounded-xl border border-[#315978] bg-[#071e33] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-sky-400/40 bg-sky-500/10 text-sky-200">
+                  <CircleHelp className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black text-sky-100">Need to download the MASPO folder?</p>
+                  <p className="mt-0.5 text-[9px] leading-relaxed text-[#8eabc0]">OneDrive saves the folder as a ZIP file. Upload that ZIP here.</p>
+                </div>
+              </div>
+              <DialogPrimitive.Trigger asChild>
+                <button
+                  type="button"
+                  className="theme-maspo-train-checker-guide-button inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-sky-400/55 bg-sky-500/15 px-3 text-[10px] font-bold text-sky-100 transition-colors hover:bg-sky-500/25"
+                  aria-label="Open picture guide for downloading the MASPO ZIP file from OneDrive"
+                >
+                  <CircleHelp className="h-3.5 w-3.5" /> View download guide
+                </button>
+              </DialogPrimitive.Trigger>
+            </div>
+
+            <DialogPrimitive.Portal>
+              <DialogPrimitive.Overlay className="fixed inset-0 z-[300] bg-[#020b14]/85 backdrop-blur-sm data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+              <DialogPrimitive.Content className="theme-maspo-download-guide fixed left-1/2 top-1/2 z-[310] grid max-h-[94vh] w-[calc(100vw-1rem)] max-w-[1520px] -translate-x-1/2 -translate-y-1/2 gap-3 overflow-hidden rounded-2xl border border-[#3d6e98] bg-[#03111d] p-3 text-white shadow-[0_28px_90px_rgba(0,0,0,0.62)] focus:outline-none sm:p-4">
+                <div className="pr-10 text-left">
+                  <DialogPrimitive.Title className="theme-maspo-download-guide-title text-sm font-black text-white sm:text-base">How to download the MASPO ZIP</DialogPrimitive.Title>
+                  <DialogPrimitive.Description className="theme-maspo-download-guide-description mt-1 text-[10px] leading-relaxed text-[#9eb5ca] sm:text-xs">
+                    Follow steps 4–6, then return to this checker and upload the ZIP file from Downloads.
+                  </DialogPrimitive.Description>
+                </div>
+                <div className="theme-maspo-download-guide-frame min-h-0 overflow-auto rounded-xl border border-[#315978] bg-white">
+                  <img
+                    src="/guides/maspo-zip-download-guide.png"
+                    alt="Picture guide showing steps 4 to 6: select Download in OneDrive, wait while the browser downloads the MASPO folder as a ZIP file, then find the ZIP file in Downloads."
+                    className="block h-auto w-full min-w-[920px] max-w-none"
+                  />
+                </div>
+                <p className="theme-maspo-download-guide-description text-[9px] text-[#7899b1] sm:hidden">Scroll sideways to read each step.</p>
+                <DialogPrimitive.Close
+                  className="theme-maspo-download-guide-close absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-500/50 bg-slate-900/55 text-slate-200 transition-colors hover:border-red-400/70 hover:bg-red-950/50 hover:text-red-200 focus:outline-none focus:ring-2 focus:ring-sky-400/70"
+                  aria-label="Close MASPO ZIP download guide"
+                >
+                  <X className="h-4 w-4" />
+                </DialogPrimitive.Close>
+              </DialogPrimitive.Content>
+            </DialogPrimitive.Portal>
+          </DialogPrimitive.Root>
           <p className="mt-1.5 text-[9px] text-[#7899b1]">
             RAR extraction license details: <a href="/THIRD_PARTY_NOTICES.txt" target="_blank" rel="noreferrer" className="font-bold text-sky-300 underline decoration-sky-500/50 underline-offset-2">third-party notices</a>.
           </p>

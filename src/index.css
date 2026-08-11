@@ -10521,6 +10521,7 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-check
 
 html[data-app-theme="light"] .theme-train-movement-page :is(
   .theme-maspo-train-checker-upload,
+  .theme-maspo-train-checker-guide,
   .theme-maspo-train-checker-controls,
   .theme-maspo-train-checker-results,
   .theme-maspo-train-checker-results-header,
@@ -10550,6 +10551,7 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-check
 
 html[data-app-theme="light"] .theme-train-movement-page :is(
   .theme-maspo-train-checker-submit,
+  .theme-maspo-train-checker-guide-button,
   .theme-maspo-train-checker-copy
 ) {
   background: #0369a1 !important;
@@ -10559,6 +10561,7 @@ html[data-app-theme="light"] .theme-train-movement-page :is(
 
 html[data-app-theme="light"] .theme-train-movement-page :is(
   .theme-maspo-train-checker-submit,
+  .theme-maspo-train-checker-guide-button,
   .theme-maspo-train-checker-copy
 ) :is(svg, span) {
   color: #ffffff !important;
@@ -10582,6 +10585,39 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-check
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-warning {
   background: #fff7d6 !important;
   border-color: #d69e2e !important;
+}
+
+html[data-app-theme="light"] .theme-maspo-download-guide {
+  color: #172b3f !important;
+  background: #eaf5fb !important;
+  background-image: none !important;
+  border-color: #367ca8 !important;
+  box-shadow: 0 28px 90px rgba(14, 55, 82, 0.38) !important;
+}
+
+html[data-app-theme="light"] .theme-maspo-download-guide-title {
+  color: #12324b !important;
+}
+
+html[data-app-theme="light"] .theme-maspo-download-guide-description {
+  color: #48677c !important;
+}
+
+html[data-app-theme="light"] .theme-maspo-download-guide-frame {
+  background: #ffffff !important;
+  border-color: #75a9c9 !important;
+}
+
+html[data-app-theme="light"] .theme-maspo-download-guide-close {
+  color: #27465c !important;
+  background: #ffffff !important;
+  border-color: #75a9c9 !important;
+}
+
+html[data-app-theme="light"] .theme-maspo-download-guide-close:hover {
+  color: #991b1b !important;
+  background: #fff1f2 !important;
+  border-color: #e58b98 !important;
 }
 
 /* Train Request visibility: standalone eye icons using the awaiting-train glow rhythm. */
