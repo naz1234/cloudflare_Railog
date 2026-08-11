@@ -66,7 +66,8 @@ test("checker header follows the supplied summary and search-panel design", () =
 
 test("movement results use the reference-inspired latest card and chronological history table", () => {
   assert.match(checkerSource, /\{analysis\.train\} Movement Check/);
-  assert.match(checkerSource, /theme-maspo-train-checker-results-compact/);
+  assert.match(checkerSource, /theme-maspo-train-checker-results-reference/);
+  assert.doesNotMatch(checkerSource, /theme-maspo-train-checker-results-compact/);
   assert.match(checkerSource, /id="maspo-latest-movement-heading"/);
   assert.match(checkerSource, /theme-maspo-train-checker-latest/);
   assert.match(checkerSource, /latest\.dateRangeDisplay/);
@@ -76,7 +77,11 @@ test("movement results use the reference-inspired latest card and chronological 
   assert.match(checkerSource, /copyReference\(latest\.reference\)/);
   assert.match(checkerSource, />Movement History<\/h4>/);
   assert.match(checkerSource, /<table[\s\S]*?aria-label=\{`Chronological movement history/);
-  assert.match(checkerSource, /min-w-\[900px\]/);
+  assert.match(checkerSource, /min-w-\[1040px\]/);
+  assert.match(checkerSource, /sm:text-\[30px\]/);
+  assert.match(checkerSource, /h-\[72px\] w-\[72px\]/);
+  assert.match(checkerSource, /px-5 py-6 text-center/);
+  assert.match(checkerSource, /border-r border-\[#24343f\]/);
   assert.match(checkerSource, /timeline\.map\(\(record, index\) =>/);
   assert.match(checkerSource, /String\(index \+ 1\)\.padStart\(2, "0"\)/);
   assert.match(checkerSource, /displaySourceName\(record\.fileName\)/);
