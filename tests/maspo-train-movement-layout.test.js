@@ -78,9 +78,10 @@ test("movement results use the reference-inspired latest card and chronological 
   assert.match(checkerSource, />Movement History<\/h4>/);
   assert.match(checkerSource, /<table[\s\S]*?aria-label=\{`Chronological movement history/);
   assert.match(checkerSource, /min-w-\[1040px\]/);
-  assert.match(checkerSource, /text-xl font-black uppercase/);
-  assert.match(checkerSource, /h-14 w-14/);
-  assert.match(checkerSource, /px-4 py-4 text-center/);
+  assert.match(checkerSource, /sm:text-\[30px\]/);
+  assert.match(checkerSource, /h-\[72px\] w-\[72px\]/);
+  assert.match(checkerSource, /px-5 py-6 text-center/);
+  assert.match(checkerSource, /border-r border-\[#24343f\]/);
   assert.match(checkerSource, /timeline\.map\(\(record, index\) =>/);
   assert.match(checkerSource, /String\(index \+ 1\)\.padStart\(2, "0"\)/);
   assert.match(checkerSource, /displaySourceName\(record\.fileName\)/);
