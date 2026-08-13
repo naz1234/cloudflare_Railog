@@ -58,7 +58,7 @@ test("checker header follows the supplied summary and search-panel design", () =
   assert.match(checkerSource, /\{timeline\.length\} \{analysis\.train\}/);
   assert.match(checkerSource, /timeline\.length === 1 \? "entry" : "entries"/);
   assert.match(checkerSource, /<FileArchive className="h-5 w-5"/);
-  assert.match(checkerSource, /<CloudDownload className="h-5 w-5"/);
+  assert.match(checkerSource, /<CloudDownload className="h-4 w-4/);
   assert.match(checkerSource, /theme-maspo-train-checker-query/);
   assert.match(checkerSource, /aria-label="Clear train set"/);
   assert.match(checkerSource, /onClick=\{clearTrainQuery\}/);
@@ -76,18 +76,22 @@ test("MASPO typography matches the movement panel scale", () => {
   assert.doesNotMatch(checkerSource, /text-(?:base|lg|xl)|sm:text-(?:xs|sm|base|lg|xl)/);
 });
 
-test("MASPO controls use four equal plum movement cards", () => {
-  assert.match(checkerSource, /grid auto-rows-fr gap-3 p-4 sm:p-5 md:grid-cols-2/);
-  assert.equal(checkerSource.match(/min-h-\[96px\]/g)?.length, 4);
-  assert.match(checkerSource, /theme-maspo-train-checker-upload[^\n]*md:col-start-1 md:row-start-1/);
-  assert.match(checkerSource, /theme-maspo-train-checker-guide[^\n]*md:col-start-1 md:row-start-2/);
-  assert.match(checkerSource, /theme-maspo-train-checker-controls[^\n]*md:col-start-2 md:row-start-1/);
-  assert.match(checkerSource, /theme-maspo-train-checker-submit[^\n]*md:col-start-2 md:row-start-2/);
-  assert.match(checkerSource, />1<\/span>[\s\S]*?Train set/);
-  assert.match(checkerSource, />Current<\/span>/);
+test("MASPO controls reveal one required flow step at a time", () => {
+  assert.match(checkerSource, /theme-maspo-train-checker-flow grid gap-3 p-4 sm:p-5/);
+  assert.match(checkerSource, />1<\/span>[\s\S]*?Upload file/);
+  assert.match(checkerSource, /\{archiveFile && \([\s\S]*?>2<\/span>[\s\S]*?Train set/);
+  assert.match(checkerSource, /\{normalizedTrainQuery && \([\s\S]*?>3<\/span>[\s\S]*?Check movement/);
+  assert.match(checkerSource, /\{archiveFile \? "Done" : "Current"\}/);
+  assert.match(checkerSource, /\{normalizedTrainQuery \? "Done" : "Current"\}/);
+  assert.match(checkerSource, /\{analysis \? "Done" : "Current"\}/);
+  assert.match(checkerSource, /theme-maspo-train-checker-guide flex flex-wrap/);
+  assert.doesNotMatch(checkerSource, /md:grid-cols-2|md:col-start-|md:row-start-/);
   assert.match(checkerSource, /border-violet-500\/70 bg-\[#100b1a\]/);
   assert.doesNotMatch(checkerSource, /pl-\[4\.25rem\]/);
-  assert.match(themeStyles, /compact plum workspace/);
+  assert.match(themeStyles, /compact progressive plum flow/);
+  assert.match(themeStyles, /@keyframes maspo-flow-step-enter/);
+  assert.match(themeStyles, /prefers-reduced-motion: reduce/);
+  assert.match(themeStyles, /theme-maspo-train-checker-guide \{[\s\S]*?background: transparent !important;[\s\S]*?border: 0 !important;[\s\S]*?box-shadow: none !important;/);
   assert.match(themeStyles, /background: #7c3aed !important/);
 });
 

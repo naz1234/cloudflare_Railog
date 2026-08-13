@@ -25,14 +25,14 @@ test("ships the supplied MASPO ZIP download picture guide", () => {
 
 test("places a contextual picture-guide action beneath the MASPO upload", () => {
   const uploadIndex = checkerSource.indexOf("Upload ZIP, RAR, or Excel");
-  const guideIndex = checkerSource.indexOf("Need to download the MASPO folder?");
+  const guideIndex = checkerSource.indexOf("Need the MASPO folder ZIP from OneDrive?");
   const trainInputIndex = checkerSource.indexOf('id="maspo-train-query"');
 
   assert.ok(uploadIndex >= 0, "MASPO upload should exist");
   assert.ok(guideIndex > uploadIndex, "guide should follow the upload control");
   assert.ok(trainInputIndex > guideIndex, "guide should stay with the upload area before the train controls");
   assert.match(checkerSource, /View download guide/);
-  assert.match(checkerSource, /OneDrive saves the folder as a ZIP file/);
+  assert.match(checkerSource, /Need the MASPO folder ZIP from OneDrive/);
 });
 
 test("opens the guide in an accessible responsive modal", () => {

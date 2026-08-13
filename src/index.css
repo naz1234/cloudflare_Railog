@@ -10505,7 +10505,28 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-log-
   border-color: var(--tp1-border) !important;
 }
 
-/* MASPO train checker: a compact plum workspace below the two TP1 windows. */
+/* MASPO train checker: a compact progressive plum flow below the two TP1 windows. */
+@keyframes maspo-flow-step-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.theme-maspo-train-checker-flow-step {
+  animation: maspo-flow-step-enter 220ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-maspo-train-checker-flow-step {
+    animation: none;
+  }
+}
+
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker {
   background: linear-gradient(180deg, #f5f0fb 0%, #eadff7 100%) !important;
   background-image: linear-gradient(180deg, #f5f0fb 0%, #eadff7 100%) !important;
@@ -10538,6 +10559,12 @@ html[data-app-theme="light"] .theme-train-movement-page :is(
   background-image: none !important;
   border-color: #a78bfa !important;
   box-shadow: 0 1px 4px rgba(109, 40, 217, 0.10) !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker .theme-maspo-train-checker-guide {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-summary span + span,
