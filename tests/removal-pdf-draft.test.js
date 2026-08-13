@@ -461,7 +461,7 @@ test("both PDF editors use the approved graphite amber and plum palette", () => 
     /\.theme-swp-ed9-open\s*\{[^}]*background: #6e557f;[^}]*border-color: #9172a7;/s,
   );
   assert.match(themeStyles, /\.theme-swp-allocation \[data-action="needSwapping"\] \.theme-swp-allocation-dot\s*\{[^}]*background: #e5484d;/s);
-  assert.match(themeStyles, /\.theme-swp-allocation \[data-action="lateShiftRem"\] \.theme-swp-allocation-dot\s*\{[^}]*background: #0284c7;/s);
+  assert.match(themeStyles, /\.theme-swp-allocation \[data-action="lateShiftRem"\] \.theme-swp-allocation-dot\s*\{[^}]*background: #8a6aa8;/s);
   assert.match(themeStyles, /\.theme-swp-allocation\[data-open="true"\]\s*\{[^}]*z-index: 100;/s);
   assert.doesNotMatch(editorSource, /emerald|cyan/);
   assert.doesNotMatch(eastNineAmEditorSource, /emerald|cyan/);
@@ -479,6 +479,14 @@ test("the SWP and ED editors render a fixed white PDF-style paper in both themes
   assert.match(themeStyles, /\.theme-swp-allocation-trigger/);
   assert.match(themeStyles, /\.theme-swp-allocation-menu/);
   assert.match(themeStyles, /\.theme-swp-paper \.theme-swp-paper-remove/);
+});
+
+test("SWP allocation controls use the same filled colors as the legend", () => {
+  const allocationControl = String.raw`:is\(\.theme-swp-allocation-trigger, \.theme-swp-allocation-option\)`;
+  assert.match(themeStyles, new RegExp(`${allocationControl}\\[data-action="needSwapping"\\]\\s*\\{[^}]*background: #fda4af !important;[^}]*border-color: #fb7185 !important;`, "s"));
+  assert.match(themeStyles, new RegExp(`${allocationControl}\\[data-action="earlyShiftRem"\\]\\s*\\{[^}]*background: #fde68a !important;[^}]*border-color: #f59e0b !important;`, "s"));
+  assert.match(themeStyles, new RegExp(`${allocationControl}\\[data-action="lateShiftRem"\\][\\s\\S]*?background: #b69ac8 !important;[^}]*border-color: #8a6aa8 !important;`, "s"));
+  assert.match(themeStyles, new RegExp(`${allocationControl}\\[data-action="removal"\\]\\s*\\{[^}]*background: #cbd5e1 !important;[^}]*border-color: #64748b !important;`, "s"));
 });
 
 test("SWP editor tables use one larger font size without changing PDF generation", () => {

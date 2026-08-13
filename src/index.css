@@ -9963,11 +9963,49 @@ html[data-app-theme="light"] .theme-swp-paper .theme-swp-paper-remark-input {
 }
 
 .theme-swp-allocation [data-action="lateShiftRem"] .theme-swp-allocation-dot {
-  background: #0284c7;
+  background: #8a6aa8;
 }
 
 .theme-swp-allocation [data-action="eosRemoval"] .theme-swp-allocation-dot {
-  background: #7c3aed;
+  background: #8a6aa8;
+}
+
+.theme-swp-allocation :is(.theme-swp-allocation-trigger, .theme-swp-allocation-option)[data-action="needSwapping"] {
+  color: #7f1d1d !important;
+  -webkit-text-fill-color: #7f1d1d !important;
+  background: #fda4af !important;
+  border-color: #fb7185 !important;
+}
+
+.theme-swp-allocation :is(.theme-swp-allocation-trigger, .theme-swp-allocation-option)[data-action="earlyShiftRem"] {
+  color: #713f12 !important;
+  -webkit-text-fill-color: #713f12 !important;
+  background: #fde68a !important;
+  border-color: #f59e0b !important;
+}
+
+.theme-swp-allocation :is(.theme-swp-allocation-trigger, .theme-swp-allocation-option)[data-action="lateShiftRem"],
+.theme-swp-allocation :is(.theme-swp-allocation-trigger, .theme-swp-allocation-option)[data-action="eosRemoval"] {
+  color: #3f2a4d !important;
+  -webkit-text-fill-color: #3f2a4d !important;
+  background: #b69ac8 !important;
+  border-color: #8a6aa8 !important;
+}
+
+.theme-swp-allocation :is(.theme-swp-allocation-trigger, .theme-swp-allocation-option)[data-action="removal"] {
+  color: #1e293b !important;
+  -webkit-text-fill-color: #1e293b !important;
+  background: #cbd5e1 !important;
+  border-color: #64748b !important;
+}
+
+.theme-swp-allocation :is(.theme-swp-allocation-trigger, .theme-swp-allocation-option)[data-action] :is(.theme-swp-allocation-chevron, .theme-swp-allocation-check) {
+  color: currentColor;
+}
+
+.theme-swp-allocation .theme-swp-allocation-option[data-action] {
+  border-style: solid !important;
+  border-width: 1px !important;
 }
 
 .theme-swp-allocation-menu {
@@ -10017,7 +10055,8 @@ html[data-app-theme="light"] .theme-swp-paper .theme-swp-paper-remark-input {
 .theme-swp-allocation-option[data-active="true"],
 .theme-swp-allocation-option:hover,
 .theme-swp-allocation-option:focus-visible {
-  background: #eef2f5 !important;
+  filter: brightness(0.96) saturate(1.05);
+  box-shadow: inset 0 0 0 1px rgba(15,23,42,0.14);
 }
 
 .theme-swp-allocation-option[aria-selected="true"] {
