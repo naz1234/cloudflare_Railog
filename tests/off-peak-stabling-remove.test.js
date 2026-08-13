@@ -93,7 +93,8 @@ test("scheduled removals use the Train Request tick while off-peak rows keep the
   assert.match(depotStablingSource, /showRemovalTidStablingRemove = shouldShowRemovalTidStablingRemove/);
   assert.match(depotStablingSource, /data-removal-stabling-status=\{offPeakStablingMatch\.depotCodes\.join\("-"\)\}/);
   assert.match(depotStablingSource, /showRemovalStablingStatus[\s\S]*?<Check className="h-\[9px\] w-\[9px\] stroke-\[3\.5\] text-white"/);
-  assert.match(depotStablingSource, /showRemovalStablingStatus[\s\S]*?already-status-trigger[\s\S]*?already-status-bubble/);
+  assert.match(depotStablingSource, /showRemovalStablingStatus[\s\S]*?<ActionTooltip[\s\S]*?message=\{removalStablingStatusMessage\}[\s\S]*?placement="top"[\s\S]*?align="start"/);
+  assert.doesNotMatch(depotStablingSource, /showRemovalStablingStatus[\s\S]{0,1600}?already-status-bubble/);
   assert.match(depotStablingSource, /className="theme-train-rem-offpeak-remove[^"\n]*"/);
   assert.match(depotStablingSource, /showOffPeakStablingRemove[\s\S]*?updateTrainRemCell\(depot, index, "trainId", ""\)/);
   assert.doesNotMatch(depotStablingSource, /data-removal-tid-stabling-remove[\s\S]{0,900}setWestData|data-removal-tid-stabling-remove[\s\S]{0,900}setEastData/);
