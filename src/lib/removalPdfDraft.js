@@ -72,6 +72,18 @@ export function getRemovalPdfDraftActionValue(row = {}) {
   return `custom:${normalizeActionText(customLabel) || "action"}`;
 }
 
+export function isRemovalPdfDraftShiftRemoval(row = {}) {
+  const actionValue = row?.swpDraftActionValue || getRemovalPdfDraftActionValue(row);
+  return actionValue === "earlyShiftRem" || actionValue === "lateShiftRem";
+}
+
+export function filterRemovalPdfDraftActionRows(rows = [], { includeShiftRemovals = false } = {}) {
+  const sourceRows = Array.isArray(rows) ? rows : [];
+  return includeShiftRemovals
+    ? [...sourceRows]
+    : sourceRows.filter((row) => !isRemovalPdfDraftShiftRemoval(row));
+}
+
 export function getRemovalPdfDraftActionOptions(row = {}) {
   const actionValue = row?.swpDraftActionValue || getRemovalPdfDraftActionValue(row);
   const isKnown = ACTION_DEFINITIONS.some((action) => action.value === actionValue);
@@ -380,8 +392,8 @@ export function buildRemovalPdfDraftExportLog(log = {}) {
   };
 }
 
-export function buildRemovalPdfDraftExportRows(rows = []) {
-  const sortedRows = sortDraftRows(rows)
+export function buildRemovalPdfDraftExportRows(rows = [], { includeShiftRemovals = true } = {}) {
+  const sortedRows = sortDraftRows(filterRemovalPdfDraftActionRows(rows, { includeShiftRemovals }))
     .filter((row) => normalizeDraftTrainNumber(row?.trainsetNumber || row?.key));
   const exportRows = [];
   let previousActionValue = null;

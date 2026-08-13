@@ -4,6 +4,7 @@ import { Check, ChevronDown, Download, FileText, Plus, RotateCcw, Trash2, X } fr
 import {
   addRemovalPdfDraftLogEntry,
   addRemovalPdfDraftRow,
+  filterRemovalPdfDraftActionRows,
   getRemovalPdfDraftActionOptions,
   getRemovalPdfDraftGroups,
   removeRemovalPdfDraftLogEntry,
@@ -174,8 +175,14 @@ export default function RemovalPdfEditor({
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
   const onCloseRef = useRef(onClose);
-  const groups = getRemovalPdfDraftGroups(draft?.actionRows || []);
+  const [showShiftRemovals, setShowShiftRemovals] = useState(false);
+  const allRequestedRows = Array.isArray(draft?.actionRows) ? draft.actionRows : [];
+  const visibleActionRows = filterRemovalPdfDraftActionRows(allRequestedRows, {
+    includeShiftRemovals: showShiftRemovals,
+  });
+  const groups = getRemovalPdfDraftGroups(visibleActionRows);
   const requestedRows = groups.flatMap((group) => group.rows);
+  const hiddenShiftRemovalCount = allRequestedRows.length - visibleActionRows.length;
   const rowCount = requestedRows.length;
   const pendingWashingCount = requestedRows.filter((row) => /\bwash(?:ing)?\b/i.test(row?.requestType || "")).length;
   const westCount = draft?.westLog?.entries?.length || 0;
@@ -184,6 +191,10 @@ export default function RemovalPdfEditor({
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
+
+  useEffect(() => {
+    if (draft) setShowShiftRemovals(false);
+  }, [Boolean(draft)]);
 
   useEffect(() => {
     if (!draft || typeof document === "undefined") return undefined;
@@ -453,6 +464,17 @@ export default function RemovalPdfEditor({
                     <span>PENDING WASHING - Total: {pendingWashingCount}</span>
                   </div>
                   <div className="theme-swp-paper-heading-actions">
+                    {hiddenShiftRemovalCount > 0 || showShiftRemovals ? (
+                      <button
+                        type="button"
+                        className="theme-swp-paper-shift-toggle"
+                        data-pdf-control="shift-removals"
+                        aria-pressed={showShiftRemovals}
+                        onClick={() => setShowShiftRemovals((visible) => !visible)}
+                      >
+                        {showShiftRemovals ? "Hide shift removals" : `Show shift removals (${hiddenShiftRemovalCount})`}
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => onDraftChange?.(addRemovalPdfDraftRow(draft))}
@@ -550,7 +572,11 @@ export default function RemovalPdfEditor({
                       </tr>
                     )) : (
                       <tr>
-                        <td colSpan={5} className="theme-swp-paper-empty">No requested train rows remain. Use Add train to create one.</td>
+                        <td colSpan={5} className="theme-swp-paper-empty">
+                          {hiddenShiftRemovalCount > 0
+                            ? "Shift removal rows are hidden. Use Show shift removals to display them."
+                            : "No requested train rows remain. Use Add train to create one."}
+                        </td>
                       </tr>
                     )}
                   </tbody>
@@ -567,7 +593,7 @@ export default function RemovalPdfEditor({
             <button type="button" onClick={onOpenEastNineAm} className="theme-swp-ed9-open inline-flex h-9 items-center gap-2 rounded-lg border px-4 text-[10px] font-black uppercase tracking-[0.08em] transition-all hover:-translate-y-0.5">
               <FileText size={14} /> ED 9AM REM
             </button>
-            <button type="button" onClick={onDownload} disabled={downloading} className="theme-swp-editor-download inline-flex h-9 items-center gap-2 rounded-lg border px-4 text-[10px] font-black uppercase tracking-[0.08em] transition-all hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60">
+            <button type="button" onClick={() => onDownload?.({ includeShiftRemovals: showShiftRemovals })} disabled={downloading} className="theme-swp-editor-download inline-flex h-9 items-center gap-2 rounded-lg border px-4 text-[10px] font-black uppercase tracking-[0.08em] transition-all hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60">
               <Download size={14} /> {downloading ? "Preparing..." : "Download edited PDF"}
             </button>
           </div>

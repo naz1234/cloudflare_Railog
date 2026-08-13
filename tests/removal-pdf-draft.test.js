@@ -7,6 +7,7 @@ import {
   buildRemovalPdfDraftExportLog,
   buildRemovalPdfDraftExportRows,
   createRemovalPdfDraft,
+  filterRemovalPdfDraftActionRows,
   getRemovalPdfDraftGroups,
   removeRemovalPdfDraftLogEntry,
   removeRemovalPdfDraftRow,
@@ -264,6 +265,21 @@ test("the edited PDF export preserves allocation separators and strips editor me
   assert.equal("swpDraftActionValue" in exportedTrainRows[0], false);
 });
 
+test("shift removals stay hidden by default and can be included in the edited PDF", () => {
+  const draft = createRemovalPdfDraft(createSourceData());
+  const hiddenRows = filterRemovalPdfDraftActionRows(draft.actionRows);
+  const visibleRows = filterRemovalPdfDraftActionRows(draft.actionRows, { includeShiftRemovals: true });
+
+  assert.ok(hiddenRows.length < visibleRows.length);
+  assert.ok(hiddenRows.every((row) => !["earlyShiftRem", "lateShiftRem"].includes(row.swpDraftActionValue)));
+  assert.equal(visibleRows.length, draft.actionRows.length);
+
+  const defaultExport = buildRemovalPdfDraftExportRows(draft.actionRows);
+  const hiddenExport = buildRemovalPdfDraftExportRows(draft.actionRows, { includeShiftRemovals: false });
+  assert.ok(defaultExport.some((row) => row.actionLabel === "Early Shift Rem"));
+  assert.ok(hiddenExport.every((row) => row.isSeparator || !/shift rem/i.test(row.actionLabel || "")));
+});
+
 test("Removal Table changes never affect Requested Train Allocation", () => {
   const source = createSourceData();
   const draft = createRemovalPdfDraft(source);
@@ -411,6 +427,10 @@ test("the SWP editor uses a paper preview with Add, Remove, and Allocation contr
   assert.match(editorSource, /aria-selected=\{selected\}/);
   assert.match(editorSource, /data-open=\{open \? "true" : "false"\}/);
   assert.match(editorSource, /data-pdf-control="allocation"/);
+  assert.match(editorSource, /data-pdf-control="shift-removals"/);
+  assert.match(editorSource, /Show shift removals/);
+  assert.match(editorSource, /includeShiftRemovals: showShiftRemovals/);
+  assert.match(depotStablingSource, /buildRemovalPdfDraftExportRows\(trainRemSwpDraft\.actionRows, \{ includeShiftRemovals \}\)/);
   assert.match(editorSource, /onChange=\{\(event\) => handleFieldChange\(row\.swpDraftId, "trainsetNumber", event\.target\.value\)\}/);
   assert.match(editorSource, /REQUESTED TRAIN - Total: \{rowCount\}/);
 });

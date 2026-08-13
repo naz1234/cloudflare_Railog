@@ -8221,7 +8221,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     setTrainRemEastNineAmDraft(createTrainRemEastNineAmDraft());
   };
 
-  const handleTrainRemSwpDownload = () => {
+  const handleTrainRemSwpDownload = ({ includeShiftRemovals = false } = {}) => {
     if (!trainRemSwpDraft || trainRemSwpDownloading) return;
 
     setTrainRemSwpDownloading(true);
@@ -8230,8 +8230,8 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         buildRemovalPdfDraftExportLog(trainRemSwpDraft.westLog),
         buildRemovalPdfDraftExportLog(trainRemSwpDraft.eastLog),
         {
-        actionOverviewRows: buildRemovalPdfDraftExportRows(trainRemSwpDraft.actionRows),
-        stackMorningDepots: true,
+          actionOverviewRows: buildRemovalPdfDraftExportRows(trainRemSwpDraft.actionRows, { includeShiftRemovals }),
+          stackMorningDepots: true,
         },
       );
     } catch (error) {
