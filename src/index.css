@@ -9697,6 +9697,7 @@ html[data-app-theme="light"] .theme-swp-ed9-back {
   -webkit-text-fill-color: #475569;
   background: #f1f5f9;
   border-color: #94a3b8;
+  animation: swp-shift-toggle-attention 1.6s ease-in-out infinite;
 }
 
 .theme-swp-paper-shift-toggle[aria-pressed="true"] {
@@ -9704,6 +9705,27 @@ html[data-app-theme="light"] .theme-swp-ed9-back {
   -webkit-text-fill-color: #3f2a4d;
   background: #e9def0;
   border-color: #8a6aa8;
+  animation: none;
+}
+
+@keyframes swp-shift-toggle-attention {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(138, 106, 168, 0.18);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(138, 106, 168, 0.2),
+      0 0 12px rgba(138, 106, 168, 0.34);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-swp-paper-shift-toggle[aria-pressed="false"] {
+    animation: none;
+    box-shadow: 0 0 0 2px rgba(138, 106, 168, 0.24);
+  }
 }
 
 .theme-swp-paper-shift-toggle:hover,

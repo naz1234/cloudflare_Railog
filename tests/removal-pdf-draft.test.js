@@ -435,6 +435,22 @@ test("the SWP editor uses a paper preview with Add, Remove, and Allocation contr
   assert.match(editorSource, /REQUESTED TRAIN - Total: \{rowCount\}/);
 });
 
+test("Show shift removals pulses only while shift rows are hidden", () => {
+  assert.match(themeStyles, /@keyframes swp-shift-toggle-attention/);
+  assert.match(
+    themeStyles,
+    /\.theme-swp-paper-shift-toggle\[aria-pressed="false"\][\s\S]*?animation: swp-shift-toggle-attention 1\.6s ease-in-out infinite;/,
+  );
+  assert.match(
+    themeStyles,
+    /\.theme-swp-paper-shift-toggle\[aria-pressed="true"\][\s\S]*?animation: none;/,
+  );
+  assert.match(
+    themeStyles,
+    /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.theme-swp-paper-shift-toggle\[aria-pressed="false"\][\s\S]*?animation: none;/,
+  );
+});
+
 test("ED 9AM REM opens a separate editor and omits requested train allocation", () => {
   assert.match(depotStablingSource, /createTrainRemEastNineAmDraft/);
   assert.match(depotStablingSource, /collectTrainRemMainlineInServiceRows\(nineAmState, activeTimetable\)/);
