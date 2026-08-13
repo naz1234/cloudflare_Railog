@@ -8201,6 +8201,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const handleTrainRemSwpOpen = (event = null) => {
     event?.preventDefault?.();
     event?.stopPropagation?.();
+    setTrainRemPdfMenuDepot(null);
     setTrainRemSwpDraft(createTrainRemSwpDraft());
   };
 
@@ -8823,13 +8824,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     <button
                       type="button"
                       role="menuitem"
-                      onClick={(event) => handleTrainRemPdfDownload(depot, event, "dc")}
+                      onClick={handleTrainRemSwpOpen}
                       className="flex w-full items-center gap-2 rounded-lg border border-transparent px-2 py-2 text-left transition hover:border-cyan-400/35 hover:bg-cyan-400/10"
                     >
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-cyan-400/35 bg-cyan-400/10 text-[9px] font-black text-cyan-200">DC</span>
                       <span className="min-w-0">
                         <span className="block text-[10px] font-semibold text-white">DC PDF</span>
-                        <span className="mt-0.5 block text-[8px] leading-tight text-[#7eb8e0]">Current complete output</span>
+                        <span className="mt-0.5 block text-[8px] leading-tight text-[#7eb8e0]">Open editable complete output</span>
                       </span>
                     </button>
                     <button
@@ -8849,28 +8850,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   </div>
                 )}
               </div>
-
-              <ActionTooltip
-                message="Open an editable SWP PDF copy"
-                placement="top"
-                align="end"
-              >
-                <button
-                  type="button"
-                  onClick={handleTrainRemSwpOpen}
-                  className="theme-train-rem-export theme-train-rem-swp inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal text-cyan-100 transition-all hover:-translate-y-0.5"
-                  style={{
-                    background: "rgba(168,85,247,0.14)",
-                    borderColor: "rgba(192,132,252,0.58)",
-                    color: "#e9d5ff",
-                    boxShadow: "0 0 12px rgba(168,85,247,0.16)",
-                  }}
-                  aria-label="Open SWP PDF Editor"
-                >
-                  <Pencil size={12} />
-                  SWP
-                </button>
-              </ActionTooltip>
 
               <ActionTooltip
                 message={trainRemUndoCount > 0 ? "Undo last change" : "Nothing to undo"}

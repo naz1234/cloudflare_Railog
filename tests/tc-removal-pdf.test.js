@@ -144,6 +144,8 @@ test("PDF toolbar exposes DC and TC choices and TC uses removal-only layout", ()
   const source = readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
   assert.match(source, />DC PDF</);
   assert.match(source, />TC PDF</);
+  assert.match(source, /role="menuitem"\s+onClick=\{handleTrainRemSwpOpen\}[\s\S]*?>DC PDF</);
+  assert.doesNotMatch(source, /handleTrainRemPdfDownload\(depot, event, "dc"\)/);
   assert.match(source, /layout:\s*"tcRemovalOnly"/);
   assert.match(source, /buildTcRemovalPdfLog\(/);
   assert.match(source, /isTcOutput \? \{ includeUntimedEntries: true \} : undefined/);

@@ -392,9 +392,13 @@ test("ED 9AM Add keeps East removal and off-peak tables independent", () => {
   assert.deepEqual(draft, draftBefore);
 });
 
-test("the Removal Summary toolbar opens SWP instead of downloading PNG", () => {
-  assert.match(depotStablingSource, /aria-label="Open SWP PDF Editor"/);
-  assert.match(depotStablingSource, /<Pencil size=\{12\} \/>\s*SWP/);
+test("DC PDF opens the editor without a separate SWP toolbar button", () => {
+  assert.match(depotStablingSource, /role="menuitem"\s+onClick=\{handleTrainRemSwpOpen\}[\s\S]*?>DC PDF</);
+  assert.match(depotStablingSource, /setTrainRemPdfMenuDepot\(null\);\s*setTrainRemSwpDraft\(createTrainRemSwpDraft\(\)\);/);
+  assert.doesNotMatch(depotStablingSource, /aria-label="Open SWP PDF Editor"/);
+  assert.doesNotMatch(depotStablingSource, /<Pencil size=\{12\} \/>\s*SWP/);
+  assert.match(editorSource, />DC PDF Editor</);
+  assert.match(editorSource, /aria-label="Close DC PDF Editor"/);
   assert.match(depotStablingSource, /downloadEditedCombinedRemovalPdf/);
   assert.match(depotStablingSource, /west-east-depot-removal-edited-\$\{dateStamp\}\.pdf/);
   assert.doesNotMatch(depotStablingSource, /handleTrainRemPngDownload|downloadCombinedRemovalPng|theme-train-rem-png/);
@@ -470,8 +474,8 @@ test("ED 9AM REM opens a separate editor and omits requested train allocation", 
   assert.doesNotMatch(eastNineAmEditorSource, /data-pdf-control="allocation"/);
 });
 
-test("the SWP button and editor have explicit light-mode contrast", () => {
-  assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-train-rem-toolbar \.theme-train-rem-swp/);
+test("the DC editor has explicit light-mode contrast without obsolete SWP button styles", () => {
+  assert.doesNotMatch(themeStyles, /html\[data-app-theme="light"\] \.theme-train-rem-toolbar \.theme-train-rem-swp/);
   assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-swp-editor-window/);
   assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-swp-editor-input/);
   assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-swp-editor-download/);
