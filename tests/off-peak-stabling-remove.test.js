@@ -100,9 +100,12 @@ test("scheduled removals use the Train Request tick while off-peak rows keep the
   assert.doesNotMatch(depotStablingSource, /data-removal-tid-stabling-remove[\s\S]{0,900}setWestData|data-removal-tid-stabling-remove[\s\S]{0,900}setEastData/);
 });
 
-test("the compact remove button has explicit dark and light mode contrast", () => {
+test("the compact remove button matches the Train Request delete style in light mode", () => {
   assert.match(themeStyles, /\.theme-train-rem-offpeak-remove\s*\{[^}]*color: #ffffff;[^}]*background: #941c24;[^}]*border-color: rgba\(252,165,165,0\.85\);/s);
-  assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-train-rem-offpeak-remove\s*\{[^}]*color: #ffffff !important;[^}]*background: #941c24 !important;[^}]*border-color: rgba\(252,165,165,0\.85\) !important;/s);
+  assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-maintenance-delete-icon\s*\{[^}]*background: #c85f67 !important;[^}]*border-color: #e7a0a5 !important;[^}]*box-shadow: 0 0 4px rgba\(200, 95, 103, 0\.26\) !important;/s);
+  assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-train-rem-offpeak-remove\s*\{[^}]*color: #ffffff !important;[^}]*background: #c85f67 !important;[^}]*border-color: #e7a0a5 !important;/s);
+  assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-train-rem-offpeak-remove svg,[\s\S]*?stroke: #ffffff !important;/);
+  assert.match(themeStyles, /html\[data-app-theme="light"\] \.theme-train-rem-offpeak-remove:hover,[\s\S]*?background: #b94f58 !important;/);
   assert.match(themeStyles, /\.theme-train-rem-offpeak-remove:hover,[\s\S]*?background: #c92a35;/);
 });
 
