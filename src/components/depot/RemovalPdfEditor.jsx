@@ -418,7 +418,7 @@ export default function RemovalPdfEditor({
               <FileText size={18} />
             </span>
             <div className="min-w-0">
-              <h2 id="swp-pdf-editor-title" className="text-[14px] font-black uppercase tracking-[0.16em] text-white">SWP PDF Editor</h2>
+              <h2 id="swp-pdf-editor-title" className="text-[14px] font-black uppercase tracking-[0.16em] text-white">DC PDF Editor</h2>
               <p className="mt-0.5 text-[11px]">Edit directly in a preview that follows the downloaded PDF layout.</p>
             </div>
           </div>
@@ -427,7 +427,7 @@ export default function RemovalPdfEditor({
             type="button"
             onClick={onClose}
             className="theme-swp-editor-close inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-500/50 bg-slate-900/45 px-2.5 text-[10px] font-bold text-slate-200 transition-colors hover:border-red-400/70 hover:bg-red-950/40 hover:text-red-200"
-            aria-label="Close SWP PDF Editor"
+            aria-label="Close DC PDF Editor"
           >
             <X size={14} /> Close
           </button>

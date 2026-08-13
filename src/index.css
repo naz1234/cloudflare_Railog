@@ -9088,14 +9088,6 @@ html[data-app-theme="light"] .theme-train-rem-toolbar .theme-train-rem-pdf {
   box-shadow: 0 1px 4px rgba(8,145,178,0.12) !important;
 }
 
-html[data-app-theme="light"] .theme-train-rem-toolbar .theme-train-rem-swp {
-  color: #581c87 !important;
-  -webkit-text-fill-color: #581c87 !important;
-  background: #f3e8ff !important;
-  border-color: #a855f7 !important;
-  box-shadow: 0 1px 4px rgba(126,34,206,0.14) !important;
-}
-
 html[data-app-theme="light"] .theme-train-rem-toolbar .theme-train-rem-export.is-done {
   color: #14532d !important;
   -webkit-text-fill-color: #14532d !important;
