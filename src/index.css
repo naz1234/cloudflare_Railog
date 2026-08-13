@@ -9671,7 +9671,8 @@ html[data-app-theme="light"] .theme-swp-ed9-back {
 }
 
 .theme-swp-paper-add,
-.theme-swp-paper-reset {
+.theme-swp-paper-reset,
+.theme-swp-paper-shift-toggle {
   display: inline-flex;
   height: 24px;
   flex: 0 0 auto;
@@ -9689,6 +9690,26 @@ html[data-app-theme="light"] .theme-swp-ed9-back {
   line-height: 1;
   white-space: nowrap;
   cursor: pointer;
+}
+
+.theme-swp-paper-shift-toggle[aria-pressed="false"] {
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.theme-swp-paper-shift-toggle[aria-pressed="true"] {
+  color: #3f2a4d;
+  -webkit-text-fill-color: #3f2a4d;
+  background: #e9def0;
+  border-color: #8a6aa8;
+}
+
+.theme-swp-paper-shift-toggle:hover,
+.theme-swp-paper-shift-toggle:focus-visible {
+  filter: brightness(0.96);
+  box-shadow: 0 0 0 2px rgba(138,106,168,0.16);
 }
 
 .theme-swp-paper-add:hover,
