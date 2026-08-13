@@ -10517,13 +10517,56 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-log-
   }
 }
 
+@keyframes maspo-current-step-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(79, 142, 247, 0.48),
+      0 0 16px rgba(79, 142, 247, 0.24),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(79, 142, 247, 0.78),
+      0 0 24px rgba(79, 142, 247, 0.52),
+      inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  }
+}
+
 .theme-maspo-train-checker-flow-step {
   animation: maspo-flow-step-enter 220ms ease-out both;
+}
+
+.theme-maspo-train-checker-flow-step.is-complete {
+  background: #170f25;
+  border-color: rgba(52, 211, 153, 0.52);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.theme-maspo-train-checker-flow-step.is-current {
+  background: linear-gradient(135deg, rgba(79, 142, 247, 0.18), #061827 82%);
+  border-color: #4f8ef7;
+  animation:
+    maspo-flow-step-enter 220ms ease-out both,
+    maspo-current-step-pulse 1.65s ease-in-out 220ms infinite;
+}
+
+.theme-maspo-train-checker-upload.is-dragging {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: #c4b5fd;
+  box-shadow: 0 0 20px rgba(167, 139, 250, 0.28);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .theme-maspo-train-checker-flow-step {
     animation: none;
+  }
+
+  .theme-maspo-train-checker-flow-step.is-current {
+    box-shadow:
+      0 0 0 1px rgba(79, 142, 247, 0.48),
+      0 0 18px rgba(79, 142, 247, 0.30),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 }
 
@@ -10565,6 +10608,18 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-check
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker .theme-maspo-train-checker-flow-step.is-current {
+  background: #e7f0ff !important;
+  background-image: none !important;
+  border-color: #2563eb !important;
+}
+
+html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker .theme-maspo-current-step-badge {
+  background: #dbeafe !important;
+  border-color: #2563eb !important;
+  color: #1d4ed8 !important;
 }
 
 html[data-app-theme="light"] .theme-train-movement-page .theme-maspo-train-checker-summary span + span,

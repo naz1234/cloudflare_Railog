@@ -95,6 +95,17 @@ test("MASPO controls reveal one required flow step at a time", () => {
   assert.match(themeStyles, /background: #7c3aed !important/);
 });
 
+test("the active MASPO step uses the Area Movement blue attention state", () => {
+  assert.match(checkerSource, /data-maspo-step-state=\{archiveFile \? "complete" : "current"\}/);
+  assert.match(checkerSource, /data-maspo-step-state=\{normalizedTrainQuery \? "complete" : "current"\}/);
+  assert.match(checkerSource, /data-maspo-step-state=\{analysis \? "complete" : "current"\}/);
+  assert.equal(checkerSource.match(/theme-maspo-current-step-badge/g)?.length, 3);
+  assert.match(themeStyles, /@keyframes maspo-current-step-pulse/);
+  assert.match(themeStyles, /theme-maspo-train-checker-flow-step\.is-current \{[\s\S]*?border-color: #4f8ef7;[\s\S]*?maspo-current-step-pulse 1\.65s ease-in-out 220ms infinite;/);
+  assert.match(themeStyles, /prefers-reduced-motion: reduce[\s\S]*?theme-maspo-train-checker-flow-step\.is-current/);
+  assert.match(themeStyles, /theme-maspo-train-checker-flow-step\.is-current \{[\s\S]*?background: #e7f0ff !important;[\s\S]*?border-color: #2563eb !important;/);
+});
+
 test("movement results use the reference-inspired latest card and chronological history table", () => {
   assert.match(checkerSource, /\{analysis\.train\} Movement Check/);
   assert.match(checkerSource, /theme-maspo-train-checker-results-reference/);

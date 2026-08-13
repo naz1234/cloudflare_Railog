@@ -190,7 +190,8 @@ export default function MaspoTrainMovementChecker() {
           ref={uploadButtonRef}
           type="button"
           disabled={working}
-          className={`theme-maspo-train-checker-flow-step theme-maspo-train-checker-upload flex min-h-[112px] w-full cursor-pointer flex-col gap-2 rounded-xl border px-4 py-3 text-left transition-all ${dragging ? "is-dragging border-violet-300 bg-violet-500/15" : "border-violet-500/65 bg-[#170f25] hover:border-violet-300 hover:bg-[#211334]"}`}
+          data-maspo-step-state={archiveFile ? "complete" : "current"}
+          className={`theme-maspo-train-checker-flow-step theme-maspo-train-checker-upload flex min-h-[112px] w-full cursor-pointer flex-col gap-2 rounded-xl border px-4 py-3 text-left transition-all ${archiveFile ? "is-complete" : dragging ? "is-dragging" : "is-current"}`}
           onClick={() => fileInputRef.current?.click()}
           onDragOver={(event) => { event.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
@@ -206,7 +207,7 @@ export default function MaspoTrainMovementChecker() {
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-violet-400/70 text-[10px] text-violet-300">1</span>
               Upload file
             </span>
-            <span className={`rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.09em] ${archiveFile ? "border-emerald-400/60 bg-emerald-500/15 text-emerald-200" : "border-violet-400/60 bg-violet-500/15 text-violet-200"}`}>
+            <span className={`rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.09em] ${archiveFile ? "border-emerald-400/60 bg-emerald-500/15 text-emerald-200" : "theme-maspo-current-step-badge border-[#4f8ef7]/70 bg-[#123f73]/70 text-[#7ab7ff]"}`}>
               {archiveFile ? "Done" : "Current"}
             </span>
           </span>
@@ -280,13 +281,16 @@ export default function MaspoTrainMovementChecker() {
 
         {archiveFile && (
           <form onSubmit={runAnalysis} className="grid gap-3">
-            <div className="theme-maspo-train-checker-flow-step theme-maspo-train-checker-controls flex min-h-[96px] flex-col justify-center rounded-xl border border-violet-500/55 bg-[#170f25] px-4 py-3 shadow-[0_0_18px_rgba(168,85,247,0.08)]">
+            <div
+              data-maspo-step-state={normalizedTrainQuery ? "complete" : "current"}
+              className={`theme-maspo-train-checker-flow-step theme-maspo-train-checker-controls flex min-h-[96px] flex-col justify-center rounded-xl border px-4 py-3 ${normalizedTrainQuery ? "is-complete" : "is-current"}`}
+            >
             <div className="flex items-center justify-between gap-3">
               <label htmlFor="maspo-train-query" className="inline-flex min-w-0 items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.08em] text-violet-100">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-violet-400/70 text-[10px] text-violet-300">2</span>
                 Train set
               </label>
-              <span className={`rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.09em] ${normalizedTrainQuery ? "border-emerald-400/60 bg-emerald-500/15 text-emerald-200" : "border-violet-400/60 bg-violet-500/15 text-violet-200"}`}>
+              <span className={`rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.09em] ${normalizedTrainQuery ? "border-emerald-400/60 bg-emerald-500/15 text-emerald-200" : "theme-maspo-current-step-badge border-[#4f8ef7]/70 bg-[#123f73]/70 text-[#7ab7ff]"}`}>
                 {normalizedTrainQuery ? "Done" : "Current"}
               </span>
             </div>
@@ -324,7 +328,8 @@ export default function MaspoTrainMovementChecker() {
             <button
               type="submit"
               disabled={working}
-              className="theme-maspo-train-checker-flow-step theme-maspo-train-checker-submit flex min-h-[96px] w-full flex-col justify-center rounded-xl border border-violet-400/65 bg-[linear-gradient(110deg,rgba(126,34,206,0.34),rgba(76,29,149,0.56))] px-4 py-3 text-left text-white transition-all hover:border-violet-300 hover:bg-violet-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+              data-maspo-step-state={analysis ? "complete" : "current"}
+              className={`theme-maspo-train-checker-flow-step theme-maspo-train-checker-submit flex min-h-[96px] w-full flex-col justify-center rounded-xl border px-4 py-3 text-left text-white transition-all disabled:cursor-not-allowed disabled:opacity-60 ${analysis ? "is-complete" : "is-current"}`}
             >
               <span className="flex w-full items-center justify-between gap-3">
                 <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.08em]">
@@ -332,7 +337,7 @@ export default function MaspoTrainMovementChecker() {
                   {working ? "Checking logs" : "Check movement"}
                 </span>
                 <span className="flex items-center gap-2">
-                  <span className={`rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.09em] ${analysis ? "border-emerald-300/70 bg-emerald-400/15 text-emerald-100" : "border-violet-300/70 bg-violet-400/15"}`}>
+                    <span className={`rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.09em] ${analysis ? "border-emerald-300/70 bg-emerald-400/15 text-emerald-100" : "theme-maspo-current-step-badge border-[#4f8ef7]/70 bg-[#123f73]/70 text-[#7ab7ff]"}`}>
                     {analysis ? "Done" : "Current"}
                   </span>
                   {working ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
