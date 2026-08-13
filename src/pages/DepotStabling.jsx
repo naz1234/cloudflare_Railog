@@ -9322,20 +9322,21 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                               className="absolute top-1/2 z-[60]"
                               style={{ left: "18%", transform: "translate(-50%, -50%)" }}
                             >
-                              <span
-                                className="already-status-trigger relative z-40 inline-flex shrink-0 items-center justify-center"
-                                tabIndex={0}
-                                aria-label={removalStablingStatusMessage}
-                                data-removal-stabling-status={offPeakStablingMatch.depotCodes.join("-")}
+                              <ActionTooltip
+                                message={removalStablingStatusMessage}
+                                placement="top"
+                                align="start"
+                                wrapperClassName="shrink-0"
                               >
-                                <span className="inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border border-emerald-300/80 bg-[#58c96b] shadow-[0_0_6px_rgba(88,201,107,0.42)]">
+                                <span
+                                  className="inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border border-emerald-300/80 bg-[#58c96b] shadow-[0_0_6px_rgba(88,201,107,0.42)]"
+                                  tabIndex={0}
+                                  aria-label={removalStablingStatusMessage}
+                                  data-removal-stabling-status={offPeakStablingMatch.depotCodes.join("-")}
+                                >
                                   <Check className="h-[9px] w-[9px] stroke-[3.5] text-white" aria-hidden="true" />
                                 </span>
-                                <span className="already-status-bubble pointer-events-none absolute right-[25px] top-1/2 z-[90] -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-900 shadow-xl opacity-0 scale-95 transition-all duration-150">
-                                  <span className="absolute -right-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-r border-t border-slate-200 bg-white" />
-                                  <span className="relative z-10">{removalStablingStatusMessage}</span>
-                                </span>
-                              </span>
+                              </ActionTooltip>
                             </span>
                           )}
 
