@@ -47,3 +47,15 @@ export function shouldShowRemovalTidStablingRemove({
     && stablingMatch?.depotCodes?.length
   );
 }
+
+export function formatRemovalStablingStatusMessage(locations = []) {
+  const cleanLocations = (Array.isArray(locations) ? locations : [locations])
+    .map((location) => String(location || "")
+      .replace(/\b(?:West|East) Depot\s*/gi, "")
+      .trim())
+    .filter(Boolean);
+
+  return cleanLocations.length
+    ? `Train already at ${cleanLocations.join(" / ")}`
+    : "";
+}

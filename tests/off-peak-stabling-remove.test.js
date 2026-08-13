@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  formatRemovalStablingStatusMessage,
   getOffPeakStablingMatch,
   shouldShowRemovalTidStablingRemove,
 } from "../src/lib/trainRemOffPeakStabling.js";
@@ -46,6 +47,21 @@ test("a train found in both stabling depots reports both locations once", () => 
   );
 });
 
+test("scheduled removal matches use the Train Request stabling message format", () => {
+  assert.equal(
+    formatRemovalStablingStatusMessage("West Depot STB 15 Block 03"),
+    "Train already at STB 15 Block 03",
+  );
+  assert.equal(
+    formatRemovalStablingStatusMessage([
+      "West Depot STB 12 Block 04",
+      "East Depot STB 02 Block 07",
+    ]),
+    "Train already at STB 12 Block 04 / STB 02 Block 07",
+  );
+  assert.equal(formatRemovalStablingStatusMessage([]), "");
+});
+
 test("the stabling-conflict control is limited to 9am and 7pm Removal TID rows", () => {
   const stablingMatch = getOffPeakStablingMatch("T03", ["T03"], []);
 
@@ -56,24 +72,30 @@ test("the stabling-conflict control is limited to 9am and 7pm Removal TID rows",
   assert.equal(shouldShowRemovalTidStablingRemove({ selectedPreset: "9am", referenceOnly: true, stablingMatch: null }), false);
 });
 
-test("Removal Summary uses stabling-only data and clears only the selected Removal TID row", () => {
+test("Removal Summary uses exact stabling locations while off-peak removal still clears only its row", () => {
   assert.match(depotStablingSource, /collectStablingTrainIds\(westData, WEST_ROADS\)/);
   assert.match(
     depotStablingSource,
     /Object\.keys\(eastData \|\| \{\}\)\.length \? eastData : eastStablingData/,
   );
   assert.match(depotStablingSource, /getOffPeakStablingMatch\([\s\S]*?westStablingTrainIds,[\s\S]*?eastStablingTrainIds/);
+  assert.match(depotStablingSource, /getMainStablingLocations\(westData, sourceData\)/);
   assert.match(depotStablingSource, /shouldShowRemovalTidStablingRemove\(\{[\s\S]*?selectedPreset,[\s\S]*?referenceOnly,/);
+  assert.match(depotStablingSource, /showRemovalStablingStatus = Boolean\([\s\S]*?realReferenceScheduleMatch[\s\S]*?removalStablingStatusMessage/);
+  assert.match(depotStablingSource, /showOffPeakStablingRemove = Boolean\([\s\S]*?referenceDisplayOnly/);
   assert.match(depotStablingSource, /data-removal-tid-stabling-remove=\{offPeakStablingMatch\.depotCodes\.join\("-"\)\}/);
   assert.match(depotStablingSource, /message=\{offPeakStablingMatch\.tooltip\}/);
   assert.match(depotStablingSource, /updateTrainRemCell\(depot, index, "trainId", ""\)/);
   assert.doesNotMatch(depotStablingSource, /data-removal-tid-stabling-remove[\s\S]{0,900}setWestData|data-removal-tid-stabling-remove[\s\S]{0,900}setEastData/);
 });
 
-test("Removal TID stabling conflicts reuse the PR 279 button and clear only the chosen row", () => {
+test("scheduled removals use the Train Request tick while off-peak rows keep the PR 279 remove control", () => {
   assert.match(depotStablingSource, /showRemovalTidStablingRemove = shouldShowRemovalTidStablingRemove/);
+  assert.match(depotStablingSource, /data-removal-stabling-status=\{offPeakStablingMatch\.depotCodes\.join\("-"\)\}/);
+  assert.match(depotStablingSource, /showRemovalStablingStatus[\s\S]*?<Check className="h-\[9px\] w-\[9px\] stroke-\[3\.5\] text-white"/);
+  assert.match(depotStablingSource, /showRemovalStablingStatus[\s\S]*?already-status-trigger[\s\S]*?already-status-bubble/);
   assert.match(depotStablingSource, /className="theme-train-rem-offpeak-remove[^"\n]*"/);
-  assert.match(depotStablingSource, /showRemovalTidStablingRemove[\s\S]*?updateTrainRemCell\(depot, index, "trainId", ""\)/);
+  assert.match(depotStablingSource, /showOffPeakStablingRemove[\s\S]*?updateTrainRemCell\(depot, index, "trainId", ""\)/);
   assert.doesNotMatch(depotStablingSource, /data-removal-tid-stabling-remove[\s\S]{0,900}setWestData|data-removal-tid-stabling-remove[\s\S]{0,900}setEastData/);
 });
 
