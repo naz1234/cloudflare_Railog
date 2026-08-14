@@ -161,7 +161,7 @@ export default function MaspoTrainMovementChecker() {
             <TrainFront className="h-7 w-7" />
           </span>
           <div className="min-w-0">
-            <h2 className="text-[15px] font-black leading-tight text-white">Check Train Train Mov. from Maspo E–log.</h2>
+            <h2 className="text-[15px] font-black leading-tight text-white">Check Train Movements in MASPO E-Log</h2>
             <p className="mt-0.5 text-[9px] font-semibold text-violet-200/85">Upload MASPO Excel logs and check one train across every workbook and worksheet.</p>
           </div>
         </div>

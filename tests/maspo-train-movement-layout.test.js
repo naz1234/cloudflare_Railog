@@ -38,7 +38,7 @@ test("MASPO checker is centered below Automatic and Manual movement windows", ()
 });
 
 test("checker exposes RAR, ZIP, and Excel upload with the requested title", () => {
-  assert.match(checkerSource, /Check Train Train Mov\. from Maspo E–log\./);
+  assert.match(checkerSource, /Check Train Movements in MASPO E-Log/);
   assert.match(checkerSource, /accept="\.zip,\.rar,\.xlsx,\.xls,\.xlsm,\.xlsb/);
   assert.match(checkerSource, /Files are analyzed in this browser and are not saved/);
   assert.match(checkerSource, /Movement ref/);
@@ -67,7 +67,7 @@ test("checker header follows the supplied summary and search-panel design", () =
 test("MASPO typography matches the movement panel scale", () => {
   assert.match(depotStablingSource, /<h2 className="text-\[15px\] font-black leading-tight text-white">\{modeTitle\}<\/h2>/);
   assert.match(depotStablingSource, /<p className="mt-0\.5 text-\[9px\] font-semibold" style=\{\{ color: accent \}\}>\{modeSubtitle\}<\/p>/);
-  assert.match(checkerSource, /<h2 className="text-\[15px\] font-black leading-tight text-white">Check Train Train Mov\. from Maspo E–log\.<\/h2>/);
+  assert.match(checkerSource, /<h2 className="text-\[15px\] font-black leading-tight text-white">Check Train Movements in MASPO E-Log<\/h2>/);
   assert.match(checkerSource, /<p className="mt-0\.5 text-\[9px\] font-semibold text-violet-200\/85">Upload MASPO Excel logs/);
   assert.match(checkerSource, /block truncate text-\[13px\] font-semibold text-white">\{archiveFile\?\.name \|\| "Upload ZIP, RAR, or Excel"\}<\/span>/);
   assert.match(checkerSource, /h-full min-w-0 flex-1 border-0 bg-transparent px-0 text-\[13px\] font-semibold uppercase/);
