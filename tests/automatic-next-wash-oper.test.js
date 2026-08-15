@@ -8,6 +8,7 @@ import automaticNextWashOperPlugin from "../build/automaticNextWashOperPlugin.js
 import manualNextWashMaintPlugin from "../build/manualNextWashMaintPlugin.js";
 
 const source = readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
+const themeStyles = readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
 const sourceId = "/repo/src/pages/DepotStabling.jsx";
 
 function applyProductionTransforms() {
@@ -104,4 +105,24 @@ test("Manual Next Wash title links to CMMS MAINT in a new tab", () => {
   assert.match(manualFlow, /rel="noopener noreferrer"/);
   assert.doesNotMatch(manualFlow, /label: "Next Wash Optional",\s+optional: true,/);
   assert.match(manualFlow, /label: "If No need update",\s+optional: true,/);
+});
+
+test("both final Next Wash cards keep their pulse after completion", () => {
+  const transformed = applyProductionTransforms();
+  const automaticStart = transformed.indexOf("const automaticFlowSteps = [");
+  const manualStart = transformed.indexOf("const manualFlowSteps = [", automaticStart);
+  const manualEnd = transformed.indexOf("const allFlowSteps", manualStart);
+  const automaticFlow = transformed.slice(automaticStart, manualStart);
+  const manualFlow = transformed.slice(manualStart, manualEnd);
+
+  assert.match(automaticFlow, /key: "nextWashText",\s+persistentPulse: true,/);
+  assert.match(manualFlow, /key: "nextWashText",\s+persistentPulse: true,/);
+  assert.match(transformed, /const isAttentionStep = Boolean\(step\.persistentPulse\) \|\| isCurrent;/);
+  assert.match(transformed, /const cardState = isAttentionStep \? "is-current" : step\.complete \? "is-complete" : "is-pending";/);
+  assert.match(transformed, /data-movement-step-state=\{isAttentionStep \? "current" : step\.complete \? "complete" : "pending"\}/);
+  assert.match(transformed, /\$\{step\.persistentPulse \? "is-persistent-pulse" : ""\}/);
+  assert.match(transformed, /\{step\.complete \? \([\s\S]*?aria-label="Completed"/);
+  assert.match(themeStyles, /@keyframes tp1-persistent-step-pulse/);
+  assert.match(themeStyles, /\.theme-tp1-flow-step\.is-persistent-pulse \{[\s\S]*?animation: tp1-persistent-step-pulse 1\.65s ease-in-out infinite;/);
+  assert.match(themeStyles, /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.theme-tp1-flow-step\.is-persistent-pulse \{[\s\S]*?animation: none !important;/);
 });
