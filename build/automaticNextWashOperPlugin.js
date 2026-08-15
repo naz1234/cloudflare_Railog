@@ -31,10 +31,13 @@ function updateAutomaticNextWash(source) {
             href="${CMMS_OPER_URL}"
             target="_blank"
             rel="noopener noreferrer"
-            className="truncate underline decoration-current/60 underline-offset-2 hover:text-[#7ab7ff]"
+            className="theme-tp1-next-wash-link inline-flex min-w-0 items-center gap-2"
             title="Open CMMS to update status to OPER"
           >
-            Next Wash (update status to OPER)
+            <span className="truncate">Next Wash</span>
+            <span className="theme-tp1-next-wash-action-pill shrink-0 rounded-full border px-2 py-0.5 text-[8px] font-black tracking-[0.08em]">
+              Update to OPER <span aria-hidden="true">↗</span>
+            </span>
           </a>
         ),
         visible: automaticCmmsReady,`;
