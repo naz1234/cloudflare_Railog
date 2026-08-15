@@ -25,20 +25,11 @@ function updateManualNextWash(source) {
   const replacement = `      {
         key: "nextWashText",
         persistentAttention: true,
-        label: (
-          <a
-            href="${CMMS_MAINT_URL}"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="theme-tp1-next-wash-link inline-flex min-w-0 items-center gap-2"
-            title="Open CMMS to update status to MAINT"
-          >
-            <span className="truncate">Next Wash</span>
-            <span className="theme-tp1-next-wash-action-pill shrink-0 rounded-full border px-2 py-0.5 text-[8px] font-black tracking-[0.08em]">
-              Update to MAINT <span aria-hidden="true">↗</span>
-            </span>
-          </a>
-        ),`;
+        hideCurrentBadge: true,
+        label: "Next Wash (update status to MAINT)",
+        actionHref: "${CMMS_MAINT_URL}",
+        actionLabel: "Update MAINT",
+        actionTitle: "Open CMMS to update status to MAINT",`;
   const updatedFlow = replaceRequired(manualFlow, original, replacement, 'the Manual Area Next Wash step');
 
   return source.slice(0, manualStart) + updatedFlow + source.slice(manualEnd);

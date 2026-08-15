@@ -48,15 +48,16 @@ test("Automatic Next Wash action pill links to CMMS OPER in a new tab", () => {
   const manualStart = transformed.indexOf("const manualFlowSteps = [", automaticStart);
   const automaticFlow = transformed.slice(automaticStart, manualStart);
 
-  assert.match(automaticFlow, /<span className="truncate">Next Wash<\/span>/);
-  assert.match(automaticFlow, /theme-tp1-next-wash-action-pill/);
-  assert.match(automaticFlow, /Update to OPER <span aria-hidden="true">↗<\/span>/);
+  assert.match(automaticFlow, /label: "Next Wash \(update status to OPER\)"/);
+  assert.match(automaticFlow, /actionLabel: "Update OPER"/);
+  assert.match(automaticFlow, /hideCurrentBadge: true/);
   assert.match(
     automaticFlow,
-    /href="https:\/\/login\.flow-metro\.com\/adfs\/ls\/IdpInitiatedSignon\.aspx\?RelayState=RPID%3Dhttps%253A%252F%252Fcmms\.flow-metro\.com%26RelayState%3Dhttps%253A%252F%252Fcmms\.flow-metro\.com%252Fmaximo%252Fui%252Fmaximo\.jsp"/,
+    /actionHref: "https:\/\/login\.flow-metro\.com\/adfs\/ls\/IdpInitiatedSignon\.aspx\?RelayState=RPID%3Dhttps%253A%252F%252Fcmms\.flow-metro\.com%26RelayState%3Dhttps%253A%252F%252Fcmms\.flow-metro\.com%252Fmaximo%252Fui%252Fmaximo\.jsp"/,
   );
-  assert.match(automaticFlow, /target="_blank"/);
-  assert.match(automaticFlow, /rel="noopener noreferrer"/);
+  assert.match(transformed, /href=\{step\.actionHref\}/);
+  assert.match(transformed, /target="_blank"/);
+  assert.match(transformed, /rel="noopener noreferrer"/);
   assert.doesNotMatch(automaticFlow, /\bunderline\b|decoration-current|underline-offset/);
 });
 
@@ -102,27 +103,32 @@ test("Manual Next Wash action pill links to CMMS MAINT in a new tab", () => {
   const manualEnd = transformed.indexOf("const allFlowSteps", manualStart);
   const manualFlow = transformed.slice(manualStart, manualEnd);
 
-  assert.match(manualFlow, /<span className="truncate">Next Wash<\/span>/);
-  assert.match(manualFlow, /theme-tp1-next-wash-action-pill/);
-  assert.match(manualFlow, /Update to MAINT <span aria-hidden="true">↗<\/span>/);
+  assert.match(manualFlow, /label: "Next Wash \(update status to MAINT\)"/);
+  assert.match(manualFlow, /actionLabel: "Update MAINT"/);
+  assert.match(manualFlow, /hideCurrentBadge: true/);
   assert.match(
     manualFlow,
-    /href="https:\/\/login\.flow-metro\.com\/adfs\/ls\/IdpInitiatedSignon\.aspx\?RelayState=RPID%3Dhttps%253A%252F%252Fcmms\.flow-metro\.com%26RelayState%3Dhttps%253A%252F%252Fcmms\.flow-metro\.com%252Fmaximo%252Fui%252Fmaximo\.jsp"/,
+    /actionHref: "https:\/\/login\.flow-metro\.com\/adfs\/ls\/IdpInitiatedSignon\.aspx\?RelayState=RPID%3Dhttps%253A%252F%252Fcmms\.flow-metro\.com%26RelayState%3Dhttps%253A%252F%252Fcmms\.flow-metro\.com%252Fmaximo%252Fui%252Fmaximo\.jsp"/,
   );
-  assert.match(manualFlow, /target="_blank"/);
-  assert.match(manualFlow, /rel="noopener noreferrer"/);
   assert.doesNotMatch(manualFlow, /\bunderline\b|decoration-current|underline-offset/);
   assert.doesNotMatch(manualFlow, /label: "Next Wash Optional",\s+optional: true,/);
   assert.match(manualFlow, /label: "If No need update",\s+optional: true,/);
 });
 
-test("Next Wash links disable underlines and use the glowing pill style", () => {
+test("Next Wash uses the reference action-row layout without a Current badge", () => {
+  const transformed = applyProductionTransforms();
+
+  assert.match(transformed, /isCurrent && !step\.hideCurrentBadge/);
+  assert.match(transformed, /theme-tp1-next-wash-content mt-1 flex min-w-0 items-center gap-3 pt-2/);
+  assert.match(transformed, /theme-tp1-next-wash-link theme-tp1-next-wash-action-pill/);
+  assert.match(transformed, /<svg aria-hidden="true"[\s\S]*?<path d="M14 3h7v7"/);
   assert.match(
     themeStyles,
     /\.theme-tp1-next-wash-link,[\s\S]*?\.theme-tp1-next-wash-link:hover,[\s\S]*?\.theme-tp1-next-wash-link:focus \{[\s\S]*?text-decoration: none !important;/,
   );
-  assert.match(themeStyles, /\.theme-tp1-next-wash-action-pill \{[\s\S]*?border-color: rgba\(79, 142, 247, 0\.78\);[\s\S]*?0 0 10px rgba\(79, 142, 247, 0\.22\);/);
-  assert.match(themeStyles, /\.theme-tp1-next-wash-link:hover \.theme-tp1-next-wash-action-pill,[\s\S]*?transform: translateY\(-1px\);/);
+  assert.match(themeStyles, /\.theme-tp1-next-wash-content \{[\s\S]*?border-top: 1px solid rgba\(34, 211, 218, 0\.3\);/);
+  assert.match(themeStyles, /\.theme-tp1-next-wash-action-pill \{[\s\S]*?min-width: 132px;[\s\S]*?border-color: rgba\(37, 227, 236, 0\.76\);/);
+  assert.match(themeStyles, /\.theme-tp1-next-wash-link\.theme-tp1-next-wash-action-pill:hover,[\s\S]*?transform: translateY\(-1px\);/);
 });
 
 test("both final Next Wash cards keep a static attention state after completion", () => {

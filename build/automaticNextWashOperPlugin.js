@@ -26,20 +26,11 @@ function updateAutomaticNextWash(source) {
   const replacement = `      {
         key: "nextWashText",
         persistentAttention: true,
-        label: (
-          <a
-            href="${CMMS_OPER_URL}"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="theme-tp1-next-wash-link inline-flex min-w-0 items-center gap-2"
-            title="Open CMMS to update status to OPER"
-          >
-            <span className="truncate">Next Wash</span>
-            <span className="theme-tp1-next-wash-action-pill shrink-0 rounded-full border px-2 py-0.5 text-[8px] font-black tracking-[0.08em]">
-              Update to OPER <span aria-hidden="true">↗</span>
-            </span>
-          </a>
-        ),
+        hideCurrentBadge: true,
+        label: "Next Wash (update status to OPER)",
+        actionHref: "${CMMS_OPER_URL}",
+        actionLabel: "Update OPER",
+        actionTitle: "Open CMMS to update status to OPER",
         visible: automaticCmmsReady,`;
   const updatedFlow = replaceRequired(automaticFlow, original, replacement, 'the Automatic Area Next Wash step');
 
@@ -91,6 +82,42 @@ function updatePersistentAttentionRendering(source) {
               ? "inset 0 1px 0 rgba(255,255,255,0.05)"
               : "inset 0 1px 0 rgba(255,255,255,0.03)",`,
     'the persistent attention card styling',
+  );
+
+  updatedSource = replaceRequired(
+    updatedSource,
+    `            ) : isCurrent ? (
+              <span className="theme-tp1-current-step-badge shrink-0 rounded-full border border-[#4f8ef7]/70 bg-[#123f73]/70 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.09em] text-[#7ab7ff]">`,
+    `            ) : isCurrent && !step.hideCurrentBadge ? (
+              <span className="theme-tp1-current-step-badge shrink-0 rounded-full border border-[#4f8ef7]/70 bg-[#123f73]/70 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.09em] text-[#7ab7ff]">`,
+    'the optional Current badge',
+  );
+
+  updatedSource = replaceRequired(
+    updatedSource,
+    `          {step.render()}
+        </div>`,
+    `          {step.actionHref ? (
+            <div className="theme-tp1-next-wash-content mt-1 flex min-w-0 items-center gap-3 pt-2">
+              <div className="min-w-0 flex-1">{step.render()}</div>
+              <a
+                href={step.actionHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="theme-tp1-next-wash-link theme-tp1-next-wash-action-pill inline-flex shrink-0 items-center justify-center gap-2 rounded-full border px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.08em]"
+                title={step.actionTitle}
+              >
+                {step.actionLabel}
+                <svg aria-hidden="true" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 3h7v7" />
+                  <path d="M10 14 21 3" />
+                  <path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6" />
+                </svg>
+              </a>
+            </div>
+          ) : step.render()}
+        </div>`,
+    'the Next Wash action row',
   );
 
   return updatedSource;
