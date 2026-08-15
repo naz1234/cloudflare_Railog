@@ -7,13 +7,14 @@ import manualArrivalTimePlugin from './build/manualArrivalTimePlugin.js'
 import manualUnplannedSrPlugin from './build/manualUnplannedSrPlugin.js'
 import requestGroupVisibilityPlugin from './build/requestGroupVisibilityPlugin.js'
 import automaticExcelCompletedByPlugin from './build/automaticExcelCompletedByPlugin.js'
+import automaticNextWashOperPlugin from './build/automaticNextWashOperPlugin.js'
 import hideWeekdayTidTimePlugin from './build/hideWeekdayTidTimePlugin.js'
 
 // Cloudflare Pages build config.
 // The original Base44 Vite plugin was removed and replaced with a normal Vite alias.
 export default defineConfig({
   logLevel: 'error',
-  plugins: [pstHeaderPlugin(), shunterNamePlugin(), manualArrivalTimePlugin(), manualUnplannedSrPlugin(), requestGroupVisibilityPlugin(), automaticExcelCompletedByPlugin(), hideWeekdayTidTimePlugin(), react()],
+  plugins: [pstHeaderPlugin(), shunterNamePlugin(), manualArrivalTimePlugin(), manualUnplannedSrPlugin(), requestGroupVisibilityPlugin(), automaticExcelCompletedByPlugin(), automaticNextWashOperPlugin(), hideWeekdayTidTimePlugin(), react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
