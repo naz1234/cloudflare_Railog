@@ -24,7 +24,7 @@ function updateManualNextWash(source) {
         optional: true,`;
   const replacement = `      {
         key: "nextWashText",
-        persistentPulse: true,
+        persistentAttention: true,
         label: (
           <a
             href="${CMMS_MAINT_URL}"
