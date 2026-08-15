@@ -25,7 +25,7 @@ function updateAutomaticNextWash(source) {
         visible: automaticCmmsReady,`;
   const replacement = `      {
         key: "nextWashText",
-        persistentPulse: true,
+        persistentAttention: true,
         label: (
           <a
             href="${CMMS_OPER_URL}"
@@ -46,15 +46,15 @@ function updateAutomaticNextWash(source) {
   return source.slice(0, automaticStart) + updatedFlow + source.slice(manualStart);
 }
 
-function updatePersistentPulseRendering(source) {
+function updatePersistentAttentionRendering(source) {
   let updatedSource = replaceRequired(
     source,
     `      const isCurrent = !step.optional && !step.complete && currentRequiredStep?.key === step.key;
       const cardState = step.complete ? "is-complete" : isCurrent ? "is-current" : "is-pending";`,
     `      const isCurrent = !step.optional && !step.complete && currentRequiredStep?.key === step.key;
-      const isAttentionStep = Boolean(step.persistentPulse) || isCurrent;
+      const isAttentionStep = Boolean(step.persistentAttention) || isCurrent;
       const cardState = isAttentionStep ? "is-current" : step.complete ? "is-complete" : "is-pending";`,
-    'the persistent pulse card state',
+    'the persistent attention card state',
   );
 
   updatedSource = replaceRequired(
@@ -62,8 +62,8 @@ function updatePersistentPulseRendering(source) {
     `          data-movement-step-state={step.complete ? "complete" : isCurrent ? "current" : "pending"}
           className={\`theme-tp1-flow-step \${cardState} rounded-xl border p-2 transition-all focus-within:ring-2 focus-within:ring-[#4f8ef7]/55\`}`,
     `          data-movement-step-state={isAttentionStep ? "current" : step.complete ? "complete" : "pending"}
-          className={\`theme-tp1-flow-step \${cardState} \${step.persistentPulse ? "is-persistent-pulse" : ""} rounded-xl border p-2 transition-all focus-within:ring-2 focus-within:ring-[#4f8ef7]/55\`}`,
-    'the persistent pulse card attributes',
+          className={\`theme-tp1-flow-step \${cardState} rounded-xl border p-2 transition-all focus-within:ring-2 focus-within:ring-[#4f8ef7]/55\`}`,
+    'the persistent attention card attributes',
   );
 
   updatedSource = replaceRequired(
@@ -90,7 +90,7 @@ function updatePersistentPulseRendering(source) {
               : step.complete
               ? "inset 0 1px 0 rgba(255,255,255,0.05)"
               : "inset 0 1px 0 rgba(255,255,255,0.03)",`,
-    'the persistent pulse card styling',
+    'the persistent attention card styling',
   );
 
   return updatedSource;
@@ -106,7 +106,7 @@ export default function automaticNextWashOperPlugin() {
       }
 
       const updatedSource = updateAutomaticNextWash(source);
-      return { code: updatePersistentPulseRendering(updatedSource), map: null };
+      return { code: updatePersistentAttentionRendering(updatedSource), map: null };
     },
   };
 }
