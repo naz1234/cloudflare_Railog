@@ -25,6 +25,7 @@ function updateAutomaticNextWash(source) {
         visible: automaticCmmsReady,`;
   const replacement = `      {
         key: "nextWashText",
+        persistentPulse: true,
         label: (
           <a
             href="${CMMS_OPER_URL}"
@@ -42,6 +43,56 @@ function updateAutomaticNextWash(source) {
   return source.slice(0, automaticStart) + updatedFlow + source.slice(manualStart);
 }
 
+function updatePersistentPulseRendering(source) {
+  let updatedSource = replaceRequired(
+    source,
+    `      const isCurrent = !step.optional && !step.complete && currentRequiredStep?.key === step.key;
+      const cardState = step.complete ? "is-complete" : isCurrent ? "is-current" : "is-pending";`,
+    `      const isCurrent = !step.optional && !step.complete && currentRequiredStep?.key === step.key;
+      const isAttentionStep = Boolean(step.persistentPulse) || isCurrent;
+      const cardState = isAttentionStep ? "is-current" : step.complete ? "is-complete" : "is-pending";`,
+    'the persistent pulse card state',
+  );
+
+  updatedSource = replaceRequired(
+    updatedSource,
+    `          data-movement-step-state={step.complete ? "complete" : isCurrent ? "current" : "pending"}
+          className={\`theme-tp1-flow-step \${cardState} rounded-xl border p-2 transition-all focus-within:ring-2 focus-within:ring-[#4f8ef7]/55\`}`,
+    `          data-movement-step-state={isAttentionStep ? "current" : step.complete ? "complete" : "pending"}
+          className={\`theme-tp1-flow-step \${cardState} \${step.persistentPulse ? "is-persistent-pulse" : ""} rounded-xl border p-2 transition-all focus-within:ring-2 focus-within:ring-[#4f8ef7]/55\`}`,
+    'the persistent pulse card attributes',
+  );
+
+  updatedSource = replaceRequired(
+    updatedSource,
+    `            borderColor: isCurrent ? "#4f8ef7" : "#31516b",
+            background: step.complete
+              ? \`linear-gradient(135deg, \${accent}08, #071b2d 86%)\`
+              : isCurrent
+              ? "linear-gradient(135deg, rgba(79,142,247,0.18), #061827 82%)"
+              : "#071b2d",
+            boxShadow: step.complete
+              ? "inset 0 1px 0 rgba(255,255,255,0.05)"
+              : isCurrent
+              ? "0 0 0 1px rgba(79,142,247,0.48), 0 0 18px rgba(79,142,247,0.30), inset 0 1px 0 rgba(255,255,255,0.06)"
+              : "inset 0 1px 0 rgba(255,255,255,0.03)",`,
+    `            borderColor: isAttentionStep ? "#4f8ef7" : "#31516b",
+            background: isAttentionStep
+              ? "linear-gradient(135deg, rgba(79,142,247,0.18), #061827 82%)"
+              : step.complete
+              ? \`linear-gradient(135deg, \${accent}08, #071b2d 86%)\`
+              : "#071b2d",
+            boxShadow: isAttentionStep
+              ? "0 0 0 1px rgba(79,142,247,0.48), 0 0 18px rgba(79,142,247,0.30), inset 0 1px 0 rgba(255,255,255,0.06)"
+              : step.complete
+              ? "inset 0 1px 0 rgba(255,255,255,0.05)"
+              : "inset 0 1px 0 rgba(255,255,255,0.03)",`,
+    'the persistent pulse card styling',
+  );
+
+  return updatedSource;
+}
+
 export default function automaticNextWashOperPlugin() {
   return {
     name: 'railog-automatic-next-wash-oper',
@@ -51,7 +102,8 @@ export default function automaticNextWashOperPlugin() {
         return null;
       }
 
-      return { code: updateAutomaticNextWash(source), map: null };
+      const updatedSource = updateAutomaticNextWash(source);
+      return { code: updatePersistentPulseRendering(updatedSource), map: null };
     },
   };
 }

@@ -10476,6 +10476,29 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-wind
     0 4px 14px rgba(37, 99, 235, 0.16) !important;
 }
 
+@keyframes tp1-persistent-step-pulse {
+  0%,
+  100% {
+    filter: brightness(1) drop-shadow(0 0 0 rgba(79, 142, 247, 0));
+    transform: scale(1);
+  }
+  50% {
+    filter: brightness(1.12) drop-shadow(0 0 8px rgba(79, 142, 247, 0.72));
+    transform: scale(1.004);
+  }
+}
+
+.theme-train-movement-page .theme-tp1-flow-step.is-persistent-pulse {
+  animation: tp1-persistent-step-pulse 1.65s ease-in-out infinite;
+  will-change: filter, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-train-movement-page .theme-tp1-flow-step.is-persistent-pulse {
+    animation: none !important;
+  }
+}
+
 html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-current-step-badge {
   background: #dbeafe !important;
   border-color: #2563eb !important;
