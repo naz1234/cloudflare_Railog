@@ -17,6 +17,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
+import { formatOdoWorkshopTrainText, parseOdoWorkshopTrainText } from "../lib/odoWorkshopTrains";
 
 const TRAINSETS = Array.from({ length: 47 }, (_, i) => `TS${String(i + 1).padStart(2, "0")}`);
 const ODO_STORAGE_KEY = "odoReadingState_v1";
@@ -272,6 +273,9 @@ export default function OdoReading() {
   const saved = loadState();
   const [mileages, setMileages] = useState(() => mergeWithTrainsets(saved?.mileages, ""));
   const [workshops, setWorkshops] = useState(() => mergeWithTrainsets(saved?.workshops, false));
+  const [workshopTrainText, setWorkshopTrainText] = useState(() =>
+    formatOdoWorkshopTrainText(mergeWithTrainsets(saved?.workshops, false))
+  );
   const [now, setNow] = useState(getNow());
   const [copied, setCopied] = useState(false);
   const [inputSearch, setInputSearch] = useState("");
@@ -348,11 +352,18 @@ export default function OdoReading() {
     });
   };
 
-  const handleWorkshopToggle = (ts) => setWorkshops((prev) => ({ ...prev, [ts]: !prev[ts] }));
+  const handleWorkshopTrainTextApply = () => {
+    const selectedTrainsets = new Set(parseOdoWorkshopTrainText(workshopTrainText, TRAINSETS.length));
+    const nextWorkshops = Object.fromEntries(TRAINSETS.map((ts) => [ts, selectedTrainsets.has(ts)]));
+
+    setWorkshops(nextWorkshops);
+    setWorkshopTrainText(formatOdoWorkshopTrainText(nextWorkshops));
+  };
 
   const handleClearAll = () => {
     setMileages(createEmptyMileageMap());
     setWorkshops(createEmptyWorkshopMap());
+    setWorkshopTrainText("");
   };
 
   const moveFocus = (currentIndex, direction) => {
@@ -389,6 +400,7 @@ export default function OdoReading() {
   const { time: displayTime, dateStr: displayDate } = now;
   const nonWorkshopCount = TRAINSETS.filter((ts) => !workshops[ts]).length;
   const recordedCount = TRAINSETS.filter((ts) => !workshops[ts] && (mileages[ts] || "").trim()).length;
+  const workshopTrainCount = TRAINSETS.length - nonWorkshopCount;
 
   const inputRows = useMemo(
     () => filterTrainsets(TRAINSETS, inputSearch, inputFilter, mileages, workshops),
@@ -458,6 +470,47 @@ export default function OdoReading() {
               <Trash2 className="h-4 w-4" />
               Clear All
             </button>
+          </div>
+
+          <div className="mb-2 rounded-xl border border-amber-400/35 bg-amber-500/[0.06] p-2.5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <label htmlFor="odo-workshop-trains" className="text-[10px] font-black uppercase tracking-[0.12em] text-amber-200">
+                    Workshop train list
+                  </label>
+                  <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold text-amber-200">
+                    {workshopTrainCount} selected
+                  </span>
+                </div>
+                <input
+                  id="odo-workshop-trains"
+                  type="text"
+                  inputMode="text"
+                  value={workshopTrainText}
+                  onChange={(event) => setWorkshopTrainText(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter") return;
+                    event.preventDefault();
+                    handleWorkshopTrainTextApply();
+                  }}
+                  placeholder="02 15 27 31"
+                  aria-describedby="odo-workshop-trains-help"
+                  className="h-9 w-full rounded-lg border border-amber-400/40 bg-[#0b1d2d] px-3 text-xs font-semibold text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-300 focus:ring-2 focus:ring-amber-400/15"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleWorkshopTrainTextApply}
+                className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-amber-400/50 bg-amber-500/15 px-4 text-xs font-black text-amber-100 transition hover:border-amber-300 hover:bg-amber-500/25"
+              >
+                <ClipboardCheck className="h-4 w-4" />
+                Apply
+              </button>
+            </div>
+            <p id="odo-workshop-trains-help" className="mt-1.5 text-[9px] font-medium text-slate-400">
+              Separate train numbers with spaces. Example: 02 = Train 2 (TS02).
+            </p>
           </div>
 
           <div className="mb-2 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
@@ -535,12 +588,11 @@ export default function OdoReading() {
                             </div>
                           </div>
                           <div className="flex justify-center px-2">
-                            <input
-                              type="checkbox"
-                              checked={isWorkshop}
-                              onChange={() => handleWorkshopToggle(ts)}
-                              className="h-3.5 w-3.5 cursor-pointer rounded border border-slate-400 bg-transparent accent-indigo-500"
-                            />
+                            {isWorkshop ? (
+                              <span className="rounded-full border border-amber-400/35 bg-amber-500/10 px-1.5 py-0.5 text-[8px] font-black text-amber-200">YES</span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-slate-600">—</span>
+                            )}
                           </div>
                           <div className="flex justify-center px-2 text-slate-400">
                             <MoreVertical className="h-3 w-3" />
