@@ -127,8 +127,11 @@ test("Next Wash uses the reference action-row layout without a Current badge", (
     /\.theme-tp1-next-wash-link,[\s\S]*?\.theme-tp1-next-wash-link:hover,[\s\S]*?\.theme-tp1-next-wash-link:focus \{[\s\S]*?text-decoration: none !important;/,
   );
   assert.match(themeStyles, /\.theme-tp1-next-wash-content \{[\s\S]*?border-top: 1px solid rgba\(34, 211, 218, 0\.3\);/);
-  assert.match(themeStyles, /\.theme-tp1-next-wash-action-pill \{[\s\S]*?min-width: 132px;[\s\S]*?border-color: rgba\(37, 227, 236, 0\.76\);/);
-  assert.match(themeStyles, /\.theme-tp1-next-wash-link\.theme-tp1-next-wash-action-pill:hover,[\s\S]*?transform: translateY\(-1px\);/);
+  assert.match(
+    themeStyles,
+    /a\.theme-tp1-next-wash-link\.theme-tp1-next-wash-action-pill,[\s\S]*?:visited \{[\s\S]*?min-width: 132px;[\s\S]*?color: #25e3ec !important;[\s\S]*?-webkit-text-fill-color: #25e3ec !important;[\s\S]*?border-color: rgba\(37, 227, 236, 0\.76\);/,
+  );
+  assert.match(themeStyles, /a\.theme-tp1-next-wash-link\.theme-tp1-next-wash-action-pill:hover,[\s\S]*?-webkit-text-fill-color: #b9fbff !important;[\s\S]*?transform: translateY\(-1px\);/);
 });
 
 test("both final Next Wash cards keep a static attention state after completion", () => {

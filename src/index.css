@@ -10487,9 +10487,11 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-wind
   border-top: 1px solid rgba(34, 211, 218, 0.3);
 }
 
-.theme-train-movement-page .theme-tp1-next-wash-action-pill {
+.theme-train-movement-page a.theme-tp1-next-wash-link.theme-tp1-next-wash-action-pill,
+.theme-train-movement-page a.theme-tp1-next-wash-link.theme-tp1-next-wash-action-pill:visited {
   min-width: 132px;
-  color: #25e3ec;
+  color: #25e3ec !important;
+  -webkit-text-fill-color: #25e3ec !important;
   background: linear-gradient(180deg, rgba(9, 58, 76, 0.86), rgba(6, 31, 49, 0.92));
   border-color: rgba(37, 227, 236, 0.76);
   box-shadow:
@@ -10498,9 +10500,10 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-wind
   transition: border-color 160ms ease, box-shadow 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
-.theme-train-movement-page .theme-tp1-next-wash-link.theme-tp1-next-wash-action-pill:hover,
-.theme-train-movement-page .theme-tp1-next-wash-link.theme-tp1-next-wash-action-pill:focus-visible {
-  color: #b9fbff;
+.theme-train-movement-page a.theme-tp1-next-wash-link.theme-tp1-next-wash-action-pill:hover,
+.theme-train-movement-page a.theme-tp1-next-wash-link.theme-tp1-next-wash-action-pill:focus-visible {
+  color: #b9fbff !important;
+  -webkit-text-fill-color: #b9fbff !important;
   border-color: #62f4fa;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
@@ -10508,15 +10511,16 @@ html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-movement-wind
   transform: translateY(-1px);
 }
 
-html[data-app-theme="light"] .theme-train-movement-page .theme-tp1-next-wash-action-pill {
-  color: #0f6f78;
+html[data-app-theme="light"] .theme-train-movement-page a.theme-tp1-next-wash-link.theme-tp1-next-wash-action-pill {
+  color: #0f6f78 !important;
+  -webkit-text-fill-color: #0f6f78 !important;
   background: #e6fcfd;
   border-color: #0f9fa9;
   box-shadow: 0 2px 8px rgba(15, 159, 169, 0.2);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .theme-train-movement-page .theme-tp1-next-wash-action-pill {
+  .theme-train-movement-page a.theme-tp1-next-wash-link.theme-tp1-next-wash-action-pill {
     transition: none !important;
   }
 }
