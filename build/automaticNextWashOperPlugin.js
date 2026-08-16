@@ -1,6 +1,7 @@
 const AUTOMATIC_FLOW_MARKER = '    const automaticFlowSteps = [';
 const MANUAL_FLOW_MARKER = '    const manualFlowSteps = [';
-const CMMS_OPER_URL = 'https://login.flow-metro.com/adfs/ls/IdpInitiatedSignon.aspx?RelayState=RPID%3Dhttps%253A%252F%252Fcmms.flow-metro.com%26RelayState%3Dhttps%253A%252F%252Fcmms.flow-metro.com%252Fmaximo%252Fui%252Fmaximo.jsp';
+const ALL_FLOW_MARKER = '    const allFlowSteps = isAutomatic ? automaticFlowSteps : manualFlowSteps;';
+const CMMS_PORTAL_URL = 'https://login.flow-metro.com/adfs/ls/IdpInitiatedSignon.aspx?RelayState=RPID%3Dhttps%253A%252F%252Fcmms.flow-metro.com%26RelayState%3Dhttps%253A%252F%252Fcmms.flow-metro.com%252Fmaximo%252Fui%252Fmaximo.jsp';
 
 function replaceRequired(source, search, replacement, label) {
   const firstIndex = source.indexOf(search);
@@ -28,13 +29,47 @@ function updateAutomaticNextWash(source) {
         persistentAttention: true,
         hideCurrentBadge: true,
         label: "Next Wash (update status to OPER)",
-        actionHref: "${CMMS_OPER_URL}",
+        actionHref: "${CMMS_PORTAL_URL}",
         actionLabel: "Update OPER",
         actionTitle: "Open CMMS to update status to OPER",
         visible: automaticCmmsReady,`;
   const updatedFlow = replaceRequired(automaticFlow, original, replacement, 'the Automatic Area Next Wash step');
 
   return source.slice(0, automaticStart) + updatedFlow + source.slice(manualStart);
+}
+
+function updateCmmsNumberActions(source) {
+  const automaticStart = source.indexOf(AUTOMATIC_FLOW_MARKER);
+  const manualStart = source.indexOf(MANUAL_FLOW_MARKER, automaticStart + AUTOMATIC_FLOW_MARKER.length);
+  const manualEnd = source.indexOf(ALL_FLOW_MARKER, manualStart + MANUAL_FLOW_MARKER.length);
+  if (automaticStart < 0 || manualStart < 0 || manualEnd < 0) {
+    throw new Error('[automatic-next-wash-oper] Unable to locate the Area Movement flows.');
+  }
+
+  const addCmmsAction = (flow, label) => replaceRequired(
+    flow,
+    `      {
+        key: "cmmsNumber",
+        label: "CMMS Number :",`,
+    `      {
+        key: "cmmsNumber",
+        label: "CMMS Number :",
+        actionHref: "${CMMS_PORTAL_URL}",
+        actionLabel: "Get CMMS Number",
+        actionTitle: "Open CMMS to get a CMMS number",`,
+    `the ${label} CMMS Number action`,
+  );
+
+  const automaticFlow = addCmmsAction(
+    source.slice(automaticStart, manualStart),
+    'Automatic Area',
+  );
+  const manualFlow = addCmmsAction(
+    source.slice(manualStart, manualEnd),
+    'Manual Area',
+  );
+
+  return source.slice(0, automaticStart) + automaticFlow + manualFlow + source.slice(manualEnd);
 }
 
 function updatePersistentAttentionRendering(source) {
@@ -132,7 +167,7 @@ export default function automaticNextWashOperPlugin() {
         return null;
       }
 
-      const updatedSource = updateAutomaticNextWash(source);
+      const updatedSource = updateCmmsNumberActions(updateAutomaticNextWash(source));
       return { code: updatePersistentAttentionRendering(updatedSource), map: null };
     },
   };

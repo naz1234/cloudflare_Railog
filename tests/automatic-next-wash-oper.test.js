@@ -115,6 +115,19 @@ test("Manual Next Wash action pill links to CMMS MAINT in a new tab", () => {
   assert.match(manualFlow, /label: "If No need update",\s+optional: true,/);
 });
 
+test("Automatic and Manual CMMS Number steps link to the CMMS portal", () => {
+  const transformed = applyProductionTransforms();
+  const automaticStart = transformed.indexOf("const automaticFlowSteps = [");
+  const manualStart = transformed.indexOf("const manualFlowSteps = [", automaticStart);
+  const manualEnd = transformed.indexOf("const allFlowSteps", manualStart);
+  const automaticFlow = transformed.slice(automaticStart, manualStart);
+  const manualFlow = transformed.slice(manualStart, manualEnd);
+  const cmmsActionPattern = /key: "cmmsNumber",[\s\S]*?actionHref: "https:\/\/login\.flow-metro\.com\/adfs\/ls\/IdpInitiatedSignon\.aspx\?RelayState=RPID%3Dhttps%253A%252F%252Fcmms\.flow-metro\.com%26RelayState%3Dhttps%253A%252F%252Fcmms\.flow-metro\.com%252Fmaximo%252Fui%252Fmaximo\.jsp",[\s\S]*?actionLabel: "Get CMMS Number",[\s\S]*?actionTitle: "Open CMMS to get a CMMS number"/;
+
+  assert.match(automaticFlow, cmmsActionPattern);
+  assert.match(manualFlow, cmmsActionPattern);
+});
+
 test("Next Wash uses the reference action-row layout without a Current badge", () => {
   const transformed = applyProductionTransforms();
 
