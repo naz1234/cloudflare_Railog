@@ -9101,6 +9101,15 @@ html[data-app-theme="light"] .theme-train-rem-toolbar .theme-train-rem-export.is
   border-color: #22c55e !important;
 }
 
+html[data-app-theme="light"] .theme-train-rem-toolbar .theme-train-rem-ins {
+  color: #14532d !important;
+  -webkit-text-fill-color: #14532d !important;
+  background: #dcfce7 !important;
+  border-color: #22c55e !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 4px rgba(22,163,74,0.14) !important;
+}
+
 html[data-app-theme="light"] .theme-train-rem-toolbar .theme-train-rem-undo {
   color: #0f172a !important;
   -webkit-text-fill-color: #0f172a !important;
