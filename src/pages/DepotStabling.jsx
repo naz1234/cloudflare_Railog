@@ -46,6 +46,10 @@ import {
 import { getSwappingAutoFillFields } from "../lib/trainMovementSwapAutoFill";
 import { buildTcRemovalPdfLog } from "../lib/tcRemovalPdf";
 import {
+  applyInsertionAssignmentsToRemovalRows,
+  buildInsertionTidAssignments,
+} from "../lib/trainRemInsertionSync";
+import {
   addOnBeforeRequestedSummaryTrailingDate,
   formatRequestedSummaryEntryCount,
   formatRequestedSummaryOtherAction,
@@ -7284,7 +7288,7 @@ function getRemovalPresetTooltip(label = "") {
   return tooltipByLabel[label] || `Show ${label} removal TID`;
 }
 
-function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablingData = {}, requests = [], westData = {}, eastData = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
+function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablingData = {}, requests = [], westData = {}, eastData = {}, insertionAssignmentsByDepot = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
   const [trainRemState, setTrainRemState] = useState(() => loadTrainRemState());
   const [trainRemLoaded, setTrainRemLoaded] = useState(false);
   const [trainRemSyncing, setTrainRemSyncing] = useState(false);
@@ -8032,6 +8036,53 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         ...prev,
         rows: nextRows,
         presetRows: nextPresetRows,
+      };
+    });
+  };
+
+  const handleTrainRemInsertionSync = (depot) => {
+    const confirmed = window.confirm(
+      "Confirm and update Train ID based on the TID from the Insertion Page?"
+    );
+    if (!confirmed) return;
+
+    updateTrainRemState((prev) => {
+      const presetLabel = prev.selectedPreset?.[depot] || "9am";
+      const rows = normalizeTrainRemRowsForPreset(
+        prev.rows?.[depot],
+        depot,
+        presetLabel,
+        activeTimetable
+      );
+      const syncedRows = applyInsertionAssignmentsToRemovalRows(
+        rows,
+        insertionAssignmentsByDepot,
+        (row, rowIndex) => {
+          if (depot === "east") return "east";
+
+          if (TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(presetLabel)) {
+            const layout = getTrainRemCombinedExtendedLayout(presetLabel, activeTimetable);
+            return rowIndex >= layout.eastStartIndex ? "east" : "west";
+          }
+
+          const tid = normalizeTrainRemTidValue(row?.tid);
+          const assignedWest = Boolean(insertionAssignmentsByDepot?.west?.[tid]);
+          const assignedEast = Boolean(insertionAssignmentsByDepot?.east?.[tid]);
+          if (assignedEast && !assignedWest) return "east";
+          if (assignedWest && !assignedEast) return "west";
+
+          const scheduledWest = Boolean(getTrainRemScheduleMatch(activeTimetable, "west", presetLabel, tid));
+          const scheduledEast = Boolean(getTrainRemScheduleMatch(activeTimetable, "east", presetLabel, tid));
+          return scheduledEast && !scheduledWest ? "east" : "west";
+        }
+      );
+
+      return {
+        ...prev,
+        rows: {
+          ...prev.rows,
+          [depot]: syncedRows,
+        },
       };
     });
   };
@@ -8855,6 +8906,28 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                   </div>
                 )}
               </div>
+
+              <ActionTooltip
+                message="Update Train ID from Insertion Page TID assignments"
+                placement="top"
+                align="end"
+              >
+                <button
+                  type="button"
+                  onClick={() => handleTrainRemInsertionSync(depot)}
+                  className="theme-train-rem-ins inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5"
+                  style={{
+                    background: "rgba(16,185,129,0.14)",
+                    borderColor: "rgba(52,211,153,0.55)",
+                    color: "#a7f3d0",
+                    boxShadow: "0 0 12px rgba(16,185,129,0.14)",
+                  }}
+                  aria-label="Update Train ID from Insertion Page TID assignments"
+                >
+                  <ClipboardCheck size={12} />
+                  INS
+                </button>
+              </ActionTooltip>
 
               <ActionTooltip
                 message={trainRemUndoCount > 0 ? "Undo last change" : "Nothing to undo"}
@@ -20779,6 +20852,10 @@ export default function DepotStablingPage() {
 
   const westInsertionSection = buildInsertionSectionConfig("west", westInsertionPg);
   const eastInsertionSection = buildInsertionSectionConfig("east", eastInsertionPg);
+  const insertionAssignmentsByDepot = {
+    west: buildInsertionTidAssignments(westInsertionSection),
+    east: buildInsertionTidAssignments(eastInsertionSection),
+  };
 
   const handleActiveInsertionClearDepot = (depot) => {
     const normalizedDepot = normalizeDepotKey(depot);
@@ -21380,6 +21457,7 @@ export default function DepotStablingPage() {
         requests={requests}
         westData={westData}
         eastData={eastData}
+        insertionAssignmentsByDepot={insertionAssignmentsByDepot}
         activeTimetable={activeTimetable}
         activeTimetableType={selectedTimetableType}
       />
