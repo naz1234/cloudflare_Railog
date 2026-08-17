@@ -801,6 +801,33 @@ html[data-app-theme="light"] .theme-stabling-count {
   color: #1d4ed8 !important;
 }
 
+/* SLP stabling uses the same readable scale as the main stabling table.
+   Avoid bold 8px uppercase text, which breaks into uneven pixels at common
+   browser zoom levels and on lower-density control-room displays. */
+.slp-stabling-block-label {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+
+.slp-stabling-road-label {
+  font-size: 11px;
+  letter-spacing: 0.025em;
+  line-height: 1.2;
+}
+
+.slp-stabling-train-id {
+  font-size: 17px;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.slp-stabling-mode-pill {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  line-height: 1.15;
+}
+
 
 /* Keep the searched train obvious in light mode without replacing its request colour. */
 html[data-app-theme="light"] .theme-stabling-train-card.is-search-match {

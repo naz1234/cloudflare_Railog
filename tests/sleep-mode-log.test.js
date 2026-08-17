@@ -90,3 +90,18 @@ test("SLP is wired as a public route with shared cloud storage", () => {
   assert.match(clientSource, /'SleepModeLog'/);
   assert.match(entityFunctionSource, /'SleepModeLog'/);
 });
+
+test("SLP stabling typography matches the readable main-stabling scale", () => {
+  const componentSource = readFileSync(new URL("../src/components/SleepModeWorkspace.jsx", import.meta.url), "utf8");
+  const cssSource = readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
+
+  assert.match(componentSource, /slp-stabling-block-label/);
+  assert.match(componentSource, /slp-stabling-road-label/);
+  assert.match(componentSource, /slp-stabling-train-id/);
+  assert.match(componentSource, /slp-stabling-mode-pill/);
+  assert.match(cssSource, /\.slp-stabling-block-label\s*\{[^}]*font-size:\s*9px[^}]*letter-spacing:\s*0\.08em/s);
+  assert.match(cssSource, /\.slp-stabling-road-label\s*\{[^}]*font-size:\s*11px/s);
+  assert.match(cssSource, /\.slp-stabling-train-id\s*\{[^}]*font-size:\s*17px/s);
+  assert.match(cssSource, /\.slp-stabling-mode-pill\s*\{[^}]*font-size:\s*10px[^}]*letter-spacing:\s*0\.04em/s);
+  assert.doesNotMatch(componentSource, /slp-stabling-mode-pill[^\n]*text-\[8px\]/);
+});
