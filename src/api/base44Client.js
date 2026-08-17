@@ -25,6 +25,7 @@ const ENTITY_NAMES = [
   'OvertimeMonthlyNote',
   'OvertimeAllowanceCheck',
   'ChecklistRecord',
+  'SleepModeLog',
 ];
 
 async function apiRequest(path, options = {}) {

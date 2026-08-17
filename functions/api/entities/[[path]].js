@@ -20,6 +20,7 @@ const ALLOWED_ENTITIES = new Set([
   'OvertimeMonthlyNote',
   'OvertimeAllowanceCheck',
   'ChecklistRecord',
+  'SleepModeLog',
 ]);
 
 const jsonHeaders = {
