@@ -119,22 +119,22 @@ function DepotSleepPanel({ depot, data, selectedKeys, latestModeByTrain, onToggl
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-[#21435e] dark:bg-[#09243a]">
         <div>
           <div className="flex items-center gap-2">
-            <span className="rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-violet-700 dark:border-violet-400/35 dark:bg-violet-400/10 dark:text-violet-200">
+            <span className="rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-violet-700 dark:border-violet-400/35 dark:bg-violet-400/10 dark:text-violet-200">
               {layout.shortLabel}
             </span>
-            <h2 className="text-[14px] font-semibold text-slate-900 dark:text-white">{layout.label} Stabling</h2>
+            <h2 className="text-[16px] font-bold text-slate-900 dark:text-white">{layout.label} Stabling</h2>
           </div>
-          <p className="mt-1 text-[10px] text-slate-500 dark:text-[#8eb5d1]">Select trains to record Sleep or Wake-up mode.</p>
+          <p className="mt-1 text-[11px] text-slate-500 dark:text-[#8eb5d1]">Select trains to record Sleep or Wake-up mode.</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[9px] font-semibold text-slate-600 dark:border-[#315574] dark:bg-[#071827] dark:text-[#a9c7da]">
+          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600 dark:border-[#315574] dark:bg-[#071827] dark:text-[#a9c7da]">
             {selectedCount} selected
           </span>
           <button
             type="button"
             onClick={() => onSelectDepot(depot, occupiedCells)}
             disabled={!occupiedCells.length}
-            className="h-8 rounded-lg border border-violet-300 bg-violet-50 px-3 text-[9px] font-semibold text-violet-700 transition hover:bg-violet-100 disabled:opacity-40 dark:border-violet-400/40 dark:bg-violet-400/10 dark:text-violet-200 dark:hover:bg-violet-400/20"
+            className="h-8 rounded-lg border border-violet-300 bg-violet-50 px-3 text-[10px] font-semibold text-violet-700 transition hover:bg-violet-100 disabled:opacity-40 dark:border-violet-400/40 dark:bg-violet-400/10 dark:text-violet-200 dark:hover:bg-violet-400/20"
           >
             {selectedAll ? "Selected All" : "Select All"}
           </button>
@@ -142,7 +142,7 @@ function DepotSleepPanel({ depot, data, selectedKeys, latestModeByTrain, onToggl
             type="button"
             onClick={() => onClearDepot(depot)}
             disabled={!selectedCount}
-            className="h-8 rounded-lg border border-slate-300 bg-white px-3 text-[9px] font-semibold text-slate-600 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-40 dark:border-[#315574] dark:bg-[#071827] dark:text-[#9bc7e4] dark:hover:border-rose-400/50 dark:hover:text-rose-200"
+            className="h-8 rounded-lg border border-slate-300 bg-white px-3 text-[10px] font-semibold text-slate-600 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-40 dark:border-[#315574] dark:bg-[#071827] dark:text-[#9bc7e4] dark:hover:border-rose-400/50 dark:hover:text-rose-200"
           >
             Clear
           </button>
@@ -154,7 +154,7 @@ function DepotSleepPanel({ depot, data, selectedKeys, latestModeByTrain, onToggl
           <div className="grid grid-cols-[76px_repeat(7,minmax(76px,1fr))] gap-1">
             <div />
             {layout.blockLabels.map((label) => (
-              <div key={label} className="px-1 py-1 text-center text-[8px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-[#5fa6d1]">
+              <div key={label} className="slp-stabling-block-label px-1 py-1 text-center font-bold uppercase text-slate-500 dark:text-[#78b9df]">
                 {label}
               </div>
             ))}
@@ -164,7 +164,7 @@ function DepotSleepPanel({ depot, data, selectedKeys, latestModeByTrain, onToggl
                 (cell) => cell.road === road && cell.blockIndex === blockIndex,
               ));
               return [
-                <div key={`${road}:label`} className="flex min-h-[74px] items-center justify-center rounded-lg border border-slate-200 bg-slate-100 px-2 text-[10px] font-bold text-slate-700 dark:border-[#24445e] dark:bg-[#0a2a43] dark:text-[#9fd5f3]">
+                <div key={`${road}:label`} className="slp-stabling-road-label flex min-h-[74px] items-center justify-center rounded-lg border border-slate-200 bg-slate-100 px-2 font-black text-slate-700 dark:border-[#24445e] dark:bg-[#0a2a43] dark:text-[#b8e2fa]">
                   {road}
                 </div>,
                 ...roadCells.map((cell) => {
@@ -184,8 +184,8 @@ function DepotSleepPanel({ depot, data, selectedKeys, latestModeByTrain, onToggl
                       }`}
                     >
                       {isSelected && <Check className="absolute right-1.5 top-1.5 h-3.5 w-3.5 text-violet-600 dark:text-violet-200" strokeWidth={3} />}
-                      <span className="text-[15px] font-bold">{cell.trainId}</span>
-                      <span className={`mt-1 rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] ${
+                      <span className="slp-stabling-train-id font-black">{cell.trainId}</span>
+                      <span className={`slp-stabling-mode-pill mt-1 rounded-full px-2 py-0.5 font-semibold uppercase ${
                         latestMode === "sleep"
                           ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-200"
                           : latestMode === "wake"
