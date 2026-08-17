@@ -5,6 +5,7 @@ import {
   Clock3,
   Cloud,
   Copy,
+  Download,
   Loader2,
   MessageSquareText,
   MoonStar,
@@ -13,6 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { buildSleepModeExcelFileName, createSleepModeExcelBytes } from "@/lib/sleepModeExcel";
 import {
   createSleepModeLogEntry,
   formatSleepTimeInput,
@@ -393,6 +395,20 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
     }
   }, [logs]);
 
+  const downloadExcel = useCallback(() => {
+    if (!logs.length) return;
+    const bytes = createSleepModeExcelBytes(logs);
+    const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = buildSleepModeExcelFileName(logs);
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 500);
+  }, [logs]);
+
   const refreshNow = useCallback(async () => {
     if (pendingSavesRef.current > 0) return;
     setSyncStatus("Refreshing live Sleep log...");
@@ -497,6 +513,7 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
             <p className="mt-1 text-[9px] text-slate-500 dark:text-[#7fa5bd]">{logs.length} log entr{logs.length === 1 ? "y" : "ies"}</p>
           </div>
           <div className="flex items-center gap-2">
+            <button type="button" onClick={downloadExcel} disabled={!logs.length} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 text-[9px] font-semibold text-emerald-700 disabled:opacity-40 dark:border-emerald-400/35 dark:bg-emerald-400/10 dark:text-emerald-200"><Download className="h-3.5 w-3.5" /> Download Excel</button>
             <button type="button" onClick={copyLogs} disabled={!logs.length} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-sky-300 bg-sky-50 px-3 text-[9px] font-semibold text-sky-700 disabled:opacity-40 dark:border-sky-400/35 dark:bg-sky-400/10 dark:text-sky-200"><Copy className="h-3.5 w-3.5" /> Copy All</button>
             <button type="button" onClick={handleClearLogs} disabled={!logs.length || saving} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-3 text-[9px] font-semibold text-rose-700 disabled:opacity-40 dark:border-rose-400/35 dark:bg-rose-400/10 dark:text-rose-200"><Trash2 className="h-3.5 w-3.5" /> {confirmClear ? "Confirm Clear" : "Clear All"}</button>
           </div>

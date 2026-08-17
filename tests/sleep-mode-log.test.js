@@ -86,6 +86,7 @@ test("SLP is wired as a public route with shared cloud storage", () => {
   assert.match(componentSource, /Log Sleep/);
   assert.match(componentSource, /Log Wake-up/);
   assert.match(componentSource, /Remark optional/);
+  assert.match(componentSource, /Download Excel/);
   assert.match(clientSource, /'SleepModeLog'/);
   assert.match(entityFunctionSource, /'SleepModeLog'/);
 });
