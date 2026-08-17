@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BedDouble,
   Check,
+  Clock3,
   Cloud,
   Copy,
   Loader2,
+  MessageSquareText,
   MoonStar,
   RefreshCw,
   Sun,
@@ -13,6 +15,7 @@ import {
 import { base44 } from "@/api/base44Client";
 import {
   createSleepModeLogEntry,
+  formatSleepTimeInput,
   getSleepModeRecordUpdatedMs,
   normalizeSleepLogTime,
   normalizeSleepModeLogs,
@@ -180,7 +183,7 @@ function DepotSleepPanel({ depot, data, selectedKeys, latestModeByTrain, onToggl
                     >
                       {isSelected && <Check className="absolute right-1.5 top-1.5 h-3.5 w-3.5 text-violet-600 dark:text-violet-200" strokeWidth={3} />}
                       <span className="text-[15px] font-bold">{cell.trainId}</span>
-                      <span className={`mt-1 rounded-full px-2 py-0.5 text-[7px] font-bold uppercase tracking-[0.12em] ${
+                      <span className={`mt-1 rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] ${
                         latestMode === "sleep"
                           ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-200"
                           : latestMode === "wake"
@@ -193,7 +196,7 @@ function DepotSleepPanel({ depot, data, selectedKeys, latestModeByTrain, onToggl
                     </button>
                   ) : (
                     <div key={cell.key} className="flex min-h-[74px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-[9px] text-slate-300 dark:border-[#21435e] dark:bg-[#071827] dark:text-[#375a71]">
-                      \u2014
+                      —
                     </div>
                   );
                 }),
@@ -210,6 +213,7 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
   const [logs, setLogs] = useState(() => loadSleepModeCache());
   const [selectedKeyList, setSelectedKeyList] = useState([]);
   const [logTime, setLogTime] = useState(() => getCurrentTime());
+  const [logRemark, setLogRemark] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Loading live Sleep log...");
@@ -372,11 +376,13 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
       trainIds,
       location,
       mode,
+      remark: logRemark,
     }, { now: new Date(nowMs + index).toISOString() }));
     persistLogs([...logs, ...newLogs]);
     setSelectedKeyList([]);
     setLogTime(getCurrentTime());
-  }, [logTime, logs, persistLogs, selectedCells]);
+    setLogRemark("");
+  }, [logRemark, logTime, logs, persistLogs, selectedCells]);
 
   const copyLogs = useCallback(async () => {
     if (!logs.length) return;
@@ -421,7 +427,7 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-[18px] font-semibold tracking-wide text-slate-900 dark:text-white">SLP — Sleep Mode</h1>
-              <span className="rounded-full border border-violet-200 bg-violet-50 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-violet-700 dark:border-violet-400/30 dark:bg-violet-400/10 dark:text-violet-200">Protected</span>
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-200">Live</span>
             </div>
             <p className="mt-1 text-[11px] text-slate-500 dark:text-[#8fb7d1]">Select trains from live stabling, then record Sleep or Wake-up mode by location.</p>
           </div>
@@ -441,9 +447,36 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
       </div>
 
       <section className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#315574] dark:bg-[#071827]">
-        <label className="block">
-          <span className="mb-1.5 block text-[9px] font-bold uppercase tracking-[0.15em] text-slate-500 dark:text-[#7eb8e0]">Log time</span>
-          <input type="time" value={logTime} onChange={(event) => setLogTime(event.target.value)} className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-800 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-200 dark:border-[#315574] dark:bg-[#0a2134] dark:text-white dark:focus:border-violet-400 dark:focus:ring-violet-400/20" />
+        <label className="block w-full min-w-[150px] sm:w-[190px]">
+          <span className="flex h-[58px] flex-col justify-center rounded-xl border border-sky-400 bg-sky-50/70 px-3 shadow-[0_0_0_2px_rgba(56,189,248,0.08)] transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-200 dark:border-[#3486d9] dark:bg-[#0a2240] dark:shadow-[0_0_12px_rgba(59,130,246,0.16)] dark:focus-within:border-[#5da8ff] dark:focus-within:ring-blue-500/20">
+            <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-sky-800 dark:text-white">
+              <Clock3 className="h-3.5 w-3.5 text-sky-600 dark:text-[#62a9ff]" /> Time
+            </span>
+            <input
+              value={logTime}
+              inputMode="numeric"
+              maxLength={5}
+              onChange={(event) => setLogTime(formatSleepTimeInput(event.target.value))}
+              onBlur={() => setLogTime((current) => normalizeSleepLogTime(current) || current)}
+              placeholder="00:00"
+              aria-label="Sleep or wake-up log time"
+              className="mt-1 w-full bg-transparent text-[12px] font-medium text-slate-800 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-[#4f7394]"
+            />
+          </span>
+        </label>
+        <label className="block min-w-[260px] flex-[1.4]">
+          <span className="flex h-[58px] flex-col justify-center rounded-xl border border-slate-300 bg-slate-50/70 px-3 transition focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-200 dark:border-[#315574] dark:bg-[#0a2134] dark:focus-within:border-violet-400 dark:focus-within:ring-violet-400/20">
+            <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-600 dark:text-white">
+              <MessageSquareText className="h-3.5 w-3.5 text-violet-600 dark:text-violet-300" /> Remark optional
+            </span>
+            <input
+              value={logRemark}
+              onChange={(event) => setLogRemark(event.target.value.slice(0, 160))}
+              placeholder="Add remark"
+              aria-label="Sleep or wake-up remark"
+              className="mt-1 w-full bg-transparent text-[12px] font-medium text-slate-800 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-[#4f7394]"
+            />
+          </span>
         </label>
         <div className="min-w-[160px] flex-1">
           <p className="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{selectedCells.length} train{selectedCells.length === 1 ? "" : "s"} selected</p>

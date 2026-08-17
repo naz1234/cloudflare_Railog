@@ -47,7 +47,17 @@ export function normalizeSleepLogTime(value = "") {
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
-export function buildSleepModeLogLine({ time = "", trainIds = [], location = "", mode = "sleep" } = {}) {
+export function formatSleepTimeInput(value = "") {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
+export function normalizeSleepRemark(value = "") {
+  return String(value || "").trim().replace(/\s+/g, " ");
+}
+
+export function buildSleepModeLogLine({ time = "", trainIds = [], location = "", mode = "sleep", remark = "" } = {}) {
   const normalizedTime = normalizeSleepLogTime(time);
   const trainList = formatSleepTrainList(trainIds);
   const normalizedLocation = formatSleepLocation(location);
@@ -55,7 +65,10 @@ export function buildSleepModeLogLine({ time = "", trainIds = [], location = "",
 
   const normalizedMode = normalizeSleepMode(mode);
   const modeLabel = normalizedMode === "wake" ? "wake\u2013up" : "sleep";
-  return `${normalizedTime} hrs \u2013 ${trainList} successfully in ${modeLabel} mode at ${normalizedLocation}.`;
+  const baseLine = `${normalizedTime} hrs \u2013 ${trainList} successfully in ${modeLabel} mode at ${normalizedLocation}.`;
+  const normalizedRemark = normalizeSleepRemark(remark);
+  if (!normalizedRemark) return baseLine;
+  return `${baseLine} Remark: ${normalizedRemark}${/[.!?]$/.test(normalizedRemark) ? "" : "."}`;
 }
 
 export function createSleepModeLogEntry(source = {}, options = {}) {
@@ -76,6 +89,7 @@ export function createSleepModeLogEntry(source = {}, options = {}) {
     trainIds,
     location: String(source.location || "").trim().toUpperCase(),
     mode: normalizeSleepMode(source.mode),
+    remark: normalizeSleepRemark(source.remark),
     createdAt,
   };
 
