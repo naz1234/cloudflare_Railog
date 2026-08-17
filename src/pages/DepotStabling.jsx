@@ -1826,7 +1826,7 @@ const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
 const OVT_SESSION_KEY = "ovtOvertimeUnlocked_v1";
 const ODO_SESSION_KEY = "odoReadingUnlocked_v1";
 const PROTECTED_SHORTCUTS_SESSION_KEY = "protectedShortcutsUnlocked_v1";
-const PROTECTED_SHORTCUT_KEYS = new Set(["sleep", "odo", "alarm", "overtime", "checklist", "admin"]);
+const PROTECTED_SHORTCUT_KEYS = new Set(["odo", "alarm", "overtime", "checklist", "admin"]);
 const ADM_LOGIN_ID = "admin";
 const ADM_LOGIN_PASSWORD = "921016";
 const ADMIN_NOTES_STORAGE_KEY = "admModernNotes_v1";
@@ -21875,37 +21875,7 @@ export default function DepotStablingPage() {
 
         {activeTab === "sleep" && (
           <div className="w-full px-2 pb-10 pt-3">
-            {areProtectedShortcutsUnlocked ? (
-              <SleepModeWorkspace westData={westData} eastData={eastData} />
-            ) : (
-              <div className="mx-auto flex min-h-[420px] w-full max-w-[620px] items-center justify-center">
-                <section className="w-full max-w-[390px] overflow-hidden rounded-[24px] border border-[#23506f]/80 bg-[#061827]/95 shadow-[0_20px_70px_rgba(0,0,0,0.38)]">
-                  <div className="border-b border-[#1a3a56]/80 bg-gradient-to-br from-[#241347] via-[#10223f] to-[#061827] px-5 py-5">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-400/40 bg-violet-400/10 text-[11px] font-semibold tracking-[0.18em] text-violet-200">SLP</div>
-                      <div>
-                        <p className="text-[10px] uppercase tracking-[0.24em] text-violet-300">Protected page</p>
-                        <h2 className="mt-1 text-[18px] font-semibold text-white">Sleep Mode</h2>
-                      </div>
-                    </div>
-                    <p className="mt-4 text-[11px] leading-relaxed text-[#a8c7dd]">Unlock the protected pages to view stabling and update the shared Sleep / Wake-up log.</p>
-                  </div>
-                  <div className="p-5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProtectedShortcutCredentials({ id: "", password: "" });
-                        setProtectedShortcutError("");
-                        setIsProtectedShortcutLoginOpen(true);
-                      }}
-                      className="flex h-10 w-full items-center justify-center rounded-xl border border-violet-400/60 bg-violet-600 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-[0_0_22px_rgba(139,92,246,0.22)] transition hover:bg-violet-500 active:scale-[0.99]"
-                    >
-                      Unlock protected pages
-                    </button>
-                  </div>
-                </section>
-              </div>
-            )}
+            <SleepModeWorkspace westData={westData} eastData={eastData} />
           </div>
         )}
 
