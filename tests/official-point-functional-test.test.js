@@ -21,3 +21,11 @@ test("Point Functional Test completed-by text uses the controller input", () => 
   assert.match(generatorSource, /noteSeparator: " - "/);
   assert.match(generatorSource, /updatedPointFunctionalTest: true/);
 });
+
+test("Point Functional Test copies the previous formatted row's fill and font styles", () => {
+  assert.match(generatorSource, /function copyCellStyle\(/);
+  assert.match(generatorSource, /latestFormattedPointFunctionalRow\(/);
+  assert.match(generatorSource, /copyCellStyle\(formattingCell \|\| sourceCell, targetCell\)/);
+  assert.match(generatorSource, /sheetDocument\.importNode\(node, true\)/);
+  assert.match(generatorSource, /cellHasRichText\(noteCell, stringsDocument\)/);
+});
