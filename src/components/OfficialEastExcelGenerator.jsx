@@ -35,6 +35,7 @@ const DEPOT_CONFIGS = {
 };
 const PST_SHEET_NAME = "PST & Train Prep";
 const AUTHORITY_SHEET_NAME = "Authority to Proceed Form";
+const POINTS_FUNCTIONAL_TEST_SHEET_NAME = "Point Functional Test";
 const XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace";
 const POINTS_FUNCTIONAL_TEST_SUMMARIES = {
   west: "Point functional test for the automatic area completed, except SA08 and SA06, which were not performed due to being blocked in reverse position.",
@@ -46,6 +47,20 @@ const POINTS_FUNCTIONAL_TEST_SUMMARIES = {
     "",
     "The Point Functional Test Form was updated accordingly.",
   ].join("\n"),
+};
+const POINTS_FUNCTIONAL_TEST_CONFIGS = {
+  east: {
+    lastStatusColumn: 22,
+    noteColumn: "W",
+    noteSeparator: "\n",
+    fallbackNote: "SA-08 are blocked in the normal position. SA10 could not be tested as the block indication remained blinking after the unblock command. SR 10121125 - 13 JUNE 2026.",
+  },
+  west: {
+    lastStatusColumn: 44,
+    noteColumn: "AS",
+    noteSeparator: " - ",
+    fallbackNote: "SA06 and SA08 are blocked in the reverse position.",
+  },
 };
 
 const SHIFT_FIELDS = {
@@ -200,6 +215,40 @@ function columnNumber(reference) {
   return [...letters].reduce((total, letter) => total * 26 + letter.charCodeAt(0) - 64, 0);
 }
 
+function columnLetters(column) {
+  let value = Number(column) || 0;
+  let letters = "";
+  while (value > 0) {
+    value -= 1;
+    letters = String.fromCharCode(65 + (value % 26)) + letters;
+    value = Math.floor(value / 26);
+  }
+  return letters;
+}
+
+function cellHasValue(cell) {
+  if (!cell) return false;
+  const valueText = Array.from(cell.getElementsByTagNameNS("*", "v"))
+    .map((node) => node.textContent || "")
+    .join("")
+    .trim();
+  const inlineText = Array.from(cell.getElementsByTagNameNS("*", "t"))
+    .map((node) => node.textContent || "")
+    .join("")
+    .trim();
+  return Boolean(valueText || inlineText);
+}
+
+function copyCellValue(sourceCell, targetCell) {
+  while (targetCell.firstChild) targetCell.removeChild(targetCell.firstChild);
+  targetCell.removeAttribute("t");
+  if (!sourceCell || !cellHasValue(sourceCell)) return;
+
+  const cellType = sourceCell.getAttribute("t");
+  if (cellType) targetCell.setAttribute("t", cellType);
+  Array.from(sourceCell.childNodes).forEach((node) => targetCell.appendChild(node.cloneNode(true)));
+}
+
 function cellsWithinRange(sheetDocument, startRow, endRow, startColumn, endColumn) {
   const cells = [];
   Array.from(sheetDocument.getElementsByTagNameNS("*", "row")).forEach((row) => {
@@ -350,6 +399,64 @@ function clearPstTrainPrepRows(sheetDocument) {
 
 function excelSerialForDate(date) {
   return (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(1899, 11, 30)) / 86400000;
+}
+
+function pointFunctionalTestRowForDate(sheetDocument, targetDate) {
+  const targetSerial = excelSerialForDate(targetDate);
+  const dateCell = cellsWithinRange(sheetDocument, 1, 500, 1, 1).find((cell) => {
+    const valueNode = cell.getElementsByTagNameNS("*", "v")[0];
+    return Number(valueNode?.textContent) === targetSerial;
+  });
+  const rowNumber = Number(String(dateCell?.getAttribute("r") || "").match(/\d+$/)?.[0] || 0);
+  if (!rowNumber) {
+    throw new Error(`The ${POINTS_FUNCTIONAL_TEST_SHEET_NAME} row for ${officialDateLabel(targetDate)} was not found.`);
+  }
+  return rowNumber;
+}
+
+function pointFunctionalStatusRowHasValues(sheetDocument, rowNumber, lastStatusColumn) {
+  return cellsWithinRange(sheetDocument, rowNumber, rowNumber, 3, lastStatusColumn).some(cellHasValue);
+}
+
+function latestPerformedPointFunctionalRow(sheetDocument, targetRow, lastStatusColumn) {
+  if (pointFunctionalStatusRowHasValues(sheetDocument, targetRow, lastStatusColumn)) return targetRow;
+  for (let rowNumber = targetRow - 1; rowNumber >= 1; rowNumber -= 1) {
+    if (pointFunctionalStatusRowHasValues(sheetDocument, rowNumber, lastStatusColumn)) return rowNumber;
+  }
+  return 0;
+}
+
+function writePointFunctionalTestForDate(sheetDocument, archive, sharedStrings, targetDate, depotConfig, controllerName) {
+  const config = POINTS_FUNCTIONAL_TEST_CONFIGS[depotConfig.key];
+  if (!config) throw new Error(`Point Functional Test settings are missing for ${depotConfig.label}.`);
+
+  const targetRow = pointFunctionalTestRowForDate(sheetDocument, targetDate);
+  const sourceRow = latestPerformedPointFunctionalRow(sheetDocument, targetRow, config.lastStatusColumn);
+  if (!sourceRow) {
+    throw new Error(`No previous performed row was found in the ${POINTS_FUNCTIONAL_TEST_SHEET_NAME} sheet.`);
+  }
+
+  if (sourceRow !== targetRow) {
+    for (let column = 3; column <= config.lastStatusColumn; column += 1) {
+      const columnName = columnLetters(column);
+      const sourceCell = findCell(sheetDocument, `${columnName}${sourceRow}`);
+      const targetCell = findCell(sheetDocument, `${columnName}${targetRow}`);
+      if (!targetCell) throw new Error(`Required Excel cell ${columnName}${targetRow} was not found.`);
+      copyCellValue(sourceCell, targetCell);
+    }
+  }
+
+  const sourceNote = readCellText(sheetDocument, `${config.noteColumn}${sourceRow}`, archive, sharedStrings);
+  const noteWithoutCompletedBy = String(sourceNote || config.fallbackNote)
+    .replace(/\s*(?:[-–—]\s*)?Completed by DC\b[\s\S]*$/i, "")
+    .trim() || config.fallbackNote;
+  writeInlineString(
+    sheetDocument,
+    `${config.noteColumn}${targetRow}`,
+    `${noteWithoutCompletedBy}${config.noteSeparator}Completed by DC ${controllerName.trim()}`,
+  );
+
+  return { targetRow, sourceRow };
 }
 
 function clearAuthorityToProceedForm(sheetDocument, targetDate) {
@@ -509,6 +616,10 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
     archive,
     AUTHORITY_SHEET_NAME,
   );
+  const { sheetPath: pointsSheetPath, sheetDocument: pointsSheetDocument } = locateWorkbookSheet(
+    archive,
+    POINTS_FUNCTIONAL_TEST_SHEET_NAME,
+  );
   const stylesDocument = parseXml(archiveText(archive, STYLES_PATH, "Excel styles"), "Excel styles");
   const strings = sharedStringValues(archive);
   const today = addLocalDays(new Date(), 0);
@@ -541,10 +652,19 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
   forceBlackFontForCells(sheetDocument, stylesDocument, ["D9", "D10", "D11", "D12", "D13"]);
   clearPstTrainPrepRows(pstSheetDocument);
   clearAuthorityToProceedForm(authoritySheetDocument, targetDate);
+  const pointFunctionalTest = writePointFunctionalTestForDate(
+    pointsSheetDocument,
+    archive,
+    strings,
+    targetDate,
+    depotConfig,
+    controllerName,
+  );
 
   archive[sheetPath] = strToU8(new XMLSerializer().serializeToString(sheetDocument));
   archive[pstSheetPath] = strToU8(new XMLSerializer().serializeToString(pstSheetDocument));
   archive[authoritySheetPath] = strToU8(new XMLSerializer().serializeToString(authoritySheetDocument));
+  archive[pointsSheetPath] = strToU8(new XMLSerializer().serializeToString(pointsSheetDocument));
   archive[STYLES_PATH] = strToU8(new XMLSerializer().serializeToString(stylesDocument));
   const outputBytes = zipSync(archive, { level: 6 });
   return {
@@ -557,6 +677,8 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
     clearedPstRows: true,
     normalizedDailyRows: true,
     clearedAuthorityRows: true,
+    updatedPointFunctionalTest: true,
+    pointFunctionalTest,
     addedDepotRemovalLog,
   };
 }
@@ -843,7 +965,7 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
       {generatedFile && (
         <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold text-emerald-300">
           <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>{generatedFile.fileName} downloaded for {generatedFile.depot.label}. Night shift and form dates are set, old Authority and PST entries are cleared, and the matching removal log is placed first.</span>
+          <span>{generatedFile.fileName} downloaded for {generatedFile.depot.label}. Night shift and form dates are set, Point Functional Test is marked as performed by the entered controller, old Authority and PST entries are cleared, and the matching removal log is placed first.</span>
         </div>
       )}
 
