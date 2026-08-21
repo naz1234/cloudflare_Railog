@@ -26538,9 +26538,9 @@ function buildPSTExportRows(logLines = [], completedBy = "", depotFilter = "", i
     ]);
   }
 
-  // The individual depot sheets keep one formatted blank row at row 50.
-  // The combined WEST + EAST sheet ends at row 49 so the following rows are
-  // normal, unformatted Excel rows, matching the approved objective workbook.
+  // Combined workbook depot tabs retain their existing formatted blank row.
+  // Standalone and combined-summary sheets pass false so their output ends at
+  // row 49, matching the approved objective workbook.
   if (includeTrailingBlankRow) {
     rows.push(["", "", "", "", "", "", "", "", "", "", ""]);
   }
@@ -26642,7 +26642,7 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = ""
 
   if (normalizedDepot) {
     const depotSheetName = normalizedDepot === "west" ? "WEST DEPOT" : "EAST DEPOT";
-    const depotRows = normalizedDepot === "west" ? westRl3Rows : eastRl3Rows;
+    const depotRows = buildPSTExportRows(logLines, completedBy, normalizedDepot, false);
     const depotRl3Xml = buildRL3WorksheetXml(depotRows);
 
     const workbookXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
