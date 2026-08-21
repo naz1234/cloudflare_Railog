@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import manualArrivalTimePlugin from "../build/manualArrivalTimePlugin.js";
 import manualUnplannedSrPlugin from "../build/manualUnplannedSrPlugin.js";
+import automaticParkingPstPlugin from "../build/automaticParkingPstPlugin.js";
 import automaticExcelCompletedByPlugin from "../build/automaticExcelCompletedByPlugin.js";
 import automaticNextWashOperPlugin from "../build/automaticNextWashOperPlugin.js";
 import manualNextWashMaintPlugin from "../build/manualNextWashMaintPlugin.js";
@@ -14,12 +15,13 @@ const sourceId = "/repo/src/pages/DepotStabling.jsx";
 function applyProductionTransforms() {
   let transformed = manualArrivalTimePlugin().transform(source, sourceId).code;
   transformed = manualUnplannedSrPlugin().transform(transformed, sourceId).code;
+  transformed = automaticParkingPstPlugin().transform(transformed, sourceId).code;
   transformed = automaticExcelCompletedByPlugin().transform(transformed, sourceId).code;
   transformed = automaticNextWashOperPlugin().transform(transformed, sourceId).code;
   return manualNextWashMaintPlugin().transform(transformed, sourceId).code;
 }
 
-test("Automatic Next Wash is required step 8 after CMMS", () => {
+test("Automatic Next Wash is required step 7 after CMMS", () => {
   const transformed = applyProductionTransforms();
   const automaticStart = transformed.indexOf("const automaticFlowSteps = [");
   const manualStart = transformed.indexOf("const manualFlowSteps = [", automaticStart);
@@ -35,11 +37,29 @@ test("Automatic Next Wash is required step 8 after CMMS", () => {
     "shunterName",
     "trAtTp1",
     "trLocalized",
-    "automaticStablingRoad",
     "cmmsNumber",
     "nextWashText",
   ]);
-  assert.equal(requiredKeys.indexOf("nextWashText") + 1, 8);
+  assert.equal(requiredKeys.indexOf("nextWashText") + 1, 7);
+});
+
+test("Automatic Parking Location appears beside PST in the optional section", () => {
+  const transformed = applyProductionTransforms();
+  const automaticStart = transformed.indexOf("const automaticFlowSteps = [");
+  const manualStart = transformed.indexOf("const manualFlowSteps = [", automaticStart);
+  const automaticFlow = transformed.slice(automaticStart, manualStart);
+  const stepBlocks = [...automaticFlow.matchAll(/\n      \{\n        key: "([^"]+)",[\s\S]*?\n      \},/g)];
+  const optionalKeys = stepBlocks
+    .filter((match) => match[0].includes("optional: true"))
+    .map((match) => match[1]);
+
+  assert.deepEqual(optionalKeys.slice(0, 2), ["automaticStablingRoad", "pstPerformedTime"]);
+  assert.match(
+    automaticFlow,
+    /key: "automaticStablingRoad",\s+label: "Parking Location",\s+optional: true,\s+visible: automaticCmmsReady,/,
+  );
+  assert.match(transformed, /const automaticCmmsReady = automaticTrLocalizedReady &&/);
+  assert.doesNotMatch(transformed, /const automaticStablingReady =/);
 });
 
 test("Automatic Next Wash action pill links to CMMS OPER in a new tab", () => {
