@@ -51,6 +51,18 @@ const POINTS_FUNCTIONAL_TEST_SUMMARIES = {
     "The Point Functional Test Form was updated accordingly.",
   ].join("\n"),
 };
+const DEFAULT_RESERVED_CATEGORIES = [
+  "Train Preparation",
+  "Points Functional Test",
+  "Internal Train Cleaning",
+  "Passenger Service Test",
+];
+const EAST_RESERVED_CATEGORIES = [
+  "Points Functional Test",
+  "Train Preparation",
+  "Internal Train Cleaning",
+  "Passenger Service Test",
+];
 const POINTS_FUNCTIONAL_TEST_CONFIGS = {
   east: {
     lastStatusColumn: 22,
@@ -745,12 +757,9 @@ function writeFirstDepotRemovalLog(sheetDocument, targetDate, removalLog, depotC
     setWorksheetRowHeight(sheetDocument, 9, 280);
   }
 
-  const reservedCategories = [
-    "Train Preparation",
-    "Points Functional Test",
-    "Internal Train Cleaning",
-    "Passenger Service Test",
-  ];
+  const reservedCategories = depotConfig.key === "east"
+    ? EAST_RESERVED_CATEGORIES
+    : DEFAULT_RESERVED_CATEGORIES;
   clearCells(cellsWithinRange(sheetDocument, 10, 13, 1, 9));
   reservedCategories.forEach((category, index) => {
     const rowNumber = 10 + index;
@@ -760,8 +769,9 @@ function writeFirstDepotRemovalLog(sheetDocument, targetDate, removalLog, depotC
     writeInlineString(sheetDocument, `D${rowNumber}`, category);
   });
 
-  writeInlineString(sheetDocument, "E11", POINTS_FUNCTIONAL_TEST_SUMMARIES[depotConfig.key]);
-  setWorksheetRowHeight(sheetDocument, 11, depotConfig.key === "east" ? 180 : 75);
+  const pointsFunctionalRow = 10 + reservedCategories.indexOf("Points Functional Test");
+  writeInlineString(sheetDocument, `E${pointsFunctionalRow}`, POINTS_FUNCTIONAL_TEST_SUMMARIES[depotConfig.key]);
+  setWorksheetRowHeight(sheetDocument, pointsFunctionalRow, depotConfig.key === "east" ? 180 : 75);
 
   return hasRemovalLog;
 }
