@@ -369,6 +369,39 @@ function clearDailyDepotLogRows(sheetDocument) {
   clearCells(cellsWithinRange(sheetDocument, 9, 39, 1, 9));
 }
 
+function normalizeDailyDepotLogMerges(sheetDocument) {
+  const mergeCells = sheetDocument.getElementsByTagNameNS("*", "mergeCells")[0];
+  if (!mergeCells) throw new Error("The main E-LOG merged-cell structure could not be read.");
+
+  let removedMergeCount = 0;
+  let removedRowSpanningMergeCount = 0;
+  Array.from(mergeCells.getElementsByTagNameNS("*", "mergeCell")).forEach((mergeCell) => {
+    const rowNumbers = Array.from(
+      String(mergeCell.getAttribute("ref") || "").matchAll(/\$?[A-Z]+\$?(\d+)/gi),
+      (match) => Number(match[1]),
+    );
+    if (!rowNumbers.length) return;
+
+    const firstRow = Math.min(...rowNumbers);
+    const lastRow = Math.max(...rowNumbers);
+    if (firstRow > 39 || lastRow < 9) return;
+
+    if (firstRow !== lastRow) removedRowSpanningMergeCount += 1;
+    mergeCell.parentNode?.removeChild(mergeCell);
+    removedMergeCount += 1;
+  });
+
+  const worksheetNamespace = sheetDocument.documentElement.namespaceURI;
+  for (let rowNumber = 9; rowNumber <= 39; rowNumber += 1) {
+    const summaryMerge = sheetDocument.createElementNS(worksheetNamespace, "mergeCell");
+    summaryMerge.setAttribute("ref", `E${rowNumber}:H${rowNumber}`);
+    mergeCells.appendChild(summaryMerge);
+  }
+
+  mergeCells.setAttribute("count", String(mergeCells.getElementsByTagNameNS("*", "mergeCell").length));
+  return { removedMergeCount, removedRowSpanningMergeCount };
+}
+
 function normalizeDailyDepotLogRows(sheetDocument) {
   Array.from(sheetDocument.getElementsByTagNameNS("*", "row")).forEach((row) => {
     const rowNumber = Number(row.getAttribute("r") || 0);
@@ -1011,6 +1044,7 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
   writeInlineString(sheetDocument, "G3", officialDateLabel(targetDate));
   writeInlineString(sheetDocument, "I3", timetableForDate(targetDate));
   if (isNewOutputDate) clearDailyDepotLogRows(sheetDocument);
+  const normalizedDailyMerges = normalizeDailyDepotLogMerges(sheetDocument);
   normalizeDailyDepotLogRows(sheetDocument);
   removeDailyDepotLogFills(sheetDocument, stylesDocument);
   copyRowCellStyles(sheetDocument, 10, [11, 12, 13], 1, 9);
@@ -1070,6 +1104,7 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
     normalizedPstRows: true,
     pstTrainPrep,
     normalizedDailyRows: true,
+    normalizedDailyMerges,
     clearedAuthorityRows: true,
     clearedSleepStandbyRows: Boolean(sleepStandbySheet),
     updatedPointFunctionalTest: true,
