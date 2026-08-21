@@ -39,6 +39,7 @@ const DEPOT_CONFIGS = {
 const PST_SHEET_NAME = "PST & Train Prep";
 const AUTHORITY_SHEET_NAME = "Authority to Proceed Form";
 const POINTS_FUNCTIONAL_TEST_SHEET_NAME = "Point Functional Test";
+const SLEEP_STANDBY_SHEET_NAMES = ["Sleep & Stdby Mode", "Sleep & Standby Mode", "Sleep and standby mode"];
 const XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace";
 const POINTS_FUNCTIONAL_TEST_SUMMARIES = {
   west: "Point functional test for the automatic area completed, except SA08 and SA06, which were not performed due to being blocked in reverse position.",
@@ -133,7 +134,7 @@ function relationshipIdForSheet(sheetNode) {
   return Array.from(sheetNode.attributes || []).find((attribute) => attribute.localName === "id")?.value || "";
 }
 
-function locateWorkbookSheet(archive, sheetNameOrNames) {
+function locateWorkbookSheet(archive, sheetNameOrNames, { required = true } = {}) {
   const workbook = parseXml(archiveText(archive, WORKBOOK_PATH, "Excel workbook definition"), "Excel workbook definition");
   const requestedNames = (Array.isArray(sheetNameOrNames) ? sheetNameOrNames : [sheetNameOrNames])
     .map((name) => String(name || "").trim())
@@ -145,6 +146,7 @@ function locateWorkbookSheet(archive, sheetNameOrNames) {
     normalizedNames.has(normalizeSheetName(node.getAttribute("name")))
   );
   if (!sheetNode) {
+    if (!required) return null;
     throw new Error(`The worksheet "${requestedNames[0]}" was not found. Upload the matching official Depot Controller Excel file.`);
   }
   const sheetName = String(sheetNode.getAttribute("name") || requestedNames[0]).trim();
@@ -406,6 +408,112 @@ function removeDailyDepotLogFills(sheetDocument, stylesDocument) {
     "count",
     String(Array.from(cellXfs.childNodes).filter((node) => node.nodeType === 1 && node.localName === "xf").length),
   );
+}
+
+function normalizeWhiteFillAndBlackFont(stylesDocument, cells) {
+  const fonts = stylesDocument.getElementsByTagNameNS("*", "fonts")[0];
+  const fills = stylesDocument.getElementsByTagNameNS("*", "fills")[0];
+  const cellXfs = stylesDocument.getElementsByTagNameNS("*", "cellXfs")[0];
+  if (!fonts || !fills || !cellXfs) throw new Error("Excel cell styles could not be read.");
+
+  const fontElements = Array.from(fonts.childNodes).filter(
+    (node) => node.nodeType === 1 && node.localName === "font",
+  );
+  const fillElements = Array.from(fills.childNodes).filter(
+    (node) => node.nodeType === 1 && node.localName === "fill",
+  );
+  const styleElements = Array.from(cellXfs.childNodes).filter(
+    (node) => node.nodeType === 1 && node.localName === "xf",
+  );
+  const namespace = stylesDocument.documentElement.namespaceURI;
+
+  const whiteFill = stylesDocument.createElementNS(namespace, "fill");
+  const patternFill = stylesDocument.createElementNS(namespace, "patternFill");
+  patternFill.setAttribute("patternType", "solid");
+  const foregroundColor = stylesDocument.createElementNS(namespace, "fgColor");
+  foregroundColor.setAttribute("rgb", "FFFFFFFF");
+  const backgroundColor = stylesDocument.createElementNS(namespace, "bgColor");
+  backgroundColor.setAttribute("indexed", "64");
+  patternFill.appendChild(foregroundColor);
+  patternFill.appendChild(backgroundColor);
+  whiteFill.appendChild(patternFill);
+  fills.appendChild(whiteFill);
+  const whiteFillId = fillElements.length;
+
+  const blackFontByOriginal = new Map();
+  const normalizedStyleByOriginal = new Map();
+
+  cells.forEach((cell) => {
+    const originalStyleId = Number(cell.getAttribute("s") || 0);
+    if (!normalizedStyleByOriginal.has(originalStyleId)) {
+      const originalStyle = styleElements[originalStyleId] || styleElements[0];
+      const originalFontId = Number(originalStyle?.getAttribute("fontId") || 0);
+      const originalFont = fontElements[originalFontId] || fontElements[0];
+      if (!originalStyle || !originalFont) throw new Error("Excel row styles could not be normalized.");
+
+      if (!blackFontByOriginal.has(originalFontId)) {
+        const blackFont = originalFont.cloneNode(true);
+        let colorNode = Array.from(blackFont.childNodes).find(
+          (node) => node.nodeType === 1 && node.localName === "color",
+        );
+        if (!colorNode) {
+          colorNode = stylesDocument.createElementNS(namespace, "color");
+          const insertBeforeNode = Array.from(blackFont.childNodes).find(
+            (node) => node.nodeType === 1 && ["sz", "u", "vertAlign", "scheme"].includes(node.localName),
+          );
+          blackFont.insertBefore(colorNode, insertBeforeNode || null);
+        }
+        Array.from(colorNode.attributes).forEach((attribute) => colorNode.removeAttributeNode(attribute));
+        colorNode.setAttribute("rgb", "FF000000");
+
+        const blackFontId = fontElements.length + blackFontByOriginal.size;
+        fonts.appendChild(blackFont);
+        blackFontByOriginal.set(originalFontId, blackFontId);
+      }
+
+      const normalizedStyle = originalStyle.cloneNode(true);
+      normalizedStyle.setAttribute("fontId", String(blackFontByOriginal.get(originalFontId)));
+      normalizedStyle.setAttribute("fillId", String(whiteFillId));
+      normalizedStyle.setAttribute("applyFont", "1");
+      normalizedStyle.setAttribute("applyFill", "1");
+      const normalizedStyleId = styleElements.length + normalizedStyleByOriginal.size;
+      cellXfs.appendChild(normalizedStyle);
+      normalizedStyleByOriginal.set(originalStyleId, normalizedStyleId);
+    }
+
+    cell.setAttribute("s", String(normalizedStyleByOriginal.get(originalStyleId)));
+  });
+
+  fonts.setAttribute(
+    "count",
+    String(Array.from(fonts.childNodes).filter((node) => node.nodeType === 1 && node.localName === "font").length),
+  );
+  fills.setAttribute(
+    "count",
+    String(Array.from(fills.childNodes).filter((node) => node.nodeType === 1 && node.localName === "fill").length),
+  );
+  cellXfs.setAttribute(
+    "count",
+    String(Array.from(cellXfs.childNodes).filter((node) => node.nodeType === 1 && node.localName === "xf").length),
+  );
+}
+
+function resetSleepAndStandbyModeRows(sheetDocument, stylesDocument, archive, strings) {
+  const trainSetColumns = new Set([1, 7, 12]);
+  const dataCells = cellsWithinRange(sheetDocument, 4, 50, 1, 16);
+
+  dataCells.forEach((cell) => {
+    const reference = cell.getAttribute("r") || "";
+    if (trainSetColumns.has(columnNumber(reference))) {
+      const trainSet = readCellText(sheetDocument, reference, archive, strings).trim();
+      if (trainSet) writeInlineString(sheetDocument, reference, trainSet);
+      else clearCells([cell]);
+    } else {
+      clearCells([cell]);
+    }
+  });
+
+  normalizeWhiteFillAndBlackFont(stylesDocument, dataCells);
 }
 
 function forceBlackFontForCells(sheetDocument, stylesDocument, references) {
@@ -881,6 +989,7 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
     archive,
     POINTS_FUNCTIONAL_TEST_SHEET_NAME,
   );
+  const sleepStandbySheet = locateWorkbookSheet(archive, SLEEP_STANDBY_SHEET_NAMES, { required: false });
   const stylesDocument = parseXml(archiveText(archive, STYLES_PATH, "Excel styles"), "Excel styles");
   const stringsDocument = sharedStringsDocument(archive);
   const strings = sharedStringValues(archive, stringsDocument);
@@ -921,6 +1030,14 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
   );
   clearPstTrainPrepRows(pstSheetDocument);
   clearAuthorityToProceedForm(authoritySheetDocument, targetDate);
+  if (sleepStandbySheet) {
+    resetSleepAndStandbyModeRows(
+      sleepStandbySheet.sheetDocument,
+      stylesDocument,
+      archive,
+      strings,
+    );
+  }
   const pointFunctionalTest = writePointFunctionalTestForDate(
     pointsSheetDocument,
     archive,
@@ -935,6 +1052,11 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
   archive[pstSheetPath] = strToU8(new XMLSerializer().serializeToString(pstSheetDocument));
   archive[authoritySheetPath] = strToU8(new XMLSerializer().serializeToString(authoritySheetDocument));
   archive[pointsSheetPath] = strToU8(new XMLSerializer().serializeToString(pointsSheetDocument));
+  if (sleepStandbySheet) {
+    archive[sleepStandbySheet.sheetPath] = strToU8(
+      new XMLSerializer().serializeToString(sleepStandbySheet.sheetDocument),
+    );
+  }
   archive[STYLES_PATH] = strToU8(new XMLSerializer().serializeToString(stylesDocument));
   const outputBytes = zipSync(archive, { level: 6 });
   return {
@@ -949,6 +1071,7 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
     pstTrainPrep,
     normalizedDailyRows: true,
     clearedAuthorityRows: true,
+    clearedSleepStandbyRows: Boolean(sleepStandbySheet),
     updatedPointFunctionalTest: true,
     pointFunctionalTest,
     addedDepotRemovalLog,
