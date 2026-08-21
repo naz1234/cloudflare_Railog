@@ -17,6 +17,9 @@ const WORKBOOK_PATH = "xl/workbook.xml";
 const WORKBOOK_RELS_PATH = "xl/_rels/workbook.xml.rels";
 const SHARED_STRINGS_PATH = "xl/sharedStrings.xml";
 const STYLES_PATH = "xl/styles.xml";
+const CALC_CHAIN_PATH = "xl/calcChain.xml";
+const PST_LAST_DATA_ROW = 49;
+const PST_LAST_OUTPUT_ROW = 50;
 const DEPOT_CONFIGS = {
   east: {
     key: "east",
@@ -125,8 +128,9 @@ function locateWorkbookSheet(archive, sheetNameOrNames) {
     .filter(Boolean);
   const normalizeSheetName = (name) => String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const normalizedNames = new Set(requestedNames.map(normalizeSheetName));
-  const sheetNode = Array.from(workbook.getElementsByTagNameNS("*", "sheet")).find(
-    (node) => normalizedNames.has(normalizeSheetName(node.getAttribute("name"))),
+  const workbookSheets = Array.from(workbook.getElementsByTagNameNS("*", "sheet"));
+  const sheetNode = workbookSheets.find((node) =>
+    normalizedNames.has(normalizeSheetName(node.getAttribute("name")))
   );
   if (!sheetNode) {
     throw new Error(`The worksheet "${requestedNames[0]}" was not found. Upload the matching official Depot Controller Excel file.`);
@@ -148,7 +152,12 @@ function locateWorkbookSheet(archive, sheetNameOrNames) {
 
   const sheetPath = normalizeArchivePath("xl", target);
   const sheetXml = archiveText(archive, sheetPath, sheetName);
-  return { sheetPath, sheetDocument: parseXml(sheetXml, sheetName) };
+  return {
+    sheetPath,
+    sheetDocument: parseXml(sheetXml, sheetName),
+    sheetId: Number(sheetNode.getAttribute("sheetId") || 0),
+    sheetIndex: workbookSheets.indexOf(sheetNode),
+  };
 }
 
 function findCell(sheetDocument, reference) {
@@ -450,7 +459,145 @@ function forceBlackFontForCells(sheetDocument, stylesDocument, references) {
 }
 
 function clearPstTrainPrepRows(sheetDocument) {
-  clearCells(cellsWithinRange(sheetDocument, 3, 49, 1, 11));
+  clearCells(cellsWithinRange(sheetDocument, 3, PST_LAST_DATA_ROW, 1, 11));
+}
+
+function pstSummaryRow(sheetDocument) {
+  const summaryCell = Array.from(sheetDocument.getElementsByTagNameNS("*", "c")).find((cell) => {
+    const formula = cell.getElementsByTagNameNS("*", "f")[0]?.textContent || "";
+    return /Total PST passed|COUNTIF\(F3:F49/i.test(formula);
+  });
+  return Number(String(summaryCell?.getAttribute("r") || "").match(/\d+$/)?.[0] || 0);
+}
+
+function replaceReferenceRow(reference, sourceRow, targetRow) {
+  return String(reference || "").replace(/(\$?)(\d+)/g, (match, absoluteMarker, rowText) =>
+    Number(rowText) === sourceRow ? `${absoluteMarker}${targetRow}` : match
+  );
+}
+
+function lastRowInReference(reference) {
+  const rowNumbers = Array.from(String(reference || "").matchAll(/\$?(\d+)/g), (match) => Number(match[1]));
+  return rowNumbers.at(-1) || 0;
+}
+
+function setReferenceLastRow(reference, lastRow) {
+  return String(reference || "").replace(/(\$?)(\d+)$/, `$1${lastRow}`);
+}
+
+function movePstSummaryToLastRow(sheetDocument, sourceRow) {
+  const sheetData = sheetDocument.getElementsByTagNameNS("*", "sheetData")[0];
+  const sourceRowNode = Array.from(sheetDocument.getElementsByTagNameNS("*", "row")).find(
+    (row) => Number(row.getAttribute("r") || 0) === sourceRow,
+  );
+  if (!sheetData || !sourceRowNode) throw new Error("The PST & Train Prep summary formula row could not be read.");
+
+  if (sourceRow !== PST_LAST_OUTPUT_ROW) {
+    const summaryClone = sourceRowNode.cloneNode(true);
+    summaryClone.setAttribute("r", String(PST_LAST_OUTPUT_ROW));
+    Array.from(summaryClone.getElementsByTagNameNS("*", "c")).forEach((cell) => {
+      cell.setAttribute("r", replaceReferenceRow(cell.getAttribute("r"), sourceRow, PST_LAST_OUTPUT_ROW));
+      Array.from(cell.getElementsByTagNameNS("*", "f")).forEach((formula) => {
+        if (formula.hasAttribute("ref")) {
+          formula.setAttribute("ref", replaceReferenceRow(formula.getAttribute("ref"), sourceRow, PST_LAST_OUTPUT_ROW));
+        }
+      });
+    });
+
+    const existingLastRow = Array.from(sheetDocument.getElementsByTagNameNS("*", "row")).find(
+      (row) => Number(row.getAttribute("r") || 0) === PST_LAST_OUTPUT_ROW,
+    );
+    existingLastRow?.parentNode?.removeChild(existingLastRow);
+    const nextRow = Array.from(sheetDocument.getElementsByTagNameNS("*", "row")).find(
+      (row) => Number(row.getAttribute("r") || 0) > PST_LAST_OUTPUT_ROW,
+    );
+    sheetData.insertBefore(summaryClone, nextRow || null);
+  }
+
+  Array.from(sheetDocument.getElementsByTagNameNS("*", "row")).forEach((row) => {
+    if (Number(row.getAttribute("r") || 0) > PST_LAST_OUTPUT_ROW) row.parentNode?.removeChild(row);
+  });
+
+  const mergeCells = sheetDocument.getElementsByTagNameNS("*", "mergeCells")[0];
+  if (mergeCells) {
+    Array.from(mergeCells.getElementsByTagNameNS("*", "mergeCell")).forEach((mergeCell) => {
+      const reference = mergeCell.getAttribute("ref") || "";
+      if (lastRowInReference(reference) === sourceRow) {
+        mergeCell.setAttribute("ref", replaceReferenceRow(reference, sourceRow, PST_LAST_OUTPUT_ROW));
+      } else if (lastRowInReference(reference) > PST_LAST_OUTPUT_ROW) {
+        mergeCell.parentNode?.removeChild(mergeCell);
+      }
+    });
+    mergeCells.setAttribute("count", String(mergeCells.getElementsByTagNameNS("*", "mergeCell").length));
+  }
+
+  const dimension = sheetDocument.getElementsByTagNameNS("*", "dimension")[0];
+  if (dimension) dimension.setAttribute("ref", setReferenceLastRow(dimension.getAttribute("ref"), PST_LAST_OUTPUT_ROW));
+}
+
+function worksheetRelationshipsPath(sheetPath) {
+  const lastSlash = sheetPath.lastIndexOf("/");
+  const directory = sheetPath.slice(0, lastSlash);
+  const fileName = sheetPath.slice(lastSlash + 1);
+  return `${directory}/_rels/${fileName}.rels`;
+}
+
+function normalizePstTableRange(archive, sheetPath) {
+  const relationshipsPath = worksheetRelationshipsPath(sheetPath);
+  if (!archive[relationshipsPath]) return;
+  const relationships = parseXml(strFromU8(archive[relationshipsPath]), "PST worksheet relationships");
+  const tableRelationship = Array.from(relationships.getElementsByTagNameNS("*", "Relationship")).find((node) =>
+    /\/table$/i.test(node.getAttribute("Type") || "")
+  );
+  if (!tableRelationship) return;
+
+  const sheetDirectory = sheetPath.slice(0, sheetPath.lastIndexOf("/"));
+  const tablePath = normalizeArchivePath(sheetDirectory, tableRelationship.getAttribute("Target"));
+  if (!archive[tablePath]) return;
+  const tableDocument = parseXml(strFromU8(archive[tablePath]), "PST Excel table");
+  const table = tableDocument.getElementsByTagNameNS("*", "table")[0];
+  const autoFilter = tableDocument.getElementsByTagNameNS("*", "autoFilter")[0];
+  if (table?.hasAttribute("ref")) table.setAttribute("ref", setReferenceLastRow(table.getAttribute("ref"), PST_LAST_DATA_ROW));
+  if (autoFilter?.hasAttribute("ref")) {
+    autoFilter.setAttribute("ref", setReferenceLastRow(autoFilter.getAttribute("ref"), PST_LAST_DATA_ROW));
+  }
+  archive[tablePath] = strToU8(new XMLSerializer().serializeToString(tableDocument));
+}
+
+function normalizePstCalcChain(archive, sheetId, sourceRow) {
+  if (!archive[CALC_CHAIN_PATH] || !sheetId || sourceRow === PST_LAST_OUTPUT_ROW) return;
+  const calcChain = parseXml(strFromU8(archive[CALC_CHAIN_PATH]), "Excel calculation chain");
+  let activeSheetId = 0;
+  Array.from(calcChain.getElementsByTagNameNS("*", "c")).forEach((cell) => {
+    if (cell.hasAttribute("i")) activeSheetId = Number(cell.getAttribute("i") || 0);
+    if (activeSheetId !== sheetId) return;
+    cell.setAttribute("r", replaceReferenceRow(cell.getAttribute("r"), sourceRow, PST_LAST_OUTPUT_ROW));
+  });
+  archive[CALC_CHAIN_PATH] = strToU8(new XMLSerializer().serializeToString(calcChain));
+}
+
+function normalizePstPrintArea(archive, sheetIndex) {
+  if (sheetIndex < 0) return;
+  const workbook = parseXml(archiveText(archive, WORKBOOK_PATH, "Excel workbook definition"), "Excel workbook definition");
+  Array.from(workbook.getElementsByTagNameNS("*", "definedName")).forEach((definedName) => {
+    if (
+      definedName.getAttribute("name") === "_xlnm.Print_Area"
+      && Number(definedName.getAttribute("localSheetId")) === sheetIndex
+    ) {
+      definedName.textContent = setReferenceLastRow(definedName.textContent, PST_LAST_OUTPUT_ROW);
+    }
+  });
+  archive[WORKBOOK_PATH] = strToU8(new XMLSerializer().serializeToString(workbook));
+}
+
+function normalizePstTrainPrepOutput(sheetDocument, archive, sheetPath, sheetId, sheetIndex) {
+  const sourceRow = pstSummaryRow(sheetDocument);
+  if (!sourceRow) throw new Error("The PST & Train Prep summary formula row was not found.");
+  movePstSummaryToLastRow(sheetDocument, sourceRow);
+  normalizePstTableRange(archive, sheetPath);
+  normalizePstCalcChain(archive, sheetId, sourceRow);
+  normalizePstPrintArea(archive, sheetIndex);
+  return { sourceRow, summaryRow: PST_LAST_OUTPUT_ROW };
 }
 
 function excelSerialForDate(date) {
@@ -710,7 +857,12 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
 
   const archive = unzipSync(new Uint8Array(await sourceFile.arrayBuffer()));
   const { sheetPath, sheetDocument } = locateWorkbookSheet(archive, depotConfig.sheetNames);
-  const { sheetPath: pstSheetPath, sheetDocument: pstSheetDocument } = locateWorkbookSheet(archive, PST_SHEET_NAME);
+  const {
+    sheetPath: pstSheetPath,
+    sheetDocument: pstSheetDocument,
+    sheetId: pstSheetId,
+    sheetIndex: pstSheetIndex,
+  } = locateWorkbookSheet(archive, PST_SHEET_NAME);
   const { sheetPath: authoritySheetPath, sheetDocument: authoritySheetDocument } = locateWorkbookSheet(
     archive,
     AUTHORITY_SHEET_NAME,
@@ -750,6 +902,13 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
     depotConfig,
   );
   forceBlackFontForCells(sheetDocument, stylesDocument, ["D9", "D10", "D11", "D12", "D13"]);
+  const pstTrainPrep = normalizePstTrainPrepOutput(
+    pstSheetDocument,
+    archive,
+    pstSheetPath,
+    pstSheetId,
+    pstSheetIndex,
+  );
   clearPstTrainPrepRows(pstSheetDocument);
   clearAuthorityToProceedForm(authoritySheetDocument, targetDate);
   const pointFunctionalTest = writePointFunctionalTestForDate(
@@ -776,6 +935,8 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
     timetable: timetableForDate(targetDate),
     clearedDailyRows: isNewOutputDate,
     clearedPstRows: true,
+    normalizedPstRows: true,
+    pstTrainPrep,
     normalizedDailyRows: true,
     clearedAuthorityRows: true,
     updatedPointFunctionalTest: true,
