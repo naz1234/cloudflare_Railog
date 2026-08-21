@@ -157,9 +157,13 @@ function findCell(sheetDocument, reference) {
   );
 }
 
-function sharedStringValues(archive) {
-  if (!archive[SHARED_STRINGS_PATH]) return [];
-  const documentNode = parseXml(strFromU8(archive[SHARED_STRINGS_PATH]), "Excel shared strings");
+function sharedStringsDocument(archive) {
+  if (!archive[SHARED_STRINGS_PATH]) return null;
+  return parseXml(strFromU8(archive[SHARED_STRINGS_PATH]), "Excel shared strings");
+}
+
+function sharedStringValues(archive, documentNode = sharedStringsDocument(archive)) {
+  if (!documentNode) return [];
   return Array.from(documentNode.getElementsByTagNameNS("*", "si")).map((item) =>
     Array.from(item.getElementsByTagNameNS("*", "t")).map((node) => node.textContent || "").join(""),
   );
@@ -247,6 +251,58 @@ function copyCellValue(sourceCell, targetCell) {
   const cellType = sourceCell.getAttribute("t");
   if (cellType) targetCell.setAttribute("t", cellType);
   Array.from(sourceCell.childNodes).forEach((node) => targetCell.appendChild(node.cloneNode(true)));
+}
+
+function copyCellStyle(sourceCell, targetCell) {
+  const styleId = sourceCell?.getAttribute("s");
+  if (styleId === null || styleId === undefined) targetCell.removeAttribute("s");
+  else targetCell.setAttribute("s", styleId);
+}
+
+function richTextContainerForCell(cell, stringsDocument) {
+  if (!cell) return null;
+  const cellType = cell.getAttribute("t") || "";
+  if (cellType === "inlineStr") return cell.getElementsByTagNameNS("*", "is")[0] || null;
+  if (cellType !== "s" || !stringsDocument) return null;
+
+  const valueNode = cell.getElementsByTagNameNS("*", "v")[0];
+  const stringIndex = Number(valueNode?.textContent);
+  return Array.from(stringsDocument.getElementsByTagNameNS("*", "si"))[stringIndex] || null;
+}
+
+function cellHasRichText(cell, stringsDocument) {
+  return Boolean(richTextContainerForCell(cell, stringsDocument)?.getElementsByTagNameNS("*", "r").length);
+}
+
+function writePointFunctionalRichNote(sheetDocument, sourceCell, targetCell, stringsDocument, fallbackText, controllerName) {
+  const sourceContainer = richTextContainerForCell(sourceCell, stringsDocument);
+  if (!sourceContainer || !sourceContainer.getElementsByTagNameNS("*", "r").length) {
+    writeInlineString(sheetDocument, targetCell.getAttribute("r"), `${fallbackText}Completed by DC ${controllerName.trim()}`);
+    return;
+  }
+
+  while (targetCell.firstChild) targetCell.removeChild(targetCell.firstChild);
+  targetCell.setAttribute("t", "inlineStr");
+
+  const namespace = sheetDocument.documentElement.namespaceURI;
+  const inlineString = sheetDocument.createElementNS(namespace, "is");
+  Array.from(sourceContainer.childNodes).forEach((node) => {
+    inlineString.appendChild(sheetDocument.importNode(node, true));
+  });
+
+  const completedByNode = Array.from(inlineString.getElementsByTagNameNS("*", "t")).find((node) =>
+    /Completed by DC\b/i.test(node.textContent || ""),
+  );
+  if (!completedByNode) {
+    writeInlineString(sheetDocument, targetCell.getAttribute("r"), `${fallbackText}Completed by DC ${controllerName.trim()}`);
+    return;
+  }
+
+  completedByNode.textContent = String(completedByNode.textContent || "").replace(
+    /Completed by DC\b[\s\S]*$/i,
+    `Completed by DC ${controllerName.trim()}`,
+  );
+  targetCell.appendChild(inlineString);
 }
 
 function cellsWithinRange(sheetDocument, startRow, endRow, startColumn, endColumn) {
@@ -426,7 +482,34 @@ function latestPerformedPointFunctionalRow(sheetDocument, targetRow, lastStatusC
   return 0;
 }
 
-function writePointFunctionalTestForDate(sheetDocument, archive, sharedStrings, targetDate, depotConfig, controllerName) {
+function latestFormattedPointFunctionalRow(
+  sheetDocument,
+  targetRow,
+  lastStatusColumn,
+  noteColumn,
+  stringsDocument,
+) {
+  for (let rowNumber = targetRow; rowNumber >= 1; rowNumber -= 1) {
+    const noteCell = findCell(sheetDocument, `${noteColumn}${rowNumber}`);
+    if (
+      pointFunctionalStatusRowHasValues(sheetDocument, rowNumber, lastStatusColumn)
+      && cellHasRichText(noteCell, stringsDocument)
+    ) {
+      return rowNumber;
+    }
+  }
+  return 0;
+}
+
+function writePointFunctionalTestForDate(
+  sheetDocument,
+  archive,
+  sharedStrings,
+  stringsDocument,
+  targetDate,
+  depotConfig,
+  controllerName,
+) {
   const config = POINTS_FUNCTIONAL_TEST_CONFIGS[depotConfig.key];
   if (!config) throw new Error(`Point Functional Test settings are missing for ${depotConfig.label}.`);
 
@@ -436,27 +519,43 @@ function writePointFunctionalTestForDate(sheetDocument, archive, sharedStrings, 
     throw new Error(`No previous performed row was found in the ${POINTS_FUNCTIONAL_TEST_SHEET_NAME} sheet.`);
   }
 
-  if (sourceRow !== targetRow) {
-    for (let column = 3; column <= config.lastStatusColumn; column += 1) {
-      const columnName = columnLetters(column);
-      const sourceCell = findCell(sheetDocument, `${columnName}${sourceRow}`);
-      const targetCell = findCell(sheetDocument, `${columnName}${targetRow}`);
-      if (!targetCell) throw new Error(`Required Excel cell ${columnName}${targetRow} was not found.`);
-      copyCellValue(sourceCell, targetCell);
-    }
+  const formattingRow = latestFormattedPointFunctionalRow(
+    sheetDocument,
+    targetRow,
+    config.lastStatusColumn,
+    config.noteColumn,
+    stringsDocument,
+  ) || sourceRow;
+
+  for (let column = 3; column <= config.lastStatusColumn; column += 1) {
+    const columnName = columnLetters(column);
+    const sourceCell = findCell(sheetDocument, `${columnName}${sourceRow}`);
+    const formattingCell = findCell(sheetDocument, `${columnName}${formattingRow}`);
+    const targetCell = findCell(sheetDocument, `${columnName}${targetRow}`);
+    if (!targetCell) throw new Error(`Required Excel cell ${columnName}${targetRow} was not found.`);
+    if (sourceRow !== targetRow) copyCellValue(sourceCell, targetCell);
+    copyCellStyle(formattingCell || sourceCell, targetCell);
   }
 
-  const sourceNote = readCellText(sheetDocument, `${config.noteColumn}${sourceRow}`, archive, sharedStrings);
+  const noteSourceCell = findCell(sheetDocument, `${config.noteColumn}${formattingRow}`);
+  const targetNoteCell = findCell(sheetDocument, `${config.noteColumn}${targetRow}`);
+  if (!targetNoteCell) throw new Error(`Required Excel cell ${config.noteColumn}${targetRow} was not found.`);
+  copyCellStyle(noteSourceCell, targetNoteCell);
+
+  const sourceNote = readCellText(sheetDocument, `${config.noteColumn}${formattingRow}`, archive, sharedStrings);
   const noteWithoutCompletedBy = String(sourceNote || config.fallbackNote)
     .replace(/\s*(?:[-–—]\s*)?Completed by DC\b[\s\S]*$/i, "")
     .trim() || config.fallbackNote;
-  writeInlineString(
+  writePointFunctionalRichNote(
     sheetDocument,
-    `${config.noteColumn}${targetRow}`,
-    `${noteWithoutCompletedBy}${config.noteSeparator}Completed by DC ${controllerName.trim()}`,
+    noteSourceCell,
+    targetNoteCell,
+    stringsDocument,
+    `${noteWithoutCompletedBy}${config.noteSeparator}`,
+    controllerName,
   );
 
-  return { targetRow, sourceRow };
+  return { targetRow, sourceRow, formattingRow };
 }
 
 function clearAuthorityToProceedForm(sheetDocument, targetDate) {
@@ -621,7 +720,8 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
     POINTS_FUNCTIONAL_TEST_SHEET_NAME,
   );
   const stylesDocument = parseXml(archiveText(archive, STYLES_PATH, "Excel styles"), "Excel styles");
-  const strings = sharedStringValues(archive);
+  const stringsDocument = sharedStringsDocument(archive);
+  const strings = sharedStringValues(archive, stringsDocument);
   const today = addLocalDays(new Date(), 0);
   const targetDate = addLocalDays(today, targetDay === "tomorrow" ? 1 : 0);
   const workbookDate = parseWorkbookDate(readCellText(sheetDocument, "G3", archive, strings), sourceFile.name);
@@ -656,6 +756,7 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
     pointsSheetDocument,
     archive,
     strings,
+    stringsDocument,
     targetDate,
     depotConfig,
     controllerName,
