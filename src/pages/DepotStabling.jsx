@@ -44,6 +44,7 @@ import {
   getOffPeakStablingMatch,
   shouldShowRemovalTidStablingRemove,
 } from "../lib/trainRemOffPeakStabling";
+import { buildPSTExcelClipboardText } from "../lib/pstExcelClipboard";
 import { getSwappingAutoFillFields } from "../lib/trainMovementSwapAutoFill";
 import { buildTcRemovalPdfLog } from "../lib/tcRemovalPdf";
 import {
@@ -14355,6 +14356,8 @@ function APUMismatchChecklist({
 function PSTTabContent
 ({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onAddManualLog, onRemoveManualLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, apuMismatchTrainIds, onAPUMismatchTrainIdsChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug, westPg = "pg1", eastPg = "pg1", onPSTPgChange, onRefreshPSTPg2, onClearPSTPg2Trains, westPSTStablingEditable = false, eastPSTStablingEditable = false, onEditablePSTTrainIdChange }) {
   const [downloadingExcelDepot, setDownloadingExcelDepot] = useState("");
+  const [copyingExcelDepot, setCopyingExcelDepot] = useState("");
+  const [copiedExcelDepot, setCopiedExcelDepot] = useState("");
   const safeCompletedByNames = completedByNames || { west: "", east: "" };
   const safeAPUMismatchTrainIds = normalizeAPUMismatchTrainIds(apuMismatchTrainIds);
   const sortedLogLines = sortPSTLogLinesByTime(logLines);
@@ -14370,12 +14373,10 @@ function PSTTabContent
     onCompletedByChange?.(depot, value);
   };
 
-  const handleDownloadExcel = (depot) => {
-    if (downloadingExcelDepot) return;
-
+  const preparePSTExcelAction = (depot, action = "download") => {
     const isCombinedDepot = depot === "combined" || depot === "all" || depot === "";
     const normalizedDepot = depot === "west" || depot === "east" ? depot : "";
-    const downloadKey = isCombinedDepot ? "combined" : normalizedDepot;
+    const actionKey = isCombinedDepot ? "combined" : normalizedDepot;
     const depotLabel = isCombinedDepot ? "Combined West + East Depot" : normalizedDepot === "west" ? "West Depot" : "East Depot";
     const completedEntries = (exportLogLines || [])
       .filter((entry) => {
@@ -14385,8 +14386,8 @@ function PSTTabContent
     const pstEntries = completedEntries.filter(isPSTLogEntry);
 
     if (completedEntries.length === 0) {
-      alert(`No completed PST or Train Prep log to export for ${depotLabel} yet.`);
-      return;
+      alert(`No completed PST or Train Prep log to ${action} for ${depotLabel} yet.`);
+      return null;
     }
 
     const completedBy = normalizeCompletedByNames(safeCompletedByNames);
@@ -14394,22 +14395,31 @@ function PSTTabContent
     const hasEastPST = pstEntries.some((entry) => getPSTDepotFromEntry(entry) === "east");
 
     if (!isCombinedDepot && pstEntries.length > 0 && !completedBy[normalizedDepot]) {
-      alert(`Please enter ${depotLabel} completed by name before downloading the Excel file.`);
-      return;
+      alert(`Please enter ${depotLabel} completed by name before ${action === "copy" ? "copying the Excel output" : "downloading the Excel file"}.`);
+      return null;
     }
 
     if (isCombinedDepot && hasWestPST && !completedBy.west) {
-      alert("Please enter West Depot completed by name before downloading the combined Excel file.");
-      return;
+      alert(`Please enter West Depot completed by name before ${action === "copy" ? "copying the combined Excel output" : "downloading the combined Excel file"}.`);
+      return null;
     }
 
     if (isCombinedDepot && hasEastPST && !completedBy.east) {
-      alert("Please enter East Depot completed by name before downloading the combined Excel file.");
-      return;
+      alert(`Please enter East Depot completed by name before ${action === "copy" ? "copying the combined Excel output" : "downloading the combined Excel file"}.`);
+      return null;
     }
 
     try { localStorage.setItem("pstExcelCompletedByNames", JSON.stringify(completedBy)); } catch {}
-    setDownloadingExcelDepot(downloadKey);
+    return { actionKey, completedBy, normalizedDepot };
+  };
+
+  const handleDownloadExcel = (depot) => {
+    if (downloadingExcelDepot || copyingExcelDepot) return;
+    const actionContext = preparePSTExcelAction(depot, "export");
+    if (!actionContext) return;
+
+    const { actionKey, completedBy, normalizedDepot } = actionContext;
+    setDownloadingExcelDepot(actionKey);
 
     try {
       downloadPSTExcelExport(exportLogLines, completedBy, normalizedDepot);
@@ -14418,6 +14428,31 @@ function PSTTabContent
       alert("Unable to create Excel export. Please try again.");
     } finally {
       setDownloadingExcelDepot("");
+    }
+  };
+
+  const handleCopyExcelOutput = async (depot) => {
+    if (downloadingExcelDepot || copyingExcelDepot) return;
+    const actionContext = preparePSTExcelAction(depot, "copy");
+    if (!actionContext) return;
+
+    const { actionKey, completedBy, normalizedDepot } = actionContext;
+    setCopyingExcelDepot(actionKey);
+
+    try {
+      const copyRows = buildPSTExportRows(exportLogLines, completedBy, normalizedDepot, false);
+      const copied = await copyTextToClipboard(buildPSTExcelClipboardText(copyRows));
+      if (!copied) throw new Error("Clipboard copy was not available.");
+
+      setCopiedExcelDepot(actionKey);
+      setTimeout(() => {
+        setCopiedExcelDepot((current) => current === actionKey ? "" : current);
+      }, 2000);
+    } catch (error) {
+      console.error("PST Excel output copy failed:", error);
+      alert("Unable to copy the Excel output. Please try again.");
+    } finally {
+      setCopyingExcelDepot("");
     }
   };
 
@@ -14441,6 +14476,7 @@ function PSTTabContent
     const depotLabel = isWestDepot ? "West Depot" : "East Depot";
     const depotShortLabel = isWestDepot ? "WD" : "ED";
     const depotExcelLabel = isWestDepot ? "West Excel" : "East Excel";
+    const depotCopyLabel = isWestDepot ? "WD Copy Excell Output" : "ED Copy Excell Output";
     const inputAccent = isWestDepot ? "#58a6ff" : "#c084fc";
     const depotExcelStyle = isWestDepot
       ? {
@@ -14513,7 +14549,7 @@ function PSTTabContent
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <button
             onClick={() => handleDownloadExcel(depot)}
-            disabled={Boolean(downloadingExcelDepot)}
+            disabled={Boolean(downloadingExcelDepot || copyingExcelDepot)}
             className={`removal-summary-tooltip-trigger theme-pst-excel-button theme-pst-excel-${depot} relative z-50 flex h-10 w-full items-center justify-center gap-2 overflow-visible rounded-xl border px-4 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50`}
             style={depotExcelStyle}
             aria-label={`Download ${depotShortLabel} PST and Train Prep Excel report to paste into the official ELOG`}
@@ -14532,7 +14568,7 @@ function PSTTabContent
 
           <button
             onClick={() => handleDownloadExcel("combined")}
-            disabled={Boolean(downloadingExcelDepot)}
+            disabled={Boolean(downloadingExcelDepot || copyingExcelDepot)}
             className="removal-summary-tooltip-trigger theme-pst-excel-button theme-pst-excel-combined relative z-50 flex h-10 w-full items-center justify-center gap-2 overflow-visible rounded-xl border px-4 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
             style={{
               background: "linear-gradient(135deg, rgba(20,184,166,0.18), rgba(14,116,144,0.22))",
@@ -14550,6 +14586,45 @@ function PSTTabContent
             {downloadingExcelDepot === "combined" ? "Preparing..." : "Combined Excel"}
             <RemovalSummaryTooltip
               message="Download combined WD and ED PST and Train Prep Excel report to paste into the official ELOG"
+              placement="top"
+            />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => handleCopyExcelOutput(depot)}
+            disabled={Boolean(downloadingExcelDepot || copyingExcelDepot)}
+            className={`removal-summary-tooltip-trigger theme-pst-excel-button theme-pst-excel-${depot} relative z-50 flex h-10 w-full items-center justify-center gap-2 overflow-visible rounded-xl border px-3 text-[11px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50`}
+            style={depotExcelStyle}
+            aria-label={`Copy ${depotShortLabel} PST and Train Prep Excel rows 3 to 49`}
+          >
+            {copiedExcelDepot === depot ? <ClipboardCheck size={15} /> : <Copy size={15} />}
+            {copyingExcelDepot === depot ? "Copying..." : copiedExcelDepot === depot ? "Copied A3:K49" : depotCopyLabel}
+            <RemovalSummaryTooltip
+              message={`Copy ${depotShortLabel} Excel output rows 3 to 49 for direct paste into A3:K49`}
+              placement="top"
+            />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleCopyExcelOutput("combined")}
+            disabled={Boolean(downloadingExcelDepot || copyingExcelDepot)}
+            className="removal-summary-tooltip-trigger theme-pst-excel-button theme-pst-excel-combined relative z-50 flex h-10 w-full items-center justify-center gap-2 overflow-visible rounded-xl border px-3 text-[11px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+            style={{
+              background: "linear-gradient(135deg, rgba(20,184,166,0.18), rgba(14,116,144,0.22))",
+              borderColor: "rgba(94,234,212,0.58)",
+              color: "#ccfbf1",
+              boxShadow: "0 0 18px rgba(20,184,166,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
+            }}
+            aria-label="Copy combined WD and ED PST and Train Prep Excel rows 3 to 49"
+          >
+            {copiedExcelDepot === "combined" ? <ClipboardCheck size={15} /> : <Copy size={15} />}
+            {copyingExcelDepot === "combined" ? "Copying..." : copiedExcelDepot === "combined" ? "Copied A3:K49" : "Combined Copy Excell Output"}
+            <RemovalSummaryTooltip
+              message="Copy combined WD and ED Excel output rows 3 to 49 for direct paste into A3:K49"
               placement="top"
             />
           </button>
@@ -26436,6 +26511,9 @@ function getPSTDepotFromEntry(entry = {}) {
   return "";
 }
 
+/** @typedef {{ west?: string, east?: string }} PSTCompletedByNames */
+
+/** @param {string | PSTCompletedByNames} completedBy */
 function normalizeCompletedByNames(completedBy = "") {
   if (typeof completedBy === "string") {
     const name = completedBy.trim();
@@ -26448,6 +26526,7 @@ function normalizeCompletedByNames(completedBy = "") {
   };
 }
 
+/** @param {string | PSTCompletedByNames} completedBy */
 function getCompletedByForPSTEntry(entry = {}, completedBy = "") {
   const names = normalizeCompletedByNames(completedBy);
   const depot = getPSTDepotFromEntry(entry);
@@ -26502,6 +26581,7 @@ function buildLatestPSTExcelMap(entries = []) {
   return latestByTrain;
 }
 
+/** @param {string | PSTCompletedByNames} completedBy */
 function buildPSTExportRows(logLines = [], completedBy = "", depotFilter = "", includeTrailingBlankRow = true) {
   const todayText = formatExcelExportDate(new Date());
   const safeLogLines = Array.isArray(logLines) ? logLines : [];
@@ -26570,6 +26650,7 @@ function buildPSTFormRows() {
   return rows;
 }
 
+/** @param {string | PSTCompletedByNames} completedBy */
 function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = "") {
   const normalizedDepot = depotFilter === "west" || depotFilter === "east" ? depotFilter : "";
   const combinedRl3Rows = buildPSTExportRows(logLines, completedBy, "", false);
@@ -26729,6 +26810,7 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = ""
   ]);
 }
 
+/** @param {string | PSTCompletedByNames} completedBy */
 function downloadPSTExcelExport(logLines = [], completedBy = "", depotFilter = "") {
   const normalizedDepot = depotFilter === "west" || depotFilter === "east" ? depotFilter : "";
   const xlsxBytes = buildPSTExcelWorkbook(logLines, completedBy, normalizedDepot);
