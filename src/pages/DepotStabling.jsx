@@ -17,6 +17,7 @@ import RosterWorkspace from "../components/RosterWorkspace";
 import ChecklistWorkspace from "../components/ChecklistWorkspace";
 import SleepModeWorkspace from "../components/SleepModeWorkspace";
 import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator";
+import OccBriefingFormSigner from "../components/OccBriefingFormSigner";
 import RemovalPdfEditor from "../components/depot/RemovalPdfEditor";
 import EastNineAmRemovalPdfEditor from "../components/depot/EastNineAmRemovalPdfEditor";
 import { summarizeInsertionTidUsage } from "../lib/insertionTidUsage";
@@ -21485,6 +21486,8 @@ export default function DepotStablingPage() {
           westData,
         )}
       />
+
+      <OccBriefingFormSigner />
 
       <TrainRequestedNotInRemoval
         requests={requests}
