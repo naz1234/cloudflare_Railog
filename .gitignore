@@ -29,3 +29,7 @@ dist-ssr
 
 .env
 .vite
+
+# Local Cloudflare deployment files may contain private binding addresses.
+/wrangler.toml
+/workers/auth-email/wrangler.toml

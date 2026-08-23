@@ -2,6 +2,8 @@
 
 The application must be protected by Cloudflare Access before it is used with operational data. The Pages middleware also fails closed unless it receives a valid Access JWT and the verified email matches the single private L3 DC shared address.
 
+Cloudflare Access remains the default and rollback authentication mode. The repository also contains a staged [custom email-PIN design](custom-pin-auth.md), but Access must stay enabled until that guide's mailer, Turnstile, D1, dual-gate testing, and cutover checklist are complete.
+
 The approved address is private data and must not be committed to this public repository. Store it in Cloudflare Zero Trust and in the encrypted Pages secret described below.
 
 > **Configure the Access application, policy, variables, and secret before merging this PR.** Until every setting exists, the fail-closed middleware returns `503` for the entire site, including static assets and `/api/*` routes.

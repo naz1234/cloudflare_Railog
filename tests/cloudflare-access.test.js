@@ -15,7 +15,10 @@ import {
   parseAllowedEmails,
   verifyCloudflareAccessJwt,
 } from '../functions/lib/cloudflare-access.js';
-import { createAccessMiddleware } from '../functions/_middleware.js';
+import {
+  createAccessMiddleware,
+  createAuthMiddleware,
+} from '../functions/_middleware.js';
 
 const memberEmails = Array.from(
   { length: 1 },
@@ -297,4 +300,201 @@ test('middleware leaves only the certificate-validation challenge path public', 
   assert.equal(await response.text(), 'challenge');
   assert.equal(authorizeCalls, 0);
   assert.equal(nextCalls, 1);
+});
+
+test('combined middleware preserves Cloudflare Access as the default mode', async () => {
+  let accessCalls = 0;
+  let customCalls = 0;
+  const middleware = createAuthMiddleware({
+    authorizeAccess: async () => {
+      accessCalls += 1;
+      return {
+        authorized: true,
+        email: memberEmails[0],
+        payload: { sub: 'access-user' },
+      };
+    },
+    authorizeCustom: async () => {
+      customCalls += 1;
+      return { authorized: true };
+    },
+  });
+
+  const response = await middleware({
+    data: {},
+    env: makeEnv(),
+    next: async () => new Response('access mode'),
+    request: makeRequest(),
+  });
+
+  assert.equal(await response.text(), 'access mode');
+  assert.equal(accessCalls, 1);
+  assert.equal(customCalls, 0);
+});
+
+test('custom mode exposes only the exact login shell and auth endpoints', async () => {
+  let authorizeCalls = 0;
+  const middleware = createAuthMiddleware({
+    authorizeCustom: async () => {
+      authorizeCalls += 1;
+      return { authorized: false, reason: 'missing_session', status: 401 };
+    },
+  });
+
+  const publicRequests = [
+    new Request('https://railog.example.com/login.html'),
+    new Request('https://railog.example.com/auth/login.css'),
+    new Request('https://railog.example.com/auth/login.js'),
+    new Request('https://railog.example.com/favicon.png'),
+    new Request('https://railog.example.com/api/auth/config'),
+    new Request('https://railog.example.com/api/auth/session'),
+    new Request('https://railog.example.com/api/auth/request-code', {
+      method: 'POST',
+      headers: { Origin: 'https://railog.example.com' },
+    }),
+  ];
+
+  for (const request of publicRequests) {
+    const response = await middleware({
+      data: {},
+      env: { AUTH_MODE: 'custom_pin' },
+      next: async () => new Response('public'),
+      request,
+    });
+    assert.equal(await response.text(), 'public');
+    if (new URL(request.url).pathname === '/login.html') {
+      assert.match(
+        response.headers.get('Content-Security-Policy') || '',
+        /frame-src https:\/\/challenges\.cloudflare\.com/,
+      );
+      assert.equal(response.headers.get('X-Frame-Options'), 'DENY');
+      assert.match(response.headers.get('Cache-Control') || '', /no-store/);
+    }
+  }
+
+  for (const path of [
+    '/auth/internal.js',
+    '/auth/login.js/extra',
+    '/auth/%6cogin.js',
+    '/login.html/extra',
+    '/api/auth/internal',
+  ]) {
+    const privateResponse = await middleware({
+      data: {},
+      env: { AUTH_MODE: 'custom_pin' },
+      next: async () => new Response('unexpected'),
+      request: new Request(`https://railog.example.com${path}`),
+    });
+
+    assert.equal(privateResponse.status, 401);
+  }
+  assert.equal(authorizeCalls, 5);
+
+  const wrongMethodResponse = await middleware({
+    data: {},
+    env: { AUTH_MODE: 'custom_pin' },
+    next: async () => new Response('unexpected'),
+    request: new Request('https://railog.example.com/api/auth/request-code'),
+  });
+  assert.equal(wrongMethodResponse.status, 401);
+  assert.equal(authorizeCalls, 6);
+});
+
+test('custom mode redirects unauthenticated document requests without exposing assets', async () => {
+  const middleware = createAuthMiddleware({
+    authorizeCustom: async () => ({
+      authorized: false,
+      reason: 'missing_session',
+      status: 401,
+    }),
+  });
+
+  const documentResponse = await middleware({
+    data: {},
+    env: { AUTH_MODE: 'custom_pin' },
+    next: async () => new Response('unexpected'),
+    request: new Request('https://railog.example.com/', {
+      headers: { Accept: 'text/html' },
+    }),
+  });
+  assert.equal(documentResponse.status, 302);
+  assert.equal(
+    documentResponse.headers.get('Location'),
+    'https://railog.example.com/login.html',
+  );
+
+  const assetResponse = await middleware({
+    data: {},
+    env: { AUTH_MODE: 'custom_pin' },
+    next: async () => new Response('unexpected'),
+    request: new Request('https://railog.example.com/assets/main.js'),
+  });
+  assert.equal(assetResponse.status, 401);
+});
+
+test('custom mode attaches the verified session before serving protected content', async () => {
+  const data = {};
+  const middleware = createAuthMiddleware({
+    authorizeCustom: async () => ({
+      authorized: true,
+      email: 'l3.dc@example.com',
+      expiresAt: '2026-08-23T12:00:00.000Z',
+    }),
+  });
+
+  const response = await middleware({
+    data,
+    env: { AUTH_MODE: 'custom_pin' },
+    next: async () => new Response('private'),
+    request: new Request('https://railog.example.com/assets/main.js'),
+  });
+
+  assert.equal(await response.text(), 'private');
+  assert.deepEqual(data.authUser, {
+    email: 'l3.dc@example.com',
+    expiresAt: '2026-08-23T12:00:00.000Z',
+  });
+});
+
+test('custom mode blocks cross-site and originless mutations before auth handlers', async () => {
+  let nextCalls = 0;
+  const middleware = createAuthMiddleware();
+
+  for (const headers of [
+    { Origin: 'https://attacker.example', 'Sec-Fetch-Site': 'cross-site' },
+    {},
+  ]) {
+    const response = await middleware({
+      data: {},
+      env: { AUTH_MODE: 'custom_pin' },
+      next: async () => {
+        nextCalls += 1;
+        return new Response('unexpected');
+      },
+      request: new Request('https://railog.example.com/api/auth/request-code', {
+        method: 'POST',
+        headers,
+      }),
+    });
+    assert.equal(response.status, 403);
+  }
+
+  assert.equal(nextCalls, 0);
+});
+
+test('custom mode fails closed for an invalid AUTH_MODE value', async () => {
+  let nextCalls = 0;
+  const middleware = createAuthMiddleware({ logger: { error: () => {} } });
+  const response = await middleware({
+    data: {},
+    env: { AUTH_MODE: 'disabled' },
+    next: async () => {
+      nextCalls += 1;
+      return new Response('unexpected');
+    },
+    request: new Request('https://railog.example.com/login.html'),
+  });
+
+  assert.equal(response.status, 503);
+  assert.equal(nextCalls, 0);
 });
