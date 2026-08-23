@@ -13,6 +13,8 @@ TURNSTILE_SITE_KEY = "PUT_ENVIRONMENT_TURNSTILE_SITE_KEY_HERE"
 
 # Custom PIN mode also requires encrypted AUTH_LOGIN_EMAIL,
 # AUTH_HMAC_SECRET, AUTH_EMAIL_SERVICE_TOKEN, and TURNSTILE_SECRET_KEY secrets.
+# Gmail OAuth credentials belong only on the private AUTH_EMAIL_SERVICE Worker,
+# never on the Pages project or in this file.
 # Keep AUTH_MODE=cloudflare_access until docs/custom-pin-auth.md is complete.
 
 # For Cloudflare Pages, create a D1 database first, then bind it as DB.

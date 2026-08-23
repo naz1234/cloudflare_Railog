@@ -16,21 +16,28 @@ The custom login is designed for one private L3 DC shared mailbox. The browser n
 
 The shared mailbox is a shared identity. It does not prove which individual staff member used a code. A determined human or distributed attacker can still cause nuisance emails, so add a Cloudflare WAF rate rule or a stable OCC source-network rule if one is available.
 
-## 1. Prepare Email Service
+## 1. Prepare the dedicated Gmail sender
 
-Cloudflare Email Service requires a sender domain that is already in this Cloudflare account, uses Cloudflare DNS, and has been onboarded for Email Sending. A `pages.dev` hostname cannot be the sender.
+Use a dedicated Gmail account only for L3 DC login codes. Protect it with 2-Step Verification; do not use a personal mailbox and never store its Google password in Cloudflare.
 
-1. Open **Cloudflare > Compute > Email Service > Email Sending**.
-2. Onboard a domain that you control and wait for its sending DNS records to become active.
-3. Verify the private L3 DC mailbox as a destination address.
-4. Deploy the private worker in [`workers/auth-email`](../workers/auth-email).
-5. Add its `EMAIL` send binding with both restrictions:
-   - `destination_address` = the private L3 DC mailbox
-   - `allowed_sender_addresses` = the onboarded no-reply sender
-6. Keep `workers_dev = false`; the worker should be reachable only through a Pages Service binding.
-7. Set the same strong `AUTH_EMAIL_SERVICE_TOKEN` secret on the worker and Pages project.
+1. Create a Google Cloud project owned by the dedicated Gmail account and enable **Gmail API**.
+2. Configure an External OAuth consent screen and add only the `https://www.googleapis.com/auth/gmail.send` scope.
+3. Add the dedicated Gmail account as a test user while setup is in progress.
+4. Create a **Web application** OAuth client with `https://developers.google.com/oauthplayground` as its only redirect URI. Leave JavaScript origins empty.
+5. In OAuth Playground, use the project's own client ID and client secret, select server-side/offline access, authorize only `gmail.send`, and exchange the one-time authorization code for a refresh token.
+6. Deploy the private worker in [`workers/auth-email`](../workers/auth-email) with `workers_dev = false` and no route or custom domain.
+7. Add these encrypted Worker secrets:
+   - `AUTH_GMAIL_CLIENT_ID`
+   - `AUTH_GMAIL_CLIENT_SECRET`
+   - `AUTH_GMAIL_REFRESH_TOKEN`
+   - `AUTH_EMAIL_FROM` = the dedicated Gmail address
+   - `AUTH_LOGIN_EMAIL` = the private L3 DC shared mailbox
+   - `AUTH_EMAIL_SERVICE_TOKEN` = a separate random service secret of at least 32 characters
+8. Set the same `AUTH_EMAIL_SERVICE_TOKEN` as an encrypted Pages secret and bind the Worker to Pages as `AUTH_EMAIL_SERVICE`.
 
-The mailer deliberately ignores browser-supplied sender or recipient values. The binding restriction is a second independent safeguard.
+The mailer accepts only a six-digit PIN and a short request reference from Pages. It deliberately rejects browser-supplied sender or recipient values, keeps all OAuth credentials inside the private Worker, exchanges the refresh token only at Google's token endpoint, and sends only through Gmail's `users.messages.send` API.
+
+> **Do not cut over while the Google OAuth app remains External/Testing.** Google documents that refresh tokens for External apps in Testing expire after seven days when non-basic scopes such as `gmail.send` are requested. For this single dedicated sender, open **Google Auth Platform > Audience**, publish the app to **In production**, then authorize it once more and replace the Testing refresh token with the newly issued token. Google allows personal-use apps with fewer than 100 known users to remain unverified, although the dedicated sender sees an unverified-app warning during that one-time authorization. OCC users never authorize the Google app; they only receive the L3 DC login code.
 
 ## 2. Create Turnstile widgets
 
@@ -105,9 +112,15 @@ If email, Turnstile, D1, or session verification fails, re-enable Cloudflare Acc
 
 Official Cloudflare references:
 
-- [Email Service setup](https://developers.cloudflare.com/email-service/get-started/send-emails/)
-- [Restrict Email Service send bindings](https://developers.cloudflare.com/email-service/configuration/send-bindings/)
 - [Pages Service bindings](https://developers.cloudflare.com/pages/functions/bindings/#service-bindings)
 - [Turnstile server-side validation](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/)
 - [Turnstile content security policy](https://developers.cloudflare.com/turnstile/reference/content-security-policy/)
 - [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/)
+
+Official Google references:
+
+- [Gmail API message sending](https://developers.google.com/workspace/gmail/api/guides/sending)
+- [Server-side Gmail OAuth](https://developers.google.com/workspace/gmail/api/auth/web-server)
+- [OAuth Playground](https://developers.google.com/oauthplayground/)
+- [OAuth refresh-token lifetime](https://developers.google.com/identity/protocols/oauth2#expiration)
+- [When OAuth verification is not required](https://support.google.com/cloud/answer/13464323)
