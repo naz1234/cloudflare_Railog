@@ -18,7 +18,7 @@ import {
 import { createAccessMiddleware } from '../functions/_middleware.js';
 
 const memberEmails = Array.from(
-  { length: 38 },
+  { length: 10 },
   (_, index) => `member${index + 1}@example.com`,
 );
 
@@ -55,23 +55,23 @@ test('normalizes the Access team domain and exact email allowlist', () => {
   );
 });
 
-test('fails closed unless the private allowlist has exactly 38 unique emails', () => {
+test('fails closed unless the private allowlist has exactly 10 unique emails', () => {
   const valid = getAccessConfiguration(makeEnv());
   assert.equal(valid.valid, true);
-  assert.equal(valid.allowedEmails.length, 38);
+  assert.equal(valid.allowedEmails.length, 10);
 
   const short = getAccessConfiguration(makeEnv({
-    OCC_ALLOWED_EMAILS: memberEmails.slice(0, 37).join(','),
+    OCC_ALLOWED_EMAILS: memberEmails.slice(0, 9).join(','),
   }));
   assert.equal(short.valid, false);
-  assert.match(short.issues.join(' '), /exactly 38 unique addresses; found 37/);
+  assert.match(short.issues.join(' '), /exactly 10 unique addresses; found 9/);
 
   const attemptedExpansion = getAccessConfiguration(makeEnv({
-    OCC_ALLOWED_EMAILS: [...memberEmails, 'member39@example.com'].join(','),
-    OCC_EXPECTED_EMAIL_COUNT: '39',
+    OCC_ALLOWED_EMAILS: [...memberEmails, 'member11@example.com'].join(','),
+    OCC_EXPECTED_EMAIL_COUNT: '11',
   }));
   assert.equal(attemptedExpansion.valid, false);
-  assert.match(attemptedExpansion.issues.join(' '), /exactly 38 unique addresses; found 39/);
+  assert.match(attemptedExpansion.issues.join(' '), /exactly 10 unique addresses; found 11/);
 });
 
 test('rejects a request that has no Cloudflare Access JWT', async () => {
@@ -85,7 +85,7 @@ test('rejects a request that has no Cloudflare Access JWT', async () => {
   assert.equal(result.status, 401);
 });
 
-test('rejects an invalid Access JWT and an email outside the 38-member list', async () => {
+test('rejects an invalid Access JWT and an email outside the Depot Controller list', async () => {
   const invalid = await authorizeOccRequest({
     request: makeRequest(),
     env: makeEnv(),
@@ -121,7 +121,7 @@ test('keeps requests denied when the remote Access keys are unavailable', async 
   assert.equal(result.status, 503);
 });
 
-test('allows a cryptographically verified JWT for one of the 38 members', async () => {
+test('allows a cryptographically verified JWT for one of the 10 Depot Controllers', async () => {
   const result = await authorizeOccRequest({
     request: makeRequest(),
     env: makeEnv(),

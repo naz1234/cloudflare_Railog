@@ -2,7 +2,7 @@
 
 ## Production access
 
-Production and preview deployments must follow the [OCC-only Cloudflare Access setup](docs/cloudflare-access.md). It uses One-time PIN, an exact 38-member email policy, and server-side Access JWT validation without committing personal email addresses.
+Production and preview deployments must follow the [Depot Controller-only Cloudflare Access setup](docs/cloudflare-access.md). It uses One-time PIN, an exact 10-member Depot Controller email policy, and server-side Access JWT validation without committing personal email addresses.
 
 - 12am rows now use the same steel-blue whole-row theme as 7pm, Fri, Sat and PH.
 - Selecting 12am under West Depot automatically selects 12am under East Depot.
