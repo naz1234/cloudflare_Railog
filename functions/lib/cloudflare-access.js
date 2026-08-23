@@ -1,6 +1,6 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 
-export const DEFAULT_EXPECTED_OCC_EMAIL_COUNT = 10;
+export const DEFAULT_EXPECTED_OCC_EMAIL_COUNT = 1;
 
 const remoteJwksByUrl = new Map();
 
@@ -46,13 +46,14 @@ export function getAccessConfiguration(env = {}) {
   const audiences = parseAccessAudiences(env.CF_ACCESS_AUD);
   const allowedEmails = parseAllowedEmails(env.OCC_ALLOWED_EMAILS);
   const expectedEmailCount = DEFAULT_EXPECTED_OCC_EMAIL_COUNT;
+  const expectedAddressLabel = expectedEmailCount === 1 ? 'address' : 'addresses';
   const issues = [];
 
   if (!teamDomain) issues.push('CF_ACCESS_TEAM_DOMAIN is missing or invalid.');
   if (audiences.length === 0) issues.push('CF_ACCESS_AUD is missing.');
   if (allowedEmails.length !== expectedEmailCount) {
     issues.push(
-      `OCC_ALLOWED_EMAILS must contain exactly ${expectedEmailCount} unique addresses; found ${allowedEmails.length}.`,
+      `OCC_ALLOWED_EMAILS must contain exactly ${expectedEmailCount} unique ${expectedAddressLabel}; found ${allowedEmails.length}.`,
     );
   }
 
