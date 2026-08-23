@@ -1,6 +1,6 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 
-export const DEFAULT_EXPECTED_OCC_EMAIL_COUNT = 38;
+export const DEFAULT_EXPECTED_OCC_EMAIL_COUNT = 10;
 
 const remoteJwksByUrl = new Map();
 
