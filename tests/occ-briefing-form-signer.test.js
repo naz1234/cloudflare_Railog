@@ -167,6 +167,8 @@ test("OCC briefing signer appears directly below the Next Day Excel Generator", 
   const panel = readFileSync(new URL("../src/components/OccBriefingFormSigner.jsx", import.meta.url), "utf8");
   assert.match(page, /<OfficialEastExcelGenerator[\s\S]*?<OccBriefingFormSigner\s*\/>\s*<TrainRequestedNotInRemoval/);
   assert.match(panel, /Existing signatures preserved/);
-  assert.match(panel, /Sign & Download OCC Form/);
+  assert.match(panel, /Sign & Save \/ Replace OCC Form/);
+  assert.match(panel, /requestWorkbookSaveHandle\(sourceFile\.name\)/);
+  assert.match(panel, /writeWorkbookToHandle\(saveHandle, signed\.blob\)/);
   assert.match(panel, /Signature image · optional/);
 });
