@@ -104,6 +104,8 @@ test("typed OCC signatures fill only the first empty row and use bold Cochocib f
   assert.equal(result.rowNumber, 65);
   assert.equal(result.preservedEntries, 1);
   assert.equal(result.signatureType, "text");
+  assert.equal(result.fileName, source.name);
+  assert.doesNotMatch(result.fileName, /signed/i);
   assert.match(form, /<c r="C65" s="0"><v>1000335<\/v><\/c>/);
   assert.match(form, /<c r="D65" s="0" t="inlineStr"><is><t xml:space="preserve">Muhammad Bin Nazif Jaafar<\/t>/);
   assert.match(form, /<c r="J65" s="2" t="inlineStr"><is><t xml:space="preserve">Nazif<\/t>/);

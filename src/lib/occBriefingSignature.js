@@ -419,8 +419,8 @@ async function insertSignatureImage(archive, form, rowNumber, imageFile) {
   archive[drawing.drawingPath] = strToU8(updatedDrawing);
 }
 
-function signedFileName(originalName) {
-  return `${String(originalName || "OCC Book In and Briefing Form.xlsx").replace(/\.xlsx$/i, "")}_Signed.xlsx`;
+function outputFileName(originalName) {
+  return String(originalName || "OCC Book In and Briefing Form.xlsx");
 }
 
 export async function signOccBriefingWorkbook({
@@ -471,7 +471,7 @@ export async function signOccBriefingWorkbook({
   const bytes = zipSync(archive, { level: 6 });
   return {
     blob: new Blob([Uint8Array.from(bytes)], { type: XLSX_MIME }),
-    fileName: signedFileName(sourceFile.name),
+    fileName: outputFileName(sourceFile.name),
     rowNumber: row,
     preservedEntries: details.existingCount,
     shift: details.shift,
