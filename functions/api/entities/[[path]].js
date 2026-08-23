@@ -25,11 +25,13 @@ const ALLOWED_ENTITIES = new Set([
 
 const jsonHeaders = {
   'Content-Type': 'application/json; charset=utf-8',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Cache-Control': 'no-store, no-cache, must-revalidate',
   Pragma: 'no-cache',
+};
+
+const optionsHeaders = {
+  Allow: 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+  'Cache-Control': 'no-store, no-cache, must-revalidate',
 };
 
 function json(data, status = 200) {
@@ -206,7 +208,7 @@ export async function onRequest(context) {
   const { request, env, params } = context;
 
   if (request.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: jsonHeaders });
+    return new Response(null, { status: 204, headers: optionsHeaders });
   }
 
   if (!env.DB) {

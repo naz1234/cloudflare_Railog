@@ -2,7 +2,7 @@
 
 ## Production access
 
-Production and preview deployments must follow the [L3 DC shared-address Cloudflare Access setup](docs/cloudflare-access.md). It uses One-time PIN, a single approved email address, and server-side Access JWT validation without committing the address to this public repository.
+Production and preview deployments default to the [L3 DC shared-address Cloudflare Access setup](docs/cloudflare-access.md). A staged [custom email-PIN system](docs/custom-pin-auth.md) is also available, but Cloudflare Access must remain enabled until its mailer, Turnstile, D1 migration, and dual-gate checklist pass. Neither design commits the private mailbox to this public repository.
 
 - 12am rows now use the same steel-blue whole-row theme as 7pm, Fri, Sat and PH.
 - Selecting 12am under West Depot automatically selects 12am under East Depot.

@@ -1,8 +1,6 @@
 const jsonHeaders = {
   'Content-Type': 'application/json; charset=utf-8',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Cache-Control': 'no-store, no-cache, must-revalidate',
 };
 
 function json(data, status = 200) {
@@ -28,7 +26,13 @@ export async function onRequest(context) {
   const { request, env } = context;
 
   if (request.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: jsonHeaders });
+    return new Response(null, {
+      status: 204,
+      headers: {
+        Allow: 'GET,OPTIONS',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      },
+    });
   }
 
   if (!env.DB) {

@@ -1,0 +1,25 @@
+name = "l3-dc-auth-email"
+main = "src/index.js"
+compatibility_date = "2026-05-26"
+
+# This Worker is callable only through a Service Binding from the Pages app.
+# Keep both public workers.dev access and preview URLs disabled.
+workers_dev = false
+preview_urls = false
+
+# Configure these as encrypted Worker secrets in the Cloudflare dashboard:
+# - AUTH_EMAIL_SERVICE_TOKEN (the same strong secret used by the Pages binding)
+# - AUTH_EMAIL_FROM (an address on an Email Service sending domain you control)
+# - AUTH_LOGIN_EMAIL (the single private shared destination address)
+# Do not add their real values to this file or to Git.
+
+# The production send_email binding must also be restricted to the same private
+# AUTH_LOGIN_EMAIL value. This non-routable placeholder documents the required
+# destination_address shape without committing the private address.
+[[send_email]]
+name = "EMAIL"
+destination_address = "shared-address@example.invalid"
+allowed_sender_addresses = ["no-reply@example.invalid"]
+
+# Do not add routes or custom domains to this Worker. Bind it to the Pages
+# project as a Service Binding named AUTH_EMAIL_SERVICE.
