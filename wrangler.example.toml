@@ -2,6 +2,13 @@ name = "raillog"
 compatibility_date = "2026-05-26"
 pages_build_output_dir = "dist"
 
+[vars]
+CF_ACCESS_TEAM_DOMAIN = "your-team.cloudflareaccess.com"
+CF_ACCESS_AUD = "PUT_ACCESS_APPLICATION_AUD_TAGS_HERE_COMMA_SEPARATED"
+
+# Store OCC_ALLOWED_EMAILS as an encrypted Pages secret for both Production
+# and Preview. Never place the 38 personal addresses in this file or in Git.
+
 # For Cloudflare Pages, create a D1 database first, then bind it as DB.
 # Replace database_id with your own D1 Database ID before renaming this file to wrangler.toml.
 [[d1_databases]]
