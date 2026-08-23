@@ -19,6 +19,12 @@ import {
   OCC_SIGNATURE_FONT,
   signOccBriefingWorkbook,
 } from "../lib/occBriefingSignature";
+import {
+  downloadWorkbook,
+  requestWorkbookSaveHandle,
+  supportsWorkbookSavePicker,
+  writeWorkbookToHandle,
+} from "../lib/saveWorkbookFile";
 
 const PROFILE_KEY = "occBriefingSignerProfile_v1";
 
@@ -34,17 +40,6 @@ function storedProfile() {
 function currentTime() {
   const now = new Date();
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-}
-
-function downloadWorkbook(blob, fileName) {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export default function OccBriefingFormSigner() {
@@ -167,6 +162,17 @@ export default function OccBriefingFormSigner() {
     setResult(null);
     setIsSigning(true);
     try {
+      let saveHandle = null;
+      let savePickerFallback = false;
+      if (supportsWorkbookSavePicker()) {
+        try {
+          saveHandle = await requestWorkbookSaveHandle(sourceFile.name);
+        } catch (pickerError) {
+          if (pickerError?.name === "AbortError") return;
+          savePickerFallback = true;
+        }
+      }
+
       const signed = await signOccBriefingWorkbook({
         sourceFile,
         employeeId,
@@ -177,8 +183,12 @@ export default function OccBriefingFormSigner() {
         signatureFile,
         signatureText,
       });
-      downloadWorkbook(signed.blob, signed.fileName);
-      setResult(signed);
+      if (saveHandle) {
+        await writeWorkbookToHandle(saveHandle, signed.blob);
+      } else {
+        downloadWorkbook(signed.blob, signed.fileName);
+      }
+      setResult({ ...signed, saveMode: saveHandle ? "picker" : "download", savePickerFallback });
     } catch (signingError) {
       setError(signingError?.message || "The OCC briefing form could not be signed.");
     } finally {
@@ -347,14 +357,17 @@ export default function OccBriefingFormSigner() {
       {result && (
         <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold text-emerald-300">
           <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>Signed row {result.rowNumber} and downloaded {result.fileName}. All {result.preservedEntries} existing sign-ins and signatures were preserved.</span>
+          <span>
+            Signed row {result.rowNumber} and {result.saveMode === "picker" ? "saved" : "downloaded"} {result.fileName}. All {result.preservedEntries} existing sign-ins and signatures were preserved.
+            {result.savePickerFallback ? " The Save As dialog was unavailable, so the browser download was used." : ""}
+          </span>
         </div>
       )}
 
       <div className="mt-3 flex justify-end">
         <button type="button" onClick={handleSign} disabled={isSigning || isInspecting || !sourceFile || !workbook?.nextRow} className="occ-sign-button inline-flex h-9 items-center gap-2 rounded-lg border border-sky-300/70 bg-gradient-to-r from-blue-600 to-cyan-600 px-4 text-[11px] font-black uppercase tracking-wide text-white shadow-[0_0_16px_rgba(59,130,246,0.24)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55">
           {isSigning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-          {isSigning ? "Signing..." : "Sign & Download OCC Form"}
+          {isSigning ? "Signing..." : "Sign & Save / Replace OCC Form"}
         </button>
       </div>
     </section>
