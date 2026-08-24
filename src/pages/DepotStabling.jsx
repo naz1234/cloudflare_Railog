@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Download, Search, ArrowUp, ArrowDown, Check, Sun, Moon, TrainFront, Clock3 } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Download, Search, ArrowUp, ArrowDown, Check, Sun, Moon, TrainFront, Clock3, RefreshCw } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
@@ -10945,6 +10945,12 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
     });
   };
 
+  const setRowCurrentTime = (id) => {
+    const currentTime = formatTime(new Date());
+    updateRow(id, "time", currentTime);
+    showFeedback(`Time set to ${currentTime}`);
+  };
+
   const addRow = () => {
     markTrainMovementExcelLocalEdit();
     setRows((prev) => {
@@ -11232,7 +11238,26 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
                     )}
                   </td>
                   <td className={cellClass}>
-                    <input value={row.time} onChange={(e) => updateRow(row.id, "time", cleanMovementCustomTimeInput(e.target.value))} placeholder="00:00" aria-invalid={validation.issues.some((issue) => issue.field === "time")} className={`${tableInputClass} font-mono`} />
+                    <div className="flex min-w-0 items-center gap-0.5 px-0.5">
+                      <input
+                        value={row.time}
+                        onChange={(e) => updateRow(row.id, "time", cleanMovementCustomTimeInput(e.target.value))}
+                        placeholder="00:00"
+                        aria-label="Movement time"
+                        aria-invalid={validation.issues.some((issue) => issue.field === "time")}
+                        className={`${tableInputClass} min-w-0 px-1 text-center font-mono`}
+                      />
+                      <ActionTooltip message="Use current time" placement="top" align="end">
+                        <button
+                          type="button"
+                          onClick={() => setRowCurrentTime(row.id)}
+                          className="theme-movement-time-refresh inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-emerald-400/70 bg-emerald-500/20 text-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.22)] transition hover:border-emerald-300 hover:bg-emerald-500/35 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+                          aria-label="Set this row time to the current time"
+                        >
+                          <RefreshCw size={10} strokeWidth={2.5} />
+                        </button>
+                      </ActionTooltip>
+                    </div>
                   </td>
                   <td className="theme-movement-status-cell border border-[#173653] bg-[#061827] px-1.5 text-center">
                     <ActionTooltip
