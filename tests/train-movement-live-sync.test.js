@@ -231,3 +231,13 @@ test("the current-time refresh icon matches the swapping animation rhythm", () =
   assert.match(indexCssSource, /rotate\(360deg\)/);
   assert.match(indexCssSource, /prefers-reduced-motion: reduce[\s\S]*?\.theme-movement-time-refresh svg[\s\S]*?animation: none !important;/);
 });
+
+
+test("the top header no longer renders the date and time pill", () => {
+  assert.doesNotMatch(depotStablingSource, /function HeaderDateTime\(/);
+  assert.doesNotMatch(depotStablingSource, /<HeaderDateTime \/>/);
+  assert.match(
+    depotStablingSource,
+    /<div className="flex items-center gap-3">\s*<button[\s\S]*?className="theme-toggle/,
+  );
+});
