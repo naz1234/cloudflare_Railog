@@ -205,3 +205,14 @@ test("the movement editor captures poll revisions and routes autosaves through t
   assert.match(depotStablingSource, /upsertTrainMovementLiveRecord\(\{/);
   assert.match(depotStablingSource, /onFocusCapture=.*trainMovementExcelInputFocusedRef\.current = true/s);
 });
+
+
+test("the movement time refresh button fills the selected row with the current browser time", () => {
+  assert.match(
+    depotStablingSource,
+    /const setRowCurrentTime = \(id\) => \{[\s\S]*?const currentTime = formatTime\(new Date\(\)\);[\s\S]*?updateRow\(id, "time", currentTime\);/,
+  );
+  assert.match(depotStablingSource, /onClick=\{\(\) => setRowCurrentTime\(row\.id\)\}/);
+  assert.match(depotStablingSource, /aria-label="Set this row time to the current time"/);
+  assert.match(depotStablingSource, /theme-movement-time-refresh[\s\S]*?bg-emerald-500\/20/);
+});
