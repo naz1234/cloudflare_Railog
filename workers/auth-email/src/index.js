@@ -1,8 +1,13 @@
 const MAX_REQUEST_BYTES = 1024;
 const MIN_SERVICE_TOKEN_LENGTH = 32;
+const MIN_OAUTH_SECRET_LENGTH = 16;
 const PIN_PATTERN = /^\d{6}$/;
 const REQUEST_REF_PATTERN = /^[A-Z0-9]{4,16}$/;
 const EMAIL_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
+const GOOGLE_CLIENT_ID_PATTERN = /^[a-z0-9._-]+\.apps\.googleusercontent\.com$/i;
+const GOOGLE_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
+const GMAIL_SEND_ENDPOINT = 'https://gmail.googleapis.com/gmail/v1/users/me/messages/send';
+const MIME_BOUNDARY = 'l3dc_auth_alternative';
 
 const responseHeaders = {
   'Cache-Control': 'no-store, no-cache, must-revalidate',
@@ -56,18 +61,24 @@ function getConfiguration(env = {}) {
   const from = normalizeEmail(env.AUTH_EMAIL_FROM);
   const to = normalizeEmail(env.AUTH_LOGIN_EMAIL);
   const serviceToken = String(env.AUTH_EMAIL_SERVICE_TOKEN || '').trim();
-  const emailBinding = env.EMAIL;
+  const clientId = String(env.AUTH_GMAIL_CLIENT_ID || '').trim();
+  const clientSecret = String(env.AUTH_GMAIL_CLIENT_SECRET || '').trim();
+  const refreshToken = String(env.AUTH_GMAIL_REFRESH_TOKEN || '').trim();
 
   return {
-    emailBinding,
+    clientId,
+    clientSecret,
     from,
+    refreshToken,
     serviceToken,
     to,
     valid: Boolean(
       from
       && to
       && serviceToken.length >= MIN_SERVICE_TOKEN_LENGTH
-      && typeof emailBinding?.send === 'function'
+      && GOOGLE_CLIENT_ID_PATTERN.test(clientId)
+      && clientSecret.length >= MIN_OAUTH_SECRET_LENGTH
+      && refreshToken.length >= MIN_OAUTH_SECRET_LENGTH
     ),
   };
 }
@@ -180,7 +191,94 @@ export function createLoginEmail({ from, pin, requestRef, to }) {
   };
 }
 
-export async function handleAuthEmailRequest(request, env = {}) {
+function bytesToBase64Url(bytes) {
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+  return btoa(binary)
+    .replaceAll('+', '-')
+    .replaceAll('/', '_')
+    .replace(/=+$/g, '');
+}
+
+export function createGmailRawMessage(message) {
+  const mime = [
+    `From: L3 DC Template Login <${message.from}>`,
+    `To: ${message.to}`,
+    `Subject: ${message.subject}`,
+    'MIME-Version: 1.0',
+    `Content-Type: multipart/alternative; boundary="${MIME_BOUNDARY}"`,
+    '',
+    `--${MIME_BOUNDARY}`,
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: 8bit',
+    '',
+    message.text,
+    '',
+    `--${MIME_BOUNDARY}`,
+    'Content-Type: text/html; charset=UTF-8',
+    'Content-Transfer-Encoding: 8bit',
+    '',
+    message.html,
+    '',
+    `--${MIME_BOUNDARY}--`,
+    '',
+  ].join('\r\n');
+
+  return bytesToBase64Url(new TextEncoder().encode(mime));
+}
+
+async function readProviderJson(response) {
+  try {
+    const body = await response.json();
+    return body && typeof body === 'object' ? body : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function requestGmailAccessToken(config, fetcher = fetch) {
+  const body = new URLSearchParams({
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
+    grant_type: 'refresh_token',
+    refresh_token: config.refreshToken,
+  });
+  const response = await fetcher(GOOGLE_TOKEN_ENDPOINT, {
+    body,
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    },
+    method: 'POST',
+    redirect: 'error',
+  });
+  const result = await readProviderJson(response);
+  const accessToken = String(result.access_token || '').trim();
+  if (!response.ok || !accessToken) {
+    throw new Error('Gmail OAuth token exchange failed.');
+  }
+  return accessToken;
+}
+
+export async function sendGmailMessage({ config, fetcher = fetch, message }) {
+  const accessToken = await requestGmailAccessToken(config, fetcher);
+  const response = await fetcher(GMAIL_SEND_ENDPOINT, {
+    body: JSON.stringify({ raw: createGmailRawMessage(message) }),
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json; charset=UTF-8',
+    },
+    method: 'POST',
+    redirect: 'error',
+  });
+  if (!response.ok) {
+    throw new Error('Gmail message delivery failed.');
+  }
+}
+
+export async function handleAuthEmailRequest(request, env = {}, options = {}) {
   const pathname = new URL(request.url).pathname;
   if (pathname !== '/send') {
     return errorResponse(404, 'NOT_FOUND', 'Not found.');
@@ -225,7 +323,11 @@ export async function handleAuthEmailRequest(request, env = {}) {
   });
 
   try {
-    await config.emailBinding.send(message);
+    await sendGmailMessage({
+      config,
+      fetcher: options.fetcher || fetch,
+      message,
+    });
     return jsonResponse({ ok: true });
   } catch {
     return errorResponse(
