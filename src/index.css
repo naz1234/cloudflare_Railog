@@ -8663,6 +8663,27 @@ html[data-app-theme="light"] .theme-movement-status[data-status="draft"] {
   82%, 100% { transform: translate(-3px, -50%); opacity: 0.74; }
 }
 
+/* Match the TIME refresh icon motion to the swapping symbol's 2.8s rhythm. */
+@keyframes movement-time-refresh-spin {
+  0% { transform: rotate(0deg) scale(0.94); opacity: 0.72; }
+  50% { transform: rotate(180deg) scale(1.08); opacity: 1; }
+  100% { transform: rotate(360deg) scale(0.94); opacity: 0.72; }
+}
+
+.theme-movement-time-refresh svg {
+  transform-origin: center;
+  animation: movement-time-refresh-spin 2.8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.theme-movement-sheet-table tbody tr:nth-child(2n) .theme-movement-time-refresh svg {
+  animation-delay: -0.35s;
+}
+
+.theme-movement-sheet-table tbody tr:nth-child(3n) .theme-movement-time-refresh svg {
+  animation-delay: -0.7s;
+}
+
 html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2) {
   --movement-type-accent: #d97706;
   --movement-type-fill: rgba(245, 158, 11, 0.16);
@@ -8708,6 +8729,13 @@ html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2) >
     animation: none !important;
     transform: translateY(-50%);
     opacity: 1;
+  }
+
+  .theme-movement-time-refresh svg {
+    animation: none !important;
+    transform: none;
+    opacity: 1;
+    will-change: auto;
   }
 
   .theme-movement-status[data-status="incomplete"] {

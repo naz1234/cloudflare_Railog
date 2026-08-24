@@ -12,6 +12,10 @@ const depotStablingSource = readFileSync(
   new URL("../src/pages/DepotStabling.jsx", import.meta.url),
   "utf8",
 );
+const indexCssSource = readFileSync(
+  new URL("../src/index.css", import.meta.url),
+  "utf8",
+);
 
 function createDeferred() {
   let resolve;
@@ -215,4 +219,15 @@ test("the movement time refresh button fills the selected row with the current b
   assert.match(depotStablingSource, /onClick=\{\(\) => setRowCurrentTime\(row\.id\)\}/);
   assert.match(depotStablingSource, /aria-label="Set this row time to the current time"/);
   assert.match(depotStablingSource, /theme-movement-time-refresh[\s\S]*?bg-emerald-500\/20/);
+});
+
+
+test("the current-time refresh icon matches the swapping animation rhythm", () => {
+  assert.match(indexCssSource, /@keyframes movement-time-refresh-spin/);
+  assert.match(
+    indexCssSource,
+    /\.theme-movement-time-refresh svg[\s\S]*?animation: movement-time-refresh-spin 2\.8s ease-in-out infinite;/,
+  );
+  assert.match(indexCssSource, /rotate\(360deg\)/);
+  assert.match(indexCssSource, /prefers-reduced-motion: reduce[\s\S]*?\.theme-movement-time-refresh svg[\s\S]*?animation: none !important;/);
 });
