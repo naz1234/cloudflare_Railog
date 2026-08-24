@@ -372,6 +372,7 @@ const DEPOT_SOUND_CONFIG = {
   east: { label: "ED", frequency: 660, color: "#d8b4fe", readyColor: "#f0abfc", glow: "rgba(168, 85, 247, 0.24)" },
   west: { label: "WD", frequency: 880, color: "#67e8f9", readyColor: "#7dd3fc", glow: "rgba(14, 165, 233, 0.24)" },
 };
+const TID_SOUND_LEAD_MINUTES = 1;
 
 function formatClockTime(date = new Date()) {
   const hh = String(date.getHours()).padStart(2, "0");
@@ -429,7 +430,8 @@ function buildDueTidList(activeSchedule = {}, currentTime = "", soundSettings = 
   ].forEach(([depotKey, depotLabel, rows]) => {
     if (!soundSettings?.[depotKey]) return;
     (Array.isArray(rows) ? rows : []).forEach((row) => {
-      if (row?.time === currentTime) entries.push({ depot: depotKey, text: `${depotLabel} TID ${row.tid}` });
+      const triggerTime = addMinutesToTime(row?.time, -TID_SOUND_LEAD_MINUTES);
+      if (triggerTime === currentTime) entries.push({ depot: depotKey, text: `${depotLabel} TID ${row.tid}` });
     });
   });
 
