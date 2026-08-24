@@ -39,6 +39,8 @@ The mailer accepts only a six-digit PIN and a short request reference from Pages
 
 > **Do not cut over while the Google OAuth app remains External/Testing.** Google documents that refresh tokens for External apps in Testing expire after seven days when non-basic scopes such as `gmail.send` are requested. For this single dedicated sender, open **Google Auth Platform > Audience**, publish the app to **In production**, then authorize it once more and replace the Testing refresh token with the newly issued token. Google allows personal-use apps with fewer than 100 known users to remain unverified, although the dedicated sender sees an unverified-app warning during that one-time authorization. OCC users never authorize the Google app; they only receive the L3 DC login code.
 
+The production OAuth Branding links are served by the separate public site documented in [`oauth-info-site.md`](oauth-info-site.md). Do not reuse the protected Railog hostname for these pages because Google must be able to load them without authentication.
+
 ## 2. Create Turnstile widgets
 
 Create separate Preview and Production Turnstile widgets. Restrict each widget to the hostnames that use it. Store:
