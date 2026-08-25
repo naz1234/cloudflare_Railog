@@ -56,7 +56,7 @@ function sessionUser(data = {}) {
 function buildLoginUrl() {
   const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
   const returnTo = currentPath.startsWith('/login') ? '/' : currentPath;
-  return `/login.html?returnTo=${encodeURIComponent(returnTo)}`;
+  return `/login?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
 function redirectToLogin() {

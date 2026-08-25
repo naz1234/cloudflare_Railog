@@ -64,7 +64,8 @@ test('main application verifies the server session and redirects through the iso
   assert.doesNotMatch(authContext, /localStorage/);
   assert.match(authContext, /data\.logoutUrl === ['"]\/cdn-cgi\/access\/logout['"]/);
   assert.match(authContext, /window\.location\.replace\(['"]\/cdn-cgi\/access\/logout['"]\)/);
-  assert.match(protectedRoute, /\/login\.html\?returnTo=/);
+  assert.match(authContext, /`\/login\?returnTo=\$\{encodeURIComponent\(returnTo\)\}`/);
+  assert.match(protectedRoute, /\/login\?returnTo=/);
   assert.match(protectedRoute, /await logout\(\)/);
   assert.match(protectedRoute, /Sign out of L3 DC Template/);
   assert.match(app, /<ProtectedRoute\s*\/>/);

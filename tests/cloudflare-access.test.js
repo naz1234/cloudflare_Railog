@@ -342,6 +342,7 @@ test('custom mode exposes only the exact login shell and auth endpoints', async 
   });
 
   const publicRequests = [
+    new Request('https://railog.example.com/login'),
     new Request('https://railog.example.com/login.html'),
     new Request('https://railog.example.com/auth/login.css'),
     new Request('https://railog.example.com/auth/login.js'),
@@ -362,7 +363,7 @@ test('custom mode exposes only the exact login shell and auth endpoints', async 
       request,
     });
     assert.equal(await response.text(), 'public');
-    if (new URL(request.url).pathname === '/login.html') {
+    if (['/login', '/login.html'].includes(new URL(request.url).pathname)) {
       assert.match(
         response.headers.get('Content-Security-Policy') || '',
         /frame-src https:\/\/challenges\.cloudflare\.com/,
@@ -400,6 +401,39 @@ test('custom mode exposes only the exact login shell and auth endpoints', async 
   assert.equal(authorizeCalls, 6);
 });
 
+test('custom mode serves the canonical extensionless login without checking a session', async () => {
+  let authorizeCalls = 0;
+  let nextCalls = 0;
+  const middleware = createAuthMiddleware({
+    authorizeCustom: async () => {
+      authorizeCalls += 1;
+      return { authorized: false, reason: 'missing_session', status: 401 };
+    },
+  });
+
+  for (const method of ['GET', 'HEAD']) {
+    const response = await middleware({
+      data: {},
+      env: { AUTH_MODE: 'custom_pin' },
+      next: async () => {
+        nextCalls += 1;
+        return new Response(method === 'HEAD' ? null : 'login');
+      },
+      request: new Request('https://railog.example.com/login', {
+        method,
+        headers: { Accept: 'text/html' },
+      }),
+    });
+
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('Content-Security-Policy') || '', /frame-ancestors 'none'/);
+    assert.equal(response.headers.get('X-Frame-Options'), 'DENY');
+  }
+
+  assert.equal(nextCalls, 2);
+  assert.equal(authorizeCalls, 0);
+});
+
 test('custom mode redirects unauthenticated document requests without exposing assets', async () => {
   const middleware = createAuthMiddleware({
     authorizeCustom: async () => ({
@@ -420,7 +454,7 @@ test('custom mode redirects unauthenticated document requests without exposing a
   assert.equal(documentResponse.status, 302);
   assert.equal(
     documentResponse.headers.get('Location'),
-    'https://railog.example.com/login.html',
+    'https://railog.example.com/login',
   );
 
   const assetResponse = await middleware({
