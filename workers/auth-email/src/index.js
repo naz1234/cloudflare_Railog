@@ -285,7 +285,7 @@ export async function requestGmailAccessToken(config, fetcher = fetch) {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
       },
       method: 'POST',
-      redirect: 'error',
+      redirect: 'manual',
     });
   } catch {
     throw new Error('Gmail OAuth transport failed.');
@@ -327,7 +327,7 @@ export async function sendGmailMessage({ config, fetcher = fetch, message }) {
         'Content-Type': 'application/json; charset=UTF-8',
       },
       method: 'POST',
-      redirect: 'error',
+      redirect: 'manual',
     });
   } catch {
     throw new Error('Gmail message delivery failed.');

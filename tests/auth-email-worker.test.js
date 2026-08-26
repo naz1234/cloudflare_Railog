@@ -195,11 +195,13 @@ test('sends with only the fixed server-side recipient and sender', async () => {
   assert.equal(providerCalls.length, 2);
   assert.equal(providerCalls[0].url, tokenEndpoint);
   assert.equal(providerCalls[0].init.method, 'POST');
+  assert.equal(providerCalls[0].init.redirect, 'manual');
   assert.equal(providerCalls[0].init.body.get('client_id'), env.AUTH_GMAIL_CLIENT_ID);
   assert.equal(providerCalls[0].init.body.get('client_secret'), env.AUTH_GMAIL_CLIENT_SECRET);
   assert.equal(providerCalls[0].init.body.get('refresh_token'), env.AUTH_GMAIL_REFRESH_TOKEN);
   assert.equal(providerCalls[0].init.body.get('grant_type'), 'refresh_token');
   assert.equal(providerCalls[1].url, sendEndpoint);
+  assert.equal(providerCalls[1].init.redirect, 'manual');
   assert.equal(
     providerCalls[1].init.headers.Authorization,
     'Bearer short-lived-gmail-access-token',
