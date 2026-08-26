@@ -238,7 +238,7 @@ test('logs only a fixed failure stage and never logs or returns a PIN', async ()
   assert.match(loggedText, /gmail_message_delivery/);
 });
 
-test('fails closed when Google rejects the refresh token', async () => {
+test('fails closed with a safe stage when Google rejects the refresh token', async () => {
   const pin = '987654';
   const calls = [];
   const { env } = createEnv();
@@ -263,6 +263,35 @@ test('fails closed when Google rejects the refresh token', async () => {
     ok: false,
   });
   assert.equal(calls.length, 1);
-  assert.match(JSON.stringify(calls), /oauth_token_exchange/);
+  assert.match(JSON.stringify(calls), /oauth_invalid_grant/);
+  assert.doesNotMatch(JSON.stringify(calls), new RegExp(pin));
+});
+
+test('fails closed with a safe stage when Google rejects the OAuth client', async () => {
+  const pin = '192837';
+  const calls = [];
+  const { env } = createEnv();
+  const response = await handle(createRequest({
+    body: { pin, requestRef: 'CLIENT8' },
+  }), env, async (url) => {
+    assert.equal(url, tokenEndpoint);
+    return Response.json({
+      error: 'invalid_client',
+      error_description: `rejected PIN ${pin}`,
+    }, { status: 401 });
+  }, { error: (...args) => calls.push(args) });
+  const responseText = await response.text();
+
+  assert.equal(response.status, 502);
+  assert.doesNotMatch(responseText, new RegExp(pin));
+  assert.deepEqual(JSON.parse(responseText), {
+    error: {
+      code: 'DELIVERY_FAILED',
+      message: 'Authentication email could not be delivered.',
+    },
+    ok: false,
+  });
+  assert.equal(calls.length, 1);
+  assert.match(JSON.stringify(calls), /oauth_invalid_client/);
   assert.doesNotMatch(JSON.stringify(calls), new RegExp(pin));
 });

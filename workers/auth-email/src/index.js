@@ -240,6 +240,12 @@ async function readProviderJson(response) {
 }
 
 function providerFailureStage(error) {
+  if (error instanceof Error && error.message === 'Gmail OAuth client authentication failed.') {
+    return 'oauth_invalid_client';
+  }
+  if (error instanceof Error && error.message === 'Gmail OAuth refresh grant failed.') {
+    return 'oauth_invalid_grant';
+  }
   if (error instanceof Error && error.message === 'Gmail OAuth token exchange failed.') {
     return 'oauth_token_exchange';
   }
@@ -272,6 +278,12 @@ export async function requestGmailAccessToken(config, fetcher = fetch) {
   const result = await readProviderJson(response);
   const accessToken = String(result.access_token || '').trim();
   if (!response.ok || !accessToken) {
+    if (result.error === 'invalid_client') {
+      throw new Error('Gmail OAuth client authentication failed.');
+    }
+    if (result.error === 'invalid_grant') {
+      throw new Error('Gmail OAuth refresh grant failed.');
+    }
     throw new Error('Gmail OAuth token exchange failed.');
   }
   return accessToken;
