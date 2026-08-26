@@ -12,6 +12,7 @@ const responseHeaders = {
 const acmeChallengePrefix = '/.well-known/acme-challenge/';
 
 const customAuthStaticPaths = new Set([
+  '/login',
   '/login.html',
   '/auth/login.css',
   '/auth/login.js',
@@ -140,7 +141,7 @@ function loginRedirect(request) {
     status: 302,
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate',
-      Location: new URL('/login.html', request.url).toString(),
+      Location: new URL('/login', request.url).toString(),
     },
   });
 }

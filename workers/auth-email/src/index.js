@@ -239,6 +239,37 @@ async function readProviderJson(response) {
   }
 }
 
+function providerFailureStage(error) {
+  if (error instanceof Error && error.message === 'Gmail OAuth transport failed.') {
+    return 'oauth_network';
+  }
+  if (error instanceof Error && error.message === 'Gmail OAuth client authentication failed.') {
+    return 'oauth_invalid_client';
+  }
+  if (error instanceof Error && error.message === 'Gmail OAuth refresh grant failed.') {
+    return 'oauth_invalid_grant';
+  }
+  if (error instanceof Error && error.message === 'Gmail OAuth request was invalid.') {
+    return 'oauth_invalid_request';
+  }
+  if (error instanceof Error && error.message === 'Gmail OAuth client is unauthorized.') {
+    return 'oauth_unauthorized_client';
+  }
+  if (error instanceof Error && error.message === 'Gmail OAuth grant type is unsupported.') {
+    return 'oauth_unsupported_grant';
+  }
+  if (error instanceof Error && error.message === 'Gmail OAuth response did not contain a token.') {
+    return 'oauth_missing_token';
+  }
+  if (error instanceof Error && error.message === 'Gmail OAuth token exchange failed.') {
+    return 'oauth_token_exchange';
+  }
+  if (error instanceof Error && error.message === 'Gmail message delivery failed.') {
+    return 'gmail_message_delivery';
+  }
+  return 'provider_request';
+}
+
 export async function requestGmailAccessToken(config, fetcher = fetch) {
   const body = new URLSearchParams({
     client_id: config.clientId,
@@ -246,33 +277,61 @@ export async function requestGmailAccessToken(config, fetcher = fetch) {
     grant_type: 'refresh_token',
     refresh_token: config.refreshToken,
   });
-  const response = await fetcher(GOOGLE_TOKEN_ENDPOINT, {
-    body,
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-    },
-    method: 'POST',
-    redirect: 'error',
-  });
+  let response;
+  try {
+    response = await fetcher(GOOGLE_TOKEN_ENDPOINT, {
+      body,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      },
+      method: 'POST',
+      redirect: 'manual',
+    });
+  } catch {
+    throw new Error('Gmail OAuth transport failed.');
+  }
   const result = await readProviderJson(response);
   const accessToken = String(result.access_token || '').trim();
-  if (!response.ok || !accessToken) {
+  if (!response.ok) {
+    if (result.error === 'invalid_client') {
+      throw new Error('Gmail OAuth client authentication failed.');
+    }
+    if (result.error === 'invalid_grant') {
+      throw new Error('Gmail OAuth refresh grant failed.');
+    }
+    if (result.error === 'invalid_request') {
+      throw new Error('Gmail OAuth request was invalid.');
+    }
+    if (result.error === 'unauthorized_client') {
+      throw new Error('Gmail OAuth client is unauthorized.');
+    }
+    if (result.error === 'unsupported_grant_type') {
+      throw new Error('Gmail OAuth grant type is unsupported.');
+    }
     throw new Error('Gmail OAuth token exchange failed.');
+  }
+  if (!accessToken) {
+    throw new Error('Gmail OAuth response did not contain a token.');
   }
   return accessToken;
 }
 
 export async function sendGmailMessage({ config, fetcher = fetch, message }) {
   const accessToken = await requestGmailAccessToken(config, fetcher);
-  const response = await fetcher(GMAIL_SEND_ENDPOINT, {
-    body: JSON.stringify({ raw: createGmailRawMessage(message) }),
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json; charset=UTF-8',
-    },
-    method: 'POST',
-    redirect: 'error',
-  });
+  let response;
+  try {
+    response = await fetcher(GMAIL_SEND_ENDPOINT, {
+      body: JSON.stringify({ raw: createGmailRawMessage(message) }),
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      method: 'POST',
+      redirect: 'manual',
+    });
+  } catch {
+    throw new Error('Gmail message delivery failed.');
+  }
   if (!response.ok) {
     throw new Error('Gmail message delivery failed.');
   }
@@ -329,7 +388,9 @@ export async function handleAuthEmailRequest(request, env = {}, options = {}) {
       message,
     });
     return jsonResponse({ ok: true });
-  } catch {
+  } catch (error) {
+    const logger = options.logger || console;
+    logger.error(`Authentication email provider failure: ${providerFailureStage(error)}.`);
     return errorResponse(
       502,
       'DELIVERY_FAILED',

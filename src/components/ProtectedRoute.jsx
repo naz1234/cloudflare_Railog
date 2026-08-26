@@ -13,7 +13,7 @@ const LoginRedirect = () => {
   useEffect(() => {
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     const returnTo = currentPath.startsWith('/login') ? '/' : currentPath;
-    window.location.replace(`/login.html?returnTo=${encodeURIComponent(returnTo)}`);
+    window.location.replace(`/login?returnTo=${encodeURIComponent(returnTo)}`);
   }, []);
 
   return <DefaultFallback />;

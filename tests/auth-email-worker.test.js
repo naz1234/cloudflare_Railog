@@ -41,8 +41,10 @@ function createEnv(overrides = {}) {
   };
 }
 
-function handle(request, env, fetcher) {
-  return handleAuthEmailRequest(request, env, { fetcher });
+const silentLogger = Object.freeze({ error() {} });
+
+function handle(request, env, fetcher, logger = silentLogger) {
+  return handleAuthEmailRequest(request, env, { fetcher, logger });
 }
 
 function createRequest({
@@ -193,11 +195,13 @@ test('sends with only the fixed server-side recipient and sender', async () => {
   assert.equal(providerCalls.length, 2);
   assert.equal(providerCalls[0].url, tokenEndpoint);
   assert.equal(providerCalls[0].init.method, 'POST');
+  assert.equal(providerCalls[0].init.redirect, 'manual');
   assert.equal(providerCalls[0].init.body.get('client_id'), env.AUTH_GMAIL_CLIENT_ID);
   assert.equal(providerCalls[0].init.body.get('client_secret'), env.AUTH_GMAIL_CLIENT_SECRET);
   assert.equal(providerCalls[0].init.body.get('refresh_token'), env.AUTH_GMAIL_REFRESH_TOKEN);
   assert.equal(providerCalls[0].init.body.get('grant_type'), 'refresh_token');
   assert.equal(providerCalls[1].url, sendEndpoint);
+  assert.equal(providerCalls[1].init.redirect, 'manual');
   assert.equal(
     providerCalls[1].init.headers.Authorization,
     'Bearer short-lived-gmail-access-token',
@@ -212,15 +216,9 @@ test('sends with only the fixed server-side recipient and sender', async () => {
   assert.deepEqual(JSON.parse(responseText), { ok: true });
 });
 
-test('never logs or returns a PIN when delivery fails', async () => {
+test('logs only a fixed failure stage and never logs or returns a PIN', async () => {
   const pin = '654321';
   const calls = [];
-  const originalConsole = {
-    error: console.error,
-    info: console.info,
-    log: console.log,
-    warn: console.warn,
-  };
   const { env } = createEnv();
   const fetcher = async (url) => {
     if (url === tokenEndpoint) {
@@ -229,30 +227,22 @@ test('never logs or returns a PIN when delivery fails', async () => {
     throw new Error(`delivery failed for PIN ${pin}`);
   };
 
-  console.error = (...args) => calls.push(args);
-  console.info = (...args) => calls.push(args);
-  console.log = (...args) => calls.push(args);
-  console.warn = (...args) => calls.push(args);
+  const response = await handle(createRequest({
+    body: { pin, requestRef: 'FAIL42' },
+  }), env, fetcher, { error: (...args) => calls.push(args) });
+  const responseText = await response.text();
+  const loggedText = JSON.stringify(calls);
 
-  try {
-    const response = await handle(createRequest({
-      body: { pin, requestRef: 'FAIL42' },
-    }), env, fetcher);
-    const responseText = await response.text();
-
-    assert.equal(response.status, 502);
-    assert.doesNotMatch(responseText, new RegExp(pin));
-    assert.equal(calls.length, 0);
-  } finally {
-    console.error = originalConsole.error;
-    console.info = originalConsole.info;
-    console.log = originalConsole.log;
-    console.warn = originalConsole.warn;
-  }
+  assert.equal(response.status, 502);
+  assert.doesNotMatch(responseText, new RegExp(pin));
+  assert.doesNotMatch(loggedText, new RegExp(pin));
+  assert.equal(calls.length, 1);
+  assert.match(loggedText, /gmail_message_delivery/);
 });
 
-test('fails closed when Google rejects the refresh token', async () => {
+test('fails closed with a safe stage when Google rejects the refresh token', async () => {
   const pin = '987654';
+  const calls = [];
   const { env } = createEnv();
   const response = await handle(createRequest({
     body: { pin, requestRef: 'OAUTH7' },
@@ -262,7 +252,7 @@ test('fails closed when Google rejects the refresh token', async () => {
       error: 'invalid_grant',
       error_description: `rejected PIN ${pin}`,
     }, { status: 400 });
-  });
+  }, { error: (...args) => calls.push(args) });
   const responseText = await response.text();
 
   assert.equal(response.status, 502);
@@ -274,4 +264,83 @@ test('fails closed when Google rejects the refresh token', async () => {
     },
     ok: false,
   });
+  assert.equal(calls.length, 1);
+  assert.match(JSON.stringify(calls), /oauth_invalid_grant/);
+  assert.doesNotMatch(JSON.stringify(calls), new RegExp(pin));
+});
+
+test('fails closed with a safe stage when Google rejects the OAuth client', async () => {
+  const pin = '192837';
+  const calls = [];
+  const { env } = createEnv();
+  const response = await handle(createRequest({
+    body: { pin, requestRef: 'CLIENT8' },
+  }), env, async (url) => {
+    assert.equal(url, tokenEndpoint);
+    return Response.json({
+      error: 'invalid_client',
+      error_description: `rejected PIN ${pin}`,
+    }, { status: 401 });
+  }, { error: (...args) => calls.push(args) });
+  const responseText = await response.text();
+
+  assert.equal(response.status, 502);
+  assert.doesNotMatch(responseText, new RegExp(pin));
+  assert.deepEqual(JSON.parse(responseText), {
+    error: {
+      code: 'DELIVERY_FAILED',
+      message: 'Authentication email could not be delivered.',
+    },
+    ok: false,
+  });
+  assert.equal(calls.length, 1);
+  assert.match(JSON.stringify(calls), /oauth_invalid_client/);
+  assert.doesNotMatch(JSON.stringify(calls), new RegExp(pin));
+});
+
+test('classifies remaining OAuth failures without logging provider details', async () => {
+  const scenarios = [
+    {
+      expectedStage: 'oauth_invalid_request',
+      response: Response.json({ error: 'invalid_request', error_description: 'sensitive detail' }, { status: 400 }),
+    },
+    {
+      expectedStage: 'oauth_unauthorized_client',
+      response: Response.json({ error: 'unauthorized_client', error_description: 'sensitive detail' }, { status: 400 }),
+    },
+    {
+      expectedStage: 'oauth_unsupported_grant',
+      response: Response.json({ error: 'unsupported_grant_type', error_description: 'sensitive detail' }, { status: 400 }),
+    },
+    {
+      expectedStage: 'oauth_missing_token',
+      response: Response.json({ token_type: 'Bearer' }),
+    },
+  ];
+
+  for (const { expectedStage, response: providerResponse } of scenarios) {
+    const calls = [];
+    const { env } = createEnv();
+    const response = await handle(createRequest(), env, async () => providerResponse.clone(), {
+      error: (...args) => calls.push(args),
+    });
+
+    assert.equal(response.status, 502);
+    assert.equal(calls.length, 1);
+    assert.match(JSON.stringify(calls), new RegExp(expectedStage));
+    assert.doesNotMatch(JSON.stringify(calls), /sensitive detail/);
+  }
+});
+
+test('classifies an OAuth network failure without logging the thrown error', async () => {
+  const calls = [];
+  const { env } = createEnv();
+  const response = await handle(createRequest(), env, async () => {
+    throw new Error('sensitive network detail');
+  }, { error: (...args) => calls.push(args) });
+
+  assert.equal(response.status, 502);
+  assert.equal(calls.length, 1);
+  assert.match(JSON.stringify(calls), /oauth_network/);
+  assert.doesNotMatch(JSON.stringify(calls), /sensitive network detail/);
 });

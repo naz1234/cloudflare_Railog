@@ -6,7 +6,7 @@ The custom login is designed for one private L3 DC shared mailbox. The browser n
 
 ## Security model
 
-- Only `/login.html`, its exact login assets, the favicon, and the required `/api/auth/*` methods are public in custom mode. The Railog HTML, application bundle, images, and operational APIs remain behind server middleware.
+- Only the canonical `/login` route (plus the backward-compatible `/login.html` alias), its exact login assets, the favicon, and the required `/api/auth/*` methods are public in custom mode. The Railog HTML, application bundle, images, and operational APIs remain behind server middleware.
 - Turnstile is validated server-side before any email is sent. The expected hostname and action are checked.
 - Each request creates an independent opaque challenge ID and short request reference. Parallel staff requests do not invalidate each other.
 - The PIN is generated with `crypto.getRandomValues`, stored only as an HMAC, expires after five minutes, and allows at most five attempts.
@@ -94,7 +94,7 @@ Verify all of these in a fresh private browser:
 6. Two separate code requests remain independently valid.
 7. Resend requires a fresh Turnstile token and respects the displayed cooldown.
 8. Logout revokes the session in every open tab.
-9. A direct document request without the session redirects to `/login.html`.
+9. A direct document request without the session redirects once to `/login`.
 10. Direct API, JavaScript, CSS, and image requests without the session return `401`, not application or login content.
 11. Cross-origin `POST`, `PUT`, `PATCH`, and `DELETE` requests return `403`.
 12. Email-delivery, Turnstile, D1, and missing-secret failures stay closed without exposing secret values.
