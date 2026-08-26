@@ -356,17 +356,29 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .request-reference strong { color: #7dd3fc; font-size: 9px; letter-spacing: .15em; }
 
-.mailbox-card {
+.email-field {
   display: flex;
   align-items: center;
   gap: 11px;
   min-height: 66px;
-  margin-bottom: 18px;
   border: 1px solid #26516d;
   border-radius: 12px;
   background: #082238;
   padding: 11px 13px;
+  cursor: text;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025);
+  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.email-field:focus-within {
+  border-color: #38bdf8;
+  background: #092940;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, .1), 0 0 18px rgba(14, 165, 233, .08);
+}
+
+.email-field:has(input[aria-invalid="true"]) {
+  border-color: rgba(251, 113, 133, .76);
+  box-shadow: 0 0 0 3px rgba(251, 113, 133, .08);
 }
 
 .mailbox-icon {
@@ -382,10 +394,47 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 .mailbox-icon svg { width: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
-.mailbox-card > span:nth-child(2) { display: grid; min-width: 0; gap: 4px; }
-.mailbox-card small { color: #5e8299; font-size: 7px; font-weight: 800; letter-spacing: .15em; }
-.mailbox-card strong { overflow: hidden; color: #dff6ff; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.mailbox-check { display: grid; width: 21px; height: 21px; margin-left: auto; place-items: center; border-radius: 50%; background: rgba(16, 185, 129, .2); color: #6ee7b7; font-size: 11px; }
+
+.email-control {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 3px;
+}
+
+.email-control small {
+  color: #6d91a8;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: .15em;
+}
+
+.email-control input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #e7f8ff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.email-control input::placeholder { color: #53758b; opacity: 1; }
+
+.email-help {
+  margin: 7px 2px 16px;
+  color: #66869b;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.email-help strong {
+  color: #8ccbe9;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 700;
+}
 
 .turnstile-shell {
   display: grid;
@@ -580,8 +629,8 @@ noscript {
   .stepper li { gap: 6px; padding: 8px 7px; }
   .pin-inputs { gap: 5px; }
   .pin-inputs input { height: 49px; border-radius: 8px; font-size: 19px; }
-  .mailbox-card { padding-inline: 10px; }
-  .mailbox-card strong { font-size: 10px; }
+  .email-field { padding-inline: 10px; }
+  .email-control input { font-size: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

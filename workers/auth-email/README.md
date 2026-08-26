@@ -6,10 +6,12 @@ Before deployment:
 
 1. Copy `wrangler.example.toml` to an untracked deployment configuration.
 2. Create a dedicated Gmail account and an OAuth client restricted to the `https://www.googleapis.com/auth/gmail.send` scope.
-3. Add encrypted Worker secrets for `AUTH_EMAIL_SERVICE_TOKEN`, `AUTH_EMAIL_FROM`, `AUTH_LOGIN_EMAIL`, `AUTH_GMAIL_CLIENT_ID`, `AUTH_GMAIL_CLIENT_SECRET`, and `AUTH_GMAIL_REFRESH_TOKEN`.
+3. Add encrypted Worker secrets for `AUTH_EMAIL_SERVICE_TOKEN`, `AUTH_EMAIL_FROM`, `AUTH_ALLOWED_EMAILS`, `AUTH_GMAIL_CLIENT_ID`, `AUTH_GMAIL_CLIENT_SECRET`, and `AUTH_GMAIL_REFRESH_TOKEN`. Store the allowlist as comma-, semicolon-, whitespace-, or newline-separated addresses; never commit the real addresses.
 4. Deploy the Worker and bind it to Pages as `AUTH_EMAIL_SERVICE`.
 5. Add the identical `AUTH_EMAIL_SERVICE_TOKEN` as an encrypted Pages secret.
 
-The runtime fixes both the sender and recipient. The service request accepts only a six-digit `pin` and a short `requestRef`; it rejects `to`, `from`, and every other extra field. The browser and Pages app never receive Gmail OAuth credentials.
+The runtime fixes the sender and independently checks every Pages-selected recipient against the private `AUTH_ALLOWED_EMAILS` secret. The current service request accepts exactly a six-digit `pin`, a validated `recipient`, and a short `requestRef`; it rejects `to`, `from`, and every other extra field. Allowlist matching is case-insensitive, while the configured address casing is retained in the outgoing message. The browser and Pages app never receive Gmail OAuth credentials.
+
+For a deployment-order-safe transition, the Worker temporarily accepts the old two-field `{ pin, requestRef }` request only while the encrypted `AUTH_LOGIN_EMAIL` secret still exists. Deploy this Worker before the Pages recipient-selection change. After the new Pages flow is verified, delete `AUTH_LOGIN_EMAIL`; two-field requests will then fail closed.
 
 See [the complete staged deployment and cutover guide](../../docs/custom-pin-auth.md).

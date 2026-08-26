@@ -4,7 +4,6 @@ import {
   getAuthMode,
   getCustomAuthConfiguration,
   jsonResponse,
-  maskEmail,
   methodNotAllowedResponse,
   optionsResponse,
 } from '../../lib/custom-auth.js';
@@ -46,7 +45,6 @@ export function createAuthConfigEndpoint({
 
     return jsonResponse({
       siteKey: config.turnstileSiteKey,
-      emailHint: maskEmail(config.loginEmail),
     });
   };
 }
