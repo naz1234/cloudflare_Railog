@@ -240,11 +240,26 @@ async function readProviderJson(response) {
 }
 
 function providerFailureStage(error) {
+  if (error instanceof Error && error.message === 'Gmail OAuth transport failed.') {
+    return 'oauth_network';
+  }
   if (error instanceof Error && error.message === 'Gmail OAuth client authentication failed.') {
     return 'oauth_invalid_client';
   }
   if (error instanceof Error && error.message === 'Gmail OAuth refresh grant failed.') {
     return 'oauth_invalid_grant';
+  }
+  if (error instanceof Error && error.message === 'Gmail OAuth request was invalid.') {
+    return 'oauth_invalid_request';
+  }
+  if (error instanceof Error && error.message === 'Gmail OAuth client is unauthorized.') {
+    return 'oauth_unauthorized_client';
+  }
+  if (error instanceof Error && error.message === 'Gmail OAuth grant type is unsupported.') {
+    return 'oauth_unsupported_grant';
+  }
+  if (error instanceof Error && error.message === 'Gmail OAuth response did not contain a token.') {
+    return 'oauth_missing_token';
   }
   if (error instanceof Error && error.message === 'Gmail OAuth token exchange failed.') {
     return 'oauth_token_exchange';
@@ -273,18 +288,30 @@ export async function requestGmailAccessToken(config, fetcher = fetch) {
       redirect: 'error',
     });
   } catch {
-    throw new Error('Gmail OAuth token exchange failed.');
+    throw new Error('Gmail OAuth transport failed.');
   }
   const result = await readProviderJson(response);
   const accessToken = String(result.access_token || '').trim();
-  if (!response.ok || !accessToken) {
+  if (!response.ok) {
     if (result.error === 'invalid_client') {
       throw new Error('Gmail OAuth client authentication failed.');
     }
     if (result.error === 'invalid_grant') {
       throw new Error('Gmail OAuth refresh grant failed.');
     }
+    if (result.error === 'invalid_request') {
+      throw new Error('Gmail OAuth request was invalid.');
+    }
+    if (result.error === 'unauthorized_client') {
+      throw new Error('Gmail OAuth client is unauthorized.');
+    }
+    if (result.error === 'unsupported_grant_type') {
+      throw new Error('Gmail OAuth grant type is unsupported.');
+    }
     throw new Error('Gmail OAuth token exchange failed.');
+  }
+  if (!accessToken) {
+    throw new Error('Gmail OAuth response did not contain a token.');
   }
   return accessToken;
 }

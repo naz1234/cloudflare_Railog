@@ -295,3 +295,50 @@ test('fails closed with a safe stage when Google rejects the OAuth client', asyn
   assert.match(JSON.stringify(calls), /oauth_invalid_client/);
   assert.doesNotMatch(JSON.stringify(calls), new RegExp(pin));
 });
+
+test('classifies remaining OAuth failures without logging provider details', async () => {
+  const scenarios = [
+    {
+      expectedStage: 'oauth_invalid_request',
+      response: Response.json({ error: 'invalid_request', error_description: 'sensitive detail' }, { status: 400 }),
+    },
+    {
+      expectedStage: 'oauth_unauthorized_client',
+      response: Response.json({ error: 'unauthorized_client', error_description: 'sensitive detail' }, { status: 400 }),
+    },
+    {
+      expectedStage: 'oauth_unsupported_grant',
+      response: Response.json({ error: 'unsupported_grant_type', error_description: 'sensitive detail' }, { status: 400 }),
+    },
+    {
+      expectedStage: 'oauth_missing_token',
+      response: Response.json({ token_type: 'Bearer' }),
+    },
+  ];
+
+  for (const { expectedStage, response: providerResponse } of scenarios) {
+    const calls = [];
+    const { env } = createEnv();
+    const response = await handle(createRequest(), env, async () => providerResponse.clone(), {
+      error: (...args) => calls.push(args),
+    });
+
+    assert.equal(response.status, 502);
+    assert.equal(calls.length, 1);
+    assert.match(JSON.stringify(calls), new RegExp(expectedStage));
+    assert.doesNotMatch(JSON.stringify(calls), /sensitive detail/);
+  }
+});
+
+test('classifies an OAuth network failure without logging the thrown error', async () => {
+  const calls = [];
+  const { env } = createEnv();
+  const response = await handle(createRequest(), env, async () => {
+    throw new Error('sensitive network detail');
+  }, { error: (...args) => calls.push(args) });
+
+  assert.equal(response.status, 502);
+  assert.equal(calls.length, 1);
+  assert.match(JSON.stringify(calls), /oauth_network/);
+  assert.doesNotMatch(JSON.stringify(calls), /sensitive network detail/);
+});
