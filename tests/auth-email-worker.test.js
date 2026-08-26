@@ -41,8 +41,10 @@ function createEnv(overrides = {}) {
   };
 }
 
-function handle(request, env, fetcher) {
-  return handleAuthEmailRequest(request, env, { fetcher });
+const silentLogger = Object.freeze({ error() {} });
+
+function handle(request, env, fetcher, logger = silentLogger) {
+  return handleAuthEmailRequest(request, env, { fetcher, logger });
 }
 
 function createRequest({
@@ -212,15 +214,9 @@ test('sends with only the fixed server-side recipient and sender', async () => {
   assert.deepEqual(JSON.parse(responseText), { ok: true });
 });
 
-test('never logs or returns a PIN when delivery fails', async () => {
+test('logs only a fixed failure stage and never logs or returns a PIN', async () => {
   const pin = '654321';
   const calls = [];
-  const originalConsole = {
-    error: console.error,
-    info: console.info,
-    log: console.log,
-    warn: console.warn,
-  };
   const { env } = createEnv();
   const fetcher = async (url) => {
     if (url === tokenEndpoint) {
@@ -229,30 +225,22 @@ test('never logs or returns a PIN when delivery fails', async () => {
     throw new Error(`delivery failed for PIN ${pin}`);
   };
 
-  console.error = (...args) => calls.push(args);
-  console.info = (...args) => calls.push(args);
-  console.log = (...args) => calls.push(args);
-  console.warn = (...args) => calls.push(args);
+  const response = await handle(createRequest({
+    body: { pin, requestRef: 'FAIL42' },
+  }), env, fetcher, { error: (...args) => calls.push(args) });
+  const responseText = await response.text();
+  const loggedText = JSON.stringify(calls);
 
-  try {
-    const response = await handle(createRequest({
-      body: { pin, requestRef: 'FAIL42' },
-    }), env, fetcher);
-    const responseText = await response.text();
-
-    assert.equal(response.status, 502);
-    assert.doesNotMatch(responseText, new RegExp(pin));
-    assert.equal(calls.length, 0);
-  } finally {
-    console.error = originalConsole.error;
-    console.info = originalConsole.info;
-    console.log = originalConsole.log;
-    console.warn = originalConsole.warn;
-  }
+  assert.equal(response.status, 502);
+  assert.doesNotMatch(responseText, new RegExp(pin));
+  assert.doesNotMatch(loggedText, new RegExp(pin));
+  assert.equal(calls.length, 1);
+  assert.match(loggedText, /gmail_message_delivery/);
 });
 
 test('fails closed when Google rejects the refresh token', async () => {
   const pin = '987654';
+  const calls = [];
   const { env } = createEnv();
   const response = await handle(createRequest({
     body: { pin, requestRef: 'OAUTH7' },
@@ -262,7 +250,7 @@ test('fails closed when Google rejects the refresh token', async () => {
       error: 'invalid_grant',
       error_description: `rejected PIN ${pin}`,
     }, { status: 400 });
-  });
+  }, { error: (...args) => calls.push(args) });
   const responseText = await response.text();
 
   assert.equal(response.status, 502);
@@ -274,4 +262,7 @@ test('fails closed when Google rejects the refresh token', async () => {
     },
     ok: false,
   });
+  assert.equal(calls.length, 1);
+  assert.match(JSON.stringify(calls), /oauth_token_exchange/);
+  assert.doesNotMatch(JSON.stringify(calls), new RegExp(pin));
 });
