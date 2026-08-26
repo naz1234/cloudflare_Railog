@@ -4,13 +4,15 @@ import test from 'node:test';
 
 const readSource = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('custom login uses the West Depot identity and a fixed masked mailbox', async () => {
+test('custom login uses the West Depot identity and requests an individual Flow email', async () => {
   const html = await readSource('public/login.html');
 
   assert.match(html, /WEST DEPOT/);
   assert.doesNotMatch(html, /NORTH YARD/i);
-  assert.match(html, /l3\.d\*\*\*@flow-metro\.com/);
-  assert.doesNotMatch(html, /type=["']email["']/i);
+  assert.match(html, /type=["']email["']/i);
+  assert.match(html, /name=["']email["']/i);
+  assert.match(html, /@flow-metro\.com/);
+  assert.doesNotMatch(html, /l3\.d\*\*\*@flow-metro\.com/i);
   assert.match(html, /id=["']request-reference["']/);
   assert.equal((html.match(/aria-label=["']Verification code digit \d["']/g) || []).length, 6);
 });
@@ -23,6 +25,7 @@ test('login requires a fresh Turnstile token and tab-local challenge for verific
 
   assert.match(html, /challenges\.cloudflare\.com\/turnstile\/v0\/api\.js\?render=explicit/);
   assert.match(script, /action:\s*['"]l3dc-login['"]/);
+  assert.match(script, /JSON\.stringify\(\{ email, turnstileToken: requestTurnstileToken \}\)/);
   assert.match(script, /turnstileToken:\s*requestTurnstileToken/);
   assert.match(script, /window\.turnstile\.reset/);
   assert.match(script, /sessionStorage\.setItem\(CHALLENGE_STORAGE_KEY/);
@@ -63,10 +66,13 @@ test('main application verifies the server session and redirects through the iso
   assert.match(authContext, /queryClientInstance\.clear\(\)/);
   assert.doesNotMatch(authContext, /localStorage/);
   assert.match(authContext, /data\.logoutUrl === ['"]\/cdn-cgi\/access\/logout['"]/);
+  assert.match(authContext, /data\.user\?\.name/);
   assert.match(authContext, /window\.location\.replace\(['"]\/cdn-cgi\/access\/logout['"]\)/);
   assert.match(authContext, /`\/login\?returnTo=\$\{encodeURIComponent\(returnTo\)\}`/);
   assert.match(protectedRoute, /\/login\?returnTo=/);
   assert.match(protectedRoute, /await logout\(\)/);
+  assert.match(protectedRoute, /['"]\/api\/auth\/presence['"]/);
+  assert.match(protectedRoute, /Online now/);
   assert.match(protectedRoute, /Sign out of L3 DC Template/);
   assert.match(app, /<ProtectedRoute\s*\/>/);
 });

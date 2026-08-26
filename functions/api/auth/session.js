@@ -2,6 +2,7 @@ import {
   AUTH_MODES,
   AUTH_SESSION_COOKIE,
   appendSetCookie,
+  authDisplayName,
   authErrorResponse,
   authorizeCustomSessionRequest,
   clearSecureCookie,
@@ -17,7 +18,10 @@ function authenticatedResponse(user) {
   return jsonResponse({
     ok: true,
     authenticated: true,
-    user: { email: maskEmail(user.email) },
+    user: {
+      email: maskEmail(user.email),
+      name: user.name || authDisplayName(user.email),
+    },
     expiresAt: expiresAt > 0
       ? new Date(expiresAt * 1000).toISOString()
       : null,

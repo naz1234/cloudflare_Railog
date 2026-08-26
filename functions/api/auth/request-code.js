@@ -1,5 +1,6 @@
 import {
   AUTH_CHALLENGE_TTL_SECONDS,
+  AUTH_ALLOWED_EMAIL_DOMAIN,
   AUTH_MAX_PIN_ATTEMPTS,
   AUTH_MODES,
   AUTH_RATE_LIMITS,
@@ -8,18 +9,22 @@ import {
   consumeRatePolicy,
   createCustomAuthStore,
   deriveRequestRef,
+  findAllowedAuthMember,
   generateOpaqueToken,
   generateSecurePin,
   getClientIp,
   getAuthMode,
   getCustomAuthConfiguration,
+  hashAuthEmail,
   hashPin,
   hashRateIdentifier,
   isSameOriginRequest,
   jsonResponse,
+  maskEmail,
   methodNotAllowedResponse,
   optionsResponse,
   readJsonObject,
+  parseSingleAuthEmail,
   toEpochSeconds,
 } from '../../lib/custom-auth.js';
 import {
@@ -30,7 +35,7 @@ import { verifyTurnstileToken } from '../../lib/custom-auth-turnstile.js';
 
 const genericRequestResponse = Object.freeze({
   ok: true,
-  message: 'A login code was sent to the approved mailbox.',
+  message: 'If this Flow email is approved, a login code was sent.',
   expiresInSeconds: AUTH_CHALLENGE_TTL_SECONDS,
   resendAfterSeconds: AUTH_RESEND_AFTER_SECONDS,
 });
@@ -43,10 +48,11 @@ function unavailableResponse() {
   );
 }
 
-function genericResponseWithChallenge(challengeId, requestRef) {
+function genericResponseWithChallenge(challengeId, requestRef, emailHint) {
   return jsonResponse({
     ...genericRequestResponse,
     challengeId,
+    emailHint,
     requestRef,
   }, 202);
 }
@@ -92,11 +98,23 @@ export function createRequestCodeEndpoint({
     }
 
     const parsedBody = await readJsonObject(request);
+    const submittedEmail = typeof parsedBody.body?.email === 'string'
+      ? parsedBody.body.email.trim()
+      : '';
+    const normalizedSubmittedEmail = parseSingleAuthEmail(submittedEmail);
     if (
       !parsedBody.ok
-      || Object.keys(parsedBody.body).some((key) => key !== 'turnstileToken')
+      || Object.keys(parsedBody.body).some(
+        (key) => !['email', 'turnstileToken'].includes(key),
+      )
+      || !normalizedSubmittedEmail
+      || !normalizedSubmittedEmail.endsWith(`@${AUTH_ALLOWED_EMAIL_DOMAIN}`)
     ) {
-      return authErrorResponse(400, 'INVALID_REQUEST', 'Invalid request.');
+      return authErrorResponse(
+        400,
+        'INVALID_REQUEST',
+        `Enter a valid @${AUTH_ALLOWED_EMAIL_DOMAIN} email address.`,
+      );
     }
 
     const config = getCustomAuthConfiguration(env);
@@ -156,16 +174,21 @@ export function createRequestCodeEndpoint({
         ));
       }
 
-      const providerCadence = await consumeRatePolicy({
+      const emailLimit = await consumeRatePolicy({
         config,
-        identifier: 'shared-mailbox',
+        identifier: normalizedSubmittedEmail,
         now: nowSeconds,
-        policy: AUTH_RATE_LIMITS.requestProviderCadence,
+        policy: AUTH_RATE_LIMITS.requestEmailWindow,
         store,
       });
-      if (!providerCadence.allowed) {
-        return rateLimitedResponse(providerCadence.retryAfterSeconds);
-      }
+      const emailBurst = await consumeRatePolicy({
+        config,
+        identifier: normalizedSubmittedEmail,
+        now: nowSeconds,
+        policy: AUTH_RATE_LIMITS.requestEmailBurst,
+        store,
+      });
+      const emailRequestAllowed = emailLimit.allowed && emailBurst.allowed;
 
       const challengeId = generateOpaqueToken(24);
       const requestRef = await deriveRequestRef({
@@ -183,32 +206,66 @@ export function createRequestCodeEndpoint({
         hmacSecret: config.hmacSecret,
         identifier: clientIp,
       });
+      const emailHash = await hashAuthEmail({
+        email: normalizedSubmittedEmail,
+        hmacSecret: config.hmacSecret,
+      });
 
       await store.insertChallenge({
         challengeId,
         createdAt: nowSeconds,
+        emailHash,
         expiresAt: nowSeconds + AUTH_CHALLENGE_TTL_SECONDS,
         ipHash,
         maxAttempts: AUTH_MAX_PIN_ATTEMPTS,
         pinHash,
       });
 
-      try {
-        await sendPin({
-          env,
-          pin,
-          requestRef,
-        });
-      } catch {
-        await store.invalidateChallenge(challengeId, nowSeconds);
-        logger.error('Custom authentication email delivery failed.');
-        return unavailableResponse();
+      const member = findAllowedAuthMember(config, normalizedSubmittedEmail);
+      const finishChallenge = async () => {
+        if (!member || !emailRequestAllowed) {
+          await store.invalidateChallenge(challengeId, nowSeconds);
+          return;
+        }
+
+        try {
+          const providerCadence = await consumeRatePolicy({
+            config,
+            identifier: 'gmail-provider',
+            now: nowSeconds,
+            policy: AUTH_RATE_LIMITS.requestProviderCadence,
+            store,
+          });
+          if (!providerCadence.allowed) {
+            await store.invalidateChallenge(challengeId, nowSeconds);
+            return;
+          }
+          await sendPin({
+            env,
+            pin,
+            recipient: member.email,
+            requestRef,
+          });
+        } catch {
+          await store.invalidateChallenge(challengeId, nowSeconds).catch(() => {});
+          logger.error('Custom authentication email delivery failed.');
+        }
+      };
+      const completion = finishChallenge().catch(() => {
+        logger.error('Custom authentication challenge finalization failed.');
+      });
+      if (typeof context.waitUntil === 'function') {
+        context.waitUntil(completion);
+        context.waitUntil(store.prune(nowSeconds).catch(() => {}));
+      } else {
+        await completion;
       }
 
-      if (typeof context.waitUntil === 'function') {
-        context.waitUntil(store.prune(nowSeconds).catch(() => {}));
-      }
-      return genericResponseWithChallenge(challengeId, requestRef);
+      return genericResponseWithChallenge(
+        challengeId,
+        requestRef,
+        maskEmail(normalizedSubmittedEmail),
+      );
     } catch {
       logger.error('Custom authentication request-code operation failed.');
       return unavailableResponse();
