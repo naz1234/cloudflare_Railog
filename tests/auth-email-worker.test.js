@@ -250,31 +250,18 @@ test('sends only to an allowlisted recipient using configured canonical casing',
   assert.deepEqual(JSON.parse(responseText), { ok: true });
 });
 
-test('supports the temporary two-field legacy request only with AUTH_LOGIN_EMAIL', async () => {
+test('rejects two-field requests even when the retired shared-recipient setting exists', async () => {
   const legacyBody = { pin: '012345', requestRef: 'OLD123' };
-  const withoutLegacy = createEnv();
-  const rejected = await handle(
-    createRequest({ body: legacyBody }),
-    withoutLegacy.env,
-    withoutLegacy.fetcher,
-  );
-  assert.equal(rejected.status, 400);
-  assert.equal(withoutLegacy.providerCalls.length, 0);
-
   const legacy = createEnv({
-    AUTH_ALLOWED_EMAILS: '',
     AUTH_LOGIN_EMAIL: 'Legacy.User@example.com',
   });
-  const accepted = await handle(
+  const rejected = await handle(
     createRequest({ body: legacyBody }),
     legacy.env,
     legacy.fetcher,
   );
-  assert.equal(accepted.status, 200);
-  assert.equal(legacy.providerCalls.length, 2);
-  const gmailPayload = JSON.parse(legacy.providerCalls[1].init.body);
-  const mime = Buffer.from(gmailPayload.raw, 'base64url').toString('utf8');
-  assert.match(mime, /To: Legacy\.User@example\.com/);
+  assert.equal(rejected.status, 400);
+  assert.equal(legacy.providerCalls.length, 0);
 });
 
 test('logs only a fixed failure stage and never logs or returns a PIN', async () => {

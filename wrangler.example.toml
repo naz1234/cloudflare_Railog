@@ -15,8 +15,6 @@ TURNSTILE_SITE_KEY = "PUT_ENVIRONMENT_TURNSTILE_SITE_KEY_HERE"
 
 # Custom PIN mode also requires encrypted AUTH_HMAC_SECRET,
 # AUTH_EMAIL_SERVICE_TOKEN, and TURNSTILE_SECRET_KEY secrets.
-# AUTH_LOGIN_EMAIL is a legacy shared-recipient secret: keep it only during a
-# backward-compatible rollout, then delete it from Pages and the mailer Worker.
 # Gmail OAuth credentials belong only on the private AUTH_EMAIL_SERVICE Worker,
 # never on the Pages project or in this file.
 # Keep AUTH_MODE=cloudflare_access until docs/custom-pin-auth.md is complete.

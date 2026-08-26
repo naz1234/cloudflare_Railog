@@ -12,6 +12,6 @@ Before deployment:
 
 The runtime fixes the sender and independently checks every Pages-selected recipient against the private `AUTH_ALLOWED_EMAILS` secret. The current service request accepts exactly a six-digit `pin`, a validated `recipient`, and a short `requestRef`; it rejects `to`, `from`, and every other extra field. Allowlist matching is case-insensitive, while the configured address casing is retained in the outgoing message. The browser and Pages app never receive Gmail OAuth credentials.
 
-For a deployment-order-safe transition, the Worker temporarily accepts the old two-field `{ pin, requestRef }` request only while the encrypted `AUTH_LOGIN_EMAIL` secret still exists. Deploy this Worker before the Pages recipient-selection change. After the new Pages flow is verified, delete `AUTH_LOGIN_EMAIL`; two-field requests will then fail closed.
+Two-field requests and shared-recipient fallbacks are unsupported. Every request must identify an explicitly allowlisted recipient or the Worker fails closed without contacting Gmail.
 
 See [the complete staged deployment and cutover guide](../../docs/custom-pin-auth.md).

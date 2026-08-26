@@ -98,8 +98,6 @@ function getBearerToken(request) {
 function getConfiguration(env = {}) {
   const from = normalizeEmail(env.AUTH_EMAIL_FROM);
   const allowed = parseAllowedEmails(env.AUTH_ALLOWED_EMAILS);
-  const legacySource = String(env.AUTH_LOGIN_EMAIL || '').trim();
-  const legacyTo = canonicalEmail(legacySource);
   const serviceToken = String(env.AUTH_EMAIL_SERVICE_TOKEN || '').trim();
   const clientId = String(env.AUTH_GMAIL_CLIENT_ID || '').trim();
   const clientSecret = String(env.AUTH_GMAIL_CLIENT_SECRET || '').trim();
@@ -110,13 +108,12 @@ function getConfiguration(env = {}) {
     clientId,
     clientSecret,
     from,
-    legacyTo,
     refreshToken,
     serviceToken,
     valid: Boolean(
       from
-      && (allowed.configured ? allowed.valid : legacyTo)
-      && (!legacySource || legacyTo)
+      && allowed.configured
+      && allowed.valid
       && serviceToken.length >= MIN_SERVICE_TOKEN_LENGTH
       && GOOGLE_CLIENT_ID_PATTERN.test(clientId)
       && clientSecret.length >= MIN_OAUTH_SECRET_LENGTH
@@ -174,10 +171,7 @@ async function readPayload(request) {
       && keys[0] === 'pin'
       && keys[1] === 'recipient'
       && keys[2] === 'requestRef';
-    const isLegacyPayload = keys.length === 2
-      && keys[0] === 'pin'
-      && keys[1] === 'requestRef';
-    if (!isCurrentPayload && !isLegacyPayload) {
+    if (!isCurrentPayload) {
       return { error: 'invalid_body' };
     }
     if (typeof body.pin !== 'string' || !PIN_PATTERN.test(body.pin)) {
@@ -190,8 +184,8 @@ async function readPayload(request) {
       return { error: 'invalid_body' };
     }
     if (
-      isCurrentPayload
-      && (typeof body.recipient !== 'string' || !normalizeEmail(body.recipient))
+      typeof body.recipient !== 'string'
+      || !normalizeEmail(body.recipient)
     ) {
       return { error: 'invalid_body' };
     }
@@ -199,7 +193,7 @@ async function readPayload(request) {
     return {
       payload: {
         pin: body.pin,
-        recipient: isCurrentPayload ? body.recipient : '',
+        recipient: body.recipient,
         requestRef: body.requestRef,
       },
     };
@@ -209,10 +203,7 @@ async function readPayload(request) {
 }
 
 function resolveRecipient(config, payload) {
-  if (payload.recipient) {
-    return config.allowedRecipients.get(normalizeEmail(payload.recipient)) || '';
-  }
-  return config.legacyTo;
+  return config.allowedRecipients.get(normalizeEmail(payload.recipient)) || '';
 }
 
 function escapeHtml(value) {
