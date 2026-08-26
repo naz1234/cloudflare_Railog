@@ -14,8 +14,6 @@ preview_urls = false
 # - AUTH_GMAIL_REFRESH_TOKEN (an offline Gmail OAuth refresh token)
 # - AUTH_EMAIL_FROM (the dedicated Gmail sender address)
 # - AUTH_ALLOWED_EMAILS (the private staff allowlist; comma/newline separated)
-# AUTH_LOGIN_EMAIL is accepted only as a temporary legacy rollout fallback.
-# Delete it after the Pages recipient-selection flow is verified.
 # Do not add their real values to this file or to Git.
 
 # Do not add routes or custom domains to this Worker. Bind it to the Pages

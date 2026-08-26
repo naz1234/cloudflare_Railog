@@ -82,7 +82,7 @@ Keep the existing Cloudflare Access variables and secret while testing. Add thes
 | `TURNSTILE_SITE_KEY` | Variable | Public widget key for this environment |
 | `TURNSTILE_SECRET_KEY` | Encrypted secret | Server-side widget secret |
 
-Configure the same approved addresses in the mailer Worker's encrypted `AUTH_ALLOWED_EMAILS` secret. Keep the legacy `AUTH_LOGIN_EMAIL` secret only while deploying a backward-compatible transition. After Preview and Production pass the per-user checklist, delete `AUTH_LOGIN_EMAIL` from both Pages and the Worker and remove the legacy fallback.
+Configure the same approved addresses in the mailer Worker's encrypted `AUTH_ALLOWED_EMAILS` secret. The Worker requires an explicit allowlisted recipient on every request and does not support a shared-recipient fallback.
 
 After changing bindings, variables, or secrets, redeploy Pages so Functions receive them. Apply every pending D1 migration in order before deploying code that reads identity or presence columns. Missing tables or columns cause authentication to fail closed.
 
@@ -118,8 +118,8 @@ Only after the checklist passes:
 2. Confirm the encrypted Pages and mailer `AUTH_ALLOWED_EMAILS` secrets contain the same approved addresses and that the retained Access rollback list matches them.
 3. Disable or bypass the Access enforcement policy; do not delete the application or its approved-staff list.
 4. Test the production URL from a new private browser and confirm the custom per-user page is now the first screen.
-5. Remove the legacy shared `AUTH_LOGIN_EMAIL` secrets only after the production per-user login and presence checks pass.
-6. Keep the previous Pages deployment and Access configuration available.
+5. Confirm obsolete shared-recipient settings have been removed from both Pages and the mailer Worker.
+6. Keep a verified per-user Pages deployment and the Access configuration available. Builds from the former shared-recipient flow are not valid rollback targets because the mailer rejects their two-field requests.
 
 If email, Turnstile, D1, or session verification fails, re-enable Cloudflare Access first. Then set `AUTH_MODE=cloudflare_access` and redeploy. Never leave the site without one verified server-side gate.
 
