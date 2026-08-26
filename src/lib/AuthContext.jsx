@@ -44,11 +44,14 @@ async function authRequest(path, options = {}) {
 }
 
 function sessionUser(data = {}) {
+  const name = String(data.user?.name || '').trim();
+  const email = String(data.user?.email || '').trim();
+
   return {
-    id: 'l3-dc-session',
+    id: String(data.user?.id || email || name || 'l3-dc-session'),
     role: 'depot-controller',
-    name: 'West Depot Controller',
-    email: data.user?.email || 'l3.d***@flow-metro.com',
+    name: name || 'West Depot Staff',
+    email,
     expiresAt: data.expiresAt || null,
   };
 }

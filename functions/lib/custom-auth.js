@@ -3,16 +3,20 @@ export const AUTH_CHALLENGE_TTL_SECONDS = 5 * 60;
 export const AUTH_RESEND_AFTER_SECONDS = 60;
 export const AUTH_SESSION_TTL_SECONDS = 8 * 60 * 60;
 export const AUTH_MAX_PIN_ATTEMPTS = 5;
+export const AUTH_PRESENCE_WINDOW_SECONDS = 2 * 60;
+export const AUTH_ALLOWED_EMAIL_DOMAIN = 'flow-metro.com';
 export const AUTH_MODES = Object.freeze({
   cloudflareAccess: 'cloudflare_access',
   customPin: 'custom_pin',
 });
 
 export const AUTH_RATE_LIMITS = Object.freeze({
-  requestProviderCadence: { action: 'request-provider-cadence', limit: 3, windowSeconds: 60 },
-  requestIpBurst: { action: 'request-ip-burst', limit: 1, windowSeconds: 60 },
-  requestIpWindow: { action: 'request-ip-window', limit: 5, windowSeconds: 15 * 60 },
-  verifyIpWindow: { action: 'verify-ip-window', limit: 30, windowSeconds: 15 * 60 },
+  requestProviderCadence: { action: 'request-provider-cadence', limit: 30, windowSeconds: 60 },
+  requestEmailBurst: { action: 'request-email-burst', limit: 1, windowSeconds: 60 },
+  requestEmailWindow: { action: 'request-email-window', limit: 5, windowSeconds: 15 * 60 },
+  requestIpBurst: { action: 'request-ip-burst', limit: 10, windowSeconds: 60 },
+  requestIpWindow: { action: 'request-ip-window', limit: 30, windowSeconds: 15 * 60 },
+  verifyIpWindow: { action: 'verify-ip-window', limit: 150, windowSeconds: 15 * 60 },
 });
 
 export const CUSTOM_AUTH_SCHEMA_STATEMENTS = Object.freeze([
@@ -20,6 +24,7 @@ export const CUSTOM_AUTH_SCHEMA_STATEMENTS = Object.freeze([
     challenge_id TEXT PRIMARY KEY,
     pin_hash TEXT NOT NULL,
     ip_hash TEXT NOT NULL,
+    email_hash TEXT NOT NULL,
     created_at INTEGER NOT NULL,
     expires_at INTEGER NOT NULL,
     attempt_count INTEGER NOT NULL DEFAULT 0,
@@ -34,8 +39,10 @@ export const CUSTOM_AUTH_SCHEMA_STATEMENTS = Object.freeze([
     ON auth_challenges(expires_at)`,
   `CREATE TABLE IF NOT EXISTS auth_sessions (
     token_hash TEXT PRIMARY KEY,
+    email_hash TEXT NOT NULL,
     created_at INTEGER NOT NULL,
     expires_at INTEGER NOT NULL,
+    last_seen_at INTEGER NOT NULL,
     revoked_at INTEGER
   )`,
   `CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires
@@ -105,15 +112,57 @@ export function parseSingleAuthEmail(value) {
   return email;
 }
 
+export function parseAllowedAuthMembers(value) {
+  const tokens = String(value || '')
+    .split(/[\s,;]+/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  if (!tokens.length || tokens.length > 100) return [];
+
+  const members = [];
+  const seen = new Set();
+  for (const canonicalEmail of tokens) {
+    const normalizedEmail = parseSingleAuthEmail(canonicalEmail);
+    if (
+      !normalizedEmail
+      || !normalizedEmail.endsWith(`@${AUTH_ALLOWED_EMAIL_DOMAIN}`)
+      || seen.has(normalizedEmail)
+    ) {
+      return [];
+    }
+    seen.add(normalizedEmail);
+    members.push({
+      email: canonicalEmail,
+      normalizedEmail,
+      name: authDisplayName(canonicalEmail),
+    });
+  }
+  return members;
+}
+
+export function authDisplayName(email) {
+  const canonicalEmail = String(email || '').trim();
+  const atIndex = canonicalEmail.indexOf('@');
+  return atIndex > 0 ? canonicalEmail.slice(0, atIndex) : '';
+}
+
+export function findAllowedAuthMember(config, email) {
+  const normalizedEmail = parseSingleAuthEmail(email);
+  if (!normalizedEmail) return null;
+  return config.allowedMembers.find(
+    (member) => member.normalizedEmail === normalizedEmail,
+  ) || null;
+}
+
 export function getCustomAuthConfiguration(env = {}) {
-  const loginEmail = parseSingleAuthEmail(env.AUTH_LOGIN_EMAIL);
+  const allowedMembers = parseAllowedAuthMembers(env.AUTH_ALLOWED_EMAILS);
   const hmacSecret = String(env.AUTH_HMAC_SECRET || '').trim();
   const turnstileSiteKey = String(env.TURNSTILE_SITE_KEY || '').trim();
   const turnstileSecretKey = String(env.TURNSTILE_SECRET_KEY || '').trim();
   const issues = [];
 
-  if (!loginEmail) {
-    issues.push('AUTH_LOGIN_EMAIL must contain exactly one valid email address.');
+  if (!allowedMembers.length) {
+    issues.push(`AUTH_ALLOWED_EMAILS must contain unique ${AUTH_ALLOWED_EMAIL_DOMAIN} addresses.`);
   }
   if (hmacSecret.length < 32) {
     issues.push('AUTH_HMAC_SECRET must be an encrypted secret of at least 32 characters.');
@@ -130,9 +179,9 @@ export function getCustomAuthConfiguration(env = {}) {
 
   return {
     db: env.DB,
+    allowedMembers,
     hmacSecret,
     issues,
-    loginEmail,
     turnstileSecretKey,
     turnstileSiteKey,
     valid: issues.length === 0,
@@ -140,12 +189,12 @@ export function getCustomAuthConfiguration(env = {}) {
 }
 
 export function maskEmail(email) {
-  const normalized = normalizeAuthEmail(email);
-  const atIndex = normalized.indexOf('@');
+  const canonicalEmail = String(email || '').trim();
+  const atIndex = canonicalEmail.indexOf('@');
   if (atIndex < 1) return '';
 
-  const local = normalized.slice(0, atIndex);
-  const domain = normalized.slice(atIndex + 1);
+  const local = canonicalEmail.slice(0, atIndex);
+  const domain = canonicalEmail.slice(atIndex + 1);
   const visibleLength = Math.min(4, Math.max(1, local.length - 1));
   return `${local.slice(0, visibleLength)}***@${domain}`;
 }
@@ -312,6 +361,24 @@ export function hashSessionToken({ hmacSecret, token }) {
   return hmacSha256Hex(hmacSecret, `session:${token}`);
 }
 
+export function hashAuthEmail({ email, hmacSecret }) {
+  return hmacSha256Hex(hmacSecret, `email:${normalizeAuthEmail(email)}`);
+}
+
+export async function findAllowedAuthMemberByHash(config, emailHash) {
+  const expectedHash = String(emailHash || '');
+  if (!/^[a-f0-9]{64}$/.test(expectedHash)) return null;
+
+  for (const member of config.allowedMembers) {
+    const memberHash = await hashAuthEmail({
+      email: member.normalizedEmail,
+      hmacSecret: config.hmacSecret,
+    });
+    if (constantTimeEqual(memberHash, expectedHash)) return member;
+  }
+  return null;
+}
+
 export function hashRateIdentifier({ action, hmacSecret, identifier }) {
   return hmacSha256Hex(hmacSecret, `rate:${action}:${identifier}`);
 }
@@ -368,13 +435,14 @@ export function createCustomAuthStore(db) {
     async insertChallenge(challenge) {
       await db.prepare(`
         INSERT INTO auth_challenges (
-          challenge_id, pin_hash, ip_hash, created_at, expires_at,
+          challenge_id, pin_hash, ip_hash, email_hash, created_at, expires_at,
           attempt_count, max_attempts, used_at
-        ) VALUES (?, ?, ?, ?, ?, 0, ?, NULL)
+        ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, NULL)
       `).bind(
         challenge.challengeId,
         challenge.pinHash,
         challenge.ipHash,
+        challenge.emailHash,
         challenge.createdAt,
         challenge.expiresAt,
         challenge.maxAttempts,
@@ -383,7 +451,7 @@ export function createCustomAuthStore(db) {
 
     async getChallenge(challengeId) {
       return db.prepare(`
-        SELECT challenge_id, pin_hash, ip_hash, created_at, expires_at,
+        SELECT challenge_id, pin_hash, ip_hash, email_hash, created_at, expires_at,
           attempt_count, max_attempts, used_at
         FROM auth_challenges
         WHERE challenge_id = ?
@@ -431,18 +499,20 @@ export function createCustomAuthStore(db) {
     async insertSession(session) {
       await db.prepare(`
         INSERT INTO auth_sessions (
-          token_hash, created_at, expires_at, revoked_at
-        ) VALUES (?, ?, ?, NULL)
+          token_hash, email_hash, created_at, expires_at, last_seen_at, revoked_at
+        ) VALUES (?, ?, ?, ?, ?, NULL)
       `).bind(
         session.tokenHash,
+        session.emailHash,
         session.createdAt,
         session.expiresAt,
+        session.lastSeenAt,
       ).run();
     },
 
     async getSession(tokenHash) {
       return db.prepare(`
-        SELECT token_hash, created_at, expires_at, revoked_at
+        SELECT token_hash, email_hash, created_at, expires_at, last_seen_at, revoked_at
         FROM auth_sessions
         WHERE token_hash = ?
       `).bind(tokenHash).first();
@@ -454,6 +524,30 @@ export function createCustomAuthStore(db) {
         SET revoked_at = COALESCE(revoked_at, ?)
         WHERE token_hash = ?
       `).bind(now, tokenHash).run();
+    },
+
+    async touchSession(tokenHash, now) {
+      await db.prepare(`
+        UPDATE auth_sessions
+        SET last_seen_at = ?
+        WHERE token_hash = ?
+          AND revoked_at IS NULL
+          AND expires_at > ?
+      `).bind(now, tokenHash, now).run();
+    },
+
+    async listOnlineMemberHashes({ cutoff, now }) {
+      const result = await db.prepare(`
+        SELECT email_hash, MAX(last_seen_at) AS last_seen_at
+        FROM auth_sessions
+        WHERE revoked_at IS NULL
+          AND expires_at > ?
+          AND last_seen_at >= ?
+          AND email_hash IS NOT NULL
+        GROUP BY email_hash
+        ORDER BY last_seen_at DESC
+      `).bind(now, cutoff).all();
+      return result.results || [];
     },
 
     async prune(now) {
@@ -534,7 +628,17 @@ export async function authorizeCustomSessionRequest({
       !session
       || session.revoked_at != null
       || Number(session.expires_at) <= nowSeconds
+      || !session.email_hash
     ) {
+      return {
+        authorized: false,
+        reason: 'invalid_session',
+        status: 401,
+      };
+    }
+
+    const member = await findAllowedAuthMemberByHash(config, session.email_hash);
+    if (!member) {
       return {
         authorized: false,
         reason: 'invalid_session',
@@ -544,8 +648,10 @@ export async function authorizeCustomSessionRequest({
 
     return {
       authorized: true,
-      email: config.loginEmail,
+      email: member.email,
       expiresAt: Number(session.expires_at),
+      memberHash: session.email_hash,
+      name: member.name,
       status: 200,
       tokenHash,
     };

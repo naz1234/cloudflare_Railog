@@ -24,10 +24,11 @@ export function getAuthEmailDeliveryConfiguration(env = {}) {
 
 /**
  * Deliver a PIN only through the private mailer Worker binding. The Pages
- * function sends no recipient or sender value across this boundary; the
- * Worker and its Email Service binding own both fixed addresses.
+ * function passes only the server-validated recipient. The Worker performs
+ * its own private allowlist check and remains the sole owner of sender and
+ * Gmail OAuth credentials.
  */
-export async function sendAuthPin({ env = {}, pin, requestRef }) {
+export async function sendAuthPin({ env = {}, pin, recipient, requestRef }) {
   const service = env.AUTH_EMAIL_SERVICE;
   if (typeof service?.fetch !== 'function') {
     throw new Error('The private authentication email service is not configured.');
@@ -41,7 +42,7 @@ export async function sendAuthPin({ env = {}, pin, requestRef }) {
   const response = await service.fetch(new Request(
     'https://auth-email.internal/send',
     {
-      body: JSON.stringify({ pin, requestRef }),
+      body: JSON.stringify({ pin, recipient, requestRef }),
       headers: {
         Authorization: `Bearer ${serviceToken}`,
         'Content-Type': 'application/json; charset=utf-8',

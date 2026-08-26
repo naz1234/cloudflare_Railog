@@ -9,6 +9,7 @@ import {
   constantTimeEqual,
   consumeRatePolicy,
   createCustomAuthStore,
+  findAllowedAuthMemberByHash,
   generateOpaqueToken,
   getClientIp,
   getAuthMode,
@@ -99,8 +100,15 @@ export function createVerifyCodeEndpoint({
         && Number(challenge.attempt_count) < Number(
           challenge.max_attempts ?? AUTH_MAX_PIN_ATTEMPTS,
         )
+        && challenge.email_hash
       );
       if (!challengeIsActive) return invalidCodeResponse();
+
+      const member = await findAllowedAuthMemberByHash(
+        config,
+        challenge.email_hash,
+      );
+      if (!member) return invalidCodeResponse();
 
       const submittedPinHash = await hashPin({
         challengeId,
@@ -127,14 +135,19 @@ export function createVerifyCodeEndpoint({
       const sessionExpiresAt = nowSeconds + AUTH_SESSION_TTL_SECONDS;
       await store.insertSession({
         createdAt: nowSeconds,
+        emailHash: challenge.email_hash,
         expiresAt: sessionExpiresAt,
+        lastSeenAt: nowSeconds,
         tokenHash: sessionTokenHash,
       });
 
       const response = jsonResponse({
         ok: true,
         authenticated: true,
-        user: { email: maskEmail(config.loginEmail) },
+        user: {
+          email: maskEmail(member.email),
+          name: member.name,
+        },
         expiresAt: new Date(sessionExpiresAt * 1000).toISOString(),
       });
       appendSetCookie(response, serializeSecureCookie(

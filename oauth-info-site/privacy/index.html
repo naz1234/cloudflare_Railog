@@ -38,35 +38,35 @@
           <p class="eyebrow">Policy 01</p>
           <h1>Privacy Policy</h1>
           <p class="lead">This policy explains the limited information used by the L3 DC OTP Mailer to deliver and verify secure login codes.</p>
-          <p class="effective-date">Effective: 24 August 2026</p>
+          <p class="effective-date">Effective: 26 August 2026</p>
         </header>
 
         <article class="policy-content">
           <section>
             <h2>1. Service scope</h2>
-            <p>L3 DC OTP Mailer supports authentication for the private L3 DC Template — WEST DEPOT. It is not a public account service. The recipient mailbox is fixed in server configuration and cannot be selected by a visitor.</p>
+            <p>L3 DC OTP Mailer supports authentication for the private L3 DC Template — WEST DEPOT. It is not a public account service. A user enters their own work email address, and a code is sent only when that address exactly matches the private approved-staff allowlist.</p>
           </section>
 
           <section>
             <h2>2. Information processed</h2>
-            <p>To protect the private application, the authentication service processes limited security information such as request timestamps, short request references, attempt counters, and cryptographic hashes derived from one-time codes, sessions, and source identifiers.</p>
-            <p>The authentication database does not store raw one-time codes, raw session tokens, raw IP addresses, or the full authorized mailbox address. The public information pages do not contain forms, advertising trackers, or application analytics.</p>
+            <p>To protect the private application, the authentication service processes the submitted work address, request timestamps, short request references, attempt counters, approved display labels, coarse last-seen times, and cryptographic hashes derived from identities, one-time codes, sessions, and source identifiers.</p>
+            <p>The submitted address is used to check authorization and deliver the code. The authentication database does not store raw one-time codes, raw session tokens, raw IP addresses, or full staff email addresses; it stores HMAC-derived identity keys and limited session/presence metadata. The public information pages do not contain forms, advertising trackers, or application analytics.</p>
           </section>
 
           <section>
             <h2>3. Gmail API data</h2>
-            <p>The dedicated Gmail sender grants only the <code>https://www.googleapis.com/auth/gmail.send</code> permission. The service uses it solely to send a login-code email to the fixed authorized mailbox. It does not request permission to read messages, contacts, profile information, or files.</p>
+            <p>The dedicated Gmail sender grants only the <code>https://www.googleapis.com/auth/gmail.send</code> permission. The service uses it solely to send a login-code email to the individually entered address after exact allowlist approval. It does not request permission to read messages, contacts, profile information, or files.</p>
             <p>Use and transfer of information received from Google APIs follows the <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="external noreferrer">Google API Services User Data Policy</a>, including its Limited Use requirements.</p>
           </section>
 
           <section>
             <h2>4. Purpose and sharing</h2>
-            <p>Information is used only to deliver login codes, validate them, maintain authenticated sessions, prevent abuse, diagnose service availability, and protect the private application. Authentication email content is processed by Google for delivery, while hosting and security requests are processed by Cloudflare. Information is not sold or used for advertising.</p>
+            <p>Information is used only to approve and deliver login codes, validate them, maintain authenticated sessions, show the approved display name and approximate online status to other authenticated users, prevent abuse, diagnose service availability, and protect the private application. Authentication email content is processed by Google for delivery, while hosting and security requests are processed by Cloudflare. Information is not sold or used for advertising.</p>
           </section>
 
           <section>
             <h2>5. Retention and security</h2>
-            <p>One-time codes expire after a short period, sessions expire automatically, and expired authentication records are periodically removed. Security controls include one-time use, rate limits, cryptographic hashing, secure cookies, server-side validation, and restricted service credentials.</p>
+            <p>One-time codes expire after a short period, sessions and presence indicators expire automatically, and expired authentication records are periodically removed. Security controls include exact allowlist checks, one-time use, rate limits, cryptographic hashing, secure cookies, server-side validation, and restricted service credentials.</p>
           </section>
 
           <section>
@@ -91,7 +91,7 @@
           <a href="/terms/">Terms of Service</a>
           <a href="mailto:l3dc.login@gmail.com">Support</a>
         </div>
-        <p class="updated">Last updated: 24 August 2026</p>
+        <p class="updated">Last updated: 26 August 2026</p>
       </footer>
     </div>
   </body>

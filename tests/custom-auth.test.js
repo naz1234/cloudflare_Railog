@@ -8,14 +8,18 @@ import {
   AUTH_SESSION_COOKIE,
   AUTH_SESSION_TTL_SECONDS,
   CUSTOM_AUTH_SCHEMA_STATEMENTS,
+  authDisplayName,
   authorizeCustomSessionRequest,
+  findAllowedAuthMember,
   generateOpaqueToken,
   generateSecurePin,
   getAuthMode,
   getCustomAuthConfiguration,
+  hashAuthEmail,
   hashPin,
   hashSessionToken,
   maskEmail,
+  parseAllowedAuthMembers,
 } from '../functions/lib/custom-auth.js';
 import {
   getAuthEmailDeliveryConfiguration,
@@ -30,9 +34,14 @@ import { createLogoutEndpoint } from '../functions/api/auth/logout.js';
 import { createRequestCodeEndpoint } from '../functions/api/auth/request-code.js';
 import { createSessionEndpoint } from '../functions/api/auth/session.js';
 import { createVerifyCodeEndpoint } from '../functions/api/auth/verify-code.js';
+import { createPresenceEndpoint } from '../functions/api/auth/presence.js';
 
 const origin = 'https://railog.example.com';
 const nowMs = Date.UTC(2026, 7, 23, 12, 0, 0);
+const allowedEmails = [
+  'Member.One@flow-metro.com',
+  'Member.Two@flow-metro.com',
+];
 
 function makeEnv(overrides = {}) {
   return {
@@ -41,7 +50,7 @@ function makeEnv(overrides = {}) {
     },
     AUTH_EMAIL_SERVICE_TOKEN: 'test-email-service-token-with-32-characters',
     AUTH_HMAC_SECRET: 'test-hmac-secret-with-at-least-32-characters',
-    AUTH_LOGIN_EMAIL: 'l3.dc@example.com',
+    AUTH_ALLOWED_EMAILS: allowedEmails.join('\n'),
     AUTH_MODE: AUTH_MODES.customPin,
     DB: { prepare() {} },
     TURNSTILE_SECRET_KEY: 'turnstile-secret',
@@ -100,6 +109,7 @@ function createMemoryStore({ rateAllowed = true } = {}) {
         challenge_id: challenge.challengeId,
         created_at: challenge.createdAt,
         expires_at: challenge.expiresAt,
+        email_hash: challenge.emailHash,
         ip_hash: challenge.ipHash,
         max_attempts: challenge.maxAttempts,
         pin_hash: challenge.pinHash,
@@ -143,7 +153,9 @@ function createMemoryStore({ rateAllowed = true } = {}) {
     async insertSession(session) {
       sessions.set(session.tokenHash, {
         created_at: session.createdAt,
+        email_hash: session.emailHash,
         expires_at: session.expiresAt,
+        last_seen_at: session.lastSeenAt,
         revoked_at: null,
         token_hash: session.tokenHash,
       });
@@ -156,6 +168,33 @@ function createMemoryStore({ rateAllowed = true } = {}) {
     async revokeSession(tokenHash, timestamp) {
       const session = sessions.get(tokenHash);
       if (session && session.revoked_at == null) session.revoked_at = timestamp;
+    },
+
+    async touchSession(tokenHash, timestamp) {
+      const session = sessions.get(tokenHash);
+      if (session && session.revoked_at == null && session.expires_at > timestamp) {
+        session.last_seen_at = timestamp;
+      }
+    },
+
+    async listOnlineMemberHashes({ cutoff, now }) {
+      const latest = new Map();
+      for (const session of sessions.values()) {
+        if (
+          session.revoked_at != null
+          || session.expires_at <= now
+          || session.last_seen_at < cutoff
+          || !session.email_hash
+        ) continue;
+        const prior = latest.get(session.email_hash);
+        if (!prior || prior.last_seen_at < session.last_seen_at) {
+          latest.set(session.email_hash, session);
+        }
+      }
+      return [...latest.values()].map((session) => ({
+        email_hash: session.email_hash,
+        last_seen_at: session.last_seen_at,
+      }));
     },
 
     async prune() {},
@@ -173,13 +212,19 @@ test('custom mode is opt-in and its configuration fails closed', () => {
 
   const valid = getCustomAuthConfiguration(makeEnv());
   assert.equal(valid.valid, true);
-  assert.equal(valid.loginEmail, 'l3.dc@example.com');
+  assert.deepEqual(valid.allowedMembers.map((member) => member.email), allowedEmails);
+  assert.equal(
+    findAllowedAuthMember(valid, 'member.one@FLOW-METRO.COM')?.name,
+    'Member.One',
+  );
+  assert.equal(authDisplayName(allowedEmails[0]), 'Member.One');
+  assert.equal(parseAllowedAuthMembers(makeEnv().AUTH_ALLOWED_EMAILS).length, 2);
 
-  const multiple = getCustomAuthConfiguration(makeEnv({
-    AUTH_LOGIN_EMAIL: 'first@example.com,second@example.com',
+  const invalidAllowlist = getCustomAuthConfiguration(makeEnv({
+    AUTH_ALLOWED_EMAILS: 'member.one@example.com\nmember.one@flow-metro.com',
   }));
-  assert.equal(multiple.valid, false);
-  assert.match(multiple.issues.join(' '), /exactly one valid email/);
+  assert.equal(invalidAllowlist.valid, false);
+  assert.match(invalidAllowlist.issues.join(' '), /AUTH_ALLOWED_EMAILS/);
 
   const missingSecurity = getCustomAuthConfiguration(makeEnv({
     AUTH_HMAC_SECRET: 'short',
@@ -221,31 +266,32 @@ test('PINs and opaque tokens use bounded secure formats and HMAC hashes', async 
 });
 
 test('schema and migration keep raw email and raw PIN data out of D1', async () => {
-  const migration = await readFile(
+  const baseMigration = await readFile(
     new URL('../migrations/0002_custom_auth.sql', import.meta.url),
     'utf8',
   );
+  const identityMigration = await readFile(
+    new URL('../migrations/0003_auth_member_identity.sql', import.meta.url),
+    'utf8',
+  );
   const runtimeSchema = CUSTOM_AUTH_SCHEMA_STATEMENTS.join(';\n');
-  for (const sql of [migration, runtimeSchema]) {
+  for (const sql of [baseMigration, identityMigration, runtimeSchema]) {
     assert.doesNotMatch(sql, /\bemail\s+TEXT\b/i);
     assert.doesNotMatch(sql, /\bpin\s+TEXT\b/i);
+  }
+
+  for (const sql of [baseMigration, runtimeSchema]) {
     assert.match(sql, /pin_hash TEXT NOT NULL/i);
     assert.match(sql, /ip_hash TEXT NOT NULL/i);
     assert.match(sql, /token_hash TEXT PRIMARY KEY/i);
   }
 
-  const normalizeSql = (value) => value
-    .replaceAll(';', '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
-  const normalizedMigration = normalizeSql(migration);
-  for (const statement of CUSTOM_AUTH_SCHEMA_STATEMENTS) {
-    assert.ok(normalizedMigration.includes(normalizeSql(statement)));
-  }
+  assert.match(identityMigration, /ADD COLUMN email_hash TEXT/i);
+  assert.match(identityMigration, /ADD COLUMN last_seen_at INTEGER/i);
+  assert.match(identityMigration, /WHERE email_hash IS NULL/i);
 });
 
-test('private mailer service receives only PIN/reference and bearer authentication', async () => {
+test('private mailer service receives the validated recipient and bearer authentication', async () => {
   let capturedRequest;
   const env = {
     AUTH_EMAIL_SERVICE: {
@@ -260,8 +306,8 @@ test('private mailer service receives only PIN/reference and bearer authenticati
   await sendAuthPin({
     env,
     pin: '654321',
+    recipient: allowedEmails[0],
     requestRef: 'A1B2C3',
-    to: 'must-not-cross-binding@example.com',
   });
 
   assert.equal(capturedRequest.url, 'https://auth-email.internal/send');
@@ -271,6 +317,7 @@ test('private mailer service receives only PIN/reference and bearer authenticati
   );
   assert.deepEqual(await capturedRequest.json(), {
     pin: '654321',
+    recipient: allowedEmails[0],
     requestRef: 'A1B2C3',
   });
 
@@ -392,7 +439,7 @@ test('Turnstile verifier binds token to action, hostname, and remote IP', async 
   assert.deepEqual(configurationError, { success: false, reason: 'configuration_error' });
 });
 
-test('public auth config exposes only site key and masked shared address', async () => {
+test('public auth config exposes only the Turnstile site key', async () => {
   const endpoint = createAuthConfigEndpoint({ logger: { error() {} } });
   const response = await endpoint(createContext(makeRequest('/api/auth/config', {
     method: 'GET',
@@ -400,7 +447,6 @@ test('public auth config exposes only site key and masked shared address', async
   })));
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), {
-    emailHint: 'l3.d***@example.com',
     siteKey: 'turnstile-site-key',
   });
 });
@@ -437,7 +483,7 @@ test('request-code stores only hashes and returns an opaque challenge/reference'
     verifyTurnstile: async () => ({ success: true }),
   });
   const response = await endpoint(createContext(makeRequest('/api/auth/request-code', {
-    body: { turnstileToken: 'valid-token' },
+    body: { email: allowedEmails[0], turnstileToken: 'valid-token' },
   })));
 
   assert.equal(response.status, 202);
@@ -447,18 +493,20 @@ test('request-code stores only hashes and returns an opaque challenge/reference'
   assert.match(body.requestRef, /^[A-F0-9]{6}$/);
   assert.equal(body.expiresInSeconds, 300);
   assert.equal(deliveries.length, 1);
+  assert.equal(deliveries[0].recipient, allowedEmails[0]);
   assert.equal(deliveries[0].requestRef, body.requestRef);
 
   const stored = store.challenges.get(body.challengeId);
   assert.ok(stored);
   assert.equal(Object.hasOwn(stored, 'email'), false);
   assert.equal(Object.hasOwn(stored, 'pin'), false);
+  assert.match(stored.email_hash, /^[a-f0-9]{64}$/);
   assert.notEqual(stored.pin_hash, deliveries[0].pin);
   assert.equal(stored.expires_at - stored.created_at, 300);
   assert.equal(stored.max_attempts, AUTH_MAX_PIN_ATTEMPTS);
 });
 
-test('request-code never accepts a browser-selected recipient', async () => {
+test('request-code rejects recipients outside the Flow domain before Turnstile', async () => {
   let turnstileCalls = 0;
   const endpoint = createRequestCodeEndpoint({
     createStore: () => createMemoryStore(),
@@ -474,6 +522,33 @@ test('request-code never accepts a browser-selected recipient', async () => {
   assert.equal(turnstileCalls, 0);
 });
 
+test('request-code does not disclose whether a valid Flow address is allowlisted', async () => {
+  const store = createMemoryStore();
+  let deliveries = 0;
+  const endpoint = createRequestCodeEndpoint({
+    createStore: () => store,
+    now: () => nowMs,
+    sendPin: async () => { deliveries += 1; },
+    verifyTurnstile: async () => ({ success: true }),
+  });
+  const response = await endpoint(createContext(makeRequest('/api/auth/request-code', {
+    body: {
+      email: 'Unknown.User@flow-metro.com',
+      turnstileToken: 'valid-token',
+    },
+  })));
+
+  assert.equal(response.status, 202);
+  const body = await response.json();
+  assert.equal(body.ok, true);
+  assert.match(body.challengeId, /^[A-Za-z0-9_-]{32}$/);
+  assert.match(body.requestRef, /^[A-F0-9]{6}$/);
+  assert.equal(body.emailHint, 'unkn***@flow-metro.com');
+  assert.equal(deliveries, 0);
+  assert.equal(store.challenges.size, 1);
+  assert.equal(store.challenges.get(body.challengeId).used_at, Math.floor(nowMs / 1000));
+});
+
 test('request-code rejects invalid Turnstile and rate limits before delivery', async () => {
   let deliveries = 0;
   let storesCreatedForInvalidTurnstile = 0;
@@ -487,7 +562,7 @@ test('request-code rejects invalid Turnstile and rate limits before delivery', a
   });
   const invalidResponse = await invalidTurnstile(createContext(makeRequest(
     '/api/auth/request-code',
-    { body: { turnstileToken: 'reused-token' } },
+    { body: { email: allowedEmails[0], turnstileToken: 'reused-token' } },
   )));
   assert.equal(invalidResponse.status, 400);
   assert.equal((await invalidResponse.json()).error.code, 'VERIFICATION_REQUIRED');
@@ -500,12 +575,63 @@ test('request-code rejects invalid Turnstile and rate limits before delivery', a
   });
   const limitedResponse = await limited(createContext(makeRequest(
     '/api/auth/request-code',
-    { body: { turnstileToken: 'valid-token' } },
+    { body: { email: allowedEmails[0], turnstileToken: 'valid-token' } },
   )));
   assert.equal(limitedResponse.status, 429);
   assert.equal(limitedResponse.headers.get('Retry-After'), '37');
   assert.equal((await limitedResponse.json()).error.code, 'TOO_MANY_REQUESTS');
   assert.equal(deliveries, 0);
+});
+
+test('per-email throttling silently drops repeat delivery without revealing membership', async () => {
+  const store = createMemoryStore({
+    rateAllowed: ({ action }) => !action.startsWith('request-email'),
+  });
+  let deliveries = 0;
+  const endpoint = createRequestCodeEndpoint({
+    createStore: () => store,
+    now: () => nowMs,
+    sendPin: async () => { deliveries += 1; },
+    verifyTurnstile: async () => ({ success: true }),
+  });
+  const response = await endpoint(createContext(makeRequest('/api/auth/request-code', {
+    body: { email: allowedEmails[0], turnstileToken: 'valid-token' },
+  })));
+
+  assert.equal(response.status, 202);
+  const body = await response.json();
+  assert.equal(body.ok, true);
+  assert.equal(deliveries, 0);
+  assert.equal(store.challenges.get(body.challengeId).used_at, Math.floor(nowMs / 1000));
+});
+
+test('request-code defers provider delivery when the runtime supplies waitUntil', async () => {
+  const store = createMemoryStore();
+  const pending = [];
+  let releaseDelivery;
+  let signalDeliveryStarted;
+  const deliveryStarted = new Promise((resolve) => { signalDeliveryStarted = resolve; });
+  const endpoint = createRequestCodeEndpoint({
+    createStore: () => store,
+    now: () => nowMs,
+    sendPin: async () => {
+      signalDeliveryStarted();
+      return new Promise((resolve) => { releaseDelivery = resolve; });
+    },
+    verifyTurnstile: async () => ({ success: true }),
+  });
+  const context = createContext(makeRequest('/api/auth/request-code', {
+    body: { email: allowedEmails[0], turnstileToken: 'valid-token' },
+  }));
+  context.waitUntil = (promise) => pending.push(promise);
+
+  const response = await endpoint(context);
+  assert.equal(response.status, 202);
+  assert.ok(pending.length >= 1);
+  await deliveryStarted;
+  assert.equal(typeof releaseDelivery, 'function');
+  releaseDelivery();
+  await Promise.all(pending);
 });
 
 test('JSON auth endpoints reject non-JSON request bodies', async () => {
@@ -523,7 +649,7 @@ test('JSON auth endpoints reject non-JSON request bodies', async () => {
   assert.equal((await response.json()).error.code, 'INVALID_REQUEST');
 });
 
-test('email delivery failure invalidates the challenge without logging the PIN', async () => {
+test('email delivery failure stays generic, invalidates the challenge, and never logs the PIN', async () => {
   const store = createMemoryStore();
   const logMessages = [];
   let deliveredPin = '';
@@ -537,9 +663,10 @@ test('email delivery failure invalidates the challenge without logging the PIN',
     verifyTurnstile: async () => ({ success: true }),
   });
   const response = await endpoint(createContext(makeRequest('/api/auth/request-code', {
-    body: { turnstileToken: 'valid-token' },
+    body: { email: allowedEmails[0], turnstileToken: 'valid-token' },
   })));
-  assert.equal(response.status, 503);
+  assert.equal(response.status, 202);
+  assert.equal((await response.json()).ok, true);
   assert.equal(store.invalidatedChallenges.length, 1);
   assert.ok(deliveredPin);
   assert.doesNotMatch(logMessages.join(' '), new RegExp(deliveredPin));
@@ -557,11 +684,17 @@ test('parallel request challenges remain independent and both can verify', async
 
   const firstResponse = await requestEndpoint(createContext(makeRequest(
     '/api/auth/request-code',
-    { body: { turnstileToken: 'token-one' }, ip: '203.0.113.11' },
+    {
+      body: { email: allowedEmails[0], turnstileToken: 'token-one' },
+      ip: '203.0.113.11',
+    },
   )));
   const secondResponse = await requestEndpoint(createContext(makeRequest(
     '/api/auth/request-code',
-    { body: { turnstileToken: 'token-two' }, ip: '203.0.113.12' },
+    {
+      body: { email: allowedEmails[1], turnstileToken: 'token-two' },
+      ip: '203.0.113.12',
+    },
   )));
   const first = await firstResponse.json();
   const second = await secondResponse.json();
@@ -596,7 +729,7 @@ test('verify-code enforces attempts, one-time use, and a hashed session cookie',
   });
   const requested = await requestEndpoint(createContext(makeRequest(
     '/api/auth/request-code',
-    { body: { turnstileToken: 'valid-token' } },
+    { body: { email: allowedEmails[0], turnstileToken: 'valid-token' } },
   )));
   const requestBody = await requested.json();
   const verifyEndpoint = createVerifyCodeEndpoint({
@@ -616,7 +749,8 @@ test('verify-code enforces attempts, one-time use, and a hashed session cookie',
   assert.equal(verified.status, 200);
   const verifiedBody = await verified.json();
   assert.equal(verifiedBody.authenticated, true);
-  assert.equal(verifiedBody.user.email, 'l3.d***@example.com');
+  assert.equal(verifiedBody.user.email, 'Memb***@flow-metro.com');
+  assert.equal(verifiedBody.user.name, 'Member.One');
   assert.equal(store.sessions.size, 1);
   const cookie = verified.headers.get('Set-Cookie');
   assert.match(cookie, new RegExp(`${AUTH_SESSION_COOKIE}=`));
@@ -633,7 +767,15 @@ test('verify-code enforces attempts, one-time use, and a hashed session cookie',
     token: sessionToken,
   });
   assert.ok(store.sessions.has(tokenHash));
-  assert.equal(Object.hasOwn(store.sessions.get(tokenHash), 'email'), false);
+  const storedSession = store.sessions.get(tokenHash);
+  assert.equal(Object.hasOwn(storedSession, 'email'), false);
+  assert.equal(
+    storedSession.email_hash,
+    await hashAuthEmail({
+      email: allowedEmails[0],
+      hmacSecret: makeEnv().AUTH_HMAC_SECRET,
+    }),
+  );
   assert.equal(store.sessions.has(sessionToken), false);
 
   const replay = await verifyEndpoint(createContext(makeRequest('/api/auth/verify-code', {
@@ -650,9 +792,15 @@ test('session authorization accepts only an active hashed D1 session', async () 
     hmacSecret: env.AUTH_HMAC_SECRET,
     token: rawToken,
   });
+  const emailHash = await hashAuthEmail({
+    email: allowedEmails[0],
+    hmacSecret: env.AUTH_HMAC_SECRET,
+  });
   store.sessions.set(tokenHash, {
     created_at: Math.floor(nowMs / 1000),
+    email_hash: emailHash,
     expires_at: Math.floor(nowMs / 1000) + AUTH_SESSION_TTL_SECONDS,
+    last_seen_at: Math.floor(nowMs / 1000),
     revoked_at: null,
     token_hash: tokenHash,
   });
@@ -668,7 +816,10 @@ test('session authorization accepts only an active hashed D1 session', async () 
     store,
   });
   assert.equal(authorized.authorized, true);
-  assert.equal(authorized.email, 'l3.dc@example.com');
+  assert.equal(authorized.email, allowedEmails[0]);
+  assert.equal(authorized.name, 'Member.One');
+  assert.equal(authorized.memberHash, emailHash);
+  assert.equal(authorized.tokenHash, tokenHash);
 
   store.sessions.get(tokenHash).revoked_at = Math.floor(nowMs / 1000);
   const revoked = await authorizeCustomSessionRequest({
@@ -698,7 +849,7 @@ test('session endpoint preserves Cloudflare Access mode during staged rollout', 
     authenticated: true,
     expiresAt: null,
     ok: true,
-    user: { email: 'l3.d***@example.com' },
+    user: { email: 'l3.d***@example.com', name: 'l3.dc' },
   });
 });
 
@@ -778,7 +929,76 @@ test('auth POST endpoints reject cross-origin requests without touching state', 
   assert.equal(storeCreations, 0);
 });
 
-test('email masking never exposes the full local part', () => {
+test('presence heartbeat returns each recently active approved member once', async () => {
+  const env = makeEnv();
+  const store = createMemoryStore();
+  const nowSeconds = Math.floor(nowMs / 1000);
+  const firstHash = await hashAuthEmail({
+    email: allowedEmails[0],
+    hmacSecret: env.AUTH_HMAC_SECRET,
+  });
+  const secondHash = await hashAuthEmail({
+    email: allowedEmails[1],
+    hmacSecret: env.AUTH_HMAC_SECRET,
+  });
+  const currentTokenHash = 'a'.repeat(64);
+
+  store.sessions.set(currentTokenHash, {
+    created_at: nowSeconds - 600,
+    email_hash: firstHash,
+    expires_at: nowSeconds + 600,
+    last_seen_at: nowSeconds - 300,
+    revoked_at: null,
+    token_hash: currentTokenHash,
+  });
+  store.sessions.set('b'.repeat(64), {
+    created_at: nowSeconds - 600,
+    email_hash: secondHash,
+    expires_at: nowSeconds + 600,
+    last_seen_at: nowSeconds - 30,
+    revoked_at: null,
+    token_hash: 'b'.repeat(64),
+  });
+  store.sessions.set('c'.repeat(64), {
+    created_at: nowSeconds - 600,
+    email_hash: secondHash,
+    expires_at: nowSeconds + 600,
+    last_seen_at: nowSeconds - 40,
+    revoked_at: null,
+    token_hash: 'c'.repeat(64),
+  });
+  store.sessions.set('d'.repeat(64), {
+    created_at: nowSeconds - 600,
+    email_hash: secondHash,
+    expires_at: nowSeconds + 600,
+    last_seen_at: nowSeconds - 10,
+    revoked_at: nowSeconds - 5,
+    token_hash: 'd'.repeat(64),
+  });
+
+  const endpoint = createPresenceEndpoint({
+    createStore: () => store,
+    now: () => nowMs,
+  });
+  const context = createContext(makeRequest('/api/auth/presence', {
+    method: 'GET',
+    requestOrigin: null,
+  }), env);
+  context.data.authUser = { tokenHash: currentTokenHash };
+
+  const response = await endpoint(context);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    ok: true,
+    users: [
+      { name: 'Member.One' },
+      { name: 'Member.Two' },
+    ],
+  });
+});
+
+test('email masking never exposes the full local part and preserves canonical casing', () => {
   assert.equal(maskEmail('l3.dc@example.com'), 'l3.d***@example.com');
   assert.equal(maskEmail('a@example.com'), 'a***@example.com');
+  assert.equal(maskEmail(allowedEmails[0]), 'Memb***@flow-metro.com');
 });

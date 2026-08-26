@@ -1,8 +1,9 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 
-export const DEFAULT_EXPECTED_OCC_EMAIL_COUNT = 1;
+export const MAX_OCC_EMAIL_COUNT = 100;
 
 const remoteJwksByUrl = new Map();
+const emailPattern = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
 
 export function normalizeEmail(value) {
   return String(value || '').trim().toLowerCase();
@@ -13,6 +14,11 @@ export function parseAllowedEmails(value) {
     .split(/[\s,;]+/)
     .map(normalizeEmail)
     .filter(Boolean);
+  if (
+    emails.length === 0
+    || emails.length > MAX_OCC_EMAIL_COUNT
+    || emails.some((email) => !emailPattern.test(email))
+  ) return [];
 
   return [...new Set(emails)];
 }
@@ -45,22 +51,17 @@ export function getAccessConfiguration(env = {}) {
   const teamDomain = normalizeTeamDomain(env.CF_ACCESS_TEAM_DOMAIN);
   const audiences = parseAccessAudiences(env.CF_ACCESS_AUD);
   const allowedEmails = parseAllowedEmails(env.OCC_ALLOWED_EMAILS);
-  const expectedEmailCount = DEFAULT_EXPECTED_OCC_EMAIL_COUNT;
-  const expectedAddressLabel = expectedEmailCount === 1 ? 'address' : 'addresses';
   const issues = [];
 
   if (!teamDomain) issues.push('CF_ACCESS_TEAM_DOMAIN is missing or invalid.');
   if (audiences.length === 0) issues.push('CF_ACCESS_AUD is missing.');
-  if (allowedEmails.length !== expectedEmailCount) {
-    issues.push(
-      `OCC_ALLOWED_EMAILS must contain exactly ${expectedEmailCount} unique ${expectedAddressLabel}; found ${allowedEmails.length}.`,
-    );
+  if (allowedEmails.length === 0) {
+    issues.push(`OCC_ALLOWED_EMAILS must contain 1-${MAX_OCC_EMAIL_COUNT} valid email addresses.`);
   }
 
   return {
     audiences,
     allowedEmails,
-    expectedEmailCount,
     issues,
     teamDomain,
     valid: issues.length === 0,

@@ -21,7 +21,7 @@ import {
 } from '../functions/_middleware.js';
 
 const memberEmails = Array.from(
-  { length: 1 },
+  { length: 21 },
   (_, index) => `member${index + 1}@example.com`,
 );
 
@@ -58,23 +58,22 @@ test('normalizes the Access team domain and exact email allowlist', () => {
   );
 });
 
-test('fails closed unless the private allowlist has exactly 1 email', () => {
+test('fails closed unless the private allowlist contains valid individual emails', () => {
   const valid = getAccessConfiguration(makeEnv());
   assert.equal(valid.valid, true);
-  assert.equal(valid.allowedEmails.length, 1);
+  assert.equal(valid.allowedEmails.length, 21);
 
   const short = getAccessConfiguration(makeEnv({
     OCC_ALLOWED_EMAILS: '',
   }));
   assert.equal(short.valid, false);
-  assert.match(short.issues.join(' '), /exactly 1 unique address; found 0/);
+  assert.match(short.issues.join(' '), /1-100 valid email addresses/);
 
-  const attemptedExpansion = getAccessConfiguration(makeEnv({
-    OCC_ALLOWED_EMAILS: [...memberEmails, 'member2@example.com'].join(','),
-    OCC_EXPECTED_EMAIL_COUNT: '2',
+  const invalidAddress = getAccessConfiguration(makeEnv({
+    OCC_ALLOWED_EMAILS: [...memberEmails, 'not-an-email'].join(','),
   }));
-  assert.equal(attemptedExpansion.valid, false);
-  assert.match(attemptedExpansion.issues.join(' '), /exactly 1 unique address; found 2/);
+  assert.equal(invalidAddress.valid, false);
+  assert.match(invalidAddress.issues.join(' '), /1-100 valid email addresses/);
 });
 
 test('rejects a request that has no Cloudflare Access JWT', async () => {
@@ -88,7 +87,7 @@ test('rejects a request that has no Cloudflare Access JWT', async () => {
   assert.equal(result.status, 401);
 });
 
-test('rejects an invalid Access JWT and an email outside the shared-address allowlist', async () => {
+test('rejects an invalid Access JWT and an email outside the individual allowlist', async () => {
   const invalid = await authorizeOccRequest({
     request: makeRequest(),
     env: makeEnv(),
@@ -124,7 +123,7 @@ test('keeps requests denied when the remote Access keys are unavailable', async 
   assert.equal(result.status, 503);
 });
 
-test('allows a cryptographically verified JWT for the single shared address', async () => {
+test('allows a cryptographically verified JWT for an approved individual address', async () => {
   const result = await authorizeOccRequest({
     request: makeRequest(),
     env: makeEnv(),

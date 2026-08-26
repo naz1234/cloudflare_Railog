@@ -1,4 +1,5 @@
 const MAX_REQUEST_BYTES = 1024;
+const MAX_ALLOWED_RECIPIENTS = 100;
 const MIN_SERVICE_TOKEN_LENGTH = 32;
 const MIN_OAUTH_SECRET_LENGTH = 16;
 const PIN_PATTERN = /^\d{6}$/;
@@ -8,6 +9,7 @@ const GOOGLE_CLIENT_ID_PATTERN = /^[a-z0-9._-]+\.apps\.googleusercontent\.com$/i
 const GOOGLE_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 const GMAIL_SEND_ENDPOINT = 'https://gmail.googleapis.com/gmail/v1/users/me/messages/send';
 const MIME_BOUNDARY = 'l3dc_auth_alternative';
+const ALLOWED_RECIPIENT_DOMAIN = 'flow-metro.com';
 
 const responseHeaders = {
   'Cache-Control': 'no-store, no-cache, must-revalidate',
@@ -36,6 +38,42 @@ function normalizeEmail(value) {
   return EMAIL_PATTERN.test(email) ? email : '';
 }
 
+function canonicalEmail(value) {
+  const email = String(value || '').trim();
+  return EMAIL_PATTERN.test(email) ? email : '';
+}
+
+function parseAllowedEmails(value) {
+  const source = String(value || '').trim();
+  if (!source) {
+    return { configured: false, recipients: new Map(), valid: false };
+  }
+
+  const entries = source.split(/[\s,;]+/).filter(Boolean);
+  const recipients = new Map();
+  let invalid = entries.length === 0 || entries.length > MAX_ALLOWED_RECIPIENTS;
+
+  for (const entry of entries) {
+    const canonical = canonicalEmail(entry);
+    const normalized = normalizeEmail(canonical);
+    if (
+      !canonical
+      || !normalized.endsWith(`@${ALLOWED_RECIPIENT_DOMAIN}`)
+      || recipients.has(normalized)
+    ) {
+      invalid = true;
+      continue;
+    }
+    recipients.set(normalized, canonical);
+  }
+
+  return {
+    configured: true,
+    recipients,
+    valid: !invalid && recipients.size === entries.length,
+  };
+}
+
 function constantTimeEqual(left, right) {
   const leftValue = String(left || '');
   const rightValue = String(right || '');
@@ -59,22 +97,26 @@ function getBearerToken(request) {
 
 function getConfiguration(env = {}) {
   const from = normalizeEmail(env.AUTH_EMAIL_FROM);
-  const to = normalizeEmail(env.AUTH_LOGIN_EMAIL);
+  const allowed = parseAllowedEmails(env.AUTH_ALLOWED_EMAILS);
+  const legacySource = String(env.AUTH_LOGIN_EMAIL || '').trim();
+  const legacyTo = canonicalEmail(legacySource);
   const serviceToken = String(env.AUTH_EMAIL_SERVICE_TOKEN || '').trim();
   const clientId = String(env.AUTH_GMAIL_CLIENT_ID || '').trim();
   const clientSecret = String(env.AUTH_GMAIL_CLIENT_SECRET || '').trim();
   const refreshToken = String(env.AUTH_GMAIL_REFRESH_TOKEN || '').trim();
 
   return {
+    allowedRecipients: allowed.recipients,
     clientId,
     clientSecret,
     from,
+    legacyTo,
     refreshToken,
     serviceToken,
-    to,
     valid: Boolean(
       from
-      && to
+      && (allowed.configured ? allowed.valid : legacyTo)
+      && (!legacySource || legacyTo)
       && serviceToken.length >= MIN_SERVICE_TOKEN_LENGTH
       && GOOGLE_CLIENT_ID_PATTERN.test(clientId)
       && clientSecret.length >= MIN_OAUTH_SECRET_LENGTH
@@ -128,7 +170,14 @@ async function readPayload(request) {
     }
 
     const keys = Object.keys(body).sort();
-    if (keys.length !== 2 || keys[0] !== 'pin' || keys[1] !== 'requestRef') {
+    const isCurrentPayload = keys.length === 3
+      && keys[0] === 'pin'
+      && keys[1] === 'recipient'
+      && keys[2] === 'requestRef';
+    const isLegacyPayload = keys.length === 2
+      && keys[0] === 'pin'
+      && keys[1] === 'requestRef';
+    if (!isCurrentPayload && !isLegacyPayload) {
       return { error: 'invalid_body' };
     }
     if (typeof body.pin !== 'string' || !PIN_PATTERN.test(body.pin)) {
@@ -140,16 +189,30 @@ async function readPayload(request) {
     ) {
       return { error: 'invalid_body' };
     }
+    if (
+      isCurrentPayload
+      && (typeof body.recipient !== 'string' || !normalizeEmail(body.recipient))
+    ) {
+      return { error: 'invalid_body' };
+    }
 
     return {
       payload: {
         pin: body.pin,
+        recipient: isCurrentPayload ? body.recipient : '',
         requestRef: body.requestRef,
       },
     };
   } catch {
     return { error: 'invalid_body' };
   }
+}
+
+function resolveRecipient(config, payload) {
+  if (payload.recipient) {
+    return config.allowedRecipients.get(normalizeEmail(payload.recipient)) || '';
+  }
+  return config.legacyTo;
 }
 
 function escapeHtml(value) {
@@ -374,11 +437,16 @@ export async function handleAuthEmailRequest(request, env = {}, options = {}) {
     return errorResponse(400, 'INVALID_REQUEST', 'Invalid request body.');
   }
 
+  const recipient = resolveRecipient(config, parsed.payload);
+  if (!recipient) {
+    return errorResponse(400, 'INVALID_REQUEST', 'Invalid request body.');
+  }
+
   const message = createLoginEmail({
     from: config.from,
     pin: parsed.payload.pin,
     requestRef: parsed.payload.requestRef,
-    to: config.to,
+    to: recipient,
   });
 
   try {

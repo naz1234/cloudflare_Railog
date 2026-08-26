@@ -2,7 +2,9 @@
 
 ## Production access
 
-Production and preview deployments default to the [L3 DC shared-address Cloudflare Access setup](docs/cloudflare-access.md). A staged [custom email-PIN system](docs/custom-pin-auth.md) is also available, but Cloudflare Access must remain enabled until its mailer, Turnstile, D1 migration, and dual-gate checklist pass. Neither design commits the private mailbox to this public repository.
+Production uses the [custom approved-staff email-PIN system](docs/custom-pin-auth.md). Each user enters their own approved Flow Metro email address, receives a short-lived code at that address, and is identified by the verified session. The [Cloudflare Access configuration](docs/cloudflare-access.md) is retained as a rollback gate until the per-user mailer, Turnstile, D1 identity/presence migration, and full verification checklist pass.
+
+The approved staff list is private configuration. Store it only in encrypted Cloudflare secrets; never commit staff addresses to this public repository, documentation, test fixtures, or deployment examples.
 
 - 12am rows now use the same steel-blue whole-row theme as 7pm, Fri, Sat and PH.
 - Selecting 12am under West Depot automatically selects 12am under East Depot.

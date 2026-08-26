@@ -5,8 +5,10 @@
   const DEFAULT_EXPIRY_SECONDS = 300;
   const DEFAULT_RESEND_SECONDS = 60;
   const CHALLENGE_STORAGE_KEY = 'l3dcLoginChallenge';
+  const FLOW_METRO_EMAIL_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@flow-metro\.com$/i;
   const GENERIC_REQUEST_ERROR = 'Login is temporarily unavailable. Please try again.';
   const GENERIC_VERIFY_ERROR = 'The code is invalid or expired. Check it and try again.';
+  const INVALID_EMAIL_ERROR = 'Enter your approved @flow-metro.com work email.';
 
   const requestStage = document.getElementById('request-stage');
   const verifyStage = document.getElementById('verify-stage');
@@ -21,6 +23,7 @@
   const expiryTimer = document.getElementById('expiry-timer');
   const requestReference = document.getElementById('request-reference');
   const message = document.getElementById('auth-message');
+  const emailInput = document.getElementById('login-email');
   const turnstileShell = document.getElementById('turnstile-shell');
   const turnstileStatus = document.getElementById('turnstile-status');
   const pinInputs = Array.from(document.querySelectorAll('#pin-inputs input'));
@@ -32,6 +35,8 @@
   let turnstileWidgetId = null;
   let turnstileToken = '';
   let activeChallengeId = '';
+  let activeEmail = '';
+  let activeEmailHint = '';
 
   function safeReturnPath() {
     const candidate = new URL(window.location.href).searchParams.get('returnTo');
@@ -45,37 +50,76 @@
     }
   }
 
-  function saveChallenge(data, expiresInSeconds, resendAfterSeconds) {
+  function normalizeFlowEmail(value) {
+    const email = String(value || '').trim().toLowerCase();
+    return FLOW_METRO_EMAIL_PATTERN.test(email) ? email : '';
+  }
+
+  function maskFlowEmail(value) {
+    const email = normalizeFlowEmail(value);
+    if (!email) return 'your***@flow-metro.com';
+    const [local] = email.split('@');
+    const visibleLength = Math.min(4, Math.max(1, local.length - 1));
+    return `${local.slice(0, visibleLength)}***@flow-metro.com`;
+  }
+
+  function safeEmailHint(value, email) {
+    const hint = String(value || '').trim();
+    return hint && hint.length <= 100 ? hint : maskFlowEmail(email);
+  }
+
+  function setSelectedEmailHint(value, email = activeEmail) {
+    activeEmailHint = safeEmailHint(value, email);
+    document.querySelectorAll('[data-selected-email]').forEach((element) => {
+      element.textContent = activeEmailHint;
+    });
+  }
+
+  function saveChallenge(data, email, expiresInSeconds, resendAfterSeconds) {
     const challengeId = String(data.challengeId || '');
     const reference = String(data.requestRef || '').replace(/[^a-z0-9-]/gi, '').slice(0, 16);
-    if (!challengeId || !reference) throw new Error('invalid_challenge');
+    const normalizedEmail = normalizeFlowEmail(email);
+    if (!challengeId || !reference || !normalizedEmail) throw new Error('invalid_challenge');
+    const emailHint = safeEmailHint(data.emailHint, normalizedEmail);
 
     const challenge = {
       challengeId,
+      email: normalizedEmail,
+      emailHint,
       requestRef: reference,
       expiresAt: Date.now() + (Number(expiresInSeconds) || DEFAULT_EXPIRY_SECONDS) * 1000,
       resendAt: Date.now() + (Number(resendAfterSeconds) || DEFAULT_RESEND_SECONDS) * 1000,
     };
     activeChallengeId = challengeId;
+    activeEmail = normalizedEmail;
+    setSelectedEmailHint(emailHint, normalizedEmail);
     requestReference.textContent = reference.toUpperCase();
     try { window.sessionStorage.setItem(CHALLENGE_STORAGE_KEY, JSON.stringify(challenge)); } catch { /* Keep the in-memory copy. */ }
     return challenge;
   }
 
-  function clearChallenge() {
+  function clearChallenge({ clearEmail = false } = {}) {
     activeChallengeId = '';
     requestReference.textContent = '------';
+    if (clearEmail) {
+      activeEmail = '';
+      setSelectedEmailHint('', '');
+    }
     try { window.sessionStorage.removeItem(CHALLENGE_STORAGE_KEY); } catch { /* No persistent session token is used. */ }
   }
 
   function restoreChallenge() {
     try {
       const challenge = JSON.parse(window.sessionStorage.getItem(CHALLENGE_STORAGE_KEY) || 'null');
-      if (!challenge?.challengeId || !challenge?.requestRef || Number(challenge.expiresAt) <= Date.now()) {
-        clearChallenge();
+      const email = normalizeFlowEmail(challenge?.email);
+      if (!challenge?.challengeId || !challenge?.requestRef || !email || Number(challenge.expiresAt) <= Date.now()) {
+        clearChallenge({ clearEmail: true });
         return false;
       }
       activeChallengeId = String(challenge.challengeId);
+      activeEmail = email;
+      emailInput.value = email;
+      setSelectedEmailHint(challenge.emailHint, email);
       requestReference.textContent = String(challenge.requestRef).toUpperCase();
       showVerifyStage();
       expiryDeadline = Number(challenge.expiresAt);
@@ -85,7 +129,7 @@
       timerId = window.setInterval(updateTimers, 500);
       return true;
     } catch {
-      clearChallenge();
+      clearChallenge({ clearEmail: true });
       return false;
     }
   }
@@ -142,14 +186,6 @@
     button.setAttribute('aria-busy', String(busy));
   }
 
-  function setMaskedEmail(maskedEmail) {
-    const safeValue = String(maskedEmail || '').trim();
-    if (!safeValue || safeValue.length > 100) return;
-    document.querySelectorAll('[data-masked-email]').forEach((element) => {
-      element.textContent = safeValue;
-    });
-  }
-
   function setTurnstileStatus(text, state = '') {
     turnstileStatus.textContent = text;
     turnstileShell.classList.toggle('is-ready', state === 'ready');
@@ -158,11 +194,12 @@
 
   function updateRequestButton() {
     const requestWaitRemaining = remainingSeconds(resendDeadline);
-    requestButton.disabled = isBusy || !turnstileToken || requestWaitRemaining > 0;
+    const hasValidEmail = Boolean(normalizeFlowEmail(emailInput.value));
+    requestButton.disabled = isBusy || !turnstileToken || !hasValidEmail || requestWaitRemaining > 0;
     if (!isBusy) {
       requestButton.querySelector('span').textContent = requestWaitRemaining > 0
         ? `Try again in ${formatTime(requestWaitRemaining)}`
-        : (turnstileToken ? 'Send Login Code' : 'Checking Secure Access');
+        : (turnstileToken && hasValidEmail ? 'Send Login Code' : 'Complete Email and Security Check');
     }
   }
 
@@ -198,7 +235,6 @@
         waitForTurnstile(),
       ]);
       if (!response.ok || !data.siteKey) throw new Error('auth_config_unavailable');
-      setMaskedEmail(data.emailHint);
       turnstileWidgetId = turnstile.render('#turnstile-widget', {
         sitekey: data.siteKey,
         theme: 'dark',
@@ -290,6 +326,7 @@
   }
 
   function showRequestStage() {
+    const previousEmail = activeEmail || normalizeFlowEmail(emailInput.value);
     verifyStage.hidden = true;
     requestStage.hidden = false;
     verifyIndicator.classList.remove('is-current');
@@ -301,15 +338,25 @@
     window.clearInterval(timerId);
     expiryDeadline = 0;
     resendDeadline = 0;
-    clearChallenge();
+    clearChallenge({ clearEmail: true });
+    if (previousEmail) emailInput.value = previousEmail;
     clearPin();
     showMessage('');
     resetTurnstile();
-    if (!requestButton.disabled) requestButton.focus();
+    emailInput.focus();
   }
 
   async function requestCode({ isResend = false } = {}) {
     if (isBusy || !turnstileToken) return;
+    const email = isResend ? activeEmail : normalizeFlowEmail(emailInput.value);
+    if (!email) {
+      emailInput.setAttribute('aria-invalid', 'true');
+      showMessage(INVALID_EMAIL_ERROR);
+      if (!isResend) emailInput.focus();
+      updateRequestButton();
+      return;
+    }
+    activeEmail = email;
     const requestTurnstileToken = turnstileToken;
     isBusy = true;
     clearTurnstileToken('Security check submitted. Preparing a fresh check…');
@@ -321,7 +368,7 @@
     try {
       const { response, data } = await api('/api/auth/request-code', {
         method: 'POST',
-        body: JSON.stringify({ turnstileToken: requestTurnstileToken }),
+        body: JSON.stringify({ email, turnstileToken: requestTurnstileToken }),
       });
       if (response.status === 429) {
         resendDeadline = Math.max(resendDeadline, Date.now() + retryAfterSeconds(response, data) * 1000);
@@ -333,7 +380,7 @@
       }
       if (!response.ok) throw new Error('request_failed');
 
-      const challenge = saveChallenge(data, data.expiresInSeconds, data.resendAfterSeconds);
+      const challenge = saveChallenge(data, email, data.expiresInSeconds, data.resendAfterSeconds);
 
       if (!isResend) showVerifyStage();
       else {
@@ -344,7 +391,7 @@
         Math.max(1, Math.ceil((challenge.expiresAt - Date.now()) / 1000)),
         Math.max(1, Math.ceil((challenge.resendAt - Date.now()) / 1000)),
       );
-      showMessage(isResend ? 'A new code was requested. Check the approved mailbox.' : '', 'success');
+      showMessage(isResend ? `A new code was requested for ${challenge.emailHint}.` : '', 'success');
     } catch {
       showMessage(GENERIC_REQUEST_ERROR);
     } finally {
@@ -410,6 +457,18 @@
     });
   });
 
+  emailInput.addEventListener('input', () => {
+    emailInput.removeAttribute('aria-invalid');
+    if (message.textContent === INVALID_EMAIL_ERROR) showMessage('');
+    updateRequestButton();
+  });
+
+  emailInput.addEventListener('blur', () => {
+    if (emailInput.value && !normalizeFlowEmail(emailInput.value)) {
+      emailInput.setAttribute('aria-invalid', 'true');
+    }
+  });
+
   requestForm.addEventListener('submit', (event) => {
     event.preventDefault();
     requestCode();
@@ -434,7 +493,7 @@
         body: JSON.stringify({ challengeId: activeChallengeId, code }),
       });
       if (!response.ok || data.authenticated !== true) throw new Error('invalid_code');
-      clearChallenge();
+      clearChallenge({ clearEmail: true });
       showMessage('Access confirmed. Opening the West Depot workspace…', 'success');
       window.setTimeout(() => window.location.replace(safeReturnPath()), 350);
     } catch {

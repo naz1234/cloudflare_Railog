@@ -58,11 +58,19 @@ test('accurately documents the narrow Gmail permission and data handling', async
 
   assert.match(home, /gmail\.send only/);
   assert.match(home, /No reading or browsing/);
-  assert.match(home, /One fixed recipient/);
+  assert.match(home, /Approved staff allowlist/);
+  assert.match(home, /bind the resulting session to the approved identity/i);
   assert.match(privacy, /https:\/\/www\.googleapis\.com\/auth\/gmail\.send/);
   assert.match(privacy, /Limited Use requirements/);
   assert.match(privacy, /does not store raw one-time codes/i);
+  assert.match(privacy, /HMAC-derived identity keys/i);
+  assert.match(privacy, /approximate online status/i);
   assert.match(terms, /must not share, forward, publish, reuse/i);
+  assert.match(terms, /Enter only your own approved work address/i);
+
+  for (const html of [home, privacy, terms]) {
+    assert.doesNotMatch(html, /shared mailbox|fixed (?:authorized )?(?:mailbox|recipient)/i);
+  }
 });
 
 test('ships restrictive static security headers', async () => {

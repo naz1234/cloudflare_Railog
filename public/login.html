@@ -84,17 +84,31 @@
           <section class="auth-stage" id="request-stage" aria-labelledby="request-heading">
             <div class="stage-label"><span>CURRENT</span><i></i></div>
             <h3 id="request-heading">Request login code</h3>
-            <p class="stage-description">A one-time code will be sent to the approved West Depot mailbox.</p>
-
-            <div class="mailbox-card" id="approved-mailbox" aria-label="Approved West Depot mailbox">
-              <span class="mailbox-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M3 6.5h18v11H3zM4 7l8 6 8-6" /></svg>
-              </span>
-              <span><small>APPROVED MAILBOX</small><strong data-masked-email>l3.d***@flow-metro.com</strong></span>
-              <span class="mailbox-check" aria-hidden="true">✓</span>
-            </div>
+            <p class="stage-description">Enter your individual Flow Metro email. A one-time code will be sent only to an approved West Depot account.</p>
 
             <form id="request-form" novalidate>
+              <label class="email-field" for="login-email">
+                <span class="mailbox-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M3 6.5h18v11H3zM4 7l8 6 8-6" /></svg>
+                </span>
+                <span class="email-control">
+                  <small>FLOW METRO EMAIL</small>
+                  <input
+                    id="login-email"
+                    name="email"
+                    type="email"
+                    inputmode="email"
+                    autocomplete="username"
+                    autocapitalize="none"
+                    spellcheck="false"
+                    placeholder="firstname.lastname@flow-metro.com"
+                    aria-describedby="email-help"
+                    required
+                  />
+                </span>
+              </label>
+              <p class="email-help" id="email-help">Use your approved <strong>@flow-metro.com</strong> work email.</p>
+
               <button class="primary-button" id="request-button" type="submit" disabled>
                 <span>Checking Secure Access</span>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg>
@@ -103,14 +117,14 @@
 
             <p class="privacy-note">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-2.8 8-7 10-4.2-2-7-5.5-7-10V6l7-3z" /></svg>
-              The mailbox address cannot be changed on this screen.
+              Codes are sent only to approved Flow Metro accounts.
             </p>
           </section>
 
           <section class="auth-stage" id="verify-stage" aria-labelledby="verify-heading" hidden>
             <div class="stage-label"><span>CURRENT</span><i></i></div>
             <h3 id="verify-heading">Enter verification code</h3>
-            <p class="stage-description">Enter the six-digit code sent to <strong data-masked-email>l3.d***@flow-metro.com</strong>.</p>
+            <p class="stage-description">Enter the six-digit code sent to <strong data-selected-email>your***@flow-metro.com</strong>.</p>
             <div class="request-reference">REQUEST REF <strong id="request-reference">------</strong></div>
 
             <form id="verify-form" novalidate>

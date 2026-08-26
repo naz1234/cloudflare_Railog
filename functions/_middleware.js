@@ -255,6 +255,9 @@ export function createAuthMiddleware({
     context.data.authUser = {
       email: result.email,
       expiresAt: result.expiresAt,
+      ...(result.memberHash ? { memberHash: result.memberHash } : {}),
+      ...(result.name ? { name: result.name } : {}),
+      ...(result.tokenHash ? { tokenHash: result.tokenHash } : {}),
     };
 
     return context.next();

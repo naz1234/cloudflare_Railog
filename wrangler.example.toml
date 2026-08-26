@@ -8,11 +8,15 @@ CF_ACCESS_TEAM_DOMAIN = "your-team.cloudflareaccess.com"
 CF_ACCESS_AUD = "PUT_ACCESS_APPLICATION_AUD_TAGS_HERE_COMMA_SEPARATED"
 TURNSTILE_SITE_KEY = "PUT_ENVIRONMENT_TURNSTILE_SITE_KEY_HERE"
 
-# Store OCC_ALLOWED_EMAILS as an encrypted Pages secret for both Production
-# and Preview. Never place the private L3 DC address in this file or in Git.
+# Store OCC_ALLOWED_EMAILS as an encrypted Pages secret for the retained
+# Cloudflare Access rollback mode. Store AUTH_ALLOWED_EMAILS as a separate
+# encrypted Pages secret for custom PIN mode. Use one approved staff address
+# per line for both secrets, and never place real addresses in this file or Git.
 
-# Custom PIN mode also requires encrypted AUTH_LOGIN_EMAIL,
-# AUTH_HMAC_SECRET, AUTH_EMAIL_SERVICE_TOKEN, and TURNSTILE_SECRET_KEY secrets.
+# Custom PIN mode also requires encrypted AUTH_HMAC_SECRET,
+# AUTH_EMAIL_SERVICE_TOKEN, and TURNSTILE_SECRET_KEY secrets.
+# AUTH_LOGIN_EMAIL is a legacy shared-recipient secret: keep it only during a
+# backward-compatible rollout, then delete it from Pages and the mailer Worker.
 # Gmail OAuth credentials belong only on the private AUTH_EMAIL_SERVICE Worker,
 # never on the Pages project or in this file.
 # Keep AUTH_MODE=cloudflare_access until docs/custom-pin-auth.md is complete.
