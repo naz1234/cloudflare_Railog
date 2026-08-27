@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { LogOut } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ChevronDown, LogOut } from 'lucide-react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -59,8 +59,10 @@ function normalizedPresenceUsers(users, currentUser) {
   });
 }
 
-const SessionPresenceControl = () => {
+export const SessionPresenceControl = () => {
   const { logout, user } = useAuth();
+  const menuRef = useRef(null);
+  const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState('');
   const [presenceSupported, setPresenceSupported] = useState(true);
@@ -132,6 +134,24 @@ const SessionPresenceControl = () => {
     };
   }, [user]);
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!menuRef.current?.contains(event.target)) setIsOpen(false);
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
   const handleLogout = async () => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
@@ -145,64 +165,88 @@ const SessionPresenceControl = () => {
   };
 
   return (
-    <aside
-      aria-label="Signed-in user and online staff"
-      className="fixed bottom-4 right-4 z-[190] w-[min(270px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[#2a5d79] bg-[#061b2c]/95 text-[#dff5ff] shadow-[0_16px_46px_rgba(0,0,0,0.42)] backdrop-blur"
-    >
-      <div className="border-b border-[#244a62] px-3 py-2.5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.75)]" aria-hidden="true" />
-            <span className="text-[9px] font-black uppercase tracking-[0.12em] text-cyan-200">
-              {presenceSupported ? 'Online now' : 'Signed in'}
-            </span>
-          </div>
-          {presenceSupported && (
-            <span className="rounded-full border border-emerald-400/35 bg-emerald-950/60 px-2 py-0.5 text-[9px] font-bold text-emerald-200" aria-label={`${onlineUsers.length} staff online`}>
-              {onlineUsers.length}
-            </span>
-          )}
-        </div>
-        <p className="mt-2 truncate text-[11px] font-extrabold text-white" title={user?.name || ''}>{user?.name || 'West Depot Staff'}</p>
-        {user?.email && <p className="mt-0.5 truncate font-mono text-[8px] text-[#78a2ba]" title={user.email}>{user.email}</p>}
-      </div>
-
-      {presenceSupported && (
-        <ul className="max-h-28 space-y-1 overflow-y-auto px-3 py-2" aria-label="Staff currently online" aria-live="polite">
-          {onlineUsers.map((onlineUser) => {
-            const isCurrentUser = onlineUser.name === user?.name;
-            return (
-              <li key={onlineUser.name} className="flex min-w-0 items-center gap-2 text-[10px] text-[#c8e3f1]">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
-                <span className="min-w-0 flex-1 truncate" title={onlineUser.name}>{onlineUser.name}</span>
-                {isCurrentUser && <span className="text-[7px] font-black uppercase tracking-[0.1em] text-cyan-300">You</span>}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-
-      {presenceSupported && presenceUnavailable && (
-        <p className="border-t border-amber-400/20 bg-amber-950/20 px-3 py-1.5 text-[8px] text-amber-100">
-          Online list will refresh automatically.
-        </p>
-      )}
-      {logoutError && (
-        <p role="alert" className="border-t border-rose-400/50 bg-[#27101a] px-3 py-2 text-[9px] font-semibold text-rose-100">
-          {logoutError}
-        </p>
-      )}
+    <div ref={menuRef} className="relative">
       <button
         type="button"
-        onClick={handleLogout}
-        disabled={isLoggingOut}
-        aria-label="Sign out of L3 DC Template"
-        className="flex h-9 w-full items-center justify-center gap-2 border-t border-rose-400/30 bg-[#25111a]/70 px-3 text-[9px] font-black uppercase tracking-[0.1em] text-rose-100 transition hover:bg-[#3a1522] focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-rose-300 disabled:cursor-wait disabled:opacity-70"
+        onClick={() => setIsOpen((current) => !current)}
+        aria-controls="session-presence-menu"
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        className="flex h-8 items-center gap-1.5 rounded-lg border border-[#2b4f6b] bg-[#071828] px-2.5 text-[10px] font-semibold text-[#b9e7d4] transition hover:border-emerald-400/70 hover:bg-[#0f2d4a] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 active:scale-95"
       >
-        <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
-        {isLoggingOut ? 'Signing out…' : 'Sign out'}
+        <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.75)]" aria-hidden="true" />
+        <span>You're online</span>
+        {presenceSupported && (
+          <span className="text-emerald-300" aria-label={`${onlineUsers.length} staff online`}>
+            · {onlineUsers.length} online
+          </span>
+        )}
+        <ChevronDown className={`h-3 w-3 text-[#75a8c5] transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
       </button>
-    </aside>
+
+      {isOpen && (
+        <aside
+          id="session-presence-menu"
+          aria-label="Signed-in user and online staff"
+          className="absolute left-0 top-[calc(100%+0.5rem)] z-[260] w-[min(270px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[#2a5d79] bg-[#061b2c]/95 text-[#dff5ff] shadow-[0_16px_46px_rgba(0,0,0,0.42)] backdrop-blur"
+        >
+          <div className="flex items-center justify-between gap-3 border-b border-[#244a62] px-3 py-2.5">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.75)]" aria-hidden="true" />
+              <span className="text-[9px] font-black uppercase tracking-[0.12em] text-cyan-200">
+                {presenceSupported ? 'Online now' : 'Signed in'}
+              </span>
+            </div>
+            {presenceSupported && (
+              <span className="rounded-full border border-emerald-400/35 bg-emerald-950/60 px-2 py-0.5 text-[9px] font-bold text-emerald-200">
+                {onlineUsers.length}
+              </span>
+            )}
+          </div>
+
+          {presenceSupported ? (
+            <ul className="max-h-36 space-y-1 overflow-y-auto px-3 py-2" aria-label="Staff currently online" aria-live="polite">
+              {onlineUsers.map((onlineUser) => {
+                const isCurrentUser = onlineUser.name === user?.name;
+                return (
+                  <li key={onlineUser.name} className="flex min-w-0 items-center gap-2 text-[10px] text-[#c8e3f1]">
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
+                    <span className="min-w-0 flex-1 truncate" title={onlineUser.name}>{onlineUser.name}</span>
+                    {isCurrentUser && <span className="text-[7px] font-black uppercase tracking-[0.1em] text-cyan-300">You</span>}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div className="px-3 py-2">
+              <p className="truncate text-[10px] font-bold text-white" title={user?.name || ''}>{user?.name || 'West Depot Staff'}</p>
+              {user?.email && <p className="mt-0.5 truncate font-mono text-[8px] text-[#78a2ba]" title={user.email}>{user.email}</p>}
+            </div>
+          )}
+
+          {presenceSupported && presenceUnavailable && (
+            <p className="border-t border-amber-400/20 bg-amber-950/20 px-3 py-1.5 text-[8px] text-amber-100">
+              Online list will refresh automatically.
+            </p>
+          )}
+          {logoutError && (
+            <p role="alert" className="border-t border-rose-400/50 bg-[#27101a] px-3 py-2 text-[9px] font-semibold text-rose-100">
+              {logoutError}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            aria-label="Sign out of L3 DC Template"
+            className="flex h-9 w-full items-center justify-center gap-2 border-t border-rose-400/30 bg-[#25111a]/70 px-3 text-[9px] font-black uppercase tracking-[0.1em] text-rose-100 transition hover:bg-[#3a1522] focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-rose-300 disabled:cursor-wait disabled:opacity-70"
+          >
+            <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+            {isLoggingOut ? 'Signing out…' : 'Sign out'}
+          </button>
+        </aside>
+      )}
+    </div>
   );
 };
 
@@ -223,10 +267,5 @@ export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthe
 
   if (!isAuthenticated) return unauthenticatedElement || <LoginRedirect />;
 
-  return (
-    <>
-      <Outlet />
-      <SessionPresenceControl />
-    </>
-  );
+  return <Outlet />;
 }
