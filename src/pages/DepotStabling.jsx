@@ -10408,20 +10408,6 @@ function normalizeTrainMovementExcelLogEntry(entry = {}) {
   };
 }
 
-function trainMovementRowMatchesSearch(row = {}, searchKey = "") {
-  if (!searchKey) return false;
-  return [row.trainId, row.replacedBy]
-    .some((value) => normalizeMovementTrain(value) === searchKey);
-}
-
-function trainMovementLogEntryMatchesSearch(entry = {}, searchKey = "") {
-  if (!searchKey) return false;
-  if (normalizeMovementTrain(entry.train) === searchKey) return true;
-
-  const trainTokens = String(entry.text || "").match(/\bT0*\d{1,2}\b/gi) || [];
-  return trainTokens.some((value) => normalizeMovementTrain(value) === searchKey);
-}
-
 function loadTrainMovementExcelLogRows() {
   try {
     const raw = localStorage.getItem(TRAIN_MOVEMENT_EXCEL_LOG_KEY);
@@ -10620,7 +10606,7 @@ function resolveTrainMovementSwappingAutoFill({
   });
 }
 
-function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTimetable = null }) {
+function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTimetable = null, stabledTrainLocations = {} }) {
   const [rows, setRows] = useState(() => loadTrainMovementExcelRows());
   const [logRows, setLogRows] = useState(() => loadTrainMovementExcelLogRows());
   const [trainSearch, setTrainSearch] = useState("");
@@ -11151,31 +11137,10 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
   const eastMovementLogRows = sortedLogRows.filter((entry) => entry.depot === "east");
   const westLogCount = westMovementLogRows.length;
   const eastLogCount = eastMovementLogRows.length;
-  const trainSearchKey = trainSearch.trim() ? normalizeMovementTrain(trainSearch) : "";
-  const sheetSearchResults = trainSearchKey
-    ? rows.flatMap((row, rowIndex) => {
-        if (!trainMovementRowMatchesSearch(row, trainSearchKey)) return [];
-        const isReplacement = normalizeMovementTrain(row.replacedBy) === trainSearchKey
-          && normalizeMovementTrain(row.trainId) !== trainSearchKey;
-        return [{
-          key: `sheet-${row.id}`,
-          depotLabel: getMovementDepotLabel(row.depot),
-          operation: formatMovementExcelOperation(row.operation),
-          detail: isReplacement ? `Replacement in row ${rowIndex + 1}` : `Sheet row ${rowIndex + 1}`,
-        }];
-      })
+  const trainSearchKey = normalizeTrainId(trainSearch);
+  const trainSearchResults = trainSearchKey && Array.isArray(stabledTrainLocations[trainSearchKey])
+    ? stabledTrainLocations[trainSearchKey]
     : [];
-  const savedLogSearchResults = trainSearchKey
-    ? sortedLogRows
-        .filter((entry) => trainMovementLogEntryMatchesSearch(entry, trainSearchKey))
-        .map((entry) => ({
-          key: `log-${entry.id}`,
-          depotLabel: getMovementDepotLabel(entry.depot),
-          operation: formatMovementExcelOperation(entry.operation),
-          detail: entry.time ? `${entry.time} hrs` : "Saved log",
-        }))
-    : [];
-  const trainSearchResults = [...sheetSearchResults, ...savedLogSearchResults];
   const trainSearchFound = trainSearchResults.length > 0;
   const trainSearchNotFound = Boolean(trainSearchKey && !trainSearchFound);
 
@@ -11256,9 +11221,9 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
             type="text"
             value={trainSearch}
             onChange={(event) => setTrainSearch(event.target.value)}
-            placeholder="Search train ID in swapping, insertion and removal logs…"
-            aria-label="Search train ID in swapping, insertion and removal logs"
-            className="theme-stabling-search-input theme-movement-train-search-input flex-1 bg-transparent text-sm font-semibold outline-none placeholder:font-normal"
+            placeholder="Search train ID in West and East Depot stabling…"
+            aria-label="Search train ID in West and East Depot stabling"
+            className="theme-stabling-search-input theme-movement-train-search-input min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none placeholder:font-normal"
             style={{
               color: trainSearchFound ? "#fde68a" : trainSearchNotFound ? "#fca5a5" : trainSearch ? "#e2eaf4" : undefined,
               caretColor: "#4f8ef7",
@@ -11271,7 +11236,7 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
               onClick={() => setTrainSearch("")}
               className="theme-stabling-search-clear theme-movement-train-search-clear flex h-4 w-4 items-center justify-center rounded-full transition-all hover:bg-[#1a3a56]"
               style={{ color: "#4a8ab5" }}
-              aria-label="Clear movement log train search"
+              aria-label="Clear stabling train search"
               title="Clear search"
             >
               <X className="h-[9px] w-[9px]" strokeWidth={3} />
@@ -11281,21 +11246,17 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
 
         {trainSearchKey && (
           <div className="mt-2 flex min-h-[22px] flex-wrap items-center gap-2" role="status" aria-live="polite">
-            {trainSearchFound ? trainSearchResults.map((result) => (
-              <div key={result.key} className="theme-stabling-search-result theme-movement-train-search-result is-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "linear-gradient(135deg,#1a2e10,#0f1f08)", border: "1px solid #4d7c0f" }}>
+            {trainSearchFound ? trainSearchResults.map((location) => (
+              <div key={location} className="theme-stabling-search-result theme-movement-train-search-result is-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "linear-gradient(135deg,#1a2e10,#0f1f08)", border: "1px solid #4d7c0f" }}>
                 <TrainFront className="h-[10px] w-[10px]" style={{ color: "#a3e635" }} strokeWidth={2.5} aria-hidden="true" />
-                <span className="text-[11px] font-bold tracking-wide" style={{ color: "#a3e635" }}>{trainSearchKey}</span>
+                <span className="text-[11px] font-bold tracking-wide" style={{ color: "#a3e635" }}>{padTrainId(trainSearchKey)}</span>
                 <span className="text-[9px]" style={{ color: "#4d7c0f" }}>•</span>
-                <span className="text-[11px] font-bold" style={{ color: "#d9f99d" }}>{result.depotLabel}</span>
-                <span className="text-[9px]" style={{ color: "#4d7c0f" }}>•</span>
-                <span className="text-[11px] font-bold" style={{ color: "#bef264" }}>{result.operation}</span>
-                <span className="text-[9px]" style={{ color: "#4d7c0f" }}>•</span>
-                <span className="text-[10px] font-bold" style={{ color: "#bef264" }}>{result.detail}</span>
+                <span className="text-[11px] font-bold" style={{ color: "#d9f99d" }}>{location}</span>
               </div>
             )) : (
               <div className="theme-stabling-search-result theme-movement-train-search-result is-not-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "rgba(127,29,29,0.35)", border: "1px solid #7f1d1d" }}>
                 <X className="h-[10px] w-[10px]" style={{ color: "#f87171" }} strokeWidth={2.5} aria-hidden="true" />
-                <span className="text-[11px] font-bold" style={{ color: "#f87171" }}>{trainSearchKey} not found in the movement sheet or either depot log</span>
+                <span className="text-[11px] font-bold" style={{ color: "#f87171" }}>{padTrainId(trainSearchKey)} not found in West or East Depot stabling</span>
               </div>
             )}
           </div>
@@ -11337,10 +11298,9 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
               const reasonEditKey = getSwapCellKey(row.id, "reason");
               const isTidEditing = editingSwapCell === tidEditKey;
               const isReasonEditing = editingSwapCell === reasonEditKey;
-              const isSearchMatch = trainMovementRowMatchesSearch(row, trainSearchKey);
 
               return (
-                <tr key={row.id} className={`theme-movement-sheet-row ${isSearchMatch ? "is-search-match" : ""} group text-[12px] text-[#eaf4ff]`}>
+                <tr key={row.id} className="group text-[12px] text-[#eaf4ff]">
                   <td className="theme-movement-delete-cell border border-[#173653] bg-[#082136] px-1 text-center" style={{ boxShadow: `inset 3px 0 0 ${operationAccent}` }}>
                     <button type="button" onClick={() => removeExcelInputRow(row.id)} className="theme-movement-delete-button inline-flex h-6 w-6 items-center justify-center rounded-md border border-red-500/30 bg-red-950/20 text-red-200 transition-all hover:border-red-400 hover:text-white" title="Remove row">
                       <Trash2 size={11} />
@@ -11546,6 +11506,7 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
             },
           ].map((log) => {
             const hasRows = log.rows.length > 0;
+            const logText = log.rows.map((entry) => entry.text).filter(Boolean).join("\n");
 
             return (
               <div key={log.key} data-depot={log.key} className="theme-movement-log-card overflow-hidden rounded-lg border border-[#1a3a56] bg-[#061827]">
@@ -11581,20 +11542,9 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
 
                 <div className="theme-movement-log-card-body min-h-[76px] rounded-b-lg border-t border-[#1a3a56] bg-[#061321] px-3 py-2">
                   {hasRows ? (
-                    <div className="space-y-1" role="list">
-                      {log.rows.map((entry) => {
-                        const isSearchMatch = trainMovementLogEntryMatchesSearch(entry, trainSearchKey);
-                        return (
-                          <div
-                            key={entry.id}
-                            role="listitem"
-                            className={`theme-movement-log-line ${isSearchMatch ? "is-search-match" : ""} whitespace-pre-wrap break-words rounded-md px-1.5 py-1 text-[11px] font-normal leading-[1.4] text-[#d8e7f7]`}
-                          >
-                            {entry.text}
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <pre className="whitespace-pre-wrap break-words text-[11px] font-normal leading-[1.4] text-[#d8e7f7]">
+                      {logText}
+                    </pre>
                   ) : (
                     <div className="flex min-h-[56px] flex-col items-center justify-center gap-1.5 text-[#315d82]">
                       <FileText size={16} strokeWidth={2.2} />
@@ -21668,6 +21618,7 @@ export default function DepotStablingPage() {
         requests={requests}
         trainRemState={trainRemCheckState}
         activeTimetable={activeTimetable}
+        stabledTrainLocations={getMainStablingLocations(westData, eastData)}
       />
 
       <RemovalLogOutputFromTrainRem
