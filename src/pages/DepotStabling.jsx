@@ -10606,7 +10606,7 @@ function resolveTrainMovementSwappingAutoFill({
   });
 }
 
-function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTimetable = null, stabledTrainLocations = {} }) {
+function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTimetable = null, activeTimetableType = "weekday", stabledTrainLocations = {} }) {
   const [rows, setRows] = useState(() => loadTrainMovementExcelRows());
   const [logRows, setLogRows] = useState(() => loadTrainMovementExcelLogRows());
   const [trainSearch, setTrainSearch] = useState("");
@@ -11207,60 +11207,66 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
         </div>
       </div>
 
-      <div className="px-3 pt-3">
-        <div
-          className={`theme-stabling-search theme-movement-train-search flex items-center gap-2 rounded-xl px-3 py-2 transition-all ${trainSearchFound ? "is-found" : trainSearchNotFound ? "is-not-found" : trainSearch ? "is-active" : "is-empty"}`}
-          style={{
-            background: "#071828",
-            border: trainSearchFound ? "1.5px solid #facc15" : trainSearchNotFound ? "1.5px solid #ef4444" : trainSearch ? "1.5px solid #4f8ef7" : "1.5px dashed #1b3a55",
-            boxShadow: trainSearchFound ? "0 0 0 2px rgba(250,204,21,0.10)" : trainSearchNotFound ? "0 0 0 2px rgba(239,68,68,0.10)" : trainSearch ? "0 0 0 2px rgba(79,142,247,0.12)" : undefined,
-          }}
-        >
-          <Search className="theme-stabling-search-icon h-[13px] w-[13px] shrink-0" style={{ color: trainSearchFound ? "#facc15" : trainSearchNotFound ? "#ef4444" : trainSearch ? "#4f8ef7" : "#2a4a64" }} aria-hidden="true" />
-          <input
-            type="text"
-            value={trainSearch}
-            onChange={(event) => setTrainSearch(event.target.value)}
-            placeholder="Search train ID in West and East Depot stabling…"
-            aria-label="Search train ID in West and East Depot stabling"
-            className="theme-stabling-search-input theme-movement-train-search-input min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none placeholder:font-normal"
+      <div className="grid items-start gap-3 px-3 pt-3 xl:grid-cols-2">
+        <div className="min-w-0">
+          <div
+            className={`theme-stabling-search theme-movement-train-search flex items-center gap-2 rounded-xl px-3 py-2 transition-all ${trainSearchFound ? "is-found" : trainSearchNotFound ? "is-not-found" : trainSearch ? "is-active" : "is-empty"}`}
             style={{
-              color: trainSearchFound ? "#fde68a" : trainSearchNotFound ? "#fca5a5" : trainSearch ? "#e2eaf4" : undefined,
-              caretColor: "#4f8ef7",
-              letterSpacing: trainSearch ? "0.06em" : undefined,
+              background: "#071828",
+              border: trainSearchFound ? "1.5px solid #facc15" : trainSearchNotFound ? "1.5px solid #ef4444" : trainSearch ? "1.5px solid #4f8ef7" : "1.5px dashed #1b3a55",
+              boxShadow: trainSearchFound ? "0 0 0 2px rgba(250,204,21,0.10)" : trainSearchNotFound ? "0 0 0 2px rgba(239,68,68,0.10)" : trainSearch ? "0 0 0 2px rgba(79,142,247,0.12)" : undefined,
             }}
-          />
-          {trainSearch && (
-            <button
-              type="button"
-              onClick={() => setTrainSearch("")}
-              className="theme-stabling-search-clear theme-movement-train-search-clear flex h-4 w-4 items-center justify-center rounded-full transition-all hover:bg-[#1a3a56]"
-              style={{ color: "#4a8ab5" }}
-              aria-label="Clear stabling train search"
-              title="Clear search"
-            >
-              <X className="h-[9px] w-[9px]" strokeWidth={3} />
-            </button>
-          )}
-        </div>
-
-        {trainSearchKey && (
-          <div className="mt-2 flex min-h-[22px] flex-wrap items-center gap-2" role="status" aria-live="polite">
-            {trainSearchFound ? trainSearchResults.map((location) => (
-              <div key={location} className="theme-stabling-search-result theme-movement-train-search-result is-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "linear-gradient(135deg,#1a2e10,#0f1f08)", border: "1px solid #4d7c0f" }}>
-                <TrainFront className="h-[10px] w-[10px]" style={{ color: "#a3e635" }} strokeWidth={2.5} aria-hidden="true" />
-                <span className="text-[11px] font-bold tracking-wide" style={{ color: "#a3e635" }}>{padTrainId(trainSearchKey)}</span>
-                <span className="text-[9px]" style={{ color: "#4d7c0f" }}>•</span>
-                <span className="text-[11px] font-bold" style={{ color: "#d9f99d" }}>{location}</span>
-              </div>
-            )) : (
-              <div className="theme-stabling-search-result theme-movement-train-search-result is-not-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "rgba(127,29,29,0.35)", border: "1px solid #7f1d1d" }}>
-                <X className="h-[10px] w-[10px]" style={{ color: "#f87171" }} strokeWidth={2.5} aria-hidden="true" />
-                <span className="text-[11px] font-bold" style={{ color: "#f87171" }}>{padTrainId(trainSearchKey)} not found in West or East Depot stabling</span>
-              </div>
+          >
+            <Search className="theme-stabling-search-icon h-[13px] w-[13px] shrink-0" style={{ color: trainSearchFound ? "#facc15" : trainSearchNotFound ? "#ef4444" : trainSearch ? "#4f8ef7" : "#2a4a64" }} aria-hidden="true" />
+            <input
+              type="text"
+              value={trainSearch}
+              onChange={(event) => setTrainSearch(event.target.value)}
+              placeholder="Search train ID in West and East Depot stabling…"
+              aria-label="Search train ID in West and East Depot stabling"
+              className="theme-stabling-search-input theme-movement-train-search-input min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none placeholder:font-normal"
+              style={{
+                color: trainSearchFound ? "#fde68a" : trainSearchNotFound ? "#fca5a5" : trainSearch ? "#e2eaf4" : undefined,
+                caretColor: "#4f8ef7",
+                letterSpacing: trainSearch ? "0.06em" : undefined,
+              }}
+            />
+            {trainSearch && (
+              <button
+                type="button"
+                onClick={() => setTrainSearch("")}
+                className="theme-stabling-search-clear theme-movement-train-search-clear flex h-4 w-4 items-center justify-center rounded-full transition-all hover:bg-[#1a3a56]"
+                style={{ color: "#4a8ab5" }}
+                aria-label="Clear stabling train search"
+                title="Clear search"
+              >
+                <X className="h-[9px] w-[9px]" strokeWidth={3} />
+              </button>
             )}
           </div>
-        )}
+
+          {trainSearchKey && (
+            <div className="mt-2 flex min-h-[22px] flex-wrap items-center gap-2" role="status" aria-live="polite">
+              {trainSearchFound ? trainSearchResults.map((location) => (
+                <div key={location} className="theme-stabling-search-result theme-movement-train-search-result is-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "linear-gradient(135deg,#1a2e10,#0f1f08)", border: "1px solid #4d7c0f" }}>
+                  <TrainFront className="h-[10px] w-[10px]" style={{ color: "#a3e635" }} strokeWidth={2.5} aria-hidden="true" />
+                  <span className="text-[11px] font-bold tracking-wide" style={{ color: "#a3e635" }}>{padTrainId(trainSearchKey)}</span>
+                  <span className="text-[9px]" style={{ color: "#4d7c0f" }}>•</span>
+                  <span className="text-[11px] font-bold" style={{ color: "#d9f99d" }}>{location}</span>
+                </div>
+              )) : (
+                <div className="theme-stabling-search-result theme-movement-train-search-result is-not-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "rgba(127,29,29,0.35)", border: "1px solid #7f1d1d" }}>
+                  <X className="h-[10px] w-[10px]" style={{ color: "#f87171" }} strokeWidth={2.5} aria-hidden="true" />
+                  <span className="text-[11px] font-bold" style={{ color: "#f87171" }}>{padTrainId(trainSearchKey)} not found in West or East Depot stabling</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <Arrival3A1P2Lookup
+          activeTimetable={activeTimetable}
+          activeTimetableType={activeTimetableType}
+        />
       </div>
 
       <div
@@ -21618,6 +21624,7 @@ export default function DepotStablingPage() {
         requests={requests}
         trainRemState={trainRemCheckState}
         activeTimetable={activeTimetable}
+        activeTimetableType={selectedTimetableType}
         stabledTrainLocations={getMainStablingLocations(westData, eastData)}
       />
 
@@ -24016,8 +24023,17 @@ function RequestedActionStatusPill({ item }) {
   );
 }
 
-function Arrival3A1P2Lookup({ activeTimetable = null, activeTimetableType = "weekday", lookupTime = new Date() }) {
+function Arrival3A1P2Lookup({ activeTimetable = null, activeTimetableType = "weekday" }) {
   const [searchTid, setSearchTid] = useState("");
+  const [lookupTime, setLookupTime] = useState(() => new Date());
+
+  useEffect(() => {
+    const tick = () => setLookupTime(new Date());
+    tick();
+    const interval = setInterval(tick, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   const normalizedTid = normalizeTidValue(searchTid);
   const searched = normalizedTid.length > 0;
   const arrivalTime = searched
@@ -24033,7 +24049,7 @@ function Arrival3A1P2Lookup({ activeTimetable = null, activeTimetableType = "wee
   };
 
   return (
-    <div className="mb-3 w-full">
+    <div className="min-w-0 w-full">
       <div
         className="theme-train-rem-search flex items-center gap-2 rounded-xl px-3 py-2 transition-all"
         style={{
@@ -24074,7 +24090,8 @@ function Arrival3A1P2Lookup({ activeTimetable = null, activeTimetableType = "wee
           value={searchTid}
           onChange={handleSearchChange}
           placeholder="Search TID for Arrival 3A1P2…"
-          className="flex-1 bg-transparent text-sm font-semibold outline-none placeholder:text-[13px] placeholder:font-normal"
+          aria-label="Search TID for Arrival 3A1P2"
+          className="min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none placeholder:text-[13px] placeholder:font-normal"
           style={{
             color: found ? "#fde68a" : notFound ? "#fca5a5" : searchTid ? "#e2eaf4" : undefined,
             caretColor: "#4f8ef7",
@@ -24087,6 +24104,7 @@ function Arrival3A1P2Lookup({ activeTimetable = null, activeTimetableType = "wee
             onClick={() => setSearchTid("")}
             className="flex h-4 w-4 items-center justify-center rounded-full transition-all hover:bg-[#1a3a56]"
             style={{ color: "#4a8ab5" }}
+            aria-label="Clear TID search"
             title="Clear search"
           >
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
@@ -24098,7 +24116,7 @@ function Arrival3A1P2Lookup({ activeTimetable = null, activeTimetableType = "wee
       </div>
 
       {searched && (
-        <div className="mt-2 flex min-h-[22px] flex-wrap items-center gap-2">
+        <div className="mt-2 flex min-h-[22px] flex-wrap items-center gap-2" role="status" aria-live="polite">
           {found ? (
             <div
               className="flex items-center gap-1.5 rounded-lg px-2.5 py-1"
@@ -24378,7 +24396,6 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
 
 function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceMap = {}, westData = {}, eastData = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
   const [downloadingDocxType, setDownloadingDocxType] = useState(null);
-  const [arrivalLookupTime, setArrivalLookupTime] = useState(() => new Date());
   const includeTomorrowRequests = true;
 
   const [manualTidByTrain, setManualTidByTrain] = useState(() => loadRequestedTrainManualTidMap(requests));
@@ -24391,13 +24408,6 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
       setManualTidByTrain(pruned);
     }
   }, [manualTidByTrain, requests]);
-
-  useEffect(() => {
-    const tick = () => setArrivalLookupTime(new Date());
-    tick();
-    const interval = setInterval(tick, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleManualTidChange = useCallback((trainKey, value) => {
     const key = normalizeTrainId(trainKey);
@@ -24495,12 +24505,6 @@ function TrainRequestedNotInRemoval({ requests = [], trainRemState, maintenanceM
           </button>
         </div>
       </div>
-
-      <Arrival3A1P2Lookup
-        activeTimetable={activeTimetable}
-        activeTimetableType={activeTimetableType}
-        lookupTime={arrivalLookupTime}
-      />
 
       <RequestedTrainActionOverviewSummary rows={actionOverviewRows} />
 
