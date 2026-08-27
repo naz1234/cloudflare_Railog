@@ -2,6 +2,11 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { Check } from "lucide-react";
 import ActionTooltip from "./ActionTooltip";
 import { countAssignedInsertionRows, isInsertionTidAssigned } from "../lib/insertionTidUsage";
+import {
+  formatClockTimeWithSeconds,
+  getInsertionSoundTriggerTime,
+  isInsertionSoundDue,
+} from "../lib/insertionSoundTiming";
 
 const WEEKDAY_EAST_ROWS = [
   { tid: 201, remark: "Late Rem", time: "05:24" },
@@ -372,8 +377,6 @@ const DEPOT_SOUND_CONFIG = {
   east: { label: "ED", frequency: 660, color: "#d8b4fe", readyColor: "#f0abfc", glow: "rgba(168, 85, 247, 0.24)" },
   west: { label: "WD", frequency: 880, color: "#67e8f9", readyColor: "#7dd3fc", glow: "rgba(14, 165, 233, 0.24)" },
 };
-const TID_SOUND_LEAD_MINUTES = 1;
-
 function formatClockTime(date = new Date()) {
   const hh = String(date.getHours()).padStart(2, "0");
   const mm = String(date.getMinutes()).padStart(2, "0");
@@ -430,8 +433,10 @@ function buildDueTidList(activeSchedule = {}, currentTime = "", soundSettings = 
   ].forEach(([depotKey, depotLabel, rows]) => {
     if (!soundSettings?.[depotKey]) return;
     (Array.isArray(rows) ? rows : []).forEach((row) => {
-      const triggerTime = addMinutesToTime(row?.time, -TID_SOUND_LEAD_MINUTES);
-      if (triggerTime === currentTime) entries.push({ depot: depotKey, text: `${depotLabel} TID ${row.tid}` });
+      const triggerTime = getInsertionSoundTriggerTime(row?.time);
+      if (isInsertionSoundDue(row?.time, currentTime)) {
+        entries.push({ depot: depotKey, tid: row.tid, triggerTime, text: `${depotLabel} TID ${row.tid}` });
+      }
     });
   });
 
@@ -1604,11 +1609,11 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
   useEffect(() => {
     if (!showHeader || !isAnyTidSoundEnabled(soundSettings) || !activeSchedule) return;
 
-    const currentTime = formatClockTime(now);
+    const currentTime = formatClockTimeWithSeconds(now);
     const dueTidList = buildDueTidList(activeSchedule, currentTime, soundSettings);
     if (!dueTidList.length) return;
 
-    const soundKey = `${getLocalDateKey(now)}|${scheduleKey}|${currentTime}|${dueTidList.map((item) => item.text).join(",")}`;
+    const soundKey = `${getLocalDateKey(now)}|${scheduleKey}|${dueTidList.map((item) => `${item.depot}:${item.tid}:${item.triggerTime}`).join(",")}`;
     if (lastSoundKeyRef.current === soundKey) return;
     lastSoundKeyRef.current = soundKey;
 
