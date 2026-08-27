@@ -8837,6 +8837,50 @@ html[data-app-theme="light"] .theme-movement-log-card-body > div {
   color: #64748b !important;
 }
 
+/* Train search emphasis for the editable movement sheet and saved depot logs. */
+.theme-movement-sheet-table tbody .theme-movement-sheet-row.is-search-match > td {
+  background: rgba(133, 77, 14, 0.28) !important;
+  border-top-color: #facc15 !important;
+  border-bottom-color: #facc15 !important;
+  box-shadow: inset 0 1px 0 rgba(250, 204, 21, 0.52), inset 0 -1px 0 rgba(250, 204, 21, 0.52) !important;
+}
+
+.theme-movement-sheet-table tbody .theme-movement-sheet-row.is-search-match > td:first-child {
+  border-left-color: #facc15 !important;
+  box-shadow: inset 2px 0 0 #facc15, inset 0 1px 0 rgba(250, 204, 21, 0.52), inset 0 -1px 0 rgba(250, 204, 21, 0.52) !important;
+}
+
+.theme-movement-sheet-table tbody .theme-movement-sheet-row.is-search-match > td:last-child {
+  border-right-color: #facc15 !important;
+}
+
+.theme-movement-log-line.is-search-match {
+  color: #fef3c7 !important;
+  background: rgba(133, 77, 14, 0.30) !important;
+  border: 1px solid rgba(250, 204, 21, 0.82);
+  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.10);
+}
+
+html[data-app-theme="light"] .theme-movement-sheet-table tbody .theme-movement-sheet-row.is-search-match > td {
+  color: #713f12 !important;
+  background: #fef9c3 !important;
+  border-top-color: #eab308 !important;
+  border-bottom-color: #eab308 !important;
+}
+
+html[data-app-theme="light"] .theme-movement-log-card-body .theme-movement-log-line {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+html[data-app-theme="light"] .theme-movement-log-card-body .theme-movement-log-line.is-search-match {
+  color: #713f12 !important;
+  -webkit-text-fill-color: #713f12 !important;
+  background: #fef9c3 !important;
+  border-color: #eab308 !important;
+  box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.10) !important;
+}
+
 /* Train Removal Log Output */
 html[data-app-theme="light"] .theme-removal-log-output {
   color: #0f172a !important;
