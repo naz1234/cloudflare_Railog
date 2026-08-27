@@ -4,10 +4,10 @@ import test from 'node:test';
 
 const readSource = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('custom login uses the West Depot identity and requests an individual Flow email', async () => {
+test('custom login uses the L3 DC Template identity and requests an individual Flow email', async () => {
   const html = await readSource('public/login.html');
 
-  assert.match(html, /WEST DEPOT/);
+  assert.match(html, /<h1 id="auth-title">L3 DC<br \\/>TEMPLATE<\\/h1>/);
   assert.doesNotMatch(html, /NORTH YARD/i);
   assert.match(html, /type=["']email["']/i);
   assert.match(html, /name=["']email["']/i);
