@@ -8,6 +8,7 @@ test('custom login uses the L3 DC Template identity and requests an individual F
   const html = await readSource('public/login.html');
 
   assert.match(html, /<h1 id="auth-title">L3 DC<br \/>TEMPLATE<\/h1>/);
+  assert.match(html, /Enter your <strong>individual Flow Metro email<\/strong>\./);
   assert.doesNotMatch(html, /NORTH YARD/i);
   assert.match(html, /type=["']email["']/i);
   assert.match(html, /name=["']email["']/i);
