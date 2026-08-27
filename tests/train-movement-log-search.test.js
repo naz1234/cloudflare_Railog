@@ -121,3 +121,43 @@ test("stabling lookup no longer highlights unrelated spreadsheet rows or saved l
   assert.doesNotMatch(sheetSource, /is-search-match/);
   assert.doesNotMatch(stylesheetSource, /theme-movement-sheet-row\.is-search-match|theme-movement-log-line\.is-search-match/);
 });
+
+test("TID arrival search appears only in the movement log with the selected timetable", () => {
+  assert.equal((pageSource.match(/<Arrival3A1P2Lookup\b/g) || []).length, 1);
+  assert.match(sheetSource, /<Arrival3A1P2Lookup\s+activeTimetable=\{activeTimetable\}\s+activeTimetableType=\{activeTimetableType\}/);
+  assert.match(pageSource, /<TrainMovementExcelSheet\b[^>]*activeTimetableType=\{selectedTimetableType\}/);
+  assert.ok(sheetSource.indexOf("theme-movement-train-search") < sheetSource.indexOf("<Arrival3A1P2Lookup"));
+  assert.ok(sheetSource.indexOf("<Arrival3A1P2Lookup") < sheetSource.indexOf("<table"));
+  const removalPlanSource = getFunctionSource("TrainRequestedNotInRemoval");
+  assert.doesNotMatch(removalPlanSource, /Arrival3A1P2Lookup|arrivalLookupTime/);
+  assert.match(removalPlanSource, /<RequestedTrainActionOverviewTable/);
+});
+
+test("relocated TID lookup owns its 30-second clock and cleans it up on unmount", () => {
+  const lookupSource = getFunctionSource("Arrival3A1P2Lookup");
+  const effectStart = lookupSource.indexOf("  useEffect(() => {");
+  const effectEnd = lookupSource.indexOf("  const normalizedTid", effectStart);
+  assert.ok(effectStart >= 0 && effectEnd > effectStart);
+  const updates = [];
+  let tick;
+  let cleanup;
+  let cleared;
+  const intervalId = Symbol("arrival clock");
+  const runEffect = new Function(
+    "useEffect", "setLookupTime", "setInterval", "clearInterval",
+    lookupSource.slice(effectStart, effectEnd),
+  );
+  runEffect(
+    (effect, dependencies) => { assert.deepEqual(dependencies, []); cleanup = effect(); },
+    (time) => updates.push(time),
+    (callback, delay) => { assert.equal(delay, 30000); tick = callback; return intervalId; },
+    (id) => { cleared = id; },
+  );
+  assert.equal(updates.length, 1);
+  tick();
+  assert.equal(updates.length, 2);
+  assert.ok(updates.every((time) => time instanceof Date && !Number.isNaN(time.getTime())));
+  cleanup();
+  assert.equal(cleared, intervalId);
+  assert.match(lookupSource, /getTimetableArrival3A1P2Time\(activeTimetable, normalizedTid, lookupTime\)/);
+});
