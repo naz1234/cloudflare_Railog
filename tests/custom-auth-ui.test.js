@@ -76,8 +76,12 @@ test('main application verifies the server session and redirects through the iso
   assert.match(protectedRoute, /['"]\/api\/auth\/presence['"]/);
   assert.match(protectedRoute, /Online now/);
   assert.match(protectedRoute, /presenceInitials\(onlineUser\.name\)/);
-  assert.match(protectedRoute, /group-hover:visible/);
-  assert.match(protectedRoute, /tabIndex=\{0\}/);
+  assert.match(protectedRoute, /import ActionTooltip from ['"]@\/components\/ActionTooltip['"]/);
+  assert.match(protectedRoute, /<ActionTooltip\s+[\s\S]*?message=\{onlineUser\.name\}/);
+  assert.match(protectedRoute, /placement="bottom"/);
+  assert.match(protectedRoute, /tabIndex:\s*0/);
+  assert.doesNotMatch(protectedRoute, /pointer-events-none invisible absolute left-1\/2/);
+  assert.doesNotMatch(protectedRoute, /hover:-translate-y-0\.5/);
   assert.doesNotMatch(protectedRoute, /You're online/);
   assert.doesNotMatch(protectedRoute, /aria-expanded=\{isOpen\}/);
   assert.doesNotMatch(protectedRoute, /ChevronDown/);
