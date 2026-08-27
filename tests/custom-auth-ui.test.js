@@ -75,8 +75,12 @@ test('main application verifies the server session and redirects through the iso
   assert.match(protectedRoute, /await logout\(\)/);
   assert.match(protectedRoute, /['"]\/api\/auth\/presence['"]/);
   assert.match(protectedRoute, /Online now/);
-  assert.match(protectedRoute, /You're online/);
-  assert.match(protectedRoute, /aria-expanded=\{isOpen\}/);
+  assert.match(protectedRoute, /presenceInitials\(onlineUser\.name\)/);
+  assert.match(protectedRoute, /group-hover:visible/);
+  assert.match(protectedRoute, /tabIndex=\{0\}/);
+  assert.doesNotMatch(protectedRoute, /You're online/);
+  assert.doesNotMatch(protectedRoute, /aria-expanded=\{isOpen\}/);
+  assert.doesNotMatch(protectedRoute, /ChevronDown/);
   assert.doesNotMatch(protectedRoute, /fixed bottom-4 right-4/);
   assert.match(protectedRoute, /Sign out of L3 DC Template/);
   assert.match(depotStabling, /import \{ SessionPresenceControl \} from ["']\.\.\/components\/ProtectedRoute["']/);
