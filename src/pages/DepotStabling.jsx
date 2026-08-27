@@ -20,6 +20,7 @@ import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator
 import OccBriefingFormSigner from "../components/OccBriefingFormSigner";
 import RemovalPdfEditor from "../components/depot/RemovalPdfEditor";
 import EastNineAmRemovalPdfEditor from "../components/depot/EastNineAmRemovalPdfEditor";
+import { SessionPresenceControl } from "../components/ProtectedRoute";
 import { summarizeInsertionTidUsage } from "../lib/insertionTidUsage";
 import {
   createLatestTrainMovementSaveQueue,
@@ -20999,6 +21000,7 @@ export default function DepotStablingPage() {
               {appTheme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
               <span>{appTheme === "dark" ? "Light" : "Dark"}</span>
             </button>
+            <SessionPresenceControl />
           </div>
 
           <div className="ml-auto flex items-center gap-2">

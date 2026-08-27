@@ -51,9 +51,10 @@ test('login requires a fresh Turnstile token and tab-local challenge for verific
 });
 
 test('main application verifies the server session and redirects through the isolated login shell', async () => {
-  const [authContext, protectedRoute, app] = await Promise.all([
+  const [authContext, protectedRoute, depotStabling, app] = await Promise.all([
     readSource('src/lib/AuthContext.jsx'),
     readSource('src/components/ProtectedRoute.jsx'),
+    readSource('src/pages/DepotStabling.jsx'),
     readSource('src/App.jsx'),
   ]);
 
@@ -73,6 +74,11 @@ test('main application verifies the server session and redirects through the iso
   assert.match(protectedRoute, /await logout\(\)/);
   assert.match(protectedRoute, /['"]\/api\/auth\/presence['"]/);
   assert.match(protectedRoute, /Online now/);
+  assert.match(protectedRoute, /You're online/);
+  assert.match(protectedRoute, /aria-expanded=\{isOpen\}/);
+  assert.doesNotMatch(protectedRoute, /fixed bottom-4 right-4/);
   assert.match(protectedRoute, /Sign out of L3 DC Template/);
+  assert.match(depotStabling, /import \{ SessionPresenceControl \} from ["']\.\.\/components\/ProtectedRoute["']/);
+  assert.match(depotStabling, /<SessionPresenceControl\s*\/>/);
   assert.match(app, /<ProtectedRoute\s*\/>/);
 });
