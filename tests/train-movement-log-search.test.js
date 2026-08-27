@@ -15,23 +15,109 @@ const sheetStart = pageSource.indexOf("function TrainMovementExcelSheet");
 const sheetEnd = pageSource.indexOf("function cleanMovementCustomTimeInput", sheetStart);
 const sheetSource = pageSource.slice(sheetStart, sheetEnd);
 
-test("movement log search checks the main train, replacement train, and saved log text", () => {
-  assert.match(pageSource, /\[row\.trainId, row\.replacedBy\]/);
-  assert.match(pageSource, /String\(entry\.text \|\| ""\)\.match\(\/\\bT0\*\\d\{1,2\}\\b\/gi\)/);
-  assert.match(sheetSource, /trainMovementRowMatchesSearch\(row, trainSearchKey\)/);
-  assert.match(sheetSource, /trainMovementLogEntryMatchesSearch\(entry, trainSearchKey\)/);
+function getFunctionSource(name) {
+  const start = pageSource.indexOf(`function ${name}(`);
+  assert.notEqual(start, -1, `${name} must exist`);
+  const end = pageSource.indexOf("\nfunction ", start + 1);
+  assert.notEqual(end, -1, `${name} must have a following function`);
+  return pageSource.slice(start, end);
+}
+
+const helperSource = [
+  "normalizeTrainId",
+  "formatStablingRoadForPopup",
+  "getMainStablingLocations",
+].map(getFunctionSource).join("\n");
+const getLocations = new Function(`${helperSource}\nreturn getMainStablingLocations;`)();
+
+const searchStart = sheetSource.indexOf("  const trainSearchKey =");
+const searchEnd = sheetSource.indexOf("  const copyExcelLogRows =", searchStart);
+assert.ok(searchStart >= 0 && searchEnd > searchStart);
+const searchSource = sheetSource.slice(searchStart, searchEnd);
+const search = new Function(
+  "trainSearch", "stabledTrainLocations", "rows", "sortedLogRows",
+  `${getFunctionSource("normalizeTrainId")}\n${searchSource}
+   return { trainSearchResults, trainSearchFound, trainSearchNotFound };`,
+);
+
+test("movement log section receives current West and East main stabling locations", () => {
+  assert.match(pageSource, /<TrainMovementExcelSheet\b[^>]*stabledTrainLocations=\{getMainStablingLocations\(westData, eastData\)\}/);
+  assert.match(sheetSource, /stabledTrainLocations = \{\}/);
+  assert.match(searchSource, /stabledTrainLocations\[trainSearchKey\]/);
+  assert.doesNotMatch(searchSource, /\b(?:rows|logRows|sortedLogRows)\b/);
 });
 
-test("combined movement section exposes the train search and depot-operation results", () => {
-  assert.match(sheetSource, /placeholder="Search train ID in swapping, insertion and removal logs…"/);
-  assert.match(sheetSource, /getMovementDepotLabel\(row\.depot\)/);
-  assert.match(sheetSource, /formatMovementExcelOperation\(entry\.operation\)/);
-  assert.match(sheetSource, /not found in the movement sheet or either depot log/);
+test("numeric, padded, lowercase and spaced queries find the same stabled train", () => {
+  const locations = getLocations({ "WD-ST15": [{ trainId: "T01" }] }, {});
+  for (const query of ["1", "01", "T1", "T01", " t 001 "]) {
+    assert.deepEqual(search(query, locations), {
+      trainSearchResults: ["West Depot STB 15 Block 01"],
+      trainSearchFound: true,
+      trainSearchNotFound: false,
+    });
+  }
 });
 
-test("matching spreadsheet rows and saved log lines use the shared yellow highlight", () => {
-  assert.match(sheetSource, /theme-movement-sheet-row \$\{isSearchMatch \? "is-search-match"/);
-  assert.match(sheetSource, /theme-movement-log-line \$\{isSearchMatch \? "is-search-match"/);
-  assert.match(stylesheetSource, /theme-movement-sheet-row\.is-search-match > td/);
-  assert.match(stylesheetSource, /theme-movement-log-line\.is-search-match/);
+test("both depots report the actual road and block, including duplicate train locations", () => {
+  const west = { "WD-ST2": [null, { trainId: "T007" }] };
+  const east = { "ED-ST10": [null, null, null, null, null, null, { trainId: "7" }] };
+  assert.deepEqual(search("T07", getLocations(west, east)).trainSearchResults, [
+    "West Depot STB 02 Block 02",
+    "East Depot STB 10 Block 07",
+  ]);
+  assert.deepEqual(search("7", getLocations({}, east)).trainSearchResults, [
+    "East Depot STB 10 Block 07",
+  ]);
+});
+
+test("blank queries are idle and unknown trains show not found", () => {
+  const locations = getLocations({ "WD-ST15": [null, { trainId: "" }] }, {});
+  for (const query of ["", "   "]) {
+    assert.deepEqual(search(query, locations), {
+      trainSearchResults: [], trainSearchFound: false, trainSearchNotFound: false,
+    });
+  }
+  for (const query of ["T10", "constructor", "__proto__"]) {
+    assert.deepEqual(search(query, locations), {
+      trainSearchResults: [], trainSearchFound: false, trainSearchNotFound: true,
+    });
+  }
+});
+
+test("spreadsheet trains, replacements and saved log entries never count as stabling matches", () => {
+  const rows = [{ trainId: "T03", replacedBy: "T04", depot: "west" }];
+  const logs = [{ train: "T05", text: "T03 swapped with T04", depot: "east" }];
+  for (const query of ["T03", "T04", "T05"]) {
+    assert.deepEqual(search(query, getLocations({}, {}), rows, logs), {
+      trainSearchResults: [], trainSearchFound: false, trainSearchNotFound: true,
+    });
+  }
+});
+
+test("results follow stabling updates without requiring a new search query", () => {
+  const west = { "WD-ST1": [{ trainId: "T06" }] };
+  assert.deepEqual(search("6", getLocations(west, {})).trainSearchResults, [
+    "West Depot STB 01 Block 01",
+  ]);
+  const east = { "ED-ST3": [null, null, { trainId: "T06" }] };
+  assert.deepEqual(search("6", getLocations({}, east)).trainSearchResults, [
+    "East Depot STB 03 Block 03",
+  ]);
+  assert.equal(search("6", getLocations({}, {})).trainSearchNotFound, true);
+});
+
+test("combined movement section labels the lookup as stabling search and announces locations", () => {
+  assert.match(sheetSource, /placeholder="Search train ID in West and East Depot stabling…"/);
+  assert.match(sheetSource, /aria-label="Search train ID in West and East Depot stabling"/);
+  assert.match(sheetSource, /role="status" aria-live="polite"/);
+  assert.match(sheetSource, /trainSearchResults\.map\(\(location\)/);
+  assert.match(sheetSource, />\{location\}<\/span>/);
+  assert.match(sheetSource, /not found in West or East Depot stabling/);
+  assert.match(sheetSource, /onClick=\{\(\) => setTrainSearch\(""\)\}/);
+});
+
+test("stabling lookup no longer highlights unrelated spreadsheet rows or saved logs", () => {
+  assert.doesNotMatch(pageSource, /trainMovementRowMatchesSearch|trainMovementLogEntryMatchesSearch/);
+  assert.doesNotMatch(sheetSource, /is-search-match/);
+  assert.doesNotMatch(stylesheetSource, /theme-movement-sheet-row\.is-search-match|theme-movement-log-line\.is-search-match/);
 });
