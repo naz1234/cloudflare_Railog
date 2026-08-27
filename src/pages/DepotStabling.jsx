@@ -5756,7 +5756,7 @@ function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2,
   );
 }
 
-function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onInsertionTaNameUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0, reserveMiddleInsertionRemark = false, tidDropRequest = null, onTidDropApplied, isTidDragActive = false, isTidDropHovered = false }) {
+function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onInsertionTaNameUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0, reserveMiddleInsertionRemark = false, tidDropRequest = null, onTidDropApplied, isTidDragActive = false, isTidDropHovered = false, isSearchMatch = false }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
@@ -5944,14 +5944,18 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           : "rgba(7, 24, 39, 0.18)";
   // Keep the card frame calm and symmetric. State colour remains in the
   // card surface and detail pills, with no reserved side-rail spacing.
-  const insCardBorder = expired
+  const insCardBorder = isSearchMatch
+    ? "2px solid #facc15"
+    : expired
     ? "1px solid #1e3547"
     : isDuplicateInsertedTid
       ? "1px solid #6d4b20"
       : key
         ? `1px solid ${INSERTION_PANEL_COLORS.cardBorder}`
         : "1px solid rgba(48, 75, 96, 0.34)";
-  const insCardGlow = isDuplicateInsertedTid
+  const insCardGlow = isSearchMatch
+    ? "0 0 0 3px rgba(250, 204, 21, 0.18), 0 8px 22px rgba(0, 0, 0, 0.24)"
+    : isDuplicateInsertedTid
     ? "0 0 0 2px rgba(245, 158, 11, 0.18), 0 0 18px rgba(245, 158, 11, 0.58), 0 8px 22px rgba(0, 0, 0, 0.24)"
     : key && !expired
       ? "0 4px 12px rgba(0,0,0,0.12)"
@@ -5989,7 +5993,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   if (expired) {
     return (
       <td className="theme-stabling-grid-cell theme-insertion-grid-cell p-1.5 align-middle" title="Elapsed TID hidden manually" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-        <div className="theme-insertion-card is-expired flex h-full flex-col items-center justify-center gap-1 rounded-xl select-none" style={{ minHeight: rowCardMinHeight, height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, opacity: 0.55 }}>
+        <div className={`theme-insertion-card is-expired ${isSearchMatch ? "is-search-match" : ""} flex h-full flex-col items-center justify-center gap-1 rounded-xl select-none`} style={{ minHeight: rowCardMinHeight, height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow, opacity: isSearchMatch ? 0.85 : 0.55 }}>
           <div className="flex h-5 w-full items-center justify-center text-center font-black leading-none" style={{ fontSize: 14, color: "#3a5068" }}>{displayVal || "—"}</div>
           {insertedRemarkLabel && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
           <span className="text-[9px] font-semibold" style={{ color: "#3a5068" }}>✓ {insertedDisplayTime}</span>
@@ -6007,7 +6011,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         data-insertion-drop-depot={autoTidDepot}
         data-insertion-drop-road={road}
         data-insertion-drop-bi={bi}
-        className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${isTidDragActive ? "is-tid-drag-active" : ""} ${isTidDropHovered ? "is-tid-drop-hovered" : ""} ${shouldStretchInsertionCard ? "h-full" : ""} relative flex flex-col items-center justify-start overflow-hidden rounded-xl text-center ${isInsertionDone ? "gap-1" : "gap-2"}`}
+        className={`theme-insertion-card ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${isSearchMatch ? "is-search-match" : ""} ${isTidDragActive ? "is-tid-drag-active" : ""} ${isTidDropHovered ? "is-tid-drop-hovered" : ""} ${shouldStretchInsertionCard ? "h-full" : ""} relative flex flex-col items-center justify-start overflow-hidden rounded-xl text-center ${isInsertionDone ? "gap-1" : "gap-2"}`}
         style={{
           minHeight: ownInsertionCardMinHeight,
           height: shouldStretchInsertionCard ? "100%" : undefined,
@@ -6798,9 +6802,12 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   );
 }
 
-function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onInsertionTaNameUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, isWeekendActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied }) {
+function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onInsertionTaNameUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, isWeekendActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied, allDepots = [] }) {
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
+  const [sectionSearch, setSectionSearch] = useState("");
+  const searchQuery = sectionSearch.trim().toUpperCase().replace(/\s+/g, "");
+  const normalizedSearch = searchQuery ? normalizeTrainId(searchQuery) : "";
   const sectionDepot = roads.some((road) => WEST_ROADS.includes(road)) ? "west" : "east";
   const depotCode = sectionDepot === "west" ? "WD" : "ED";
   const tooltipPlacement = sectionDepot === "west" ? "bottom" : "top";
@@ -6809,6 +6816,28 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
     pg2: `Show ${depotCode} PG2 editable stabling`,
     refresh: `Copy latest ${depotCode} PG1 stabling to PG2 and reset ${depotCode} PG2 insertion work`,
   };
+
+  const locationResults = (() => {
+    if (!normalizedSearch || allDepots.length === 0) return [];
+    const results = [];
+
+    allDepots.forEach(({ depotLabel, roads: depotRoads, data: depotData, blockLabels: depotBlockLabels, blockIndices: depotBlockIndices }) => {
+      depotRoads.forEach((road) => {
+        const blocks = depotData[road] || [];
+        depotBlockIndices.forEach((bi, visualIndex) => {
+          const trainKey = normalizeTrainId(blocks[bi]?.trainId || "");
+          if (trainKey && trainKey === normalizedSearch) {
+            results.push({ depotLabel, road, blockLabel: depotBlockLabels[visualIndex] });
+          }
+        });
+      });
+    });
+
+    return results;
+  })();
+  const searched = normalizedSearch.length > 0;
+  const found = locationResults.length > 0;
+  const notFound = searched && !found;
 
   useEffect(() => {
     saveInsertionHideElapsedTid(title, roads, hideElapsedTid);
@@ -7133,6 +7162,67 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
           </div>
         </div>
       </div>
+      <div className="mb-3" style={{ width: 880 }}>
+        <div
+          className={`theme-stabling-search theme-insertion-search flex items-center gap-2 rounded-xl px-3 py-2 transition-all ${found ? "is-found" : notFound ? "is-not-found" : sectionSearch ? "is-active" : "is-empty"}`}
+          style={{
+            background: "#071828",
+            border: found ? "1.5px solid #facc15" : notFound ? "1.5px solid #ef4444" : sectionSearch ? "1.5px solid #4f8ef7" : "1.5px dashed #1b3a55",
+            boxShadow: found ? "0 0 0 2px rgba(250,204,21,0.10)" : notFound ? "0 0 0 2px rgba(239,68,68,0.10)" : sectionSearch ? "0 0 0 2px rgba(79,142,247,0.12)" : undefined,
+          }}
+        >
+          <Search className="theme-stabling-search-icon h-[13px] w-[13px] shrink-0" style={{ color: found ? "#facc15" : notFound ? "#ef4444" : sectionSearch ? "#4f8ef7" : "#2a4a64" }} aria-hidden="true" />
+          <input
+            type="text"
+            value={sectionSearch}
+            onChange={(event) => setSectionSearch(event.target.value)}
+            placeholder="Search train ID across both insertion depots…"
+            aria-label="Search train ID across both insertion depots"
+            className="theme-stabling-search-input theme-insertion-search-input flex-1 bg-transparent text-sm font-semibold outline-none placeholder:font-normal"
+            style={{
+              color: found ? "#fde68a" : notFound ? "#fca5a5" : sectionSearch ? "#e2eaf4" : undefined,
+              caretColor: "#4f8ef7",
+              letterSpacing: sectionSearch ? "0.06em" : undefined,
+            }}
+          />
+          {sectionSearch && (
+            <button
+              type="button"
+              onClick={() => setSectionSearch("")}
+              className="theme-stabling-search-clear theme-insertion-search-clear flex h-4 w-4 items-center justify-center rounded-full transition-all hover:bg-[#1a3a56]"
+              style={{ color: "#4a8ab5" }}
+              aria-label="Clear insertion train search"
+              title="Clear search"
+            >
+              <X className="h-[9px] w-[9px]" strokeWidth={3} />
+            </button>
+          )}
+        </div>
+
+        {searched && (
+          <div className="mt-2 flex min-h-[22px] flex-wrap items-center gap-2" role="status" aria-live="polite">
+            {found ? locationResults.map((result, index) => (
+              <div key={`${result.depotLabel}-${result.road}-${result.blockLabel}-${index}`} className="theme-stabling-search-result theme-insertion-search-result is-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "linear-gradient(135deg,#1a2e10,#0f1f08)", border: "1px solid #4d7c0f" }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#a3e635" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                </svg>
+                <span className="text-[11px] font-bold tracking-wide" style={{ color: "#a3e635" }}>{normalizedSearch}</span>
+                <span className="text-[10px] font-bold" style={{ color: "#6a9a20" }}>is at</span>
+                <span className="text-[11px] font-bold" style={{ color: "#d9f99d" }}>{result.depotLabel}</span>
+                <span className="text-[9px]" style={{ color: "#4d7c0f" }}>›</span>
+                <span className="text-[11px] font-bold" style={{ color: "#bef264" }}>{result.road}</span>
+                <span className="text-[9px]" style={{ color: "#4d7c0f" }}>›</span>
+                <span className="text-[11px] font-bold" style={{ color: "#bef264" }}>{result.blockLabel}</span>
+              </div>
+            )) : (
+              <div className="theme-stabling-search-result theme-insertion-search-result is-not-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "rgba(127,29,29,0.35)", border: "1px solid #7f1d1d" }}>
+                <X className="h-[10px] w-[10px]" style={{ color: "#f87171" }} strokeWidth={2.5} aria-hidden="true" />
+                <span className="text-[11px] font-bold" style={{ color: "#f87171" }}>{normalizedSearch} not found in either insertion depot</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       <div className="theme-insertion-table-wrap overflow-x-auto rounded-xl border" style={{ borderColor: INSERTION_PANEL_COLORS.gridLine }}>
         <table className="theme-insertion-table border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 880, maxWidth: 880, width: 880 }}>
           <thead>
@@ -7228,7 +7318,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
                     const borderBottom = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
                     const borderBottomRightRadius = labelSide === "left" && isLastRow && isLastBlock ? 12 : undefined;
                     const borderBottomLeftRadius = labelSide === "right" && isLastRow && i === 0 ? 12 : undefined;
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onInsertionTaNameUpdate={onInsertionTaNameUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} reserveMiddleInsertionRemark={rowMaxStatusCount > 0} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onInsertionTaNameUpdate={onInsertionTaNameUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} reserveMiddleInsertionRemark={rowMaxStatusCount > 0} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(block?.trainId || "") === normalizedSearch)} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -9692,6 +9782,22 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
     controlledScheduleKey: tidReferenceScheduleKey,
     onScheduleKeyChange: setTidReferenceScheduleKey,
   };
+  const insertionSearchDepots = [
+    {
+      depotLabel: "West Depot",
+      roads: WEST_ROADS,
+      data: westSection?.data || {},
+      blockLabels: ["BLOCK 7", "BLOCK 6", "BLOCK 5", "BLOCK 4", "BLOCK 3", "BLOCK 2", "BLOCK 1"],
+      blockIndices: [6, 5, 4, 3, 2, 1, 0],
+    },
+    {
+      depotLabel: "East Depot",
+      roads: EAST_ROADS,
+      data: eastSection?.data || {},
+      blockLabels: ["BLOCK 1", "BLOCK 2", "BLOCK 3", "BLOCK 4", "BLOCK 5", "BLOCK 6", "BLOCK 7"],
+      blockIndices: [0, 1, 2, 3, 4, 5, 6],
+    },
+  ];
 
   return (
     <div className="theme-insertion-page flex flex-col gap-5">
@@ -9778,6 +9884,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
               tidDragHover={tidDragHover}
               tidDropRequest={tidDropRequest}
               onTidDropApplied={handleTidDropApplied}
+              allDepots={insertionSearchDepots}
               {...westSection}
             />
             <div className="w-full max-w-full" style={{ width: "914px" }}>
@@ -9818,6 +9925,7 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
               tidDragHover={tidDragHover}
               tidDropRequest={tidDropRequest}
               onTidDropApplied={handleTidDropApplied}
+              allDepots={insertionSearchDepots}
               {...eastSection}
             />
             <div className="w-full max-w-full" style={{ width: "914px" }}>
