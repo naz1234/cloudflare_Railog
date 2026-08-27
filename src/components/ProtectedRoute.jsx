@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { LogOut } from 'lucide-react';
 import { Outlet } from 'react-router-dom';
+import ActionTooltip from '@/components/ActionTooltip';
 import { useAuth } from '@/lib/AuthContext';
 
 const PRESENCE_POLL_INTERVAL_MS = 30_000;
@@ -181,18 +182,24 @@ export const SessionPresenceControl = () => {
         {onlineUsers.map((onlineUser) => {
           const isCurrentUser = onlineUser.name === user?.name;
           return (
-            <li key={onlineUser.name} className="group relative shrink-0">
-              <span
-                tabIndex={0}
-                aria-label={`${onlineUser.name}${isCurrentUser ? ', you' : ''}`}
-                className={`relative flex h-6 w-6 items-center justify-center rounded-full border bg-[#0a2a42] font-mono text-[8px] font-black tracking-wide text-cyan-100 transition hover:-translate-y-0.5 hover:bg-[#103b5c] focus-visible:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cyan-300 ${isCurrentUser ? 'border-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.2)]' : 'border-[#2f6f91]'}`}
+            <li key={onlineUser.name} className="shrink-0">
+              <ActionTooltip
+                message={onlineUser.name}
+                placement="bottom"
+                sideOffset={8}
+                wrapperClassName="shrink-0 rounded-full"
+                triggerProps={{
+                  tabIndex: 0,
+                  'aria-label': `${onlineUser.name}${isCurrentUser ? ', you' : ''}`,
+                }}
               >
-                {presenceInitials(onlineUser.name)}
-                <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-[#071828] bg-emerald-400" aria-hidden="true" />
-              </span>
-              <span aria-hidden="true" className="pointer-events-none invisible absolute left-1/2 top-[calc(100%+0.45rem)] z-[280] -translate-x-1/2 whitespace-nowrap rounded-md border border-[#2a5d79] bg-[#020b13] px-2 py-1 text-[9px] font-semibold text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.5)] transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-                {onlineUser.name}
-              </span>
+                <span
+                  className={`relative flex h-6 w-6 items-center justify-center rounded-full border bg-[#0a2a42] font-mono text-[8px] font-black tracking-wide text-cyan-100 transition-colors hover:border-cyan-300 hover:bg-[#103b5c] ${isCurrentUser ? 'border-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.2)]' : 'border-[#2f6f91]'}`}
+                >
+                  {presenceInitials(onlineUser.name)}
+                  <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-[#071828] bg-emerald-400" aria-hidden="true" />
+                </span>
+              </ActionTooltip>
             </li>
           );
         })}
