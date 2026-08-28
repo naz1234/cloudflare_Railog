@@ -4758,7 +4758,7 @@ function getTrainRemRowCardVisual(requestItem = null, label = "", options = {}) 
 
 // ── PST / Train Prep Components ──────────────────────────────────────────────
 
-function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taName, onTaNameChange, stablingEditable = false, onEditableTrainIdChange }) {
+function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taName, onTaNameChange, stablingEditable = false, onEditableTrainIdChange, isSearchMatch = false }) {
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
@@ -4813,7 +4813,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   const pstRowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
   return (
     <td className="theme-pst-grid-cell p-1.5 align-top" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: pstRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
-      <div className={`theme-pst-card relative flex flex-col items-center justify-start gap-1 rounded-xl ${!key ? "is-empty" : isPstDone ? "is-pst-done" : isPstConfirming ? "is-pst-confirming" : isPrepDone ? "is-prep-done" : "is-normal"}`} style={{ minHeight: isPrepDone ? 156 : (isPstDone || isPstConfirming) ? 128 : pstEstimateTime ? 102 : 90, padding: "7px 5px", background: pstCardBg, border: pstCardBorder, boxShadow: key ? "0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)" : undefined }}>
+      <div className={`theme-pst-card ${isSearchMatch ? "is-search-match" : ""} relative flex flex-col items-center justify-start gap-1 rounded-xl ${!key ? "is-empty" : isPstDone ? "is-pst-done" : isPstConfirming ? "is-pst-confirming" : isPrepDone ? "is-prep-done" : "is-normal"}`} style={{ minHeight: isPrepDone ? 156 : (isPstDone || isPstConfirming) ? 128 : pstEstimateTime ? 102 : 90, padding: "7px 5px", background: pstCardBg, border: pstCardBorder, boxShadow: key ? "0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)" : undefined }}>
         {key && (
           <div className="absolute top-1 right-1.5 opacity-20 pointer-events-none">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={trainColor} strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/></svg>
@@ -4932,8 +4932,11 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   );
 }
 
-function PSTStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taNameState, onTaNameChange, onClearPST, onClearPrep, onClearPg2Trains, stablingEditable = false, onEditableTrainIdChange }) {
+function PSTStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taNameState, onTaNameChange, onClearPST, onClearPrep, onClearPg2Trains, stablingEditable = false, onEditableTrainIdChange, trainSearch = "", onTrainSearchChange, trainSearchResults = [] }) {
   const [confirmClearAction, setConfirmClearAction] = useState(null);
+  const normalizedSearch = normalizeTrainId(trainSearch);
+  const searchFound = trainSearchResults.length > 0;
+  const searchNotFound = Boolean(normalizedSearch && !searchFound);
   const isPg2Active = normalizePSTPg(activePg) === "pg2";
   const hasClearControls = Boolean(onClearPST || onClearPrep || (isPg2Active && onClearPg2Trains));
   const pstClearCount = roads.reduce((count, road) => {
@@ -5045,6 +5048,59 @@ function PSTStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2,
           )}
         </div>
       </div>
+      <div className="mb-3 w-full">
+        <div
+          className={`theme-stabling-search theme-pst-search flex items-center gap-2 rounded-xl px-3 py-2 transition-all ${searchFound ? "is-found" : searchNotFound ? "is-not-found" : trainSearch ? "is-active" : "is-empty"}`}
+          style={{
+            background: "#071828",
+            border: searchFound ? "1.5px solid #facc15" : searchNotFound ? "1.5px solid #ef4444" : trainSearch ? "1.5px solid #4f8ef7" : "1.5px dashed #1b3a55",
+            boxShadow: searchFound ? "0 0 0 2px rgba(250,204,21,0.10)" : searchNotFound ? "0 0 0 2px rgba(239,68,68,0.10)" : trainSearch ? "0 0 0 2px rgba(79,142,247,0.12)" : undefined,
+          }}
+        >
+          <Search className="theme-stabling-search-icon h-[13px] w-[13px] shrink-0" style={{ color: searchFound ? "#facc15" : searchNotFound ? "#ef4444" : trainSearch ? "#4f8ef7" : "#2a4a64" }} aria-hidden="true" />
+          <input
+            type="text"
+            value={trainSearch}
+            onChange={(event) => onTrainSearchChange?.(event.target.value)}
+            placeholder="Search train ID across both PST / Train Prep depots…"
+            aria-label={`${sectionDepotLabel} PST / Train Prep: search train ID across both depots`}
+            className="theme-stabling-search-input min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none placeholder:font-normal"
+            style={{
+              color: searchFound ? "#fde68a" : searchNotFound ? "#fca5a5" : trainSearch ? "#e2eaf4" : undefined,
+              caretColor: "#4f8ef7",
+              letterSpacing: trainSearch ? "0.06em" : undefined,
+            }}
+          />
+          {trainSearch && (
+            <button
+              type="button"
+              onClick={() => onTrainSearchChange?.("")}
+              className="theme-stabling-search-clear flex h-4 w-4 items-center justify-center rounded-full transition-all hover:bg-[#1a3a56]"
+              style={{ color: "#4a8ab5" }}
+              aria-label={`Clear ${sectionDepotLabel} PST / Train Prep train search`}
+              title="Clear search"
+            >
+              <X className="h-[9px] w-[9px]" strokeWidth={3} />
+            </button>
+          )}
+        </div>
+        {normalizedSearch && (
+          <div className="mt-2 flex min-h-[22px] flex-wrap items-center gap-2" role="status" aria-live="polite">
+            {searchFound ? trainSearchResults.map((location) => (
+              <div key={location} className="theme-stabling-search-result is-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "linear-gradient(135deg,#1a2e10,#0f1f08)", border: "1px solid #4d7c0f" }}>
+                <span className="text-[11px] font-bold tracking-wide" style={{ color: "#a3e635" }}>{normalizedSearch}</span>
+                <span className="text-[10px] font-bold" style={{ color: "#6a9a20" }}>is at</span>
+                <span className="text-[11px] font-bold" style={{ color: "#d9f99d" }}>{location}</span>
+              </div>
+            )) : (
+              <div className="theme-stabling-search-result is-not-found flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: "rgba(127,29,29,0.35)", border: "1px solid #7f1d1d" }}>
+                <X className="h-[10px] w-[10px]" style={{ color: "#f87171" }} strokeWidth={2.5} aria-hidden="true" />
+                <span className="text-[11px] font-bold" style={{ color: "#f87171" }}>{normalizedSearch} not found in either PST / Train Prep depot</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       <div className="overflow-x-auto rounded-xl">
         <table className="theme-stabling-table border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 912, maxWidth: 912, width: 912 }}>
           <thead>
@@ -5071,7 +5127,7 @@ function PSTStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2,
                 <tr key={road}>
                   {labelSide === "left" && labelCell}
                   {blockIndices.map((bi, i) => (
-                    <PSTCell key={bi} block={data[road]?.[bi]} bi={bi} road={road} labelSide={labelSide} isLast={ri === roads.length - 1} isFirstBlock={i === 0} isLastBlock={i === blockIndices.length - 1} maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taName={taNameState[`${road}-${bi}`] || ""} onTaNameChange={onTaNameChange} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} />
+                    <PSTCell key={bi} block={data[road]?.[bi]} bi={bi} road={road} labelSide={labelSide} isLast={ri === roads.length - 1} isFirstBlock={i === 0} isLastBlock={i === blockIndices.length - 1} maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taName={taNameState[`${road}-${bi}`] || ""} onTaNameChange={onTaNameChange} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(data[road]?.[bi]?.trainId || "") === normalizedSearch)} />
                   ))}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -14559,6 +14615,12 @@ function APUMismatchChecklist({
 
 function PSTTabContent
 ({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onAddManualLog, onRemoveManualLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, apuMismatchTrainIds, onAPUMismatchTrainIdsChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug, westPg = "pg1", eastPg = "pg1", onPSTPgChange, onRefreshPSTPg2, onClearPSTPg2Trains, westPSTStablingEditable = false, eastPSTStablingEditable = false, onEditablePSTTrainIdChange }) {
+  const [trainSearch, setTrainSearch] = useState("");
+  const trainSearchKey = normalizeTrainId(trainSearch);
+  const trainSearchLocations = trainSearchKey ? getMainStablingLocations(westData, eastData) : {};
+  const trainSearchResults = Array.isArray(trainSearchLocations[trainSearchKey])
+    ? trainSearchLocations[trainSearchKey]
+    : [];
   const [downloadingExcelDepot, setDownloadingExcelDepot] = useState("");
   const [copyingExcelDepot, setCopyingExcelDepot] = useState("");
   const [copiedExcelDepot, setCopiedExcelDepot] = useState("");
@@ -14841,7 +14903,7 @@ function PSTTabContent
     <div className="flex w-fit flex-col items-start gap-7">
       <div className="grid w-fit grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[max-content_420px] lg:items-start">
         <div className="flex min-w-0 flex-col gap-3">
-          <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" activePg={westPg} onPgChange={(pg) => onPSTPgChange?.("west", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("west")} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearPg2Trains={westPSTStablingEditable ? () => onClearPSTPg2Trains?.("west") : null} stablingEditable={westPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} />
+          <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" activePg={westPg} onPgChange={(pg) => onPSTPgChange?.("west", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("west")} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearPg2Trains={westPSTStablingEditable ? () => onClearPSTPg2Trains?.("west") : null} stablingEditable={westPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
           <PSTManualEntry depot="west" logLines={sortedLogLines} onAddEntry={onAddManualLog} onRemoveEntry={onRemoveManualLog} />
           <div className="pst-train-prep-log-font-bump w-full overflow-visible">
             <style>{`
@@ -14926,7 +14988,7 @@ function PSTTabContent
 
       <div className="grid w-fit grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[max-content_420px] lg:items-start">
         <div className="flex min-w-0 flex-col gap-3">
-          <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" activePg={eastPg} onPgChange={(pg) => onPSTPgChange?.("east", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("east")} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearPg2Trains={eastPSTStablingEditable ? () => onClearPSTPg2Trains?.("east") : null} stablingEditable={eastPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} />
+          <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" activePg={eastPg} onPgChange={(pg) => onPSTPgChange?.("east", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("east")} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearPg2Trains={eastPSTStablingEditable ? () => onClearPSTPg2Trains?.("east") : null} stablingEditable={eastPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
           <PSTManualEntry depot="east" logLines={sortedLogLines} onAddEntry={onAddManualLog} onRemoveEntry={onRemoveManualLog} />
           <div className="pst-train-prep-log-font-bump w-full overflow-visible">
             <PSTLogOutput depot="east" logLines={sortedLogLines} onClearDepot={onClearDepotLog} />
