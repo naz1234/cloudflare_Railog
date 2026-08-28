@@ -100,3 +100,13 @@ html[data-app-theme="light"] .theme-pst-section .theme-pst-prep-button.is-done {
   border: 1.5px solid #2563eb !important;
   box-shadow: 0 2px 5px rgba(37, 99, 235, 0.20) !important;
 }
+
+/* Search rings preserve the existing PST and Train Prep status colors. */
+.theme-pst-section .theme-pst-card.is-search-match {
+  outline: 2px solid #facc15;
+  outline-offset: 2px;
+}
+
+html[data-app-theme="light"] .theme-pst-section .theme-pst-card.is-search-match {
+  outline-color: #ca8a04;
+}
