@@ -65,9 +65,18 @@ test("dashboard uses compact operational sizing instead of presentation sizing",
 });
 
 test("sidebar dashboard matches the West Depot reference width and stays compact", () => {
-  assert.match(themeStyles, /\.theme-insertion-reference-controls-only \{[\s\S]*width: clamp\(250px, 26vw, 340px\)/);
+  assert.match(tidReferenceSource, /const referenceColumnWidth = isWeekday[\s\S]*clamp\(250px, 26vw, 340px\)[\s\S]*clamp\(220px, 21vw, 270px\)/);
+  assert.match(tidReferenceSource, /theme-insertion-reference-controls-only[\s\S]*style=\{\{ width: referenceColumnWidth, maxWidth: "100%" \}\}/);
   assert.match(themeStyles, /\.theme-insertion-reference-controls-only \.insertion-dashboard__top \{[\s\S]*min-height: 42px/);
   assert.match(themeStyles, /\.theme-insertion-reference-controls-only \.insertion-dashboard__time \{[\s\S]*font-size: 23px/);
   assert.match(themeStyles, /\.theme-insertion-reference-controls-only \.insertion-dashboard__sound-row \{[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(themeStyles, /\.theme-insertion-reference-controls-only \.insertion-dashboard__schedule \{[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+});
+
+test("off-peak TID table uses a narrow TID column and compact rows", () => {
+  assert.match(tidReferenceSource, /width: isWeekday \? "29%" : "42%"/);
+  assert.match(tidReferenceSource, /width: isWeekday \? "32%" : "58%"/);
+  assert.match(tidReferenceSource, /padding: isWeekday \? "1px 6px" : "0 4px"/);
+  assert.match(tidReferenceSource, /lineHeight: isWeekday \? "16px" : "14px"/);
+  assert.match(tidReferenceSource, /data-layout=\{isWeekday \? "weekday" : "compact"\}/);
 });
