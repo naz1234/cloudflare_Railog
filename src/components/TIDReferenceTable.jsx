@@ -786,19 +786,19 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 8,
-          padding: "10px 11px 9px",
+          gap: isWeekday ? 8 : 6,
+          padding: isWeekday ? "10px 11px 9px" : "7px 8px 6px",
           background: accent.headerGradient,
           borderBottom: `1px solid ${accent.border}`,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isWeekday ? 9 : 7, minWidth: 0 }}>
           <div
             className="theme-insertion-reference-depot-icon"
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: 11,
+              width: isWeekday ? 34 : 28,
+              height: isWeekday ? 34 : 28,
+              borderRadius: isWeekday ? 11 : 9,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -809,7 +809,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               flexShrink: 0,
             }}
           >
-            <TrainIcon size={18} />
+            <TrainIcon size={isWeekday ? 18 : 15} />
           </div>
 
           <div style={{ minWidth: 0 }}>
@@ -817,8 +817,8 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               className="theme-insertion-reference-depot-title"
               style={{
                 color: "#e5f3ff",
-                fontSize: 14,
-                lineHeight: "17px",
+                fontSize: isWeekday ? 14 : 12,
+                lineHeight: isWeekday ? "17px" : "14px",
                 fontWeight: 800,
                 letterSpacing: "0.11em",
                 textTransform: "uppercase",
@@ -831,8 +831,8 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               className="theme-insertion-reference-depot-subtitle"
               style={{
                 color: isScheduleOverride ? "#fbbf24" : accent.text,
-                fontSize: 9,
-                lineHeight: "12px",
+                fontSize: isWeekday ? 9 : 8,
+                lineHeight: isWeekday ? "12px" : "10px",
                 fontWeight: 700,
                 letterSpacing: "0.16em",
                 textTransform: "uppercase",
@@ -849,11 +849,11 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
           className={`theme-insertion-reference-depot-chip ${isScheduleOverride ? "is-override" : ""}`}
           style={{
             color: isScheduleOverride ? "#fbbf24" : accent.accent,
-            fontSize: 9,
+            fontSize: isWeekday ? 9 : 7,
             fontWeight: 700,
             letterSpacing: "0.10em",
             textTransform: "uppercase",
-            padding: "5px 8px",
+            padding: isWeekday ? "5px 8px" : "4px 6px",
             borderRadius: 999,
             background: isScheduleOverride ? "rgba(245, 158, 11, 0.16)" : accent.accentSoft,
             border: isScheduleOverride ? "1px solid rgba(251, 191, 36, 0.38)" : `1px solid ${accent.border}`,
@@ -990,7 +990,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
         </div>
       )}
 
-      <div style={{ padding: 8 }}>
+      <div style={{ padding: isWeekday ? 8 : 6 }}>
         <table
           className="theme-insertion-reference-table"
           style={{
@@ -1010,11 +1010,11 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               <th
                 className="theme-insertion-reference-table-header"
                 style={{
-                  width: isWeekday ? "29%" : "68%",
-                  padding: "7px 5px",
+                  width: isWeekday ? "29%" : "42%",
+                  padding: isWeekday ? "7px 5px" : "5px 4px",
                   textAlign: "center",
                   color: accent.text,
-                  fontSize: 10,
+                  fontSize: isWeekday ? 10 : 9,
                   fontWeight: 400,
                   letterSpacing: "0.13em",
                   textTransform: "uppercase",
@@ -1050,11 +1050,11 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               <th
                 className="theme-insertion-reference-table-header"
                 style={{
-                  width: "32%",
-                  padding: "7px 5px",
+                  width: isWeekday ? "32%" : "58%",
+                  padding: isWeekday ? "7px 5px" : "5px 4px",
                   textAlign: "center",
                   color: accent.text,
-                  fontSize: 10,
+                  fontSize: isWeekday ? 10 : 9,
                   fontWeight: 400,
                   letterSpacing: "0.13em",
                   textTransform: "uppercase",
@@ -1132,9 +1132,9 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
 
               /** @type {React.CSSProperties} */
               const commonCellStyle = {
-                padding: "1px 6px",
+                padding: isWeekday ? "1px 6px" : "0 4px",
                 textAlign: "center",
-                lineHeight: "16px",
+                lineHeight: isWeekday ? "16px" : "14px",
                 background: rowBackground,
                 borderBottom: idx === rows.length - 1 ? "none" : "1px solid rgba(125, 184, 224, 0.13)",
                 opacity: isUsed ? 1 : isPast && !isActive ? 0.46 : 1,
@@ -1194,7 +1194,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                       });
                     }}
                     style={{
-                      lineHeight: "16px",
+                      lineHeight: isWeekday ? "16px" : "14px",
                       cursor: isDraggingSource ? "grabbing" : "grab",
                       touchAction: "none",
                       userSelect: "none",
@@ -1276,8 +1276,8 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                           className="theme-insertion-reference-train-id"
                           style={{
                             color: isActive ? "#ffffff" : "#e0f2fe",
-                            fontSize: 12,
-                            lineHeight: "14px",
+                            fontSize: isWeekday ? 12 : 11,
+                            lineHeight: isWeekday ? "14px" : "13px",
                             fontWeight: isNext ? 800 : 500,
                             letterSpacing: "0.05em",
                             fontVariantNumeric: "tabular-nums",
@@ -1331,8 +1331,8 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                       style={{
                         ...commonCellStyle,
                         color: isNext ? accent.accent : "#dbeafe",
-                        fontSize: 12,
-                        lineHeight: "14px",
+                        fontSize: isWeekday ? 12 : 11,
+                        lineHeight: isWeekday ? "14px" : "13px",
                         fontWeight: isNext ? 800 : 500,
                         letterSpacing: "0.06em",
                         fontVariantNumeric: "tabular-nums",
@@ -1494,6 +1494,9 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
   }, [selectedScheduleKey, schedules, setScheduleKey]);
 
   const normalizedDepotFilter = depotFilter === "east" || depotFilter === "west" ? depotFilter : "";
+  const referenceColumnWidth = isWeekday
+    ? "clamp(250px, 26vw, 340px)"
+    : "clamp(220px, 21vw, 270px)";
   const renderDepotCard = (depotType) => (
     <DepotCard
       depotType={depotType}
@@ -1536,7 +1539,11 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
 
   if (controlsOnly) {
     return (
-      <div className="theme-insertion-reference-controls-only">
+      <div
+        className="theme-insertion-reference-controls-only"
+        data-layout={isWeekday ? "weekday" : "compact"}
+        style={{ width: referenceColumnWidth, maxWidth: "100%" }}
+      >
         {referenceHeader}
       </div>
     );
@@ -1545,8 +1552,9 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
   return (
     <div
       className="theme-insertion-reference"
+      data-layout={isWeekday ? "weekday" : "compact"}
       style={{
-        width: normalizedDepotFilter ? "clamp(250px, 26vw, 340px)" : isWeekday ? "clamp(500px, 48vw, 620px)" : isScheduleOverride ? "clamp(300px, 32vw, 430px)" : "clamp(240px, 25vw, 300px)",
+        width: normalizedDepotFilter ? referenceColumnWidth : isWeekday ? "clamp(500px, 48vw, 620px)" : isScheduleOverride ? "clamp(300px, 32vw, 430px)" : "clamp(240px, 25vw, 300px)",
         maxWidth: "100%",
         boxSizing: "border-box",
         padding: 8,
