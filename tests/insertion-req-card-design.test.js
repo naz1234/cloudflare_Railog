@@ -29,17 +29,20 @@ test("INS cards use the Train Request visual hierarchy", () => {
   assert.match(insertionCellSource, /\? "1px solid #1e4d72"/);
 });
 
-test("Tracking ID uses the compact completed footer shown in the reference", () => {
+test("Tracking ID uses a centered label before entry and centered value after entry", () => {
   assert.match(insertionCellSource, /<label[\s\S]*theme-insertion-tracking-footer is-editing/);
-  assert.match(insertionCellSource, /<span>Tracking<\/span>[\s\S]*placeholder="Enter ID"/);
+  assert.match(insertionCellSource, /placeholder="Tracking ID"/);
+  assert.doesNotMatch(insertionCellSource, /<span>Tracking<\/span>/);
   assert.match(insertionCellSource, /aria-label="Enter Tracking ID or special insertion code"/);
   assert.match(insertionCellSource, /theme-insertion-tracking-footer is-complete[\s\S]*String\(insertedTrackingId\)\.padStart\(3, "0"\)/);
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*min-height: 24px/);
+  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*justify-content: center/);
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*border-radius: 7px/);
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*background: rgba\(3, 17, 29, 0\.78\)/);
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer input\.theme-insertion-tid-input \{[\s\S]*width: 100% !important/);
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer input\.theme-insertion-tid-input \{[\s\S]*border: 0 !important/);
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer input\.theme-insertion-tid-input \{[\s\S]*background: transparent !important/);
+  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer input\.theme-insertion-tid-input \{[\s\S]*text-align: center !important/);
 });
 
 test("submitted numeric Tracking IDs persist even without an active timetable match", () => {
