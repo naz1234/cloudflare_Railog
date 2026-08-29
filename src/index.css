@@ -11479,16 +11479,16 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.t
   box-sizing: border-box;
   width: 100%;
   overflow: hidden;
-  padding: 26px 30px 24px;
+  padding: 14px 18px 13px;
   border: 1px solid rgba(91, 132, 205, 0.72);
-  border-radius: 34px;
+  border-radius: 22px;
   color: #f8fbff;
   background:
     radial-gradient(circle at 84% 20%, rgba(14, 165, 233, 0.20), transparent 31%),
     radial-gradient(circle at 14% 5%, rgba(79, 142, 247, 0.16), transparent 29%),
     linear-gradient(145deg, #07152c 0%, #06162b 46%, #061b37 100%);
   box-shadow:
-    0 24px 60px rgba(0, 5, 18, 0.48),
+    0 16px 38px rgba(0, 5, 18, 0.42),
     0 0 34px rgba(37, 99, 235, 0.10),
     inset 0 2px 0 rgba(147, 197, 253, 0.26),
     inset 0 -1px 0 rgba(15, 49, 86, 0.88);
@@ -11498,9 +11498,9 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.t
   position: absolute;
   z-index: -1;
   top: -72px;
-  right: -10px;
-  width: 430px;
-  height: 245px;
+  right: -30px;
+  width: 330px;
+  height: 185px;
   border: 2px solid rgba(14, 165, 233, 0.20);
   border-radius: 50%;
   box-shadow:
@@ -11513,34 +11513,34 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.t
 .theme-insertion-page .insertion-dashboard::after {
   position: absolute;
   z-index: -1;
-  inset: 9px;
+  inset: 6px;
   border: 1px solid rgba(77, 113, 171, 0.20);
-  border-radius: 27px;
+  border-radius: 17px;
   content: "";
   pointer-events: none;
 }
 
 .insertion-dashboard__top {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 1px minmax(320px, 0.78fr);
+  grid-template-columns: minmax(0, 1fr) 1px minmax(240px, 0.72fr);
   align-items: center;
-  gap: 30px;
-  min-height: 106px;
+  gap: 20px;
+  min-height: 58px;
 }
 
 .insertion-dashboard__identity {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 24px;
+  gap: 14px;
 }
 
 .insertion-dashboard__clock-orb {
   position: relative;
   display: flex;
-  width: 86px;
-  height: 86px;
-  flex: 0 0 86px;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(14, 165, 233, 0.28);
@@ -11549,19 +11549,21 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.t
   background:
     radial-gradient(circle, rgba(15, 75, 124, 0.74) 0 46%, rgba(7, 28, 57, 0.90) 48% 100%);
   box-shadow:
-    0 0 0 10px rgba(14, 165, 233, 0.09),
-    0 0 30px rgba(6, 182, 212, 0.22),
+    0 0 0 6px rgba(14, 165, 233, 0.09),
+    0 0 20px rgba(6, 182, 212, 0.22),
     inset 0 0 20px rgba(14, 165, 233, 0.18);
 }
 
 .insertion-dashboard__clock-orb svg {
+  width: 22px;
+  height: 22px;
   filter: drop-shadow(0 0 7px rgba(34, 211, 238, 0.70));
 }
 
 .insertion-dashboard__clock-ring {
   position: absolute;
-  inset: 15px;
-  border: 4px solid #28d7ff;
+  inset: 9px;
+  border: 2px solid #28d7ff;
   border-radius: 50%;
   box-shadow:
     0 0 11px rgba(34, 211, 238, 0.80),
@@ -11576,7 +11578,7 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.t
 
 .insertion-dashboard__kicker {
   color: #41c8ff;
-  font-size: 15px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.15em;
   line-height: 1;
@@ -11585,10 +11587,10 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.t
 }
 
 .insertion-dashboard__day {
-  margin-top: 8px;
+  margin-top: 4px;
   overflow: hidden;
   color: #f8fafc;
-  font-size: clamp(30px, 3vw, 46px);
+  font-size: clamp(20px, 2.2vw, 30px);
   font-weight: 750;
   letter-spacing: 0.03em;
   line-height: 1;
@@ -11598,9 +11600,9 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.t
 }
 
 .insertion-dashboard__date {
-  margin-top: 9px;
+  margin-top: 5px;
   color: #8ba7d2;
-  font-size: 18px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   line-height: 1;
@@ -11609,7 +11611,7 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.t
 .insertion-dashboard__divider {
   display: block;
   width: 1px;
-  height: 96px;
+  height: 54px;
   border-radius: 999px;
   background: linear-gradient(180deg, transparent, rgba(92, 129, 184, 0.70) 17%, rgba(92, 129, 184, 0.70) 83%, transparent);
 }
@@ -11617,7 +11619,7 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.t
 .insertion-dashboard__time {
   justify-self: center;
   color: #f8fbff;
-  font-size: clamp(64px, 7vw, 94px);
+  font-size: clamp(38px, 4.6vw, 56px);
   font-variant-numeric: tabular-nums;
   font-weight: 760;
   letter-spacing: 0.03em;
@@ -11631,8 +11633,8 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.t
 .theme-insertion-page .insertion-dashboard__sound-row {
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px !important;
-  margin-top: 22px;
+  gap: 12px !important;
+  margin-top: 10px;
   padding: 0 !important;
   border: 0 !important;
   background: transparent !important;
@@ -11642,12 +11644,12 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.t
 .theme-insertion-page .insertion-dashboard__sound-button {
   display: flex;
   width: 100%;
-  min-height: 54px;
+  min-height: 34px;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 10px 20px;
-  border: 2px solid rgba(88, 121, 166, 0.48);
+  gap: 7px;
+  padding: 5px 12px;
+  border: 1px solid rgba(88, 121, 166, 0.48);
   border-radius: 999px;
   color: #86a1ca;
   background: linear-gradient(180deg, rgba(7, 25, 52, 0.96), rgba(5, 20, 43, 0.98));
@@ -11655,11 +11657,16 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.t
     inset 0 1px 0 rgba(255, 255, 255, 0.035),
     0 8px 18px rgba(0, 0, 0, 0.22);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   transition: transform 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.theme-insertion-page .insertion-dashboard__sound-button svg {
+  width: 15px;
+  height: 15px;
 }
 
 .theme-insertion-page .insertion-dashboard__sound-button strong {
@@ -11689,15 +11696,15 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.t
 
 .theme-insertion-page .insertion-dashboard__schedule {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 5px !important;
-  margin-top: 24px;
-  padding: 7px !important;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 4px !important;
+  margin-top: 12px;
+  padding: 4px !important;
   border: 1px solid rgba(70, 104, 155, 0.44) !important;
-  border-radius: 26px !important;
+  border-radius: 16px !important;
   background: rgba(5, 20, 43, 0.82) !important;
   box-shadow:
-    0 0 0 7px rgba(18, 49, 86, 0.32),
+    0 0 0 4px rgba(18, 49, 86, 0.32),
     inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
 }
 
@@ -11705,17 +11712,17 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.t
   position: relative;
   display: flex;
   width: 100%;
-  min-height: 60px;
+  min-height: 38px;
   align-items: center;
   justify-content: center;
-  padding: 11px 18px;
+  padding: 6px 10px;
   border: 1px solid transparent;
-  border-radius: 20px;
+  border-radius: 12px;
   color: #89a4ce;
   background: transparent;
   box-shadow: none;
   cursor: pointer;
-  font-size: 17px;
+  font-size: 10px;
   font-weight: 750;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -11740,10 +11747,10 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card input.t
 
 .theme-insertion-page .insertion-dashboard__schedule-tab.is-active::after {
   position: absolute;
-  bottom: -10px;
+  bottom: -7px;
   left: 50%;
-  width: 84px;
-  height: 7px;
+  width: 48px;
+  height: 4px;
   border-radius: 0 0 8px 8px;
   background: #23c9ff;
   box-shadow: 0 0 12px rgba(34, 211, 238, 0.78);
@@ -11839,13 +11846,13 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
 
 @media (max-width: 900px) {
   .theme-insertion-page .insertion-dashboard {
-    padding: 20px;
-    border-radius: 26px;
+    padding: 14px;
+    border-radius: 20px;
   }
 
   .insertion-dashboard__top {
     grid-template-columns: 1fr;
-    gap: 18px;
+    gap: 10px;
   }
 
   .insertion-dashboard__divider {
@@ -11854,37 +11861,37 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
 
   .insertion-dashboard__time {
     justify-self: start;
-    padding-left: 110px;
-    font-size: 58px;
+    padding-left: 66px;
+    font-size: 42px;
   }
 }
 
 @media (max-width: 640px) {
   .insertion-dashboard__identity {
-    gap: 16px;
+    gap: 12px;
   }
 
   .insertion-dashboard__clock-orb {
-    width: 70px;
-    height: 70px;
-    flex-basis: 70px;
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
   }
 
   .insertion-dashboard__clock-ring {
-    inset: 11px;
+    inset: 8px;
   }
 
   .insertion-dashboard__day {
-    font-size: 25px;
+    font-size: 22px;
   }
 
   .insertion-dashboard__date {
-    font-size: 14px;
+    font-size: 11px;
   }
 
   .insertion-dashboard__time {
     padding-left: 0;
-    font-size: 52px;
+    font-size: 38px;
   }
 
   .theme-insertion-page .insertion-dashboard__sound-row,

@@ -53,3 +53,12 @@ test("dashboard follows the supplied illuminated glass design responsively", () 
   assert.match(themeStyles, /linear-gradient\(135deg, #0284c7 0%, #2563eb 62%, #263fbd 100%\)/);
   assert.match(themeStyles, /@media \(max-width: 640px\)[\s\S]*\.insertion-dashboard__sound-row,[\s\S]*grid-template-columns: 1fr/);
 });
+
+test("dashboard uses compact operational sizing instead of presentation sizing", () => {
+  assert.match(themeStyles, /\.theme-insertion-page \.insertion-dashboard \{[\s\S]*padding: 14px 18px 13px/);
+  assert.match(themeStyles, /\.insertion-dashboard__top \{[\s\S]*min-height: 58px/);
+  assert.match(themeStyles, /\.insertion-dashboard__clock-orb \{[\s\S]*width: 52px;[\s\S]*height: 52px/);
+  assert.match(themeStyles, /\.insertion-dashboard__time \{[\s\S]*font-size: clamp\(38px, 4\.6vw, 56px\)/);
+  assert.match(themeStyles, /\.insertion-dashboard__sound-button \{[\s\S]*min-height: 34px/);
+  assert.match(themeStyles, /\.insertion-dashboard__schedule-tab \{[\s\S]*min-height: 38px/);
+});
