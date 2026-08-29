@@ -5656,6 +5656,14 @@ function isInsertionLogEntryActiveForStabling(entry = {}, stablingData = {}) {
   return !entryTrainKey || entryTrainKey === currentTrainKey;
 }
 
+function getInsertionTrackingId(entry = null) {
+  if (!entry) return null;
+  const savedInput = String(entry.inputValue ?? "").trim();
+  const source = savedInput || String(entry.tid ?? "").trim();
+  const match = source.match(/^(?:TID[:\s-]*)?T?(\d{1,3})$/i);
+  return match ? parseInt(match[1], 10) : null;
+}
+
 const INSERTION_PANEL_COLORS = {
   shell: "#071622",
   shellBorder: "#1f3b50",
@@ -5820,8 +5828,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     ? getTidScheduledTime(parsedInsertedTid, autoTidDepot, { allowFallback: false })
     : null;
   // A numeric value is a real TID only when it exists in the currently active timetable.
-  // Older saved unmatched TIDs are displayed as normal numeric remarks.
+  // An unmatched numeric value still remains visible as Tracking metadata, but
+  // it does not receive timetable timing or TID-specific operational details.
   const insertedTid = insertedScheduledTime ? parsedInsertedTid : null;
+  const insertedTrackingId = getInsertionTrackingId(inserted) ?? insertedTid;
   const insertedRemarkLabel = insertedTid
     ? `TID ${insertedTid}`
     : inserted?.isSweeping
@@ -5839,7 +5849,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     : null;
   const insertedTidAssistDisplayRemark = getInsertionAssistRemarkDisplayLabel(insertedTidAssistRemark);
   const hasInsertedTidAssistDisplayRemark = Boolean(insertedTid && insertedTidAssistDisplayRemark);
-  const insertedPlainRemark = inserted && !inserted.isSweeping && !insertedTid
+  const insertedPlainRemark = inserted && !inserted.isSweeping && !insertedTrackingId
     ? String(inserted.remark ?? parsedInsertedTid ?? "").trim()
     : "";
   const hasInsertedPlainRemark = Boolean(insertedPlainRemark);
@@ -5885,7 +5895,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const hiddenInsertionStatusCount = insertionStatusRemarkList.length - displayedInsertionStatusRemarks.length;
   const hasMiddleInsertionRemark = Boolean(key && insertionStatusRemarkList.length > 0);
   const insertedTidBigPillStyle = getInsertionTidBigPillStyle(insertedTidRemarkStyle, autoTidDepot);
-  const insertionDoneCardMinHeight = insertedTid ? 76 : hasInsertedPlainRemark ? 112 : 116;
+  const insertionDoneCardMinHeight = insertedTrackingId ? 76 : hasInsertedPlainRemark ? 112 : 116;
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
   const isInsertionDone = Boolean(inserted && !inserted.isSweeping);
@@ -6024,11 +6034,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
       <td className="theme-stabling-grid-cell theme-insertion-grid-cell p-1.5 align-middle" title="Elapsed TID hidden manually" style={{ height: 1, backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
         <div className={`theme-insertion-card is-expired ${isSearchMatch ? "is-search-match" : ""} flex h-full flex-col items-center justify-center gap-1 rounded-xl select-none`} style={{ minHeight: rowCardMinHeight, height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow, opacity: isSearchMatch ? 0.85 : 0.55 }}>
           <div className="flex h-5 w-full items-center justify-center text-center font-black leading-none" style={{ fontSize: 14, color: "#3a5068" }}>{displayVal || "—"}</div>
-          {insertedRemarkLabel && !insertedTid && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
-          {insertedTid && (
-            <div className="theme-insertion-tracking-footer is-complete mt-auto" aria-label={`Tracking ID ${String(insertedTid).padStart(3, "0")}`}>
+          {insertedRemarkLabel && !insertedTrackingId && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
+          {insertedTrackingId && (
+            <div className="theme-insertion-tracking-footer is-complete mt-auto" aria-label={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}`}>
               <span>Tracking</span>
-              <strong>{String(insertedTid).padStart(3, "0")}</strong>
+              <strong>{String(insertedTrackingId).padStart(3, "0")}</strong>
             </div>
           )}
           <span className="text-[8px] tracking-wide uppercase" style={{ color: "#1e3a52" }}>elapsed hidden</span>
@@ -6440,17 +6450,17 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 />
               </div>
             )}
-            {insertedTid && (
+            {insertedTrackingId && (
               <div
                 className="theme-insertion-tracking-footer is-complete"
-                title={`Tracking ID ${String(insertedTid).padStart(3, "0")}`}
-                aria-label={`Tracking ID ${String(insertedTid).padStart(3, "0")}`}
+                title={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}`}
+                aria-label={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}`}
               >
                 <span>Tracking</span>
-                <strong>{String(insertedTid).padStart(3, "0")}</strong>
+                <strong>{String(insertedTrackingId).padStart(3, "0")}</strong>
               </div>
             )}
-            {inserted && !inserted.isSweeping && !insertedTid && (
+            {inserted && !inserted.isSweeping && !insertedTrackingId && (
               isEast3K1InsertionCard ? (
                 <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
                   <div
@@ -7247,6 +7257,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
 
                 const rowEntry = getActiveInsertionEntryForCell(insertionLog, road, blockIndex, rowTrainKey);
                 const rowEntryTid = Number(String(rowEntry?.tid ?? "").replace(/\D/g, ""));
+                const rowTrackingId = getInsertionTrackingId(rowEntry);
                 const rowEntryDepot = WEST_ROADS.includes(road) ? "west" : "east";
                 const rowHasValidTid = Boolean(
                   rowEntryTid && typeof getTidScheduledTime === "function" &&
@@ -7264,7 +7275,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
                     .map((label) => String(label || "").trim())
                     .filter(Boolean),
                   ...(rowHasValidTid && rowAssistDisplayRemark ? [rowAssistDisplayRemark] : []),
-                  ...(!rowHasValidTid && !rowEntry?.isSweeping && rowEntry?.remark
+                  ...(!rowTrackingId && !rowEntry?.isSweeping && rowEntry?.remark
                     ? [String(rowEntry.remark).trim()]
                     : []),
                 ]);
@@ -7278,24 +7289,17 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
                 const rowBlock = data[road]?.[blockIndex];
                 const rowTrainKey = normalizeTrainId(rowBlock?.trainId || "");
                 const rowEntry = getActiveInsertionEntryForCell(insertionLog, road, blockIndex, rowTrainKey);
-                const rowEntryTid = rowEntry?.tid !== null && rowEntry?.tid !== undefined
-                  ? Number(String(rowEntry.tid).replace(/\D/g, ""))
-                  : null;
-                const rowEntryDepot = WEST_ROADS.includes(road) ? "west" : "east";
-                const rowHasValidTid = Boolean(
-                  rowEntryTid && typeof getTidScheduledTime === "function" &&
-                  getTidScheduledTime(rowEntryTid, rowEntryDepot, { allowFallback: false })
-                );
+                const rowTrackingId = getInsertionTrackingId(rowEntry);
                 const rowHasPlainRemark = Boolean(
                   rowEntry &&
                   !rowEntry.isSweeping &&
-                  !rowHasValidTid &&
-                  String(rowEntry.remark ?? rowEntryTid ?? "").trim()
+                  !rowTrackingId &&
+                  String(rowEntry.remark ?? rowEntry.tid ?? "").trim()
                 );
                 const baseHeight = rowEntry?.isSweeping
                   ? 184
                   : rowEntry
-                    ? (rowHasValidTid ? 76 : rowHasPlainRemark ? 126 : 116)
+                    ? (rowTrackingId ? 76 : rowHasPlainRemark ? 126 : 116)
                     : 90;
                 return Math.max(maxHeight, baseHeight);
               }, 90);
