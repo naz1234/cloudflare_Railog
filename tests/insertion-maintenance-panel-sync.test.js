@@ -59,6 +59,10 @@ test("Insertion receives the production request-group visibility handler", () =>
     /onToggleMaintenanceRequestGroupHidden=\{handleToggleRequestGroupHidden\}/,
   );
   assert.match(
+    transformedSource,
+    /<InsertionTabContent[\s\S]*?maintenanceMap=\{visibleRequestMaintenanceMap\}/,
+  );
+  assert.match(
     insertionComponent,
     /onToggleGroupHidden=\{onToggleMaintenanceRequestGroupHidden\}/,
   );
