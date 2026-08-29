@@ -89,6 +89,15 @@ export default function requestGroupVisibilityPlugin() {
 
       code = replaceRequired(
         code,
+        /            onDeleteMaintenanceRequestGroup=\{handleDeleteRequestGroup\}\r?\n/,
+        `            onDeleteMaintenanceRequestGroup={handleDeleteRequestGroup}
+            onToggleMaintenanceRequestGroupHidden={handleToggleRequestGroupHidden}
+`,
+        'Insertion MaintenancePanel visibility callback'
+      );
+
+      code = replaceRequired(
+        code,
         /      remark: "",\r?\n      badgeText: displayType,/,
         `      remark: "",
       hiddenByRequestGroup: req?.groupHidden === true,

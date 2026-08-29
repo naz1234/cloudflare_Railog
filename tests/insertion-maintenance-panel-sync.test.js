@@ -1,0 +1,68 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import requestGroupVisibilityPlugin from "../build/requestGroupVisibilityPlugin.js";
+
+const depotStablingUrl = new URL("../src/pages/DepotStabling.jsx", import.meta.url);
+const depotStablingSource = readFileSync(
+  depotStablingUrl,
+  "utf8",
+);
+
+const insertionComponent = depotStablingSource.slice(
+  depotStablingSource.indexOf("function InsertionTabContent"),
+  depotStablingSource.indexOf("// ── Train Movement Internal Page"),
+);
+const stablingTabRender = depotStablingSource.slice(
+  depotStablingSource.indexOf('{activeTab === "stabling"'),
+  depotStablingSource.indexOf('{activeTab === "movement"'),
+);
+const insertionTabRender = depotStablingSource.slice(
+  depotStablingSource.indexOf('{activeTab === "insertion"'),
+  depotStablingSource.indexOf('{activeTab === "washing"'),
+);
+
+test("Insertion renders the same MaintenancePanel component used by Train Request", () => {
+  assert.match(depotStablingSource, /function MaintenancePanelShell\(props\)/);
+  assert.match(depotStablingSource, /<MaintenancePanel \{\.\.\.props\} \/>/);
+  assert.match(stablingTabRender, /<MaintenancePanel[\s\S]*requests=\{requests\}/);
+  assert.match(insertionComponent, /<MaintenancePanelShell[\s\S]*requests=\{maintenanceRequests\}/);
+});
+
+test("Insertion receives the shared request list and every Train Request mutation handler", () => {
+  assert.match(insertionTabRender, /maintenanceRequests=\{requests\}/);
+  assert.match(insertionTabRender, /onAddMaintenanceRequest=\{handleAddRequest\}/);
+  assert.match(insertionTabRender, /onRemoveMaintenanceRequest=\{handleRemoveRequest\}/);
+  assert.match(insertionTabRender, /onClearMaintenanceRequests=\{handleClearAllRequests\}/);
+  assert.match(insertionTabRender, /onRenameMaintenanceRequestGroup=\{handleRenameRequestGroup\}/);
+  assert.match(insertionTabRender, /onDeleteMaintenanceRequestGroup=\{handleDeleteRequestGroup\}/);
+
+  assert.match(insertionComponent, /onAdd=\{onAddMaintenanceRequest\}/);
+  assert.match(insertionComponent, /onRemove=\{onRemoveMaintenanceRequest\}/);
+  assert.match(insertionComponent, /onClearAll=\{onClearMaintenanceRequests\}/);
+  assert.match(insertionComponent, /onRenameGroup=\{onRenameMaintenanceRequestGroup\}/);
+  assert.match(insertionComponent, /onDeleteGroup=\{onDeleteMaintenanceRequestGroup\}/);
+});
+
+test("Insertion receives the production request-group visibility handler", () => {
+  const transformedSource = requestGroupVisibilityPlugin().transform(
+    depotStablingSource,
+    depotStablingUrl.pathname,
+  )?.code || "";
+
+  assert.match(
+    transformedSource,
+    /onToggleMaintenanceRequestGroupHidden=\{handleToggleRequestGroupHidden\}/,
+  );
+  assert.match(
+    insertionComponent,
+    /onToggleGroupHidden=\{onToggleMaintenanceRequestGroupHidden\}/,
+  );
+});
+
+test("Insertion reuses shared stabling locations for request status", () => {
+  assert.match(insertionTabRender, /stabledTrainIds=\{Array\.from\(westStablingKeys\)\}/);
+  assert.match(insertionTabRender, /stabledTrainLocations=\{getMainStablingLocations\(westData, eastData\)\}/);
+  assert.match(insertionComponent, /stabledTrainIds=\{stabledTrainIds\}/);
+  assert.match(insertionComponent, /stabledTrainLocations=\{stabledTrainLocations\}/);
+});

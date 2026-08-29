@@ -9672,7 +9672,65 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   );
 }
 
-function InsertionTabContent({ westSection, eastSection, maintenanceMap, insertionLog, onClearInsertionDepot, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, activeTimetable, activeTimetableType, insertionLiveStatusText, insertionLiveStatusClass, insertionLiveDebug, eastInsertionTimeOffsetMinutes = 0, onEastInsertionTimeOffsetChange }) {
+function MaintenancePanelShell(props) {
+  return (
+    <div
+      className="maintenance-panel-shell"
+      style={{ width: 276, minWidth: 276, flex: "0 0 276px" }}
+    >
+      <style>{`
+        .maintenance-panel-shell > * {
+          width: 100%;
+        }
+
+        .maintenance-panel-shell button[class*="red"] svg,
+        .maintenance-panel-shell button[class*="danger"] svg,
+        .maintenance-panel-shell button[class*="text-red"] svg,
+        .maintenance-panel-shell button[class*="border-red"] svg,
+        .maintenance-panel-shell button[class*="bg-red"] svg {
+          color: #f87171 !important;
+          stroke: #f87171 !important;
+        }
+
+        .maintenance-panel-shell button[class*="red"] svg *,
+        .maintenance-panel-shell button[class*="danger"] svg *,
+        .maintenance-panel-shell button[class*="text-red"] svg *,
+        .maintenance-panel-shell button[class*="border-red"] svg *,
+        .maintenance-panel-shell button[class*="bg-red"] svg * {
+          stroke: #f87171 !important;
+        }
+      `}</style>
+      <MaintenancePanel {...props} />
+    </div>
+  );
+}
+
+function InsertionTabContent({
+  westSection,
+  eastSection,
+  maintenanceMap,
+  insertionLog,
+  onClearInsertionDepot,
+  getTidScheduledTime,
+  getTidAssistRemark,
+  getTidAssistRemarkStyle,
+  activeTimetable,
+  activeTimetableType,
+  insertionLiveStatusText,
+  insertionLiveStatusClass,
+  insertionLiveDebug,
+  eastInsertionTimeOffsetMinutes = 0,
+  onEastInsertionTimeOffsetChange,
+  maintenanceRequests = [],
+  onAddMaintenanceRequest,
+  onRemoveMaintenanceRequest,
+  onClearMaintenanceRequests,
+  onRenameMaintenanceRequestGroup,
+  onToggleMaintenanceRequestGroupHidden = undefined,
+  onDeleteMaintenanceRequestGroup,
+  stabledTrainIds = [],
+  stabledTrainLocations = {},
+}) {
   const [tidDragState, setTidDragState] = useState(null);
   const [tidDragPoint, setTidDragPoint] = useState({ x: 0, y: 0 });
   const [tidDragHover, setTidDragHover] = useState(null);
@@ -9910,8 +9968,12 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
         </div>
       )}
 
-      {/* Insertion layout: each depot reference table sits beside its own stabling table, with that depot log below the stabling side */}
-      <div className="space-y-6 min-w-0">
+      {/* Insertion layout: depot tables remain together while the shared Train Request panel stays available at the right. */}
+      <div
+        className="grid min-w-0 items-start gap-3"
+        style={{ gridTemplateColumns: "minmax(1230px, 1fr) 276px" }}
+      >
+        <div className="min-w-0 space-y-6">
         <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
           <div className="self-start">
             <TIDReferenceTable
@@ -9992,6 +10054,21 @@ function InsertionTabContent({ westSection, eastSection, maintenanceMap, inserti
               />
             </div>
           </div>
+        </div>
+        </div>
+
+        <div className="sticky top-1 self-start">
+          <MaintenancePanelShell
+            requests={maintenanceRequests}
+            onAdd={onAddMaintenanceRequest}
+            onRemove={onRemoveMaintenanceRequest}
+            onClearAll={onClearMaintenanceRequests}
+            onRenameGroup={onRenameMaintenanceRequestGroup}
+            onToggleGroupHidden={onToggleMaintenanceRequestGroupHidden}
+            onDeleteGroup={onDeleteMaintenanceRequestGroup}
+            stabledTrainIds={stabledTrainIds}
+            stabledTrainLocations={stabledTrainLocations}
+          />
         </div>
       </div>
     </div>
@@ -21810,6 +21887,14 @@ export default function DepotStablingPage() {
             insertionLiveDebug={insertionLiveDebug}
             eastInsertionTimeOffsetMinutes={eastInsertionTimeOffsetMinutes}
             onEastInsertionTimeOffsetChange={setEastInsertionTimeOffsetMinutes}
+            maintenanceRequests={requests}
+            onAddMaintenanceRequest={handleAddRequest}
+            onRemoveMaintenanceRequest={handleRemoveRequest}
+            onClearMaintenanceRequests={handleClearAllRequests}
+            onRenameMaintenanceRequestGroup={handleRenameRequestGroup}
+            onDeleteMaintenanceRequestGroup={handleDeleteRequestGroup}
+            stabledTrainIds={Array.from(westStablingKeys)}
+            stabledTrainLocations={getMainStablingLocations(westData, eastData)}
           />
         )}
 
