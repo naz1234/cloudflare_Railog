@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Download, Search, ArrowUp, ArrowDown, Check, Sun, Moon, TrainFront, Clock3, RefreshCw } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Redo2, Flame, Download, Search, ArrowUp, ArrowDown, Check, Sun, Moon, TrainFront, Clock3, RefreshCw } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
@@ -1963,6 +1963,16 @@ function cloneInsertionStablingState(westData = {}, eastData = {}) {
     westData: normalizeStablingDepotData(westData, WEST_ROADS),
     eastData: normalizeStablingDepotData(eastData, EAST_ROADS),
   };
+}
+
+function insertionStablingTrainPositionsMatch(leftData = {}, rightData = {}, roads = []) {
+  return roads.every((road) => {
+    const leftBlocks = normalizeStablingBlocks(leftData?.[road]);
+    const rightBlocks = normalizeStablingBlocks(rightData?.[road]);
+    return leftBlocks.every((block, blockIndex) => (
+      normalizeTrainId(block?.trainId || "") === normalizeTrainId(rightBlocks[blockIndex]?.trainId || "")
+    ));
+  });
 }
 
 function normalizeInsertionPgByDepot(value = {}) {
@@ -5805,6 +5815,81 @@ function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2,
   );
 }
 
+function InsertionEditableHeaderControls({
+  depotCode,
+  onRefresh,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
+  isDirty = false,
+  tooltipPlacement = "top",
+}) {
+  const refreshTooltip = isDirty
+    ? `${depotCode} editable stabling differs from Main Stabling. Refresh to sync and reset ${depotCode} insertion work.`
+    : `${depotCode} editable stabling matches Main Stabling. Refresh will reset ${depotCode} insertion work.`;
+
+  return (
+    <div className="theme-insertion-editable-controls flex flex-wrap items-center justify-start gap-1.5">
+      <div className="theme-insertion-editable-label inline-flex h-7 items-center gap-1.5 rounded-full border border-[#2b4f6b] bg-[#071828] px-2.5 text-[10px] font-semibold text-sky-100">
+        <Pencil className="h-3 w-3" aria-hidden="true" />
+        Editable Stabling
+      </div>
+      <ActionTooltip
+        message={canUndo ? `Undo the last ${depotCode} stabling edit` : `No ${depotCode} stabling edit to undo`}
+        placement={tooltipPlacement}
+      >
+        <button
+          type="button"
+          onClick={onUndo}
+          disabled={!canUndo}
+          aria-label={`Undo ${depotCode} stabling edit`}
+          className="theme-insertion-history-button inline-flex h-7 items-center gap-1 rounded-full border border-[#2b4f6b] bg-[#071828] px-2.5 text-[10px] font-semibold text-sky-100 transition-all hover:-translate-y-0.5 hover:border-sky-400/70 disabled:cursor-not-allowed disabled:opacity-35"
+        >
+          <Undo2 className="h-3 w-3" aria-hidden="true" />
+          Undo
+        </button>
+      </ActionTooltip>
+      <ActionTooltip
+        message={canRedo ? `Redo the last ${depotCode} stabling edit` : `No ${depotCode} stabling edit to redo`}
+        placement={tooltipPlacement}
+      >
+        <button
+          type="button"
+          onClick={onRedo}
+          disabled={!canRedo}
+          aria-label={`Redo ${depotCode} stabling edit`}
+          className="theme-insertion-history-button inline-flex h-7 items-center gap-1 rounded-full border border-[#2b4f6b] bg-[#071828] px-2.5 text-[10px] font-semibold text-sky-100 transition-all hover:-translate-y-0.5 hover:border-sky-400/70 disabled:cursor-not-allowed disabled:opacity-35"
+        >
+          <Redo2 className="h-3 w-3" aria-hidden="true" />
+          Redo
+        </button>
+      </ActionTooltip>
+      <ActionTooltip message={refreshTooltip} placement={tooltipPlacement}>
+        <button
+          type="button"
+          onClick={onRefresh}
+          aria-label={refreshTooltip}
+          className={`theme-insertion-refresh-button ${isDirty ? "is-dirty" : "is-synced"} group inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-[10px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0`}
+          style={isDirty ? {
+            background: "linear-gradient(135deg, rgba(249,115,22,0.42), rgba(220,38,38,0.34))",
+            borderColor: "rgba(251,146,60,0.92)",
+            color: "#fff7ed",
+            boxShadow: "0 0 16px rgba(249,115,22,0.38), inset 0 1px 0 rgba(255,255,255,0.12)",
+          } : MAIN_STABLING_BUTTON_BLUE}
+        >
+          {isDirty ? (
+            <Flame className="theme-insertion-refresh-fire h-3.5 w-3.5" aria-hidden="true" />
+          ) : (
+            <RefreshCw className="h-3 w-3" aria-hidden="true" />
+          )}
+          Refresh
+        </button>
+      </ActionTooltip>
+    </div>
+  );
+}
+
 function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onInsertionTaNameUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0, tidDropRequest = null, onTidDropApplied, isTidDragActive = false, isTidDropHovered = false, isSearchMatch = false }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
@@ -6838,7 +6923,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   );
 }
 
-function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onInsertionTaNameUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, isWeekendActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied, allDepots = [] }) {
+function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoStabling, canUndoStabling = false, canRedoStabling = false, isStablingDirty = false, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onInsertionTaNameUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, isWeekendActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied, allDepots = [] }) {
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
   const [sectionSearch, setSectionSearch] = useState("");
@@ -6847,11 +6932,6 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
   const sectionDepot = roads.some((road) => WEST_ROADS.includes(road)) ? "west" : "east";
   const depotCode = sectionDepot === "west" ? "WD" : "ED";
   const tooltipPlacement = sectionDepot === "west" ? "bottom" : "top";
-  const pgTooltips = {
-    pg1: `Show ${depotCode} PG1 default stabling`,
-    pg2: `Show ${depotCode} PG2 editable stabling`,
-    refresh: `Copy latest ${depotCode} PG1 stabling to PG2 and reset ${depotCode} PG2 insertion work`,
-  };
 
   const locationResults = (() => {
     if (!normalizedSearch || allDepots.length === 0) return [];
@@ -7083,11 +7163,14 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
       <InsertionSectionTitle
         title={title}
         leftAction={
-          <InsertionPgHeaderControls
-            activePg={activePg}
-            onPgChange={onPgChange}
-            onRefreshPg2={onRefreshPg2}
-            tooltips={pgTooltips}
+          <InsertionEditableHeaderControls
+            depotCode={depotCode}
+            onRefresh={onRefreshStabling}
+            onUndo={onUndoStabling}
+            onRedo={onRedoStabling}
+            canUndo={canUndoStabling}
+            canRedo={canRedoStabling}
+            isDirty={isStablingDirty}
             tooltipPlacement={tooltipPlacement}
           />
         }
@@ -17382,6 +17465,7 @@ export default function DepotStablingPage() {
   const [pg2Stabling, setPg2Stabling] = useState(() => loadInsertionPg2Stabling(westData, eastData));
   const [pg2InsertionLog, setPg2InsertionLog] = useState(() => loadInsertionPg2Log());
   const [pg2TidInputs, setPg2TidInputs] = useState(() => loadInsertionPg2TidInputs());
+  const [insertionEditHistoryRevision, setInsertionEditHistoryRevision] = useState(0);
   const [eastInsertionTimeOffsetMinutes, setEastInsertionTimeOffsetMinutes] = useState(() => loadEastInsertionTimeOffset());
   const [insertionLiveLoaded, setInsertionLiveLoaded] = useState(false);
   const [insertionLiveSyncing, setInsertionLiveSyncing] = useState(false);
@@ -18276,6 +18360,10 @@ export default function DepotStablingPage() {
   const pg2StablingRef = useRef(pg2Stabling);
   const pg2InsertionLogRef = useRef(pg2InsertionLog);
   const pg2TidInputsRef = useRef(pg2TidInputs);
+  const insertionEditHistoryRef = useRef({
+    west: { past: [], future: [] },
+    east: { past: [], future: [] },
+  });
   const insertionLiveLocalUpdatedAtRef = useRef(loadInsertionLiveLocalUpdatedMs());
   const insertionLiveRemoteUpdatedAtRef = useRef(0);
 
@@ -18783,6 +18871,14 @@ export default function DepotStablingPage() {
       setPg2TidInputs(normalized.pg2TidInputs);
       saveInsertionPg2TidInputs(normalized.pg2TidInputs);
     }
+
+    // A newer shared editable-stabling snapshot replaces the local undo chain.
+    // Keeping old history here could undo into another controller's stale layout.
+    insertionEditHistoryRef.current = {
+      west: { past: [], future: [] },
+      east: { past: [], future: [] },
+    };
+    setInsertionEditHistoryRevision((revision) => revision + 1);
   }, []);
 
   const saveInsertionLiveToDb = useCallback(async (state) => {
@@ -20166,8 +20262,105 @@ export default function DepotStablingPage() {
     commitInsertionLiveSnapshot({ pg2TidInputs: nextInputs });
   }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit]);
 
-  const handlePg2TrainIdChange = useCallback((depot, road, blockIndex, value) => {
+  const getInsertionEditableDepotSnapshot = useCallback((depot) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    const targetRoads = normalizedDepot === "west" ? WEST_ROADS : EAST_ROADS;
+    const currentStabling = pg2StablingRef.current || cloneInsertionStablingState(westDataRef.current, eastDataRef.current);
+    const depotData = normalizedDepot === "west" ? currentStabling.westData : currentStabling.eastData;
+    const snapshotInputs = {};
+
+    Object.entries(pg2TidInputsRef.current || {}).forEach(([key, value]) => {
+      if (targetRoads.some((road) => key.startsWith(`${road}-`))) snapshotInputs[key] = value;
+    });
+
+    const snapshotLog = (pg2InsertionLogRef.current || [])
+      .filter((entry) => {
+        const entryDepot = entry?.depot || (EAST_ROADS.includes(entry?.road) ? "east" : "west");
+        return normalizeDepotKey(entryDepot) === normalizedDepot;
+      })
+      .map((entry) => ({ ...entry }));
+
+    return {
+      stabling: normalizeStablingDepotData(depotData, targetRoads),
+      insertionLog: snapshotLog,
+      tidInputs: snapshotInputs,
+    };
+  }, []);
+
+  const rememberInsertionEditableDepot = useCallback((depot) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    const history = insertionEditHistoryRef.current[normalizedDepot];
+    history.past = [...history.past.slice(-49), getInsertionEditableDepotSnapshot(normalizedDepot)];
+    history.future = [];
+    setInsertionEditHistoryRevision((revision) => revision + 1);
+  }, [getInsertionEditableDepotSnapshot]);
+
+  const applyInsertionEditableDepotSnapshot = useCallback((depot, snapshot) => {
+    if (!snapshot) return;
     markInsertionLiveLocalEdit();
+    const normalizedDepot = normalizeDepotKey(depot);
+    const targetRoads = normalizedDepot === "west" ? WEST_ROADS : EAST_ROADS;
+    const currentStabling = pg2StablingRef.current || cloneInsertionStablingState(westDataRef.current, eastDataRef.current);
+    const nextStabling = cloneInsertionStablingState(currentStabling.westData, currentStabling.eastData);
+
+    if (normalizedDepot === "west") {
+      nextStabling.westData = normalizeStablingDepotData(snapshot.stabling, WEST_ROADS);
+    } else {
+      nextStabling.eastData = normalizeStablingDepotData(snapshot.stabling, EAST_ROADS);
+    }
+
+    const nextLog = sortInsertionLogByTime([
+      ...(pg2InsertionLogRef.current || []).filter((entry) => {
+        const entryDepot = entry?.depot || (EAST_ROADS.includes(entry?.road) ? "east" : "west");
+        return normalizeDepotKey(entryDepot) !== normalizedDepot;
+      }),
+      ...(snapshot.insertionLog || []).map((entry) => ({ ...entry })),
+    ]);
+    const nextInputs = { ...(pg2TidInputsRef.current || {}) };
+    targetRoads.forEach((road) => {
+      for (let bi = 0; bi < 7; bi += 1) delete nextInputs[`${road}-${bi}`];
+    });
+    Object.assign(nextInputs, snapshot.tidInputs || {});
+
+    pg2StablingRef.current = nextStabling;
+    pg2InsertionLogRef.current = nextLog;
+    pg2TidInputsRef.current = nextInputs;
+    saveInsertionPg2Stabling(nextStabling);
+    saveInsertionPg2Log(nextLog);
+    saveInsertionPg2TidInputs(nextInputs);
+    setPg2Stabling(nextStabling);
+    setPg2InsertionLog(nextLog);
+    setPg2TidInputs(nextInputs);
+    commitInsertionLiveSnapshot({
+      pg2Stabling: nextStabling,
+      pg2InsertionLog: nextLog,
+      pg2TidInputs: nextInputs,
+    });
+  }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit]);
+
+  const handleUndoInsertionStabling = useCallback((depot) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    const history = insertionEditHistoryRef.current[normalizedDepot];
+    const previous = history.past.pop();
+    if (!previous) return;
+
+    history.future = [...history.future.slice(-49), getInsertionEditableDepotSnapshot(normalizedDepot)];
+    setInsertionEditHistoryRevision((revision) => revision + 1);
+    applyInsertionEditableDepotSnapshot(normalizedDepot, previous);
+  }, [applyInsertionEditableDepotSnapshot, getInsertionEditableDepotSnapshot]);
+
+  const handleRedoInsertionStabling = useCallback((depot) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    const history = insertionEditHistoryRef.current[normalizedDepot];
+    const next = history.future.pop();
+    if (!next) return;
+
+    history.past = [...history.past.slice(-49), getInsertionEditableDepotSnapshot(normalizedDepot)];
+    setInsertionEditHistoryRevision((revision) => revision + 1);
+    applyInsertionEditableDepotSnapshot(normalizedDepot, next);
+  }, [applyInsertionEditableDepotSnapshot, getInsertionEditableDepotSnapshot]);
+
+  const handlePg2TrainIdChange = useCallback((depot, road, blockIndex, value) => {
     const normalizedDepot = normalizeDepotKey(depot);
     const cellKey = `${road}-${blockIndex}`;
     const logKey = `ins-${cellKey}`;
@@ -20175,6 +20368,10 @@ export default function DepotStablingPage() {
     const currentDepotData = normalizedDepot === "west" ? currentPg2Stabling.westData : currentPg2Stabling.eastData;
     const previousKey = normalizeTrainId(currentDepotData?.[road]?.[blockIndex]?.trainId || "");
     const incomingKey = normalizeTrainId(value);
+
+    if (previousKey === incomingKey) return;
+    rememberInsertionEditableDepot(normalizedDepot);
+    markInsertionLiveLocalEdit();
 
     let nextInputs = pg2TidInputsRef.current || {};
     let nextLog = pg2InsertionLogRef.current || [];
@@ -20207,15 +20404,21 @@ export default function DepotStablingPage() {
       pg2TidInputs: nextInputs,
       pg2InsertionLog: nextLog,
     });
-  }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit]);
+  }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit, rememberInsertionEditableDepot]);
 
-  const handleRefreshPg2FromDefault = useCallback((depot) => {
+  const handleRefreshEditableStablingFromMain = useCallback((depot) => {
     markInsertionLiveLocalEdit();
     const normalizedDepot = normalizeDepotKey(depot);
     const targetRoads = normalizedDepot === "west" ? WEST_ROADS : EAST_ROADS;
     const currentPg2Stabling = pg2StablingRef.current || cloneInsertionStablingState(westDataRef.current, eastDataRef.current);
 
-    // Refresh only the selected depot. The other depot's PG2 layout and work stay untouched.
+    const currentSnapshot = getInsertionEditableDepotSnapshot(normalizedDepot);
+    const mainDepotData = normalizedDepot === "west" ? westDataRef.current : eastDataRef.current;
+    const hasLayoutChanges = !insertionStablingTrainPositionsMatch(currentSnapshot.stabling, mainDepotData, targetRoads);
+    const hasInsertionWork = currentSnapshot.insertionLog.length > 0 || Object.values(currentSnapshot.tidInputs).some((value) => String(value || "").trim());
+    if (hasLayoutChanges || hasInsertionWork) rememberInsertionEditableDepot(normalizedDepot);
+
+    // Refresh only the selected depot. The other depot's editable layout and work stay untouched.
     const nextStabling = cloneInsertionStablingState(currentPg2Stabling?.westData || {}, currentPg2Stabling?.eastData || {});
     if (normalizedDepot === "west") {
       nextStabling.westData = normalizeStablingDepotData(westDataRef.current, WEST_ROADS);
@@ -20228,30 +20431,22 @@ export default function DepotStablingPage() {
     targetRoads.forEach((road) => {
       for (let bi = 0; bi < 7; bi += 1) delete nextInputs[`${road}-${bi}`];
     });
-    const nextActivePg = {
-      ...normalizeInsertionPgByDepot(activeInsertionPgRef.current),
-      [normalizedDepot]: "pg2",
-    };
 
     pg2StablingRef.current = nextStabling;
     pg2InsertionLogRef.current = nextLog;
     pg2TidInputsRef.current = nextInputs;
-    activeInsertionPgRef.current = nextActivePg;
     saveInsertionPg2Stabling(nextStabling);
     saveInsertionPg2Log(nextLog);
     saveInsertionPg2TidInputs(nextInputs);
-    saveInsertionActivePg(nextActivePg);
     setPg2Stabling(nextStabling);
     setPg2InsertionLog(nextLog);
     setPg2TidInputs(nextInputs);
-    setActiveInsertionPg(nextActivePg);
     commitInsertionLiveSnapshot({
-      activePg: nextActivePg,
       pg2Stabling: nextStabling,
       pg2InsertionLog: nextLog,
       pg2TidInputs: nextInputs,
     });
-  }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit]);
+  }, [commitInsertionLiveSnapshot, getInsertionEditableDepotSnapshot, markInsertionLiveLocalEdit, rememberInsertionEditableDepot]);
 
   const getDepotFromRoad = (road) => WEST_ROADS.includes(road) ? "west" : "east";
 
@@ -21176,68 +21371,57 @@ export default function DepotStablingPage() {
   const westStablingKeys = getWestStablingKeys(westData);
   const westStablingLocations = getWestStablingLocations(westData);
   const maintenanceMap = buildMaintenanceMap(requests, westStablingKeys);
-  const activeInsertionPgByDepot = normalizeInsertionPgByDepot(activeInsertionPg);
-  const westInsertionPg = activeInsertionPgByDepot.west;
-  const eastInsertionPg = activeInsertionPgByDepot.east;
 
   const getInsertionEntriesForDepot = (log = [], depot = "west") => (Array.isArray(log) ? log : []).filter((entry) => {
     const entryDepot = entry?.depot || getDepotFromRoad(entry?.road || "");
     return entryDepot === depot;
   });
 
-  const westInsertionSourceLog = westInsertionPg === "pg2" ? pg2InsertionLog : insertionLog;
-  const eastInsertionSourceLog = eastInsertionPg === "pg2" ? pg2InsertionLog : insertionLog;
-  const westInsertionSourceData = westInsertionPg === "pg2" ? pg2Stabling.westData : westData;
-  const eastInsertionSourceData = eastInsertionPg === "pg2" ? pg2Stabling.eastData : eastData;
+  const westInsertionSourceData = pg2Stabling.westData;
+  const eastInsertionSourceData = pg2Stabling.eastData;
   const activeInsertionLog = sortInsertionLogByTime([
-    ...getInsertionEntriesForDepot(westInsertionSourceLog, "west")
+    ...getInsertionEntriesForDepot(pg2InsertionLog, "west")
       .filter((entry) => isInsertionLogEntryActiveForStabling(entry, westInsertionSourceData)),
-    ...getInsertionEntriesForDepot(eastInsertionSourceLog, "east")
+    ...getInsertionEntriesForDepot(pg2InsertionLog, "east")
       .filter((entry) => isInsertionLogEntryActiveForStabling(entry, eastInsertionSourceData)),
   ]);
+  const westInsertionStablingDirty = !insertionStablingTrainPositionsMatch(westInsertionSourceData, westData, WEST_ROADS);
+  const eastInsertionStablingDirty = !insertionStablingTrainPositionsMatch(eastInsertionSourceData, eastData, EAST_ROADS);
+  const insertionHistory = insertionEditHistoryRef.current;
+  const westCanUndoInsertionStabling = Boolean(insertionEditHistoryRevision >= 0 && insertionHistory.west.past.length);
+  const westCanRedoInsertionStabling = Boolean(insertionEditHistoryRevision >= 0 && insertionHistory.west.future.length);
+  const eastCanUndoInsertionStabling = Boolean(insertionEditHistoryRevision >= 0 && insertionHistory.east.past.length);
+  const eastCanRedoInsertionStabling = Boolean(insertionEditHistoryRevision >= 0 && insertionHistory.east.future.length);
 
-  const updateActiveInsertionPgForDepot = (depot, pg) => {
+  const buildInsertionSectionConfig = (depot) => {
     const normalizedDepot = normalizeDepotKey(depot);
-    markInsertionLiveLocalEdit();
-    const nextActivePg = {
-      ...normalizeInsertionPgByDepot(activeInsertionPgRef.current),
-      [normalizedDepot]: normalizeInsertionPg(pg),
-    };
-    activeInsertionPgRef.current = nextActivePg;
-    saveInsertionActivePg(nextActivePg);
-    setActiveInsertionPg(nextActivePg);
-    commitInsertionLiveSnapshot({ activePg: nextActivePg });
-  };
-
-  const buildInsertionSectionConfig = (depot, pg) => {
-    const normalizedDepot = normalizeDepotKey(depot);
-    const isPg2 = normalizeInsertionPg(pg) === "pg2";
     const isWest = normalizedDepot === "west";
 
     return {
-      activePg: normalizeInsertionPg(pg),
-      onPgChange: (nextPg) => updateActiveInsertionPgForDepot(normalizedDepot, nextPg),
-      onRefreshPg2: () => handleRefreshPg2FromDefault(normalizedDepot),
-      data: isPg2
-        ? (isWest ? pg2Stabling.westData : pg2Stabling.eastData)
-        : (isWest ? westData : eastData),
-      insertionLog: isPg2 ? pg2InsertionLog : insertionLog,
-      onInsertionTick: isPg2 ? handlePg2InsertionTick : handleInsertionTick,
-      onInsertionTimeUpdate: isPg2 ? handlePg2InsertionTimeUpdate : handleInsertionTimeUpdate,
-      onInsertionRemarkUpdate: isPg2 ? handlePg2InsertionRemarkUpdate : handleInsertionRemarkUpdate,
-      onInsertionTaNameUpdate: isPg2 ? handlePg2InsertionTaNameUpdate : handleInsertionTaNameUpdate,
-      onSweepUpdate: isPg2 ? handlePg2SweepUpdate : handleSweepUpdate,
-      tidInputs: isPg2 ? pg2TidInputs : tidInputs,
-      onTidChange: isPg2 ? handlePg2TidChange : handleTidChange,
-      onClearInsertedTidRemarks: isPg2 ? handleClearPg2InsertedTidRemarks : handleClearInsertedTidRemarks,
-      onClearInsertedTrains: isPg2 ? handleClearPg2InsertedTrains : handleClearInsertedTrains,
-      stablingEditable: isPg2,
+      onRefreshStabling: () => handleRefreshEditableStablingFromMain(normalizedDepot),
+      onUndoStabling: () => handleUndoInsertionStabling(normalizedDepot),
+      onRedoStabling: () => handleRedoInsertionStabling(normalizedDepot),
+      canUndoStabling: isWest ? westCanUndoInsertionStabling : eastCanUndoInsertionStabling,
+      canRedoStabling: isWest ? westCanRedoInsertionStabling : eastCanRedoInsertionStabling,
+      isStablingDirty: isWest ? westInsertionStablingDirty : eastInsertionStablingDirty,
+      data: isWest ? pg2Stabling.westData : pg2Stabling.eastData,
+      insertionLog: pg2InsertionLog,
+      onInsertionTick: handlePg2InsertionTick,
+      onInsertionTimeUpdate: handlePg2InsertionTimeUpdate,
+      onInsertionRemarkUpdate: handlePg2InsertionRemarkUpdate,
+      onInsertionTaNameUpdate: handlePg2InsertionTaNameUpdate,
+      onSweepUpdate: handlePg2SweepUpdate,
+      tidInputs: pg2TidInputs,
+      onTidChange: handlePg2TidChange,
+      onClearInsertedTidRemarks: handleClearPg2InsertedTidRemarks,
+      onClearInsertedTrains: handleClearPg2InsertedTrains,
+      stablingEditable: true,
       onEditableTrainIdChange: (road, bi, value) => handlePg2TrainIdChange(normalizedDepot, road, bi, value),
     };
   };
 
-  const westInsertionSection = buildInsertionSectionConfig("west", westInsertionPg);
-  const eastInsertionSection = buildInsertionSectionConfig("east", eastInsertionPg);
+  const westInsertionSection = buildInsertionSectionConfig("west");
+  const eastInsertionSection = buildInsertionSectionConfig("east");
   const insertionAssignmentsByDepot = {
     west: buildInsertionTidAssignments(westInsertionSection),
     east: buildInsertionTidAssignments(eastInsertionSection),
@@ -21245,9 +21429,7 @@ export default function DepotStablingPage() {
 
   const handleActiveInsertionClearDepot = (depot) => {
     const normalizedDepot = normalizeDepotKey(depot);
-    const activePg = normalizedDepot === "west" ? westInsertionPg : eastInsertionPg;
-    if (activePg === "pg2") handleClearPg2InsertionDepot(normalizedDepot);
-    else handleClearInsertionDepot(normalizedDepot);
+    handleClearPg2InsertionDepot(normalizedDepot);
   };
 
   if (!loaded) {

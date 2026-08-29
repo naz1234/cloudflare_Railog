@@ -22,10 +22,10 @@ test("the movement Add Row action keeps the attention animation hook", () => {
   );
 });
 
-test("selected PST and insertion PG controls reuse the Add Row animation", () => {
+test("the remaining PST PG control reuses the Add Row animation", () => {
   assert.equal(
     (depotStablingSource.match(/<InsertionPgHeaderControls/g) || []).length,
-    2,
+    1,
   );
   assert.match(
     depotStablingSource,
