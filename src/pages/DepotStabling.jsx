@@ -5539,6 +5539,10 @@ function isSweepRemark(value) {
   return key === "SW" || key === "SW1" || key === "SW2" || key === "SWEEP" || key === "SWEEPING";
 }
 
+function isManualInsertionActionRemark(value) {
+  return isSweepRemark(value) || getEastInsertionKeywordRemarkLabel(value) === "3K1";
+}
+
 function getInsertionRemarkStyle(value) {
   const rawKey = (value || "").toString().trim().toUpperCase();
   const key = isSweepRemark(rawKey) ? "SW" : rawKey;
@@ -5908,7 +5912,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     ? getTidScheduledTime(autoTid, autoTidDepot, { allowFallback: false })
     : null;
   const canAutoInsertTid = Boolean(key && !inserted && !suppressAutoInsert && autoTid !== null && autoScheduledTime);
+  const canLogManualInsertion = Boolean(
+    key &&
+    !inserted &&
+    !canAutoInsertTid &&
+    isManualInsertionActionRemark(tidRemarkText)
+  );
   const isTidDropEligible = Boolean(key && !inserted);
+  const insertTrainTooltip = "Log this insertion using the entered TID or remark";
   const resetCardTooltip = "Reset this card and return to Add TID";
   const undoInsertionTooltip = "Undo this train insertion";
 
@@ -6027,7 +6038,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         ? 76
       : isInsertionDone
         ? insertionDoneCardMinHeight
-        : 90;
+        : canLogManualInsertion
+          ? 122
+          : 90;
   const ownInsertionCardMinHeight = Math.max(ownInsertionCardMinHeightBase, rowCardMinHeight);
   if (expired) {
     return (
@@ -6453,6 +6466,22 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   className="theme-insertion-tid-input min-w-0 w-full border-0 bg-transparent p-0 text-center text-[11px] font-semibold outline-none placeholder:text-[#47637a]"
                 />
               </label>
+            )}
+            {canLogManualInsertion && (
+              <ActionTooltip
+                message={insertTrainTooltip}
+                placement="top"
+                wrapperClassName="w-full"
+              >
+                <button
+                  type="button"
+                  onClick={handleInsertClick}
+                  aria-label={insertTrainTooltip}
+                  className={`theme-insertion-insert-button ${hasTidRemark ? "has-input" : ""} h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-all`}
+                >
+                  Log Insertion
+                </button>
+              </ActionTooltip>
             )}
             {insertedTrackingId && (
               <div
@@ -7299,11 +7328,18 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
                   !rowTrackingId &&
                   String(rowEntry.remark ?? rowEntry.tid ?? "").trim()
                 );
+                const rowHasManualInsertionAction = Boolean(
+                  rowTrainKey &&
+                  !rowEntry &&
+                  isManualInsertionActionRemark(tidInputs[`${road}-${blockIndex}`] || "")
+                );
                 const baseHeight = rowEntry?.isSweeping
                   ? 184
                   : rowEntry
                     ? (rowTrackingId ? 76 : rowHasPlainRemark ? 126 : 116)
-                    : 90;
+                    : rowHasManualInsertionAction
+                      ? 122
+                      : 90;
                 return Math.max(maxHeight, baseHeight);
               }, 90);
               const rowCardMinHeight = rowBaseMinHeight + rowMaintenanceSlotHeight;
