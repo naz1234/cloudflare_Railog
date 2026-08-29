@@ -12095,8 +12095,31 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
   font-variant-numeric: tabular-nums;
 }
 
-.theme-insertion-page .theme-insertion-tracking-footer input {
-  color: inherit;
+.theme-insertion-page .theme-insertion-tracking-footer input.theme-insertion-tid-input {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 18px !important;
+  padding: 0 2px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: inherit !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-align: right !important;
+  cursor: text;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.theme-insertion-page .theme-insertion-tracking-footer input.theme-insertion-tid-input:focus {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.theme-insertion-page .theme-insertion-tracking-footer input.theme-insertion-tid-input::placeholder {
+  color: #6f899f !important;
+  opacity: 1 !important;
 }
 
 .theme-insertion-page .theme-insertion-tracking-footer > span {
