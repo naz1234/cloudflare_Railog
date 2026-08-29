@@ -11906,3 +11906,140 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
     transition: none;
   }
 }
+
+/* Keep insertion timing controls directly above, and the same width as, the West Depot TID card. */
+.theme-insertion-page .theme-insertion-reference-controls-only {
+  width: clamp(250px, 26vw, 340px);
+  max-width: 100%;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard {
+  padding: 8px 9px;
+  border-radius: 15px;
+  box-shadow:
+    0 10px 24px rgba(0, 5, 18, 0.38),
+    0 0 18px rgba(37, 99, 235, 0.08),
+    inset 0 1px 0 rgba(147, 197, 253, 0.22);
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard::before {
+  top: -38px;
+  right: -34px;
+  width: 156px;
+  height: 92px;
+  box-shadow:
+    0 0 0 10px rgba(37, 99, 235, 0.06),
+    0 0 0 20px rgba(37, 99, 235, 0.035);
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard::after {
+  inset: 4px;
+  border-radius: 11px;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__top {
+  grid-template-columns: minmax(0, 1fr) 1px auto;
+  gap: 7px;
+  min-height: 42px;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__identity {
+  gap: 8px;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__clock-orb {
+  width: 34px;
+  height: 34px;
+  flex-basis: 34px;
+  box-shadow:
+    0 0 0 3px rgba(14, 165, 233, 0.08),
+    0 0 12px rgba(6, 182, 212, 0.18),
+    inset 0 0 10px rgba(14, 165, 233, 0.16);
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__clock-orb svg {
+  width: 15px;
+  height: 15px;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__clock-ring {
+  inset: 6px;
+  border-width: 1px;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__kicker {
+  font-size: 7px;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__day {
+  margin-top: 2px;
+  font-size: 15px;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__date {
+  margin-top: 3px;
+  font-size: 8px;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__divider {
+  display: block;
+  height: 34px;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__time {
+  justify-self: end;
+  padding-left: 0;
+  font-size: 23px;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__sound-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px !important;
+  margin-top: 6px;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__sound-button {
+  min-height: 27px;
+  gap: 3px;
+  padding: 3px 4px;
+  font-size: 6.5px;
+  letter-spacing: 0.08em;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__sound-button svg {
+  width: 11px;
+  height: 11px;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__schedule {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px !important;
+  margin-top: 7px;
+  padding: 2px !important;
+  border-radius: 10px !important;
+  box-shadow:
+    0 0 0 2px rgba(18, 49, 86, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__schedule-tab {
+  min-height: 27px;
+  padding: 4px 2px;
+  border-radius: 8px;
+  font-size: 7px;
+  letter-spacing: 0.07em;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__schedule-tab.is-active::after {
+  bottom: -4px;
+  width: 28px;
+  height: 2px;
+}
+
+.theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__override-badge {
+  right: 2px;
+  bottom: 1px;
+  padding: 0 2px;
+  font-size: 5px;
+  line-height: 6px;
+}
