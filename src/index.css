@@ -12208,6 +12208,13 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-foo
   animation: insertion-refresh-dirty-pulse 1.25s ease-in-out infinite;
 }
 
+.theme-insertion-page .theme-insertion-refresh-button.is-synced {
+  border-color: #2b4f6b;
+  background: #071828;
+  color: #7890a4;
+  box-shadow: none;
+}
+
 .theme-insertion-page .theme-insertion-refresh-fire {
   color: #fde047;
   fill: rgba(249, 115, 22, 0.55);
@@ -12237,6 +12244,13 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-butt
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button.is-dirty svg {
   color: #ea580c !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button.is-synced {
+  border-color: #cbd5e1 !important;
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+  box-shadow: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
