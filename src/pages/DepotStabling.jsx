@@ -6425,7 +6425,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 style={insTidInputStyle}
                 title="Enter Tracking ID"
               >
-                  <input
+                <input
                   ref={(element) => {
                     localTidInputRef.current = element;
                     tidInputRef?.(element);
@@ -6460,7 +6460,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 title={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}`}
                 aria-label={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}`}
               >
-                  <strong>{String(insertedTrackingId).padStart(3, "0")}</strong>
+                <strong>{String(insertedTrackingId).padStart(3, "0")}</strong>
               </div>
             )}
             {inserted && !inserted.isSweeping && !insertedTrackingId && (
