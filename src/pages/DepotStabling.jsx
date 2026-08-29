@@ -6005,13 +6005,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
       : key && !expired
         ? "0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)"
       : undefined;
-  const tidDividerColor = specialTidRemarkStyle?.border || (hasTidRemark ? "#b68a19" : "#315671");
   const insTidInputStyle = {
-    border: `1px solid ${tidDividerColor}`,
-    borderRadius: 7,
-    backgroundColor: hasTidRemark ? "rgba(120, 83, 10, 0.13)" : "rgba(3, 17, 29, 0.54)",
     color: specialTidRemarkStyle ? specialTidRemarkStyle.color : hasTidRemark ? "#fde68a" : "#d6e6f3",
-    boxShadow: "inset 0 1px 2px rgba(0, 0, 0, 0.20)",
   };
   const insRowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
   const ownInsertionCardMinHeightBase = inserted?.isSweeping

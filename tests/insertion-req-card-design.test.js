@@ -29,11 +29,14 @@ test("INS cards use the Train Request visual hierarchy", () => {
   assert.match(insertionCellSource, /\? "1px solid #1e4d72"/);
 });
 
-test("Tracking ID is isolated in a slim footer", () => {
+test("Tracking ID is isolated in a flat footer without a nested pill", () => {
   assert.match(insertionCellSource, /theme-insertion-tracking-footer is-editing/);
   assert.match(insertionCellSource, /<span>Tracking<\/span>[\s\S]*placeholder="TID \/ Remark"/);
   assert.match(insertionCellSource, /theme-insertion-tracking-footer is-complete[\s\S]*String\(insertedTid\)\.padStart\(3, "0"\)/);
-  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*min-height: 24px/);
+  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*min-height: 18px/);
+  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*border-radius: 0/);
+  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*background: transparent/);
+  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*box-shadow: none/);
 });
 
 test("valid TID completion does not render Time or TA Name controls", () => {
