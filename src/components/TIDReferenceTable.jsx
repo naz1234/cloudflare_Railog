@@ -493,6 +493,22 @@ function ClockIcon({ size = 22, color = "currentColor" }) {
   );
 }
 
+function SoundIcon({ enabled = false, size = 22, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 10v4h4l5 4V6L8 10H4Z" stroke={color} strokeWidth="1.9" strokeLinejoin="round" />
+      {enabled ? (
+        <>
+          <path d="M16 9.2a4 4 0 0 1 0 5.6" stroke={color} strokeWidth="1.9" strokeLinecap="round" />
+          <path d="M18.7 6.7a7.4 7.4 0 0 1 0 10.6" stroke={color} strokeWidth="1.9" strokeLinecap="round" />
+        </>
+      ) : (
+        <path d="m16 9 5 6m0-6-5 6" stroke={color} strokeWidth="1.9" strokeLinecap="round" />
+      )}
+    </svg>
+  );
+}
+
 function WarningTriangleIcon({ size = 22, color = "currentColor" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -546,171 +562,63 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
   const currentTimeStr = formatClockTime(now);
 
   return (
-    <div
-      className="theme-insertion-reference-header"
-      style={{
-        width: "100%",
-        boxSizing: "border-box",
-        borderRadius: 14,
-        padding: 8,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 8,
-        flexWrap: "wrap",
-        background: "linear-gradient(135deg, rgba(12, 46, 74, 0.88), rgba(7, 27, 44, 0.78))",
-        border: "1px solid rgba(125, 184, 224, 0.18)",
-        boxShadow: "0 10px 28px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255,255,255,0.08)",
-        backdropFilter: "blur(16px)",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-        <div
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 11,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#7dd3fc",
-            background: "linear-gradient(145deg, rgba(14,165,233,0.22), rgba(37,99,235,0.12))",
-            border: "1px solid rgba(125, 211, 252, 0.28)",
-            boxShadow: "0 0 22px rgba(14,165,233,0.12)",
-            flexShrink: 0,
-          }}
+    <section className="theme-insertion-reference-header insertion-dashboard" aria-label="Insertion timing controls">
+      <div className="insertion-dashboard__top">
+        <div className="insertion-dashboard__identity">
+          <div className="insertion-dashboard__clock-orb">
+            <span className="insertion-dashboard__clock-ring" aria-hidden="true" />
+            <ClockIcon size={34} />
+          </div>
+          <div className="insertion-dashboard__date-block">
+            <span className="insertion-dashboard__kicker">Today</span>
+            <strong className="insertion-dashboard__day">{formatDay(now)}</strong>
+            <span className="insertion-dashboard__date">{formatDate(now)}</span>
+          </div>
+        </div>
+
+        <span className="insertion-dashboard__divider" aria-hidden="true" />
+        <time
+          className="insertion-dashboard__time"
+          dateTime={`${getLocalDateKey(now)}T${currentTimeStr}`}
         >
-          <ClockIcon size={17} />
-        </div>
-
-        <div style={{ minWidth: 0 }}>
-          <div
-            style={{
-              color: "#7eb8e0",
-              fontSize: 8,
-              lineHeight: "10px",
-              fontWeight: 400,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-            }}
-          >
-            Today
-          </div>
-          <div
-            style={{
-              color: "#e0f2fe",
-              fontSize: 13,
-              lineHeight: "16px",
-              fontWeight: 400,
-              letterSpacing: "0.08em",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {formatDay(now)}
-          </div>
-          <div
-            style={{
-              color: "#8aa6bd",
-              fontSize: 9,
-              lineHeight: "11px",
-              fontWeight: 400,
-              letterSpacing: "0.03em",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {formatDate(now)}
-          </div>
-          <div
-            className="theme-insertion-reference-control theme-insertion-reference-sound-control"
-            style={{
-              display: "flex",
-              gap: 3,
-              padding: 2,
-              marginTop: 5,
-              borderRadius: 10,
-              background: "rgba(6, 24, 39, 0.60)",
-              border: "1px solid rgba(125, 184, 224, 0.14)",
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
-            }}
-          >
-            {["east", "west"].map((depotKey) => {
-              const config = DEPOT_SOUND_CONFIG[depotKey];
-              const enabled = Boolean(soundSettings?.[depotKey]);
-
-              const soundTooltip = enabled
-                ? `Disable ${config.label} insertion-time sound`
-                : `Enable ${config.label} insertion-time sound`;
-
-              return (
-                <ActionTooltip
-                  key={depotKey}
-                  message={soundTooltip}
-                  placement="bottom"
-                >
-                  <button
-                    type="button"
-                    onClick={() => onToggleDepotSound(depotKey)}
-                    aria-label={soundTooltip}
-                  className={`theme-insertion-reference-sound-button ${enabled ? "is-enabled" : ""} ${soundReady ? "is-ready" : ""}`}
-                  style={{
-                    border: "1px solid",
-                    borderColor: enabled
-                      ? soundReady
-                        ? `${config.readyColor}99`
-                        : "rgba(251, 191, 36, 0.62)"
-                      : "rgba(125, 184, 224, 0.20)",
-                    background: enabled
-                      ? soundReady
-                        ? `linear-gradient(135deg, ${config.glow}, rgba(6, 24, 39, 0.76))`
-                        : "linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(120, 53, 15, 0.24))"
-                      : "linear-gradient(180deg, rgba(10, 30, 46, 0.95), rgba(7, 24, 40, 0.95))",
-                    color: enabled ? (soundReady ? config.readyColor : "#fde68a") : "#9fb8cb",
-                    fontSize: 8,
-                    fontWeight: 400,
-                    padding: "4px 6px",
-                    borderRadius: 7,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                    boxShadow: enabled && soundReady ? `0 0 16px ${config.glow}` : "none",
-                    transition: "all 160ms ease",
-                    }}
-                  >
-                    {config.label} Sound {enabled ? "ON" : "OFF"}
-                  </button>
-                </ActionTooltip>
-              );
-            })}
-          </div>
-        </div>
+          {currentTimeStr}
+        </time>
       </div>
 
       <div
-        style={{
-          color: "#ffffff",
-          fontSize: 22,
-          lineHeight: "25px",
-          fontWeight: 400,
-          letterSpacing: "0.04em",
-          fontVariantNumeric: "tabular-nums",
-          textShadow: "0 0 18px rgba(125, 211, 252, 0.18)",
-        }}
+        className="theme-insertion-reference-control theme-insertion-reference-sound-control insertion-dashboard__sound-row"
+        role="group"
+        aria-label="Insertion sound controls"
       >
-        {currentTimeStr}
+        {["east", "west"].map((depotKey) => {
+          const config = DEPOT_SOUND_CONFIG[depotKey];
+          const enabled = Boolean(soundSettings?.[depotKey]);
+          const soundTooltip = enabled
+            ? `Disable ${config.label} insertion-time sound`
+            : `Enable ${config.label} insertion-time sound`;
+
+          return (
+            <ActionTooltip key={depotKey} message={soundTooltip} placement="bottom">
+              <button
+                type="button"
+                onClick={() => onToggleDepotSound(depotKey)}
+                aria-label={soundTooltip}
+                aria-pressed={enabled}
+                className={`theme-insertion-reference-sound-button insertion-dashboard__sound-button ${enabled ? "is-enabled" : ""} ${soundReady ? "is-ready" : ""}`}
+              >
+                <SoundIcon enabled={enabled} size={22} />
+                <span>{config.label} Sound</span>
+                <strong>{enabled ? "ON" : "OFF"}</strong>
+              </button>
+            </ActionTooltip>
+          );
+        })}
       </div>
 
       <div
-        className="theme-insertion-reference-control theme-insertion-reference-schedule-control"
-        style={{
-          display: "flex",
-          gap: 3,
-          padding: 2,
-          borderRadius: 10,
-          background: "rgba(6, 24, 39, 0.72)",
-          border: "1px solid rgba(125, 184, 224, 0.16)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
-        }}
+        className="theme-insertion-reference-control theme-insertion-reference-schedule-control insertion-dashboard__schedule"
+        role="tablist"
+        aria-label="Insertion timetable"
       >
         {Object.entries(schedules).map(([key, schedule]) => {
           const isActive = key === scheduleKey;
@@ -730,69 +638,22 @@ function HeaderCard({ now, schedules, scheduleKey, setScheduleKey, todaySchedule
                 type="button"
                 onClick={() => setScheduleKey(key)}
                 aria-label={scheduleTooltip}
-              className={`theme-insertion-reference-tab ${isActive ? "is-active" : ""} ${isWrongActiveTab ? "is-warning" : ""}`}
-              style={{
-                position: "relative",
-                border: "1px solid",
-                borderColor: isWrongActiveTab
-                  ? "rgba(251, 146, 60, 0.95)"
-                  : isActive
-                    ? "rgba(125, 211, 252, 0.70)"
-                    : "rgba(125, 184, 224, 0.20)",
-                background: isWrongActiveTab
-                  ? "linear-gradient(135deg, rgba(220, 38, 38, 0.92) 0%, rgba(245, 158, 11, 0.88) 100%)"
-                  : isActive
-                    ? "linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)"
-                    : "linear-gradient(180deg, rgba(10, 30, 46, 0.95), rgba(7, 24, 40, 0.95))",
-                color: isActive ? "#ffffff" : "#9fb8cb",
-                fontSize: 9,
-                fontWeight: 400,
-                padding: isWrongActiveTab ? "5px 7px 10px" : "5px 6px",
-                borderRadius: 8,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                boxShadow: isWrongActiveTab
-                  ? "0 0 0 2px rgba(251, 146, 60, 0.20), 0 8px 22px rgba(248, 113, 113, 0.28)"
-                  : isActive
-                    ? "0 8px 22px rgba(14, 165, 233, 0.28)"
-                    : "none",
-                transition: "all 160ms ease",
-              }}
-            >
-              <span style={{ display: "block" }}>{schedule.label}</span>
-              {isWrongActiveTab && (
-                <span
-                  className="theme-insertion-reference-override-badge"
-                  style={{
-                    position: "absolute",
-                    left: "50%",
-                    bottom: -8,
-                    transform: "translateX(-50%)",
-                    padding: "1px 5px",
-                    borderRadius: 999,
-                    fontSize: 7,
-                    lineHeight: "9px",
-                    fontWeight: 400,
-                    letterSpacing: "0.04em",
-                    color: "#7c2d12",
-                    background: "linear-gradient(180deg, #fde68a, #f59e0b)",
-                    border: "1px solid rgba(251, 191, 36, 0.88)",
-                    boxShadow: "0 4px 10px rgba(0,0,0,0.24)",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  OVERRIDE
-                </span>
+                role="tab"
+                aria-selected={isActive}
+                className={`theme-insertion-reference-tab insertion-dashboard__schedule-tab ${isActive ? "is-active" : ""} ${isWrongActiveTab ? "is-warning" : ""}`}
+              >
+                <span>{schedule.label}</span>
+                {isWrongActiveTab && (
+                  <span className="theme-insertion-reference-override-badge insertion-dashboard__override-badge">
+                    OVERRIDE
+                  </span>
                 )}
               </button>
             </ActionTooltip>
           );
         })}
       </div>
-
-
-    </div>
+    </section>
   );
 }
 
@@ -1517,7 +1378,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
   );
 }
 
-export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday", onTidDragStart, activeDragKey = "", usedTidKeys = [], duplicateTidKeys = [], eastTimeOffsetMinutes = 0, onEastTimeOffsetChange, depotFilter = "", showHeader = true, showHelp = true, controlledScheduleKey = null, onScheduleKeyChange = null }) {
+export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday", onTidDragStart, activeDragKey = "", usedTidKeys = [], duplicateTidKeys = [], eastTimeOffsetMinutes = 0, onEastTimeOffsetChange, depotFilter = "", showHeader = true, showHelp = true, controlsOnly = false, controlledScheduleKey = null, onScheduleKeyChange = null }) {
   const [now, setNow] = useState(new Date());
   const [soundSettings, setSoundSettings] = useState(loadTidSoundSettings);
   const [soundReady, setSoundReady] = useState(false);
@@ -1650,6 +1511,36 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
       onTimeOffsetChange={depotType === "east" ? onEastTimeOffsetChange : undefined}
     />
   );
+  const referenceHeader = showHeader ? (
+    <>
+      {isScheduleOverride && (
+        <ScheduleWarningBanner
+          selectedLabel={activeSchedule.label}
+          todayLabel={todaySchedule.label}
+          onSwitchToToday={() => setScheduleKey(todayScheduleKey)}
+        />
+      )}
+      <HeaderCard
+        now={now}
+        schedules={schedules}
+        scheduleKey={scheduleKey}
+        setScheduleKey={setScheduleKey}
+        todayScheduleKey={todayScheduleKey}
+        isScheduleOverride={isScheduleOverride}
+        soundSettings={soundSettings}
+        soundReady={soundReady}
+        onToggleDepotSound={handleToggleDepotSound}
+      />
+    </>
+  ) : null;
+
+  if (controlsOnly) {
+    return (
+      <div className="theme-insertion-reference-controls-only">
+        {referenceHeader}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -1672,27 +1563,7 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
         flexShrink: 0,
       }}
     >
-      {showHeader && isScheduleOverride && (
-        <ScheduleWarningBanner
-          selectedLabel={activeSchedule.label}
-          todayLabel={todaySchedule.label}
-          onSwitchToToday={() => setScheduleKey(todayScheduleKey)}
-        />
-      )}
-
-      {showHeader && (
-        <HeaderCard
-          now={now}
-          schedules={schedules}
-          scheduleKey={scheduleKey}
-          setScheduleKey={setScheduleKey}
-          todayScheduleKey={todayScheduleKey}
-          isScheduleOverride={isScheduleOverride}
-          soundSettings={soundSettings}
-          soundReady={soundReady}
-          onToggleDepotSound={handleToggleDepotSound}
-        />
-      )}
+      {referenceHeader}
 
       {normalizedDepotFilter ? (
         renderDepotCard(normalizedDepotFilter)
