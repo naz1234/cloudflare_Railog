@@ -12080,17 +12080,18 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
 .theme-insertion-page .theme-insertion-tracking-footer {
   display: grid;
   width: 100%;
-  min-height: 18px;
+  min-height: 24px;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 6px;
-  padding: 3px 2px 0;
-  border: 0;
-  border-top: 1px solid rgba(126, 184, 224, 0.32);
-  border-radius: 0;
+  padding: 3px 7px;
+  border: 1px solid #0ea5e9;
+  border-radius: 7px;
   color: #e7f7ff;
-  background: transparent;
-  box-shadow: none;
+  background: rgba(3, 17, 29, 0.78);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.28),
+    0 0 9px rgba(14, 165, 233, 0.10);
   font-variant-numeric: tabular-nums;
 }
 
@@ -12120,8 +12121,10 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
 }
 
 .theme-insertion-page .theme-insertion-tracking-footer.is-editing:focus-within {
-  border-top-color: #67e8f9;
-  box-shadow: none;
+  border-color: #67e8f9;
+  box-shadow:
+    0 0 0 2px rgba(34, 211, 238, 0.13),
+    0 0 13px rgba(14, 165, 233, 0.16);
 }
 
 .theme-insertion-page .theme-insertion-tracking-footer.is-complete {
@@ -12152,10 +12155,10 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-req-
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer {
-  border-color: #c2ced9 !important;
+  border-color: #5da9d6 !important;
   color: #102f49 !important;
-  background: transparent !important;
-  box-shadow: none !important;
+  background: #f7fbff !important;
+  box-shadow: inset 0 1px 2px rgba(15, 43, 68, 0.08) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer > span {

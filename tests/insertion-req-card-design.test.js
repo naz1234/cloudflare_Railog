@@ -29,21 +29,28 @@ test("INS cards use the Train Request visual hierarchy", () => {
   assert.match(insertionCellSource, /\? "1px solid #1e4d72"/);
 });
 
-test("Tracking ID is isolated in a flat footer without a nested pill", () => {
+test("Tracking ID uses the compact completed footer shown in the reference", () => {
   assert.match(insertionCellSource, /theme-insertion-tracking-footer is-editing/);
   assert.match(insertionCellSource, /<span>Tracking<\/span>[\s\S]*placeholder="TID \/ Remark"/);
-  assert.match(insertionCellSource, /theme-insertion-tracking-footer is-complete[\s\S]*String\(insertedTid\)\.padStart\(3, "0"\)/);
-  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*min-height: 18px/);
-  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*border-radius: 0/);
-  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*background: transparent/);
-  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*box-shadow: none/);
+  assert.match(insertionCellSource, /theme-insertion-tracking-footer is-complete[\s\S]*String\(insertedTrackingId\)\.padStart\(3, "0"\)/);
+  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*min-height: 24px/);
+  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*border-radius: 7px/);
+  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*background: rgba\(3, 17, 29, 0\.78\)/);
 });
 
-test("valid TID completion does not render Time or TA Name controls", () => {
-  assert.match(insertionCellSource, /\{inserted && !inserted\.isSweeping && !insertedTid && \(/);
+test("submitted numeric Tracking IDs persist even without an active timetable match", () => {
+  assert.match(pageSource, /function getInsertionTrackingId\(entry = null\)/);
+  assert.match(pageSource, /source\.match\(\/\^\(\?:TID/);
+  assert.match(insertionCellSource, /const insertedTrackingId = getInsertionTrackingId\(inserted\) \?\? insertedTid/);
+  assert.match(insertionCellSource, /\{insertedTrackingId && \(/);
+  assert.match(insertionSectionSource, /rowTrackingId \? 76/);
+});
+
+test("submitted Tracking ID completion does not render Time or TA Name controls", () => {
+  assert.match(insertionCellSource, /\{inserted && !inserted\.isSweeping && !insertedTrackingId && \(/);
   assert.doesNotMatch(
     insertionCellSource,
-    /\{insertedTid && \([\s\S]*?onInsertionTimeUpdate[\s\S]*?theme-insertion-tracking-footer is-complete/,
+    /\{insertedTrackingId && \([\s\S]*?onInsertionTimeUpdate[\s\S]*?theme-insertion-tracking-footer is-complete/,
   );
 });
 
@@ -54,7 +61,7 @@ test("INS operational remarks use full request labels above Tracking", () => {
   assert.match(insertionCellSource, /theme-stabling-remark block w-full/);
   assert.match(insertionCellSource, /theme-stabling-remark-tooltip-text/);
   assert.match(insertionSectionSource, /Math\.min\(rowStatusLabels\.size, 3\)/);
-  assert.match(insertionSectionSource, /rowHasValidTid \? 76/);
+  assert.match(insertionSectionSource, /rowTrackingId \? 76/);
 });
 
 test("INS removes the Log Insertion button and keeps Enter as the manual fallback", () => {
