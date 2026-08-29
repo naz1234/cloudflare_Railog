@@ -11190,7 +11190,7 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-de
   min-width: 0;
 }
 
-.theme-insertion-page .theme-insertion-card.has-train .theme-insertion-train-id {
+.theme-insertion-page .theme-insertion-card.has-refresh-control .theme-insertion-train-id {
   padding-right: 27px !important;
 }
 
@@ -12128,11 +12128,21 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-req-layout {
-  border-color: #90b6d0 !important;
-  background: linear-gradient(145deg, #ffffff, #eaf4fb) !important;
-  box-shadow:
-    0 4px 12px rgba(15, 43, 68, 0.10),
-    inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+  border-color: #9fb2c2 !important;
+  background: linear-gradient(145deg, #ffffff 0%, #edf4f8 100%) !important;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-req-layout.is-empty {
+  border-color: #aebdcc !important;
+  background: #f8fafc !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-req-layout.is-duplicate {
+  border-color: #ef4444 !important;
+  background: #fee2e2 !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.12) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-req-layout .theme-insertion-train-id {

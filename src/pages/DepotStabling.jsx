@@ -4644,6 +4644,10 @@ function getMainStablingRemarkPillStyle(item = null) {
   };
 }
 
+function getMainStablingRemarkLabel(item = null) {
+  return String(item?.badgeText || item?.displayType || item?.typeKey || "Request").trim() || "Request";
+}
+
 function getRequestPillStyle(item, options = {}) {
   const accent = getRequestAccent(item);
   const showSuppressedStyle = options.showSuppressedStyle !== false;
@@ -5506,29 +5510,6 @@ function getEastInsertionPillStyle(style = null, width = 78) {
   };
 }
 
-function getInsertionStatusChipStyle(label = "") {
-  const normalizedLabel = getEastInsertionKeywordRemarkLabel(label) || String(label || "").trim().toUpperCase();
-  const style = EAST_INSERTION_KEYWORD_REMARK_STYLES[normalizedLabel] || INSERTION_DEFAULT_REMARK_PILL_STYLE;
-  const widthByLabel = {
-    PM: 34,
-    CM: 34,
-    WASH: 46,
-    "G TO C": 54,
-    "3K1": 40,
-    REQUEST: 58,
-    "DEEP CLEANING": 84,
-  };
-
-  return {
-    ...getEastInsertionPillStyle(style, widthByLabel[normalizedLabel] || 52),
-    minHeight: 18,
-    padding: "1px 5px",
-    fontSize: 10,
-    lineHeight: "14px",
-    boxShadow: "none",
-  };
-}
-
 function getTimetableInsertionRemarkMap(activeTimetable = null, depot = "west") {
   const parsed = getActiveTimetableParsedData(activeTimetable);
   const depotKey = normalizeDepotKey(depot);
@@ -5812,7 +5793,7 @@ function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2,
   );
 }
 
-function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onInsertionTaNameUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0, reserveMiddleInsertionRemark = false, tidDropRequest = null, onTidDropApplied, isTidDragActive = false, isTidDropHovered = false, isSearchMatch = false }) {
+function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onInsertionTaNameUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0, tidDropRequest = null, onTidDropApplied, isTidDragActive = false, isTidDropHovered = false, isSearchMatch = false }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
@@ -5858,7 +5839,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     : null;
   const insertedTidAssistDisplayRemark = getInsertionAssistRemarkDisplayLabel(insertedTidAssistRemark);
   const hasInsertedTidAssistDisplayRemark = Boolean(insertedTid && insertedTidAssistDisplayRemark);
-  const insertedRemarkStyle = inserted?.remark ? getInsertionRemarkStyle(inserted.remark) : null;
   const insertedPlainRemark = inserted && !inserted.isSweeping && !insertedTid
     ? String(inserted.remark ?? parsedInsertedTid ?? "").trim()
     : "";
@@ -5878,28 +5858,32 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   // The 3K1 special card already shows 3K1 in the main big pill.
   // Do not duplicate another 3K1 pill in the remark section for West or East.
   const suppressDuplicate3K1RemarkPill = is3K1InsertionCard;
-  const maintenanceRemarkList = key
-    ? Array.from(new Set(maintList
-        .map((item) => item.badgeText || item.remark || item.displayType || item.typeKey || "Request")
-        .map((label) => String(label || "").trim())
-        .filter(Boolean)
-        .filter((label) => !(suppressDuplicate3K1RemarkPill && label.toUpperCase() === "3K1"))))
-    : [];
   const insertionOwnedStatusRemarks = [
     ...(insertedTidAssistDisplayRemark ? [insertedTidAssistDisplayRemark] : []),
     ...(insertedPlainRemark ? [insertedPlainRemark] : []),
   ].filter((label) => !(suppressDuplicate3K1RemarkPill && label.toUpperCase() === "3K1"));
-  const insertionOwnedStatusRemarkSet = new Set(insertionOwnedStatusRemarks);
-  const insertionStatusRemarkList = Array.from(new Set([
-    ...insertionOwnedStatusRemarks,
-    ...maintenanceRemarkList,
-  ]));
+  const insertionStatusRemarkMap = new Map();
+  if (key) {
+    maintList.forEach((item) => {
+      const label = getMainStablingRemarkLabel(item);
+      if (!label || (suppressDuplicate3K1RemarkPill && label.toUpperCase() === "3K1")) return;
+      insertionStatusRemarkMap.set(label, { label, item, isUndoable: false });
+    });
+  }
+  insertionOwnedStatusRemarks.forEach((label) => {
+    const existing = insertionStatusRemarkMap.get(label);
+    insertionStatusRemarkMap.set(label, {
+      label,
+      item: existing?.item || { badgeText: label },
+      isUndoable: true,
+    });
+  });
+  const insertionStatusRemarkList = Array.from(insertionStatusRemarkMap.values());
   const displayedInsertionStatusRemarks = insertionStatusRemarkList.length > 3
     ? insertionStatusRemarkList.slice(0, 2)
     : insertionStatusRemarkList.slice(0, 3);
   const hiddenInsertionStatusCount = insertionStatusRemarkList.length - displayedInsertionStatusRemarks.length;
   const hasMiddleInsertionRemark = Boolean(key && insertionStatusRemarkList.length > 0);
-  const activeTidRemarkStyle = inserted ? (insertedTidRemarkStyle || insertedRemarkStyle) : specialTidRemarkStyle;
   const insertedTidBigPillStyle = getInsertionTidBigPillStyle(insertedTidRemarkStyle, autoTidDepot);
   const insertionDoneCardMinHeight = insertedTid ? 76 : hasInsertedPlainRemark ? 112 : 116;
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
@@ -5915,7 +5899,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     : null;
   const canAutoInsertTid = Boolean(key && !inserted && !suppressAutoInsert && autoTid !== null && autoScheduledTime);
   const isTidDropEligible = Boolean(key && !inserted);
-  const insertTrainTooltip = "Log this insertion using the entered TID or remark";
   const resetCardTooltip = "Reset this card and return to Add TID";
   const undoInsertionTooltip = "Undo this train insertion";
 
@@ -5993,32 +5976,34 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   // Keep the stabling card border/background neutral so the pill is the only request colour.
   const insCardBg = expired
     ? "#07131e"
-    : inserted?.isSweeping
-      ? "linear-gradient(145deg, #17142d 0%, #0a1727 58%, #071523 100%)"
-      : insertedTid
+    : isDuplicateInsertedTid
+      ? "linear-gradient(135deg,#2d0a0a,#1a0505)"
+      : key
         ? "linear-gradient(135deg,#0f2d4a,#081e32)"
-      : isInsertionDone
-        ? "linear-gradient(145deg, #0b2930 0%, #0a1c2b 58%, #071523 100%)"
-        : key
-          ? "linear-gradient(145deg, #0d2a42 0%, #0a1d30 52%, #071827 100%)"
-          : "rgba(7, 24, 39, 0.18)";
+        : "none";
   // Keep the card frame calm and symmetric. State colour remains in the
   // card surface and detail pills, with no reserved side-rail spacing.
+  const primaryInsertionRequest = insertionStatusRemarkList[0]?.item || null;
+  const insertionRequestAccent = primaryInsertionRequest
+    ? (getStablingRequestVisual(primaryInsertionRequest)?.accent || getRequestAccent(primaryInsertionRequest))
+    : "#4f8ef7";
   const insCardBorder = isSearchMatch
     ? "2px solid #facc15"
     : expired
     ? "1px solid #1e3547"
     : isDuplicateInsertedTid
-      ? "1px solid #6d4b20"
+      ? "1.5px solid #ef4444"
       : key
-        ? `1px solid ${INSERTION_PANEL_COLORS.cardBorder}`
-        : "1px solid rgba(48, 75, 96, 0.34)";
+        ? "1px solid #1e4d72"
+        : "1.5px dashed #1b3a55";
   const insCardGlow = isSearchMatch
-    ? "0 0 0 3px rgba(250, 204, 21, 0.18), 0 8px 22px rgba(0, 0, 0, 0.24)"
+    ? "0 0 0 3px rgba(250,204,21,0.18), 0 2px 8px rgba(0,0,0,0.45)"
     : isDuplicateInsertedTid
-    ? "0 0 0 2px rgba(245, 158, 11, 0.18), 0 0 18px rgba(245, 158, 11, 0.58), 0 8px 22px rgba(0, 0, 0, 0.24)"
-    : key && !expired
-      ? "0 4px 12px rgba(0,0,0,0.12)"
+    ? "0 2px 8px rgba(0,0,0,0.45)"
+    : key && primaryInsertionRequest && !expired
+      ? `0 2px 8px rgba(0,0,0,0.45), inset 0 0 0 1px ${hexToRgba(insertionRequestAccent, 0.11)}, inset 0 1px 0 rgba(255,255,255,0.06)`
+      : key && !expired
+        ? "0 2px 8px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)"
       : undefined;
   const tidDividerColor = specialTidRemarkStyle?.border || (hasTidRemark ? "#b68a19" : "#315671");
   const insTidInputStyle = {
@@ -6028,13 +6013,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     color: specialTidRemarkStyle ? specialTidRemarkStyle.color : hasTidRemark ? "#fde68a" : "#d6e6f3",
     boxShadow: "inset 0 1px 2px rgba(0, 0, 0, 0.20)",
   };
-  const insRowLine = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
-  const insertionCardDividerBorder = "1px solid rgba(255, 255, 255, 0.08)";
-  const middleInsertionRemarkContentHeight = Math.max(
-    rowMaintenanceSlotHeight > 0 ? rowMaintenanceSlotHeight : 0,
-    hasMiddleInsertionRemark ? 18 : 0
-  );
-  const middleInsertionRemarkSlotMinHeight = middleInsertionRemarkContentHeight + (hasMiddleInsertionRemark ? 4 : 0);
+  const insRowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
   const ownInsertionCardMinHeightBase = inserted?.isSweeping
     ? 158
     : isEast3K1InsertionCard
@@ -6045,16 +6024,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         ? insertionDoneCardMinHeight
         : 90;
   const ownInsertionCardMinHeight = Math.max(ownInsertionCardMinHeightBase, rowCardMinHeight);
-  const shouldStretchInsertionCard = Boolean(
-    inserted?.isSweeping ||
-    isEast3K1InsertionCard ||
-    hasMiddleInsertionRemark ||
-    (key && reserveMiddleInsertionRemark)
-  );
-
   if (expired) {
     return (
-      <td className="theme-stabling-grid-cell theme-insertion-grid-cell p-1.5 align-middle" title="Elapsed TID hidden manually" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
+      <td className="theme-stabling-grid-cell theme-insertion-grid-cell p-1.5 align-middle" title="Elapsed TID hidden manually" style={{ height: 1, backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
         <div className={`theme-insertion-card is-expired ${isSearchMatch ? "is-search-match" : ""} flex h-full flex-col items-center justify-center gap-1 rounded-xl select-none`} style={{ minHeight: rowCardMinHeight, height: "100%", padding: "9px 7px", background: insCardBg, border: insCardBorder, boxShadow: insCardGlow, opacity: isSearchMatch ? 0.85 : 0.55 }}>
           <div className="flex h-5 w-full items-center justify-center text-center font-black leading-none" style={{ fontSize: 14, color: "#3a5068" }}>{displayVal || "—"}</div>
           {insertedRemarkLabel && !insertedTid && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
@@ -6071,22 +6043,19 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   }
 
   return (
-    <td className="theme-stabling-grid-cell theme-insertion-grid-cell p-1.5 align-middle" style={{ height: 1, backgroundColor: INSERTION_PANEL_COLORS.grid, borderLeft: `1px solid ${INSERTION_PANEL_COLORS.gridLine}`, borderRight: undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
+    <td className="theme-stabling-grid-cell theme-insertion-grid-cell p-1.5 align-middle" style={{ height: 1, backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: insRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
       <div
         data-insertion-drop-target="true"
         data-insertion-drop-eligible={isTidDropEligible ? "true" : "false"}
         data-insertion-drop-depot={autoTidDepot}
         data-insertion-drop-road={road}
         data-insertion-drop-bi={bi}
-        className={`theme-insertion-card is-req-layout ${key ? "has-train" : "is-empty"} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${isSearchMatch ? "is-search-match" : ""} ${isTidDragActive ? "is-tid-drag-active" : ""} ${isTidDropHovered ? "is-tid-drop-hovered" : ""} ${shouldStretchInsertionCard ? "h-full" : ""} relative flex flex-col items-center justify-start overflow-hidden rounded-xl text-center ${isInsertionDone ? "gap-1" : "gap-2"}`}
+        className={`theme-stabling-train-card theme-insertion-card is-req-layout ${key ? "has-train" : "is-empty"} ${primaryInsertionRequest ? "has-request" : ""} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted has-refresh-control" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${isSearchMatch ? "is-search-match" : ""} ${isTidDragActive ? "is-tid-drag-active" : ""} ${isTidDropHovered ? "is-tid-drop-hovered" : ""} relative flex h-full flex-col items-center justify-start gap-1 overflow-hidden rounded-xl text-center transition-all duration-150`}
         style={{
           minHeight: ownInsertionCardMinHeight,
-          height: shouldStretchInsertionCard ? "100%" : undefined,
-          // Symmetric horizontal padding keeps every pill, field and action on the
-          // same visual centre line in both light and dark mode.
-          padding: useUnifiedInsertionCardStyle
-            ? (inserted?.isSweeping ? "7px 5px" : isInsertionDone ? "6px 5px" : "7px 5px")
-            : (isInsertionDone ? "6px 5px" : "8px 7px"),
+          height: "100%",
+          padding: "7px 4px",
+          "--theme-accent": insertionRequestAccent,
           background: insCardBg,
           border: insCardBorder,
           outline: isTidDropHovered
@@ -6137,7 +6106,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
                 aria-label="Train ID"
                 placeholder="Train ID"
-                className="theme-insertion-train-id h-7 w-full border-0 px-1.5 text-center text-[17px] font-black uppercase outline-none placeholder:text-[9px] placeholder:text-[#587187]"
+                className="theme-stabling-train-id theme-insertion-train-id h-7 w-full border-0 px-1.5 text-center text-[17px] font-black uppercase outline-none placeholder:text-[9px] placeholder:text-[#587187]"
                 style={{
                   borderBottomColor: key ? INSERTION_PANEL_COLORS.cardBorder : INSERTION_PANEL_COLORS.gridLine,
                   backgroundColor: "transparent",
@@ -6161,7 +6130,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             )
           ) : (
             <div
-              className="theme-insertion-train-id w-full text-center font-black leading-none"
+              className="theme-stabling-train-id theme-insertion-train-id w-full text-center font-black leading-none"
               style={{
                 fontSize: key ? 17 : 10,
                 color: key ? trainColor : "#587187",
@@ -6174,119 +6143,78 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             </div>
           )}
           {key && (
-            hasMiddleInsertionRemark ? (
-              <div
-                className="theme-insertion-card-request-slot flex w-full flex-col items-center gap-1"
-                style={{ minHeight: middleInsertionRemarkSlotMinHeight }}
-              >
-                <div
-                  className="w-full"
-                  style={{
-                    borderTop: key ? insertionCardDividerBorder : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`,
-                    opacity: key ? 1 : 0.82,
-                    marginTop: stablingEditable ? 1 : 0,
-                  }}
-                />
+            <div
+              aria-hidden="true"
+              style={{
+                width: "calc(100% - 16px)",
+                height: 1,
+                margin: "2px 0 1px",
+                background: isDuplicateInsertedTid
+                  ? "rgba(248,113,113,0.72)"
+                  : "rgba(126,184,224,0.42)",
+              }}
+            />
+          )}
+          {key && hasMiddleInsertionRemark ? (
+            <div
+              className="theme-insertion-card-request-list flex w-full flex-col items-center justify-start gap-0.5 px-1"
+              style={{ minHeight: rowMaintenanceSlotHeight || undefined }}
+              aria-label={`Train ${displayVal} remarks: ${insertionStatusRemarkList.map(({ label }) => label).join(", ")}`}
+            >
+              {displayedInsertionStatusRemarks.map(({ label, item, isUndoable }) => {
+                const pillStyle = getMainStablingRemarkPillStyle(item);
+                const tooltipStyle = {
+                  "--stabling-tooltip-accent": pillStyle["--stabling-remark-accent"],
+                  "--stabling-tooltip-accent-rgb": pillStyle["--stabling-remark-accent-rgb"],
+                };
+                const remarkClassName = `theme-stabling-remark block w-full truncate rounded-md px-1.5 py-0.5 text-center text-[11px] font-normal leading-tight text-white${isUndoable ? " cursor-pointer outline-none transition-all hover:brightness-110 focus-visible:brightness-110" : " cursor-pointer"}`;
 
-                <div
-                  className="theme-insertion-card-request-list flex w-full shrink-0 flex-col items-center justify-start gap-0.5 px-1"
-                  style={{
-                    height: middleInsertionRemarkContentHeight,
-                    minHeight: middleInsertionRemarkContentHeight,
-                    maxHeight: middleInsertionRemarkContentHeight,
-                    alignContent: "flex-start",
-                    overflow: "visible",
-                  }}
-                  aria-label={`Train ${displayVal} remarks: ${insertionStatusRemarkList.join(", ")}`}
-                >
-                  {displayedInsertionStatusRemarks.map((label) => {
-                    const isUndoableInsertionStatus = insertionOwnedStatusRemarkSet.has(label);
-                    const statusChipProps = {
-                      className: `theme-insertion-card-request-pill inline-flex w-full min-w-0 items-center justify-center truncate rounded-md px-1.5 py-0.5 text-center text-[11px] font-normal leading-tight${isUndoableInsertionStatus ? " cursor-pointer outline-none transition-all hover:brightness-125 focus-visible:brightness-125" : ""}`,
-                      "data-remark": label,
-                      style: { ...getInsertionStatusChipStyle(label), width: "100%", minHeight: 18 },
-                      title: isUndoableInsertionStatus ? undoInsertionTooltip : label,
-                    };
-
-                    return isUndoableInsertionStatus ? (
+                return (
+                  <ActionTooltip
+                    key={label}
+                    message={<span className="theme-stabling-remark-tooltip-text">{label}</span>}
+                    placement="bottom"
+                    sideOffset={6}
+                    wrapperClassName="w-full min-w-0"
+                    contentStyle={tooltipStyle}
+                  >
+                    {isUndoable ? (
                       <button
-                        key={label}
                         type="button"
                         onClick={handleInsertedUndoClick}
                         aria-label={`${undoInsertionTooltip}: ${label}`}
-                        {...statusChipProps}
+                        className={remarkClassName}
+                        style={pillStyle}
                       >
                         {label}
                       </button>
                     ) : (
-                      <span key={label} {...statusChipProps}>
+                      <span className={remarkClassName} style={pillStyle} aria-label={label}>
                         {label}
                       </span>
-                    );
-                  })}
+                    )}
+                  </ActionTooltip>
+                );
+              })}
 
-                  {hiddenInsertionStatusCount > 0 && (
-                    <span
-                      className="theme-insertion-card-request-more inline-flex h-[18px] w-full min-w-0 items-center justify-center rounded-md border px-1 text-[9px] font-bold"
-                      title={insertionStatusRemarkList.slice(displayedInsertionStatusRemarks.length).join(", ")}
-                      aria-label={`${hiddenInsertionStatusCount} more remarks: ${insertionStatusRemarkList.slice(displayedInsertionStatusRemarks.length).join(", ")}`}
-                    >
-                      +{hiddenInsertionStatusCount}
-                    </span>
-                  )}
-
-                </div>
-                <div
-                  className="w-full"
-                  style={{
-                    borderTop: insertionCardDividerBorder,
-                    opacity: 1,
-                  }}
-                />
-              </div>
-            ) : reserveMiddleInsertionRemark ? (
-              <div
-                className="theme-insertion-card-request-spacer flex w-full flex-col items-center"
-                style={{ minHeight: middleInsertionRemarkSlotMinHeight }}
-              >
-                <div
-                  className="w-full"
-                  style={{
-                    borderTop: key ? insertionCardDividerBorder : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`,
-                    opacity: key ? 1 : 0.82,
-                    marginTop: stablingEditable ? 1 : 0,
-                  }}
-                />
-                <div
-                  aria-hidden="true"
-                  className="w-full shrink-0"
-                  style={{
-                    height: middleInsertionRemarkContentHeight,
-                    minHeight: middleInsertionRemarkContentHeight,
-                    maxHeight: middleInsertionRemarkContentHeight,
-                    marginTop: 2,
-                  }}
-                />
-                <div
-                  aria-hidden="true"
-                  className="w-full"
-                  style={{
-                    borderTop: insertionCardDividerBorder,
-                    opacity: 0,
-                  }}
-                />
-              </div>
-            ) : (
-              <div
-                className="theme-insertion-card-request-divider w-full"
-                style={{
-                  borderTop: key ? insertionCardDividerBorder : `1px solid ${INSERTION_PANEL_COLORS.gridLine}`,
-                  opacity: key ? 1 : 0.82,
-                  marginTop: stablingEditable ? 1 : 0,
-                }}
-              />
-            )
-          )}
+              {hiddenInsertionStatusCount > 0 && (
+                <span
+                  className="theme-insertion-card-request-more inline-flex h-[18px] w-full min-w-0 items-center justify-center rounded-md border px-1 text-[9px] font-bold"
+                  title={insertionStatusRemarkList.slice(displayedInsertionStatusRemarks.length).map(({ label }) => label).join(", ")}
+                  aria-label={`${hiddenInsertionStatusCount} more remarks: ${insertionStatusRemarkList.slice(displayedInsertionStatusRemarks.length).map(({ label }) => label).join(", ")}`}
+                >
+                  +{hiddenInsertionStatusCount}
+                </span>
+              )}
+            </div>
+          ) : key ? (
+            <span
+              className="block w-full text-center text-[10px] font-medium leading-tight"
+              style={{ color: "#5f7f99", minHeight: rowMaintenanceSlotHeight || undefined }}
+            >
+              —
+            </span>
+          ) : null}
           {key && inserted?.isSweeping && (
             isEastInsertionCard ? (
               <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
@@ -6501,7 +6429,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     setSuppressAutoInsert(false);
                     onTidChange(road, bi, e.target.value);
                   }}
-                  onKeyDown={onTidKeyDown}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !canAutoInsertTid && tidRemarkText) {
+                      event.preventDefault();
+                      handleInsertClick();
+                      return;
+                    }
+                    onTidKeyDown?.(event);
+                  }}
                   onFocus={onTidFocus}
                   onPointerDown={onTidFocus}
                   placeholder="TID / Remark"
@@ -6509,22 +6444,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   className="theme-insertion-tid-input min-w-0 flex-1 border-0 bg-transparent p-0 text-right text-[11px] font-semibold outline-none placeholder:text-[#47637a]"
                 />
               </div>
-            )}
-            {!inserted && !canAutoInsertTid && (
-              <ActionTooltip
-                message={insertTrainTooltip}
-                placement="top"
-                wrapperClassName="w-full"
-              >
-                <button
-                  type="button"
-                  onClick={handleInsertClick}
-                  aria-label={insertTrainTooltip}
-                  className={`theme-insertion-insert-button ${hasTidRemark ? "has-input" : ""} h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-all`}
-                >
-                  Log Insertion
-                </button>
-              </ActionTooltip>
             )}
             {insertedTid && (
               <div
@@ -7408,7 +7327,7 @@ function InsertionStablingSection({ title, activePg = "pg1", onPgChange, onRefre
                     const borderBottom = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
                     const borderBottomRightRadius = labelSide === "left" && isLastRow && isLastBlock ? 12 : undefined;
                     const borderBottomLeftRadius = labelSide === "right" && isLastRow && i === 0 ? 12 : undefined;
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onInsertionTaNameUpdate={onInsertionTaNameUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} reserveMiddleInsertionRemark={rowMaxStatusCount > 0} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(block?.trainId || "") === normalizedSearch)} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onInsertionTaNameUpdate={onInsertionTaNameUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(block?.trainId || "") === normalizedSearch)} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -28194,7 +28113,7 @@ function RoadRow({
                   style={{ minHeight: rowRemarkSlotHeight || undefined }}
                 >
                   {maintList.map((item) => {
-                    const label = item.badgeText || item.displayType || item.typeKey || "Request";
+                    const label = getMainStablingRemarkLabel(item);
                     const pillStyle = getMainStablingRemarkPillStyle(item);
                     const tooltipStyle = {
                       "--stabling-tooltip-accent": pillStyle["--stabling-remark-accent"],

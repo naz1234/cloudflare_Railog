@@ -21,10 +21,12 @@ const insertionSectionSource = pageSource.slice(
 );
 
 test("INS cards use the Train Request visual hierarchy", () => {
-  assert.match(insertionCellSource, /theme-insertion-card is-req-layout/);
-  assert.match(insertionCellSource, /theme-insertion-train-id w-full text-center font-black/);
+  assert.match(insertionCellSource, /theme-stabling-train-card theme-insertion-card is-req-layout/);
+  assert.match(insertionCellSource, /theme-stabling-train-id theme-insertion-train-id w-full text-center font-black/);
   assert.match(insertionCellSource, /fontSize: key \? 17 : 10/);
-  assert.match(stylesheetSource, /\.theme-insertion-card\.is-req-layout \{[\s\S]*linear-gradient\(135deg, #0f2d4a, #081e32\)/);
+  assert.match(insertionCellSource, /padding: "7px 4px"/);
+  assert.match(insertionCellSource, /\? "linear-gradient\(135deg,#0f2d4a,#081e32\)"/);
+  assert.match(insertionCellSource, /\? "1px solid #1e4d72"/);
 });
 
 test("Tracking ID is isolated in a slim footer", () => {
@@ -43,9 +45,18 @@ test("valid TID completion does not render Time or TA Name controls", () => {
 });
 
 test("INS operational remarks use full request labels above Tracking", () => {
-  assert.match(insertionCellSource, /item\.badgeText \|\| item\.remark \|\| item\.displayType \|\| item\.typeKey/);
+  assert.match(insertionCellSource, /getMainStablingRemarkLabel\(item\)/);
   assert.match(insertionCellSource, /insertedTidAssistDisplayRemark \? \[insertedTidAssistDisplayRemark\]/);
-  assert.match(insertionCellSource, /theme-insertion-card-request-list flex w-full shrink-0 flex-col/);
+  assert.match(insertionCellSource, /getMainStablingRemarkPillStyle\(item\)/);
+  assert.match(insertionCellSource, /theme-stabling-remark block w-full/);
+  assert.match(insertionCellSource, /theme-stabling-remark-tooltip-text/);
   assert.match(insertionSectionSource, /Math\.min\(rowStatusLabels\.size, 3\)/);
   assert.match(insertionSectionSource, /rowHasValidTid \? 76/);
+});
+
+test("INS removes the Log Insertion button and keeps Enter as the manual fallback", () => {
+  assert.doesNotMatch(insertionCellSource, />\s*Log Insertion\s*</);
+  assert.doesNotMatch(insertionCellSource, /theme-insertion-insert-button/);
+  assert.match(insertionCellSource, /event\.key === "Enter" && !canAutoInsertTid && tidRemarkText/);
+  assert.match(insertionCellSource, /handleInsertClick\(\)/);
 });
