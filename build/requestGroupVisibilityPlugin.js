@@ -135,6 +135,13 @@ export default function requestGroupVisibilityPlugin() {
 
       code = replaceRequired(
         code,
+        /(<InsertionTabContent[\s\S]*?\r?\n            maintenanceMap=)\{maintenanceMap\}/,
+        '$1{visibleRequestMaintenanceMap}',
+        'Insertion visible remarks'
+      );
+
+      code = replaceRequired(
+        code,
         /(<TrainRemPanel\r?\n        maintenanceMap=)\{maintenanceMap\}/,
         '$1{visibleRequestMaintenanceMap}',
         'Removal Summary visible remarks'
