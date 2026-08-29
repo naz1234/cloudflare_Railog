@@ -12043,3 +12043,115 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
   font-size: 5px;
   line-height: 6px;
 }
+
+/* INS cards follow the calm Train Request stabling hierarchy. */
+.theme-insertion-page .theme-insertion-card.is-req-layout {
+  background: linear-gradient(135deg, #0f2d4a, #081e32);
+  border-color: #1e4d72;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.055);
+}
+
+.theme-insertion-page .theme-insertion-card.is-req-layout.is-empty {
+  background: transparent;
+  border: 1.5px dashed #1b3a55;
+  box-shadow: none;
+}
+
+.theme-insertion-page .theme-insertion-card.is-req-layout.is-sweeping {
+  background: linear-gradient(145deg, #17142d 0%, #0a1727 58%, #071523 100%);
+}
+
+.theme-insertion-page .theme-insertion-card.is-req-layout .theme-insertion-train-id {
+  position: relative;
+  z-index: 2;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.48);
+}
+
+.theme-insertion-page .theme-insertion-card.is-req-layout .theme-insertion-card-request-pill {
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-insertion-page .theme-insertion-tracking-footer {
+  display: grid;
+  width: 100%;
+  min-height: 24px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  padding: 3px 7px;
+  border: 1px solid #0ea5e9;
+  border-radius: 7px;
+  color: #e7f7ff;
+  background: rgba(3, 17, 29, 0.78);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.28),
+    0 0 9px rgba(14, 165, 233, 0.10);
+  font-variant-numeric: tabular-nums;
+}
+
+.theme-insertion-page .theme-insertion-tracking-footer > span {
+  color: #35c6f4;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.theme-insertion-page .theme-insertion-tracking-footer > strong {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-insertion-page .theme-insertion-tracking-footer.is-editing:focus-within {
+  border-color: #67e8f9;
+  box-shadow:
+    0 0 0 2px rgba(34, 211, 238, 0.13),
+    0 0 13px rgba(14, 165, 233, 0.16);
+}
+
+.theme-insertion-page .theme-insertion-tracking-footer.is-complete {
+  margin-top: auto;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-req-layout {
+  border-color: #90b6d0 !important;
+  background: linear-gradient(145deg, #ffffff, #eaf4fb) !important;
+  box-shadow:
+    0 4px 12px rgba(15, 43, 68, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-req-layout .theme-insertion-train-id {
+  color: #102f49 !important;
+  text-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer {
+  border-color: #5da9d6 !important;
+  color: #102f49 !important;
+  background: #f7fbff !important;
+  box-shadow: inset 0 1px 2px rgba(15, 43, 68, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer > span {
+  color: #087fab !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer > strong,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer input {
+  color: #102f49 !important;
+}
