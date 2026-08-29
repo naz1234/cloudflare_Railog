@@ -12078,12 +12078,11 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
 }
 
 .theme-insertion-page .theme-insertion-tracking-footer {
-  display: grid;
+  display: flex;
   width: 100%;
   min-height: 24px;
-  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   padding: 3px 7px;
   border: 1px solid #0ea5e9;
   border-radius: 7px;
@@ -12105,7 +12104,7 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
   color: inherit !important;
   background: transparent !important;
   box-shadow: none !important;
-  text-align: right !important;
+  text-align: center !important;
   cursor: text;
   appearance: none;
   -webkit-appearance: none;
@@ -12132,13 +12131,14 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
 }
 
 .theme-insertion-page .theme-insertion-tracking-footer > strong {
+  width: 100%;
   overflow: hidden;
   color: #ffffff;
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.05em;
   line-height: 1;
-  text-align: right;
+  text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

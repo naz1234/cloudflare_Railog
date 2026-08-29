@@ -6037,7 +6037,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           {insertedRemarkLabel && !insertedTrackingId && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
           {insertedTrackingId && (
             <div className="theme-insertion-tracking-footer is-complete mt-auto" aria-label={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}`}>
-              <span>Tracking</span>
               <strong>{String(insertedTrackingId).padStart(3, "0")}</strong>
             </div>
           )}
@@ -6426,7 +6425,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 style={insTidInputStyle}
                 title="Enter Tracking ID"
               >
-                <span>Tracking</span>
                 <input
                   ref={(element) => {
                     localTidInputRef.current = element;
@@ -6448,11 +6446,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   }}
                   onFocus={onTidFocus}
                   onPointerDown={onTidFocus}
-                  placeholder="Enter ID"
+                  placeholder="Tracking ID"
                   aria-label="Enter Tracking ID or special insertion code"
                   autoComplete="off"
                   spellCheck={false}
-                  className="theme-insertion-tid-input min-w-0 w-full border-0 bg-transparent p-0 text-right text-[11px] font-semibold outline-none placeholder:text-[#47637a]"
+                  className="theme-insertion-tid-input min-w-0 w-full border-0 bg-transparent p-0 text-center text-[11px] font-semibold outline-none placeholder:text-[#47637a]"
                 />
               </label>
             )}
@@ -6462,7 +6460,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 title={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}`}
                 aria-label={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}`}
               >
-                <span>Tracking</span>
                 <strong>{String(insertedTrackingId).padStart(3, "0")}</strong>
               </div>
             )}
