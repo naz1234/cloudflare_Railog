@@ -6421,7 +6421,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         {key && (
           <div className={`${inserted ? "mt-0" : "mt-auto"} flex w-full flex-col items-center ${isInsertionDone ? "gap-1" : "gap-2"}`}>
             {!inserted && (
-              <div className="theme-insertion-tracking-footer is-editing" style={insTidInputStyle}>
+              <label
+                className="theme-insertion-tracking-footer is-editing"
+                style={insTidInputStyle}
+                title="Enter Tracking ID"
+              >
                 <span>Tracking</span>
                 <input
                   ref={(element) => {
@@ -6444,11 +6448,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   }}
                   onFocus={onTidFocus}
                   onPointerDown={onTidFocus}
-                  placeholder="TID / Remark"
-                  aria-label="Tracking ID or insertion remark"
-                  className="theme-insertion-tid-input min-w-0 flex-1 border-0 bg-transparent p-0 text-right text-[11px] font-semibold outline-none placeholder:text-[#47637a]"
+                  placeholder="Enter ID"
+                  aria-label="Enter Tracking ID or special insertion code"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="theme-insertion-tid-input min-w-0 w-full border-0 bg-transparent p-0 text-right text-[11px] font-semibold outline-none placeholder:text-[#47637a]"
                 />
-              </div>
+              </label>
             )}
             {insertedTrackingId && (
               <div
