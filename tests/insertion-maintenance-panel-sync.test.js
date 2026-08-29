@@ -8,6 +8,10 @@ const depotStablingSource = readFileSync(
   depotStablingUrl,
   "utf8",
 );
+const maintenancePanelSource = readFileSync(
+  new URL("../src/components/MaintenancePanel.jsx", import.meta.url),
+  "utf8",
+);
 
 const insertionComponent = depotStablingSource.slice(
   depotStablingSource.indexOf("function InsertionTabContent"),
@@ -65,4 +69,14 @@ test("Insertion reuses shared stabling locations for request status", () => {
   assert.match(insertionTabRender, /stabledTrainLocations=\{getMainStablingLocations\(westData, eastData\)\}/);
   assert.match(insertionComponent, /stabledTrainIds=\{stabledTrainIds\}/);
   assert.match(insertionComponent, /stabledTrainLocations=\{stabledTrainLocations\}/);
+});
+
+test("Insertion hides the CMMS Excel and Train Request image import tools only", () => {
+  assert.match(maintenancePanelSource, /showImportTools = true/);
+  assert.match(
+    maintenancePanelSource,
+    /\{showImportTools && \([\s\S]*data-testid="cmms-wash-review-card"[\s\S]*<MaintenanceImageSummary requests=\{requests\} onAdd=\{onAdd\} \/>[\s\S]*\)\}/,
+  );
+  assert.match(insertionComponent, /showImportTools=\{false\}/);
+  assert.doesNotMatch(stablingTabRender, /showImportTools=\{false\}/);
 });

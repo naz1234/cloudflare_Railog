@@ -666,7 +666,7 @@ function RequestGroupVisibilityIcon({ hidden = false, className = "" }) {
   );
 }
 
-export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, onDeleteGroup, onToggleGroupHidden, stabledTrainIds = [], stabledTrainLocations = {} }) {
+export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, onDeleteGroup, onToggleGroupHidden, showImportTools = true, stabledTrainIds = [], stabledTrainLocations = {} }) {
   const [trainId, setTrainId] = useState("");
   const [requestType, setRequestType] = useState("");
   const [error, setError] = useState("");
@@ -1484,7 +1484,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
       {/* Input Form */}
       <div className="border-b border-[#1a3a56] p-2.5 space-y-2">
-        <div data-testid="cmms-wash-review-card" className="theme-maintenance-upload-card theme-maintenance-upload-card--wash overflow-hidden rounded-xl border border-cyan-400/70 bg-[radial-gradient(circle_at_12%_30%,rgba(8,145,178,0.20),transparent_34%),linear-gradient(145deg,#06172a_0%,#071e33_58%,#09213a_100%)] p-2 shadow-[0_0_14px_rgba(34,211,238,0.10)]">
+        {showImportTools && (
+          <>
+          <div data-testid="cmms-wash-review-card" className="theme-maintenance-upload-card theme-maintenance-upload-card--wash overflow-hidden rounded-xl border border-cyan-400/70 bg-[radial-gradient(circle_at_12%_30%,rgba(8,145,178,0.20),transparent_34%),linear-gradient(145deg,#06172a_0%,#071e33_58%,#09213a_100%)] p-2 shadow-[0_0_14px_rgba(34,211,238,0.10)]">
           <div className="flex min-w-0 items-center gap-2">
             <div className="theme-maintenance-upload-icon relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-500/30 bg-[linear-gradient(145deg,rgba(8,47,73,0.95),rgba(6,31,56,0.95))] shadow-[inset_0_0_12px_rgba(14,165,233,0.14)]">
               <FileSpreadsheet className="h-4 w-4 text-cyan-100" strokeWidth={1.6} />
@@ -1560,9 +1562,11 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               </div>
             </div>
           )}
-        </div>
+          </div>
 
-        <MaintenanceImageSummary requests={requests} onAdd={onAdd} />
+          <MaintenanceImageSummary requests={requests} onAdd={onAdd} />
+          </>
+        )}
 
         <div>
           <label className={labelCls}>Train ID</label>
