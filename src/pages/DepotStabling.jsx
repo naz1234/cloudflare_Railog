@@ -9970,8 +9970,8 @@ function InsertionTabContent({
 
       {/* Insertion layout: depot tables remain together while the shared Train Request panel stays available at the right. */}
       <div
-        className="grid min-w-0 items-start gap-3"
-        style={{ gridTemplateColumns: "minmax(1230px, 1fr) 276px" }}
+        className="grid min-w-0 items-start gap-2"
+        style={{ gridTemplateColumns: "max-content 276px" }}
       >
         <div className="min-w-0 space-y-6">
         <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>

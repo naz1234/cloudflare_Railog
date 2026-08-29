@@ -80,3 +80,11 @@ test("Insertion hides the CMMS Excel and Train Request image import tools only",
   assert.match(insertionComponent, /showImportTools=\{false\}/);
   assert.doesNotMatch(stablingTabRender, /showImportTools=\{false\}/);
 });
+
+test("Insertion keeps Maintenance directly beside the actual depot content width", () => {
+  assert.match(
+    insertionComponent,
+    /className="grid min-w-0 items-start gap-2"[\s\S]*gridTemplateColumns: "max-content 276px"/,
+  );
+  assert.doesNotMatch(insertionComponent, /gridTemplateColumns: "minmax\(1230px, 1fr\) 276px"/);
+});
