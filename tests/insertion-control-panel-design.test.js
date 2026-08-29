@@ -20,7 +20,7 @@ const insertionComponent = depotStablingSource.slice(
   depotStablingSource.indexOf("// ── Train Movement Internal Page"),
 );
 
-test("Insertion displays one full-width control dashboard before both depot references", () => {
+test("Insertion displays one compact control dashboard above the West Depot reference", () => {
   const dashboardIndex = insertionComponent.indexOf("controlsOnly={true}");
   const westReferenceIndex = insertionComponent.indexOf('depotFilter="west"');
   const eastReferenceIndex = insertionComponent.indexOf('depotFilter="east"');
@@ -29,6 +29,7 @@ test("Insertion displays one full-width control dashboard before both depot refe
   assert.ok(westReferenceIndex > dashboardIndex);
   assert.ok(eastReferenceIndex > westReferenceIndex);
   assert.match(tidReferenceSource, /if \(controlsOnly\) \{[\s\S]*theme-insertion-reference-controls-only/);
+  assert.match(insertionComponent, /className="self-start space-y-3"[\s\S]*controlsOnly=\{true\}[\s\S]*depotFilter="west"/);
   assert.match(insertionComponent, /depotFilter="west"[\s\S]*showHeader=\{false\}/);
 });
 
@@ -61,4 +62,12 @@ test("dashboard uses compact operational sizing instead of presentation sizing",
   assert.match(themeStyles, /\.insertion-dashboard__time \{[\s\S]*font-size: clamp\(38px, 4\.6vw, 56px\)/);
   assert.match(themeStyles, /\.insertion-dashboard__sound-button \{[\s\S]*min-height: 34px/);
   assert.match(themeStyles, /\.insertion-dashboard__schedule-tab \{[\s\S]*min-height: 38px/);
+});
+
+test("sidebar dashboard matches the West Depot reference width and stays compact", () => {
+  assert.match(themeStyles, /\.theme-insertion-reference-controls-only \{[\s\S]*width: clamp\(250px, 26vw, 340px\)/);
+  assert.match(themeStyles, /\.theme-insertion-reference-controls-only \.insertion-dashboard__top \{[\s\S]*min-height: 42px/);
+  assert.match(themeStyles, /\.theme-insertion-reference-controls-only \.insertion-dashboard__time \{[\s\S]*font-size: 23px/);
+  assert.match(themeStyles, /\.theme-insertion-reference-controls-only \.insertion-dashboard__sound-row \{[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(themeStyles, /\.theme-insertion-reference-controls-only \.insertion-dashboard__schedule \{[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
 });
