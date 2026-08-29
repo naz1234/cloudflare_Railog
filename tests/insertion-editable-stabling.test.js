@@ -43,6 +43,7 @@ test("Refresh shows an animated fire warning when editable positions differ from
   assert.match(pageSource, /function insertionStablingTrainPositionsMatch\([\s\S]*normalizeTrainId/);
   assert.match(controlsSource, /isDirty \? "is-dirty" : "is-synced"/);
   assert.match(controlsSource, /<Flame className="theme-insertion-refresh-fire/);
+  assert.match(stylesheetSource, /\.theme-insertion-refresh-button\.is-synced \{[\s\S]*background: #071828;[\s\S]*color: #7890a4;/);
   assert.match(pageSource, /westInsertionStablingDirty = !insertionStablingTrainPositionsMatch/);
   assert.match(pageSource, /eastInsertionStablingDirty = !insertionStablingTrainPositionsMatch/);
   assert.match(stylesheetSource, /@keyframes insertion-refresh-fire-flicker/);
