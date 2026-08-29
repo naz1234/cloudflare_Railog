@@ -71,9 +71,11 @@ test("INS operational remarks use full request labels above Tracking", () => {
   assert.match(insertionSectionSource, /rowTrackingId \? 76/);
 });
 
-test("INS removes the Log Insertion button and keeps Enter as the manual fallback", () => {
-  assert.doesNotMatch(insertionCellSource, />\s*Log Insertion\s*</);
-  assert.doesNotMatch(insertionCellSource, /theme-insertion-insert-button/);
+test("INS shows Log Insertion only for Sweep and 3K1 manual inputs", () => {
+  assert.match(pageSource, /function isManualInsertionActionRemark\(value\) \{[\s\S]*isSweepRemark\(value\) \|\| getEastInsertionKeywordRemarkLabel\(value\) === "3K1"/);
+  assert.match(insertionCellSource, /const canLogManualInsertion = Boolean\([\s\S]*!canAutoInsertTid[\s\S]*isManualInsertionActionRemark\(tidRemarkText\)/);
+  assert.match(insertionCellSource, /\{canLogManualInsertion && \([\s\S]*theme-insertion-insert-button[\s\S]*>\s*Log Insertion\s*</);
   assert.match(insertionCellSource, /event\.key === "Enter" && !canAutoInsertTid && tidRemarkText/);
   assert.match(insertionCellSource, /handleInsertClick\(\)/);
+  assert.match(insertionSectionSource, /rowHasManualInsertionAction[\s\S]*isManualInsertionActionRemark\(tidInputs\[/);
 });
