@@ -12,13 +12,14 @@ function transformDepotStabling() {
   return plugin.transform(source, depotStablingPath.pathname)?.code || '';
 }
 
-test('hidden request groups are filtered from stabling and Removal Summary inputs', () => {
+test('hidden request groups are filtered from stabling, Insertion and Removal Summary inputs', () => {
   const code = transformDepotStabling();
 
   assert.match(code, /hiddenByRequestGroup: req\?\.groupHidden === true/);
   assert.match(code, /const visibleRemovalRequests = requests\.filter\(\(request\) => request\?\.groupHidden !== true\)/);
   assert.match(code, /title="WEST DEPOT STABLING"[\s\S]*?maintenanceMap=\{visibleRequestMaintenanceMap\}/);
   assert.match(code, /title="EAST DEPOT STABLING"[\s\S]*?maintenanceMap=\{visibleRequestMaintenanceMap\}/);
+  assert.match(code, /<InsertionTabContent[\s\S]*?maintenanceMap=\{visibleRequestMaintenanceMap\}/);
   assert.match(code, /<TrainRemPanel\s+maintenanceMap=\{visibleRequestMaintenanceMap\}[\s\S]*?requests=\{visibleRemovalRequests\}/);
 });
 
