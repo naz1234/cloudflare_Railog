@@ -10066,6 +10066,7 @@ function InsertionTabContent({
             onRenameGroup={onRenameMaintenanceRequestGroup}
             onToggleGroupHidden={onToggleMaintenanceRequestGroupHidden}
             onDeleteGroup={onDeleteMaintenanceRequestGroup}
+            showImportTools={false}
             stabledTrainIds={stabledTrainIds}
             stabledTrainLocations={stabledTrainLocations}
           />
