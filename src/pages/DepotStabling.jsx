@@ -5876,7 +5876,7 @@ function InsertionEditableHeaderControls({
             borderColor: "rgba(251,146,60,0.92)",
             color: "#fff7ed",
             boxShadow: "0 0 16px rgba(249,115,22,0.38), inset 0 1px 0 rgba(255,255,255,0.12)",
-          } : MAIN_STABLING_BUTTON_BLUE}
+          } : undefined}
         >
           {isDirty ? (
             <Flame className="theme-insertion-refresh-fire h-3.5 w-3.5" aria-hidden="true" />
