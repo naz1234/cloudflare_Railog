@@ -5827,7 +5827,7 @@ function InsertionEditableHeaderControls({
 }) {
   const refreshTooltip = isDirty
     ? `${depotCode} editable stabling differs from Main Stabling. Refresh to sync and reset ${depotCode} insertion work.`
-    : `${depotCode} editable stabling matches Main Stabling. Refresh will reset ${depotCode} insertion work.`;
+    : `${depotCode} editable stabling already matches Main Stabling`;
 
   return (
     <div className="theme-insertion-editable-controls flex flex-wrap items-center justify-start gap-1.5">
@@ -5869,8 +5869,9 @@ function InsertionEditableHeaderControls({
         <button
           type="button"
           onClick={onRefresh}
+          disabled={!isDirty}
           aria-label={refreshTooltip}
-          className={`theme-insertion-refresh-button ${isDirty ? "is-dirty" : "is-synced"} group inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-[10px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0`}
+          className={`theme-insertion-refresh-button ${isDirty ? "is-dirty" : "is-synced"} group inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-[10px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100`}
           style={isDirty ? {
             background: "linear-gradient(135deg, rgba(249,115,22,0.42), rgba(220,38,38,0.34))",
             borderColor: "rgba(251,146,60,0.92)",
