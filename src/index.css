@@ -12192,3 +12192,56 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-foo
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer input {
   color: #102f49 !important;
 }
+
+@keyframes insertion-refresh-fire-flicker {
+  0%, 100% { transform: translateY(0) scale(1) rotate(-2deg); filter: drop-shadow(0 0 3px rgba(251, 146, 60, 0.78)); }
+  35% { transform: translateY(-1px) scale(1.14) rotate(3deg); filter: drop-shadow(0 0 7px rgba(239, 68, 68, 0.92)); }
+  68% { transform: translateY(0) scale(0.96) rotate(-4deg); filter: drop-shadow(0 0 5px rgba(250, 204, 21, 0.88)); }
+}
+
+@keyframes insertion-refresh-dirty-pulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(249, 115, 22, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12); }
+  50% { box-shadow: 0 0 22px rgba(249, 115, 22, 0.56), 0 0 7px rgba(239, 68, 68, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18); }
+}
+
+.theme-insertion-page .theme-insertion-refresh-button.is-dirty {
+  animation: insertion-refresh-dirty-pulse 1.25s ease-in-out infinite;
+}
+
+.theme-insertion-page .theme-insertion-refresh-fire {
+  color: #fde047;
+  fill: rgba(249, 115, 22, 0.55);
+  animation: insertion-refresh-fire-flicker 720ms ease-in-out infinite;
+  transform-origin: 50% 78%;
+}
+
+.theme-insertion-page .theme-insertion-history-button:disabled {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-editable-label,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-history-button {
+  border-color: #94a3b8 !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button.is-dirty {
+  border-color: #f97316 !important;
+  background: linear-gradient(135deg, #ffedd5, #fee2e2) !important;
+  color: #9a3412 !important;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.30) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button.is-dirty svg {
+  color: #ea580c !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-insertion-page .theme-insertion-refresh-button.is-dirty,
+  .theme-insertion-page .theme-insertion-refresh-fire {
+    animation: none !important;
+  }
+}
