@@ -43,6 +43,7 @@ test("Tracking ID uses a centered label before entry and centered value after en
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer input\.theme-insertion-tid-input \{[\s\S]*border: 0 !important/);
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer input\.theme-insertion-tid-input \{[\s\S]*background: transparent !important/);
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer input\.theme-insertion-tid-input \{[\s\S]*text-align: center !important/);
+  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer > strong \{[\s\S]*font-size: 11px/);
 });
 
 test("submitted numeric Tracking IDs persist even without an active timetable match", () => {
