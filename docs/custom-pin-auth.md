@@ -14,7 +14,7 @@ The allowlist belongs only in the encrypted `AUTH_ALLOWED_EMAILS` secrets on Pag
 - Each approved request creates an independent opaque challenge ID and short request reference bound to an HMAC-derived identity key. Parallel staff requests do not invalidate each other.
 - The PIN is generated with `crypto.getRandomValues`, stored only as an HMAC, expires after five minutes, and allows at most five attempts.
 - The session token is 256-bit random data. D1 stores only its HMAC plus the HMAC-derived approved identity, expiry, revocation state, and coarse last-seen time. Display names are re-derived from the encrypted allowlist rather than stored in the authentication tables. The `__Host-l3dc_session` cookie is `Secure`, `HttpOnly`, `SameSite=Strict`, has `Path=/`, and expires after eight hours.
-- Every protected request revalidates the session in D1. Authenticated presence heartbeats update the coarse last-seen time; the online list contains approved display names only and treats a user as offline after two minutes without a heartbeat. It is an approximate application-presence signal, not a physical attendance record.
+- Every protected request revalidates the session in D1. Authenticated presence heartbeats update the coarse last-seen time; the online list contains approved display names only and treats a user as offline after two minutes without a heartbeat. The optional Pages-only `AUTH_PRESENCE_HIDDEN_EMAILS` secret can exclude an approved subset from the presence response and count without removing their login authorization. It is an approximate application-presence signal, not a physical attendance record.
 - Logout revokes the session server-side. Unsafe requests require an exact same-origin `Origin` header.
 - Request limits combine Turnstile, source-IP limits, per-identity limits, and a global Gmail provider guard. No raw PIN, session token, IP address, or full staff email address is written to the auth tables or application logs.
 
@@ -77,12 +77,13 @@ Keep the existing Cloudflare Access variables and secret while testing. Add thes
 | `AUTH_EMAIL_SERVICE` | Service binding | Private `l3-dc-auth-email` worker |
 | `AUTH_MODE` | Variable | Keep `cloudflare_access` until cutover |
 | `AUTH_ALLOWED_EMAILS` | Encrypted secret | Private approved-staff allowlist, one address per line |
+| `AUTH_PRESENCE_HIDDEN_EMAILS` | Encrypted secret | Optional approved subset to omit from the online list and count, one address per line |
 | `AUTH_HMAC_SECRET` | Encrypted secret | Random secret of at least 32 characters |
 | `AUTH_EMAIL_SERVICE_TOKEN` | Encrypted secret | Authenticates Pages to the mailer worker |
 | `TURNSTILE_SITE_KEY` | Variable | Public widget key for this environment |
 | `TURNSTILE_SECRET_KEY` | Encrypted secret | Server-side widget secret |
 
-Configure the same approved addresses in the mailer Worker's encrypted `AUTH_ALLOWED_EMAILS` secret. The Worker requires an explicit allowlisted recipient on every request and does not support a shared-recipient fallback.
+Configure the same approved addresses in the mailer Worker's encrypted `AUTH_ALLOWED_EMAILS` secret. The Worker requires an explicit allowlisted recipient on every request and does not support a shared-recipient fallback. Keep `AUTH_PRESENCE_HIDDEN_EMAILS` only on Pages; every address in it must also remain in Pages and mailer `AUTH_ALLOWED_EMAILS`. It is a display-privacy setting, not an authorization control, so hidden members can still request a PIN, sign in, and see other online staff.
 
 After changing bindings, variables, or secrets, redeploy Pages so Functions receive them. Apply every pending D1 migration in order before deploying code that reads identity or presence columns. Missing tables or columns cause authentication to fail closed.
 
@@ -101,7 +102,7 @@ Verify all of these in a fresh private browser:
 7. A code expires after five minutes and cannot be used twice.
 8. Two separate users can request and verify independent challenges without replacing each other.
 9. Per-IP, per-identity, resend, and global provider limits work without leaking raw addresses to logs.
-10. The authenticated session returns the expected approved display name. The online list shows recently active approved display names only, deduplicates multiple sessions, and removes users after logout, expiry, or the inactivity window.
+10. The authenticated session returns the expected approved display name. The online list shows recently active approved display names only, omits every configured `AUTH_PRESENCE_HIDDEN_EMAILS` member from both initials and count, deduplicates multiple sessions, and removes users after logout, expiry, or the inactivity window.
 11. Logout revokes the session in every open tab.
 12. A direct document request without the session redirects once to `/login`.
 13. Direct API, JavaScript, CSS, and image requests without the session return `401`, not application or login content.

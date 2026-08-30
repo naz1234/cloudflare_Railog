@@ -14,6 +14,7 @@ import {
   generateOpaqueToken,
   generateSecurePin,
   getAuthMode,
+  getAuthPresenceConfiguration,
   getCustomAuthConfiguration,
   hashAuthEmail,
   hashPin,
@@ -241,6 +242,36 @@ test('custom mode is opt-in and its configuration fails closed', () => {
   }));
   assert.equal(whitespaceSecret.valid, false);
   assert.match(whitespaceSecret.issues.join(' '), /AUTH_HMAC_SECRET/);
+});
+
+test('presence visibility accepts only an optional approved subset without affecting login', () => {
+  const authConfig = getCustomAuthConfiguration(makeEnv());
+  const unset = getAuthPresenceConfiguration(makeEnv(), authConfig);
+  assert.equal(unset.valid, true);
+  assert.deepEqual(unset.hiddenMembers, []);
+
+  const hidden = getAuthPresenceConfiguration(makeEnv({
+    AUTH_PRESENCE_HIDDEN_EMAILS: 'member.one@FLOW-METRO.COM',
+  }), authConfig);
+  assert.equal(hidden.valid, true);
+  assert.deepEqual(
+    hidden.hiddenMembers.map((member) => member.normalizedEmail),
+    ['member.one@flow-metro.com'],
+  );
+
+  for (const invalidValue of [
+    'member.one@example.com',
+    `${allowedEmails[0]}\n${allowedEmails[0].toLowerCase()}`,
+    'Not.Approved@flow-metro.com',
+  ]) {
+    const env = makeEnv({ AUTH_PRESENCE_HIDDEN_EMAILS: invalidValue });
+    const loginConfig = getCustomAuthConfiguration(env);
+    const presenceConfig = getAuthPresenceConfiguration(env, loginConfig);
+    assert.equal(loginConfig.valid, true);
+    assert.equal(presenceConfig.valid, false);
+    assert.deepEqual(presenceConfig.hiddenMembers, []);
+    assert.doesNotMatch(presenceConfig.issues.join(' '), /member|example/i);
+  }
 });
 
 test('PINs and opaque tokens use bounded secure formats and HMAC hashes', async () => {
@@ -995,6 +1026,85 @@ test('presence heartbeat returns each recently active approved member once', asy
       { name: 'Member.Two' },
     ],
   });
+});
+
+test('presence hides configured members while preserving their authenticated heartbeat', async () => {
+  const env = makeEnv({
+    AUTH_PRESENCE_HIDDEN_EMAILS: allowedEmails[0].toLowerCase(),
+  });
+  const store = createMemoryStore();
+  const nowSeconds = Math.floor(nowMs / 1000);
+  const firstHash = await hashAuthEmail({
+    email: allowedEmails[0],
+    hmacSecret: env.AUTH_HMAC_SECRET,
+  });
+  const secondHash = await hashAuthEmail({
+    email: allowedEmails[1],
+    hmacSecret: env.AUTH_HMAC_SECRET,
+  });
+  const currentTokenHash = 'a'.repeat(64);
+
+  store.sessions.set(currentTokenHash, {
+    created_at: nowSeconds - 600,
+    email_hash: firstHash,
+    expires_at: nowSeconds + 600,
+    last_seen_at: nowSeconds - 300,
+    revoked_at: null,
+    token_hash: currentTokenHash,
+  });
+  store.sessions.set('b'.repeat(64), {
+    created_at: nowSeconds - 600,
+    email_hash: secondHash,
+    expires_at: nowSeconds + 600,
+    last_seen_at: nowSeconds - 30,
+    revoked_at: null,
+    token_hash: 'b'.repeat(64),
+  });
+
+  const endpoint = createPresenceEndpoint({
+    createStore: () => store,
+    now: () => nowMs,
+  });
+  const context = createContext(makeRequest('/api/auth/presence', {
+    method: 'GET',
+    requestOrigin: null,
+  }), env);
+  context.data.authUser = { tokenHash: currentTokenHash };
+
+  const response = await endpoint(context);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    ok: true,
+    users: [{ name: 'Member.Two' }],
+  });
+  assert.equal(store.sessions.get(currentTokenHash).last_seen_at, nowSeconds);
+
+  env.AUTH_PRESENCE_HIDDEN_EMAILS = allowedEmails.join('\n');
+  const allHiddenResponse = await endpoint(context);
+  assert.equal(allHiddenResponse.status, 200);
+  assert.deepEqual(await allHiddenResponse.json(), { ok: true, users: [] });
+});
+
+test('invalid presence visibility fails only the presence endpoint without leaking values', async () => {
+  const hiddenValue = 'Not.Approved@flow-metro.com';
+  const env = makeEnv({ AUTH_PRESENCE_HIDDEN_EMAILS: hiddenValue });
+  const logMessages = [];
+  const endpoint = createPresenceEndpoint({
+    logger: { error: (...values) => logMessages.push(values.join(' ')) },
+  });
+  const context = createContext(makeRequest('/api/auth/presence', {
+    method: 'GET',
+    requestOrigin: null,
+  }), env);
+  context.data.authUser = { tokenHash: 'a'.repeat(64) };
+
+  assert.equal(getCustomAuthConfiguration(env).valid, true);
+  const response = await endpoint(context);
+  assert.equal(response.status, 503);
+  const body = await response.json();
+  assert.equal(body.error.code, 'AUTH_UNAVAILABLE');
+  assert.doesNotMatch(JSON.stringify(body), new RegExp(hiddenValue, 'i'));
+  assert.doesNotMatch(logMessages.join(' '), new RegExp(hiddenValue, 'i'));
 });
 
 test('email masking never exposes the full local part and preserves canonical casing', () => {

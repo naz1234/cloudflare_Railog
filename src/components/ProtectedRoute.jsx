@@ -40,15 +40,11 @@ const AuthUnavailable = ({ message, onRetry }) => (
   </main>
 );
 
-function normalizedPresenceUsers(users, currentUser) {
+function normalizedPresenceUsers(users) {
   const source = Array.isArray(users) ? users : [];
-  const candidates = [
-    ...(currentUser?.name ? [{ name: currentUser.name, lastSeenAt: null }] : []),
-    ...source,
-  ];
   const seen = new Set();
 
-  return candidates.flatMap((entry) => {
+  return source.flatMap((entry) => {
     const name = String(entry?.name || '').trim().slice(0, 80);
     const identityKey = name.toLocaleLowerCase('en');
     if (!name || seen.has(identityKey)) return [];
@@ -79,7 +75,7 @@ export const SessionPresenceControl = () => {
   const [logoutError, setLogoutError] = useState('');
   const [presenceSupported, setPresenceSupported] = useState(true);
   const [presenceUnavailable, setPresenceUnavailable] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState(() => normalizedPresenceUsers([], user));
+  const [onlineUsers, setOnlineUsers] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,7 +99,7 @@ export const SessionPresenceControl = () => {
         });
         if (response.status === 404) {
           if (!cancelled) {
-            setOnlineUsers(normalizedPresenceUsers([], user));
+            setOnlineUsers([]);
             setPresenceSupported(false);
             setPresenceUnavailable(false);
           }
@@ -115,13 +111,13 @@ export const SessionPresenceControl = () => {
           throw new Error('invalid_presence_response');
         }
         if (!cancelled) {
-          setOnlineUsers(normalizedPresenceUsers(data.users, user));
+          setOnlineUsers(normalizedPresenceUsers(data.users));
           setPresenceSupported(true);
           setPresenceUnavailable(false);
         }
       } catch {
         if (!cancelled) {
-          setOnlineUsers(normalizedPresenceUsers([], user));
+          setOnlineUsers([]);
           setPresenceUnavailable(true);
         }
       } finally {

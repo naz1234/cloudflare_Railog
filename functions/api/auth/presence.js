@@ -4,6 +4,7 @@ import {
   authErrorResponse,
   createCustomAuthStore,
   getAuthMode,
+  getAuthPresenceConfiguration,
   getCustomAuthConfiguration,
   hashAuthEmail,
   jsonResponse,
@@ -42,6 +43,11 @@ export function createPresenceEndpoint({
       logger.error('Custom authentication presence configuration is invalid.');
       return unavailableResponse();
     }
+    const presenceConfig = getAuthPresenceConfiguration(env, config);
+    if (!presenceConfig.valid) {
+      logger.error('Custom authentication presence visibility configuration is invalid.');
+      return unavailableResponse();
+    }
 
     try {
       const nowSeconds = toEpochSeconds(now());
@@ -51,8 +57,14 @@ export function createPresenceEndpoint({
         cutoff: nowSeconds - AUTH_PRESENCE_WINDOW_SECONDS,
         now: nowSeconds,
       });
+      const hiddenEmails = new Set(
+        presenceConfig.hiddenMembers.map((member) => member.normalizedEmail),
+      );
+      const visibleMembers = config.allowedMembers.filter(
+        (member) => !hiddenEmails.has(member.normalizedEmail),
+      );
       const membersByHash = new Map(await Promise.all(
-        config.allowedMembers.map(async (member) => [
+        visibleMembers.map(async (member) => [
           await hashAuthEmail({
             email: member.normalizedEmail,
             hmacSecret: config.hmacSecret,
