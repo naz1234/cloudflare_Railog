@@ -10028,7 +10028,11 @@ function InsertionTabContent({
       `}</style>
 
       {insertionLiveStatusText && (
-        <div className={`theme-insertion-live-status w-fit rounded-xl border px-3 py-1.5 text-[11px] font-normal ${insertionLiveStatusClass || "border-emerald-600/50 bg-emerald-950/30 text-emerald-300"}`}>
+        <div
+          hidden
+          aria-hidden="true"
+          className={`theme-insertion-live-status w-fit rounded-xl border px-3 py-1.5 text-[11px] font-normal ${insertionLiveStatusClass || "border-emerald-600/50 bg-emerald-950/30 text-emerald-300"}`}
+        >
           {insertionLiveStatusText}
         </div>
       )}
