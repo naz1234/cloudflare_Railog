@@ -5270,6 +5270,7 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     cardBg: "linear-gradient(135deg, rgba(34, 197, 94, 0.20) 0%, rgba(34, 197, 94, 0.07) 100%)",
     border: "#22c55e",
     color: "#bbf7d0",
+    lightColor: "#166534",
     shadow: "0 0 12px rgba(34, 197, 94, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
   "Late Rem": {
@@ -5279,6 +5280,7 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     cardBg: "linear-gradient(135deg, rgba(250, 204, 21, 0.20) 0%, rgba(250, 204, 21, 0.07) 100%)",
     border: "#facc15",
     color: "#fde68a",
+    lightColor: "#854d0e",
     shadow: "0 0 12px rgba(250, 204, 21, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
   "ED (7pm)": {
@@ -5288,6 +5290,7 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     cardBg: "linear-gradient(135deg, rgba(139, 92, 246, 0.20) 0%, rgba(139, 92, 246, 0.07) 100%)",
     border: "#8b5cf6",
     color: "#ddd6fe",
+    lightColor: "#5b21b6",
     shadow: "0 0 12px rgba(139, 92, 246, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
   ED: {
@@ -5297,6 +5300,7 @@ const INSERTION_ASSIST_REMARK_STYLES = {
     cardBg: "linear-gradient(135deg, rgba(248, 113, 113, 0.20) 0%, rgba(248, 113, 113, 0.07) 100%)",
     border: "#f87171",
     color: "#fecaca",
+    lightColor: "#991b1b",
     shadow: "0 0 12px rgba(248, 113, 113, 0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
 };
@@ -5452,6 +5456,7 @@ function getInsertionTidBigPillStyle(assistStyle = null, depot = "west") {
     bg: assistStyle.cardBg || assistStyle.bg || fallback.bg,
     border: assistStyle.border || fallback.border,
     color: assistStyle.color || fallback.color,
+    lightColor: assistStyle.lightColor || assistStyle.color || fallback.color,
     shadow: assistStyle.shadow || fallback.shadow,
   };
 }
@@ -5998,6 +6003,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         "--insertion-tracking-reference-bg": insertedTrackingReferencePillStyle.bg,
         "--insertion-tracking-reference-border": insertedTrackingReferencePillStyle.border,
         "--insertion-tracking-reference-color": insertedTrackingReferencePillStyle.color,
+        "--insertion-tracking-reference-light-color": insertedTrackingReferencePillStyle.lightColor,
         "--insertion-tracking-reference-shadow": insertedTrackingReferencePillStyle.shadow,
       }
     : undefined;

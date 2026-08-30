@@ -12161,9 +12161,12 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-foo
   box-shadow: var(--insertion-tracking-reference-shadow) !important;
 }
 
-.theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style > strong,
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style > strong {
+.theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style > strong {
   color: var(--insertion-tracking-reference-color) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style > strong {
+  color: var(--insertion-tracking-reference-light-color, var(--insertion-tracking-reference-color)) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-req-layout {

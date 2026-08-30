@@ -62,10 +62,13 @@ test("matched Tracking IDs inherit their TID Reference Table service colour", ()
   assert.match(insertionCellSource, /"--insertion-tracking-reference-bg": insertedTrackingReferencePillStyle\.bg/);
   assert.match(insertionCellSource, /"--insertion-tracking-reference-border": insertedTrackingReferencePillStyle\.border/);
   assert.match(insertionCellSource, /"--insertion-tracking-reference-color": insertedTrackingReferencePillStyle\.color/);
+  assert.match(insertionCellSource, /"--insertion-tracking-reference-light-color": insertedTrackingReferencePillStyle\.lightColor/);
   assert.match(referenceTableSource, /\{ tid: 205, remark: "Late Rem"/);
   assert.match(referenceTableSource, /\{ tid: 208, remark: "ED"/);
   assert.match(pageSource, /"Late Rem": \{[\s\S]*?border: "#facc15"/);
+  assert.match(pageSource, /"Late Rem": \{[\s\S]*?lightColor: "#854d0e"/);
   assert.match(pageSource, /\n  ED: \{[\s\S]*?border: "#f87171"/);
+  assert.match(pageSource, /\n  ED: \{[\s\S]*?lightColor: "#991b1b"/);
   assert.equal(
     (insertionCellSource.match(/has-reference-style/g) || []).length,
     2,
@@ -77,7 +80,7 @@ test("matched Tracking IDs inherit their TID Reference Table service colour", ()
   );
   assert.match(
     stylesheetSource,
-    /html\[data-app-theme="light"\] \.theme-insertion-page \.theme-insertion-tracking-footer\.is-complete\.has-reference-style > strong \{[\s\S]*color: var\(--insertion-tracking-reference-color\) !important/,
+    /html\[data-app-theme="light"\] \.theme-insertion-page \.theme-insertion-tracking-footer\.is-complete\.has-reference-style > strong \{[\s\S]*color: var\(--insertion-tracking-reference-light-color, var\(--insertion-tracking-reference-color\)\) !important/,
   );
 });
 
