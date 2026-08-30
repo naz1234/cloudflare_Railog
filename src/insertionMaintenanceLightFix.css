@@ -6,6 +6,8 @@
  */
 html[data-app-theme="light"] .theme-insertion-page {
   overflow: visible !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .maintenance-panel-shell,
