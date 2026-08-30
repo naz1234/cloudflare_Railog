@@ -436,6 +436,23 @@ html[data-app-theme="light"] .theme-toggle {
   border-color: #9eafc0 !important;
 }
 
+/* Presence avatars stay dark in the light header, so keep their initials bright. */
+html[data-app-theme="light"] .theme-session-presence .theme-presence-avatar {
+  background-color: #0a2a42 !important;
+  color: #ecfeff !important;
+  -webkit-text-fill-color: #ecfeff !important;
+}
+
+html[data-app-theme="light"] .theme-session-presence .theme-presence-avatar:hover {
+  background-color: #103b5c !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-session-presence .theme-presence-avatar-dot {
+  border-color: #ffffff !important;
+}
+
 /* Convert the application's dark neutral panels to light neutral panels. */
 html[data-app-theme="light"] :is(
   [class*="bg-[#03111d]"],
