@@ -1,0 +1,112 @@
+/*
+ * Keep Insertion card states immediately distinguishable in light mode.
+ * This loads after index.css so the neutral Train Request card skin cannot
+ * flatten the depot and workflow state colours back to the same surface.
+ */
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-section[data-depot="west"]
+  .theme-insertion-card.is-req-layout.has-train:not(.has-input):not(.is-inserted):not(.is-complete):not(.is-duplicate) {
+  background: linear-gradient(145deg, #fff7ed 0%, #ffedd5 100%) !important;
+  border: 1px solid #fb923c !important;
+  border-top: 3px solid #ea580c !important;
+  box-shadow: 0 3px 10px rgba(234, 88, 12, 0.14) !important;
+}
+
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-section[data-depot="east"]
+  .theme-insertion-card.is-req-layout.has-train:not(.has-input):not(.is-inserted):not(.is-complete):not(.is-duplicate) {
+  background: linear-gradient(145deg, #ecfeff 0%, #cffafe 100%) !important;
+  border: 1px solid #22b8cf !important;
+  border-top: 3px solid #0891b2 !important;
+  box-shadow: 0 3px 10px rgba(8, 145, 178, 0.14) !important;
+}
+
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card.is-req-layout.is-empty {
+  background: #e9eef3 !important;
+  background-image: none !important;
+  border: 1.5px dashed #94a3b8 !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card.is-req-layout.has-input:not(.is-inserted) {
+  background: linear-gradient(145deg, #fef9c3 0%, #fde68a 100%) !important;
+  border: 1px solid #ca8a04 !important;
+  border-top: 3px solid #eab308 !important;
+  box-shadow: 0 3px 10px rgba(202, 138, 4, 0.16) !important;
+}
+
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card.is-req-layout.is-inserted:not(.is-complete):not(.is-sweeping):not(.is-duplicate) {
+  background: linear-gradient(145deg, #f5f3ff 0%, #ddd6fe 100%) !important;
+  border: 1px solid #8b5cf6 !important;
+  border-top: 3px solid #7c3aed !important;
+  box-shadow: 0 3px 10px rgba(124, 58, 237, 0.16) !important;
+}
+
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card.is-req-layout.is-complete:not(.is-sweeping):not(.is-duplicate) {
+  background: linear-gradient(145deg, #ecfdf5 0%, #bbf7d0 100%) !important;
+  border: 1px solid #22c55e !important;
+  border-top: 3px solid #16a34a !important;
+  box-shadow: 0 3px 10px rgba(22, 163, 74, 0.16) !important;
+}
+
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card.is-req-layout.is-sweeping:not(.is-duplicate) {
+  background: linear-gradient(145deg, #faf5ff 0%, #e9d5ff 100%) !important;
+  border: 1px solid #a855f7 !important;
+  border-top: 3px solid #9333ea !important;
+  box-shadow: 0 3px 10px rgba(147, 51, 234, 0.16) !important;
+}
+
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card.is-req-layout.is-duplicate {
+  background: linear-gradient(145deg, #fef2f2 0%, #fecaca 100%) !important;
+  border: 1px solid #ef4444 !important;
+  border-top: 3px solid #dc2626 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.10), 0 3px 10px rgba(220, 38, 38, 0.16) !important;
+}
+
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card.is-expired {
+  background: #dce3ea !important;
+  background-image: none !important;
+  border-color: #8795a5 !important;
+  box-shadow: none !important;
+}
+
+/* Stronger pastel fill keeps adjacent request categories readable. */
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card
+  .theme-stabling-remark {
+  background: color-mix(
+    in srgb,
+    rgb(var(--stabling-remark-accent-rgb, 79, 142, 247)) 56%,
+    #ffffff 44%
+  ) !important;
+  border-color: rgb(var(--stabling-remark-accent-rgb, 79, 142, 247)) !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+/* Search remains the highest-priority outline without replacing state fill. */
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card.is-search-match {
+  border: 2px solid #ca8a04 !important;
+  box-shadow:
+    0 0 0 3px rgba(202, 138, 4, 0.26),
+    0 4px 12px rgba(15, 23, 42, 0.12) !important;
+}

@@ -7,6 +7,7 @@ import '@/pstCompletionColors.css'
 import '@/referenceControlFontSize.css'
 import '@/insertionTidTimeVisibility.css'
 import '@/officialExcelGeneratorMotion.css'
+import '@/insertionLightCardContrast.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />
