@@ -10,6 +10,10 @@ const stylesheetSource = readFileSync(
   new URL("../src/index.css", import.meta.url),
   "utf8",
 );
+const referenceTableSource = readFileSync(
+  new URL("../src/components/TIDReferenceTable.jsx", import.meta.url),
+  "utf8",
+);
 
 const insertionCellSource = pageSource.slice(
   pageSource.indexOf("function InsertionCell"),
@@ -49,11 +53,19 @@ test("Tracking ID uses a centered label before entry and centered value after en
 test("matched Tracking IDs inherit their TID Reference Table service colour", () => {
   assert.match(
     insertionCellSource,
-    /const insertedTrackingReferenceStyle = insertedTid && insertedTidRemarkStyle/,
+    /getTidAssistRemark\(insertedTrackingId, autoTidDepot\)/,
   );
-  assert.match(insertionCellSource, /"--insertion-tracking-reference-bg": insertedTidBigPillStyle\.bg/);
-  assert.match(insertionCellSource, /"--insertion-tracking-reference-border": insertedTidBigPillStyle\.border/);
-  assert.match(insertionCellSource, /"--insertion-tracking-reference-color": insertedTidBigPillStyle\.color/);
+  assert.match(
+    insertionCellSource,
+    /const insertedTrackingReferenceStyle = insertedTrackingId && insertedTrackingRemarkStyle/,
+  );
+  assert.match(insertionCellSource, /"--insertion-tracking-reference-bg": insertedTrackingReferencePillStyle\.bg/);
+  assert.match(insertionCellSource, /"--insertion-tracking-reference-border": insertedTrackingReferencePillStyle\.border/);
+  assert.match(insertionCellSource, /"--insertion-tracking-reference-color": insertedTrackingReferencePillStyle\.color/);
+  assert.match(referenceTableSource, /\{ tid: 205, remark: "Late Rem"/);
+  assert.match(referenceTableSource, /\{ tid: 208, remark: "ED"/);
+  assert.match(pageSource, /"Late Rem": \{[\s\S]*?border: "#facc15"/);
+  assert.match(pageSource, /\n  ED: \{[\s\S]*?border: "#f87171"/);
   assert.equal(
     (insertionCellSource.match(/has-reference-style/g) || []).length,
     2,

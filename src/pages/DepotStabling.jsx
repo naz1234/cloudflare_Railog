@@ -5937,6 +5937,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const insertedTidRemarkStyle = insertedTid && typeof getTidAssistRemarkStyle === "function"
     ? getTidAssistRemarkStyle(insertedTid, autoTidDepot)
     : null;
+  // Older insertion entries can retain their numeric value only in inputValue.
+  // Resolve the reference colour from the displayed Tracking ID so both legacy
+  // and newly logged cards match the active TID Reference Table.
+  const insertedTrackingAssistRemark = insertedTrackingId && typeof getTidAssistRemark === "function"
+    ? getTidAssistRemark(insertedTrackingId, autoTidDepot)
+    : "";
+  const insertedTrackingRemarkStyle = getInsertionAssistRemarkStyle(insertedTrackingAssistRemark);
   const insertedTidAssistDisplayRemark = getInsertionAssistRemarkDisplayLabel(insertedTidAssistRemark);
   const hasInsertedTidAssistDisplayRemark = Boolean(insertedTid && insertedTidAssistDisplayRemark);
   const insertedPlainRemark = inserted && !inserted.isSweeping && !insertedTrackingId
@@ -5985,12 +5992,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const hiddenInsertionStatusCount = insertionStatusRemarkList.length - displayedInsertionStatusRemarks.length;
   const hasMiddleInsertionRemark = Boolean(key && insertionStatusRemarkList.length > 0);
   const insertedTidBigPillStyle = getInsertionTidBigPillStyle(insertedTidRemarkStyle, autoTidDepot);
-  const insertedTrackingReferenceStyle = insertedTid && insertedTidRemarkStyle
+  const insertedTrackingReferencePillStyle = getInsertionTidBigPillStyle(insertedTrackingRemarkStyle, autoTidDepot);
+  const insertedTrackingReferenceStyle = insertedTrackingId && insertedTrackingRemarkStyle
     ? {
-        "--insertion-tracking-reference-bg": insertedTidBigPillStyle.bg,
-        "--insertion-tracking-reference-border": insertedTidBigPillStyle.border,
-        "--insertion-tracking-reference-color": insertedTidBigPillStyle.color,
-        "--insertion-tracking-reference-shadow": insertedTidBigPillStyle.shadow,
+        "--insertion-tracking-reference-bg": insertedTrackingReferencePillStyle.bg,
+        "--insertion-tracking-reference-border": insertedTrackingReferencePillStyle.border,
+        "--insertion-tracking-reference-color": insertedTrackingReferencePillStyle.color,
+        "--insertion-tracking-reference-shadow": insertedTrackingReferencePillStyle.shadow,
       }
     : undefined;
   const insertionDoneCardMinHeight = insertedTrackingId ? 76 : hasInsertedPlainRemark ? 112 : 116;
