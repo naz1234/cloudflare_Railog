@@ -59,6 +59,20 @@ html[data-app-theme="light"]
   box-shadow: 0 3px 10px rgba(22, 163, 74, 0.16) !important;
 }
 
+/* A completed numeric TID follows its active TID Reference Table colour. */
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card.is-req-layout.is-complete.has-tracking-reference:not(.is-sweeping):not(.is-duplicate) {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--insertion-card-reference-accent) 14%, #ffffff) 0%,
+    color-mix(in srgb, var(--insertion-card-reference-accent) 34%, #ffffff) 100%
+  ) !important;
+  border: 1px solid var(--insertion-card-reference-accent) !important;
+  border-top: 3px solid var(--insertion-card-reference-accent) !important;
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--insertion-card-reference-accent) 22%, transparent) !important;
+}
+
 html[data-app-theme="light"]
   .theme-insertion-page
   .theme-insertion-card.is-req-layout.is-sweeping:not(.is-duplicate) {

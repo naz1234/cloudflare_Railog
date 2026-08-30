@@ -6005,6 +6005,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         "--insertion-tracking-reference-color": insertedTrackingReferencePillStyle.color,
         "--insertion-tracking-reference-light-color": insertedTrackingReferencePillStyle.lightColor,
         "--insertion-tracking-reference-shadow": insertedTrackingReferencePillStyle.shadow,
+        "--insertion-card-reference-accent": insertedTrackingReferencePillStyle.border,
       }
     : undefined;
   const insertionDoneCardMinHeight = insertedTrackingId ? 76 : hasInsertedPlainRemark ? 112 : 116;
@@ -6179,12 +6180,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         data-insertion-drop-depot={autoTidDepot}
         data-insertion-drop-road={road}
         data-insertion-drop-bi={bi}
-        className={`theme-stabling-train-card theme-insertion-card is-req-layout ${key ? "has-train" : "is-empty"} ${primaryInsertionRequest ? "has-request" : ""} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted has-refresh-control" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${isSearchMatch ? "is-search-match" : ""} ${isTidDragActive ? "is-tid-drag-active" : ""} ${isTidDropHovered ? "is-tid-drop-hovered" : ""} relative flex h-full flex-col items-center justify-start gap-1 overflow-hidden rounded-xl text-center transition-all duration-150`}
+        className={`theme-stabling-train-card theme-insertion-card is-req-layout ${key ? "has-train" : "is-empty"} ${primaryInsertionRequest ? "has-request" : ""} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted has-refresh-control" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${insertedTrackingReferenceStyle ? "has-tracking-reference" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${isSearchMatch ? "is-search-match" : ""} ${isTidDragActive ? "is-tid-drag-active" : ""} ${isTidDropHovered ? "is-tid-drop-hovered" : ""} relative flex h-full flex-col items-center justify-start gap-1 overflow-hidden rounded-xl text-center transition-all duration-150`}
         style={{
           minHeight: ownInsertionCardMinHeight,
           height: "100%",
           padding: "7px 4px",
           "--theme-accent": insertionRequestAccent,
+          ...insertedTrackingReferenceStyle,
           background: insCardBg,
           border: insCardBorder,
           outline: isTidDropHovered
