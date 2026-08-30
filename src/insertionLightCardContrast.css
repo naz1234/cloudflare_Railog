@@ -1,26 +1,14 @@
 /*
- * Keep Insertion card states immediately distinguishable in light mode.
+ * Keep Insertion card workflow states immediately distinguishable in light mode.
  * This loads after index.css so the neutral Train Request card skin cannot
- * flatten the depot and workflow state colours back to the same surface.
+ * flatten the workflow state colours back to the same surface.
  */
 html[data-app-theme="light"]
   .theme-insertion-page
-  .theme-insertion-section[data-depot="west"]
   .theme-insertion-card.is-req-layout.has-train:not(.has-input):not(.is-inserted):not(.is-complete):not(.is-duplicate) {
-  background: linear-gradient(145deg, #fff7ed 0%, #ffedd5 100%) !important;
-  border: 1px solid #fb923c !important;
-  border-top: 3px solid #ea580c !important;
-  box-shadow: 0 3px 10px rgba(234, 88, 12, 0.14) !important;
-}
-
-html[data-app-theme="light"]
-  .theme-insertion-page
-  .theme-insertion-section[data-depot="east"]
-  .theme-insertion-card.is-req-layout.has-train:not(.has-input):not(.is-inserted):not(.is-complete):not(.is-duplicate) {
-  background: linear-gradient(145deg, #ecfeff 0%, #cffafe 100%) !important;
-  border: 1px solid #22b8cf !important;
-  border-top: 3px solid #0891b2 !important;
-  box-shadow: 0 3px 10px rgba(8, 145, 178, 0.14) !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%) !important;
+  border: 1px solid #b7c4d1 !important;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08) !important;
 }
 
 html[data-app-theme="light"]
