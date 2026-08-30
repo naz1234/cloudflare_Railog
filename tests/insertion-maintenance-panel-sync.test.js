@@ -12,6 +12,14 @@ const maintenancePanelSource = readFileSync(
   new URL("../src/components/MaintenancePanel.jsx", import.meta.url),
   "utf8",
 );
+const lightModeFixStyles = readFileSync(
+  new URL("../src/insertionMaintenanceLightFix.css", import.meta.url),
+  "utf8",
+);
+const mainEntrySource = readFileSync(
+  new URL("../src/main.jsx", import.meta.url),
+  "utf8",
+);
 
 const insertionComponent = depotStablingSource.slice(
   depotStablingSource.indexOf("function InsertionTabContent"),
@@ -91,4 +99,20 @@ test("Insertion keeps Maintenance directly beside the actual depot content width
     /className="grid min-w-0 items-start gap-2"[\s\S]*gridTemplateColumns: "max-content 276px"/,
   );
   assert.doesNotMatch(insertionComponent, /gridTemplateColumns: "minmax\(1230px, 1fr\) 276px"/);
+});
+
+test("light mode does not clip the Insertion Maintenance panel", () => {
+  assert.match(mainEntrySource, /import '@\/insertionMaintenanceLightFix\.css'/);
+  assert.match(
+    lightModeFixStyles,
+    /html\[data-app-theme="light"\] \.theme-insertion-page \{\s*overflow: visible !important;/,
+  );
+  assert.match(
+    lightModeFixStyles,
+    /html\[data-app-theme="light"\] \.theme-insertion-page \.maintenance-panel-shell \{[\s\S]*?z-index: 3;[\s\S]*?min-width: 276px;/,
+  );
+  assert.doesNotMatch(
+    lightModeFixStyles,
+    /html\[data-app-theme="dark"\] \.theme-insertion-page/,
+  );
 });
