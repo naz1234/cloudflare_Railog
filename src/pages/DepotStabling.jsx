@@ -7202,78 +7202,6 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
             tooltipPlacement={tooltipPlacement}
           />
         }
-        action={
-          <div className="flex items-center gap-2">
-            <ActionTooltip
-              message={`Download ${depotCode} insertion TID and timing as PNG`}
-              placement={tooltipPlacement}
-            >
-              <button
-                type="button"
-                onClick={handleDownloadPng}
-                disabled={downloadingPng}
-                aria-label={`Download ${depotCode} insertion TID and timing as PNG`}
-                className="theme-insertion-action theme-insertion-download flex items-center justify-center gap-2 rounded-xl border text-[11px] font-bold transition-colors hover:bg-[#123554] disabled:cursor-not-allowed disabled:opacity-45"
-                style={INSERTION_ACTION_BUTTON_BLUE}
-              >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                {downloadingPng ? "Preparing..." : "Download PNG"}
-              </button>
-            </ActionTooltip>
-
-            <ActionTooltip
-              message={`Clear all ${depotCode} TID inputs, remarks, and inserted status`}
-              placement={tooltipPlacement}
-            >
-              <button
-                type="button"
-                onClick={handleClearAllTid}
-                disabled={!hasTidRemarks && !hasInsertedTrains}
-                aria-label={`Clear all ${depotCode} TID inputs, remarks, and inserted status`}
-                className="theme-insertion-action theme-insertion-clear flex items-center justify-center gap-2 rounded-xl border text-[11px] font-bold transition-colors hover:bg-[#641f2b] disabled:cursor-not-allowed disabled:opacity-45"
-                style={INSERTION_ACTION_BUTTON_DANGER}
-              >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 6h18" />
-                  <path d="M8 6V4h8v2" />
-                  <path d="M19 6l-1 14H6L5 6" />
-                  <path d="M10 11v5" />
-                  <path d="M14 11v5" />
-                </svg>
-                Clear All
-              </button>
-            </ActionTooltip>
-
-            <ActionTooltip
-              message={hideElapsedTid
-                ? `Show hidden elapsed ${depotCode} inserted TIDs`
-                : `Hide ${depotCode} inserted TIDs whose scheduled time has elapsed`}
-              placement={tooltipPlacement}
-            >
-              <button
-                type="button"
-                onClick={() => setHideElapsedTid((value) => !value)}
-                disabled={elapsedTidCount === 0}
-                aria-label={hideElapsedTid
-                  ? `Show hidden elapsed ${depotCode} inserted TIDs`
-                  : `Hide ${depotCode} inserted TIDs whose scheduled time has elapsed`}
-                className={`theme-insertion-action theme-insertion-hide ${hideElapsedTid ? "is-active" : ""} flex items-center justify-center gap-2 rounded-xl border text-[11px] font-bold transition-colors hover:bg-[#123554] disabled:cursor-not-allowed disabled:opacity-45`}
-                style={hideElapsedTid ? INSERTION_ACTION_BUTTON_PRIMARY : INSERTION_ACTION_BUTTON_BLUE}
-              >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  {hideElapsedTid
-                    ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>
-                    : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}
-                </svg>
-                {hideElapsedTid ? `Show elapsed TID (${elapsedTidCount})` : `Hide elapsed TID (${elapsedTidCount})`}
-              </button>
-            </ActionTooltip>
-          </div>
-        }
       />
       <div
         className="theme-insertion-stabling-summary mb-3 grid grid-cols-4 overflow-hidden rounded-xl border"
@@ -7308,6 +7236,81 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
             <div className="theme-insertion-stabling-summary-label mt-1 text-[9px] font-bold uppercase tracking-[0.11em]">Empty</div>
           </div>
         </div>
+      </div>
+      <div
+        className="theme-insertion-search-actions mb-2 flex items-center justify-end gap-2"
+        style={{ width: 880 }}
+        role="group"
+        aria-label={`${depotCode} insertion actions`}
+      >
+        <ActionTooltip
+          message={`Download ${depotCode} insertion TID and timing as PNG`}
+          placement={tooltipPlacement}
+        >
+          <button
+            type="button"
+            onClick={handleDownloadPng}
+            disabled={downloadingPng}
+            aria-label={`Download ${depotCode} insertion TID and timing as PNG`}
+            className="theme-insertion-action theme-insertion-download flex items-center justify-center gap-2 rounded-xl border text-[11px] font-bold transition-colors hover:bg-[#123554] disabled:cursor-not-allowed disabled:opacity-45"
+            style={INSERTION_ACTION_BUTTON_BLUE}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            {downloadingPng ? "Preparing..." : "Download PNG"}
+          </button>
+        </ActionTooltip>
+
+        <ActionTooltip
+          message={`Clear all ${depotCode} TID inputs, remarks, and inserted status`}
+          placement={tooltipPlacement}
+        >
+          <button
+            type="button"
+            onClick={handleClearAllTid}
+            disabled={!hasTidRemarks && !hasInsertedTrains}
+            aria-label={`Clear all ${depotCode} TID inputs, remarks, and inserted status`}
+            className="theme-insertion-action theme-insertion-clear flex items-center justify-center gap-2 rounded-xl border text-[11px] font-bold transition-colors hover:bg-[#641f2b] disabled:cursor-not-allowed disabled:opacity-45"
+            style={INSERTION_ACTION_BUTTON_DANGER}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18" />
+              <path d="M8 6V4h8v2" />
+              <path d="M19 6l-1 14H6L5 6" />
+              <path d="M10 11v5" />
+              <path d="M14 11v5" />
+            </svg>
+            Clear All
+          </button>
+        </ActionTooltip>
+
+        <ActionTooltip
+          message={hideElapsedTid
+            ? `Show hidden elapsed ${depotCode} inserted TIDs`
+            : `Hide ${depotCode} inserted TIDs whose scheduled time has elapsed`}
+          placement={tooltipPlacement}
+        >
+          <button
+            type="button"
+            onClick={() => setHideElapsedTid((value) => !value)}
+            disabled={elapsedTidCount === 0}
+            aria-label={hideElapsedTid
+              ? `Show hidden elapsed ${depotCode} inserted TIDs`
+              : `Hide ${depotCode} inserted TIDs whose scheduled time has elapsed`}
+            className={`theme-insertion-action theme-insertion-hide ${hideElapsedTid ? "is-active" : ""} flex items-center justify-center gap-2 rounded-xl border text-[11px] font-bold transition-colors hover:bg-[#123554] disabled:cursor-not-allowed disabled:opacity-45`}
+            style={hideElapsedTid ? INSERTION_ACTION_BUTTON_PRIMARY : INSERTION_ACTION_BUTTON_BLUE}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              {hideElapsedTid
+                ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>
+                : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}
+            </svg>
+            {hideElapsedTid ? `Show elapsed TID (${elapsedTidCount})` : `Hide elapsed TID (${elapsedTidCount})`}
+          </button>
+        </ActionTooltip>
       </div>
       <div className="mb-3" style={{ width: 880 }}>
         <div
