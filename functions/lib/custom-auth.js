@@ -188,6 +188,37 @@ export function getCustomAuthConfiguration(env = {}) {
   };
 }
 
+export function getAuthPresenceConfiguration(
+  env = {},
+  authConfig = getCustomAuthConfiguration(env),
+) {
+  const rawHiddenMembers = String(env.AUTH_PRESENCE_HIDDEN_EMAILS || '').trim();
+  if (!rawHiddenMembers) {
+    return { hiddenMembers: [], issues: [], valid: true };
+  }
+
+  const hiddenMembers = parseAllowedAuthMembers(rawHiddenMembers);
+  const allowedEmails = new Set(
+    (authConfig.allowedMembers || []).map((member) => member.normalizedEmail),
+  );
+  const issues = [];
+
+  if (
+    !hiddenMembers.length
+    || hiddenMembers.some((member) => !allowedEmails.has(member.normalizedEmail))
+  ) {
+    issues.push(
+      'AUTH_PRESENCE_HIDDEN_EMAILS must contain only unique approved staff addresses.',
+    );
+  }
+
+  return {
+    hiddenMembers: issues.length ? [] : hiddenMembers,
+    issues,
+    valid: issues.length === 0,
+  };
+}
+
 export function maskEmail(email) {
   const canonicalEmail = String(email || '').trim();
   const atIndex = canonicalEmail.indexOf('@');
