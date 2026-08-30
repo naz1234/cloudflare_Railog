@@ -1,0 +1,20 @@
+/*
+ * The light insertion surface is narrower than its fixed depot + Maintenance
+ * workspace on compact viewports. Keep the rounded surface styling, but let
+ * the shared Maintenance panel paint at its full width instead of clipping at
+ * the page boundary.
+ */
+html[data-app-theme="light"] .theme-insertion-page {
+  overflow: visible !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .maintenance-panel-shell,
+html[data-app-theme="light"] .theme-insertion-page .theme-maintenance-panel {
+  overflow: visible !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .maintenance-panel-shell {
+  position: relative;
+  z-index: 3;
+  min-width: 276px;
+}
