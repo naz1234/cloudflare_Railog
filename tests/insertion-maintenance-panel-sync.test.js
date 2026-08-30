@@ -101,7 +101,7 @@ test("Insertion keeps Maintenance directly beside the actual depot content width
   assert.doesNotMatch(insertionComponent, /gridTemplateColumns: "minmax\(1230px, 1fr\) 276px"/);
 });
 
-test("light mode does not clip the Insertion Maintenance panel or draw an outer frame", () => {
+test("light mode matches dark-mode wrapper spacing without an outer surface", () => {
   const pageRule = lightModeFixStyles.match(
     /html\[data-app-theme="light"\] \.theme-insertion-page \{([^}]+)\}/,
   )?.[1];
@@ -109,8 +109,16 @@ test("light mode does not clip the Insertion Maintenance panel or draw an outer 
   assert.match(mainEntrySource, /import '@\/insertionMaintenanceLightFix\.css'/);
   assert.ok(pageRule, "expected a scoped light-mode Insertion page override");
   assert.match(pageRule, /overflow: visible !important;/);
+  assert.match(pageRule, /padding: 0 !important;/);
   assert.match(pageRule, /border: 0 !important;/);
+  assert.match(pageRule, /border-radius: 0 !important;/);
+  assert.match(pageRule, /background: transparent !important;/);
+  assert.match(pageRule, /background-image: none !important;/);
   assert.match(pageRule, /box-shadow: none !important;/);
+  assert.match(
+    lightModeFixStyles,
+    /html\[data-app-theme="light"\] \.theme-insertion-page::before,[\s\S]*?\.theme-insertion-page::after \{[\s\S]*?content: none !important;[\s\S]*?display: none !important;/,
+  );
   assert.match(
     lightModeFixStyles,
     /html\[data-app-theme="light"\] \.theme-insertion-page \.maintenance-panel-shell \{[\s\S]*?z-index: 3;[\s\S]*?min-width: 276px;/,
