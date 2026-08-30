@@ -46,6 +46,29 @@ test("Tracking ID uses a centered label before entry and centered value after en
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer > strong \{[\s\S]*font-size: 11px/);
 });
 
+test("matched Tracking IDs inherit their TID Reference Table service colour", () => {
+  assert.match(
+    insertionCellSource,
+    /const insertedTrackingReferenceStyle = insertedTid && insertedTidRemarkStyle/,
+  );
+  assert.match(insertionCellSource, /"--insertion-tracking-reference-bg": insertedTidBigPillStyle\.bg/);
+  assert.match(insertionCellSource, /"--insertion-tracking-reference-border": insertedTidBigPillStyle\.border/);
+  assert.match(insertionCellSource, /"--insertion-tracking-reference-color": insertedTidBigPillStyle\.color/);
+  assert.equal(
+    (insertionCellSource.match(/has-reference-style/g) || []).length,
+    2,
+    "normal and elapsed completed TID boxes should both receive the reference colour",
+  );
+  assert.match(
+    stylesheetSource,
+    /html\[data-app-theme="light"\] \.theme-insertion-page \.theme-insertion-tracking-footer\.is-complete\.has-reference-style \{[\s\S]*background: var\(--insertion-tracking-reference-bg\) !important/,
+  );
+  assert.match(
+    stylesheetSource,
+    /html\[data-app-theme="light"\] \.theme-insertion-page \.theme-insertion-tracking-footer\.is-complete\.has-reference-style > strong \{[\s\S]*color: var\(--insertion-tracking-reference-color\) !important/,
+  );
+});
+
 test("submitted numeric Tracking IDs persist even without an active timetable match", () => {
   assert.match(pageSource, /function getInsertionTrackingId\(entry = null\)/);
   assert.match(pageSource, /source\.match\(\/\^\(\?:TID/);

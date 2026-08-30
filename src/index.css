@@ -12154,6 +12154,18 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
   margin-top: auto;
 }
 
+.theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style {
+  border-color: var(--insertion-tracking-reference-border) !important;
+  background: var(--insertion-tracking-reference-bg) !important;
+  box-shadow: var(--insertion-tracking-reference-shadow) !important;
+}
+
+.theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style > strong,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style > strong {
+  color: var(--insertion-tracking-reference-color) !important;
+}
+
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-req-layout {
   border-color: #9fb2c2 !important;
   background: linear-gradient(145deg, #ffffff 0%, #edf4f8 100%) !important;

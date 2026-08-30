@@ -5985,6 +5985,14 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const hiddenInsertionStatusCount = insertionStatusRemarkList.length - displayedInsertionStatusRemarks.length;
   const hasMiddleInsertionRemark = Boolean(key && insertionStatusRemarkList.length > 0);
   const insertedTidBigPillStyle = getInsertionTidBigPillStyle(insertedTidRemarkStyle, autoTidDepot);
+  const insertedTrackingReferenceStyle = insertedTid && insertedTidRemarkStyle
+    ? {
+        "--insertion-tracking-reference-bg": insertedTidBigPillStyle.bg,
+        "--insertion-tracking-reference-border": insertedTidBigPillStyle.border,
+        "--insertion-tracking-reference-color": insertedTidBigPillStyle.color,
+        "--insertion-tracking-reference-shadow": insertedTidBigPillStyle.shadow,
+      }
+    : undefined;
   const insertionDoneCardMinHeight = insertedTrackingId ? 76 : hasInsertedPlainRemark ? 112 : 116;
   // Keep the timetable time as the initial default, but always display a user-edited actual time first.
   const insertedDisplayTime = inserted?.time || insertedScheduledTime || "";
@@ -6135,7 +6143,11 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           <div className="flex h-5 w-full items-center justify-center text-center font-black leading-none" style={{ fontSize: 14, color: "#3a5068" }}>{displayVal || "—"}</div>
           {insertedRemarkLabel && !insertedTrackingId && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
           {insertedTrackingId && (
-            <div className="theme-insertion-tracking-footer is-complete mt-auto" aria-label={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}`}>
+            <div
+              className={`theme-insertion-tracking-footer is-complete${insertedTrackingReferenceStyle ? " has-reference-style" : ""} mt-auto`}
+              style={insertedTrackingReferenceStyle}
+              aria-label={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}`}
+            >
               <strong>{String(insertedTrackingId).padStart(3, "0")}</strong>
             </div>
           )}
@@ -6571,7 +6583,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             )}
             {insertedTrackingId && (
               <div
-                className="theme-insertion-tracking-footer is-complete"
+                className={`theme-insertion-tracking-footer is-complete${insertedTrackingReferenceStyle ? " has-reference-style" : ""}`}
+                style={insertedTrackingReferenceStyle}
                 title={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}`}
                 aria-label={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}`}
               >
