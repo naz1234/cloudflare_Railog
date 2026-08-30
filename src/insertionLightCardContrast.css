@@ -4,7 +4,29 @@ html[data-app-theme="light"]
   .theme-insertion-page
   .theme-insertion-card.is-req-layout.has-train {
   background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%) !important;
+  background-image: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%) !important;
   border: 1px solid #b7c4d1 !important;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* The legacy depot waiting selectors carry more specificity than the shared
+ * card rule. Match them here so an untracked West/East card cannot keep its
+ * orange/teal tint or coloured top border. */
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-section[data-depot="west"]
+  .theme-insertion-card.is-req-layout.has-train:not(.has-input):not(.is-inserted):not(.is-complete),
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-section[data-depot="east"]
+  .theme-insertion-card.is-req-layout.has-train:not(.has-input):not(.is-inserted):not(.is-complete) {
+  --insertion-card-rest: #f8fafc;
+  --insertion-card-hover: #ffffff;
+  --insertion-card-border: #b7c4d1;
+  background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%) !important;
+  background-image: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%) !important;
+  border: 1px solid #b7c4d1 !important;
+  border-top: 1px solid #b7c4d1 !important;
   box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08) !important;
 }
 
