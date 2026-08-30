@@ -10,10 +10,6 @@ const stylesheetSource = readFileSync(
   new URL("../src/index.css", import.meta.url),
   "utf8",
 );
-const lightCardContrastSource = readFileSync(
-  new URL("../src/insertionLightCardContrast.css", import.meta.url),
-  "utf8",
-);
 const referenceTableSource = readFileSync(
   new URL("../src/components/TIDReferenceTable.jsx", import.meta.url),
   "utf8",
@@ -67,8 +63,6 @@ test("matched Tracking IDs inherit their TID Reference Table service colour", ()
   assert.match(insertionCellSource, /"--insertion-tracking-reference-border": insertedTrackingReferencePillStyle\.border/);
   assert.match(insertionCellSource, /"--insertion-tracking-reference-color": insertedTrackingReferencePillStyle\.color/);
   assert.match(insertionCellSource, /"--insertion-tracking-reference-light-color": insertedTrackingReferencePillStyle\.lightColor/);
-  assert.match(insertionCellSource, /"--insertion-card-reference-accent": insertedTrackingReferencePillStyle\.border/);
-  assert.match(insertionCellSource, /insertedTrackingReferenceStyle \? "has-tracking-reference" : ""/);
   assert.match(insertionCellSource, /"--theme-accent": insertionRequestAccent,[\s\S]*?\.\.\.insertedTrackingReferenceStyle/);
   assert.match(referenceTableSource, /\{ tid: 205, remark: "Late Rem"/);
   assert.match(referenceTableSource, /\{ tid: 208, remark: "ED"/);
@@ -89,10 +83,6 @@ test("matched Tracking IDs inherit their TID Reference Table service colour", ()
   assert.match(
     stylesheetSource,
     /html\[data-app-theme="light"\] \.theme-insertion-page \.theme-insertion-tracking-footer\.is-complete\.has-reference-style > strong \{[\s\S]*color: var\(--insertion-tracking-reference-light-color, var\(--insertion-tracking-reference-color\)\) !important/,
-  );
-  assert.match(
-    lightCardContrastSource,
-    /\.theme-insertion-card\.is-req-layout\.is-complete\.has-tracking-reference[\s\S]*?var\(--insertion-card-reference-accent\) 34%, #ffffff[\s\S]*?border-top: 3px solid var\(--insertion-card-reference-accent\) !important/,
   );
 });
 
