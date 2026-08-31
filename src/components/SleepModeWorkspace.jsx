@@ -177,7 +177,8 @@ function DepotSleepPanel({ depot, data, selectedKeys, latestModeByTrain, onToggl
                       onClick={() => onToggle(cell.key)}
                       aria-pressed={isSelected}
                       aria-label={`${isSelected ? "Deselect" : "Select"} T${cell.trainId} at ${road}`}
-                      className={`relative flex min-h-[74px] flex-col items-center justify-center rounded-lg border px-1 py-2 transition active:scale-[0.97] ${
+                      data-sleep-mode={latestMode || "ready"}
+                      className={`slp-stabling-train-card relative flex min-h-[74px] flex-col items-center justify-center rounded-lg border px-1 py-2 transition active:scale-[0.97] ${
                         isSelected
                           ? "border-violet-500 bg-violet-100 text-violet-950 shadow-[0_0_0_2px_rgba(139,92,246,0.16)] dark:border-violet-300 dark:bg-violet-400/20 dark:text-white"
                           : "border-slate-300 bg-white text-slate-900 hover:border-violet-400 hover:bg-violet-50 dark:border-[#2b5674] dark:bg-[#0a2134] dark:text-white dark:hover:border-violet-400/70 dark:hover:bg-violet-400/10"
@@ -185,7 +186,7 @@ function DepotSleepPanel({ depot, data, selectedKeys, latestModeByTrain, onToggl
                     >
                       {isSelected && <Check className="absolute right-1.5 top-1.5 h-3.5 w-3.5 text-violet-600 dark:text-violet-200" strokeWidth={3} />}
                       <span className="slp-stabling-train-id font-black">{cell.trainId}</span>
-                      <span className={`slp-stabling-mode-pill mt-1 rounded-full px-2 py-0.5 font-semibold uppercase ${
+                      <span data-mode={latestMode || "ready"} className={`slp-stabling-mode-pill mt-1 rounded-full px-2 py-0.5 font-semibold uppercase ${
                         latestMode === "sleep"
                           ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-200"
                           : latestMode === "wake"
