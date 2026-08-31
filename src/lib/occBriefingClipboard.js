@@ -1,4 +1,5 @@
-export const OCC_BRIEFING_COPY_COLUMN_COUNT = 6;
+export const OCC_BRIEFING_COPY_RANGE = "C:L";
+export const OCC_BRIEFING_COPY_COLUMN_COUNT = 10;
 
 function normalizeClipboardCell(value) {
   return String(value ?? "")
@@ -20,10 +21,14 @@ export function buildOccBriefingClipboardText({
   return [
     employeeId,
     normalizedName,
+    "",
+    "",
     position,
     timeIn,
     timeOut,
     normalizeClipboardCell(signature) || normalizedName,
+    "",
+    "",
   ]
     .map(normalizeClipboardCell)
     .join("\t");
