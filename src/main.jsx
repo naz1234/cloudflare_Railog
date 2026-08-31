@@ -10,6 +10,7 @@ import '@/officialExcelGeneratorMotion.css'
 import '@/insertionLightCardContrast.css'
 import '@/insertionTidLightContrast.css'
 import '@/insertionLightTidFooter.css'
+import '@/insertionDarkTidFooter.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />
