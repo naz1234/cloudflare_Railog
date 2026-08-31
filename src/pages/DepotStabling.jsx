@@ -5335,16 +5335,6 @@ function getInsertionAssistRemarkStyle(remark = "") {
   return normalized ? INSERTION_ASSIST_REMARK_STYLES[normalized] || null : null;
 }
 
-function getInsertionAssistRemarkDisplayLabel(remark = "") {
-  const normalized = normalizeInsertionAssistRemark(remark) || String(remark || "").trim();
-
-  if (normalized === "Late Rem") return "WD (7pm)";
-  if (normalized === "Early Rem") return "WD (9am)";
-  if (normalized === "ED") return "ED (9am)";
-
-  return normalized;
-}
-
 const INSERTION_CARD_PILL_WIDTH = 68;
 
 const INSERTION_DEFAULT_REMARK_PILL_STYLE = {
@@ -5949,8 +5939,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     ? getTidAssistRemark(insertedTrackingId, autoTidDepot)
     : "";
   const insertedTrackingRemarkStyle = getInsertionAssistRemarkStyle(insertedTrackingAssistRemark);
-  const insertedTidAssistDisplayRemark = getInsertionAssistRemarkDisplayLabel(insertedTidAssistRemark);
-  const hasInsertedTidAssistDisplayRemark = Boolean(insertedTid && insertedTidAssistDisplayRemark);
   const insertedPlainRemark = inserted && !inserted.isSweeping && !insertedTrackingId
     ? String(inserted.remark ?? parsedInsertedTid ?? "").trim()
     : "";
@@ -5971,7 +5959,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   // Do not duplicate another 3K1 pill in the remark section for West or East.
   const suppressDuplicate3K1RemarkPill = is3K1InsertionCard;
   const insertionOwnedStatusRemarks = [
-    ...(insertedTidAssistDisplayRemark ? [insertedTidAssistDisplayRemark] : []),
     ...(insertedPlainRemark ? [insertedPlainRemark] : []),
   ].filter((label) => !(suppressDuplicate3K1RemarkPill && label.toUpperCase() === "3K1"));
   const insertionStatusRemarkMap = new Map();
@@ -6690,15 +6677,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       aria-label={`TID ${insertedTid} insertion details`}
                     >
                       <div className="mb-0.5 whitespace-nowrap text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
-                      {hasInsertedTidAssistDisplayRemark && (
-                        <div
-                          className="mb-1 whitespace-nowrap text-center text-[11px] font-normal leading-tight tracking-[0.5px] text-white"
-                          title={insertedTidAssistDisplayRemark}
-                          aria-label={insertedTidAssistDisplayRemark}
-                        >
-                          --{insertedTidAssistDisplayRemark}--
-                        </div>
-                      )}
                       <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
                         <span className="text-right text-[10px] font-normal uppercase tracking-normal" style={{ color: insertedTidBigPillStyle.color, opacity: 0.92 }}>Time :</span>
                         <input
@@ -6796,15 +6774,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       aria-label={`TID ${insertedTid} insertion details`}
                     >
                       <div className="mb-0.5 whitespace-nowrap text-center text-[11px] font-normal leading-tight text-white">TID {insertedTid}</div>
-                      {hasInsertedTidAssistDisplayRemark && (
-                        <div
-                          className="mb-1 whitespace-nowrap text-center text-[11px] font-normal leading-tight tracking-[0.5px] text-white"
-                          title={insertedTidAssistDisplayRemark}
-                          aria-label={insertedTidAssistDisplayRemark}
-                        >
-                          --{insertedTidAssistDisplayRemark}--
-                        </div>
-                      )}
                       <div className="grid w-full grid-cols-[34px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
                         <span className="text-right text-[10px] font-normal uppercase tracking-normal" style={{ color: insertedTidBigPillStyle.color, opacity: 0.92 }}>Time :</span>
                         <input
@@ -7404,25 +7373,14 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
                 if (!rowTrainKey) return maxCount;
 
                 const rowEntry = getActiveInsertionEntryForCell(insertionLog, road, blockIndex, rowTrainKey);
-                const rowEntryTid = Number(String(rowEntry?.tid ?? "").replace(/\D/g, ""));
                 const rowTrackingId = getInsertionTrackingId(rowEntry);
-                const rowEntryDepot = WEST_ROADS.includes(road) ? "west" : "east";
-                const rowHasValidTid = Boolean(
-                  rowEntryTid && typeof getTidScheduledTime === "function" &&
-                  getTidScheduledTime(rowEntryTid, rowEntryDepot, { allowFallback: false })
-                );
-                const rowAssistRemark = rowEntryTid && typeof getTidAssistRemark === "function"
-                  ? getTidAssistRemark(rowEntryTid, rowEntryDepot)
-                  : "";
-                const rowAssistDisplayRemark = getInsertionAssistRemarkDisplayLabel(rowAssistRemark);
-                const rowEntrySource = String(rowEntry?.remark || rowEntry?.inputValue || rowAssistRemark || "");
+                const rowEntrySource = String(rowEntry?.remark || rowEntry?.inputValue || "");
                 const rowIs3K1Insertion = getEastInsertionKeywordRemarkLabel(rowEntrySource) === "3K1";
                 const rowStatusLabels = new Set([
                   ...(maintenanceMap[rowTrainKey] || [])
                     .map((item) => item.badgeText || item.remark || item.displayType || item.typeKey || "Request")
                     .map((label) => String(label || "").trim())
                     .filter(Boolean),
-                  ...(rowHasValidTid && rowAssistDisplayRemark ? [rowAssistDisplayRemark] : []),
                   ...(!rowTrackingId && !rowEntry?.isSweeping && rowEntry?.remark
                     ? [String(rowEntry.remark).trim()]
                     : []),
