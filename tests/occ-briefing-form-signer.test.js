@@ -11,6 +11,7 @@ import {
 import {
   buildOccBriefingClipboardText,
   OCC_BRIEFING_COPY_COLUMN_COUNT,
+  OCC_BRIEFING_COPY_RANGE,
 } from "../src/lib/occBriefingClipboard.js";
 
 const MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
@@ -88,7 +89,7 @@ function signOptions(sourceFile, overrides = {}) {
   };
 }
 
-test("OCC clipboard output creates one paste-ready row with exactly six columns", () => {
+test("OCC clipboard output creates one paste-ready row matching Excel columns C:L", () => {
   const output = buildOccBriefingClipboardText({
     employeeId: "1000335",
     employeeName: "Nazif Jaafar",
@@ -98,19 +99,24 @@ test("OCC clipboard output creates one paste-ready row with exactly six columns"
     signature: "Nazif",
   });
 
-  assert.equal(OCC_BRIEFING_COPY_COLUMN_COUNT, 6);
+  assert.equal(OCC_BRIEFING_COPY_RANGE, "C:L");
+  assert.equal(OCC_BRIEFING_COPY_COLUMN_COUNT, 10);
   assert.deepEqual(output.split("\t"), [
     "1000335",
     "Nazif Jaafar",
+    "",
+    "",
     "DC",
     "20:54:00",
     "07:30:00",
     "Nazif",
+    "",
+    "",
   ]);
   assert.doesNotMatch(output, /\n/);
 });
 
-test("OCC clipboard output keeps its six-column shape and defaults a blank signature to the employee name", () => {
+test("OCC clipboard output keeps the C:L shape and defaults a blank signature to the employee name", () => {
   const output = buildOccBriefingClipboardText({
     employeeId: "1000335",
     employeeName: "Nazif\nJaafar",
@@ -120,7 +126,18 @@ test("OCC clipboard output keeps its six-column shape and defaults a blank signa
   const columns = output.split("\t");
 
   assert.equal(columns.length, OCC_BRIEFING_COPY_COLUMN_COUNT);
-  assert.deepEqual(columns, ["1000335", "Nazif Jaafar", "D C", "20:54:00", "", "Nazif Jaafar"]);
+  assert.deepEqual(columns, [
+    "1000335",
+    "Nazif Jaafar",
+    "",
+    "",
+    "D C",
+    "20:54:00",
+    "",
+    "Nazif Jaafar",
+    "",
+    "",
+  ]);
 });
 
 test("OCC form inspection reads the actual shift, available row, staff directory, and shift end", async () => {
@@ -205,9 +222,9 @@ test("OCC row copy appears below the Next Day Excel Generator without requiring 
   const page = readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
   const panel = readFileSync(new URL("../src/components/OccBriefingFormSigner.jsx", import.meta.url), "utf8");
   assert.match(page, /<OfficialEastExcelGenerator[\s\S]*?<OccBriefingFormSigner\s*\/>\s*<TrainRequestedNotInRemoval/);
-  assert.match(panel, /Copy 6 Columns/);
+  assert.match(panel, /Copy C:L Excel Row/);
+  assert.match(panel, /C ID · D:F Name · G Position · H Time in · I Time out · J:L Signature/);
   assert.match(panel, /buildOccBriefingClipboardText/);
-  assert.match(panel, /ID · Name · Position · Time in · Time out · Signature/);
   assert.doesNotMatch(panel, /type="file"/);
   assert.doesNotMatch(panel, /\.xlsx/);
   assert.doesNotMatch(panel, /Signature image/);
