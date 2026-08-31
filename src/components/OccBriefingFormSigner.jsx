@@ -181,7 +181,7 @@ export default function OccBriefingFormSigner() {
         </div>
         <div className="occ-panel occ-accent inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[10px] font-bold">
           <TableProperties className="h-3 w-3" />
-          6 Excel columns
+          Excel range C:L
         </div>
       </div>
 
@@ -226,7 +226,7 @@ export default function OccBriefingFormSigner() {
       </div>
 
       <p className="occ-label mt-2 text-[10px] font-semibold">
-        Copy order: ID · Name · Position · Time in · Time out · Signature. A blank signature uses the employee name.
+        Excel mapping: C ID · D:F Name · G Position · H Time in · I Time out · J:L Signature. A blank signature uses the employee name.
       </p>
 
       {error && (
@@ -239,14 +239,14 @@ export default function OccBriefingFormSigner() {
       {copied && (
         <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold text-emerald-300" aria-live="polite">
           <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>Copied one row with 6 columns. Paste it into the first Excel cell.</span>
+          <span>Copied for Excel columns C:L. Select the empty cell in column C, then paste.</span>
         </div>
       )}
 
       <div className="mt-3 flex justify-end">
         <button type="button" onClick={handleCopy} disabled={isCopying} className={`occ-copy-button inline-flex h-9 items-center gap-2 rounded-lg border px-4 text-[11px] font-black uppercase tracking-wide text-white shadow-[0_0_16px_rgba(59,130,246,0.24)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 ${copied ? "border-emerald-300/70 bg-gradient-to-r from-emerald-600 to-teal-600" : "border-sky-300/70 bg-gradient-to-r from-blue-600 to-cyan-600"}`}>
           {isCopying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : copied ? <ClipboardCheck className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-          {isCopying ? "Copying..." : copied ? "Copied — Paste into Excel" : "Copy 6 Columns"}
+          {isCopying ? "Copying..." : copied ? "Copied — Paste at Column C" : "Copy C:L Excel Row"}
         </button>
       </div>
     </section>
