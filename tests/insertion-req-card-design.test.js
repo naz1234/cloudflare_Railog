@@ -105,11 +105,15 @@ test("matched Tracking IDs expose their TID Reference Table service colour", () 
 
 test("completed Tracking ID shows its TID reference remark on hover", () => {
   assert.match(pageSource, /function getInsertionTidReferenceTooltipLabel\(remark = ""\)/);
-  assert.match(pageSource, /normalized === "ED"\) return "ED REMOVAL 9AM"/);
+  assert.match(pageSource, /normalized === "Early Rem"\) return "WD Rem 9am"/);
+  assert.match(pageSource, /normalized === "Late Rem"\) return "WD Rem 7pm"/);
+  assert.match(pageSource, /normalized === "ED"\) return "ED Rem 9am"/);
+  assert.match(pageSource, /normalized === "ED \(7pm\)"\) return "ED Rem 7pm"/);
   assert.match(insertionCellSource, /const insertedTidReferenceTooltip = getInsertionTidReferenceTooltipLabel\(insertedTrackingAssistRemark\)/);
   assert.match(insertionCellSource, /message=\{insertedTidReferenceTooltip \? <span className="theme-stabling-remark-tooltip-text">/);
   assert.match(insertionCellSource, /contentStyle=\{insertedTidTooltipStyle\}/);
   assert.match(insertionCellSource, /aria-label=\{`Tracking ID \$\{String\(insertedTrackingId\)\.padStart\(3, "0"\)\}\$\{insertedTidReferenceTooltip/);
+  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer\.is-complete \{[\s\S]*?cursor: pointer/);
 });
 
 test("submitted numeric Tracking IDs persist even without an active timetable match", () => {

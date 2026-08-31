@@ -5337,10 +5337,10 @@ function getInsertionAssistRemarkStyle(remark = "") {
 function getInsertionTidReferenceTooltipLabel(remark = "") {
   const normalized = normalizeInsertionAssistRemark(remark);
 
-  if (normalized === "Early Rem") return "WD REMOVAL 9AM";
-  if (normalized === "Late Rem") return "WD REMOVAL 7PM";
-  if (normalized === "ED") return "ED REMOVAL 9AM";
-  if (normalized === "ED (7pm)") return "ED REMOVAL 7PM";
+  if (normalized === "Early Rem") return "WD Rem 9am";
+  if (normalized === "Late Rem") return "WD Rem 7pm";
+  if (normalized === "ED") return "ED Rem 9am";
+  if (normalized === "ED (7pm)") return "ED Rem 7pm";
 
   return String(remark || "").trim();
 }
