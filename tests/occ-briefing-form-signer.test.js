@@ -8,6 +8,10 @@ import {
   parseOccTime,
   signOccBriefingWorkbook,
 } from "../src/lib/occBriefingSignature.js";
+import {
+  buildOccBriefingClipboardText,
+  OCC_BRIEFING_COPY_COLUMN_COUNT,
+} from "../src/lib/occBriefingClipboard.js";
 
 const MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 const OFFICE_RELS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
@@ -83,6 +87,41 @@ function signOptions(sourceFile, overrides = {}) {
     ...overrides,
   };
 }
+
+test("OCC clipboard output creates one paste-ready row with exactly six columns", () => {
+  const output = buildOccBriefingClipboardText({
+    employeeId: "1000335",
+    employeeName: "Nazif Jaafar",
+    position: "DC",
+    timeIn: "20:54:00",
+    timeOut: "07:30:00",
+    signature: "Nazif",
+  });
+
+  assert.equal(OCC_BRIEFING_COPY_COLUMN_COUNT, 6);
+  assert.deepEqual(output.split("\t"), [
+    "1000335",
+    "Nazif Jaafar",
+    "DC",
+    "20:54:00",
+    "07:30:00",
+    "Nazif",
+  ]);
+  assert.doesNotMatch(output, /\n/);
+});
+
+test("OCC clipboard output keeps its six-column shape and defaults a blank signature to the employee name", () => {
+  const output = buildOccBriefingClipboardText({
+    employeeId: "1000335",
+    employeeName: "Nazif\nJaafar",
+    position: "D\tC",
+    timeIn: "20:54:00",
+  });
+  const columns = output.split("\t");
+
+  assert.equal(columns.length, OCC_BRIEFING_COPY_COLUMN_COUNT);
+  assert.deepEqual(columns, ["1000335", "Nazif Jaafar", "D C", "20:54:00", "", "Nazif Jaafar"]);
+});
 
 test("OCC form inspection reads the actual shift, available row, staff directory, and shift end", async () => {
   const details = await inspectOccBriefingWorkbook(sampleWorkbook());
@@ -162,13 +201,14 @@ test("duplicate sign-ins and full OCC forms never overwrite existing staff", asy
   await assert.rejects(signOccBriefingWorkbook(signOptions(sampleWorkbook({ occupiedRows: 3 }))), /All OCC sign-in rows are already occupied/);
 });
 
-test("OCC briefing signer appears directly below the Next Day Excel Generator", () => {
+test("OCC row copy appears below the Next Day Excel Generator without requiring an Excel upload", () => {
   const page = readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
   const panel = readFileSync(new URL("../src/components/OccBriefingFormSigner.jsx", import.meta.url), "utf8");
   assert.match(page, /<OfficialEastExcelGenerator[\s\S]*?<OccBriefingFormSigner\s*\/>\s*<TrainRequestedNotInRemoval/);
-  assert.match(panel, /Existing signatures preserved/);
-  assert.match(panel, /Sign & Save \/ Replace OCC Form/);
-  assert.match(panel, /requestWorkbookSaveHandle\(sourceFile\.name\)/);
-  assert.match(panel, /writeWorkbookToHandle\(saveHandle, signed\.blob\)/);
-  assert.match(panel, /Signature image · optional/);
+  assert.match(panel, /Copy 6 Columns/);
+  assert.match(panel, /buildOccBriefingClipboardText/);
+  assert.match(panel, /ID · Name · Position · Time in · Time out · Signature/);
+  assert.doesNotMatch(panel, /type="file"/);
+  assert.doesNotMatch(panel, /\.xlsx/);
+  assert.doesNotMatch(panel, /Signature image/);
 });
