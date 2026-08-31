@@ -105,3 +105,14 @@ test("SLP stabling typography matches the readable main-stabling scale", () => {
   assert.match(cssSource, /\.slp-stabling-mode-pill\s*\{[^}]*font-size:\s*10px[^}]*letter-spacing:\s*0\.04em/s);
   assert.doesNotMatch(componentSource, /slp-stabling-mode-pill[^\n]*text-\[8px\]/);
 });
+
+test("trains already in Sleep mode use a bright distinct card state", () => {
+  const componentSource = readFileSync(new URL("../src/components/SleepModeWorkspace.jsx", import.meta.url), "utf8");
+  const cssSource = readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
+
+  assert.match(componentSource, /data-sleep-mode=\{latestMode \|\| "ready"\}/);
+  assert.match(componentSource, /data-mode=\{latestMode \|\| "ready"\}/);
+  assert.match(cssSource, /\.slp-stabling-train-card\[data-sleep-mode="sleep"\]:not\(\[aria-pressed="true"\]\) \{[\s\S]*?border-color: #d946ef;[\s\S]*?background: linear-gradient/);
+  assert.match(cssSource, /\.slp-stabling-mode-pill\[data-mode="sleep"\] \{[\s\S]*?background: #f0abfc;[\s\S]*?box-shadow/);
+  assert.match(cssSource, /html\[data-app-theme="dark"\] \.slp-stabling-train-card\[data-sleep-mode="sleep"\][\s\S]*?border-color: #e879f9/);
+});

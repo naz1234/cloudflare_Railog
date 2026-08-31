@@ -845,6 +845,39 @@ html[data-app-theme="light"] .theme-stabling-count {
   line-height: 1.15;
 }
 
+/* A train already logged in Sleep mode must stand out from Ready trains. */
+.slp-stabling-train-card[data-sleep-mode="sleep"]:not([aria-pressed="true"]) {
+  border-color: #d946ef;
+  color: #701a75;
+  background: linear-gradient(145deg, #fdf4ff 0%, #fae8ff 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(217, 70, 239, 0.16),
+    0 0 14px rgba(217, 70, 239, 0.24);
+}
+
+.slp-stabling-mode-pill[data-mode="sleep"] {
+  border: 1px solid #c026d3;
+  color: #3b0764;
+  background: #f0abfc;
+  box-shadow: 0 0 9px rgba(217, 70, 239, 0.42);
+}
+
+html[data-app-theme="dark"] .slp-stabling-train-card[data-sleep-mode="sleep"]:not([aria-pressed="true"]) {
+  border-color: #e879f9;
+  color: #ffffff;
+  background: linear-gradient(145deg, rgba(162, 28, 175, 0.48) 0%, rgba(112, 26, 117, 0.62) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(240, 171, 252, 0.22),
+    0 0 16px rgba(217, 70, 239, 0.38);
+}
+
+html[data-app-theme="dark"] .slp-stabling-mode-pill[data-mode="sleep"] {
+  border-color: #f0abfc;
+  color: #3b0764;
+  background: #f5d0fe;
+  box-shadow: 0 0 10px rgba(232, 121, 249, 0.52);
+}
+
 
 /* Keep the searched train obvious in light mode without replacing its request colour. */
 html[data-app-theme="light"] .theme-stabling-train-card.is-search-match {
