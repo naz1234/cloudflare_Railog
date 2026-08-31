@@ -20,17 +20,26 @@ const insertionComponent = depotStablingSource.slice(
   depotStablingSource.indexOf("// ── Train Movement Internal Page"),
 );
 
-test("Insertion displays one compact control dashboard above the West Depot reference", () => {
-  const dashboardIndex = insertionComponent.indexOf("controlsOnly={true}");
+test("Insertion displays a compact control dashboard above each depot reference", () => {
+  const dashboardIndices = [...insertionComponent.matchAll(/controlsOnly=\{true\}/g)].map((match) => match.index);
   const westReferenceIndex = insertionComponent.indexOf('depotFilter="west"');
   const eastReferenceIndex = insertionComponent.indexOf('depotFilter="east"');
 
-  assert.ok(dashboardIndex >= 0);
-  assert.ok(westReferenceIndex > dashboardIndex);
+  assert.equal(dashboardIndices.length, 2);
+  assert.ok(westReferenceIndex > dashboardIndices[0]);
   assert.ok(eastReferenceIndex > westReferenceIndex);
+  assert.ok(eastReferenceIndex > dashboardIndices[1]);
   assert.match(tidReferenceSource, /if \(controlsOnly\) \{[\s\S]*theme-insertion-reference-controls-only/);
   assert.match(insertionComponent, /className="self-start space-y-3"[\s\S]*controlsOnly=\{true\}[\s\S]*depotFilter="west"/);
+  assert.match(insertionComponent, /depotFilter="west"[\s\S]*className="self-start space-y-3"[\s\S]*controlsOnly=\{true\}[\s\S]*soundAlertsEnabled=\{false\}[\s\S]*depotFilter="east"/);
   assert.match(insertionComponent, /depotFilter="west"[\s\S]*showHeader=\{false\}/);
+});
+
+test("duplicate depot dashboards share sound state without duplicating automatic alerts", () => {
+  assert.match(tidReferenceSource, /const TID_SOUND_SETTINGS_EVENT = "insertion-tid-sound-settings-change"/);
+  assert.match(tidReferenceSource, /window\.dispatchEvent\(new CustomEvent\(TID_SOUND_SETTINGS_EVENT/);
+  assert.match(tidReferenceSource, /window\.addEventListener\(TID_SOUND_SETTINGS_EVENT, syncSoundSettings\)/);
+  assert.match(tidReferenceSource, /if \(!soundAlertsEnabled \|\| !showHeader/);
 });
 
 test("dashboard keeps live date, clock, depot sound, and timetable controls", () => {
