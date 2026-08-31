@@ -4946,13 +4946,12 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   );
 }
 
-function PSTStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taNameState, onTaNameChange, onClearPST, onClearPrep, onClearPg2Trains, stablingEditable = false, onEditableTrainIdChange, trainSearch = "", onTrainSearchChange, trainSearchResults = [] }) {
+function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoStabling, canUndoStabling = false, canRedoStabling = false, isStablingDirty = false, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taNameState, onTaNameChange, onClearPST, onClearPrep, onClearStablingTrains, stablingEditable = true, onEditableTrainIdChange, trainSearch = "", onTrainSearchChange, trainSearchResults = [] }) {
   const [confirmClearAction, setConfirmClearAction] = useState(null);
   const normalizedSearch = normalizeTrainId(trainSearch);
   const searchFound = trainSearchResults.length > 0;
   const searchNotFound = Boolean(normalizedSearch && !searchFound);
-  const isPg2Active = normalizePSTPg(activePg) === "pg2";
-  const hasClearControls = Boolean(onClearPST || onClearPrep || (isPg2Active && onClearPg2Trains));
+  const hasClearControls = Boolean(onClearPST || onClearPrep || onClearStablingTrains);
   const pstClearCount = roads.reduce((count, road) => {
     return count + blockIndices.filter((bi) => {
       const state = pstState?.[`${road}-${bi}`];
@@ -4965,12 +4964,12 @@ function PSTStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2,
       return state?.started || state?.done;
     }).length;
   }, 0);
-  const pg2TrainClearCount = isPg2Active ? roads.reduce((count, road) => {
+  const stablingTrainClearCount = roads.reduce((count, road) => {
     return count + blockIndices.filter((bi) => normalizeTrainId(data?.[road]?.[bi]?.trainId || "")).length;
-  }, 0) : 0;
+  }, 0);
 
   const handleSectionClear = (action) => {
-    const clearHandler = action === "pst" ? onClearPST : action === "prep" ? onClearPrep : onClearPg2Trains;
+    const clearHandler = action === "pst" ? onClearPST : action === "prep" ? onClearPrep : onClearStablingTrains;
     if (!clearHandler) return;
 
     if (confirmClearAction === action) {
@@ -5000,16 +4999,16 @@ function PSTStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2,
         </div>
 
         <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-2">
-          <InsertionPgHeaderControls
-            activePg={activePg}
-            onPgChange={onPgChange}
-            onRefreshPg2={onRefreshPg2}
+          <InsertionEditableHeaderControls
+            depotCode={sectionDepotLabel === "West Depot" ? "WD" : "ED"}
+            workLabel="PST / Train Prep"
+            onRefresh={onRefreshStabling}
+            onUndo={onUndoStabling}
+            onRedo={onRedoStabling}
+            canUndo={canUndoStabling}
+            canRedo={canRedoStabling}
+            isDirty={isStablingDirty}
             tooltipPlacement={headerTooltipPlacement}
-            tooltips={{
-              pg1: "Show PG1 default stabling",
-              pg2: "Show PG2 editable stabling",
-              refresh: "Copy latest PG1 stabling to PG2 and reset its PG2.",
-            }}
           />
           {hasClearControls && (
             <div className="flex flex-shrink-0 items-center gap-2">
@@ -5047,13 +5046,13 @@ function PSTStablingSection({ title, activePg = "pg1", onPgChange, onRefreshPg2,
                 />
               </span>
             )}
-            {isPg2Active && onClearPg2Trains && (
+            {onClearStablingTrains && (
               <button
                 type="button"
                 onClick={() => handleSectionClear("trains")}
-                disabled={pg2TrainClearCount === 0}
+                disabled={stablingTrainClearCount === 0}
                 className={`theme-pst-clear-button is-trains ${confirmClearAction === "trains" ? "is-confirming" : ""} ${clearButtonBase} ${confirmClearAction === "trains" ? "border-red-500 bg-red-600 text-white" : "border-rose-500/55 bg-rose-950/35 text-rose-200 hover:border-rose-400 hover:bg-rose-900/50"}`}
-                title={`Clear all ${sectionDepotLabel} PG2 Train IDs only. PG1/Main Stabling is not affected.`}
+                title={`Clear all ${sectionDepotLabel} editable Train IDs only. Main Stabling is not affected.`}
               >
                 {confirmClearAction === "trains" ? "Confirm clear" : "Clear all train"}
               </button>
@@ -5748,70 +5747,9 @@ function InsertionSectionTitle({ title, leftAction = null, action = null }) {
   );
 }
 
-function InsertionPgHeaderControls({ activePg = "pg1", onPgChange, onRefreshPg2, tooltips = null, tooltipPlacement = "top" }) {
-  const defaultRefreshTooltip = "Refresh only this depot's PG2 from its current PG1 stabling";
-  const refreshTooltipMessage = tooltips?.refresh || "";
-
-  return (
-    <div className="flex flex-wrap items-center justify-start gap-2">
-      <div className="theme-insertion-pg-switch inline-flex w-fit items-center rounded-full border border-[#2b4f6b] bg-[#071828] p-1 text-[10px] font-normal shadow-inner shadow-black/20">
-        {(["pg1", "pg2"]).map((pg) => {
-          const selected = normalizeInsertionPg(activePg) === pg;
-          const defaultTooltip = pg === "pg1" ? "PG1 default stabling" : "PG2 editable stabling";
-          const tooltipMessage = tooltips?.[pg] || "";
-
-          return (
-            <span
-              key={pg}
-              className={`${tooltipMessage ? "removal-summary-tooltip-trigger " : ""}relative z-50 inline-flex overflow-visible`}
-            >
-              <button
-                type="button"
-                onClick={() => onPgChange?.(pg)}
-                aria-pressed={selected}
-                aria-label={tooltipMessage || defaultTooltip}
-                title={tooltipMessage ? undefined : defaultTooltip}
-                className={`theme-insertion-pg-button ${selected ? "is-selected theme-movement-add-row-attention" : ""} rounded-full px-3 py-1 transition-all`}
-                style={selected ? undefined : { color: "#7eb8e0", background: "transparent" }}
-              >
-                {pg.toUpperCase()}
-              </button>
-              {tooltipMessage && (
-                <RemovalSummaryTooltip message={tooltipMessage} placement={tooltipPlacement} />
-              )}
-            </span>
-          );
-        })}
-      </div>
-      <span
-        className={`${refreshTooltipMessage ? "removal-summary-tooltip-trigger " : ""}relative z-50 inline-flex overflow-visible`}
-      >
-        <button
-          type="button"
-          onClick={onRefreshPg2}
-          aria-label={refreshTooltipMessage || defaultRefreshTooltip}
-          title={refreshTooltipMessage ? undefined : defaultRefreshTooltip}
-          className="theme-insertion-refresh-button group flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-normal transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
-          style={MAIN_STABLING_BUTTON_BLUE}
-        >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12a9 9 0 0 1-15.5 6.2" />
-            <path d="M3 12A9 9 0 0 1 18.5 5.8" />
-            <path d="M18 2v4h4" />
-            <path d="M6 22v-4H2" />
-          </svg>
-          Refresh PG2
-        </button>
-        {refreshTooltipMessage && (
-          <RemovalSummaryTooltip message={refreshTooltipMessage} placement={tooltipPlacement} />
-        )}
-      </span>
-    </div>
-  );
-}
-
 function InsertionEditableHeaderControls({
   depotCode,
+  workLabel = "insertion",
   onRefresh,
   onUndo,
   onRedo,
@@ -5821,7 +5759,7 @@ function InsertionEditableHeaderControls({
   tooltipPlacement = "top",
 }) {
   const refreshTooltip = isDirty
-    ? `${depotCode} editable stabling differs from Main Stabling. Refresh to sync and reset ${depotCode} insertion work.`
+    ? `${depotCode} editable stabling differs from Main Stabling. Refresh to sync and reset ${depotCode} ${workLabel} work.`
     : `${depotCode} editable stabling already matches Main Stabling`;
 
   return (
@@ -14767,7 +14705,7 @@ function APUMismatchChecklist({
 
 
 function PSTTabContent
-({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onAddManualLog, onRemoveManualLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, apuMismatchTrainIds, onAPUMismatchTrainIdsChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug, westPg = "pg1", eastPg = "pg1", onPSTPgChange, onRefreshPSTPg2, onClearPSTPg2Trains, westPSTStablingEditable = false, eastPSTStablingEditable = false, onEditablePSTTrainIdChange }) {
+({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onAddManualLog, onRemoveManualLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, apuMismatchTrainIds, onAPUMismatchTrainIdsChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug, onRefreshPSTStabling, onUndoPSTStabling, onRedoPSTStabling, westCanUndoPSTStabling = false, westCanRedoPSTStabling = false, eastCanUndoPSTStabling = false, eastCanRedoPSTStabling = false, westPSTStablingDirty = false, eastPSTStablingDirty = false, onClearPSTStablingTrains, onEditablePSTTrainIdChange }) {
   const [trainSearch, setTrainSearch] = useState("");
   const trainSearchKey = normalizeTrainId(trainSearch);
   const trainSearchLocations = trainSearchKey ? getMainStablingLocations(westData, eastData) : {};
@@ -15056,7 +14994,7 @@ function PSTTabContent
     <div className="flex w-fit flex-col items-start gap-7">
       <div className="grid w-fit grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[max-content_420px] lg:items-start">
         <div className="flex min-w-0 flex-col gap-3">
-          <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" activePg={westPg} onPgChange={(pg) => onPSTPgChange?.("west", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("west")} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearPg2Trains={westPSTStablingEditable ? () => onClearPSTPg2Trains?.("west") : null} stablingEditable={westPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
+          <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" onRefreshStabling={() => onRefreshPSTStabling?.("west")} onUndoStabling={() => onUndoPSTStabling?.("west")} onRedoStabling={() => onRedoPSTStabling?.("west")} canUndoStabling={westCanUndoPSTStabling} canRedoStabling={westCanRedoPSTStabling} isStablingDirty={westPSTStablingDirty} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearStablingTrains={() => onClearPSTStablingTrains?.("west")} stablingEditable onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
           <PSTManualEntry depot="west" logLines={sortedLogLines} onAddEntry={onAddManualLog} onRemoveEntry={onRemoveManualLog} />
           <div className="pst-train-prep-log-font-bump w-full overflow-visible">
             <style>{`
@@ -15141,7 +15079,7 @@ function PSTTabContent
 
       <div className="grid w-fit grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[max-content_420px] lg:items-start">
         <div className="flex min-w-0 flex-col gap-3">
-          <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" activePg={eastPg} onPgChange={(pg) => onPSTPgChange?.("east", pg)} onRefreshPg2={() => onRefreshPSTPg2?.("east")} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearPg2Trains={eastPSTStablingEditable ? () => onClearPSTPg2Trains?.("east") : null} stablingEditable={eastPSTStablingEditable} onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
+          <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" onRefreshStabling={() => onRefreshPSTStabling?.("east")} onUndoStabling={() => onUndoPSTStabling?.("east")} onRedoStabling={() => onRedoPSTStabling?.("east")} canUndoStabling={eastCanUndoPSTStabling} canRedoStabling={eastCanRedoPSTStabling} isStablingDirty={eastPSTStablingDirty} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearStablingTrains={() => onClearPSTStablingTrains?.("east")} stablingEditable onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
           <PSTManualEntry depot="east" logLines={sortedLogLines} onAddEntry={onAddManualLog} onRemoveEntry={onRemoveManualLog} />
           <div className="pst-train-prep-log-font-bump w-full overflow-visible">
             <PSTLogOutput depot="east" logLines={sortedLogLines} onClearDepot={onClearDepotLog} />
@@ -17437,7 +17375,9 @@ export default function DepotStablingPage() {
   const [pstAPUMismatchTrainIds, setPstAPUMismatchTrainIds] = useState(
     savedPST.apuMismatchTrainIds || { west: [], east: [] }
   );
-  const [activePSTPg, setActivePSTPg] = useState(() => loadPSTActivePg());
+  // PST now exposes one editable stabling view. Keep the legacy active-page
+  // value pinned to PG2 so older synced clients migrate to the editable data.
+  const [activePSTPg, setActivePSTPg] = useState({ west: "pg2", east: "pg2" });
   const [pstPg2Stabling, setPstPg2Stabling] = useState(() => loadPSTPg2Stabling(westData, eastData));
   const savedPSTPg2 = loadPSTPg2WorkState();
   const [pstPg2State, setPstPg2State] = useState(savedPSTPg2.pstState);
@@ -17448,6 +17388,7 @@ export default function DepotStablingPage() {
   const [pstPg2APUMismatchTrainIds, setPstPg2APUMismatchTrainIds] = useState(
     savedPSTPg2.apuMismatchTrainIds || { west: [], east: [] }
   );
+  const [pstEditHistoryRevision, setPstEditHistoryRevision] = useState(0);
   const [pstLiveLoaded, setPstLiveLoaded] = useState(false);
   const [pstLiveSyncing, setPstLiveSyncing] = useState(false);
   const [pstLiveLastSynced, setPstLiveLastSynced] = useState(null);
@@ -18339,6 +18280,10 @@ export default function DepotStablingPage() {
   const taNamePg2StateRef = useRef(taNamePg2State);
   const pstPg2CompletedByNamesRef = useRef(pstPg2CompletedByNames);
   const pstPg2APUMismatchTrainIdsRef = useRef(pstPg2APUMismatchTrainIds);
+  const pstEditHistoryRef = useRef({
+    west: { past: [], future: [] },
+    east: { past: [], future: [] },
+  });
   const pstLiveLocalUpdatedAtRef = useRef(Date.parse(savedPST.updatedAt || "") || 0);
   const pstLiveRemoteUpdatedAtRef = useRef(0);
 
@@ -18461,11 +18406,10 @@ export default function DepotStablingPage() {
     setPstCompletedByNames(normalized.completedByNames);
     setPstAPUMismatchTrainIds(normalized.apuMismatchTrainIds);
 
-    if (normalized.activePg) {
-      activePSTPgRef.current = normalized.activePg;
-      setActivePSTPg(normalized.activePg);
-      savePSTActivePg(normalized.activePg);
-    }
+    const editablePSTPage = { west: "pg2", east: "pg2" };
+    activePSTPgRef.current = editablePSTPage;
+    setActivePSTPg(editablePSTPage);
+    savePSTActivePg(editablePSTPage);
     if (normalized.pg2Stabling) {
       pstPg2StablingRef.current = normalized.pg2Stabling;
       setPstPg2Stabling(normalized.pg2Stabling);
@@ -18486,6 +18430,13 @@ export default function DepotStablingPage() {
       setPstPg2APUMismatchTrainIds(normalized.pg2WorkState.apuMismatchTrainIds);
       savePSTPg2WorkState(normalized.pg2WorkState);
     }
+
+    // A newer shared editable-stabling snapshot invalidates local undo history.
+    pstEditHistoryRef.current = {
+      west: { past: [], future: [] },
+      east: { past: [], future: [] },
+    };
+    setPstEditHistoryRevision((revision) => revision + 1);
 
     savePSTState(
       normalized.pstState,
@@ -20757,80 +20708,171 @@ export default function DepotStablingPage() {
     setTaNameState((prev) => removePSTSectionKeys(prev, depot));
   };
 
-  const handlePSTPgChange = useCallback((depot, pg) => {
+  const getPSTEditableDepotSnapshot = useCallback((depot) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    const targetRoads = normalizedDepot === "west" ? WEST_ROADS : EAST_ROADS;
+    const currentStabling = pstPg2StablingRef.current || cloneInsertionStablingState(westDataRef.current, eastDataRef.current);
+    const depotData = normalizedDepot === "west" ? currentStabling.westData : currentStabling.eastData;
+
+    return {
+      stabling: normalizeStablingDepotData(depotData, targetRoads),
+      pstState: getPSTDepotStateEntries(pstPg2StateRef.current, normalizedDepot),
+      prepState: getPSTDepotStateEntries(prepPg2StateRef.current, normalizedDepot),
+      logLines: getPSTEntriesForDepot(pstPg2LogLinesRef.current, normalizedDepot).map((entry) => ({ ...entry })),
+      taNameState: getPSTDepotStateEntries(taNamePg2StateRef.current, normalizedDepot),
+    };
+  }, []);
+
+  const rememberPSTEditableDepot = useCallback((depot) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    const history = pstEditHistoryRef.current[normalizedDepot];
+    history.past = [...history.past.slice(-49), getPSTEditableDepotSnapshot(normalizedDepot)];
+    history.future = [];
+    setPstEditHistoryRevision((revision) => revision + 1);
+  }, [getPSTEditableDepotSnapshot]);
+
+  const applyPSTEditableDepotSnapshot = useCallback((depot, snapshot) => {
+    if (!snapshot) return;
     markPSTLiveLocalEdit();
     const normalizedDepot = normalizeDepotKey(depot);
-    setActivePSTPg((prev) => ({
-      ...normalizePSTPgByDepot(prev),
-      [normalizedDepot]: normalizePSTPg(pg),
-    }));
+    const currentStabling = pstPg2StablingRef.current || cloneInsertionStablingState(westDataRef.current, eastDataRef.current);
+    const nextStabling = cloneInsertionStablingState(currentStabling.westData, currentStabling.eastData);
+
+    if (normalizedDepot === "west") {
+      nextStabling.westData = normalizeStablingDepotData(snapshot.stabling, WEST_ROADS);
+    } else {
+      nextStabling.eastData = normalizeStablingDepotData(snapshot.stabling, EAST_ROADS);
+    }
+
+    const nextPstState = {
+      ...removePSTSectionKeys(pstPg2StateRef.current, normalizedDepot),
+      ...(snapshot.pstState || {}),
+    };
+    const nextPrepState = {
+      ...removePSTSectionKeys(prepPg2StateRef.current, normalizedDepot),
+      ...(snapshot.prepState || {}),
+    };
+    const nextTaNameState = {
+      ...removePSTSectionKeys(taNamePg2StateRef.current, normalizedDepot),
+      ...(snapshot.taNameState || {}),
+    };
+    const nextLogLines = sortPSTLogLinesByTime([
+      ...pstPg2LogLinesRef.current.filter((entry) => normalizeDepotKey(entry?.depot || getDepotFromRoad(entry?.road || "")) !== normalizedDepot),
+      ...(snapshot.logLines || []).map((entry) => ({ ...entry })),
+    ]);
+
+    pstPg2StablingRef.current = nextStabling;
+    pstPg2StateRef.current = nextPstState;
+    prepPg2StateRef.current = nextPrepState;
+    pstPg2LogLinesRef.current = nextLogLines;
+    taNamePg2StateRef.current = nextTaNameState;
+    savePSTPg2Stabling(nextStabling);
+    savePSTPg2WorkState({
+      pstState: nextPstState,
+      prepState: nextPrepState,
+      logLines: nextLogLines,
+      taNameState: nextTaNameState,
+      completedByNames: pstPg2CompletedByNamesRef.current,
+      apuMismatchTrainIds: pstPg2APUMismatchTrainIdsRef.current,
+    });
+    setPstPg2Stabling(nextStabling);
+    setPstPg2State(nextPstState);
+    setPrepPg2State(nextPrepState);
+    setPstPg2LogLines(nextLogLines);
+    setTaNamePg2State(nextTaNameState);
   }, [markPSTLiveLocalEdit]);
 
+  const handleUndoPSTStabling = useCallback((depot) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    const history = pstEditHistoryRef.current[normalizedDepot];
+    const previous = history.past.pop();
+    if (!previous) return;
+
+    history.future = [...history.future.slice(-49), getPSTEditableDepotSnapshot(normalizedDepot)];
+    setPstEditHistoryRevision((revision) => revision + 1);
+    applyPSTEditableDepotSnapshot(normalizedDepot, previous);
+  }, [applyPSTEditableDepotSnapshot, getPSTEditableDepotSnapshot]);
+
+  const handleRedoPSTStabling = useCallback((depot) => {
+    const normalizedDepot = normalizeDepotKey(depot);
+    const history = pstEditHistoryRef.current[normalizedDepot];
+    const next = history.future.pop();
+    if (!next) return;
+
+    history.past = [...history.past.slice(-49), getPSTEditableDepotSnapshot(normalizedDepot)];
+    setPstEditHistoryRevision((revision) => revision + 1);
+    applyPSTEditableDepotSnapshot(normalizedDepot, next);
+  }, [applyPSTEditableDepotSnapshot, getPSTEditableDepotSnapshot]);
+
   const handlePSTPg2TrainIdChange = useCallback((depot, road, blockIndex, value) => {
-    markPSTLiveLocalEdit();
     const normalizedDepot = normalizeDepotKey(depot);
     const cellKey = `${road}-${blockIndex}`;
     const pstLogKey = `pst-${cellKey}`;
     const prepLogKey = `prep-${cellKey}`;
+    const currentStabling = pstPg2StablingRef.current || cloneInsertionStablingState(westDataRef.current, eastDataRef.current);
+    const currentDepotData = normalizedDepot === "west" ? currentStabling.westData : currentStabling.eastData;
+    const previousKey = normalizeTrainId(currentDepotData?.[road]?.[blockIndex]?.trainId || "");
+    const incomingKey = normalizeTrainId(value);
+    if (previousKey === incomingKey) return;
 
-    setPstPg2Stabling((prev) => {
-      const currentDepotData = normalizedDepot === "west" ? prev.westData : prev.eastData;
-      const previousKey = normalizeTrainId(currentDepotData?.[road]?.[blockIndex]?.trainId || "");
-      const incomingKey = normalizeTrainId(value);
+    rememberPSTEditableDepot(normalizedDepot);
+    markPSTLiveLocalEdit();
 
-      if (previousKey !== incomingKey) {
-        setPstPg2State((prevState) => { const next = { ...prevState }; delete next[cellKey]; return next; });
-        setPrepPg2State((prevState) => { const next = { ...prevState }; delete next[cellKey]; return next; });
-        setTaNamePg2State((prevState) => { const next = { ...prevState }; delete next[cellKey]; return next; });
-        setPstPg2LogLines((prevLog) => prevLog.filter((entry) => entry.key !== pstLogKey && entry.key !== prepLogKey));
-      }
+    const nextPstState = { ...pstPg2StateRef.current };
+    const nextPrepState = { ...prepPg2StateRef.current };
+    const nextTaNameState = { ...taNamePg2StateRef.current };
+    delete nextPstState[cellKey];
+    delete nextPrepState[cellKey];
+    delete nextTaNameState[cellKey];
+    const nextLogLines = pstPg2LogLinesRef.current.filter((entry) => entry.key !== pstLogKey && entry.key !== prepLogKey);
 
-      const next = cloneInsertionStablingState(prev.westData, prev.eastData);
-      const target = normalizedDepot === "west" ? next.westData : next.eastData;
-      const blocks = [...(target[road] || emptyBlocks())];
-      blocks[blockIndex] = { ...(blocks[blockIndex] || { trainId: "", extraRemark: "" }), trainId: value };
-      target[road] = blocks;
-      return next;
+    const nextStabling = cloneInsertionStablingState(currentStabling.westData, currentStabling.eastData);
+    const target = normalizedDepot === "west" ? nextStabling.westData : nextStabling.eastData;
+    const blocks = [...(target[road] || emptyBlocks())];
+    blocks[blockIndex] = { ...(blocks[blockIndex] || { trainId: "", extraRemark: "" }), trainId: value };
+    target[road] = blocks;
+
+    pstPg2StablingRef.current = nextStabling;
+    pstPg2StateRef.current = nextPstState;
+    prepPg2StateRef.current = nextPrepState;
+    taNamePg2StateRef.current = nextTaNameState;
+    pstPg2LogLinesRef.current = nextLogLines;
+    savePSTPg2Stabling(nextStabling);
+    savePSTPg2WorkState({
+      pstState: nextPstState,
+      prepState: nextPrepState,
+      logLines: nextLogLines,
+      taNameState: nextTaNameState,
+      completedByNames: pstPg2CompletedByNamesRef.current,
+      apuMismatchTrainIds: pstPg2APUMismatchTrainIdsRef.current,
     });
-  }, [markPSTLiveLocalEdit]);
+    setPstPg2Stabling(nextStabling);
+    setPstPg2State(nextPstState);
+    setPrepPg2State(nextPrepState);
+    setTaNamePg2State(nextTaNameState);
+    setPstPg2LogLines(nextLogLines);
+  }, [markPSTLiveLocalEdit, rememberPSTEditableDepot]);
 
   const handleRefreshPSTPg2FromDefault = useCallback((depot) => {
-    markPSTLiveLocalEdit();
     const normalizedDepot = normalizeDepotKey(depot);
     const targetRoads = normalizedDepot === "west" ? WEST_ROADS : EAST_ROADS;
+    const currentSnapshot = getPSTEditableDepotSnapshot(normalizedDepot);
+    const mainDepotData = normalizedDepot === "west" ? westDataRef.current : eastDataRef.current;
+    const hasLayoutChanges = !insertionStablingTrainPositionsMatch(currentSnapshot.stabling, mainDepotData, targetRoads);
+    const hasPSTWork = Object.keys(currentSnapshot.pstState).length > 0 ||
+      Object.keys(currentSnapshot.prepState).length > 0 ||
+      currentSnapshot.logLines.length > 0 ||
+      Object.values(currentSnapshot.taNameState).some((value) => String(value || "").trim());
+    if (hasLayoutChanges || hasPSTWork) rememberPSTEditableDepot(normalizedDepot);
 
-    setPstPg2Stabling((prev) => {
-      const next = cloneInsertionStablingState(prev?.westData || {}, prev?.eastData || {});
-      if (normalizedDepot === "west") {
-        next.westData = normalizeStablingDepotData(westDataRef.current, WEST_ROADS);
-      } else {
-        next.eastData = normalizeStablingDepotData(eastDataRef.current, EAST_ROADS);
-      }
-      return next;
+    applyPSTEditableDepotSnapshot(normalizedDepot, {
+      stabling: normalizeStablingDepotData(mainDepotData, targetRoads),
+      pstState: {},
+      prepState: {},
+      logLines: [],
+      taNameState: {},
     });
-
-    setPstPg2State((prev) => removePSTSectionKeys(prev, normalizedDepot));
-    setPrepPg2State((prev) => removePSTSectionKeys(prev, normalizedDepot));
-    setTaNamePg2State((prev) => removePSTSectionKeys(prev, normalizedDepot));
-    setPstPg2LogLines((prev) => prev.filter((entry) => entry?.depot !== normalizedDepot));
-    setActivePSTPg((prev) => ({
-      ...normalizePSTPgByDepot(prev),
-      [normalizedDepot]: "pg2",
-    }));
-
-    // Clear any stale per-cell PG2 values for this depot after copying PG1.
-    targetRoads.forEach((road) => {
-      for (let bi = 0; bi < 7; bi += 1) {
-        const cellKey = `${road}-${bi}`;
-        pstPg2StateRef.current = { ...pstPg2StateRef.current };
-        prepPg2StateRef.current = { ...prepPg2StateRef.current };
-        taNamePg2StateRef.current = { ...taNamePg2StateRef.current };
-        delete pstPg2StateRef.current[cellKey];
-        delete prepPg2StateRef.current[cellKey];
-        delete taNamePg2StateRef.current[cellKey];
-      }
-    });
-  }, [markPSTLiveLocalEdit]);
+  }, [applyPSTEditableDepotSnapshot, getPSTEditableDepotSnapshot, rememberPSTEditableDepot]);
 
   const commitPSTPg2WorkState = useCallback((
     nextPstState,
@@ -21101,6 +21143,7 @@ export default function DepotStablingPage() {
   const handleClearPSTPg2DepotTrains = useCallback((depot) => {
     const normalizedDepot = normalizeDepotKey(depot);
     const targetRoads = normalizedDepot === "west" ? WEST_ROADS : EAST_ROADS;
+    rememberPSTEditableDepot(normalizedDepot);
     markPSTLiveLocalEdit();
 
     const nextStabling = cloneInsertionStablingState(
@@ -21122,9 +21165,9 @@ export default function DepotStablingPage() {
     const nextTaNameState = removePSTSectionKeys(taNamePg2StateRef.current, normalizedDepot);
     const nextLogLines = pstPg2LogLinesRef.current.filter((line) => line.depot !== normalizedDepot);
     commitPSTPg2WorkState(nextPstState, nextPrepState, nextLogLines, nextTaNameState);
-  }, [commitPSTPg2WorkState, markPSTLiveLocalEdit]);
+  }, [commitPSTPg2WorkState, markPSTLiveLocalEdit, rememberPSTEditableDepot]);
 
-  const getActivePSTPgForDepot = useCallback((depot) => normalizePSTPgByDepot(activePSTPgRef.current)[normalizeDepotKey(depot)], []);
+  const getActivePSTPgForDepot = useCallback(() => "pg2", []);
   const getActivePSTPgForRoad = useCallback((road) => getActivePSTPgForDepot(getDepotFromRoad(road)), [getActivePSTPgForDepot]);
   const isActivePSTPg2Depot = useCallback((depot) => getActivePSTPgForDepot(depot) === "pg2", [getActivePSTPgForDepot]);
   const isActivePSTPg2Road = useCallback((road) => getActivePSTPgForRoad(road) === "pg2", [getActivePSTPgForRoad]);
@@ -21235,37 +21278,39 @@ export default function DepotStablingPage() {
     }
   }, [commitPSTPg2WorkState, handleRemovePSTLog, isActivePSTPg2Road]);
 
-  const activePSTPgByDepot = normalizePSTPgByDepot(activePSTPg);
-  const westPSTPg = activePSTPgByDepot.west;
-  const eastPSTPg = activePSTPgByDepot.east;
-  const westPSTIsPg2 = westPSTPg === "pg2";
-  const eastPSTIsPg2 = eastPSTPg === "pg2";
-  const activePSTWestData = westPSTIsPg2 ? pstPg2Stabling.westData : westData;
-  const activePSTEastData = eastPSTIsPg2 ? pstPg2Stabling.eastData : eastData;
+  const activePSTWestData = pstPg2Stabling.westData;
+  const activePSTEastData = pstPg2Stabling.eastData;
   const activePSTState = {
-    ...getPSTDepotStateEntries(westPSTIsPg2 ? pstPg2State : pstState, "west"),
-    ...getPSTDepotStateEntries(eastPSTIsPg2 ? pstPg2State : pstState, "east"),
+    ...getPSTDepotStateEntries(pstPg2State, "west"),
+    ...getPSTDepotStateEntries(pstPg2State, "east"),
   };
   const activePrepState = {
-    ...getPSTDepotStateEntries(westPSTIsPg2 ? prepPg2State : prepState, "west"),
-    ...getPSTDepotStateEntries(eastPSTIsPg2 ? prepPg2State : prepState, "east"),
+    ...getPSTDepotStateEntries(prepPg2State, "west"),
+    ...getPSTDepotStateEntries(prepPg2State, "east"),
   };
   const activeTaNameState = {
-    ...getPSTDepotStateEntries(westPSTIsPg2 ? taNamePg2State : taNameState, "west"),
-    ...getPSTDepotStateEntries(eastPSTIsPg2 ? taNamePg2State : taNameState, "east"),
+    ...getPSTDepotStateEntries(taNamePg2State, "west"),
+    ...getPSTDepotStateEntries(taNamePg2State, "east"),
   };
   const activePSTLogLines = sortPSTLogLinesByTime([
-    ...getPSTEntriesForDepot(westPSTIsPg2 ? pstPg2LogLines : pstLogLines, "west"),
-    ...getPSTEntriesForDepot(eastPSTIsPg2 ? pstPg2LogLines : pstLogLines, "east"),
+    ...getPSTEntriesForDepot(pstPg2LogLines, "west"),
+    ...getPSTEntriesForDepot(pstPg2LogLines, "east"),
   ]);
   const activePSTCompletedByNames = {
-    west: westPSTIsPg2 ? (pstPg2CompletedByNames?.west || "") : (pstCompletedByNames?.west || ""),
-    east: eastPSTIsPg2 ? (pstPg2CompletedByNames?.east || "") : (pstCompletedByNames?.east || ""),
+    west: pstPg2CompletedByNames?.west || "",
+    east: pstPg2CompletedByNames?.east || "",
   };
   const activePSTAPUMismatchTrainIds = normalizeAPUMismatchTrainIds({
-    west: westPSTIsPg2 ? pstPg2APUMismatchTrainIds?.west : pstAPUMismatchTrainIds?.west,
-    east: eastPSTIsPg2 ? pstPg2APUMismatchTrainIds?.east : pstAPUMismatchTrainIds?.east,
+    west: pstPg2APUMismatchTrainIds?.west,
+    east: pstPg2APUMismatchTrainIds?.east,
   });
+  const westPSTStablingDirty = !insertionStablingTrainPositionsMatch(activePSTWestData, westData, WEST_ROADS);
+  const eastPSTStablingDirty = !insertionStablingTrainPositionsMatch(activePSTEastData, eastData, EAST_ROADS);
+  const pstHistory = pstEditHistoryRef.current;
+  const westCanUndoPSTStabling = Boolean(pstEditHistoryRevision >= 0 && pstHistory.west.past.length);
+  const westCanRedoPSTStabling = Boolean(pstEditHistoryRevision >= 0 && pstHistory.west.future.length);
+  const eastCanUndoPSTStabling = Boolean(pstEditHistoryRevision >= 0 && pstHistory.east.past.length);
+  const eastCanRedoPSTStabling = Boolean(pstEditHistoryRevision >= 0 && pstHistory.east.future.length);
 
   const handleAddRequest = async (reqData) => {
     const requestTypeKey = normalizeRequestIdentity(getTrainRequestDisplayType(reqData));
@@ -22202,13 +22247,16 @@ export default function DepotStablingPage() {
             pstLiveStatusText={pstLiveStatusText}
             pstLiveStatusClass={pstLiveStatusClass}
             pstLiveDebug={pstLiveDebug}
-            westPg={westPSTPg}
-            eastPg={eastPSTPg}
-            onPSTPgChange={handlePSTPgChange}
-            onRefreshPSTPg2={handleRefreshPSTPg2FromDefault}
-            onClearPSTPg2Trains={handleClearPSTPg2DepotTrains}
-            westPSTStablingEditable={westPSTIsPg2}
-            eastPSTStablingEditable={eastPSTIsPg2}
+            onRefreshPSTStabling={handleRefreshPSTPg2FromDefault}
+            onUndoPSTStabling={handleUndoPSTStabling}
+            onRedoPSTStabling={handleRedoPSTStabling}
+            westCanUndoPSTStabling={westCanUndoPSTStabling}
+            westCanRedoPSTStabling={westCanRedoPSTStabling}
+            eastCanUndoPSTStabling={eastCanUndoPSTStabling}
+            eastCanRedoPSTStabling={eastCanRedoPSTStabling}
+            westPSTStablingDirty={westPSTStablingDirty}
+            eastPSTStablingDirty={eastPSTStablingDirty}
+            onClearPSTStablingTrains={handleClearPSTPg2DepotTrains}
             onEditablePSTTrainIdChange={handlePSTPg2TrainIdChange}
           />
         )}

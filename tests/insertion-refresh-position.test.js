@@ -34,17 +34,17 @@ test("light mode keeps the refresh control above the train input click layer", (
   );
 });
 
-test("sticky app header stays above insertion PG controls while scrolling", () => {
+test("sticky app header stays above editable stabling controls while scrolling", () => {
   const headerZ = Number(
     insertionSource.match(/<header className="app-top-header[^"]*z-\[(\d+)\]"/)?.[1],
   );
-  const controlsStart = insertionSource.indexOf("function InsertionPgHeaderControls");
+  const controlsStart = insertionSource.indexOf("function InsertionEditableHeaderControls");
   const controlsEnd = insertionSource.indexOf("function InsertionCell", controlsStart);
   const controlsSource = insertionSource.slice(controlsStart, controlsEnd);
-  const controlZLevels = [...controlsSource.matchAll(/relative z-(\d+) inline-flex/g)]
-    .map((match) => Number(match[1]));
+  const controlZLevels = [...controlsSource.matchAll(/\bz-(?:\[(\d+)\]|(\d+))\b/g)]
+    .map((match) => Number(match[1] || match[2]));
 
   assert.ok(Number.isFinite(headerZ));
-  assert.ok(controlZLevels.length > 0);
+  assert.ok(controlsStart >= 0 && controlsEnd > controlsStart);
   assert.ok(controlZLevels.every((controlZ) => headerZ > controlZ));
 });
