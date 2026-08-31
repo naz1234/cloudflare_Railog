@@ -1,21 +1,51 @@
 /* Keep the Insertion card neutral while making completed TID Reference Table
- * colours clearly visible on the compact Tracking ID box in light mode. */
+ * colours clearly visible and structurally different from remark pills. */
 html[data-app-theme="light"]
   .theme-insertion-page
   .theme-insertion-tracking-footer.is-complete.has-reference-style {
-  border-color: color-mix(
+  --insertion-tid-box-accent: color-mix(
     in srgb,
-    var(--insertion-tracking-reference-border) 88%,
-    #0f172a 12%
-  ) !important;
+    var(--insertion-tracking-reference-border) 92%,
+    #0f172a 8%
+  );
+  display: grid !important;
+  grid-template-columns: 30px minmax(0, 1fr) 30px;
+  min-height: 28px;
+  padding: 2px !important;
+  border: 2px solid var(--insertion-tid-box-accent) !important;
+  border-radius: 5px !important;
   background: color-mix(
     in srgb,
-    var(--insertion-tracking-reference-border) 62%,
-    #ffffff 38%
+    var(--insertion-tracking-reference-border) 34%,
+    #ffffff 66%
   ) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     0 1px 3px rgba(15, 23, 42, 0.16) !important;
+}
+
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-tracking-footer.is-complete.has-reference-style::before {
+  content: "TID";
+  display: flex;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  color: #ffffff;
+  background: #0f172a;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-tracking-footer.is-complete.has-reference-style::after {
+  content: "";
+  width: 30px;
 }
 
 html[data-app-theme="light"]
@@ -30,5 +60,8 @@ html[data-app-theme="light"]
     ) 80%,
     #020617 20%
   ) !important;
+  width: auto;
+  font-size: 12px;
   font-weight: 900;
+  letter-spacing: 0.08em;
 }

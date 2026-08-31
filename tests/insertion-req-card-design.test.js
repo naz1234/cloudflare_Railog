@@ -90,16 +90,19 @@ test("matched Tracking IDs inherit their TID Reference Table service colour", ()
   );
   assert.match(
     tidLightContrastSource,
-    /var\(--insertion-tracking-reference-border\) 62%/,
+    /var\(--insertion-tracking-reference-border\) 34%/,
   );
   assert.match(
     tidLightContrastSource,
-    /var\(--insertion-tracking-reference-border\) 88%/,
+    /var\(--insertion-tracking-reference-border\) 92%/,
   );
   assert.match(
     tidLightContrastSource,
     /--insertion-tracking-reference-light-color,[\s\S]*?80%,[\s\S]*?#020617 20%/,
   );
+  assert.match(tidLightContrastSource, /grid-template-columns: 30px minmax\(0, 1fr\) 30px/);
+  assert.match(tidLightContrastSource, /border-radius: 5px !important/);
+  assert.match(tidLightContrastSource, /::before \{[\s\S]*?content: "TID"[\s\S]*?color: #ffffff;[\s\S]*?background: #0f172a/);
   assert.doesNotMatch(tidLightContrastSource, /theme-insertion-card(?:\.|\s|\{)/);
 });
 
