@@ -6,6 +6,10 @@ const pageSource = readFileSync(
   new URL("../src/pages/DepotStabling.jsx", import.meta.url),
   "utf8",
 );
+const themeStyles = readFileSync(
+  new URL("../src/index.css", import.meta.url),
+  "utf8",
+);
 
 const sectionStart = pageSource.indexOf("function PSTStablingSection");
 const sectionEnd = pageSource.indexOf("function normalizePSTEntryType", sectionStart);
@@ -49,6 +53,21 @@ test("PST exposes depot-specific Undo, Redo and dirty Refresh controls", () => {
   assert.match(sectionSource, /isDirty=\{isStablingDirty\}/);
   assert.match(activeSource, /westPSTStablingDirty = !insertionStablingTrainPositionsMatch/);
   assert.match(activeSource, /eastPSTStablingDirty = !insertionStablingTrainPositionsMatch/);
+});
+
+test("PST dirty Refresh uses the same pulse and flame animations as Insertion", () => {
+  assert.match(
+    themeStyles,
+    /\.theme-pst-section \.theme-insertion-refresh-button\.is-dirty \{\s*animation: insertion-refresh-dirty-pulse/,
+  );
+  assert.match(
+    themeStyles,
+    /\.theme-pst-section \.theme-insertion-refresh-fire \{[\s\S]*?animation: insertion-refresh-fire-flicker/,
+  );
+  assert.match(
+    themeStyles,
+    /prefers-reduced-motion: reduce[\s\S]*?\.theme-pst-section \.theme-insertion-refresh-fire[\s\S]*?animation: none !important/,
+  );
 });
 
 test("PST history restores depot layout and matching PST work", () => {

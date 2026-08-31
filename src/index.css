@@ -12236,49 +12236,58 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-foo
   50% { box-shadow: 0 0 22px rgba(249, 115, 22, 0.56), 0 0 7px rgba(239, 68, 68, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18); }
 }
 
-.theme-insertion-page .theme-insertion-refresh-button.is-dirty {
+.theme-insertion-page .theme-insertion-refresh-button.is-dirty,
+.theme-pst-section .theme-insertion-refresh-button.is-dirty {
   animation: insertion-refresh-dirty-pulse 1.25s ease-in-out infinite;
 }
 
-.theme-insertion-page .theme-insertion-refresh-button.is-synced {
+.theme-insertion-page .theme-insertion-refresh-button.is-synced,
+.theme-pst-section .theme-insertion-refresh-button.is-synced {
   border-color: #2b4f6b;
   background: #071828;
   color: #7890a4;
   box-shadow: none;
 }
 
-.theme-insertion-page .theme-insertion-refresh-fire {
+.theme-insertion-page .theme-insertion-refresh-fire,
+.theme-pst-section .theme-insertion-refresh-fire {
   color: #fde047;
   fill: rgba(249, 115, 22, 0.55);
   animation: insertion-refresh-fire-flicker 720ms ease-in-out infinite;
   transform-origin: 50% 78%;
 }
 
-.theme-insertion-page .theme-insertion-history-button:disabled {
+.theme-insertion-page .theme-insertion-history-button:disabled,
+.theme-pst-section .theme-insertion-history-button:disabled {
   transform: none !important;
   box-shadow: none !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-editable-label,
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-history-button {
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-history-button,
+html[data-app-theme="light"] .theme-pst-section .theme-insertion-editable-label,
+html[data-app-theme="light"] .theme-pst-section .theme-insertion-history-button {
   border-color: #94a3b8 !important;
   background: #f8fafc !important;
   color: #0f172a !important;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button.is-dirty {
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button.is-dirty,
+html[data-app-theme="light"] .theme-pst-section .theme-insertion-refresh-button.is-dirty {
   border-color: #f97316 !important;
   background: linear-gradient(135deg, #ffedd5, #fee2e2) !important;
   color: #9a3412 !important;
   box-shadow: 0 0 16px rgba(249, 115, 22, 0.30) !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button.is-dirty svg {
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button.is-dirty svg,
+html[data-app-theme="light"] .theme-pst-section .theme-insertion-refresh-button.is-dirty svg {
   color: #ea580c !important;
 }
 
-html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button.is-synced {
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button.is-synced,
+html[data-app-theme="light"] .theme-pst-section .theme-insertion-refresh-button.is-synced {
   border-color: #cbd5e1 !important;
   background: #f1f5f9 !important;
   color: #64748b !important;
@@ -12287,7 +12296,9 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-butt
 
 @media (prefers-reduced-motion: reduce) {
   .theme-insertion-page .theme-insertion-refresh-button.is-dirty,
-  .theme-insertion-page .theme-insertion-refresh-fire {
+  .theme-insertion-page .theme-insertion-refresh-fire,
+  .theme-pst-section .theme-insertion-refresh-button.is-dirty,
+  .theme-pst-section .theme-insertion-refresh-fire {
     animation: none !important;
   }
 }
