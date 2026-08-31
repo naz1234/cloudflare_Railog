@@ -12169,6 +12169,7 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
 
 .theme-insertion-page .theme-insertion-tracking-footer.is-complete {
   margin-top: auto;
+  cursor: pointer;
 }
 
 .theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style,
