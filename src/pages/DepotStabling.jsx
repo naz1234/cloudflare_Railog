@@ -4772,7 +4772,37 @@ function getTrainRemRowCardVisual(requestItem = null, label = "", options = {}) 
 
 // ── PST / Train Prep Components ──────────────────────────────────────────────
 
-function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taName, onTaNameChange, stablingEditable = false, onEditableTrainIdChange, isSearchMatch = false }) {
+function getPSTArrowNavigationTarget(key, rowIndex, columnIndex, rowCount, columnCount) {
+  const movement = {
+    ArrowLeft: [0, -1],
+    ArrowRight: [0, 1],
+    ArrowUp: [-1, 0],
+    ArrowDown: [1, 0],
+  }[key];
+  if (!movement) return null;
+
+  const nextRowIndex = Number(rowIndex) + movement[0];
+  const nextColumnIndex = Number(columnIndex) + movement[1];
+  if (
+    nextRowIndex < 0 ||
+    nextRowIndex >= Number(rowCount) ||
+    nextColumnIndex < 0 ||
+    nextColumnIndex >= Number(columnCount)
+  ) return null;
+
+  return { rowIndex: nextRowIndex, columnIndex: nextColumnIndex };
+}
+
+function shouldNavigatePSTGridInput(key, field, valueLength, selectionStart, selectionEnd) {
+  if (key === "ArrowUp" || key === "ArrowDown") return true;
+  if (key !== "ArrowLeft" && key !== "ArrowRight") return false;
+  if (field === "train-id") return true;
+  if (!Number.isInteger(selectionStart) || !Number.isInteger(selectionEnd)) return true;
+  if (selectionStart !== selectionEnd) return false;
+  return key === "ArrowLeft" ? selectionStart === 0 : selectionEnd === Number(valueLength);
+}
+
+function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, gridRowIndex = 0, gridColumnIndex = 0, maintenanceMap, pstState, prepState, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, taName, onTaNameChange, stablingEditable = false, onEditableTrainIdChange, isSearchMatch = false }) {
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
@@ -4825,6 +4855,12 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
     : "none";
   const pstCardBorder = isPstDone ? "1px solid #059669" : isPstConfirming ? "1px solid #ca8a04" : isPrepDone ? "1px solid #3b82f6" : isPrepStarted ? "1px solid #ca8a04" : key ? "1px solid #1e4d72" : "1.5px dashed #1b3a55";
   const pstRowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
+  const gridNavigationProps = (field) => ({
+    "data-pst-grid-input": field,
+    "data-pst-grid-row": gridRowIndex,
+    "data-pst-grid-column": gridColumnIndex,
+    "aria-keyshortcuts": "ArrowLeft ArrowRight ArrowUp ArrowDown",
+  });
   return (
     <td className="theme-pst-grid-cell p-1.5 align-top" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: pstRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
       <div className={`theme-pst-card ${isSearchMatch ? "is-search-match" : ""} relative flex flex-col items-center justify-start gap-1 rounded-xl ${!key ? "is-empty" : isPstDone ? "is-pst-done" : isPstConfirming ? "is-pst-confirming" : isPrepDone ? "is-prep-done" : "is-normal"}`} style={{ minHeight: isPrepDone ? 156 : (isPstDone || isPstConfirming) ? 128 : pstEstimateTime ? 102 : 90, padding: "7px 5px", background: pstCardBg, border: pstCardBorder, boxShadow: key ? "0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)" : undefined }}>
@@ -4835,6 +4871,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
         )}
         {stablingEditable ? (
           <input
+            {...gridNavigationProps("train-id")}
             type="text"
             value={isTrainIdEditing ? val : (key ? displayVal : val)}
             onFocus={(e) => {
@@ -4875,6 +4912,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
             <div className="flex w-full items-center justify-center gap-0.5 whitespace-nowrap">
               <span className={`theme-pst-time-label shrink-0 text-[10px] font-bold leading-tight ${isPstConfirming ? "text-amber-300" : "text-emerald-300"}`}>Start :</span>
               <input
+                {...gridNavigationProps("pst-start")}
                 type="text"
                 inputMode="numeric"
                 maxLength={5}
@@ -4912,6 +4950,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
               <div className="theme-pst-prep-panel w-full rounded-lg border border-blue-500/60 bg-blue-950/30 px-1 py-1">
                 <div className="theme-pst-prep-label mb-0.5 text-center text-[9px] font-normal uppercase tracking-wide text-blue-300">PREP Done :</div>
                 <input
+                  {...gridNavigationProps("prep-end")}
                   type="text"
                   inputMode="numeric"
                   maxLength={5}
@@ -4934,7 +4973,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
               </div>
             )}
             {!isPrepDone && (
-              <input value={taName} onChange={(e) => onTaNameChange(road, bi, e.target.value)} onClick={(e) => e.stopPropagation()} placeholder="TA name (optional)" className="theme-pst-ta-input w-full text-[11px] rounded-lg border border-blue-600/60 bg-blue-950/30 px-1 py-0.5 outline-none text-blue-200 placeholder:text-blue-700" />
+              <input {...gridNavigationProps("ta-name")} value={taName} onChange={(e) => onTaNameChange(road, bi, e.target.value)} onClick={(e) => e.stopPropagation()} placeholder="TA name (optional)" className="theme-pst-ta-input w-full text-[11px] rounded-lg border border-blue-600/60 bg-blue-950/30 px-1 py-0.5 outline-none text-blue-200 placeholder:text-blue-700" />
             )}
             <button onClick={() => onPrepTick(road, bi, key, taName)} className={`theme-pst-prep-button ${isPrepDone ? "is-done" : "is-idle"} w-full text-[9px] font-bold rounded-lg px-1 py-0.5 border transition-all leading-tight ${isPrepDone ? "bg-green-200 border-green-500 text-green-900" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:border-indigo-500 hover:text-indigo-300"}`}>
               {isPrepDone ? "✓ PREP COMP." : "Train Prep"}
@@ -4968,6 +5007,43 @@ function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoSt
     return count + blockIndices.filter((bi) => normalizeTrainId(data?.[road]?.[bi]?.trainId || "")).length;
   }, 0);
 
+  const handleGridArrowNavigation = useCallback((event) => {
+    const currentInput = event.target.closest?.("[data-pst-grid-input]");
+    if (!currentInput || !event.currentTarget.contains(currentInput)) return;
+
+    const nextPosition = getPSTArrowNavigationTarget(
+      event.key,
+      currentInput.dataset.pstGridRow,
+      currentInput.dataset.pstGridColumn,
+      roads.length,
+      blockIndices.length,
+    );
+    if (!nextPosition) return;
+
+    const field = currentInput.dataset.pstGridInput || "train-id";
+    const value = String(currentInput.value || "");
+    if (!shouldNavigatePSTGridInput(
+      event.key,
+      field,
+      value.length,
+      currentInput.selectionStart,
+      currentInput.selectionEnd,
+    )) return;
+
+    const targetCoordinates = `[data-pst-grid-row="${nextPosition.rowIndex}"][data-pst-grid-column="${nextPosition.columnIndex}"]`;
+    const nextInput = event.currentTarget.querySelector(
+      `[data-pst-grid-input="${field}"]${targetCoordinates}`,
+    ) || event.currentTarget.querySelector(
+      `[data-pst-grid-input="train-id"]${targetCoordinates}`,
+    );
+    if (!nextInput) return;
+
+    event.preventDefault();
+    nextInput.focus();
+    nextInput.select?.();
+    nextInput.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  }, [blockIndices.length, roads.length]);
+
   const handleSectionClear = (action) => {
     const clearHandler = action === "pst" ? onClearPST : action === "prep" ? onClearPrep : onClearStablingTrains;
     if (!clearHandler) return;
@@ -4989,7 +5065,7 @@ function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoSt
   const headerTooltipPlacement = sectionDepotLabel === "West Depot" ? "bottom" : "top";
 
   return (
-    <section className={`theme-stabling-section theme-pst-section ${sectionDepotLabel === "East Depot" ? "is-east" : "is-west"} bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4`} style={{ width: "fit-content", maxWidth: "fit-content" }}>
+    <section onKeyDown={handleGridArrowNavigation} className={`theme-stabling-section theme-pst-section ${sectionDepotLabel === "East Depot" ? "is-east" : "is-west"} bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4`} style={{ width: "fit-content", maxWidth: "fit-content" }}>
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex min-w-0 items-center gap-3">
           <div className="theme-pst-title-icon w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
@@ -5140,7 +5216,7 @@ function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoSt
                 <tr key={road}>
                   {labelSide === "left" && labelCell}
                   {blockIndices.map((bi, i) => (
-                    <PSTCell key={bi} block={data[road]?.[bi]} bi={bi} road={road} labelSide={labelSide} isLast={ri === roads.length - 1} isFirstBlock={i === 0} isLastBlock={i === blockIndices.length - 1} maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taName={taNameState[`${road}-${bi}`] || ""} onTaNameChange={onTaNameChange} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(data[road]?.[bi]?.trainId || "") === normalizedSearch)} />
+                    <PSTCell key={bi} block={data[road]?.[bi]} bi={bi} road={road} labelSide={labelSide} isLast={ri === roads.length - 1} isFirstBlock={i === 0} isLastBlock={i === blockIndices.length - 1} gridRowIndex={ri} gridColumnIndex={i} maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taName={taNameState[`${road}-${bi}`] || ""} onTaNameChange={onTaNameChange} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(data[road]?.[bi]?.trainId || "") === normalizedSearch)} />
                   ))}
                   {labelSide === "right" && labelCell}
                 </tr>

@@ -18,7 +18,7 @@ function functionSource(name) {
 
 const section = functionSource("PSTStablingSection");
 const cell = functionSource("PSTCell");
-const tabStart = source.indexOf("function PSTTabContent\n");
+const tabStart = source.search(/function PSTTabContent\r?\n/);
 const tabEnd = source.indexOf("\nfunction ", tabStart + 1);
 assert.ok(tabStart >= 0 && tabEnd > tabStart);
 const tab = source.slice(tabStart, tabEnd);
@@ -129,7 +129,7 @@ test("PST search rings work in both themes without replacing completion-state co
 
 // Render the actual section and cards, stubbing only the unchanged header controls/icons.
 const renderSource = ts.transpileModule([
-  "const { useState } = React;",
+  "const { useState, useCallback } = React;",
   helpers,
   ...["normalizeInsertionPg", "normalizePSTPg", "padTrainId", "formatTrainNumberOnly"].map(functionSource),
   cell,
