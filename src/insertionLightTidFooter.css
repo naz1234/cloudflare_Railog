@@ -1,6 +1,22 @@
 /* In light mode, keep a completed TID visually separate from the coloured
  * operational remark above it. The original reference colour remains as a
  * compact status dot so its meaning is preserved without repeating the fill. */
+@keyframes insertion-tid-status-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--insertion-tracking-reference-border, #38bdf8) 48%, transparent),
+      0 0 6px color-mix(in srgb, var(--insertion-tracking-reference-border, #38bdf8) 24%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.42);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--insertion-tracking-reference-border, #38bdf8) 78%, transparent),
+      0 0 11px color-mix(in srgb, var(--insertion-tracking-reference-border, #38bdf8) 52%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.56);
+  }
+}
+
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style {
   position: relative;
@@ -41,6 +57,17 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-foo
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.09);
 }
 
+/* Match the MASPO upload box's glow cadence without moving the dot. Only
+ * semantic reference dots pulse; the unmatched blue fallback stays still. */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style::after {
+  width: 8px;
+  height: 8px;
+  border-color: color-mix(in srgb, var(--insertion-tracking-reference-border, #38bdf8) 76%, #020617);
+  filter: saturate(1.45) brightness(0.92) contrast(1.08);
+  opacity: 1;
+  animation: insertion-tid-status-pulse 1.65s ease-in-out 220ms infinite backwards;
+}
+
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete > strong,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style > strong {
   color: #ffffff !important;
@@ -54,4 +81,14 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-foo
   border-style: dashed;
   background: #f8fafc !important;
   box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style::after {
+    animation: none;
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--insertion-tracking-reference-border, #38bdf8) 58%, transparent),
+      0 0 7px color-mix(in srgb, var(--insertion-tracking-reference-border, #38bdf8) 34%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.48);
+  }
 }
