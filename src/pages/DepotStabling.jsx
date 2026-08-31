@@ -5910,7 +5910,29 @@ function InsertionEditableHeaderControls({
   );
 }
 
-function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onInsertionTaNameUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0, tidDropRequest = null, onTidDropApplied, isTidDragActive = false, isTidDropHovered = false, isSearchMatch = false }) {
+function getInsertionArrowNavigationTarget(key, rowIndex, columnIndex, rowCount, columnCount) {
+  const offsets = {
+    ArrowDown: [1, 0],
+    ArrowUp: [-1, 0],
+    ArrowRight: [0, 1],
+    ArrowLeft: [0, -1],
+  };
+  const offset = offsets[key];
+  if (!offset) return null;
+
+  const target = {
+    rowIndex: rowIndex + offset[0],
+    columnIndex: columnIndex + offset[1],
+  };
+  const isInsideGrid = target.rowIndex >= 0
+    && target.rowIndex < rowCount
+    && target.columnIndex >= 0
+    && target.columnIndex < columnCount;
+
+  return isInsideGrid ? target : null;
+}
+
+function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onInsertionTaNameUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, onTrainIdKeyDown, trainIdControlRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0, tidDropRequest = null, onTidDropApplied, isTidDragActive = false, isTidDropHovered = false, isSearchMatch = false }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
@@ -6252,6 +6274,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           {stablingEditable ? (
             key || isTrainIdEditing ? (
               <input
+                ref={trainIdControlRef}
                 type="text"
                 value={isTrainIdEditing ? val : formatTrainNumberOnly(val)}
                 autoFocus={!key}
@@ -6261,7 +6284,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                 }}
                 onBlur={() => setIsTrainIdEditing(false)}
                 onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
+                onKeyDown={onTrainIdKeyDown}
                 aria-label="Train ID"
+                aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
                 placeholder="Train ID"
                 className="theme-stabling-train-id theme-insertion-train-id h-7 w-full border-0 px-1.5 text-center text-[17px] font-black uppercase outline-none placeholder:text-[9px] placeholder:text-[#587187]"
                 style={{
@@ -6274,10 +6299,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               />
             ) : (
               <button
+                ref={trainIdControlRef}
                 type="button"
                 className="theme-insertion-empty-action flex w-full flex-1 flex-col items-center justify-center gap-1.5 rounded-lg text-[9px] font-semibold uppercase tracking-[0.08em] transition-colors"
                 onClick={() => setIsTrainIdEditing(true)}
+                onKeyDown={onTrainIdKeyDown}
                 aria-label={`Add train to ${road}, block ${bi + 1}`}
+                aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
               >
                 <span className="theme-insertion-empty-action-icon inline-flex h-7 w-7 items-center justify-center rounded-full border" aria-hidden="true">
                   <Plus className="h-4 w-4" />
@@ -6601,6 +6629,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   onPointerDown={onTidFocus}
                   placeholder="Tracking ID"
                   aria-label="Enter Tracking ID or special insertion code"
+                  aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
                   autoComplete="off"
                   spellCheck={false}
                   className="theme-insertion-tid-input min-w-0 w-full border-0 bg-transparent p-0 text-center text-[11px] font-semibold outline-none placeholder:text-[#47637a]"
@@ -7032,6 +7061,7 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
   // ── Keyboard navigation refs ─────────────────────────────────────────────
   // Key: "roadIndex-visualColIndex", value: input element
   const tidRefs = useRef({});
+  const trainIdControlRefs = useRef({});
   const tidAutoAdvanceRef = useRef(false);
   const tidAutoDirectionRef = useRef(null);
 
@@ -7080,6 +7110,30 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
       if (colIdx > 0) focusInsertionTid(roadIdx, colIdx - 1);
     }
   }, [roads.length, blockIndices.length, focusInsertionTid]);
+
+  const focusInsertionTrainId = useCallback((roadIdx, colIdx) => {
+    const control = trainIdControlRefs.current[`${roadIdx}-${colIdx}`];
+    if (!control) return false;
+
+    control.focus();
+    control.select?.();
+    control.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    return true;
+  }, []);
+
+  const handleTrainIdKeyDown = useCallback((event, roadIdx, colIdx) => {
+    const target = getInsertionArrowNavigationTarget(
+      event.key,
+      roadIdx,
+      colIdx,
+      roads.length,
+      blockIndices.length,
+    );
+    if (!target) return;
+
+    event.preventDefault();
+    focusInsertionTrainId(target.rowIndex, target.columnIndex);
+  }, [roads.length, blockIndices.length, focusInsertionTrainId]);
 
   const getNextTidAutoFocusTarget = useCallback((roadIdx, colIdx, direction) => {
     const totalRows = roads.length;
@@ -7485,7 +7539,7 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
                     const borderBottom = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
                     const borderBottomRightRadius = labelSide === "left" && isLastRow && isLastBlock ? 12 : undefined;
                     const borderBottomLeftRadius = labelSide === "right" && isLastRow && i === 0 ? 12 : undefined;
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onInsertionTaNameUpdate={onInsertionTaNameUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(block?.trainId || "") === normalizedSearch)} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onInsertionTaNameUpdate={onInsertionTaNameUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} onTrainIdKeyDown={(event) => handleTrainIdKeyDown(event, ri, i)} trainIdControlRef={(element) => { trainIdControlRefs.current[`${ri}-${i}`] = element; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(block?.trainId || "") === normalizedSearch)} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
