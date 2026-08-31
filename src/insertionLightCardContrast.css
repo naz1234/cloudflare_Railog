@@ -1,0 +1,74 @@
+/* Keep occupied Insertion cards neutral in light mode; status colour belongs
+ * to the labels and Tracking ID box instead of the whole card surface. */
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card.is-req-layout.has-train {
+  background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%) !important;
+  background-image: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%) !important;
+  border: 1px solid #b7c4d1 !important;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* The legacy depot waiting selectors carry more specificity than the shared
+ * card rule. Match them here so an untracked West/East card cannot keep its
+ * orange/teal tint or coloured top border. */
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-section[data-depot="west"]
+  .theme-insertion-card.is-req-layout.has-train:not(.has-input):not(.is-inserted):not(.is-complete),
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-section[data-depot="east"]
+  .theme-insertion-card.is-req-layout.has-train:not(.has-input):not(.is-inserted):not(.is-complete) {
+  --insertion-card-rest: #f8fafc;
+  --insertion-card-hover: #ffffff;
+  --insertion-card-border: #b7c4d1;
+  background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%) !important;
+  background-image: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%) !important;
+  border: 1px solid #b7c4d1 !important;
+  border-top: 1px solid #b7c4d1 !important;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card.is-req-layout.is-empty {
+  background: #e9eef3 !important;
+  background-image: none !important;
+  border: 1.5px dashed #94a3b8 !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card.is-expired {
+  background: #dce3ea !important;
+  background-image: none !important;
+  border-color: #8795a5 !important;
+  box-shadow: none !important;
+}
+
+/* Stronger pastel fill keeps adjacent request categories readable. */
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card
+  .theme-stabling-remark {
+  background: color-mix(
+    in srgb,
+    rgb(var(--stabling-remark-accent-rgb, 79, 142, 247)) 56%,
+    #ffffff 44%
+  ) !important;
+  border-color: rgb(var(--stabling-remark-accent-rgb, 79, 142, 247)) !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+/* Search remains the highest-priority outline without replacing the neutral fill. */
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card.is-search-match {
+  border: 2px solid #ca8a04 !important;
+  box-shadow:
+    0 0 0 3px rgba(202, 138, 4, 0.26),
+    0 4px 12px rgba(15, 23, 42, 0.12) !important;
+}

@@ -436,6 +436,23 @@ html[data-app-theme="light"] .theme-toggle {
   border-color: #9eafc0 !important;
 }
 
+/* Presence avatars stay dark in the light header, so keep their initials bright. */
+html[data-app-theme="light"] .theme-session-presence .theme-presence-avatar {
+  background-color: #0a2a42 !important;
+  color: #ecfeff !important;
+  -webkit-text-fill-color: #ecfeff !important;
+}
+
+html[data-app-theme="light"] .theme-session-presence .theme-presence-avatar:hover {
+  background-color: #103b5c !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-session-presence .theme-presence-avatar-dot {
+  border-color: #ffffff !important;
+}
+
 /* Convert the application's dark neutral panels to light neutral panels. */
 html[data-app-theme="light"] :is(
   [class*="bg-[#03111d]"],
@@ -12078,12 +12095,11 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
 }
 
 .theme-insertion-page .theme-insertion-tracking-footer {
-  display: grid;
+  display: flex;
   width: 100%;
   min-height: 24px;
-  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   padding: 3px 7px;
   border: 1px solid #0ea5e9;
   border-radius: 7px;
@@ -12105,7 +12121,7 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
   color: inherit !important;
   background: transparent !important;
   box-shadow: none !important;
-  text-align: right !important;
+  text-align: center !important;
   cursor: text;
   appearance: none;
   -webkit-appearance: none;
@@ -12132,13 +12148,14 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
 }
 
 .theme-insertion-page .theme-insertion-tracking-footer > strong {
+  width: 100%;
   overflow: hidden;
   color: #ffffff;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.05em;
   line-height: 1;
-  text-align: right;
+  text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -12152,6 +12169,21 @@ html[data-app-theme="light"] .theme-insertion-page .insertion-dashboard__schedul
 
 .theme-insertion-page .theme-insertion-tracking-footer.is-complete {
   margin-top: auto;
+}
+
+.theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style {
+  border-color: var(--insertion-tracking-reference-border) !important;
+  background: var(--insertion-tracking-reference-bg) !important;
+  box-shadow: var(--insertion-tracking-reference-shadow) !important;
+}
+
+.theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style > strong {
+  color: var(--insertion-tracking-reference-color) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style > strong {
+  color: var(--insertion-tracking-reference-light-color, var(--insertion-tracking-reference-color)) !important;
 }
 
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-req-layout {
@@ -12191,4 +12223,82 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-foo
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer > strong,
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer input {
   color: #102f49 !important;
+}
+
+@keyframes insertion-refresh-fire-flicker {
+  0%, 100% { transform: translateY(0) scale(1) rotate(-2deg); filter: drop-shadow(0 0 3px rgba(251, 146, 60, 0.78)); }
+  35% { transform: translateY(-1px) scale(1.14) rotate(3deg); filter: drop-shadow(0 0 7px rgba(239, 68, 68, 0.92)); }
+  68% { transform: translateY(0) scale(0.96) rotate(-4deg); filter: drop-shadow(0 0 5px rgba(250, 204, 21, 0.88)); }
+}
+
+@keyframes insertion-refresh-dirty-pulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(249, 115, 22, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12); }
+  50% { box-shadow: 0 0 22px rgba(249, 115, 22, 0.56), 0 0 7px rgba(239, 68, 68, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18); }
+}
+
+.theme-insertion-page .theme-insertion-refresh-button.is-dirty,
+.theme-pst-section .theme-insertion-refresh-button.is-dirty {
+  animation: insertion-refresh-dirty-pulse 1.25s ease-in-out infinite;
+}
+
+.theme-insertion-page .theme-insertion-refresh-button.is-synced,
+.theme-pst-section .theme-insertion-refresh-button.is-synced {
+  border-color: #2b4f6b;
+  background: #071828;
+  color: #7890a4;
+  box-shadow: none;
+}
+
+.theme-insertion-page .theme-insertion-refresh-fire,
+.theme-pst-section .theme-insertion-refresh-fire {
+  color: #fde047;
+  fill: rgba(249, 115, 22, 0.55);
+  animation: insertion-refresh-fire-flicker 720ms ease-in-out infinite;
+  transform-origin: 50% 78%;
+}
+
+.theme-insertion-page .theme-insertion-history-button:disabled,
+.theme-pst-section .theme-insertion-history-button:disabled {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-editable-label,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-history-button,
+html[data-app-theme="light"] .theme-pst-section .theme-insertion-editable-label,
+html[data-app-theme="light"] .theme-pst-section .theme-insertion-history-button {
+  border-color: #94a3b8 !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button.is-dirty,
+html[data-app-theme="light"] .theme-pst-section .theme-insertion-refresh-button.is-dirty {
+  border-color: #f97316 !important;
+  background: linear-gradient(135deg, #ffedd5, #fee2e2) !important;
+  color: #9a3412 !important;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.30) !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button.is-dirty svg,
+html[data-app-theme="light"] .theme-pst-section .theme-insertion-refresh-button.is-dirty svg {
+  color: #ea580c !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-refresh-button.is-synced,
+html[data-app-theme="light"] .theme-pst-section .theme-insertion-refresh-button.is-synced {
+  border-color: #cbd5e1 !important;
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+  box-shadow: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-insertion-page .theme-insertion-refresh-button.is-dirty,
+  .theme-insertion-page .theme-insertion-refresh-fire,
+  .theme-pst-section .theme-insertion-refresh-button.is-dirty,
+  .theme-pst-section .theme-insertion-refresh-fire {
+    animation: none !important;
+  }
 }

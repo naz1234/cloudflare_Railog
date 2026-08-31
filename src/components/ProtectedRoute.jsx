@@ -40,15 +40,11 @@ const AuthUnavailable = ({ message, onRetry }) => (
   </main>
 );
 
-function normalizedPresenceUsers(users, currentUser) {
+function normalizedPresenceUsers(users) {
   const source = Array.isArray(users) ? users : [];
-  const candidates = [
-    ...(currentUser?.name ? [{ name: currentUser.name, lastSeenAt: null }] : []),
-    ...source,
-  ];
   const seen = new Set();
 
-  return candidates.flatMap((entry) => {
+  return source.flatMap((entry) => {
     const name = String(entry?.name || '').trim().slice(0, 80);
     const identityKey = name.toLocaleLowerCase('en');
     if (!name || seen.has(identityKey)) return [];
@@ -79,7 +75,7 @@ export const SessionPresenceControl = () => {
   const [logoutError, setLogoutError] = useState('');
   const [presenceSupported, setPresenceSupported] = useState(true);
   const [presenceUnavailable, setPresenceUnavailable] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState(() => normalizedPresenceUsers([], user));
+  const [onlineUsers, setOnlineUsers] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,7 +99,7 @@ export const SessionPresenceControl = () => {
         });
         if (response.status === 404) {
           if (!cancelled) {
-            setOnlineUsers(normalizedPresenceUsers([], user));
+            setOnlineUsers([]);
             setPresenceSupported(false);
             setPresenceUnavailable(false);
           }
@@ -115,13 +111,13 @@ export const SessionPresenceControl = () => {
           throw new Error('invalid_presence_response');
         }
         if (!cancelled) {
-          setOnlineUsers(normalizedPresenceUsers(data.users, user));
+          setOnlineUsers(normalizedPresenceUsers(data.users));
           setPresenceSupported(true);
           setPresenceUnavailable(false);
         }
       } catch {
         if (!cancelled) {
-          setOnlineUsers(normalizedPresenceUsers([], user));
+          setOnlineUsers([]);
           setPresenceUnavailable(true);
         }
       } finally {
@@ -159,7 +155,7 @@ export const SessionPresenceControl = () => {
   };
 
   return (
-    <aside aria-label="Signed-in user and online staff" className="relative flex h-8 min-w-0 max-w-[min(28rem,42vw)] items-center rounded-lg border border-[#2b4f6b] bg-[#071828] text-[#dff5ff] shadow-[0_0_14px_rgba(52,211,153,0.08)]">
+    <aside aria-label="Signed-in user and online staff" className="theme-session-presence relative flex h-8 min-w-0 max-w-[min(28rem,42vw)] items-center rounded-lg border border-[#2b4f6b] bg-[#071828] text-[#dff5ff] shadow-[0_0_14px_rgba(52,211,153,0.08)]">
       <div
         className="flex h-full shrink-0 items-center gap-1.5 border-r border-[#244a62] px-2.5"
         title={presenceUnavailable ? 'Online list will refresh automatically.' : undefined}
@@ -194,10 +190,10 @@ export const SessionPresenceControl = () => {
                 }}
               >
                 <span
-                  className={`relative flex h-6 w-6 items-center justify-center rounded-full border bg-[#0a2a42] font-mono text-[8px] font-black tracking-wide text-cyan-100 transition-colors hover:border-cyan-300 hover:bg-[#103b5c] ${isCurrentUser ? 'border-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.2)]' : 'border-[#2f6f91]'}`}
+                  className={`theme-presence-avatar relative flex h-6 w-6 items-center justify-center rounded-full border bg-[#0a2a42] font-mono text-[8px] font-black tracking-wide text-cyan-100 transition-colors hover:border-cyan-300 hover:bg-[#103b5c] ${isCurrentUser ? 'border-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.2)]' : 'border-[#2f6f91]'}`}
                 >
                   {presenceInitials(onlineUser.name)}
-                  <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-[#071828] bg-emerald-400" aria-hidden="true" />
+                  <span className="theme-presence-avatar-dot absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-[#071828] bg-emerald-400" aria-hidden="true" />
                 </span>
               </ActionTooltip>
             </li>

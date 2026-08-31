@@ -10,6 +10,14 @@ const stylesheetSource = readFileSync(
   new URL("../src/index.css", import.meta.url),
   "utf8",
 );
+const tidLightContrastSource = readFileSync(
+  new URL("../src/insertionTidLightContrast.css", import.meta.url),
+  "utf8",
+);
+const referenceTableSource = readFileSync(
+  new URL("../src/components/TIDReferenceTable.jsx", import.meta.url),
+  "utf8",
+);
 
 const insertionCellSource = pageSource.slice(
   pageSource.indexOf("function InsertionCell"),
@@ -29,23 +37,76 @@ test("INS cards use the Train Request visual hierarchy", () => {
   assert.match(insertionCellSource, /\? "1px solid #1e4d72"/);
 });
 
-test("Tracking ID uses the compact completed footer shown in the reference", () => {
+test("Tracking ID uses a centered label before entry and centered value after entry", () => {
   assert.match(insertionCellSource, /<label[\s\S]*theme-insertion-tracking-footer is-editing/);
-  assert.match(insertionCellSource, /<span>Tracking<\/span>[\s\S]*placeholder="Enter ID"/);
+  assert.match(insertionCellSource, /placeholder="Tracking ID"/);
+  assert.doesNotMatch(insertionCellSource, /<span>Tracking<\/span>/);
   assert.match(insertionCellSource, /aria-label="Enter Tracking ID or special insertion code"/);
   assert.match(insertionCellSource, /theme-insertion-tracking-footer is-complete[\s\S]*String\(insertedTrackingId\)\.padStart\(3, "0"\)/);
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*min-height: 24px/);
+  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*justify-content: center/);
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*border-radius: 7px/);
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer \{[\s\S]*background: rgba\(3, 17, 29, 0\.78\)/);
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer input\.theme-insertion-tid-input \{[\s\S]*width: 100% !important/);
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer input\.theme-insertion-tid-input \{[\s\S]*border: 0 !important/);
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer input\.theme-insertion-tid-input \{[\s\S]*background: transparent !important/);
+  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer input\.theme-insertion-tid-input \{[\s\S]*text-align: center !important/);
+  assert.match(stylesheetSource, /\.theme-insertion-tracking-footer > strong \{[\s\S]*font-size: 11px/);
+});
+
+test("matched Tracking IDs expose their TID Reference Table service colour", () => {
+  assert.match(
+    insertionCellSource,
+    /getTidAssistRemark\(insertedTrackingId, autoTidDepot\)/,
+  );
+  assert.match(
+    insertionCellSource,
+    /const insertedTrackingReferenceStyle = insertedTrackingId && insertedTrackingRemarkStyle/,
+  );
+  assert.match(insertionCellSource, /"--insertion-tracking-reference-bg": insertedTrackingReferencePillStyle\.bg/);
+  assert.match(insertionCellSource, /"--insertion-tracking-reference-border": insertedTrackingReferencePillStyle\.border/);
+  assert.match(insertionCellSource, /"--insertion-tracking-reference-color": insertedTrackingReferencePillStyle\.color/);
+  assert.match(insertionCellSource, /"--insertion-tracking-reference-light-color": insertedTrackingReferencePillStyle\.lightColor/);
+  assert.match(insertionCellSource, /"--theme-accent": insertionRequestAccent,[\s\S]*?\.\.\.insertedTrackingReferenceStyle/);
+  assert.match(referenceTableSource, /\{ tid: 205, remark: "Late Rem"/);
+  assert.match(referenceTableSource, /\{ tid: 208, remark: "ED"/);
+  assert.match(referenceTableSource, /\{ tid: 118, remark: "ED"/);
+  assert.match(pageSource, /"Late Rem": \{[\s\S]*?border: "#facc15"/);
+  assert.match(pageSource, /"Late Rem": \{[\s\S]*?lightColor: "#854d0e"/);
+  assert.match(pageSource, /\n  ED: \{[\s\S]*?border: "#f87171"/);
+  assert.match(pageSource, /\n  ED: \{[\s\S]*?lightColor: "#991b1b"/);
+  assert.equal(
+    (insertionCellSource.match(/has-reference-style/g) || []).length,
+    2,
+    "normal and elapsed completed TID boxes should both expose the reference colour",
+  );
+  assert.match(
+    stylesheetSource,
+    /\.theme-insertion-page \.theme-insertion-tracking-footer\.is-complete\.has-reference-style,[\s\S]*background: var\(--insertion-tracking-reference-bg\) !important/,
+  );
+  assert.match(
+    stylesheetSource,
+    /\.theme-insertion-page \.theme-insertion-tracking-footer\.is-complete\.has-reference-style > strong \{[\s\S]*color: var\(--insertion-tracking-reference-color\) !important/,
+  );
+  assert.match(
+    tidLightContrastSource,
+    /var\(--insertion-tracking-reference-border\) 62%/,
+  );
+  assert.match(
+    tidLightContrastSource,
+    /var\(--insertion-tracking-reference-border\) 88%/,
+  );
+  assert.match(
+    tidLightContrastSource,
+    /--insertion-tracking-reference-light-color,[\s\S]*?80%,[\s\S]*?#020617 20%/,
+  );
+  assert.doesNotMatch(tidLightContrastSource, /theme-insertion-card(?:\.|\s|\{)/);
 });
 
 test("completed Tracking ID shows its TID reference remark on hover", () => {
   assert.match(pageSource, /function getInsertionTidReferenceTooltipLabel\(remark = ""\)/);
   assert.match(pageSource, /normalized === "ED"\) return "ED REMOVAL 9AM"/);
-  assert.match(insertionCellSource, /const insertedTidReferenceTooltip = getInsertionTidReferenceTooltipLabel\(insertedTidAssistRemark\)/);
+  assert.match(insertionCellSource, /const insertedTidReferenceTooltip = getInsertionTidReferenceTooltipLabel\(insertedTrackingAssistRemark\)/);
   assert.match(insertionCellSource, /message=\{insertedTidReferenceTooltip \? <span className="theme-stabling-remark-tooltip-text">/);
   assert.match(insertionCellSource, /contentStyle=\{insertedTidTooltipStyle\}/);
   assert.match(insertionCellSource, /aria-label=\{`Tracking ID \$\{String\(insertedTrackingId\)\.padStart\(3, "0"\)\}\$\{insertedTidReferenceTooltip/);
@@ -67,9 +128,11 @@ test("submitted Tracking ID completion does not render Time or TA Name controls"
   );
 });
 
-test("INS operational remarks use full request labels above Tracking", () => {
+test("INS operational remarks come from requests instead of the Tracking ID reference", () => {
   assert.match(insertionCellSource, /getMainStablingRemarkLabel\(item\)/);
-  assert.match(insertionCellSource, /insertedTidAssistDisplayRemark \? \[insertedTidAssistDisplayRemark\]/);
+  assert.doesNotMatch(insertionCellSource, /insertedTidAssistDisplayRemark|hasInsertedTidAssistDisplayRemark/);
+  assert.doesNotMatch(insertionSectionSource, /rowAssistDisplayRemark|rowHasValidTid/);
+  assert.match(insertionCellSource, /insertedTrackingRemarkStyle = getInsertionAssistRemarkStyle\(insertedTrackingAssistRemark\)/);
   assert.match(insertionCellSource, /getMainStablingRemarkPillStyle\(item\)/);
   assert.match(insertionCellSource, /theme-stabling-remark block w-full/);
   assert.match(insertionCellSource, /theme-stabling-remark-tooltip-text/);
@@ -77,9 +140,11 @@ test("INS operational remarks use full request labels above Tracking", () => {
   assert.match(insertionSectionSource, /rowTrackingId \? 76/);
 });
 
-test("INS removes the Log Insertion button and keeps Enter as the manual fallback", () => {
-  assert.doesNotMatch(insertionCellSource, />\s*Log Insertion\s*</);
-  assert.doesNotMatch(insertionCellSource, /theme-insertion-insert-button/);
+test("INS shows Log Insertion only for Sweep and 3K1 manual inputs", () => {
+  assert.match(pageSource, /function isManualInsertionActionRemark\(value\) \{[\s\S]*isSweepRemark\(value\) \|\| getEastInsertionKeywordRemarkLabel\(value\) === "3K1"/);
+  assert.match(insertionCellSource, /const canLogManualInsertion = Boolean\([\s\S]*!canAutoInsertTid[\s\S]*isManualInsertionActionRemark\(tidRemarkText\)/);
+  assert.match(insertionCellSource, /\{canLogManualInsertion && \([\s\S]*theme-insertion-insert-button[\s\S]*>\s*Log Insertion\s*</);
   assert.match(insertionCellSource, /event\.key === "Enter" && !canAutoInsertTid && tidRemarkText/);
   assert.match(insertionCellSource, /handleInsertClick\(\)/);
+  assert.match(insertionSectionSource, /rowHasManualInsertionAction[\s\S]*isManualInsertionActionRemark\(tidInputs\[/);
 });

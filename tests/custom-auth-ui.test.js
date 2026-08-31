@@ -76,6 +76,12 @@ test('main application verifies the server session and redirects through the iso
   assert.match(protectedRoute, /['"]\/api\/auth\/presence['"]/);
   assert.match(protectedRoute, /Online now/);
   assert.match(protectedRoute, /presenceInitials\(onlineUser\.name\)/);
+  assert.match(protectedRoute, /const \[onlineUsers, setOnlineUsers\] = useState\(\[\]\)/);
+  assert.match(protectedRoute, /setOnlineUsers\(normalizedPresenceUsers\(data\.users\)\)/);
+  assert.ok((protectedRoute.match(/setOnlineUsers\(\[\]\)/g) || []).length >= 2);
+  assert.doesNotMatch(protectedRoute, /currentUser\?\.name/);
+  assert.doesNotMatch(protectedRoute, /normalizedPresenceUsers\(\[\],\s*user\)/);
+  assert.doesNotMatch(protectedRoute, /normalizedPresenceUsers\(data\.users,\s*user\)/);
   assert.match(protectedRoute, /import ActionTooltip from ['"]@\/components\/ActionTooltip['"]/);
   assert.match(protectedRoute, /<ActionTooltip\s+[\s\S]*?message=\{onlineUser\.name\}/);
   assert.match(protectedRoute, /placement="bottom"/);

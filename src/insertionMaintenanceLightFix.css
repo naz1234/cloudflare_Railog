@@ -1,0 +1,27 @@
+/* Keep the light Insertion wrapper geometry identical to dark mode. */
+html[data-app-theme="light"] .theme-insertion-page {
+  overflow: visible !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page::before,
+html[data-app-theme="light"] .theme-insertion-page::after {
+  content: none !important;
+  display: none !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .maintenance-panel-shell,
+html[data-app-theme="light"] .theme-insertion-page .theme-maintenance-panel {
+  overflow: visible !important;
+}
+
+html[data-app-theme="light"] .theme-insertion-page .maintenance-panel-shell {
+  position: relative;
+  z-index: 3;
+  min-width: 276px;
+}

@@ -14,7 +14,7 @@ const themeStyles = readFileSync(
 test("the movement Add Row action keeps the attention animation hook", () => {
   assert.equal(
     (depotStablingSource.match(/theme-movement-add-row-attention/g) || []).length,
-    2,
+    1,
   );
   assert.match(
     depotStablingSource,
@@ -22,19 +22,9 @@ test("the movement Add Row action keeps the attention animation hook", () => {
   );
 });
 
-test("selected PST and insertion PG controls reuse the Add Row animation", () => {
-  assert.equal(
-    (depotStablingSource.match(/<InsertionPgHeaderControls/g) || []).length,
-    2,
-  );
-  assert.match(
-    depotStablingSource,
-    /theme-insertion-pg-button \$\{selected \? "is-selected theme-movement-add-row-attention" : ""\}/,
-  );
-  assert.match(
-    depotStablingSource,
-    /style=\{selected \? undefined : \{ color: "#7eb8e0", background: "transparent" \}\}/,
-  );
+test("PST no longer renders the retired PG selector", () => {
+  assert.doesNotMatch(depotStablingSource, /function InsertionPgHeaderControls/);
+  assert.doesNotMatch(depotStablingSource, /<InsertionPgHeaderControls/);
   assert.doesNotMatch(themeStyles, /@keyframes theme-pg-selected-attention/);
 });
 

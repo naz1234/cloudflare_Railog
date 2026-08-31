@@ -12,6 +12,14 @@ const maintenancePanelSource = readFileSync(
   new URL("../src/components/MaintenancePanel.jsx", import.meta.url),
   "utf8",
 );
+const lightModeFixStyles = readFileSync(
+  new URL("../src/insertionMaintenanceLightFix.css", import.meta.url),
+  "utf8",
+);
+const mainEntrySource = readFileSync(
+  new URL("../src/main.jsx", import.meta.url),
+  "utf8",
+);
 
 const insertionComponent = depotStablingSource.slice(
   depotStablingSource.indexOf("function InsertionTabContent"),
@@ -59,6 +67,10 @@ test("Insertion receives the production request-group visibility handler", () =>
     /onToggleMaintenanceRequestGroupHidden=\{handleToggleRequestGroupHidden\}/,
   );
   assert.match(
+    transformedSource,
+    /<InsertionTabContent[\s\S]*?maintenanceMap=\{visibleRequestMaintenanceMap\}/,
+  );
+  assert.match(
     insertionComponent,
     /onToggleGroupHidden=\{onToggleMaintenanceRequestGroupHidden\}/,
   );
@@ -87,4 +99,32 @@ test("Insertion keeps Maintenance directly beside the actual depot content width
     /className="grid min-w-0 items-start gap-2"[\s\S]*gridTemplateColumns: "max-content 276px"/,
   );
   assert.doesNotMatch(insertionComponent, /gridTemplateColumns: "minmax\(1230px, 1fr\) 276px"/);
+});
+
+test("light mode matches dark-mode wrapper spacing without an outer surface", () => {
+  const pageRule = lightModeFixStyles.match(
+    /html\[data-app-theme="light"\] \.theme-insertion-page \{([^}]+)\}/,
+  )?.[1];
+
+  assert.match(mainEntrySource, /import '@\/insertionMaintenanceLightFix\.css'/);
+  assert.ok(pageRule, "expected a scoped light-mode Insertion page override");
+  assert.match(pageRule, /overflow: visible !important;/);
+  assert.match(pageRule, /padding: 0 !important;/);
+  assert.match(pageRule, /border: 0 !important;/);
+  assert.match(pageRule, /border-radius: 0 !important;/);
+  assert.match(pageRule, /background: transparent !important;/);
+  assert.match(pageRule, /background-image: none !important;/);
+  assert.match(pageRule, /box-shadow: none !important;/);
+  assert.match(
+    lightModeFixStyles,
+    /html\[data-app-theme="light"\] \.theme-insertion-page::before,[\s\S]*?\.theme-insertion-page::after \{[\s\S]*?content: none !important;[\s\S]*?display: none !important;/,
+  );
+  assert.match(
+    lightModeFixStyles,
+    /html\[data-app-theme="light"\] \.theme-insertion-page \.maintenance-panel-shell \{[\s\S]*?z-index: 3;[\s\S]*?min-width: 276px;/,
+  );
+  assert.doesNotMatch(
+    lightModeFixStyles,
+    /html\[data-app-theme="dark"\] \.theme-insertion-page/,
+  );
 });

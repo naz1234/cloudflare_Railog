@@ -7,6 +7,7 @@ import {
   getInsertionSoundTriggerTime,
   isInsertionSoundDue,
 } from "../lib/insertionSoundTiming";
+import { hasLargeTimetableGap } from "../lib/tidScheduleSections";
 
 const WEEKDAY_EAST_ROWS = [
   { tid: 201, remark: "Late Rem", time: "05:24" },
@@ -1121,7 +1122,8 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               const interactionColor = remark ? remarkStyle.sideColor : accent.accent;
               const isUsed = isInsertionTidAssigned(tid, usedTidKeys, isWeekday);
               const isDuplicate = Boolean(isUsed && duplicateTidKeys.has(String(tid)));
-              const showUpcomingDivider = isWeekday && nextIndex >= 0 && idx === nextIndex;
+              const startsNewTimeBlock = idx > 0 && hasLargeTimetableGap(rows[idx - 1]?.time, time);
+              const showUpcomingDivider = (isWeekday && nextIndex >= 0 && idx === nextIndex) || startsNewTimeBlock;
               const rowBackground = isDuplicate
                 ? "linear-gradient(90deg, rgba(245, 158, 11, 0.20) 0%, rgba(120, 53, 15, 0.12) 100%)"
                 : isUsed
@@ -1147,7 +1149,10 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               return (
                 <React.Fragment key={tid}>
                   {showUpcomingDivider && (
-                    <tr className="theme-insertion-reference-section-row">
+                    <tr
+                      className="theme-insertion-reference-section-row"
+                      data-section-reason={startsNewTimeBlock ? "timetable-gap" : "next-tid"}
+                    >
                       <td
                         className="theme-insertion-reference-section-cell"
                         colSpan={isWeekday ? 3 : 2}
