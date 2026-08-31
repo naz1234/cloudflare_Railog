@@ -5334,6 +5334,16 @@ function getInsertionAssistRemarkStyle(remark = "") {
   return normalized ? INSERTION_ASSIST_REMARK_STYLES[normalized] || null : null;
 }
 
+function getInsertionTidReferenceTooltipLabel(remark = "") {
+  const normalized = normalizeInsertionAssistRemark(remark);
+
+  if (normalized === "Early Rem") return "WD REMOVAL 9AM";
+  if (normalized === "Late Rem") return "WD REMOVAL 7PM";
+  if (normalized === "ED") return "ED REMOVAL 9AM";
+  if (normalized === "ED (7pm)") return "ED REMOVAL 7PM";
+
+  return String(remark || "").trim();
+}
 const INSERTION_CARD_PILL_WIDTH = 68;
 
 const INSERTION_DEFAULT_REMARK_PILL_STYLE = {
@@ -5877,6 +5887,13 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     ? getTidAssistRemark(insertedTrackingId, autoTidDepot)
     : "";
   const insertedTrackingRemarkStyle = getInsertionAssistRemarkStyle(insertedTrackingAssistRemark);
+  const insertedTidReferenceTooltip = getInsertionTidReferenceTooltipLabel(insertedTrackingAssistRemark);
+  const insertedTidTooltipAccent = insertedTrackingRemarkStyle?.border || "#4f8ef7";
+  const insertedTidTooltipAccentRgb = requestColorRgb(insertedTidTooltipAccent);
+  const insertedTidTooltipStyle = {
+    "--stabling-tooltip-accent": insertedTidTooltipAccent,
+    "--stabling-tooltip-accent-rgb": `${insertedTidTooltipAccentRgb.r}, ${insertedTidTooltipAccentRgb.g}, ${insertedTidTooltipAccentRgb.b}`,
+  };
   const insertedPlainRemark = inserted && !inserted.isSweeping && !insertedTrackingId
     ? String(inserted.remark ?? parsedInsertedTid ?? "").trim()
     : "";
@@ -6083,13 +6100,21 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           <div className="flex h-5 w-full items-center justify-center text-center font-black leading-none" style={{ fontSize: 14, color: "#3a5068" }}>{displayVal || "—"}</div>
           {insertedRemarkLabel && !insertedTrackingId && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
           {insertedTrackingId && (
-            <div
-              className={`theme-insertion-tracking-footer is-complete${insertedTrackingReferenceStyle ? " has-reference-style" : ""} mt-auto`}
-              style={insertedTrackingReferenceStyle}
-              aria-label={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}`}
+            <ActionTooltip
+              message={insertedTidReferenceTooltip ? <span className="theme-stabling-remark-tooltip-text">{insertedTidReferenceTooltip}</span> : null}
+              placement="bottom"
+              sideOffset={6}
+              wrapperClassName="mt-auto w-full min-w-0"
+              contentStyle={insertedTidTooltipStyle}
             >
-              <strong>{String(insertedTrackingId).padStart(3, "0")}</strong>
-            </div>
+              <span
+                className={`theme-insertion-tracking-footer is-complete${insertedTrackingReferenceStyle ? " has-reference-style" : ""} mt-auto`}
+                style={insertedTrackingReferenceStyle}
+                aria-label={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}${insertedTidReferenceTooltip ? `, ${insertedTidReferenceTooltip}` : ""}`}
+              >
+                <strong>{String(insertedTrackingId).padStart(3, "0")}</strong>
+              </span>
+            </ActionTooltip>
           )}
           <span className="text-[8px] tracking-wide uppercase" style={{ color: "#1e3a52" }}>elapsed hidden</span>
         </div>
@@ -6523,14 +6548,21 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               </ActionTooltip>
             )}
             {insertedTrackingId && (
-              <div
-                className={`theme-insertion-tracking-footer is-complete${insertedTrackingReferenceStyle ? " has-reference-style" : ""}`}
-                style={insertedTrackingReferenceStyle}
-                title={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}`}
-                aria-label={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}`}
+              <ActionTooltip
+                message={insertedTidReferenceTooltip ? <span className="theme-stabling-remark-tooltip-text">{insertedTidReferenceTooltip}</span> : null}
+                placement="bottom"
+                sideOffset={6}
+                wrapperClassName="w-full min-w-0"
+                contentStyle={insertedTidTooltipStyle}
               >
-                <strong>{String(insertedTrackingId).padStart(3, "0")}</strong>
-              </div>
+                <span
+                  className={`theme-insertion-tracking-footer is-complete${insertedTrackingReferenceStyle ? " has-reference-style" : ""}`}
+                  style={insertedTrackingReferenceStyle}
+                  aria-label={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}${insertedTidReferenceTooltip ? `, ${insertedTidReferenceTooltip}` : ""}`}
+                >
+                  <strong>{String(insertedTrackingId).padStart(3, "0")}</strong>
+                </span>
+              </ActionTooltip>
             )}
             {inserted && !inserted.isSweeping && !insertedTrackingId && (
               isEast3K1InsertionCard ? (
