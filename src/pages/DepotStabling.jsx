@@ -10061,7 +10061,14 @@ function InsertionTabContent({
         </div>
 
         <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
-          <div className="self-start">
+          <div className="self-start space-y-3">
+            <TIDReferenceTable
+              {...tidReferenceCommonProps}
+              controlsOnly={true}
+              showHelp={false}
+              soundAlertsEnabled={false}
+            />
+
             <TIDReferenceTable
               {...tidReferenceCommonProps}
               depotFilter="east"
