@@ -8,10 +8,16 @@ import {
   Copy,
   FileSignature,
   Loader2,
+  RefreshCw,
   TableProperties,
   UserRound,
 } from "lucide-react";
 import { buildOccBriefingClipboardText } from "../lib/occBriefingClipboard";
+import {
+  cleanCompactTimeInput,
+  formatCompactTime,
+  normalizeCompactTimeInput,
+} from "../lib/compactTimeInput";
 
 const PROFILE_KEY = "occBriefingSignerProfile_v1";
 const OCC_SIGNATURE_FONT = "Cochocib Script Latin Pro";
@@ -26,10 +32,7 @@ function storedProfile() {
 }
 
 function currentTime() {
-  const now = new Date();
-  return [now.getHours(), now.getMinutes(), now.getSeconds()]
-    .map((value) => String(value).padStart(2, "0"))
-    .join(":");
+  return formatCompactTime(new Date());
 }
 
 async function copyTextToClipboard(text) {
@@ -86,14 +89,50 @@ export default function OccBriefingFormSigner() {
     setCopied(false);
   };
 
+  const changeTime = (setter, value) => {
+    setter(cleanCompactTimeInput(value));
+    clearFeedback();
+  };
+
+  const finishTime = (setter, value) => {
+    setter(normalizeCompactTimeInput(value));
+    clearFeedback();
+  };
+
+  const handleTimeKeyDown = (event, setter) => {
+    const value = String(event.currentTarget.value || "");
+    const cursorAtEnd = event.currentTarget.selectionStart === value.length
+      && event.currentTarget.selectionEnd === value.length;
+
+    if (event.key === "Backspace" && cursorAtEnd && value.endsWith(":")) {
+      event.preventDefault();
+      setter(value.slice(0, -2));
+      clearFeedback();
+      return;
+    }
+
+    if (event.key === "Enter") {
+      setter(normalizeCompactTimeInput(value));
+      event.currentTarget.blur();
+    }
+  };
+
+  const setCurrentTime = (setter) => {
+    setter(currentTime());
+    clearFeedback();
+  };
+
   const handleCopy = async () => {
     clearFeedback();
+
+    const normalizedTimeIn = normalizeCompactTimeInput(timeIn);
+    const normalizedTimeOut = normalizeCompactTimeInput(timeOut);
 
     const missingFields = [
       ["employee ID", employeeId],
       ["employee name", employeeName],
       ["position", position],
-      ["time in", timeIn],
+      ["time in", normalizedTimeIn],
     ]
       .filter(([, value]) => !String(value || "").trim())
       .map(([label]) => label);
@@ -103,14 +142,17 @@ export default function OccBriefingFormSigner() {
       return;
     }
 
+    setTimeIn(normalizedTimeIn);
+    setTimeOut(normalizedTimeOut);
+
     setIsCopying(true);
     try {
       const copyText = buildOccBriefingClipboardText({
         employeeId,
         employeeName,
         position,
-        timeIn,
-        timeOut,
+        timeIn: normalizedTimeIn,
+        timeOut: normalizedTimeOut,
         signature: signatureText,
       });
       const didCopy = await copyTextToClipboard(copyText);
@@ -137,6 +179,7 @@ export default function OccBriefingFormSigner() {
           --occ-text: #eff8ff;
           --occ-muted: #bdd5e8;
           --occ-accent: #7dd3fc;
+          --occ-now: #6ee7b7;
           --occ-soft: rgba(56, 189, 248, 0.12);
           background: linear-gradient(135deg, var(--occ-bg-start), var(--occ-bg-end));
           border-color: var(--occ-border);
@@ -152,6 +195,7 @@ export default function OccBriefingFormSigner() {
           --occ-text: #142a3e;
           --occ-muted: #4f6980;
           --occ-accent: #0369a1;
+          --occ-now: #047857;
           --occ-soft: rgba(14, 165, 233, 0.11);
           box-shadow: 0 8px 20px rgba(59, 130, 246, 0.11), inset 0 1px 0 rgba(255,255,255,0.82);
         }
@@ -167,6 +211,8 @@ export default function OccBriefingFormSigner() {
         .occ-briefing-signer .occ-input:focus { border-color: var(--occ-accent); box-shadow: 0 0 0 2px var(--occ-soft); }
         .occ-briefing-signer .occ-signature-preview { font-family: "${OCC_SIGNATURE_FONT}", "Brush Script MT", cursive; }
         .occ-briefing-signer .occ-copy-button { color: #ffffff; -webkit-text-fill-color: #ffffff; }
+        .occ-briefing-signer .occ-time-now { color: var(--occ-now); -webkit-text-fill-color: var(--occ-now); }
+        .occ-briefing-signer .occ-time-now:hover { color: #ffffff; -webkit-text-fill-color: #ffffff; }
       `}</style>
 
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -211,12 +257,58 @@ export default function OccBriefingFormSigner() {
       <div className="mt-2.5 grid gap-2.5 lg:grid-cols-[0.8fr_0.8fr_1.25fr]">
         <div className="occ-panel rounded-lg border p-2.5">
           <label htmlFor="occ-signer-time-in" className="occ-label flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.15em]"><Clock3 className="occ-accent h-3.5 w-3.5" /> Time in</label>
-          <input id="occ-signer-time-in" type="time" step="1" value={timeIn} onChange={(event) => { setTimeIn(event.target.value); clearFeedback(); }} className="occ-input mt-1.5 h-10 w-full rounded-lg border px-3 text-[11px] font-bold outline-none" />
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <input
+              id="occ-signer-time-in"
+              type="text"
+              inputMode="numeric"
+              maxLength={5}
+              value={timeIn}
+              onChange={(event) => changeTime(setTimeIn, event.target.value)}
+              onBlur={(event) => finishTime(setTimeIn, event.target.value)}
+              onKeyDown={(event) => handleTimeKeyDown(event, setTimeIn)}
+              placeholder="00:00"
+              aria-label="OCC time in"
+              className="occ-input h-10 min-w-0 flex-1 rounded-lg border px-2 text-center font-mono text-[12px] font-bold outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => setCurrentTime(setTimeIn)}
+              className="occ-time-now theme-movement-time-refresh inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-emerald-400/70 bg-emerald-500/20 shadow-[0_0_8px_rgba(52,211,153,0.22)] transition hover:border-emerald-300 hover:bg-emerald-500/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+              aria-label="Set OCC time in to the current time"
+              title="Use current time"
+            >
+              <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
 
         <div className="occ-panel rounded-lg border p-2.5">
           <label htmlFor="occ-signer-time-out" className="occ-label flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.15em]"><Clock3 className="occ-accent h-3.5 w-3.5" /> Time out</label>
-          <input id="occ-signer-time-out" type="time" step="1" value={timeOut} onChange={(event) => { setTimeOut(event.target.value); clearFeedback(); }} className="occ-input mt-1.5 h-10 w-full rounded-lg border px-3 text-[11px] font-bold outline-none" />
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <input
+              id="occ-signer-time-out"
+              type="text"
+              inputMode="numeric"
+              maxLength={5}
+              value={timeOut}
+              onChange={(event) => changeTime(setTimeOut, event.target.value)}
+              onBlur={(event) => finishTime(setTimeOut, event.target.value)}
+              onKeyDown={(event) => handleTimeKeyDown(event, setTimeOut)}
+              placeholder="00:00"
+              aria-label="OCC time out"
+              className="occ-input h-10 min-w-0 flex-1 rounded-lg border px-2 text-center font-mono text-[12px] font-bold outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => setCurrentTime(setTimeOut)}
+              className="occ-time-now theme-movement-time-refresh inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-emerald-400/70 bg-emerald-500/20 shadow-[0_0_8px_rgba(52,211,153,0.22)] transition hover:border-emerald-300 hover:bg-emerald-500/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+              aria-label="Set OCC time out to the current time"
+              title="Use current time"
+            >
+              <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
 
         <div className="occ-panel rounded-lg border p-2.5">
@@ -226,7 +318,7 @@ export default function OccBriefingFormSigner() {
       </div>
 
       <p className="occ-label mt-2 text-[10px] font-semibold">
-        Excel mapping: C ID · D:F Name · G Position · H Time in · I Time out · J:L Signature. A blank signature uses the employee name.
+        Time entry: type 1459 to get 14:59, or use the green current-time button. Excel mapping: C ID · D:F Name · G Position · H Time in · I Time out · J:L Signature. A blank signature uses the employee name.
       </p>
 
       {error && (

@@ -13,6 +13,12 @@ import {
   OCC_BRIEFING_COPY_COLUMN_COUNT,
   OCC_BRIEFING_COPY_RANGE,
 } from "../src/lib/occBriefingClipboard.js";
+import {
+  cleanCompactTimeInput,
+  formatCompactTime,
+  isCompleteCompactTimeInput,
+  normalizeCompactTimeInput,
+} from "../src/lib/compactTimeInput.js";
 
 const MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 const OFFICE_RELS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
@@ -88,6 +94,19 @@ function signOptions(sourceFile, overrides = {}) {
     ...overrides,
   };
 }
+
+test("OCC time fields reuse the compact movement-log time format", () => {
+  assert.equal(cleanCompactTimeInput("1"), "1");
+  assert.equal(cleanCompactTimeInput("14"), "14:");
+  assert.equal(cleanCompactTimeInput("1459"), "14:59");
+  assert.equal(cleanCompactTimeInput("14a5b9"), "14:59");
+  assert.equal(normalizeCompactTimeInput("8"), "08:00");
+  assert.equal(normalizeCompactTimeInput("083"), "08:03");
+  assert.equal(normalizeCompactTimeInput("2468"), "23:59");
+  assert.equal(isCompleteCompactTimeInput("23:59"), true);
+  assert.equal(isCompleteCompactTimeInput("24:00"), false);
+  assert.equal(formatCompactTime(new Date(2026, 0, 1, 14, 5)), "14:05");
+});
 
 test("OCC clipboard output creates one paste-ready row matching Excel columns C:L", () => {
   const output = buildOccBriefingClipboardText({
@@ -225,6 +244,13 @@ test("OCC row copy appears below the Next Day Excel Generator without requiring 
   assert.match(panel, /Copy C:L Excel Row/);
   assert.match(panel, /C ID · D:F Name · G Position · H Time in · I Time out · J:L Signature/);
   assert.match(panel, /buildOccBriefingClipboardText/);
+  assert.match(panel, /cleanCompactTimeInput/);
+  assert.match(panel, /normalizeCompactTimeInput/);
+  assert.match(panel, /type="text"\s+inputMode="numeric"\s+maxLength=\{5\}/);
+  assert.equal((panel.match(/title="Use current time"/g) || []).length, 2);
+  assert.equal((panel.match(/theme-movement-time-refresh/g) || []).length, 2);
+  assert.match(panel, /type 1459 to get 14:59/);
+  assert.doesNotMatch(panel, /type="time"/);
   assert.doesNotMatch(panel, /type="file"/);
   assert.doesNotMatch(panel, /\.xlsx/);
   assert.doesNotMatch(panel, /Signature image/);
