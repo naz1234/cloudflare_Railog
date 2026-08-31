@@ -8,6 +8,7 @@ import '@/referenceControlFontSize.css'
 import '@/insertionTidTimeVisibility.css'
 import '@/officialExcelGeneratorMotion.css'
 import '@/insertionLightCardContrast.css'
+import '@/insertionTidLightContrast.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />

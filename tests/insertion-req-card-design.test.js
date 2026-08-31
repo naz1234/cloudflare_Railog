@@ -10,6 +10,10 @@ const stylesheetSource = readFileSync(
   new URL("../src/index.css", import.meta.url),
   "utf8",
 );
+const tidLightContrastSource = readFileSync(
+  new URL("../src/insertionTidLightContrast.css", import.meta.url),
+  "utf8",
+);
 const referenceTableSource = readFileSync(
   new URL("../src/components/TIDReferenceTable.jsx", import.meta.url),
   "utf8",
@@ -84,6 +88,19 @@ test("matched Tracking IDs inherit their TID Reference Table service colour", ()
     stylesheetSource,
     /html\[data-app-theme="light"\] \.theme-insertion-page \.theme-insertion-tracking-footer\.is-complete\.has-reference-style > strong \{[\s\S]*color: var\(--insertion-tracking-reference-light-color, var\(--insertion-tracking-reference-color\)\) !important/,
   );
+  assert.match(
+    tidLightContrastSource,
+    /var\(--insertion-tracking-reference-border\) 62%/,
+  );
+  assert.match(
+    tidLightContrastSource,
+    /var\(--insertion-tracking-reference-border\) 88%/,
+  );
+  assert.match(
+    tidLightContrastSource,
+    /--insertion-tracking-reference-light-color,[\s\S]*?80%,[\s\S]*?#020617 20%/,
+  );
+  assert.doesNotMatch(tidLightContrastSource, /theme-insertion-card(?:\.|\s|\{)/);
 });
 
 test("submitted numeric Tracking IDs persist even without an active timetable match", () => {
