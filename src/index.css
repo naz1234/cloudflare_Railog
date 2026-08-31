@@ -878,6 +878,39 @@ html[data-app-theme="dark"] .slp-stabling-mode-pill[data-mode="sleep"] {
   box-shadow: 0 0 10px rgba(232, 121, 249, 0.52);
 }
 
+/* Wake-up uses its own bright amber state, separate from Sleep and Ready. */
+.slp-stabling-train-card[data-sleep-mode="wake"]:not([aria-pressed="true"]) {
+  border-color: #f59e0b;
+  color: #78350f;
+  background: linear-gradient(145deg, #fffbeb 0%, #fef3c7 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(245, 158, 11, 0.18),
+    0 0 14px rgba(245, 158, 11, 0.28);
+}
+
+.slp-stabling-mode-pill[data-mode="wake"] {
+  border: 1px solid #d97706;
+  color: #451a03;
+  background: #fbbf24;
+  box-shadow: 0 0 9px rgba(245, 158, 11, 0.44);
+}
+
+html[data-app-theme="dark"] .slp-stabling-train-card[data-sleep-mode="wake"]:not([aria-pressed="true"]) {
+  border-color: #fbbf24;
+  color: #ffffff;
+  background: linear-gradient(145deg, rgba(180, 83, 9, 0.48) 0%, rgba(120, 53, 15, 0.64) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(253, 230, 138, 0.22),
+    0 0 16px rgba(245, 158, 11, 0.40);
+}
+
+html[data-app-theme="dark"] .slp-stabling-mode-pill[data-mode="wake"] {
+  border-color: #fde68a;
+  color: #451a03;
+  background: #fde68a;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.54);
+}
+
 
 /* Keep the searched train obvious in light mode without replacing its request colour. */
 html[data-app-theme="light"] .theme-stabling-train-card.is-search-match {

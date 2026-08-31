@@ -116,3 +116,11 @@ test("trains already in Sleep mode use a bright distinct card state", () => {
   assert.match(cssSource, /\.slp-stabling-mode-pill\[data-mode="sleep"\] \{[\s\S]*?background: #f0abfc;[\s\S]*?box-shadow/);
   assert.match(cssSource, /html\[data-app-theme="dark"\] \.slp-stabling-train-card\[data-sleep-mode="sleep"\][\s\S]*?border-color: #e879f9/);
 });
+
+test("trains already in Wake-up mode use a bright distinct card state", () => {
+  const cssSource = readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
+
+  assert.match(cssSource, /\.slp-stabling-train-card\[data-sleep-mode="wake"\]:not\(\[aria-pressed="true"\]\) \{[\s\S]*?border-color: #f59e0b;[\s\S]*?background: linear-gradient/);
+  assert.match(cssSource, /\.slp-stabling-mode-pill\[data-mode="wake"\] \{[\s\S]*?background: #fbbf24;[\s\S]*?box-shadow/);
+  assert.match(cssSource, /html\[data-app-theme="dark"\] \.slp-stabling-train-card\[data-sleep-mode="wake"\][\s\S]*?border-color: #fbbf24/);
+});
