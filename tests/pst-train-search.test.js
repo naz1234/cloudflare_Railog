@@ -139,7 +139,7 @@ const renderSource = ts.transpileModule([
   compilerOptions: { jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 const EmptyControl = () => null;
-const Section = new Function("React", "Search", "X", "InsertionPgHeaderControls", "RemovalSummaryTooltip", renderSource)(
+const Section = new Function("React", "Search", "X", "InsertionEditableHeaderControls", "RemovalSummaryTooltip", renderSource)(
   React, EmptyControl, EmptyControl, EmptyControl, EmptyControl,
 );
 
