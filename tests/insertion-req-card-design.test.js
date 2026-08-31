@@ -119,9 +119,11 @@ test("submitted Tracking ID completion does not render Time or TA Name controls"
   );
 });
 
-test("INS operational remarks use full request labels above Tracking", () => {
+test("INS operational remarks come from requests instead of the Tracking ID reference", () => {
   assert.match(insertionCellSource, /getMainStablingRemarkLabel\(item\)/);
-  assert.match(insertionCellSource, /insertedTidAssistDisplayRemark \? \[insertedTidAssistDisplayRemark\]/);
+  assert.doesNotMatch(insertionCellSource, /insertedTidAssistDisplayRemark|hasInsertedTidAssistDisplayRemark/);
+  assert.doesNotMatch(insertionSectionSource, /rowAssistDisplayRemark|rowHasValidTid/);
+  assert.match(insertionCellSource, /insertedTrackingRemarkStyle = getInsertionAssistRemarkStyle\(insertedTrackingAssistRemark\)/);
   assert.match(insertionCellSource, /getMainStablingRemarkPillStyle\(item\)/);
   assert.match(insertionCellSource, /theme-stabling-remark block w-full/);
   assert.match(insertionCellSource, /theme-stabling-remark-tooltip-text/);
