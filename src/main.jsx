@@ -9,6 +9,7 @@ import '@/insertionTidTimeVisibility.css'
 import '@/officialExcelGeneratorMotion.css'
 import '@/insertionLightCardContrast.css'
 import '@/insertionTidLightContrast.css'
+import '@/insertionLightTidFooter.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />

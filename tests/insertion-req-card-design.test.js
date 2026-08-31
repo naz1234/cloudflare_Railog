@@ -54,7 +54,7 @@ test("Tracking ID uses a centered label before entry and centered value after en
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer > strong \{[\s\S]*font-size: 11px/);
 });
 
-test("matched Tracking IDs inherit their TID Reference Table service colour", () => {
+test("matched Tracking IDs expose their TID Reference Table service colour", () => {
   assert.match(
     insertionCellSource,
     /getTidAssistRemark\(insertedTrackingId, autoTidDepot\)/,
@@ -78,15 +78,15 @@ test("matched Tracking IDs inherit their TID Reference Table service colour", ()
   assert.equal(
     (insertionCellSource.match(/has-reference-style/g) || []).length,
     2,
-    "normal and elapsed completed TID boxes should both receive the reference colour",
+    "normal and elapsed completed TID boxes should both expose the reference colour",
   );
   assert.match(
     stylesheetSource,
-    /html\[data-app-theme="light"\] \.theme-insertion-page \.theme-insertion-tracking-footer\.is-complete\.has-reference-style \{[\s\S]*background: var\(--insertion-tracking-reference-bg\) !important/,
+    /\.theme-insertion-page \.theme-insertion-tracking-footer\.is-complete\.has-reference-style,[\s\S]*background: var\(--insertion-tracking-reference-bg\) !important/,
   );
   assert.match(
     stylesheetSource,
-    /html\[data-app-theme="light"\] \.theme-insertion-page \.theme-insertion-tracking-footer\.is-complete\.has-reference-style > strong \{[\s\S]*color: var\(--insertion-tracking-reference-light-color, var\(--insertion-tracking-reference-color\)\) !important/,
+    /\.theme-insertion-page \.theme-insertion-tracking-footer\.is-complete\.has-reference-style > strong \{[\s\S]*color: var\(--insertion-tracking-reference-color\) !important/,
   );
   assert.match(
     tidLightContrastSource,
