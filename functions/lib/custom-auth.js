@@ -1,7 +1,7 @@
 export const AUTH_SESSION_COOKIE = '__Host-l3dc_session';
 export const AUTH_CHALLENGE_TTL_SECONDS = 5 * 60;
 export const AUTH_RESEND_AFTER_SECONDS = 60;
-export const AUTH_SESSION_TTL_SECONDS = 8 * 60 * 60;
+export const AUTH_SESSION_TTL_SECONDS = 10 * 60 * 60;
 export const AUTH_MAX_PIN_ATTEMPTS = 5;
 export const AUTH_PRESENCE_WINDOW_SECONDS = 2 * 60;
 export const AUTH_ALLOWED_EMAIL_DOMAIN = 'flow-metro.com';

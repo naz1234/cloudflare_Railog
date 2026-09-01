@@ -44,6 +44,10 @@ const allowedEmails = [
   'Member.Two@flow-metro.com',
 ];
 
+test('custom login sessions last ten hours', () => {
+  assert.equal(AUTH_SESSION_TTL_SECONDS, 10 * 60 * 60);
+});
+
 function makeEnv(overrides = {}) {
   return {
     AUTH_EMAIL_SERVICE: {
@@ -789,6 +793,7 @@ test('verify-code enforces attempts, one-time use, and a hashed session cookie',
   assert.match(cookie, /Secure/);
   assert.match(cookie, /SameSite=Strict/);
   assert.match(cookie, /Path=\//);
+  assert.match(cookie, /Max-Age=36000/);
 
   const sessionToken = decodeURIComponent(
     cookie.match(new RegExp(`${AUTH_SESSION_COOKIE}=([^;]+)`))[1],
@@ -799,6 +804,10 @@ test('verify-code enforces attempts, one-time use, and a hashed session cookie',
   });
   assert.ok(store.sessions.has(tokenHash));
   const storedSession = store.sessions.get(tokenHash);
+  assert.equal(
+    storedSession.expires_at,
+    Math.floor((nowMs + 1000) / 1000) + AUTH_SESSION_TTL_SECONDS,
+  );
   assert.equal(Object.hasOwn(storedSession, 'email'), false);
   assert.equal(
     storedSession.email_hash,
