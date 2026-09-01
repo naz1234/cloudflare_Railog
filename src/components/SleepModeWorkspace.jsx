@@ -18,6 +18,7 @@ import { buildSleepModeExcelFileName, createSleepModeExcelBytes } from "@/lib/sl
 import {
   createSleepModeLogEntry,
   formatSleepTimeInput,
+  getSleepModeDepot,
   getSleepModeRecordUpdatedMs,
   normalizeSleepLogTime,
   normalizeSleepModeLogs,
@@ -212,6 +213,71 @@ function DepotSleepPanel({ depot, data, selectedKeys, latestModeByTrain, onToggl
   );
 }
 
+function SleepLogOutputPanel({
+  depot,
+  logs,
+  loaded,
+  saving,
+  confirmClear,
+  onDownload,
+  onCopy,
+  onClear,
+  onDelete,
+}) {
+  const layout = DEPOT_LAYOUTS[depot];
+  const isWest = depot === "west";
+  const badgeClass = isWest
+    ? "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-400/35 dark:bg-violet-400/10 dark:text-violet-200"
+    : "border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-400/35 dark:bg-cyan-400/10 dark:text-cyan-200";
+
+  return (
+    <section
+      data-sleep-log-depot={depot}
+      className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-[#315574] dark:bg-[#061827]"
+    >
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-[#21435e] dark:bg-[#09243a]">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className={`rounded-lg border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] ${badgeClass}`}>
+              {layout.shortLabel}
+            </span>
+            <h2 className="text-[14px] font-semibold text-slate-900 dark:text-white">{layout.label} Log Output</h2>
+          </div>
+          <p className="mt-1 text-[9px] text-slate-500 dark:text-[#7fa5bd]">
+            {logs.length} Sleep / Wake-up log entr{logs.length === 1 ? "y" : "ies"}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => onDownload(depot)} disabled={!logs.length} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 text-[9px] font-semibold text-emerald-700 disabled:opacity-40 dark:border-emerald-400/35 dark:bg-emerald-400/10 dark:text-emerald-200"><Download className="h-3.5 w-3.5" /> Download Excel</button>
+          <button type="button" onClick={() => onCopy(depot)} disabled={!logs.length} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-sky-300 bg-sky-50 px-3 text-[9px] font-semibold text-sky-700 disabled:opacity-40 dark:border-sky-400/35 dark:bg-sky-400/10 dark:text-sky-200"><Copy className="h-3.5 w-3.5" /> Copy All</button>
+          <button type="button" onClick={() => onClear(depot)} disabled={!logs.length || saving} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-3 text-[9px] font-semibold text-rose-700 disabled:opacity-40 dark:border-rose-400/35 dark:bg-rose-400/10 dark:text-rose-200"><Trash2 className="h-3.5 w-3.5" /> {confirmClear ? `Confirm ${layout.shortLabel}` : "Clear All"}</button>
+        </div>
+      </header>
+      <div className="min-h-[150px] p-3">
+        {!loaded ? (
+          <div className="flex min-h-[130px] items-center justify-center gap-2 text-[11px] text-slate-500 dark:text-[#8fb7d1]"><Loader2 className="h-4 w-4 animate-spin" /> Loading {layout.label} log...</div>
+        ) : logs.length ? (
+          <ul className="space-y-2">
+            {logs.map((entry) => (
+              <li key={entry.id} className={`flex items-start gap-3 rounded-xl border px-3 py-3 ${entry.mode === "sleep" ? "border-indigo-200 bg-indigo-50 dark:border-indigo-400/25 dark:bg-indigo-400/[0.07]" : "border-amber-200 bg-amber-50 dark:border-amber-400/25 dark:bg-amber-400/[0.07]"}`}>
+                {entry.mode === "sleep" ? <MoonStar className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-300" /> : <Sun className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />}
+                <p className="min-w-0 flex-1 font-mono text-[12px] leading-5 text-slate-800 dark:text-slate-100">{entry.text}</p>
+                <button type="button" onClick={() => onDelete(entry.id)} disabled={saving} aria-label={`Delete ${entry.text}`} title="Delete log entry" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-rose-200 text-rose-500 transition hover:bg-rose-100 disabled:opacity-40 dark:border-rose-400/30 dark:text-rose-300 dark:hover:bg-rose-500/15"><Trash2 className="h-3.5 w-3.5" /></button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="flex min-h-[130px] flex-col items-center justify-center text-center">
+            <BedDouble className="h-8 w-8 text-slate-300 dark:text-[#456980]" />
+            <p className="mt-3 text-[13px] font-medium text-slate-700 dark:text-slate-200">No {layout.label} entries yet.</p>
+            <p className="mt-1 text-[10px] text-slate-500 dark:text-[#7f9fb5]">Select trains from {layout.shortLabel} stabling and add the required mode.</p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
   const [logs, setLogs] = useState(() => loadSleepModeCache());
   const [selectedKeyList, setSelectedKeyList] = useState([]);
@@ -220,7 +286,7 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Loading live Sleep log...");
-  const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmClearDepot, setConfirmClearDepot] = useState("");
 
   const recordIdRef = useRef(null);
   const appliedUpdatedMsRef = useRef(0);
@@ -349,6 +415,14 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
     () => allCells.filter((cell) => cell.trainId && selectedKeys.has(cell.key)),
     [allCells, selectedKeys],
   );
+  const logsByDepot = useMemo(() => {
+    const groupedLogs = { west: [], east: [] };
+    logs.forEach((entry) => {
+      const depot = getSleepModeDepot(entry.location);
+      if (groupedLogs[depot]) groupedLogs[depot].push(entry);
+    });
+    return groupedLogs;
+  }, [logs]);
 
   const toggleSelection = useCallback((key) => {
     setSelectedKeyList((current) => current.includes(key)
@@ -387,28 +461,31 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
     setLogRemark("");
   }, [logRemark, logTime, logs, persistLogs, selectedCells]);
 
-  const copyLogs = useCallback(async () => {
-    if (!logs.length) return;
+  const copyLogs = useCallback(async (depot) => {
+    const depotLogs = logsByDepot[depot] || [];
+    if (!depotLogs.length) return;
     try {
-      await navigator.clipboard.writeText(logs.map((entry) => entry.text).join("\n"));
+      await navigator.clipboard.writeText(depotLogs.map((entry) => entry.text).join("\n"));
     } catch (error) {
       console.error("Sleep Mode log copy failed:", error);
     }
-  }, [logs]);
+  }, [logsByDepot]);
 
-  const downloadExcel = useCallback(() => {
-    if (!logs.length) return;
-    const bytes = createSleepModeExcelBytes(logs);
+  const downloadExcel = useCallback((depot) => {
+    const depotLogs = logsByDepot[depot] || [];
+    const layout = DEPOT_LAYOUTS[depot];
+    if (!depotLogs.length || !layout) return;
+    const bytes = createSleepModeExcelBytes(depotLogs);
     const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = buildSleepModeExcelFileName(logs);
+    anchor.download = buildSleepModeExcelFileName(depotLogs, undefined, layout.shortLabel);
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 500);
-  }, [logs]);
+  }, [logsByDepot]);
 
   const refreshNow = useCallback(async () => {
     if (pendingSavesRef.current > 0) return;
@@ -422,15 +499,20 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
     }
   }, [fetchLatest]);
 
-  const handleClearLogs = useCallback(() => {
-    if (!confirmClear) {
-      setConfirmClear(true);
-      window.setTimeout(() => setConfirmClear(false), 3_000);
+  const handleClearLogs = useCallback((depot) => {
+    if (!DEPOT_LAYOUTS[depot]) return;
+    if (confirmClearDepot !== depot) {
+      setConfirmClearDepot(depot);
+      window.setTimeout(() => setConfirmClearDepot((current) => current === depot ? "" : current), 3_000);
       return;
     }
-    persistLogs([]);
-    setConfirmClear(false);
-  }, [confirmClear, persistLogs]);
+    persistLogs(logs.filter((entry) => getSleepModeDepot(entry.location) !== depot));
+    setConfirmClearDepot("");
+  }, [confirmClearDepot, logs, persistLogs]);
+
+  const deleteLog = useCallback((entryId) => {
+    persistLogs(logs.filter((entry) => entry.id !== entryId));
+  }, [logs, persistLogs]);
 
   const validLogTime = Boolean(normalizeSleepLogTime(logTime));
 
@@ -507,40 +589,22 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
         </button>
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-[#315574] dark:bg-[#061827]">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-[#21435e] dark:bg-[#09243a]">
-          <div>
-            <h2 className="text-[14px] font-semibold text-slate-900 dark:text-white">Sleep / Wake-up Log Output</h2>
-            <p className="mt-1 text-[9px] text-slate-500 dark:text-[#7fa5bd]">{logs.length} log entr{logs.length === 1 ? "y" : "ies"}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button type="button" onClick={downloadExcel} disabled={!logs.length} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 text-[9px] font-semibold text-emerald-700 disabled:opacity-40 dark:border-emerald-400/35 dark:bg-emerald-400/10 dark:text-emerald-200"><Download className="h-3.5 w-3.5" /> Download Excel</button>
-            <button type="button" onClick={copyLogs} disabled={!logs.length} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-sky-300 bg-sky-50 px-3 text-[9px] font-semibold text-sky-700 disabled:opacity-40 dark:border-sky-400/35 dark:bg-sky-400/10 dark:text-sky-200"><Copy className="h-3.5 w-3.5" /> Copy All</button>
-            <button type="button" onClick={handleClearLogs} disabled={!logs.length || saving} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-3 text-[9px] font-semibold text-rose-700 disabled:opacity-40 dark:border-rose-400/35 dark:bg-rose-400/10 dark:text-rose-200"><Trash2 className="h-3.5 w-3.5" /> {confirmClear ? "Confirm Clear" : "Clear All"}</button>
-          </div>
-        </header>
-        <div className="min-h-[150px] p-3">
-          {!loaded ? (
-            <div className="flex min-h-[130px] items-center justify-center gap-2 text-[11px] text-slate-500 dark:text-[#8fb7d1]"><Loader2 className="h-4 w-4 animate-spin" /> Loading Sleep log...</div>
-          ) : logs.length ? (
-            <ul className="space-y-2">
-              {logs.map((entry) => (
-                <li key={entry.id} className={`flex items-start gap-3 rounded-xl border px-3 py-3 ${entry.mode === "sleep" ? "border-indigo-200 bg-indigo-50 dark:border-indigo-400/25 dark:bg-indigo-400/[0.07]" : "border-amber-200 bg-amber-50 dark:border-amber-400/25 dark:bg-amber-400/[0.07]"}`}>
-                  {entry.mode === "sleep" ? <MoonStar className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-300" /> : <Sun className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />}
-                  <p className="min-w-0 flex-1 font-mono text-[12px] leading-5 text-slate-800 dark:text-slate-100">{entry.text}</p>
-                  <button type="button" onClick={() => persistLogs(logs.filter((item) => item.id !== entry.id))} disabled={saving} aria-label={`Delete ${entry.text}`} title="Delete log entry" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-rose-200 text-rose-500 transition hover:bg-rose-100 disabled:opacity-40 dark:border-rose-400/30 dark:text-rose-300 dark:hover:bg-rose-500/15"><Trash2 className="h-3.5 w-3.5" /></button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="flex min-h-[130px] flex-col items-center justify-center text-center">
-              <BedDouble className="h-8 w-8 text-slate-300 dark:text-[#456980]" />
-              <p className="mt-3 text-[13px] font-medium text-slate-700 dark:text-slate-200">No Sleep or Wake-up entries yet.</p>
-              <p className="mt-1 text-[10px] text-slate-500 dark:text-[#7f9fb5]">Select trains above and add the required mode.</p>
-            </div>
-          )}
-        </div>
-      </section>
+      <div className="grid items-start gap-4 xl:grid-cols-2">
+        {(["west", "east"]).map((depot) => (
+          <SleepLogOutputPanel
+            key={depot}
+            depot={depot}
+            logs={logsByDepot[depot]}
+            loaded={loaded}
+            saving={saving}
+            confirmClear={confirmClearDepot === depot}
+            onDownload={downloadExcel}
+            onCopy={copyLogs}
+            onClear={handleClearLogs}
+            onDelete={deleteLog}
+          />
+        ))}
+      </div>
     </section>
   );
 }

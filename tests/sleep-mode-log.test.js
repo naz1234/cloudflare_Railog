@@ -6,6 +6,7 @@ import {
   createSleepModeLogEntry,
   formatSleepTimeInput,
   formatSleepTrainList,
+  getSleepModeDepot,
   normalizeSleepModeLogs,
   normalizeSleepTrainId,
 } from "../src/lib/sleepModeLog.js";
@@ -71,6 +72,14 @@ test("Sleep logs normalize persisted entries and reject incomplete rows", () => 
   assert.equal(normalized[0].text, "01:05 hrs – T02 successfully in wake–up mode at ED–ST02.");
 });
 
+test("Sleep logs identify West and East depot locations for separate outputs", () => {
+  assert.equal(getSleepModeDepot("WD-ST15"), "west");
+  assert.equal(getSleepModeDepot("wd–st14"), "west");
+  assert.equal(getSleepModeDepot("ED-ST02"), "east");
+  assert.equal(getSleepModeDepot("ed–st03"), "east");
+  assert.equal(getSleepModeDepot("Unknown"), "");
+});
+
 test("SLP is wired as a public route with shared cloud storage", () => {
   const appSource = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
   const depotSource = readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
@@ -87,6 +96,13 @@ test("SLP is wired as a public route with shared cloud storage", () => {
   assert.match(componentSource, /Log Wake-up/);
   assert.match(componentSource, /Remark optional/);
   assert.match(componentSource, /Download Excel/);
+  assert.match(componentSource, /data-sleep-log-depot=\{depot\}/);
+  assert.match(componentSource, /\{layout\.label\} Log Output/);
+  assert.match(componentSource, /const logsByDepot = useMemo/);
+  assert.match(componentSource, /getSleepModeDepot\(entry\.location\)/);
+  assert.match(componentSource, /\(\["west", "east"\]\)\.map/);
+  assert.match(componentSource, /buildSleepModeExcelFileName\(depotLogs, undefined, layout\.shortLabel\)/);
+  assert.match(componentSource, /persistLogs\(logs\.filter\(\(entry\) => getSleepModeDepot\(entry\.location\) !== depot\)\)/);
   assert.match(clientSource, /'SleepModeLog'/);
   assert.match(entityFunctionSource, /'SleepModeLog'/);
 });
