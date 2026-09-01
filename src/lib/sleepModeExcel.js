@@ -297,12 +297,13 @@ export function createSleepModeExcelBytes(logs = []) {
   }, { level: 6 });
 }
 
-export function buildSleepModeExcelFileName(logs = [], now = new Date()) {
+export function buildSleepModeExcelFileName(logs = [], now = new Date(), depotLabel = "") {
   const newestLogDate = normalizeSleepModeLogs(logs)
     .map((entry) => parseLogDate(entry.createdAt))
     .filter(Boolean)
     .sort((left, right) => right.getTime() - left.getTime())[0];
   const date = newestLogDate || parseLogDate(now) || new Date();
   const datePart = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-  return `SLP-Sleep-Mode-${datePart}.xlsx`;
+  const cleanDepotLabel = String(depotLabel || "").trim().toUpperCase().replace(/[^A-Z0-9]+/g, "-");
+  return `SLP-${cleanDepotLabel ? `${cleanDepotLabel}-` : ""}Sleep-Mode-${datePart}.xlsx`;
 }

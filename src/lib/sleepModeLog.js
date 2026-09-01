@@ -17,6 +17,13 @@ export function formatSleepLocation(value = "") {
   return String(value || "").trim().toUpperCase().replace(/-/g, "\u2013");
 }
 
+export function getSleepModeDepot(value = "") {
+  const location = String(value || "").trim().toUpperCase().replace(/\u2013/g, "-");
+  if (location.startsWith("WD-")) return "west";
+  if (location.startsWith("ED-")) return "east";
+  return "";
+}
+
 export function normalizeSleepMode(value = "sleep") {
   const clean = String(value || "").trim().toLowerCase();
   return VALID_SLEEP_MODES.has(clean) ? clean : "sleep";

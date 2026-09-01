@@ -57,4 +57,6 @@ test("SLP Excel workbook follows the supplied three-shift template", () => {
 
 test("SLP Excel filename uses the latest saved log date", () => {
   assert.equal(buildSleepModeExcelFileName(repeatedLogs), "SLP-Sleep-Mode-2026-08-17.xlsx");
+  assert.equal(buildSleepModeExcelFileName(repeatedLogs, undefined, "WD"), "SLP-WD-Sleep-Mode-2026-08-17.xlsx");
+  assert.equal(buildSleepModeExcelFileName(repeatedLogs, undefined, "East Depot"), "SLP-EAST-DEPOT-Sleep-Mode-2026-08-17.xlsx");
 });
