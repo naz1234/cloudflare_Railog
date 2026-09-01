@@ -48,6 +48,26 @@ html[data-app-theme="light"]
   box-shadow: none !important;
 }
 
+/* Duplicate TIDs are a data warning rather than an operational status. Use a
+ * violet card treatment so the green/amber/red TID dot can keep its original
+ * timetable meaning. Both cards sharing the TID receive this same style. */
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card.is-req-layout.has-train.is-duplicate {
+  background: linear-gradient(145deg, #ffffff 0%, #f7f2ff 100%) !important;
+  background-image: linear-gradient(145deg, #ffffff 0%, #f7f2ff 100%) !important;
+}
+
+html[data-app-theme="light"]
+  .theme-insertion-page
+  .theme-insertion-card.is-req-layout.has-train.is-duplicate:not(.is-search-match) {
+  border: 2px solid #a855f7 !important;
+  box-shadow:
+    0 0 0 1px rgba(168, 85, 247, 0.10),
+    0 5px 14px rgba(76, 29, 149, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+}
+
 /* Stronger pastel fill keeps adjacent request categories readable. */
 html[data-app-theme="light"]
   .theme-insertion-page

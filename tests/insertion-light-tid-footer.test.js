@@ -51,6 +51,30 @@ test("the TID bar keeps the reference colour as a compact status dot", () => {
   );
 });
 
+test("duplicate TIDs use a violet shell without replacing their status dot colour", () => {
+  const duplicateFooterStart = lightTidFooterSource.indexOf(
+    ".theme-insertion-card.is-duplicate .theme-insertion-tracking-footer.is-complete,",
+  );
+  const sharedDotStart = lightTidFooterSource.indexOf(
+    ".theme-insertion-tracking-footer.is-complete::before",
+    duplicateFooterStart,
+  );
+  const duplicateFooterRule = lightTidFooterSource.slice(duplicateFooterStart, sharedDotStart);
+
+  assert.notEqual(duplicateFooterStart, -1);
+  assert.ok(sharedDotStart > duplicateFooterStart);
+  assert.match(
+    duplicateFooterRule,
+    /\.theme-insertion-card\.is-duplicate \.theme-insertion-tracking-footer\.is-complete,[\s\S]*?border-color: #e879f9 !important;[\s\S]*?linear-gradient\(135deg, #4c1d95 0%, #2e1065 100%\)[\s\S]*?rgba\(168, 85, 247, 0\.30\)/,
+  );
+  assert.match(
+    lightTidFooterSource,
+    /\.theme-insertion-tracking-footer\.is-complete::after[\s\S]*?background: var\(--insertion-tracking-reference-border, #38bdf8\)/,
+  );
+  assert.doesNotMatch(duplicateFooterRule, /--insertion-tracking-reference-border/);
+  assert.doesNotMatch(duplicateFooterRule, /::after/);
+});
+
 test("semantic TID dots reuse the MASPO upload pulse rhythm without moving", () => {
   const pulseStart = lightTidFooterSource.indexOf("@keyframes insertion-tid-status-pulse");
   const pulseEnd = lightTidFooterSource.indexOf('html[data-app-theme="light"]', pulseStart);

@@ -30,6 +30,18 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-foo
     0 2px 5px rgba(15, 23, 42, 0.18) !important;
 }
 
+/* A duplicate uses a purple footer shell, but its semantic status dot remains
+ * driven by --insertion-tracking-reference-border in the shared ::after rule. */
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-duplicate .theme-insertion-tracking-footer.is-complete,
+html[data-app-theme="light"] .theme-insertion-page .theme-insertion-card.is-duplicate .theme-insertion-tracking-footer.is-complete.has-reference-style {
+  border-color: #e879f9 !important;
+  background: linear-gradient(135deg, #4c1d95 0%, #2e1065 100%) !important;
+  box-shadow:
+    0 0 0 1px rgba(232, 121, 249, 0.16),
+    0 0 10px rgba(168, 85, 247, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+}
+
 html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete::before {
   content: "TID";
   position: absolute;
