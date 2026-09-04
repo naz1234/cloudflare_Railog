@@ -108,12 +108,27 @@ function collectDepotCells(depot, data = {}) {
   }));
 }
 
-function DepotSleepPanel({ depot, data, selectedKeys, latestModeByTrain, onToggle, onSelectDepot, onClearDepot }) {
+function DepotSleepPanel({
+  depot,
+  data,
+  selectedKeys,
+  latestModeByTrain,
+  logDraft,
+  saving,
+  onToggle,
+  onSelectDepot,
+  onClearDepot,
+  onTimeChange,
+  onRemarkChange,
+  onUseCurrentTime,
+  onAddLogs,
+}) {
   const layout = DEPOT_LAYOUTS[depot];
   const cells = useMemo(() => collectDepotCells(depot, data), [data, depot]);
   const occupiedCells = cells.filter((cell) => cell.trainId);
   const selectedCount = occupiedCells.filter((cell) => selectedKeys.has(cell.key)).length;
   const selectedAll = occupiedCells.length > 0 && selectedCount === occupiedCells.length;
+  const validLogTime = Boolean(normalizeSleepLogTime(logDraft?.time));
 
   return (
     <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-[#28506d] dark:bg-[#061827]">
@@ -209,6 +224,62 @@ function DepotSleepPanel({ depot, data, selectedKeys, latestModeByTrain, onToggl
           </div>
         </div>
       </div>
+
+      <footer data-sleep-entry-controls={depot} className="border-t border-slate-200 bg-slate-50/60 px-3 py-3 dark:border-[#21435e] dark:bg-[#071827]">
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="w-full min-w-[140px] sm:w-[150px]">
+            <div className="flex h-[54px] flex-col justify-center rounded-xl border border-sky-400 bg-sky-50/70 px-3 shadow-[0_0_0_2px_rgba(56,189,248,0.08)] transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-200 dark:border-[#3486d9] dark:bg-[#0a2240] dark:shadow-[0_0_12px_rgba(59,130,246,0.16)] dark:focus-within:border-[#5da8ff] dark:focus-within:ring-blue-500/20">
+              <label htmlFor={`slp-log-time-${depot}`} className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-sky-800 dark:text-white">
+                <Clock3 className="h-3.5 w-3.5 text-sky-600 dark:text-[#62a9ff]" /> Time
+              </label>
+              <div className="mt-1 flex min-w-0 items-center gap-1.5">
+                <input
+                  id={`slp-log-time-${depot}`}
+                  value={logDraft?.time || ""}
+                  inputMode="numeric"
+                  maxLength={5}
+                  onChange={(event) => onTimeChange(depot, formatSleepTimeInput(event.target.value))}
+                  onBlur={() => onTimeChange(depot, normalizeSleepLogTime(logDraft?.time) || logDraft?.time || "")}
+                  placeholder="00:00"
+                  aria-label={`${layout.label} sleep or wake-up log time`}
+                  className="min-w-0 flex-1 bg-transparent text-[12px] font-medium text-slate-800 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-[#4f7394]"
+                />
+                <button
+                  type="button"
+                  onClick={() => onUseCurrentTime(depot)}
+                  title="Use current time"
+                  aria-label={`Set ${layout.label} SLP time to the current time`}
+                  className="theme-movement-time-refresh inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-emerald-400/70 bg-emerald-500/20 text-emerald-600 shadow-[0_0_8px_rgba(52,211,153,0.22)] transition hover:border-emerald-500 hover:bg-emerald-500/35 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 dark:text-emerald-300 dark:hover:border-emerald-300 dark:hover:text-white"
+                >
+                  <RefreshCw size={10} strokeWidth={2.5} aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <label className="min-w-[180px] flex-1">
+            <span className="flex h-[54px] flex-col justify-center rounded-xl border border-slate-300 bg-white/80 px-3 transition focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-200 dark:border-[#315574] dark:bg-[#0a2134] dark:focus-within:border-violet-400 dark:focus-within:ring-violet-400/20">
+              <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-600 dark:text-white">
+                <MessageSquareText className="h-3.5 w-3.5 text-violet-600 dark:text-violet-300" /> Remark optional
+              </span>
+              <input
+                value={logDraft?.remark || ""}
+                onChange={(event) => onRemarkChange(depot, event.target.value.slice(0, 160))}
+                placeholder="Add remark"
+                aria-label={`${layout.label} sleep or wake-up remark`}
+                className="mt-1 w-full bg-transparent text-[12px] font-medium text-slate-800 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-[#4f7394]"
+              />
+            </span>
+          </label>
+
+          <button type="button" onClick={() => onAddLogs(depot, "sleep")} disabled={!selectedCount || !validLogTime || saving} className="inline-flex h-10 items-center gap-2 rounded-xl border border-indigo-500 bg-indigo-600 px-3 text-[10px] font-bold uppercase tracking-[0.1em] text-white shadow-[0_7px_18px_rgba(79,70,229,0.22)] transition hover:bg-indigo-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40">
+            <MoonStar className="h-4 w-4" /> Log Sleep
+          </button>
+          <button type="button" onClick={() => onAddLogs(depot, "wake")} disabled={!selectedCount || !validLogTime || saving} className="inline-flex h-10 items-center gap-2 rounded-xl border border-amber-500 bg-amber-500 px-3 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-950 shadow-[0_7px_18px_rgba(245,158,11,0.20)] transition hover:bg-amber-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40">
+            <Sun className="h-4 w-4" /> Log Wake-up
+          </button>
+        </div>
+      </footer>
     </section>
   );
 }
@@ -281,8 +352,13 @@ function SleepLogOutputPanel({
 export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
   const [logs, setLogs] = useState(() => loadSleepModeCache());
   const [selectedKeyList, setSelectedKeyList] = useState([]);
-  const [logTime, setLogTime] = useState(() => getCurrentTime());
-  const [logRemark, setLogRemark] = useState("");
+  const [logDrafts, setLogDrafts] = useState(() => {
+    const currentTime = getCurrentTime();
+    return {
+      west: { time: currentTime, remark: "" },
+      east: { time: currentTime, remark: "" },
+    };
+  });
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Loading live Sleep log...");
@@ -439,11 +515,21 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
     setSelectedKeyList((current) => current.filter((key) => !key.startsWith(`${depot}:`)));
   }, []);
 
-  const addSelectedLogs = useCallback((mode) => {
-    const normalizedTime = normalizeSleepLogTime(logTime);
-    if (!selectedCells.length || !normalizedTime) return;
+  const updateLogDraft = useCallback((depot, field, value) => {
+    if (!DEPOT_LAYOUTS[depot]) return;
+    setLogDrafts((current) => ({
+      ...current,
+      [depot]: { ...current[depot], [field]: value },
+    }));
+  }, []);
+
+  const addSelectedLogs = useCallback((depot, mode) => {
+    const depotSelectedCells = selectedCells.filter((cell) => cell.depot === depot);
+    const logDraft = logDrafts[depot] || {};
+    const normalizedTime = normalizeSleepLogTime(logDraft.time);
+    if (!depotSelectedCells.length || !normalizedTime) return;
     const groups = new Map();
-    selectedCells.forEach((cell) => {
+    depotSelectedCells.forEach((cell) => {
       if (!groups.has(cell.road)) groups.set(cell.road, []);
       groups.get(cell.road).push(cell.trainId);
     });
@@ -453,13 +539,15 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
       trainIds,
       location,
       mode,
-      remark: logRemark,
+      remark: logDraft.remark,
     }, { now: new Date(nowMs + index).toISOString() }));
     persistLogs([...logs, ...newLogs]);
-    setSelectedKeyList([]);
-    setLogTime(getCurrentTime());
-    setLogRemark("");
-  }, [logRemark, logTime, logs, persistLogs, selectedCells]);
+    setSelectedKeyList((current) => current.filter((key) => !key.startsWith(`${depot}:`)));
+    setLogDrafts((current) => ({
+      ...current,
+      [depot]: { time: getCurrentTime(), remark: "" },
+    }));
+  }, [logDrafts, logs, persistLogs, selectedCells]);
 
   const copyLogs = useCallback(async (depot) => {
     const depotLogs = logsByDepot[depot] || [];
@@ -514,8 +602,6 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
     persistLogs(logs.filter((entry) => entry.id !== entryId));
   }, [logs, persistLogs]);
 
-  const validLogTime = Boolean(normalizeSleepLogTime(logTime));
-
   return (
     <section className="mx-auto w-full max-w-[1500px] space-y-4 pb-10">
       <header className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)] dark:border-[#315574] dark:bg-[radial-gradient(circle_at_0%_0%,rgba(139,92,246,0.12),transparent_32%),linear-gradient(145deg,#092139,#061827)] dark:shadow-[0_20px_55px_rgba(0,0,0,0.28)]">
@@ -541,65 +627,9 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
       </header>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <DepotSleepPanel depot="west" data={westData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} />
-        <DepotSleepPanel depot="east" data={eastData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} />
+        <DepotSleepPanel depot="west" data={westData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.west} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onTimeChange={(depot, value) => updateLogDraft(depot, "time", value)} onRemarkChange={(depot, value) => updateLogDraft(depot, "remark", value)} onUseCurrentTime={(depot) => updateLogDraft(depot, "time", getCurrentTime())} onAddLogs={addSelectedLogs} />
+        <DepotSleepPanel depot="east" data={eastData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.east} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onTimeChange={(depot, value) => updateLogDraft(depot, "time", value)} onRemarkChange={(depot, value) => updateLogDraft(depot, "remark", value)} onUseCurrentTime={(depot) => updateLogDraft(depot, "time", getCurrentTime())} onAddLogs={addSelectedLogs} />
       </div>
-
-      <section className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#315574] dark:bg-[#071827]">
-        <div className="block w-full min-w-[150px] sm:w-[190px]">
-          <div className="flex h-[58px] flex-col justify-center rounded-xl border border-sky-400 bg-sky-50/70 px-3 shadow-[0_0_0_2px_rgba(56,189,248,0.08)] transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-200 dark:border-[#3486d9] dark:bg-[#0a2240] dark:shadow-[0_0_12px_rgba(59,130,246,0.16)] dark:focus-within:border-[#5da8ff] dark:focus-within:ring-blue-500/20">
-            <label htmlFor="slp-log-time" className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-sky-800 dark:text-white">
-              <Clock3 className="h-3.5 w-3.5 text-sky-600 dark:text-[#62a9ff]" /> Time
-            </label>
-            <div className="mt-1 flex min-w-0 items-center gap-1.5">
-              <input
-                id="slp-log-time"
-                value={logTime}
-                inputMode="numeric"
-                maxLength={5}
-                onChange={(event) => setLogTime(formatSleepTimeInput(event.target.value))}
-                onBlur={() => setLogTime((current) => normalizeSleepLogTime(current) || current)}
-                placeholder="00:00"
-                aria-label="Sleep or wake-up log time"
-                className="min-w-0 flex-1 bg-transparent text-[12px] font-medium text-slate-800 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-[#4f7394]"
-              />
-              <button
-                type="button"
-                onClick={() => setLogTime(getCurrentTime())}
-                title="Use current time"
-                aria-label="Set SLP time to the current time"
-                className="theme-movement-time-refresh inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-emerald-400/70 bg-emerald-500/20 text-emerald-600 shadow-[0_0_8px_rgba(52,211,153,0.22)] transition hover:border-emerald-500 hover:bg-emerald-500/35 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 dark:text-emerald-300 dark:hover:border-emerald-300 dark:hover:text-white"
-              >
-                <RefreshCw size={10} strokeWidth={2.5} aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-        </div>
-        <label className="block min-w-[260px] flex-[1.4]">
-          <span className="flex h-[58px] flex-col justify-center rounded-xl border border-slate-300 bg-slate-50/70 px-3 transition focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-200 dark:border-[#315574] dark:bg-[#0a2134] dark:focus-within:border-violet-400 dark:focus-within:ring-violet-400/20">
-            <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-600 dark:text-white">
-              <MessageSquareText className="h-3.5 w-3.5 text-violet-600 dark:text-violet-300" /> Remark optional
-            </span>
-            <input
-              value={logRemark}
-              onChange={(event) => setLogRemark(event.target.value.slice(0, 160))}
-              placeholder="Add remark"
-              aria-label="Sleep or wake-up remark"
-              className="mt-1 w-full bg-transparent text-[12px] font-medium text-slate-800 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-[#4f7394]"
-            />
-          </span>
-        </label>
-        <div className="min-w-[160px] flex-1">
-          <p className="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{selectedCells.length} train{selectedCells.length === 1 ? "" : "s"} selected</p>
-          <p className="mt-1 text-[9px] text-slate-500 dark:text-[#759ab2]">Trains on the same stabling road are combined into one log line.</p>
-        </div>
-        <button type="button" onClick={() => addSelectedLogs("sleep")} disabled={!selectedCells.length || !validLogTime || saving} className="inline-flex h-10 items-center gap-2 rounded-xl border border-indigo-500 bg-indigo-600 px-4 text-[10px] font-bold uppercase tracking-[0.12em] text-white shadow-[0_7px_18px_rgba(79,70,229,0.22)] transition hover:bg-indigo-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40">
-          <MoonStar className="h-4 w-4" /> Log Sleep
-        </button>
-        <button type="button" onClick={() => addSelectedLogs("wake")} disabled={!selectedCells.length || !validLogTime || saving} className="inline-flex h-10 items-center gap-2 rounded-xl border border-amber-500 bg-amber-500 px-4 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-950 shadow-[0_7px_18px_rgba(245,158,11,0.20)] transition hover:bg-amber-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40">
-          <Sun className="h-4 w-4" /> Log Wake-up
-        </button>
-      </section>
 
       <div className="grid items-start gap-4 xl:grid-cols-2">
         {(["west", "east"]).map((depot) => (
