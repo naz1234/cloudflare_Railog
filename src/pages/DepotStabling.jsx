@@ -4813,18 +4813,24 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
-  // Keep PST / Train Prep cards clean: hide normal maintenance remarks and show
-  // a remark only when the train's request/manual remark contains the keyword APU.
-  const apuRemarkLabels = key
-    ? [
-        ...(maintenanceMap?.[key] || []).map((item) => (
-          item?.badgeText || item?.displayType || item?.typeKey || item?.remark || ""
-        )),
-        block?.extraRemark || "",
-      ]
-        .map((label) => String(label || "").trim().replace(/\s+/g, " "))
-        .filter((label) => /\bAPU\b/i.test(label))
-        .filter((label, index, labels) => labels.findIndex((candidate) => candidate.toUpperCase() === label.toUpperCase()) === index)
+  // PST remarks are intentionally isolated from the main Train Request and
+  // stabling manual remarks. Display only entries created in the PST panel.
+  const pstRemarkItems = key
+    ? (maintenanceMap?.[key] || [])
+        .reduce((items, item) => {
+          const label = String(
+            item?.badgeText || item?.displayType || item?.typeKey || item?.remark || ""
+          ).trim().replace(/\s+/g, " ");
+          const labelKey = normalizeRequestIdentity(label);
+          if (!labelKey || items.some((candidate) => candidate.labelKey === labelKey)) return items;
+
+          items.push({
+            label,
+            labelKey,
+            style: getTrainRemRequestRemarkStyle(item, label),
+          });
+          return items;
+        }, [])
         .slice(0, 2)
     : [];
   const isWestBottomRightCorner = labelSide === "left" && isLast && isLastBlock;
@@ -4901,13 +4907,14 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
             {displayVal || "—"}
           </div>
         )}
-        {apuRemarkLabels.length > 0 && (
-          <div className="theme-pst-apu-remarks flex w-full flex-col items-center gap-0.5 px-0.5">
-            {apuRemarkLabels.map((label) => (
+        {pstRemarkItems.length > 0 && (
+          <div className="theme-pst-request-remarks flex w-full flex-col items-center gap-0.5 px-0.5">
+            {pstRemarkItems.map(({ label, labelKey, style }) => (
               <span
-                key={`${cellKey}-${label}`}
-                className="theme-pst-apu-remark block w-full truncate rounded-md border border-teal-500/50 bg-teal-950/35 px-1 py-0.5 text-center text-[9px] font-semibold leading-tight text-teal-200"
+                key={`${cellKey}-${labelKey}`}
+                className="theme-pst-request-remark block w-full truncate rounded-md border px-1 py-0.5 text-center text-[9px] font-semibold leading-tight"
                 title={label}
+                style={style}
               >
                 {label}
               </span>
@@ -14881,7 +14888,7 @@ function APUMismatchChecklist({
 
 
 function PSTTabContent
-({ westData, eastData, maintenanceMap, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onAddManualLog, onRemoveManualLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, apuMismatchTrainIds, onAPUMismatchTrainIdsChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug, onRefreshPSTStabling, onUndoPSTStabling, onRedoPSTStabling, westCanUndoPSTStabling = false, westCanRedoPSTStabling = false, eastCanUndoPSTStabling = false, eastCanRedoPSTStabling = false, westPSTStablingDirty = false, eastPSTStablingDirty = false, onClearPSTStablingTrains, onEditablePSTTrainIdChange }) {
+({ westData, eastData, maintenanceMap, pstRequests, onAddPSTRequest, onRemovePSTRequest, onClearPSTRequests, onRenamePSTRequestGroup, onDeletePSTRequestGroup, onTogglePSTRequestGroupHidden, pstState, prepState, logLines, onPSTTick, onPSTStartTimeChange, onPrepTick, onPrepCompletionTimeChange, onRemoveLog, onAddManualLog, onRemoveManualLog, onClearDepotLog, onClearDepotPSTOnly, onClearDepotPrepOnly, taNameState, onTaNameChange, completedByNames, onCompletedByChange, apuMismatchTrainIds, onAPUMismatchTrainIdsChange, pstLiveStatusText, pstLiveStatusClass, pstLiveDebug, onRefreshPSTStabling, onUndoPSTStabling, onRedoPSTStabling, westCanUndoPSTStabling = false, westCanRedoPSTStabling = false, eastCanUndoPSTStabling = false, eastCanRedoPSTStabling = false, westPSTStablingDirty = false, eastPSTStablingDirty = false, onClearPSTStablingTrains, onEditablePSTTrainIdChange }) {
   const [trainSearch, setTrainSearch] = useState("");
   const trainSearchKey = normalizeTrainId(trainSearch);
   const trainSearchLocations = trainSearchKey ? getMainStablingLocations(westData, eastData) : {};
@@ -15167,7 +15174,11 @@ function PSTTabContent
   };
 
   return (
-    <div className="flex w-fit flex-col items-start gap-7">
+    <div
+      className="grid w-fit min-w-0 items-start gap-3"
+      style={{ gridTemplateColumns: "max-content 276px" }}
+    >
+      <div className="flex w-fit flex-col items-start gap-7">
       <div className="grid w-fit grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[max-content_420px] lg:items-start">
         <div className="flex min-w-0 flex-col gap-3">
           <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" onRefreshStabling={() => onRefreshPSTStabling?.("west")} onUndoStabling={() => onUndoPSTStabling?.("west")} onRedoStabling={() => onRedoPSTStabling?.("west")} canUndoStabling={westCanUndoPSTStabling} canRedoStabling={westCanRedoPSTStabling} isStablingDirty={westPSTStablingDirty} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearStablingTrains={() => onClearPSTStablingTrains?.("west")} stablingEditable onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
@@ -15270,6 +15281,25 @@ function PSTTabContent
             onSelectedTrainIdsChange={(trainIds) => onAPUMismatchTrainIdsChange?.("east", trainIds)}
           />
         </div>
+      </div>
+      </div>
+
+      <div className="sticky top-1 self-start">
+        <MaintenancePanelShell
+          requests={pstRequests}
+          onAdd={onAddPSTRequest}
+          onRemove={onRemovePSTRequest}
+          onClearAll={onClearPSTRequests}
+          onRenameGroup={onRenamePSTRequestGroup}
+          onDeleteGroup={onDeletePSTRequestGroup}
+          onToggleGroupHidden={onTogglePSTRequestGroupHidden}
+          showImportTools={false}
+          panelTitle="PST Remarks"
+          listTitle="PST Remark List"
+          requestTypeLabel="PST Remark"
+          requestTypePlaceholder="e.g. No alarm / APU alarm"
+          addButtonLabel="Add Remark"
+        />
       </div>
     </div>
   );
@@ -17601,6 +17631,7 @@ export default function DepotStablingPage() {
   const [westData, setWestData] = useState(() => loadLocalStablingState().westData);
   const [eastData, setEastData] = useState(() => loadLocalStablingState().eastData);
   const [requests, setRequests] = useState([]);
+  const [pstRequests, setPstRequests] = useState([]);
   const [trainRemCheckState, setTrainRemCheckState] = useState(() => loadTrainRemState());
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -19339,9 +19370,10 @@ export default function DepotStablingPage() {
     if (showStatus) setSyncing(true);
 
     try {
-      const [stablingRecords, maintenanceRecords] = await Promise.all([
+      const [stablingRecords, maintenanceRecords, pstMaintenanceRecords] = await Promise.all([
         base44.entities.DepotStabling.list(),
         base44.entities.MaintenanceRequest.list(),
+        base44.entities.PSTMaintenanceRequest.list().catch(() => null),
       ]);
       const { map, newWest, newEast } = buildStablingStateFromRecords(stablingRecords);
       const remoteUpdatedMs = getStablingRecordsUpdatedMs(stablingRecords);
@@ -19365,6 +19397,7 @@ export default function DepotStablingPage() {
         saveLocalStablingState(newWest, newEast, new Date(remoteUpdatedMs || Date.now()).toISOString());
       }
       setRequests(maintenanceRecords || []);
+      if (Array.isArray(pstMaintenanceRecords)) setPstRequests(pstMaintenanceRecords);
       setLastSynced(new Date());
       setSyncError(false);
     } catch (err) {
@@ -19380,7 +19413,8 @@ export default function DepotStablingPage() {
     Promise.all([
       base44.entities.DepotStabling.list(),
       base44.entities.MaintenanceRequest.list(),
-    ]).then(([stablingRecords, maintenanceRecords]) => {
+      base44.entities.PSTMaintenanceRequest.list().catch(() => null),
+    ]).then(([stablingRecords, maintenanceRecords, pstMaintenanceRecords]) => {
       const { map, newWest, newEast } = buildStablingStateFromRecords(stablingRecords);
       const remoteUpdatedMs = getStablingRecordsUpdatedMs(stablingRecords);
       const localUpdatedMs = stablingLocalUpdatedAtRef.current || 0;
@@ -19402,6 +19436,7 @@ export default function DepotStablingPage() {
         saveLocalStablingState(newWest, newEast, new Date(remoteUpdatedMs || Date.now()).toISOString());
       }
       setRequests(maintenanceRecords || []);
+      if (Array.isArray(pstMaintenanceRecords)) setPstRequests(pstMaintenanceRecords);
       setLastSynced(new Date());
       setLoaded(true);
     }).catch(() => {
@@ -21650,10 +21685,154 @@ export default function DepotStablingPage() {
     setRequests([]);
   };
 
+  const handleAddPSTRequest = async (reqData) => {
+    const requestTypeKey = normalizeRequestIdentity(getTrainRequestDisplayType(reqData));
+    const matchingGroup = pstRequests.filter(
+      (request) => normalizeRequestIdentity(getTrainRequestDisplayType(request)) === requestTypeKey
+    );
+    const inheritedGroupTitle = cleanRequestLabel(
+      matchingGroup.find((request) => cleanRequestLabel(request?.groupTitle))?.groupTitle || ""
+    );
+    const inheritedGroupHidden = matchingGroup.some((request) => request?.groupHidden === true);
+    const payload = {
+      ...reqData,
+      groupHidden: inheritedGroupHidden,
+      ...(inheritedGroupTitle && !cleanRequestLabel(reqData?.groupTitle)
+        ? { groupTitle: inheritedGroupTitle }
+        : {}),
+    };
+    const created = await base44.entities.PSTMaintenanceRequest.create(payload);
+    setPstRequests((previous) => [...previous, created]);
+  };
+
+  const handleRenamePSTRequestGroup = async (groupItems = [], nextTitle = "") => {
+    const cleanTitle = cleanRequestLabel(nextTitle);
+    const editableItems = groupItems.filter((request) => request?.id);
+
+    if (!cleanTitle) throw new Error("PST remark title is required.");
+    if (editableItems.length === 0) throw new Error("No saved PST remarks were found in this group.");
+
+    const results = await Promise.allSettled(
+      editableItems.map((request) =>
+        base44.entities.PSTMaintenanceRequest.update(request.id, { groupTitle: cleanTitle })
+      )
+    );
+    const updatedById = new Map();
+
+    results.forEach((result, index) => {
+      if (result.status !== "fulfilled") return;
+      const request = editableItems[index];
+      updatedById.set(request.id, {
+        ...request,
+        ...(result.value || {}),
+        groupTitle: cleanTitle,
+      });
+    });
+
+    if (updatedById.size > 0) {
+      setPstRequests((previous) =>
+        previous.map((request) => updatedById.get(request.id) || request)
+      );
+    }
+
+    const failedCount = results.length - updatedById.size;
+    if (failedCount > 0) {
+      throw new Error(
+        failedCount === results.length
+          ? "Unable to save the PST remark title."
+          : `PST remark title saved for ${updatedById.size} train(s); ${failedCount} could not be updated.`
+      );
+    }
+  };
+
+  const handleTogglePSTRequestGroupHidden = async (groupItems = [], hidden = false) => {
+    const editableItems = groupItems.filter((request) => request?.id);
+    if (editableItems.length === 0) throw new Error("No saved PST remarks were found in this group.");
+
+    const nextHidden = Boolean(hidden);
+    const results = await Promise.allSettled(
+      editableItems.map((request) =>
+        base44.entities.PSTMaintenanceRequest.update(request.id, { groupHidden: nextHidden })
+      )
+    );
+    const updatedById = new Map();
+
+    results.forEach((result, index) => {
+      if (result.status !== "fulfilled") return;
+      const request = editableItems[index];
+      updatedById.set(request.id, {
+        ...request,
+        ...(result.value || {}),
+        groupHidden: nextHidden,
+      });
+    });
+
+    if (updatedById.size > 0) {
+      setPstRequests((previous) =>
+        previous.map((request) => updatedById.get(request.id) || request)
+      );
+    }
+
+    const failedCount = results.length - updatedById.size;
+    if (failedCount > 0) {
+      throw new Error(
+        failedCount === results.length
+          ? `Unable to ${nextHidden ? "hide" : "unhide"} this PST remark group.`
+          : `${nextHidden ? "Hidden" : "Unhidden"} for ${updatedById.size} train(s); ${failedCount} could not be updated.`
+      );
+    }
+  };
+
+  const handleDeletePSTRequestGroup = async (groupItems = []) => {
+    const requestIds = [...new Set(groupItems.map((request) => request?.id).filter(Boolean))];
+    if (requestIds.length === 0) throw new Error("No saved PST remarks were found in this group.");
+
+    const results = await Promise.allSettled(
+      requestIds.map((id) => base44.entities.PSTMaintenanceRequest.delete(id))
+    );
+    const deletedIds = new Set();
+
+    results.forEach((result, index) => {
+      if (result.status === "fulfilled" || result.reason?.status === 404) {
+        deletedIds.add(requestIds[index]);
+      }
+    });
+
+    if (deletedIds.size > 0) {
+      setPstRequests((previous) => previous.filter((request) => !deletedIds.has(request.id)));
+    }
+
+    const failedCount = requestIds.length - deletedIds.size;
+    if (failedCount > 0) {
+      throw new Error(
+        failedCount === requestIds.length
+          ? "Unable to delete this PST remark group."
+          : `Deleted ${deletedIds.size} PST remark(s); ${failedCount} could not be deleted.`
+      );
+    }
+  };
+
+  const handleRemovePSTRequest = async (id) => {
+    await base44.entities.PSTMaintenanceRequest.delete(id).catch(() => {});
+    setPstRequests((previous) => previous.filter((request) => request.id !== id));
+  };
+
+  const handleClearPSTRequests = async () => {
+    await Promise.all(
+      pstRequests.map((request) =>
+        base44.entities.PSTMaintenanceRequest.delete(request.id).catch(() => {})
+      )
+    );
+    setPstRequests([]);
+  };
+
   const duplicates = getDuplicates(westData, eastData);
   const westStablingKeys = getWestStablingKeys(westData);
   const westStablingLocations = getWestStablingLocations(westData);
   const maintenanceMap = buildMaintenanceMap(requests, westStablingKeys);
+  const pstMaintenanceMap = buildMaintenanceMap(
+    pstRequests.filter((request) => request?.groupHidden !== true)
+  );
 
   const getInsertionEntriesForDepot = (log = [], depot = "west") => (Array.isArray(log) ? log : []).filter((entry) => {
     const entryDepot = entry?.depot || getDepotFromRoad(entry?.road || "");
@@ -22469,7 +22648,14 @@ export default function DepotStablingPage() {
           <PSTTabContent
             westData={activePSTWestData}
             eastData={activePSTEastData}
-            maintenanceMap={maintenanceMap}
+            maintenanceMap={pstMaintenanceMap}
+            pstRequests={pstRequests}
+            onAddPSTRequest={handleAddPSTRequest}
+            onRemovePSTRequest={handleRemovePSTRequest}
+            onClearPSTRequests={handleClearPSTRequests}
+            onRenamePSTRequestGroup={handleRenamePSTRequestGroup}
+            onDeletePSTRequestGroup={handleDeletePSTRequestGroup}
+            onTogglePSTRequestGroupHidden={handleTogglePSTRequestGroupHidden}
             pstState={activePSTState}
             prepState={activePrepState}
             logLines={activePSTLogLines}

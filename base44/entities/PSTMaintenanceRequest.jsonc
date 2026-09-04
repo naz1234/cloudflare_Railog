@@ -1,0 +1,34 @@
+{
+  "name": "PSTMaintenanceRequest",
+  "type": "object",
+  "properties": {
+    "trainId": {
+      "type": "string",
+      "description": "Train ID for a PST-only remark"
+    },
+    "requestType": {
+      "type": "string",
+      "description": "PST-only remark entered by the user"
+    },
+    "customType": {
+      "type": "string",
+      "description": "Legacy custom text retained for MaintenancePanel compatibility"
+    },
+    "groupTitle": {
+      "type": "string",
+      "description": "Optional editable title used to group matching PST remarks"
+    },
+    "groupHidden": {
+      "type": "boolean",
+      "description": "Whether this PST remark group is hidden from PST train cards"
+    },
+    "remark": {
+      "type": "string",
+      "description": "Optional legacy remark field"
+    }
+  },
+  "required": [
+    "trainId",
+    "requestType"
+  ]
+}

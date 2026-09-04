@@ -666,7 +666,7 @@ function RequestGroupVisibilityIcon({ hidden = false, className = "" }) {
   );
 }
 
-export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, onDeleteGroup, onToggleGroupHidden, showImportTools = true, stabledTrainIds = [], stabledTrainLocations = {} }) {
+export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, onDeleteGroup, onToggleGroupHidden, showImportTools = true, stabledTrainIds = [], stabledTrainLocations = {}, panelTitle = "Maintenance", listTitle = "Train Request", requestTypeLabel = "Request Type", requestTypePlaceholder = "e.g. RST PM / INBOUND (G to C)", addButtonLabel = "Add Request" }) {
   const [trainId, setTrainId] = useState("");
   const [requestType, setRequestType] = useState("");
   const [error, setError] = useState("");
@@ -1468,7 +1468,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         <div className="w-6 h-6 rounded-md bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center">
           <Wrench className="w-3.5 h-3.5 text-[#4f8ef7]" />
         </div>
-        <span className="text-xs font-bold text-white uppercase tracking-widest">Maintenance</span>
+        <span className="text-xs font-bold text-white uppercase tracking-widest">{panelTitle}</span>
         {requests.length > 0 && (
           <div className="ml-auto flex items-center gap-1.5">
             <span className="bg-[#0f2d4a] text-[#4f8ef7] border border-[#2b4f6b] text-[10px] font-bold px-2 py-0.5 rounded-full">{requests.length}</span>
@@ -1574,14 +1574,14 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             className={inputCls} placeholder="e.g. 24 28 7 20" />
         </div>
         <div>
-          <label className={labelCls}>Request Type</label>
+          <label className={labelCls}>{requestTypeLabel}</label>
           <input
             type="text"
             value={requestType}
             onChange={(e) => setRequestType(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             className={inputCls}
-            placeholder="e.g. RST PM / INBOUND (G to C)"
+            placeholder={requestTypePlaceholder}
           />
           {cleanRequestLabel(requestType) && (
             <div className="mt-1 flex items-center gap-1.5 text-[10px] text-[#4a8ab5]">
@@ -1598,7 +1598,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         {error && <p className="text-[10px] text-red-400 bg-red-950/40 border border-red-800/60 rounded-lg px-2.5 py-1.5">{error}</p>}
         <button onClick={handleAdd}
           className="mt-0.5 flex w-full items-center justify-center gap-1.5 rounded-full border border-[#2b4f6b] bg-[#1a3a5c] py-1.5 text-xs font-bold text-[#c8d8ea] transition-all hover:bg-[#1e4d72] active:scale-[0.98]">
-          <Plus className="w-3.5 h-3.5" /> Add Request
+          <Plus className="w-3.5 h-3.5" /> {addButtonLabel}
         </button>
       </div>
 
@@ -1690,7 +1690,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       {/* Requests List */}
       <div className="overflow-visible">
         <div className="theme-maintenance-subheader flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">Train Request</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">{listTitle}</span>
           <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{regularRequests.length}</span>
         </div>
 
