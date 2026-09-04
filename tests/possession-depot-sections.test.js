@@ -35,3 +35,12 @@ test("EPAF depot follows the selected PSS depot", () => {
   assert.match(source, /depot: depotLabel/);
   assert.match(source, /<POSSESSION_FIELD label="Depot"><div[^>]*>\{depotLabel\}<\/div><\/POSSESSION_FIELD>/);
 });
+
+test("PSS hides the live-sync banner without disabling cross-laptop sync", () => {
+  assert.doesNotMatch(source, /Live shared page/);
+  assert.doesNotMatch(source, />Live sync</);
+  assert.match(source, /\{activeTab === "possession" && \([\s\S]*?<PossessionTabContent \/>/);
+  assert.match(source, /const records = await entity\.filter\(\{ stateKey \}\)/);
+  assert.match(source, /await entity\.update\(recordId, \{ stateKey, data: current, updatedAt: now \}\)/);
+  assert.match(source, /intervalId = window\.setInterval\(\(\) => fetchRemote\(false\), POSSESSION_LIVE_SYNC_INTERVAL_MS\)/);
+});
