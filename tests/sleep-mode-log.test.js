@@ -2,11 +2,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  buildSleepModeGroupedText,
   buildSleepModeLogLine,
   createSleepModeLogEntry,
   formatSleepTimeInput,
   formatSleepTrainList,
   getSleepModeDepot,
+  groupSleepModeLogs,
   normalizeSleepModeLogs,
   normalizeSleepTrainId,
 } from "../src/lib/sleepModeLog.js";
@@ -19,7 +21,7 @@ test("Sleep Mode uses the requested grouped Sleep log sentence", () => {
       location: "WD-ST14",
       mode: "sleep",
     }),
-    "00:21 hrs – T10, T13, T16, T20, T35, T38 and T44 successfully in sleep mode at WD–ST14.",
+    "00:21 hrs – T10, T13, T16, T20, T35, T38 and T44 confirmed successfully in sleep mode at WD–ST14.",
   );
 });
 
@@ -31,7 +33,7 @@ test("Sleep Mode uses the requested grouped Wake-up log sentence", () => {
       location: "wd-st14",
       mode: "wake",
     }),
-    "00:21 hrs – T10, T13, T16, T20, T35, T38 and T44 successfully in wake–up mode at WD–ST14.",
+    "00:21 hrs – T10, T13, T16, T20, T35, T38 and T44 successfully in wake-up mode at WD–ST14.",
   );
 });
 
@@ -44,7 +46,7 @@ test("Sleep Mode adds an optional remark to the shared log line", () => {
       mode: "sleep",
       remark: "Confirmed by DC",
     }),
-    "00:21 hrs – T10 successfully in sleep mode at WD–ST14. Remark: Confirmed by DC.",
+    "00:21 hrs – T10 confirmed successfully in sleep mode at WD–ST14. – Confirmed by DC",
   );
 });
 
@@ -69,7 +71,31 @@ test("Sleep logs normalize persisted entries and reject incomplete rows", () => 
 
   const normalized = normalizeSleepModeLogs([valid, { id: "empty", time: "", trainIds: [], location: "" }]);
   assert.equal(normalized.length, 1);
-  assert.equal(normalized[0].text, "01:05 hrs – T02 successfully in wake–up mode at ED–ST02.");
+  assert.equal(normalized[0].text, "01:05 hrs – T02 successfully in wake-up mode at ED–ST02.");
+});
+
+test("Sleep and Wake-up logs are grouped separately in chronological order", () => {
+  const logs = [
+    createSleepModeLogEntry({ time: "20:53", trainIds: ["15"], location: "WD-ST14", mode: "wake" }, { id: "wake-1", now: "2026-09-04T20:53:00.000Z" }),
+    createSleepModeLogEntry({ time: "19:22", trainIds: ["04"], location: "WD-ST15", mode: "sleep" }, { id: "sleep-1", now: "2026-09-04T19:22:00.000Z" }),
+    createSleepModeLogEntry({ time: "20:56", trainIds: ["33", "41"], location: "WD-ST15", mode: "wake", remark: "FOR SWAPPING" }, { id: "wake-2", now: "2026-09-04T20:56:00.000Z" }),
+    createSleepModeLogEntry({ time: "19:31", trainIds: ["33"], location: "WD-ST15", mode: "sleep" }, { id: "sleep-2", now: "2026-09-04T19:31:00.000Z" }),
+  ];
+
+  const grouped = groupSleepModeLogs(logs);
+  assert.deepEqual(grouped.sleep.map((entry) => entry.id), ["sleep-1", "sleep-2"]);
+  assert.deepEqual(grouped.wake.map((entry) => entry.id), ["wake-1", "wake-2"]);
+  assert.equal(
+    buildSleepModeGroupedText(logs),
+    [
+      "SLEEP MODE",
+      "19:22 hrs – T04 confirmed successfully in sleep mode at WD–ST15.",
+      "19:31 hrs – T33 confirmed successfully in sleep mode at WD–ST15.",
+      "WAKE-UP MODE",
+      "20:53 hrs – T15 successfully in wake-up mode at WD–ST14.",
+      "20:56 hrs – T33 and T41 successfully in wake-up mode at WD–ST15. – FOR SWAPPING",
+    ].join("\n\n"),
+  );
 });
 
 test("Sleep logs identify West and East depot locations for separate outputs", () => {
@@ -102,6 +128,9 @@ test("SLP is wired as a public route with shared cloud storage", () => {
   assert.match(componentSource, /getSleepModeDepot\(entry\.location\)/);
   assert.match(componentSource, /\(\["west", "east"\]\)\.map/);
   assert.match(componentSource, /buildSleepModeExcelFileName\(depotLogs, undefined, layout\.shortLabel\)/);
+  assert.match(componentSource, /<SleepLogGroup mode="sleep" entries=\{groupedLogs\.sleep\}/);
+  assert.match(componentSource, /<SleepLogGroup mode="wake" entries=\{groupedLogs\.wake\}/);
+  assert.match(componentSource, /navigator\.clipboard\.writeText\(buildSleepModeGroupedText\(depotLogs\)\)/);
   assert.match(componentSource, /persistLogs\(logs\.filter\(\(entry\) => getSleepModeDepot\(entry\.location\) !== depot\)\)/);
   assert.match(clientSource, /'SleepModeLog'/);
   assert.match(entityFunctionSource, /'SleepModeLog'/);

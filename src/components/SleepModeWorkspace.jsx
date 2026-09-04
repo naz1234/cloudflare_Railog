@@ -16,10 +16,12 @@ import {
 import { base44 } from "@/api/base44Client";
 import { buildSleepModeExcelFileName, createSleepModeExcelBytes } from "@/lib/sleepModeExcel";
 import {
+  buildSleepModeGroupedText,
   createSleepModeLogEntry,
   formatSleepTimeInput,
   getSleepModeDepot,
   getSleepModeRecordUpdatedMs,
+  groupSleepModeLogs,
   normalizeSleepLogTime,
   normalizeSleepModeLogs,
   normalizeSleepTrainId,
@@ -284,6 +286,36 @@ function DepotSleepPanel({
   );
 }
 
+function SleepLogGroup({ mode, entries, saving, onDelete }) {
+  const isSleep = mode === "sleep";
+  const title = isSleep ? "Sleep Mode" : "Wake-up Mode";
+
+  return (
+    <section data-sleep-log-mode={mode}>
+      <div className={`mb-2 flex items-center justify-between rounded-lg border px-3 py-2 ${isSleep ? "border-indigo-200 bg-indigo-50 text-indigo-800 dark:border-indigo-400/25 dark:bg-indigo-400/[0.09] dark:text-indigo-200" : "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-400/25 dark:bg-amber-400/[0.09] dark:text-amber-200"}`}>
+        <h3 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em]">
+          {isSleep ? <MoonStar className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          {title}
+        </h3>
+        <span className="rounded-full border border-current/20 px-2 py-0.5 text-[9px] font-semibold">{entries.length}</span>
+      </div>
+      {entries.length ? (
+        <ul className="space-y-2">
+          {entries.map((entry) => (
+            <li key={entry.id} className={`flex items-start gap-3 rounded-xl border px-3 py-3 ${isSleep ? "border-indigo-200 bg-indigo-50 dark:border-indigo-400/25 dark:bg-indigo-400/[0.07]" : "border-amber-200 bg-amber-50 dark:border-amber-400/25 dark:bg-amber-400/[0.07]"}`}>
+              {isSleep ? <MoonStar className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-300" /> : <Sun className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />}
+              <p className="min-w-0 flex-1 font-mono text-[12px] leading-5 text-slate-800 dark:text-slate-100">{entry.text}</p>
+              <button type="button" onClick={() => onDelete(entry.id)} disabled={saving} aria-label={`Delete ${entry.text}`} title="Delete log entry" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-rose-200 text-rose-500 transition hover:bg-rose-100 disabled:opacity-40 dark:border-rose-400/30 dark:text-rose-300 dark:hover:bg-rose-500/15"><Trash2 className="h-3.5 w-3.5" /></button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-[10px] text-slate-400 dark:border-[#21435e] dark:text-[#587990]">No {title.toLowerCase()} entries.</p>
+      )}
+    </section>
+  );
+}
+
 function SleepLogOutputPanel({
   depot,
   logs,
@@ -300,6 +332,7 @@ function SleepLogOutputPanel({
   const badgeClass = isWest
     ? "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-400/35 dark:bg-violet-400/10 dark:text-violet-200"
     : "border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-400/35 dark:bg-cyan-400/10 dark:text-cyan-200";
+  const groupedLogs = useMemo(() => groupSleepModeLogs(logs), [logs]);
 
   return (
     <section
@@ -328,15 +361,10 @@ function SleepLogOutputPanel({
         {!loaded ? (
           <div className="flex min-h-[130px] items-center justify-center gap-2 text-[11px] text-slate-500 dark:text-[#8fb7d1]"><Loader2 className="h-4 w-4 animate-spin" /> Loading {layout.label} log...</div>
         ) : logs.length ? (
-          <ul className="space-y-2">
-            {logs.map((entry) => (
-              <li key={entry.id} className={`flex items-start gap-3 rounded-xl border px-3 py-3 ${entry.mode === "sleep" ? "border-indigo-200 bg-indigo-50 dark:border-indigo-400/25 dark:bg-indigo-400/[0.07]" : "border-amber-200 bg-amber-50 dark:border-amber-400/25 dark:bg-amber-400/[0.07]"}`}>
-                {entry.mode === "sleep" ? <MoonStar className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-300" /> : <Sun className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />}
-                <p className="min-w-0 flex-1 font-mono text-[12px] leading-5 text-slate-800 dark:text-slate-100">{entry.text}</p>
-                <button type="button" onClick={() => onDelete(entry.id)} disabled={saving} aria-label={`Delete ${entry.text}`} title="Delete log entry" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-rose-200 text-rose-500 transition hover:bg-rose-100 disabled:opacity-40 dark:border-rose-400/30 dark:text-rose-300 dark:hover:bg-rose-500/15"><Trash2 className="h-3.5 w-3.5" /></button>
-              </li>
-            ))}
-          </ul>
+          <div className="space-y-5">
+            <SleepLogGroup mode="sleep" entries={groupedLogs.sleep} saving={saving} onDelete={onDelete} />
+            <SleepLogGroup mode="wake" entries={groupedLogs.wake} saving={saving} onDelete={onDelete} />
+          </div>
         ) : (
           <div className="flex min-h-[130px] flex-col items-center justify-center text-center">
             <BedDouble className="h-8 w-8 text-slate-300 dark:text-[#456980]" />
@@ -552,7 +580,7 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
     const depotLogs = logsByDepot[depot] || [];
     if (!depotLogs.length) return;
     try {
-      await navigator.clipboard.writeText(depotLogs.map((entry) => entry.text).join("\n"));
+      await navigator.clipboard.writeText(buildSleepModeGroupedText(depotLogs));
     } catch (error) {
       console.error("Sleep Mode log copy failed:", error);
     }
