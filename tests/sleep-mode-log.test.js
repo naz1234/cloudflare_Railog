@@ -122,6 +122,15 @@ test("SLP stabling typography matches the readable main-stabling scale", () => {
   assert.doesNotMatch(componentSource, /slp-stabling-mode-pill[^\n]*text-\[8px\]/);
 });
 
+test("SLP time field has a compact current-time refresh control", () => {
+  const componentSource = readFileSync(new URL("../src/components/SleepModeWorkspace.jsx", import.meta.url), "utf8");
+
+  assert.match(componentSource, /id="slp-log-time"/);
+  assert.match(componentSource, /onClick=\{\(\) => setLogTime\(getCurrentTime\(\)\)\}/);
+  assert.match(componentSource, /aria-label="Set SLP time to the current time"/);
+  assert.match(componentSource, /theme-movement-time-refresh[\s\S]*?<RefreshCw size=\{10\}/);
+});
+
 test("trains already in Sleep mode use a bright distinct card state", () => {
   const componentSource = readFileSync(new URL("../src/components/SleepModeWorkspace.jsx", import.meta.url), "utf8");
   const cssSource = readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
