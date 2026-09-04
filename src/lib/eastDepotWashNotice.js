@@ -1,6 +1,6 @@
 export const EAST_DEPOT_WEEKDAY_WASH_NOTICE = "Early Shift Weekdays: Kindly send pending-wash trains at East Depot back to the Mainline as off-peak trains.\nObjective: To reduce swapping and expedite washing.";
 export const EAST_DEPOT_RETURN_TO_MAINLINE_REMARK = "Return Back to ML";
-export const WEST_DEPOT_WEEKEND_WASH_NOTICE = "Early Shift Friday and Saturday – Kindly park the trains pending for washing at West Depot and ensure no pending-wash trains are running on the Mainline. Late Shift can send them directly for wash after Possession.";
+export const WEST_DEPOT_WEEKEND_WASH_NOTICE = "Early Shift Friday and Saturday:\n1. Kindly park the pending-wash trains at West Depot.\n2. Ensure no pending-wash trains are running on the Mainline.\n\nObjective: Late Shift can send the trains directly for wash after Possession and expedite washing.";
 
 export function shouldShowEastDepotWashNotice({
   depot = "west",
