@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import {
+  EAST_DEPOT_RETURN_TO_MAINLINE_REMARK,
   EAST_DEPOT_WEEKDAY_WASH_NOTICE,
   shouldShowEastDepotWashNotice,
 } from "../src/lib/eastDepotWashNotice.js";
@@ -18,6 +19,15 @@ test("East Depot wash notice uses the requested wording", () => {
     EAST_DEPOT_WEEKDAY_WASH_NOTICE,
     "Early Shift Weekdays – Kindly arrange for the pending-wash trains parked at East Depot to be sent back to the Mainline as off-peak trains, to reduce swapping and expedite the pending washing.",
   );
+});
+
+test("pending-wash train cards use the requested Mainline return remark", () => {
+  assert.equal(EAST_DEPOT_RETURN_TO_MAINLINE_REMARK, "Return Back to ML");
+  assert.match(pageSource, /showReturnBackToMainlineRemark=\{showEastDepotWashNotice\}/);
+  assert.match(pageSource, /showReturnBackToMainlineRemark && depot === "east" && hasPendingWash/);
+  assert.match(pageSource, /maintList\.some\(\(item\) => getStablingRequestCategory\(item\) === "wash"\)/);
+  assert.match(pageSource, /theme-east-depot-return-remark/);
+  assert.match(pageSource, /\{EAST_DEPOT_RETURN_TO_MAINLINE_REMARK\}/);
 });
 
 test("notice appears only for East Depot with the Weekday timetable", () => {
