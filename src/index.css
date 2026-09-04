@@ -10485,6 +10485,97 @@ html[data-app-theme="light"] .theme-possession-header {
     0 1px 3px rgba(15, 23, 42, 0.06) !important;
 }
 
+/* PSS depot identity: West uses cyan and East uses violet while the forms,
+   storage, and live-sync behavior remain shared. */
+.theme-possession-depot-workspace[data-possession-depot="west"] {
+  --pss-depot-accent: #22d3ee;
+  --pss-depot-border: rgba(34, 211, 238, 0.38);
+  --pss-depot-surface: rgba(6, 37, 52, 0.72);
+  --pss-depot-card: #092438;
+  --pss-depot-header-start: #0b3b50;
+  --pss-depot-header-end: #08293c;
+  --pss-depot-muted: #67e8f9;
+  --pss-depot-glow: rgba(34, 211, 238, 0.12);
+}
+
+.theme-possession-depot-workspace[data-possession-depot="east"] {
+  --pss-depot-accent: #c084fc;
+  --pss-depot-border: rgba(192, 132, 252, 0.42);
+  --pss-depot-surface: rgba(35, 20, 58, 0.72);
+  --pss-depot-card: #1a1630;
+  --pss-depot-header-start: #35204e;
+  --pss-depot-header-end: #21172f;
+  --pss-depot-muted: #d8b4fe;
+  --pss-depot-glow: rgba(168, 85, 247, 0.14);
+}
+
+.theme-possession-depot-workspace {
+  border: 1px solid var(--pss-depot-border);
+  border-radius: 18px;
+  padding: 12px;
+  background: linear-gradient(145deg, var(--pss-depot-surface), rgba(3, 17, 29, 0.72));
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18), inset 0 1px 0 var(--pss-depot-glow);
+}
+
+.theme-possession-depot-workspace .theme-possession-depot-banner,
+.theme-possession-depot-workspace .theme-possession-card {
+  border-color: var(--pss-depot-border) !important;
+  background-color: var(--pss-depot-card) !important;
+}
+
+.theme-possession-depot-workspace .theme-possession-depot-banner {
+  background: linear-gradient(120deg, var(--pss-depot-header-start), var(--pss-depot-header-end)) !important;
+  box-shadow: inset 3px 0 0 var(--pss-depot-accent), 0 8px 22px var(--pss-depot-glow);
+}
+
+.theme-possession-depot-workspace .theme-possession-header {
+  border-color: var(--pss-depot-border) !important;
+  background: linear-gradient(180deg, var(--pss-depot-header-start), var(--pss-depot-header-end)) !important;
+  background-image: linear-gradient(180deg, var(--pss-depot-header-start), var(--pss-depot-header-end)) !important;
+}
+
+.theme-possession-depot-workspace .theme-possession-label,
+.theme-possession-depot-workspace .theme-possession-depot-title {
+  color: var(--pss-depot-muted) !important;
+}
+
+.theme-possession-depot-workspace .theme-possession-divider {
+  border-color: var(--pss-depot-border) !important;
+}
+
+.theme-possession-depot-workspace .theme-possession-input:focus {
+  border-color: var(--pss-depot-accent) !important;
+  --tw-ring-color: var(--pss-depot-accent) !important;
+}
+
+html[data-app-theme="light"] .theme-possession-depot-workspace[data-possession-depot="west"] {
+  --pss-depot-accent: #0891b2;
+  --pss-depot-border: rgba(8, 145, 178, 0.42);
+  --pss-depot-surface: rgba(224, 247, 250, 0.92);
+  --pss-depot-card: #f5fdff;
+  --pss-depot-header-start: #d7f3f8;
+  --pss-depot-header-end: #c4e8f0;
+  --pss-depot-muted: #0e7490;
+  --pss-depot-glow: rgba(8, 145, 178, 0.10);
+}
+
+html[data-app-theme="light"] .theme-possession-depot-workspace[data-possession-depot="east"] {
+  --pss-depot-accent: #7e22ce;
+  --pss-depot-border: rgba(126, 34, 206, 0.38);
+  --pss-depot-surface: rgba(245, 235, 255, 0.94);
+  --pss-depot-card: #fdf8ff;
+  --pss-depot-header-start: #f0ddff;
+  --pss-depot-header-end: #e4caf8;
+  --pss-depot-muted: #6b21a8;
+  --pss-depot-glow: rgba(126, 34, 206, 0.10);
+}
+
+html[data-app-theme="light"] .theme-possession-depot-workspace .theme-possession-header {
+  border-color: var(--pss-depot-border) !important;
+  background: linear-gradient(180deg, var(--pss-depot-header-start), var(--pss-depot-header-end)) !important;
+  background-image: linear-gradient(180deg, var(--pss-depot-header-start), var(--pss-depot-header-end)) !important;
+}
+
 /* TP1 movement dropdowns: keep native option menus readable in both themes. */
 .theme-train-movement-page .theme-tp1-movement-window select.theme-tp1-inline-field-control {
   color-scheme: dark;
