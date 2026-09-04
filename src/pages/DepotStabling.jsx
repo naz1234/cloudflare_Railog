@@ -22494,26 +22494,7 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "possession" && (
-          <div className="w-full px-2 pb-10 pt-6">
-            <div className="mb-3 w-full rounded-[24px] border border-[#1d4869] bg-[#061827]/90 p-3 shadow-[0_18px_55px_rgba(0,0,0,0.25)]">
-              <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#4f8ef7]/35 bg-[#0f2d4a] text-[10px] font-semibold tracking-[0.16em] text-[#bceaff]">
-                  PSS
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-[#6db6e8]">Live shared page</p>
-                  <h2 className="truncate text-[17px] font-normal leading-tight text-white">Possession Log</h2>
-                  <p className="mt-0.5 text-[10px] font-semibold text-[#8ea8c0]">
-                    No password required. Changes auto-save to Cloudflare D1 and sync across laptops.
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.85)]" />
-                  Live sync
-                </div>
-              </div>
-            </div>
-
+          <div className="w-full px-2 pb-10 pt-3">
             <PossessionTabContent />
           </div>
         )}
