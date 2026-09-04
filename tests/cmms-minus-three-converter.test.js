@@ -111,6 +111,8 @@ test("CMMS output filename follows the supplied example", () => {
 
 test("the converter window is below Manual Washing Entry and exposes upload, selection, and download", () => {
   assert.ok(trainWashingSource.indexOf("Manual Washing Entry") < trainWashingSource.indexOf("<CmmsMinusThreeConverter />"));
+  assert.match(trainWashingSource, /Convert Completed Washing from CMMS to ELOG/);
+  assert.doesNotMatch(trainWashingSource, /Convert Completed Washing Records from Excel to ELOG/);
   assert.match(converterSource, /Subtract 2 or 3 CMMS Time Entries/);
   assert.match(converterSource, /\[2, 3\]\.map/);
   assert.match(converterSource, /placeholder="02 16 36 41 42"/);
