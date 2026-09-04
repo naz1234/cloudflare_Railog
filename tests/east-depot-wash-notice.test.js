@@ -44,15 +44,16 @@ test("notice appears only for East Depot with the Weekday timetable", () => {
 });
 
 test("West Depot uses the requested message only for Friday and Saturday timetables", () => {
+  const midday = localDateAt(12, 0);
   assert.equal(
     WEST_DEPOT_WEEKEND_WASH_NOTICE,
     "Early Shift Friday and Saturday:\nKindly park all pending-wash trains at West Depot and ensure none are running on the Mainline.\n\nObjective: Late Shift can send the trains directly for wash after Possession and expedite washing.",
   );
-  assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "west", timetableType: "friday" }), true);
-  assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "west", timetableType: "saturday" }), true);
-  assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "west", timetableType: "weekday" }), false);
-  assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "west", timetableType: "ph" }), false);
-  assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "east", timetableType: "friday" }), false);
+  assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "west", timetableType: "friday", date: midday }), true);
+  assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "west", timetableType: "saturday", date: midday }), true);
+  assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "west", timetableType: "weekday", date: midday }), false);
+  assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "west", timetableType: "ph", date: midday }), false);
+  assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "east", timetableType: "friday", date: midday }), false);
 });
 
 test("Train Request renders the weekend message only through the West condition", () => {
@@ -69,23 +70,31 @@ test("East and West wash notices use the purple reference treatment only in nigh
   assert.match(pageSource, /theme-stabling-wash-notice-icon/);
 });
 
-test("notice follows the inclusive 09:00 to 16:00 local-time window", () => {
-  const visible = (hours, minutes) => shouldShowEastDepotWashNotice({
+test("East and West notices follow the inclusive 09:00 to 16:00 local-time window", () => {
+  const eastVisible = (hours, minutes) => shouldShowEastDepotWashNotice({
     depot: "east",
     timetableType: "weekday",
     date: localDateAt(hours, minutes),
   });
+  const westVisible = (hours, minutes) => shouldShowWestDepotWeekendWashNotice({
+    depot: "west",
+    timetableType: "friday",
+    date: localDateAt(hours, minutes),
+  });
 
-  assert.equal(visible(8, 59), false);
-  assert.equal(visible(9, 0), true);
-  assert.equal(visible(15, 59), true);
-  assert.equal(visible(16, 0), true);
-  assert.equal(visible(16, 1), false);
+  for (const visible of [eastVisible, westVisible]) {
+    assert.equal(visible(8, 59), false);
+    assert.equal(visible(9, 0), true);
+    assert.equal(visible(15, 59), true);
+    assert.equal(visible(16, 0), true);
+    assert.equal(visible(16, 1), false);
+  }
 });
 
-test("Train Request wires the active timetable and refreshes the East notice clock", () => {
+test("Train Request wires the active timetable and refreshes both notice clocks", () => {
   assert.match(pageSource, /depot="east"\s+activeTimetableType=\{selectedTimetableType\}\s+title="EAST DEPOT STABLING"/);
   assert.match(pageSource, /showEastDepotWashNotice && \(/);
+  assert.match(pageSource, /shouldShowWestDepotWeekendWashNotice\(\{\s*depot,\s*timetableType: normalizeTimetableType\(activeTimetableType\),\s*date: washNoticeDate,/);
   assert.match(pageSource, /role="status"/);
   assert.match(pageSource, /window\.setInterval\(refreshNoticeTime, 30000\)/);
 });
