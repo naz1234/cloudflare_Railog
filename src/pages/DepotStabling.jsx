@@ -62,6 +62,7 @@ import {
   removeRequestedSummaryLeadingSeparator,
 } from "../lib/requestedActionSummary";
 import {
+  EAST_DEPOT_RETURN_TO_MAINLINE_REMARK,
   EAST_DEPOT_WEEKDAY_WASH_NOTICE,
   shouldShowEastDepotWashNotice,
 } from "../lib/eastDepotWashNotice";
@@ -28385,6 +28386,7 @@ function StablingSection({
                 isFirst={ri === 0}
                 isLast={ri === roads.length - 1}
                 searchHighlight={normalizedSearch}
+                showReturnBackToMainlineRemark={showEastDepotWashNotice}
               />
             ))}
           </tbody>
@@ -28470,6 +28472,7 @@ function RoadRow({
   isFirst,
   isLast,
   searchHighlight = "",
+  showReturnBackToMainlineRemark = false,
 }) {
   const rowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
 
@@ -28488,7 +28491,11 @@ function RoadRow({
   // aligned with trains that have two or more remark pills.
   const rowMaxRemarkCount = blockIndices.reduce((maxCount, blockIndex) => {
     const rowKey = normalizeTrainId(blocks[blockIndex]?.trainId || "");
-    const rowRemarkCount = rowKey ? (maintenanceMap[rowKey] || []).length : 0;
+    const rowRequests = rowKey ? maintenanceMap[rowKey] || [] : [];
+    const hasPendingWash = rowRequests.some((item) => getStablingRequestCategory(item) === "wash");
+    const rowRemarkCount = rowRequests.length + (
+      showReturnBackToMainlineRemark && depot === "east" && hasPendingWash ? 1 : 0
+    );
     return Math.max(maxCount, rowRemarkCount);
   }, 0);
   const rowRemarkSlotHeight = rowMaxRemarkCount > 0
@@ -28504,6 +28511,11 @@ function RoadRow({
         const val = blocks[bi]?.trainId || "";
         const key = normalizeTrainId(val);
         const maintList = key ? maintenanceMap[key] || [] : [];
+        const showTrainReturnRemark = Boolean(
+          showReturnBackToMainlineRemark
+          && depot === "east"
+          && maintList.some((item) => getStablingRequestCategory(item) === "wash")
+        );
         const primaryMaint = getPrimaryStablingRequest(maintList);
         const primaryVisual = primaryMaint ? getStablingRequestVisual(primaryMaint) : null;
         const isDup = key && duplicates.has(key);
@@ -28649,6 +28661,21 @@ function RoadRow({
                       </ActionTooltip>
                     );
                   })}
+                  {showTrainReturnRemark && (
+                    <span
+                      className="theme-east-depot-return-remark block w-full truncate rounded-md px-1.5 py-0.5 text-center text-[10px] font-bold leading-tight"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(245,158,11,0.30), rgba(120,53,15,0.72))",
+                        border: "1px solid rgba(251,191,36,0.82)",
+                        boxShadow: "0 0 10px rgba(245,158,11,0.24), inset 0 1px 0 rgba(255,255,255,0.08)",
+                        color: "#fef3c7",
+                      }}
+                      title={EAST_DEPOT_RETURN_TO_MAINLINE_REMARK}
+                      aria-label={EAST_DEPOT_RETURN_TO_MAINLINE_REMARK}
+                    >
+                      {EAST_DEPOT_RETURN_TO_MAINLINE_REMARK}
+                    </span>
+                  )}
                 </div>
               ) : key ? (
                 <span
