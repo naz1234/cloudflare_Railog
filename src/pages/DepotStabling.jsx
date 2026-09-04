@@ -28085,7 +28085,20 @@ function StablingWashNotice({ depot, message }) {
         : "border-cyan-300/50 bg-cyan-400/10 text-cyan-200"}`}>
         <RefreshCw className="h-4 w-4" aria-hidden="true" />
       </span>
-      <p className="text-xs font-semibold leading-relaxed">{message}</p>
+      <div className="min-w-0 text-xs font-semibold leading-relaxed">
+        {String(message || "").split("\n").map((line, index) => {
+          const separatorIndex = line.indexOf(":");
+          const label = separatorIndex >= 0 ? line.slice(0, separatorIndex + 1) : "";
+          const body = separatorIndex >= 0 ? line.slice(separatorIndex + 1) : line;
+
+          return (
+            <p key={`${index}-${line}`} className={index > 0 ? "mt-1" : undefined}>
+              {label && <strong className="font-black">{label}</strong>}
+              {body}
+            </p>
+          );
+        })}
+      </div>
     </div>
   );
 }
