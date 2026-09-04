@@ -239,7 +239,7 @@ export default function TrainWashing() {
               <Droplets className="w-4 h-4 text-[#4f8ef7]" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-sm font-black leading-tight text-white tracking-widest uppercase">Convert Completed Washing Records from Excel to ELOG</h2>
+              <h2 className="text-sm font-black leading-tight text-white tracking-widest uppercase">Convert Completed Washing from CMMS to ELOG</h2>
               <p className="text-[10px] text-[#4a8ab5]">Excel upload only — columns: Train Number, Last Wash</p>
             </div>
           </div>
