@@ -28080,7 +28080,7 @@ function StablingWashNotice({ depot, message }) {
         ? "theme-east-depot-wash-notice border-amber-400/65 bg-amber-500/10 text-amber-100"
         : "theme-west-depot-weekend-wash-notice border-cyan-400/65 bg-cyan-500/10 text-cyan-100"}`}
     >
-      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${isEast
+      <span className={`theme-stabling-wash-notice-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${isEast
         ? "border-amber-300/50 bg-amber-400/10 text-amber-300"
         : "border-cyan-300/50 bg-cyan-400/10 text-cyan-200"}`}>
         <RefreshCw className="h-4 w-4" aria-hidden="true" />

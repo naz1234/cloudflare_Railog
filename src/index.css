@@ -746,6 +746,27 @@ html[data-app-theme="light"] .theme-east-depot-return-remark {
   -webkit-text-fill-color: #78350f !important;
 }
 
+/* East and West wash notices share the reference panel's purple treatment in night mode only. */
+html[data-app-theme="dark"] :is(
+  .theme-east-depot-wash-notice,
+  .theme-west-depot-weekend-wash-notice
+) {
+  background: linear-gradient(135deg, #211d52 0%, #1f225b 100%) !important;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.2), inset 0 1px 0 rgba(196, 181, 253, 0.14) !important;
+  color: #f5f3ff !important;
+  -webkit-text-fill-color: #f5f3ff !important;
+}
+
+html[data-app-theme="dark"] :is(
+  .theme-east-depot-wash-notice,
+  .theme-west-depot-weekend-wash-notice
+) .theme-stabling-wash-notice-icon {
+  background: #2e265f !important;
+  border-color: #a78bfa !important;
+  color: #c4b5fd !important;
+}
+
 /* Stabling remark tooltip: portal-based so it is never clipped by a train card. */
 [role="tooltip"]:has(.theme-stabling-remark-tooltip-text) {
   max-width: min(360px, calc(100vw - 24px)) !important;
