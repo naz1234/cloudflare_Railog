@@ -55,3 +55,20 @@ test("West and East PSS workspaces have distinct depot themes", () => {
   assert.match(css, /theme-possession-depot-workspace \.theme-possession-header/);
   assert.match(css, /theme-possession-depot-workspace \.theme-possession-input:focus/);
 });
+
+test("each PSS Access Entry cycles through a distinct window theme", () => {
+  const css = fs.readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
+  assert.match(source, /const POSSESSION_ACCESS_ENTRY_THEME_COUNT = 6/);
+  assert.match(source, /className="theme-possession-access-entry/);
+  assert.match(source, /data-entry-theme=\{index % POSSESSION_ACCESS_ENTRY_THEME_COUNT\}/);
+  assert.match(source, /theme-possession-access-entry-header/);
+  assert.match(source, /theme-possession-access-entry-title/);
+
+  for (let themeIndex = 0; themeIndex < 6; themeIndex += 1) {
+    assert.match(css, new RegExp(`theme-possession-access-entry\\[data-entry-theme="${themeIndex}"\\]`));
+  }
+  assert.match(css, /html\[data-app-theme="light"\] \.theme-possession-access-entry\[data-entry-theme="0"\]/);
+  assert.match(css, /--pss-entry-surface/);
+  assert.match(css, /--pss-entry-header-start/);
+  assert.match(css, /--pss-entry-accent/);
+});
