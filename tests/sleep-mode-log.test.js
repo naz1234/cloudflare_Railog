@@ -125,10 +125,35 @@ test("SLP stabling typography matches the readable main-stabling scale", () => {
 test("SLP time field has a compact current-time refresh control", () => {
   const componentSource = readFileSync(new URL("../src/components/SleepModeWorkspace.jsx", import.meta.url), "utf8");
 
-  assert.match(componentSource, /id="slp-log-time"/);
-  assert.match(componentSource, /onClick=\{\(\) => setLogTime\(getCurrentTime\(\)\)\}/);
-  assert.match(componentSource, /aria-label="Set SLP time to the current time"/);
+  assert.match(componentSource, /id=\{`slp-log-time-\$\{depot\}`\}/);
+  assert.match(componentSource, /onClick=\{\(\) => onUseCurrentTime\(depot\)\}/);
+  assert.match(componentSource, /aria-label=\{`Set \$\{layout\.label\} SLP time to the current time`\}/);
   assert.match(componentSource, /theme-movement-time-refresh[\s\S]*?<RefreshCw size=\{10\}/);
+});
+
+test("each depot owns its Time, Remark, Sleep and Wake-up controls", () => {
+  const componentSource = readFileSync(new URL("../src/components/SleepModeWorkspace.jsx", import.meta.url), "utf8");
+  const panelStart = componentSource.indexOf("function DepotSleepPanel");
+  const panelEnd = componentSource.indexOf("function SleepLogOutputPanel", panelStart);
+  const panelSource = componentSource.slice(panelStart, panelEnd);
+
+  assert.match(panelSource, /data-sleep-entry-controls=\{depot\}/);
+  assert.match(panelSource, /Remark optional/);
+  assert.match(panelSource, /onAddLogs\(depot, "sleep"\)/);
+  assert.match(panelSource, /onAddLogs\(depot, "wake"\)/);
+  assert.match(componentSource, /logDraft=\{logDrafts\.west\}/);
+  assert.match(componentSource, /logDraft=\{logDrafts\.east\}/);
+  assert.doesNotMatch(componentSource, /id="slp-log-time"/);
+});
+
+test("SLP logging clears only the selected depot and preserves its separate draft", () => {
+  const componentSource = readFileSync(new URL("../src/components/SleepModeWorkspace.jsx", import.meta.url), "utf8");
+
+  assert.match(componentSource, /const \[logDrafts, setLogDrafts\] = useState/);
+  assert.match(componentSource, /const addSelectedLogs = useCallback\(\(depot, mode\)/);
+  assert.match(componentSource, /selectedCells\.filter\(\(cell\) => cell\.depot === depot\)/);
+  assert.match(componentSource, /current\.filter\(\(key\) => !key\.startsWith\(`\$\{depot\}:`\)\)/);
+  assert.match(componentSource, /\[depot\]: \{ time: getCurrentTime\(\), remark: "" \}/);
 });
 
 test("trains already in Sleep mode use a bright distinct card state", () => {
