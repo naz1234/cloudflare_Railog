@@ -22,12 +22,14 @@ test("East Depot wash notice uses the requested wording", () => {
 });
 
 test("pending-wash train cards use the requested Mainline return remark", () => {
+  const css = fs.readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
   assert.equal(EAST_DEPOT_RETURN_TO_MAINLINE_REMARK, "Return Back to ML");
   assert.match(pageSource, /showReturnBackToMainlineRemark=\{showEastDepotWashNotice\}/);
   assert.match(pageSource, /showReturnBackToMainlineRemark && depot === "east" && hasPendingWash/);
   assert.match(pageSource, /maintList\.some\(\(item\) => getStablingRequestCategory\(item\) === "wash"\)/);
   assert.match(pageSource, /theme-east-depot-return-remark/);
   assert.match(pageSource, /\{EAST_DEPOT_RETURN_TO_MAINLINE_REMARK\}/);
+  assert.match(css, /html\[data-app-theme="light"\] \.theme-east-depot-return-remark/);
 });
 
 test("notice appears only for East Depot with the Weekday timetable", () => {

@@ -738,6 +738,14 @@ html[data-app-theme="dark"] .theme-stabling-remark {
   font-weight: 400 !important;
 }
 
+html[data-app-theme="light"] .theme-east-depot-return-remark {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+  border-color: #d97706 !important;
+  box-shadow: 0 1px 3px rgba(120, 53, 15, 0.18) !important;
+  color: #78350f !important;
+  -webkit-text-fill-color: #78350f !important;
+}
+
 /* Stabling remark tooltip: portal-based so it is never clipped by a train card. */
 [role="tooltip"]:has(.theme-stabling-remark-tooltip-text) {
   max-width: min(360px, calc(100vw - 24px)) !important;
