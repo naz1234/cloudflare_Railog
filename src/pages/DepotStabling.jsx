@@ -61,6 +61,10 @@ import {
   normalizeRequestedSummaryDates,
   removeRequestedSummaryLeadingSeparator,
 } from "../lib/requestedActionSummary";
+import {
+  EAST_DEPOT_WEEKDAY_WASH_NOTICE,
+  shouldShowEastDepotWashNotice,
+} from "../lib/eastDepotWashNotice";
 
 const DEFAULT_BOOKMARK_LINKS = [
   { title: "Outlook", url: "https://outlook.office.com", sortOrder: 0 },
@@ -22164,6 +22168,7 @@ export default function DepotStablingPage() {
     <div className="min-w-0 flex flex-col items-start gap-5">
       <StablingSection
         depot="west"
+        activeTimetableType={selectedTimetableType}
         title="WEST DEPOT STABLING"
         blockLabels={["BLOCK 7", "BLOCK 6", "BLOCK 5", "BLOCK 4", "BLOCK 3", "BLOCK 2", "BLOCK 1"]}
         blockIndices={[6, 5, 4, 3, 2, 1, 0]}
@@ -22188,6 +22193,7 @@ export default function DepotStablingPage() {
 
       <StablingSection
         depot="east"
+        activeTimetableType={selectedTimetableType}
         title="EAST DEPOT STABLING"
         blockLabels={["BLOCK 1", "BLOCK 2", "BLOCK 3", "BLOCK 4", "BLOCK 5", "BLOCK 6", "BLOCK 7"]}
         blockIndices={[0, 1, 2, 3, 4, 5, 6]}
@@ -28064,6 +28070,7 @@ async function downloadInsertionPicturePng({ title, blockLabels, blockIndices, r
 
 function StablingSection({
   depot,
+  activeTimetableType = "weekday",
   title,
   blockLabels,
   blockIndices,
@@ -28083,6 +28090,7 @@ function StablingSection({
   allDepots = [],
 }) {
   const [sectionSearch, setSectionSearch] = useState("");
+  const [washNoticeDate, setWashNoticeDate] = useState(() => new Date());
   const searchQuery = sectionSearch.trim().toUpperCase().replace(/\s+/g, "");
   const normalizedSearch = searchQuery ? normalizeTrainId(searchQuery) : "";
   const [copiedStabling, setCopiedStabling] = useState(false);
@@ -28122,6 +28130,19 @@ function StablingSection({
   }).join("\n");
   const copyStablingTooltipText = `Copy text :\n${stablingCopyText}`;
   const downloadPdfTooltipText = `Download ${depotLabel} stabling PDF with colour-coded remark pills`;
+  const showEastDepotWashNotice = shouldShowEastDepotWashNotice({
+    depot,
+    timetableType: normalizeTimetableType(activeTimetableType),
+    date: washNoticeDate,
+  });
+
+  useEffect(() => {
+    if (depot !== "east") return undefined;
+    const refreshNoticeTime = () => setWashNoticeDate(new Date());
+    refreshNoticeTime();
+    const interval = window.setInterval(refreshNoticeTime, 30000);
+    return () => window.clearInterval(interval);
+  }, [depot]);
 
   const handleDownloadPdf = async () => {
     if (downloadingPdf) return;
@@ -28292,6 +28313,20 @@ function StablingSection({
           </div>
         )}
       </div>
+
+      {showEastDepotWashNotice && (
+        <div
+          role="status"
+          className="theme-east-depot-wash-notice mb-3 flex w-[912px] items-center gap-3 rounded-xl border border-amber-400/65 bg-amber-500/10 px-4 py-3 text-amber-100 shadow-[0_0_20px_rgba(245,158,11,0.12)]"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-amber-300/50 bg-amber-400/10 text-amber-300">
+            <RefreshCw className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <p className="text-xs font-semibold leading-relaxed">
+            {EAST_DEPOT_WEEKDAY_WASH_NOTICE}
+          </p>
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-xl">
         <table className="theme-stabling-table border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 912, maxWidth: 912, width: 912 }}>
