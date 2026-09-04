@@ -71,11 +71,13 @@ export function buildSleepModeLogLine({ time = "", trainIds = [], location = "",
   if (!normalizedTime || !trainList || !normalizedLocation) return "";
 
   const normalizedMode = normalizeSleepMode(mode);
-  const modeLabel = normalizedMode === "wake" ? "wake\u2013up" : "sleep";
-  const baseLine = `${normalizedTime} hrs \u2013 ${trainList} successfully in ${modeLabel} mode at ${normalizedLocation}.`;
+  const status = normalizedMode === "wake"
+    ? `${trainList} successfully in wake-up mode`
+    : `${trainList} confirmed successfully in sleep mode`;
+  const baseLine = `${normalizedTime} hrs \u2013 ${status} at ${normalizedLocation}.`;
   const normalizedRemark = normalizeSleepRemark(remark);
   if (!normalizedRemark) return baseLine;
-  return `${baseLine} Remark: ${normalizedRemark}${/[.!?]$/.test(normalizedRemark) ? "" : "."}`;
+  return `${baseLine} \u2013 ${normalizedRemark}`;
 }
 
 export function createSleepModeLogEntry(source = {}, options = {}) {
@@ -119,6 +121,25 @@ export function normalizeSleepModeLogs(logs = []) {
       return true;
     })
     .sort((left, right) => Date.parse(left.createdAt) - Date.parse(right.createdAt));
+}
+
+export function groupSleepModeLogs(logs = []) {
+  const grouped = { sleep: [], wake: [] };
+  normalizeSleepModeLogs(logs).forEach((entry) => grouped[entry.mode].push(entry));
+  return grouped;
+}
+
+export function buildSleepModeGroupedText(logs = []) {
+  const grouped = groupSleepModeLogs(logs);
+  const formatSection = (title, entries) => [
+    title,
+    ...entries.map((entry) => entry.text),
+  ].join("\n\n");
+
+  return [
+    formatSection("SLEEP MODE", grouped.sleep),
+    formatSection("WAKE-UP MODE", grouped.wake),
+  ].join("\n\n");
 }
 
 export function getSleepModeRecordUpdatedMs(record = {}) {
