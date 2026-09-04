@@ -546,23 +546,35 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
       </div>
 
       <section className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#315574] dark:bg-[#071827]">
-        <label className="block w-full min-w-[150px] sm:w-[190px]">
-          <span className="flex h-[58px] flex-col justify-center rounded-xl border border-sky-400 bg-sky-50/70 px-3 shadow-[0_0_0_2px_rgba(56,189,248,0.08)] transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-200 dark:border-[#3486d9] dark:bg-[#0a2240] dark:shadow-[0_0_12px_rgba(59,130,246,0.16)] dark:focus-within:border-[#5da8ff] dark:focus-within:ring-blue-500/20">
-            <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-sky-800 dark:text-white">
+        <div className="block w-full min-w-[150px] sm:w-[190px]">
+          <div className="flex h-[58px] flex-col justify-center rounded-xl border border-sky-400 bg-sky-50/70 px-3 shadow-[0_0_0_2px_rgba(56,189,248,0.08)] transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-200 dark:border-[#3486d9] dark:bg-[#0a2240] dark:shadow-[0_0_12px_rgba(59,130,246,0.16)] dark:focus-within:border-[#5da8ff] dark:focus-within:ring-blue-500/20">
+            <label htmlFor="slp-log-time" className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-sky-800 dark:text-white">
               <Clock3 className="h-3.5 w-3.5 text-sky-600 dark:text-[#62a9ff]" /> Time
-            </span>
-            <input
-              value={logTime}
-              inputMode="numeric"
-              maxLength={5}
-              onChange={(event) => setLogTime(formatSleepTimeInput(event.target.value))}
-              onBlur={() => setLogTime((current) => normalizeSleepLogTime(current) || current)}
-              placeholder="00:00"
-              aria-label="Sleep or wake-up log time"
-              className="mt-1 w-full bg-transparent text-[12px] font-medium text-slate-800 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-[#4f7394]"
-            />
-          </span>
-        </label>
+            </label>
+            <div className="mt-1 flex min-w-0 items-center gap-1.5">
+              <input
+                id="slp-log-time"
+                value={logTime}
+                inputMode="numeric"
+                maxLength={5}
+                onChange={(event) => setLogTime(formatSleepTimeInput(event.target.value))}
+                onBlur={() => setLogTime((current) => normalizeSleepLogTime(current) || current)}
+                placeholder="00:00"
+                aria-label="Sleep or wake-up log time"
+                className="min-w-0 flex-1 bg-transparent text-[12px] font-medium text-slate-800 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-[#4f7394]"
+              />
+              <button
+                type="button"
+                onClick={() => setLogTime(getCurrentTime())}
+                title="Use current time"
+                aria-label="Set SLP time to the current time"
+                className="theme-movement-time-refresh inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-emerald-400/70 bg-emerald-500/20 text-emerald-600 shadow-[0_0_8px_rgba(52,211,153,0.22)] transition hover:border-emerald-500 hover:bg-emerald-500/35 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 dark:text-emerald-300 dark:hover:border-emerald-300 dark:hover:text-white"
+              >
+                <RefreshCw size={10} strokeWidth={2.5} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </div>
         <label className="block min-w-[260px] flex-[1.4]">
           <span className="flex h-[58px] flex-col justify-center rounded-xl border border-slate-300 bg-slate-50/70 px-3 transition focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-200 dark:border-[#315574] dark:bg-[#0a2134] dark:focus-within:border-violet-400 dark:focus-within:ring-violet-400/20">
             <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-600 dark:text-white">
