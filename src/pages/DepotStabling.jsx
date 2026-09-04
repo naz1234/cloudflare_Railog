@@ -28173,10 +28173,10 @@ function StablingSection({
   const showWestDepotWeekendWashNotice = shouldShowWestDepotWeekendWashNotice({
     depot,
     timetableType: normalizeTimetableType(activeTimetableType),
+    date: washNoticeDate,
   });
 
   useEffect(() => {
-    if (depot !== "east") return undefined;
     const refreshNoticeTime = () => setWashNoticeDate(new Date());
     refreshNoticeTime();
     const interval = window.setInterval(refreshNoticeTime, 30000);
