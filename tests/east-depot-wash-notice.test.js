@@ -46,7 +46,7 @@ test("notice appears only for East Depot with the Weekday timetable", () => {
 test("West Depot uses the requested message only for Friday and Saturday timetables", () => {
   assert.equal(
     WEST_DEPOT_WEEKEND_WASH_NOTICE,
-    "Early Shift Friday and Saturday – Kindly park the trains pending for washing at West Depot and ensure no pending-wash trains are running on the Mainline. Late Shift can send them directly for wash after Possession.",
+    "Early Shift Friday and Saturday:\n1. Kindly park the pending-wash trains at West Depot.\n2. Ensure no pending-wash trains are running on the Mainline.\n\nObjective: Late Shift can send the trains directly for wash after Possession and expedite washing.",
   );
   assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "west", timetableType: "friday" }), true);
   assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "west", timetableType: "saturday" }), true);
