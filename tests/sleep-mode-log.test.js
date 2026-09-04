@@ -153,7 +153,18 @@ test("SLP logging clears only the selected depot and preserves its separate draf
   assert.match(componentSource, /const addSelectedLogs = useCallback\(\(depot, mode\)/);
   assert.match(componentSource, /selectedCells\.filter\(\(cell\) => cell\.depot === depot\)/);
   assert.match(componentSource, /current\.filter\(\(key\) => !key\.startsWith\(`\$\{depot\}:`\)\)/);
-  assert.match(componentSource, /\[depot\]: \{ time: getCurrentTime\(\), remark: "" \}/);
+  assert.match(componentSource, /\[depot\]: \{ time: "00:00", remark: "", timeConfirmed: false \}/);
+});
+
+test("SLP requires a fresh time refresh before every log submission", () => {
+  const componentSource = readFileSync(new URL("../src/components/SleepModeWorkspace.jsx", import.meta.url), "utf8");
+
+  assert.match(componentSource, /west: \{ time: "00:00", remark: "", timeConfirmed: false \}/);
+  assert.match(componentSource, /east: \{ time: "00:00", remark: "", timeConfirmed: false \}/);
+  assert.match(componentSource, /onTimeChange=\{\(depot, value\) => updateLogDraft\(depot, \{ time: value, timeConfirmed: false \}\)\}/);
+  assert.match(componentSource, /onUseCurrentTime=\{\(depot\) => updateLogDraft\(depot, \{ time: getCurrentTime\(\), timeConfirmed: true \}\)\}/);
+  assert.match(componentSource, /!normalizedTime \|\| !logDraft\.timeConfirmed/);
+  assert.match(componentSource, /disabled=\{!selectedCount \|\| !canSubmitLog \|\| saving\}/);
 });
 
 test("trains already in Sleep mode use a bright distinct card state", () => {

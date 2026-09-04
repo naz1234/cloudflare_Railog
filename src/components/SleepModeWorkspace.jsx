@@ -128,7 +128,7 @@ function DepotSleepPanel({
   const occupiedCells = cells.filter((cell) => cell.trainId);
   const selectedCount = occupiedCells.filter((cell) => selectedKeys.has(cell.key)).length;
   const selectedAll = occupiedCells.length > 0 && selectedCount === occupiedCells.length;
-  const validLogTime = Boolean(normalizeSleepLogTime(logDraft?.time));
+  const canSubmitLog = Boolean(normalizeSleepLogTime(logDraft?.time)) && Boolean(logDraft?.timeConfirmed);
 
   return (
     <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-[#28506d] dark:bg-[#061827]">
@@ -247,7 +247,7 @@ function DepotSleepPanel({
                 <button
                   type="button"
                   onClick={() => onUseCurrentTime(depot)}
-                  title="Use current time"
+                  title="Use current time and enable logging"
                   aria-label={`Set ${layout.label} SLP time to the current time`}
                   className="theme-movement-time-refresh inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-emerald-400/70 bg-emerald-500/20 text-emerald-600 shadow-[0_0_8px_rgba(52,211,153,0.22)] transition hover:border-emerald-500 hover:bg-emerald-500/35 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 dark:text-emerald-300 dark:hover:border-emerald-300 dark:hover:text-white"
                 >
@@ -272,10 +272,10 @@ function DepotSleepPanel({
             </span>
           </label>
 
-          <button type="button" onClick={() => onAddLogs(depot, "sleep")} disabled={!selectedCount || !validLogTime || saving} className="inline-flex h-10 items-center gap-2 rounded-xl border border-indigo-500 bg-indigo-600 px-3 text-[10px] font-bold uppercase tracking-[0.1em] text-white shadow-[0_7px_18px_rgba(79,70,229,0.22)] transition hover:bg-indigo-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40">
+          <button type="button" onClick={() => onAddLogs(depot, "sleep")} disabled={!selectedCount || !canSubmitLog || saving} className="inline-flex h-10 items-center gap-2 rounded-xl border border-indigo-500 bg-indigo-600 px-3 text-[10px] font-bold uppercase tracking-[0.1em] text-white shadow-[0_7px_18px_rgba(79,70,229,0.22)] transition hover:bg-indigo-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40">
             <MoonStar className="h-4 w-4" /> Log Sleep
           </button>
-          <button type="button" onClick={() => onAddLogs(depot, "wake")} disabled={!selectedCount || !validLogTime || saving} className="inline-flex h-10 items-center gap-2 rounded-xl border border-amber-500 bg-amber-500 px-3 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-950 shadow-[0_7px_18px_rgba(245,158,11,0.20)] transition hover:bg-amber-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40">
+          <button type="button" onClick={() => onAddLogs(depot, "wake")} disabled={!selectedCount || !canSubmitLog || saving} className="inline-flex h-10 items-center gap-2 rounded-xl border border-amber-500 bg-amber-500 px-3 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-950 shadow-[0_7px_18px_rgba(245,158,11,0.20)] transition hover:bg-amber-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40">
             <Sun className="h-4 w-4" /> Log Wake-up
           </button>
         </div>
@@ -353,10 +353,9 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
   const [logs, setLogs] = useState(() => loadSleepModeCache());
   const [selectedKeyList, setSelectedKeyList] = useState([]);
   const [logDrafts, setLogDrafts] = useState(() => {
-    const currentTime = getCurrentTime();
     return {
-      west: { time: currentTime, remark: "" },
-      east: { time: currentTime, remark: "" },
+      west: { time: "00:00", remark: "", timeConfirmed: false },
+      east: { time: "00:00", remark: "", timeConfirmed: false },
     };
   });
   const [loaded, setLoaded] = useState(false);
@@ -515,11 +514,11 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
     setSelectedKeyList((current) => current.filter((key) => !key.startsWith(`${depot}:`)));
   }, []);
 
-  const updateLogDraft = useCallback((depot, field, value) => {
+  const updateLogDraft = useCallback((depot, updates) => {
     if (!DEPOT_LAYOUTS[depot]) return;
     setLogDrafts((current) => ({
       ...current,
-      [depot]: { ...current[depot], [field]: value },
+      [depot]: { ...current[depot], ...updates },
     }));
   }, []);
 
@@ -527,7 +526,7 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
     const depotSelectedCells = selectedCells.filter((cell) => cell.depot === depot);
     const logDraft = logDrafts[depot] || {};
     const normalizedTime = normalizeSleepLogTime(logDraft.time);
-    if (!depotSelectedCells.length || !normalizedTime) return;
+    if (!depotSelectedCells.length || !normalizedTime || !logDraft.timeConfirmed) return;
     const groups = new Map();
     depotSelectedCells.forEach((cell) => {
       if (!groups.has(cell.road)) groups.set(cell.road, []);
@@ -545,7 +544,7 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
     setSelectedKeyList((current) => current.filter((key) => !key.startsWith(`${depot}:`)));
     setLogDrafts((current) => ({
       ...current,
-      [depot]: { time: getCurrentTime(), remark: "" },
+      [depot]: { time: "00:00", remark: "", timeConfirmed: false },
     }));
   }, [logDrafts, logs, persistLogs, selectedCells]);
 
@@ -627,8 +626,8 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
       </header>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <DepotSleepPanel depot="west" data={westData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.west} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onTimeChange={(depot, value) => updateLogDraft(depot, "time", value)} onRemarkChange={(depot, value) => updateLogDraft(depot, "remark", value)} onUseCurrentTime={(depot) => updateLogDraft(depot, "time", getCurrentTime())} onAddLogs={addSelectedLogs} />
-        <DepotSleepPanel depot="east" data={eastData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.east} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onTimeChange={(depot, value) => updateLogDraft(depot, "time", value)} onRemarkChange={(depot, value) => updateLogDraft(depot, "remark", value)} onUseCurrentTime={(depot) => updateLogDraft(depot, "time", getCurrentTime())} onAddLogs={addSelectedLogs} />
+        <DepotSleepPanel depot="west" data={westData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.west} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onTimeChange={(depot, value) => updateLogDraft(depot, { time: value, timeConfirmed: false })} onRemarkChange={(depot, value) => updateLogDraft(depot, { remark: value })} onUseCurrentTime={(depot) => updateLogDraft(depot, { time: getCurrentTime(), timeConfirmed: true })} onAddLogs={addSelectedLogs} />
+        <DepotSleepPanel depot="east" data={eastData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.east} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onTimeChange={(depot, value) => updateLogDraft(depot, { time: value, timeConfirmed: false })} onRemarkChange={(depot, value) => updateLogDraft(depot, { remark: value })} onUseCurrentTime={(depot) => updateLogDraft(depot, { time: getCurrentTime(), timeConfirmed: true })} onAddLogs={addSelectedLogs} />
       </div>
 
       <div className="grid items-start gap-4 xl:grid-cols-2">
