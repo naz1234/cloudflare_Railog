@@ -4,7 +4,9 @@ import fs from "node:fs";
 import {
   EAST_DEPOT_RETURN_TO_MAINLINE_REMARK,
   EAST_DEPOT_WEEKDAY_WASH_NOTICE,
+  WEST_DEPOT_WEEKEND_WASH_NOTICE,
   shouldShowEastDepotWashNotice,
+  shouldShowWestDepotWeekendWashNotice,
 } from "../src/lib/eastDepotWashNotice.js";
 
 const pageSource = fs.readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
@@ -39,6 +41,24 @@ test("notice appears only for East Depot with the Weekday timetable", () => {
   assert.equal(shouldShowEastDepotWashNotice({ depot: "east", timetableType: "friday", date: midday }), false);
   assert.equal(shouldShowEastDepotWashNotice({ depot: "east", timetableType: "saturday", date: midday }), false);
   assert.equal(shouldShowEastDepotWashNotice({ depot: "east", timetableType: "ph", date: midday }), false);
+});
+
+test("West Depot uses the requested message only for Friday and Saturday timetables", () => {
+  assert.equal(
+    WEST_DEPOT_WEEKEND_WASH_NOTICE,
+    "Early Shift Friday and Saturday – Kindly park the trains pending for washing at West Depot and ensure no pending-wash trains are running on the Mainline. Late Shift can send them directly for wash after Possession.",
+  );
+  assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "west", timetableType: "friday" }), true);
+  assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "west", timetableType: "saturday" }), true);
+  assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "west", timetableType: "weekday" }), false);
+  assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "west", timetableType: "ph" }), false);
+  assert.equal(shouldShowWestDepotWeekendWashNotice({ depot: "east", timetableType: "friday" }), false);
+});
+
+test("Train Request renders the weekend message only through the West condition", () => {
+  assert.match(pageSource, /showWestDepotWeekendWashNotice && \(/);
+  assert.match(pageSource, /<StablingWashNotice depot="west" message=\{WEST_DEPOT_WEEKEND_WASH_NOTICE\} \/>/);
+  assert.match(pageSource, /theme-west-depot-weekend-wash-notice/);
 });
 
 test("notice follows the inclusive 09:00 to 16:00 local-time window", () => {
