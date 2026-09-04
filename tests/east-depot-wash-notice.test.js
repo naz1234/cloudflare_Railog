@@ -61,6 +61,14 @@ test("Train Request renders the weekend message only through the West condition"
   assert.match(pageSource, /theme-west-depot-weekend-wash-notice/);
 });
 
+test("East and West wash notices use the purple reference treatment only in night mode", () => {
+  const css = fs.readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
+  assert.match(css, /html\[data-app-theme="dark"\] :is\(\s*\.theme-east-depot-wash-notice,\s*\.theme-west-depot-weekend-wash-notice\s*\)/);
+  assert.match(css, /background: linear-gradient\(135deg, #211d52 0%, #1f225b 100%\) !important/);
+  assert.match(css, /border-color: #8b5cf6 !important/);
+  assert.match(pageSource, /theme-stabling-wash-notice-icon/);
+});
+
 test("notice follows the inclusive 09:00 to 16:00 local-time window", () => {
   const visible = (hours, minutes) => shouldShowEastDepotWashNotice({
     depot: "east",
