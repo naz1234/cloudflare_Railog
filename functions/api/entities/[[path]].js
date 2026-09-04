@@ -6,6 +6,7 @@ const ALLOWED_ENTITIES = new Set([
   'rawTrainRem',
   'InsertionLive',
   'PSTTrainPrep',
+  'PSTMaintenanceRequest',
   'PossessionLive',
   'RosterFile',
   'NightShiftRosterFile',
