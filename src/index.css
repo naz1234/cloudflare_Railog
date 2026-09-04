@@ -10605,6 +10605,143 @@ html[data-app-theme="light"] .theme-possession-depot-workspace .theme-possession
   background-image: linear-gradient(180deg, var(--pss-depot-header-start), var(--pss-depot-header-end)) !important;
 }
 
+/* Give consecutive PSS Access Entry windows distinct, repeating six-colour themes. */
+.theme-possession-access-entry[data-entry-theme="0"] {
+  --pss-entry-accent: #38bdf8;
+  --pss-entry-border: rgba(56, 189, 248, 0.72);
+  --pss-entry-surface: #08233a;
+  --pss-entry-header-start: #0d4464;
+  --pss-entry-header-end: #0a2942;
+  --pss-entry-title: #bae6fd;
+  --pss-entry-glow: rgba(56, 189, 248, 0.18);
+}
+
+.theme-possession-access-entry[data-entry-theme="1"] {
+  --pss-entry-accent: #a78bfa;
+  --pss-entry-border: rgba(167, 139, 250, 0.72);
+  --pss-entry-surface: #24184a;
+  --pss-entry-header-start: #49317a;
+  --pss-entry-header-end: #2d2056;
+  --pss-entry-title: #ddd6fe;
+  --pss-entry-glow: rgba(167, 139, 250, 0.18);
+}
+
+.theme-possession-access-entry[data-entry-theme="2"] {
+  --pss-entry-accent: #34d399;
+  --pss-entry-border: rgba(52, 211, 153, 0.68);
+  --pss-entry-surface: #07382f;
+  --pss-entry-header-start: #0d5949;
+  --pss-entry-header-end: #093d34;
+  --pss-entry-title: #a7f3d0;
+  --pss-entry-glow: rgba(52, 211, 153, 0.17);
+}
+
+.theme-possession-access-entry[data-entry-theme="3"] {
+  --pss-entry-accent: #fbbf24;
+  --pss-entry-border: rgba(251, 191, 36, 0.7);
+  --pss-entry-surface: #3a2608;
+  --pss-entry-header-start: #654414;
+  --pss-entry-header-end: #452d0b;
+  --pss-entry-title: #fde68a;
+  --pss-entry-glow: rgba(251, 191, 36, 0.17);
+}
+
+.theme-possession-access-entry[data-entry-theme="4"] {
+  --pss-entry-accent: #fb7185;
+  --pss-entry-border: rgba(251, 113, 133, 0.7);
+  --pss-entry-surface: #3b1622;
+  --pss-entry-header-start: #67253a;
+  --pss-entry-header-end: #471a2a;
+  --pss-entry-title: #fecdd3;
+  --pss-entry-glow: rgba(251, 113, 133, 0.17);
+}
+
+.theme-possession-access-entry[data-entry-theme="5"] {
+  --pss-entry-accent: #a3e635;
+  --pss-entry-border: rgba(163, 230, 53, 0.68);
+  --pss-entry-surface: #21320c;
+  --pss-entry-header-start: #3f5b16;
+  --pss-entry-header-end: #293d0f;
+  --pss-entry-title: #d9f99d;
+  --pss-entry-glow: rgba(163, 230, 53, 0.16);
+}
+
+.theme-possession-depot-workspace .theme-possession-access-entry {
+  background: var(--pss-entry-surface) !important;
+  border-color: var(--pss-entry-border) !important;
+  box-shadow: 0 8px 20px var(--pss-entry-glow), inset 3px 0 0 var(--pss-entry-accent) !important;
+}
+
+.theme-possession-depot-workspace .theme-possession-access-entry .theme-possession-access-entry-header {
+  background: linear-gradient(180deg, var(--pss-entry-header-start), var(--pss-entry-header-end)) !important;
+  background-image: linear-gradient(180deg, var(--pss-entry-header-start), var(--pss-entry-header-end)) !important;
+  border-color: var(--pss-entry-border) !important;
+}
+
+.theme-possession-depot-workspace .theme-possession-access-entry .theme-possession-access-entry-title {
+  color: var(--pss-entry-title) !important;
+}
+
+html[data-app-theme="light"] .theme-possession-access-entry[data-entry-theme="0"] {
+  --pss-entry-accent: #0284c7;
+  --pss-entry-border: rgba(2, 132, 199, 0.5);
+  --pss-entry-surface: #f0f9ff;
+  --pss-entry-header-start: #e0f2fe;
+  --pss-entry-header-end: #bae6fd;
+  --pss-entry-title: #075985;
+  --pss-entry-glow: rgba(2, 132, 199, 0.12);
+}
+
+html[data-app-theme="light"] .theme-possession-access-entry[data-entry-theme="1"] {
+  --pss-entry-accent: #7e22ce;
+  --pss-entry-border: rgba(126, 34, 206, 0.46);
+  --pss-entry-surface: #faf5ff;
+  --pss-entry-header-start: #f3e8ff;
+  --pss-entry-header-end: #e9d5ff;
+  --pss-entry-title: #6b21a8;
+  --pss-entry-glow: rgba(126, 34, 206, 0.11);
+}
+
+html[data-app-theme="light"] .theme-possession-access-entry[data-entry-theme="2"] {
+  --pss-entry-accent: #059669;
+  --pss-entry-border: rgba(5, 150, 105, 0.46);
+  --pss-entry-surface: #f0fdfa;
+  --pss-entry-header-start: #ccfbf1;
+  --pss-entry-header-end: #99f6e4;
+  --pss-entry-title: #047857;
+  --pss-entry-glow: rgba(5, 150, 105, 0.11);
+}
+
+html[data-app-theme="light"] .theme-possession-access-entry[data-entry-theme="3"] {
+  --pss-entry-accent: #d97706;
+  --pss-entry-border: rgba(217, 119, 6, 0.48);
+  --pss-entry-surface: #fffbeb;
+  --pss-entry-header-start: #fef3c7;
+  --pss-entry-header-end: #fde68a;
+  --pss-entry-title: #92400e;
+  --pss-entry-glow: rgba(217, 119, 6, 0.11);
+}
+
+html[data-app-theme="light"] .theme-possession-access-entry[data-entry-theme="4"] {
+  --pss-entry-accent: #e11d48;
+  --pss-entry-border: rgba(225, 29, 72, 0.46);
+  --pss-entry-surface: #fff1f2;
+  --pss-entry-header-start: #ffe4e6;
+  --pss-entry-header-end: #fecdd3;
+  --pss-entry-title: #9f1239;
+  --pss-entry-glow: rgba(225, 29, 72, 0.11);
+}
+
+html[data-app-theme="light"] .theme-possession-access-entry[data-entry-theme="5"] {
+  --pss-entry-accent: #65a30d;
+  --pss-entry-border: rgba(101, 163, 13, 0.46);
+  --pss-entry-surface: #f7fee7;
+  --pss-entry-header-start: #ecfccb;
+  --pss-entry-header-end: #d9f99d;
+  --pss-entry-title: #4d7c0f;
+  --pss-entry-glow: rgba(101, 163, 13, 0.11);
+}
+
 /* TP1 movement dropdowns: keep native option menus readable in both themes. */
 .theme-train-movement-page .theme-tp1-movement-window select.theme-tp1-inline-field-control {
   color-scheme: dark;
