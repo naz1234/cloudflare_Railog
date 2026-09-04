@@ -28077,20 +28077,29 @@ async function downloadInsertionPicturePng({ title, blockLabels, blockIndices, r
 
 function StablingWashNotice({ depot, message }) {
   const isEast = depot === "east";
+  const [headingLine = "", ...remainingLines] = String(message || "").split("\n");
+  const headingSeparatorIndex = headingLine.indexOf(":");
+  const heading = headingSeparatorIndex >= 0 ? headingLine.slice(0, headingSeparatorIndex + 1) : headingLine;
+  const headingBody = headingSeparatorIndex >= 0 ? headingLine.slice(headingSeparatorIndex + 1).trim() : "";
+  const bodyLines = headingBody ? [headingBody, ...remainingLines] : remainingLines;
+
   return (
     <div
       role="status"
-      className={`mb-3 flex w-[912px] items-center gap-3 rounded-xl border px-4 py-3 shadow-[0_0_20px_rgba(0,0,0,0.12)] ${isEast
+      className={`theme-stabling-wash-notice mb-3 w-[912px] overflow-hidden rounded-xl border shadow-[0_0_20px_rgba(0,0,0,0.12)] ${isEast
         ? "theme-east-depot-wash-notice border-amber-400/65 bg-amber-500/10 text-amber-100"
         : "theme-west-depot-weekend-wash-notice border-cyan-400/65 bg-cyan-500/10 text-cyan-100"}`}
     >
-      <span className={`theme-stabling-wash-notice-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${isEast
-        ? "border-amber-300/50 bg-amber-400/10 text-amber-300"
-        : "border-cyan-300/50 bg-cyan-400/10 text-cyan-200"}`}>
-        <RefreshCw className="h-4 w-4" aria-hidden="true" />
-      </span>
-      <div className="min-w-0 text-xs font-semibold leading-relaxed">
-        {String(message || "").split("\n").map((line, index) => {
+      <div className="theme-stabling-wash-notice-header flex items-center gap-2.5 border-b border-current/20 px-4 py-2">
+        <span className={`theme-stabling-wash-notice-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${isEast
+          ? "border-amber-300/50 bg-amber-400/10 text-amber-300"
+          : "border-cyan-300/50 bg-cyan-400/10 text-cyan-200"}`}>
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+        </span>
+        <strong className="theme-stabling-wash-notice-title text-xs font-black tracking-wide">{heading}</strong>
+      </div>
+      <div className="theme-stabling-wash-notice-body min-w-0 px-4 py-3 text-xs font-semibold leading-relaxed">
+        {bodyLines.map((line, index) => {
           const separatorIndex = line.indexOf(":");
           const label = separatorIndex >= 0 ? line.slice(0, separatorIndex + 1) : "";
           const body = separatorIndex >= 0 ? line.slice(separatorIndex + 1) : line;
