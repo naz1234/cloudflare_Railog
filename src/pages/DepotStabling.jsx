@@ -15344,13 +15344,6 @@ const POSSESSION_INPUT = ({ value, onChange, placeholder, className = "" }) => (
     className={`${possessionInputCls} ${className}`} />
 );
 
-const POSSESSION_SELECT = ({ value, onChange, children, className = "" }) => (
-  <select value={value} onChange={(e) => onChange(e.target.value)}
-    className={`${possessionInputCls} ${className}`}>
-    {children}
-  </select>
-);
-
 const POSSESSION_TIME_INPUT = ({ value, onChange, placeholder = "e.g. 04:17", className = "" }) => (
   <input
     value={value}
@@ -15376,6 +15369,22 @@ const possessionHeaderStyle = { background: "linear-gradient(180deg,#0c2e4a 0%,#
 const POSSESSION_LIVE_SYNC_INTERVAL_MS = 5000;
 const POSSESSION_LIVE_SAVE_DEBOUNCE_MS = 650;
 const POSSESSION_LIVE_LOCAL_EDIT_HOLD_MS = 12000;
+
+function normalizePossessionDepot(depot = "west") {
+  return depot === "east" ? "east" : "west";
+}
+
+function getPossessionDepotLabel(depot = "west") {
+  return normalizePossessionDepot(depot) === "east" ? "East Depot" : "West Depot";
+}
+
+function getPossessionStorageKey(baseKey, depot = "west") {
+  return normalizePossessionDepot(depot) === "east" ? `${baseKey}_east` : baseKey;
+}
+
+function getPossessionLiveStateKey(baseKey, depot = "west") {
+  return normalizePossessionDepot(depot) === "east" ? `${baseKey}-east` : baseKey;
+}
 
 function getPossessionLiveEntity() {
   return base44?.entities?.PossessionLive || null;
@@ -15597,19 +15606,20 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
   );
 }
 
-function PossessionLog() {
+function PossessionLog({ depot = "west" }) {
+  const storageKey = getPossessionStorageKey(POSSESSION_LOG_KEY, depot);
   const [entries, setEntries] = useState(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem(POSSESSION_LOG_KEY) || "null");
+      const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
       return Array.isArray(saved) && saved.length > 0
         ? saved.map((entry) => ({ ...defaultEntry(), ...entry }))
         : [defaultEntry()];
     }
     catch { return [defaultEntry()]; }
   });
-  useEffect(() => { localStorage.setItem(POSSESSION_LOG_KEY, JSON.stringify(entries)); }, [entries]);
+  useEffect(() => { localStorage.setItem(storageKey, JSON.stringify(entries)); }, [entries, storageKey]);
   usePossessionLiveState(
-    "possession-log",
+    getPossessionLiveStateKey("possession-log", depot),
     entries,
     setEntries,
     (value) => Array.isArray(value) && value.length > 0
@@ -15619,7 +15629,7 @@ function PossessionLog() {
   const updateEntry = (i, val) => setEntries((prev) => prev.map((e, idx) => idx === i ? val : e));
   const addEntry = () => setEntries((prev) => [...prev, defaultEntry()]);
   const removeEntry = (i) => setEntries((prev) => prev.filter((_, idx) => idx !== i));
-  const clear = () => { setEntries([defaultEntry()]); localStorage.removeItem(POSSESSION_LOG_KEY); };
+  const clear = () => { setEntries([defaultEntry()]); localStorage.removeItem(storageKey); };
   const output = entries.map(generateEntryOutput).join("\n\n");
 
   return (
@@ -15677,12 +15687,13 @@ function generateSCOutput(f) {
   return [`PIC Name: ${f.picName}`, `Mobile#: ${f.phone}`, `Access: ${access}`, `Activity: ${f.description}`, `Location: ${f.location}`, `Gate Number: ${f.gateNo}`].join("\n");
 }
 
-function SCSecurityMessage() {
-  const [form, setForm] = useState(() => { try { return { ...defaultSC, ...JSON.parse(localStorage.getItem(POSSESSION_SC_KEY) || "{}") }; } catch { return defaultSC; } });
-  useEffect(() => { localStorage.setItem(POSSESSION_SC_KEY, JSON.stringify(form)); }, [form]);
-  usePossessionLiveState("possession-security-message", form, setForm, (value) => ({ ...defaultSC, ...(value || {}) }));
+function SCSecurityMessage({ depot = "west" }) {
+  const storageKey = getPossessionStorageKey(POSSESSION_SC_KEY, depot);
+  const [form, setForm] = useState(() => { try { return { ...defaultSC, ...JSON.parse(localStorage.getItem(storageKey) || "{}") }; } catch { return defaultSC; } });
+  useEffect(() => { localStorage.setItem(storageKey, JSON.stringify(form)); }, [form, storageKey]);
+  usePossessionLiveState(getPossessionLiveStateKey("possession-security-message", depot), form, setForm, (value) => ({ ...defaultSC, ...(value || {}) }));
   const set = (field) => (val) => setForm((p) => ({ ...p, [field]: val }));
-  const clear = () => { setForm(defaultSC); localStorage.removeItem(POSSESSION_SC_KEY); };
+  const clear = () => { setForm(defaultSC); localStorage.removeItem(storageKey); };
   const output = generateSCOutput(form);
   const hasContent = Object.values(form).some((v) => v.trim() !== "");
 
@@ -15822,17 +15833,19 @@ function generateEPAFOutput(f) {
   return lines.join("\n").trim();
 }
 
-function EPAFLog() {
+function EPAFLog({ depot = "west" }) {
+  const storageKey = getPossessionStorageKey(POSSESSION_EPAF_KEY, depot);
+  const depotLabel = getPossessionDepotLabel(depot);
   const [form, setForm] = useState(() => {
-    try { return { ...defaultEPAF, ...JSON.parse(localStorage.getItem(POSSESSION_EPAF_KEY) || "{}") }; }
-    catch { return defaultEPAF; }
+    try { return { ...defaultEPAF, ...JSON.parse(localStorage.getItem(storageKey) || "{}"), depot: depotLabel }; }
+    catch { return { ...defaultEPAF, depot: depotLabel }; }
   });
 
-  useEffect(() => { localStorage.setItem(POSSESSION_EPAF_KEY, JSON.stringify(form)); }, [form]);
-  usePossessionLiveState("possession-epaf", form, setForm, (value) => ({ ...defaultEPAF, ...(value || {}) }));
+  useEffect(() => { localStorage.setItem(storageKey, JSON.stringify(form)); }, [form, storageKey]);
+  usePossessionLiveState(getPossessionLiveStateKey("possession-epaf", depot), form, setForm, (value) => ({ ...defaultEPAF, ...(value || {}), depot: depotLabel }));
 
   const set = (field) => (val) => setForm((p) => ({ ...p, [field]: val }));
-  const clear = () => { setForm(defaultEPAF); localStorage.removeItem(POSSESSION_EPAF_KEY); };
+  const clear = () => { setForm({ ...defaultEPAF, depot: depotLabel }); localStorage.removeItem(storageKey); };
   const output = generateEPAFOutput(form);
   const hasContent = output.trim() !== "";
 
@@ -15858,10 +15871,7 @@ function EPAFLog() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <POSSESSION_FIELD label="Location"><POSSESSION_INPUT value={form.location} onChange={set("location")} placeholder="e.g. ATWP BRUSH ISSUE" /></POSSESSION_FIELD>
-            <POSSESSION_FIELD label="Depot"><POSSESSION_SELECT value={form.depot} onChange={set("depot")}>
-              <option value="West Depot">West Depot</option>
-              <option value="East Depot">East Depot</option>
-            </POSSESSION_SELECT></POSSESSION_FIELD>
+            <POSSESSION_FIELD label="Depot"><div className={`${possessionInputCls} flex items-center font-semibold`}>{depotLabel}</div></POSSESSION_FIELD>
           </div>
 
           <div className="rounded-xl border border-[#1e3a56] bg-[#071828] p-3 space-y-3">
@@ -15959,11 +15969,13 @@ function generateSweepOutput(f) {
   return line;
 }
 
-function SweepingLog() {
-  const [form, setForm] = useState(() => { try { return { ...defaultSweep, ...JSON.parse(localStorage.getItem(POSSESSION_SWEEP_KEY) || "{}") }; } catch { return defaultSweep; } });
+function SweepingLog({ depot = "west" }) {
+  const storageKey = getPossessionStorageKey(POSSESSION_SWEEP_KEY, depot);
+  const entriesStorageKey = getPossessionStorageKey(POSSESSION_SWEEP_ENTRIES_KEY, depot);
+  const [form, setForm] = useState(() => { try { return { ...defaultSweep, ...JSON.parse(localStorage.getItem(storageKey) || "{}") }; } catch { return defaultSweep; } });
   const [logEntries, setLogEntries] = useState(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem(POSSESSION_SWEEP_ENTRIES_KEY) || "[]");
+      const saved = JSON.parse(localStorage.getItem(entriesStorageKey) || "[]");
       return Array.isArray(saved) ? saved : [];
     } catch {
       return [];
@@ -15977,10 +15989,10 @@ function SweepingLog() {
     setLogEntries(Array.isArray(next.logEntries) ? next.logEntries : []);
   }, []);
 
-  useEffect(() => { localStorage.setItem(POSSESSION_SWEEP_KEY, JSON.stringify(form)); }, [form]);
-  useEffect(() => { localStorage.setItem(POSSESSION_SWEEP_ENTRIES_KEY, JSON.stringify(logEntries)); }, [logEntries]);
+  useEffect(() => { localStorage.setItem(storageKey, JSON.stringify(form)); }, [form, storageKey]);
+  useEffect(() => { localStorage.setItem(entriesStorageKey, JSON.stringify(logEntries)); }, [entriesStorageKey, logEntries]);
   usePossessionLiveState(
-    "possession-sweeping",
+    getPossessionLiveStateKey("possession-sweeping", depot),
     sweepingLiveState,
     setSweepingLiveState,
     (value) => ({
@@ -15990,8 +16002,8 @@ function SweepingLog() {
   );
 
   const set = (field) => (val) => setForm((p) => ({ ...p, [field]: val }));
-  const clear = () => { setForm(defaultSweep); localStorage.removeItem(POSSESSION_SWEEP_KEY); };
-  const clearLog = () => { setLogEntries([]); localStorage.removeItem(POSSESSION_SWEEP_ENTRIES_KEY); };
+  const clear = () => { setForm(defaultSweep); localStorage.removeItem(storageKey); };
+  const clearLog = () => { setLogEntries([]); localStorage.removeItem(entriesStorageKey); };
   const output = generateSweepOutput(form);
   const hasOutput = output.trim() !== "";
   const allLogsText = logEntries.map((entry) => entry.text).join("\n");
@@ -16097,16 +16109,21 @@ function SweepingLog() {
   );
 }
 
-function PossessionTabContent() {
+function PossessionDepotWorkspace({ depot }) {
+  const depotLabel = getPossessionDepotLabel(depot);
   return (
     <div className="space-y-6">
+      <div className="rounded-xl border border-[#2b4f6b] bg-[#081a2b] px-4 py-3">
+        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#4a8ab5]">Active PSS workspace</p>
+        <h2 className="mt-0.5 text-base font-black text-white">{depotLabel}</h2>
+      </div>
       <section>
         <div className="flex items-center gap-2 mb-3">
           <span className="w-5 h-5 rounded-full bg-violet-900/50 border border-violet-700/50 flex items-center justify-center text-[10px] font-black text-violet-300">1</span>
           <h1 className="text-sm font-black text-white tracking-widest uppercase">Possession Log</h1>
           <div className="flex-1 h-px bg-[#1e3a56]" />
         </div>
-        <PossessionLog />
+        <PossessionLog depot={depot} />
       </section>
       <div className="border-t border-[#1e3a56]" />
       <section>
@@ -16115,7 +16132,7 @@ function PossessionTabContent() {
           <h1 className="text-sm font-black text-white tracking-widest uppercase">EPAF</h1>
           <div className="flex-1 h-px bg-[#1e3a56]" />
         </div>
-        <EPAFLog />
+        <EPAFLog depot={depot} />
       </section>
       <div className="border-t border-[#1e3a56]" />
       <section>
@@ -16124,7 +16141,7 @@ function PossessionTabContent() {
           <h1 className="text-sm font-black text-white tracking-widest uppercase">Station Controller Security Message</h1>
           <div className="flex-1 h-px bg-[#1e3a56]" />
         </div>
-        <SCSecurityMessage />
+        <SCSecurityMessage depot={depot} />
       </section>
       <div className="border-t border-[#1e3a56]" />
       <section>
@@ -16133,8 +16150,54 @@ function PossessionTabContent() {
           <h1 className="text-sm font-black text-white tracking-widest uppercase">Sweeping (after Possession)</h1>
           <div className="flex-1 h-px bg-[#1e3a56]" />
         </div>
-        <SweepingLog />
+        <SweepingLog depot={depot} />
       </section>
+    </div>
+  );
+}
+
+function PossessionTabContent() {
+  const [activeDepot, setActiveDepot] = useState("west");
+  const depots = ["west", "east"];
+
+  return (
+    <div className="space-y-4">
+      <div role="tablist" aria-label="PSS depot" className="grid grid-cols-2 gap-2 rounded-xl border border-[#2b4f6b] bg-[#071828] p-1.5">
+        {depots.map((depot) => {
+          const selected = activeDepot === depot;
+          const label = getPossessionDepotLabel(depot);
+          return (
+            <button
+              key={depot}
+              id={`possession-${depot}-tab`}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-controls={`possession-${depot}-panel`}
+              onClick={() => setActiveDepot(depot)}
+              className={`rounded-lg border px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all ${selected
+                ? depot === "east"
+                  ? "border-violet-400/70 bg-violet-500/20 text-violet-100 shadow-[0_0_18px_rgba(139,92,246,0.18)]"
+                  : "border-cyan-400/70 bg-cyan-500/15 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.16)]"
+                : "border-transparent bg-[#0b1f33] text-[#5d94bd] hover:border-[#2b4f6b] hover:text-white"}`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {depots.map((depot) => (
+        <div
+          key={depot}
+          id={`possession-${depot}-panel`}
+          role="tabpanel"
+          aria-labelledby={`possession-${depot}-tab`}
+          hidden={activeDepot !== depot}
+        >
+          <PossessionDepotWorkspace depot={depot} />
+        </div>
+      ))}
     </div>
   );
 }
