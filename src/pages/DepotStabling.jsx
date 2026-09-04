@@ -15332,12 +15332,12 @@ function PossessionCopyBtn({ text, disabled }) {
 
 const POSSESSION_FIELD = ({ label, children }) => (
   <div>
-    <label className="block text-[10px] font-semibold text-[#4a8ab5] tracking-widest uppercase mb-1">{label}</label>
+    <label className="theme-possession-label block text-[10px] font-semibold text-[#4a8ab5] tracking-widest uppercase mb-1">{label}</label>
     {children}
   </div>
 );
 
-const possessionInputCls = "w-full rounded-lg border border-[#1e3a56] bg-[#071828] px-3 py-2 text-xs text-[#c8d8ea] outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] transition-all placeholder:text-[#2b4f6b]";
+const possessionInputCls = "theme-possession-input w-full rounded-lg border border-[#1e3a56] bg-[#071828] px-3 py-2 text-xs text-[#c8d8ea] outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] transition-all placeholder:text-[#2b4f6b]";
 
 const POSSESSION_INPUT = ({ value, onChange, placeholder, className = "" }) => (
   <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || ""}
@@ -15358,11 +15358,11 @@ const POSSESSION_TIME_INPUT = ({ value, onChange, placeholder = "e.g. 04:17", cl
 
 const POSSESSION_TEXTAREA = ({ value, onChange, placeholder, rows = 2 }) => (
   <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || ""} rows={rows}
-    className="w-full rounded-lg border border-[#1e3a56] bg-[#071828] px-3 py-2 text-xs text-[#c8d8ea] outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] transition-all placeholder:text-[#2b4f6b] resize-none" />
+    className="theme-possession-input w-full rounded-lg border border-[#1e3a56] bg-[#071828] px-3 py-2 text-xs text-[#c8d8ea] outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] transition-all placeholder:text-[#2b4f6b] resize-none" />
 );
 
 // ── Shared card/header styles ─────────────────────────────────────────────────
-const possessionCardCls = "bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shadow-md overflow-hidden";
+const possessionCardCls = "theme-possession-card bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shadow-md overflow-hidden";
 const possessionHeaderCls = "theme-possession-header border-b border-[#1a3a56] px-4 py-3 flex items-center justify-between";
 const possessionHeaderStyle = { background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" };
 
@@ -16112,10 +16112,10 @@ function SweepingLog({ depot = "west" }) {
 function PossessionDepotWorkspace({ depot }) {
   const depotLabel = getPossessionDepotLabel(depot);
   return (
-    <div className="space-y-6">
-      <div className="rounded-xl border border-[#2b4f6b] bg-[#081a2b] px-4 py-3">
-        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#4a8ab5]">Active PSS workspace</p>
-        <h2 className="mt-0.5 text-base font-black text-white">{depotLabel}</h2>
+    <div className="theme-possession-depot-workspace space-y-6" data-possession-depot={normalizePossessionDepot(depot)}>
+      <div className="theme-possession-depot-banner rounded-xl border border-[#2b4f6b] bg-[#081a2b] px-4 py-3">
+        <p className="theme-possession-label text-[10px] font-black uppercase tracking-[0.18em] text-[#4a8ab5]">Active PSS workspace</p>
+        <h2 className="theme-possession-depot-title mt-0.5 text-base font-black text-white">{depotLabel}</h2>
       </div>
       <section>
         <div className="flex items-center gap-2 mb-3">
@@ -16125,7 +16125,7 @@ function PossessionDepotWorkspace({ depot }) {
         </div>
         <PossessionLog depot={depot} />
       </section>
-      <div className="border-t border-[#1e3a56]" />
+      <div className="theme-possession-divider border-t border-[#1e3a56]" />
       <section>
         <div className="flex items-center gap-2 mb-3">
           <span className="w-5 h-5 rounded-full bg-amber-900/50 border border-amber-700/50 flex items-center justify-center text-[10px] font-black text-amber-300">2</span>
@@ -16134,7 +16134,7 @@ function PossessionDepotWorkspace({ depot }) {
         </div>
         <EPAFLog depot={depot} />
       </section>
-      <div className="border-t border-[#1e3a56]" />
+      <div className="theme-possession-divider border-t border-[#1e3a56]" />
       <section>
         <div className="flex items-center gap-2 mb-3">
           <span className="w-5 h-5 rounded-full bg-sky-900/50 border border-sky-700/50 flex items-center justify-center text-[10px] font-black text-sky-300">3</span>
@@ -16143,7 +16143,7 @@ function PossessionDepotWorkspace({ depot }) {
         </div>
         <SCSecurityMessage depot={depot} />
       </section>
-      <div className="border-t border-[#1e3a56]" />
+      <div className="theme-possession-divider border-t border-[#1e3a56]" />
       <section>
         <div className="flex items-center gap-2 mb-3">
           <span className="w-5 h-5 rounded-full bg-emerald-900/50 border border-emerald-700/50 flex items-center justify-center text-[10px] font-black text-emerald-300">4</span>

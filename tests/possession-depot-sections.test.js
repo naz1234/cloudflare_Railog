@@ -44,3 +44,14 @@ test("PSS hides the live-sync banner without disabling cross-laptop sync", () =>
   assert.match(source, /await entity\.update\(recordId, \{ stateKey, data: current, updatedAt: now \}\)/);
   assert.match(source, /intervalId = window\.setInterval\(\(\) => fetchRemote\(false\), POSSESSION_LIVE_SYNC_INTERVAL_MS\)/);
 });
+
+test("West and East PSS workspaces have distinct depot themes", () => {
+  const css = fs.readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
+  assert.match(source, /className="theme-possession-depot-workspace space-y-6" data-possession-depot=\{normalizePossessionDepot\(depot\)\}/);
+  assert.match(source, /theme-possession-card/);
+  assert.match(source, /theme-possession-input/);
+  assert.match(css, /theme-possession-depot-workspace\[data-possession-depot="west"\][\s\S]*?--pss-depot-accent: #22d3ee/);
+  assert.match(css, /theme-possession-depot-workspace\[data-possession-depot="east"\][\s\S]*?--pss-depot-accent: #c084fc/);
+  assert.match(css, /theme-possession-depot-workspace \.theme-possession-header/);
+  assert.match(css, /theme-possession-depot-workspace \.theme-possession-input:focus/);
+});
