@@ -103,16 +103,24 @@ test("matched Tracking IDs expose their TID Reference Table service colour", () 
   assert.doesNotMatch(tidLightContrastSource, /theme-insertion-card(?:\.|\s|\{)/);
 });
 
-test("completed Tracking ID shows its TID reference remark on hover", () => {
-  assert.match(pageSource, /function getInsertionTidReferenceTooltipLabel\(remark = ""\)/);
-  assert.match(pageSource, /normalized === "Early Rem"\) return "WD Rem 9am"/);
-  assert.match(pageSource, /normalized === "Late Rem"\) return "WD Rem 7pm"/);
-  assert.match(pageSource, /normalized === "ED"\) return "ED Rem 9am"/);
-  assert.match(pageSource, /normalized === "ED \(7pm\)"\) return "ED Rem 7pm"/);
-  assert.match(insertionCellSource, /const insertedTidReferenceTooltip = getInsertionTidReferenceTooltipLabel\(insertedTrackingAssistRemark\)/);
-  assert.match(insertionCellSource, /message=\{insertedTidReferenceTooltip \? <span className="theme-stabling-remark-tooltip-text">/);
+test("completed Tracking ID shows its TID reference departure time and service on hover", () => {
+  assert.match(pageSource, /function getInsertionTidReferenceTooltipLabel\(remark = "", scheduledTime = ""\)/);
+  assert.match(pageSource, /normalized === "Early Rem"\) serviceLabel = "WD Rem 9am"/);
+  assert.match(pageSource, /normalized === "Late Rem"\) serviceLabel = "WD Rem 7pm"/);
+  assert.match(pageSource, /normalized === "ED"\) serviceLabel = "ED Rem 9am"/);
+  assert.match(pageSource, /normalized === "ED \(7pm\)"\) serviceLabel = "ED Rem 7pm"/);
+  assert.match(pageSource, /return `Departure time: \$\{cleanScheduledTime\}/);
+  assert.match(pageSource, /No departure time in the active TID Reference Table/);
+  assert.match(insertionCellSource, /getTidScheduledTime\(insertedTrackingId, autoTidDepot, \{ allowFallback: false \}\)/);
+  assert.match(insertionCellSource, /getInsertionTidReferenceTooltipLabel\(\s*insertedTrackingAssistRemark,\s*insertedTrackingScheduledTime/);
+  assert.match(insertionCellSource, /message=\{<span className="theme-stabling-remark-tooltip-text">/);
   assert.match(insertionCellSource, /contentStyle=\{insertedTidTooltipStyle\}/);
-  assert.match(insertionCellSource, /aria-label=\{`Tracking ID \$\{String\(insertedTrackingId\)\.padStart\(3, "0"\)\}\$\{insertedTidReferenceTooltip/);
+  assert.equal(
+    (insertionCellSource.match(/triggerProps=\{\{ tabIndex: 0, "aria-label": insertedTidAccessibilityLabel \}\}/g) || []).length,
+    2,
+    "normal and elapsed Tracking IDs should both expose a keyboard-focusable tooltip",
+  );
+  assert.equal((insertionCellSource.match(/aria-hidden="true"/g) || []).length >= 2, true);
   assert.match(stylesheetSource, /\.theme-insertion-tracking-footer\.is-complete \{[\s\S]*?cursor: pointer/);
 });
 
