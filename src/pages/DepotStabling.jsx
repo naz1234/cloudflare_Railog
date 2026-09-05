@@ -5424,15 +5424,22 @@ function getInsertionAssistRemarkStyle(remark = "") {
   return normalized ? INSERTION_ASSIST_REMARK_STYLES[normalized] || null : null;
 }
 
-function getInsertionTidReferenceTooltipLabel(remark = "") {
+function getInsertionTidReferenceTooltipLabel(remark = "", scheduledTime = "") {
   const normalized = normalizeInsertionAssistRemark(remark);
+  const cleanScheduledTime = String(scheduledTime || "").trim();
+  let serviceLabel = "";
 
-  if (normalized === "Early Rem") return "WD Rem 9am";
-  if (normalized === "Late Rem") return "WD Rem 7pm";
-  if (normalized === "ED") return "ED Rem 9am";
-  if (normalized === "ED (7pm)") return "ED Rem 7pm";
+  if (normalized === "Early Rem") serviceLabel = "WD Rem 9am";
+  if (normalized === "Late Rem") serviceLabel = "WD Rem 7pm";
+  if (normalized === "ED") serviceLabel = "ED Rem 9am";
+  if (normalized === "ED (7pm)") serviceLabel = "ED Rem 7pm";
 
-  return String(remark || "").trim();
+  if (!serviceLabel) serviceLabel = String(remark || "").trim();
+  if (cleanScheduledTime) {
+    return `Departure time: ${cleanScheduledTime}${serviceLabel ? ` • ${serviceLabel}` : ""}`;
+  }
+
+  return serviceLabel || "No departure time in the active TID Reference Table";
 }
 const INSERTION_CARD_PILL_WIDTH = 68;
 
@@ -5998,8 +6005,15 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const insertedTrackingAssistRemark = insertedTrackingId && typeof getTidAssistRemark === "function"
     ? getTidAssistRemark(insertedTrackingId, autoTidDepot)
     : "";
+  const insertedTrackingScheduledTime = insertedTrackingId && typeof getTidScheduledTime === "function"
+    ? getTidScheduledTime(insertedTrackingId, autoTidDepot, { allowFallback: false })
+    : null;
   const insertedTrackingRemarkStyle = getInsertionAssistRemarkStyle(insertedTrackingAssistRemark);
-  const insertedTidReferenceTooltip = getInsertionTidReferenceTooltipLabel(insertedTrackingAssistRemark);
+  const insertedTidReferenceTooltip = getInsertionTidReferenceTooltipLabel(
+    insertedTrackingAssistRemark,
+    insertedTrackingScheduledTime
+  );
+  const insertedTidAccessibilityLabel = `Tracking ID ${String(insertedTrackingId || "").padStart(3, "0")}, ${insertedTidReferenceTooltip}`;
   const insertedTidTooltipAccent = insertedTrackingRemarkStyle?.border || "#4f8ef7";
   const insertedTidTooltipAccentRgb = requestColorRgb(insertedTidTooltipAccent);
   const insertedTidTooltipStyle = {
@@ -6213,16 +6227,17 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           {insertedRemarkLabel && !insertedTrackingId && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
           {insertedTrackingId && (
             <ActionTooltip
-              message={insertedTidReferenceTooltip ? <span className="theme-stabling-remark-tooltip-text">{insertedTidReferenceTooltip}</span> : null}
+              message={<span className="theme-stabling-remark-tooltip-text">{insertedTidReferenceTooltip}</span>}
               placement="bottom"
               sideOffset={6}
               wrapperClassName="mt-auto w-full min-w-0"
               contentStyle={insertedTidTooltipStyle}
+              triggerProps={{ tabIndex: 0, "aria-label": insertedTidAccessibilityLabel }}
             >
               <span
                 className={`theme-insertion-tracking-footer is-complete${insertedTrackingReferenceStyle ? " has-reference-style" : ""} mt-auto`}
                 style={insertedTrackingReferenceStyle}
-                aria-label={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}${insertedTidReferenceTooltip ? `, ${insertedTidReferenceTooltip}` : ""}`}
+                aria-hidden="true"
               >
                 <strong>{String(insertedTrackingId).padStart(3, "0")}</strong>
               </span>
@@ -6668,16 +6683,17 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             )}
             {insertedTrackingId && (
               <ActionTooltip
-                message={insertedTidReferenceTooltip ? <span className="theme-stabling-remark-tooltip-text">{insertedTidReferenceTooltip}</span> : null}
+                message={<span className="theme-stabling-remark-tooltip-text">{insertedTidReferenceTooltip}</span>}
                 placement="bottom"
                 sideOffset={6}
                 wrapperClassName="w-full min-w-0"
                 contentStyle={insertedTidTooltipStyle}
+                triggerProps={{ tabIndex: 0, "aria-label": insertedTidAccessibilityLabel }}
               >
                 <span
                   className={`theme-insertion-tracking-footer is-complete${insertedTrackingReferenceStyle ? " has-reference-style" : ""}`}
                   style={insertedTrackingReferenceStyle}
-                  aria-label={`Tracking ID ${String(insertedTrackingId).padStart(3, "0")}${insertedTidReferenceTooltip ? `, ${insertedTidReferenceTooltip}` : ""}`}
+                  aria-hidden="true"
                 >
                   <strong>{String(insertedTrackingId).padStart(3, "0")}</strong>
                 </span>
