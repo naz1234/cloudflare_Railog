@@ -5,10 +5,10 @@
   const DEFAULT_EXPIRY_SECONDS = 300;
   const DEFAULT_RESEND_SECONDS = 60;
   const CHALLENGE_STORAGE_KEY = 'l3dcLoginChallenge';
-  const FLOW_METRO_EMAIL_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@flow-metro\.com$/i;
+  const EMAIL_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
   const GENERIC_REQUEST_ERROR = 'Login is temporarily unavailable. Please try again.';
   const GENERIC_VERIFY_ERROR = 'The code is invalid or expired. Check it and try again.';
-  const INVALID_EMAIL_ERROR = 'Enter your approved @flow-metro.com work email.';
+  const INVALID_EMAIL_ERROR = 'Enter your approved email address.';
 
   const requestStage = document.getElementById('request-stage');
   const verifyStage = document.getElementById('verify-stage');
@@ -50,22 +50,22 @@
     }
   }
 
-  function normalizeFlowEmail(value) {
+  function normalizeLoginEmail(value) {
     const email = String(value || '').trim().toLowerCase();
-    return FLOW_METRO_EMAIL_PATTERN.test(email) ? email : '';
+    return EMAIL_PATTERN.test(email) ? email : '';
   }
 
-  function maskFlowEmail(value) {
-    const email = normalizeFlowEmail(value);
-    if (!email) return 'your***@flow-metro.com';
-    const [local] = email.split('@');
+  function maskLoginEmail(value) {
+    const email = normalizeLoginEmail(value);
+    if (!email) return 'your approved email';
+    const [local, domain] = email.split('@');
     const visibleLength = Math.min(4, Math.max(1, local.length - 1));
-    return `${local.slice(0, visibleLength)}***@flow-metro.com`;
+    return `${local.slice(0, visibleLength)}***@${domain}`;
   }
 
   function safeEmailHint(value, email) {
     const hint = String(value || '').trim();
-    return hint && hint.length <= 100 ? hint : maskFlowEmail(email);
+    return hint && hint.length <= 100 ? hint : maskLoginEmail(email);
   }
 
   function setSelectedEmailHint(value, email = activeEmail) {
@@ -78,7 +78,7 @@
   function saveChallenge(data, email, expiresInSeconds, resendAfterSeconds) {
     const challengeId = String(data.challengeId || '');
     const reference = String(data.requestRef || '').replace(/[^a-z0-9-]/gi, '').slice(0, 16);
-    const normalizedEmail = normalizeFlowEmail(email);
+    const normalizedEmail = normalizeLoginEmail(email);
     if (!challengeId || !reference || !normalizedEmail) throw new Error('invalid_challenge');
     const emailHint = safeEmailHint(data.emailHint, normalizedEmail);
 
@@ -111,7 +111,7 @@
   function restoreChallenge() {
     try {
       const challenge = JSON.parse(window.sessionStorage.getItem(CHALLENGE_STORAGE_KEY) || 'null');
-      const email = normalizeFlowEmail(challenge?.email);
+      const email = normalizeLoginEmail(challenge?.email);
       if (!challenge?.challengeId || !challenge?.requestRef || !email || Number(challenge.expiresAt) <= Date.now()) {
         clearChallenge({ clearEmail: true });
         return false;
@@ -194,7 +194,7 @@
 
   function updateRequestButton() {
     const requestWaitRemaining = remainingSeconds(resendDeadline);
-    const hasValidEmail = Boolean(normalizeFlowEmail(emailInput.value));
+    const hasValidEmail = Boolean(normalizeLoginEmail(emailInput.value));
     requestButton.disabled = isBusy || !turnstileToken || !hasValidEmail || requestWaitRemaining > 0;
     if (!isBusy) {
       requestButton.querySelector('span').textContent = requestWaitRemaining > 0
@@ -326,7 +326,7 @@
   }
 
   function showRequestStage() {
-    const previousEmail = activeEmail || normalizeFlowEmail(emailInput.value);
+    const previousEmail = activeEmail || normalizeLoginEmail(emailInput.value);
     verifyStage.hidden = true;
     requestStage.hidden = false;
     verifyIndicator.classList.remove('is-current');
@@ -348,7 +348,7 @@
 
   async function requestCode({ isResend = false } = {}) {
     if (isBusy || !turnstileToken) return;
-    const email = isResend ? activeEmail : normalizeFlowEmail(emailInput.value);
+    const email = isResend ? activeEmail : normalizeLoginEmail(emailInput.value);
     if (!email) {
       emailInput.setAttribute('aria-invalid', 'true');
       showMessage(INVALID_EMAIL_ERROR);
@@ -464,7 +464,7 @@
   });
 
   emailInput.addEventListener('blur', () => {
-    if (emailInput.value && !normalizeFlowEmail(emailInput.value)) {
+    if (emailInput.value && !normalizeLoginEmail(emailInput.value)) {
       emailInput.setAttribute('aria-invalid', 'true');
     }
   });
