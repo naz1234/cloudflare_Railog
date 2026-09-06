@@ -112,7 +112,7 @@ export function parseSingleAuthEmail(value) {
   return email;
 }
 
-export function parseAllowedAuthMembers(value) {
+export function parseAllowedAuthMembers(value, { allowExternal = false } = {}) {
   const tokens = String(value || '')
     .split(/[\s,;]+/)
     .map((entry) => entry.trim())
@@ -125,7 +125,7 @@ export function parseAllowedAuthMembers(value) {
     const normalizedEmail = parseSingleAuthEmail(canonicalEmail);
     if (
       !normalizedEmail
-      || !normalizedEmail.endsWith(`@${AUTH_ALLOWED_EMAIL_DOMAIN}`)
+      || (!allowExternal && !normalizedEmail.endsWith(`@${AUTH_ALLOWED_EMAIL_DOMAIN}`))
       || seen.has(normalizedEmail)
     ) {
       return [];
@@ -155,14 +155,24 @@ export function findAllowedAuthMember(config, email) {
 }
 
 export function getCustomAuthConfiguration(env = {}) {
-  const allowedMembers = parseAllowedAuthMembers(env.AUTH_ALLOWED_EMAILS);
+  const staffMembers = parseAllowedAuthMembers(env.AUTH_ALLOWED_EMAILS);
+  const rawAdditional = String(env.AUTH_ADDITIONAL_ALLOWED_EMAILS || '').trim();
+  const additionalMembers = parseAllowedAuthMembers(rawAdditional, { allowExternal: true });
+  const allowedMembers = [...staffMembers, ...additionalMembers];
   const hmacSecret = String(env.AUTH_HMAC_SECRET || '').trim();
   const turnstileSiteKey = String(env.TURNSTILE_SITE_KEY || '').trim();
   const turnstileSecretKey = String(env.TURNSTILE_SECRET_KEY || '').trim();
   const issues = [];
 
-  if (!allowedMembers.length) {
+  if (!staffMembers.length) {
     issues.push(`AUTH_ALLOWED_EMAILS must contain unique ${AUTH_ALLOWED_EMAIL_DOMAIN} addresses.`);
+  }
+  if (
+    (rawAdditional && !additionalMembers.length)
+    || allowedMembers.length > 100
+    || new Set(allowedMembers.map((member) => member.normalizedEmail)).size !== allowedMembers.length
+  ) {
+    issues.push('AUTH_ADDITIONAL_ALLOWED_EMAILS must contain unique valid addresses, with at most 100 approved addresses across both lists.');
   }
   if (hmacSecret.length < 32) {
     issues.push('AUTH_HMAC_SECRET must be an encrypted secret of at least 32 characters.');
