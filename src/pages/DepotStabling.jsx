@@ -9867,11 +9867,13 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   );
 }
 
-function MaintenancePanelShell(props) {
+function MaintenancePanelShell({ fullWidth = false, ...props }) {
   return (
     <div
       className="maintenance-panel-shell"
-      style={{ width: 276, minWidth: 276, flex: "0 0 276px" }}
+      style={fullWidth
+        ? { width: "100%", minWidth: 0, flex: "1 1 auto" }
+        : { width: 276, minWidth: 276, flex: "0 0 276px" }}
     >
       <style>{`
         .maintenance-panel-shell > * {
@@ -15190,11 +15192,7 @@ function PSTTabContent
   };
 
   return (
-    <div
-      className="grid w-fit min-w-0 items-start gap-3"
-      style={{ gridTemplateColumns: "max-content 276px" }}
-    >
-      <div className="flex w-fit flex-col items-start gap-7">
+    <div className="flex w-fit min-w-0 flex-col items-start gap-7">
       <div className="grid w-fit grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[max-content_420px] lg:items-start">
         <div className="flex min-w-0 flex-col gap-3">
           <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" onRefreshStabling={() => onRefreshPSTStabling?.("west")} onUndoStabling={() => onUndoPSTStabling?.("west")} onRedoStabling={() => onRedoPSTStabling?.("west")} canUndoStabling={westCanUndoPSTStabling} canRedoStabling={westCanRedoPSTStabling} isStablingDirty={westPSTStablingDirty} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearStablingTrains={() => onClearPSTStablingTrains?.("west")} stablingEditable onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
@@ -15277,6 +15275,22 @@ function PSTTabContent
             selectedTrainIds={safeAPUMismatchTrainIds.west}
             onSelectedTrainIdsChange={(trainIds) => onAPUMismatchTrainIdsChange?.("west", trainIds)}
           />
+          <MaintenancePanelShell
+            fullWidth
+            requests={pstRequests}
+            onAdd={onAddPSTRequest}
+            onRemove={onRemovePSTRequest}
+            onClearAll={onClearPSTRequests}
+            onRenameGroup={onRenamePSTRequestGroup}
+            onDeleteGroup={onDeletePSTRequestGroup}
+            onToggleGroupHidden={onTogglePSTRequestGroupHidden}
+            showImportTools={false}
+            panelTitle="PST Remarks"
+            listTitle="PST Remark List"
+            requestTypeLabel="PST Remark"
+            requestTypePlaceholder="e.g. No alarm / APU alarm"
+            addButtonLabel="Add Remark"
+          />
         </div>
       </div>
 
@@ -15297,25 +15311,6 @@ function PSTTabContent
             onSelectedTrainIdsChange={(trainIds) => onAPUMismatchTrainIdsChange?.("east", trainIds)}
           />
         </div>
-      </div>
-      </div>
-
-      <div className="sticky top-1 self-start">
-        <MaintenancePanelShell
-          requests={pstRequests}
-          onAdd={onAddPSTRequest}
-          onRemove={onRemovePSTRequest}
-          onClearAll={onClearPSTRequests}
-          onRenameGroup={onRenamePSTRequestGroup}
-          onDeleteGroup={onDeletePSTRequestGroup}
-          onToggleGroupHidden={onTogglePSTRequestGroupHidden}
-          showImportTools={false}
-          panelTitle="PST Remarks"
-          listTitle="PST Remark List"
-          requestTypeLabel="PST Remark"
-          requestTypePlaceholder="e.g. No alarm / APU alarm"
-          addButtonLabel="Add Remark"
-        />
       </div>
     </div>
   );
