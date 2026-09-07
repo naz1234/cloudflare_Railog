@@ -47,6 +47,7 @@ import {
   shouldShowRemovalTidStablingRemove,
 } from "../lib/trainRemOffPeakStabling";
 import { buildPSTExcelClipboardText } from "../lib/pstExcelClipboard";
+import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { getSwappingAutoFillFields } from "../lib/trainMovementSwapAutoFill";
 import { buildTcRemovalPdfLog } from "../lib/tcRemovalPdf";
 import {
@@ -4685,6 +4686,15 @@ function getRequestPillStyle(item, options = {}) {
   };
 }
 
+function createTrainRemRequestRemarkStyle(accent) {
+  return {
+    backgroundColor: hexToRgba(accent, 0.13),
+    borderColor: hexToRgba(accent, 0.82),
+    color: accent,
+    boxShadow: `0 0 0 1px ${hexToRgba(accent, 0.16)}, 0 0 10px ${hexToRgba(accent, 0.18)}, inset 0 1px 0 rgba(255,255,255,0.05)`,
+  };
+}
+
 function getTrainRemRequestRemarkStyle(requestItem = null, label = "") {
   const requestLabel = (
     label ||
@@ -4713,12 +4723,16 @@ function getTrainRemRequestRemarkStyle(requestItem = null, label = "") {
     requestItem?.trainColor ||
     "#fbbf24";
 
-  return {
-    backgroundColor: hexToRgba(accent, 0.13),
-    borderColor: hexToRgba(accent, 0.82),
-    color: accent,
-    boxShadow: `0 0 0 1px ${hexToRgba(accent, 0.16)}, 0 0 10px ${hexToRgba(accent, 0.18)}, inset 0 1px 0 rgba(255,255,255,0.05)`,
-  };
+  return createTrainRemRequestRemarkStyle(accent);
+}
+
+function getPSTRequestRemarkStyle(requestItem = null, label = "") {
+  const defaultStyle = getTrainRemRequestRemarkStyle(requestItem, label);
+  const accent = getPSTRemarkAccent(defaultStyle.color, label);
+
+  return accent === defaultStyle.color
+    ? defaultStyle
+    : createTrainRemRequestRemarkStyle(accent);
 }
 
 function getTrainRemRowCardVisual(requestItem = null, label = "", options = {}) {
@@ -4827,7 +4841,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
           items.push({
             label,
             labelKey,
-            style: getTrainRemRequestRemarkStyle(item, label),
+            style: getPSTRequestRemarkStyle(item, label),
           });
           return items;
         }, [])
