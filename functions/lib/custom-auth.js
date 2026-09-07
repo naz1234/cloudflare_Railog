@@ -202,12 +202,15 @@ export function getAuthPresenceConfiguration(
   env = {},
   authConfig = getCustomAuthConfiguration(env),
 ) {
-  const rawHiddenMembers = String(env.AUTH_PRESENCE_HIDDEN_EMAILS || '').trim();
+  const rawHiddenMembers = [
+    env.AUTH_PRESENCE_HIDDEN_EMAILS,
+    env.AUTH_PRESENCE_ADDITIONAL_HIDDEN_EMAILS,
+  ].map((value) => String(value || '').trim()).filter(Boolean).join('\n');
   if (!rawHiddenMembers) {
     return { hiddenMembers: [], issues: [], valid: true };
   }
 
-  const hiddenMembers = parseAllowedAuthMembers(rawHiddenMembers);
+  const hiddenMembers = parseAllowedAuthMembers(rawHiddenMembers, { allowExternal: true });
   const allowedEmails = new Set(
     (authConfig.allowedMembers || []).map((member) => member.normalizedEmail),
   );
@@ -218,7 +221,7 @@ export function getAuthPresenceConfiguration(
     || hiddenMembers.some((member) => !allowedEmails.has(member.normalizedEmail))
   ) {
     issues.push(
-      'AUTH_PRESENCE_HIDDEN_EMAILS must contain only unique approved staff addresses.',
+      'Presence visibility secrets must contain only unique approved addresses.',
     );
   }
 
