@@ -278,6 +278,72 @@ test('presence visibility accepts only an optional approved subset without affec
   }
 });
 
+test('additional approved addresses are exact, optional, and fail closed on invalid configuration', () => {
+  const env = makeEnv({ AUTH_ADDITIONAL_ALLOWED_EMAILS: 'Guest.User@example.net' });
+  const config = getCustomAuthConfiguration(env);
+  assert.equal(config.valid, true);
+  assert.equal(findAllowedAuthMember(config, 'guest.user@EXAMPLE.NET')?.name, 'Guest.User');
+  assert.equal(findAllowedAuthMember(config, 'other@example.net'), null);
+  assert.equal(findAllowedAuthMember(config, allowedEmails[0])?.email, allowedEmails[0]);
+  for (const value of ['not-an-email', 'guest@example.net;GUEST@example.net', allowedEmails[0]]) {
+    assert.equal(getCustomAuthConfiguration(makeEnv({ AUTH_ADDITIONAL_ALLOWED_EMAILS: value })).valid, false);
+  }
+  assert.equal(getCustomAuthConfiguration(makeEnv({
+    AUTH_ADDITIONAL_ALLOWED_EMAILS: Array.from({ length: 99 }, (_, index) => `guest${index}@example.net`).join('\n'),
+  })).valid, false);
+  assert.equal(getCustomAuthConfiguration({ ...env, AUTH_ALLOWED_EMAILS: '' }).valid, false);
+});
+
+test('approved external user completes PIN login and loses access when removed', async () => {
+  const env = makeEnv({ AUTH_ADDITIONAL_ALLOWED_EMAILS: 'Guest.User@example.net' });
+  const store = createMemoryStore();
+  let delivery;
+  const requestEndpoint = createRequestCodeEndpoint({
+    createStore: () => store,
+    now: () => nowMs,
+    sendPin: async (value) => { delivery = value; },
+    verifyTurnstile: async () => ({ success: true }),
+  });
+  const requested = await requestEndpoint(createContext(makeRequest('/api/auth/request-code', {
+    body: { email: 'GUEST.USER@EXAMPLE.NET', turnstileToken: 'valid-token' },
+  }), env));
+  assert.equal(requested.status, 202);
+  assert.equal(delivery.recipient, 'Guest.User@example.net');
+  const body = await requested.json();
+  assert.equal(body.emailHint, 'gues***@example.net');
+  const verifyEndpoint = createVerifyCodeEndpoint({ createStore: () => store, now: () => nowMs + 1000 });
+  const verified = await verifyEndpoint(createContext(makeRequest('/api/auth/verify-code', {
+    body: { challengeId: body.challengeId, code: delivery.pin },
+  }), env));
+  assert.equal(verified.status, 200);
+  assert.equal((await verified.json()).user.name, 'Guest.User');
+  const cookie = verified.headers.get('Set-Cookie').split(';')[0];
+  const sessionRequest = makeRequest('/api/auth/session', { method: 'GET', cookie });
+  const authorized = await authorizeCustomSessionRequest({ request: sessionRequest, env, store, now: nowMs + 2000 });
+  assert.equal(authorized.authorized, true);
+  const removed = await authorizeCustomSessionRequest({ request: sessionRequest, env: makeEnv(), store, now: nowMs + 2000 });
+  assert.equal(removed.authorized, false);
+  assert.equal(removed.reason, 'invalid_session');
+});
+
+test('unapproved external addresses get no delivery and no usable challenge', async () => {
+  const store = createMemoryStore();
+  let deliveries = 0;
+  const endpoint = createRequestCodeEndpoint({
+    createStore: () => store,
+    now: () => nowMs,
+    sendPin: async () => { deliveries += 1; },
+    verifyTurnstile: async () => ({ success: true }),
+  });
+  const response = await endpoint(createContext(makeRequest('/api/auth/request-code', {
+    body: { email: 'other@example.net', turnstileToken: 'valid-token' },
+  }), makeEnv({ AUTH_ADDITIONAL_ALLOWED_EMAILS: 'guest@example.net' })));
+  assert.equal(response.status, 202);
+  const body = await response.json();
+  assert.equal(deliveries, 0);
+  assert.ok(store.challenges.get(body.challengeId).used_at);
+});
+
 test('PINs and opaque tokens use bounded secure formats and HMAC hashes', async () => {
   const pins = new Set(Array.from({ length: 100 }, () => generateSecurePin()));
   for (const pin of pins) assert.match(pin, /^\d{6}$/);
@@ -541,7 +607,7 @@ test('request-code stores only hashes and returns an opaque challenge/reference'
   assert.equal(stored.max_attempts, AUTH_MAX_PIN_ATTEMPTS);
 });
 
-test('request-code rejects recipients outside the Flow domain before Turnstile', async () => {
+test('request-code rejects malformed addresses before Turnstile', async () => {
   let turnstileCalls = 0;
   const endpoint = createRequestCodeEndpoint({
     createStore: () => createMemoryStore(),
@@ -551,7 +617,7 @@ test('request-code rejects recipients outside the Flow domain before Turnstile',
     },
   });
   const response = await endpoint(createContext(makeRequest('/api/auth/request-code', {
-    body: { email: 'attacker@example.com', turnstileToken: 'valid-token' },
+    body: { email: 'not-an-email', turnstileToken: 'valid-token' },
   })));
   assert.equal(response.status, 400);
   assert.equal(turnstileCalls, 0);

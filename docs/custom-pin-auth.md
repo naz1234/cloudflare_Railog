@@ -2,7 +2,11 @@
 
 The custom login is designed for individually identified L3 DC staff. Each user enters their own Flow Metro email address, completes Cloudflare Turnstile, and receives a six-digit code only when the normalized address exactly matches the private approved-staff allowlist. After verification, the session carries that approved identity so the application can show the user's derived display name and an approximate online-presence indicator.
 
-The allowlist belongs only in the encrypted `AUTH_ALLOWED_EMAILS` secrets on Pages and the private mailer Worker. Do not commit real staff addresses to source, documentation, examples, fixtures, logs, or a pull-request description.
+The staff allowlist belongs only in the encrypted `AUTH_ALLOWED_EMAILS` secrets on Pages and the private mailer Worker. Individually approved addresses outside the staff domain can be configured separately in the optional encrypted `AUTH_ADDITIONAL_ALLOWED_EMAILS` secret on both services. Do not commit real approved addresses to source, documentation, examples, fixtures, logs, or a pull-request description.
+
+### Adding an individually approved external address
+
+Deploy the additional-address support to both Pages and the private mailer, then set the same `AUTH_ADDITIONAL_ALLOWED_EMAILS` encrypted secret on both. Use exact addresses separated by newlines, never domains or wildcards. The existing `AUTH_ALLOWED_EMAILS` secret remains required and continues to accept only staff-domain addresses. Across both lists, addresses must be unique ignoring case and total at most 100; an invalid configuration fails closed. Redeploy Pages after changing its secret. Unlisted addresses still receive no code, and removing an additional address invalidates its sessions on subsequent authorization checks. Keep the retained Cloudflare Access list and `OCC_ALLOWED_EMAILS` synchronized separately if the external address must also work during an Access rollback. The optional presence-hiding list continues to apply to staff-domain addresses.
 
 > **Keep Cloudflare Access enabled during setup and testing.** This repository defaults to `AUTH_MODE=cloudflare_access`. Do not switch production to `custom_pin` or disable the Access application until the mailer, Turnstile, D1 migration, secrets, and the full verification checklist below are complete.
 

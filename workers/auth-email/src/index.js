@@ -43,7 +43,7 @@ function canonicalEmail(value) {
   return EMAIL_PATTERN.test(email) ? email : '';
 }
 
-function parseAllowedEmails(value) {
+function parseAllowedEmails(value, { allowExternal = false } = {}) {
   const source = String(value || '').trim();
   if (!source) {
     return { configured: false, recipients: new Map(), valid: false };
@@ -58,7 +58,7 @@ function parseAllowedEmails(value) {
     const normalized = normalizeEmail(canonical);
     if (
       !canonical
-      || !normalized.endsWith(`@${ALLOWED_RECIPIENT_DOMAIN}`)
+      || (!allowExternal && !normalized.endsWith(`@${ALLOWED_RECIPIENT_DOMAIN}`))
       || recipients.has(normalized)
     ) {
       invalid = true;
@@ -98,13 +98,19 @@ function getBearerToken(request) {
 function getConfiguration(env = {}) {
   const from = normalizeEmail(env.AUTH_EMAIL_FROM);
   const allowed = parseAllowedEmails(env.AUTH_ALLOWED_EMAILS);
+  const rawAdditional = String(env.AUTH_ADDITIONAL_ALLOWED_EMAILS || '').trim();
+  const additional = parseAllowedEmails(rawAdditional, { allowExternal: true });
+  const recipients = new Map([...allowed.recipients, ...additional.recipients]);
+  const additionalValid = (!rawAdditional || additional.valid)
+    && recipients.size === allowed.recipients.size + additional.recipients.size
+    && recipients.size <= MAX_ALLOWED_RECIPIENTS;
   const serviceToken = String(env.AUTH_EMAIL_SERVICE_TOKEN || '').trim();
   const clientId = String(env.AUTH_GMAIL_CLIENT_ID || '').trim();
   const clientSecret = String(env.AUTH_GMAIL_CLIENT_SECRET || '').trim();
   const refreshToken = String(env.AUTH_GMAIL_REFRESH_TOKEN || '').trim();
 
   return {
-    allowedRecipients: allowed.recipients,
+    allowedRecipients: recipients,
     clientId,
     clientSecret,
     from,
@@ -114,6 +120,7 @@ function getConfiguration(env = {}) {
       from
       && allowed.configured
       && allowed.valid
+      && additionalValid
       && serviceToken.length >= MIN_SERVICE_TOKEN_LENGTH
       && GOOGLE_CLIENT_ID_PATTERN.test(clientId)
       && clientSecret.length >= MIN_OAUTH_SECRET_LENGTH

@@ -250,6 +250,31 @@ test('sends only to an allowlisted recipient using configured canonical casing',
   assert.deepEqual(JSON.parse(responseText), { ok: true });
 });
 
+test('mailer allows only exact additional recipients and preserves staff delivery', async () => {
+  const { env, fetcher, providerCalls } = createEnv({ AUTH_ADDITIONAL_ALLOWED_EMAILS: 'Guest.User@example.net' });
+  const guestBody = { pin: '012345', recipient: 'GUEST.USER@EXAMPLE.NET', requestRef: 'GUEST1' };
+  const sent = await handle(createRequest({ body: guestBody }), env, fetcher);
+  assert.equal(sent.status, 200);
+  const mime = Buffer.from(JSON.parse(providerCalls[1].init.body).raw, 'base64url').toString('utf8');
+  assert.match(mime, /To: Guest\.User@example\.net/);
+  assert.equal((await handle(createRequest(), env, fetcher)).status, 200);
+  const count = providerCalls.length;
+  assert.equal((await handle(createRequest({ body: { ...guestBody, recipient: 'other@example.net' } }), env, fetcher)).status, 400);
+  assert.equal((await handle(createRequest({ body: guestBody }), { ...env, AUTH_ADDITIONAL_ALLOWED_EMAILS: '' }, fetcher)).status, 400);
+  assert.equal(providerCalls.length, count);
+});
+
+test('mailer fails closed for invalid or duplicate additional recipients', async () => {
+  for (const value of [
+    'not-an-email', 'guest@example.net;GUEST@example.net', requestedRecipient,
+    Array.from({ length: 99 }, (_, index) => `guest${index}@example.net`).join('\n'),
+  ]) {
+    const { env, fetcher, providerCalls } = createEnv({ AUTH_ADDITIONAL_ALLOWED_EMAILS: value });
+    assert.equal((await handle(createRequest(), env, fetcher)).status, 503);
+    assert.equal(providerCalls.length, 0);
+  }
+});
+
 test('rejects two-field requests even when the retired shared-recipient setting exists', async () => {
   const legacyBody = { pin: '012345', requestRef: 'OLD123' };
   const legacy = createEnv({

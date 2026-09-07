@@ -12,6 +12,8 @@ TURNSTILE_SITE_KEY = "PUT_ENVIRONMENT_TURNSTILE_SITE_KEY_HERE"
 # Cloudflare Access rollback mode. Store AUTH_ALLOWED_EMAILS as a separate
 # encrypted Pages secret for custom PIN mode. Use one approved staff address
 # per line for both secrets, and never place real addresses in this file or Git.
+# AUTH_ADDITIONAL_ALLOWED_EMAILS optionally adds exact external addresses in
+# custom PIN mode. Store it as an encrypted secret on both Pages and the mailer.
 
 # Custom PIN mode also requires encrypted AUTH_HMAC_SECRET,
 # AUTH_EMAIL_SERVICE_TOKEN, and TURNSTILE_SECRET_KEY secrets.

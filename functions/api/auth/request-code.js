@@ -1,6 +1,5 @@
 import {
   AUTH_CHALLENGE_TTL_SECONDS,
-  AUTH_ALLOWED_EMAIL_DOMAIN,
   AUTH_MAX_PIN_ATTEMPTS,
   AUTH_MODES,
   AUTH_RATE_LIMITS,
@@ -35,7 +34,7 @@ import { verifyTurnstileToken } from '../../lib/custom-auth-turnstile.js';
 
 const genericRequestResponse = Object.freeze({
   ok: true,
-  message: 'If this Flow email is approved, a login code was sent.',
+  message: 'If this email is approved, a login code was sent.',
   expiresInSeconds: AUTH_CHALLENGE_TTL_SECONDS,
   resendAfterSeconds: AUTH_RESEND_AFTER_SECONDS,
 });
@@ -108,12 +107,11 @@ export function createRequestCodeEndpoint({
         (key) => !['email', 'turnstileToken'].includes(key),
       )
       || !normalizedSubmittedEmail
-      || !normalizedSubmittedEmail.endsWith(`@${AUTH_ALLOWED_EMAIL_DOMAIN}`)
     ) {
       return authErrorResponse(
         400,
         'INVALID_REQUEST',
-        `Enter a valid @${AUTH_ALLOWED_EMAIL_DOMAIN} email address.`,
+        'Enter a valid approved email address.',
       );
     }
 
