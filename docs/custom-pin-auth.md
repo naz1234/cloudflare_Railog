@@ -82,12 +82,13 @@ Keep the existing Cloudflare Access variables and secret while testing. Add thes
 | `AUTH_MODE` | Variable | Keep `cloudflare_access` until cutover |
 | `AUTH_ALLOWED_EMAILS` | Encrypted secret | Private approved-staff allowlist, one address per line |
 | `AUTH_PRESENCE_HIDDEN_EMAILS` | Encrypted secret | Optional approved subset to omit from the online list and count, one address per line |
+| `AUTH_PRESENCE_ADDITIONAL_HIDDEN_EMAILS` | Encrypted secret | Optional additional hidden members, allowing additions without replacing an existing encrypted presence list |
 | `AUTH_HMAC_SECRET` | Encrypted secret | Random secret of at least 32 characters |
 | `AUTH_EMAIL_SERVICE_TOKEN` | Encrypted secret | Authenticates Pages to the mailer worker |
 | `TURNSTILE_SITE_KEY` | Variable | Public widget key for this environment |
 | `TURNSTILE_SECRET_KEY` | Encrypted secret | Server-side widget secret |
 
-Configure the same approved addresses in the mailer Worker's encrypted `AUTH_ALLOWED_EMAILS` secret. The Worker requires an explicit allowlisted recipient on every request and does not support a shared-recipient fallback. Keep `AUTH_PRESENCE_HIDDEN_EMAILS` only on Pages; every address in it must also remain in Pages and mailer `AUTH_ALLOWED_EMAILS`. It is a display-privacy setting, not an authorization control, so hidden members can still request a PIN, sign in, and see other online staff.
+Configure the same approved addresses in the mailer Worker's encrypted `AUTH_ALLOWED_EMAILS` secret. The Worker requires an explicit allowlisted recipient on every request and does not support a shared-recipient fallback. Keep both presence visibility secrets only on Pages. Their combined entries must be unique and approved through `AUTH_ALLOWED_EMAILS` or `AUTH_ADDITIONAL_ALLOWED_EMAILS`; approved external addresses are supported. Use `AUTH_PRESENCE_ADDITIONAL_HIDDEN_EMAILS` to extend an existing encrypted list without replacing it. These are display-privacy settings, not authorization controls, so hidden members can still request a PIN, sign in, and see other online staff.
 
 After changing bindings, variables, or secrets, redeploy Pages so Functions receive them. Apply every pending D1 migration in order before deploying code that reads identity or presence columns. Missing tables or columns cause authentication to fail closed.
 

@@ -278,6 +278,33 @@ test('presence visibility accepts only an optional approved subset without affec
   }
 });
 
+test('presence visibility combines private lists and accepts only approved external identities', () => {
+  const env = makeEnv({
+    AUTH_ADDITIONAL_ALLOWED_EMAILS: 'Guest.User@example.net',
+    AUTH_PRESENCE_HIDDEN_EMAILS: allowedEmails[0],
+    AUTH_PRESENCE_ADDITIONAL_HIDDEN_EMAILS: 'guest.user@EXAMPLE.NET',
+  });
+  const authConfig = getCustomAuthConfiguration(env);
+  const config = getAuthPresenceConfiguration(env, authConfig);
+  assert.equal(authConfig.valid, true);
+  assert.equal(config.valid, true);
+  assert.deepEqual(config.hiddenMembers.map((member) => member.normalizedEmail), [
+    allowedEmails[0].toLowerCase(),
+    'guest.user@example.net',
+  ]);
+  for (const value of ['not-an-email', 'unknown@example.net', allowedEmails[0].toLowerCase(),
+    'guest.user@example.net;GUEST.USER@example.net']) {
+    const invalidEnv = { ...env, AUTH_PRESENCE_ADDITIONAL_HIDDEN_EMAILS: value };
+    assert.equal(getCustomAuthConfiguration(invalidEnv).valid, true);
+    assert.equal(getAuthPresenceConfiguration(invalidEnv).valid, false);
+  }
+  assert.equal(getAuthPresenceConfiguration({
+    ...env,
+    AUTH_PRESENCE_HIDDEN_EMAILS: 'guest.user@example.net',
+    AUTH_PRESENCE_ADDITIONAL_HIDDEN_EMAILS: '',
+  }).valid, true);
+});
+
 test('additional approved addresses are exact, optional, and fail closed on invalid configuration', () => {
   const env = makeEnv({ AUTH_ADDITIONAL_ALLOWED_EMAILS: 'Guest.User@example.net' });
   const config = getCustomAuthConfiguration(env);
@@ -1106,6 +1133,8 @@ test('presence heartbeat returns each recently active approved member once', asy
 test('presence hides configured members while preserving their authenticated heartbeat', async () => {
   const env = makeEnv({
     AUTH_PRESENCE_HIDDEN_EMAILS: allowedEmails[0].toLowerCase(),
+    AUTH_ADDITIONAL_ALLOWED_EMAILS: 'Guest.User@example.net',
+    AUTH_PRESENCE_ADDITIONAL_HIDDEN_EMAILS: 'guest.user@example.net',
   });
   const store = createMemoryStore();
   const nowSeconds = Math.floor(nowMs / 1000);
@@ -1118,6 +1147,19 @@ test('presence hides configured members while preserving their authenticated hea
     hmacSecret: env.AUTH_HMAC_SECRET,
   });
   const currentTokenHash = 'a'.repeat(64);
+
+  const guestTokenHash = 'c'.repeat(64);
+  store.sessions.set(guestTokenHash, {
+    created_at: nowSeconds - 600,
+    email_hash: await hashAuthEmail({
+      email: 'guest.user@example.net',
+      hmacSecret: env.AUTH_HMAC_SECRET,
+    }),
+    expires_at: nowSeconds + 600,
+    last_seen_at: nowSeconds - 30,
+    revoked_at: null,
+    token_hash: guestTokenHash,
+  });
 
   store.sessions.set(currentTokenHash, {
     created_at: nowSeconds - 600,
@@ -1153,6 +1195,20 @@ test('presence hides configured members while preserving their authenticated hea
     users: [{ name: 'Member.Two' }],
   });
   assert.equal(store.sessions.get(currentTokenHash).last_seen_at, nowSeconds);
+
+  context.data.authUser = { tokenHash: guestTokenHash };
+  const guestResponse = await endpoint(context);
+  assert.equal(guestResponse.status, 200);
+  assert.deepEqual(await guestResponse.json(), { ok: true, users: [{ name: 'Member.Two' }] });
+  assert.equal(store.sessions.get(guestTokenHash).last_seen_at, nowSeconds);
+
+  env.AUTH_PRESENCE_ADDITIONAL_HIDDEN_EMAILS = '';
+  const visibleGuestResponse = await endpoint(context);
+  assert.deepEqual(await visibleGuestResponse.json(), {
+    ok: true,
+    users: [{ name: 'Guest.User' }, { name: 'Member.Two' }],
+  });
+  env.AUTH_PRESENCE_ADDITIONAL_HIDDEN_EMAILS = 'guest.user@example.net';
 
   env.AUTH_PRESENCE_HIDDEN_EMAILS = allowedEmails.join('\n');
   const allHiddenResponse = await endpoint(context);
