@@ -19,7 +19,7 @@ function localDateAt(hours, minutes) {
 test("East Depot wash notice uses the requested wording", () => {
   assert.equal(
     EAST_DEPOT_WEEKDAY_WASH_NOTICE,
-    "Early Shift Weekdays: Kindly send pending-wash trains at East Depot back to the Mainline as off-peak trains.\nObjective: To reduce swapping and expedite washing.",
+    "Early Shift Weekdays: Kindly send pending-wash trains at East Depot back to the Mainline as off-peak trains.\nObjective: To reduce LS swapping and expedite pending washing.",
   );
 });
 
