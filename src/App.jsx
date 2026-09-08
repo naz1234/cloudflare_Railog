@@ -40,6 +40,8 @@ const AuthenticatedApp = () => {
         <Route path="/slp" element={<DepotStabling />} />
         <Route path="/admin" element={<DepotStabling />} />
         <Route path="/adm" element={<DepotStabling />} />
+        <Route path="/about" element={<DepotStabling />} />
+        <Route path="/abt" element={<DepotStabling />} />
         {/* Add your page Route elements here */}
         <Route path="*" element={<PageNotFound />} />
       </Route>

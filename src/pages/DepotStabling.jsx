@@ -15,6 +15,7 @@ import MaspoTrainMovementChecker from "../components/depot/MaspoTrainMovementChe
 import OvertimeTracker from "../components/OvertimeTracker";
 import RosterWorkspace from "../components/RosterWorkspace";
 import ChecklistWorkspace from "../components/ChecklistWorkspace";
+import AboutWorkspace from "../components/AboutWorkspace";
 import SleepModeWorkspace from "../components/SleepModeWorkspace";
 import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator";
 import OccBriefingFormSigner from "../components/OccBriefingFormSigner";
@@ -1837,7 +1838,7 @@ const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
 const OVT_SESSION_KEY = "ovtOvertimeUnlocked_v1";
 const ODO_SESSION_KEY = "odoReadingUnlocked_v1";
 const PROTECTED_SHORTCUTS_SESSION_KEY = "protectedShortcutsUnlocked_v1";
-const PROTECTED_SHORTCUT_KEYS = new Set(["odo", "alarm", "overtime", "checklist", "admin"]);
+const PROTECTED_SHORTCUT_KEYS = new Set(["odo", "alarm", "overtime", "checklist", "admin", "about"]);
 const ADM_LOGIN_ID = "admin";
 const ADM_LOGIN_PASSWORD = "921016";
 const ADMIN_NOTES_STORAGE_KEY = "admModernNotes_v1";
@@ -17746,6 +17747,7 @@ export default function DepotStablingPage() {
     if (path === "/sleep" || path === "/slp") return "sleep";
     if (path === "/checklist" || path === "/chk") return "checklist";
     if (path === "/admin" || path === "/adm") return "admin";
+    if (path === "/about" || path === "/abt") return "about";
     return "stabling";
   };
   const [activeTab, setActiveTab] = useState(() => getTabFromPath(location.pathname));
@@ -22196,6 +22198,7 @@ export default function DepotStablingPage() {
                 </svg>
               ),
             },
+            { key: "about", label: "About", code: "ABT", to: "/about" },
           ]
             .filter(({ key }) => !PROTECTED_SHORTCUT_KEYS.has(key) || areProtectedShortcutsUnlocked)
             .map(({ key, label, code, to }) => {
@@ -22967,6 +22970,19 @@ export default function DepotStablingPage() {
                 </section>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === "about" && (
+          <div className="w-full px-2 pb-10 pt-3">
+            <AboutWorkspace
+              unlocked={areProtectedShortcutsUnlocked}
+              onUnlock={() => {
+                setProtectedShortcutCredentials({ id: "", password: "" });
+                setProtectedShortcutError("");
+                setIsProtectedShortcutLoginOpen(true);
+              }}
+            />
           </div>
         )}
 
