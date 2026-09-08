@@ -105,10 +105,10 @@ test("matched Tracking IDs expose their TID Reference Table service colour", () 
 
 test("completed Tracking ID shows its TID reference departure time and service on hover", () => {
   assert.match(pageSource, /function getInsertionTidReferenceTooltipLabel\(remark = "", scheduledTime = ""\)/);
-  assert.match(pageSource, /normalized === "Early Rem"\) serviceLabel = "WD Rem 9am"/);
-  assert.match(pageSource, /normalized === "Late Rem"\) serviceLabel = "WD Rem 7pm"/);
-  assert.match(pageSource, /normalized === "ED"\) serviceLabel = "ED Rem 9am"/);
-  assert.match(pageSource, /normalized === "ED \(7pm\)"\) serviceLabel = "ED Rem 7pm"/);
+  assert.match(pageSource, /normalized === "Early Rem"\) serviceLabel = "WD Removal 9am"/);
+  assert.match(pageSource, /normalized === "Late Rem"\) serviceLabel = "WD Removal 7pm"/);
+  assert.match(pageSource, /normalized === "ED"\) serviceLabel = "ED Removal 9am"/);
+  assert.match(pageSource, /normalized === "ED \(7pm\)"\) serviceLabel = "ED Removal 7pm"/);
   assert.match(pageSource, /return `Departure time: \$\{cleanScheduledTime\}/);
   assert.match(pageSource, /No departure time in the active TID Reference Table/);
   assert.match(insertionCellSource, /getTidScheduledTime\(insertedTrackingId, autoTidDepot, \{ allowFallback: false \}\)/);
