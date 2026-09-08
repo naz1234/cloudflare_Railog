@@ -7,7 +7,7 @@ import {
   getInsertionSoundTriggerTime,
   isInsertionSoundDue,
 } from "../lib/insertionSoundTiming";
-import { hasLargeTimetableGap } from "../lib/tidScheduleSections";
+import { getUpcomingFirstRows, hasLargeTimetableGap } from "../lib/tidScheduleSections";
 
 const WEEKDAY_EAST_ROWS = [
   { tid: 201, remark: "Late Rem", time: "05:24" },
@@ -767,6 +767,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
   const accent = DEPOT_ACCENTS[depotType];
   const nextIndex = getNextIndex(rows, nowMinutes);
   const activeIndex = getActiveIndex(rows, nowMinutes);
+  const displayRows = getUpcomingFirstRows(rows, nextIndex);
   const isWeekday = dayLabel === "Weekday";
   const displayDayLabel = isScheduleOverride ? `${dayLabel} Override` : dayLabel;
   const assignedCount = countAssignedInsertionRows(rows, usedTidKeys, isWeekday);
@@ -1116,10 +1117,17 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
           </thead>
 
           <tbody>
-            {rows.map(({ tid, remark, time }, idx) => {
-              const isActive = idx === activeIndex;
+            {rows.length > 0 && nextIndex < 0 && (
+              <tr>
+                <td colSpan={isWeekday ? 3 : 2} style={{ padding: "10px 6px", textAlign: "center", color: accent.text, fontSize: 11 }}>
+                  No upcoming departures in this schedule
+                </td>
+              </tr>
+            )}
+            {displayRows.map(({ row: { tid, remark, time }, originalIndex: idx }, displayIndex) => {
+              const isActive = nextIndex >= 0 && idx === activeIndex;
               const isNext = idx === nextIndex;
-              const isPast = withinSchedule && idx < activeIndex;
+              const isPast = withinSchedule && (nextIndex < 0 || idx < nextIndex);
               const isUpcoming = nextIndex >= 0 && idx >= nextIndex;
               const remarkStyle = getRemarkStyle(remark || "");
 
@@ -1131,7 +1139,8 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
               const isUsed = isInsertionTidAssigned(tid, usedTidKeys, isWeekday);
               const isDuplicate = Boolean(isUsed && duplicateTidKeys.has(String(tid)));
               const startsNewTimeBlock = idx > 0 && hasLargeTimetableGap(rows[idx - 1]?.time, time);
-              const showUpcomingDivider = (isWeekday && nextIndex >= 0 && idx === nextIndex) || startsNewTimeBlock;
+              const showUpcomingDivider = isUpcoming && (idx === nextIndex || startsNewTimeBlock);
+              const showEarlierDivider = nextIndex !== 0 && idx === 0;
               const rowBackground = isDuplicate
                 ? "linear-gradient(90deg, rgba(245, 158, 11, 0.20) 0%, rgba(120, 53, 15, 0.12) 100%)"
                 : isUsed
@@ -1146,7 +1155,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                 textAlign: "center",
                 lineHeight: isWeekday ? "16px" : "15px",
                 background: rowBackground,
-                borderBottom: idx === rows.length - 1 ? "none" : "1px solid rgba(125, 184, 224, 0.13)",
+                borderBottom: displayIndex === displayRows.length - 1 ? "none" : "1px solid rgba(125, 184, 224, 0.13)",
                 opacity: isUsed ? 1 : isPast && !isActive ? 0.46 : 1,
                 boxShadow: isRaised
                   ? `inset 0 1px 0 ${interactionColor}, inset 0 -1px 0 ${interactionColor}, inset 0 0 13px color-mix(in srgb, ${interactionColor} 22%, transparent)`
@@ -1156,10 +1165,10 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
 
               return (
                 <React.Fragment key={tid}>
-                  {showUpcomingDivider && (
+                  {(showUpcomingDivider || showEarlierDivider) && (
                     <tr
                       className="theme-insertion-reference-section-row"
-                      data-section-reason={startsNewTimeBlock ? "timetable-gap" : "next-tid"}
+                      data-section-reason={showEarlierDivider ? "earlier-departures" : startsNewTimeBlock ? "timetable-gap" : "next-tid"}
                     >
                       <td
                         className="theme-insertion-reference-section-cell"
@@ -1176,7 +1185,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                             className="theme-insertion-reference-section-label"
                             style={{ display: "inline-flex", alignItems: "center", gap: 5, color: accent.accent, fontSize: 9, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase" }}
                           >
-                            <ClockIcon size={11} /> Upcoming
+                            <ClockIcon size={11} /> {showEarlierDivider ? "Earlier departures" : "Upcoming"}
                           </span>
                           <span className="theme-insertion-reference-section-line" style={{ height: 1, flex: 1, background: "rgba(125, 184, 224, 0.22)" }} />
                         </div>
