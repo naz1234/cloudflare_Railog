@@ -5444,14 +5444,14 @@ function getInsertionTidReferenceTooltipLabel(remark = "", scheduledTime = "") {
   const cleanScheduledTime = String(scheduledTime || "").trim();
   let serviceLabel = "";
 
-  if (normalized === "Early Rem") serviceLabel = "WD Rem 9am";
-  if (normalized === "Late Rem") serviceLabel = "WD Rem 7pm";
-  if (normalized === "ED") serviceLabel = "ED Rem 9am";
-  if (normalized === "ED (7pm)") serviceLabel = "ED Rem 7pm";
+  if (normalized === "Early Rem") serviceLabel = "WD Removal 9am";
+  if (normalized === "Late Rem") serviceLabel = "WD Removal 7pm";
+  if (normalized === "ED") serviceLabel = "ED Removal 9am";
+  if (normalized === "ED (7pm)") serviceLabel = "ED Removal 7pm";
 
   if (!serviceLabel) serviceLabel = String(remark || "").trim();
   if (cleanScheduledTime) {
-    return `Departure time: ${cleanScheduledTime}${serviceLabel ? ` • ${serviceLabel}` : ""}`;
+    return `Departure time: ${cleanScheduledTime}${serviceLabel ? `\n${serviceLabel}` : ""}`;
   }
 
   return serviceLabel || "No departure time in the active TID Reference Table";
@@ -6242,7 +6242,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           {insertedRemarkLabel && !insertedTrackingId && <span className="text-[10px] font-semibold" style={{ color: "#3a5068" }}>{insertedRemarkLabel}</span>}
           {insertedTrackingId && (
             <ActionTooltip
-              message={<span className="theme-stabling-remark-tooltip-text">{insertedTidReferenceTooltip}</span>}
+              message={<span className="theme-stabling-remark-tooltip-text" style={{ whiteSpace: "pre-line" }}>{insertedTidReferenceTooltip}</span>}
               placement="bottom"
               sideOffset={6}
               wrapperClassName="mt-auto w-full min-w-0"
@@ -6698,7 +6698,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             )}
             {insertedTrackingId && (
               <ActionTooltip
-                message={<span className="theme-stabling-remark-tooltip-text">{insertedTidReferenceTooltip}</span>}
+                message={<span className="theme-stabling-remark-tooltip-text" style={{ whiteSpace: "pre-line" }}>{insertedTidReferenceTooltip}</span>}
                 placement="bottom"
                 sideOffset={6}
                 wrapperClassName="w-full min-w-0"
