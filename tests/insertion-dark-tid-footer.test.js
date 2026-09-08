@@ -38,7 +38,7 @@ test("dark TID footer overrides load after the light-only design", () => {
   );
 });
 
-test("completed dark-mode TIDs use the approved recessed signal rail", () => {
+test("completed dark-mode TIDs use the approved soft-violet box", () => {
   const railRule = extractRule(
     darkTidFooterSource,
     'html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete,',
@@ -50,7 +50,7 @@ test("completed dark-mode TIDs use the approved recessed signal rail", () => {
 
   assert.match(
     railRule,
-    /background: linear-gradient\(135deg, #071725 0%, #04101b 100%\) !important/,
+    /background: linear-gradient\(135deg, #22233e 0%, #17192e 100%\) !important/,
   );
   assert.match(
     railRule,
@@ -58,13 +58,14 @@ test("completed dark-mode TIDs use the approved recessed signal rail", () => {
   );
   assert.match(
     darkTidFooterSource,
-    /\.theme-insertion-tracking-footer\.is-complete::before \{[\s\S]*content: "TID";[\s\S]*color: #67e8f9/,
+    /\.theme-insertion-tracking-footer\.is-complete::before \{[\s\S]*content: "TID";[\s\S]*color: #b5adf5/,
   );
+  assert.match(railRule, /border-color: #8f86d8 !important/);
   assert.match(numberRule, /color: #f4f8fc !important/);
   assert.match(numberRule, /-webkit-text-fill-color: #f4f8fc !important/);
 });
 
-test("dark semantic rails retain a saturated accent and stationary pulsing dot", () => {
+test("dark semantic dots retain their status colour and stationary pulse", () => {
   const pulseStart = lightTidFooterSource.indexOf("@keyframes insertion-tid-status-pulse");
   const pulseEnd = lightTidFooterSource.indexOf('html[data-app-theme="light"]', pulseStart);
   const pulseKeyframes = lightTidFooterSource.slice(pulseStart, pulseEnd);
@@ -77,11 +78,7 @@ test("dark semantic rails retain a saturated accent and stationary pulsing dot",
     ".theme-insertion-tracking-footer.is-complete.has-reference-style::after {",
   );
 
-  assert.match(
-    darkTidFooterSource,
-    /\.theme-insertion-tracking-footer\.is-complete\.has-reference-style \{[\s\S]*border-color: color-mix\(in srgb, var\(--insertion-tracking-reference-border, #38bdf8\) 72%, #29465a\) !important/,
-  );
-  assert.match(fallbackRule, /background: var\(--insertion-tracking-reference-border, #38bdf8\)/);
+  assert.match(fallbackRule, /background: var\(--insertion-tracking-reference-border, #b5adf5\)/);
   assert.match(semanticDotRule, /opacity: 1/);
   assert.match(semanticDotRule, /filter: saturate\(1\.55\) brightness\(1\.04\) contrast\(1\.08\)/);
   assert.match(semanticDotRule, /animation: insertion-tid-status-pulse 1\.65s ease-in-out 220ms infinite backwards/);
