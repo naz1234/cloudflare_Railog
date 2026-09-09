@@ -15,6 +15,8 @@ const REQUEST_SUMMARY_MONTHS = {
 
 const REQUEST_SUMMARY_DATE_PATTERN = /\b(0?[1-9]|[12]\d|3[01])\s*[-/]?\s*(JAN(?:UARY)?|FEB(?:RUARY)?|MAR(?:CH)?|APR(?:IL)?|MAY|JUN(?:E)?|JUL(?:Y)?|AUG(?:UST)?|SEP(?:T(?:EMBER)?)?|OCT(?:OBER)?|NOV(?:EMBER)?|DEC(?:EMBER)?)(?:\s*[-/,]\s*(\d{2,4}))?\b/gi;
 const REQUEST_SUMMARY_TRAILING_DATE_PATTERN = /\b\d{1,2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(?: \d{2,4})?$/;
+const REQUEST_SUMMARY_MONTH_FIRST_DATE_PATTERN = /\b(JAN(?:UARY)?|FEB(?:RUARY)?|MAR(?:CH)?|APR(?:IL)?|MAY|JUN(?:E)?|JUL(?:Y)?|AUG(?:UST)?|SEP(?:T(?:EMBER)?)?|OCT(?:OBER)?|NOV(?:EMBER)?|DEC(?:EMBER)?)\s*[-/]?\s*(0?[1-9]|[12]\d|3[01])(?:\s*[-/,]\s*(\d{2,4}))?\b/gi;
+const REQUEST_SUMMARY_ANY_DATE_PATTERN = new RegExp(`${REQUEST_SUMMARY_DATE_PATTERN.source}|${REQUEST_SUMMARY_MONTH_FIRST_DATE_PATTERN.source}`, "gi");
 
 function compactRequestedSummaryText(value = "") {
   return String(value || "").trim().replace(/\s+/g, " ");
@@ -30,9 +32,14 @@ function normalizeRequestedSummaryIdentity(value = "") {
 }
 
 export function normalizeRequestedSummaryDates(value = "") {
+  // Parse both orders in one pass so a year after a day-first date cannot be
+  // mistaken for the day of a second, month-first date.
   return compactRequestedSummaryText(value).replace(
-    REQUEST_SUMMARY_DATE_PATTERN,
-    (_match, day, month, year) => {
+    REQUEST_SUMMARY_ANY_DATE_PATTERN,
+    (_match, leadingDay, trailingMonth, trailingYear, leadingMonth, trailingDay, monthFirstYear) => {
+      const day = leadingDay || trailingDay;
+      const month = trailingMonth || leadingMonth;
+      const year = trailingYear || monthFirstYear;
       const monthLabel = REQUEST_SUMMARY_MONTHS[String(month).slice(0, 3).toUpperCase()];
       return `${Number(day)} ${monthLabel}${year ? ` ${year}` : ""}`;
     },
@@ -51,8 +58,45 @@ export function addOnBeforeRequestedSummaryTrailingDate(value = "") {
   if (!dateMatch) return clean;
 
   const prefix = clean.slice(0, dateMatch.index).trimEnd();
-  if (/\bon$/i.test(prefix)) return `${prefix} ${dateMatch[0]}`;
+  if (/\bon$/i.test(prefix)) return `${prefix.replace(/\bon$/i, "on")} ${dateMatch[0]}`;
   return `${prefix} on ${dateMatch[0]}`;
+}
+
+function formatRequestedSummaryTiming(value = "") {
+  const clean = removeRequestedSummaryLeadingSeparator(value).replace(/[.!?]+$/, "").trim();
+  if (/^(?:\d{1,2} [A-Z][a-z]{2}\b|\d{1,2}[/-]\d{1,2}\b)/.test(clean)) return `on ${clean}`;
+  if (/^(?:ON|AT|TODAY|TONIGHT|TOMORROW|TMRW?|TOM|THIS\s+(?:MORNING|AFTERNOON|EVENING))\b/i.test(clean)) {
+    return clean.replace(/^(?:TMRW?|TOM)\b/i, "tomorrow")
+      .replace(/^(?:ON|AT|TODAY|TONIGHT|TOMORROW|THIS\s+(?:MORNING|AFTERNOON|EVENING))\b/i, word => word.toLowerCase());
+  }
+  return "";
+}
+
+export function formatRequestedSummaryWashingAction(value = "") {
+  const details = removeRequestedSummaryLeadingSeparator(compactRequestedSummaryText(value).replace(/^WASH\b/i, ""))
+    .replace(/[.!?]+$/, "").trim();
+  if (!details) return "scheduled for washing";
+  if (/^WITH\b/i.test(details)) {
+    const activity = addOnBeforeRequestedSummaryTrailingDate(details.replace(/^WITH\s*/i, ""));
+    return activity ? `washing requested with ${activity}` : "scheduled for washing";
+  }
+  const timing = formatRequestedSummaryTiming(details);
+  return timing ? `scheduled for washing ${timing}` : `washing requested: ${details}`;
+}
+
+export function formatRequestedSummaryWorkshopAction(value = "") {
+  const direction = getRequestedSummaryWorkshopMovementDirection(value);
+  if (!direction) return "";
+  const movement = direction === "in" ? "workshop movement from G to C" : "workshop movement from C to G";
+  const details = normalizeRequestedSummaryDates(value)
+    .replace(/\b(?:INBOUND|OUTBOUND)\b|\b(?:WORKSHOP\s+)?MOVEMENT\b/gi, " ")
+    .replace(/\b[GC](?:\s*(?:TO|2|[-–—→])\s*|\s+)[GC]\b/gi, " ")
+    .replace(/\(\s*\)/g, " ")
+    .replace(/^[\s:;,–—-]+|[\s.!?:;,–—-]+$/g, "")
+    .replace(/\s+/g, " ");
+  if (!details) return movement;
+  const timing = formatRequestedSummaryTiming(details);
+  return timing ? `${movement} ${timing}` : `${movement} (${details})`;
 }
 
 export function formatRequestedSummaryOtherAction(value = "") {
@@ -66,6 +110,9 @@ export function formatRequestedSummaryOtherAction(value = "") {
   if (normalized === "RESTRICTED") return "restricted operation";
   if (normalized === "UNFIT PARK MODE") return "unfit / park mode";
   if (normalized === "APU ALARM") return "APU alarm";
+  const temperature = clean.match(/^SET\s+(-?\d+(?:\.\d+)?)\s*°?\s*C$/i);
+  if (temperature) return `set the temperature to ${temperature[1]}°C`;
+  if (/^TLC\b/i.test(clean)) return clean.replace(/^TLC\b/i, "TLC").replace(/\bAMPLIFIER\b/gi, "amplifier").replace(/\bCCTV\b/gi, "CCTV");
 
   if (normalized.startsWith("ATC INSPECTION")) {
     const detail = clean.replace(/^ATC\s+INSPECTION\b/i, "").trim();

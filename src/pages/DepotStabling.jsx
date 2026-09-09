@@ -59,9 +59,10 @@ import {
   addOnBeforeRequestedSummaryTrailingDate,
   formatRequestedSummaryEntryCount,
   formatRequestedSummaryOtherAction,
+  formatRequestedSummaryWashingAction,
+  formatRequestedSummaryWorkshopAction,
   getRequestedSummaryWorkshopMovementDirection,
   normalizeRequestedSummaryDates,
-  removeRequestedSummaryLeadingSeparator,
 } from "../lib/requestedActionSummary";
 import {
   EAST_DEPOT_RETURN_TO_MAINLINE_REMARK,
@@ -24072,11 +24073,12 @@ function createRequestedSummaryBucket() {
 }
 
 function getRequestedSummaryBucketByLabel(groupMap, label = "RST") {
-  const cleanLabel = cleanRequestLabel(label).toUpperCase() || "RST";
-  if (!groupMap.has(cleanLabel)) {
-    groupMap.set(cleanLabel, createRequestedSummaryBucket());
+  const cleanLabel = cleanRequestLabel(label) || "RST";
+  const groupKey = normalizeRequestIdentity(cleanLabel);
+  if (!groupMap.has(groupKey)) {
+    groupMap.set(groupKey, { ...createRequestedSummaryBucket(), label: cleanLabel });
   }
-  return groupMap.get(cleanLabel);
+  return groupMap.get(groupKey);
 }
 
 function formatRequestedSummaryPmActivityLabel(value = "") {
@@ -24118,12 +24120,12 @@ function getRequestedActionSummaryRowsFromRequests(requests = []) {
 }
 
 function buildRequestedActionSummaryLines(rows = []) {
-  const workshopIn = createRequestedSummaryBucket();
-  const workshopOut = createRequestedSummaryBucket();
+  const workshopIn = new Map();
+  const workshopOut = new Map();
   const todayPmGroups = new Map();
   const morningPmGroups = new Map();
   const cm = createRequestedSummaryBucket();
-  const tlc = createRequestedSummaryBucket();
+  const tlc = new Map();
   const deepCleaning = createRequestedSummaryBucket();
   const otherGroups = new Map();
   let cmActivityLabel = "RST CM";
@@ -24141,7 +24143,7 @@ function buildRequestedActionSummaryLines(rows = []) {
     const hasWorkshopIn = workshopMovementDirection === "in";
     const hasWorkshopOut = workshopMovementDirection === "out";
     const hasWorkshopMovement = hasWorkshopIn || hasWorkshopOut;
-    const hasPm = tokens.includes("PM");
+    const hasPm = !/^WASH\b/.test(normalized) && tokens.includes("PM");
     const hasCm = tokens.includes("CM");
     const hasTlc = tokens.includes("TLC");
     const isTomorrowPm = hasTomorrowRequestToken(requestType) || tokens.includes("MORNING");
@@ -24151,14 +24153,19 @@ function buildRequestedActionSummaryLines(rows = []) {
       return;
     }
 
-    if (hasWorkshopIn) appendRequestedSummaryTrain(workshopIn, row);
-    if (hasWorkshopOut) appendRequestedSummaryTrain(workshopOut, row);
+    if (hasWorkshopMovement) {
+      const activity = formatRequestedSummaryWorkshopAction(requestType);
+      appendRequestedSummaryTrain(getRequestedSummaryBucketByLabel(hasWorkshopIn ? workshopIn : workshopOut, activity), row);
+    }
     if (hasPm) {
       const activityLabel = formatRequestedSummaryPmActivityLabel(requestType);
       const activityGroups = isTomorrowPm ? morningPmGroups : todayPmGroups;
       appendRequestedSummaryTrain(getRequestedSummaryBucketByLabel(activityGroups, activityLabel), row);
     }
-    if (hasTlc) appendRequestedSummaryTrain(tlc, row);
+    if (hasTlc) {
+      const activity = addOnBeforeRequestedSummaryTrailingDate(formatRequestedSummaryOtherAction(requestType));
+      appendRequestedSummaryTrain(getRequestedSummaryBucketByLabel(tlc, activity), row);
+    }
     if (hasCm) {
       appendRequestedSummaryTrain(cm, row);
       const requestedCmLabel = formatRequestedSummaryCmActivityLabel(requestType);
@@ -24179,31 +24186,26 @@ function buildRequestedActionSummaryLines(rows = []) {
 
   const lines = [];
   const deepCleaningList = joinRequestedSummaryTrainList(deepCleaning.trains);
-  const workshopInList = joinRequestedSummaryTrainList(workshopIn.trains);
-  const workshopOutList = joinRequestedSummaryTrainList(workshopOut.trains);
 
   if (deepCleaningList) {
-    lines.push(`${deepCleaningList} — deep cleaning completed.`);
+    lines.push(`${deepCleaningList} — requested for deep cleaning.`);
   }
 
-  if (workshopInList) {
-    lines.push(`${workshopInList} — workshop movement from G to C.`);
-  }
+  [workshopIn, workshopOut].forEach((groups) => groups.forEach((bucket) => {
+    const trainList = joinRequestedSummaryTrainList(bucket.trains);
+    if (trainList) lines.push(`${trainList} — ${bucket.label}.`);
+  }));
 
-  if (workshopOutList) {
-    lines.push(`${workshopOutList} — workshop movement from C to G.`);
-  }
-
-  morningPmGroups.forEach((bucket, activityLabel) => {
+  morningPmGroups.forEach((bucket) => {
     const trainList = joinRequestedSummaryTrainList(bucket.trains);
     if (!trainList) return;
-    lines.push(`${trainList} — requested for ${activityLabel}.`);
+    lines.push(`${trainList} — requested for ${bucket.label}.`);
   });
 
-  todayPmGroups.forEach((bucket, activityLabel) => {
+  todayPmGroups.forEach((bucket) => {
     const trainList = joinRequestedSummaryTrainList(bucket.trains);
     if (!trainList) return;
-    lines.push(`${trainList} — requested for ${activityLabel}.`);
+    lines.push(`${trainList} — requested for ${bucket.label}.`);
   });
 
   const cmList = joinRequestedSummaryTrainList(cm.trains);
@@ -24211,10 +24213,10 @@ function buildRequestedActionSummaryLines(rows = []) {
     lines.push(`${cmList} — requested for ${cmActivityLabel} activity; close the SR.`);
   }
 
-  const tlcList = joinRequestedSummaryTrainList(tlc.trains);
-  if (tlcList) {
-    lines.push(`${tlcList} — requested for the TLC team.`);
-  }
+  tlc.forEach((bucket) => {
+    const trainList = joinRequestedSummaryTrainList(bucket.trains);
+    if (trainList) lines.push(`${trainList} — requested for ${bucket.label}.`);
+  });
 
   otherGroups.forEach(({ label, bucket }) => {
     const trainList = joinRequestedSummaryTrainList(bucket.trains);
@@ -24254,12 +24256,7 @@ function buildRequestedActionSummaryLines(rows = []) {
 
     const washMatch = cleanLabel.match(/^WASH(?:\s+(.+))?$/i);
     if (washMatch) {
-      const washDate = removeRequestedSummaryLeadingSeparator(
-        cleanRequestLabel(washMatch[1] || "").replace(/[.!?]+$/, ""),
-      );
-      lines.push(washDate
-        ? `${trainList} — scheduled for washing on ${washDate}.`
-        : `${trainList} — scheduled for washing.`);
+      lines.push(`${trainList} — ${formatRequestedSummaryWashingAction(cleanLabel)}.`);
       return;
     }
 
