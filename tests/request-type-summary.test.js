@@ -110,7 +110,7 @@ test("workshop summaries preserve each movement's date and other qualifiers", ()
   ]);
 });
 
-test("requests do not imply completed work and TLC subtypes remain distinct", () => {
+test("deep cleaning describes the current activity and TLC subtypes remain distinct", () => {
   assert.deepEqual(summarize([
     { trainId: "T17", requestType: "DEEP CLEANING" },
     { trainId: "T14", requestType: "TLC CCTV" },
@@ -118,7 +118,7 @@ test("requests do not imply completed work and TLC subtypes remain distinct", ()
     { trainId: "T32", requestType: "SET 25C" },
     { trainId: "T36", requestType: "SET 25C" },
   ]), [
-    "T17 — requested for deep cleaning.",
+    "T17 — undergoing deep cleaning.",
     "T14 — requested for TLC CCTV.",
     "T09 — requested for TLC amplifier.",
     "T32 and T36 — set the temperature to 25°C.",

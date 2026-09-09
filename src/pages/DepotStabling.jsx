@@ -24188,7 +24188,7 @@ function buildRequestedActionSummaryLines(rows = []) {
   const deepCleaningList = joinRequestedSummaryTrainList(deepCleaning.trains);
 
   if (deepCleaningList) {
-    lines.push(`${deepCleaningList} — requested for deep cleaning.`);
+    lines.push(`${deepCleaningList} — undergoing deep cleaning.`);
   }
 
   [workshopIn, workshopOut].forEach((groups) => groups.forEach((bucket) => {
