@@ -9826,7 +9826,8 @@ function InsertionTabContent({
   maintenanceMap,
   insertionLog,
   onClearInsertionDepot,
-  onInsertionTaNameUpdate,
+  onInsertionTimeUpdate,
+  onSweepUpdate,
   getTidScheduledTime,
   getTidAssistRemark,
   getTidAssistRemarkStyle,
@@ -10136,7 +10137,8 @@ function InsertionTabContent({
                 insertionLog={sortInsertionLogByTime(insertionLog)}
                 onClearDepot={onClearInsertionDepot}
                 depotFilter="west"
-                onTaNameUpdate={onInsertionTaNameUpdate}
+                onTimeUpdate={onInsertionTimeUpdate}
+                onSweepUpdate={onSweepUpdate}
               />
             </div>
           </div>
@@ -10185,7 +10187,8 @@ function InsertionTabContent({
                 insertionLog={sortInsertionLogByTime(insertionLog)}
                 onClearDepot={onClearInsertionDepot}
                 depotFilter="east"
-                onTaNameUpdate={onInsertionTaNameUpdate}
+                onTimeUpdate={onInsertionTimeUpdate}
+                onSweepUpdate={onSweepUpdate}
               />
             </div>
           </div>
@@ -20097,58 +20100,6 @@ export default function DepotStablingPage() {
     commitInsertionLiveSnapshot({ pg2InsertionLog: next });
   }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit, updateInsertionEntryRemarkInLog]);
 
-  const updateInsertionEntryTaNameInLog = useCallback((prevLog = [], entryKey, nextValue = "") => {
-    const taName = cleanInsertionTaName(nextValue);
-
-    return sortInsertionLogByTime((prevLog || []).map((entry) => {
-      if (!entry || entry.key !== entryKey) return entry;
-
-      if (entry.isSweeping) {
-        const text = buildSweepingInsertionEntryText({
-          time: entry.time || formatTime(new Date()),
-          trainKey: padTrainId(normalizeTrainId(entry.trainKey)),
-          road: entry.road || "",
-          signal: entry.signal || getSweepingSignal(entry.road, entry.sweepTrack),
-          clearTime: entry.clearTime || getSweepingClearTime(entry.time || formatTime(new Date())),
-          taName,
-        });
-        return { ...entry, taName, text };
-      }
-
-      const depot = entry.depot || getDepotFromRoad(entry.road || "");
-      const mainlineTrack = entry.mainlineTrack || (depot === "west" ? 1 : 2);
-      const tid = entry.tid !== null && entry.tid !== undefined ? entry.tid : "";
-      const text = buildNormalInsertionEntryText({
-        time: entry.time || formatTime(new Date()),
-        trainKey: entry.trainKey || "",
-        tid,
-        remark: tid !== "" ? "" : entry.remark,
-        road: entry.road || "",
-        mainlineTrack,
-        taName,
-      });
-      return { ...entry, taName, text };
-    }));
-  }, []);
-
-  const handleInsertionTaNameUpdate = useCallback((entryKey, nextValue) => {
-    markInsertionLiveLocalEdit();
-    setInsertionLog((prev) => {
-      const next = updateInsertionEntryTaNameInLog(prev, entryKey, nextValue);
-      saveInsertionLog(next);
-      return next;
-    });
-  }, [markInsertionLiveLocalEdit, updateInsertionEntryTaNameInLog]);
-
-  const handlePg2InsertionTaNameUpdate = useCallback((entryKey, nextValue) => {
-    markInsertionLiveLocalEdit();
-    const next = updateInsertionEntryTaNameInLog(pg2InsertionLogRef.current, entryKey, nextValue);
-    pg2InsertionLogRef.current = next;
-    saveInsertionPg2Log(next);
-    setPg2InsertionLog(next);
-    commitInsertionLiveSnapshot({ pg2InsertionLog: next });
-  }, [commitInsertionLiveSnapshot, markInsertionLiveLocalEdit, updateInsertionEntryTaNameInLog]);
-
   const updateSweepEntryInLog = useCallback((prevLog = [], entryKey, changes = {}) => {
     return sortInsertionLogByTime((prevLog || []).map((entry) => {
       if (!entry?.isSweeping || entry.key !== entryKey) return entry;
@@ -22454,7 +22405,8 @@ export default function DepotStablingPage() {
             maintenanceMap={maintenanceMap}
             insertionLog={activeInsertionLog}
             onClearInsertionDepot={handleActiveInsertionClearDepot}
-            onInsertionTaNameUpdate={handlePg2InsertionTaNameUpdate}
+            onInsertionTimeUpdate={handlePg2InsertionTimeUpdate}
+            onSweepUpdate={handlePg2SweepUpdate}
             getTidScheduledTime={getTidScheduledTime}
             getTidAssistRemark={getTidAssistRemark}
             getTidAssistRemarkStyle={getTidAssistRemarkStyle}

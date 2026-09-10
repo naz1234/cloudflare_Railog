@@ -1,6 +1,6 @@
 import { useState } from "react";
 import ActionTooltip from "../ActionTooltip";
-import InsertionTaRow from "./InsertionTaRow";
+import InsertionTimeRow from "./InsertionTimeRow";
 
 function formatSentenceList(values = []) {
   const items = values
@@ -38,9 +38,9 @@ function buildNormalInsertionCopyText(lines, depotLabel) {
 
   const depotName = depotLabel === "West" ? "West Depot" : "East Depot";
   const destination = depotLabel === "West" ? "3A1P1" : "3K1P2";
-  const tidsWithValue = lines.filter((line) => line.tid !== null && line.tid !== undefined && String(line.tid).trim() !== "");
-  const tidRange = tidsWithValue.length > 0
-    ? ` (TID ${tidsWithValue[0].tid}–${tidsWithValue[tidsWithValue.length - 1].tid})`
+  const tids = lines.map((line) => String(line.tid ?? "").trim()).filter((value) => /^\d+$/.test(value)).map(Number);
+  const tidRange = tids.length > 0
+    ? ` (TID ${Math.min(...tids)}–${Math.max(...tids)})`
     : "";
   const header = `Insertion from ${depotName} to ${destination}${tidRange}.`;
   const trainList = lines.map((line) => line.trainKey).join(", ");
@@ -234,7 +234,7 @@ function ClearDepotButton({ depotCode, disabled, onClear }) {
   );
 }
 
-function LogEntryGroup({ text, lines, onTaNameUpdate, formatLine = (line) => line.text }) {
+function LogEntryGroup({ text, lines, onTimeUpdate, onSweepUpdate, formatLine = (line) => line.text }) {
   if (!text) return null;
   const header = text.slice(0, text.indexOf("\n\n"));
   return (
@@ -242,11 +242,11 @@ function LogEntryGroup({ text, lines, onTaNameUpdate, formatLine = (line) => lin
       <div className="insertion-clean-pre">{header}</div>
       <div className="insertion-clean-pre insertion-clean-entry-rows">
         {lines.map((line, index) => (
-          <InsertionTaRow
+          <InsertionTimeRow
             key={`${line.key || index}:${line.trainKey}`}
             entry={line}
             text={formatLine(line)}
-            onTaNameUpdate={onTaNameUpdate}
+            onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate}
           />
         ))}
       </div>
@@ -268,7 +268,7 @@ function SectionTextBlock({ title, text, emptyText, tone = "insertion", children
   );
 }
 
-function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot, onTaNameUpdate }) {
+function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot, onTimeUpdate, onSweepUpdate }) {
   const sweepingLines = lines.filter(isSweepingLine);
   const threeK1Lines = lines.filter(is3K1InsertionLine);
   const normalLines = lines.filter((line) => !isSweepingLine(line) && !is3K1InsertionLine(line));
@@ -320,11 +320,11 @@ function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot, onTaNameUpd
         {hasEntries ? (
           <>
             <SectionTextBlock title="Insertion" text={normalText} emptyText="No insertion entries." tone="insertion">
-              <LogEntryGroup text={normalText} lines={normalLines} onTaNameUpdate={onTaNameUpdate} />
+              <LogEntryGroup text={normalText} lines={normalLines} onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} />
             </SectionTextBlock>
             <SectionTextBlock title="Sweep + 3K1" text={sweepAnd3K1Text} emptyText="No Sweep or 3K1 entries." tone="special">
-              <LogEntryGroup text={buildSweepingCopyText(sweepingLines, depotLabel)} lines={sweepingLines} onTaNameUpdate={onTaNameUpdate} />
-              <LogEntryGroup text={build3K1InsertionCopyText(threeK1Lines, depotLabel)} lines={threeK1Lines} onTaNameUpdate={onTaNameUpdate} formatLine={(line) => get3K1InsertionEntryText(line, depotLabel)} />
+              <LogEntryGroup text={buildSweepingCopyText(sweepingLines, depotLabel)} lines={sweepingLines} onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} />
+              <LogEntryGroup text={build3K1InsertionCopyText(threeK1Lines, depotLabel)} lines={threeK1Lines} onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} formatLine={(line) => get3K1InsertionEntryText(line, depotLabel)} />
             </SectionTextBlock>
           </>
         ) : (
@@ -341,7 +341,7 @@ function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot, onTaNameUpd
   );
 }
 
-export default function InsertionLogOutput({ insertionLog, onClearDepot, onTaNameUpdate, depotFilter = "all" }) {
+export default function InsertionLogOutput({ insertionLog, onClearDepot, onTimeUpdate, onSweepUpdate, depotFilter = "all" }) {
   const safeInsertionLog = Array.isArray(insertionLog) ? insertionLog : [];
   const normalizedDepotFilter = depotFilter === "west" || depotFilter === "east" ? depotFilter : "all";
   const westLines = safeInsertionLog.filter((line) => line.depot === "west");
@@ -691,7 +691,7 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, onTaNam
             lines={westLines}
             depot="west"
             onClearDepot={onClearDepot}
-            onTaNameUpdate={onTaNameUpdate}
+            onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate}
           />
         )}
         {showEastCard && (
@@ -700,7 +700,7 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, onTaNam
             lines={eastLines}
             depot="east"
             onClearDepot={onClearDepot}
-            onTaNameUpdate={onTaNameUpdate}
+            onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate}
           />
         )}
       </div>
