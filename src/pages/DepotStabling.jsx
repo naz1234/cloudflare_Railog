@@ -9924,6 +9924,7 @@ function InsertionTabContent({
   maintenanceMap,
   insertionLog,
   onClearInsertionDepot,
+  onInsertionTaNameUpdate,
   getTidScheduledTime,
   getTidAssistRemark,
   getTidAssistRemarkStyle,
@@ -10233,6 +10234,7 @@ function InsertionTabContent({
                 insertionLog={sortInsertionLogByTime(insertionLog)}
                 onClearDepot={onClearInsertionDepot}
                 depotFilter="west"
+                onTaNameUpdate={onInsertionTaNameUpdate}
               />
             </div>
           </div>
@@ -10281,6 +10283,7 @@ function InsertionTabContent({
                 insertionLog={sortInsertionLogByTime(insertionLog)}
                 onClearDepot={onClearInsertionDepot}
                 depotFilter="east"
+                onTaNameUpdate={onInsertionTaNameUpdate}
               />
             </div>
           </div>
@@ -22550,6 +22553,7 @@ export default function DepotStablingPage() {
             maintenanceMap={maintenanceMap}
             insertionLog={activeInsertionLog}
             onClearInsertionDepot={handleActiveInsertionClearDepot}
+            onInsertionTaNameUpdate={handlePg2InsertionTaNameUpdate}
             getTidScheduledTime={getTidScheduledTime}
             getTidAssistRemark={getTidAssistRemark}
             getTidAssistRemarkStyle={getTidAssistRemarkStyle}
