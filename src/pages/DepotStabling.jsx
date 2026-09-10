@@ -5969,7 +5969,7 @@ function getInsertionArrowNavigationTarget(key, rowIndex, columnIndex, rowCount,
   return isInsideGrid ? target : null;
 }
 
-function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onInsertionTaNameUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, onTrainIdKeyDown, trainIdControlRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0, tidDropRequest = null, onTidDropApplied, isTidDragActive = false, isTidDropHovered = false, isSearchMatch = false }) {
+function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, onTrainIdKeyDown, trainIdControlRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0, tidDropRequest = null, onTidDropApplied, isTidDragActive = false, isTidDropHovered = false, isSearchMatch = false }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
@@ -6528,20 +6528,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     </div>
                   </div>
                 </div>
-                <div className="w-full px-1">
-                  <div className="theme-insertion-ta-name-shell flex w-full flex-col items-center justify-center rounded-lg border border-purple-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(168,85,247,0.22)]">
-                                        <input
-                      type="text"
-                      maxLength={40}
-                      value={inserted.taName || ""}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                      placeholder="(Name)"
-                      className="theme-insertion-ta-name-input w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
-                      title="Optional TA name for the sweeping output"
-                    />
-                  </div>
-                </div>
               </div>
             ) : (
             <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
@@ -6623,20 +6609,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       title="Edit Sweep end time"
                     />
                   </div>
-                </div>
-              </div>
-              <div className="w-full px-1">
-                <div className="theme-insertion-ta-name-shell flex w-full flex-col items-center justify-center rounded-lg border border-purple-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(168,85,247,0.22)]">
-                                    <input
-                    type="text"
-                    maxLength={40}
-                    value={inserted.taName || ""}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                    placeholder="(Name)"
-                    className="theme-insertion-ta-name-input w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
-                    title="Optional TA name for the sweeping output"
-                  />
                 </div>
               </div>
             </div>
@@ -6763,20 +6735,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       />
                     </div>
                   </div>
-                  <div className="w-full px-1">
-                    <div className="theme-insertion-ta-name-shell flex w-full flex-col items-center justify-center rounded-lg border border-cyan-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(20,216,189,0.22)]">
-                                            <input
-                        type="text"
-                        maxLength={40}
-                        value={inserted.taName || ""}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                        placeholder="(Name)"
-                        className="theme-insertion-ta-name-input w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
-                        title="Optional TA name for the 3K1 insertion output"
-                      />
-                    </div>
-                  </div>
                 </div>
               ) : useUnifiedInsertionCardStyle ? (
                 <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
@@ -6859,20 +6817,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     </div>
                   )}
 
-                  <div className="w-full px-1">
-                    <div className="theme-insertion-ta-name-shell flex w-full flex-col items-center justify-center rounded-lg border border-sky-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(56,189,248,0.20)]">
-                                            <input
-                        type="text"
-                        maxLength={40}
-                        value={inserted.taName || ""}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                        placeholder="(Name)"
-                        className="theme-insertion-ta-name-input w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
-                        title="Optional TA name for the insertion output"
-                      />
-                    </div>
-                  </div>
                 </div>
               ) : (
               <>
@@ -6923,20 +6867,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         />
                       </div>
                     </div>
-                    <div className="w-full px-1">
-                      <div className="theme-insertion-ta-name-shell flex w-full flex-col items-center justify-center rounded-lg border border-sky-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(56,189,248,0.20)]">
-                                                <input
-                          type="text"
-                          maxLength={40}
-                          value={inserted.taName || ""}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                          placeholder="(Name)"
-                          className="theme-insertion-ta-name-input w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
-                          title="Optional TA name for the insertion output"
-                        />
-                      </div>
-                    </div>
                   </div>
               ) : hasInsertedPlainRemark ? (
                 <div className="flex w-full flex-col items-center gap-1 pt-1 pb-0.5 text-[12px] font-normal leading-tight">
@@ -6969,20 +6899,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       style={{ color: EAST_INSERTION_TIME_PILL_STYLE.color }}
                       title="Edit insertion completion time"
                     />
-                  </div>
-                  <div className="w-full px-1">
-                    <div className="theme-insertion-ta-name-shell flex w-full flex-col items-center justify-center rounded-lg border border-slate-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(96,165,250,0.18)]">
-                                            <input
-                        type="text"
-                        maxLength={40}
-                        value={inserted.taName || ""}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                        placeholder="(Name)"
-                        className="theme-insertion-ta-name-input w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
-                        title="Optional TA name for the insertion output"
-                      />
-                    </div>
                   </div>
                 </div>
               ) : (
@@ -7017,20 +6933,6 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       title="Edit insertion completion time"
                     />
                   </div>
-                  <div className="w-full px-1">
-                    <div className="theme-insertion-ta-name-shell flex w-full flex-col items-center justify-center rounded-lg border border-slate-300/35 bg-[#071828]/75 px-2 py-1.5 text-center shadow-[0_0_10px_rgba(96,165,250,0.18)]">
-                                            <input
-                        type="text"
-                        maxLength={40}
-                        value={inserted.taName || ""}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => onInsertionTaNameUpdate?.(inserted.key, e.target.value)}
-                        placeholder="(Name)"
-                        className="theme-insertion-ta-name-input w-full min-w-0 border-0 bg-transparent p-0 text-center text-[12px] font-normal leading-tight text-white outline-none placeholder:text-white/45"
-                        title="Optional TA name for the insertion output"
-                      />
-                    </div>
-                  </div>
                 </div>
                 )}
               </>
@@ -7043,7 +6945,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   );
 }
 
-function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoStabling, canUndoStabling = false, canRedoStabling = false, isStablingDirty = false, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onInsertionTaNameUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, isWeekendActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied, allDepots = [] }) {
+function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoStabling, canUndoStabling = false, canRedoStabling = false, isStablingDirty = false, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, isWeekendActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied, allDepots = [] }) {
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
   const [sectionSearch, setSectionSearch] = useState("");
@@ -7585,7 +7487,7 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
                     const borderBottom = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
                     const borderBottomRightRadius = labelSide === "left" && isLastRow && isLastBlock ? 12 : undefined;
                     const borderBottomLeftRadius = labelSide === "right" && isLastRow && i === 0 ? 12 : undefined;
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onInsertionTaNameUpdate={onInsertionTaNameUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} onTrainIdKeyDown={(event) => handleTrainIdKeyDown(event, ri, i)} trainIdControlRef={(element) => { trainIdControlRefs.current[`${ri}-${i}`] = element; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(block?.trainId || "") === normalizedSearch)} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} onTrainIdKeyDown={(event) => handleTrainIdKeyDown(event, ri, i)} trainIdControlRef={(element) => { trainIdControlRefs.current[`${ri}-${i}`] = element; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(block?.trainId || "") === normalizedSearch)} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -21902,7 +21804,6 @@ export default function DepotStablingPage() {
       onInsertionTick: handlePg2InsertionTick,
       onInsertionTimeUpdate: handlePg2InsertionTimeUpdate,
       onInsertionRemarkUpdate: handlePg2InsertionRemarkUpdate,
-      onInsertionTaNameUpdate: handlePg2InsertionTaNameUpdate,
       onSweepUpdate: handlePg2SweepUpdate,
       tidInputs: pg2TidInputs,
       onTidChange: handlePg2TidChange,
