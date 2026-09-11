@@ -1,9 +1,11 @@
 import { useId, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { defaultSweepEndTime, getInsertionLogTiming, normalizeInsertionLogTime, previewInsertionLogTiming } from "../../lib/insertionLogTiming";
+import { withoutInsertionTaSuffix } from "../../lib/insertionTaName";
+import InsertionTaControl from "./InsertionTaControl";
 import "./InsertionTimeRow.css";
 
-export default function InsertionTimeRow({ entry, text = "", onTimeUpdate, onSweepUpdate }) {
+export default function InsertionTimeRow({ entry, text = "", onTimeUpdate, onSweepUpdate, onTaNameUpdate }) {
   const [open, setOpen] = useState(false);
   const [draftTime, setDraftTime] = useState("");
   const [draftEnd, setDraftEnd] = useState("");
@@ -16,6 +18,7 @@ export default function InsertionTimeRow({ entry, text = "", onTimeUpdate, onSwe
   const valid = Boolean(time && (!isSweep || clearTime));
   const context = `${entry.trainKey}${entry.tid ? ` · TID ${entry.tid}` : ""} · ${entry.road || entry.depot}`;
   const timePrefix = text.match(/^\d{1,2}:\d{2}(?=\s+hrs)/i)?.[0];
+  const displayText = onTaNameUpdate ? withoutInsertionTaSuffix(text, entry.taName) : text;
 
   const changeOpen = (nextOpen) => {
     if (nextOpen) {
@@ -44,7 +47,7 @@ export default function InsertionTimeRow({ entry, text = "", onTimeUpdate, onSwe
             {timePrefix}<span className="insertion-time-pencil" aria-hidden="true"> ✎</span>
           </button>
         </Dialog.Trigger>
-        <span>{text.slice(timePrefix.length)}</span>
+        <span>{displayText.slice(timePrefix.length)}</span>
         <Dialog.Portal>
           <Dialog.Overlay className="insertion-time-overlay" />
           <Dialog.Content className="insertion-time-dialog" onWheel={(event) => event.stopPropagation()}>
@@ -101,6 +104,7 @@ export default function InsertionTimeRow({ entry, text = "", onTimeUpdate, onSwe
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+      {" "}<InsertionTaControl entry={entry} text={text} onTaNameUpdate={onTaNameUpdate} />
     </div>
   );
 }
