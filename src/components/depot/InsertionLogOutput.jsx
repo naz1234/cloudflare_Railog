@@ -234,7 +234,7 @@ function ClearDepotButton({ depotCode, disabled, onClear }) {
   );
 }
 
-function LogEntryGroup({ text, lines, onTimeUpdate, onSweepUpdate, formatLine = (line) => line.text }) {
+function LogEntryGroup({ text, lines, onTimeUpdate, onSweepUpdate, onTaNameUpdate, formatLine = (line) => line.text }) {
   if (!text) return null;
   const header = text.slice(0, text.indexOf("\n\n"));
   return (
@@ -246,7 +246,7 @@ function LogEntryGroup({ text, lines, onTimeUpdate, onSweepUpdate, formatLine = 
             key={`${line.key || index}:${line.trainKey}`}
             entry={line}
             text={formatLine(line)}
-            onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate}
+            onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} onTaNameUpdate={onTaNameUpdate}
           />
         ))}
       </div>
@@ -268,7 +268,7 @@ function SectionTextBlock({ title, text, emptyText, tone = "insertion", children
   );
 }
 
-function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot, onTimeUpdate, onSweepUpdate }) {
+function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot, onTimeUpdate, onSweepUpdate, onTaNameUpdate }) {
   const sweepingLines = lines.filter(isSweepingLine);
   const threeK1Lines = lines.filter(is3K1InsertionLine);
   const normalLines = lines.filter((line) => !isSweepingLine(line) && !is3K1InsertionLine(line));
@@ -320,11 +320,11 @@ function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot, onTimeUpdat
         {hasEntries ? (
           <>
             <SectionTextBlock title="Insertion" text={normalText} emptyText="No insertion entries." tone="insertion">
-              <LogEntryGroup text={normalText} lines={normalLines} onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} />
+              <LogEntryGroup text={normalText} lines={normalLines} onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} onTaNameUpdate={onTaNameUpdate} />
             </SectionTextBlock>
             <SectionTextBlock title="Sweep + 3K1" text={sweepAnd3K1Text} emptyText="No Sweep or 3K1 entries." tone="special">
-              <LogEntryGroup text={buildSweepingCopyText(sweepingLines, depotLabel)} lines={sweepingLines} onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} />
-              <LogEntryGroup text={build3K1InsertionCopyText(threeK1Lines, depotLabel)} lines={threeK1Lines} onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} formatLine={(line) => get3K1InsertionEntryText(line, depotLabel)} />
+              <LogEntryGroup text={buildSweepingCopyText(sweepingLines, depotLabel)} lines={sweepingLines} onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} onTaNameUpdate={onTaNameUpdate} />
+              <LogEntryGroup text={build3K1InsertionCopyText(threeK1Lines, depotLabel)} lines={threeK1Lines} onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} onTaNameUpdate={onTaNameUpdate} formatLine={(line) => get3K1InsertionEntryText(line, depotLabel)} />
             </SectionTextBlock>
           </>
         ) : (
@@ -341,7 +341,7 @@ function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot, onTimeUpdat
   );
 }
 
-export default function InsertionLogOutput({ insertionLog, onClearDepot, onTimeUpdate, onSweepUpdate, depotFilter = "all" }) {
+export default function InsertionLogOutput({ insertionLog, onClearDepot, onTimeUpdate, onSweepUpdate, onTaNameUpdate, depotFilter = "all" }) {
   const safeInsertionLog = Array.isArray(insertionLog) ? insertionLog : [];
   const normalizedDepotFilter = depotFilter === "west" || depotFilter === "east" ? depotFilter : "all";
   const westLines = safeInsertionLog.filter((line) => line.depot === "west");
@@ -691,7 +691,7 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, onTimeU
             lines={westLines}
             depot="west"
             onClearDepot={onClearDepot}
-            onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate}
+            onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} onTaNameUpdate={onTaNameUpdate}
           />
         )}
         {showEastCard && (
@@ -700,7 +700,7 @@ export default function InsertionLogOutput({ insertionLog, onClearDepot, onTimeU
             lines={eastLines}
             depot="east"
             onClearDepot={onClearDepot}
-            onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate}
+            onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} onTaNameUpdate={onTaNameUpdate}
           />
         )}
       </div>

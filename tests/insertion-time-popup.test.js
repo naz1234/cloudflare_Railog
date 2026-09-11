@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 import { defaultSweepEndTime, getInsertionLogTiming, normalizeInsertionLogTime, previewInsertionLogTiming } from "../src/lib/insertionLogTiming.js";
+import { normalizeInsertionTaName, withoutInsertionTaSuffix } from "../src/lib/insertionTaName.js";
 
 const page = readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
 const output = readFileSync(new URL("../src/components/depot/InsertionLogOutput.jsx", import.meta.url), "utf8");
@@ -38,9 +39,9 @@ function createApi(initialLog = []) {
   vm.runInContext([
     page.match(/const EAST_ROADS = .*;/)[0],
     ...helpers.map(extractFunction),
-    ...["updateInsertionEntryTimeInLog", "updateSweepEntryInLog", "handlePg2InsertionTimeUpdate", "handlePg2SweepUpdate"].map(callback),
+    ...["updateInsertionEntryTimeInLog", "updateSweepEntryInLog", "updateInsertionEntryTaNameInLog", "handlePg2InsertionTimeUpdate", "handlePg2SweepUpdate", "handlePg2InsertionTaNameUpdate"].map(callback),
     output.slice(output.indexOf("function formatSentenceList"), output.indexOf("async function copyText")),
-    "globalThis.api = { updateInsertionEntryTimeInLog, updateSweepEntryInLog, handlePg2InsertionTimeUpdate, handlePg2SweepUpdate, buildNormalInsertionCopyText, buildSweepAnd3K1CopyText };",
+    "globalThis.api = { updateInsertionEntryTimeInLog, updateSweepEntryInLog, handlePg2InsertionTimeUpdate, handlePg2SweepUpdate, handlePg2InsertionTaNameUpdate, buildNormalInsertionCopyText, buildSweepAnd3K1CopyText };",
   ].join("\n"), sandbox);
   return { ...sandbox.api, state, writes };
 }
@@ -113,5 +114,44 @@ test("normal and Sweep handlers persist the same timing to storage, rendered sta
     assert.equal(api.writes.rendered, api.state.current);
     assert.equal(api.writes.live.pg2InsertionLog, api.state.current);
     assert.equal(JSON.parse(api.writes.stored)[0].taName, entry.taName);
+  }
+});
+
+test("TA names normalize whitespace and are removed from the sentence only once for the editable chip", () => {
+  assert.equal(normalizeInsertionTaName("  Ali   bin\n Ahmad  "), "Ali bin Ahmad");
+  assert.equal(normalizeInsertionTaName(" \t "), "");
+  assert.equal(normalizeInsertionTaName("A".repeat(50)).length, 40);
+  const text = "05:30 hrs – T19 inserted to mainline track 1. TA Ali onboard.";
+  assert.equal(withoutInsertionTaSuffix(text, "Ali"), "05:30 hrs – T19 inserted to mainline track 1.");
+  assert.equal(withoutInsertionTaSuffix(text, "Al"), text);
+});
+
+test("editing TA names and timing in either order preserves both values and persists the combined log", () => {
+  for (const entry of [normal(), sweeping(), { ...normal("east"), tid: "", remark: "3K1" }]) {
+    const api = createApi([entry]);
+    api.handlePg2InsertionTaNameUpdate(entry.key, "Siti");
+    if (entry.isSweeping) api.handlePg2SweepUpdate(entry.key, { time: "04:30", clearTime: "04:35" });
+    else api.handlePg2InsertionTimeUpdate(entry.key, "04:30");
+    api.handlePg2InsertionTaNameUpdate(entry.key, "Ali bin Ahmad");
+    const saved = JSON.parse(api.writes.stored)[0];
+    assert.equal(saved.time, "04:30");
+    assert.equal(saved.taName, "Ali bin Ahmad");
+    assert.match(saved.text, /^04:30 hrs.*TA Ali bin Ahmad onboard\.$/);
+    if (entry.isSweeping) assert.equal(saved.clearTime, "04:35");
+    else assert.equal(saved.timeEdited, true);
+    assert.equal(api.writes.live.pg2InsertionLog, api.writes.rendered);
+    const copied = entry.isSweeping
+      ? api.buildSweepAnd3K1CopyText(api.state.current, [], "West")
+      : entry.remark === "3K1"
+        ? api.buildSweepAnd3K1CopyText([], api.state.current, "East")
+        : api.buildNormalInsertionCopyText(api.state.current, "West");
+    assert.match(copied, /04:30 hrs.*TA Ali bin Ahmad onboard\.$/);
+    assert.equal((copied.match(/TA Ali bin Ahmad onboard\./g) || []).length, 1);
+    api.handlePg2InsertionTaNameUpdate(entry.key, "");
+    const removed = JSON.parse(api.writes.stored)[0];
+    assert.equal(removed.time, "04:30");
+    assert.equal(removed.taName, "");
+    assert.doesNotMatch(removed.text, /\bTA\b/);
+    if (entry.isSweeping) assert.equal(removed.clearTime, "04:35");
   }
 });

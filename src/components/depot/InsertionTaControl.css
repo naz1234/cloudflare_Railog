@@ -1,0 +1,12 @@
+.insertion-time-trigger.insertion-ta-trigger { white-space: normal; max-width: 100%; }
+.insertion-ta-trigger:not(.has-name) { user-select: none; }
+@media (hover: hover) and (pointer: fine) and (min-width: 701px) {
+  .insertion-ta-trigger:not(.has-name) { opacity: 0; transform: translateX(-3px); pointer-events: none; }
+  .insertion-time-row:hover .insertion-ta-trigger,
+  .insertion-time-row:focus-within .insertion-ta-trigger { opacity: 1; transform: none; pointer-events: auto; }
+}
+.insertion-time-dialog-actions .insertion-ta-remove { margin-right: auto; color: #fda4af; border-color: transparent; padding-inline: 0; }
+html[data-app-theme="light"] .insertion-time-dialog-actions .insertion-ta-remove { color: #b4233d; }
+@media print {
+  .insertion-ta-trigger:not(.has-name) { display: none !important; }
+}
