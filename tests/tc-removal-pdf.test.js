@@ -150,7 +150,7 @@ test("PDF toolbar exposes DC and TC choices and TC uses removal-only layout", ()
   assert.match(source, /buildTcRemovalPdfLog\(/);
   assert.match(source, /isTcOutput \? \{ includeUntimedEntries: true \} : undefined/);
   assert.match(source, /!key \|\| \(!time && !includeUntimedEntries\)/);
-  assert.match(source, /const TIMETABLE_PARSE_VERSION = 6;/);
+  assert.match(source, /const TIMETABLE_PARSE_VERSION = 7;/);
   assert.match(source, /const timetableTime = formatSecondsAsTime\(excelTimeToSeconds\(row\[westArrivalIndex\]\)\)/);
   assert.match(source, /const timetableTime = formatSecondsAsTime\(excelTimeToSeconds\(row\[eastArrivalIndex\]\)\)/);
 });

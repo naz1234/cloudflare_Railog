@@ -83,13 +83,13 @@ const TIMETABLE_TYPES = [
   { key: "weekday", label: "Weekday", presetLabel: "9am" },
   { key: "friday", label: "Friday", presetLabel: "Fri" },
   { key: "saturday", label: "Saturday", presetLabel: "Sat" },
-  { key: "ph", label: "PH", presetLabel: "PH" },
+  { key: "ph", label: "PH", presetLabel: "9am" },
 ];
 
 const ACTIVE_TIMETABLE_TYPE_KEY = "activeTimetableType_v1";
 const LOCAL_TIMETABLE_RECORDS_KEY = "storedTimetableRecords_v1";
 const EAST_INSERTION_TIME_OFFSET_KEY = "eastInsertionTimeOffsetMinutes_v1";
-const TIMETABLE_PARSE_VERSION = 6;
+const TIMETABLE_PARSE_VERSION = 7;
 const APP_THEME_KEY = "l3DcTheme_v1";
 const NINE_AM_HIGHLIGHT_TIDS = new Set(["112", "114", "116", "118", "120", "202", "204", "206", "208", "210"]);
 const NINE_AM_SPECIAL_TIDS = new Set(["207", "209", "211"]);
@@ -162,7 +162,7 @@ function getDefaultPresetLabelForTimetableType(type = "weekday", currentLabel = 
   const normalized = normalizeTimetableType(type);
   if (normalized === "friday") return "Fri";
   if (normalized === "saturday") return "Sat";
-  if (normalized === "ph") return "PH";
+  if (normalized === "ph" && currentLabel === "PH") return "12am";
   return ["9am", "7pm", "12am"].includes(currentLabel) ? currentLabel : "9am";
 }
 
@@ -170,7 +170,6 @@ function getValidTrainRemPresetLabelsForTimetableType(type = "weekday") {
   const normalized = normalizeTimetableType(type);
   if (normalized === "friday") return ["Fri"];
   if (normalized === "saturday") return ["Sat"];
-  if (normalized === "ph") return ["PH"];
   return ["9am", "7pm", "12am"];
 }
 
@@ -519,11 +518,10 @@ function classifyRemovalPresetFromTime(timetableType, time = "") {
   const normalizedType = normalizeTimetableType(timetableType);
   if (normalizedType === "friday") return "Fri";
   if (normalizedType === "saturday") return "Sat";
-  if (normalizedType === "ph") return "PH";
 
   const minutes = excelTimeToMinutes(time);
   if (minutes === null) return "9am";
-  if (minutes < 180) return "12am";
+  if (minutes < 180 || minutes >= 23 * 60) return "12am";
   if (minutes >= 18 * 60) return "7pm";
   return "9am";
 }
@@ -844,22 +842,42 @@ function addArrival3A1P2ToRequestedRows(rows = [], activeTimetable = null, date 
 
 function getTimetableRemovalPreset(activeTimetable = null, depot = "west", label = "9am") {
   const parsed = getActiveTimetableParsedData(activeTimetable);
+  if (!parsed) return null;
   const depotKey = depot === "east" ? "east" : "west";
-  const preset = parsed?.removal?.[depotKey]?.presets?.[label];
-  if (preset?.tids?.length) return preset;
-
   const recordType = getTimetableRecordType(activeTimetable);
-  const entries = parsed?.removal?.[depotKey]?.entries || [];
-  if (getValidTrainRemPresetLabelsForTimetableType(recordType).includes(label) && entries.length) {
-    return {
-      label,
-      entries,
-      tids: entries.map((entry) => entry.tid).filter(Boolean),
-      timeMap: Object.fromEntries(entries.filter((entry) => entry?.tid && entry?.time).map((entry) => [entry.tid, entry.time])),
-    };
-  }
+  const bucket = parsed?.removal?.[depotKey] || {};
+  // Reclassify cached uploads too, including the former all-day PH bucket.
+  const sourceEntries = Array.isArray(bucket.entries)
+    ? bucket.entries
+    : Object.values(bucket.presets || {}).flatMap((preset) => preset?.entries || []);
+  const entries = sourceEntries.filter((entry) => (
+    entry?.tid && entry?.time
+    && classifyRemovalPresetFromTime(recordType, entry.timetableTime || entry.time) === label
+  ));
 
-  return null;
+  // An empty uploaded period must never restore an unrelated built-in preset.
+  return {
+    label,
+    entries,
+    tids: entries.map((entry) => entry.tid),
+    timeMap: Object.fromEntries(entries.map((entry) => [entry.tid, entry.time])),
+  };
+}
+
+function getVisibleTrainRemPresetLabels(activeTimetable = null, timetableType = "weekday") {
+  const parsed = getActiveTimetableParsedData(activeTimetable);
+  const type = parsed ? getTimetableRecordType(activeTimetable) : timetableType;
+  const labels = getValidTrainRemPresetLabelsForTimetableType(type);
+  if (!parsed) return labels;
+  return labels.filter((label) => ["west", "east"].some((depot) => (
+    getTimetableRemovalPreset(activeTimetable, depot, label).entries.length > 0
+  )));
+}
+
+function getAvailableTrainRemPresetLabel(currentLabel, availableLabels = []) {
+  if (availableLabels.includes(currentLabel)) return currentLabel;
+  if (currentLabel === "PH" && availableLabels.includes("12am")) return "12am";
+  return availableLabels[0] || "";
 }
 
 function getTrainRemPresetConfig(depot = "west", label = "9am", activeTimetable = null) {
@@ -2605,6 +2623,15 @@ function buildTrainRemCombinedWestRows(existingRows = [], label = "9am", activeT
 
   if (TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(label)) {
     const layout = getTrainRemCombinedExtendedLayout(label, activeTimetable);
+    const matchesLayout = (candidate) => (
+      candidate.westTids.every((tid, index) => normalizeTrainRemTidValue(existingRows[index]?.tid) === String(tid))
+      && candidate.eastTids.every((tid, index) => normalizeTrainRemTidValue(existingRows[candidate.eastStartIndex + index]?.tid) === String(tid))
+    );
+    // Older saved midnight rows use a smaller layout. Locate their reserve
+    // slots before expanding the uploaded schedule so scheduled rows do not
+    // become manual duplicates and typed reserve entries are retained.
+    const fallbackLayout = activeTimetable ? getTrainRemCombinedExtendedLayout(label) : layout;
+    const sourceLayout = matchesLayout(layout) ? layout : matchesLayout(fallbackLayout) ? fallbackLayout : null;
     const westReferenceRows = layout.westTids.map((referenceTid) => {
       const tid = normalizeTrainRemTidValue(referenceTid);
       const matchedRow = rowsByTid.get(tid) || {};
@@ -2630,7 +2657,7 @@ function buildTrainRemCombinedWestRows(existingRows = [], label = "9am", activeT
     });
 
     const reserveRowsFromSlots = Array.from({ length: layout.reserveCount }, (_, offset) => {
-      const sourceRow = normalizedSourceRows[layout.reserveStartIndex + offset] || {};
+      const sourceRow = sourceLayout ? normalizedSourceRows[sourceLayout.reserveStartIndex + offset] || {} : {};
       const tid = normalizeTrainRemTidValue(sourceRow?.tid || "");
       // Keep user-entered duplicate TIDs visible in reserve rows. Duplicate styling
       // will warn the user instead of auto-clearing the typed value.
@@ -2671,7 +2698,7 @@ function buildTrainRemCombinedWestRows(existingRows = [], label = "9am", activeT
     }
 
     const eastAdditionalRows = Array.from({ length: layout.eastReserveCount }, (_, offset) => {
-      const sourceRow = normalizedSourceRows[layout.eastReserveStartIndex + offset] || {};
+      const sourceRow = sourceLayout ? normalizedSourceRows[sourceLayout.eastReserveStartIndex + offset] || {} : {};
       const tid = normalizeTrainRemTidValue(sourceRow?.tid || "");
       // Keep user-entered duplicate TIDs visible in reserve rows. Duplicate styling
       // will warn the user instead of auto-clearing the typed value.
@@ -2914,8 +2941,8 @@ function getLatestTrainRemRecordsByDepot(records = []) {
 }
 
 function normalizeTrainRemRows(rows, depot) {
-  const count = TRAIN_REM_ROW_COUNTS[depot];
   const source = Array.isArray(rows) ? rows : [];
+  const count = Math.max(TRAIN_REM_ROW_COUNTS[depot], source.length);
   return Array.from({ length: count }, (_, i) => ({
     trainId: source[i]?.trainId || "",
     tid: source[i]?.tid || "",
@@ -2951,6 +2978,11 @@ function getTrainRemWestVisibleRows(rows = [], selectedPreset = "9am", presetTid
 }
 
 function normalizeTrainRemRowsForPreset(rows, depot, label = "9am", activeTimetable = null) {
+  // Cache/load/save paths do not have a timetable. Preserve uploaded layouts
+  // there instead of rebuilding them with the smaller built-in midnight list.
+  if (!activeTimetable && Array.isArray(rows) && TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(label)) {
+    return normalizeTrainRemRows(rows, depot);
+  }
   if (isTrainRemCombinedReferencePreset(depot, label)) {
     return buildTrainRemCombinedWestRows(rows, label, activeTimetable);
   }
@@ -3044,10 +3076,25 @@ function getTrainRemCachedPresetRows(state = {}, depot = "west", label = "9am") 
   return normalizeTrainRemRowsForPreset(buildTrainRemRowsFromPreset(safeDepot, safeLabel), safeDepot, safeLabel);
 }
 
+function getTrainRemSavedRowsForTimetable(state, depot, label, activeTimetable) {
+  const cachedRows = getTrainRemCachedPresetRows(state, depot, label);
+  if (!activeTimetable || getTimetableRecordType(activeTimetable) !== "ph") return cachedRows;
+  if (state?.phMigratedPresets?.[depot]?.[label]) return cachedRows;
+  const legacyRows = state?.presetRows?.[depot]?.PH || [];
+  if (!legacyRows.some((row) => row?.trainId)) return cachedRows;
+  const legacyByTid = indexTrainRemRowsByTid(legacyRows.filter((row) => row?.trainId));
+  return buildTrainRemRowsFromPresetConfig(depot, label, cachedRows, activeTimetable, { preserveManualBlankRows: true })
+    .map((row) => ({
+      ...row,
+      trainId: row.trainId || legacyByTid.get(normalizeTrainRemTidValue(row.tid))?.trainId || "",
+    }));
+}
+
 function mergeTrainRemCombinedMorningReferenceState(state = {}, activeTimetable = null) {
   const syncedState = syncTrainRemActiveRowsToPresetCache(state);
   const westPreset = syncedState?.selectedPreset?.west || "9am";
   const eastPreset = syncedState?.selectedPreset?.east || "9am";
+  if (!activeTimetable && TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(westPreset)) return syncedState;
   if (!isTrainRemCombinedReferencePreset("west", westPreset)) return syncedState;
 
   const westRows = normalizeTrainRemRowsForPreset(
@@ -3330,6 +3377,7 @@ function loadTrainRemState() {
     };
     const state = {
       selectedPreset,
+      phMigratedPresets: parsed?.phMigratedPresets || {},
       sortMode: normalizeTrainRemSortModes(parsed?.sortMode),
       rows: {
         west: normalizeTrainRemRowsForPreset(
@@ -3392,6 +3440,7 @@ function buildTrainRemDepotPayload(state = {}, depot = "west") {
     depot: safeDepot,
     key: safeDepot,
     selectedPreset,
+    phMigratedPresets: syncedState.phMigratedPresets?.[safeDepot] || {},
     sortMode: normalizeTrainRemSortMode(syncedState.sortMode?.[safeDepot]),
     rows: normalizeTrainRemRowsForPreset(syncedState.rows?.[safeDepot], safeDepot, selectedPreset),
     presetRows: normalizeTrainRemPresetRows(syncedState.presetRows?.[safeDepot], safeDepot),
@@ -3404,6 +3453,7 @@ function buildTrainRemStateFromRecords(records = []) {
   const map = {};
   const state = {
     selectedPreset: { ...fallback.selectedPreset },
+    phMigratedPresets: {},
     sortMode: { ...fallback.sortMode },
     rows: { ...fallback.rows },
     presetRows: {
@@ -3424,6 +3474,7 @@ function buildTrainRemStateFromRecords(records = []) {
 
     const selectedPreset = rec.selectedPreset || fallback.selectedPreset[depot];
     state.selectedPreset[depot] = selectedPreset;
+    state.phMigratedPresets[depot] = rec.phMigratedPresets || {};
     state.sortMode[depot] = normalizeTrainRemSortMode(rec?.sortMode);
     state.presetRows[depot] = normalizeTrainRemPresetRows(rec?.presetRows, depot);
     state.rows[depot] = normalizeTrainRemRowsForPreset(
@@ -7540,12 +7591,11 @@ function RemovalSummaryTooltip({ message, align = "center", placement = "bottom"
 
 function getRemovalPresetTooltip(label = "") {
   const tooltipByLabel = {
-    "9am": "Show 9am Weekday removal TID",
-    "7pm": "Show 7pm Weekday removal TID",
-    "12am": "Show 12am Weekday removal TID",
+    "9am": "Show morning removal TIDs from the active timetable",
+    "7pm": "Show evening removal TIDs from the active timetable",
+    "12am": "Show end-of-service removal TIDs from the active timetable",
     Fri: "Show Friday End of Service removal TID",
     Sat: "Show Saturday End of Service removal TID",
-    PH: "Show Public Holiday End of Service removal TID",
   };
 
   return tooltipByLabel[label] || `Show ${label} removal TID`;
@@ -7570,6 +7620,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   const [westDepotCopyStatus, setWestDepotCopyStatus] = useState("");
   const [eastDepotCopyStatus, setEastDepotCopyStatus] = useState("");
   const [totalServiceCopyStatus, setTotalServiceCopyStatus] = useState("");
+  const visiblePresetLabels = useMemo(
+    () => getVisibleTrainRemPresetLabels(activeTimetable, activeTimetableType),
+    [activeTimetable, activeTimetableType]
+  );
 
   const trainRemStateRef = useRef(trainRemState);
 
@@ -7889,31 +7943,52 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   }, [scheduleTrainRemSave]);
 
   useEffect(() => {
-    if (!trainRemLoaded) return;
+    if (!trainRemLoaded || !visiblePresetLabels.length) return;
 
-    // Timetable selection must not auto-select Train Rem preset buttons.
-    // Only refresh the currently selected preset rows when a new uploaded timetable record is loaded.
+    // Keep the current period when it exists; move both depots away from a
+    // hidden/legacy period when the active upload changes.
     updateTrainRemState((prev) => {
+      const syncedPrev = syncTrainRemActiveRowsToPresetCache(prev);
+      const selectedLabel = getAvailableTrainRemPresetLabel(prev.selectedPreset?.west, visiblePresetLabels);
       const nextRows = {};
+      const nextSelectedPreset = {};
+      const phMigratedPresets = { ...syncedPrev.phMigratedPresets };
 
       ["west", "east"].forEach((depot) => {
         const currentPresetLabel = prev.selectedPreset?.[depot] || "9am";
-        const existingRows = normalizeTrainRemRows(prev.rows?.[depot], depot);
-        nextRows[depot] = buildTrainRemRowsFromPresetConfig(
+        const label = selectedLabel || "9am";
+        const changingPeriod = label !== currentPresetLabel;
+        const existingRows = getTrainRemSavedRowsForTimetable(syncedPrev, depot, label, activeTimetable);
+        const restoredRows = selectedLabel ? buildTrainRemRowsFromPresetConfig(
           depot,
-          currentPresetLabel,
-          existingRows,
+          label,
+          changingPeriod ? [] : existingRows,
           activeTimetable,
           { preserveManualBlankRows: true }
-        );
+        ) : emptyTrainRemRows(TRAIN_REM_ROW_COUNTS[depot]);
+        const savedByTid = indexTrainRemRowsByTid([
+          ...existingRows.filter((row) => row?.trainId),
+          ...(prev.rows?.[depot] || []).filter((row) => row?.trainId),
+        ]);
+        nextRows[depot] = changingPeriod ? restoredRows.map((row) => ({
+          ...row,
+          trainId: savedByTid.get(normalizeTrainRemTidValue(row.tid))?.trainId || row.trainId,
+        })) : restoredRows;
+        nextSelectedPreset[depot] = label;
+        if (activeTimetable && getTimetableRecordType(activeTimetable) === "ph") {
+          phMigratedPresets[depot] = { ...phMigratedPresets[depot], [label]: true };
+        }
       });
 
-      return mergeTrainRemCombinedMorningReferenceState({
-        ...prev,
+      const nextState = {
+        ...syncedPrev,
+        selectedPreset: nextSelectedPreset,
+        phMigratedPresets,
         rows: nextRows,
-      }, activeTimetable);
+      };
+      return selectedLabel ? mergeTrainRemCombinedMorningReferenceState(nextState, activeTimetable) : nextState;
     });
-  }, [activeTimetable?.id, trainRemLoaded, updateTrainRemState]);
+  }, [activeTimetable, visiblePresetLabels, trainRemLoaded, updateTrainRemState, trainRemState.selectedPreset?.west, trainRemState.selectedPreset?.east]);
 
   const handleTrainRemUndo = useCallback(() => {
     const previousState = trainRemUndoStackRef.current.pop();
@@ -8196,6 +8271,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
   };
 
   const applyPreset = (depot, label) => {
+    if (!visiblePresetLabels.includes(label)) return;
     updateTrainRemState((prev) => {
       // Save the currently displayed preset before changing tabs, then restore
       // the exact rows previously entered for the newly selected preset.
@@ -8209,6 +8285,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         : [depot];
 
       const nextSelectedPreset = { ...syncedPrev.selectedPreset };
+      const phMigratedPresets = { ...syncedPrev.phMigratedPresets };
       const nextRows = { ...syncedPrev.rows };
       const nextPresetRows = {
         ...syncedPrev.presetRows,
@@ -8217,7 +8294,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       };
 
       targetDepots.forEach((targetDepot) => {
-        const cachedTargetRows = getTrainRemCachedPresetRows(syncedPrev, targetDepot, label);
+        const cachedTargetRows = getTrainRemSavedRowsForTimetable(syncedPrev, targetDepot, label, activeTimetable);
         const restoredRows = buildTrainRemRowsFromPresetConfig(
           targetDepot,
           label,
@@ -8227,6 +8304,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         );
 
         nextSelectedPreset[targetDepot] = label;
+        if (activeTimetable && getTimetableRecordType(activeTimetable) === "ph") {
+          phMigratedPresets[targetDepot] = { ...phMigratedPresets[targetDepot], [label]: true };
+        }
         nextRows[targetDepot] = restoredRows;
         nextPresetRows[targetDepot] = {
           ...nextPresetRows[targetDepot],
@@ -8237,6 +8317,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       const nextState = {
         ...syncedPrev,
         selectedPreset: nextSelectedPreset,
+        phMigratedPresets,
         rows: nextRows,
         presetRows: nextPresetRows,
       };
@@ -8987,7 +9068,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       getTrainRemPresetConfig(depot, selectedPreset, activeTimetable)?.tids || [],
       activeTimetable
     ).length;
-    const rows = depot === "west" && !isTrainRemCombinedReferencePreset(depot, selectedPreset)
+    const rows = !visiblePresetLabels.length ? [] : depot === "west" && !isTrainRemCombinedReferencePreset(depot, selectedPreset)
       ? getTrainRemWestVisibleRows(normalizedRows, selectedPreset, selectedPresetTidCount)
       : normalizedRows;
     const rowEntries = rows.map((row, sourceIndex) => ({ row, sourceIndex }));
@@ -9044,9 +9125,9 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     const pdfMenuOpen = trainRemPdfMenuDepot === depot;
     const tcPdfAvailable = Boolean(getActiveTimetableParsedData(activeTimetable));
     const activeTimetableLabel = getTimetableTypeLabel(activeTimetableType);
-    const timetablePresetNotice = isTrainRemPresetMismatchWithTimetable(activeTimetableType, selectedPreset)
-      ? `Currently timetable ${activeTimetableLabel} is used`
-      : "";
+    const timetablePresetNotice = visiblePresetLabels.length === 0
+      ? "No removals in the active timetable"
+      : activeTimetable ? `Active timetable: ${activeTimetableLabel}` : "";
 
     return (
       <div className="theme-train-rem-depot-card relative overflow-visible rounded-xl border border-[#2b4f6b] bg-[#071828] shadow-md">
@@ -9241,50 +9322,28 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
             <div className="flex items-start justify-between gap-1.5">
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-1">
-                  {TID_PRESETS[depot].slice(0, 3).map((preset) => {
-                    const active = selectedPreset === preset.label;
+                  {visiblePresetLabels.map((label) => {
+                    const active = selectedPreset === label;
                     return (
                       <button
-                        key={preset.label}
+                        key={label}
                         type="button"
-                        onClick={() => applyPreset(depot, preset.label)}
+                        onClick={() => applyPreset(depot, label)}
                         className={`theme-train-rem-preset ${active ? "is-active" : ""} removal-summary-tooltip-trigger relative z-50 h-5 overflow-visible rounded-md border text-[11px] font-normal transition-all ${
                           active
                             ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
                             : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
                         }`}
                         style={{ width: "34px", minWidth: "34px" }}
-                        aria-label={getRemovalPresetTooltip(preset.label)}
+                        aria-label={getRemovalPresetTooltip(label)}
                       >
-                        {preset.label}
-                        <RemovalSummaryTooltip message={getRemovalPresetTooltip(preset.label)} align="left" placement="top" />
+                        {label}
+                        <RemovalSummaryTooltip message={getRemovalPresetTooltip(label)} align="left" placement="top" />
                       </button>
                     );
                   })}
                 </div>
 
-                <div className="flex items-center gap-1">
-                  {TID_PRESETS[depot].slice(3).map((preset) => {
-                    const active = selectedPreset === preset.label;
-                    return (
-                      <button
-                        key={preset.label}
-                        type="button"
-                        onClick={() => applyPreset(depot, preset.label)}
-                        className={`theme-train-rem-preset ${active ? "is-active" : ""} removal-summary-tooltip-trigger relative z-50 h-5 overflow-visible rounded-md border text-[11px] font-normal transition-all ${
-                          active
-                            ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
-                            : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
-                        }`}
-                        style={{ width: "34px", minWidth: "34px" }}
-                        aria-label={getRemovalPresetTooltip(preset.label)}
-                      >
-                        {preset.label}
-                        <RemovalSummaryTooltip message={getRemovalPresetTooltip(preset.label)} align={preset.label === "PH" ? "right" : "left"} />
-                      </button>
-                    );
-                  })}
-                </div>
               </div>
 
               {canSortByRemovalColor && (
