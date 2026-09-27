@@ -132,7 +132,7 @@ test("the overlaid remove button does not shift the Train ID away from center", 
 test("the remove button is centered on the Train ID and TID divider", () => {
   assert.match(
     depotStablingSource,
-    /gridTemplateColumns: "18% 18% 22% 42%"[\s\S]*?style=\{\{ left: "18%", transform: "translate\(-50%, -50%\)" \}\}/,
+    /gridTemplateColumns: isHdw40 \? "22% 27% 51%" : "18% 18% 22% 42%"[\s\S]*?style=\{\{ left: "18%", transform: "translate\(-50%, -50%\)" \}\}/,
   );
   assert.doesNotMatch(
     depotStablingSource,
