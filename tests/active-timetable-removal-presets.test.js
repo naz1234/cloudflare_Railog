@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import test from 'node:test';
 import * as XLSX from 'xlsx';
+import * as hdw40 from '../src/lib/trainRemHdw40.js';
 
 const source = readFileSync(new URL('../src/pages/DepotStabling.jsx', import.meta.url), 'utf8');
 const functions = [
@@ -20,13 +21,23 @@ const functions = [
   'normalizeTrainRemSortMode', 'normalizeTrainRemSortModes', 'syncTrainRemActiveRowsToPresetCache',
   'getTrainRemCachedPresetRows', 'buildTrainRemDepotPayload',
   'buildTrainRemRowsFromPresetConfig', 'getTrainRemSavedRowsForTimetable',
+  'getDefaultPresetLabelForTimetableType', 'normalizeTrainId', 'padTrainId',
+  'collectTrainRemRowsForDepotCopy', 'collectTrainRemReferenceInServiceRows',
+  'collectTrainRemMainlineInServiceRows', 'isTrainRemReferenceOnlyIndex',
+  'isTrainRemCombinedEastExtraRowIndex', 'getTrainRemCombinedManualRowDepot',
+  'mergeTrainRemCombinedMorningReferenceState', 'buildDefaultTrainRemState',
+  'getTrainRemTimestampValue', 'getTrainRemStateTimestamp', 'getTrainRemRecordTimestamp',
+  'getTrainRemRecordFilledTrainIdCount', 'getLatestTrainRemRecordsByDepot',
+  'buildTrainRemStateFromRecords', 'getTrainRemRowForTrain', 'getWestRemovalRowsMap',
+  'getTrainRemScheduleMatch',
+  'getRequestTid', 'getRequestTiming',
 ];
 const functionText = name => {
   const start = source.indexOf(`function ${name}(`);
   assert.ok(start >= 0, name);
   return source.slice(start, source.indexOf('\n}', start) + 2);
 };
-const context = {XLSX, Date, Uint8Array, TIMETABLE_PARSE_VERSION:7};
+const context = {XLSX, Date, Uint8Array, TIMETABLE_PARSE_VERSION:7, ...hdw40};
 vm.createContext(context);
 vm.runInContext([
   source.slice(source.indexOf('const TIMETABLE_TYPES ='), source.indexOf('const ACTIVE_TIMETABLE_TYPE_KEY')),
@@ -59,7 +70,7 @@ test('already uploaded PH records expose only morning and midnight buttons',()=>
 
 test('visibility follows the upload and includes periods found only in East Depot',()=>{
   const weekday=record('weekday',[makeEntry(212,'09:00')],[makeEntry(207,'19:44')]);
-  assert.deepEqual(plain(context.getVisibleTrainRemPresetLabels(weekday)),['9am','7pm']);
+  assert.deepEqual(plain(context.getVisibleTrainRemPresetLabels(weekday)),['9am','7pm','HDW 40']);
   assert.deepEqual(plain(context.getVisibleTrainRemPresetLabels(record('friday',[makeEntry(102,'00:02')]))),['Fri']);
   assert.deepEqual(plain(context.getVisibleTrainRemPresetLabels(record('saturday',[],[makeEntry(207,'00:02')]))),['Sat']);
   assert.deepEqual(plain(context.getVisibleTrainRemPresetLabels(record('ph'))),[]);
@@ -140,4 +151,99 @@ test('saved PH train assignments remain available in both replacement periods',(
   assert.ok(cleared.every(row=>!row.trainId), 'cleared assignments must not be restored from the legacy PH cache');
   const saved=context.buildTrainRemDepotPayload(clearedState,'west');
   assert.equal(saved.phMigratedPresets['12am'],true);
+});
+
+test('HDW 40 is available only on Weekday, including uploads with no removals', () => {
+  assert.deepEqual(plain(context.getVisibleTrainRemPresetLabels(record('weekday'))), ['HDW 40']);
+  assert.ok(context.getVisibleTrainRemPresetLabels(null, 'weekday').includes('HDW 40'));
+  for (const type of ['friday', 'saturday', 'ph']) {
+    assert.ok(!context.getVisibleTrainRemPresetLabels(record(type), type).includes('HDW 40'));
+    assert.notEqual(context.getDefaultPresetLabelForTimetableType(type, 'HDW 40'), 'HDW 40');
+  }
+  assert.equal(context.getDefaultPresetLabelForTimetableType('weekday', 'HDW 40'), 'HDW 40');
+});
+
+test('HDW 40 has exactly 40 manual slots, with no scheduled TIDs or times', () => {
+  const uploaded = record('weekday', [makeEntry(213, '19:06')], [makeEntry(207, '20:00')]);
+  assert.deepEqual(plain(context.getTrainRemPresetConfig('west', 'HDW 40', uploaded)), {
+    label: 'HDW 40', tids: [], timeMap: {}, source: 'manual',
+  });
+  const rows = context.buildTrainRemRowsFromPresetConfig('west', 'HDW 40', [], uploaded);
+  assert.equal(rows.length, 40);
+  assert.ok(rows.every(row => !row.trainId && !row.tid && !row.timing && !row.remark));
+  assert.equal(context.buildTrainRemRowsFromPresetConfig('east', 'HDW 40', [], uploaded).length, 0);
+  assert.ok(rows.every((_, i) => !context.isTrainRemReferenceOnlyIndex('west', 'HDW 40', i, uploaded)), 'all manual time fields stay editable');
+});
+
+function makeHdwState() {
+  const rows = hdw40.normalizeHdw40Rows();
+  for (const [index, trainId, timing] of [[0,'01','19:04'], [16,'17','19:30'], [17,'18','19:31'], [19,'20','19:35'], [20,'21','20:00'], [39,'40','20:30']]) {
+    rows[index] = { trainId, tid: '', timing, remark: `Manual ${trainId}` };
+  }
+  return { selectedPreset: { west: 'HDW 40', east: 'HDW 40' }, rows: { west: rows, east: [] } };
+}
+
+test('7pm and HDW 40 retain independent rows through switch, save and remote reload', () => {
+  let state = context.syncTrainRemActiveRowsToPresetCache(makeHdwState());
+  const originalRows = plain(state.rows.west);
+  const evening = context.buildTrainRemRowsFromPresetConfig('west', '7pm');
+  evening[0].trainId = '47';
+  state = context.syncTrainRemActiveRowsToPresetCache({ ...state, selectedPreset: { west: '7pm', east: '7pm' }, rows: { west: evening, east: [] } });
+  const restored = context.buildTrainRemRowsFromPresetConfig('west', 'HDW 40', context.getTrainRemCachedPresetRows(state, 'west', 'HDW 40'), record('weekday'));
+  assert.deepEqual(plain(restored), originalRows);
+  state = context.mergeTrainRemCombinedMorningReferenceState({ ...state, selectedPreset: { west: 'HDW 40', east: 'HDW 40' }, rows: { west: restored, east: [] } });
+  const records = ['west', 'east'].map(depot => context.buildTrainRemDepotPayload(state, depot));
+  const reloaded = context.buildTrainRemStateFromRecords(records).state;
+  assert.deepEqual(plain(reloaded.rows.west), originalRows);
+  assert.equal(reloaded.presetRows.west['7pm'][0].trainId, '47');
+  assert.equal(reloaded.rows.east.length, 0);
+  const cleared = context.syncTrainRemActiveRowsToPresetCache({ ...reloaded, rows: { west: [], east: [] } });
+  assert.equal(cleared.presetRows.west['7pm'][0].trainId, '47');
+  assert.ok(cleared.presetRows.west['HDW 40'].every(row => !row.trainId && !row.timing));
+});
+
+test('manual groups preserve 7pm counts and route depot copy and service totals correctly', () => {
+  assert.deepEqual(hdw40.HDW40_GROUPS.map(group => group.count), [17, 3, 20]);
+  const state = makeHdwState();
+  assert.deepEqual(plain(context.collectTrainRemRowsForDepotCopy(state, 'west').filter(row => row.trainId).map(row => row.trainId)), ['01', '17']);
+  assert.deepEqual(plain(context.collectTrainRemRowsForDepotCopy(state, 'east').filter(row => row.trainId).map(row => row.trainId)), ['18', '20']);
+  assert.deepEqual(plain(context.collectTrainRemMainlineInServiceRows(state).map(row => row.trainId)), ['21', '40']);
+  assert.equal(context.collectTrainRemReferenceInServiceRows(state).length, 6);
+  assert.equal(context.getTrainRemRowForTrain(state, '18').depot, 'east');
+  assert.equal(context.getTrainRemRowForTrain(state, '21').isTrainRemReferenceOnly, true);
+  assert.equal(context.getTrainRemRowForTrain(state, '01').isTrainRemReferenceOnly, false);
+  assert.deepEqual([...context.getWestRemovalRowsMap(state).keys()], ['T1', 'T17']);
+});
+
+test('normalization strips stale TIDs without altering manual times or remarks', () => {
+  const rows = [{ trainId: '02', tid: '213', timing: '19:23', remark: 'Manual wash' }];
+  const normalized = context.normalizeTrainRemRowsForPreset(rows, 'west', 'HDW 40', record('weekday'));
+  assert.deepEqual(plain(normalized[0]), { trainId: '02', tid: '', timing: '19:23', remark: 'Manual wash' });
+  assert.equal(rows[0].tid, '213', 'must not mutate caller state');
+  const manualRow = { ...normalized[0], selectedPreset: 'HDW 40' };
+  assert.equal(context.getRequestTid({ tid: '999' }, manualRow), '');
+  assert.equal(context.getRequestTiming({ time: '23:59' }, manualRow), '19:23');
+});
+
+test('HDW removal output uses manual times exactly, separates depots, and excludes off-peak', () => {
+  const outputContext = {
+    ...context,
+    cleanRemovalTime: value => value,
+    getRemovalTimeMinutes: value => Number(value.replace(':', '')),
+    adjustRemovalOutputTimeForDestinationBlock: () => { throw new Error('Manual times must not be adjusted'); },
+    getTrainRemRemovalRequestItem: () => null,
+    getTrainRemRemovalRemarkItems: () => [],
+    getTrainRemRemovalRemark: row => row.remark,
+    getRemovalRemarkFillColor: () => '',
+  };
+  vm.createContext(outputContext);
+  vm.runInContext(functionText('getTrainRemRemovalEntries'), outputContext);
+  const state = makeHdwState();
+  state.rows.west[1] = { trainId: '02', tid: '', timing: '', remark: '' };
+  const west = outputContext.getTrainRemRemovalEntries(state, 'west');
+  const east = outputContext.getTrainRemRemovalEntries(state, 'east');
+  assert.deepEqual(plain(west.map(row => [row.trainId, row.tid, row.time, row.remark])), [
+    ['T01', '', '19:04', 'Manual 01'], ['T17', '', '19:30', 'Manual 17'],
+  ]);
+  assert.deepEqual(plain(east.map(row => [row.trainId, row.time])), [['T18','19:31'], ['T20','19:35']]);
 });
