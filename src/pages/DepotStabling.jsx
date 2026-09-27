@@ -7987,7 +7987,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         const restoredRows = selectedLabel ? buildTrainRemRowsFromPresetConfig(
           depot,
           label,
-          changingPeriod ? [] : existingRows,
+          changingPeriod && label !== HDW40_PRESET_LABEL ? [] : existingRows,
           activeTimetable,
           { preserveManualBlankRows: true }
         ) : emptyTrainRemRows(TRAIN_REM_ROW_COUNTS[depot]);
