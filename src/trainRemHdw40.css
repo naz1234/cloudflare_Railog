@@ -1,4 +1,15 @@
 /* Match the compact 7pm palette without relying on hidden/fake TIDs. */
+.theme-hdw-row-control:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 1px;
+}
+
+html[data-app-theme="light"] .theme-hdw-row-control {
+  color: #075985;
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+}
+
 .theme-train-rem-panel .theme-train-rem-row-card[data-hdw-group]:not(.is-duplicate) {
   --hdw-accent: #3b82f6;
   background: linear-gradient(90deg, rgba(49,104,147,.24), rgba(28,61,91,.07)) !important;

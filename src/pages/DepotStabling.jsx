@@ -49,7 +49,7 @@ import {
 } from "../lib/trainRemOffPeakStabling";
 import { buildPSTExcelClipboardText } from "../lib/pstExcelClipboard";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
-import { HDW40_PRESET_LABEL, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows } from "../lib/trainRemHdw40";
+import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40Groups, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, resizeHdwDepotRows, clearHdwRows } from "../lib/trainRemHdw40";
 import "../trainRemHdw40.css";
 import { getSwappingAutoFillFields } from "../lib/trainMovementSwapAutoFill";
 import { buildTcRemovalPdfLog } from "../lib/tcRemovalPdf";
@@ -2564,9 +2564,9 @@ function isTrainRemCombinedEastExtraRowIndex(depot = "west", label = "9am", rowI
   return rowIndex >= layout.eastReserveStartIndex && rowIndex < layout.totalCount;
 }
 
-function getTrainRemCombinedManualRowDepot(depot = "west", label = "9am", rowIndex = -1, activeTimetable = null) {
+function getTrainRemCombinedManualRowDepot(depot = "west", label = "9am", rowIndex = -1, activeTimetable = null, rows = []) {
   if (depot === "west" && label === HDW40_PRESET_LABEL) {
-    return getHdw40RowGroup(rowIndex)?.depot === "east" ? "east" : "west";
+    return getHdw40RowGroup(rowIndex, rows)?.depot === "east" ? "east" : "west";
   }
   return isTrainRemCombinedEastExtraRowIndex(depot, label, rowIndex, activeTimetable) ? "east" : depot;
 }
@@ -7617,7 +7617,7 @@ function getRemovalPresetTooltip(label = "") {
   const tooltipByLabel = {
     "9am": "Show morning removal TIDs from the active timetable",
     "7pm": "Show evening removal TIDs from the active timetable",
-    [HDW40_PRESET_LABEL]: "40-train headway: same 7pm groups, no TIDs, enter times manually",
+    [HDW40_PRESET_LABEL]: HDW_TOOLTIP,
     "12am": "Show end-of-service removal TIDs from the active timetable",
     Fri: "Show Friday End of Service removal TID",
     Sat: "Show Saturday End of Service removal TID",
@@ -8360,7 +8360,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
       if (field === "tid") {
         const cleanTid = (value || "").toString().replace(/[^0-9]/g, "");
-        const timingDepot = getTrainRemCombinedManualRowDepot(depot, presetLabel, rowIndex, activeTimetable);
+        const timingDepot = getTrainRemCombinedManualRowDepot(depot, presetLabel, rowIndex, activeTimetable, rows);
         updatedRow.tid = cleanTid;
         updatedRow.timing = referenceOnly ? "" : getTimingForTid(timingDepot, presetLabel, cleanTid);
       }
@@ -8457,12 +8457,34 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
     });
   };
 
+  const handleResizeHdwDepot = (depot, delta) => {
+    const current = trainRemStateRef.current;
+    if (current?.selectedPreset?.west !== HDW40_PRESET_LABEL) return;
+    const rows = normalizeHdw40Rows(current.rows?.west);
+    const group = getHdw40Groups(rows).find((item) => item.depot === depot);
+    if (!group || (delta < 0 && group.count === 0)) return;
+    const lastRow = rows[group.start + group.count - 1];
+    if (delta < 0 && hasTrainRemRowContent(lastRow) && !window.confirm(
+      `Remove the last ${group.label} row${lastRow.trainId ? ` (Train ${lastRow.trainId})` : ""}? Its entry will be removed. You can restore it with Undo.`
+    )) return;
+
+    updateTrainRemState((prev) => {
+      // Do not remove a different entry if live sync changed the list while the
+      // confirmation was open. The controls can be used again on the new list.
+      if (prev.selectedPreset?.west !== HDW40_PRESET_LABEL
+        || JSON.stringify(normalizeHdw40Rows(prev.rows?.west)) !== JSON.stringify(rows)) return prev;
+      return { ...prev, rows: { ...prev.rows, west: resizeHdwDepotRows(rows, depot, delta) } };
+    });
+  };
+
   const clearDepotTrainRem = (depot) => {
     updateTrainRemState((prev) => ({
       ...prev,
       rows: {
         ...prev.rows,
-        [depot]: emptyTrainRemRows(TRAIN_REM_ROW_COUNTS[depot]),
+        [depot]: prev.selectedPreset?.[depot] === HDW40_PRESET_LABEL
+          ? clearHdwRows(prev.rows?.[depot])
+          : emptyTrainRemRows(TRAIN_REM_ROW_COUNTS[depot]),
       },
     }));
   };
@@ -9147,6 +9169,14 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
         })
       : rowEntries;
     const duplicateCounts = getTrainRemDuplicateCounts();
+    const hdwGroups = isHdw40 ? getHdw40Groups(rows) : [];
+    const indexedRowEntries = displayRowEntries.map((entry, displayIndex) => ({ ...entry, displayIndex }));
+    const tableEntries = isHdw40
+      ? hdwGroups.flatMap((group) => [
+          { hdwHeader: group },
+          ...indexedRowEntries.slice(group.start, group.start + group.count),
+        ])
+      : indexedRowEntries;
     const duplicateTidCounts = getTrainRemTidDuplicateCounts();
     const pdfActive = Boolean(trainRemPdfStatus?.[depot]);
     const pdfMenuOpen = trainRemPdfMenuDepot === depot;
@@ -9265,7 +9295,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                       role="menuitem"
                       disabled={!tcPdfAvailable}
                       onClick={(event) => handleTrainRemPdfDownload(depot, event, "tc")}
-                      title={isHdw40 ? "HDW 40 uses manual times; use DC PDF" : tcPdfAvailable ? "Depot removal only using active timetable timing" : "Upload or select an active timetable first"}
+                      title={isHdw40 ? "HDW uses manual times; use DC PDF" : tcPdfAvailable ? "Depot removal only using active timetable timing" : "Upload or select an active timetable first"}
                       className="mt-1 flex w-full items-center gap-2 rounded-lg border border-transparent px-2 py-2 text-left transition hover:border-violet-400/35 hover:bg-violet-400/10 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-violet-400/35 bg-violet-400/10 text-[9px] font-black text-violet-200">TC</span>
@@ -9361,11 +9391,11 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                             ? "bg-[#1d4ed8] border-[#60a5fa] text-white shadow-sm"
                             : "bg-[#10263b] border-[#2b4f6b] text-[#7eb8e0] hover:bg-[#173a59] hover:text-white"
                         }`}
-                        style={{ width: label === HDW40_PRESET_LABEL ? "54px" : "34px", minWidth: label === HDW40_PRESET_LABEL ? "54px" : "34px" }}
+                        style={{ width: "34px", minWidth: "34px" }}
                         aria-pressed={active}
                         aria-label={getRemovalPresetTooltip(label)}
                       >
-                        {label}
+                        {label === HDW40_PRESET_LABEL ? HDW_DISPLAY_LABEL : label}
                         <RemovalSummaryTooltip message={getRemovalPresetTooltip(label)} align="left" placement="top" />
                       </button>
                     );
@@ -9442,8 +9472,29 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               </tr>
             </thead>
             <tbody>
-              {displayRowEntries.map(({ row, sourceIndex: index }, displayIndex) => {
-                const hdw40Group = isHdw40 ? getHdw40RowGroup(index) : null;
+              {tableEntries.map(({ row, sourceIndex: index, displayIndex, hdwHeader }) => {
+                if (hdwHeader) {
+                  return (
+                    <tr key={`hdw-heading-${hdwHeader.depot}`}>
+                      <th colSpan={3} className="theme-train-rem-table-header px-2 pb-1 pt-2 text-left text-[9px] font-semibold text-[#7eb8e0]">
+                        <div className="flex items-center justify-between gap-2">
+                          <span>{hdwHeader.label} · {hdwHeader.count} rows</span>
+                          {hdwHeader.depot !== "mainline" && (
+                            <span className="inline-flex items-center gap-1">
+                              <ActionTooltip message={`Add a ${hdwHeader.label} row`} placement="top" align="end">
+                                <button type="button" aria-label={`Add ${hdwHeader.label} row`} onClick={() => handleResizeHdwDepot(hdwHeader.depot, 1)} className="theme-hdw-row-control inline-flex h-5 w-5 items-center justify-center rounded border border-[#2b4f6b] text-sm hover:bg-[#173a59]">+</button>
+                              </ActionTooltip>
+                              <ActionTooltip message={`Remove the last ${hdwHeader.label} row`} placement="top" align="end">
+                                <button type="button" aria-label={`Remove last ${hdwHeader.label} row`} disabled={hdwHeader.count === 0} onClick={() => handleResizeHdwDepot(hdwHeader.depot, -1)} className="theme-hdw-row-control inline-flex h-5 w-5 items-center justify-center rounded border border-[#2b4f6b] text-sm hover:bg-[#173a59] disabled:cursor-not-allowed disabled:opacity-35">−</button>
+                              </ActionTooltip>
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                    </tr>
+                  );
+                }
+                const hdw40Group = isHdw40 ? hdwGroups.find((group) => index >= group.start && index < group.start + group.count) : null;
                 const previousVisibleRowIndex = displayIndex > 0
                   ? displayRowEntries[displayIndex - 1].sourceIndex
                   : null;
@@ -9631,13 +9682,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
 
                 return (
                   <Fragment key={`${depot}-train-rem-${index}`}>
-                    {hdw40Group?.start === index && (
-                      <tr>
-                        <th colSpan={3} className="theme-train-rem-table-header px-2 pb-1 pt-2 text-left text-[9px] font-semibold text-[#7eb8e0]">
-                          {hdw40Group.label} · {hdw40Group.count} trains
-                        </th>
-                      </tr>
-                    )}
                     {showLocationGroupSpacer && (
                       <tr aria-hidden="true">
                         <td
@@ -23289,14 +23333,14 @@ function getTrainRemRowForTrain(trainRemState = {}, trainKey = "", activeTimetab
         ? getTrainRemScheduleMatch(activeTimetable, "east", selectedPreset, tid)
         : null;
       const derivedScheduleMatch = westReferenceScheduleMatch || eastReferenceScheduleMatch;
-      const isReferenceOnly = (selectedPreset === HDW40_PRESET_LABEL && getHdw40RowGroup(matchIndex)?.depot === "mainline") || isTrainRemReferenceOnlyIndex(
+      const isReferenceOnly = (selectedPreset === HDW40_PRESET_LABEL && getHdw40RowGroup(matchIndex, rows)?.depot === "mainline") || isTrainRemReferenceOnlyIndex(
         depot,
         selectedPreset,
         matchIndex,
         activeTimetable
       );
 
-      const manualRowDepot = getTrainRemCombinedManualRowDepot(depot, selectedPreset, matchIndex, activeTimetable);
+      const manualRowDepot = getTrainRemCombinedManualRowDepot(depot, selectedPreset, matchIndex, activeTimetable, rows);
 
       return {
         depot: derivedScheduleMatch?.depot || manualRowDepot,
@@ -23340,7 +23384,7 @@ function getWestRemovalRowsMap(trainRemState = {}, activeTimetable = null) {
 
   if (isTrainRemCombinedReferencePreset("west", selectedPreset)) {
     westRows.forEach((row, index) => {
-      if (selectedPreset === HDW40_PRESET_LABEL && getHdw40RowGroup(index)?.depot !== "west") return;
+      if (selectedPreset === HDW40_PRESET_LABEL && getHdw40RowGroup(index, westRows)?.depot !== "west") return;
       const key = normalizeTrainId(row.trainId);
       if (!key) return;
 

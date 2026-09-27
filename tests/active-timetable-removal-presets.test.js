@@ -218,7 +218,7 @@ test('manual groups preserve 7pm counts and route depot copy and service totals 
 test('normalization strips stale TIDs without altering manual times or remarks', () => {
   const rows = [{ trainId: '02', tid: '213', timing: '19:23', remark: 'Manual wash' }];
   const normalized = context.normalizeTrainRemRowsForPreset(rows, 'west', 'HDW 40', record('weekday'));
-  assert.deepEqual(plain(normalized[0]), { trainId: '02', tid: '', timing: '19:23', remark: 'Manual wash' });
+  assert.deepEqual(plain(normalized[0]), { trainId: '02', tid: '', timing: '19:23', remark: 'Manual wash', hdwDepot: 'west' });
   assert.equal(rows[0].tid, '213', 'must not mutate caller state');
   const manualRow = { ...normalized[0], selectedPreset: 'HDW 40' };
   assert.equal(context.getRequestTid({ tid: '999' }, manualRow), '');
@@ -246,4 +246,67 @@ test('HDW removal output uses manual times exactly, separates depots, and exclud
     ['T01', '', '19:04', 'Manual 01'], ['T17', '', '19:30', 'Manual 17'],
   ]);
   assert.deepEqual(plain(east.map(row => [row.trainId, row.time])), [['T18','19:31'], ['T20','19:35']]);
+  state.rows.west = hdw40.resizeHdwDepotRows(state.rows.west, 'west', 1);
+  state.rows.west = hdw40.resizeHdwDepotRows(state.rows.west, 'east', 1);
+  assert.deepEqual(plain(outputContext.getTrainRemRemovalEntries(state, 'west')), plain(west));
+  assert.deepEqual(plain(outputContext.getTrainRemRemovalEntries(state, 'east')), plain(east));
+});
+
+test('HDW display name and tooltip do not expose the legacy saved label or 7pm groups', () => {
+  assert.equal(hdw40.HDW_DISPLAY_LABEL, 'HDW');
+  assert.doesNotMatch(hdw40.HDW_TOOLTIP, /7pm|40/i);
+  assert.match(source, /label === HDW40_PRESET_LABEL \? HDW_DISPLAY_LABEL : label/);
+  assert.match(source, /\[HDW40_PRESET_LABEL\]: HDW_TOOLTIP/);
+});
+
+test('adding and removing depot rows never shifts another train into a different group', () => {
+  let rows = context.syncTrainRemActiveRowsToPresetCache(makeHdwState()).rows.west;
+  const originalEast = plain(hdw40.getHdw40GroupRows(rows, 'east'));
+  const originalOffPeak = plain(hdw40.getHdw40GroupRows(rows, 'mainline'));
+  rows = hdw40.resizeHdwDepotRows(rows, 'west', 1);
+  rows = hdw40.resizeHdwDepotRows(rows, 'east', 1);
+  assert.deepEqual(hdw40.getHdw40Groups(rows).map(group => group.count), [18, 4, 20]);
+  assert.deepEqual(plain(hdw40.getHdw40GroupRows(rows, 'east').slice(0,3)), originalEast);
+  assert.deepEqual(plain(hdw40.getHdw40GroupRows(rows, 'mainline')), originalOffPeak);
+  rows = hdw40.resizeHdwDepotRows(rows, 'west', -1);
+  rows = hdw40.resizeHdwDepotRows(rows, 'east', -1);
+  assert.deepEqual(hdw40.getHdw40Groups(rows).map(group => group.count), [17, 3, 20]);
+  assert.deepEqual(plain(hdw40.getHdw40GroupRows(rows, 'east')), originalEast);
+});
+
+test('both depot groups can reach zero, survive remote reload, and grow again', () => {
+  let rows = hdw40.normalizeHdw40Rows();
+  rows[20] = { ...rows[20], trainId: '21', timing: '20:00', remark: 'Off-peak' };
+  for (let i=0;i<17;i++) rows = hdw40.resizeHdwDepotRows(rows, 'west', -1);
+  for (let i=0;i<3;i++) rows = hdw40.resizeHdwDepotRows(rows, 'east', -1);
+  assert.deepEqual(hdw40.getHdw40Groups(rows).map(group => group.count), [0, 0, 20]);
+  const state = {selectedPreset:{west:'HDW 40',east:'HDW 40'}, rows:{west:rows,east:[]}};
+  const records = ['west','east'].map(depot => context.buildTrainRemDepotPayload(state, depot));
+  const reloaded = context.buildTrainRemStateFromRecords(records).state;
+  assert.deepEqual(hdw40.getHdw40Groups(reloaded.rows.west).map(group => group.count), [0,0,20]);
+  assert.equal(context.collectTrainRemRowsForDepotCopy(reloaded,'west').length,0);
+  assert.equal(context.collectTrainRemRowsForDepotCopy(reloaded,'east').length,0);
+  assert.equal(context.getTrainRemRowForTrain(reloaded,'21').isTrainRemReferenceOnly,true);
+  rows = hdw40.resizeHdwDepotRows(reloaded.rows.west, 'east', 1);
+  rows[0] = { ...rows[0], trainId:'18',timing:'19:31' };
+  const expanded = { ...reloaded, rows:{west:rows,east:[]} };
+  assert.equal(context.getTrainRemRowForTrain(expanded,'18').depot,'east');
+  assert.equal(context.getWestRemovalRowsMap(expanded).size,0);
+  assert.equal(context.getTrainRemRowForTrain(expanded,'21').isTrainRemReferenceOnly,true);
+});
+
+test('custom group counts persist across tab cache restores and Clear keeps the layout', () => {
+  let rows = hdw40.normalizeHdw40Rows();
+  for(let i=0;i<4;i++) rows=hdw40.resizeHdwDepotRows(rows,'east',1);
+  rows=hdw40.resizeHdwDepotRows(rows,'west',-1);
+  rows[16]={...rows[16],trainId:'22',timing:'21:10'};
+  let state=context.syncTrainRemActiveRowsToPresetCache({selectedPreset:{west:'HDW 40',east:'HDW 40'},rows:{west:rows,east:[]}});
+  state=context.syncTrainRemActiveRowsToPresetCache({...state,selectedPreset:{west:'7pm',east:'7pm'},rows:{west:[],east:[]}});
+  const restored=context.getTrainRemCachedPresetRows(state,'west','HDW 40');
+  assert.deepEqual(plain(restored),plain(rows));
+  const cleared=hdw40.clearHdwRows(restored);
+  assert.deepEqual(hdw40.getHdw40Groups(cleared).map(group=>group.count),[16,7,20]);
+  assert.ok(cleared.every(row=>!row.trainId&&!row.timing&&!row.remark&&!row.tid));
+  assert.match(source,/disabled=\{hdwHeader.count === 0\}/);
+  assert.match(source,/delta < 0 && hasTrainRemRowContent\(lastRow\) && !window.confirm/);
 });
