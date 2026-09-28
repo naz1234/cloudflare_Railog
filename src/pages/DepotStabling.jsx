@@ -9072,7 +9072,7 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
       <button
         type="button"
         onClick={() => handleCopyDepotTrainList(safeDepot)}
-        className={`theme-train-rem-copy ${safeDepot === "west" ? "is-west" : "is-east"} ${status ? `is-${status}` : ""} removal-summary-tooltip-trigger relative z-50 inline-flex h-5 items-center gap-1 overflow-visible rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5 ${extraClassName}`}
+        className={`theme-train-rem-copy ${safeDepot === "west" ? "is-west" : "is-east"} ${status ? `is-${status}` : ""} removal-summary-tooltip-trigger relative z-50 inline-flex h-5 shrink-0 items-center whitespace-nowrap overflow-visible rounded-md border px-1 text-[10px] font-normal transition-all hover:-translate-y-0.5 ${extraClassName}`}
         aria-label={tooltipMessage}
         style={{
           background: status === "copied"
@@ -9093,9 +9093,6 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
             : "none",
         }}
       >
-        {status === "copied"
-          ? <ClipboardCheck size={11} />
-          : <Copy size={11} />}
         {getDepotCopyLabel(safeDepot)}
         <RemovalSummaryTooltip message={tooltipMessage} align="right" />
       </button>
@@ -9405,14 +9402,14 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
               </div>
 
               {canSortByRemovalColor && (
-                <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  <div className="theme-train-rem-sort-control inline-flex h-5 items-center rounded-md border border-[#2b4f6b] bg-[#081c2d] p-0.5">
+                <div className="theme-train-rem-sort-copy-row flex w-full flex-nowrap items-center gap-1">
+                  <div className="theme-train-rem-sort-control inline-flex h-5 shrink-0 items-center rounded-md border border-[#2b4f6b] bg-[#081c2d] p-0.5">
                     <span
                       className="theme-train-rem-sort-label removal-summary-tooltip-trigger relative z-50 px-1 text-[10px] font-normal tracking-wide text-[#5f8fb2]"
                       tabIndex={0}
                       aria-label="Choose train sorting method"
                     >
-                      SORT by :
+                      SORT
                       <RemovalSummaryTooltip message="Choose train sorting method" align="right" placement="top" />
                     </span>
                     <button
@@ -9443,10 +9440,10 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                     </button>
                   </div>
                   {depot === "west" && (
-                    <div className="flex items-center justify-end gap-1">
+                    <>
                       {renderDepotCopyButton("west")}
                       {renderDepotCopyButton("east")}
-                    </div>
+                    </>
                   )}
                 </div>
               )}
