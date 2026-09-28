@@ -89,13 +89,42 @@ test("Sleep and Wake-up logs are grouped separately in chronological order", () 
     buildSleepModeGroupedText(logs),
     [
       "SLEEP MODE",
+      "",
       "19:22 hrs – T04 confirmed successfully in sleep mode at WD–ST15.",
       "19:31 hrs – T33 confirmed successfully in sleep mode at WD–ST15.",
+      "",
       "WAKE-UP MODE",
+      "",
       "20:53 hrs – T15 successfully in wake-up mode at WD–ST14.",
       "20:56 hrs – T33 and T41 successfully in wake-up mode at WD–ST15. – FOR SWAPPING",
-    ].join("\n\n"),
+    ].join("\n"),
   );
+});
+
+test("Sleep-only output has consecutive entry lines and no empty Wake-up heading", () => {
+  const logs = [
+    { id: "sleep-1", time: "18:25", trainIds: ["23"], location: "WD-ST15", mode: "sleep", createdAt: "2026-09-28T18:25:00Z" },
+    { id: "sleep-2", time: "19:06", trainIds: ["09"], location: "WD-ST14", mode: "sleep", createdAt: "2026-09-28T19:06:00Z" },
+  ];
+  assert.equal(buildSleepModeGroupedText(logs), [
+    "SLEEP MODE", "",
+    "18:25 hrs – T23 confirmed successfully in sleep mode at WD–ST15.",
+    "19:06 hrs – T09 confirmed successfully in sleep mode at WD–ST14.",
+  ].join("\n"));
+});
+
+test("Wake-only output omits Sleep heading and preserves remarks", () => {
+  const logs = [
+    { id: "wake-1", time: "20:56", trainIds: ["33", "41"], location: "WD-ST15", mode: "wake", remark: "FOR SWAPPING" },
+  ];
+  assert.equal(buildSleepModeGroupedText(logs), "WAKE-UP MODE\n\n20:56 hrs – T33 and T41 successfully in wake-up mode at WD–ST15. – FOR SWAPPING");
+});
+
+test("Empty or invalid logs produce no mode headings in copied output or empty UI groups", () => {
+  assert.equal(buildSleepModeGroupedText([]), "");
+  assert.equal(buildSleepModeGroupedText([{ id: "invalid", mode: "wake", time: "" }]), "");
+  const componentSource = readFileSync(new URL("../src/components/SleepModeWorkspace.jsx", import.meta.url), "utf8");
+  assert.match(componentSource, /function SleepLogGroup\([^)]*\)\s*\{\s*if \(!entries.length\) return null;/);
 });
 
 test("Sleep logs identify West and East depot locations for separate outputs", () => {

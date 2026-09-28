@@ -131,15 +131,14 @@ export function groupSleepModeLogs(logs = []) {
 
 export function buildSleepModeGroupedText(logs = []) {
   const grouped = groupSleepModeLogs(logs);
-  const formatSection = (title, entries) => [
-    title,
-    ...entries.map((entry) => entry.text),
-  ].join("\n\n");
+  const formatSection = (title, entries) => entries.length
+    ? `${title}\n\n${entries.map((entry) => entry.text).join("\n")}`
+    : "";
 
   return [
     formatSection("SLEEP MODE", grouped.sleep),
     formatSection("WAKE-UP MODE", grouped.wake),
-  ].join("\n\n");
+  ].filter(Boolean).join("\n\n");
 }
 
 export function getSleepModeRecordUpdatedMs(record = {}) {

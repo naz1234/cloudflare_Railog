@@ -287,6 +287,7 @@ function DepotSleepPanel({
 }
 
 function SleepLogGroup({ mode, entries, saving, onDelete }) {
+  if (!entries.length) return null;
   const isSleep = mode === "sleep";
   const title = isSleep ? "Sleep Mode" : "Wake-up Mode";
 
@@ -299,19 +300,15 @@ function SleepLogGroup({ mode, entries, saving, onDelete }) {
         </h3>
         <span className="rounded-full border border-current/20 px-2 py-0.5 text-[9px] font-semibold">{entries.length}</span>
       </div>
-      {entries.length ? (
-        <ul className="space-y-2">
-          {entries.map((entry) => (
-            <li key={entry.id} className={`flex items-start gap-3 rounded-xl border px-3 py-3 ${isSleep ? "border-indigo-200 bg-indigo-50 dark:border-indigo-400/25 dark:bg-indigo-400/[0.07]" : "border-amber-200 bg-amber-50 dark:border-amber-400/25 dark:bg-amber-400/[0.07]"}`}>
-              {isSleep ? <MoonStar className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-300" /> : <Sun className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />}
-              <p className="min-w-0 flex-1 font-mono text-[12px] leading-5 text-slate-800 dark:text-slate-100">{entry.text}</p>
-              <button type="button" onClick={() => onDelete(entry.id)} disabled={saving} aria-label={`Delete ${entry.text}`} title="Delete log entry" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-rose-200 text-rose-500 transition hover:bg-rose-100 disabled:opacity-40 dark:border-rose-400/30 dark:text-rose-300 dark:hover:bg-rose-500/15"><Trash2 className="h-3.5 w-3.5" /></button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-[10px] text-slate-400 dark:border-[#21435e] dark:text-[#587990]">No {title.toLowerCase()} entries.</p>
-      )}
+      <ul className="space-y-2">
+        {entries.map((entry) => (
+          <li key={entry.id} className={`flex items-start gap-3 rounded-xl border px-3 py-3 ${isSleep ? "border-indigo-200 bg-indigo-50 dark:border-indigo-400/25 dark:bg-indigo-400/[0.07]" : "border-amber-200 bg-amber-50 dark:border-amber-400/25 dark:bg-amber-400/[0.07]"}`}>
+            {isSleep ? <MoonStar className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-300" /> : <Sun className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />}
+            <p className="min-w-0 flex-1 font-mono text-[12px] leading-5 text-slate-800 dark:text-slate-100">{entry.text}</p>
+            <button type="button" onClick={() => onDelete(entry.id)} disabled={saving} aria-label={`Delete ${entry.text}`} title="Delete log entry" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-rose-200 text-rose-500 transition hover:bg-rose-100 disabled:opacity-40 dark:border-rose-400/30 dark:text-rose-300 dark:hover:bg-rose-500/15"><Trash2 className="h-3.5 w-3.5" /></button>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
