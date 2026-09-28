@@ -9189,12 +9189,14 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
           className={`theme-train-rem-header theme-train-rem-toolbar relative ${pdfMenuOpen ? "z-[120]" : "z-30"} rounded-t-xl border-b border-[#1a3a56] px-2 py-2`}
           style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}
         >
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              {depot !== "west" && <div className="text-[10px] font-normal text-white uppercase tracking-widest">{title}</div>}
-              {subtitle && <div className="mt-0.5 text-[7px] font-normal text-[#7eb8e0]">{subtitle}</div>}
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex flex-col items-start gap-2">
+            {(depot !== "west" || subtitle) && (
+              <div>
+                {depot !== "west" && <div className="text-[10px] font-normal text-white uppercase tracking-widest">{title}</div>}
+                {subtitle && <div className="mt-0.5 text-[7px] font-normal text-[#7eb8e0]">{subtitle}</div>}
+              </div>
+            )}
+            <div className="theme-train-rem-action-row flex flex-nowrap items-center justify-start gap-1 flex-shrink-0">
               {depot === "west" && (
                 <ActionTooltip
                   message={totalServiceTooltipContent}
