@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import vm from "node:vm";
 import {
   buildSleepModeGroupedText,
   buildSleepModeLogLine,
@@ -10,6 +11,7 @@ import {
   getSleepModeDepot,
   groupSleepModeLogs,
   normalizeSleepModeLogs,
+  normalizeSleepLogTime,
   normalizeSleepTrainId,
 } from "../src/lib/sleepModeLog.js";
 
@@ -214,15 +216,34 @@ test("SLP logging clears only the selected depot and preserves its separate draf
   assert.match(componentSource, /\[depot\]: \{ time: "00:00", remark: "", timeConfirmed: false \}/);
 });
 
-test("SLP requires a fresh time refresh before every log submission", () => {
+test("SLP requires an explicitly entered or refreshed time before every log submission", () => {
   const componentSource = readFileSync(new URL("../src/components/SleepModeWorkspace.jsx", import.meta.url), "utf8");
 
   assert.match(componentSource, /west: \{ time: "00:00", remark: "", timeConfirmed: false \}/);
   assert.match(componentSource, /east: \{ time: "00:00", remark: "", timeConfirmed: false \}/);
-  assert.match(componentSource, /onTimeChange=\{\(depot, value\) => updateLogDraft\(depot, \{ time: value, timeConfirmed: false \}\)\}/);
+  assert.match(componentSource, /timeConfirmed: Boolean\(normalizeSleepLogTime\(value\)\)/);
+  assert.match(componentSource, /if \(normalized && normalized !== logDraft\?\.time\) onTimeChange\(depot, normalized\)/);
   assert.match(componentSource, /onUseCurrentTime=\{\(depot\) => updateLogDraft\(depot, \{ time: getCurrentTime\(\), timeConfirmed: true \}\)\}/);
   assert.match(componentSource, /!normalizedTime \|\| !logDraft\.timeConfirmed/);
   assert.match(componentSource, /disabled=\{!selectedCount \|\| !canSubmitLog \|\| saving\}/);
+});
+
+test("both depot manual-time handlers confirm valid times and reject incomplete or invalid times", () => {
+  const source = readFileSync(new URL("../src/components/SleepModeWorkspace.jsx", import.meta.url), "utf8");
+  const handlers = [...source.matchAll(/onTimeChange=\{(\(depot, value\) => updateLogDraft\(depot, \{[^\n]*?\}\))\}/g)];
+  assert.equal(handlers.length, 2);
+  handlers.forEach(([ , expression], index) => {
+    let result;
+    const depot = index === 0 ? "west" : "east";
+    const handler = vm.runInNewContext(`(${expression})`, {
+      normalizeSleepLogTime,
+      updateLogDraft: (target, updates) => { result = { target, ...updates }; },
+    });
+    for (const [time, confirmed] of [["18:25", true], ["23:59", true], ["00:00", true], ["", false], ["18:2", false], ["24:00", false], ["12:60", false]]) {
+      handler(depot, time);
+      assert.deepEqual(result, { target: depot, time, timeConfirmed: confirmed });
+    }
+  });
 });
 
 test("trains already in Sleep mode use a bright distinct card state", () => {
