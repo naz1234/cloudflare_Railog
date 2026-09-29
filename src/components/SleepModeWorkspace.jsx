@@ -241,7 +241,10 @@ function DepotSleepPanel({
                   inputMode="numeric"
                   maxLength={5}
                   onChange={(event) => onTimeChange(depot, formatSleepTimeInput(event.target.value))}
-                  onBlur={() => onTimeChange(depot, normalizeSleepLogTime(logDraft?.time) || logDraft?.time || "")}
+                  onBlur={() => {
+                    const normalized = normalizeSleepLogTime(logDraft?.time);
+                    if (normalized && normalized !== logDraft?.time) onTimeChange(depot, normalized);
+                  }}
                   placeholder="00:00"
                   aria-label={`${layout.label} sleep or wake-up log time`}
                   className="min-w-0 flex-1 bg-transparent text-[12px] font-medium text-slate-800 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-[#4f7394]"
@@ -651,8 +654,8 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
       </header>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <DepotSleepPanel depot="west" data={westData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.west} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onTimeChange={(depot, value) => updateLogDraft(depot, { time: value, timeConfirmed: false })} onRemarkChange={(depot, value) => updateLogDraft(depot, { remark: value })} onUseCurrentTime={(depot) => updateLogDraft(depot, { time: getCurrentTime(), timeConfirmed: true })} onAddLogs={addSelectedLogs} />
-        <DepotSleepPanel depot="east" data={eastData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.east} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onTimeChange={(depot, value) => updateLogDraft(depot, { time: value, timeConfirmed: false })} onRemarkChange={(depot, value) => updateLogDraft(depot, { remark: value })} onUseCurrentTime={(depot) => updateLogDraft(depot, { time: getCurrentTime(), timeConfirmed: true })} onAddLogs={addSelectedLogs} />
+        <DepotSleepPanel depot="west" data={westData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.west} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onTimeChange={(depot, value) => updateLogDraft(depot, { time: value, timeConfirmed: Boolean(normalizeSleepLogTime(value)) })} onRemarkChange={(depot, value) => updateLogDraft(depot, { remark: value })} onUseCurrentTime={(depot) => updateLogDraft(depot, { time: getCurrentTime(), timeConfirmed: true })} onAddLogs={addSelectedLogs} />
+        <DepotSleepPanel depot="east" data={eastData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.east} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onTimeChange={(depot, value) => updateLogDraft(depot, { time: value, timeConfirmed: Boolean(normalizeSleepLogTime(value)) })} onRemarkChange={(depot, value) => updateLogDraft(depot, { remark: value })} onUseCurrentTime={(depot) => updateLogDraft(depot, { time: getCurrentTime(), timeConfirmed: true })} onAddLogs={addSelectedLogs} />
       </div>
 
       <div className="grid items-start gap-4 xl:grid-cols-2">
