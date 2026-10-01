@@ -37,6 +37,15 @@ function summarize(requests) {
   return Array.from(summaryRuntime.buildRequestedActionSummaryLines(summaryRuntime.getRequestedActionSummaryRowsFromRequests(requests)));
 }
 
+runInContext(depotStablingSource.slice(
+  depotStablingSource.indexOf("const REQUESTED_ACTION_SUMMARY_GROUPS"),
+  depotStablingSource.indexOf("\nconst REQUESTED_TRAIN_MANUAL_TID_STORAGE_KEY"),
+), summaryRuntime);
+
+function groupSummary(requests) {
+  return JSON.parse(JSON.stringify(summaryRuntime.groupRequestedActionSummaryLines(summarize(requests))));
+}
+
 test("request summary dates use one readable format", () => {
   assert.equal(normalizeRequestedSummaryDates("01AUG"), "1 Aug");
   assert.equal(normalizeRequestedSummaryDates("1-AUG"), "1 Aug");
@@ -123,6 +132,35 @@ test("deep cleaning describes the current activity and TLC subtypes remain disti
     "T09 — requested for TLC amplifier.",
     "T32 and T36 — set the temperature to 25°C.",
   ]);
+});
+
+test("TLC requests have their own summary section instead of Other Remarks", () => {
+  const groups = groupSummary([
+    { trainId: "T15", requestType: "TLC Req after comm svc" },
+    { trainId: "T36", requestType: "TLC Req after comm svc" },
+    { trainId: "T14", requestType: "tlc CCTV" },
+    { trainId: "T09", requestType: "TLC AMPLIFIER", groupHidden: true },
+    { trainId: "T32", requestType: "SET 25C" },
+    { trainId: "T43", requestType: "WASH 1-Oct" },
+    { trainId: "T41", requestType: "G-C PENDING AM" },
+  ]);
+  assert.deepEqual(groups.map(({ title }) => title), ["Washing", "TLC Req", "Workshop Movement", "Other Remarks"]);
+  assert.deepEqual(groups.find(({ key }) => key === "tlc").lines, [
+    "T15 and T36 — requested for TLC Req after comm svc.",
+    "T14 — requested for TLC CCTV.",
+    "T09 — requested for TLC amplifier.",
+  ]);
+  assert.deepEqual(groups.find(({ key }) => key === "others").lines, ["T32 — set the temperature to 25°C."]);
+});
+
+test("empty TLC sections are omitted and other request categories remain separate", () => {
+  const groups = groupSummary([
+    { trainId: "T25", requestType: "RST PM 1-Oct" },
+    { trainId: "T27", requestType: "RST CM" },
+    { trainId: "T42", requestType: "PENDING ATC CC RESET" },
+  ]);
+  assert.deepEqual(groups.map(({ key }) => key), ["pm", "cm", "others"]);
+  assert.deepEqual(groupSummary([]), []);
 });
 
 test("PM grouping retains readable dates, all dates and hidden request groups", () => {

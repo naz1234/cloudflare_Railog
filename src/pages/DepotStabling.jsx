@@ -24345,6 +24345,12 @@ const REQUESTED_ACTION_SUMMARY_GROUPS = [
     bulletClass: "text-cyan-300",
   },
   {
+    key: "tlc",
+    title: "TLC Req",
+    headingClass: "border-pink-400/45 bg-pink-500/12 text-pink-200",
+    bulletClass: "text-pink-300",
+  },
+  {
     key: "workshop",
     title: "Workshop Movement",
     headingClass: "border-violet-400/45 bg-violet-500/12 text-violet-200",
@@ -24360,6 +24366,7 @@ const REQUESTED_ACTION_SUMMARY_GROUPS = [
 
 function getRequestedActionSummaryGroupKey(line = "") {
   const normalized = normalizeRequestIdentity(line);
+  if (/\bTLC\b/.test(normalized)) return "tlc";
   const workshopMovementDirection = getRequestedSummaryWorkshopMovementDirection(line);
   if (workshopMovementDirection) return "workshop";
   if (/\bWASH(?:ING)?\b/.test(normalized)) return "washing";
