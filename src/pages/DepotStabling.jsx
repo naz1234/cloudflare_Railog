@@ -68,10 +68,7 @@ import {
   normalizeRequestedSummaryDates,
 } from "../lib/requestedActionSummary";
 import {
-  EAST_DEPOT_RETURN_TO_MAINLINE_REMARK,
-  EAST_DEPOT_WEEKDAY_WASH_NOTICE,
   WEST_DEPOT_WEEKEND_WASH_NOTICE,
-  shouldShowEastDepotWashNotice,
   shouldShowWestDepotWeekendWashNotice,
 } from "../lib/eastDepotWashNotice";
 
@@ -28470,11 +28467,6 @@ function StablingSection({
   }).join("\n");
   const copyStablingTooltipText = `Copy text :\n${stablingCopyText}`;
   const downloadPdfTooltipText = `Download ${depotLabel} stabling PDF with colour-coded remark pills`;
-  const showEastDepotWashNotice = shouldShowEastDepotWashNotice({
-    depot,
-    timetableType: normalizeTimetableType(activeTimetableType),
-    date: washNoticeDate,
-  });
   const showWestDepotWeekendWashNotice = shouldShowWestDepotWeekendWashNotice({
     depot,
     timetableType: normalizeTimetableType(activeTimetableType),
@@ -28658,10 +28650,6 @@ function StablingSection({
         )}
       </div>
 
-      {showEastDepotWashNotice && (
-        <StablingWashNotice depot="east" message={EAST_DEPOT_WEEKDAY_WASH_NOTICE} />
-      )}
-
       {showWestDepotWeekendWashNotice && (
         <StablingWashNotice depot="west" message={WEST_DEPOT_WEEKEND_WASH_NOTICE} />
       )}
@@ -28724,7 +28712,6 @@ function StablingSection({
                 isFirst={ri === 0}
                 isLast={ri === roads.length - 1}
                 searchHighlight={normalizedSearch}
-                showReturnBackToMainlineRemark={showEastDepotWashNotice}
               />
             ))}
           </tbody>
@@ -28811,7 +28798,6 @@ function RoadRow({
   isFirst,
   isLast,
   searchHighlight = "",
-  showReturnBackToMainlineRemark = false,
 }) {
   const rowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
 
@@ -28831,11 +28817,7 @@ function RoadRow({
   const rowMaxRemarkCount = blockIndices.reduce((maxCount, blockIndex) => {
     const rowKey = normalizeTrainId(blocks[blockIndex]?.trainId || "");
     const rowRequests = rowKey ? maintenanceMap[rowKey] || [] : [];
-    const hasPendingWash = rowRequests.some((item) => getStablingRequestCategory(item) === "wash");
-    const rowRemarkCount = rowRequests.length + (
-      showReturnBackToMainlineRemark && depot === "east" && hasPendingWash ? 1 : 0
-    );
-    return Math.max(maxCount, rowRemarkCount);
+    return Math.max(maxCount, rowRequests.length);
   }, 0);
   const rowRemarkSlotHeight = rowMaxRemarkCount > 0
     ? (rowMaxRemarkCount * 18) + ((rowMaxRemarkCount - 1) * 2)
@@ -28850,11 +28832,6 @@ function RoadRow({
         const val = blocks[bi]?.trainId || "";
         const key = normalizeTrainId(val);
         const maintList = key ? maintenanceMap[key] || [] : [];
-        const showTrainReturnRemark = Boolean(
-          showReturnBackToMainlineRemark
-          && depot === "east"
-          && maintList.some((item) => getStablingRequestCategory(item) === "wash")
-        );
         const primaryMaint = getPrimaryStablingRequest(maintList);
         const primaryVisual = primaryMaint ? getStablingRequestVisual(primaryMaint) : null;
         const isDup = key && duplicates.has(key);
@@ -29001,21 +28978,6 @@ function RoadRow({
                       </ActionTooltip>
                     );
                   })}
-                  {showTrainReturnRemark && (
-                    <span
-                      className="theme-east-depot-return-remark block w-full truncate rounded-md px-1.5 py-0.5 text-center text-[10px] font-bold leading-tight"
-                      style={{
-                        background: "linear-gradient(135deg, rgba(245,158,11,0.30), rgba(120,53,15,0.72))",
-                        border: "1px solid rgba(251,191,36,0.82)",
-                        boxShadow: "0 0 10px rgba(245,158,11,0.24), inset 0 1px 0 rgba(255,255,255,0.08)",
-                        color: "#fef3c7",
-                      }}
-                      title={EAST_DEPOT_RETURN_TO_MAINLINE_REMARK}
-                      aria-label={EAST_DEPOT_RETURN_TO_MAINLINE_REMARK}
-                    >
-                      {EAST_DEPOT_RETURN_TO_MAINLINE_REMARK}
-                    </span>
-                  )}
                 </div>
               ) : key ? (
                 <span
