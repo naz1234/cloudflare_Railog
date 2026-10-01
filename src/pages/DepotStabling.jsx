@@ -8,6 +8,7 @@ import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
 import TIDReferenceTable, { getTidReferenceRemark } from "../components/TIDReferenceTable";
 import ActionTooltip from "../components/ActionTooltip";
+import HiddenRequestRemarks from "../components/HiddenRequestRemarks";
 import PSTLogOutput from "../components/depot/PSTLogOutput";
 import PSTManualEntry from "../components/depot/PSTManualEntry";
 import InsertionLogOutput from "../components/depot/InsertionLogOutput";
@@ -6044,7 +6045,7 @@ function getInsertionArrowNavigationTarget(key, rowIndex, columnIndex, rowCount,
   return isInsideGrid ? target : null;
 }
 
-function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, onTrainIdKeyDown, trainIdControlRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0, tidDropRequest = null, onTidDropApplied, isTidDragActive = false, isTidDropHovered = false, isSearchMatch = false }) {
+function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock, maintenanceMap, hiddenMaintenanceMap = {}, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInput, onTidChange, onTidKeyDown, onTidFocus, tidInputRef, onTrainIdKeyDown, trainIdControlRef, hideElapsedTid, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, rowCardMinHeight = 98, rowMaintenanceSlotHeight = 0, tidDropRequest = null, onTidDropApplied, isTidDragActive = false, isTidDropHovered = false, isSearchMatch = false }) {
   const val = block?.trainId || "";
   const key = normalizeTrainId(val);
   const [isTrainIdEditing, setIsTrainIdEditing] = useState(false);
@@ -6391,6 +6392,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           </ActionTooltip>
         )}
         <div className="theme-insertion-card-header flex w-full flex-col items-center gap-1">
+          <HiddenRequestRemarks items={key ? hiddenMaintenanceMap[key] : []} trainId={key} className="absolute left-1 top-1" />
           {stablingEditable ? (
             key || isTrainIdEditing ? (
               <input
@@ -7020,7 +7022,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   );
 }
 
-function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoStabling, canUndoStabling = false, canRedoStabling = false, isStablingDirty = false, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, isWeekendActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied, allDepots = [] }) {
+function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoStabling, canUndoStabling = false, canRedoStabling = false, isStablingDirty = false, blockLabels, blockIndices, roads, data, labelSide, maintenanceMap, hiddenMaintenanceMap = {}, insertionLog, onInsertionTick, onInsertionTimeUpdate, onInsertionRemarkUpdate, onSweepUpdate, tidInputs, onTidChange, onClearInsertedTidRemarks, onClearInsertedTrains, getTidScheduledTime, getTidAssistRemark, getTidAssistRemarkStyle, isWeekdayActive = false, isWeekendActive = false, duplicateTidKeys = null, stablingEditable = false, onEditableTrainIdChange, tidDragState = null, tidDragHover = null, tidDropRequest = null, onTidDropApplied, allDepots = [] }) {
   const [hideElapsedTid, setHideElapsedTid] = useState(() => loadInsertionHideElapsedTid(title, roads));
   const [downloadingPng, setDownloadingPng] = useState(false);
   const [sectionSearch, setSectionSearch] = useState("");
@@ -7562,7 +7564,7 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
                     const borderBottom = `1px solid ${INSERTION_PANEL_COLORS.gridLine}`;
                     const borderBottomRightRadius = labelSide === "left" && isLastRow && isLastBlock ? 12 : undefined;
                     const borderBottomLeftRadius = labelSide === "right" && isLastRow && i === 0 ? 12 : undefined;
-                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} onTrainIdKeyDown={(event) => handleTrainIdKeyDown(event, ri, i)} trainIdControlRef={(element) => { trainIdControlRefs.current[`${ri}-${i}`] = element; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(block?.trainId || "") === normalizedSearch)} />;
+                    return <InsertionCell key={bi} block={block} bi={bi} road={road} labelSide={labelSide} isLast={isLastRow} isFirstBlock={i === 0} isLastBlock={isLastBlock} maintenanceMap={maintenanceMap} hiddenMaintenanceMap={hiddenMaintenanceMap} insertionLog={insertionLog} onInsertionTick={onInsertionTick} onInsertionTimeUpdate={onInsertionTimeUpdate} onInsertionRemarkUpdate={onInsertionRemarkUpdate} onSweepUpdate={onSweepUpdate} tidInput={tidInputs[`${road}-${bi}`] || ""} onTidChange={(targetRoad, targetBi, value, options) => handleTidChange(targetRoad, targetBi, value, ri, i, options)} onTidKeyDown={(e) => handleTidKeyDown(e, ri, i)} onTidFocus={() => rememberTidStartDirection(i)} tidInputRef={(el) => { tidRefs.current[`${ri}-${i}`] = el; }} onTrainIdKeyDown={(event) => handleTrainIdKeyDown(event, ri, i)} trainIdControlRef={(element) => { trainIdControlRefs.current[`${ri}-${i}`] = element; }} hideElapsedTid={hideElapsedTid} getTidScheduledTime={getTidScheduledTime} getTidAssistRemark={getTidAssistRemark} getTidAssistRemarkStyle={getTidAssistRemarkStyle} isWeekdayActive={isWeekdayActive} duplicateTidKeys={duplicateTidKeys} stablingEditable={stablingEditable} onEditableTrainIdChange={onEditableTrainIdChange} rowCardMinHeight={rowCardMinHeight} rowMaintenanceSlotHeight={rowMaintenanceSlotHeight} tidDropRequest={tidDropRequest?.depot === sectionDepot && tidDropRequest?.road === road && Number(tidDropRequest?.bi) === Number(bi) ? tidDropRequest : null} onTidDropApplied={onTidDropApplied} isTidDragActive={Boolean(tidDragState)} isTidDropHovered={tidDragHover?.depot === sectionDepot && tidDragHover?.road === road && Number(tidDragHover?.bi) === Number(bi)} isSearchMatch={Boolean(normalizedSearch && normalizeTrainId(block?.trainId || "") === normalizedSearch)} />;
                   })}
                   {labelSide === "right" && labelCell}
                 </tr>
@@ -7626,7 +7628,7 @@ function getRemovalPresetTooltip(label = "") {
   return tooltipByLabel[label] || `Show ${label} removal TID`;
 }
 
-function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablingData = {}, requests = [], westData = {}, eastData = {}, insertionAssignmentsByDepot = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
+function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrainRemStateChange, eastStablingData = {}, requests = [], westData = {}, eastData = {}, insertionAssignmentsByDepot = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
   const [trainRemState, setTrainRemState] = useState(() => loadTrainRemState());
   const [trainRemLoaded, setTrainRemLoaded] = useState(false);
   const [trainRemSyncing, setTrainRemSyncing] = useState(false);
@@ -9792,13 +9794,15 @@ function TrainRemPanel({ maintenanceMap = {}, onTrainRemStateChange, eastStablin
                             readOnly={Boolean(requestRemark) || referenceOnly}
                             title={referenceOnly ? rowStatusTitle : requestRemark ? `Auto-detected request type: ${requestRemark}` : ""}
                             placeholder="-"
-                            className={`h-full min-w-0 border-0 px-1.5 text-[11px] font-normal outline-none placeholder:text-[#36536c] focus:brightness-110 ${(remarkValue || "").toString().trim() ? "text-left" : "text-center"} ${requestRemark || referenceOnly ? "cursor-default" : ""} ${isNineAmReferenceTid && (remarkValue || "").toString().trim() && !hasDuplicateValue ? "is-9am-remark-accent" : ""}`}
+                            className={`h-full min-w-0 border-0 pl-1.5 ${hiddenMaintenanceMap[trainRemRequestKey]?.length ? "pr-5" : "pr-1.5"} text-[11px] font-normal outline-none placeholder:text-[#36536c] focus:brightness-110 ${(remarkValue || "").toString().trim() ? "text-left" : "text-center"} ${requestRemark || referenceOnly ? "cursor-default" : ""} ${isNineAmReferenceTid && (remarkValue || "").toString().trim() && !hasDuplicateValue ? "is-9am-remark-accent" : ""}`}
                             style={{
                               color: remarkTextColor,
                               background: remarkCellBackground,
                               boxShadow: remarkCellBoxShadow,
                             }}
                           />
+
+                          <HiddenRequestRemarks items={hiddenMaintenanceMap[trainRemRequestKey]} trainId={trainRemRequestKey} className="absolute right-1 top-1/2 -translate-y-1/2" />
 
                           {showRemovalStablingStatus && (
                             <span
@@ -9971,6 +9975,7 @@ function InsertionTabContent({
   westSection,
   eastSection,
   maintenanceMap,
+  hiddenMaintenanceMap = {},
   insertionLog,
   onClearInsertionDepot,
   onInsertionTaNameUpdate,
@@ -10267,6 +10272,7 @@ function InsertionTabContent({
               roads={WEST_ROADS}
               labelSide="left"
               maintenanceMap={maintenanceMap}
+              hiddenMaintenanceMap={hiddenMaintenanceMap}
               getTidScheduledTime={getTidScheduledTime}
               getTidAssistRemark={getTidAssistRemark}
               getTidAssistRemarkStyle={getTidAssistRemarkStyle}
@@ -10318,6 +10324,7 @@ function InsertionTabContent({
               roads={EAST_ROADS}
               labelSide="right"
               maintenanceMap={maintenanceMap}
+              hiddenMaintenanceMap={hiddenMaintenanceMap}
               getTidScheduledTime={getTidScheduledTime}
               getTidAssistRemark={getTidAssistRemark}
               getTidAssistRemarkStyle={getTidAssistRemarkStyle}
@@ -28411,6 +28418,7 @@ function StablingSection({
   labelSide,
   duplicates,
   maintenanceMap,
+  hiddenMaintenanceMap = {},
   cellRefs,
   flashingCells,
   onCellKeyDown,
@@ -28705,6 +28713,7 @@ function StablingSection({
                 blockIndices={blockIndices}
                 duplicates={duplicates}
                 maintenanceMap={maintenanceMap}
+                hiddenMaintenanceMap={hiddenMaintenanceMap}
                 cellRefs={cellRefs}
                 flashingCells={flashingCells}
                 onCellKeyDown={onCellKeyDown}
@@ -28791,6 +28800,7 @@ function RoadRow({
   blockIndices,
   duplicates,
   maintenanceMap,
+  hiddenMaintenanceMap = {},
   cellRefs,
   flashingCells,
   onCellKeyDown,
@@ -28918,6 +28928,7 @@ function RoadRow({
                 boxShadow: cardGlow,
               }}
             >
+              <HiddenRequestRemarks items={key ? hiddenMaintenanceMap[key] : []} trainId={key} className="absolute left-1 top-1" />
               <input
                 ref={(el) => { cellRefs.current[`${depot}-${roadIndex}-${i}`] = el; }}
                 type="text"
