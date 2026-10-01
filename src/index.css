@@ -738,14 +738,6 @@ html[data-app-theme="dark"] .theme-stabling-remark {
   font-weight: 400 !important;
 }
 
-html[data-app-theme="light"] .theme-east-depot-return-remark {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
-  border-color: #d97706 !important;
-  box-shadow: 0 1px 3px rgba(120, 53, 15, 0.18) !important;
-  color: #78350f !important;
-  -webkit-text-fill-color: #78350f !important;
-}
-
 /* East and West wash notices use the amber Access Entry window treatment in night mode only. */
 html[data-app-theme="dark"] :is(
   .theme-east-depot-wash-notice,
