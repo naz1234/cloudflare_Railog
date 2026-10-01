@@ -15,7 +15,7 @@ export default function requestGroupVisibilityPlugin() {
         return null;
       }
 
-      let code = source;
+      let code = 'import { splitRequestMaintenanceMap } from "../lib/requestGroupVisibility";\n' + source;
 
       code = replaceRequired(
         code,
@@ -109,12 +109,7 @@ export default function requestGroupVisibilityPlugin() {
         code,
         /  const maintenanceMap = buildMaintenanceMap\(requests, westStablingKeys\);/,
         `  const maintenanceMap = buildMaintenanceMap(requests, westStablingKeys);
-  const visibleRequestMaintenanceMap = Object.fromEntries(
-    Object.entries(maintenanceMap).map(([trainKey, items]) => [
-      trainKey,
-      (Array.isArray(items) ? items : []).filter((item) => !item.hiddenByRequestGroup),
-    ])
-  );
+  const { visible: visibleRequestMaintenanceMap, hidden: hiddenRequestMaintenanceMap } = splitRequestMaintenanceMap(maintenanceMap);
   const visibleRemovalRequests = requests.filter((request) => request?.groupHidden !== true);`,
         'visible request maps for stabling and removal summary'
       );
@@ -122,28 +117,28 @@ export default function requestGroupVisibilityPlugin() {
       code = replaceRequired(
         code,
         /(title="WEST DEPOT STABLING"[\s\S]*?maintenanceMap=)\{maintenanceMap\}/,
-        '$1{visibleRequestMaintenanceMap}',
+        '$1{visibleRequestMaintenanceMap}\n        hiddenMaintenanceMap={hiddenRequestMaintenanceMap}',
         'West stabling visible remarks'
       );
 
       code = replaceRequired(
         code,
         /(title="EAST DEPOT STABLING"[\s\S]*?maintenanceMap=)\{maintenanceMap\}/,
-        '$1{visibleRequestMaintenanceMap}',
+        '$1{visibleRequestMaintenanceMap}\n        hiddenMaintenanceMap={hiddenRequestMaintenanceMap}',
         'East stabling visible remarks'
       );
 
       code = replaceRequired(
         code,
         /(<InsertionTabContent[\s\S]*?\r?\n            maintenanceMap=)\{maintenanceMap\}/,
-        '$1{visibleRequestMaintenanceMap}',
+        '$1{visibleRequestMaintenanceMap}\n            hiddenMaintenanceMap={hiddenRequestMaintenanceMap}',
         'Insertion visible remarks'
       );
 
       code = replaceRequired(
         code,
         /(<TrainRemPanel\r?\n        maintenanceMap=)\{maintenanceMap\}/,
-        '$1{visibleRequestMaintenanceMap}',
+        '$1{visibleRequestMaintenanceMap}\n        hiddenMaintenanceMap={hiddenRequestMaintenanceMap}',
         'Removal Summary visible remarks'
       );
 

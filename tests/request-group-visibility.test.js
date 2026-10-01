@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import requestGroupVisibilityPlugin from '../build/requestGroupVisibilityPlugin.js';
+import { getHiddenRequestRemarkLabels, splitRequestMaintenanceMap } from '../src/lib/requestGroupVisibility.js';
 
 const depotStablingPath = new URL('../src/pages/DepotStabling.jsx', import.meta.url);
 
@@ -27,4 +28,28 @@ test('Removal Log Output keeps the full request data', () => {
   const code = transformDepotStabling();
 
   assert.match(code, /<RemovalLogOutputFromTrainRem\s+trainRemState=\{trainRemCheckState\}\s+maintenanceMap=\{maintenanceMap\}\s+requests=\{requests\}/);
+});
+
+test('hidden remarks remain available for hover without leaking into visible/export data', () => {
+  const shown = { badgeText: 'Wash 1-Oct' };
+  const hidden = { badgeText: 'PENDING CC RESET', hiddenByRequestGroup: true };
+  const input = { '20': [shown, hidden], '03': [hidden], '47': [] };
+  const result = splitRequestMaintenanceMap(input);
+
+  assert.deepEqual(result.visible, { '20': [shown], '03': [], '47': [] });
+  assert.deepEqual(result.hidden, { '20': [hidden], '03': [hidden], '47': [] });
+  assert.deepEqual(input['20'], [shown, hidden]);
+  assert.deepEqual(splitRequestMaintenanceMap({ '01': null }), { visible: { '01': [] }, hidden: { '01': [] } });
+});
+
+test('hover lists every hidden remark once and ignores blank entries', () => {
+  assert.deepEqual(getHiddenRequestRemarkLabels([
+    { badgeText: 'PENDING CC RESET' },
+    { displayType: 'pending cc reset' },
+    { remark: 'RST PM 1-Oct' },
+    { typeKey: 'Other request' },
+    null,
+    {},
+  ]), ['PENDING CC RESET', 'RST PM 1-Oct', 'Other request']);
+  assert.deepEqual(getHiddenRequestRemarkLabels(), []);
 });
