@@ -42,16 +42,15 @@ test("editable stabling exposes depot-specific Undo, Redo and Refresh controls",
 test("Insertion Refresh keeps its warning glow with a circular arrow icon", () => {
   assert.match(pageSource, /function insertionStablingTrainPositionsMatch\([\s\S]*normalizeTrainId/);
   assert.match(controlsSource, /isDirty \? "is-dirty" : "is-synced"/);
-  assert.match(controlsSource, /refreshIcon = "refresh"/);
-  assert.match(controlsSource, /isDirty && refreshIcon === "flame"/);
+  assert.doesNotMatch(controlsSource, /Flame|refreshIcon/);
   assert.match(controlsSource, /<RefreshCw className=\{`theme-insertion-refresh-icon/);
   assert.match(controlsSource, /onClick=\{onRefresh\}[\s\S]*disabled=\{!isDirty\}[\s\S]*disabled:cursor-not-allowed/);
   assert.match(stylesheetSource, /\.theme-insertion-refresh-button\.is-synced \{[\s\S]*background: #071828;[\s\S]*color: #7890a4;/);
   assert.match(pageSource, /westInsertionStablingDirty = !insertionStablingTrainPositionsMatch/);
   assert.match(pageSource, /eastInsertionStablingDirty = !insertionStablingTrainPositionsMatch/);
-  assert.match(stylesheetSource, /\.theme-insertion-page \.theme-insertion-refresh-button\.is-dirty \.theme-insertion-refresh-icon \{\s*color: #fde047;/);
-  assert.match(stylesheetSource, /\.theme-insertion-page \.theme-insertion-refresh-button\.is-dirty \{[\s\S]*?--movement-add-row-attention-glow: rgba\(249, 115, 22, 0\.88\);[\s\S]*?animation: movement-add-row-attention 1\.55s ease-in-out infinite/);
-  assert.match(stylesheetSource, /\.theme-insertion-page \.theme-insertion-refresh-button\.is-dirty \.theme-insertion-refresh-icon \{[\s\S]*?animation: movement-add-row-icon-attention 1\.55s ease-in-out infinite/);
+  assert.match(stylesheetSource, /\.theme-insertion-page \.theme-insertion-refresh-button\.is-dirty \.theme-insertion-refresh-icon,\s*\.theme-pst-section \.theme-insertion-refresh-button\.is-dirty \.theme-insertion-refresh-icon \{\s*color: #fde047;/);
+  assert.match(stylesheetSource, /\.theme-insertion-page \.theme-insertion-refresh-button\.is-dirty,\s*\.theme-pst-section \.theme-insertion-refresh-button\.is-dirty \{[\s\S]*?--movement-add-row-attention-glow: rgba\(249, 115, 22, 0\.88\);[\s\S]*?animation: movement-add-row-attention 1\.55s ease-in-out infinite/);
+  assert.match(stylesheetSource, /\.theme-insertion-page \.theme-insertion-refresh-button\.is-dirty \.theme-insertion-refresh-icon,\s*\.theme-pst-section \.theme-insertion-refresh-button\.is-dirty \.theme-insertion-refresh-icon \{[\s\S]*?animation: movement-add-row-icon-attention 1\.55s ease-in-out infinite/);
   assert.match(stylesheetSource, /@media \(prefers-reduced-motion: reduce\)[\s\S]*theme-insertion-refresh-button\.is-dirty[\s\S]*animation: none !important/);
 });
 

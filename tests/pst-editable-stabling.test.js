@@ -28,7 +28,7 @@ test("PST uses one editable stabling view without PG1 or PG2 controls", () => {
   assert.ok(sectionStart >= 0);
   assert.match(sectionSource, /<InsertionEditableHeaderControls/);
   assert.match(sectionSource, /workLabel="PST \/ Train Prep"/);
-  assert.match(sectionSource, /refreshIcon="flame"/);
+  assert.doesNotMatch(pageSource, /<Flame|refreshIcon="flame"/);
   assert.doesNotMatch(sectionSource, /InsertionPgHeaderControls|onPgChange|activePg|Refresh PG2/);
   assert.match(sectionSource, /stablingEditable = true/);
   assert.match(tabSource, /<PSTStablingSection[^\n]+stablingEditable/);
@@ -56,18 +56,18 @@ test("PST exposes depot-specific Undo, Redo and dirty Refresh controls", () => {
   assert.match(activeSource, /eastPSTStablingDirty = !insertionStablingTrainPositionsMatch/);
 });
 
-test("PST dirty Refresh preserves its pulse and flame animations", () => {
+test("PST Refresh shares the circular icon and orange Add Row animation", () => {
   assert.match(
     themeStyles,
-    /\.theme-pst-section \.theme-insertion-refresh-button\.is-dirty \{\s*animation: insertion-refresh-dirty-pulse/,
+    /\.theme-pst-section \.theme-insertion-refresh-button\.is-dirty \{\s*--movement-add-row-attention-glow: rgba\(249, 115, 22, 0\.88\);[\s\S]*?animation: movement-add-row-attention 1\.55s ease-in-out infinite/,
   );
   assert.match(
     themeStyles,
-    /\.theme-pst-section \.theme-insertion-refresh-fire \{[\s\S]*?animation: insertion-refresh-fire-flicker/,
+    /\.theme-pst-section \.theme-insertion-refresh-button\.is-dirty \.theme-insertion-refresh-icon \{\s*color: #fde047;[\s\S]*?animation: movement-add-row-icon-attention 1\.55s ease-in-out infinite/,
   );
   assert.match(
     themeStyles,
-    /prefers-reduced-motion: reduce[\s\S]*?\.theme-pst-section \.theme-insertion-refresh-fire[\s\S]*?animation: none !important/,
+    /prefers-reduced-motion: reduce[\s\S]*?\.theme-pst-section \.theme-insertion-refresh-icon[\s\S]*?animation: none !important/,
   );
 });
 
