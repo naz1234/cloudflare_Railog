@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
+import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, useId } from "react";
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -28370,13 +28370,28 @@ async function downloadInsertionPicturePng({ title, blockLabels, blockIndices, r
   downloadBlob(blob, `${safeName}-insertion-print.png`);
 }
 
+const WASH_NOTICE_AUTO_COLLAPSE_MS = 3000;
+
 function StablingWashNotice({ depot, message }) {
   const isEast = depot === "east";
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const noticeBodyId = useId();
+  const HeaderTag = isEast ? "div" : "button";
   const [headingLine = "", ...remainingLines] = String(message || "").split("\n");
   const headingSeparatorIndex = headingLine.indexOf(":");
   const heading = headingSeparatorIndex >= 0 ? headingLine.slice(0, headingSeparatorIndex + 1) : headingLine;
   const headingBody = headingSeparatorIndex >= 0 ? headingLine.slice(headingSeparatorIndex + 1).trim() : "";
   const bodyLines = headingBody ? [headingBody, ...remainingLines] : remainingLines;
+
+  useEffect(() => {
+    if (isEast || isCollapsed) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setIsCollapsed(true);
+    }, WASH_NOTICE_AUTO_COLLAPSE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [isEast, isCollapsed]);
 
   return (
     <div
@@ -28385,15 +28400,24 @@ function StablingWashNotice({ depot, message }) {
         ? "theme-east-depot-wash-notice border-amber-400/65 bg-amber-500/10 text-amber-100"
         : "theme-west-depot-weekend-wash-notice border-cyan-400/65 bg-cyan-500/10 text-cyan-100"}`}
     >
-      <div className="theme-stabling-wash-notice-header flex items-center gap-2.5 border-b border-current/20 px-4 py-2">
+      <HeaderTag
+        type={isEast ? undefined : "button"}
+        onClick={isEast ? undefined : () => setIsCollapsed((collapsed) => !collapsed)}
+        aria-expanded={isEast ? undefined : !isCollapsed}
+        aria-controls={isEast ? undefined : noticeBodyId}
+        aria-label={isEast ? undefined : `${isCollapsed ? "Show" : "Hide"} West Depot notice`}
+        title={isEast ? undefined : isCollapsed ? "Show West Depot notice for 3 seconds" : "Hide West Depot notice now"}
+        className={`theme-stabling-wash-notice-header flex w-full items-center gap-2.5 border-current/20 px-4 py-2 text-left ${isCollapsed ? "" : "border-b"} ${isEast ? "" : "cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-current"}`}
+      >
         <span className={`theme-stabling-wash-notice-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${isEast
           ? "border-amber-300/50 bg-amber-400/10 text-amber-300"
           : "border-cyan-300/50 bg-cyan-400/10 text-cyan-200"}`}>
           <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
         </span>
         <strong className="theme-stabling-wash-notice-title text-xs font-black tracking-wide">{heading}</strong>
-      </div>
-      <div className="theme-stabling-wash-notice-body min-w-0 px-4 py-3 text-xs font-semibold leading-relaxed">
+        {!isEast && <ChevronDown className={`ml-auto h-4 w-4 shrink-0 transition-transform ${isCollapsed ? "" : "rotate-180"}`} aria-hidden="true" />}
+      </HeaderTag>
+      <div id={noticeBodyId} hidden={isCollapsed} className="theme-stabling-wash-notice-body min-w-0 px-4 py-3 text-xs font-semibold leading-relaxed">
         {bodyLines.map((line, index) => {
           const separatorIndex = line.indexOf(":");
           const label = separatorIndex >= 0 ? line.slice(0, separatorIndex + 1) : "";
