@@ -159,8 +159,27 @@ test("empty TLC sections are omitted and other request categories remain separat
     { trainId: "T27", requestType: "RST CM" },
     { trainId: "T42", requestType: "PENDING ATC CC RESET" },
   ]);
-  assert.deepEqual(groups.map(({ key }) => key), ["pm", "cm", "others"]);
+  assert.deepEqual(groups.map(({ key }) => key), ["pm", "cm", "atc"]);
   assert.deepEqual(groupSummary([]), []);
+});
+
+test("ATC requests have their own section, including trailing ATC labels and inspection dates", () => {
+  const groups = groupSummary([
+    { trainId: "T46", requestType: "CC RESET PENDING - ATC" },
+    { trainId: "T31", requestType: "CC RESET PENDING - ATC" },
+    { trainId: "T46", requestType: "CC RESET PENDING - ATC" },
+    { trainId: "T20", requestType: "atc TESTING" },
+    { trainId: "T18", requestType: "ATC Inspection 2-OCT", groupHidden: true },
+    { trainId: "T15", requestType: "TLC Req after comm svc" },
+    { trainId: "T36", requestType: "SET 25C" },
+  ]);
+  assert.deepEqual(groups.map(({ title }) => title), ["TLC Req", "ATC Req", "Other Remarks"]);
+  assert.deepEqual(groups.find(({ key }) => key === "atc").lines, [
+    "T46 and T31 — CC RESET PENDING - ATC.",
+    "T20 — ATC testing.",
+    "T18 — ATC inspection on 2 Oct.",
+  ]);
+  assert.deepEqual(groups.find(({ key }) => key === "others").lines, ["T36 — set the temperature to 25°C."]);
 });
 
 test("PM grouping retains readable dates, all dates and hidden request groups", () => {
