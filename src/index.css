@@ -12763,6 +12763,11 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-foo
   transform-origin: 50% 78%;
 }
 
+.theme-insertion-page .theme-insertion-refresh-button.is-dirty .theme-insertion-refresh-icon {
+  color: #fde047;
+  filter: drop-shadow(0 0 3px rgba(251, 146, 60, 0.78));
+}
+
 .theme-insertion-page .theme-insertion-history-button:disabled,
 .theme-pst-section .theme-insertion-history-button:disabled {
   transform: none !important;

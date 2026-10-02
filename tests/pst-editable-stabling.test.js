@@ -28,6 +28,7 @@ test("PST uses one editable stabling view without PG1 or PG2 controls", () => {
   assert.ok(sectionStart >= 0);
   assert.match(sectionSource, /<InsertionEditableHeaderControls/);
   assert.match(sectionSource, /workLabel="PST \/ Train Prep"/);
+  assert.match(sectionSource, /refreshIcon="flame"/);
   assert.doesNotMatch(sectionSource, /InsertionPgHeaderControls|onPgChange|activePg|Refresh PG2/);
   assert.match(sectionSource, /stablingEditable = true/);
   assert.match(tabSource, /<PSTStablingSection[^\n]+stablingEditable/);
@@ -55,7 +56,7 @@ test("PST exposes depot-specific Undo, Redo and dirty Refresh controls", () => {
   assert.match(activeSource, /eastPSTStablingDirty = !insertionStablingTrainPositionsMatch/);
 });
 
-test("PST dirty Refresh uses the same pulse and flame animations as Insertion", () => {
+test("PST dirty Refresh preserves its pulse and flame animations", () => {
   assert.match(
     themeStyles,
     /\.theme-pst-section \.theme-insertion-refresh-button\.is-dirty \{\s*animation: insertion-refresh-dirty-pulse/,
