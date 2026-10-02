@@ -41,3 +41,25 @@ test("tree guide lines and flat light-theme overrides prevent nested borders ret
   assert.match(flatOverrides, /theme-maintenance-request-line \{\s*border: 0 !important;/);
   assert.match(flatOverrides, /box-shadow: none !important;/);
 });
+
+test("light-theme guide lines and row dividers remain visible against white without changing dark mode", () => {
+  const guideBlock = css.match(/html\[data-app-theme="light"\] \.theme-maintenance-category-body \{([^}]*)\}/)?.[1] || "";
+  const rowBlock = css.match(/html\[data-app-theme="light"\] \.theme-maintenance-panel \.theme-maintenance-category \.theme-maintenance-request-line \{([^}]*)\}/)?.[1] || "";
+  const guideColor = guideBlock.match(/--maintenance-tree-line:\s*(#[\da-f]{6})/i)?.[1];
+  const dividerColor = rowBlock.match(/border-bottom:\s*1px solid (#[\da-f]{6})/i)?.[1];
+  assert.ok(guideColor, "light guide lines use a solid, readable color");
+  assert.ok(dividerColor, "light row dividers use a solid, readable color");
+
+  const contrastAgainstWhite = (hex) => {
+    const channels = hex.slice(1).match(/../g).map((part) => {
+      const value = parseInt(part, 16) / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    const luminance = channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+    return 1.05 / (luminance + 0.05);
+  };
+  assert.ok(contrastAgainstWhite(guideColor) >= 3);
+  assert.ok(contrastAgainstWhite(dividerColor) >= 2);
+  assert.match(css, /\.theme-maintenance-category-body \{[\s\S]*?--maintenance-tree-line: rgba\(125, 175, 205, 0\.25\);/);
+  assert.match(css, /border-bottom: 1px solid rgba\(125, 175, 205, 0\.08\);/);
+});
