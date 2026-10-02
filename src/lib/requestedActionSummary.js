@@ -149,3 +149,42 @@ export function getRequestedSummaryWorkshopMovementDirection(value = "") {
 
   return "";
 }
+
+export const REQUEST_CATEGORY_DEFINITIONS = [
+  { key: "washing", title: "Washing", accent: "#34d399", accentRgb: "52, 211, 153" },
+  { key: "pm", title: "PM", accent: "#60a5fa", accentRgb: "96, 165, 250" },
+  { key: "cm", title: "CM", accent: "#22d3ee", accentRgb: "34, 211, 238" },
+  { key: "tlc", title: "TLC Req", accent: "#f472b6", accentRgb: "244, 114, 182" },
+  { key: "atc", title: "ATC Req", accent: "#fbbf24", accentRgb: "251, 191, 36" },
+  { key: "workshop", title: "Workshop Movement", accent: "#c084fc", accentRgb: "192, 132, 252" },
+  { key: "others", title: "Other Remarks", accent: "#94a3b8", accentRgb: "148, 163, 184" },
+];
+
+// Shared by the summary sentences and the editable request-group list.
+export function getRequestedSummaryCategoryKey(value = "") {
+  const normalized = normalizeRequestedSummaryIdentity(value);
+  if (/\bTLC\b/.test(normalized)) return "tlc";
+  if (/\bATC\b/.test(normalized)) return "atc";
+  if (getRequestedSummaryWorkshopMovementDirection(value)) return "workshop";
+  if (/\bWASH(?:ING)?\b/.test(normalized)) return "washing";
+  if (/\bPM\b/.test(normalized)) return "pm";
+  if (/\bCM\b/.test(normalized) || normalized.includes("CLOSING SR")) return "cm";
+  return "others";
+}
+
+export function groupRequestGroupsByCategory(groups = []) {
+  const buckets = new Map(REQUEST_CATEGORY_DEFINITIONS.map(({ key }) => [key, []]));
+  (Array.isArray(groups) ? groups : []).forEach((group) => {
+    if (!group || !Array.isArray(group.items) || !group.items.length) return;
+    buckets.get(getRequestedSummaryCategoryKey(group.label))?.push(group);
+  });
+
+  return REQUEST_CATEGORY_DEFINITIONS.map((category) => {
+    const categoryGroups = buckets.get(category.key);
+    return {
+      ...category,
+      groups: categoryGroups,
+      requestCount: categoryGroups.reduce((count, group) => count + group.items.length, 0),
+    };
+  }).filter(({ requestCount }) => requestCount > 0);
+}

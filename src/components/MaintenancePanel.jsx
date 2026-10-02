@@ -4,6 +4,7 @@ import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, 
 import ActionTooltip from "./ActionTooltip";
 import MaintenanceImageSummary from "./MaintenanceImageSummary";
 import { sortRequestsByStatusThenTrain } from "../utils/maintenanceRequestSort";
+import { groupRequestGroupsByCategory } from "../lib/requestedActionSummary";
 
 const MIN_VISIBLE_REQUEST_ROWS = 40;
 
@@ -1037,6 +1038,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       return typeSort || trainSort || statusSort;
     });
   const regularRequestGroups = groupRequestsByExactRemark(regularRequests);
+  const requestCategories = groupRequestGroupsByCategory(regularRequestGroups);
   const editingRequestGroup = regularRequestGroups.find((group) => group.key === editingGroupKey) || null;
   const savingGroupTitle = Boolean(editingRequestGroup && savingGroupKey === editingRequestGroup.key);
   const groupEditorBusy = savingGroupTitle || addingGroupTrains || Boolean(removingGroupTrainId);
@@ -1700,7 +1702,32 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           </div>
         ) : (
           <div className="grid gap-[9px] p-2.5">
-            {renderRequestGroupCards(regularRequestGroups, { section: "pending" })}
+            {requestCategories.map((category) => (
+              <section
+                key={category.key}
+                aria-label={`${category.title} requests`}
+                className="theme-maintenance-category rounded-lg border"
+                style={{
+                  "--request-category-accent": category.accent,
+                  "--request-category-accent-rgb": category.accentRgb,
+                }}
+              >
+                <div className="theme-maintenance-category-heading flex min-h-7 items-center justify-between gap-1.5 rounded-t-lg px-2 py-1">
+                  <h3 className="min-w-0 text-[10px] font-bold uppercase leading-tight tracking-[0.04em]">
+                    {category.title}
+                  </h3>
+                  <span
+                    className="theme-maintenance-category-count shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-bold leading-none"
+                    aria-label={`${category.requestCount} request${category.requestCount === 1 ? "" : "s"}`}
+                  >
+                    {category.requestCount}
+                  </span>
+                </div>
+                <div className="grid gap-2 p-1.5">
+                  {renderRequestGroupCards(category.groups, { section: "pending" })}
+                </div>
+              </section>
+            ))}
           </div>
         )}
       </div>

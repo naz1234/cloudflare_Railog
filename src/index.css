@@ -9030,6 +9030,39 @@ html[data-app-theme="light"] .theme-removal-log-card-body > div {
   color: #64748b !important;
 }
 
+/* Always-open category separators in the compact editable Train Request list. */
+.theme-maintenance-category {
+  border-color: rgba(var(--request-category-accent-rgb), 0.35);
+  background: rgba(7, 24, 40, 0.5);
+}
+
+.theme-maintenance-category-heading {
+  border-left: 3px solid var(--request-category-accent);
+  border-bottom: 1px solid rgba(var(--request-category-accent-rgb), 0.25);
+  background: linear-gradient(90deg, rgba(var(--request-category-accent-rgb), 0.20), rgba(var(--request-category-accent-rgb), 0.05));
+  color: #eaf4ff;
+}
+
+.theme-maintenance-category-count {
+  border-color: rgba(var(--request-category-accent-rgb), 0.5);
+  background: #0b2339;
+  color: var(--request-category-accent);
+}
+
+html[data-app-theme="light"] .theme-maintenance-category {
+  border-color: rgba(var(--request-category-accent-rgb), 0.65);
+  background: #ffffff;
+}
+
+html[data-app-theme="light"] .theme-maintenance-category-heading {
+  color: #0f172a;
+}
+
+html[data-app-theme="light"] .theme-maintenance-category-count {
+  background: #ffffff;
+  color: #0f172a;
+}
+
 /* Request Summary by Type — distinct violet identity in both application themes. */
 .theme-request-type-summary {
   background: linear-gradient(135deg, #2b163f 0%, #211b4b 52%, #172554 100%) !important;
