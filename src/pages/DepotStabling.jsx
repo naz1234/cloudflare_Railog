@@ -2,12 +2,13 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Redo2, Download, Search, ArrowUp, ArrowDown, Check, Sun, Moon, TrainFront, Clock3, RefreshCw } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Redo2, Download, Search, ArrowUp, ArrowDown, Check, Sun, Moon, TrainFront, Clock3, RefreshCw, TriangleAlert } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
 import TIDReferenceTable, { getTidReferenceRemark } from "../components/TIDReferenceTable";
 import ActionTooltip from "../components/ActionTooltip";
+import { getStablingSyncTooltipCopy } from "../lib/stablingSyncTooltip";
 import HiddenRequestRemarks from "../components/HiddenRequestRemarks";
 import PSTLogOutput from "../components/depot/PSTLogOutput";
 import PSTManualEntry from "../components/depot/PSTManualEntry";
@@ -5956,9 +5957,7 @@ function InsertionEditableHeaderControls({
   isDirty = false,
   tooltipPlacement = "top",
 }) {
-  const refreshTooltip = isDirty
-    ? `${depotCode} editable stabling differs from Main Stabling. Refresh to sync and reset ${depotCode} ${workLabel} work.`
-    : `${depotCode} editable stabling already matches Main Stabling`;
+  const syncTooltip = getStablingSyncTooltipCopy({ depotCode, workLabel, isDirty });
 
   return (
     <div className="theme-insertion-editable-controls flex flex-wrap items-center justify-start gap-1.5">
@@ -5996,12 +5995,28 @@ function InsertionEditableHeaderControls({
           Redo
         </button>
       </ActionTooltip>
-      <ActionTooltip message={refreshTooltip} placement={tooltipPlacement}>
+      <ActionTooltip
+        message={
+          <span className="block text-[11px] leading-snug">
+            <span className="block font-bold">{syncTooltip.title}</span>
+            <span className="mt-1 block font-normal">{syncTooltip.description}</span>
+            {syncTooltip.warning && (
+              <span className="mt-1.5 flex items-start gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 font-medium text-amber-950">
+                <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+                <span>{syncTooltip.warning}</span>
+              </span>
+            )}
+          </span>
+        }
+        placement={tooltipPlacement}
+        contentStyle={{ maxWidth: "min(280px, calc(100vw - 20px))", overflowWrap: "anywhere" }}
+        triggerProps={!isDirty ? { tabIndex: 0, role: "group", "aria-label": syncTooltip.accessibleLabel } : {}}
+      >
         <button
           type="button"
           onClick={onRefresh}
           disabled={!isDirty}
-          aria-label={refreshTooltip}
+          aria-label={syncTooltip.accessibleLabel}
           className={`theme-insertion-refresh-button ${isDirty ? "is-dirty" : "is-synced"} group inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-[10px] font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100`}
           style={isDirty ? {
             background: "linear-gradient(135deg, rgba(249,115,22,0.42), rgba(220,38,38,0.34))",
@@ -6011,7 +6026,7 @@ function InsertionEditableHeaderControls({
           } : undefined}
         >
           <RefreshCw className={`theme-insertion-refresh-icon ${isDirty ? "h-3.5 w-3.5" : "h-3 w-3"}`} aria-hidden="true" />
-          Refresh
+          Sync from Main
         </button>
       </ActionTooltip>
     </div>

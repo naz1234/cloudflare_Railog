@@ -31,10 +31,10 @@ test("Request stabling is one editable view without PG1 or PG2 controls", () => 
   assert.match(configSource, /stablingEditable: true/);
 });
 
-test("editable stabling exposes depot-specific Undo, Redo and Refresh controls", () => {
+test("editable stabling exposes depot-specific Undo, Redo and Sync from Main controls", () => {
   assert.match(controlsSource, /onClick=\{onUndo\}[\s\S]*>\s*<Undo2[\s\S]*Undo/);
   assert.match(controlsSource, /onClick=\{onRedo\}[\s\S]*>\s*<Redo2[\s\S]*Redo/);
-  assert.match(controlsSource, /onClick=\{onRefresh\}[\s\S]*Refresh/);
+  assert.match(controlsSource, /onClick=\{onRefresh\}[\s\S]*>\s*Sync from Main\s*</);
   assert.match(configSource, /handleUndoInsertionStabling\(normalizedDepot\)/);
   assert.match(configSource, /handleRedoInsertionStabling\(normalizedDepot\)/);
 });
