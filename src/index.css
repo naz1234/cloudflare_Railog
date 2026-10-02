@@ -9170,7 +9170,7 @@ html[data-app-theme="light"] .theme-maintenance-category-count {
 }
 
 html[data-app-theme="light"] .theme-maintenance-category-body {
-  --maintenance-tree-line: rgba(71, 110, 139, 0.23);
+  --maintenance-tree-line: #6c91ae;
 }
 
 html[data-app-theme="light"] .theme-maintenance-panel .theme-maintenance-category .request-group-eye-status * {
@@ -10589,7 +10589,7 @@ html[data-app-theme="light"] .theme-maintenance-panel .theme-maintenance-categor
 
 html[data-app-theme="light"] .theme-maintenance-panel .theme-maintenance-category .theme-maintenance-request-line {
   border: 0 !important;
-  border-bottom: 1px solid rgba(71, 110, 139, 0.10) !important;
+  border-bottom: 1px solid #9bb5c9 !important;
   border-radius: 0;
   background: transparent !important;
   box-shadow: none !important;
