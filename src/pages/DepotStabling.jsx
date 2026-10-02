@@ -65,6 +65,7 @@ import {
   formatRequestedSummaryWashingAction,
   formatRequestedSummaryWorkshopAction,
   getRequestedSummaryWorkshopMovementDirection,
+  getRequestedSummaryCategoryKey,
   normalizeRequestedSummaryDates,
 } from "../lib/requestedActionSummary";
 import {
@@ -24371,15 +24372,7 @@ const REQUESTED_ACTION_SUMMARY_GROUPS = [
 ];
 
 function getRequestedActionSummaryGroupKey(line = "") {
-  const normalized = normalizeRequestIdentity(line);
-  if (/\bTLC\b/.test(normalized)) return "tlc";
-  if (/\bATC\b/.test(normalized)) return "atc";
-  const workshopMovementDirection = getRequestedSummaryWorkshopMovementDirection(line);
-  if (workshopMovementDirection) return "workshop";
-  if (/\bWASH(?:ING)?\b/.test(normalized)) return "washing";
-  if (/\bPM\b/.test(normalized)) return "pm";
-  if (/\bCM\b/.test(normalized) || normalized.includes("CLOSING SR")) return "cm";
-  return "others";
+  return getRequestedSummaryCategoryKey(line);
 }
 
 function groupRequestedActionSummaryLines(lines = []) {
