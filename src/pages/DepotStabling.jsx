@@ -49,6 +49,7 @@ import {
   shouldShowRemovalTidStablingRemove,
 } from "../lib/trainRemOffPeakStabling";
 import { buildPSTExcelClipboardText } from "../lib/pstExcelClipboard";
+import { buildPossessionEntryOutput, getPossessionAccessDetails, normalizePossessionAccessEntry } from "../lib/possessionAccessLog";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40Groups, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, resizeHdwDepotRows, clearHdwRows } from "../lib/trainRemHdw40";
 import "../trainRemHdw40.css";
@@ -15466,8 +15467,8 @@ const POSSESSION_FIELD = ({ label, children }) => (
 
 const possessionInputCls = "theme-possession-input w-full rounded-lg border border-[#1e3a56] bg-[#071828] px-3 py-2 text-xs text-[#c8d8ea] outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] transition-all placeholder:text-[#2b4f6b]";
 
-const POSSESSION_INPUT = ({ value, onChange, placeholder, className = "" }) => (
-  <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || ""}
+const POSSESSION_INPUT = ({ value, onChange, placeholder, className = "", ariaLabel }) => (
+  <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || ""} aria-label={ariaLabel}
     className={`${possessionInputCls} ${className}`} />
 );
 
@@ -15483,8 +15484,8 @@ const POSSESSION_TIME_INPUT = ({ value, onChange, placeholder = "e.g. 04:17", cl
   />
 );
 
-const POSSESSION_TEXTAREA = ({ value, onChange, placeholder, rows = 2 }) => (
-  <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || ""} rows={rows}
+const POSSESSION_TEXTAREA = ({ value, onChange, placeholder, rows = 2, ariaLabel }) => (
+  <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || ""} rows={rows} aria-label={ariaLabel}
     className="theme-possession-input w-full rounded-lg border border-[#1e3a56] bg-[#071828] px-3 py-2 text-xs text-[#c8d8ea] outline-none focus:ring-1 focus:ring-[#4f8ef7] focus:border-[#4f8ef7] transition-all placeholder:text-[#2b4f6b] resize-none" />
 );
 
@@ -15655,35 +15656,19 @@ function usePossessionLiveState(stateKey, state, setState, normalizeState = (val
 const POSSESSION_LOG_KEY = "possessionLog_v2";
 const POSSESSION_ACCESS_ENTRY_THEME_COUNT = 6;
 
-const defaultEntry = () => ({ picName: "", picId: "", description: "", accessNo: "", issueTime: "", accessPoint: "", accessAuthTime: "", scd: "Yes", scdLoc: "", scdApplyTime: "", scdRemTime: "", handbackTime: "" });
+const defaultEntry = () => normalizePossessionAccessEntry();
 
 function generateEntryOutput(f) {
-  const access = cleanPossessionAccessNo(f.accessNo);
-  const lines = [];
-  if (f.picName || f.picId) lines.push(`PIC - ${f.picName}${f.picId ? ` (${f.picId})` : ""}`);
-  if (f.description) lines.push(f.description);
-  lines.push("");
-  const accessPoint = String(f.accessPoint || "").trim();
-  const accessAuthT = fmtPossession24(f.accessAuthTime);
-  if (f.scd !== "No" && accessAuthT && accessPoint) {
-    lines.push(`${accessAuthT} – PIC${f.picName ? ` ${f.picName}` : ""} authorized to access ${accessPoint} and start apply the SCD.`);
-  }
-  if (f.scd === "Yes" && (f.scdApplyTime || f.scdRemTime || f.scdLoc)) {
-    const applyT = fmtPossession24(f.scdApplyTime); const remT = fmtPossession24(f.scdRemTime);
-    let scdLine = "";
-    if (applyT) scdLine += `${applyT} - SCD applied${f.scdLoc ? ` at ${f.scdLoc}` : ""}.`;
-    if (remT) scdLine += ` At ${remT} SCD confirmed removed.`;
-    if (scdLine) lines.push(scdLine);
-  }
-  const issueT = fmtPossession24(f.issueTime);
-  if (issueT && access) lines.push(`${issueT} - CMMS updated to ISSUED (Access #${access})`);
-  const handbackT = fmtPossession24(f.handbackTime);
-  if (handbackT && access) lines.push(`${handbackT} - CMMS updated to COMP (Access #${access})`);
-  return lines.join("\n");
+  return buildPossessionEntryOutput(f, fmtPossession24);
 }
 
 function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
   const set = (field) => (val) => onChange({ ...entry, [field]: val });
+  const accessDetails = getPossessionAccessDetails(entry);
+  const setAccessDetails = (details) => onChange(normalizePossessionAccessEntry({ ...entry, accessDetails: details }));
+  const setAccessDetail = (accessIndex, field) => (value) => setAccessDetails(
+    accessDetails.map((detail, i) => i === accessIndex ? { ...detail, [field]: value } : detail)
+  );
   return (
     <div
       className="theme-possession-access-entry rounded-xl border border-[#1e3a56] overflow-hidden bg-[#071828]"
@@ -15702,11 +15687,29 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
           <POSSESSION_FIELD label="PIC Name"><POSSESSION_INPUT value={entry.picName} onChange={set("picName")} placeholder="Full name" /></POSSESSION_FIELD>
           <POSSESSION_FIELD label="PIC ID"><POSSESSION_INPUT value={entry.picId} onChange={set("picId")} placeholder="e.g. FLOW_8545" /></POSSESSION_FIELD>
         </div>
-        <POSSESSION_FIELD label="Description"><POSSESSION_TEXTAREA value={entry.description} onChange={set("description")} placeholder="Work description..." rows={2} /></POSSESSION_FIELD>
-        <div className="grid grid-cols-2 gap-3">
-          <POSSESSION_FIELD label="Access No."><POSSESSION_INPUT value={entry.accessNo || ""} onChange={set("accessNo")} placeholder="e.g. 268,216" /></POSSESSION_FIELD>
-          <POSSESSION_FIELD label="Issue Time"><POSSESSION_TIME_INPUT value={entry.issueTime || ""} onChange={set("issueTime")} placeholder="e.g. 04:17" /></POSSESSION_FIELD>
-        </div>
+        {accessDetails.map((detail, accessIndex) => (
+          <div key={accessIndex} className={`space-y-2 ${accessIndex > 0 ? "border-t border-[#1e3a56] pt-3" : ""}`}>
+            <div className="flex items-center justify-between gap-2">
+              <span className="theme-possession-label text-[10px] font-bold tracking-widest uppercase">Access Number {accessIndex + 1}</span>
+              {accessDetails.length > 1 && (
+                <button type="button" aria-label={`Remove access number ${accessIndex + 1} for entry ${index + 1}`}
+                  onClick={() => setAccessDetails(accessDetails.filter((_, i) => i !== accessIndex))}
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border border-red-800/50 text-red-400 hover:bg-red-950/40 transition-colors">
+                  <X className="w-3 h-3" /> Remove
+                </button>
+              )}
+            </div>
+            <POSSESSION_FIELD label="Access No."><POSSESSION_INPUT value={detail.accessNo} onChange={setAccessDetail(accessIndex, "accessNo")}
+              ariaLabel={`Access number ${accessIndex + 1} for entry ${index + 1}`} placeholder="e.g. 303004" /></POSSESSION_FIELD>
+            <POSSESSION_FIELD label="Description"><POSSESSION_TEXTAREA value={detail.description} onChange={setAccessDetail(accessIndex, "description")}
+              ariaLabel={`Access description ${accessIndex + 1} for entry ${index + 1}`} placeholder="Work description for this access number..." rows={2} /></POSSESSION_FIELD>
+          </div>
+        ))}
+        <button type="button" onClick={() => setAccessDetails([...accessDetails, { accessNo: "", description: "" }])}
+          className="theme-possession-label flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border border-dashed border-[#2b4f6b] hover:border-[#4f8ef7] transition-colors">
+          <Plus className="w-3 h-3" /> Add Access Number
+        </button>
+        <POSSESSION_FIELD label="Issue Time"><POSSESSION_TIME_INPUT value={entry.issueTime || ""} onChange={set("issueTime")} placeholder="e.g. 04:17" /></POSSESSION_FIELD>
         <div className="grid grid-cols-2 gap-3">
           <POSSESSION_FIELD label="Access Point"><POSSESSION_INPUT value={entry.accessPoint || ""} onChange={set("accessPoint")} placeholder="e.g. DOOR B01" /></POSSESSION_FIELD>
           <POSSESSION_FIELD label="Access Authorized Time"><POSSESSION_TIME_INPUT value={entry.accessAuthTime || ""} onChange={set("accessAuthTime")} placeholder="e.g. 18:10" /></POSSESSION_FIELD>
@@ -15743,7 +15746,7 @@ function PossessionLog({ depot = "west" }) {
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
       return Array.isArray(saved) && saved.length > 0
-        ? saved.map((entry) => ({ ...defaultEntry(), ...entry }))
+        ? saved.map(normalizePossessionAccessEntry)
         : [defaultEntry()];
     }
     catch { return [defaultEntry()]; }
@@ -15754,7 +15757,7 @@ function PossessionLog({ depot = "west" }) {
     entries,
     setEntries,
     (value) => Array.isArray(value) && value.length > 0
-      ? value.map((entry) => ({ ...defaultEntry(), ...(entry || {}) }))
+      ? value.map(normalizePossessionAccessEntry)
       : [defaultEntry()]
   );
   const updateEntry = (i, val) => setEntries((prev) => prev.map((e, idx) => idx === i ? val : e));
