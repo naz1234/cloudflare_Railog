@@ -59,12 +59,54 @@ test("three or more access rows use readable references without an arbitrary two
   assert.ok(result.endsWith("CMMS updated to ISSUED (Access #1, #2 and #3)"));
 });
 
-test("SCD apply/remove events and No-SCD behaviour remain unchanged", () => {
+test("SCD apply/remove events keep their content as independently sorted lines and respect No-SCD", () => {
   const entry = { ...shared, accessNo: "30300", description: firstDescription, scd: "Yes", scdLoc: "TRACK 11", scdApplyTime: "13:10", scdRemTime: "15:00" };
-  assert.ok(output(entry).includes("13:10 hrs - SCD applied at TRACK 11. At 15:00 hrs SCD confirmed removed."));
+  assert.ok(output(entry).includes("13:10 hrs - SCD applied at TRACK 11.\n15:00 hrs - SCD confirmed removed."));
   const noScd = output({ ...entry, scd: "No" });
   assert.doesNotMatch(noScd, /authorized to access|SCD applied|SCD confirmed removed/);
   assert.match(noScd, /CMMS updated to ISSUED/);
+});
+
+test("timed output is sorted earliest to latest instead of following form-field order", () => {
+  const result = output({ ...shared, accessNo: "30300", description: firstDescription,
+    issueTime: "13:02", accessAuthTime: "13:05", scdApplyTime: "13:10", scdRemTime: "15:00", handbackTime: "15:05", scdLoc: "TRACK 11" });
+  assert.equal(result, [
+    "PIC - Jay Bigcas (FLOW_1113)",
+    `Access #30300 – ${firstDescription}`,
+    "",
+    "13:02 hrs - CMMS updated to ISSUED (Access #30300)",
+    "13:05 hrs – PIC Jay Bigcas authorized to access GATE 03 and start apply the SCD.",
+    "13:10 hrs - SCD applied at TRACK 11.",
+    "15:00 hrs - SCD confirmed removed.",
+    "15:05 hrs - CMMS updated to COMP (Access #30300)",
+  ].join("\n"));
+});
+
+test("ISSUED can sort between SCD application and removal without losing either time", () => {
+  const result = output({ ...shared, accessNo: "30300", accessAuthTime: "13:00",
+    scdApplyTime: "13:01", issueTime: "13:02", scdRemTime: "15:00" });
+  const timedLines = result.split("\n").filter((line) => /^\d{2}:\d{2} hrs/.test(line));
+  assert.deepEqual(timedLines.map((line) => line.slice(0, 5)), ["13:00", "13:01", "13:02", "15:00"]);
+  assert.equal(timedLines.length, 4);
+});
+
+test("same-time authorization and CMMS lines keep the requested stable order", () => {
+  const result = output({ ...shared, accessNo: "30300", scdApplyTime: "13:02", scdRemTime: "13:02", handbackTime: "13:02" });
+  assert.ok(result.indexOf("authorized to access") < result.indexOf("SCD applied"));
+  assert.ok(result.indexOf("SCD applied") < result.indexOf("SCD confirmed removed"));
+  assert.ok(result.indexOf("SCD confirmed removed") < result.indexOf("CMMS updated to ISSUED"));
+  assert.ok(result.indexOf("CMMS updated to ISSUED") < result.indexOf("CMMS updated to COMP"));
+});
+
+test("early morning, unpadded and saved AM/PM input sort by normalized 24-hour time", () => {
+  const result = output({ ...shared, accessNo: "30300", accessAuthTime: "9:05", issueTime: "01:02 AM", handbackTime: "13:00" });
+  assert.deepEqual(result.split("\n").filter((line) => /^\d{2}:\d{2} hrs/.test(line)).map((line) => line.slice(0, 5)), ["01:02", "09:05", "13:00"]);
+});
+
+test("SCD removal without an application time still has a sortable time prefix", () => {
+  const result = output({ ...shared, accessNo: "30300", scdRemTime: "14:30", handbackTime: "14:20" });
+  assert.deepEqual(result.split("\n").filter((line) => /^\d{2}:\d{2} hrs/.test(line)).map((line) => line.slice(0, 5)), ["13:02", "13:02", "14:20", "14:30"]);
+  assert.ok(result.endsWith("14:30 hrs - SCD confirmed removed."));
 });
 
 test("blank entries generate no output and incomplete rows do not fabricate numbers", () => {
