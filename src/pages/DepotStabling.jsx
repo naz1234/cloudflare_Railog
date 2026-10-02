@@ -5183,6 +5183,7 @@ function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoSt
           <InsertionEditableHeaderControls
             depotCode={sectionDepotLabel === "West Depot" ? "WD" : "ED"}
             workLabel="PST / Train Prep"
+            refreshIcon="flame"
             onRefresh={onRefreshStabling}
             onUndo={onUndoStabling}
             onRedo={onRedoStabling}
@@ -5948,6 +5949,7 @@ function InsertionSectionTitle({ title, leftAction = null, action = null }) {
 function InsertionEditableHeaderControls({
   depotCode,
   workLabel = "insertion",
+  refreshIcon = "refresh",
   onRefresh,
   onUndo,
   onRedo,
@@ -6010,10 +6012,10 @@ function InsertionEditableHeaderControls({
             boxShadow: "0 0 16px rgba(249,115,22,0.38), inset 0 1px 0 rgba(255,255,255,0.12)",
           } : undefined}
         >
-          {isDirty ? (
+          {isDirty && refreshIcon === "flame" ? (
             <Flame className="theme-insertion-refresh-fire h-3.5 w-3.5" aria-hidden="true" />
           ) : (
-            <RefreshCw className="h-3 w-3" aria-hidden="true" />
+            <RefreshCw className={`theme-insertion-refresh-icon ${isDirty ? "h-3.5 w-3.5" : "h-3 w-3"}`} aria-hidden="true" />
           )}
           Refresh
         </button>
