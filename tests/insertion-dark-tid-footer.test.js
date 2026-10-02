@@ -38,7 +38,7 @@ test("dark TID footer overrides load after the light-only design", () => {
   );
 });
 
-test("completed dark-mode TIDs use the approved soft-violet box", () => {
+test("completed dark-mode TIDs use the approved teal pill without changing its layout", () => {
   const railRule = extractRule(
     darkTidFooterSource,
     'html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete,',
@@ -50,7 +50,7 @@ test("completed dark-mode TIDs use the approved soft-violet box", () => {
 
   assert.match(
     railRule,
-    /background: linear-gradient\(135deg, #22233e 0%, #17192e 100%\) !important/,
+    /background: #146f65 !important/,
   );
   assert.match(
     railRule,
@@ -58,9 +58,12 @@ test("completed dark-mode TIDs use the approved soft-violet box", () => {
   );
   assert.match(
     darkTidFooterSource,
-    /\.theme-insertion-tracking-footer\.is-complete::before \{[\s\S]*content: "TID";[\s\S]*color: #b5adf5/,
+    /\.theme-insertion-tracking-footer\.is-complete::before \{[\s\S]*content: "TID";[\s\S]*color: #99f6e4/,
   );
-  assert.match(railRule, /border-color: #8f86d8 !important/);
+  assert.match(railRule, /border-color: #2dd4bf !important/);
+  assert.match(railRule, /min-height: 26px/);
+  assert.match(railRule, /padding: 3px 27px/);
+  assert.match(railRule, /border-radius: 8px/);
   assert.match(numberRule, /color: #f4f8fc !important/);
   assert.match(numberRule, /-webkit-text-fill-color: #f4f8fc !important/);
 });
@@ -78,7 +81,7 @@ test("dark semantic dots retain their status colour and stationary pulse", () =>
     ".theme-insertion-tracking-footer.is-complete.has-reference-style::after {",
   );
 
-  assert.match(fallbackRule, /background: var\(--insertion-tracking-reference-border, #b5adf5\)/);
+  assert.match(fallbackRule, /background: var\(--insertion-tracking-reference-border, #99f6e4\)/);
   assert.match(semanticDotRule, /opacity: 1/);
   assert.match(semanticDotRule, /filter: saturate\(1\.55\) brightness\(1\.04\) contrast\(1\.08\)/);
   assert.match(semanticDotRule, /animation: insertion-tid-status-pulse 1\.65s ease-in-out 220ms infinite backwards/);
@@ -97,4 +100,27 @@ test("dark semantic dots respect reduced-motion preferences", () => {
     darkTidFooterSource,
     /@media \(prefers-reduced-motion: reduce\) \{\s*html\[data-app-theme="dark"\] \.theme-insertion-page \.theme-insertion-tracking-footer\.is-complete\.has-reference-style::after \{[^}]*animation: none/,
   );
+});
+
+test("pending dark-mode TIDs use amber with readable input and placeholder text", () => {
+  const pendingRule = extractRule(darkTidFooterSource, '.theme-insertion-tracking-footer.is-editing {');
+  const inputRule = extractRule(darkTidFooterSource, '.theme-insertion-tracking-footer.is-editing input.theme-insertion-tid-input {');
+  const placeholderRule = extractRule(darkTidFooterSource, 'input.theme-insertion-tid-input::placeholder {');
+  assert.match(pendingRule, /border-color: #fbbf24 !important/);
+  assert.match(pendingRule, /background: #5b3b0c !important/);
+  assert.match(inputRule, /color: #fde68a !important/);
+  assert.match(inputRule, /-webkit-text-fill-color: #fde68a !important/);
+  assert.match(placeholderRule, /color: #fde68a !important/);
+});
+
+test("tracking-pill text meets small-text contrast without recolouring cards or remarks", () => {
+  const luminance = (hex) => hex.slice(1).match(/../g).map((part) => {
+    const channel = parseInt(part, 16) / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  }).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+  const contrast = (text, background) => (luminance(text) + 0.05) / (luminance(background) + 0.05);
+  assert.ok(contrast('#f4f8fc', '#146f65') >= 4.5);
+  assert.ok(contrast('#ffffff', '#146f65') >= 4.5);
+  assert.ok(contrast('#fde68a', '#5b3b0c') >= 4.5);
+  assert.doesNotMatch(darkTidFooterSource, /theme-insertion-card|theme-stabling-remark/);
 });

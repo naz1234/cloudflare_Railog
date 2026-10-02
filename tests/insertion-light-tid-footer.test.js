@@ -24,10 +24,10 @@ test("light TID footer overrides load after the light Insertion card styles", ()
   assert.ok(tidFooterImport > cardContrastImport);
 });
 
-test("completed TIDs use a dark footer bar only in light mode", () => {
+test("completed light-mode TIDs use the same teal pill with white text", () => {
   assert.match(
     lightTidFooterSource,
-    /html\[data-app-theme="light"\][\s\S]*\.theme-insertion-tracking-footer\.is-complete[\s\S]*background: linear-gradient\(135deg, #0b2d47 0%, #061b2e 100%\) !important/,
+    /html\[data-app-theme="light"\][\s\S]*\.theme-insertion-tracking-footer\.is-complete[\s\S]*border-color: #2dd4bf !important;[\s\S]*background: #146f65 !important/,
   );
   assert.match(
     lightTidFooterSource,
@@ -110,9 +110,10 @@ test("semantic TID dots stay opaque, saturated, and respect reduced motion", () 
   );
 });
 
-test("unfinished light-mode TIDs keep a distinct dashed input state", () => {
+test("unfinished light-mode TIDs use amber while keeping the dashed input state", () => {
   assert.match(
     lightTidFooterSource,
-    /html\[data-app-theme="light"\] \.theme-insertion-page \.theme-insertion-tracking-footer\.is-editing \{[\s\S]*border-color: #0ea5e9 !important;[\s\S]*border-style: dashed;[\s\S]*background: #f8fafc !important/,
+    /html\[data-app-theme="light"\] \.theme-insertion-page \.theme-insertion-tracking-footer\.is-editing \{[\s\S]*border-color: #fbbf24 !important;[\s\S]*border-style: dashed;[\s\S]*background: #5b3b0c !important/,
   );
+  assert.match(lightTidFooterSource, /\.is-editing input\.theme-insertion-tid-input::placeholder \{\s*color: #fde68a !important;\s*-webkit-text-fill-color: #fde68a !important/);
 });
