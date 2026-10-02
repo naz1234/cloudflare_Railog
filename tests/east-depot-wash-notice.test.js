@@ -72,3 +72,24 @@ test("Train Request wires the active timetable and refreshes the notice clock", 
   assert.match(pageSource, /role="status"/);
   assert.match(pageSource, /window\.setInterval\(refreshNoticeTime, 30000\)/);
 });
+
+test("West notice collapses three seconds after opening and clears its timer when closed or unmounted", () => {
+  const noticeSource = pageSource.slice(pageSource.indexOf("const WASH_NOTICE_AUTO_COLLAPSE_MS"), pageSource.indexOf("function StablingSection"));
+  assert.match(noticeSource, /WASH_NOTICE_AUTO_COLLAPSE_MS = 3000/);
+  assert.match(noticeSource, /\[isCollapsed, setIsCollapsed\] = useState\(false\)/);
+  assert.match(noticeSource, /if \(isEast \|\| isCollapsed\) return undefined/);
+  assert.match(noticeSource, /window\.setTimeout\(\(\) => \{\s*setIsCollapsed\(true\);\s*\}, WASH_NOTICE_AUTO_COLLAPSE_MS\)/);
+  assert.match(noticeSource, /return \(\) => window\.clearTimeout\(timer\)/);
+  assert.match(noticeSource, /\[isEast, isCollapsed\]/);
+});
+
+test("notice heading stays available as an accessible keyboard-operable reopen button", () => {
+  const noticeSource = pageSource.slice(pageSource.indexOf("function StablingWashNotice"), pageSource.indexOf("function StablingSection"));
+  assert.match(noticeSource, /HeaderTag = isEast \? "div" : "button"/);
+  assert.match(noticeSource, /onClick=\{isEast \? undefined : \(\) => setIsCollapsed\(\(collapsed\) => !collapsed\)\}/);
+  assert.match(noticeSource, /aria-expanded=\{isEast \? undefined : !isCollapsed\}/);
+  assert.match(noticeSource, /aria-controls=\{isEast \? undefined : noticeBodyId\}/);
+  assert.match(noticeSource, /id=\{noticeBodyId\} hidden=\{isCollapsed\}/);
+  assert.match(noticeSource, /Show West Depot notice for 3 seconds/);
+  assert.match(noticeSource, /cursor-pointer focus-visible:outline/);
+});
