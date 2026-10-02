@@ -1,12 +1,22 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil } from "lucide-react";
+import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil, TrainFront, Droplet, BriefcaseMedical, Cog, Building2, FileText } from "lucide-react";
 import ActionTooltip from "./ActionTooltip";
 import MaintenanceImageSummary from "./MaintenanceImageSummary";
 import { sortRequestsByStatusThenTrain } from "../utils/maintenanceRequestSort";
 import { groupRequestGroupsByCategory } from "../lib/requestedActionSummary";
 
 const MIN_VISIBLE_REQUEST_ROWS = 40;
+
+const REQUEST_CATEGORY_ICONS = {
+  washing: Droplet,
+  pm: TrainFront,
+  cm: Wrench,
+  tlc: BriefcaseMedical,
+  atc: Cog,
+  workshop: Building2,
+  others: FileText,
+};
 
 export const REQUEST_COLORS = {
   // Matched with DepotStabling.jsx MAINT_STYLES badgeBorder values.
@@ -1305,19 +1315,15 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     const confirmingDelete = confirmDeleteGroupKey === group.key;
     const deletingGroup = deletingGroupKey === group.key;
     const togglingGroup = togglingGroupKey === group.key;
-    const requestTypeLabel = displayType(group.items?.[0]) || group.label;
-    const cardVisual = getMainStablingCompactCardStyle(requestTypeLabel, requestTypeLabel, requestGroupColors);
-
     return (
       <div
         key={`${section}-${group.key}`}
-        className="space-y-[1px]"
+        className="theme-maintenance-request-group"
       >
         <div
-          className="theme-maintenance-request-card theme-maintenance-group-heading theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] w-full grid-cols-[minmax(0,1fr)_15px_15px_15px] items-center gap-1 overflow-visible rounded-md border pl-3 pr-1.5 text-left leading-none"
-          style={cardVisual.card}
+          className="theme-maintenance-group-heading theme-maintenance-request-bar grid min-h-[26px] w-full grid-cols-[minmax(0,1fr)_18px_18px_18px] items-center gap-1 overflow-visible pl-3 pr-1.5 text-left leading-none"
         >
-          <span className="min-w-0 truncate text-[12px] font-normal uppercase text-[#f8fbff]">
+          <span className="min-w-0 truncate text-[11px] font-semibold uppercase text-[#f8fbff]" title={group.label}>
             {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
           </span>
           <ActionTooltip
@@ -1429,10 +1435,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               return (
                 <div
                   key={`${section}-${group.key}-${req.id || req._tempId || chipLabel}`}
-                  className={`theme-maintenance-request-card theme-maintenance-train-row theme-train-rem-row-card theme-maintenance-summary-row grid h-[24px] ${expandedGridClass} items-center gap-[2px] overflow-visible rounded-md border px-1.5 leading-none transition-[border-color,background,box-shadow] duration-150`}
-                  style={{ ...cardVisual.card, marginLeft: "10px", width: "calc(100% - 10px)" }}
+                  className={`theme-maintenance-train-row theme-maintenance-request-line grid h-[24px] ${expandedGridClass} items-center gap-[2px] overflow-visible px-1.5 leading-none transition-colors duration-150`}
                 >
-                  <span className="truncate text-center text-[12px] font-semibold text-[#f8fbff]">{chipLabel}</span>
+                  <span className="truncate pl-1 text-left text-[12px] font-semibold text-[#f8fbff]">{chipLabel}</span>
                   <span className="min-w-0" aria-hidden="true" />
                   {showAlreadyStatusIcon ? (
                     <AlreadyStatusIcon message={statusMessage} reason={crossOutInfo.reason} />
@@ -1464,7 +1469,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const labelCls = "block text-[10px] font-semibold text-[#4a8ab5] uppercase tracking-widest mb-0.5";
 
   return (
-    <div className="theme-maintenance-panel relative overflow-visible bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shadow-md">
+    <div data-request-layout="modern" className="theme-maintenance-panel relative overflow-visible bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shadow-md">
       {/* Header */}
       <div className="theme-maintenance-header flex items-center gap-2.5 px-4 py-3 border-b border-[#1a3a56] rounded-t-xl" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
         <div className="w-6 h-6 rounded-md bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center">
@@ -1690,10 +1695,13 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       )}
 
       {/* Requests List */}
-      <div className="overflow-visible">
-        <div className="theme-maintenance-subheader flex items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#7eb8e0]">{listTitle}</span>
-          <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{regularRequests.length}</span>
+      <div className="theme-maintenance-request-list overflow-visible">
+        <div className="theme-maintenance-list-header flex items-center justify-between gap-2 px-3 py-2.5">
+          <h2 className="flex min-w-0 items-center gap-2 text-[12px] font-bold uppercase tracking-wide">
+            <TrainFront aria-hidden="true" className="h-5 w-5 shrink-0" />
+            <span>{listTitle}</span>
+          </h2>
+          <span className="theme-maintenance-list-count shrink-0 rounded-lg px-2 py-1 text-[12px] font-bold leading-none">{regularRequests.length}</span>
         </div>
 
         {regularRequestGroups.length === 0 ? (
@@ -1701,33 +1709,39 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             {requests.length === 0 ? "No requests yet" : "No train request"}
           </div>
         ) : (
-          <div className="grid gap-[9px] p-2.5">
-            {requestCategories.map((category) => (
-              <section
-                key={category.key}
-                aria-label={`${category.title} requests`}
-                className="theme-maintenance-category rounded-lg border"
-                style={{
-                  "--request-category-accent": category.accent,
-                  "--request-category-accent-rgb": category.accentRgb,
-                }}
-              >
-                <div className="theme-maintenance-category-heading flex min-h-7 items-center justify-between gap-1.5 rounded-t-lg px-2 py-1">
-                  <h3 className="min-w-0 text-[10px] font-bold uppercase leading-tight tracking-[0.04em]">
-                    {category.title}
-                  </h3>
-                  <span
-                    className="theme-maintenance-category-count shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-bold leading-none"
-                    aria-label={`${category.requestCount} request${category.requestCount === 1 ? "" : "s"}`}
-                  >
-                    {category.requestCount}
-                  </span>
-                </div>
-                <div className="grid gap-2 p-1.5">
-                  {renderRequestGroupCards(category.groups, { section: "pending" })}
-                </div>
-              </section>
-            ))}
+          <div className="theme-maintenance-categories grid gap-3 p-2.5">
+            {requestCategories.map((category) => {
+              const CategoryIcon = REQUEST_CATEGORY_ICONS[category.key];
+              return (
+                <section
+                  key={category.key}
+                  aria-label={`${category.title} requests`}
+                  className="theme-maintenance-category"
+                  style={{
+                    "--request-category-accent": category.accent,
+                    "--request-category-accent-rgb": category.accentRgb,
+                  }}
+                >
+                  <div className="theme-maintenance-category-heading flex min-h-8 items-center gap-1.5 rounded-md pr-2">
+                    <span className="theme-maintenance-category-icon flex h-8 w-7 shrink-0 items-center justify-center rounded-l-md" aria-hidden="true">
+                      <CategoryIcon className="h-4 w-4" strokeWidth={2} />
+                    </span>
+                    <h3 className="min-w-0 flex-1 text-[11px] font-bold uppercase leading-tight tracking-[0.02em]">
+                      {category.title}
+                    </h3>
+                    <span
+                      className="theme-maintenance-category-count flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1 text-[11px] font-bold leading-none"
+                      aria-label={`${category.requestCount} request${category.requestCount === 1 ? "" : "s"}`}
+                    >
+                      {category.requestCount}
+                    </span>
+                  </div>
+                  <div className="theme-maintenance-category-body grid gap-2 pb-1 pt-1">
+                    {renderRequestGroupCards(category.groups, { section: "pending" })}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         )}
       </div>

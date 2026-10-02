@@ -9030,37 +9030,152 @@ html[data-app-theme="light"] .theme-removal-log-card-body > div {
   color: #64748b !important;
 }
 
-/* Always-open category separators in the compact editable Train Request list. */
+/* Modern Train Request tree: one panel frame, colored bars and flat train rows. */
+.theme-maintenance-panel[data-request-layout="modern"] {
+  background: #061d30;
+  border-color: rgba(34, 211, 238, 0.65);
+  box-shadow: 0 0 14px rgba(14, 165, 233, 0.12), inset 0 0 16px rgba(14, 165, 233, 0.04);
+}
+
+.theme-maintenance-list-header {
+  color: #f0f9ff;
+  background: linear-gradient(90deg, #082a46, #061b2c);
+}
+
+.theme-maintenance-list-count {
+  color: #ffffff;
+  background: linear-gradient(135deg, #147bd7, #064b92);
+}
+
 .theme-maintenance-category {
-  border-color: rgba(var(--request-category-accent-rgb), 0.35);
-  background: rgba(7, 24, 40, 0.5);
+  border: 0;
+  background: transparent;
 }
 
 .theme-maintenance-category-heading {
-  border-left: 3px solid var(--request-category-accent);
-  border-bottom: 1px solid rgba(var(--request-category-accent-rgb), 0.25);
-  background: linear-gradient(90deg, rgba(var(--request-category-accent-rgb), 0.20), rgba(var(--request-category-accent-rgb), 0.05));
-  color: #eaf4ff;
+  background: linear-gradient(90deg, rgba(var(--request-category-accent-rgb), 0.52), rgba(var(--request-category-accent-rgb), 0.12));
+  color: #f0f9ff;
+  box-shadow: inset 3px 0 0 var(--request-category-accent), 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.theme-maintenance-category-icon {
+  color: #ffffff;
+  background: rgba(var(--request-category-accent-rgb), 0.35);
 }
 
 .theme-maintenance-category-count {
-  border-color: rgba(var(--request-category-accent-rgb), 0.5);
-  background: #0b2339;
-  color: var(--request-category-accent);
+  color: #ffffff;
+  background: rgba(var(--request-category-accent-rgb), 0.35);
+}
+
+.theme-maintenance-category-body {
+  position: relative;
+  --maintenance-tree-line: rgba(125, 175, 205, 0.25);
+}
+
+.theme-maintenance-category-body::before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 0;
+  bottom: 4px;
+  width: 1px;
+  background: var(--maintenance-tree-line);
+}
+
+.theme-maintenance-request-group {
+  position: relative;
+  margin-left: 18px;
+  min-width: 0;
+}
+
+.theme-maintenance-request-group::before {
+  content: "";
+  position: absolute;
+  left: -9px;
+  top: 13px;
+  width: 9px;
+  height: 1px;
+  background: var(--maintenance-tree-line);
+}
+
+.theme-maintenance-category .theme-maintenance-request-bar {
+  position: relative;
+  border: 0;
+  border-radius: 5px;
+  color: #f0f9ff;
+  background: linear-gradient(90deg, rgba(var(--request-category-accent-rgb), 0.13), rgba(8, 37, 59, 0.75));
+  box-shadow: inset 3px 0 0 var(--request-category-accent);
+}
+
+.theme-maintenance-category .theme-maintenance-request-line {
+  position: relative;
+  margin-left: 8px;
+  width: calc(100% - 8px);
+  border: 0;
+  border-bottom: 1px solid rgba(125, 175, 205, 0.08);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.theme-maintenance-request-line::before {
+  content: "";
+  position: absolute;
+  left: -17px;
+  top: 50%;
+  width: 17px;
+  height: 1px;
+  background: var(--maintenance-tree-line);
+}
+
+.theme-maintenance-category .theme-maintenance-request-line:hover,
+.theme-maintenance-category .theme-maintenance-request-line:focus-within {
+  background: rgba(56, 189, 248, 0.06);
+}
+
+html[data-app-theme="light"] .theme-maintenance-panel[data-request-layout="modern"] {
+  border-color: #67b2d5 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-list-header {
+  color: #0f172a;
+  background: linear-gradient(90deg, #e0f2fe, #f8fafc);
 }
 
 html[data-app-theme="light"] .theme-maintenance-category {
-  border-color: rgba(var(--request-category-accent-rgb), 0.65);
-  background: #ffffff;
+  background: transparent;
 }
 
 html[data-app-theme="light"] .theme-maintenance-category-heading {
   color: #0f172a;
+  background: linear-gradient(90deg, rgba(var(--request-category-accent-rgb), 0.25), rgba(var(--request-category-accent-rgb), 0.08));
+  box-shadow: inset 3px 0 0 var(--request-category-accent);
+}
+
+html[data-app-theme="light"] .theme-maintenance-category-icon,
+html[data-app-theme="light"] .theme-maintenance-category-icon *,
+html[data-app-theme="light"] .theme-maintenance-list-count {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-category-icon {
+  background: rgba(var(--request-category-accent-rgb), 0.85);
 }
 
 html[data-app-theme="light"] .theme-maintenance-category-count {
-  background: #ffffff;
-  color: #0f172a;
+  color: #0f172a !important;
+  background: rgba(var(--request-category-accent-rgb), 0.23);
+}
+
+html[data-app-theme="light"] .theme-maintenance-category-body {
+  --maintenance-tree-line: rgba(71, 110, 139, 0.23);
+}
+
+html[data-app-theme="light"] .theme-maintenance-panel .theme-maintenance-category .request-group-eye-status * {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
 }
 
 /* Request Summary by Type — distinct violet identity in both application themes. */
@@ -10463,6 +10578,25 @@ html[data-app-theme="light"] .theme-train-rem-copy.is-east.is-copied {
 html[data-app-theme="light"] .theme-maintenance-panel
 .theme-maintenance-group-heading > span:first-child {
   font-weight: 700 !important;
+}
+
+/* Keep the new tree rows flat despite older light-theme card overrides. */
+html[data-app-theme="light"] .theme-maintenance-panel .theme-maintenance-category .theme-maintenance-request-bar {
+  border: 0 !important;
+  background: linear-gradient(90deg, rgba(var(--request-category-accent-rgb), 0.14), #ffffff) !important;
+  box-shadow: inset 3px 0 0 var(--request-category-accent) !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-panel .theme-maintenance-category .theme-maintenance-request-line {
+  border: 0 !important;
+  border-bottom: 1px solid rgba(71, 110, 139, 0.10) !important;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-panel .theme-maintenance-category .theme-maintenance-request-line:is(:hover, :focus-within) {
+  background: #f0f9ff !important;
 }
 
 /* Removal Summary 7pm: keep special rows pastel in light mode. */
