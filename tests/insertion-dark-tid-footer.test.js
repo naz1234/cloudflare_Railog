@@ -36,9 +36,17 @@ test("dark TID footer overrides load after the light-only design", () => {
     darkTidFooterSource,
     /(?:^|})\s*\.theme-insertion-page/,
   );
+  const selectors = darkTidFooterSource.replace(/\/\*[\s\S]*?\*\//g, "")
+    .split("{").slice(0, -1).map((part) => part.slice(part.lastIndexOf("}") + 1).trim())
+    .filter((part) => part && !part.startsWith("@"))
+    .flatMap((part) => part.split(",").map((selector) => selector.trim()));
+  assert.ok(selectors.length > 0);
+  for (const selector of selectors) {
+    assert.ok(selector.startsWith('html[data-app-theme="dark"] '), selector);
+  }
 });
 
-test("completed dark-mode TIDs use the approved teal pill without changing its layout", () => {
+test("completed dark-mode TIDs use the original violet pill without changing its layout", () => {
   const railRule = extractRule(
     darkTidFooterSource,
     'html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete,',
@@ -50,7 +58,7 @@ test("completed dark-mode TIDs use the approved teal pill without changing its l
 
   assert.match(
     railRule,
-    /background: #146f65 !important/,
+    /background: linear-gradient\(180deg, #22233e 0%, #17192e 100%\) !important/,
   );
   assert.match(
     railRule,
@@ -58,9 +66,9 @@ test("completed dark-mode TIDs use the approved teal pill without changing its l
   );
   assert.match(
     darkTidFooterSource,
-    /\.theme-insertion-tracking-footer\.is-complete::before \{[\s\S]*content: "TID";[\s\S]*color: #99f6e4/,
+    /\.theme-insertion-tracking-footer\.is-complete::before \{[\s\S]*content: "TID";[\s\S]*color: #b5adf5/,
   );
-  assert.match(railRule, /border-color: #2dd4bf !important/);
+  assert.match(railRule, /border-color: #8f86d8 !important/);
   assert.match(railRule, /min-height: 26px/);
   assert.match(railRule, /padding: 3px 27px/);
   assert.match(railRule, /border-radius: 8px/);
@@ -81,7 +89,7 @@ test("dark semantic dots retain their status colour and stationary pulse", () =>
     ".theme-insertion-tracking-footer.is-complete.has-reference-style::after {",
   );
 
-  assert.match(fallbackRule, /background: var\(--insertion-tracking-reference-border, #99f6e4\)/);
+  assert.match(fallbackRule, /background: var\(--insertion-tracking-reference-border, #b5adf5\)/);
   assert.match(semanticDotRule, /opacity: 1/);
   assert.match(semanticDotRule, /filter: saturate\(1\.55\) brightness\(1\.04\) contrast\(1\.08\)/);
   assert.match(semanticDotRule, /animation: insertion-tid-status-pulse 1\.65s ease-in-out 220ms infinite backwards/);
@@ -102,15 +110,28 @@ test("dark semantic dots respect reduced-motion preferences", () => {
   );
 });
 
-test("pending dark-mode TIDs use amber with readable input and placeholder text", () => {
+test("pending dark-mode TIDs use cyan with readable input, focus and placeholder text", () => {
   const pendingRule = extractRule(darkTidFooterSource, '.theme-insertion-tracking-footer.is-editing {');
+  const focusRule = extractRule(darkTidFooterSource, '.theme-insertion-tracking-footer.is-editing:focus-within {');
   const inputRule = extractRule(darkTidFooterSource, '.theme-insertion-tracking-footer.is-editing input.theme-insertion-tid-input {');
   const placeholderRule = extractRule(darkTidFooterSource, 'input.theme-insertion-tid-input::placeholder {');
+  assert.match(pendingRule, /border-color: #38bdf8 !important/);
+  assert.match(pendingRule, /background: #0c334d !important/);
+  assert.match(focusRule, /border-color: #67e8f9 !important/);
+  assert.match(focusRule, /rgba\(56, 189, 248, 0\.18\)/);
+  assert.match(inputRule, /color: #bae6fd !important/);
+  assert.match(inputRule, /-webkit-text-fill-color: #bae6fd !important/);
+  assert.match(placeholderRule, /color: #bae6fd !important/);
+});
+
+test("light-mode pills keep the existing teal and amber palette", () => {
+  const addedRule = extractRule(lightTidFooterSource, '.theme-insertion-tracking-footer.is-complete,');
+  const pendingRule = extractRule(lightTidFooterSource, '.theme-insertion-tracking-footer.is-editing {');
+  assert.match(addedRule, /border-color: #2dd4bf !important/);
+  assert.match(addedRule, /background: #146f65 !important/);
   assert.match(pendingRule, /border-color: #fbbf24 !important/);
   assert.match(pendingRule, /background: #5b3b0c !important/);
-  assert.match(inputRule, /color: #fde68a !important/);
-  assert.match(inputRule, /-webkit-text-fill-color: #fde68a !important/);
-  assert.match(placeholderRule, /color: #fde68a !important/);
+  assert.doesNotMatch(lightTidFooterSource, /#0c334d|#22233e|#17192e/);
 });
 
 test("tracking-pill text meets small-text contrast without recolouring cards or remarks", () => {
@@ -119,8 +140,9 @@ test("tracking-pill text meets small-text contrast without recolouring cards or 
     return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
   }).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
   const contrast = (text, background) => (luminance(text) + 0.05) / (luminance(background) + 0.05);
-  assert.ok(contrast('#f4f8fc', '#146f65') >= 4.5);
-  assert.ok(contrast('#ffffff', '#146f65') >= 4.5);
-  assert.ok(contrast('#fde68a', '#5b3b0c') >= 4.5);
+  assert.ok(contrast('#f4f8fc', '#22233e') >= 4.5);
+  assert.ok(contrast('#f4f8fc', '#17192e') >= 4.5);
+  assert.ok(contrast('#b5adf5', '#22233e') >= 4.5);
+  assert.ok(contrast('#bae6fd', '#0c334d') >= 4.5);
   assert.doesNotMatch(darkTidFooterSource, /theme-insertion-card|theme-stabling-remark/);
 });
