@@ -8486,7 +8486,7 @@ html[data-app-theme="light"] .theme-movement-sheet-action {
   }
   50% {
     transform: translateY(-1px) scale(1.045);
-    filter: brightness(1.18) drop-shadow(0 0 6px rgba(56, 189, 248, 0.88));
+    filter: brightness(1.18) drop-shadow(0 0 6px var(--movement-add-row-attention-glow, rgba(56, 189, 248, 0.88)));
   }
 }
 
@@ -12742,7 +12742,13 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-foo
   50% { box-shadow: 0 0 22px rgba(249, 115, 22, 0.56), 0 0 7px rgba(239, 68, 68, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18); }
 }
 
-.theme-insertion-page .theme-insertion-refresh-button.is-dirty,
+.theme-insertion-page .theme-insertion-refresh-button.is-dirty {
+  --movement-add-row-attention-glow: rgba(249, 115, 22, 0.88);
+  transform-origin: center;
+  animation: movement-add-row-attention 1.55s ease-in-out infinite;
+  will-change: transform, filter;
+}
+
 .theme-pst-section .theme-insertion-refresh-button.is-dirty {
   animation: insertion-refresh-dirty-pulse 1.25s ease-in-out infinite;
 }
@@ -12766,6 +12772,9 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-tracking-foo
 .theme-insertion-page .theme-insertion-refresh-button.is-dirty .theme-insertion-refresh-icon {
   color: #fde047;
   filter: drop-shadow(0 0 3px rgba(251, 146, 60, 0.78));
+  transform-origin: center;
+  animation: movement-add-row-icon-attention 1.55s ease-in-out infinite;
+  will-change: transform;
 }
 
 .theme-insertion-page .theme-insertion-history-button:disabled,
@@ -12807,9 +12816,16 @@ html[data-app-theme="light"] .theme-pst-section .theme-insertion-refresh-button.
 
 @media (prefers-reduced-motion: reduce) {
   .theme-insertion-page .theme-insertion-refresh-button.is-dirty,
+  .theme-insertion-page .theme-insertion-refresh-icon,
   .theme-insertion-page .theme-insertion-refresh-fire,
   .theme-pst-section .theme-insertion-refresh-button.is-dirty,
   .theme-pst-section .theme-insertion-refresh-fire {
     animation: none !important;
+  }
+
+  .theme-insertion-page .theme-insertion-refresh-button.is-dirty,
+  .theme-insertion-page .theme-insertion-refresh-icon {
+    transform: none !important;
+    will-change: auto;
   }
 }

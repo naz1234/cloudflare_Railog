@@ -50,7 +50,8 @@ test("Insertion Refresh keeps its warning glow with a circular arrow icon", () =
   assert.match(pageSource, /westInsertionStablingDirty = !insertionStablingTrainPositionsMatch/);
   assert.match(pageSource, /eastInsertionStablingDirty = !insertionStablingTrainPositionsMatch/);
   assert.match(stylesheetSource, /\.theme-insertion-page \.theme-insertion-refresh-button\.is-dirty \.theme-insertion-refresh-icon \{\s*color: #fde047;/);
-  assert.match(stylesheetSource, /\.theme-insertion-refresh-button\.is-dirty[\s\S]*animation: insertion-refresh-dirty-pulse/);
+  assert.match(stylesheetSource, /\.theme-insertion-page \.theme-insertion-refresh-button\.is-dirty \{[\s\S]*?--movement-add-row-attention-glow: rgba\(249, 115, 22, 0\.88\);[\s\S]*?animation: movement-add-row-attention 1\.55s ease-in-out infinite/);
+  assert.match(stylesheetSource, /\.theme-insertion-page \.theme-insertion-refresh-button\.is-dirty \.theme-insertion-refresh-icon \{[\s\S]*?animation: movement-add-row-icon-attention 1\.55s ease-in-out infinite/);
   assert.match(stylesheetSource, /@media \(prefers-reduced-motion: reduce\)[\s\S]*theme-insertion-refresh-button\.is-dirty[\s\S]*animation: none !important/);
 });
 
