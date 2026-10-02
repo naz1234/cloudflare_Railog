@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Redo2, Flame, Download, Search, ArrowUp, ArrowDown, Check, Sun, Moon, TrainFront, Clock3, RefreshCw } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Redo2, Download, Search, ArrowUp, ArrowDown, Check, Sun, Moon, TrainFront, Clock3, RefreshCw } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
@@ -5183,7 +5183,6 @@ function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoSt
           <InsertionEditableHeaderControls
             depotCode={sectionDepotLabel === "West Depot" ? "WD" : "ED"}
             workLabel="PST / Train Prep"
-            refreshIcon="flame"
             onRefresh={onRefreshStabling}
             onUndo={onUndoStabling}
             onRedo={onRedoStabling}
@@ -5949,7 +5948,6 @@ function InsertionSectionTitle({ title, leftAction = null, action = null }) {
 function InsertionEditableHeaderControls({
   depotCode,
   workLabel = "insertion",
-  refreshIcon = "refresh",
   onRefresh,
   onUndo,
   onRedo,
@@ -6012,11 +6010,7 @@ function InsertionEditableHeaderControls({
             boxShadow: "0 0 16px rgba(249,115,22,0.38), inset 0 1px 0 rgba(255,255,255,0.12)",
           } : undefined}
         >
-          {isDirty && refreshIcon === "flame" ? (
-            <Flame className="theme-insertion-refresh-fire h-3.5 w-3.5" aria-hidden="true" />
-          ) : (
-            <RefreshCw className={`theme-insertion-refresh-icon ${isDirty ? "h-3.5 w-3.5" : "h-3 w-3"}`} aria-hidden="true" />
-          )}
+          <RefreshCw className={`theme-insertion-refresh-icon ${isDirty ? "h-3.5 w-3.5" : "h-3 w-3"}`} aria-hidden="true" />
           Refresh
         </button>
       </ActionTooltip>
