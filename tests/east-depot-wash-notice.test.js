@@ -40,16 +40,46 @@ test("Train Request renders the weekend message only through the West condition"
   assert.match(pageSource, /theme-west-depot-weekend-wash-notice/);
 });
 
-test("East and West wash notices use the amber Access Entry window treatment only in night mode", () => {
+test("East wash notice retains the amber treatment only in night mode", () => {
   const css = fs.readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
-  assert.match(css, /html\[data-app-theme="dark"\] :is\(\s*\.theme-east-depot-wash-notice,\s*\.theme-west-depot-weekend-wash-notice\s*\)/);
-  assert.match(css, /background: #3a2608 !important/);
-  assert.match(css, /border-color: #fbbf24 !important/);
+  assert.match(css, /html\[data-app-theme="dark"\] \.theme-east-depot-wash-notice \{[^}]*background: #3a2608 !important;[^}]*border-color: #fbbf24 !important/);
   assert.match(css, /theme-stabling-wash-notice-header/);
   assert.match(css, /background: linear-gradient\(180deg, #654414 0%, #452d0b 100%\) !important/);
   assert.match(pageSource, /theme-stabling-wash-notice-title/);
   assert.match(pageSource, /theme-stabling-wash-notice-body/);
   assert.match(pageSource, /theme-stabling-wash-notice-icon/);
+});
+
+test("West night-mode notice matches the added Tracking ID violet palette without changing light mode", () => {
+  const css = fs.readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
+  const tidCss = fs.readFileSync(new URL("../src/insertionDarkTidFooter.css", import.meta.url), "utf8");
+  const extractRule = (source, selector) => {
+    const start = source.indexOf(selector);
+    assert.ok(start >= 0, selector);
+    return source.slice(start, source.indexOf("}", start) + 1);
+  };
+  const noticeRule = extractRule(css, 'html[data-app-theme="dark"] .theme-west-depot-weekend-wash-notice {');
+  const tidRule = extractRule(tidCss, 'html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete,');
+  for (const declaration of [
+    'background: linear-gradient(180deg, #22233e 0%, #17192e 100%) !important;',
+    'border-color: #8f86d8 !important;',
+    'color: #f4f8fc !important;',
+  ]) {
+    assert.ok(noticeRule.includes(declaration), declaration);
+    assert.ok(tidRule.includes(declaration), declaration);
+  }
+  const header = extractRule(css, 'html[data-app-theme="dark"] .theme-west-depot-weekend-wash-notice .theme-stabling-wash-notice-header {');
+  const title = extractRule(css, 'html[data-app-theme="dark"] .theme-west-depot-weekend-wash-notice .theme-stabling-wash-notice-title {');
+  const icon = extractRule(css, 'html[data-app-theme="dark"] .theme-west-depot-weekend-wash-notice .theme-stabling-wash-notice-icon {');
+  assert.match(header, /background: linear-gradient\(180deg, #22233e 0%, #17192e 100%\) !important/);
+  assert.match(title, /color: #b5adf5 !important/);
+  assert.match(icon, /border-color: #8f86d8 !important/);
+  assert.doesNotMatch(noticeRule + header + title + icon, /#fbbf24|#654414|#452d0b|#3a2608/);
+  const westSelectors = css.replace(/\/\*[\s\S]*?\*\//g, "").split("{")
+    .slice(0, -1).map((part) => part.slice(part.lastIndexOf("}") + 1).trim())
+    .filter((selector) => selector.includes("theme-west-depot-weekend-wash-notice"));
+  assert.equal(westSelectors.length, 4);
+  assert.ok(westSelectors.every((selector) => selector.startsWith('html[data-app-theme="dark"] ')));
 });
 
 test("West notice follows the inclusive 09:00 to 16:00 local-time window", () => {

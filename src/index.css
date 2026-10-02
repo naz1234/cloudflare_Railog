@@ -738,11 +738,8 @@ html[data-app-theme="dark"] .theme-stabling-remark {
   font-weight: 400 !important;
 }
 
-/* East and West wash notices use the amber Access Entry window treatment in night mode only. */
-html[data-app-theme="dark"] :is(
-  .theme-east-depot-wash-notice,
-  .theme-west-depot-weekend-wash-notice
-) {
+/* The East wash notice retains its amber treatment in night mode only. */
+html[data-app-theme="dark"] .theme-east-depot-wash-notice {
   background: #3a2608 !important;
   border-color: #fbbf24 !important;
   box-shadow: 0 8px 20px rgba(251, 191, 36, 0.17), inset 3px 0 0 #fbbf24 !important;
@@ -750,29 +747,45 @@ html[data-app-theme="dark"] :is(
   -webkit-text-fill-color: #fef3c7 !important;
 }
 
-html[data-app-theme="dark"] :is(
-  .theme-east-depot-wash-notice,
-  .theme-west-depot-weekend-wash-notice
-) .theme-stabling-wash-notice-header {
+html[data-app-theme="dark"] .theme-east-depot-wash-notice .theme-stabling-wash-notice-header {
   background: linear-gradient(180deg, #654414 0%, #452d0b 100%) !important;
   border-color: rgba(251, 191, 36, 0.7) !important;
 }
 
-html[data-app-theme="dark"] :is(
-  .theme-east-depot-wash-notice,
-  .theme-west-depot-weekend-wash-notice
-) .theme-stabling-wash-notice-title {
+html[data-app-theme="dark"] .theme-east-depot-wash-notice .theme-stabling-wash-notice-title {
   color: #fde68a !important;
   -webkit-text-fill-color: #fde68a !important;
 }
 
-html[data-app-theme="dark"] :is(
-  .theme-east-depot-wash-notice,
-  .theme-west-depot-weekend-wash-notice
-) .theme-stabling-wash-notice-icon {
+html[data-app-theme="dark"] .theme-east-depot-wash-notice .theme-stabling-wash-notice-icon {
   background: #452d0b !important;
   border-color: #fbbf24 !important;
   color: #fde68a !important;
+}
+
+/* West Depot matches the added Tracking ID violet palette; light mode is unchanged. */
+html[data-app-theme="dark"] .theme-west-depot-weekend-wash-notice {
+  background: linear-gradient(180deg, #22233e 0%, #17192e 100%) !important;
+  border-color: #8f86d8 !important;
+  box-shadow: 0 8px 20px rgba(143, 134, 216, 0.17), inset 3px 0 0 #8f86d8 !important;
+  color: #f4f8fc !important;
+  -webkit-text-fill-color: #f4f8fc !important;
+}
+
+html[data-app-theme="dark"] .theme-west-depot-weekend-wash-notice .theme-stabling-wash-notice-header {
+  background: linear-gradient(180deg, #22233e 0%, #17192e 100%) !important;
+  border-color: rgba(143, 134, 216, 0.7) !important;
+}
+
+html[data-app-theme="dark"] .theme-west-depot-weekend-wash-notice .theme-stabling-wash-notice-title {
+  color: #b5adf5 !important;
+  -webkit-text-fill-color: #b5adf5 !important;
+}
+
+html[data-app-theme="dark"] .theme-west-depot-weekend-wash-notice .theme-stabling-wash-notice-icon {
+  background: #17192e !important;
+  border-color: #8f86d8 !important;
+  color: #b5adf5 !important;
 }
 
 /* Stabling remark tooltip: portal-based so it is never clipped by a train card. */
