@@ -48,6 +48,11 @@ function formatAccessReferences(numbers) {
   return `Access ${references.slice(0, -1).join(", ")} and ${references.at(-1)}`;
 }
 
+function getTimedLineMinutes(line) {
+  const match = line.match(/^(\d{2}):(\d{2}) hrs/);
+  return match ? Number(match[1]) * 60 + Number(match[2]) : Infinity;
+}
+
 export function buildPossessionEntryOutput(entry, formatTime) {
   const f = normalizePossessionAccessEntry(entry);
   const header = [];
@@ -76,15 +81,16 @@ export function buildPossessionEntryOutput(entry, formatTime) {
   if (f.scd === "Yes" && (f.scdApplyTime || f.scdRemTime || f.scdLoc)) {
     const applyT = formatTime(f.scdApplyTime);
     const remT = formatTime(f.scdRemTime);
-    let scdLine = "";
-    if (applyT) scdLine += `${applyT} - SCD applied${f.scdLoc ? ` at ${f.scdLoc}` : ""}.`;
-    if (remT) scdLine += ` At ${remT} SCD confirmed removed.`;
-    if (scdLine) events.push(scdLine.trim());
+    // Separate events so an issue/handback time can fall between application and removal.
+    if (applyT) events.push(`${applyT} - SCD applied${f.scdLoc ? ` at ${f.scdLoc}` : ""}.`);
+    if (remT) events.push(`${remT} - SCD confirmed removed.`);
   }
   const accessReferences = formatAccessReferences(accessNumbers);
   const issueT = formatTime(f.issueTime);
   if (issueT && accessNumbers.length) events.push(`${issueT} - CMMS updated to ISSUED (${accessReferences})`);
   const handbackT = formatTime(f.handbackTime);
   if (handbackT && accessNumbers.length) events.push(`${handbackT} - CMMS updated to COMP (${accessReferences})`);
+  // Stable ascending 24-hour order; equal-time events retain their original order.
+  events.sort((left, right) => getTimedLineMinutes(left) - getTimedLineMinutes(right));
   return [header.join("\n"), events.join("\n")].filter(Boolean).join("\n\n");
 }
