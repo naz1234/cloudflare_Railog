@@ -150,14 +150,15 @@ export function getRequestedSummaryWorkshopMovementDirection(value = "") {
   return "";
 }
 
+// Operational display priority: workshop first, washing last.
 export const REQUEST_CATEGORY_DEFINITIONS = [
-  { key: "washing", title: "Washing", accent: "#34d399", accentRgb: "52, 211, 153" },
+  { key: "workshop", title: "Workshop Movement", accent: "#c084fc", accentRgb: "192, 132, 252" },
   { key: "pm", title: "PM", accent: "#60a5fa", accentRgb: "96, 165, 250" },
   { key: "cm", title: "CM", accent: "#22d3ee", accentRgb: "34, 211, 238" },
-  { key: "tlc", title: "TLC Req", accent: "#f472b6", accentRgb: "244, 114, 182" },
   { key: "atc", title: "ATC Req", accent: "#fbbf24", accentRgb: "251, 191, 36" },
-  { key: "workshop", title: "Workshop Movement", accent: "#c084fc", accentRgb: "192, 132, 252" },
+  { key: "tlc", title: "TLC Req", accent: "#f472b6", accentRgb: "244, 114, 182" },
   { key: "others", title: "Other Remarks", accent: "#94a3b8", accentRgb: "148, 163, 184" },
+  { key: "washing", title: "Washing", accent: "#34d399", accentRgb: "52, 211, 153" },
 ];
 
 // Shared by the summary sentences and the editable request-group list.

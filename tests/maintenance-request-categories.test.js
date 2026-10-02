@@ -32,19 +32,35 @@ test("category grouping preserves every row, group control data and within-group
   const other = { key: "other", label: "DEEP CLEAN", items: [{ id: "o1", trainId: "T40" }] };
   const groups = [atc, other, washOne, washTwo];
   const categories = groupRequestGroupsByCategory(groups);
-  assert.deepEqual(categories.map(({ key, requestCount }) => [key, requestCount]), [["washing", 3], ["atc", 1], ["others", 1]]);
-  assert.deepEqual(categories[0].groups, [washOne, washTwo]);
-  assert.equal(categories[0].groups[0], washOne);
-  assert.equal(categories[0].groups[0].items, washItems);
-  assert.equal(categories[0].groups[0].hidden, true);
+  assert.deepEqual(categories.map(({ key, requestCount }) => [key, requestCount]), [["atc", 1], ["others", 1], ["washing", 3]]);
+  const washing = categories.find(({ key }) => key === "washing");
+  assert.deepEqual(washing.groups, [washOne, washTwo]);
+  assert.equal(washing.groups[0], washOne);
+  assert.equal(washing.groups[0].items, washItems);
+  assert.equal(washing.groups[0].hidden, true);
   assert.deepEqual(categories.flatMap(({ groups }) => groups).map(({ key }) => key).sort(), ["atc", "other", "wash1", "wash2"]);
   assert.equal(categories.reduce((sum, { requestCount }) => sum + requestCount, 0), 5);
 });
 
-test("empty categories are omitted and all seven populated categories use summary order", () => {
+test("empty categories are omitted and populated categories use operational priority order", () => {
   assert.deepEqual(groupRequestGroupsByCategory(), []);
   assert.deepEqual(groupRequestGroupsByCategory([null, { label: "WASH", items: [] }]), []);
   const labels = ["SET 25C", "G-C", "ATC", "TLC", "RST CM", "RST PM", "WASH"];
   const categories = groupRequestGroupsByCategory(labels.map((label) => ({ label, items: [{}] })));
-  assert.deepEqual(categories.map(({ title }) => title), ["Washing", "PM", "CM", "TLC Req", "ATC Req", "Workshop Movement", "Other Remarks"]);
+  assert.deepEqual(categories.map(({ title }) => title), ["Workshop Movement", "PM", "CM", "ATC Req", "TLC Req", "Other Remarks", "Washing"]);
+});
+
+test("workshop remains first and washing last regardless of input order or missing categories", () => {
+  const cases = [
+    [["WASH", "TLC", "RST PM", "G-C"], ["workshop", "pm", "tlc", "washing"]],
+    [["RST CM", "ATC", "SET 25C", "WASH", "G-C"], ["workshop", "cm", "atc", "others", "washing"]],
+    [["WASH", "ATC", "RST PM"], ["pm", "atc", "washing"]],
+    [["SET 25C", "TLC", "G-C"], ["workshop", "tlc", "others"]],
+  ];
+  for (const [labels, expected] of cases) {
+    for (const input of [labels, [...labels].reverse()]) {
+      const categories = groupRequestGroupsByCategory(input.map((label) => ({ label, items: [{}] })));
+      assert.deepEqual(categories.map(({ key }) => key), expected);
+    }
+  }
 });
