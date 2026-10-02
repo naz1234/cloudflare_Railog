@@ -1,14 +1,14 @@
-/* Teal means a Tracking ID has been added; amber means it is still pending.
+/* Night-mode Option A: original violet for added IDs; cyan for pending IDs.
  * Keep the existing pill geometry and semantic timetable dots unchanged. */
 html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete,
 html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style {
   position: relative;
   min-height: 26px;
   padding: 3px 27px;
-  border-color: #2dd4bf !important;
+  border-color: #8f86d8 !important;
   border-radius: 8px;
   color: #f4f8fc !important;
-  background: #146f65 !important;
+  background: linear-gradient(180deg, #22233e 0%, #17192e 100%) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
     0 2px 4px rgba(0, 0, 0, 0.35) !important;
@@ -20,7 +20,7 @@ html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-foot
   left: 7px;
   top: 50%;
   transform: translateY(-50%);
-  color: #99f6e4;
+  color: #b5adf5;
   font-size: 8px;
   font-weight: 900;
   line-height: 1;
@@ -37,12 +37,12 @@ html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-foot
   transform: translateY(-50%);
   border: 1px solid rgba(237, 233, 254, 0.68);
   border-radius: 999px;
-  background: var(--insertion-tracking-reference-border, #99f6e4);
-  box-shadow: 0 0 0 2px rgba(153, 246, 228, 0.08);
+  background: var(--insertion-tracking-reference-border, #b5adf5);
+  box-shadow: 0 0 0 2px rgba(181, 173, 245, 0.08);
 }
 
 /* Semantic dots share the MASPO upload glow cadence and never change position.
- * The unmatched mint fallback remains static. */
+ * The unmatched violet fallback remains static. */
 html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-complete.has-reference-style::after {
   width: 8px;
   height: 8px;
@@ -59,25 +59,25 @@ html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-foot
 }
 
 html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-editing {
-  border-color: #fbbf24 !important;
-  color: #fde68a !important;
-  background: #5b3b0c !important;
+  border-color: #38bdf8 !important;
+  color: #bae6fd !important;
+  background: #0c334d !important;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28) !important;
 }
 
 html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-editing:focus-within {
-  border-color: #fde68a !important;
-  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.18) !important;
+  border-color: #67e8f9 !important;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18) !important;
 }
 
 html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-editing input.theme-insertion-tid-input {
-  color: #fde68a !important;
-  -webkit-text-fill-color: #fde68a !important;
+  color: #bae6fd !important;
+  -webkit-text-fill-color: #bae6fd !important;
 }
 
 html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer input.theme-insertion-tid-input::placeholder {
-  color: #fde68a !important;
-  -webkit-text-fill-color: #fde68a !important;
+  color: #bae6fd !important;
+  -webkit-text-fill-color: #bae6fd !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
