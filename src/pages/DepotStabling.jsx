@@ -20,7 +20,6 @@ import ChecklistWorkspace from "../components/ChecklistWorkspace";
 import AboutWorkspace from "../components/AboutWorkspace";
 import SleepModeWorkspace from "../components/SleepModeWorkspace";
 import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator";
-import OccBriefingFormSigner from "../components/OccBriefingFormSigner";
 import RemovalPdfEditor from "../components/depot/RemovalPdfEditor";
 import EastNineAmRemovalPdfEditor from "../components/depot/EastNineAmRemovalPdfEditor";
 import { SessionPresenceControl } from "../components/ProtectedRoute";
@@ -22534,18 +22533,6 @@ export default function DepotStablingPage() {
           activeTimetable,
           westData,
         )}
-      />
-
-      <OccBriefingFormSigner />
-
-      <TrainRequestedNotInRemoval
-        requests={requests}
-        trainRemState={trainRemCheckState}
-        maintenanceMap={maintenanceMap}
-        westData={westData}
-        eastData={eastData}
-        activeTimetable={activeTimetable}
-        activeTimetableType={selectedTimetableType}
       />
 
     </div>

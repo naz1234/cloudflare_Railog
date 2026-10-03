@@ -237,10 +237,11 @@ test("duplicate sign-ins and full OCC forms never overwrite existing staff", asy
   await assert.rejects(signOccBriefingWorkbook(signOptions(sampleWorkbook({ occupiedRows: 3 }))), /All OCC sign-in rows are already occupied/);
 });
 
-test("OCC row copy appears below the Next Day Excel Generator without requiring an Excel upload", () => {
+test("OCC row copy is not mounted on the Train Request page; its standalone clipboard helpers remain available", () => {
   const page = readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
   const panel = readFileSync(new URL("../src/components/OccBriefingFormSigner.jsx", import.meta.url), "utf8");
-  assert.match(page, /<OfficialEastExcelGenerator[\s\S]*?<OccBriefingFormSigner\s*\/>\s*<TrainRequestedNotInRemoval/);
+  assert.doesNotMatch(page, /<OccBriefingFormSigner\b/);
+  assert.doesNotMatch(page, /import\s+OccBriefingFormSigner\b/);
   assert.match(panel, /Copy C:L Excel Row/);
   assert.match(panel, /C ID · D:F Name · G Position · H Time in · I Time out · J:L Signature/);
   assert.match(panel, /buildOccBriefingClipboardText/);
