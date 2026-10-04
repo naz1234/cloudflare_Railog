@@ -19,7 +19,19 @@ test("the popup keeps the exact existing swapping, insertion and removal icons",
     assert.ok(styles.includes(`content: "${option.icon}";`));
   }
   assert.match(componentSource, /MOVEMENT_TYPE_OPTIONS\.map\(\(option\) =>/);
-  assert.match(componentSource, /className="theme-movement-type-option-icon" aria-hidden="true">\{option\.icon\}/);
+  assert.match(componentSource, /className="theme-movement-type-option-icon" aria-hidden="true">\s*<span className="theme-movement-type-option-symbol">\{option\.icon\}<\/span>/);
+});
+
+test("popup icons reuse the selected type's exact animation names and 2.8-second rhythm", () => {
+  assert.match(styles, /\.theme-movement-type-option-symbol\s*\{[^}]*position: absolute;[^}]*top: 50%;[^}]*animation: movement-type-swap 2\.8s ease-in-out infinite;/);
+  assert.match(styles, /\.theme-movement-type-option\[data-movement-type="insertion"\] \.theme-movement-type-option-symbol\s*\{\s*animation-name: movement-type-enter;/);
+  assert.match(styles, /\.theme-movement-type-option\[data-movement-type="removal"\] \.theme-movement-type-option-symbol\s*\{\s*animation-name: movement-type-exit;/);
+  assert.match(styles, /\.theme-movement-type-option-icon\s*\{[^}]*flex: 0 0 18px;[^}]*height: 18px;/);
+  assert.match(styles, /html\[data-app-theme="light"\] \.theme-movement-type-option-symbol,[^]*?color: var\(--movement-option-accent\) !important;/);
+});
+
+test("popup motion is disabled for reduced-motion users without hiding or shifting icons", () => {
+  assert.match(styles, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.theme-movement-type-option-symbol\s*\{\s*animation: none !important;\s*transform: translateY\(-50%\);\s*opacity: 1;\s*will-change: auto;/);
 });
 
 test("every selected type keeps its label and the trigger is an accessible select control", () => {
