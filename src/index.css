@@ -8922,6 +8922,7 @@ html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2) >
   top: 50%;
   left: 0;
   width: 100%;
+  text-shadow: 0 0 7px var(--movement-option-accent);
   pointer-events: none;
   will-change: transform, opacity;
   animation: movement-type-swap 2.8s ease-in-out infinite;
