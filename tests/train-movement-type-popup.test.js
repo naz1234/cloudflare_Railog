@@ -34,6 +34,15 @@ test("popup motion is disabled for reduced-motion users without hiding or shifti
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.theme-movement-type-option-symbol\s*\{\s*animation: none !important;\s*transform: translateY\(-50%\);\s*opacity: 1;\s*will-change: auto;/);
 });
 
+test("popup icons have the same coloured 7px glow as the selected table icons", () => {
+  const tableIconRule = styles.match(/\.theme-movement-sheet-table tbody td:nth-child\(2\)::before\s*\{([^}]*)\}/)[1];
+  const popupIconRule = styles.match(/\.theme-movement-type-option-symbol\s*\{([^}]*)\}/)[1];
+  const tableGlow = tableIconRule.match(/text-shadow:\s*([^;]+);/)[1];
+  const popupGlow = popupIconRule.match(/text-shadow:\s*([^;]+);/)[1];
+  assert.equal(popupGlow, tableGlow.replace("--movement-type-accent", "--movement-option-accent"));
+  assert.equal(popupGlow, "0 0 7px var(--movement-option-accent)");
+});
+
 test("every selected type keeps its label and the trigger is an accessible select control", () => {
   const selectionSource = componentSource.match(/const selected = ([^;]+);/)[1];
   const selectOption = new Function("value", "MOVEMENT_TYPE_OPTIONS", `return ${selectionSource};`);
