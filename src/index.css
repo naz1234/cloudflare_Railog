@@ -8907,11 +8907,32 @@ html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2) >
 
 .theme-movement-type-option-icon {
   flex: 0 0 18px;
+  position: relative;
+  height: 18px;
   text-align: center;
   color: var(--movement-option-accent);
   font-size: 18px;
   font-weight: 900;
   line-height: 1;
+}
+
+/* Use the selected table icon's exact motion while choosing from the popup. */
+.theme-movement-type-option-symbol {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: movement-type-swap 2.8s ease-in-out infinite;
+}
+
+.theme-movement-type-option[data-movement-type="insertion"] .theme-movement-type-option-symbol {
+  animation-name: movement-type-enter;
+}
+
+.theme-movement-type-option[data-movement-type="removal"] .theme-movement-type-option-symbol {
+  animation-name: movement-type-exit;
 }
 
 .theme-movement-type-option-check {
@@ -8940,12 +8961,20 @@ html[data-app-theme="light"] .theme-movement-type-option[data-movement-type="rem
 }
 
 html[data-app-theme="light"] .theme-movement-type-option-icon,
+html[data-app-theme="light"] .theme-movement-type-option-symbol,
 html[data-app-theme="light"] .theme-movement-type-option-check,
 html[data-app-theme="light"] .theme-movement-type-option-check svg {
   color: var(--movement-option-accent) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .theme-movement-type-option-symbol {
+    animation: none !important;
+    transform: translateY(-50%);
+    opacity: 1;
+    will-change: auto;
+  }
+
   .theme-movement-sheet-table tbody td:nth-child(2)::before {
     animation: none !important;
     transform: translateY(-50%);

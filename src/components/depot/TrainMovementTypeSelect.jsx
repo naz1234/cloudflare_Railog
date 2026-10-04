@@ -37,7 +37,9 @@ export default function TrainMovementTypeSelect({ value = "swapping", onValueCha
                 data-movement-type={option.value}
                 textValue={option.label}
               >
-                <span className="theme-movement-type-option-icon" aria-hidden="true">{option.icon}</span>
+                <span className="theme-movement-type-option-icon" aria-hidden="true">
+                  <span className="theme-movement-type-option-symbol">{option.icon}</span>
+                </span>
                 <SelectPrimitive.ItemText>{option.label}</SelectPrimitive.ItemText>
                 <SelectPrimitive.ItemIndicator className="theme-movement-type-option-check">
                   <Check size={14} strokeWidth={2.5} aria-hidden="true" />
