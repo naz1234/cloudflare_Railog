@@ -8708,13 +8708,13 @@ html[data-app-theme="light"] .theme-movement-status[data-status="draft"] {
   transition: background 180ms ease, box-shadow 180ms ease;
 }
 
-.theme-movement-sheet-table tbody td:nth-child(2):has(> select option[value="insertion"]:checked) {
+.theme-movement-sheet-table tbody td:nth-child(2):has(> .theme-movement-type-trigger[data-movement-type="insertion"]) {
   --movement-type-accent: #4ade80;
   --movement-type-fill: rgba(34, 197, 94, 0.12);
   --movement-type-text: #bbf7d0;
 }
 
-.theme-movement-sheet-table tbody td:nth-child(2):has(> select option[value="removal"]:checked) {
+.theme-movement-sheet-table tbody td:nth-child(2):has(> .theme-movement-type-trigger[data-movement-type="removal"]) {
   --movement-type-accent: #fb7185;
   --movement-type-fill: rgba(244, 63, 94, 0.12);
   --movement-type-text: #fecdd3;
@@ -8738,12 +8738,12 @@ html[data-app-theme="light"] .theme-movement-status[data-status="draft"] {
   animation: movement-type-swap 2.8s ease-in-out infinite;
 }
 
-.theme-movement-sheet-table tbody td:nth-child(2):has(> select option[value="insertion"]:checked)::before {
+.theme-movement-sheet-table tbody td:nth-child(2):has(> .theme-movement-type-trigger[data-movement-type="insertion"])::before {
   content: "→";
   animation-name: movement-type-enter;
 }
 
-.theme-movement-sheet-table tbody td:nth-child(2):has(> select option[value="removal"]:checked)::before {
+.theme-movement-sheet-table tbody td:nth-child(2):has(> .theme-movement-type-trigger[data-movement-type="removal"])::before {
   content: "←";
   animation-name: movement-type-exit;
 }
@@ -8756,7 +8756,16 @@ html[data-app-theme="light"] .theme-movement-status[data-status="draft"] {
   animation-delay: -0.7s;
 }
 
-.theme-movement-sheet-table tbody td:nth-child(2) > select {
+.theme-movement-sheet-table tbody td:nth-child(2) > .theme-movement-type-trigger {
+  display: block;
+  width: 100%;
+  height: 28px;
+  border: 0;
+  border-radius: 0;
+  margin: 0;
+  outline: none;
+  cursor: pointer;
+  font: inherit;
   position: relative;
   z-index: 2;
   padding-left: 19px !important;
@@ -8822,13 +8831,13 @@ html[data-app-theme="light"] .theme-movement-sheet-table tbody tr:nth-child(even
   --movement-type-surface: #f8fafc;
 }
 
-html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2):has(> select option[value="insertion"]:checked) {
+html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2):has(> .theme-movement-type-trigger[data-movement-type="insertion"]) {
   --movement-type-accent: #16a34a;
   --movement-type-fill: rgba(34, 197, 94, 0.15);
   --movement-type-text: #14532d;
 }
 
-html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2):has(> select option[value="removal"]:checked) {
+html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2):has(> .theme-movement-type-trigger[data-movement-type="removal"]) {
   --movement-type-accent: #e11d48;
   --movement-type-fill: rgba(244, 63, 94, 0.14);
   --movement-type-text: #881337;
@@ -8839,16 +8848,101 @@ html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2)::
   -webkit-text-fill-color: var(--movement-type-accent) !important;
 }
 
-html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2) > select {
+html[data-app-theme="light"] .theme-movement-sheet-table tbody td:nth-child(2) > .theme-movement-type-trigger {
   color: var(--movement-type-text) !important;
   -webkit-text-fill-color: var(--movement-type-text) !important;
 }
 
-.theme-movement-sheet-table tbody td:nth-child(2) > select option {
-  color: #000000 !important;
-  -webkit-text-fill-color: #000000 !important;
-  background: #ffffff !important;
+.theme-movement-type-popup {
+  z-index: 100;
+  width: 180px;
+  max-width: calc(100vw - 16px);
+  max-height: var(--radix-select-content-available-height);
+  overflow: hidden;
+  padding: 4px;
+  border: 1px solid #2b6a8e;
+  border-radius: 9px;
+  background: #071d2e;
+  color: #eaf4ff;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+}
+
+.theme-movement-type-option {
+  --movement-option-accent: #fbbf24;
+  --movement-option-fill: rgba(245, 158, 11, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: inherit;
+}
+
+.theme-movement-type-option[data-movement-type="insertion"] {
+  --movement-option-accent: #4ade80;
+  --movement-option-fill: rgba(34, 197, 94, 0.15);
+}
+
+.theme-movement-type-option[data-movement-type="removal"] {
+  --movement-option-accent: #fb7185;
+  --movement-option-fill: rgba(244, 63, 94, 0.15);
+}
+
+.theme-movement-type-option[data-state="checked"],
+.theme-movement-type-option[data-highlighted] {
+  color: var(--movement-option-accent);
+  background: var(--movement-option-fill);
+}
+
+.theme-movement-type-option[data-highlighted] {
+  box-shadow: inset 2px 0 0 var(--movement-option-accent);
+}
+
+.theme-movement-type-option-icon {
+  flex: 0 0 18px;
   text-align: center;
+  color: var(--movement-option-accent);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.theme-movement-type-option-check {
+  display: inline-flex;
+  margin-left: auto;
+  color: var(--movement-option-accent);
+}
+
+html[data-app-theme="light"] .theme-movement-type-popup {
+  color: #172b3f;
+  background: #ffffff;
+  border-color: #94a3b8;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.16);
+}
+
+html[data-app-theme="light"] .theme-movement-type-option {
+  --movement-option-accent: #92400e;
+}
+
+html[data-app-theme="light"] .theme-movement-type-option[data-movement-type="insertion"] {
+  --movement-option-accent: #166534;
+}
+
+html[data-app-theme="light"] .theme-movement-type-option[data-movement-type="removal"] {
+  --movement-option-accent: #9f1239;
+}
+
+html[data-app-theme="light"] .theme-movement-type-option-icon,
+html[data-app-theme="light"] .theme-movement-type-option-check,
+html[data-app-theme="light"] .theme-movement-type-option-check svg {
+  color: var(--movement-option-accent) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

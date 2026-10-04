@@ -14,6 +14,7 @@ import PSTLogOutput from "../components/depot/PSTLogOutput";
 import PSTManualEntry from "../components/depot/PSTManualEntry";
 import InsertionLogOutput from "../components/depot/InsertionLogOutput";
 import MaspoTrainMovementChecker from "../components/depot/MaspoTrainMovementChecker";
+import TrainMovementTypeSelect from "../components/depot/TrainMovementTypeSelect";
 import OvertimeTracker from "../components/OvertimeTracker";
 import RosterWorkspace from "../components/RosterWorkspace";
 import ChecklistWorkspace from "../components/ChecklistWorkspace";
@@ -11071,6 +11072,7 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
   const trainMovementExcelSavedRevisionRef = useRef(0);
   const trainMovementExcelDirtyRef = useRef(initialLiveDirty);
   const trainMovementExcelInputFocusedRef = useRef(false);
+  const trainMovementExcelTypeMenuOpenRef = useRef(false);
   const trainMovementExcelSaveWorkerRef = useRef(null);
   const trainMovementExcelSaveQueueRef = useRef(null);
   const swapEditInputRefs = useRef(new Map());
@@ -11160,7 +11162,7 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
       currentRevision,
       hasUnsavedLocalEdits: trainMovementExcelDirtyRef.current || currentRevision > trainMovementExcelSavedRevisionRef.current,
       isSaveBusy: saveQueueBusy || trainMovementExcelPendingSaveRef.current || trainMovementExcelSavingRef.current,
-      isInputFocused: trainMovementExcelInputFocusedRef.current,
+      isInputFocused: trainMovementExcelInputFocusedRef.current || trainMovementExcelTypeMenuOpenRef.current,
     })) return false;
 
     if (incomingUpdatedMs) {
@@ -11284,6 +11286,7 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
     if (
       Date.now() < trainMovementExcelLocalEditUntilRef.current ||
       trainMovementExcelInputFocusedRef.current ||
+      trainMovementExcelTypeMenuOpenRef.current ||
       trainMovementExcelSavingRef.current ||
       trainMovementExcelPendingSaveRef.current ||
       saveQueueBusy ||
@@ -11303,7 +11306,8 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
       if (!record) {
         const changedWhilePolling = pollRevision !== trainMovementExcelLocalRevisionRef.current
           || trainMovementExcelDirtyRef.current
-          || trainMovementExcelInputFocusedRef.current;
+          || trainMovementExcelInputFocusedRef.current
+          || trainMovementExcelTypeMenuOpenRef.current;
         if (!changedWhilePolling) {
           scheduleTrainMovementExcelLiveSave({ rows: rowsRef.current, logRows: logRowsRef.current });
         }
@@ -11751,11 +11755,11 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
                     </button>
                   </td>
                   <td className={cellClass}>
-                    <select value={row.operation} onChange={(e) => updateRow(row.id, "operation", e.target.value)} className={tableSelectClass}>
-                      <option value="swapping">Swapping</option>
-                      <option value="insertion">Insertion</option>
-                      <option value="removal">Removal</option>
-                    </select>
+                    <TrainMovementTypeSelect
+                      value={row.operation}
+                      onValueChange={(operation) => updateRow(row.id, "operation", operation)}
+                      onOpenChange={(open) => { trainMovementExcelTypeMenuOpenRef.current = open; }}
+                    />
                   </td>
                   <td className={cellClass}>
                     <select value={row.depot} onChange={(e) => updateRow(row.id, "depot", e.target.value)} className={tableSelectClass}>
