@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronRight, Image as ImageIcon, Loader2, Upload, X } from "lucide-react";
 
 const EMPTY_EXTRACTION = {
@@ -103,7 +103,7 @@ export function buildMaintenanceImageSummary(extraction = EMPTY_EXTRACTION) {
   ].join("\n");
 }
 
-export default function MaintenanceImageSummary({ requests = [], onAdd }) {
+export default function MaintenanceImageSummary({ requests = [], onAdd, onActivityChange, onFilePickerChange }) {
   const inputRef = useRef(null);
   const analysisIdRef = useRef(0);
   const [fileName, setFileName] = useState("");
@@ -113,6 +113,18 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
   const [addedKeys, setAddedKeys] = useState(() => new Set());
   const [addMessage, setAddMessage] = useState({ key: "", type: "", text: "" });
   const [message, setMessage] = useState({ type: "", text: "" });
+  const hasActiveUpload = Boolean(fileName || analysing || addingGroupKey);
+
+  useEffect(() => {
+    onActivityChange?.(hasActiveUpload);
+  }, [hasActiveUpload, onActivityChange]);
+
+  useEffect(() => {
+    const input = inputRef.current;
+    const closePicker = () => onFilePickerChange?.(false);
+    input?.addEventListener("cancel", closePicker);
+    return () => input?.removeEventListener("cancel", closePicker);
+  }, [onFilePickerChange]);
 
   const clearSelection = () => {
     analysisIdRef.current += 1;
@@ -188,6 +200,7 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
   };
 
   const handleFileChange = (event) => {
+    onFilePickerChange?.(false);
     const file = event.target.files?.[0] || null;
     analyseImage(file);
   };
@@ -286,7 +299,7 @@ export default function MaintenanceImageSummary({ requests = [], onAdd }) {
 
       <button
         type="button"
-        onClick={() => inputRef.current?.click()}
+        onClick={() => { onFilePickerChange?.(true); inputRef.current?.click(); }}
         disabled={analysing}
         className="theme-maintenance-upload-button mt-1.5 inline-flex h-7 w-full items-center justify-center overflow-hidden rounded-lg border border-violet-400/70 bg-[linear-gradient(90deg,rgba(76,29,149,0.92),rgba(147,51,234,0.88))] text-[10px] font-normal text-white shadow-[0_0_9px_rgba(168,85,247,0.24)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-wait disabled:opacity-65"
       >

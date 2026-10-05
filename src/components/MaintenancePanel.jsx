@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil, TrainFront, Droplet, BriefcaseMedical, Cog, Building2, FileText } from "lucide-react";
 import ActionTooltip from "./ActionTooltip";
 import MaintenanceImageSummary from "./MaintenanceImageSummary";
+import MaintenanceUploadTools from "./MaintenanceUploadTools";
 import DepotRemovalInfo from "./DepotRemovalInfo";
 import { buildRemovalInfoByTrain } from "../lib/maintenanceRemovalInfo";
 import { sortRequestsByStatusThenTrain } from "../utils/maintenanceRequestSort";
@@ -689,6 +690,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const [excelWashFileName, setExcelWashFileName] = useState("");
   const [isAddingExcelWash, setIsAddingExcelWash] = useState(false);
   const [excelWashAdded, setExcelWashAdded] = useState(false);
+  const excelInputRef = useRef(null);
+  const [isReadingExcelWash, setIsReadingExcelWash] = useState(false);
+  const [imageUploadActive, setImageUploadActive] = useState(false);
+  const [filePickerOpen, setFilePickerOpen] = useState(false);
   const [workshopCopyStatus, setWorkshopCopyStatus] = useState("");
   const [editingGroupKey, setEditingGroupKey] = useState("");
   const [groupTitleDraft, setGroupTitleDraft] = useState("");
@@ -704,6 +709,13 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const [removingGroupTrainId, setRemovingGroupTrainId] = useState("");
   const [groupTrainMessage, setGroupTrainMessage] = useState({ type: "", text: "" });
   const [groupCopyStatus, setGroupCopyStatus] = useState("");
+
+  useEffect(() => {
+    const input = excelInputRef.current;
+    const closePicker = () => setFilePickerOpen(false);
+    input?.addEventListener("cancel", closePicker);
+    return () => input?.removeEventListener("cancel", closePicker);
+  }, [showImportTools]);
 
   const handleAdd = () => {
     const trainIds = trainId.split(/[\s,]+/).map(normalizeTrainId).filter(Boolean);
@@ -729,10 +741,12 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   };
 
   const handleWashExcelUpload = async (event) => {
+    setFilePickerOpen(false);
     const file = event.target.files?.[0];
     if (!file) return;
 
     try {
+      setIsReadingExcelWash(true);
       setError("");
       setExcelUploadStatus("Reading Excel...");
       setExcelWashPreview([]);
@@ -791,6 +805,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       console.error("Wash Excel upload error:", uploadError);
       setExcelUploadStatus("Unable to read Excel file.");
     } finally {
+      setIsReadingExcelWash(false);
       event.target.value = "";
     }
   };
@@ -1505,7 +1520,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       {/* Input Form */}
       <div className="border-b border-[#1a3a56] p-2.5 space-y-2">
         {showImportTools && (
-          <>
+          <MaintenanceUploadTools keepOpen={filePickerOpen || isReadingExcelWash || isAddingExcelWash || Boolean(excelWashFileName) || imageUploadActive}>
           <div data-testid="cmms-wash-review-card" className="theme-maintenance-upload-card theme-maintenance-upload-card--wash overflow-hidden rounded-xl border border-cyan-400/70 bg-[radial-gradient(circle_at_12%_30%,rgba(8,145,178,0.20),transparent_34%),linear-gradient(145deg,#06172a_0%,#071e33_58%,#09213a_100%)] p-2 shadow-[0_0_14px_rgba(34,211,238,0.10)]">
           <div className="flex min-w-0 items-center gap-2">
             <div className="theme-maintenance-upload-icon relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-500/30 bg-[linear-gradient(145deg,rgba(8,47,73,0.95),rgba(6,31,56,0.95))] shadow-[inset_0_0_12px_rgba(14,165,233,0.14)]">
@@ -1523,18 +1538,19 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             </div>
           </div>
 
-          <label className="theme-maintenance-upload-button mt-1.5 inline-flex h-7 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-cyan-400/70 bg-[linear-gradient(90deg,rgba(8,80,104,0.96),rgba(13,148,136,0.85))] text-[10px] font-normal text-white shadow-[0_0_9px_rgba(34,211,238,0.18)] transition hover:brightness-110 active:scale-[0.98]">
+          <button type="button" disabled={isReadingExcelWash || isAddingExcelWash} onClick={() => { setFilePickerOpen(true); excelInputRef.current?.click(); }} className="theme-maintenance-upload-button mt-1.5 inline-flex h-7 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-cyan-400/70 bg-[linear-gradient(90deg,rgba(8,80,104,0.96),rgba(13,148,136,0.85))] text-[10px] font-normal text-white shadow-[0_0_9px_rgba(34,211,238,0.18)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-wait disabled:opacity-65">
             <span className="theme-maintenance-upload-button-icon inline-flex h-7 w-8 items-center justify-center border-r border-cyan-200/20 bg-[#082b45]/80">
               <Upload className="h-3.5 w-3.5" />
             </span>
             <span className="flex-1 px-2 text-center">Upload Wash Excel</span>
+          </button>
             <input
+              ref={excelInputRef}
               type="file"
               accept=".xlsx,.xls"
               onChange={handleWashExcelUpload}
               className="hidden"
             />
-          </label>
 
           {excelUploadStatus && (
             <div className="mt-2 rounded-lg border border-[#1e4060] bg-[#091828] px-2 py-1 text-[10px] text-[#c8d8ea]">
@@ -1547,9 +1563,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             </div>
           )}
 
-          {excelWashPreview.length > 0 && (
+          {excelWashFileName && (
             <div className="mt-2 space-y-2">
-              <div className="flex max-h-20 flex-wrap gap-1.5 overflow-y-auto pr-1">
+              {excelWashPreview.length > 0 && <div className="flex max-h-20 flex-wrap gap-1.5 overflow-y-auto pr-1">
                 {excelWashPreview.map((item, index) => (
                   <span
                     key={`${item.trainId}-${item.requestType}-${index}`}
@@ -1558,13 +1574,13 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                     {item.trainId} • {item.requestType}
                   </span>
                 ))}
-              </div>
+              </div>}
 
               <div className="grid grid-cols-2 gap-1.5">
                 <button
                   type="button"
                   onClick={handleClearExcelWashReview}
-                  disabled={isAddingExcelWash}
+                  disabled={isAddingExcelWash || isReadingExcelWash}
                   className="inline-flex h-7 items-center justify-center gap-1 rounded-lg border border-rose-400/80 bg-rose-950/45 text-[10px] font-semibold text-rose-100 shadow-[0_0_9px_rgba(251,113,133,0.28)] transition hover:bg-rose-900/60 active:scale-[0.98] disabled:cursor-default disabled:border-rose-800/50 disabled:text-rose-400 disabled:shadow-none"
                 >
                   <X className="h-3 w-3" />
@@ -1573,7 +1589,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 <button
                   type="button"
                   onClick={handleAddExcelWashPreview}
-                  disabled={isAddingExcelWash || excelWashAdded}
+                  disabled={isAddingExcelWash || isReadingExcelWash || excelWashAdded || excelWashPreview.length === 0}
                   className="inline-flex h-7 items-center justify-center gap-1 rounded-lg border border-emerald-300/80 bg-emerald-700/70 text-[10px] font-semibold text-white shadow-[0_0_10px_rgba(52,211,153,0.34)] transition hover:bg-emerald-600/80 active:scale-[0.98] disabled:cursor-default disabled:border-emerald-600/50 disabled:bg-emerald-950/55 disabled:text-emerald-300 disabled:shadow-none"
                 >
                   {excelWashAdded ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
@@ -1584,8 +1600,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           )}
           </div>
 
-          <MaintenanceImageSummary requests={requests} onAdd={onAdd} />
-          </>
+          <MaintenanceImageSummary requests={requests} onAdd={onAdd} onActivityChange={setImageUploadActive} onFilePickerChange={setFilePickerOpen} />
+          </MaintenanceUploadTools>
         )}
 
         <div>

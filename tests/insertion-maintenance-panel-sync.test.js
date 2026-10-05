@@ -87,7 +87,7 @@ test("Insertion hides the CMMS Excel and Train Request image import tools only",
   assert.match(maintenancePanelSource, /showImportTools = true/);
   assert.match(
     maintenancePanelSource,
-    /\{showImportTools && \([\s\S]*data-testid="cmms-wash-review-card"[\s\S]*<MaintenanceImageSummary requests=\{requests\} onAdd=\{onAdd\} \/>[\s\S]*\)\}/,
+    /\{showImportTools && \([\s\S]*data-testid="cmms-wash-review-card"[\s\S]*<MaintenanceImageSummary requests=\{requests\} onAdd=\{onAdd\}[^>]*\/>[\s\S]*\)\}/,
   );
   assert.match(insertionComponent, /showImportTools=\{false\}/);
   assert.doesNotMatch(stablingTabRender, /showImportTools=\{false\}/);
