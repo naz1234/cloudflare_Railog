@@ -3,6 +3,8 @@ import * as XLSX from "xlsx";
 import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil, TrainFront, Droplet, BriefcaseMedical, Cog, Building2, FileText } from "lucide-react";
 import ActionTooltip from "./ActionTooltip";
 import MaintenanceImageSummary from "./MaintenanceImageSummary";
+import WestRemovalInfo from "./WestRemovalInfo";
+import { buildWestRemovalInfoByTrain } from "../lib/maintenanceRemovalInfo";
 import { sortRequestsByStatusThenTrain } from "../utils/maintenanceRequestSort";
 import { groupRequestGroupsByCategory } from "../lib/requestedActionSummary";
 
@@ -677,7 +679,7 @@ function RequestGroupVisibilityIcon({ hidden = false, className = "" }) {
   );
 }
 
-export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, onDeleteGroup, onToggleGroupHidden, showImportTools = true, stabledTrainIds = [], stabledTrainLocations = {}, panelTitle = "Maintenance", listTitle = "Train Request", requestTypeLabel = "Request Type", requestTypePlaceholder = "e.g. RST PM / INBOUND (G to C)", addButtonLabel = "Add Request" }) {
+export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, onDeleteGroup, onToggleGroupHidden, showImportTools = true, stabledTrainIds = [], stabledTrainLocations = {}, westRemovalRows = [], panelTitle = "Maintenance", listTitle = "Train Request", requestTypeLabel = "Request Type", requestTypePlaceholder = "e.g. RST PM / INBOUND (G to C)", addButtonLabel = "Add Request" }) {
   const [trainId, setTrainId] = useState("");
   const [requestType, setRequestType] = useState("");
   const [error, setError] = useState("");
@@ -857,6 +859,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   };
 
   const displayType = (req) => getRequestDisplayLabel(req) || "Request";
+  const westRemovalInfoByTrain = buildWestRemovalInfoByTrain(westRemovalRows);
   const requestGroupColors = buildDistinctRequestGroupColorMap(
     (requests || []).map((req) => displayType(req))
   );
@@ -1422,6 +1425,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         <div className="space-y-[1px]">
             {group.items.map((req) => {
               const chipLabel = getRequestChipTrainLabel(req);
+              const westRemovals = westRemovalInfoByTrain.get(normalizeTrainCompareKey(req.trainId));
 
               const crossOutInfo = getCrossOutInfo(req);
               const crossOutMessage = getCrossOutMessage(req, crossOutInfo);
@@ -1438,7 +1442,11 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   className={`theme-maintenance-train-row theme-maintenance-request-line grid h-[24px] ${expandedGridClass} items-center gap-[2px] overflow-visible px-1.5 leading-none transition-colors duration-150`}
                 >
                   <span className="truncate pl-1 text-left text-[12px] font-semibold text-[#f8fbff]">{chipLabel}</span>
-                  <span className="min-w-0" aria-hidden="true" />
+                  <span className="flex min-w-0 justify-end">
+                    {westRemovals?.length > 0 && (
+                      <WestRemovalInfo trainLabel={chipLabel} removals={westRemovals} />
+                    )}
+                  </span>
                   {showAlreadyStatusIcon ? (
                     <AlreadyStatusIcon message={statusMessage} reason={crossOutInfo.reason} />
                   ) : showStillNotAtStablingIcon ? (

@@ -17929,6 +17929,13 @@ export default function DepotStablingPage() {
     () => findLatestTimetableRecord(timetableRecords, selectedTimetableType),
     [timetableRecords, selectedTimetableType]
   );
+  const westRemovalInfoRows = useMemo(
+    () => Array.from(
+      getWestRemovalRowsMap(trainRemCheckState, activeTimetable),
+      ([trainId, row]) => ({ ...row, trainId }),
+    ),
+    [trainRemCheckState, activeTimetable],
+  );
 
   const loadTimetableRecords = useCallback(async () => {
     const localRecords = normalizeStoredTimetableRecords(loadLocalTimetableRecords());
@@ -22578,6 +22585,7 @@ export default function DepotStablingPage() {
           onDeleteGroup={handleDeleteRequestGroup}
           stabledTrainIds={Array.from(westStablingKeys)}
           stabledTrainLocations={getMainStablingLocations(westData, eastData)}
+          westRemovalRows={westRemovalInfoRows}
         />
       </div>
 
