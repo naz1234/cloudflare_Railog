@@ -24,7 +24,7 @@ export default function WestRemovalInfo({ trainLabel, removals = [] }) {
           <TooltipPrimitive.Content
             side="right"
             align="center"
-            sideOffset={64}
+            sideOffset={6}
             collisionPadding={10}
             className="theme-west-removal-info-tooltip z-[10000] max-w-[280px] rounded-lg border px-3 py-2 text-left text-[11px] leading-snug shadow-xl"
           >
