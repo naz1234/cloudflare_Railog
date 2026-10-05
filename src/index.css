@@ -12945,7 +12945,7 @@ html[data-app-theme="light"] .theme-pst-section .theme-insertion-refresh-button.
   border-radius: 50%;
   background: transparent;
   color: #22d3ee;
-  cursor: help;
+  cursor: pointer;
 }
 
 .theme-removal-info-trigger:hover {
@@ -12967,10 +12967,6 @@ html[data-app-theme="light"] .theme-pst-section .theme-insertion-refresh-button.
   color: #22d3ee;
 }
 
-.theme-removal-info-source {
-  color: #8bb4d8;
-}
-
 .theme-removal-info-arrow {
   fill: #071e30;
   filter: drop-shadow(0 1px 0 #22d3ee);
@@ -12990,10 +12986,6 @@ html[data-app-theme="light"] .theme-removal-info-tooltip {
 
 html[data-app-theme="light"] .theme-removal-info-tooltip .theme-removal-info-tid {
   color: #0369a1 !important;
-}
-
-html[data-app-theme="light"] .theme-removal-info-tooltip .theme-removal-info-source {
-  color: #475569 !important;
 }
 
 html[data-app-theme="light"] .theme-removal-info-arrow {
