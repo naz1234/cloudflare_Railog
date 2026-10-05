@@ -77,6 +77,7 @@ test("tooltip is focus-accessible, portalled, collision-aware and matches the ap
   assert.match(tooltip, /aria-label=\{`West Depot Removal for/);
   assert.match(tooltip, /TooltipPrimitive\.Portal/);
   assert.match(tooltip, /side="right"/);
+  assert.match(tooltip, /sideOffset=\{6\}/);
   assert.match(tooltip, /collisionPadding=\{10\}/);
   for (const text of ["West Depot Removal", "TID {tid}", "Removal time:", "From Removal Summary"]) {
     assert.ok(tooltip.includes(text));
