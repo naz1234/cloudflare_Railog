@@ -3185,7 +3185,8 @@ function collectStablingTrainIds(data = {}, roads = []) {
 function collectTrainRemRowsForDepotCopy(
   trainRemState = {},
   depot = "east",
-  activeTimetable = null
+  activeTimetable = null,
+  { includeScheduleTiming = false } = {},
 ) {
   const safeDepot = depot === "east" ? "east" : "west";
   const selectedPreset = trainRemState?.selectedPreset?.[safeDepot] || "9am";
@@ -3209,8 +3210,9 @@ function collectTrainRemRowsForDepotCopy(
       const isEastExtraRow = isTrainRemCombinedEastExtraRowIndex("west", westSelectedPreset, index, activeTimetable);
 
       if (isReferenceRow) {
-        if (!getTrainRemScheduleMatch(activeTimetable, safeDepot, westSelectedPreset, tid)) return;
-        rowsToScan.push(row);
+        const scheduleMatch = getTrainRemScheduleMatch(activeTimetable, safeDepot, westSelectedPreset, tid);
+        if (!scheduleMatch) return;
+        rowsToScan.push(includeScheduleTiming ? { ...row, timing: scheduleMatch.timing || row.timing } : row);
         return;
       }
 
@@ -17930,9 +17932,14 @@ export default function DepotStablingPage() {
     [timetableRecords, selectedTimetableType]
   );
   const westRemovalInfoRows = useMemo(
-    () => Array.from(
-      getWestRemovalRowsMap(trainRemCheckState, activeTimetable),
-      ([trainId, row]) => ({ ...row, trainId }),
+    () => collectTrainRemRowsForDepotCopy(
+      trainRemCheckState, "west", activeTimetable, { includeScheduleTiming: true },
+    ),
+    [trainRemCheckState, activeTimetable],
+  );
+  const eastRemovalInfoRows = useMemo(
+    () => collectTrainRemRowsForDepotCopy(
+      trainRemCheckState, "east", activeTimetable, { includeScheduleTiming: true },
     ),
     [trainRemCheckState, activeTimetable],
   );
@@ -22586,6 +22593,7 @@ export default function DepotStablingPage() {
           stabledTrainIds={Array.from(westStablingKeys)}
           stabledTrainLocations={getMainStablingLocations(westData, eastData)}
           westRemovalRows={westRemovalInfoRows}
+          eastRemovalRows={eastRemovalInfoRows}
         />
       </div>
 

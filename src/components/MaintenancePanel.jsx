@@ -3,8 +3,8 @@ import * as XLSX from "xlsx";
 import { Plus, Wrench, FileSpreadsheet, Upload, Copy, ClipboardCheck, Check, X, Pencil, TrainFront, Droplet, BriefcaseMedical, Cog, Building2, FileText } from "lucide-react";
 import ActionTooltip from "./ActionTooltip";
 import MaintenanceImageSummary from "./MaintenanceImageSummary";
-import WestRemovalInfo from "./WestRemovalInfo";
-import { buildWestRemovalInfoByTrain } from "../lib/maintenanceRemovalInfo";
+import DepotRemovalInfo from "./DepotRemovalInfo";
+import { buildRemovalInfoByTrain } from "../lib/maintenanceRemovalInfo";
 import { sortRequestsByStatusThenTrain } from "../utils/maintenanceRequestSort";
 import { groupRequestGroupsByCategory } from "../lib/requestedActionSummary";
 
@@ -679,7 +679,7 @@ function RequestGroupVisibilityIcon({ hidden = false, className = "" }) {
   );
 }
 
-export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, onDeleteGroup, onToggleGroupHidden, showImportTools = true, stabledTrainIds = [], stabledTrainLocations = {}, westRemovalRows = [], panelTitle = "Maintenance", listTitle = "Train Request", requestTypeLabel = "Request Type", requestTypePlaceholder = "e.g. RST PM / INBOUND (G to C)", addButtonLabel = "Add Request" }) {
+export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, onDeleteGroup, onToggleGroupHidden, showImportTools = true, stabledTrainIds = [], stabledTrainLocations = {}, westRemovalRows = [], eastRemovalRows = [], panelTitle = "Maintenance", listTitle = "Train Request", requestTypeLabel = "Request Type", requestTypePlaceholder = "e.g. RST PM / INBOUND (G to C)", addButtonLabel = "Add Request" }) {
   const [trainId, setTrainId] = useState("");
   const [requestType, setRequestType] = useState("");
   const [error, setError] = useState("");
@@ -859,7 +859,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   };
 
   const displayType = (req) => getRequestDisplayLabel(req) || "Request";
-  const westRemovalInfoByTrain = buildWestRemovalInfoByTrain(westRemovalRows);
+  const westRemovalInfoByTrain = buildRemovalInfoByTrain(westRemovalRows);
+  const eastRemovalInfoByTrain = buildRemovalInfoByTrain(eastRemovalRows);
   const requestGroupColors = buildDistinctRequestGroupColorMap(
     (requests || []).map((req) => displayType(req))
   );
@@ -1426,6 +1427,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             {group.items.map((req) => {
               const chipLabel = getRequestChipTrainLabel(req);
               const westRemovals = westRemovalInfoByTrain.get(normalizeTrainCompareKey(req.trainId));
+              const eastRemovals = eastRemovalInfoByTrain.get(normalizeTrainCompareKey(req.trainId));
 
               const crossOutInfo = getCrossOutInfo(req);
               const crossOutMessage = getCrossOutMessage(req, crossOutInfo);
@@ -1442,9 +1444,12 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   className={`theme-maintenance-train-row theme-maintenance-request-line grid h-[24px] ${expandedGridClass} items-center gap-[2px] overflow-visible px-1.5 leading-none transition-colors duration-150`}
                 >
                   <span className="truncate pl-1 text-left text-[12px] font-semibold text-[#f8fbff]">{chipLabel}</span>
-                  <span className="flex min-w-0 justify-end">
+                  <span className="flex min-w-0 justify-end gap-[2px]">
                     {westRemovals?.length > 0 && (
-                      <WestRemovalInfo trainLabel={chipLabel} removals={westRemovals} />
+                      <DepotRemovalInfo trainLabel={chipLabel} depot="west" removals={westRemovals} />
+                    )}
+                    {eastRemovals?.length > 0 && (
+                      <DepotRemovalInfo trainLabel={chipLabel} depot="east" removals={eastRemovals} />
                     )}
                   </span>
                   {showAlreadyStatusIcon ? (
