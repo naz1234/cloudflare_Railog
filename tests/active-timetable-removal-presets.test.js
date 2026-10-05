@@ -4,6 +4,7 @@ import vm from 'node:vm';
 import test from 'node:test';
 import * as XLSX from 'xlsx';
 import * as hdw40 from '../src/lib/trainRemHdw40.js';
+import { buildWestRemovalInfoByTrain } from '../src/lib/maintenanceRemovalInfo.js';
 
 const source = readFileSync(new URL('../src/pages/DepotStabling.jsx', import.meta.url), 'utf8');
 const functions = [
@@ -58,6 +59,30 @@ const record = (type,west=[],east=[]) => ({
 const holiday = record('ph',[
   makeEntry(212,'08:59'),makeEntry(214,'09:05'),makeEntry(221,'23:59'),makeEntry(113,'00:02'),
 ],[makeEntry(112,'08:59'),makeEntry(121,'23:59'),makeEntry(213,'00:02')]);
+
+const sidebarRemovalInfo = (state, timetable) => buildWestRemovalInfoByTrain(
+  Array.from(context.getWestRemovalRowsMap(state, timetable), ([trainId, row]) => ({ ...row, trainId })),
+);
+
+test('sidebar info includes scheduled West removals but excludes East and mainline reference TIDs', () => {
+  const timetable = record('weekday', [makeEntry(216, '09:15')], [makeEntry(214, '09:09')]);
+  const state = { selectedPreset: { west: '9am', east: '9am' }, rows: { west: [
+    { trainId: '35', tid: '216' }, { trainId: '47', tid: '214' }, { trainId: '32', tid: '218' },
+  ], east: [] } };
+  assert.deepEqual([...sidebarRemovalInfo(state, timetable)], [['35', [{ tid: '216', timing: '09:15' }]]]);
+  const changed = record('weekday', [makeEntry(214, '09:11')], [makeEntry(216, '09:15')]);
+  assert.deepEqual([...sidebarRemovalInfo(state, changed)], [['47', [{ tid: '214', timing: '09:11' }]]]);
+  assert.equal(sidebarRemovalInfo({ ...state, rows: { west: [], east: [] } }, changed).size, 0);
+});
+
+test('sidebar info follows the selected period and never uses cached inactive rows or TID-less HDW', () => {
+  const timetable = record('weekday', [makeEntry(216, '09:15'), makeEntry(213, '19:06')]);
+  const state = { selectedPreset: { west: '7pm', east: '7pm' }, rows: { west: [
+    { trainId: '47', tid: '213' },
+  ], east: [] }, presetRows: { west: { '9am': [{ trainId: '35', tid: '216' }] } } };
+  assert.deepEqual([...sidebarRemovalInfo(state, timetable)], [['47', [{ tid: '213', timing: '19:06' }]]]);
+  assert.equal(sidebarRemovalInfo(makeHdwState(), timetable).size, 0);
+});
 
 test('already uploaded PH records expose only morning and midnight buttons',()=>{
   assert.deepEqual(plain(context.getVisibleTrainRemPresetLabels(holiday,'ph')),['9am','12am']);
