@@ -60,8 +60,8 @@ const holiday = record('ph',[
   makeEntry(212,'08:59'),makeEntry(214,'09:05'),makeEntry(221,'23:59'),makeEntry(113,'00:02'),
 ],[makeEntry(112,'08:59'),makeEntry(121,'23:59'),makeEntry(213,'00:02')]);
 
-const sidebarRemovalInfo = (state, timetable) => buildWestRemovalInfoByTrain(
-  Array.from(context.getWestRemovalRowsMap(state, timetable), ([trainId, row]) => ({ ...row, trainId })),
+const sidebarRemovalInfo = (state, timetable, depot = 'west') => buildWestRemovalInfoByTrain(
+  context.collectTrainRemRowsForDepotCopy(state, depot, timetable, { includeScheduleTiming: true }),
 );
 
 test('sidebar info includes scheduled West removals but excludes East and mainline reference TIDs', () => {
@@ -70,9 +70,12 @@ test('sidebar info includes scheduled West removals but excludes East and mainli
     { trainId: '35', tid: '216' }, { trainId: '47', tid: '214' }, { trainId: '32', tid: '218' },
   ], east: [] } };
   assert.deepEqual([...sidebarRemovalInfo(state, timetable)], [['35', [{ tid: '216', timing: '09:15' }]]]);
+  assert.deepEqual([...sidebarRemovalInfo(state, timetable, 'east')], [['47', [{ tid: '214', timing: '09:09' }]]]);
   const changed = record('weekday', [makeEntry(214, '09:11')], [makeEntry(216, '09:15')]);
   assert.deepEqual([...sidebarRemovalInfo(state, changed)], [['47', [{ tid: '214', timing: '09:11' }]]]);
+  assert.deepEqual([...sidebarRemovalInfo(state, changed, 'east')], [['35', [{ tid: '216', timing: '09:15' }]]]);
   assert.equal(sidebarRemovalInfo({ ...state, rows: { west: [], east: [] } }, changed).size, 0);
+  assert.equal(sidebarRemovalInfo({ ...state, rows: { west: [], east: [] } }, changed, 'east').size, 0);
 });
 
 test('sidebar info follows the selected period and never uses cached inactive rows or TID-less HDW', () => {
@@ -82,6 +85,56 @@ test('sidebar info follows the selected period and never uses cached inactive ro
   ], east: [] }, presetRows: { west: { '9am': [{ trainId: '35', tid: '216' }] } } };
   assert.deepEqual([...sidebarRemovalInfo(state, timetable)], [['47', [{ tid: '213', timing: '19:06' }]]]);
   assert.equal(sidebarRemovalInfo(makeHdwState(), timetable).size, 0);
+  assert.equal(sidebarRemovalInfo(makeHdwState(), timetable, 'east').size, 0);
+});
+
+test('East sidebar info uses active scheduled timing in morning, evening and midnight combined tables', () => {
+  for (const [preset, tid, time] of [['9am', '214', '09:09'], ['7pm', '207', '19:09'], ['12am', '214', '00:09']]) {
+    const timetable = record('weekday', [], [makeEntry(tid, time)]);
+    const state = { selectedPreset: { west: preset, east: preset }, rows: { west: [
+      { trainId: '47', tid },
+    ], east: [] } };
+    assert.deepEqual([...sidebarRemovalInfo(state, timetable, 'east')], [['47', [{ tid, timing: time }]]]);
+    assert.equal(sidebarRemovalInfo(state, timetable, 'west').size, 0);
+  }
+});
+
+test('East sidebar info also matches Friday/Saturday combined removal lists without changing stored rows', () => {
+  for (const [preset, type] of [['Fri', 'friday'], ['Sat', 'saturday']]) {
+    const timetable = record(type, [makeEntry(212, '00:03')], [makeEntry(214, '00:09')]);
+    const state = { selectedPreset: { west: preset, east: preset }, rows: {
+      west: [{ trainId: '35', tid: '212' }, { trainId: '47', tid: '214' }],
+      east: [],
+    } };
+    const before = JSON.stringify(state);
+    assert.deepEqual([...sidebarRemovalInfo(state, timetable, 'east')], [['47', [{ tid: '214', timing: '00:09' }]]]);
+    assert.deepEqual([...sidebarRemovalInfo(state, timetable, 'west')], [['35', [{ tid: '212', timing: '00:03' }]]]);
+    assert.equal(JSON.stringify(state), before);
+  }
+});
+
+test('manual East reserve rows keep their entered times and copy output is unaffected by tooltip timing enrichment', () => {
+  const timetable = record('weekday', [makeEntry(212, '00:03')], [makeEntry(214, '00:09')]);
+  const rows = context.buildTrainRemRowsFromPresetConfig('west', '12am', [
+    { trainId: '35', tid: '212' }, { trainId: '47', tid: '214' },
+  ], timetable);
+  const layout = context.getTrainRemCombinedExtendedLayout('12am', timetable);
+  rows[layout.reserveStartIndex] = { trainId: '32', tid: '442', timing: '00:43' };
+  rows[layout.eastReserveStartIndex] = { trainId: '38', tid: '444', timing: '00:44' };
+  const state = { selectedPreset: { west: '12am', east: '12am' }, rows: { west: rows, east: [
+    { trainId: '23', tid: '446', timing: '00:46' },
+  ] } };
+  const before = JSON.stringify(state);
+  assert.deepEqual([...sidebarRemovalInfo(state, timetable, 'east')], [
+    ['47', [{ tid: '214', timing: '00:09' }]],
+    ['38', [{ tid: '444', timing: '00:44' }]],
+    ['23', [{ tid: '446', timing: '00:46' }]],
+  ]);
+  assert.deepEqual([...sidebarRemovalInfo(state, timetable, 'west')], [
+    ['35', [{ tid: '212', timing: '00:03' }]], ['32', [{ tid: '442', timing: '00:43' }]],
+  ]);
+  assert.equal(context.collectTrainRemRowsForDepotCopy(state, 'east', timetable).find(row => row.tid === '214').timing, '');
+  assert.equal(JSON.stringify(state), before);
 });
 
 test('already uploaded PH records expose only morning and midnight buttons',()=>{

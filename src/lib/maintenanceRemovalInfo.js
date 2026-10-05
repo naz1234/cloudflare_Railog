@@ -1,6 +1,6 @@
-// Input rows must already be filtered to West Depot by Removal Summary.
+// Input rows must already be filtered to the intended depot by Removal Summary.
 // TID-less HDW/manual rows are intentionally not labelled as TID removals.
-export function buildWestRemovalInfoByTrain(rows = []) {
+export function buildRemovalInfoByTrain(rows = []) {
   const byTrain = new Map();
 
   for (const row of Array.isArray(rows) ? rows : []) {
@@ -24,3 +24,6 @@ export function buildWestRemovalInfoByTrain(rows = []) {
 
   return byTrain;
 }
+
+// Retain the original export for West-only callers.
+export const buildWestRemovalInfoByTrain = buildRemovalInfoByTrain;
