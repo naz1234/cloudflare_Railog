@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#041523" />
+    <meta name="theme-color" content="#090b10" />
     <meta name="robots" content="noindex, nofollow" />
     <title>West Depot Secure Access | L3 DC Template</title>
     <link rel="icon" type="image/png" href="/favicon.png" />
@@ -13,157 +13,68 @@
   </head>
   <body>
     <main class="login-shell">
-      <div class="login-grid" aria-hidden="true"></div>
-      <div class="depot-watermark" aria-hidden="true">WEST DEPOT</div>
-      <div class="route-line route-line-one" aria-hidden="true"></div>
-      <div class="route-line route-line-two" aria-hidden="true"></div>
-
-      <section class="login-frame" aria-labelledby="auth-title">
-        <aside class="brand-panel">
-          <div class="brand-lockup">
-            <span class="brand-mark" aria-hidden="true">
-              <svg viewBox="0 0 32 32" fill="none">
-                <rect x="7" y="4" width="18" height="21" rx="6" stroke="currentColor" stroke-width="1.8" />
-                <path d="M11 10h10M11 15h10M12 21l-3 6m11-6 3 6M11 27h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                <circle cx="12" cy="19" r="1.2" fill="currentColor" />
-                <circle cx="20" cy="19" r="1.2" fill="currentColor" />
-              </svg>
-            </span>
-            <span>
-              <strong>L3 DC TEMPLATE</strong>
-              <small>DEPOT CONTROL</small>
-            </span>
-          </div>
-
-          <div class="brand-copy">
-            <span class="system-kicker"><i></i> SECURE OPERATIONS ACCESS</span>
-            <h1 id="auth-title">L3 DC<br />TEMPLATE</h1>
-            <p>One protected route to the Line 3 depot-control workspace.</p>
-          </div>
-
-          <div class="track-map" aria-hidden="true">
-            <span class="track-station is-active"></span>
-            <span class="track-rail"></span>
-            <span class="track-station"></span>
-            <span class="track-rail"></span>
-            <span class="track-station"></span>
-          </div>
-
-          <div class="brand-status">
-            <span class="status-light" aria-hidden="true"></span>
-            <span><strong>AUTH GATE ONLINE</strong><small>Encrypted session • 10-hour access</small></span>
-          </div>
-        </aside>
-
-        <section class="auth-panel" aria-labelledby="form-heading">
-          <header class="auth-header">
-            <div>
-              <span class="panel-kicker">AUTHORIZED STAFF ONLY</span>
-              <h2 id="form-heading">Sign in to continue</h2>
-            </div>
-            <span class="secure-badge">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V8a5 5 0 0110 0v2m-9 0h8a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>
-              SECURE
-            </span>
-          </header>
-
-          <ol class="stepper" aria-label="Login progress">
-            <li class="is-current" id="request-step-indicator" aria-current="step">
-              <span>01</span><div><strong>REQUEST</strong><small>Send code</small></div>
-            </li>
-            <li id="verify-step-indicator">
-              <span>02</span><div><strong>VERIFY</strong><small>Enter PIN</small></div>
-            </li>
-          </ol>
-
-          <div class="turnstile-shell" id="turnstile-shell">
-            <div id="turnstile-widget" aria-label="Cloudflare security check"></div>
-            <span id="turnstile-status" aria-live="polite">Preparing secure verification…</span>
-          </div>
-
+      <header class="brand-lockup">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><rect x="7" y="4" width="18" height="21" rx="6" stroke="currentColor" stroke-width="1.8" /><path d="M11 10h10M11 15h10M12 21l-3 6m11-6 3 6M11 27h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /><circle cx="12" cy="19" r="1.2" fill="currentColor" /><circle cx="20" cy="19" r="1.2" fill="currentColor" /></svg></span>
+        <div><h1 id="auth-title">L3 DC TEMPLATE</h1><p>DEPOT CONTROL</p></div>
+      </header>
+      <section class="login-experience" aria-labelledby="form-heading">
+        <h2 id="form-heading" class="sr-only">Sign in</h2>
+        <ol class="stepper" aria-label="Login progress">
+          <li class="is-current" id="request-step-indicator" aria-current="step"><span>01</span><strong>YOUR EMAIL</strong></li>
+          <li id="verify-step-indicator"><span>02</span><strong>ENTER PIN</strong></li>
+          <li id="success-step-indicator"><span>03</span><strong>VERIFIED</strong></li>
+        </ol>
+        <section class="auth-panel login-frame" id="login-card" data-stage="request" aria-labelledby="form-heading">
+          <div class="card-handle" aria-hidden="true"></div>
           <section class="auth-stage" id="request-stage" aria-labelledby="request-heading">
-            <div class="stage-label"><span>CURRENT</span><i></i></div>
-            <h3 id="request-heading">Request login code</h3>
-            <p class="stage-description">Enter your <strong>approved email address</strong>. A one-time code will be sent only to an approved West Depot account.</p>
-
+            <h3 id="request-heading">Sign in to continue</h3>
+            <p class="stage-description">Enter your approved FLOW work email.</p>
             <form id="request-form" novalidate>
-              <label class="email-field" for="login-email">
-                <span class="mailbox-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24"><path d="M3 6.5h18v11H3zM4 7l8 6 8-6" /></svg>
-                </span>
-                <span class="email-control">
-                  <small>FLOW METRO EMAIL</small>
-                  <input
-                    id="login-email"
-                    name="email"
-                    type="email"
-                    inputmode="email"
-                    autocomplete="username"
-                    autocapitalize="none"
-                    spellcheck="false"
-                    placeholder="firstname.lastname@flow-metro.com"
-                    aria-describedby="email-help"
-                    required
-                  />
-                </span>
-              </label>
+              <label class="field-label" for="login-email">FLOW METRO EMAIL</label>
+              <div class="email-field">
+                <svg class="mailbox-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5h18v11H3zM4 7l8 6 8-6" /></svg>
+                <input id="login-email" name="email" type="email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="firstname.lastname@flow-metro.com" aria-describedby="email-help" required />
+              </div>
               <p class="email-help" id="email-help">Use your work email or another address approved for access.</p>
-
-              <button class="primary-button" id="request-button" type="submit" disabled>
-                <span>Checking Secure Access</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg>
-              </button>
+              <button class="primary-button" id="request-button" type="submit" disabled><span>Send Login Code</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg></button>
             </form>
-
-            <p class="privacy-note">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-2.8 8-7 10-4.2-2-7-5.5-7-10V6l7-3z" /></svg>
-              Codes are sent only to approved accounts.
-            </p>
+            <p class="privacy-note">Codes are sent only to approved accounts.</p>
           </section>
-
           <section class="auth-stage" id="verify-stage" aria-labelledby="verify-heading" hidden>
-            <div class="stage-label"><span>CURRENT</span><i></i></div>
-            <h3 id="verify-heading">Enter verification code</h3>
-            <p class="stage-description">Enter the six-digit code sent to <strong data-selected-email>your approved email</strong>.</p>
+            <h3 id="verify-heading">Enter your code</h3>
+            <p class="stage-description">A 6-digit code was sent to<br /><strong data-selected-email>your approved email</strong></p>
             <div class="request-reference">REQUEST REF <strong id="request-reference">------</strong></div>
-
             <form id="verify-form" novalidate>
               <fieldset class="pin-fieldset">
-                <legend>Six-digit verification code</legend>
+                <legend class="sr-only">Six-digit verification code</legend>
                 <div class="pin-inputs" id="pin-inputs">
-                  <input aria-label="Verification code digit 1" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" />
-                  <input aria-label="Verification code digit 2" inputmode="numeric" autocomplete="off" maxlength="1" pattern="[0-9]*" />
-                  <input aria-label="Verification code digit 3" inputmode="numeric" autocomplete="off" maxlength="1" pattern="[0-9]*" />
-                  <input aria-label="Verification code digit 4" inputmode="numeric" autocomplete="off" maxlength="1" pattern="[0-9]*" />
-                  <input aria-label="Verification code digit 5" inputmode="numeric" autocomplete="off" maxlength="1" pattern="[0-9]*" />
-                  <input aria-label="Verification code digit 6" inputmode="numeric" autocomplete="off" maxlength="1" pattern="[0-9]*" />
+                  <span class="pin-slot"><input aria-label="Verification code digit 1" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" /><svg class="pin-spark" viewBox="0 0 64 80" preserveAspectRatio="none" aria-hidden="true"><rect x="1" y="1" width="62" height="78" rx="13" pathLength="100" /></svg></span>
+                  <span class="pin-slot"><input aria-label="Verification code digit 2" inputmode="numeric" autocomplete="off" maxlength="1" pattern="[0-9]*" /><svg class="pin-spark" viewBox="0 0 64 80" preserveAspectRatio="none" aria-hidden="true"><rect x="1" y="1" width="62" height="78" rx="13" pathLength="100" /></svg></span>
+                  <span class="pin-slot"><input aria-label="Verification code digit 3" inputmode="numeric" autocomplete="off" maxlength="1" pattern="[0-9]*" /><svg class="pin-spark" viewBox="0 0 64 80" preserveAspectRatio="none" aria-hidden="true"><rect x="1" y="1" width="62" height="78" rx="13" pathLength="100" /></svg></span>
+                  <span class="pin-slot"><input aria-label="Verification code digit 4" inputmode="numeric" autocomplete="off" maxlength="1" pattern="[0-9]*" /><svg class="pin-spark" viewBox="0 0 64 80" preserveAspectRatio="none" aria-hidden="true"><rect x="1" y="1" width="62" height="78" rx="13" pathLength="100" /></svg></span>
+                  <span class="pin-slot"><input aria-label="Verification code digit 5" inputmode="numeric" autocomplete="off" maxlength="1" pattern="[0-9]*" /><svg class="pin-spark" viewBox="0 0 64 80" preserveAspectRatio="none" aria-hidden="true"><rect x="1" y="1" width="62" height="78" rx="13" pathLength="100" /></svg></span>
+                  <span class="pin-slot"><input aria-label="Verification code digit 6" inputmode="numeric" autocomplete="off" maxlength="1" pattern="[0-9]*" /><svg class="pin-spark" viewBox="0 0 64 80" preserveAspectRatio="none" aria-hidden="true"><rect x="1" y="1" width="62" height="78" rx="13" pathLength="100" /></svg></span>
                 </div>
               </fieldset>
-
-              <div class="code-timing">
-                <span><i aria-hidden="true"></i> Code expires in <strong id="expiry-timer">05:00</strong></span>
-                <button id="resend-button" type="button" disabled>Resend in 01:00</button>
-              </div>
-
-              <button class="primary-button" id="verify-button" type="submit" disabled>
-                <span>Verify and Continue</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg>
-              </button>
+              <button class="primary-button" id="verify-button" type="submit" disabled><span>Verify and Continue</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg></button>
+              <div class="code-timing"><span>Expires in <strong id="expiry-timer">05:00</strong></span><button id="resend-button" type="button" disabled>Resend in 01:00</button></div>
             </form>
-
-            <button class="text-button" id="restart-button" type="button">Start again</button>
+            <button class="text-button" id="restart-button" type="button">Use a different email</button>
           </section>
-
+          <section class="auth-stage success-stage" id="success-stage" aria-labelledby="success-heading" hidden>
+            <h3 id="success-heading" tabindex="-1">Verified</h3>
+            <p class="stage-description">Opening your workspace…</p>
+            <div class="success-seal" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="m14 24 7 7 14-15" /></svg></div>
+            <p class="success-greeting">Welcome back, <span id="success-name"></span></p>
+            <p class="success-location">LINE 3 • WEST DEPOT</p>
+            <p class="session-note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V8a5 5 0 0110 0v2m-9 0h8a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg><span id="session-duration">10 hours</span> session</p>
+          </section>
+          <div class="turnstile-shell" id="turnstile-shell"><div id="turnstile-widget" aria-label="Cloudflare security check"></div><span id="turnstile-status" aria-live="polite">Preparing secure verification…</span></div>
           <p class="auth-message" id="auth-message" role="alert" aria-live="polite" hidden></p>
-
-          <footer class="auth-footer">
-            <span>LINE 3 • WEST DEPOT</span>
-            <span>PIN PROTECTED</span>
-          </footer>
+          <footer class="auth-footer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-2.8 8-7 10-4.2-2-7-5.5-7-10V6l7-3z" /></svg> AUTHORIZED STAFF ONLY</footer>
         </section>
       </section>
-
-      <p class="shell-footer">L3 DC TEMPLATE <span>•</span> AUTHORIZED OPERATIONS PERSONNEL</p>
+      <p class="shell-footer">LINE 3 <span>•</span> WEST DEPOT <span>•</span> SECURE ACCESS</p>
     </main>
     <noscript>This secure login requires JavaScript to verify your one-time code.</noscript>
   </body>
