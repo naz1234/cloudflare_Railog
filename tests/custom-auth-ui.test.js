@@ -7,8 +7,8 @@ const readSource = (path) => readFile(new URL(`../${path}`, import.meta.url), 'u
 test('custom login uses the L3 DC Template identity and requests an approved email', async () => {
   const html = await readSource('public/login.html');
 
-  assert.match(html, /<h1 id="auth-title">L3 DC<br \/>TEMPLATE<\/h1>/);
-  assert.match(html, /Enter your <strong>approved email address<\/strong>\./);
+  assert.match(html, /<h1 id="auth-title">L3 DC TEMPLATE<\/h1>/);
+  assert.match(html, /Enter your approved FLOW work email\./);
   assert.doesNotMatch(html, /NORTH YARD/i);
   assert.match(html, /type=["']email["']/i);
   assert.match(html, /name=["']email["']/i);
@@ -46,9 +46,9 @@ test('login requires a fresh Turnstile token and tab-local challenge for verific
   assert.doesNotMatch(rateLimitBlock, /clearChallenge\(/);
 
   const widgetPosition = html.indexOf('id="turnstile-shell"');
-  const requestStagePosition = html.indexOf('id="request-stage"');
-  const verifyStagePosition = html.indexOf('id="verify-stage"');
-  assert.ok(widgetPosition > 0 && widgetPosition < requestStagePosition && widgetPosition < verifyStagePosition);
+  const successStagePosition = html.indexOf('id="success-stage"');
+  const successStageEnd = html.indexOf('</section>', successStagePosition);
+  assert.ok(widgetPosition > successStageEnd, 'The shared security widget stays outside the hidden login stages');
 });
 
 test('main application verifies the server session and redirects through the isolated login shell', async () => {

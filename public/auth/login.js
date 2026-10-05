@@ -4,16 +4,26 @@
   const PIN_LENGTH = 6;
   const DEFAULT_EXPIRY_SECONDS = 300;
   const DEFAULT_RESEND_SECONDS = 60;
+  const VERIFY_ANIMATION_MS = 650;
+  const DECK_CLOSING_MS = 750;
+  const SUCCESS_DISPLAY_MS = 2000;
   const CHALLENGE_STORAGE_KEY = 'l3dcLoginChallenge';
   const EMAIL_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
   const GENERIC_REQUEST_ERROR = 'Login is temporarily unavailable. Please try again.';
   const GENERIC_VERIFY_ERROR = 'The code is invalid or expired. Check it and try again.';
   const INVALID_EMAIL_ERROR = 'Enter your approved email address.';
 
+  const loginCard = document.getElementById('login-card');
+  const formHeading = document.getElementById('form-heading');
   const requestStage = document.getElementById('request-stage');
   const verifyStage = document.getElementById('verify-stage');
+  const successStage = document.getElementById('success-stage');
+  const successHeading = document.getElementById('success-heading');
+  const successName = document.getElementById('success-name');
+  const sessionDuration = document.getElementById('session-duration');
   const requestIndicator = document.getElementById('request-step-indicator');
   const verifyIndicator = document.getElementById('verify-step-indicator');
+  const successIndicator = document.getElementById('success-step-indicator');
   const requestForm = document.getElementById('request-form');
   const verifyForm = document.getElementById('verify-form');
   const requestButton = document.getElementById('request-button');
@@ -26,17 +36,69 @@
   const emailInput = document.getElementById('login-email');
   const turnstileShell = document.getElementById('turnstile-shell');
   const turnstileStatus = document.getElementById('turnstile-status');
+  const pinContainer = document.getElementById('pin-inputs');
   const pinInputs = Array.from(document.querySelectorAll('#pin-inputs input'));
 
   let expiryDeadline = 0;
   let resendDeadline = 0;
   let timerId = 0;
   let isBusy = false;
+  let loginCompleted = false;
   let turnstileWidgetId = null;
   let turnstileToken = '';
   let activeChallengeId = '';
   let activeEmail = '';
   let activeEmailHint = '';
+
+  function prefersReducedMotion() {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+  }
+
+  function wait(milliseconds) {
+    return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+  }
+
+  function setStage(stage) {
+    const stages = ['request', 'verify', 'success'];
+    const currentIndex = stages.indexOf(stage);
+    pinContainer.classList.remove('is-verifying', 'is-closing');
+    loginCard.dataset.stage = stage;
+    requestStage.hidden = stage !== 'request';
+    verifyStage.hidden = stage !== 'verify';
+    successStage.hidden = stage !== 'success';
+    formHeading.textContent = ['Sign in', 'Verify your email', 'Access verified'][currentIndex];
+    [requestIndicator, verifyIndicator, successIndicator].forEach((indicator, index) => {
+      indicator.classList.toggle('is-current', index === currentIndex);
+      indicator.classList.toggle('is-complete', index < currentIndex);
+      if (index === currentIndex) indicator.setAttribute('aria-current', 'step');
+      else indicator.removeAttribute('aria-current');
+      indicator.querySelector(':scope > span').textContent = index < currentIndex ? '✓' : `0${index + 1}`;
+    });
+  }
+
+  function verifiedName(data, email) {
+    const name = typeof data.user?.name === 'string' ? data.user.name.trim() : '';
+    return name && name.length <= 80 && !/[\u0000-\u001f\u007f]/.test(name)
+      ? name
+      : (normalizeLoginEmail(email).split('@')[0] || 'Team member');
+  }
+
+  function showSuccessStage(data, email) {
+    const remainingHours = (Date.parse(data.expiresAt) - Date.now()) / 3600000;
+    const hours = Number.isFinite(remainingHours) && remainingHours > 0
+      ? Math.min(10, Math.ceil(remainingHours))
+      : 10;
+    successName.textContent = verifiedName(data, email);
+    sessionDuration.textContent = `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+    pinContainer.classList.remove('is-verifying', 'is-closing');
+    pinContainer.setAttribute('aria-busy', 'false');
+    setButtonBusy(verifyButton, false, 'Verifying code');
+    setStage('success');
+    turnstileShell.hidden = true;
+    emailInput.disabled = true;
+    showMessage('');
+    successHeading.focus();
+  }
 
   function safeReturnPath() {
     const candidate = new URL(window.location.href).searchParams.get('returnTo');
@@ -262,7 +324,7 @@
     } catch {
       clearTurnstileToken('Secure login could not be prepared. Refresh this page to retry.');
       setTurnstileStatus('Secure login could not be prepared. Refresh this page to retry.', 'error');
-      showMessage(GENERIC_REQUEST_ERROR);
+      if (!loginCompleted) showMessage(GENERIC_REQUEST_ERROR);
     }
   }
 
@@ -273,7 +335,7 @@
   function clearPin() {
     pinInputs.forEach((input) => {
       input.value = '';
-      input.classList.remove('is-filled');
+      updatePinAppearance(input);
     });
     updateVerifyButton();
   }
@@ -287,6 +349,7 @@
   }
 
   function updateTimers() {
+    if (loginCompleted) return;
     const expiryRemaining = remainingSeconds(expiryDeadline);
     const resendRemaining = remainingSeconds(resendDeadline);
     expiryTimer.textContent = formatTime(expiryRemaining);
@@ -313,28 +376,15 @@
   }
 
   function showVerifyStage() {
-    requestStage.hidden = true;
-    verifyStage.hidden = false;
-    requestIndicator.classList.remove('is-current');
-    requestIndicator.classList.add('is-complete');
-    requestIndicator.removeAttribute('aria-current');
-    requestIndicator.querySelector(':scope > span').textContent = '✓';
-    verifyIndicator.classList.add('is-current');
-    verifyIndicator.setAttribute('aria-current', 'step');
+    setStage('verify');
     clearPin();
     window.requestAnimationFrame(() => pinInputs[0].focus());
   }
 
   function showRequestStage() {
+    if (isBusy || loginCompleted) return;
     const previousEmail = activeEmail || normalizeLoginEmail(emailInput.value);
-    verifyStage.hidden = true;
-    requestStage.hidden = false;
-    verifyIndicator.classList.remove('is-current');
-    verifyIndicator.removeAttribute('aria-current');
-    requestIndicator.classList.remove('is-complete');
-    requestIndicator.classList.add('is-current');
-    requestIndicator.setAttribute('aria-current', 'step');
-    requestIndicator.querySelector(':scope > span').textContent = '01';
+    setStage('request');
     window.clearInterval(timerId);
     expiryDeadline = 0;
     resendDeadline = 0;
@@ -359,6 +409,7 @@
     activeEmail = email;
     const requestTurnstileToken = turnstileToken;
     isBusy = true;
+    restartButton.disabled = true;
     clearTurnstileToken('Security check submitted. Preparing a fresh check…');
     showMessage('');
     const activeButton = isResend ? resendButton : requestButton;
@@ -396,6 +447,7 @@
       showMessage(GENERIC_REQUEST_ERROR);
     } finally {
       isBusy = false;
+      restartButton.disabled = false;
       if (!isResend) setButtonBusy(requestButton, false, 'Sending secure code');
       activeButton.removeAttribute('aria-busy');
       resetTurnstile();
@@ -404,15 +456,47 @@
     }
   }
 
+  function updatePinAppearance(input, animate = false) {
+    const filled = Boolean(input.value);
+    input.classList.toggle('is-filled', filled);
+    const slot = input.closest('.pin-slot');
+    if (!slot) return;
+    slot.classList.toggle('is-filled', filled);
+    slot.classList.remove('is-entering');
+    if (filled && animate && !prefersReducedMotion()) {
+      // Restart the entry animation when a digit is replaced or pasted again.
+      void slot.offsetWidth;
+      slot.classList.add('is-entering');
+    }
+  }
+
+  function setVerificationBusy(busy) {
+    isBusy = busy;
+    setButtonBusy(verifyButton, busy, 'Verifying code');
+    if (busy) {
+      pinInputs.forEach((input) => input.closest('.pin-slot')?.classList.remove('is-entering'));
+    }
+    pinContainer.classList.remove('is-closing');
+    pinContainer.classList.toggle('is-verifying', busy);
+    pinContainer.setAttribute('aria-busy', String(busy));
+    pinInputs.forEach((input) => { input.disabled = busy; });
+    restartButton.disabled = busy;
+    updateTimers();
+  }
+
   function distributeDigits(startIndex, rawValue) {
+    if (isBusy) return;
     const digits = String(rawValue || '').replace(/\D/g, '').slice(0, PIN_LENGTH - startIndex);
-    if (!digits) return;
+    if (!digits) {
+      updateVerifyButton();
+      return;
+    }
 
     digits.split('').forEach((digit, offset) => {
       const input = pinInputs[startIndex + offset];
       if (!input) return;
       input.value = digit;
-      input.classList.add('is-filled');
+      updatePinAppearance(input, true);
     });
 
     const nextIndex = Math.min(startIndex + digits.length, PIN_LENGTH - 1);
@@ -423,21 +507,28 @@
   }
 
   pinInputs.forEach((input, index) => {
+    const slot = input.closest('.pin-slot');
+    slot?.addEventListener('animationend', (event) => {
+      if (event.target === slot) slot.classList.remove('is-entering');
+    });
+
     input.addEventListener('input', () => {
+      if (isBusy) return;
       const digits = input.value.replace(/\D/g, '');
       input.value = '';
-      input.classList.remove('is-filled');
+      updatePinAppearance(input);
       distributeDigits(index, digits);
     });
 
     input.addEventListener('keydown', (event) => {
+      if (isBusy) return;
       if (event.key === 'Backspace') {
         if (input.value) {
           input.value = '';
-          input.classList.remove('is-filled');
+          updatePinAppearance(input);
         } else if (index > 0) {
           pinInputs[index - 1].value = '';
-          pinInputs[index - 1].classList.remove('is-filled');
+          updatePinAppearance(pinInputs[index - 1]);
           pinInputs[index - 1].focus();
         }
         event.preventDefault();
@@ -482,10 +573,10 @@
     const code = readPin();
     if (isBusy || !activeChallengeId || code.length !== PIN_LENGTH || Date.now() >= expiryDeadline) return;
 
-    isBusy = true;
+    const verifyStartedAt = Date.now();
+    const challengeEmail = activeEmail;
+    setVerificationBusy(true);
     showMessage('');
-    setButtonBusy(verifyButton, true, 'Verifying code');
-    pinInputs.forEach((input) => { input.disabled = true; });
 
     try {
       const { response, data } = await api('/api/auth/verify-code', {
@@ -493,21 +584,29 @@
         body: JSON.stringify({ challengeId: activeChallengeId, code }),
       });
       if (!response.ok || data.authenticated !== true) throw new Error('invalid_code');
+      loginCompleted = true;
+      window.clearInterval(timerId);
+      if (!prefersReducedMotion()) {
+        const animationRemaining = VERIFY_ANIMATION_MS - (Date.now() - verifyStartedAt);
+        if (animationRemaining > 0) await wait(animationRemaining);
+        pinContainer.classList.add('is-closing');
+        await wait(DECK_CLOSING_MS);
+      }
+      showSuccessStage(data, challengeEmail);
       clearChallenge({ clearEmail: true });
-      showMessage('Access confirmed. Opening the West Depot workspace…', 'success');
-      window.setTimeout(() => window.location.replace(safeReturnPath()), 350);
+      window.setTimeout(
+        () => window.location.replace(safeReturnPath()),
+        SUCCESS_DISPLAY_MS,
+      );
     } catch {
+      setVerificationBusy(false);
       clearPin();
       showMessage(GENERIC_VERIFY_ERROR);
       pinInputs[0].focus();
-    } finally {
-      isBusy = false;
-      setButtonBusy(verifyButton, false, 'Verifying code');
-      pinInputs.forEach((input) => { input.disabled = false; });
-      updateVerifyButton();
     }
   });
 
+  setStage('request');
   restoreChallenge();
   initializeTurnstile();
 
