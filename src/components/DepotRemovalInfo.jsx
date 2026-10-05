@@ -39,7 +39,6 @@ export default function DepotRemovalInfo({ trainLabel, depot = "west", removals 
                 <div className="mt-0.5">Removal time: {timing || "Not set"}</div>
               </div>
             ))}
-            <div className="theme-removal-info-source mt-1.5">From Removal Summary</div>
             <TooltipPrimitive.Arrow className="theme-removal-info-arrow" width={10} height={5} />
           </TooltipPrimitive.Content>
         </TooltipPrimitive.Portal>

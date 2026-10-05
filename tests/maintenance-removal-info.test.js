@@ -89,7 +89,7 @@ test("tooltip is focus-accessible, portalled, collision-aware and matches the ap
   assert.match(tooltip, /side="right"/);
   assert.match(tooltip, /sideOffset=\{6\}/);
   assert.match(tooltip, /collisionPadding=\{10\}/);
-  for (const text of ["{depotLabel} Removal", "TID {tid}", "Removal time:", "From Removal Summary"]) {
+  for (const text of ["{depotLabel} Removal", "TID {tid}", "Removal time:"]) {
     assert.ok(tooltip.includes(text));
   }
   assert.match(css, /\.theme-removal-info-trigger:focus-visible/);
@@ -97,6 +97,14 @@ test("tooltip is focus-accessible, portalled, collision-aware and matches the ap
   assert.match(css, /html\[data-app-theme="light"\] \.theme-removal-info-trigger svg \*/);
   assert.match(css, /\.theme-removal-info-tooltip \{[\s\S]*?background: #071e30;/);
   assert.match(css, /html\[data-app-theme="light"\] \.theme-removal-info-tooltip \{[\s\S]*?background: #ffffff;/);
+});
+
+test("both depot info icons use a pointing-hand cursor and omit the source footer", () => {
+  const triggerStyle = css.match(/\.theme-removal-info-trigger \{([^}]*)\}/)?.[1] || "";
+  assert.match(triggerStyle, /cursor: pointer;/);
+  assert.doesNotMatch(triggerStyle, /cursor: help;/);
+  assert.doesNotMatch(tooltip, /From Removal Summary|theme-removal-info-source/);
+  assert.doesNotMatch(css, /theme-removal-info-source/);
 });
 
 test("East uses red in both themes without changing West cyan or the close tooltip offset", () => {
