@@ -27,3 +27,25 @@ export function buildRemovalInfoByTrain(rows = []) {
 
 // Retain the original export for West-only callers.
 export const buildWestRemovalInfoByTrain = buildRemovalInfoByTrain;
+
+// Rows must come from the active off-peak/mainline list, not from a guess based
+// on missing depot assignments. HDW off-peak rows legitimately have no TID.
+export function buildOffPeakInfoByTrain(rows = []) {
+  const byTrain = new Map();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const trainMatch = String(row?.trainId ?? "").trim().match(/^T?0*(\d+)$/i);
+    if (!trainMatch || Number(trainMatch[1]) === 0) continue;
+
+    const trainId = String(Number(trainMatch[1])).padStart(2, "0");
+    const tidMatch = String(row?.tid ?? "").trim().match(/^(?:TID\s*)?0*(\d{1,3})$/i);
+    const tid = tidMatch && Number(tidMatch[1]) > 0
+      ? String(Number(tidMatch[1])).padStart(3, "0")
+      : "";
+    const references = byTrain.get(trainId) || [];
+    if (!references.some((entry) => entry.tid === tid)) {
+      references.push({ tid });
+      byTrain.set(trainId, references);
+    }
+  }
+  return byTrain;
+}

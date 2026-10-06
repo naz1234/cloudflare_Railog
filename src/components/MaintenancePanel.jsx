@@ -5,7 +5,8 @@ import ActionTooltip from "./ActionTooltip";
 import MaintenanceImageSummary from "./MaintenanceImageSummary";
 import MaintenanceUploadTools from "./MaintenanceUploadTools";
 import DepotRemovalInfo from "./DepotRemovalInfo";
-import { buildRemovalInfoByTrain } from "../lib/maintenanceRemovalInfo";
+import OffPeakTrainInfo from "./OffPeakTrainInfo";
+import { buildRemovalInfoByTrain, buildOffPeakInfoByTrain } from "../lib/maintenanceRemovalInfo";
 import { sortRequestsByStatusThenTrain } from "../utils/maintenanceRequestSort";
 import { groupRequestGroupsByCategory } from "../lib/requestedActionSummary";
 
@@ -680,7 +681,7 @@ function RequestGroupVisibilityIcon({ hidden = false, className = "" }) {
   );
 }
 
-export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, onDeleteGroup, onToggleGroupHidden, showImportTools = true, stabledTrainIds = [], stabledTrainLocations = {}, westRemovalRows = [], eastRemovalRows = [], panelTitle = "Maintenance", listTitle = "Train Request", requestTypeLabel = "Request Type", requestTypePlaceholder = "e.g. RST PM / INBOUND (G to C)", addButtonLabel = "Add Request" }) {
+export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll, onRenameGroup, onDeleteGroup, onToggleGroupHidden, showImportTools = true, stabledTrainIds = [], stabledTrainLocations = {}, westRemovalRows = [], eastRemovalRows = [], offPeakRows = [], panelTitle = "Maintenance", listTitle = "Train Request", requestTypeLabel = "Request Type", requestTypePlaceholder = "e.g. RST PM / INBOUND (G to C)", addButtonLabel = "Add Request" }) {
   const [trainId, setTrainId] = useState("");
   const [requestType, setRequestType] = useState("");
   const [error, setError] = useState("");
@@ -876,6 +877,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const displayType = (req) => getRequestDisplayLabel(req) || "Request";
   const westRemovalInfoByTrain = buildRemovalInfoByTrain(westRemovalRows);
   const eastRemovalInfoByTrain = buildRemovalInfoByTrain(eastRemovalRows);
+  const offPeakInfoByTrain = buildOffPeakInfoByTrain(offPeakRows);
   const requestGroupColors = buildDistinctRequestGroupColorMap(
     (requests || []).map((req) => displayType(req))
   );
@@ -1443,6 +1445,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               const chipLabel = getRequestChipTrainLabel(req);
               const westRemovals = westRemovalInfoByTrain.get(normalizeTrainCompareKey(req.trainId));
               const eastRemovals = eastRemovalInfoByTrain.get(normalizeTrainCompareKey(req.trainId));
+              const offPeakReferences = offPeakInfoByTrain.get(normalizeTrainCompareKey(req.trainId));
 
               const crossOutInfo = getCrossOutInfo(req);
               const crossOutMessage = getCrossOutMessage(req, crossOutInfo);
@@ -1465,6 +1468,9 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                     )}
                     {eastRemovals?.length > 0 && (
                       <DepotRemovalInfo trainLabel={chipLabel} depot="east" removals={eastRemovals} />
+                    )}
+                    {offPeakReferences?.length > 0 && (
+                      <OffPeakTrainInfo trainLabel={chipLabel} references={offPeakReferences} />
                     )}
                   </span>
                   {showAlreadyStatusIcon ? (
