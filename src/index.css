@@ -13034,3 +13034,49 @@ html[data-app-theme="light"] .theme-removal-info-tooltip[data-depot="east"] .the
 html[data-app-theme="light"] .theme-removal-info-tooltip[data-depot="east"] .theme-removal-info-arrow {
   filter: drop-shadow(0 1px 0 #dc2626);
 }
+
+.theme-removal-info-trigger[data-service="off-peak"] {
+  color: #a78bfa;
+}
+
+.theme-removal-info-trigger[data-service="off-peak"]:hover {
+  color: #ddd6fe;
+}
+
+.theme-removal-info-trigger[data-service="off-peak"]:focus-visible {
+  outline-color: #a78bfa;
+}
+
+.theme-removal-info-tooltip[data-service="off-peak"] {
+  border-color: #a78bfa;
+}
+
+.theme-removal-info-tooltip[data-service="off-peak"] .theme-removal-info-tid {
+  color: #c4b5fd;
+}
+
+.theme-removal-info-tooltip[data-service="off-peak"] .theme-removal-info-arrow {
+  filter: drop-shadow(0 1px 0 #a78bfa);
+}
+
+html[data-app-theme="light"] .theme-removal-info-trigger[data-service="off-peak"],
+html[data-app-theme="light"] .theme-removal-info-trigger[data-service="off-peak"] svg,
+html[data-app-theme="light"] .theme-removal-info-trigger[data-service="off-peak"] svg * {
+  color: #7c3aed !important;
+}
+
+html[data-app-theme="light"] .theme-removal-info-trigger[data-service="off-peak"]:focus-visible {
+  outline-color: #7c3aed;
+}
+
+html[data-app-theme="light"] .theme-removal-info-tooltip[data-service="off-peak"] {
+  border-color: #7c3aed;
+}
+
+html[data-app-theme="light"] .theme-removal-info-tooltip[data-service="off-peak"] .theme-removal-info-tid {
+  color: #6d28d9 !important;
+}
+
+html[data-app-theme="light"] .theme-removal-info-tooltip[data-service="off-peak"] .theme-removal-info-arrow {
+  filter: drop-shadow(0 1px 0 #7c3aed);
+}

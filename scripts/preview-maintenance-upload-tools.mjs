@@ -22,7 +22,7 @@ const server = await createServer({
     configureServer(vite) {
       vite.middlewares.use(async (request, response, next) => {
         const url = new URL(request.url, "http://127.0.0.1:4191");
-        if (url.pathname === "/" || url.pathname === "/maintenance-preview") {
+        if (["/", "/maintenance-preview", "/off-peak-preview"].includes(url.pathname)) {
           const transformed = await vite.transformIndexHtml(url.pathname, html);
           response.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
           response.end(transformed);
@@ -66,3 +66,4 @@ const server = await createServer({
 
 await server.listen();
 console.log("Local maintenance preview: http://127.0.0.1:4191/maintenance-preview");
+console.log("Local off-peak icon preview: http://127.0.0.1:4191/off-peak-preview");

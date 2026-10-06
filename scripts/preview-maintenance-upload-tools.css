@@ -9,6 +9,8 @@ body { margin: 0; min-height: 100vh; background: #061522; color: #d3e6f6; font-f
 .local-maintenance-actions :is(a, button):focus-visible { outline: 2px solid #52dce6; outline-offset: 3px; }
 .local-maintenance-disclaimer { font-size: 11px; color: #89a5b8; }
 .local-maintenance-demo { width: 340px; max-width: 100%; }
+.local-off-peak-preview { grid-template-columns: minmax(240px, 370px) 276px; }
+.local-off-peak-preview .local-maintenance-demo { width: 276px; }
 html[data-app-theme="light"] body { background: #eef4f9; color: #334155; }
 html[data-app-theme="light"] .local-maintenance-notes h1 { color: #0f2940; }
 html[data-app-theme="light"] .local-maintenance-eyebrow { color: #0e7490; }
@@ -18,4 +20,5 @@ html[data-app-theme="light"] .local-maintenance-actions :is(a, button) { backgro
   .local-maintenance-preview { grid-template-columns: minmax(0, 340px); gap: 24px; padding: 20px 16px; }
   .local-maintenance-notes { padding-top: 0; }
   .local-maintenance-notes h1 { font-size: 24px; }
+  .local-off-peak-preview { grid-template-columns: minmax(0, 276px); }
 }

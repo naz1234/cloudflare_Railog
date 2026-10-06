@@ -17943,6 +17943,10 @@ export default function DepotStablingPage() {
     ),
     [trainRemCheckState, activeTimetable],
   );
+  const offPeakInfoRows = useMemo(
+    () => collectTrainRemMainlineInServiceRows(trainRemCheckState, activeTimetable),
+    [trainRemCheckState, activeTimetable],
+  );
 
   const loadTimetableRecords = useCallback(async () => {
     const localRecords = normalizeStoredTimetableRecords(loadLocalTimetableRecords());
@@ -22594,6 +22598,7 @@ export default function DepotStablingPage() {
           stabledTrainLocations={getMainStablingLocations(westData, eastData)}
           westRemovalRows={westRemovalInfoRows}
           eastRemovalRows={eastRemovalInfoRows}
+          offPeakRows={offPeakInfoRows}
         />
       </div>
 
