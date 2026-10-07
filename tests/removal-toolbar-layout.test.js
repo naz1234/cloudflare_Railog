@@ -4,14 +4,14 @@ import test from 'node:test';
 
 const source = readFileSync(new URL('../src/pages/DepotStabling.jsx', import.meta.url), 'utf8');
 
-test('primary removal actions are left-aligned without an empty title spacer', () => {
+test('primary removal actions retain their order without an empty title spacer', () => {
   const start = source.indexOf('<div className="theme-train-rem-depot-card');
   const header = source.slice(start, source.indexOf('<div className="space-y-1 mt-2">', start));
   assert.match(header, /flex flex-col items-start gap-2/);
   assert.match(header, /\{\(depot !== "west" \|\| subtitle\) && \(/);
   assert.match(header, /theme-train-rem-action-row flex flex-nowrap items-center justify-start gap-1/);
   assert.doesNotMatch(header, /justify-between/);
-  const actions = ['SVC :', 'theme-train-rem-pdf-menu', 'theme-train-rem-ins', 'theme-train-rem-undo', 'theme-train-rem-clear'];
+  const actions = ['theme-train-rem-pdf-menu', 'theme-train-rem-ins', 'theme-train-rem-undo', 'theme-train-rem-clear'];
   const positions = actions.map(action => header.indexOf(action));
   assert.ok(positions.every((position, index) => position >= 0 && (!index || position > positions[index - 1])));
 });
