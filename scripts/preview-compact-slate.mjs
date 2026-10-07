@@ -21,7 +21,7 @@ const server = await createServer({
     name: "local-slate-component", enforce: "pre",
     transform(code, id) {
       if (id.replaceAll("\\", "/").endsWith("/src/pages/DepotStabling.jsx")) {
-        return `${code}\nexport { TrainRemPanel, MaintenancePanelShell, buildDefaultTrainRemState, buildTrainRemDepotPayload, getTrainRemPresetConfig, collectTrainRemRowsForDepotCopy, collectTrainRemMainlineInServiceRows };`;
+        return `${code}\nexport { TrainRemPanel, MaintenancePanelShell, StablingSection, TrainMovementExcelSheet, RemovalLogOutputFromTrainRem, RequestedTrainActionSummary, getDuplicates, getWestStablingKeys, getMainStablingLocations, buildStablingMoveState, buildDefaultTrainRemState, buildTrainRemDepotPayload, getTrainRemPresetConfig, collectTrainRemRowsForDepotCopy, collectTrainRemMainlineInServiceRows, buildTrainRemRemovalLog, createTrainMovementExcelRow, buildTrainMovementExcelLivePayload, saveTrainMovementExcelRows, saveTrainMovementExcelLogRows, saveTrainMovementExcelLocalUpdatedAt, saveTrainMovementExcelDirty };`;
       }
     },
     configureServer(vite) {

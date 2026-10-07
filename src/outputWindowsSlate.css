@@ -1,0 +1,184 @@
+/* Output, request and Excel windows share the compact Removal Summary frame.
+   Depot colours, request categories and workbook operations stay independent. */
+html[data-app-theme] :is(.theme-removal-log-output, .theme-request-type-summary, .official-depot-excel-generator)[data-window-design="compact-slate"] {
+  --window-panel: #0b1f33;
+  --window-control: #10263b;
+  --window-line: #2b4f6b;
+  --window-text: #e1ecf5;
+  --window-muted: #7dabc6;
+  --window-hover: #102c44;
+  --window-focus: #8bb5f6;
+  padding: 0 !important;
+  border: 1px solid var(--window-line) !important;
+  border-radius: 28px !important;
+  background: var(--window-panel) !important;
+  background-image: none !important;
+  color: var(--window-text) !important;
+  box-shadow: 0 14px 36px rgb(0 0 0 / 9%) !important;
+  font-family: Inter, "Segoe UI", sans-serif;
+}
+
+html[data-app-theme="light"] :is(.theme-removal-log-output, .theme-request-type-summary, .official-depot-excel-generator)[data-window-design="compact-slate"] {
+  --window-panel: #edf2f7;
+  --window-control: #ffffff;
+  --window-line: #d7e2ee;
+  --window-text: #0b2443;
+  --window-muted: #4e7198;
+  --window-hover: #e1ebf8;
+  --window-focus: #396cba;
+  box-shadow: 0 14px 36px rgb(35 51 75 / 5%) !important;
+}
+
+html[data-app-theme] [data-window-design="compact-slate"] .slate-window-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 70px;
+  padding: 12px 12px 10px;
+  border-bottom: 1px solid var(--window-line);
+  background: transparent;
+}
+
+html[data-app-theme] [data-window-design="compact-slate"] .slate-window-heading {
+  display: flex;
+  flex: 1 1 250px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+html[data-app-theme] [data-window-design="compact-slate"] .slate-window-title {
+  margin: 0;
+  color: var(--window-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.035em;
+  line-height: 1.2;
+  text-transform: none;
+  text-shadow: none;
+}
+
+html[data-app-theme] [data-window-design="compact-slate"] .slate-window-subtitle {
+  margin: 4px 0 0;
+  color: var(--window-muted) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+html[data-app-theme] [data-window-design="compact-slate"] .slate-window-title-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--window-line) !important;
+  border-radius: 9px;
+  background: var(--window-control) !important;
+  color: var(--window-muted) !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme] [data-window-design="compact-slate"] .slate-window-title-icon :is(svg, svg *) {
+  width: 15px;
+  height: 15px;
+  color: var(--window-muted) !important;
+  stroke: var(--window-muted) !important;
+  stroke-width: 1.5;
+}
+
+html[data-app-theme] [data-window-design="compact-slate"] .slate-window-body {
+  min-width: 0;
+  padding: 12px;
+}
+
+html[data-app-theme] [data-window-design="compact-slate"] :is(.slate-window-action, .theme-removal-log-action) {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 5px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--window-line) !important;
+  border-radius: 8px;
+  background: var(--window-control) !important;
+  color: var(--window-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  box-shadow: none !important;
+  transform: none !important;
+  cursor: pointer;
+}
+
+html[data-app-theme] [data-window-design="compact-slate"] :is(.slate-window-action, .theme-removal-log-action):hover:not(:disabled):not([data-copy-state="copied"]) {
+  background: var(--window-hover) !important;
+}
+
+html[data-app-theme] [data-window-design="compact-slate"] :is(.slate-window-action, .theme-removal-log-action):focus-visible {
+  outline: 2px solid var(--window-focus);
+  outline-offset: -2px;
+}
+
+html[data-app-theme] [data-window-design="compact-slate"] :is(.slate-window-action, .theme-removal-log-action):disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+html[data-app-theme] [data-window-design="compact-slate"] :is(.slate-window-action, .theme-removal-log-action) :is(svg, svg *) {
+  width: 14px;
+  height: 14px;
+  color: inherit !important;
+  stroke: currentColor !important;
+  stroke-width: 1.5;
+}
+
+html[data-app-theme] [data-window-design="compact-slate"] .slate-window-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+html[data-app-theme] [data-window-design="compact-slate"] .slate-window-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border: 1px solid var(--window-line);
+  border-radius: 8px;
+  background: var(--window-control);
+  color: var(--window-muted) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+html[data-app-theme] [data-window-design="compact-slate"] .slate-window-badge :is(svg, svg *) {
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+/* Preserve semantic teal actions and amber warnings, but use slate work surfaces. */
+html[data-app-theme] .official-depot-excel-generator[data-window-design="compact-slate"] {
+  --official-bg-start: var(--window-panel);
+  --official-bg-end: var(--window-panel);
+  --official-border: var(--window-line);
+  --official-panel: #061827;
+  --official-input: #10263b;
+  --official-text: var(--window-text);
+  --official-muted: var(--window-muted);
+}
+
+html[data-app-theme="light"] .official-depot-excel-generator[data-window-design="compact-slate"] {
+  --official-panel: rgba(255, 255, 255, 0.86);
+  --official-input: #ffffff;
+}

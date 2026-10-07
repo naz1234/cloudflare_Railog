@@ -9,7 +9,9 @@ const generatorSource = readFileSync(
 
 test("Next Day Excel Generator uses light surfaces and dark text in light mode", () => {
   assert.match(generatorSource, /html\[data-app-theme="light"\] \.official-depot-excel-generator \{/);
-  assert.match(generatorSource, /--official-bg-start: #f0fdfa;/);
+  assert.match(generatorSource, /--official-bg-start: #edf2f7;/);
+  assert.match(generatorSource, /--official-bg-end: #edf2f7;/);
+  assert.match(generatorSource, /--official-border: #d7e2ee;/);
   assert.match(generatorSource, /--official-panel: rgba\(255, 255, 255, 0\.86\);/);
   assert.match(generatorSource, /--official-input: #ffffff;/);
   assert.match(generatorSource, /--official-text: #0f2733;/);

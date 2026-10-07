@@ -1,0 +1,65 @@
+/* Every workspace Copy button shares Copy Stabling's existing success reaction.
+   Sizes, layout, labels and idle colours remain owned by their panels. */
+html[data-app-theme] :is(
+  .theme-stabling-section[data-stabling-design="compact-slate"],
+  .theme-movement-sheet[data-movement-design="compact-slate"],
+  .theme-train-rem-panel[data-removal-design="compact-slate"],
+  .theme-removal-log-output,
+  .theme-request-type-summary,
+  .theme-maintenance-panel,
+  [role="dialog"]
+) .slate-copy-feedback[data-copy-state] {
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+  animation-name: none !important;
+  animation-duration: 200ms !important;
+  transform: none !important;
+}
+
+html[data-app-theme] :is(
+  .theme-stabling-section[data-stabling-design="compact-slate"],
+  .theme-movement-sheet[data-movement-design="compact-slate"],
+  .theme-train-rem-panel[data-removal-design="compact-slate"],
+  .theme-removal-log-output,
+  .theme-request-type-summary,
+  .theme-maintenance-panel,
+  [role="dialog"]
+) .slate-copy-feedback[data-copy-state="copied"]:not(:disabled) {
+  background: #13785a !important;
+  border-color: #13785a !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: currentColor !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+html[data-app-theme] :is(
+  .theme-stabling-section[data-stabling-design="compact-slate"],
+  .theme-movement-sheet[data-movement-design="compact-slate"],
+  .theme-train-rem-panel[data-removal-design="compact-slate"],
+  .theme-removal-log-output,
+  .theme-request-type-summary,
+  .theme-maintenance-panel,
+  [role="dialog"]
+) .slate-copy-feedback[data-copy-state="copied"] > :is(span[aria-live], strong, svg) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+html[data-app-theme] .slate-copy-feedback[data-copy-state="copied"] svg {
+  color: #ffffff !important;
+  stroke: currentColor !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-app-theme] :is(
+    .theme-stabling-section[data-stabling-design="compact-slate"],
+    .theme-movement-sheet[data-movement-design="compact-slate"],
+    .theme-train-rem-panel[data-removal-design="compact-slate"],
+    .theme-removal-log-output,
+    .theme-request-type-summary,
+    .theme-maintenance-panel,
+    [role="dialog"]
+  ) .slate-copy-feedback[data-copy-state] {
+    transition-duration: 0s !important;
+  }
+}

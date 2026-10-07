@@ -6,6 +6,7 @@ import MaintenanceImageSummary from "./MaintenanceImageSummary";
 import MaintenanceUploadTools from "./MaintenanceUploadTools";
 import DepotRemovalInfo from "./DepotRemovalInfo";
 import OffPeakTrainInfo from "./OffPeakTrainInfo";
+import "../copyFeedbackSlate.css";
 import { buildRemovalInfoByTrain, buildOffPeakInfoByTrain } from "../lib/maintenanceRemovalInfo";
 import { sortRequestsByStatusThenTrain } from "../utils/maintenanceRequestSort";
 import { groupRequestGroupsByCategory } from "../lib/requestedActionSummary";
@@ -696,6 +697,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const [imageUploadActive, setImageUploadActive] = useState(false);
   const [filePickerOpen, setFilePickerOpen] = useState(false);
   const [workshopCopyStatus, setWorkshopCopyStatus] = useState("");
+  const workshopCopyTimerRef = useRef(null);
+  const groupCopyTimerRef = useRef(null);
   const [editingGroupKey, setEditingGroupKey] = useState("");
   const [groupTitleDraft, setGroupTitleDraft] = useState("");
   const [savingGroupKey, setSavingGroupKey] = useState("");
@@ -710,6 +713,11 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const [removingGroupTrainId, setRemovingGroupTrainId] = useState("");
   const [groupTrainMessage, setGroupTrainMessage] = useState({ type: "", text: "" });
   const [groupCopyStatus, setGroupCopyStatus] = useState("");
+
+  useEffect(() => () => {
+    clearTimeout(workshopCopyTimerRef.current);
+    clearTimeout(groupCopyTimerRef.current);
+  }, []);
 
   useEffect(() => {
     const input = excelInputRef.current;
@@ -1092,7 +1100,11 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       console.error("Workshop train copy failed:", copyError);
       setWorkshopCopyStatus("failed");
     } finally {
-      setTimeout(() => setWorkshopCopyStatus(""), 1400);
+      clearTimeout(workshopCopyTimerRef.current);
+      workshopCopyTimerRef.current = setTimeout(() => {
+        setWorkshopCopyStatus("");
+        workshopCopyTimerRef.current = null;
+      }, 2500);
     }
   };
 
@@ -1105,6 +1117,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     setGroupEditError("");
     setGroupTrainDraft("");
     setGroupTrainMessage({ type: "", text: "" });
+    clearTimeout(groupCopyTimerRef.current);
     setGroupCopyStatus("");
   };
 
@@ -1115,6 +1128,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     setGroupEditError("");
     setGroupTrainDraft("");
     setGroupTrainMessage({ type: "", text: "" });
+    clearTimeout(groupCopyTimerRef.current);
     setGroupCopyStatus("");
   };
 
@@ -1174,7 +1188,11 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       console.error("Request group train copy failed:", copyError);
       setGroupCopyStatus("failed");
     } finally {
-      setTimeout(() => setGroupCopyStatus(""), 1600);
+      clearTimeout(groupCopyTimerRef.current);
+      groupCopyTimerRef.current = setTimeout(() => {
+        setGroupCopyStatus("");
+        groupCopyTimerRef.current = null;
+      }, 2500);
     }
   };
 
@@ -1670,7 +1688,8 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               <button
                 type="button"
                 onClick={handleCopyWorkshopTrains}
-                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition-all ${
+                data-copy-state={workshopCopyStatus || "idle"}
+                className={`slate-copy-feedback inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition-all ${
                   workshopCopyStatus === "copied"
                     ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-300"
                     : workshopCopyStatus === "failed"
@@ -1680,7 +1699,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 title="Copy Workshop Train list"
               >
                 {workshopCopyStatus === "copied" ? <ClipboardCheck className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                {workshopCopyStatus === "copied" ? "Copied" : workshopCopyStatus === "failed" ? "Failed" : "Copy"}
+                <span aria-live="polite">{workshopCopyStatus === "copied" ? "Copied" : workshopCopyStatus === "failed" ? "Copy failed" : "Copy"}</span>
               </button>
               <span className="rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 py-0.5 text-[10px] font-black text-[#4f8ef7]">{workshopRequests.length}</span>
             </div>
@@ -1878,11 +1897,12 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                 <button
                   type="button"
                   onClick={copyEditingGroupTrainList}
+                  data-copy-state={groupCopyStatus || "idle"}
                   disabled={groupEditorBusy}
-                  className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-lg border border-sky-400/65 bg-sky-500/15 px-2 text-[9px] font-normal uppercase text-sky-100 hover:bg-sky-500/30 disabled:cursor-wait disabled:opacity-60"
+                  className="slate-copy-feedback inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-lg border border-sky-400/65 bg-sky-500/15 px-2 text-[9px] font-normal uppercase text-sky-100 hover:bg-sky-500/30 disabled:cursor-wait disabled:opacity-60"
                 >
                   <Copy className="h-3 w-3" />
-                  {groupCopyStatus === "copied" ? "Copied" : groupCopyStatus === "failed" ? "Copy failed" : "Copy train list"}
+                  <span aria-live="polite">{groupCopyStatus === "copied" ? "Copied" : groupCopyStatus === "failed" ? "Copy failed" : "Copy train list"}</span>
                 </button>
               </div>
 
