@@ -10008,7 +10008,6 @@ function InsertionTabContent({
   maintenanceRequests = [],
   onAddMaintenanceRequest,
   onRemoveMaintenanceRequest,
-  onClearMaintenanceRequests,
   onRenameMaintenanceRequestGroup,
   onToggleMaintenanceRequestGroupHidden = undefined,
   onDeleteMaintenanceRequestGroup,
@@ -10371,7 +10370,6 @@ function InsertionTabContent({
             requests={maintenanceRequests}
             onAdd={onAddMaintenanceRequest}
             onRemove={onRemoveMaintenanceRequest}
-            onClearAll={onClearMaintenanceRequests}
             onRenameGroup={onRenameMaintenanceRequestGroup}
             onToggleGroupHidden={onToggleMaintenanceRequestGroupHidden}
             onDeleteGroup={onDeleteMaintenanceRequestGroup}
@@ -21799,11 +21797,6 @@ export default function DepotStablingPage() {
     setRequests((prev) => prev.filter((r) => r.id !== id));
   };
 
-  const handleClearAllRequests = async () => {
-    await Promise.all(requests.map((r) => base44.entities.MaintenanceRequest.delete(r.id).catch(() => {})));
-    setRequests([]);
-  };
-
   const handleAddPSTRequest = async (reqData) => {
     const requestTypeKey = normalizeRequestIdentity(getTrainRequestDisplayType(reqData));
     const matchingGroup = pstRequests.filter(
@@ -22593,7 +22586,6 @@ export default function DepotStablingPage() {
           requests={requests}
           onAdd={handleAddRequest}
           onRemove={handleRemoveRequest}
-          onClearAll={handleClearAllRequests}
           onRenameGroup={handleRenameRequestGroup}
           onDeleteGroup={handleDeleteRequestGroup}
           stabledTrainIds={Array.from(westStablingKeys)}
@@ -22647,7 +22639,6 @@ export default function DepotStablingPage() {
             maintenanceRequests={requests}
             onAddMaintenanceRequest={handleAddRequest}
             onRemoveMaintenanceRequest={handleRemoveRequest}
-            onClearMaintenanceRequests={handleClearAllRequests}
             onRenameMaintenanceRequestGroup={handleRenameRequestGroup}
             onDeleteMaintenanceRequestGroup={handleDeleteRequestGroup}
             stabledTrainIds={Array.from(westStablingKeys)}

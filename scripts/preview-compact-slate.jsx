@@ -124,7 +124,6 @@ function Preview() {
           return request;
         }}
         onRemove={async (id) => setRequests((current) => current.filter((item) => item.id !== id))}
-        onClearAll={() => setRequests([])}
         onRenameGroup={async (items, title) => updateGroup(items, { groupTitle: title })}
         onDeleteGroup={async (items) => {
           const ids = new Set(items.map((item) => item.id));

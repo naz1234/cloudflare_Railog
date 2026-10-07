@@ -9,7 +9,9 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
   --slate-text: #e1ecf5;
   --slate-muted: #7dabc6;
   --slate-control: #10263b;
-  --slate-active: #155bd7;
+  --slate-active: #17364a;
+  --slate-active-text: #67d7f0;
+  --slate-active-shadow: inset 0 0 0 1px #28556d;
   --slate-focus: #8bb5f6;
   --slate-danger: #f09a9f;
   width: 314px;
@@ -35,7 +37,9 @@ html[data-app-theme="light"] .theme-train-rem-panel[data-removal-design="compact
   --slate-text: #0b2443;
   --slate-muted: #4e7198;
   --slate-control: #ffffff;
-  --slate-active: #155bd7;
+  --slate-active: #e7effd;
+  --slate-active-text: #155bd7;
+  --slate-active-shadow: none;
   --slate-focus: #396cba;
   --slate-danger: #b83349;
   box-shadow: 0 14px 36px rgb(35 51 75 / 5%) !important;
@@ -181,7 +185,7 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
 
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-presets > div {
   gap: 4px;
-  padding: 3px;
+  padding: 2px;
   background: var(--slate-row);
   border: 0;
   border-radius: 12px;
@@ -189,7 +193,7 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
 
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-preset {
   flex: 1;
-  height: 34px;
+  height: 28px;
   border: 0 !important;
   border-radius: 8px;
   background: transparent !important;
@@ -201,7 +205,8 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
 
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-preset.is-active {
   background: var(--slate-active) !important;
-  color: #fff !important;
+  color: var(--slate-active-text) !important;
+  box-shadow: var(--slate-active-shadow) !important;
   font-weight: 600 !important;
 }
 
@@ -215,8 +220,10 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-sort-control {
   height: 32px;
   margin-right: auto;
-  background: transparent !important;
-  border: 0 !important;
+  background: var(--slate-row) !important;
+  border: 1px solid var(--slate-line) !important;
+  border-radius: 12px;
+  padding: 0 0 0 2px !important;
   box-shadow: none !important;
 }
 
@@ -230,6 +237,7 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
   height: 30px;
   padding: 0 8px;
   border: 0 !important;
+  border-radius: 8px;
   background: transparent !important;
   color: var(--slate-muted) !important;
   font-size: 14px;
@@ -238,14 +246,24 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
 }
 
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-sort-button.is-active {
-  background: #e7effd !important;
-  color: #155bd7 !important;
+  background: var(--slate-active) !important;
+  color: var(--slate-active-text) !important;
+  box-shadow: var(--slate-active-shadow) !important;
 }
 
-html[data-app-theme="dark"] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-sort-button.is-active {
-  background: #17364a !important;
-  color: #67d7f0 !important;
-  box-shadow: inset 0 0 0 1px #28556d !important;
+/* Let Location meet the frame's inner curve without a dark padded end cap. */
+html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-sort-button:last-child {
+  align-self: stretch;
+  height: auto;
+  border-radius: 8px 11px 11px 8px;
+}
+
+html[data-app-theme="light"] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-sort-control {
+  border: 1px solid #ffffff !important;
+}
+
+html[data-app-theme="light"] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-sort-button.is-active {
+  box-shadow: inset 0 0 0 1px #ffffff !important;
 }
 
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-copy {
@@ -293,7 +311,7 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
 }
 
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-row-card[data-preset][data-tid] {
-  height: 30px;
+  height: 24px;
   border: 0 !important;
   border-bottom: 1px solid var(--slate-soft-line) !important;
   border-radius: 0 !important;
@@ -343,7 +361,7 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
   text-overflow: ellipsis;
 }
 
-.slate-removal-remark-wrap { display: flex; min-width: 0; height: 100%; padding: 3px 6px; }
+.slate-removal-remark-wrap { display: flex; min-width: 0; height: 100%; padding: 2px 6px; }
 .slate-removal-remark {
   display: flex; align-items: center; gap: 6px; width: 100%; min-width: 0;
   padding: 0 8px; border: 0; border-radius: 5px;
@@ -402,7 +420,7 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
   stroke: currentColor !important; stroke-width: 2.25;
 }
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-row-card[data-preset][data-tid] input[data-removal-field="remark"][data-removal-has-remark="true"] {
-  height: calc(100% - 6px); width: calc(100% - 12px); margin: 0 6px;
+  height: calc(100% - 4px); width: calc(100% - 12px); margin: 0 6px;
   border-radius: 5px !important; padding: 0 8px;
 }
 .slate-removal-remark-popover {
@@ -444,9 +462,7 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-service > span { color: var(--slate-muted) !important; font-size: 14px; font-weight: 400; }
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-service > strong { color: inherit !important; font-size: 30px; font-weight: 650; line-height: 1.05; }
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row button > svg { width: 19px; height: 19px; stroke: currentColor !important; stroke-width: 1.5; }
-html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row button.theme-train-rem-pdf { min-width: 118px; background: #155bd7 !important; color: #fff !important; border-color: #155bd7 !important; }
-html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row button.theme-train-rem-pdf :is(svg, svg *) { color: #fff !important; stroke: #fff !important; }
-html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row .theme-train-rem-pdf:hover { background: #124cba !important; }
+html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row button.theme-train-rem-pdf { min-width: 118px; }
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row .theme-train-rem-pdf.is-done { background: #13785a !important; border-color: #13785a !important; color: white !important; }
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-toolbar > .space-y-1 { margin-top: 0; }
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-timetable { display: flex; align-items: center; justify-content: flex-start; gap: 8px; border-top: 1px solid var(--slate-line); padding: 10px 0 8px; color: var(--slate-muted); font-size: 14px; }
@@ -482,7 +498,7 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row button.theme-train-rem-pdf { min-width: 80px; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row .theme-train-rem-clear { width: 30px; padding: 0; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-timetable { padding: 8px 0 6px; font-size: 11px; }
-  html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-preset { height: 30px; font-size: 12px; }
+  html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-preset { height: 24px; font-size: 12px; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-sort-copy-row { margin-top: 8px; padding: 8px 0; gap: 4px; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-sort-control { height: 28px; padding: 0; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-sort-label { font-size: 10px; padding: 0 3px; }
