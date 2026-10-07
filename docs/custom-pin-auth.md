@@ -12,7 +12,7 @@ Deploy the additional-address support to both Pages and the private mailer, then
 
 ## Security model
 
-- Only the canonical `/login` route (plus the backward-compatible `/login.html` alias), its exact login assets, the favicon, and the required `/api/auth/*` methods are public in custom mode. The Railog HTML, application bundle, images, and operational APIs remain behind server middleware.
+- The canonical `/login` route (plus `/login.html`), its exact login assets, the favicon, and required `/api/auth/*` methods are public in custom mode. The separate `/removal-scan` phone shell and its exact two standalone assets are also public; see [QR phone access](removal-scan-qr.md). Its API requires a valid, unexpired session capability. The Railog HTML, dashboard bundle, images, and operational APIs remain behind server middleware.
 - Turnstile is validated server-side before any email is sent. The expected hostname and action are checked.
 - The submitted address is normalized and matched case-insensitively against `AUTH_ALLOWED_EMAILS`. The mailer independently enforces the same encrypted allowlist and never delivers a code to an arbitrary browser-supplied recipient.
 - Each approved request creates an independent opaque challenge ID and short request reference bound to an HMAC-derived identity key. Parallel staff requests do not invalidate each other.

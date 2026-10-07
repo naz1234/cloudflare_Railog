@@ -15,7 +15,7 @@ export async function removalScanRequest(id, token, options = {}) {
     },
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok || !payload.success) throw new Error(payload.error || 'Unable to connect. Please sign in and try again.');
+  if (!response.ok || !payload.success) throw new Error(payload.error || 'Unable to connect. Reopen QR on the computer and try again.');
   return payload;
 }
 
@@ -58,6 +58,7 @@ export function RemovalScanUploader({ id, token }) {
   const [error, setError] = useState('');
   const [reviewed, setReviewed] = useState(false);
   const [fileName, setFileName] = useState('');
+  const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
     let stopped = false, timer;
@@ -70,7 +71,7 @@ export function RemovalScanUploader({ id, token }) {
         if (!uploadActiveRef.current && mutation === mutationRef.current) setSession(value);
         if (!['applied', 'cancelled'].includes(value.status)) timer = setTimeout(poll, 2500);
       } catch (err) {
-        if (!stopped) setError(err.message);
+        if (!stopped) { setError(err.message); setUnavailable(true); }
       }
     };
     poll();
@@ -120,8 +121,8 @@ export function RemovalScanUploader({ id, token }) {
     <input ref={camera} type="file" accept="image/*" capture="environment" onChange={upload} hidden aria-label="Take train table photo" />
     <input ref={gallery} type="file" accept="image/*" onChange={upload} hidden aria-label="Choose train table image" />
     {!finished && <div className="removal-scan-choices">
-      <button type="button" disabled={busy || !session || session.status === 'reading'} onClick={() => camera.current.click()}><Camera size={22} />Take photo</button>
-      <button type="button" disabled={busy || !session || session.status === 'reading'} onClick={() => gallery.current.click()}><Image size={22} />Choose from gallery</button>
+      <button type="button" disabled={busy || unavailable || !session || session.status === 'reading'} onClick={() => camera.current.click()}><Camera size={22} />Take photo</button>
+      <button type="button" disabled={busy || unavailable || !session || session.status === 'reading'} onClick={() => gallery.current.click()}><Image size={22} />Choose from gallery</button>
     </div>}
     {localDemo && !finished && <button type="button" className="removal-scan-secondary" disabled={busy || !session} onClick={() => uploadFile(new File(['local example'], 'example-table.png', { type: 'image/png' }))}>Try example table (local demo)</button>}
     {(busy || session?.status === 'reading') && <p role="status" className="removal-scan-status"><Loader2 className="animate-spin" size={18} />{session?.status === 'reading' ? 'Reading train numbers and TIDs…' : 'Sending update…'}</p>}
@@ -137,7 +138,7 @@ export function RemovalScanUploader({ id, token }) {
       <p className="removal-scan-muted">TIDs missing from this picture will have their train numbers cleared in this period. Timetable TIDs and times stay in place.</p>
       {summary.unmatched.length > 0 && <p className="removal-scan-warning">TIDs outside this period: {summary.unmatched.join(', ')}.</p>}
       <label className="removal-scan-confirm"><input type="checkbox" checked={reviewed} onChange={(event) => setReviewed(event.target.checked)} />I checked the numbers and included the complete table.</label>
-      <button className="removal-scan-primary" type="button" disabled={!reviewed || busy} onClick={confirm}><Check size={17} />Update Removal summary</button>
+      <button className="removal-scan-primary" type="button" disabled={!reviewed || busy || unavailable} onClick={confirm}><Check size={17} />Update Removal summary</button>
     </>}
     {session?.status === 'ready' && <p role="status" className="removal-scan-status"><Loader2 className="animate-spin" size={18} />Waiting for the computer to save the update. Keep its QR window open.</p>}
     {session?.status === 'applied' && <p role="status" className="removal-scan-success"><Check size={20} />Removal summary updated and saved. You can close this page.</p>}
@@ -154,7 +155,7 @@ export default function RemovalScanButton({ getTarget, onApply, disabled = false
   const lifecycleRef = useRef(0);
   applyRef.current = onApply;
   const preview = import.meta.env.DEV && window.location.pathname === '/compact-slate-preview';
-  const scanUrl = session ? `${window.location.origin}/${preview ? 'compact-slate-preview' : ''}#/removal-scan?id=${session.id}&token=${session.token}` : '';
+  const scanUrl = session ? `${window.location.origin}/${preview ? 'compact-slate-preview#/removal-scan?' : 'removal-scan#'}id=${session.id}&token=${session.token}` : '';
 
   const start = async () => {
     const lifecycle = ++lifecycleRef.current;
@@ -228,7 +229,7 @@ export default function RemovalScanButton({ getTarget, onApply, disabled = false
         {preview && <p className="removal-scan-warning">Local demo uses the example table. Phone scanning needs the deployed site.</p>}
         {!uploadHere && qr && <img className="removal-scan-qr" src={qr} width="280" height="280" alt="QR code for uploading a train tracking table" />}
         {!uploadHere && session && <>
-          <p className="removal-scan-muted">Valid for 15 minutes. Sign in on your phone if asked. Keep this window open.</p>
+          <p className="removal-scan-muted">No phone login needed. Valid for 15 minutes and one update. Keep this window open and do not share the QR.</p>
           <a className="removal-scan-link" href={scanUrl} target="_blank" rel="noreferrer">Open upload page</a>
           <button className="removal-scan-secondary" type="button" onClick={() => setUploadHere(true)}><Upload size={16} />Upload on this device</button>
         </>}
@@ -250,11 +251,11 @@ export function RemovalScanPage() {
     window.addEventListener('hashchange', changed);
     return () => window.removeEventListener('hashchange', changed);
   }, []);
-  const params = new URLSearchParams(hash.split('?')[1] || '');
+  const params = new URLSearchParams(hash.includes('?') ? hash.split('?')[1] : hash.slice(1));
   const id = params.get('id'), token = params.get('token');
   return <main className="removal-scan-page"><section className="removal-scan-surface removal-scan-phone">
     <div className="removal-scan-title"><QrCode size={25} /><h1>Removal summary</h1></div>
-    <p className="removal-scan-muted">Scan train assignments</p>
+    <p className="removal-scan-muted">Scan train assignments · No login needed</p>
     {import.meta.env.DEV && <p className="removal-scan-warning">Local demo: example OCR results only.</p>}
     {id && token ? <RemovalScanUploader key={`${id}:${token}`} id={id} token={token} /> : <p role="alert" className="removal-scan-error">Scan the QR from Removal summary to open an upload session.</p>}
   </section></main>;

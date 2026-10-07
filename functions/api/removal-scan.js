@@ -1,5 +1,6 @@
 import { isSameOriginBrowserRequest, mediaTypeForImage, runAzureLayout } from './maintenance-image.js';
 import { extractRemovalAssignments } from '../lib/removal-image-parser.js';
+import { REMOVAL_SCAN_ID, REMOVAL_SCAN_TOKEN } from '../lib/removal-scan-access.js';
 
 const TTL_MS = 15 * 60 * 1000;
 const json = (data, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -16,10 +17,37 @@ async function schema(db) {
   await db.prepare('CREATE INDEX IF NOT EXISTS removal_scan_expiry ON removal_scan_sessions(expires_at)').run();
 }
 
+async function readBoundedBody(request, limit, message) {
+  if (Number(request.headers.get('Content-Length')) > limit) fail(message, 413);
+  if (!request.body) return [];
+  const reader = request.body.getReader(), chunks = [];
+  let bytes = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytes += value.byteLength;
+      if (bytes > limit) {
+        await reader.cancel();
+        fail(message, 413);
+      }
+      chunks.push(value);
+    }
+  } finally { reader.releaseLock(); }
+  return chunks;
+}
+
 async function readJson(request) {
-  const content = await request.text();
-  if (content.length > 24000) fail('The request is too large.', 413);
+  const content = await new Blob(await readBoundedBody(request, 24000, 'The request is too large.')).text();
   try { return JSON.parse(content); } catch { fail('Invalid request.'); }
+}
+
+async function readImageForm(request) {
+  if (!request.body || !request.headers.get('Content-Type')?.startsWith('multipart/form-data;')) fail('Choose a photo first.');
+  const chunks = await readBoundedBody(request, 5 * 1024 * 1024, 'Please use an image smaller than 4 MB.');
+  try {
+    return await new Response(new Blob(chunks), { headers: { 'Content-Type': request.headers.get('Content-Type') } }).formData();
+  } catch { fail('Choose a valid photo upload.'); }
 }
 
 function validateTarget(value) {
@@ -37,14 +65,17 @@ export function createRemovalScanHandler({ readImage = runAzureLayout, now = Dat
   return async ({ request, env, data = {} }) => {
     try {
       const identity = data.authUser?.email || data.accessUser?.email;
-      if (!identity) fail('Please sign in to use the removal scanner.', 401);
+      const id = new URL(request.url).searchParams.get('id');
+      const token = request.headers.get('X-Removal-Scan-Token') || '';
+      if (!identity && (!id || !REMOVAL_SCAN_TOKEN.test(token))) fail('Open a valid QR link, or sign in on the computer to create one.', 401);
       if (!env.DB) fail('The removal scanner database is unavailable.', 503);
       if (!['GET', 'POST', 'PATCH', 'DELETE'].includes(request.method)) fail('Method not allowed.', 405);
       if (request.method !== 'GET' && !isSameOriginBrowserRequest(request)) fail('Cross-site requests are not allowed.', 403);
-      const db = env.DB, owner = await hash(identity.toLowerCase()), time = now();
+      if (id && !REMOVAL_SCAN_ID.test(id)) fail('Invalid scan link.', 404);
+      const db = env.DB, owner = identity ? await hash(identity.toLowerCase()) : null, time = now();
       await schema(db);
-      const id = new URL(request.url).searchParams.get('id');
       if (!id) {
+        if (!identity) fail('Sign in on the computer to create a QR.', 401);
         if (request.method !== 'POST') fail('Missing scan session.');
         const body = await readJson(request);
         const target = validateTarget(body.target);
@@ -57,13 +88,17 @@ export function createRemovalScanHandler({ readImage = runAzureLayout, now = Dat
           .bind(sessionId, owner, await hash(token), time + TTL_MS, 'waiting', JSON.stringify(target)).run();
         return json({ success: true, id: sessionId, token, expiresAt: time + TTL_MS, target, status: 'waiting' });
       }
-      if (!/^[\da-f-]{36}$/i.test(id)) fail('Invalid scan link.', 404);
       const session = await db.prepare('SELECT * FROM removal_scan_sessions WHERE id = ?').bind(id).first();
       if (!session || session.expires_at <= time) fail('This QR has expired. Open QR again on the computer.', 410);
       const isOwner = session.owner === owner;
-      const token = request.headers.get('X-Removal-Scan-Token') || '';
-      const validToken = /^[a-f0-9]{64}$/.test(token) && await hash(token) === session.token_hash;
+      const validToken = REMOVAL_SCAN_TOKEN.test(token) && await hash(token) === session.token_hash;
       if (!isOwner && !validToken) fail('This scan belongs to another session.', 403);
+      if (!isOwner && session.status === 'cancelled') fail('This QR was closed. Open a new QR on the computer.', 410);
+      if (!isOwner && session.status === 'applied') {
+        // A spent capability exposes only its completion receipt for phone polling.
+        if (request.method !== 'GET') fail('This QR has already been used. Open a new QR on the computer.', 410);
+        return json({ success: true, id, status: 'applied', expiresAt: session.expires_at });
+      }
       const target = JSON.parse(session.target_json);
       const extraction = session.extraction_json ? JSON.parse(session.extraction_json) : null;
       if (request.method === 'GET') return json({ success: true, id, status: session.status, expiresAt: session.expires_at, target, extraction });
@@ -91,8 +126,7 @@ export function createRemovalScanHandler({ readImage = runAzureLayout, now = Dat
       if (!env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || !env.AZURE_DOCUMENT_INTELLIGENCE_KEY) fail('Azure OCR is not configured. Use the same Azure secrets as Maintenance Req. Image.', 503);
       if (!['waiting', 'review', 'error'].includes(session.status)) fail('This scan is already processing or complete.', 409);
       if (session.attempts >= 4) fail('Four images have been tried. Open a new QR to try again.', 429);
-      if (Number(request.headers.get('Content-Length')) > 5 * 1024 * 1024) fail('Please use an image smaller than 4 MB.', 413);
-      const form = await request.formData(), file = form.get('image');
+      const form = await readImageForm(request), file = form.get('image');
       if (!file || typeof file.arrayBuffer !== 'function') fail('Choose a photo first.');
       const mediaType = mediaTypeForImage(file);
       if (!mediaType) fail('Use a JPG, PNG, BMP, or TIFF image.', 415);
