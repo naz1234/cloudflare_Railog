@@ -3,6 +3,7 @@ import {
   authorizeCustomSessionRequest,
   getAuthMode,
 } from './lib/custom-auth.js';
+import { isRemovalScanPublicRequest, withRemovalScanSecurityHeaders } from './lib/removal-scan-access.js';
 
 const responseHeaders = {
   'Cache-Control': 'no-store, no-cache, must-revalidate',
@@ -205,6 +206,12 @@ export function createAuthMiddleware({
     }
 
     const mode = resolveMode(context.env);
+    if (['cloudflare_access', 'custom_pin'].includes(mode) && isRemovalScanPublicRequest(context.request)) {
+      if (!isSameOriginMutation(context.request)) return csrfDeniedResponse();
+      // API token syntax is only routing eligibility. The handler validates the
+      // stored hash, expiry and permitted action before revealing session data.
+      return withRemovalScanSecurityHeaders(await context.next());
+    }
     if (mode === 'cloudflare_access') {
       return accessMiddleware(context);
     }

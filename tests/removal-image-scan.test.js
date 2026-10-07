@@ -3,6 +3,7 @@ import test from 'node:test';
 import { extractRemovalAssignments, imageVehicleToTrainId } from '../functions/lib/removal-image-parser.js';
 import { applyRemovalImageAssignments, removalScanFingerprint } from '../src/lib/removalImageAssignments.js';
 import { createRemovalScanHandler } from '../functions/api/removal-scan.js';
+import { createAuthMiddleware } from '../functions/_middleware.js';
 import { memoryD1 } from './helpers/memory-d1.js';
 import { photographedPairs, trackingTableResult } from './fixtures/removal-tracking-table.js';
 
@@ -79,7 +80,7 @@ test('paired phone reads, reviews, confirms and computer acknowledges a one-use 
   const f = setup();
   try {
     const session = await f.create();
-    const phone = { id: session.id, token: session.token, email: 'phone@example.test' };
+    const phone = { id: session.id, token: session.token, email: '' };
     assert.equal((await f.request({ ...phone })).status, 'waiting');
     const read = await f.request({ ...phone, method: 'POST', body: f.image() });
     assert.equal(read.extraction.assignedCount, 20);
@@ -89,6 +90,12 @@ test('paired phone reads, reviews, confirms and computer acknowledges a one-use 
     assert.equal((await f.request({ ...phone, method: 'POST', body: f.image() })).success, false);
     assert.equal((await f.request({ ...phone, method: 'PATCH', body: { action: 'apply' } })).success, false);
     assert.equal((await f.request({ id: session.id, method: 'PATCH', body: { action: 'apply' } })).status, 'applied');
+    const receipt = await f.request(phone);
+    assert.equal(receipt.status, 'applied');
+    assert.equal(receipt.target, undefined);
+    assert.equal(receipt.extraction, undefined);
+    assert.equal((await f.request({ ...phone, method: 'POST', body: f.image() })).status, 410);
+    assert.equal((await f.request({ ...phone, method: 'PATCH', body: { action: 'confirm', reviewed: true } })).status, 410);
   } finally { f.db.close(); }
 });
 
@@ -99,8 +106,81 @@ test('blocks unauthenticated, cross-origin, wrong-token and expired requests', a
     assert.equal((await f.request({ method: 'POST', origin: 'https://other.example', body: {} })).status, 403);
     const session = await f.create();
     assert.equal((await f.request({ id: session.id, email: 'other@example.test', token: 'a'.repeat(64) })).status, 403);
+    assert.equal((await f.request({ id: session.id, email: '', token: 'a'.repeat(64) })).status, 403);
+    assert.equal((await f.request({ id: session.id, email: '' })).status, 401);
+    assert.equal((await f.request({ id: session.id, email: '', token: session.token, method: 'POST', body: f.image(), origin: 'https://other.example' })).status, 403);
     f.expire();
     assert.equal((await f.request({ id: session.id })).status, 410);
+    assert.equal((await f.request({ id: session.id, email: '', token: session.token })).status, 410);
+  } finally { f.db.close(); }
+});
+
+test('QR possession cannot create, cancel or apply a scan, or read another session', async () => {
+  const f = setup();
+  try {
+    const session = await f.create(), other = await f.create();
+    const phone = { id: session.id, token: session.token, email: '' };
+    assert.equal((await f.request({ ...phone, id: '', method: 'POST', body: { target: {} } })).status, 401);
+    assert.equal((await f.request({ ...phone, method: 'DELETE' })).status, 403);
+    assert.equal((await f.request({ ...phone, method: 'PATCH', body: { action: 'apply' } })).success, false);
+    assert.equal((await f.request({ ...phone, id: other.id })).status, 403);
+    await f.request({ id: session.id, method: 'DELETE' });
+    assert.equal((await f.request(phone)).status, 410);
+    assert.equal((await f.request({ ...phone, method: 'POST', body: f.image() })).status, 410);
+  } finally { f.db.close(); }
+});
+
+test('anonymous QR phone passes the real middleware for upload and review while creation remains authenticated', async () => {
+  const db = memoryD1();
+  const env = { AUTH_MODE: 'custom_pin', DB: db, AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: 'https://test.example', AZURE_DOCUMENT_INTELLIGENCE_KEY: 'test' };
+  const middleware = createAuthMiddleware({
+    authorizeCustom: async ({ request }) => request.headers.get('Cookie') === 'test-owner=1'
+      ? { authorized: true, email: 'owner@example.test' }
+      : { authorized: false, reason: 'missing_session', status: 401 },
+  });
+  const handler = createRemovalScanHandler({ readImage: async () => trackingTableResult() });
+  const request = async ({ method = 'GET', id = '', token = '', cookie = '', body, path = '/api/removal-scan', origin = 'https://rail.example' } = {}) => {
+    const context = { env, data: {}, request: new Request(`https://rail.example${path}${id ? `?id=${id}` : ''}`, {
+      method, headers: { Origin: origin, Cookie: cookie, 'X-Removal-Scan-Token': token },
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
+    }) };
+    context.next = () => path === '/api/removal-scan' ? handler(context) : new Response('private operational data');
+    const response = await middleware(context);
+    return { code: response.status, ...await response.json().catch(() => ({})) };
+  };
+  try {
+    const target = { period: '7pm', timetable: 'Weekday', rows: [{ tid: '226', trainId: '42' }] };
+    assert.equal((await request({ method: 'POST', body: { target } })).code, 401);
+    const session = await request({ method: 'POST', cookie: 'test-owner=1', body: { target } });
+    assert.equal(session.code, 200);
+    const phone = { id: session.id, token: session.token };
+    assert.equal((await request(phone)).status, 'waiting');
+    const form = new FormData(); form.append('image', new Blob(['photo'], { type: 'image/png' }), 'screen.png');
+    assert.equal((await request({ ...phone, method: 'POST', body: form })).status, 'review');
+    assert.equal((await request({ ...phone, method: 'PATCH', body: { action: 'confirm', reviewed: true } })).status, 'ready');
+    assert.equal((await request({ ...phone, method: 'PATCH', body: { action: 'apply' } })).success, false);
+    assert.equal((await request({ ...phone, method: 'DELETE' })).code, 401);
+    for (const path of ['/', '/api/entities/TrainRem', '/api/auth/presence', '/assets/main.js', '/api/maintenance-image']) {
+      assert.equal((await request({ ...phone, path })).code, 401, path);
+    }
+    assert.equal((await request({ ...phone, method: 'PATCH', origin: 'https://evil.example', body: { action: 'confirm', reviewed: true } })).code, 403);
+    assert.equal((await request({ id: session.id, cookie: 'test-owner=1', method: 'PATCH', body: { action: 'apply' } })).status, 'applied');
+    const receipt = await request(phone);
+    assert.equal(receipt.status, 'applied');
+    assert.equal(receipt.extraction, undefined);
+    assert.equal(receipt.target, undefined);
+  } finally { db.close(); }
+});
+
+test('anonymous image uploads are size-bounded even without Content-Length', async () => {
+  const f = setup();
+  try {
+    const session = await f.create();
+    const form = new FormData(); form.append('image', new Blob([new Uint8Array(5 * 1024 * 1024 + 1)], { type: 'image/png' }), 'huge.png');
+    assert.equal((await f.request({ id: session.id, token: session.token, email: '', method: 'POST', body: form })).status, 413);
+    assert.equal((await f.request({ id: session.id })).status, 'waiting');
+    assert.equal((await f.request({ id: session.id, token: session.token, email: '', method: 'POST', body: { image: 'not multipart' } })).status, 400);
+    assert.equal((await f.request({ id: session.id, token: session.token, email: '', method: 'PATCH', body: { action: 'confirm', reviewed: true, padding: 'x'.repeat(24001) } })).status, 413);
   } finally { f.db.close(); }
 });
 
