@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Redo2, Download, Search, ArrowUp, ArrowDown, Check, Sun, Moon, TrainFront, Clock3, RefreshCw, TriangleAlert } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, FileText, FileDown, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Redo2, Download, Search, ArrowUp, ArrowDown, Check, Sun, Moon, TrainFront, Clock3, RefreshCw, TriangleAlert } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
@@ -23,6 +23,7 @@ import SleepModeWorkspace from "../components/SleepModeWorkspace";
 import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator";
 import RemovalPdfEditor from "../components/depot/RemovalPdfEditor";
 import EastNineAmRemovalPdfEditor from "../components/depot/EastNineAmRemovalPdfEditor";
+import RemovalSummaryRemark from "../components/depot/RemovalSummaryRemark";
 import { SessionPresenceControl } from "../components/ProtectedRoute";
 import { summarizeInsertionTidUsage } from "../lib/insertionTidUsage";
 import {
@@ -9179,6 +9180,19 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
           return a.sourceIndex - b.sourceIndex;
         })
       : rowEntries;
+    const removalLocationGroups = [
+      { key: "west", label: "West Depot", code: "WD" },
+      { key: "east", label: "East Depot", code: "ED" },
+      { key: "offpeak", label: "Off Peak", code: "OP" },
+    ];
+    const removalLocationCounts = [0, 0, 0];
+    if (canSortByRemovalColor) {
+      displayRowEntries.forEach(({ row, sourceIndex }) => {
+        if (String(row.trainId || "").trim()) {
+          removalLocationCounts[getRemovalColorSortGroup(row, sourceIndex)] += 1;
+        }
+      });
+    }
     const duplicateCounts = getTrainRemDuplicateCounts();
     const hdwGroups = isHdw40 ? getHdw40Groups(rows) : [];
     const indexedRowEntries = displayRowEntries.map((entry, displayIndex) => ({ ...entry, displayIndex }));
@@ -9195,7 +9209,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
     const activeTimetableLabel = getTimetableTypeLabel(activeTimetableType);
     const timetablePresetNotice = visiblePresetLabels.length === 0
       ? "No removals in the active timetable"
-      : activeTimetable ? `Active timetable: ${activeTimetableLabel}` : "";
+      : "";
 
     return (
       <div className="theme-train-rem-depot-card relative overflow-visible rounded-xl border border-[#2b4f6b] bg-[#071828] shadow-md">
@@ -9211,51 +9225,6 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
               </div>
             )}
             <div className="theme-train-rem-action-row flex flex-nowrap items-center justify-start gap-1 flex-shrink-0">
-              {depot === "west" && (
-                <ActionTooltip
-                  message={totalServiceTooltipContent}
-                  placement="top"
-                  align="end"
-                  contentStyle={{
-                    width: "max-content",
-                    maxWidth: "min(720px, calc(100vw - 20px))",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={handleCopyTotalService}
-                    aria-label={totalServiceText}
-                    className={`theme-train-rem-ttl ${totalServiceCopyStatus === "copied" ? "is-copied" : totalServiceCopyStatus === "failed" ? "is-error" : hasServiceTrainDuplicate ? "is-duplicate" : ""} inline-flex h-6 select-none items-center justify-center rounded-md border px-1.5 text-[10px] font-normal tracking-wide outline-none transition-all hover:-translate-y-0.5 focus-visible:ring-1 ${hasServiceTrainDuplicate ? "focus-visible:ring-red-300/70" : "focus-visible:ring-amber-300/70"}`}
-                    style={{
-                      background: totalServiceCopyStatus === "copied"
-                        ? "rgba(34,197,94,0.18)"
-                        : totalServiceCopyStatus === "failed" || hasServiceTrainDuplicate
-                          ? "rgba(127,29,29,0.50)"
-                          : "rgba(245,158,11,0.13)",
-                      borderColor: totalServiceCopyStatus === "copied"
-                        ? "rgba(34,197,94,0.48)"
-                        : totalServiceCopyStatus === "failed" || hasServiceTrainDuplicate
-                          ? "rgba(248,113,113,0.72)"
-                          : "rgba(251,191,36,0.50)",
-                      color: totalServiceCopyStatus === "copied"
-                        ? "#86efac"
-                        : totalServiceCopyStatus === "failed"
-                          ? "#fca5a5"
-                          : hasServiceTrainDuplicate
-                            ? "#fecaca"
-                            : "#fde68a",
-                      boxShadow: totalServiceCopyStatus === "copied"
-                        ? "0 0 12px rgba(34,197,94,0.16)"
-                        : hasServiceTrainDuplicate
-                          ? "0 0 14px rgba(239,68,68,0.28)"
-                          : "0 0 12px rgba(245,158,11,0.12)",
-                    }}
-                  >
-                    SVC : {totalServiceTrainCount}
-                  </button>
-                </ActionTooltip>
-              )}
-
               <div data-train-rem-pdf-menu className="relative">
                 <ActionTooltip
                   message="Choose DC or TC PDF output"
@@ -9280,7 +9249,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                     aria-haspopup="menu"
                     aria-expanded={pdfMenuOpen}
                   >
-                    <FileText size={12} />
+                    <FileDown size={12} />
                     {pdfActive ? "Done" : "PDF"}
                     <ChevronDown size={10} className={`transition-transform ${pdfMenuOpen ? "rotate-180" : ""}`} />
                   </button>
@@ -9347,6 +9316,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                 message={trainRemUndoCount > 0 ? "Undo last change" : "Nothing to undo"}
                 placement="top"
                 align="end"
+                wrapperClassName="slate-removal-undo-wrap"
               >
                 <button
                   type="button"
@@ -9361,7 +9331,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                   aria-label={trainRemUndoCount > 0 ? "Undo last change" : "Nothing to undo"}
                 >
                   <Undo2 size={12} />
-                  UND
+                  Undo
                 </button>
               </ActionTooltip>
 
@@ -9377,20 +9347,23 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                   aria-label="Clear removal summary"
                 >
                   <Trash2 size={12} />
-                  CLR
                 </button>
               </ActionTooltip>
             </div>
           </div>
 
           <div className="space-y-1 mt-2">
+            <div className="slate-removal-timetable">
+              <span>Active timetable</span>
+              <strong>{activeTimetableLabel}</strong>
+            </div>
             {timetablePresetNotice && (
               <div className="rounded-md border border-amber-400/45 bg-amber-950/25 px-2 py-1 text-[9px] font-black leading-tight text-amber-200">
                 {timetablePresetNotice}
               </div>
             )}
             <div className="flex flex-wrap items-start justify-between gap-1.5">
-              <div className="flex-1 space-y-1">
+              <div className="slate-removal-presets flex-1 space-y-1">
                 <div className="flex items-center gap-1">
                   {visiblePresetLabels.map((label) => {
                     const active = selectedPreset === label;
@@ -9475,13 +9448,13 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
         </div>
 
         <div className="overflow-hidden rounded-b-xl">
-          <table className="theme-train-rem-table w-full border-separate border-spacing-0 table-fixed text-[12px]">
+          <table data-removal-headway={isHdw40 ? "true" : undefined} className="theme-train-rem-table w-full border-separate border-spacing-0 table-fixed text-[12px]">
             <thead>
               <tr>
-                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "2%" }}>Train ID</th>
-                {!isHdw40 && <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "2%" }}>TID</th>}
-                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "2%" }}>Timing</th>
-                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "5%" }}>Remark</th>
+                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: isHdw40 ? "16%" : "14%" }}>Train</th>
+                {!isHdw40 && <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "11%" }}>TID</th>}
+                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: isHdw40 ? "24%" : "18%" }}>Time</th>
+                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: isHdw40 ? "60%" : "57%" }}>Remark</th>
               </tr>
             </thead>
             <tbody>
@@ -9489,9 +9462,9 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                 if (hdwHeader) {
                   return (
                     <tr key={`hdw-heading-${hdwHeader.depot}`}>
-                      <th colSpan={3} className="theme-train-rem-table-header px-2 pb-1 pt-2 text-left text-[9px] font-semibold text-[#7eb8e0]">
+                      <th colSpan={3} data-removal-location={hdwHeader.depot === "mainline" ? "offpeak" : hdwHeader.depot} className="theme-train-rem-table-header slate-removal-group-header px-2 pb-1 pt-2 text-left text-[9px] font-semibold text-[#7eb8e0]">
                         <div className="flex items-center justify-between gap-2">
-                          <span>{hdwHeader.label} · {hdwHeader.count} rows</span>
+                          <span className="slate-removal-group-title">{hdwHeader.label}<span className="slate-removal-group-count">{hdwHeader.count} rows</span></span>
                           {hdwHeader.depot !== "mainline" && (
                             <span className="inline-flex items-center gap-1">
                               <ActionTooltip message={`Add a ${hdwHeader.label} row`} placement="top" align="end">
@@ -9526,16 +9499,19 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                 };
                 const previousEditableTidRowIndex = getAdjacentEditableTidRowIndex("previous");
                 const nextEditableTidRowIndex = getAdjacentEditableTidRowIndex("next");
-                const currentLocationGroup = activeSortMode === "color"
+                const rowLocationIndex = canSortByRemovalColor
                   ? getRemovalColorSortGroup(row, index)
-                  : null;
+                  : isHdw40
+                    ? { west: 0, east: 1, mainline: 2 }[getHdw40RowGroup(index, rows)?.depot]
+                    : depot === "east" ? 1 : 0;
+                const rowLocation = removalLocationGroups[rowLocationIndex];
+                const currentLocationGroup = activeSortMode === "color" ? rowLocationIndex : null;
                 const previousLocationGroup = activeSortMode === "color" && displayIndex > 0
                   ? getRemovalColorSortGroup(displayRowEntries[displayIndex - 1].row, displayRowEntries[displayIndex - 1].sourceIndex)
                   : null;
-                const showLocationGroupSpacer = canSortByRemovalColor
+                const showLocationGroupHeader = canSortByRemovalColor
                   && activeSortMode === "color"
-                  && (currentLocationGroup === 1 || currentLocationGroup === 2)
-                  && currentLocationGroup !== previousLocationGroup;
+                  && (displayIndex === 0 || currentLocationGroup !== previousLocationGroup);
                 const referenceSeparator = isTrainRemReferenceSeparatorIndex(depot, selectedPreset, index);
                 const referenceOnly = isTrainRemReferenceOnlyIndex(depot, selectedPreset, index, activeTimetable);
                 const westReferenceScheduleMatch = referenceOnly
@@ -9695,12 +9671,19 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
 
                 return (
                   <Fragment key={`${depot}-train-rem-${index}`}>
-                    {showLocationGroupSpacer && (
-                      <tr aria-hidden="true">
-                        <td
+                    {showLocationGroupHeader && (
+                      <tr>
+                        <th
                           colSpan={4}
-                          className="theme-train-rem-table-cell h-3 border-b border-[#1f3c55] bg-[#071828] p-0"
-                        />
+                          data-removal-location={rowLocation.key}
+                          className="slate-removal-group-header"
+                          scope="rowgroup"
+                        >
+                          <span className="slate-removal-group-title">
+                            {rowLocation.label}
+                            <span className="slate-removal-group-count">{removalLocationCounts[currentLocationGroup]} trains</span>
+                          </span>
+                        </th>
                       </tr>
                     )}
                     <tr>
@@ -9710,8 +9693,10 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                           data-preset={selectedPreset}
                           data-hdw-group={hdw40Group?.depot}
                           data-tid={cleanTid}
+                          data-removal-location={rowLocation?.key}
+                          data-removal-location-badge={canSortByRemovalColor && activeSortMode === "tid" ? "true" : undefined}
                           style={{
-                            gridTemplateColumns: isHdw40 ? "22% 27% 51%" : "18% 18% 22% 42%",
+                            gridTemplateColumns: isHdw40 ? "16% 24% 60%" : "14% 11% 18% 57%",
                             background: rowCardVisual.background,
                             borderColor: rowCardVisual.borderColor,
                             boxShadow: rowCardVisual.boxShadow,
@@ -9720,6 +9705,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                           <input
                             ref={(element) => setTrainRemTrainIdRef(depot, index, element)}
                             value={row.trainId}
+                            data-removal-field="train"
                             onFocus={() => handleTrainRemTrainIdFocus(depot, index, rows.length)}
                             onChange={(e) => {
                               const nextValue = e.target.value;
@@ -9740,9 +9726,16 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                             style={{ color: trainIdTextColor }}
                           />
 
+                          {canSortByRemovalColor && activeSortMode === "tid" && (
+                            <span className="slate-removal-location-badge" title={rowLocation.label} role="img" aria-label={rowLocation.label}>
+                              {rowLocation.code}
+                            </span>
+                          )}
+
                           {!isHdw40 && <input
                             ref={(element) => setTrainRemTidRef(depot, index, element)}
                             value={row.tid}
+                            data-removal-field="tid"
                             onFocus={handleTrainRemOtherFieldFocus}
                             onChange={(e) => {
                               if (!referenceOnly) {
@@ -9773,6 +9766,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
 
                           <input
                             value={displayTimingValue}
+                            data-removal-field="time"
                             aria-label={isHdw40 ? `${hdw40Group.label} row ${index - hdw40Group.start + 1} manual time` : undefined}
                             onFocus={handleTrainRemOtherFieldFocus}
                             onChange={(e) => {
@@ -9794,8 +9788,17 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                             style={{ color: timingTextColor }}
                           />
 
-                          <input
+                          {(requestRemark || referenceOnly) && String(remarkValue || "").trim() ? (
+                            <RemovalSummaryRemark
+                              value={remarkValue}
+                              trainLabel={row.trainId ? padTrainId(normalizeTrainId(row.trainId)) : "this train"}
+                              accent={remarkCardVisual?.accent}
+                              hasHiddenRemarks={Boolean(hiddenMaintenanceMap[trainRemRequestKey]?.length)}
+                            />
+                          ) : <input
                             value={remarkValue}
+                            data-removal-field="remark"
+                            data-removal-has-remark={Boolean(String(remarkValue || "").trim())}
                             onFocus={handleTrainRemOtherFieldFocus}
                             onChange={(e) => {
                               if (!requestRemark && !referenceOnly) {
@@ -9811,15 +9814,16 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                               color: remarkTextColor,
                               background: remarkCellBackground,
                               boxShadow: remarkCellBoxShadow,
+                              "--slate-remark-accent": remarkCardVisual?.accent || "#94a3b8",
                             }}
-                          />
+                          />}
 
-                          <HiddenRequestRemarks items={hiddenMaintenanceMap[trainRemRequestKey]} trainId={trainRemRequestKey} className="absolute right-1 top-1/2 -translate-y-1/2" />
+                          <HiddenRequestRemarks items={hiddenMaintenanceMap[trainRemRequestKey]} trainId={trainRemRequestKey} className="slate-removal-hidden-remarks absolute right-1 top-1/2 -translate-y-1/2" />
 
                           {showRemovalStablingStatus && (
                             <span
                               className="absolute top-1/2 z-[60]"
-                              style={{ left: "18%", transform: "translate(-50%, -50%)" }}
+                              style={{ left: "14%", transform: "translate(-50%, -50%)" }}
                             >
                               <ActionTooltip
                                 message={removalStablingStatusMessage}
@@ -9842,7 +9846,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                           {showOffPeakStablingRemove && (
                             <span
                               className="absolute top-1/2 z-[60]"
-                              style={{ left: "18%", transform: "translate(-50%, -50%)" }}
+                              style={{ left: "14%", transform: "translate(-50%, -50%)" }}
                             >
                               <ActionTooltip
                                 message={offPeakStablingMatch.tooltip}
@@ -9884,7 +9888,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
 
   return (
     <>
-      <section className="theme-train-rem-panel w-[314px] flex-shrink-0 rounded-xl border border-[#2b4f6b] bg-[#0b1f33] p-2 shadow-md">
+      <section data-removal-design="compact-slate" className="theme-train-rem-panel w-[314px] flex-shrink-0 rounded-xl border border-[#2b4f6b] bg-[#0b1f33] p-2 shadow-md">
         <div className="theme-train-rem-titlebar flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2 min-w-0">
           <div className="theme-train-rem-title-icon w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center flex-shrink-0">
@@ -9893,14 +9897,29 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
             </svg>
           </div>
           <div className="min-w-0">
-            <h2 className="text-[11px] font-normal text-white tracking-widest uppercase leading-none">REMOVAL SUMMARY</h2>
+            <h2 className="leading-none">Removal summary</h2>
+            <div className={`theme-train-rem-sync ${!trainRemDbReady || trainRemSyncError ? "is-warning" : "is-ready"} whitespace-nowrap ${syncStatusClass}`}>
+              <span className="slate-removal-sync-dot" aria-hidden="true" />
+              {syncStatusText}
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className={`theme-train-rem-sync ${!trainRemDbReady || trainRemSyncError ? "is-warning" : "is-ready"} px-1.5 py-0.5 rounded-md border text-[7px] font-black whitespace-nowrap ${syncStatusClass}`}>
-            {syncStatusText}
-          </div>
-        </div>
+        <ActionTooltip
+          message={totalServiceTooltipContent}
+          placement="bottom"
+          align="end"
+          contentStyle={{ width: "max-content", maxWidth: "min(720px, calc(100vw - 20px))" }}
+        >
+          <button
+            type="button"
+            onClick={handleCopyTotalService}
+            aria-label={totalServiceText}
+            className={`theme-train-rem-ttl slate-removal-service ${totalServiceCopyStatus === "copied" ? "is-copied" : totalServiceCopyStatus === "failed" ? "is-error" : hasServiceTrainDuplicate ? "is-duplicate" : ""}`}
+          >
+            <span>SVC</span>
+            <strong>{totalServiceTrainCount}</strong>
+          </button>
+        </ActionTooltip>
       </div>
 
       {(!trainRemDbReady || trainRemSyncError) && trainRemDebug && (

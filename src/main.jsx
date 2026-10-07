@@ -11,6 +11,7 @@ import '@/insertionLightCardContrast.css'
 import '@/insertionTidLightContrast.css'
 import '@/insertionLightTidFooter.css'
 import '@/insertionDarkTidFooter.css'
+import '@/removalSummarySlate.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />
