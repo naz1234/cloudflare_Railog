@@ -7644,8 +7644,8 @@ function getRemovalPresetTooltip(label = "") {
 function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrainRemStateChange, eastStablingData = {}, requests = [], westData = {}, eastData = {}, insertionAssignmentsByDepot = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
   const [trainRemState, setTrainRemState] = useState(() => loadTrainRemState());
   const [trainRemLoaded, setTrainRemLoaded] = useState(false);
-  const [trainRemSyncing, setTrainRemSyncing] = useState(false);
-  const [trainRemLastSynced, setTrainRemLastSynced] = useState(null);
+  const [, setTrainRemSyncing] = useState(false);
+  const [, setTrainRemLastSynced] = useState(null);
   const [trainRemSyncError, setTrainRemSyncError] = useState(false);
   const [trainRemDbReady, setTrainRemDbReady] = useState(() => isTrainRemEntityReady());
   const [trainRemDebug, setTrainRemDebug] = useState("");
@@ -8503,20 +8503,6 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
       },
     }));
   };
-
-  const syncStatusText = !trainRemDbReady
-    ? "Local only"
-    : trainRemSyncError
-    ? "Sync issue"
-    : trainRemSyncing
-    ? "Syncing..."
-    : trainRemLastSynced
-    ? `Synced ${formatTime(trainRemLastSynced)}`
-    : "Live ready";
-
-  const syncStatusClass = !trainRemDbReady || trainRemSyncError
-    ? "border-amber-600/50 bg-amber-950/30 text-amber-300"
-    : "border-emerald-600/50 bg-emerald-950/30 text-emerald-300";
 
   const handleTrainRemPdfDownload = (depot, event = null, outputType = "dc") => {
     event?.preventDefault?.();
@@ -9898,10 +9884,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
           </div>
           <div className="min-w-0">
             <h2 className="leading-none">Removal summary</h2>
-            <div className={`theme-train-rem-sync ${!trainRemDbReady || trainRemSyncError ? "is-warning" : "is-ready"} whitespace-nowrap ${syncStatusClass}`}>
-              <span className="slate-removal-sync-dot" aria-hidden="true" />
-              {syncStatusText}
-            </div>
+            <p className="theme-train-rem-subtitle whitespace-nowrap">Train Removal list from timetable</p>
           </div>
         </div>
         <ActionTooltip
