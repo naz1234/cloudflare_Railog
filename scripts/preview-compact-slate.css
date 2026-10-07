@@ -1,27 +1,33 @@
 body { margin: 0; background: #0e1520 !important; color: #dce5f1; font-family: Inter, "Segoe UI", sans-serif; }
-.slate-preview-shell { display: grid; grid-template-columns: 240px minmax(0, 608px); align-items: start; justify-content: center; gap: 32px; padding: 36px 24px; min-height: 100vh; }
-.slate-preview-notes { position: sticky; top: 52px; padding-top: 30px; }
+.slate-preview-shell { max-width: 1660px; margin: 0 auto; padding: 24px; min-height: 100vh; }
+.slate-preview-notes { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 24px; margin-bottom: 20px; }
 .slate-preview-eyebrow { color: #8ea5c3; font-size: 10px; font-weight: 650; letter-spacing: .15em; }
-.slate-preview-notes h1 { margin: 14px 0; font-size: 32px; font-weight: 700; letter-spacing: -.04em; }
+.slate-preview-notes h1 { grid-column: 1; margin: 4px 0; font-size: 25px; font-weight: 700; letter-spacing: -.04em; }
 .slate-preview-notes > p:not(.slate-preview-eyebrow) { color: #97a7bd; font-size: 13px; line-height: 1.8; }
-.slate-preview-notes ul { margin: 26px 0; padding-left: 17px; font-size: 12px; line-height: 2; color: #c4cfde; list-style: disc; }
-.slate-preview-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 28px 0 22px; }
+.slate-preview-notes > p { grid-column: 1; margin: 0; }
+.slate-preview-actions { grid-column: 2; grid-row: 1 / 4; display: flex; gap: 8px; flex-wrap: wrap; }
 .slate-preview-actions button { padding: 9px 12px; border-radius: 7px; border: 1px solid #384b65; background: #23334b; color: #e1e9f5; font-size: 11px; }
 .slate-preview-actions button:hover { background: #30435f; }
-.slate-preview-notes .slate-preview-disclaimer { font-size: 11px !important; opacity: .75; }
+.slate-preview-notes .slate-preview-disclaimer { grid-column: 1 / -1; font-size: 11px !important; opacity: .75; margin-top: 6px; }
+.slate-preview-jump-links { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.slate-preview-jump-links button { border: 1px solid #384b65; border-radius: 7px; padding: 5px 9px; background: #18283b; color: #dce5f1; font-size: 11px; cursor: pointer; }
+.slate-preview-jump-links button:hover { background: #30435f; }
+.slate-preview-jump-links button:focus-visible { outline: 2px solid #8bb5f6; outline-offset: 2px; }
+.slate-preview-workspace-scroll { max-width: 100%; max-height: calc(100vh - 220px); min-height: 480px; overflow: auto; padding-bottom: 12px; }
+.slate-preview-workspace-scroll:focus-visible { outline: 2px solid #8bb5f6; outline-offset: 4px; border-radius: 8px; }
+.slate-preview-workspace { display: flex; align-items: flex-start; gap: 18px; width: max-content; }
+.slate-preview-depots { display: flex; flex-direction: column; gap: 18px; flex-shrink: 0; width: 954px; }
+.slate-preview-live-window { width: 100%; min-width: 0; }
 .slate-preview-panel { width: 314px; max-width: 100%; }
-.slate-preview-panels { display: flex; align-items: flex-start; gap: 18px; min-width: 0; }
+.slate-preview-panels { display: flex; align-items: flex-start; gap: 18px; min-width: 0; flex-shrink: 0; }
 .slate-preview-panels > .slate-preview-panel { flex-shrink: 0; }
 html[data-app-theme="light"] body { background: radial-gradient(circle, #d9e0e8 .8px, transparent 1px) 8px 8px / 21px 21px, #fafbfc !important; color: #23334b; }
 html[data-app-theme="light"] body #root { background: transparent !important; }
 html[data-app-theme="light"] .slate-preview-notes > p, html[data-app-theme="light"] .slate-preview-notes ul { color: #526781; }
 html[data-app-theme="light"] .slate-preview-actions button { background: #edf3fa; color: #23334b; border-color: #b1c2d8; }
-@media (max-width: 1000px) {
-  .slate-preview-shell { grid-template-columns: minmax(0, 608px); gap: 24px; padding: 24px 12px; }
-  .slate-preview-notes { position: static; padding-top: 0; }
-  .slate-preview-notes ul { display: none; }
-  .slate-preview-notes h1 { font-size: 25px; }
-}
+html[data-app-theme="light"] .slate-preview-jump-links button { background: #edf3fa; color: #23334b; border-color: #b1c2d8; }
 @media (max-width: 640px) {
-  .slate-preview-panels { flex-wrap: wrap; }
+  .slate-preview-shell { padding: 18px 12px; }
+  .slate-preview-notes { grid-template-columns: minmax(0, 1fr); }
+  .slate-preview-actions { grid-column: 1; grid-row: auto; margin-top: 12px; }
 }

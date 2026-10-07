@@ -22,6 +22,7 @@ function entity(name) {
   return client;
 }
 export function seedPreviewRecords(rows) { records.set("TrainRem", copy(rows)); }
+export function seedPreviewMovementRecord(record) { records.set("TrainMovementExcelLive", [copy(record)]); }
 export const base44 = {
   entities: new Proxy({}, { get: (_, name) => entity(name) }),
   auth: { me: async () => ({ id: "local-preview", name: "Local preview" }), logout() {}, redirectToLogin() {} },

@@ -55,6 +55,10 @@ import { buildPossessionEntryOutput, getPossessionAccessDetails, normalizePosses
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40Groups, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, resizeHdwDepotRows, clearHdwRows } from "../lib/trainRemHdw40";
 import "../trainRemHdw40.css";
+import "../stablingSlate.css";
+import "../movementLogSlate.css";
+import "../copyFeedbackSlate.css";
+import "../outputWindowsSlate.css";
 import { getSwappingAutoFillFields } from "../lib/trainMovementSwapAutoFill";
 import { buildTcRemovalPdfLog } from "../lib/tcRemovalPdf";
 import {
@@ -8718,7 +8722,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
     timerRef.current = setTimeout(() => {
       setStatus("");
       timerRef.current = null;
-    }, 1600);
+    }, 2500);
   };
 
   const getDepotCopyTrainIds = useCallback((depot = "east", sourceState = null) => {
@@ -9028,7 +9032,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
     totalServiceCopyTimerRef.current = setTimeout(() => {
       setTotalServiceCopyStatus("");
       totalServiceCopyTimerRef.current = null;
-    }, 1600);
+    }, 2500);
   };
 
   const handleCopyDepotTrainList = async (depot = "east") => {
@@ -9073,7 +9077,8 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
       <button
         type="button"
         onClick={() => handleCopyDepotTrainList(safeDepot)}
-        className={`theme-train-rem-copy ${safeDepot === "west" ? "is-west" : "is-east"} ${status ? `is-${status}` : ""} removal-summary-tooltip-trigger relative z-50 inline-flex h-5 shrink-0 items-center whitespace-nowrap overflow-visible rounded-md border px-1 text-[10px] font-normal transition-all hover:-translate-y-0.5 ${extraClassName}`}
+        data-copy-state={status || "idle"}
+        className={`theme-train-rem-copy slate-copy-feedback ${safeDepot === "west" ? "is-west" : "is-east"} ${status ? `is-${status}` : ""} removal-summary-tooltip-trigger relative z-50 inline-flex h-5 shrink-0 items-center whitespace-nowrap overflow-visible rounded-md border px-1 text-[10px] font-normal transition-all hover:-translate-y-0.5 ${extraClassName}`}
         aria-label={tooltipMessage}
         style={{
           background: status === "copied"
@@ -9896,10 +9901,11 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
           <button
             type="button"
             onClick={handleCopyTotalService}
+            data-copy-state={totalServiceCopyStatus || "idle"}
             aria-label={totalServiceText}
-            className={`theme-train-rem-ttl slate-removal-service ${totalServiceCopyStatus === "copied" ? "is-copied" : totalServiceCopyStatus === "failed" ? "is-error" : hasServiceTrainDuplicate ? "is-duplicate" : ""}`}
+            className={`theme-train-rem-ttl slate-removal-service slate-copy-feedback ${totalServiceCopyStatus === "copied" ? "is-copied" : totalServiceCopyStatus === "failed" ? "is-error" : hasServiceTrainDuplicate ? "is-duplicate" : ""}`}
           >
-            <span>SVC</span>
+            <span aria-live="polite">{totalServiceCopyStatus === "copied" ? "Copied" : totalServiceCopyStatus === "failed" ? "Failed" : "SVC"}</span>
             <strong>{totalServiceTrainCount}</strong>
           </button>
         </ActionTooltip>
@@ -11053,12 +11059,13 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
   const [trainSearch, setTrainSearch] = useState("");
   const [initialLiveDirty] = useState(() => loadTrainMovementExcelDirty());
   const [feedback, setFeedback] = useState("");
+  const { copyStatuses, copyWithFeedback } = useClipboardCopyFeedback();
   const [confirmClearTarget, setConfirmClearTarget] = useState("");
   const [editingSwapCell, setEditingSwapCell] = useState("");
   const [liveLoaded, setLiveLoaded] = useState(false);
-  const [liveSyncing, setLiveSyncing] = useState(false);
-  const [liveLastSynced, setLiveLastSynced] = useState(null);
-  const [liveSyncError, setLiveSyncError] = useState(false);
+  const [, setLiveSyncing] = useState(false);
+  const [, setLiveLastSynced] = useState(null);
+  const [, setLiveSyncError] = useState(false);
   const [liveDbReady, setLiveDbReady] = useState(() => isTrainMovementExcelLiveEntityReady());
   const feedbackTimerRef = useRef(null);
   const confirmClearTimerRef = useRef(null);
@@ -11424,19 +11431,6 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
     confirmClearTimerRef.current = null;
   };
 
-  const copyText = async (text) => {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
-    }
-  };
-
   const getSwapCellKey = (rowId, field) => `${rowId}:${field}`;
 
   const beginSwapCellEdit = (rowId, field) => {
@@ -11537,8 +11531,7 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
       showFeedback("No added rows");
       return;
     }
-    await copyText(lines.join("\n"));
-    showFeedback("Copied");
+    await copyWithFeedback(lines.join("\n"), "sheet");
   };
 
   const copySingleRow = async (row) => {
@@ -11547,8 +11540,8 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
       showFeedback("Row incomplete");
       return;
     }
-    await copyText(line);
-    showFeedback("Copied row");
+    const copied = await copyTextToClipboard(line);
+    showFeedback(copied ? "Copied row" : "Copy failed");
   };
 
   const addRowToMovementLog = (row) => {
@@ -11579,8 +11572,6 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
   const sortedLogRows = useMemo(() => sortTrainMovementExcelLogRows(logRows), [logRows]);
   const westMovementLogRows = sortedLogRows.filter((entry) => entry.depot === "west");
   const eastMovementLogRows = sortedLogRows.filter((entry) => entry.depot === "east");
-  const westLogCount = westMovementLogRows.length;
-  const eastLogCount = eastMovementLogRows.length;
   const trainSearchKey = normalizeTrainId(trainSearch);
   const trainSearchResults = trainSearchKey && Array.isArray(stabledTrainLocations[trainSearchKey])
     ? stabledTrainLocations[trainSearchKey]
@@ -11597,61 +11588,47 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
       showFeedback(depot ? `No ${depot === "east" ? "East" : "West"} log` : "No log yet");
       return;
     }
-    await copyText(lines.join("\n"));
-    showFeedback(depot ? `Copied ${depot === "east" ? "East" : "West"}` : "Copied log");
-  };
-
-  const clearExcelLogRows = () => {
-    if (!requestClearConfirm("output")) return;
-    markTrainMovementExcelLocalEdit();
-    setLogRows([]);
-    resetClearConfirm();
-    showFeedback("Output cleared");
+    await copyWithFeedback(lines.join("\n"), depot ? `output-${depot}` : "output-all");
   };
 
   const readyCount = rows.filter((row) => getMovementExcelStatus(row) === "Added").length;
-  const liveStatusText = !liveDbReady
-    ? "Local only"
-    : liveSyncError
-    ? "Sync issue"
-    : liveSyncing
-    ? "Syncing..."
-    : liveLastSynced
-    ? `Live synced ${formatTime(liveLastSynced)}`
-    : "Live ready";
-  const liveStatusClass = !liveDbReady || liveSyncError
-    ? "border-amber-500/45 bg-amber-950/25 text-amber-200"
-    : "border-emerald-500/45 bg-emerald-950/25 text-emerald-200";
   const tableInputClass = "h-7 w-full min-w-0 border-0 bg-transparent px-2 text-[12px] font-medium text-[#eaf4ff] outline-none placeholder:text-[#45677f] focus:bg-[#0d2b43]";
   const tableSelectClass = `${tableInputClass} appearance-none cursor-pointer`;
   const cellClass = "border border-[#173653] bg-[#061827] align-middle";
 
   return (
-    <section className="theme-movement-sheet w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_12px_26px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.05)]">
+    <section data-movement-design="compact-slate" className="theme-movement-sheet w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_12px_26px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.05)]">
       <div className="theme-movement-sheet-header flex flex-wrap items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2.5" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-        <div>
-          <h2 className="text-[13px] font-black tracking-[1.2px] text-white">Train Swapping / Insertion / Removal Log</h2>
-          <p className="mt-0.5 text-[10px] font-medium text-[#58a6ff]">Compact spreadsheet format above Removal Log Output</p>
+        <div className="slate-movement-heading">
+          <span className="slate-movement-title-icon" aria-hidden="true"><FileSpreadsheet size={15} /></span>
+          <div className="min-w-0">
+            <h2 className="slate-movement-title">Train Swapping / Insertion / Removal Log</h2>
+            <p className="slate-movement-subtitle">Compact spreadsheet format above Removal Log Output</p>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {feedback && (
-            <span className="theme-movement-feedback rounded-lg border border-[#2b4f6b] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#9fd3f6]">{feedback}</span>
-          )}
-          <span className={`theme-movement-live-status rounded-lg border px-2 py-1 text-[10px] font-bold ${!liveDbReady || liveSyncError ? "is-warning" : "is-ready"} ${liveStatusClass}`}>{liveStatusText}</span>
-          <span className="theme-movement-ready-count rounded-lg border border-[#2b4f6b] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#8ea8c0]">{readyCount} added</span>
+        <div className="slate-movement-actions">
           <button type="button" onClick={addRow} className="theme-movement-sheet-action theme-movement-add-row-attention inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
             <Plus size={12} />Add Row
           </button>
-          <button type="button" onClick={copyAllRows} className="theme-movement-sheet-action inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
-            <Copy size={12} />Copy All
+          <button type="button" onClick={copyAllRows} data-copy-state={copyStatuses.sheet || "idle"} aria-label="Copy all movement rows" className="theme-movement-sheet-action slate-copy-feedback inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
+            {copyStatuses.sheet === "copied" ? <ClipboardCheck size={12} /> : <Copy size={12} />}
+            <span aria-live="polite">{copyStatuses.sheet === "copied" ? "Copied" : copyStatuses.sheet === "failed" ? "Copy failed" : "Copy All"}</span>
           </button>
           <button type="button" onClick={clearRows} className={`theme-movement-sheet-clear inline-flex h-7 items-center gap-1 rounded-full border px-3 text-[10px] font-bold text-white transition-all hover:text-white ${confirmClearTarget === "sheet" ? "is-confirming border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-white hover:border-red-400"}`}>
             <Trash2 size={12} />{confirmClearTarget === "sheet" ? "Confirm Clear" : "Clear"}
           </button>
         </div>
+        <span className="theme-movement-ready-count slate-movement-count" title={`${readyCount} movements added to the log`} aria-label={`${readyCount} movements added to the log`}>
+          <span>Added</span><strong>{readyCount}</strong>
+        </span>
       </div>
+      {feedback && (
+        <div className="slate-movement-feedback">
+          <span className="theme-movement-feedback rounded-lg border border-[#2b4f6b] bg-[#061827] px-2 py-1 text-[10px] font-bold text-[#9fd3f6]" role="status">{feedback}</span>
+        </div>
+      )}
 
-      <div className="grid items-start gap-3 px-3 pt-3 xl:grid-cols-2">
+      <div className="slate-movement-searches grid items-start gap-3 px-3 pt-3 xl:grid-cols-2">
         <div className="min-w-0">
           <div
             className={`theme-stabling-search theme-movement-train-search flex items-center gap-2 rounded-xl px-3 py-2 transition-all ${trainSearchFound ? "is-found" : trainSearchNotFound ? "is-not-found" : trainSearch ? "is-active" : "is-empty"}`}
@@ -11910,32 +11887,13 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
       </div>
 
       <section
+        aria-label="Train swapping, insertion and removal output logs"
         className="theme-movement-log-output mt-3 w-full rounded-xl border border-[#2b4f6b] bg-[#0b1f33] px-3 py-3 shadow-md"
         style={{
           background: "linear-gradient(135deg,rgba(12,46,74,0.58) 0%,rgba(7,24,40,0.98) 100%)",
           boxShadow: "0 16px 32px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.04)",
         }}
       >
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <div className="theme-movement-log-title-icon flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#2b4f6b] bg-[#10263b] shadow-sm">
-              <FileText size={15} className="text-[#4f8ef7]" strokeWidth={2.4} />
-            </div>
-            <div className="min-w-0">
-              <h3 className="truncate text-sm font-black uppercase leading-none tracking-widest text-white">Train Swapping / Insertion / Removal Log Output</h3>
-              <p className="mt-1 text-[10px] font-normal text-[#58a6ff]">{sortedLogRows.length} entries • WD {westLogCount} • ED {eastLogCount}</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button type="button" onClick={() => copyExcelLogRows("")} className="theme-movement-log-action inline-flex h-6 items-center gap-1 rounded-md border border-[#4a8ab5]/55 bg-[#0f2d4a]/75 px-1.5 text-[9px] font-black text-[#9ccbea] transition-all hover:-translate-y-0.5 hover:text-white">
-              <Copy size={12} />Copy All
-            </button>
-            <button type="button" onClick={clearExcelLogRows} className={`theme-movement-log-action theme-movement-log-clear inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 hover:text-white ${confirmClearTarget === "output" ? "is-confirming border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-red-100 hover:border-red-400"}`}>
-              <Trash2 size={12} />{confirmClearTarget === "output" ? "Confirm Clear" : "Clear"}
-            </button>
-          </div>
-        </div>
-
         <div className="space-y-2">
           {[
             {
@@ -11977,16 +11935,18 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
                   <button
                     type="button"
                     onClick={() => copyExcelLogRows(log.key)}
+                    data-copy-state={copyStatuses[`output-${log.key}`] || "idle"}
+                    aria-label={log.copyLabel}
                     disabled={!hasRows}
-                    className="theme-movement-log-copy inline-flex h-6 flex-shrink-0 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                    className="theme-movement-log-copy slate-copy-feedback inline-flex h-6 flex-shrink-0 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
                     style={{
                       background: "rgba(15,45,74,0.75)",
                       borderColor: "rgba(74,138,181,0.55)",
                       color: "#9ccbea",
                     }}
                   >
-                    <Copy size={12} />
-                    {log.copyLabel}
+                    {copyStatuses[`output-${log.key}`] === "copied" ? <ClipboardCheck size={12} /> : <Copy size={12} />}
+                    <span aria-live="polite">{copyStatuses[`output-${log.key}`] === "copied" ? "Copied" : copyStatuses[`output-${log.key}`] === "failed" ? "Copy failed" : log.copyLabel}</span>
                   </button>
                 </div>
 
@@ -25225,8 +25185,8 @@ function RequestedTrainActionOverviewTable({ rows = [], onManualTidChange = null
 }
 
 function RequestedTrainActionSummary({ rows = [], requests = [] }) {
-  const [copied, setCopied] = useState(false);
-  const copyTimerRef = useRef(null);
+  const { copyStatuses, copyWithFeedback } = useClipboardCopyFeedback();
+  const copied = copyStatuses.default === "copied";
   const summaryRows = Array.isArray(requests) && requests.length
     ? getRequestedActionSummaryRowsFromRequests(requests)
     : rows;
@@ -25242,33 +25202,32 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
     .join("\n\n");
 
   const handleCopySummary = async () => {
-    const ok = await copyTextToClipboard(summaryText);
-    if (!ok) return;
-    setCopied(true);
-    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-    copyTimerRef.current = setTimeout(() => {
-      setCopied(false);
-      copyTimerRef.current = null;
-    }, 1400);
+    await copyWithFeedback(summaryText);
   };
 
   return (
-    <div className="theme-request-type-summary w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[12px] leading-snug text-[#eaf4ff]">
-      <div className="mb-1.5 flex w-full items-center justify-between gap-2">
-        <h2 className="text-[11px] font-black uppercase tracking-widest text-white">
-          Request Summary by Type
-        </h2>
+    <div data-window-design="compact-slate" className="theme-request-type-summary w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[12px] leading-snug text-[#eaf4ff]">
+      <div className="slate-window-header">
+        <div className="slate-window-heading">
+          <span className="slate-window-title-icon" aria-hidden="true"><FileText size={15} /></span>
+          <div className="min-w-0">
+            <h2 className="slate-window-title">Request Summary by Type</h2>
+            <p className="slate-window-subtitle">Requests grouped by type</p>
+          </div>
+        </div>
         <button
           type="button"
           onClick={handleCopySummary}
-          className="inline-flex items-center gap-1 rounded-lg border border-[#2f6e9f] bg-[#0d2b45] px-2 py-1 text-[10px] font-semibold leading-none text-[#dff3ff] shadow-[0_0_10px_rgba(56,189,248,0.18)] transition hover:bg-[#123957] active:scale-95"
+          data-copy-state={copyStatuses.default || "idle"}
+          aria-label="Copy requested summary"
+          className="slate-window-action slate-copy-feedback inline-flex items-center gap-1 rounded-lg border border-[#2f6e9f] bg-[#0d2b45] px-2 py-1 text-[10px] font-semibold leading-none text-[#dff3ff] shadow-[0_0_10px_rgba(56,189,248,0.18)] transition hover:bg-[#123957] active:scale-95"
           title="Copy requested summary"
         >
           {copied ? <ClipboardCheck className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-          {copied ? "Copied" : "Copy"}
+          <span aria-live="polite">{copied ? "Copied" : copyStatuses.default === "failed" ? "Copy failed" : "Copy"}</span>
         </button>
       </div>
-      <div className="space-y-2.5">
+      <div className="slate-window-body space-y-2.5">
         {summaryGroups.map((group) => (
           <section key={group.key} aria-labelledby={`requested-summary-${group.key}`}>
             <div
@@ -25789,30 +25748,73 @@ function buildTrainRemRemovalLog(
   };
 }
 
-function copyTextToClipboard(text = "") {
-  if (!text) return Promise.resolve(false);
+async function copyTextToClipboard(text = "") {
+  if (!text) return false;
 
-  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-    return navigator.clipboard.writeText(text).then(() => true);
+  try {
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Older browsers or denied clipboard access can still support Copy.
   }
 
-  return new Promise((resolve) => {
-    try {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.setAttribute("readonly", "");
-      textarea.style.position = "fixed";
-      textarea.style.opacity = "0";
-      textarea.style.left = "-9999px";
-      document.body.appendChild(textarea);
-      textarea.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(textarea);
-      resolve(ok);
-    } catch {
-      resolve(false);
-    }
-  });
+  if (typeof document === "undefined") return false;
+  const previousFocus = document.activeElement;
+  let textarea;
+  try {
+    textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    return Boolean(document.execCommand("copy"));
+  } catch {
+    return false;
+  } finally {
+    textarea?.remove();
+    previousFocus?.focus?.({ preventScroll: true });
+  }
+}
+
+function useClipboardCopyFeedback() {
+  const [copyStatuses, setCopyStatuses] = useState({});
+  const copyTimersRef = useRef(new Map());
+  const copyAttemptsRef = useRef(new Map());
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    const timers = copyTimersRef.current;
+    const attempts = copyAttemptsRef.current;
+    return () => {
+      mountedRef.current = false;
+      timers.forEach(clearTimeout);
+      timers.clear();
+      attempts.clear();
+    };
+  }, []);
+
+  const copyWithFeedback = async (text, key = "default") => {
+    const attempt = (copyAttemptsRef.current.get(key) || 0) + 1;
+    copyAttemptsRef.current.set(key, attempt);
+    clearTimeout(copyTimersRef.current.get(key));
+    setCopyStatuses((current) => ({ ...current, [key]: "" }));
+    const copied = await copyTextToClipboard(text);
+    if (!mountedRef.current || copyAttemptsRef.current.get(key) !== attempt) return copied;
+    setCopyStatuses((current) => ({ ...current, [key]: copied ? "copied" : "failed" }));
+    copyTimersRef.current.set(key, setTimeout(() => {
+      setCopyStatuses((current) => ({ ...current, [key]: "" }));
+      copyTimersRef.current.delete(key);
+    }, 2500));
+    return copied;
+  };
+
+  return { copyStatuses, copyWithFeedback };
 }
 
 
@@ -27021,7 +27023,8 @@ function downloadEastNineAmRemovalPdf(eastLog = {}, offPeakLog = {}) {
 }
 
 function RemovalDepotLogCard({ log, combinedLogs = null }) {
-  const [copied, setCopied] = useState(false);
+  const { copyStatuses, copyWithFeedback } = useClipboardCopyFeedback();
+  const copied = copyStatuses.default === "copied";
   const [pdfReady, setPdfReady] = useState(false);
   const hasEntries = log.entries.length > 0;
 
@@ -27063,11 +27066,7 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
   const handleCopy = async () => {
     if (!hasEntries || !log.text) return;
 
-    const ok = await copyTextToClipboard(log.text);
-    if (ok) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    }
+    await copyWithFeedback(log.text);
   };
 
   return (
@@ -27107,8 +27106,10 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
           <button
             type="button"
             onClick={handleCopy}
+            data-copy-state={copyStatuses.default || "idle"}
+            aria-label={log.copyLabel}
             disabled={!hasEntries}
-            className="theme-removal-log-action inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="theme-removal-log-action slate-copy-feedback inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             style={{
               background: copied ? "rgba(34,197,94,0.18)" : "rgba(15,45,74,0.75)",
               borderColor: copied ? "rgba(34,197,94,0.48)" : "rgba(74,138,181,0.55)",
@@ -27117,7 +27118,7 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
             }}
           >
             {copied ? <ClipboardCheck size={12} /> : <Copy size={12} />}
-            {copied ? "Copied" : log.copyLabel}
+            <span aria-live="polite">{copied ? "Copied" : copyStatuses.default === "failed" ? "Copy failed" : log.copyLabel}</span>
           </button>
         </div>
       </div>
@@ -27167,30 +27168,26 @@ function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {}, requ
 
   return (
     <section
+      data-window-design="compact-slate"
       className="theme-removal-log-output w-full rounded-xl border border-[#2b4f6b] bg-[#0b1f33] shadow-md px-3 py-3"
       style={{
         background: "linear-gradient(135deg,rgba(12,46,74,0.58) 0%,rgba(7,24,40,0.98) 100%)",
         boxShadow: "0 16px 32px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.04)",
       }}
     >
-      <div className="flex items-center gap-2 mb-2">
-        <div className="theme-removal-log-title-icon w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="8" y1="13" x2="16" y2="13" />
-            <line x1="8" y1="17" x2="14" y2="17" />
-          </svg>
-        </div>
-        <h2 className="text-sm leading-none font-black text-white tracking-widest uppercase">
-          Removal Log Output
-        </h2>
-        <div className="text-[10px] font-normal text-[#58a6ff]">
-          Auto-generated from Train Rem
+      <div className="slate-window-header">
+        <div className="slate-window-heading">
+          <div className="theme-removal-log-title-icon slate-window-title-icon" aria-hidden="true">
+            <FileText size={15} />
+          </div>
+          <div className="min-w-0">
+            <h2 className="slate-window-title">Removal Log Output</h2>
+            <p className="slate-window-subtitle">Auto-generated from Train Rem</p>
+          </div>
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="slate-window-body space-y-2">
         <RemovalDepotLogCard
           log={westLog}
           combinedLogs={{
@@ -27310,12 +27307,12 @@ function ClearAllStablingButton({ onClearAll, depotLabel = "Depot" }) {
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
   return (
-    <ActionTooltip message={tooltipMessage} placement="top" align="end">
+    <ActionTooltip message={tooltipMessage} placement="top" align="end" wrapperClassName="theme-stabling-clear-wrap">
       <button
         type="button"
         onClick={handleClick}
         aria-label={tooltipMessage}
-        className="theme-light-control theme-light-clear group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
+        className={`theme-stabling-action ${confirming ? "is-confirming" : ""} theme-light-control theme-light-clear group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0`}
         style={confirming ? MAIN_STABLING_BUTTON_DANGER : MAIN_STABLING_BUTTON_CLEAR}
       >
         {!confirming && (
@@ -28480,7 +28477,8 @@ function StablingSection({
   const [washNoticeDate, setWashNoticeDate] = useState(() => new Date());
   const searchQuery = sectionSearch.trim().toUpperCase().replace(/\s+/g, "");
   const normalizedSearch = searchQuery ? normalizeTrainId(searchQuery) : "";
-  const [copiedStabling, setCopiedStabling] = useState(false);
+  const { copyStatuses, copyWithFeedback } = useClipboardCopyFeedback();
+  const copiedStabling = copyStatuses.default === "copied";
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const totalTrains = roads.reduce((total, road) => {
     const blocks = data[road] || [];
@@ -28552,10 +28550,8 @@ function StablingSection({
     }
   };
 
-  const handleCopyStabling = () => {
-    navigator.clipboard.writeText(stablingCopyText);
-    setCopiedStabling(true);
-    setTimeout(() => setCopiedStabling(false), 2000);
+  const handleCopyStabling = async () => {
+    await copyWithFeedback(stablingCopyText);
   };
 
   // ── Cross-depot location lookup ────────────────────────────────────────────
@@ -28582,12 +28578,13 @@ function StablingSection({
   const notFound = searched && !found;
 
   return (
-    <section className="theme-stabling-section bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
+    <section data-stabling-design="compact-slate" className="theme-stabling-section bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
       <SectionTitle
-        title={title}
+        title={`${depotLabel} stabling`}
+        subtitle={`Train locations in ${depotLabel}`}
         count={totalTrains}
         action={
-          <div className="flex items-center gap-2">
+          <div className="theme-stabling-action-row flex items-center gap-2">
             <ActionTooltip
               message={<span className="whitespace-pre font-mono text-[10px]">{copyStablingTooltipText}</span>}
               placement="top"
@@ -28597,8 +28594,9 @@ function StablingSection({
               <button
                 type="button"
                 onClick={handleCopyStabling}
+                data-copy-state={copyStatuses.default || "idle"}
                 aria-label={copyStablingTooltipText}
-                className="theme-light-control theme-light-copy group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0"
+                className={`theme-stabling-action slate-copy-feedback ${copiedStabling ? "is-done" : ""} theme-light-control theme-light-copy group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0`}
                 style={copiedStabling ? MAIN_STABLING_BUTTON_SUCCESS : MAIN_STABLING_BUTTON_COPY}
               >
                 {copiedStabling ? (
@@ -28606,7 +28604,7 @@ function StablingSection({
                 ) : (
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"/></svg>
                 )}
-                {copiedStabling ? "Copied!" : "Copy Stabling"}
+                <span aria-live="polite">{copiedStabling ? "Copied" : copyStatuses.default === "failed" ? "Copy failed" : "Copy Stabling"}</span>
               </button>
             </ActionTooltip>
             <ActionTooltip
@@ -28619,7 +28617,7 @@ function StablingSection({
                 onClick={handleDownloadPdf}
                 disabled={downloadingPdf}
                 aria-label={downloadPdfTooltipText}
-                className="theme-light-control theme-light-pdf group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
+                className="theme-stabling-action theme-light-control theme-light-pdf group flex items-center gap-1.5 px-3.5 py-1.5 rounded-[14px] text-[10px] font-bold border transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:brightness-100"
                 style={MAIN_STABLING_BUTTON_PDF}
               >
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -28772,10 +28770,10 @@ function StablingSection({
 }
 
 
-function SectionTitle({ title, count = null, small = false, action = null }) {
+function SectionTitle({ title, subtitle, count = null, action = null }) {
   return (
-    <div className="flex items-center gap-2 mb-2">
-      <div className="w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
+    <header className="theme-stabling-header">
+      <div className="theme-stabling-title-icon bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center flex-shrink-0">
         <svg
           width="19"
           height="19"
@@ -28791,27 +28789,25 @@ function SectionTitle({ title, count = null, small = false, action = null }) {
         </svg>
       </div>
 
-      <h2
-        className={`leading-none font-black text-white tracking-widest uppercase ${
-          small ? "text-sm" : "text-base"
-        }`}
-      >
-        {title}
-      </h2>
+      <div className="min-w-0">
+        <h2 className="theme-stabling-title">{title}</h2>
+        <p className="theme-stabling-subtitle">{subtitle}</p>
+      </div>
+
+      {action}
 
       {Number.isFinite(count) && (
         <span
-          className="theme-stabling-count inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-[#2b4f6b] bg-[#0f2d4a] px-2 text-[11px] font-black text-[#4f8ef7]"
+          className="theme-stabling-count"
           aria-label={`${count} ${count === 1 ? "train" : "trains"}`}
           title={`${count} ${count === 1 ? "train" : "trains"}`}
         >
-          {count}
+          <span>TRN</span>
+          <strong>{count}</strong>
         </span>
       )}
 
-      <div className="flex-1" />
-      {action && <div className="flex-shrink-0">{action}</div>}
-    </div>
+    </header>
   );
 }
 

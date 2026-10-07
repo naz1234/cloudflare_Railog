@@ -11,6 +11,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
+import "../outputWindowsSlate.css";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const WORKBOOK_PATH = "xl/workbook.xml";
@@ -1181,7 +1182,7 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
   };
 
   return (
-    <section className="official-depot-excel-generator w-full rounded-xl border px-3 py-3">
+    <section data-window-design="compact-slate" className="official-depot-excel-generator w-full rounded-xl border px-3 py-3">
       <style>{`
         .official-depot-excel-generator {
           --official-bg-start: #062b32;
@@ -1203,9 +1204,9 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
           box-shadow: 0 8px 22px rgba(8, 145, 178, 0.16), inset 0 1px 0 rgba(255,255,255,0.05);
         }
         html[data-app-theme="light"] .official-depot-excel-generator {
-          --official-bg-start: #f0fdfa;
-          --official-bg-end: #ecfeff;
-          --official-border: #14b8a6;
+          --official-bg-start: #edf2f7;
+          --official-bg-end: #edf2f7;
+          --official-border: #d7e2ee;
           --official-panel: rgba(255, 255, 255, 0.86);
           --official-input: #ffffff;
           --official-text: #0f2733;
@@ -1216,7 +1217,9 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
           --official-warning-border: #d97706;
           --official-warning-text: #78350f;
           --official-warning-icon: #b45309;
-          box-shadow: 0 8px 20px rgba(13, 148, 136, 0.12), inset 0 1px 0 rgba(255,255,255,0.82);
+          background: #edf2f7;
+          background-image: none;
+          box-shadow: 0 14px 36px rgb(35 51 75 / 5%);
         }
         .official-depot-excel-generator :is(h1, h2, h3, p, label, span, button, input) {
           color: var(--official-text) !important;
@@ -1292,30 +1295,26 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
         .official-depot-excel-generator .official-day[data-active="false"] { color: var(--official-muted); }
       `}</style>
 
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-teal-400/45 bg-teal-400/10 text-teal-300">
+      <div className="slate-window-header">
+        <div className="slate-window-heading">
+          <div className="slate-window-title-icon" aria-hidden="true">
             <FileSpreadsheet className="h-4 w-4" />
           </div>
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-[12px] font-black uppercase tracking-[0.16em]">Next Day Excel Generator</h2>
-              <span className="rounded-full border border-teal-400/40 bg-teal-400/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-teal-300">
-                {sourceDepot?.label || "Auto-detect"}
-              </span>
-            </div>
-            <p className="official-label mt-0.5 text-[11px] font-medium">
+            <h2 className="slate-window-title">Next Day Excel Generator</h2>
+            <p className="slate-window-subtitle">
               Create today's or tomorrow's official Depot Controller workbook. East or West is detected from the filename.
             </p>
           </div>
         </div>
-        <div className="official-panel inline-flex items-center gap-1.5 rounded-lg border border-teal-400/25 px-2 py-1 text-[10px] font-bold text-teal-300">
-          <ShieldCheck className="h-3 w-3" />
-          Unrelated tabs preserved
+        <div className="slate-window-meta">
+          <span className="slate-window-badge">{sourceDepot?.label || "Auto-detect"}</span>
+          <span className="slate-window-badge"><ShieldCheck className="h-3 w-3" />Unrelated tabs preserved</span>
         </div>
       </div>
 
-      <div className="mt-3 grid gap-2.5 lg:grid-cols-[1.2fr_1fr]">
+      <div className="slate-window-body">
+      <div className="grid gap-2.5 lg:grid-cols-[1.2fr_1fr]">
         <div className="official-panel official-upload-panel rounded-lg border border-teal-400/20 p-2.5">
           <label className="official-label block text-[10px] font-black uppercase tracking-[0.15em]">Add West / East log to convert New Log</label>
           <input ref={fileInputRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={handleFileChange} className="hidden" />
@@ -1409,6 +1408,7 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
           {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
           {isGenerating ? "Generating..." : "Generate Official Excel"}
         </button>
+      </div>
       </div>
     </section>
   );

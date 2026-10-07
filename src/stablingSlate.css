@@ -1,0 +1,183 @@
+/* Main stabling shares the Compact Slate frame and header; grids stay unchanged. */
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] {
+  --stabling-panel: #0b1f33;
+  --stabling-control: #10263b;
+  --stabling-line: #2b4f6b;
+  --stabling-text: #e1ecf5;
+  --stabling-muted: #7dabc6;
+  --stabling-hover: #102c44;
+  --stabling-focus: #8bb5f6;
+  padding-top: 0;
+  border-radius: 28px;
+  border-color: var(--stabling-line) !important;
+  background: var(--stabling-panel) !important;
+  box-shadow: 0 14px 36px rgb(0 0 0 / 9%) !important;
+  font-family: Inter, "Segoe UI", sans-serif;
+}
+
+html[data-app-theme="light"] .theme-stabling-section[data-stabling-design="compact-slate"] {
+  --stabling-panel: #edf2f7;
+  --stabling-control: #ffffff;
+  --stabling-line: #d7e2ee;
+  --stabling-text: #0b2443;
+  --stabling-muted: #4e7198;
+  --stabling-hover: #e1ebf8;
+  --stabling-focus: #396cba;
+  box-shadow: 0 14px 36px rgb(35 51 75 / 5%) !important;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 70px;
+  padding: 12px 0 10px;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-title {
+  margin: 0;
+  color: var(--stabling-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.035em;
+  line-height: 1.2;
+  text-transform: none;
+  text-shadow: none;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-subtitle {
+  margin: 4px 0 0;
+  color: var(--stabling-muted) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-title-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--stabling-control) !important;
+  border-color: var(--stabling-line) !important;
+  box-shadow: none;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-title-icon svg {
+  width: 15px;
+  height: 15px;
+  stroke: var(--stabling-muted) !important;
+  stroke-width: 1.5;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 40px;
+  margin-left: 8px;
+  padding-left: 10px;
+  border: 0;
+  border-left: 1px solid var(--stabling-line) !important;
+  border-radius: 0;
+  background: transparent !important;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-count > span {
+  color: var(--stabling-muted) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-count > strong {
+  color: var(--stabling-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: 24px;
+  font-weight: 650;
+  line-height: 1.05;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-action-row {
+  gap: 8px;
+  margin-left: auto;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-clear-wrap {
+  margin-left: 0;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-action {
+  height: 30px;
+  min-height: 30px !important;
+  padding: 0 10px;
+  border-radius: 8px !important;
+  border-color: var(--stabling-line) !important;
+  background: var(--stabling-control) !important;
+  color: var(--stabling-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  box-shadow: none !important;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  backdrop-filter: none !important;
+  transform: none !important;
+  filter: none !important;
+  cursor: pointer;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-action svg {
+  width: 14px;
+  height: 14px;
+  color: inherit !important;
+  stroke: currentColor !important;
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-action:hover:not(:disabled):not(.is-done):not(.is-confirming) {
+  background: var(--stabling-hover) !important;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-action:focus-visible {
+  outline: 2px solid var(--stabling-focus);
+  outline-offset: -2px;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-action:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-action.is-done {
+  background: #13785a !important;
+  border-color: #13785a !important;
+  color: #ffffff !important;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-action.is-confirming {
+  background: #712635 !important;
+  border-color: #a74a5b !important;
+  color: #ffffff !important;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-search {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 12px;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-search.is-empty {
+  background: var(--stabling-control) !important;
+  border: 1px solid var(--stabling-line) !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-search-input {
+  height: 32px;
+  font-size: 12px;
+}
