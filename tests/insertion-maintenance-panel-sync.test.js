@@ -35,23 +35,23 @@ const insertionTabRender = depotStablingSource.slice(
 );
 
 test("Insertion renders the same MaintenancePanel component used by Train Request", () => {
-  assert.match(depotStablingSource, /function MaintenancePanelShell\(props\)/);
+  assert.match(depotStablingSource, /function MaintenancePanelShell\(\{\s*fullWidth = false,\s*\.\.\.props\s*\}\)/);
   assert.match(depotStablingSource, /<MaintenancePanel \{\.\.\.props\} \/>/);
   assert.match(stablingTabRender, /<MaintenancePanel[\s\S]*requests=\{requests\}/);
   assert.match(insertionComponent, /<MaintenancePanelShell[\s\S]*requests=\{maintenanceRequests\}/);
 });
 
-test("Insertion receives the shared request list and every Train Request mutation handler", () => {
+test("Insertion shares request editing handlers without a bulk-clear action", () => {
   assert.match(insertionTabRender, /maintenanceRequests=\{requests\}/);
   assert.match(insertionTabRender, /onAddMaintenanceRequest=\{handleAddRequest\}/);
   assert.match(insertionTabRender, /onRemoveMaintenanceRequest=\{handleRemoveRequest\}/);
-  assert.match(insertionTabRender, /onClearMaintenanceRequests=\{handleClearAllRequests\}/);
+  assert.doesNotMatch(insertionTabRender, /onClearMaintenanceRequests|handleClearAllRequests/);
   assert.match(insertionTabRender, /onRenameMaintenanceRequestGroup=\{handleRenameRequestGroup\}/);
   assert.match(insertionTabRender, /onDeleteMaintenanceRequestGroup=\{handleDeleteRequestGroup\}/);
 
   assert.match(insertionComponent, /onAdd=\{onAddMaintenanceRequest\}/);
   assert.match(insertionComponent, /onRemove=\{onRemoveMaintenanceRequest\}/);
-  assert.match(insertionComponent, /onClearAll=\{onClearMaintenanceRequests\}/);
+  assert.doesNotMatch(insertionComponent, /onClearAll|onClearMaintenanceRequests/);
   assert.match(insertionComponent, /onRenameGroup=\{onRenameMaintenanceRequestGroup\}/);
   assert.match(insertionComponent, /onDeleteGroup=\{onDeleteMaintenanceRequestGroup\}/);
 });

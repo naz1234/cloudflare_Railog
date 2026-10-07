@@ -1,4 +1,9 @@
 .maintenance-upload-shortcuts {
+  --maintenance-shortcut-bg: #10263b;
+  --maintenance-shortcut-border: #2b4f6b;
+  --maintenance-shortcut-text: #e1ecf5;
+  --maintenance-shortcut-hover: #102c44;
+  --maintenance-shortcut-focus: #8bb5f6;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
@@ -12,10 +17,11 @@
   min-width: 0;
   min-height: 34px;
   padding: 6px 9px;
-  border: 1px solid #157d98;
+  border: 1px solid var(--maintenance-shortcut-border);
   border-radius: 10px;
-  background: linear-gradient(135deg, #073347, #09293b);
-  color: #a7f1fa;
+  background: var(--maintenance-shortcut-bg);
+  color: var(--maintenance-shortcut-text);
+  box-shadow: none;
   font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
@@ -23,27 +29,14 @@
   transition: border-color 150ms, box-shadow 150ms, background 150ms;
 }
 
-.maintenance-upload-shortcut--image {
-  border-color: #6652b0;
-  background: linear-gradient(135deg, #282047, #171e3a);
-  color: #decfff;
-}
-
 .maintenance-upload-shortcut:hover,
 .maintenance-upload-shortcut[aria-expanded="true"] {
-  border-color: #3bc6dc;
-  box-shadow: inset 0 0 12px #22d3ee0d, 0 0 9px #22d3ee17;
-}
-
-.maintenance-upload-shortcut--image:hover,
-.maintenance-upload-shortcut--image[aria-expanded="true"] {
-  border-color: #aa8df5;
-  box-shadow: inset 0 0 12px #a78bfa0d, 0 0 9px #a78bfa17;
+  background: var(--maintenance-shortcut-hover);
 }
 
 .maintenance-upload-shortcut:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 3px;
+  outline: 2px solid var(--maintenance-shortcut-focus);
+  outline-offset: -2px;
 }
 
 .maintenance-upload-shortcut-icon { width: 15px; height: 15px; flex-shrink: 0; }
@@ -57,16 +50,19 @@
   to { opacity: 1; }
 }
 
-html[data-app-theme="light"] .maintenance-upload-shortcut {
-  background: linear-gradient(135deg, #cffafe, #e0f2fe);
-  border-color: #0891b2;
-  color: #155e75;
+html[data-app-theme="light"] .maintenance-upload-shortcuts {
+  --maintenance-shortcut-bg: #ffffff;
+  --maintenance-shortcut-border: #d7e2ee;
+  --maintenance-shortcut-text: #0b2443;
+  --maintenance-shortcut-hover: #e1ebf8;
+  --maintenance-shortcut-focus: #396cba;
 }
 
-html[data-app-theme="light"] .maintenance-upload-shortcut--image {
-  background: linear-gradient(135deg, #ede9fe, #f3e8ff);
-  border-color: #8b5cf6;
-  color: #5b21b6;
+/* Override broad light-theme text rules without recolouring the upload cards. */
+html[data-app-theme="light"] .theme-maintenance-panel[data-request-layout="modern"] .maintenance-upload-shortcut,
+html[data-app-theme="light"] .theme-maintenance-panel[data-request-layout="modern"] .maintenance-upload-shortcut :is(span, svg, svg *) {
+  color: var(--maintenance-shortcut-text) !important;
+  -webkit-text-fill-color: currentColor !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

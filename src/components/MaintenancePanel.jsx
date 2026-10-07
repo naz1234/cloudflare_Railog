@@ -801,7 +801,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         return;
       }
       setExcelWashPreview(detected);
-      setExcelUploadStatus(`${detected.length} wash trains detected. Review and choose Add or Clear All.`);
+      setExcelUploadStatus(`${detected.length} wash trains detected. Review and choose Add or Clear Preview.`);
     } catch (uploadError) {
       console.error("Wash Excel upload error:", uploadError);
       setExcelUploadStatus("Unable to read Excel file.");
@@ -1595,7 +1595,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   className="inline-flex h-7 items-center justify-center gap-1 rounded-lg border border-rose-400/80 bg-rose-950/45 text-[10px] font-semibold text-rose-100 shadow-[0_0_9px_rgba(251,113,133,0.28)] transition hover:bg-rose-900/60 active:scale-[0.98] disabled:cursor-default disabled:border-rose-800/50 disabled:text-rose-400 disabled:shadow-none"
                 >
                   <X className="h-3 w-3" />
-                  Clear All
+                  Clear Preview
                 </button>
                 <button
                   type="button"
@@ -1648,7 +1648,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
             className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full border border-[#2b4f6b] bg-[#1a3a5c] py-1.5 text-xs font-bold text-[#c8d8ea] transition-all hover:bg-[#1e4d72] active:scale-[0.98]">
             <Plus className="w-3.5 h-3.5" /> {addButtonLabel}
           </button>
-          {requests.length > 0 && (
+          {typeof onClearAll === "function" && requests.length > 0 && (
             <button
               type="button"
               title="Clear all maintenance requests"
