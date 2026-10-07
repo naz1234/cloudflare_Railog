@@ -21,7 +21,7 @@ const server = await createServer({
     name: "local-slate-component", enforce: "pre",
     transform(code, id) {
       if (id.replaceAll("\\", "/").endsWith("/src/pages/DepotStabling.jsx")) {
-        return `${code}\nexport { TrainRemPanel, buildDefaultTrainRemState, buildTrainRemDepotPayload, getTrainRemPresetConfig };`;
+        return `${code}\nexport { TrainRemPanel, MaintenancePanelShell, buildDefaultTrainRemState, buildTrainRemDepotPayload, getTrainRemPresetConfig, collectTrainRemRowsForDepotCopy, collectTrainRemMainlineInServiceRows };`;
       }
     },
     configureServer(vite) {

@@ -152,7 +152,7 @@ function DeleteRequestButton({ label, onClick }) {
 function StillNotAtStablingIcon({ message = "Still not in WD" }) {
   return (
     <span
-      className="still-not-stabling-trigger relative z-40 inline-flex shrink-0 items-center justify-center justify-self-end"
+      className="still-not-stabling-trigger cursor-pointer relative z-40 inline-flex shrink-0 items-center justify-center justify-self-end"
       tabIndex={0}
       aria-label={message}
     >
@@ -187,7 +187,7 @@ function AlreadyStatusIcon({ message, reason }) {
 
   return (
     <span
-      className="already-status-trigger relative z-40 inline-flex shrink-0 items-center justify-center justify-self-end"
+      className="already-status-trigger cursor-pointer relative z-40 inline-flex shrink-0 items-center justify-center justify-self-end"
       tabIndex={0}
       aria-label={message}
     >
@@ -1505,26 +1505,31 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   return (
     <div data-request-layout="modern" className="theme-maintenance-panel relative overflow-visible bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shadow-md">
       {/* Header */}
-      <div className="theme-maintenance-header flex items-center gap-2.5 px-4 py-3 border-b border-[#1a3a56] rounded-t-xl" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
-        <div className="w-6 h-6 rounded-md bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center">
-          <Wrench className="w-3.5 h-3.5 text-[#4f8ef7]" />
-        </div>
-        <span className="text-xs font-bold text-white uppercase tracking-widest">{panelTitle}</span>
-        {requests.length > 0 && (
-          <div className="ml-auto flex items-center gap-1.5">
-            <span className="bg-[#0f2d4a] text-[#4f8ef7] border border-[#2b4f6b] text-[10px] font-bold px-2 py-0.5 rounded-full">{requests.length}</span>
-            <button
-              onClick={() => { if (confirmClear) { onClearAll(); setConfirmClear(false); } else { setConfirmClear(true); } }}
-              onBlur={() => setTimeout(() => setConfirmClear(false), 150)}
-              className={`text-[9px] font-semibold border rounded-full px-2 py-0.5 transition-colors ${confirmClear ? "text-white bg-red-600 border-red-600" : "text-red-400 border-red-800/50 hover:bg-red-950/40"}`}>
-              {confirmClear ? "Confirm?" : "Clear All"}
-            </button>
+      <div className="theme-maintenance-header flex items-center justify-between gap-2 rounded-t-xl">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="theme-maintenance-title-icon flex shrink-0 items-center justify-center border border-[#2b4f6b] bg-[#10263b]">
+            <Wrench aria-hidden="true" />
           </div>
-        )}
+          <div className="min-w-0">
+            <h2 className="theme-maintenance-title">{panelTitle}</h2>
+            <p className="theme-maintenance-subtitle">Train requests</p>
+          </div>
+        </div>
+        <ActionTooltip
+          message={`${requests.length} maintenance requests currently in the Train Request list.`}
+          placement="bottom"
+          align="end"
+          wrapperClassName="ml-auto shrink-0"
+        >
+          <button type="button" className="theme-maintenance-total" aria-label={`${requests.length} maintenance requests`}>
+            <span>REQ</span>
+            <strong>{requests.length}</strong>
+          </button>
+        </ActionTooltip>
       </div>
 
       {/* Input Form */}
-      <div className="border-b border-[#1a3a56] p-2.5 space-y-2">
+      <div className="theme-maintenance-form border-b border-[#1a3a56] p-2.5 space-y-2">
         {showImportTools && (
           <MaintenanceUploadTools keepOpen={filePickerOpen || isReadingExcelWash || isAddingExcelWash || Boolean(excelWashFileName) || imageUploadActive}>
           <div data-testid="cmms-wash-review-card" className="theme-maintenance-upload-card theme-maintenance-upload-card--wash overflow-hidden rounded-xl border border-cyan-400/70 bg-[radial-gradient(circle_at_12%_30%,rgba(8,145,178,0.20),transparent_34%),linear-gradient(145deg,#06172a_0%,#071e33_58%,#09213a_100%)] p-2 shadow-[0_0_14px_rgba(34,211,238,0.10)]">
@@ -1638,10 +1643,22 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
           )}
         </div>
         {error && <p className="text-[10px] text-red-400 bg-red-950/40 border border-red-800/60 rounded-lg px-2.5 py-1.5">{error}</p>}
-        <button onClick={handleAdd}
-          className="mt-0.5 flex w-full items-center justify-center gap-1.5 rounded-full border border-[#2b4f6b] bg-[#1a3a5c] py-1.5 text-xs font-bold text-[#c8d8ea] transition-all hover:bg-[#1e4d72] active:scale-[0.98]">
-          <Plus className="w-3.5 h-3.5" /> {addButtonLabel}
-        </button>
+        <div className="flex items-stretch gap-2">
+          <button onClick={handleAdd}
+            className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full border border-[#2b4f6b] bg-[#1a3a5c] py-1.5 text-xs font-bold text-[#c8d8ea] transition-all hover:bg-[#1e4d72] active:scale-[0.98]">
+            <Plus className="w-3.5 h-3.5" /> {addButtonLabel}
+          </button>
+          {requests.length > 0 && (
+            <button
+              type="button"
+              title="Clear all maintenance requests"
+              onClick={() => { if (confirmClear) { onClearAll(); setConfirmClear(false); } else { setConfirmClear(true); } }}
+              onBlur={() => setTimeout(() => setConfirmClear(false), 150)}
+              className={`shrink-0 rounded-lg border px-2.5 text-[10px] font-semibold transition-colors ${confirmClear ? "text-white bg-red-600 border-red-600" : "text-red-400 border-red-800/50 hover:bg-red-950/40"}`}>
+              {confirmClear ? "Confirm?" : "Clear All"}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Workshop Requests */}

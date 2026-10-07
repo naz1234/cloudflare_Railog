@@ -77,10 +77,7 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
   stroke-width: 1.5;
 }
 
-html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-sync {
-  display: flex;
-  align-items: center;
-  gap: 7px;
+html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-subtitle {
   margin-top: 4px;
   padding: 0;
   border: 0 !important;
@@ -93,16 +90,16 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
   color: var(--slate-muted) !important;
 }
 
-html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-sync.is-warning {
-  background: rgb(245 158 11 / 10%) !important;
-  color: #c38b3a !important;
-}
-
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-depot-card {
   border: 0 !important;
   border-radius: 0 0 27px 27px;
   background: var(--slate-row) !important;
   box-shadow: none !important;
+}
+
+/* Match the panel's inner curve so table backgrounds cannot cover its border. */
+html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-depot-card > .overflow-hidden {
+  border-radius: 0 0 27px 27px;
 }
 
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-toolbar {
@@ -301,7 +298,7 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
   border-bottom: 1px solid var(--slate-soft-line) !important;
   border-radius: 0 !important;
   background: var(--slate-row) !important;
-  box-shadow: inset 3px 0 0 var(--slate-row-accent, #719bc9) !important;
+  box-shadow: none !important;
 }
 
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-row-card:is(.is-9am-exact-tid-row, .is-combined-east-preset-row, [data-hdw-group="mainline"]) {
@@ -443,8 +440,6 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
   background: color-mix(in srgb, var(--slate-location-accent) 11%, var(--slate-row));
   font-size: 8px; font-weight: 700; letter-spacing: .02em; cursor: help;
 }
-.slate-removal-sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #178366; }
-.theme-train-rem-sync.is-warning .slate-removal-sync-dot { background: #c38b3a; }
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-titlebar > div { gap: 16px; }
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-service > span { color: var(--slate-muted) !important; font-size: 14px; font-weight: 400; }
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-service > strong { color: inherit !important; font-size: 30px; font-weight: 650; line-height: 1.05; }
@@ -476,7 +471,7 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-titlebar h2 { font-size: 16px; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-title-icon { width: 30px; height: 30px; border-radius: 9px; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-title-icon svg { width: 15px; height: 15px; }
-  html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-sync { font-size: 11px !important; gap: 5px; }
+  html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-subtitle { font-size: 11px !important; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-service { min-width: 40px; padding-left: 10px; gap: 2px; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-service > span { font-size: 10px; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-service > strong { font-size: 24px; }

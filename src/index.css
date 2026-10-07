@@ -3601,56 +3601,13 @@ html[data-app-theme="light"] .theme-maintenance-pending-icon svg * {
   stroke: #ffffff !important;
 }
 
-/* “Still not in WD” status: a calm waiting pulse with an hourglass flip. */
-.theme-maintenance-pending-icon {
-  transform-origin: center;
-  will-change: transform, filter;
-  animation: maintenance-pending-pulse 1.2s ease-in-out infinite;
-}
-
+/* Keep the pending status static; only its tooltip responds to hover/focus. */
+.theme-maintenance-pending-icon,
 .theme-maintenance-pending-icon > svg {
-  transform-origin: center;
-  will-change: transform;
-  animation: maintenance-pending-hourglass-flip 1.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
-}
-
-.theme-maintenance-train-row:nth-child(2n) .theme-maintenance-pending-icon,
-.theme-maintenance-train-row:nth-child(2n) .theme-maintenance-pending-icon > svg {
-  animation-delay: -0.24s;
-}
-
-.theme-maintenance-train-row:nth-child(3n) .theme-maintenance-pending-icon,
-.theme-maintenance-train-row:nth-child(3n) .theme-maintenance-pending-icon > svg {
-  animation-delay: -0.48s;
-}
-
-@keyframes maintenance-pending-pulse {
-  0%, 48%, 100% {
-    transform: scale(1);
-    filter: brightness(1) drop-shadow(0 0 0 rgba(245, 158, 11, 0));
-  }
-  62% {
-    transform: scale(1.1);
-    filter: brightness(1.18) drop-shadow(0 0 4px rgba(245, 158, 11, 0.72));
-  }
-  78% {
-    transform: scale(1);
-    filter: brightness(1.04) drop-shadow(0 0 2px rgba(245, 158, 11, 0.28));
-  }
-}
-
-@keyframes maintenance-pending-hourglass-flip {
-  0%, 48% { transform: rotate(0deg); }
-  72%, 100% { transform: rotate(180deg); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .theme-maintenance-pending-icon,
-  .theme-maintenance-pending-icon > svg {
-    animation: none !important;
-    transform: none;
-    filter: none;
-  }
+  animation: none;
+  transform: none;
+  filter: none;
+  will-change: auto;
 }
 
 /* Controller Roster light-mode redesign.
@@ -9167,11 +9124,94 @@ html[data-app-theme="light"] .theme-removal-log-card-body > div {
   color: #64748b !important;
 }
 
-/* Modern Train Request tree: one panel frame, colored bars and flat train rows. */
+/* Modern Train Request tree: match Removal Summary's outer frame. */
 .theme-maintenance-panel[data-request-layout="modern"] {
   background: #061d30;
-  border-color: rgba(34, 211, 238, 0.65);
-  box-shadow: 0 0 14px rgba(14, 165, 233, 0.12), inset 0 0 16px rgba(14, 165, 233, 0.04);
+  border: 1px solid #2b4f6b;
+  border-radius: 28px;
+  box-shadow: 0 14px 36px rgb(0 0 0 / 9%);
+}
+
+.theme-maintenance-panel[data-request-layout="modern"] > .theme-maintenance-header {
+  min-height: 70px;
+  padding: 12px 10px 10px;
+  border: 0;
+  border-radius: 27px 27px 0 0;
+  background: #0b1f33 !important;
+  background-image: none !important;
+  font-family: Inter, "Segoe UI", sans-serif;
+}
+
+.theme-maintenance-panel[data-request-layout="modern"] .theme-maintenance-title {
+  color: #e1ecf5 !important;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.035em;
+  line-height: 1.2;
+  text-transform: none;
+  text-shadow: none;
+}
+
+.theme-maintenance-panel[data-request-layout="modern"] .theme-maintenance-subtitle {
+  margin-top: 4px;
+  color: #7dabc6 !important;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.theme-maintenance-panel[data-request-layout="modern"] .theme-maintenance-title-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  box-shadow: none;
+}
+
+.theme-maintenance-panel[data-request-layout="modern"] .theme-maintenance-title-icon svg {
+  width: 15px;
+  height: 15px;
+  stroke: #7dabc6 !important;
+  stroke-width: 1.5;
+}
+
+.theme-maintenance-panel[data-request-layout="modern"] .theme-maintenance-total {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 40px;
+  padding: 0;
+  padding-left: 10px;
+  border: 0;
+  border-left: 1px solid #2b4f6b;
+  border-radius: 0;
+  background: transparent;
+  color: #e1ecf5 !important;
+  cursor: pointer;
+}
+
+.theme-maintenance-panel[data-request-layout="modern"] .theme-maintenance-total > span {
+  color: #7dabc6 !important;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.theme-maintenance-panel[data-request-layout="modern"] .theme-maintenance-total > strong {
+  color: inherit !important;
+  font-size: 24px;
+  font-weight: 650;
+  line-height: 1.05;
+}
+
+.theme-maintenance-panel[data-request-layout="modern"] > .theme-maintenance-form {
+  padding-top: 0;
+}
+
+.theme-maintenance-panel[data-request-layout="modern"] .maintenance-upload-shortcut {
+  height: 30px;
+  min-height: 30px;
+  padding: 0 8px;
+  border-radius: 8px;
 }
 
 .theme-maintenance-list-header {
@@ -9272,12 +9312,45 @@ html[data-app-theme="light"] .theme-removal-log-card-body > div {
 }
 
 html[data-app-theme="light"] .theme-maintenance-panel[data-request-layout="modern"] {
-  border-color: #67b2d5 !important;
+  --maintenance-panel-base: #edf2f7;
+  background: var(--maintenance-panel-base) !important;
+  border-color: #d7e2ee !important;
+  box-shadow: 0 14px 36px rgb(35 51 75 / 5%) !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-panel[data-request-layout="modern"] > .theme-maintenance-header {
+  background: var(--maintenance-panel-base) !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-panel[data-request-layout="modern"] .theme-maintenance-title {
+  color: #0b2443 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-panel[data-request-layout="modern"] .theme-maintenance-subtitle {
+  color: #4e7198 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-panel[data-request-layout="modern"] .theme-maintenance-title-icon {
+  background: #ffffff !important;
+  border-color: #d7e2ee !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-panel[data-request-layout="modern"] .theme-maintenance-title-icon svg {
+  stroke: #4e7198 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-panel[data-request-layout="modern"] .theme-maintenance-total {
+  border-color: #d7e2ee;
+  color: #0b2443 !important;
+}
+
+html[data-app-theme="light"] .theme-maintenance-panel[data-request-layout="modern"] .theme-maintenance-total > span {
+  color: #4e7198 !important;
 }
 
 html[data-app-theme="light"] .theme-maintenance-list-header {
   color: #0f172a;
-  background: linear-gradient(90deg, #e0f2fe, #f8fafc);
+  background: var(--maintenance-panel-base, linear-gradient(90deg, #e0f2fe, #f8fafc));
 }
 
 html[data-app-theme="light"] .theme-maintenance-category {
@@ -10720,7 +10793,7 @@ html[data-app-theme="light"] .theme-maintenance-panel
 /* Keep the new tree rows flat despite older light-theme card overrides. */
 html[data-app-theme="light"] .theme-maintenance-panel .theme-maintenance-category .theme-maintenance-request-bar {
   border: 0 !important;
-  background: linear-gradient(90deg, rgba(var(--request-category-accent-rgb), 0.14), #ffffff) !important;
+  background: linear-gradient(90deg, rgba(var(--request-category-accent-rgb), 0.14), var(--maintenance-panel-base, #ffffff)) !important;
   box-shadow: inset 3px 0 0 var(--request-category-accent) !important;
 }
 
