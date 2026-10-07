@@ -9708,7 +9708,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                             placeholder="ID"
                             aria-label={isHdw40 ? `${hdw40Group.label} row ${index - hdw40Group.start + 1} Train ID` : undefined}
                             title={referenceOnly ? rowStatusTitle : isDuplicateTrainId ? "Duplicate Train ID detected" : ""}
-                            className={`h-full min-w-0 border-0 bg-transparent px-1 text-center text-[11px] outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${hasDuplicateValue ? "font-normal" : "font-bold"} ${referenceOnly ? "cursor-default" : ""}`}
+                            className={`h-full min-w-0 border-0 bg-transparent px-1 text-center text-[11px] outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${hasDuplicateValue ? "font-normal" : "font-semibold"} ${referenceOnly ? "cursor-default" : ""}`}
                             style={{ color: trainIdTextColor }}
                           />
 
