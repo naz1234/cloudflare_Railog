@@ -8751,15 +8751,13 @@ html[data-app-theme="light"] .theme-movement-status[data-status="draft"] {
 }
 
 @keyframes movement-type-enter {
-  0%, 12% { transform: translate(-5px, -50%); opacity: 0.18; }
-  48% { opacity: 1; }
-  82%, 100% { transform: translate(3px, -50%); opacity: 0.74; }
+  0%, 100% { transform: translate(-3px, -50%); opacity: 0.8; }
+  50% { transform: translate(3px, -50%); opacity: 1; }
 }
 
 @keyframes movement-type-exit {
-  0%, 12% { transform: translate(5px, -50%); opacity: 0.18; }
-  48% { opacity: 1; }
-  82%, 100% { transform: translate(-3px, -50%); opacity: 0.74; }
+  0%, 100% { transform: translate(3px, -50%); opacity: 0.8; }
+  50% { transform: translate(-3px, -50%); opacity: 1; }
 }
 
 /* Match the TIME refresh icon motion to the swapping symbol's 2.8s rhythm. */
@@ -9409,62 +9407,30 @@ html[data-app-theme="light"] .theme-request-type-summary {
   box-shadow: 0 14px 36px rgb(35 51 75 / 5%) !important;
 }
 
-/* West/East depot identity for Movement and Removal log cards.
-   West uses violet; East uses cyan/teal in both application themes. */
+/* Both depot log types share Removal Summary's slate surfaces in each theme.
+   Only the small header dots retain West/East colour identity. */
 html:not([data-app-theme="light"]) :is(
   .theme-movement-log-card,
   .theme-removal-log-card
-)[data-depot="west"] {
-  --depot-log-card-bg: #17172f;
-  --depot-log-body-bg: #131429;
-  --depot-log-header-start: #2b234e;
-  --depot-log-header-middle: #3a2c63;
-  --depot-log-header-end: #2b234e;
-  --depot-log-border: rgba(192, 132, 252, 0.52);
-  --depot-log-inner-border: rgba(192, 132, 252, 0.34);
-  --depot-log-shadow: 0 2px 9px rgba(76, 29, 149, 0.24);
-}
-
-html:not([data-app-theme="light"]) :is(
-  .theme-movement-log-card,
-  .theme-removal-log-card
-)[data-depot="east"] {
-  --depot-log-card-bg: #062a31;
-  --depot-log-body-bg: #061f26;
-  --depot-log-header-start: #07343d;
-  --depot-log-header-middle: #07525d;
-  --depot-log-header-end: #07343d;
-  --depot-log-border: rgba(34, 211, 238, 0.50);
-  --depot-log-inner-border: rgba(34, 211, 238, 0.32);
-  --depot-log-shadow: 0 2px 9px rgba(8, 145, 178, 0.22);
+)[data-depot] {
+  --depot-log-card-bg: #0b1f33;
+  --depot-log-body-bg: #071828;
+  --depot-log-header-start: #0b1f33;
+  --depot-log-border: #2b4f6b;
+  --depot-log-inner-border: #1a3a56;
+  --depot-log-shadow: none;
 }
 
 html[data-app-theme="light"] :is(
   .theme-movement-log-card,
   .theme-removal-log-card
-)[data-depot="west"] {
-  --depot-log-card-bg: #faf7ff;
-  --depot-log-body-bg: #faf7ff;
-  --depot-log-header-start: #f5f3ff;
-  --depot-log-header-middle: #ede9fe;
-  --depot-log-header-end: #ede9fe;
-  --depot-log-border: #c4b5fd;
-  --depot-log-inner-border: #c4b5fd;
-  --depot-log-shadow: 0 2px 7px rgba(109, 40, 217, 0.09);
-}
-
-html[data-app-theme="light"] :is(
-  .theme-movement-log-card,
-  .theme-removal-log-card
-)[data-depot="east"] {
-  --depot-log-card-bg: #f0fdfa;
-  --depot-log-body-bg: #f0fdfa;
-  --depot-log-header-start: #f0fdfa;
-  --depot-log-header-middle: #ccfbf1;
-  --depot-log-header-end: #ccfbf1;
-  --depot-log-border: #5eead4;
-  --depot-log-inner-border: #5eead4;
-  --depot-log-shadow: 0 2px 7px rgba(13, 148, 136, 0.09);
+)[data-depot] {
+  --depot-log-card-bg: #edf2f7;
+  --depot-log-body-bg: #f6f8fb;
+  --depot-log-header-start: #edf2f7;
+  --depot-log-border: #d7e2ee;
+  --depot-log-inner-border: #d7e2ee;
+  --depot-log-shadow: none;
 }
 
 html:not([data-app-theme="light"]) :is(
@@ -9486,7 +9452,12 @@ html:not([data-app-theme="light"]) :is(
 )[data-depot] :is(
   .theme-movement-log-card-header,
   .theme-removal-log-card-header
-),
+) {
+  background: var(--depot-log-header-start) !important;
+  background-image: none !important;
+  border-color: var(--depot-log-inner-border) !important;
+}
+
 html[data-app-theme="light"] :is(
   .theme-movement-log-card,
   .theme-removal-log-card
@@ -9494,19 +9465,20 @@ html[data-app-theme="light"] :is(
   .theme-movement-log-card-header,
   .theme-removal-log-card-header
 ) {
-  background: linear-gradient(
-    90deg,
-    var(--depot-log-header-start) 0%,
-    var(--depot-log-header-middle) 55%,
-    var(--depot-log-header-end) 100%
-  ) !important;
-  background-image: linear-gradient(
-    90deg,
-    var(--depot-log-header-start) 0%,
-    var(--depot-log-header-middle) 55%,
-    var(--depot-log-header-end) 100%
-  ) !important;
+  background: var(--depot-log-header-start) !important;
+  background-image: none !important;
   border-color: var(--depot-log-inner-border) !important;
+}
+
+html:not([data-app-theme="light"]) :is(
+  .theme-movement-log-card-header,
+  .theme-removal-log-card-header
+) .rounded-full,
+html[data-app-theme="light"] :is(
+  .theme-movement-log-card-header,
+  .theme-removal-log-card-header
+) .rounded-full {
+  box-shadow: none !important;
 }
 
 html:not([data-app-theme="light"]) :is(
@@ -9632,15 +9604,6 @@ html[data-app-theme="light"] .theme-train-rem-toolbar .theme-train-rem-export.is
   -webkit-text-fill-color: #14532d !important;
   background: #dcfce7 !important;
   border-color: #22c55e !important;
-}
-
-html[data-app-theme="light"] .theme-train-rem-toolbar .theme-train-rem-ins {
-  color: #14532d !important;
-  -webkit-text-fill-color: #14532d !important;
-  background: #dcfce7 !important;
-  border-color: #22c55e !important;
-  font-weight: 600 !important;
-  box-shadow: 0 1px 4px rgba(22,163,74,0.14) !important;
 }
 
 html[data-app-theme="light"] .theme-train-rem-toolbar .theme-train-rem-undo {

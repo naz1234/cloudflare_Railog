@@ -1257,32 +1257,16 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
         html[data-app-theme="light"] .official-depot-excel-generator svg.text-teal-300 {
           color: var(--official-accent) !important;
         }
-        @keyframes official-upload-pulse {
-          0%, 100% {
-            transform: translateY(0) scale(1);
-            box-shadow: 0 0 0 rgba(45, 212, 191, 0);
-          }
-          50% {
-            transform: translateY(-1px) scale(1.003);
-            box-shadow: 0 0 18px var(--official-soft);
-          }
-        }
         .official-depot-excel-generator .official-upload-panel {
-          animation: official-upload-pulse 2.6s ease-in-out infinite;
-          transform-origin: center;
-          will-change: transform, box-shadow;
+          animation: none;
+          transform: none;
+          box-shadow: none;
+          will-change: auto;
         }
-        .official-depot-excel-generator .official-upload-panel:hover,
-        .official-depot-excel-generator .official-upload-panel:focus-within {
-          animation-play-state: paused;
-          border-color: var(--official-accent);
-          box-shadow: 0 0 18px var(--official-soft);
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .official-depot-excel-generator .official-upload-panel {
-            animation: none;
-            transform: none;
-          }
+        .official-depot-excel-generator .official-upload-panel .official-input:focus-visible {
+          outline: 2px solid var(--official-accent);
+          outline-offset: 2px;
+          box-shadow: none;
         }
         .official-depot-excel-generator .official-input::placeholder { color: var(--official-muted); opacity: .78; }
         .official-depot-excel-generator .official-input:focus { border-color: var(--official-accent); box-shadow: 0 0 0 2px var(--official-soft); }
@@ -1321,7 +1305,7 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="official-input mt-1.5 flex h-10 w-full items-center gap-2 rounded-lg border px-3 text-left transition hover:border-teal-400"
+            className="official-input mt-1.5 flex h-10 w-full cursor-pointer items-center gap-2 rounded-lg border px-3 text-left hover:border-teal-400"
           >
             <Upload className="h-4 w-4 shrink-0 text-teal-300" />
             <span className="min-w-0 flex-1 truncate text-[11px] font-bold">

@@ -9,6 +9,16 @@ html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"]
   --movement-na-text: #94a3b8;
   --movement-hover: #102c44;
   --movement-focus: #8bb5f6;
+  --movement-row: #071828;
+  --movement-row-alt: #0a1c2e;
+  --movement-cell-line: #1a3a56;
+  --movement-danger: #e5a4af;
+  --movement-added-bg: #103229;
+  --movement-added-text: #a1d7b9;
+  --movement-added-line: #305948;
+  --movement-incomplete-bg: #34212c;
+  --movement-incomplete-text: #efb0ba;
+  --movement-incomplete-line: #70434f;
   border-radius: 28px;
   border-color: var(--movement-line) !important;
   background: var(--movement-panel) !important;
@@ -28,6 +38,16 @@ html[data-app-theme="light"] .theme-movement-sheet[data-movement-design="compact
   --movement-na-text: #475569;
   --movement-hover: #e1ebf8;
   --movement-focus: #396cba;
+  --movement-row: #ffffff;
+  --movement-row-alt: #f8fafc;
+  --movement-cell-line: #d9e2ee;
+  --movement-danger: #a4465b;
+  --movement-added-bg: #eaf7f0;
+  --movement-added-text: #28734f;
+  --movement-added-line: #c0dfcd;
+  --movement-incomplete-bg: #fff0f2;
+  --movement-incomplete-text: #a4465b;
+  --movement-incomplete-line: #efc6cf;
   box-shadow: 0 14px 36px rgb(35 51 75 / 5%) !important;
 }
 
@@ -229,19 +249,171 @@ html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"]
   letter-spacing: .06em;
 }
 
-/* N/A is a non-editable value, not a disabled button. Keep the row striping. */
-html[data-app-theme="dark"] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-na-cell {
-  background: #061827 !important;
+/* Table rows use the same quiet slate surfaces and controls as Removal Summary. */
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-sheet-table tbody td {
+  height: 32px;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-color: var(--movement-cell-line) !important;
+  background: var(--movement-row) !important;
+  background-image: none !important;
+  color: var(--movement-text) !important;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: none !important;
+  transition: none !important;
 }
 
-html[data-app-theme="light"] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-sheet-table tbody .theme-movement-na-cell {
-  background: #ffffff !important;
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-sheet-table tbody tr:nth-child(even) td {
+  background: var(--movement-row-alt) !important;
 }
 
-html[data-app-theme="light"] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-sheet-table tbody tr:nth-child(even) .theme-movement-na-cell {
-  background: #f8fafc !important;
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-sheet-table :is(input, select) {
+  height: 30px;
+  color: var(--movement-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: 12px;
+  font-weight: 500 !important;
 }
 
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-sheet-table :is(input, select):focus-visible {
+  outline: 2px solid var(--movement-focus);
+  outline-offset: -2px;
+  background: var(--movement-hover) !important;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-sheet-table td > div > span {
+  color: var(--movement-muted) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-weight: 500;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-sheet-table thead svg {
+  color: var(--movement-muted) !important;
+  stroke-width: 1.5;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-sheet-table tbody td:nth-child(2) {
+  --movement-type-accent: #fbbf24;
+  --movement-type-text: #e4c783;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-sheet-table tbody td:nth-child(2):has(> [data-movement-type="insertion"]) {
+  --movement-type-accent: #4ade80;
+  --movement-type-text: #96d2b1;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-sheet-table tbody td:nth-child(2):has(> [data-movement-type="removal"]) {
+  --movement-type-accent: #fb7185;
+  --movement-type-text: #e5a4af;
+}
+
+html[data-app-theme="light"] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-sheet-table tbody td:nth-child(2) {
+  --movement-type-accent: #d97706;
+  --movement-type-text: #91652d;
+}
+
+html[data-app-theme="light"] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-sheet-table tbody td:nth-child(2):has(> [data-movement-type="insertion"]) {
+  --movement-type-accent: #16a34a;
+  --movement-type-text: #28734f;
+}
+
+html[data-app-theme="light"] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-sheet-table tbody td:nth-child(2):has(> [data-movement-type="removal"]) {
+  --movement-type-accent: #e11d48;
+  --movement-type-text: #a4465b;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-sheet-table tbody td:nth-child(2)::before {
+  left: 8px;
+  color: var(--movement-type-accent) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-type-trigger {
+  height: 30px;
+  padding-left: 28px !important;
+  font-weight: 500;
+  text-align: left;
+  text-align-last: left;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-type-trigger:focus-visible {
+  outline: 2px solid var(--movement-focus);
+  outline-offset: -2px;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] :is(.theme-movement-delete-button, .theme-movement-swap-edit, .theme-movement-time-refresh) {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--movement-line) !important;
+  border-radius: 6px;
+  background: var(--movement-control) !important;
+  color: var(--movement-muted) !important;
+  -webkit-text-fill-color: currentColor !important;
+  box-shadow: none !important;
+  animation: none !important;
+  transform: none !important;
+  filter: none !important;
+  transition: none !important;
+  cursor: pointer;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-delete-button {
+  color: var(--movement-danger) !important;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] :is(.theme-movement-delete-button, .theme-movement-swap-edit, .theme-movement-time-refresh):hover {
+  background: var(--movement-hover) !important;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] :is(.theme-movement-delete-button, .theme-movement-swap-edit, .theme-movement-time-refresh):focus-visible {
+  outline: 2px solid var(--movement-focus);
+  outline-offset: -2px;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] :is(.theme-movement-delete-button, .theme-movement-swap-edit, .theme-movement-time-refresh) svg {
+  width: 12px;
+  height: 12px;
+  stroke-width: 1.5;
+  animation: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+  pointer-events: none;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-status {
+  min-width: 64px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  border-color: var(--movement-line) !important;
+  background: var(--movement-control) !important;
+  color: var(--movement-muted) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: .02em;
+  text-transform: none;
+  box-shadow: none !important;
+  animation: none !important;
+  transform: none !important;
+  filter: none !important;
+  will-change: auto;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-status[data-status="added"] {
+  background: var(--movement-added-bg) !important;
+  color: var(--movement-added-text) !important;
+  border-color: var(--movement-added-line) !important;
+}
+
+html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-status[data-status="incomplete"] {
+  background: var(--movement-incomplete-bg) !important;
+  color: var(--movement-incomplete-text) !important;
+  border-color: var(--movement-incomplete-line) !important;
+}
+
+/* N/A is plain text on the same striped row surface, not a disabled button. */
 html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-na {
   background: transparent !important;
   border: 0 !important;

@@ -376,8 +376,9 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
   --slate-remark-hover-bg: color-mix(in srgb, var(--slate-remark-accent) 25%, var(--slate-row));
 }
 html[data-app-theme="light"] .theme-train-rem-panel[data-removal-design="compact-slate"] :is(.slate-removal-remark, input[data-removal-has-remark="true"]) {
-  --slate-remark-bg: color-mix(in srgb, var(--slate-remark-accent) 28%, #17212e);
-  --slate-remark-hover-bg: color-mix(in srgb, var(--slate-remark-accent) 38%, #17212e);
+  --slate-remark-bg: color-mix(in srgb, var(--slate-remark-accent) 18%, #ffffff);
+  --slate-remark-fg: var(--slate-text);
+  --slate-remark-hover-bg: color-mix(in srgb, var(--slate-remark-accent) 26%, #ffffff);
 }
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-remark,
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-row-card[data-preset][data-tid] input[data-removal-field="remark"][data-removal-has-remark="true"] {
@@ -398,8 +399,9 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
   border: 0 !important; box-shadow: none !important;
   color: #cf8d99 !important;
 }
-html[data-app-theme="light"] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-hidden-remarks button { color: #d899a4 !important; }
+html[data-app-theme="light"] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-hidden-remarks button { color: #b83349 !important; }
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-hidden-remarks button:hover { color: #f0b6bf !important; }
+html[data-app-theme="light"] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-hidden-remarks button:hover { color: #982330 !important; }
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-hidden-remarks :is(svg, svg *) {
   width: 12px; height: 12px; color: inherit !important;
   stroke: currentColor !important; stroke-width: 1.75;

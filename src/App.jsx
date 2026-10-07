@@ -9,6 +9,7 @@ import { initCloudflareSchema } from '@/api/base44Client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 // Add page imports here
 import DepotStabling from "./pages/DepotStabling";
+import { RemovalScanPage } from "./components/depot/RemovalScan";
 
 const AuthenticatedApp = () => {
   const { isAuthenticated } = useAuth();
@@ -20,6 +21,7 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route element={<ProtectedRoute />}>
+        <Route path="/removal-scan" element={<RemovalScanPage />} />
         <Route path="/" element={<DepotStabling />} />
         <Route path="/depot-stabling" element={<DepotStabling />} />
         <Route path="/train-movement" element={<DepotStabling />} />

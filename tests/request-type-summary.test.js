@@ -134,12 +134,14 @@ test("deep cleaning describes the current activity and TLC subtypes remain disti
   ]);
 });
 
-test("TLC requests have their own summary section instead of Other Remarks", () => {
+test("TLC, TFT and ACES requests share the TLC Req summary section", () => {
   const groups = groupSummary([
     { trainId: "T15", requestType: "TLC Req after comm svc" },
     { trainId: "T36", requestType: "TLC Req after comm svc" },
     { trainId: "T14", requestType: "tlc CCTV" },
     { trainId: "T09", requestType: "TLC AMPLIFIER", groupHidden: true },
+    { trainId: "T04", requestType: "TFT issue" },
+    { trainId: "T41", requestType: "ACES Req", groupHidden: true },
     { trainId: "T32", requestType: "SET 25C" },
     { trainId: "T43", requestType: "WASH 1-Oct" },
     { trainId: "T41", requestType: "G-C PENDING AM" },
@@ -149,6 +151,8 @@ test("TLC requests have their own summary section instead of Other Remarks", () 
     "T15 and T36 — requested for TLC Req after comm svc.",
     "T14 — requested for TLC CCTV.",
     "T09 — requested for TLC amplifier.",
+    "T04 — TFT issue.",
+    "T41 — ACES Req.",
   ]);
   assert.deepEqual(groups.find(({ key }) => key === "others").lines, ["T32 — set the temperature to 25°C."]);
 });

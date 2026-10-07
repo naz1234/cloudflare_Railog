@@ -30,6 +30,19 @@ test("popup icons reuse the selected type's exact animation names and 2.8-second
   assert.match(styles, /html\[data-app-theme="light"\] \.theme-movement-type-option-symbol,[^]*?color: var\(--movement-option-accent\) !important;/);
 });
 
+test("insertion and removal loops join at the same position and opacity without teleporting", () => {
+  for (const [name, start, midpoint] of [["enter", -3, 3], ["exit", 3, -3]]) {
+    const frames = styles.match(new RegExp(`@keyframes movement-type-${name} \\{([\\s\\S]*?)\\n\\}`))?.[1];
+    assert.ok(frames, `${name} keyframes exist`);
+    assert.ok(frames.includes(`0%, 100% { transform: translate(${start}px, -50%); opacity: 0.8; }`), `${name} has identical loop endpoints`);
+    assert.ok(frames.includes(`50% { transform: translate(${midpoint}px, -50%); opacity: 1; }`), `${name} glides through the midpoint`);
+    assert.doesNotMatch(frames, /12%|48%|82%|opacity: 0\.18/);
+  }
+  for (const selector of ["\\.theme-movement-sheet-table tbody td:nth-child\\(2\\)::before", "\\.theme-movement-type-option-symbol"]) {
+    assert.match(styles, new RegExp(`${selector}\\s*\\{[^}]*animation: movement-type-swap 2\\.8s ease-in-out infinite;`));
+  }
+});
+
 test("popup motion is disabled for reduced-motion users without hiding or shifting icons", () => {
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.theme-movement-type-option-symbol\s*\{\s*animation: none !important;\s*transform: translateY\(-50%\);\s*opacity: 1;\s*will-change: auto;/);
 });
