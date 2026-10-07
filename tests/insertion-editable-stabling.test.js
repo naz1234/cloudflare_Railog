@@ -18,7 +18,7 @@ const sectionStart = pageSource.indexOf("function InsertionStablingSection");
 const sectionEnd = pageSource.indexOf("function getInsertionEntrySortMinutes", sectionStart);
 const sectionSource = pageSource.slice(sectionStart, sectionEnd);
 const configStart = pageSource.indexOf("const buildInsertionSectionConfig = (depot)");
-const configEnd = pageSource.indexOf("const insertionAssignmentsByDepot", configStart);
+const configEnd = pageSource.indexOf("const westInsertionSection", configStart);
 const configSource = pageSource.slice(configStart, configEnd);
 
 test("Request stabling is one editable view without PG1 or PG2 controls", () => {

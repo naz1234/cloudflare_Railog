@@ -11,7 +11,7 @@ test('primary removal actions retain their order without an empty title spacer',
   assert.match(header, /\{\(depot !== "west" \|\| subtitle\) && \(/);
   assert.match(header, /theme-train-rem-action-row flex flex-nowrap items-center justify-start gap-1/);
   assert.doesNotMatch(header, /justify-between/);
-  const actions = ['theme-train-rem-pdf-menu', 'theme-train-rem-ins', 'theme-train-rem-undo', 'theme-train-rem-clear'];
+  const actions = ['theme-train-rem-pdf-menu', 'theme-train-rem-undo', 'theme-train-rem-clear'];
   const positions = actions.map(action => header.indexOf(action));
   assert.ok(positions.every((position, index) => position >= 0 && (!index || position > positions[index - 1])));
 });

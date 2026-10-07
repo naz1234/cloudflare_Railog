@@ -25,3 +25,14 @@ test("warning and generate action retain accessible contrast", () => {
   assert.match(generatorSource, /className="official-generate-button/);
   assert.match(generatorSource, /\.official-generate-button \{\s*color: #ffffff !important;/);
 });
+
+test("the source upload panel stays still without a pulse or glow in either theme", () => {
+  assert.doesNotMatch(generatorSource, /official-upload-pulse|animation-play-state|transform-origin/);
+  assert.match(generatorSource, /\.official-depot-excel-generator \.official-upload-panel \{\s*animation: none;\s*transform: none;\s*box-shadow: none;\s*will-change: auto;/);
+  assert.match(generatorSource, /\.official-upload-panel \.official-input:focus-visible \{\s*outline: 2px solid var\(--official-accent\);\s*outline-offset: 2px;\s*box-shadow: none;/);
+  const uploadPanel = generatorSource.slice(generatorSource.indexOf('<div className="official-panel official-upload-panel'), generatorSource.indexOf('<div className="official-panel rounded-lg', generatorSource.indexOf('<div className="official-panel official-upload-panel')));
+  assert.doesNotMatch(uploadPanel, /transition|animate-/);
+  assert.match(uploadPanel, /cursor-pointer/);
+  assert.match(uploadPanel, /onClick=\{\(\) => fileInputRef.current\?\.click\(\)\}/);
+  assert.match(uploadPanel, /onChange=\{handleFileChange\}/);
+});

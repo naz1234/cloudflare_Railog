@@ -26,7 +26,7 @@ test("PDF inherits the neutral action-button styling without a blue highlight", 
   assert.match(css, /button:not\(\[role="menuitem"\]\) \{[^}]*background: var\(--slate-control\) !important;/);
 });
 
-test("Wash Excel and Req. Image share the neutral PDF and INS palette in both themes", () => {
+test("Wash Excel and Req. Image share the neutral PDF palette in both themes", () => {
   for (const [name, colors] of Object.entries({
     bg: ["#10263b", "#ffffff"],
     border: ["#2b4f6b", "#d7e2ee"],

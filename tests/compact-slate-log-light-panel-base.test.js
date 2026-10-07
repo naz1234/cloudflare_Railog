@@ -40,12 +40,33 @@ test("Excel Generator uses a flat slate light base while retaining legible input
   assert.match(rule, /--official-accent: #0f766e;/);
 });
 
-test("dark windows share the Removal Summary slate base while West/East operational colours remain intact", () => {
+test("dark windows share the Removal Summary slate base", () => {
   assert.match(outputCss, /--window-panel: #0b1f33;/);
   assert.match(outputCss, /--window-line: #2b4f6b;/);
   assert.match(outputCss, /background: var\(--window-panel\) !important;\s*background-image: none !important;/);
   assert.match(outputCss, /--official-bg-start: var\(--window-panel\);\s*--official-bg-end: var\(--window-panel\);\s*--official-border: var\(--window-line\);/);
   assert.match(generator, /data-window-design="compact-slate"/);
-  assert.match(css, /--depot-log-body-bg: #faf7ff;/);
-  assert.match(css, /--depot-log-body-bg: #f0fdfa;/);
+  const shared = css.match(/html:not\(\[data-app-theme="light"\]\) :is\(\s*\.theme-movement-log-card,\s*\.theme-removal-log-card\s*\)\[data-depot\] \{([^}]*)\}/)?.[1];
+  assert.ok(shared, "both log types and depots use the same dark rule");
+  assert.match(shared, /--depot-log-card-bg: #0b1f33;/);
+  assert.match(shared, /--depot-log-body-bg: #071828;/);
+  assert.match(shared, /--depot-log-header-start: #0b1f33;/);
+  assert.match(shared, /--depot-log-border: #2b4f6b;/);
+  assert.match(shared, /--depot-log-inner-border: #1a3a56;/);
+  assert.match(shared, /--depot-log-shadow: none;/);
+  assert.match(css, /html:not\(\[data-app-theme="light"\]\) :is\(\s*\.theme-movement-log-card,\s*\.theme-removal-log-card\s*\)\[data-depot\] :is\(\s*\.theme-movement-log-card-header,\s*\.theme-removal-log-card-header\s*\) \{\s*background: var\(--depot-log-header-start\) !important;\s*background-image: none !important;/);
+  assert.match(css, /html:not\(\[data-app-theme="light"\]\) :is\(\s*\.theme-movement-log-card-header,\s*\.theme-removal-log-card-header\s*\) \.rounded-full,/);
+});
+
+test("both depot output card types share neutral light surfaces without coloured gradients or glow", () => {
+  const shared = css.match(/html\[data-app-theme="light"\] :is\(\s*\.theme-movement-log-card,\s*\.theme-removal-log-card\s*\)\[data-depot\] \{([^}]*)\}/)?.[1];
+  assert.ok(shared, "both log types and depots use the same light rule");
+  assert.match(shared, /--depot-log-card-bg: #edf2f7;/);
+  assert.match(shared, /--depot-log-body-bg: #f6f8fb;/);
+  assert.match(shared, /--depot-log-header-start: #edf2f7;/);
+  assert.match(shared, /--depot-log-border: #d7e2ee;/);
+  assert.match(shared, /--depot-log-inner-border: #d7e2ee;/);
+  assert.match(shared, /--depot-log-shadow: none;/);
+  assert.match(css, /html\[data-app-theme="light"\] :is\(\s*\.theme-movement-log-card,\s*\.theme-removal-log-card\s*\)\[data-depot\] :is\(\s*\.theme-movement-log-card-header,\s*\.theme-removal-log-card-header\s*\) \{\s*background: var\(--depot-log-header-start\) !important;\s*background-image: none !important;/);
+  assert.match(css, /html\[data-app-theme="light"\] :is\(\s*\.theme-movement-log-card-header,\s*\.theme-removal-log-card-header\s*\) \.rounded-full \{\s*box-shadow: none !important;/);
 });

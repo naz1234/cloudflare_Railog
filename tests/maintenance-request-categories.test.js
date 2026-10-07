@@ -9,6 +9,15 @@ test("editable request labels use the same categories as summary sentences", () 
     ["RST PM 02-OCT", "pm"],
     ["RST CM", "cm"],
     ["TLC Req after comm svc", "tlc"],
+    ["TFT issue", "tlc"],
+    ["ACES Req", "tlc"],
+    ["tft-issue", "tlc"],
+    ["Requested by aces", "tlc"],
+    ["FIT but LEAST PRIORITY TFT by ACES - 08Oct", "tlc"],
+    ["ATC test with TFT issue", "tlc"],
+    ["WASH after ACES Req", "tlc"],
+    ["FACES issue", "others"],
+    ["TFTS fault", "others"],
     ["CC RESET PENDING - ATC", "atc"],
     ["ATC Inspection 2-Oct", "atc"],
     ["G-C UNPLANNED - SR PENDING", "workshop"],
@@ -30,16 +39,23 @@ test("category grouping preserves every row, group control data and within-group
   const washTwo = { key: "wash2", label: "WASH 2-OCT", items: [{ id: "w3", trainId: "T19" }] };
   const atc = { key: "atc", label: "CC RESET PENDING - ATC", items: [{ id: "a1", trainId: "T19" }] };
   const other = { key: "other", label: "DEEP CLEAN", items: [{ id: "o1", trainId: "T40" }] };
-  const groups = [atc, other, washOne, washTwo];
+  const tft = { key: "tft", label: "TFT issue", items: [{ id: "t1", trainId: "T04" }, { id: "t2", trainId: "T41" }], hidden: true };
+  const aces = { key: "aces", label: "ACES Req", items: [{ id: "a2", trainId: "T12" }] };
+  const groups = [atc, other, washOne, tft, washTwo, aces];
   const categories = groupRequestGroupsByCategory(groups);
-  assert.deepEqual(categories.map(({ key, requestCount }) => [key, requestCount]), [["atc", 1], ["others", 1], ["washing", 3]]);
+  assert.deepEqual(categories.map(({ key, requestCount }) => [key, requestCount]), [["atc", 1], ["tlc", 3], ["others", 1], ["washing", 3]]);
+  const tlc = categories.find(({ key }) => key === "tlc");
+  assert.deepEqual(tlc.groups, [tft, aces]);
+  assert.equal(tlc.groups[0], tft);
+  assert.equal(tlc.groups[0].items, tft.items);
+  assert.equal(tlc.groups[0].hidden, true);
   const washing = categories.find(({ key }) => key === "washing");
   assert.deepEqual(washing.groups, [washOne, washTwo]);
   assert.equal(washing.groups[0], washOne);
   assert.equal(washing.groups[0].items, washItems);
   assert.equal(washing.groups[0].hidden, true);
-  assert.deepEqual(categories.flatMap(({ groups }) => groups).map(({ key }) => key).sort(), ["atc", "other", "wash1", "wash2"]);
-  assert.equal(categories.reduce((sum, { requestCount }) => sum + requestCount, 0), 5);
+  assert.deepEqual(categories.flatMap(({ groups }) => groups).map(({ key }) => key).sort(), ["aces", "atc", "other", "tft", "wash1", "wash2"]);
+  assert.equal(categories.reduce((sum, { requestCount }) => sum + requestCount, 0), 8);
 });
 
 test("empty categories are omitted and populated categories use operational priority order", () => {

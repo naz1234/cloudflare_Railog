@@ -164,7 +164,7 @@ export const REQUEST_CATEGORY_DEFINITIONS = [
 // Shared by the summary sentences and the editable request-group list.
 export function getRequestedSummaryCategoryKey(value = "") {
   const normalized = normalizeRequestedSummaryIdentity(value);
-  if (/\bTLC\b/.test(normalized)) return "tlc";
+  if (/\b(?:TLC|TFT|ACES)\b/.test(normalized)) return "tlc";
   if (/\bATC\b/.test(normalized)) return "atc";
   if (getRequestedSummaryWorkshopMovementDirection(value)) return "workshop";
   if (/\bWASH(?:ING)?\b/.test(normalized)) return "washing";

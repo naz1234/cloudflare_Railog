@@ -19,7 +19,7 @@ function sleep(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-function isSameOriginBrowserRequest(request) {
+export function isSameOriginBrowserRequest(request) {
   const origin = request.headers.get('Origin');
   if (!origin) return false;
 
@@ -134,7 +134,7 @@ async function azureFetch(input, init, deadline) {
   }
 }
 
-async function runAzureLayout({ env, mediaType, arrayBuffer }) {
+export async function runAzureLayout({ env, mediaType, arrayBuffer }) {
   const deadline = Date.now() + POLL_TIMEOUT_MS;
   const endpoint = azureEndpoint(env);
   const apiKey = String(env.AZURE_DOCUMENT_INTELLIGENCE_KEY || '').trim();
@@ -219,7 +219,7 @@ async function runAzureLayout({ env, mediaType, arrayBuffer }) {
   throw Object.assign(new Error('Azure OCR is taking too long. Please try the image again.'), { status: 504 });
 }
 
-function mediaTypeForImage(imageFile) {
+export function mediaTypeForImage(imageFile) {
   const declaredType = String(imageFile.type || '').toLowerCase();
   const supportedTypes = new Set(['image/png', 'image/jpeg', 'image/bmp', 'image/tiff']);
   if (supportedTypes.has(declaredType)) return declaredType;

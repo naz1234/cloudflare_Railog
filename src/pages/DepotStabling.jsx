@@ -24,6 +24,8 @@ import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator
 import RemovalPdfEditor from "../components/depot/RemovalPdfEditor";
 import EastNineAmRemovalPdfEditor from "../components/depot/EastNineAmRemovalPdfEditor";
 import RemovalSummaryRemark from "../components/depot/RemovalSummaryRemark";
+import RemovalScanButton from "../components/depot/RemovalScan";
+import { applyRemovalImageAssignments, removalScanFingerprint } from "../lib/removalImageAssignments";
 import { SessionPresenceControl } from "../components/ProtectedRoute";
 import { summarizeInsertionTidUsage } from "../lib/insertionTidUsage";
 import {
@@ -61,10 +63,6 @@ import "../copyFeedbackSlate.css";
 import "../outputWindowsSlate.css";
 import { getSwappingAutoFillFields } from "../lib/trainMovementSwapAutoFill";
 import { buildTcRemovalPdfLog } from "../lib/tcRemovalPdf";
-import {
-  applyInsertionAssignmentsToRemovalRows,
-  buildInsertionTidAssignments,
-} from "../lib/trainRemInsertionSync";
 import {
   addOnBeforeRequestedSummaryTrailingDate,
   formatRequestedSummaryEntryCount,
@@ -7645,7 +7643,7 @@ function getRemovalPresetTooltip(label = "") {
   return tooltipByLabel[label] || `Show ${label} removal TID`;
 }
 
-function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrainRemStateChange, eastStablingData = {}, requests = [], westData = {}, eastData = {}, insertionAssignmentsByDepot = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
+function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrainRemStateChange, eastStablingData = {}, requests = [], westData = {}, eastData = {}, activeTimetable = null, activeTimetableType = "weekday" }) {
   const [trainRemState, setTrainRemState] = useState(() => loadTrainRemState());
   const [trainRemLoaded, setTrainRemLoaded] = useState(false);
   const [, setTrainRemSyncing] = useState(false);
@@ -7704,6 +7702,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
   const trainRemTrainIdRefs = useRef({});
   const trainRemTidRefs = useRef({});
   const trainRemUndoStackRef = useRef([]);
+  const trainRemAppliedScanRef = useRef(null);
   const trainRemSmartDirectionRef = useRef({});
   const trainRemLastFocusedIndexRef = useRef({});
   const trainRemFocusedTrainIdCellRef = useRef(null);
@@ -7888,7 +7887,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
       setTrainRemDbReady(false);
       setTrainRemSyncError(true);
       trainRemPendingSaveRef.current = false;
-      return;
+      return false;
     }
 
     trainRemSavingRef.current = true;
@@ -7911,6 +7910,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
       setTrainRemSyncError(false);
       setTrainRemDebug("");
       setTrainRemDbReady(true);
+      return true;
     } catch (err) {
       const message = err?.message || err?.response?.data?.message || String(err);
       console.error("Train Rem save failed:", err);
@@ -7919,6 +7919,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
         setTrainRemDebug(`Save failed: ${message}`);
         setTrainRemSyncError(true);
       }
+      return false;
     } finally {
       const isLatestSave = saveRevision === trainRemSaveRevisionRef.current;
 
@@ -7985,6 +7986,37 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
     setTrainRemState(nextState);
     scheduleTrainRemSave(nextState);
   }, [scheduleTrainRemSave]);
+
+  const getRemovalScanTarget = () => {
+    const state = trainRemStateRef.current;
+    const timetableKey = JSON.stringify([activeTimetable?.id, activeTimetable?.updated_date, activeTimetable?.parsedData, activeTimetableType]);
+    return {
+      fingerprint: removalScanFingerprint(state, timetableKey),
+      target: {
+        period: state.selectedPreset?.west || "9am",
+        timetable: getTimetableTypeLabel(activeTimetableType),
+        rows: ["west", "east"].flatMap((depot) => (state.rows?.[depot] || []).map(({ trainId, tid }) => ({ trainId, tid }))),
+      },
+    };
+  };
+
+  const applyRemovalScan = async (assignments, snapshot, scanId) => {
+    if (trainRemSavingRef.current || trainRemEditingRef.current) {
+      throw new Error("Finish the current edit and wait for it to save, then retry this update.");
+    }
+    if (trainRemAppliedScanRef.current?.id !== scanId) {
+      if (getRemovalScanTarget().fingerprint !== snapshot.fingerprint) {
+        throw new Error("The timetable or Removal summary changed while scanning. Close this window and open a new QR.");
+      }
+      updateTrainRemState((prev) => applyRemovalImageAssignments(prev, assignments));
+      trainRemAppliedScanRef.current = { id: scanId, fingerprint: getRemovalScanTarget().fingerprint };
+    } else if (trainRemAppliedScanRef.current.fingerprint !== getRemovalScanTarget().fingerprint) {
+      throw new Error("Removal summary changed after the scan. Close this window and open a new QR.");
+    }
+    clearTimeout(trainRemAutoSaveTimerRef.current);
+    const saved = await saveTrainRemToDb(trainRemStateRef.current);
+    if (!saved) throw new Error("The scan updated locally but could not save. Check your connection, then retry the update.");
+  };
 
   useEffect(() => {
     if (!trainRemLoaded || !visiblePresetLabels.length) return;
@@ -8424,54 +8456,6 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
         ...prev,
         rows: nextRows,
         presetRows: nextPresetRows,
-      };
-    });
-  };
-
-  const handleTrainRemInsertionSync = (depot) => {
-    if (trainRemStateRef.current?.selectedPreset?.[depot] === HDW40_PRESET_LABEL) return;
-    const confirmed = window.confirm(
-      "Confirm and update Train ID based on the TID from the Insertion Page?"
-    );
-    if (!confirmed) return;
-
-    updateTrainRemState((prev) => {
-      const presetLabel = prev.selectedPreset?.[depot] || "9am";
-      const rows = normalizeTrainRemRowsForPreset(
-        prev.rows?.[depot],
-        depot,
-        presetLabel,
-        activeTimetable
-      );
-      const syncedRows = applyInsertionAssignmentsToRemovalRows(
-        rows,
-        insertionAssignmentsByDepot,
-        (row, rowIndex) => {
-          if (depot === "east") return "east";
-
-          if (TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(presetLabel)) {
-            const layout = getTrainRemCombinedExtendedLayout(presetLabel, activeTimetable);
-            return rowIndex >= layout.eastStartIndex ? "east" : "west";
-          }
-
-          const tid = normalizeTrainRemTidValue(row?.tid);
-          const assignedWest = Boolean(insertionAssignmentsByDepot?.west?.[tid]);
-          const assignedEast = Boolean(insertionAssignmentsByDepot?.east?.[tid]);
-          if (assignedEast && !assignedWest) return "east";
-          if (assignedWest && !assignedEast) return "west";
-
-          const scheduledWest = Boolean(getTrainRemScheduleMatch(activeTimetable, "west", presetLabel, tid));
-          const scheduledEast = Boolean(getTrainRemScheduleMatch(activeTimetable, "east", presetLabel, tid));
-          return scheduledEast && !scheduledWest ? "east" : "west";
-        }
-      );
-
-      return {
-        ...prev,
-        rows: {
-          ...prev.rows,
-          [depot]: syncedRows,
-        },
       };
     });
   };
@@ -9281,27 +9265,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                 )}
               </div>
 
-              {!isHdw40 && <ActionTooltip
-                message="Update Train ID from Insertion Page TID assignments"
-                placement="top"
-                align="end"
-              >
-                <button
-                  type="button"
-                  onClick={() => handleTrainRemInsertionSync(depot)}
-                  className="theme-train-rem-ins inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-normal transition-all hover:-translate-y-0.5"
-                  style={{
-                    background: "rgba(16,185,129,0.14)",
-                    borderColor: "rgba(52,211,153,0.55)",
-                    color: "#a7f3d0",
-                    boxShadow: "0 0 12px rgba(16,185,129,0.14)",
-                  }}
-                  aria-label="Update Train ID from Insertion Page TID assignments"
-                >
-                  <ClipboardCheck size={12} />
-                  INS
-                </button>
-              </ActionTooltip>}
+              {depot === "west" && <RemovalScanButton getTarget={getRemovalScanTarget} onApply={applyRemovalScan} disabled={!trainRemLoaded} />}
 
               <ActionTooltip
                 message={trainRemUndoCount > 0 ? "Undo last change" : "Nothing to undo"}
@@ -21955,11 +21919,6 @@ export default function DepotStablingPage() {
 
   const westInsertionSection = buildInsertionSectionConfig("west");
   const eastInsertionSection = buildInsertionSectionConfig("east");
-  const insertionAssignmentsByDepot = {
-    west: buildInsertionTidAssignments(westInsertionSection),
-    east: buildInsertionTidAssignments(eastInsertionSection),
-  };
-
   const handleActiveInsertionClearDepot = (depot) => {
     const normalizedDepot = normalizeDepotKey(depot);
     handleClearPg2InsertionDepot(normalizedDepot);
@@ -22563,7 +22522,6 @@ export default function DepotStablingPage() {
         requests={requests}
         westData={westData}
         eastData={eastData}
-        insertionAssignmentsByDepot={insertionAssignmentsByDepot}
         activeTimetable={activeTimetable}
         activeTimetableType={selectedTimetableType}
       />

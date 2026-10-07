@@ -33,6 +33,7 @@ function deferred() {
 async function setup({
   reducedMotion = false,
   returnTo = '/depot?tab=movements#today',
+  hash = '',
   challenge = {
     challengeId: 'opaque-tab-local-challenge',
     email: 'operator@flow-metro.com',
@@ -139,7 +140,8 @@ async function setup({
     window: {
       matchMedia: () => ({ matches: reducedMotion }),
       location: {
-        href: `https://railog.example/login?returnTo=${encodeURIComponent(returnTo)}`,
+        href: `https://railog.example/login${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}${hash}`,
+        hash,
         origin: 'https://railog.example',
         replace: (path) => navigations.push(path),
       },
@@ -403,6 +405,14 @@ test('successful login does not navigate to an external origin or back into the 
     await app.advance(2000);
     assert.deepEqual(app.navigations, ['/'], returnTo);
   }
+});
+
+test('a phone login retains the removal scan fragment after the server redirect', async () => {
+  const hash = '#/removal-scan?id=paired-scan&token=opaque-token';
+  const app = await setup({ returnTo: '', hash, sessionResponse: response({ authenticated: true }) });
+  assert.deepEqual(app.navigations, [`/${hash}`]);
+  const unrelated = await setup({ returnTo: '', hash: '#//attacker.example', sessionResponse: response({ authenticated: true }) });
+  assert.deepEqual(unrelated.navigations, ['/']);
 });
 
 test('challenge restoration retains expiry and resend cooldown, and restart resets the stage markers', async () => {
