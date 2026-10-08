@@ -64,8 +64,8 @@ function seed() {
 const initialRemovalState = seed();
 const previewPanelLinks = [
   ["movement", "Movement Log"],
-  ["removal-output", "Removal Output"],
   ["request-summary", "Request Summary"],
+  ["removal-output", "Removal Output"],
   ["excel-generator", "Excel Generator"],
 ];
 const maintenanceMap = Object.fromEntries(sampleTrains.map((train, index) => [`T${train}`, [
@@ -213,6 +213,9 @@ function Preview() {
           stabledTrainLocations={stablingLocations}
         />
       </div>
+      <div className="slate-preview-live-window" ref={(element) => { panelRefs.current["request-summary"] = element; }}>
+        <RequestedTrainActionSummary requests={requests} />
+      </div>
       <div className="slate-preview-live-window" ref={(element) => { panelRefs.current["removal-output"] = element; }}>
         <RemovalLogOutputFromTrainRem
           trainRemState={removalState}
@@ -222,9 +225,6 @@ function Preview() {
           activeTimetable={previewTimetable}
           activeTimetableType="weekday"
         />
-      </div>
-      <div className="slate-preview-live-window" ref={(element) => { panelRefs.current["request-summary"] = element; }}>
-        <RequestedTrainActionSummary requests={requests} />
       </div>
       <div className="slate-preview-live-window" ref={(element) => { panelRefs.current["excel-generator"] = element; }}>
         <OfficialEastExcelGenerator

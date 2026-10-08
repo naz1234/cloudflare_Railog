@@ -31,6 +31,27 @@ test("group bars and train lines keep all controls without the old bordered card
   assert.match(groups, /StillNotAtStablingIcon/);
 });
 
+test("parent headings use the shared bubble tooltip and hand cursor without changing layout", () => {
+  assert.match(categories, /<ActionTooltip\s+asChild\s+message=\{`\$\{category\.title\} — \$\{category\.requestCount\} train request/);
+  assert.match(categories, /across \$\{category\.groups\.length\} sub-group/);
+  assert.match(categories, /triggerProps=\{\{ tabIndex: 0 \}\}/);
+  assert.match(categories, /theme-maintenance-category-heading[^"\n]*cursor-pointer/);
+  assert.match(categories, /<CategoryIcon[^>]*cursor-inherit/);
+  assert.match(categories, /focus-visible:ring-2/);
+  assert.doesNotMatch(categories, /title=\{|onClick=|<button/);
+});
+
+test("sub-group titles and counts show the matching bubble while existing action tooltips stay separate", () => {
+  assert.match(groups, /<ActionTooltip\s+asChild\s+message=\{`\$\{group\.label\} — \$\{group\.items\.length\} train request/);
+  assert.match(groups, /triggerProps=\{\{ tabIndex: 0 \}\}/);
+  assert.match(groups, /theme-maintenance-group-title-trigger[^"\n]*cursor-pointer[^"\n]*self-stretch/);
+  assert.doesNotMatch(groups, /className="theme-maintenance-group-title(?:\s|")/);
+  assert.match(groups, /focus-visible:ring-2/);
+  assert.doesNotMatch(groups, /title=\{group\.label\}/);
+  assert.match(groups, /\{group\.label\} <span[^>]*>\(\{group\.items\.length\}\)<\/span>/);
+  assert.match(groups, /<\/ActionTooltip>\s*<ActionTooltip\s+message=\{group\.hidden/);
+});
+
 test("tree guide lines and flat light-theme overrides prevent nested borders returning", () => {
   assert.match(css, /\.theme-maintenance-category \{\s*border: 0;/);
   assert.match(css, /\.theme-maintenance-category-body::before/);

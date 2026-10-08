@@ -177,10 +177,19 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
   border-color: var(--slate-danger) !important;
 }
 
-html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row .theme-train-rem-clear {
+html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row button.theme-train-rem-clear {
   color: var(--slate-text) !important;
-  width: 44px;
+  width: 36px;
+  min-width: 36px;
   padding: 0;
+}
+html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row button.theme-train-rem-clear[data-confirming="true"] {
+  width: 62px;
+  min-width: 62px;
+  padding: 0 4px;
+  font-size: 11px;
+  color: var(--slate-danger) !important;
+  border-color: var(--slate-danger) !important;
 }
 
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-presets > div {
@@ -452,6 +461,38 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
 .slate-removal-group-title { display: flex; align-items: center; gap: 8px; text-transform: uppercase; }
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-group-title { color: var(--slate-location-accent) !important; -webkit-text-fill-color: currentColor !important; }
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-group-count { margin-left: auto; color: var(--slate-muted) !important; -webkit-text-fill-color: currentColor !important; font-size: 10px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] button.theme-train-rem-group-clear {
+  color: var(--slate-muted) !important;
+  -webkit-text-fill-color: currentColor !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] button.theme-train-rem-group-clear:hover {
+  color: var(--slate-danger) !important;
+  border-color: var(--slate-danger) !important;
+}
+html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] button.theme-train-rem-group-clear[data-confirming="true"] {
+  width: 54px;
+  min-width: 54px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  color: var(--slate-danger) !important;
+  border-color: var(--slate-danger) !important;
+  background: var(--slate-control) !important;
+}
+/* Keep group labels/counts at the edges; align the dustbin with the Time column. */
+html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-table:not([data-removal-headway]) .slate-removal-group-header { position: relative; }
+html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-table:not([data-removal-headway]) .slate-removal-group-header .theme-train-rem-group-clear {
+  position: absolute;
+  left: 34%; /* Train 14% + TID 11% + half of Time 18%. */
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-row-card[data-removal-location-badge="true"] input[data-removal-field="train"] { padding-right: 28px; }
 html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-location-badge {
   position: absolute; left: calc(14% - 29px); top: 50%; transform: translateY(-50%);
@@ -498,7 +539,8 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row button:not([role="menuitem"]) { height: 30px; min-height: 30px; padding: 0 8px; gap: 5px; border-radius: 8px; font-size: 12px; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row button > svg { width: 14px; height: 14px; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row button.theme-train-rem-pdf { min-width: 80px; }
-  html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row .theme-train-rem-clear { width: 30px; padding: 0; }
+  html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row button.theme-train-rem-clear { width: 30px; min-width: 30px; padding: 0; }
+  html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-action-row button.theme-train-rem-clear[data-confirming="true"] { width: 58px; min-width: 58px; padding: 0 4px; font-size: 10px; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .slate-removal-timetable { padding: 8px 0 6px; font-size: 11px; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-preset { height: 24px; font-size: 12px; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-sort-copy-row { margin-top: 8px; padding: 8px 0; gap: 4px; }
@@ -518,6 +560,7 @@ html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"]
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-table:not([data-removal-headway]) thead th:nth-child(2) { width: 13% !important; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-table:not([data-removal-headway]) thead th:nth-child(3) { width: 19% !important; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-table:not([data-removal-headway]) thead th:nth-child(4) { width: 50% !important; }
+  html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-table:not([data-removal-headway]) .slate-removal-group-header .theme-train-rem-group-clear { left: 40.5%; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-row-card:not([data-hdw-group]) { grid-template-columns: 18% 13% 19% 50% !important; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-row-card:not([data-hdw-group]) > span:has([data-removal-stabling-status], .theme-train-rem-offpeak-remove) { left: 18% !important; }
   html[data-app-theme] .theme-train-rem-panel[data-removal-design="compact-slate"] .theme-train-rem-row-card[data-preset][data-tid] input { font-size: 12px; }
