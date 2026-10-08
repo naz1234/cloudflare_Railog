@@ -2877,6 +2877,64 @@ function emptyTrainRemRows(count) {
   }));
 }
 
+function clearTrainRemSummaryState(state = {}) {
+  return {
+    ...state,
+    rows: Object.fromEntries(["west", "east"].map((depot) => [
+      depot,
+      state.selectedPreset?.[depot] === HDW40_PRESET_LABEL
+        ? clearHdwRows(state.rows?.[depot])
+        : emptyTrainRemRows(Math.max(TRAIN_REM_ROW_COUNTS[depot], state.rows?.[depot]?.length || 0)),
+    ])),
+  };
+}
+
+function getTrainRemLocationGroupIndex(depot, selectedPreset, row, sourceIndex = -1, activeTimetable = null) {
+  if (selectedPreset === HDW40_PRESET_LABEL) return { west: 0, east: 1, mainline: 2 }[row?.hdwDepot];
+  if (!isTrainRemCombinedReferencePreset(depot, selectedPreset)) return depot === "east" ? 1 : 0;
+  const layout = TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(selectedPreset)
+    ? getTrainRemCombinedExtendedLayout(selectedPreset, activeTimetable)
+    : null;
+  if (layout && sourceIndex >= layout.reserveStartIndex && sourceIndex < layout.eastStartIndex) return 0;
+  if (layout && sourceIndex >= layout.eastReserveStartIndex && sourceIndex < layout.totalCount) return 1;
+  if (getTrainRemScheduleMatch(activeTimetable, "west", selectedPreset, row?.tid)) return 0;
+  if (getTrainRemScheduleMatch(activeTimetable, "east", selectedPreset, row?.tid)) return 1;
+  return layout ? 0 : 2;
+}
+
+function clearTrainRemGroupState(state = {}, groupKey = "west", activeTimetable = null) {
+  const groupIndex = { west: 0, east: 1, offpeak: 2 }[groupKey];
+  if (groupIndex === undefined) return state;
+  const selectedPreset = state.selectedPreset?.west || "9am";
+  const westRows = normalizeTrainRemRowsForPreset(state.rows?.west, "west", selectedPreset, activeTimetable);
+  const clearedReferenceTids = new Set();
+  const nextWestRows = westRows.map((row, index) => {
+    if (getTrainRemLocationGroupIndex("west", selectedPreset, row, index, activeTimetable) !== groupIndex) return row;
+    const referenceOnly = isTrainRemReferenceOnlyIndex("west", selectedPreset, index, activeTimetable);
+    if (referenceOnly) clearedReferenceTids.add(normalizeTrainRemTidValue(row.tid));
+    return { ...row, trainId: "", tid: referenceOnly ? row.tid : "", timing: "", remark: "" };
+  });
+  // Legacy East records can mirror reference rows in the combined table. Clear
+  // only matching TIDs in this period so reload/live sync cannot refill the group.
+  const clearMirrors = (rows = []) => rows.some((row) => clearedReferenceTids.has(normalizeTrainRemTidValue(row.tid)))
+    ? rows.map((row) => clearedReferenceTids.has(normalizeTrainRemTidValue(row.tid))
+      ? { ...row, trainId: "", timing: "", remark: "" }
+      : row)
+    : rows;
+  const eastUsesSelectedPeriod = (state.selectedPreset?.east || "9am") === selectedPreset;
+  return {
+    ...state,
+    rows: {
+      ...state.rows,
+      west: nextWestRows,
+      east: eastUsesSelectedPeriod ? clearMirrors(state.rows?.east) : state.rows?.east,
+    },
+    presetRows: !eastUsesSelectedPeriod && Array.isArray(state.presetRows?.east?.[selectedPreset])
+      ? { ...state.presetRows, east: { ...state.presetRows.east, [selectedPreset]: clearMirrors(state.presetRows.east[selectedPreset]) } }
+      : state.presetRows,
+  };
+}
+
 function getTrainRemTimestampValue(value) {
   const time = Date.parse((value || "").toString());
   return Number.isFinite(time) ? time : 0;
@@ -7659,6 +7717,8 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
   const [trainRemEastNineAmDraft, setTrainRemEastNineAmDraft] = useState(null);
   const [trainRemEastNineAmDownloading, setTrainRemEastNineAmDownloading] = useState(false);
   const [trainRemUndoCount, setTrainRemUndoCount] = useState(0);
+  const [trainRemClearTarget, setTrainRemClearTarget] = useState(null);
+  const trainRemClearConfirm = trainRemClearTarget === "all";
   const [westDepotCopyStatus, setWestDepotCopyStatus] = useState("");
   const [eastDepotCopyStatus, setEastDepotCopyStatus] = useState("");
   const [totalServiceCopyStatus, setTotalServiceCopyStatus] = useState("");
@@ -7668,6 +7728,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
   );
 
   const trainRemStateRef = useRef(trainRemState);
+  const trainRemClearStateRef = useRef(trainRemState);
 
   useEffect(() => {
     trainRemStateRef.current = trainRemState;
@@ -7709,6 +7770,28 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
   const westDepotCopyTimerRef = useRef(null);
   const eastDepotCopyTimerRef = useRef(null);
   const totalServiceCopyTimerRef = useRef(null);
+
+  useEffect(() => {
+    // Identical polling results must not shorten the five-second confirmation.
+    if (!isSameTrainRemState(trainRemClearStateRef.current, trainRemState)) {
+      setTrainRemClearTarget(null);
+    }
+    trainRemClearStateRef.current = trainRemState;
+  }, [trainRemState]);
+
+  useEffect(() => {
+    if (!trainRemClearTarget) return undefined;
+    const confirmTimer = setTimeout(() => setTrainRemClearTarget(null), 5000);
+    const cancelClear = (event) => {
+      if (event.key !== "Escape") return;
+      setTrainRemClearTarget(null);
+    };
+    window.addEventListener("keydown", cancelClear);
+    return () => {
+      clearTimeout(confirmTimer);
+      window.removeEventListener("keydown", cancelClear);
+    };
+  }, [trainRemClearTarget]);
 
   useEffect(() => {
     return () => {
@@ -8480,16 +8563,52 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
     });
   };
 
-  const clearDepotTrainRem = (depot) => {
-    updateTrainRemState((prev) => ({
-      ...prev,
-      rows: {
-        ...prev.rows,
-        [depot]: prev.selectedPreset?.[depot] === HDW40_PRESET_LABEL
-          ? clearHdwRows(prev.rows?.[depot])
-          : emptyTrainRemRows(TRAIN_REM_ROW_COUNTS[depot]),
-      },
-    }));
+  const requestTrainRemClear = (groupKey) => {
+    if (!["all", "west", "east", "offpeak"].includes(groupKey)) return;
+    if (trainRemClearTarget !== groupKey) {
+      setTrainRemClearTarget(groupKey);
+      return;
+    }
+    setTrainRemClearTarget(null);
+    updateTrainRemState((prev) => groupKey === "all"
+      ? clearTrainRemSummaryState(prev)
+      : clearTrainRemGroupState(prev, groupKey, activeTimetable));
+  };
+
+  const clearAllTrainRem = () => requestTrainRemClear("all");
+
+  const clearTrainRemGroup = (groupKey) => {
+    if (!["west", "east", "offpeak"].includes(groupKey)) return;
+    requestTrainRemClear(groupKey);
+  };
+
+  const renderRemovalGroupClearButton = (groupKey) => {
+    const groupLabels = { west: "West Depot", east: "East Depot", offpeak: "Off Peak" };
+    const label = groupLabels[groupKey];
+    const confirming = trainRemClearTarget === groupKey;
+    const otherGroups = Object.entries(groupLabels)
+      .filter(([key]) => key !== groupKey)
+      .map(([, value]) => value)
+      .join(" and ");
+    return (
+      <ActionTooltip asChild
+        message={confirming
+          ? `Click again to clear ${label} entries only. ${otherGroups} stay unchanged. Escape or 5 seconds cancels; Undo restores cleared entries.`
+          : `Clear ${label} entries only. ${otherGroups} stay unchanged. Click once to show Confirm?, then again to clear.`}
+        placement="top" align="start"
+      >
+        <button type="button"
+          onClick={() => clearTrainRemGroup(groupKey)}
+          disabled={!trainRemLoaded}
+          data-removal-clear-group={groupKey}
+          data-confirming={confirming || undefined}
+          aria-label={confirming ? `Confirm clearing ${label} entries only` : `Clear ${label} entries only`}
+          className="theme-train-rem-group-clear inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded border border-transparent bg-transparent text-[#7eb8e0] transition-colors hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {confirming ? <span aria-live="polite">Confirm?</span> : <Trash2 size={12} aria-hidden="true" />}
+        </button>
+      </ActionTooltip>
+    );
   };
 
   const handleTrainRemPdfDownload = (depot, event = null, outputType = "dc") => {
@@ -9112,24 +9231,8 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
     const activeSortMode = canSortByRemovalColor
       ? normalizeTrainRemSortMode(trainRemState.sortMode?.[depot])
       : "tid";
-    const combinedExtendedLayout = depot === "west" && TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(selectedPreset)
-      ? getTrainRemCombinedExtendedLayout(selectedPreset, activeTimetable)
-      : null;
-    const getRemovalColorSortGroup = (row, sourceIndex = -1) => {
-      if (combinedExtendedLayout
-        && sourceIndex >= combinedExtendedLayout.reserveStartIndex
-        && sourceIndex < combinedExtendedLayout.eastStartIndex) {
-        return 0;
-      }
-      if (combinedExtendedLayout
-        && sourceIndex >= combinedExtendedLayout.eastReserveStartIndex
-        && sourceIndex < combinedExtendedLayout.totalCount) {
-        return 1;
-      }
-      if (getTrainRemScheduleMatch(activeTimetable, "west", selectedPreset, row?.tid)) return 0;
-      if (getTrainRemScheduleMatch(activeTimetable, "east", selectedPreset, row?.tid)) return combinedExtendedLayout ? 1 : 1;
-      return combinedExtendedLayout ? 0 : 2;
-    };
+    const getRemovalColorSortGroup = (row, sourceIndex = -1) =>
+      getTrainRemLocationGroupIndex(depot, selectedPreset, row, sourceIndex, activeTimetable);
     const westLocationOrderByPreset = {
       "9am": [212, 214, 216, 218, 220, 102, 104, 106, 108, 110],
       "7pm": [213, 215, 217, 219, 101, 103, 105, 107, 109, 111, 113, 115, 117, 119, 201, 203, 205],
@@ -9290,20 +9393,24 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                 </button>
               </ActionTooltip>
 
-              <ActionTooltip
-                message="Clear removal summary"
+              {depot === "west" && <ActionTooltip
+                message={trainRemClearConfirm
+                  ? "Click again to clear all West Depot, East Depot and Off Peak entries in the selected period. Other periods, Maintenance and stabling stay unchanged. Escape or 5 seconds cancels; Undo restores cleared entries."
+                  : "Clear all West Depot, East Depot and Off Peak entries in the selected period. Other periods, Maintenance and stabling stay unchanged. Click once to show Confirm?, then again to clear."}
                 placement="top"
                 align="end"
               >
                 <button
                   type="button"
-                  onClick={() => clearDepotTrainRem(depot)}
-                  className="theme-train-rem-clear inline-flex h-6 items-center gap-1 rounded-md border border-[#2b4f6b] bg-[#10263b] px-1.5 text-[10px] font-normal text-[#7eb8e0] transition-colors hover:border-red-600/60 hover:bg-red-950/30 hover:text-red-300"
-                  aria-label="Clear removal summary"
+                  onClick={clearAllTrainRem}
+                  disabled={!trainRemLoaded}
+                  data-confirming={trainRemClearConfirm || undefined}
+                  className="theme-train-rem-clear inline-flex h-6 shrink-0 cursor-pointer items-center justify-center rounded-md border border-[#2b4f6b] bg-[#10263b] text-[#7eb8e0] transition-colors hover:border-red-600/60 hover:bg-red-950/30 hover:text-red-300 disabled:cursor-not-allowed"
+                  aria-label={trainRemClearConfirm ? "Confirm clearing all Removal Summary entries" : "Clear all Removal Summary entries"}
                 >
-                  <Trash2 size={12} />
+                  {trainRemClearConfirm ? <span aria-live="polite">Confirm?</span> : <Trash2 size={12} aria-hidden="true" />}
                 </button>
-              </ActionTooltip>
+              </ActionTooltip>}
             </div>
           </div>
 
@@ -9419,7 +9526,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                     <tr key={`hdw-heading-${hdwHeader.depot}`}>
                       <th colSpan={3} data-removal-location={hdwHeader.depot === "mainline" ? "offpeak" : hdwHeader.depot} className="theme-train-rem-table-header slate-removal-group-header px-2 pb-1 pt-2 text-left text-[9px] font-semibold text-[#7eb8e0]">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="slate-removal-group-title">{hdwHeader.label}<span className="slate-removal-group-count">{hdwHeader.count} rows</span></span>
+                          <span className="slate-removal-group-title flex-1">{hdwHeader.label}{renderRemovalGroupClearButton(hdwHeader.depot === "mainline" ? "offpeak" : hdwHeader.depot)}<span className="slate-removal-group-count">{hdwHeader.count} rows</span></span>
                           {hdwHeader.depot !== "mainline" && (
                             <span className="inline-flex items-center gap-1">
                               <ActionTooltip message={`Add a ${hdwHeader.label} row`} placement="top" align="end">
@@ -9636,6 +9743,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                         >
                           <span className="slate-removal-group-title">
                             {rowLocation.label}
+                            {renderRemovalGroupClearButton(rowLocation.key)}
                             <span className="slate-removal-group-count">{removalLocationCounts[currentLocationGroup]} trains</span>
                           </span>
                         </th>
@@ -22454,6 +22562,8 @@ export default function DepotStablingPage() {
         stabledTrainLocations={getMainStablingLocations(westData, eastData)}
       />
 
+      <RequestedTrainActionSummary requests={requests} />
+
       <RemovalLogOutputFromTrainRem
         trainRemState={trainRemCheckState}
         maintenanceMap={maintenanceMap}
@@ -22463,8 +22573,6 @@ export default function DepotStablingPage() {
         activeTimetable={activeTimetable}
         activeTimetableType={selectedTimetableType}
       />
-
-      <RequestedTrainActionSummary requests={requests} />
 
       <OfficialEastExcelGenerator
         eastRemovalLog={buildTrainRemRemovalLog(

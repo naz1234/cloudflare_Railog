@@ -6,12 +6,16 @@ import { base44, seedPreviewRecords, seedPreviewMovementRecord } from "../script
 const preview = readFileSync(new URL("../scripts/preview-compact-slate.jsx", import.meta.url), "utf8");
 const server = readFileSync(new URL("../scripts/preview-compact-slate.mjs", import.meta.url), "utf8");
 const css = readFileSync(new URL("../scripts/preview-compact-slate.css", import.meta.url), "utf8");
+const production = readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
 
 test("the four requested windows reuse live components in production order below stabling", () => {
-  const components = ["StablingSection", "TrainMovementExcelSheet", "RemovalLogOutputFromTrainRem", "RequestedTrainActionSummary", "OfficialEastExcelGenerator"];
+  const components = ["StablingSection", "TrainMovementExcelSheet", "RequestedTrainActionSummary", "RemovalLogOutputFromTrainRem", "OfficialEastExcelGenerator"];
   const positions = components.map((name) => preview.indexOf(`<${name}`));
   assert.ok(positions.every((position) => position >= 0));
   assert.deepEqual(positions, [...positions].sort((a, b) => a - b));
+  const productionPositions = components.map((name) => production.indexOf(`<${name}`));
+  assert.ok(productionPositions.every((position) => position >= 0));
+  assert.deepEqual(productionPositions, [...productionPositions].sort((a, b) => a - b));
   for (const name of components.slice(1, 4)) assert.match(server, new RegExp(`export \\{[^}]*${name}`));
   assert.match(preview, /import OfficialEastExcelGenerator from "\.\.\/src\/components\/OfficialEastExcelGenerator"/);
 });

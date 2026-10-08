@@ -1362,9 +1362,20 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         <div
           className="theme-maintenance-group-heading theme-maintenance-request-bar grid min-h-[26px] w-full grid-cols-[minmax(0,1fr)_18px_18px_18px] items-center gap-1 overflow-visible pl-3 pr-1.5 text-left leading-none"
         >
-          <span className="min-w-0 truncate text-[11px] font-semibold uppercase text-[#f8fbff]" title={group.label}>
-            {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
-          </span>
+          <ActionTooltip
+            asChild
+            message={`${group.label} — ${group.items.length} train request${group.items.length === 1 ? "" : "s"}.`}
+            placement="top"
+            align="start"
+            sideOffset={6}
+            triggerProps={{ tabIndex: 0 }}
+          >
+            <span className="theme-maintenance-group-title-trigger flex cursor-pointer self-stretch min-w-0 items-center rounded-sm text-[11px] font-semibold uppercase text-[#f8fbff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80">
+              <span className="min-w-0 truncate">
+                {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
+              </span>
+            </span>
+          </ActionTooltip>
           <ActionTooltip
             message={group.hidden ? "Show remarks at stabling, Removal Summary and PDF" : "Hide remarks at stabling, Removal Summary and PDF"}
             placement="top"
@@ -1793,20 +1804,28 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                     "--request-category-accent-rgb": category.accentRgb,
                   }}
                 >
-                  <div className="theme-maintenance-category-heading flex min-h-8 items-center gap-1.5 rounded-md pr-2">
-                    <span className="theme-maintenance-category-icon flex h-8 w-7 shrink-0 items-center justify-center rounded-l-md" aria-hidden="true">
-                      <CategoryIcon className="h-4 w-4" strokeWidth={2} />
-                    </span>
-                    <h3 className="min-w-0 flex-1 text-[11px] font-bold uppercase leading-tight tracking-[0.02em]">
-                      {category.title}
-                    </h3>
-                    <span
-                      className="theme-maintenance-category-count flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1 text-[11px] font-bold leading-none"
-                      aria-label={`${category.requestCount} request${category.requestCount === 1 ? "" : "s"}`}
-                    >
-                      {category.requestCount}
-                    </span>
-                  </div>
+                  <ActionTooltip
+                    asChild
+                    message={`${category.title} — ${category.requestCount} train request${category.requestCount === 1 ? "" : "s"} across ${category.groups.length} sub-group${category.groups.length === 1 ? "" : "s"}.`}
+                    placement="top"
+                    align="start"
+                    triggerProps={{ tabIndex: 0 }}
+                  >
+                    <div className="theme-maintenance-category-heading flex cursor-pointer min-h-8 items-center gap-1.5 rounded-md pr-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80">
+                      <span className="theme-maintenance-category-icon flex h-8 w-7 shrink-0 items-center justify-center rounded-l-md" aria-hidden="true">
+                        <CategoryIcon className="h-4 w-4 cursor-inherit" strokeWidth={2} />
+                      </span>
+                      <h3 className="min-w-0 flex-1 text-[11px] font-bold uppercase leading-tight tracking-[0.02em]">
+                        {category.title}
+                      </h3>
+                      <span
+                        className="theme-maintenance-category-count flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1 text-[11px] font-bold leading-none"
+                        aria-label={`${category.requestCount} request${category.requestCount === 1 ? "" : "s"}`}
+                      >
+                        {category.requestCount}
+                      </span>
+                    </div>
+                  </ActionTooltip>
                   <div className="theme-maintenance-category-body grid gap-2 pb-1 pt-1">
                     {renderRequestGroupCards(category.groups, { section: "pending" })}
                   </div>

@@ -5,6 +5,7 @@ import test from 'node:test';
 import * as XLSX from 'xlsx';
 import * as hdw40 from '../src/lib/trainRemHdw40.js';
 import { buildWestRemovalInfoByTrain } from '../src/lib/maintenanceRemovalInfo.js';
+import { selectEastNineAmOffPeakRows } from '../src/lib/eastNineAmRemoval.js';
 
 const source = readFileSync(new URL('../src/pages/DepotStabling.jsx', import.meta.url), 'utf8');
 const functions = [
@@ -17,7 +18,8 @@ const functions = [
   'getTrainRemCombinedExtendedLayout', 'getTrainRemAdditionalWestRowCount',
   'getTrainRemAdditionalEastRowCount', 'getTrainRemPresetRowTids', 'indexTrainRemRowsByTid',
   'hasTrainRemRowContent', 'buildTrainRemCombinedWestRows', 'buildTrainRemAdditionalEastRows',
-  'normalizeTrainRemRows', 'normalizeTrainRemRowsForPreset', 'emptyTrainRemRows',
+  'normalizeTrainRemRows', 'normalizeTrainRemRowsForPreset', 'emptyTrainRemRows', 'clearTrainRemSummaryState',
+  'getTrainRemLocationGroupIndex', 'clearTrainRemGroupState',
   'buildTrainRemRowsFromPreset', 'buildDefaultTrainRemPresetRows', 'normalizeTrainRemPresetRows',
   'normalizeTrainRemSortMode', 'normalizeTrainRemSortModes', 'syncTrainRemActiveRowsToPresetCache',
   'getTrainRemCachedPresetRows', 'buildTrainRemDepotPayload',
@@ -38,7 +40,7 @@ const functionText = name => {
   assert.ok(start >= 0, name);
   return source.slice(start, source.indexOf('\n}', start) + 2);
 };
-const context = {XLSX, Date, Uint8Array, TIMETABLE_PARSE_VERSION:7, ...hdw40};
+const context = {XLSX, Date, Uint8Array, TIMETABLE_PARSE_VERSION:7, selectEastNineAmOffPeakRows, ...hdw40};
 vm.createContext(context);
 vm.runInContext([
   source.slice(source.indexOf('const TIMETABLE_TYPES ='), source.indexOf('const ACTIVE_TIMETABLE_TYPE_KEY')),
@@ -63,6 +65,229 @@ const holiday = record('ph',[
 const sidebarRemovalInfo = (state, timetable, depot = 'west') => buildWestRemovalInfoByTrain(
   context.collectTrainRemRowsForDepotCopy(state, depot, timetable, { includeScheduleTiming: true }),
 );
+
+test('one summary clear empties both active depots and off-peak while preserving other periods', () => {
+  for (const label of ['9am', '7pm', '12am', 'Fri', 'Sat', 'PH']) {
+    const state = context.buildDefaultTrainRemState();
+    state.selectedPreset = { west: label, east: label };
+    for (const depot of ['west', 'east']) {
+      state.rows[depot] = context.getTrainRemCachedPresetRows(state, depot, label).map((row, index) => ({
+        ...row, trainId: String(index + 1), timing: '19:00', remark: 'Manual note',
+      }));
+    }
+    state.sortMode = { west: 'color', east: 'tid' };
+    const before = JSON.stringify(state);
+    const inactiveLabel = label === '9am' ? '7pm' : '9am';
+    const inactive = plain({ west: state.presetRows.west[inactiveLabel], east: state.presetRows.east[inactiveLabel] });
+    const cleared = context.syncTrainRemActiveRowsToPresetCache(context.clearTrainRemSummaryState(state));
+
+    for (const depot of ['west', 'east']) {
+      assert.ok(cleared.rows[depot].every(row => !row.trainId && !row.timing && !row.remark), `${label} ${depot}`);
+      assert.deepEqual(plain(cleared.presetRows[depot][label]), plain(cleared.rows[depot]));
+      assert.deepEqual(plain(cleared.presetRows[depot][inactiveLabel]), inactive[depot]);
+      assert.ok(context.buildTrainRemDepotPayload(cleared, depot).rows.every(row => !row.trainId));
+    }
+    assert.deepEqual(plain(cleared.selectedPreset), { west: label, east: label });
+    assert.deepEqual(plain(cleared.sortMode), { west: 'color', east: 'tid' });
+    assert.equal(context.collectTrainRemMainlineInServiceRows(cleared).length, 0);
+    assert.equal(JSON.stringify(state), before, 'the Undo snapshot is not mutated');
+  }
+});
+
+test('clearing HDW keeps custom group sizes while emptying West, East and Off Peak', () => {
+  const state = context.buildDefaultTrainRemState();
+  state.selectedPreset = { west: hdw40.HDW40_PRESET_LABEL, east: hdw40.HDW40_PRESET_LABEL };
+  state.rows.west = hdw40.resizeHdwDepotRows(hdw40.resizeHdwDepotRows([], 'west', 1), 'east', -1)
+    .map((row, index) => ({ ...row, trainId: String(index + 1), timing: '19:00', remark: 'Manual note' }));
+  const groups = hdw40.getHdw40Groups(state.rows.west);
+  const before = JSON.stringify(state);
+  const cleared = context.syncTrainRemActiveRowsToPresetCache(context.clearTrainRemSummaryState(state));
+  assert.deepEqual(hdw40.getHdw40Groups(cleared.rows.west), groups);
+  assert.ok(cleared.rows.west.every(row => !row.trainId && !row.tid && !row.timing && !row.remark));
+  assert.equal(cleared.rows.east.length, 0);
+  assert.deepEqual(plain(cleared.presetRows.west[hdw40.HDW40_PRESET_LABEL]), plain(cleared.rows.west));
+  assert.equal(JSON.stringify(state), before);
+});
+
+test('all-depot clearing also handles different selected periods without losing extra row slots', () => {
+  const state = {
+    selectedPreset: { west: '7pm', east: '9am' },
+    rows: {
+      west: Array.from({ length: 60 }, () => ({ trainId: '23', tid: '213', timing: '19:00', remark: 'Note' })),
+      east: Array.from({ length: 20 }, () => ({ trainId: '18', tid: '112', timing: '09:00', remark: 'Note' })),
+    },
+    presetRows: { west: {}, east: {} },
+  };
+  const cleared = context.clearTrainRemSummaryState(state);
+  assert.equal(cleared.rows.west.length, 60);
+  assert.equal(cleared.rows.east.length, 20);
+  assert.ok([...cleared.rows.west, ...cleared.rows.east].every(row => !row.trainId && !row.tid && !row.timing && !row.remark));
+  assert.equal(cleared.presetRows, state.presetRows);
+  assert.equal(cleared.selectedPreset, state.selectedPreset);
+});
+
+test('West-only clearing uses the displayed group and preserves East, Off Peak and other periods', () => {
+  for (const label of ['9am', '7pm', '12am', 'Fri', 'Sat', 'PH']) {
+    let state = context.buildDefaultTrainRemState();
+    state.selectedPreset = { west: label, east: label };
+    for (const depot of ['west', 'east']) {
+      state.rows[depot] = context.getTrainRemCachedPresetRows(state, depot, label).map((row, index) => ({
+        ...row, trainId: String(index + 1), timing: '19:00', remark: 'Manual note',
+      }));
+    }
+    state = context.syncTrainRemActiveRowsToPresetCache(state);
+    const before = JSON.stringify(state);
+    const otherLabel = label === '9am' ? '7pm' : '9am';
+    const cleared = context.syncTrainRemActiveRowsToPresetCache(context.clearTrainRemGroupState(state, 'west'));
+    state.rows.west.forEach((row, index) => {
+      const actual = cleared.rows.west[index];
+      if (context.getTrainRemLocationGroupIndex('west', label, row, index) === 0) {
+        assert.equal(actual.trainId, '', `${label} West train clears`);
+        assert.equal(actual.timing, '');
+        assert.equal(actual.remark, '');
+        if (context.isTrainRemReferenceOnlyIndex('west', label, index)) assert.equal(actual.tid, row.tid);
+      } else {
+        assert.deepEqual(plain(actual), plain(row), `${label} East/Off Peak row stays unchanged`);
+      }
+    });
+    assert.deepEqual(plain(cleared.rows.east), plain(state.rows.east));
+    for (const depot of ['west', 'east']) {
+      assert.deepEqual(plain(cleared.presetRows[depot][otherLabel]), plain(state.presetRows[depot][otherLabel]));
+    }
+    assert.deepEqual(plain(cleared.selectedPreset), plain(state.selectedPreset));
+    assert.equal(JSON.stringify(state), before, 'Undo snapshot stays intact');
+  }
+});
+
+test('West-only clearing follows uploaded timetable locations, not the built-in West TID list', () => {
+  const timetable = record('weekday', [makeEntry(214, '09:10')], [makeEntry(212, '09:16')]);
+  const state = context.buildDefaultTrainRemState();
+  state.rows.west = context.buildTrainRemRowsFromPresetConfig('west', '9am', [], timetable)
+    .map((row, index) => ({ ...row, trainId: String(index + 1) }));
+  const cleared = context.clearTrainRemGroupState(state, 'west', timetable);
+  assert.equal(cleared.rows.west.find(row => row.tid === '214').trainId, '');
+  for (const tid of ['212', '216']) {
+    assert.deepEqual(plain(cleared.rows.west.find(row => row.tid === tid)), plain(state.rows.west.find(row => row.tid === tid)));
+  }
+  assert.equal(cleared.rows.east, state.rows.east);
+});
+
+test('West reserve entries clear completely while midnight East reserve entries survive', () => {
+  const label = '12am';
+  const layout = context.getTrainRemCombinedExtendedLayout(label);
+  let state = context.buildDefaultTrainRemState();
+  state.selectedPreset = { west: label, east: label };
+  state.rows.west = context.buildTrainRemRowsFromPresetConfig('west', label);
+  state.rows.west[layout.reserveStartIndex] = { trainId: '43', tid: '451', timing: '00:40', remark: 'West note' };
+  state.rows.west[layout.eastReserveStartIndex] = { trainId: '44', tid: '452', timing: '00:41', remark: 'East note' };
+  state = context.syncTrainRemActiveRowsToPresetCache(state);
+  const cleared = context.syncTrainRemActiveRowsToPresetCache(context.clearTrainRemGroupState(state, 'west'));
+  assert.deepEqual(plain(cleared.rows.west[layout.reserveStartIndex]), { trainId: '', tid: '', timing: '', remark: '' });
+  assert.deepEqual(plain(cleared.rows.west[layout.eastReserveStartIndex]), plain(state.rows.west[layout.eastReserveStartIndex]));
+});
+
+test('West-only HDW clearing preserves resized groups and every East/Off Peak entry', () => {
+  let state = makeHdwState();
+  state.rows.west = hdw40.resizeHdwDepotRows(hdw40.resizeHdwDepotRows(state.rows.west, 'west', 1), 'east', 1);
+  state = context.syncTrainRemActiveRowsToPresetCache(state);
+  const before = JSON.stringify(state);
+  const cleared = context.syncTrainRemActiveRowsToPresetCache(context.clearTrainRemGroupState(state, 'west'));
+  assert.deepEqual(hdw40.getHdw40Groups(cleared.rows.west), hdw40.getHdw40Groups(state.rows.west));
+  assert.ok(cleared.rows.west.filter(row => row.hdwDepot === 'west').every(row => !row.trainId && !row.timing && !row.remark));
+  assert.deepEqual(plain(cleared.rows.west.filter(row => row.hdwDepot !== 'west')), plain(state.rows.west.filter(row => row.hdwDepot !== 'west')));
+  const reloaded = context.buildTrainRemStateFromRecords(['west', 'east'].map(depot => context.buildTrainRemDepotPayload(cleared, depot))).state;
+  assert.deepEqual(plain(reloaded.rows.west), plain(cleared.rows.west));
+  assert.equal(JSON.stringify(state), before);
+});
+
+for (const [groupKey, groupIndex] of [['east', 1], ['offpeak', 2]]) {
+  test(`${groupKey} clears independently across periods and preserves every other visible group`, () => {
+    for (const label of ['9am', '7pm', '12am', 'Fri', 'Sat', 'PH']) {
+      let state = context.buildDefaultTrainRemState();
+      state.selectedPreset = { west: label, east: label };
+      state.rows.west = context.getTrainRemCachedPresetRows(state, 'west', label)
+        .map((row, index) => ({ ...row, trainId: String(index + 1), timing: '19:00', remark: 'Manual note' }));
+      state = context.syncTrainRemActiveRowsToPresetCache(state);
+      const before = JSON.stringify(state);
+      const cleared = context.syncTrainRemActiveRowsToPresetCache(context.clearTrainRemGroupState(state, groupKey));
+      state.rows.west.forEach((row, index) => {
+        if (context.getTrainRemLocationGroupIndex('west', label, row, index) === groupIndex) {
+          assert.equal(cleared.rows.west[index].trainId, '', `${label} ${groupKey}`);
+          assert.equal(cleared.rows.west[index].timing, '');
+          assert.equal(cleared.rows.west[index].remark, '');
+          if (context.isTrainRemReferenceOnlyIndex('west', label, index)) assert.equal(cleared.rows.west[index].tid, row.tid);
+        } else {
+          assert.deepEqual(plain(cleared.rows.west[index]), plain(row), `${label} non-target row`);
+        }
+      });
+      const inactive = label === '9am' ? '7pm' : '9am';
+      for (const depot of ['west', 'east']) assert.deepEqual(plain(cleared.presetRows[depot][inactive]), plain(state.presetRows[depot][inactive]));
+      assert.equal(JSON.stringify(state), before);
+    }
+  });
+
+  test(`${groupKey} clearing preserves custom HDW sizes and persists without affecting other groups`, () => {
+    let state = makeHdwState();
+    state.rows.west = hdw40.resizeHdwDepotRows(hdw40.resizeHdwDepotRows(state.rows.west, 'west', 1), 'east', 1);
+    state = context.syncTrainRemActiveRowsToPresetCache(state);
+    const hdwGroup = groupKey === 'offpeak' ? 'mainline' : groupKey;
+    const cleared = context.syncTrainRemActiveRowsToPresetCache(context.clearTrainRemGroupState(state, groupKey));
+    assert.deepEqual(hdw40.getHdw40Groups(cleared.rows.west), hdw40.getHdw40Groups(state.rows.west));
+    assert.ok(cleared.rows.west.filter(row => row.hdwDepot === hdwGroup).every(row => !row.trainId && !row.timing && !row.remark));
+    assert.deepEqual(plain(cleared.rows.west.filter(row => row.hdwDepot !== hdwGroup)), plain(state.rows.west.filter(row => row.hdwDepot !== hdwGroup)));
+    const reloaded = context.buildTrainRemStateFromRecords(['west', 'east'].map(depot => context.buildTrainRemDepotPayload(cleared, depot))).state;
+    assert.deepEqual(plain(reloaded.rows.west), plain(cleared.rows.west));
+  });
+}
+
+test('East midnight reserve entries clear completely without affecting West manual entries', () => {
+  const label = '12am';
+  const layout = context.getTrainRemCombinedExtendedLayout(label);
+  let state = context.buildDefaultTrainRemState();
+  state.selectedPreset = { west: label, east: label };
+  state.rows.west = context.buildTrainRemRowsFromPresetConfig('west', label);
+  state.rows.west[layout.reserveStartIndex] = { trainId: '43', tid: '451', timing: '00:40', remark: 'West note' };
+  state.rows.west[layout.eastReserveStartIndex] = { trainId: '44', tid: '452', timing: '00:41', remark: 'East note' };
+  state = context.syncTrainRemActiveRowsToPresetCache(state);
+  const cleared = context.syncTrainRemActiveRowsToPresetCache(context.clearTrainRemGroupState(state, 'east'));
+  assert.deepEqual(plain(cleared.rows.west[layout.eastReserveStartIndex]), { trainId: '', tid: '', timing: '', remark: '' });
+  assert.deepEqual(plain(cleared.rows.west[layout.reserveStartIndex]), plain(state.rows.west[layout.reserveStartIndex]));
+});
+
+test('cleared group assignments stay cleared after reload even with legacy East mirror records', () => {
+  for (const [groupKey, groupIndex] of [['west', 0], ['east', 1], ['offpeak', 2]]) {
+    let state = context.buildDefaultTrainRemState();
+    state.selectedPreset = { west: '7pm', east: '7pm' };
+    state.rows.west = context.getTrainRemCachedPresetRows(state, 'west', '7pm').map((row, index) => ({ ...row, trainId: String(index + 1) }));
+    const target = state.rows.west.find((row, index) => context.getTrainRemLocationGroupIndex('west', '7pm', row, index) === groupIndex);
+    const other = state.rows.west.find((row, index) => context.getTrainRemLocationGroupIndex('west', '7pm', row, index) !== groupIndex);
+    state.rows.east = [{ ...target }, { ...other }];
+    state = context.syncTrainRemActiveRowsToPresetCache(state);
+    const cleared = context.syncTrainRemActiveRowsToPresetCache(context.clearTrainRemGroupState(state, groupKey));
+    assert.equal(cleared.rows.east.find(row => row.tid === target.tid).trainId, '');
+    assert.equal(cleared.rows.east.find(row => row.tid === other.tid).trainId, other.trainId);
+    const reloaded = context.buildTrainRemStateFromRecords(['west', 'east'].map(depot => context.buildTrainRemDepotPayload(cleared, depot))).state;
+    assert.ok(reloaded.rows.west.filter((row, index) => context.getTrainRemLocationGroupIndex('west', '7pm', row, index) === groupIndex).every(row => !row.trainId));
+  }
+});
+
+test('group clearing updates only the selected-period legacy mirrors when East stores a different period', () => {
+  let state = context.buildDefaultTrainRemState();
+  state.selectedPreset = { west: '7pm', east: '9am' };
+  state.rows.west = context.getTrainRemCachedPresetRows(state, 'west', '7pm').map((row, index) => ({ ...row, trainId: String(index + 1) }));
+  const target = state.rows.west.find((row, index) => context.getTrainRemLocationGroupIndex('west', '7pm', row, index) === 1);
+  state.presetRows.east['7pm'] = [{ ...target }];
+  state = context.syncTrainRemActiveRowsToPresetCache(state);
+  const cleared = context.clearTrainRemGroupState(state, 'east');
+  assert.equal(cleared.rows.east, state.rows.east);
+  assert.equal(cleared.presetRows.east['7pm'][0].trainId, '');
+  assert.deepEqual(plain(cleared.presetRows.east['9am']), plain(state.presetRows.east['9am']));
+});
+
+test('an unknown clear group is a no-op', () => {
+  const state = context.buildDefaultTrainRemState();
+  assert.equal(context.clearTrainRemGroupState(state, 'unknown'), state);
+});
 
 test('sidebar info includes scheduled West removals but excludes East and mainline reference TIDs', () => {
   const timetable = record('weekday', [makeEntry(216, '09:15')], [makeEntry(214, '09:09')]);
