@@ -8,6 +8,7 @@ export default function ActionTooltip({
   wrapperClassName = "",
   contentStyle = null,
   triggerProps = {},
+  asChild = false,
   children,
 }) {
   if (!message) return children;
@@ -21,10 +22,16 @@ export default function ActionTooltip({
       disableHoverableContent
     >
       <TooltipPrimitive.Root>
-        <TooltipPrimitive.Trigger asChild>
-          <span {...triggerProps} className={`inline-flex ${wrapperClassName}`.trim()}>
-            {children}
-          </span>
+        <TooltipPrimitive.Trigger
+          asChild
+          {...(asChild ? triggerProps : {})}
+          className={asChild ? wrapperClassName || undefined : undefined}
+        >
+          {asChild ? children : (
+            <span {...triggerProps} className={`inline-flex ${wrapperClassName}`.trim()}>
+              {children}
+            </span>
+          )}
         </TooltipPrimitive.Trigger>
 
         <TooltipPrimitive.Portal>

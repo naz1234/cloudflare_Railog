@@ -11571,20 +11571,28 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
           </div>
         </div>
         <div className="slate-movement-actions">
-          <button type="button" onClick={addRow} className="theme-movement-sheet-action theme-movement-add-row-attention inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
+          <ActionTooltip asChild message="Add a new swapping, insertion or removal row.">
+          <button type="button" onClick={addRow} className="theme-movement-sheet-action theme-movement-add-row-attention cursor-pointer inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
             <Plus size={12} />Add Row
           </button>
-          <button type="button" onClick={copyAllRows} data-copy-state={copyStatuses.sheet || "idle"} aria-label="Copy all movement rows" className="theme-movement-sheet-action slate-copy-feedback inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
+          </ActionTooltip>
+          <ActionTooltip asChild message="Copy all movement rows to the clipboard.">
+          <button type="button" onClick={copyAllRows} data-copy-state={copyStatuses.sheet || "idle"} aria-label="Copy all movement rows" className="theme-movement-sheet-action slate-copy-feedback cursor-pointer inline-flex h-7 items-center gap-1 rounded-full border border-[#2f6084] bg-[#0a2236] px-3 text-[10px] font-bold text-white transition-all hover:border-[#58a6ff] hover:text-white">
             {copyStatuses.sheet === "copied" ? <ClipboardCheck size={12} /> : <Copy size={12} />}
             <span aria-live="polite">{copyStatuses.sheet === "copied" ? "Copied" : copyStatuses.sheet === "failed" ? "Copy failed" : "Copy All"}</span>
           </button>
-          <button type="button" onClick={clearRows} className={`theme-movement-sheet-clear inline-flex h-7 items-center gap-1 rounded-full border px-3 text-[10px] font-bold text-white transition-all hover:text-white ${confirmClearTarget === "sheet" ? "is-confirming border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-white hover:border-red-400"}`}>
+          </ActionTooltip>
+          <ActionTooltip asChild message={confirmClearTarget === "sheet" ? "Click again to clear all movement rows." : "Clear all movement rows (confirmation required)."}>
+          <button type="button" onClick={clearRows} className={`theme-movement-sheet-clear cursor-pointer inline-flex h-7 items-center gap-1 rounded-full border px-3 text-[10px] font-bold text-white transition-all hover:text-white ${confirmClearTarget === "sheet" ? "is-confirming border-red-400 bg-red-600 text-white" : "border-red-500/45 bg-red-950/25 text-white hover:border-red-400"}`}>
             <Trash2 size={12} />{confirmClearTarget === "sheet" ? "Confirm Clear" : "Clear"}
           </button>
+          </ActionTooltip>
         </div>
-        <span className="theme-movement-ready-count slate-movement-count" title={`${readyCount} movements added to the log`} aria-label={`${readyCount} movements added to the log`}>
-          <span>Added</span><strong>{readyCount}</strong>
-        </span>
+        <ActionTooltip asChild message={`${readyCount} movements added to the log`} align="end" triggerProps={{ tabIndex: 0 }}>
+          <span className="theme-movement-ready-count slate-movement-count" aria-label={`${readyCount} movements added to the log`}>
+            <span>Added</span><strong>{readyCount}</strong>
+          </span>
+        </ActionTooltip>
       </div>
       {feedback && (
         <div className="slate-movement-feedback">
@@ -11681,7 +11689,9 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
             {rows.map((row) => {
               const validation = getMovementExcelValidation(row);
               const status = validation.status;
-              const statusTooltip = validation.issues.map((issue) => issue.message).join("\n");
+              const statusTooltip = status === "Added"
+                ? "This movement has been added to the log."
+                : validation.issues.map((issue) => issue.message).join("\n");
               const statusStyle = getMovementExcelStatusStyle(status);
               const operationAccent = row.operation === "insertion" ? "#22c55e" : row.operation === "removal" ? "#ef4444" : "#f59e0b";
               const isSwapping = row.operation === "swapping";
@@ -11827,7 +11837,7 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
                       message={statusTooltip}
                       placement="top"
                       align="end"
-                      wrapperClassName="cursor-help justify-center rounded-md outline-none focus-visible:ring-2 focus-visible:ring-red-300/70"
+                      wrapperClassName={`${status === "Added" ? "cursor-pointer" : "cursor-help"} justify-center rounded-md outline-none focus-visible:ring-2 focus-visible:ring-red-300/70`}
                       contentStyle={{ whiteSpace: "pre-line" }}
                       triggerProps={{
                         tabIndex: 0,
@@ -11896,13 +11906,14 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
                     </div>
                   </div>
 
+                  <ActionTooltip asChild message={hasRows ? `${log.copyLabel} to the clipboard.` : "No movement log entries to copy."} align="end">
                   <button
                     type="button"
                     onClick={() => copyExcelLogRows(log.key)}
                     data-copy-state={copyStatuses[`output-${log.key}`] || "idle"}
                     aria-label={log.copyLabel}
                     disabled={!hasRows}
-                    className="theme-movement-log-copy slate-copy-feedback inline-flex h-6 flex-shrink-0 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                    className="theme-movement-log-copy slate-copy-feedback cursor-pointer inline-flex h-6 flex-shrink-0 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
                     style={{
                       background: "rgba(15,45,74,0.75)",
                       borderColor: "rgba(74,138,181,0.55)",
@@ -11912,6 +11923,7 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
                     {copyStatuses[`output-${log.key}`] === "copied" ? <ClipboardCheck size={12} /> : <Copy size={12} />}
                     <span aria-live="polite">{copyStatuses[`output-${log.key}`] === "copied" ? "Copied" : copyStatuses[`output-${log.key}`] === "failed" ? "Copy failed" : log.copyLabel}</span>
                   </button>
+                  </ActionTooltip>
                 </div>
 
                 <div className="theme-movement-log-card-body min-h-[76px] rounded-b-lg border-t border-[#1a3a56] bg-[#061321] px-3 py-2">
@@ -22379,7 +22391,7 @@ export default function DepotStablingPage() {
   <div
     ref={stablingHorizontalScrollRef}
     className="theme-stabling-workspace grid gap-3 items-start overflow-x-auto scroll-smooth"
-    style={{ gridTemplateColumns: "960px auto" }}
+    style={{ gridTemplateColumns: "954px auto" }}
   >
     {/* LEFT CONTENT - left aligned stabling tables */}
     <div className="min-w-0 flex flex-col items-start gap-5">
@@ -25173,17 +25185,18 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
             <p className="slate-window-subtitle">Requests grouped by type</p>
           </div>
         </div>
+        <ActionTooltip asChild message="Copy the request summary by type to the clipboard." align="end">
         <button
           type="button"
           onClick={handleCopySummary}
           data-copy-state={copyStatuses.default || "idle"}
           aria-label="Copy requested summary"
-          className="slate-window-action slate-copy-feedback inline-flex items-center gap-1 rounded-lg border border-[#2f6e9f] bg-[#0d2b45] px-2 py-1 text-[10px] font-semibold leading-none text-[#dff3ff] shadow-[0_0_10px_rgba(56,189,248,0.18)] transition hover:bg-[#123957] active:scale-95"
-          title="Copy requested summary"
+          className="slate-window-action slate-copy-feedback cursor-pointer inline-flex items-center gap-1 rounded-lg border border-[#2f6e9f] bg-[#0d2b45] px-2 py-1 text-[10px] font-semibold leading-none text-[#dff3ff] shadow-[0_0_10px_rgba(56,189,248,0.18)] transition hover:bg-[#123957] active:scale-95"
         >
           {copied ? <ClipboardCheck className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
           <span aria-live="polite">{copied ? "Copied" : copyStatuses.default === "failed" ? "Copy failed" : "Copy"}</span>
         </button>
+        </ActionTooltip>
       </div>
       <div className="slate-window-body space-y-2.5">
         {summaryGroups.map((group) => (
@@ -27044,30 +27057,32 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
         </div>
 
         <div className="flex items-center justify-start gap-1 flex-shrink-0">
-          <button
-            type="button"
-            onClick={handleDownloadPdf}
-            disabled={pdfReady || (!(combinedLogs?.westLog?.entries?.length || combinedLogs?.eastLog?.entries?.length) && !hasEntries)}
-            className="theme-removal-log-action inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black text-cyan-100 transition-all hover:-translate-y-0.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-            style={{
-              background: pdfReady ? "rgba(34,197,94,0.18)" : "rgba(6,212,232,0.14)",
-              borderColor: pdfReady ? "rgba(34,197,94,0.48)" : "rgba(34,211,238,0.55)",
-              color: pdfReady ? "#86efac" : "#b6f3ff",
-              boxShadow: pdfReady ? "0 0 12px rgba(34,197,94,0.16)" : "0 0 12px rgba(34,211,238,0.16)",
-            }}
-            title="Download one-page PDF: West and East stacked left, Requested Train right"
-          >
-            <FileText size={12} />
-            {pdfReady ? "Done" : "PDF"}
-          </button>
+          <ActionTooltip asChild message="Download one-page PDF: West and East stacked left, Requested Train right">
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={pdfReady || (!(combinedLogs?.westLog?.entries?.length || combinedLogs?.eastLog?.entries?.length) && !hasEntries)}
+              className="theme-removal-log-action cursor-pointer inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black text-cyan-100 transition-all hover:-translate-y-0.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              style={{
+                background: pdfReady ? "rgba(34,197,94,0.18)" : "rgba(6,212,232,0.14)",
+                borderColor: pdfReady ? "rgba(34,197,94,0.48)" : "rgba(34,211,238,0.55)",
+                color: pdfReady ? "#86efac" : "#b6f3ff",
+                boxShadow: pdfReady ? "0 0 12px rgba(34,197,94,0.16)" : "0 0 12px rgba(34,211,238,0.16)",
+              }}
+            >
+              <FileText size={12} />
+              {pdfReady ? "Done" : "PDF"}
+            </button>
+          </ActionTooltip>
 
+          <ActionTooltip asChild message={hasEntries ? `${log.copyLabel} to the clipboard.` : "No removal log entries to copy."}>
           <button
             type="button"
             onClick={handleCopy}
             data-copy-state={copyStatuses.default || "idle"}
             aria-label={log.copyLabel}
             disabled={!hasEntries}
-            className="theme-removal-log-action slate-copy-feedback inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="theme-removal-log-action slate-copy-feedback cursor-pointer inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[9px] font-black transition-all hover:-translate-y-0.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             style={{
               background: copied ? "rgba(34,197,94,0.18)" : "rgba(15,45,74,0.75)",
               borderColor: copied ? "rgba(34,197,94,0.48)" : "rgba(74,138,181,0.55)",
@@ -27078,6 +27093,7 @@ function RemovalDepotLogCard({ log, combinedLogs = null }) {
             {copied ? <ClipboardCheck size={12} /> : <Copy size={12} />}
             <span aria-live="polite">{copied ? "Copied" : copyStatuses.default === "failed" ? "Copy failed" : log.copyLabel}</span>
           </button>
+          </ActionTooltip>
         </div>
       </div>
 
@@ -28536,7 +28552,7 @@ function StablingSection({
   const notFound = searched && !found;
 
   return (
-    <section data-stabling-design="compact-slate" className="theme-stabling-section bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: "fit-content", maxWidth: "fit-content" }}>
+    <section data-stabling-design="compact-slate" className="theme-stabling-section bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: 954, maxWidth: 954 }}>
       <SectionTitle
         title={`${depotLabel} stabling`}
         subtitle={`Train locations in ${depotLabel}`}
@@ -28755,14 +28771,15 @@ function SectionTitle({ title, subtitle, count = null, action = null }) {
       {action}
 
       {Number.isFinite(count) && (
+        <ActionTooltip asChild message={`${count} ${count === 1 ? "train" : "trains"} in ${title.replace(/ stabling$/i, "")}`} align="end" triggerProps={{ tabIndex: 0 }}>
         <span
           className="theme-stabling-count"
           aria-label={`${count} ${count === 1 ? "train" : "trains"}`}
-          title={`${count} ${count === 1 ? "train" : "trains"}`}
         >
           <span>TRN</span>
           <strong>{count}</strong>
         </span>
+        </ActionTooltip>
       )}
 
     </header>

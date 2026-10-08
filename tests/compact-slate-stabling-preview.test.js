@@ -27,6 +27,8 @@ test("local stabling edits use production move rules and update both compact pan
 
 test("stabling is stacked beside the compact panels without shrinking their production widths", () => {
   assert.match(css, /\.slate-preview-workspace \{[^}]*display: flex;[^}]*align-items: flex-start;/);
+  assert.match(css, /\.slate-preview-workspace \{[^}]*gap: 12px;/);
+  assert.match(css, /\.slate-preview-panels \{[^}]*gap: 12px;/);
   assert.match(css, /\.slate-preview-depots \{[^}]*flex-direction: column;/);
   assert.match(css, /\.slate-preview-panel \{ width: 314px;/);
   assert.match(css, /\.slate-preview-workspace-scroll \{[^}]*overflow: auto;/);

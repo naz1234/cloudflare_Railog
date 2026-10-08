@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { Camera, Check, Image, Loader2, QrCode, Upload, X } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { summarizeRemovalScan } from '@/lib/removalImageAssignments';
+import ActionTooltip from '@/components/ActionTooltip';
 import './RemovalScan.css';
 
 export async function removalScanRequest(id, token, options = {}) {
@@ -218,7 +219,9 @@ export default function RemovalScanButton({ getTarget, onApply, disabled = false
   };
 
   return <>
-    <button type="button" className="theme-train-rem-export removal-scan-trigger" disabled={disabled} onClick={start} title="Scan train assignments from a photo"><QrCode size={14} />QR</button>
+    <ActionTooltip asChild message="Open a QR code to scan a train photo and update Removal summary.">
+      <button type="button" className="theme-train-rem-export removal-scan-trigger" disabled={disabled} onClick={start}><QrCode size={14} />QR</button>
+    </ActionTooltip>
     <Dialog.Root open={open} onOpenChange={(value) => { if (!value) close(); }}>
       <Dialog.Portal>
       <Dialog.Overlay className="removal-scan-overlay" />

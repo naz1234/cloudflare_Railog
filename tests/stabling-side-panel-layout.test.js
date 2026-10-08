@@ -16,4 +16,7 @@ test("Maintenance and Removal Summary use the compact shared side-panel spacing"
     source,
     /theme-stabling-side-panels flex items-start gap-3 sticky/,
   );
+  assert.match(source, /gridTemplateColumns: "954px auto"/);
+  assert.doesNotMatch(source, /gridTemplateColumns: "960px auto"/);
+  assert.match(source, /data-stabling-design="compact-slate"[^\n]*style=\{\{ width: 954, maxWidth: 954 \}\}/);
 });

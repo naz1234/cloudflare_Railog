@@ -83,6 +83,7 @@ html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate
   border-left: 1px solid var(--stabling-line) !important;
   border-radius: 0;
   background: transparent !important;
+  cursor: pointer;
 }
 
 html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate"] .theme-stabling-count > span {
