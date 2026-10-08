@@ -11,6 +11,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
+import ActionTooltip from "./ActionTooltip";
 import "../outputWindowsSlate.css";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -1383,15 +1384,17 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
       )}
 
       <div className="mt-3 flex justify-end">
+        <ActionTooltip asChild message={isGenerating ? "Generating the official Excel workbook..." : "Generate the official depot Excel workbook from the uploaded source."} align="end">
         <button
           type="button"
           onClick={handleGenerate}
           disabled={isGenerating}
-          className="official-generate-button inline-flex h-9 items-center gap-2 rounded-lg border border-teal-300/70 bg-gradient-to-r from-teal-600 to-cyan-600 px-4 text-[11px] font-black uppercase tracking-wide text-white shadow-[0_0_16px_rgba(20,184,166,0.28)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
+          className="official-generate-button cursor-pointer inline-flex h-9 items-center gap-2 rounded-lg border border-teal-300/70 bg-gradient-to-r from-teal-600 to-cyan-600 px-4 text-[11px] font-black uppercase tracking-wide text-white shadow-[0_0_16px_rgba(20,184,166,0.28)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
         >
           {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
           {isGenerating ? "Generating..." : "Generate Official Excel"}
         </button>
+        </ActionTooltip>
       </div>
       </div>
     </section>

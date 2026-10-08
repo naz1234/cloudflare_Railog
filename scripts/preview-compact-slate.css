@@ -15,11 +15,11 @@ body { margin: 0; background: #0e1520 !important; color: #dce5f1; font-family: I
 .slate-preview-jump-links button:focus-visible { outline: 2px solid #8bb5f6; outline-offset: 2px; }
 .slate-preview-workspace-scroll { max-width: 100%; max-height: calc(100vh - 220px); min-height: 480px; overflow: auto; padding-bottom: 12px; }
 .slate-preview-workspace-scroll:focus-visible { outline: 2px solid #8bb5f6; outline-offset: 4px; border-radius: 8px; }
-.slate-preview-workspace { display: flex; align-items: flex-start; gap: 18px; width: max-content; }
+.slate-preview-workspace { display: flex; align-items: flex-start; gap: 12px; width: max-content; }
 .slate-preview-depots { display: flex; flex-direction: column; gap: 18px; flex-shrink: 0; width: 954px; }
 .slate-preview-live-window { width: 100%; min-width: 0; }
 .slate-preview-panel { width: 314px; max-width: 100%; }
-.slate-preview-panels { display: flex; align-items: flex-start; gap: 18px; min-width: 0; flex-shrink: 0; }
+.slate-preview-panels { display: flex; align-items: flex-start; gap: 12px; min-width: 0; flex-shrink: 0; }
 .slate-preview-panels > .slate-preview-panel { flex-shrink: 0; }
 html[data-app-theme="light"] body { background: radial-gradient(circle, #d9e0e8 .8px, transparent 1px) 8px 8px / 21px 21px, #fafbfc !important; color: #23334b; }
 html[data-app-theme="light"] body #root { background: transparent !important; }

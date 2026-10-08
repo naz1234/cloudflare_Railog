@@ -124,6 +124,7 @@ html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"]
   border-radius: 0;
   background: transparent !important;
   box-shadow: none !important;
+  cursor: pointer;
 }
 
 html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .slate-movement-count > span {
@@ -405,6 +406,7 @@ html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"]
   background: var(--movement-added-bg) !important;
   color: var(--movement-added-text) !important;
   border-color: var(--movement-added-line) !important;
+  cursor: pointer;
 }
 
 html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-status[data-status="incomplete"] {

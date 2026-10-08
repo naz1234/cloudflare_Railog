@@ -17,6 +17,8 @@
   --scan-text: #102b4a; --scan-muted: #52718d; --scan-accent: #075b9d;
 }
 .removal-scan-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer; }
+.removal-scan-trigger:disabled { cursor: not-allowed; }
+.removal-scan-trigger * { cursor: inherit; }
 .removal-scan-overlay { position: fixed; inset: 0; z-index: 1000; background: #020b16b8; }
 .removal-scan-dialog { position: fixed; z-index: 1001; top: 50%; left: 50%; transform: translate(-50%, -50%); display: grid; width: calc(100vw - 24px); max-width: 440px; max-height: calc(100dvh - 24px); overflow-y: auto; border: 1px solid var(--scan-line); border-radius: 24px; padding: 24px; gap: 12px; box-shadow: 0 24px 80px #0005; }
 .removal-scan-close { position: absolute; top: 16px; right: 14px; padding: 5px; cursor: pointer; border-radius: 7px; }
