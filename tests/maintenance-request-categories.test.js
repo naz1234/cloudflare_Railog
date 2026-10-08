@@ -13,13 +13,32 @@ test("editable request labels use the same categories as summary sentences", () 
     ["ACES Req", "tlc"],
     ["tft-issue", "tlc"],
     ["Requested by aces", "tlc"],
+    ["Comms req", "tlc"],
+    ["comm req", "tlc"],
+    ["comms imran req", "tlc"],
+    ["cOmMs Imran ReQ", "tlc"],
+    ["COMM-REQ", "tlc"],
+    ["COMMS / IMRAN / REQ", "tlc"],
+    ["ATC test with comms imran req", "tlc"],
     ["FIT but LEAST PRIORITY TFT by ACES - 08Oct", "tlc"],
     ["ATC test with TFT issue", "tlc"],
     ["WASH after ACES Req", "tlc"],
     ["FACES issue", "others"],
     ["TFTS fault", "others"],
+    ["COMMAND req", "others"],
+    ["COMMERCIAL req", "others"],
     ["CC RESET PENDING - ATC", "atc"],
     ["ATC Inspection 2-Oct", "atc"],
+    ["CC technical failure", "atc"],
+    ["CC functional failure", "atc"],
+    ["cc TECHNICAL failure", "atc"],
+    ["CC-functional-failure", "atc"],
+    ["CC", "atc"],
+    ["CC technical failure with Comms req", "tlc"],
+    ["TLC CC functional failure", "tlc"],
+    ["PCC technical failure", "others"],
+    ["CCU functional failure", "others"],
+    ["CCTV failure", "others"],
     ["G-C UNPLANNED - SR PENDING", "workshop"],
     ["OUTBOUND (C to G)", "workshop"],
     ["DEEP CLEAN", "others"],
@@ -31,6 +50,38 @@ test("editable request labels use the same categories as summary sentences", () 
     assert.equal(getRequestedSummaryCategoryKey(label), category);
     assert.equal(getRequestedSummaryCategoryKey(`T10 and T20 — ${label}.`), category);
   });
+});
+
+test("COMM and COMMS remark groups share the TLC parent without changing their labels or controls", () => {
+  const groups = [
+    { key: "comms", label: "Comms req", items: [{ id: "c1", trainId: "T03" }] },
+    { key: "comm", label: "comm req", items: [{ id: "c2", trainId: "T04" }] },
+    { key: "imran", label: "comms imran req", items: [{ id: "c3", trainId: "T05" }], hidden: true },
+  ];
+  const categories = groupRequestGroupsByCategory(groups);
+  assert.deepEqual(categories.map(({ key, title, requestCount }) => [key, title, requestCount]), [["tlc", "TLC Req", 3]]);
+  assert.deepEqual(categories[0].groups, groups);
+  groups.forEach((group, index) => {
+    assert.equal(categories[0].groups[index], group);
+    assert.equal(categories[0].groups[index].items, group.items);
+  });
+  assert.equal(categories[0].groups[2].hidden, true);
+});
+
+test("CC failures share the ATC parent while preserving original groups and controls", () => {
+  const groups = [
+    { key: "technical", label: "CC technical failure", items: [{ id: "c1", trainId: "T03" }] },
+    { key: "functional", label: "CC functional failure", items: [{ id: "c2", trainId: "T04" }], hidden: true },
+    { key: "atc", label: "ATC Inspection", items: [{ id: "a1", trainId: "T05" }] },
+  ];
+  const categories = groupRequestGroupsByCategory(groups);
+  assert.deepEqual(categories.map(({ key, title, requestCount }) => [key, title, requestCount]), [["atc", "ATC Req", 3]]);
+  assert.deepEqual(categories[0].groups, groups);
+  groups.forEach((group, index) => {
+    assert.equal(categories[0].groups[index], group);
+    assert.equal(categories[0].groups[index].items, group.items);
+  });
+  assert.equal(categories[0].groups[1].hidden, true);
 });
 
 test("category grouping preserves every row, group control data and within-group status order", () => {

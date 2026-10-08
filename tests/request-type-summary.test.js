@@ -157,6 +157,24 @@ test("TLC, TFT and ACES requests share the TLC Req summary section", () => {
   assert.deepEqual(groups.find(({ key }) => key === "others").lines, ["T32 — set the temperature to 25°C."]);
 });
 
+test("COMM and COMMS requests appear under TLC Req with their original remark text", () => {
+  const groups = groupSummary([
+    { trainId: "T03", requestType: "Comms req" },
+    { trainId: "T04", requestType: "comm req" },
+    { trainId: "T05", requestType: "comms imran req", groupHidden: true },
+    { trainId: "T06", requestType: "COMMS REQ" },
+    { trainId: "T03", requestType: "Comms req" },
+    { trainId: "T07", requestType: "COMMAND req" },
+  ]);
+  assert.deepEqual(groups.map(({ title }) => title), ["TLC Req", "Other Remarks"]);
+  assert.deepEqual(groups.find(({ key }) => key === "tlc").lines, [
+    "T03 and T06 — Comms req.",
+    "T04 — comm req.",
+    "T05 — comms imran req.",
+  ]);
+  assert.deepEqual(groups.find(({ key }) => key === "others").lines, ["T07 — COMMAND req."]);
+});
+
 test("empty TLC sections are omitted and other request categories remain separate", () => {
   const groups = groupSummary([
     { trainId: "T25", requestType: "RST PM 1-Oct" },
@@ -184,6 +202,28 @@ test("ATC requests have their own section, including trailing ATC labels and ins
     "T18 — ATC inspection on 2 Oct.",
   ]);
   assert.deepEqual(groups.find(({ key }) => key === "others").lines, ["T36 — set the temperature to 25°C."]);
+});
+
+test("standalone CC remarks appear under ATC Req without matching longer unrelated words", () => {
+  const groups = groupSummary([
+    { trainId: "T03", requestType: "CC technical failure" },
+    { trainId: "T04", requestType: "CC functional failure", groupHidden: true },
+    { trainId: "T05", requestType: "cc TECHNICAL failure" },
+    { trainId: "T03", requestType: "CC technical failure" },
+    { trainId: "T06", requestType: "CC" },
+    { trainId: "T07", requestType: "PCC technical failure" },
+    { trainId: "T08", requestType: "CCTV failure" },
+  ]);
+  assert.deepEqual(groups.map(({ title }) => title), ["ATC Req", "Other Remarks"]);
+  assert.deepEqual(groups.find(({ key }) => key === "atc").lines, [
+    "T03 and T05 — CC technical failure.",
+    "T04 — CC functional failure.",
+    "T06 — CC.",
+  ]);
+  assert.deepEqual(groups.find(({ key }) => key === "others").lines, [
+    "T07 — PCC technical failure.",
+    "T08 — CCTV failure.",
+  ]);
 });
 
 test("PM grouping retains readable dates, all dates and hidden request groups", () => {
