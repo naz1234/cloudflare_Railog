@@ -2,6 +2,14 @@
 
 The signed-in computer creates a QR session for the selected Removal summary timetable and period. The phone opens the standalone `/removal-scan#id=…&token=…` page, takes a photo or selects an image, reviews the extracted Vehicle/Tracking IDs and confirms the complete table. The computer must keep its QR window open to apply and save the update through its existing authenticated operational API. Missing image TIDs clear train assignments only in the selected period; timetable TIDs, times, other periods and Undo remain unchanged.
 
+### Screen photos and cropped tables
+
+Include the column headers when possible. The parser accepts Azure headings in separate lines, one combined line, or separate words, and bounds both columns so labels such as `GATE` beside the table are not vehicles. Blank Tracking IDs stay on their own rows; numbers are never paired from flat OCR text.
+
+A headerless crop is accepted only when at least three repeated 3xx vehicles, a separate three-digit TID column, and aligned depot/station locations establish one unambiguous table. These scans are marked **partial** and require explicit review: only photographed TIDs update; missing TIDs never clear existing assignments. Conflicts with a train already assigned outside the crop refuse the update instead of creating duplicates. Ambiguous columns, misaligned rows and unreadable numbers still fail closed.
+
+Partial scans require a newly created QR from the updated computer page. Older cached dashboard or phone clients cannot confirm a cropped scan and accidentally apply the old clear-missing behavior. Refresh Removal summary on the computer and generate a new QR after upgrading.
+
 ## Access boundary
 
 - Only GET/HEAD for `/removal-scan`, `/removal-scan.html`, `/removal-scan-assets/removal-scan.js` and `/removal-scan-assets/removal-scan.css` are public static requests. No wildcard asset or application-root exemption is used. The standalone build imports no login provider, staff presence or dashboard client.

@@ -107,18 +107,18 @@ export function RemovalScanUploader({ id, token }) {
     uploadActiveRef.current = true;
     setBusy(true); setError('');
     try {
-      const result = await removalScanRequest(id, token, { method: 'PATCH', body: JSON.stringify({ action: 'confirm', reviewed }) });
+      const result = await removalScanRequest(id, token, { method: 'PATCH', body: JSON.stringify({ action: 'confirm', reviewed, partial: session?.extraction?.partial === true }) });
       setSession((current) => ({ ...current, ...result }));
     } catch (err) { setError(err.message); }
     finally { uploadActiveRef.current = false; setBusy(false); }
   };
 
   const extraction = session?.extraction;
-  const summary = extraction ? summarizeRemovalScan(session.target.rows, extraction.rows) : null;
+  const summary = extraction ? summarizeRemovalScan(session.target.rows, extraction.rows, extraction) : null;
   const finished = ['applied', 'cancelled', 'ready'].includes(session?.status);
   return <div className="removal-scan-surface removal-scan-uploader">
     {session?.target && <p className="removal-scan-period">{session.target.timetable} · {session.target.period}</p>}
-    <p className="removal-scan-muted">Include the complete Vehicle ID and Tracking ID columns. Vehicle 301 becomes train 01.</p>
+    <p className="removal-scan-muted">Photograph the Vehicle ID and Tracking ID columns with their headers when possible. Vehicle 301 becomes train 01.</p>
     <input ref={camera} type="file" accept="image/*" capture="environment" onChange={upload} hidden aria-label="Take train table photo" />
     <input ref={gallery} type="file" accept="image/*" onChange={upload} hidden aria-label="Choose train table image" />
     {!finished && <div className="removal-scan-choices">
@@ -132,13 +132,14 @@ export function RemovalScanUploader({ id, token }) {
       <div className="removal-scan-review-heading"><h3>Review detected trains</h3><span>{extraction.rows.length} read</span></div>
       {fileName && <p className="removal-scan-filename">{fileName}</p>}
       {extraction.uncertain && <p className="removal-scan-warning">Some text may be unclear. Check every detected number against your photo.</p>}
+      {extraction.partial && <p className="removal-scan-warning">Cropped table: only matching TIDs shown in this photo will update. Assignments outside the photo will stay unchanged.</p>}
       <div className="removal-scan-table"><table><thead><tr><th>Vehicle</th><th>Train</th><th>Tracking ID</th></tr></thead><tbody>
         {extraction.rows.map((row) => <tr key={row.trainId}><td>{row.vehicleId}</td><td>{row.trainId}</td><td>{row.tid || <span className="removal-scan-muted">No TID</span>}</td></tr>)}
       </tbody></table></div>
       <p className="removal-scan-impact"><strong>{summary.matched}</strong> TIDs matched · <strong>{summary.cleared}</strong> existing train assignments will clear.</p>
-      <p className="removal-scan-muted">TIDs missing from this picture will have their train numbers cleared in this period. Timetable TIDs and times stay in place.</p>
+      <p className="removal-scan-muted">{extraction.partial ? 'TIDs missing from this cropped picture will stay unchanged.' : 'TIDs missing from this picture will have their train numbers cleared in this period.'} Timetable TIDs and times stay in place.</p>
       {summary.unmatched.length > 0 && <p className="removal-scan-warning">TIDs outside this period: {summary.unmatched.join(', ')}.</p>}
-      <label className="removal-scan-confirm"><input type="checkbox" checked={reviewed} onChange={(event) => setReviewed(event.target.checked)} />I checked the numbers and included the complete table.</label>
+      <label className="removal-scan-confirm"><input type="checkbox" checked={reviewed} onChange={(event) => setReviewed(event.target.checked)} />{extraction.partial ? 'I checked every detected vehicle and Tracking ID against the photo.' : 'I checked the numbers and included the complete table.'}</label>
       <button className="removal-scan-primary" type="button" disabled={!reviewed || busy || unavailable} onClick={confirm}><Check size={17} />Update Removal summary</button>
     </>}
     {session?.status === 'ready' && <p role="status" className="removal-scan-status"><Loader2 className="animate-spin" size={18} />Waiting for the computer to save the update. Keep its QR window open.</p>}
@@ -195,7 +196,7 @@ export default function RemovalScanButton({ getTarget, onApply, disabled = false
         if (result.status === 'ready') {
           setWorking(true);
           if (!appliedRef.current) {
-            await applyRef.current(result.extraction.rows, targetRef.current, session.id);
+            await applyRef.current(result.extraction.rows, targetRef.current, session.id, { partial: result.extraction.partial === true });
             appliedRef.current = true;
           }
           await removalScanRequest(session.id, '', { method: 'PATCH', body: JSON.stringify({ action: 'apply' }) });
