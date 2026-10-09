@@ -10,21 +10,21 @@ const depotSource = readFileSync(
 test("standalone West and East PST Excel output ends at row 49", () => {
   assert.match(
     depotSource,
-    /const depotRows = buildPSTExportRows\(logLines, completedBy, normalizedDepot, false\);/,
+    /const depotRows = buildPSTExportRows\(logLines, completedBy, normalizedDepot, false, fldcVerifications\);/,
   );
 });
 
 test("combined PST Excel output keeps its existing sheet behavior", () => {
   assert.match(
     depotSource,
-    /const combinedRl3Rows = buildPSTExportRows\(logLines, completedBy, "", false\);/,
+    /const combinedRl3Rows = buildPSTExportRows\(logLines, completedBy, "", false, fldcVerifications\);/,
   );
   assert.match(
     depotSource,
-    /const westRl3Rows = buildPSTExportRows\(logLines, completedBy, "west", true\);/,
+    /const westRl3Rows = buildPSTExportRows\(logLines, completedBy, "west", true, fldcVerifications\);/,
   );
   assert.match(
     depotSource,
-    /const eastRl3Rows = buildPSTExportRows\(logLines, completedBy, "east", true\);/,
+    /const eastRl3Rows = buildPSTExportRows\(logLines, completedBy, "east", true, fldcVerifications\);/,
   );
 });
