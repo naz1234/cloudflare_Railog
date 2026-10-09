@@ -734,6 +734,47 @@ function clearPstTrainPrepRows(sheetDocument, stylesDocument) {
   normalizeWhiteFillAndBlackFont(stylesDocument, dataCells);
 }
 
+function verifyPstReset(sheetDocument, stylesDocument, tableDocument = null) {
+  const styles = Array.from(stylesDocument.getElementsByTagNameNS("*", "cellXfs")[0]?.children || []);
+  const fills = Array.from(stylesDocument.getElementsByTagNameNS("*", "fills")[0]?.children || []);
+  const dataCells = cellsWithinRange(sheetDocument, 3, PST_LAST_DATA_ROW, 1, 13);
+  for (const cell of dataCells) {
+    const hasContents = ["v", "is", "f"].some((name) => cell.getElementsByTagNameNS("*", name).length > 0);
+    const style = styles[Number(cell.getAttribute("s") || 0)];
+    const fill = fills[Number(style?.getAttribute("fillId") || 0)];
+    const pattern = fill?.getElementsByTagNameNS("*", "patternFill")[0];
+    const colour = pattern?.getElementsByTagNameNS("*", "fgColor")[0]?.getAttribute("rgb");
+    if (hasContents || pattern?.getAttribute("patternType") !== "solid" || colour !== "FFFFFFFF") {
+      throw new Error(`PST export check failed at ${cell.getAttribute("r")}: daily rows must be empty and white. No file was downloaded.`);
+    }
+  }
+  const tableStyle = tableDocument?.getElementsByTagNameNS("*", "tableStyleInfo")[0];
+  if (tableStyle && ["showRowStripes", "showColumnStripes"].some((name) => ["1", "true"].includes(tableStyle.getAttribute(name)))) {
+    throw new Error("PST export check failed: coloured table striping is still enabled. No file was downloaded.");
+  }
+}
+
+function verifyExportedPstReset(outputBytes, pstSheetPath) {
+  // Check the zipped download itself, not just the worksheet being edited.
+  const exportedArchive = unzipSync(outputBytes);
+  const sheetDocument = parseXml(archiveText(exportedArchive, pstSheetPath), "Exported PST worksheet");
+  const stylesDocument = parseXml(archiveText(exportedArchive, STYLES_PATH), "Exported Excel styles");
+  const relationshipsPath = worksheetRelationshipsPath(pstSheetPath);
+  let tableDocument = null;
+  if (exportedArchive[relationshipsPath]) {
+    const relationships = parseXml(archiveText(exportedArchive, relationshipsPath), "Exported PST relationships");
+    const tableRelationship = Array.from(relationships.getElementsByTagNameNS("*", "Relationship")).find((node) =>
+      /\/table$/i.test(node.getAttribute("Type") || "")
+    );
+    if (tableRelationship) {
+      const directory = pstSheetPath.slice(0, pstSheetPath.lastIndexOf("/"));
+      const tablePath = normalizeArchivePath(directory, tableRelationship.getAttribute("Target"));
+      tableDocument = parseXml(archiveText(exportedArchive, tablePath), "Exported PST table");
+    }
+  }
+  verifyPstReset(sheetDocument, stylesDocument, tableDocument);
+}
+
 function pstSummaryRow(sheetDocument) {
   const summaryCell = Array.from(sheetDocument.getElementsByTagNameNS("*", "c")).find((cell) => {
     const formula = cell.getElementsByTagNameNS("*", "f")[0]?.textContent || "";
@@ -1220,6 +1261,7 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
   }
   archive[STYLES_PATH] = strToU8(new XMLSerializer().serializeToString(stylesDocument));
   const outputBytes = zipSync(archive, { level: 6 });
+  verifyExportedPstReset(outputBytes, pstSheetPath);
   return {
     blob: new Blob([outputBytes], { type: XLSX_MIME }),
     fileName: outputFileName(targetDate, depotConfig),
