@@ -18080,6 +18080,17 @@ export default function DepotStablingPage() {
     scrollTarget.scrollTo({ left: nextLeft, behavior: "smooth" });
   }, []);
 
+  const handleHeaderVerticalScroll = useCallback((direction) => {
+    const mainScrollTarget = mainContentScrollRef.current;
+    const scrollTarget = mainScrollTarget && mainScrollTarget.scrollHeight > mainScrollTarget.clientHeight + 1
+      ? mainScrollTarget
+      : document.scrollingElement || document.documentElement;
+    if (!scrollTarget) return;
+
+    const nextTop = direction === "up" ? 0 : scrollTarget.scrollHeight;
+    scrollTarget.scrollTo({ top: nextTop, behavior: "smooth" });
+  }, []);
+
   const closeProtectedShortcutLogin = useCallback(() => {
     setIsProtectedShortcutLoginOpen(false);
     setProtectedShortcutCredentials({ id: "", password: "" });
@@ -22110,6 +22121,26 @@ export default function DepotStablingPage() {
                 <path d="M5 12h14" />
                 <path d="M12 5l7 7-7 7" />
               </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleHeaderVerticalScroll("up")}
+              title="Go to top"
+              aria-label="Go to top"
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#2b4f6b] bg-[#071828] px-3 text-[10px] font-black uppercase tracking-wide text-[#8bd5ff] shadow-[0_0_14px_rgba(79,142,247,0.18)] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-95"
+            >
+              <ArrowUp aria-hidden="true" className="h-3 w-3" strokeWidth={2.8} />
+              Up
+            </button>
+            <button
+              type="button"
+              onClick={() => handleHeaderVerticalScroll("down")}
+              title="Go to bottom"
+              aria-label="Go to bottom"
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#2b4f6b] bg-[#071828] px-3 text-[10px] font-black uppercase tracking-wide text-[#8bd5ff] shadow-[0_0_14px_rgba(79,142,247,0.18)] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-95"
+            >
+              Down
+              <ArrowDown aria-hidden="true" className="h-3 w-3" strokeWidth={2.8} />
             </button>
           </div>
         </div>
