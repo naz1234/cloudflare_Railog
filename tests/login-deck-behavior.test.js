@@ -407,10 +407,10 @@ test('successful login does not navigate to an external origin or back into the 
   }
 });
 
-test('a phone login retains the removal scan fragment after the server redirect', async () => {
+test('login no longer resumes a retired QR fragment after the server redirect', async () => {
   const hash = '#/removal-scan?id=paired-scan&token=opaque-token';
   const app = await setup({ returnTo: '', hash, sessionResponse: response({ authenticated: true }) });
-  assert.deepEqual(app.navigations, [`/${hash}`]);
+  assert.deepEqual(app.navigations, ['/']);
   const unrelated = await setup({ returnTo: '', hash: '#//attacker.example', sessionResponse: response({ authenticated: true }) });
   assert.deepEqual(unrelated.navigations, ['/']);
 });

@@ -6,9 +6,7 @@ const readSource = (path) => readFileSync(new URL(`../${path}`, import.meta.url)
 const page = readSource("src/pages/DepotStabling.jsx");
 const stablingCss = readSource("src/stablingSlate.css");
 const movementCss = readSource("src/movementLogSlate.css");
-const scanCss = readSource("src/components/depot/RemovalScan.css");
 const generator = readSource("src/components/OfficialEastExcelGenerator.jsx");
-const scan = readSource("src/components/depot/RemovalScan.jsx");
 const tooltip = readSource("src/components/ActionTooltip.jsx");
 
 test("both stabling TRN counts and movement Added count show the hand cursor with their existing tooltips", () => {
@@ -41,12 +39,6 @@ test("movement header actions and all requested log copy actions explicitly use 
   assert.match(page, /theme-removal-log-action slate-copy-feedback[^"\n]*cursor-pointer[^"\n]*disabled:cursor-not-allowed/);
 });
 
-test("QR icon inherits the trigger cursor and disabled QR is unavailable", () => {
-  assert.match(scanCss, /\.removal-scan-trigger \{[^}]*cursor: pointer;/);
-  assert.match(scanCss, /\.removal-scan-trigger:disabled \{ cursor: not-allowed; \}/);
-  assert.match(scanCss, /\.removal-scan-trigger \* \{ cursor: inherit; \}/);
-});
-
 test("official Excel generate button shows a hand when ready and keeps the busy cursor", () => {
   assert.match(generator, /official-generate-button cursor-pointer[^"\n]*disabled:cursor-wait/);
   assert.match(generator, /onClick=\{handleGenerate\}\s+disabled=\{isGenerating\}/);
@@ -65,7 +57,6 @@ test("all requested controls use matching popup tooltips without adding layout w
   ]) assert.ok(page.includes(message), `Missing popup for ${message}`);
   assert.match(page, /<ActionTooltip asChild message=\{hasRows \? `\$\{log.copyLabel\} to the clipboard\.`/);
   assert.match(page, /<ActionTooltip asChild message=\{hasEntries \? `\$\{log.copyLabel\} to the clipboard\.`/);
-  assert.match(scan, /<ActionTooltip asChild message="Open a QR code to scan a train photo and update Removal summary\."/);
   assert.match(generator, /<ActionTooltip asChild message=\{isGenerating \? "Generating the official Excel workbook\.\.\."/);
 });
 
