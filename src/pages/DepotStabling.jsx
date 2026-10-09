@@ -22498,6 +22498,7 @@ export default function DepotStablingPage() {
   {activeTab === "stabling" && (
   <div
     ref={stablingHorizontalScrollRef}
+    data-stabling-workspace
     className="theme-stabling-workspace grid gap-3 items-start overflow-x-auto scroll-smooth"
     style={{ gridTemplateColumns: "954px auto" }}
   >
@@ -29023,6 +29024,10 @@ function RoadRow({
             }}
           >
             <div
+              data-stabling-train={key || undefined}
+              data-stabling-depot={depot}
+              data-stabling-road={label}
+              data-stabling-block={bi}
               className={`theme-stabling-train-card relative flex flex-col items-center justify-start gap-1 overflow-hidden rounded-xl transition-all duration-150 ${primaryMaint ? "has-request" : ""} ${isDup ? "is-duplicate" : ""} ${isFlashing ? "is-flashing" : ""} ${isSearchMatch ? "is-search-match" : ""} ${key ? "has-train" : "is-empty"}`}
               style={{
                 minHeight: rowCardMinHeight,

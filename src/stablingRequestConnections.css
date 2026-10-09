@@ -1,0 +1,31 @@
+.stabling-request-connections {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9990;
+  pointer-events: none;
+  overflow: hidden;
+  --connection-color: color-mix(in srgb, var(--connection-accent) 82%, white);
+  --connection-halo: #071828;
+}
+html[data-app-theme="light"] .stabling-request-connections {
+  --connection-color: color-mix(in srgb, var(--connection-accent) 70%, #26364d);
+  --connection-halo: #ffffff;
+}
+.stabling-request-connections path,
+.stabling-request-connections rect {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.stabling-request-connections .stabling-connection-halo { stroke: var(--connection-halo); stroke-width: 4; opacity: .82; }
+.stabling-request-connections .stabling-connection-line { stroke: var(--connection-color); stroke-width: 1.7; opacity: .9; }
+.stabling-request-connections .stabling-connection-highlight {
+  stroke: var(--connection-color);
+  stroke-width: 2.5;
+  fill: var(--connection-color);
+  fill-opacity: .07;
+}
+.stabling-request-connections .stabling-connection-dot { fill: var(--connection-color); stroke: var(--connection-halo); stroke-width: 1; }

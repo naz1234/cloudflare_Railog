@@ -6,6 +6,7 @@ import MaintenanceImageSummary from "./MaintenanceImageSummary";
 import MaintenanceUploadTools from "./MaintenanceUploadTools";
 import DepotRemovalInfo from "./DepotRemovalInfo";
 import OffPeakTrainInfo from "./OffPeakTrainInfo";
+import StablingRequestConnections from "./StablingRequestConnections";
 import "../copyFeedbackSlate.css";
 import { buildRemovalInfoByTrain, buildOffPeakInfoByTrain } from "../lib/maintenanceRemovalInfo";
 import { sortRequestsByStatusThenTrain } from "../utils/maintenanceRequestSort";
@@ -713,6 +714,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const [removingGroupTrainId, setRemovingGroupTrainId] = useState("");
   const [groupTrainMessage, setGroupTrainMessage] = useState({ type: "", text: "" });
   const [groupCopyStatus, setGroupCopyStatus] = useState("");
+  const [stablingHoverGroup, setStablingHoverGroup] = useState(null);
 
   useEffect(() => () => {
     clearTimeout(workshopCopyTimerRef.current);
@@ -1079,6 +1081,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
   const regularRequestGroups = groupRequestsByExactRemark(regularRequests);
   const requestCategories = groupRequestGroupsByCategory(regularRequestGroups);
   const editingRequestGroup = regularRequestGroups.find((group) => group.key === editingGroupKey) || null;
+  const connectedRequestGroup = regularRequestGroups.find((group) => group.key === stablingHoverGroup?.key) || null;
   const savingGroupTitle = Boolean(editingRequestGroup && savingGroupKey === editingRequestGroup.key);
   const groupEditorBusy = savingGroupTitle || addingGroupTrains || Boolean(removingGroupTrainId);
   const hasWorkshopRequests = workshopRequests.length > 0;
@@ -1364,13 +1367,19 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         >
           <ActionTooltip
             asChild
-            message={`${group.label} — ${group.items.length} train request${group.items.length === 1 ? "" : "s"}.`}
+            message={`${group.label} — ${group.items.length} train request${group.items.length === 1 ? "" : "s"}. Hover to connect its trains in West/East stabling.`}
             placement="top"
             align="start"
             sideOffset={6}
             triggerProps={{ tabIndex: 0 }}
           >
-            <span className="theme-maintenance-group-title-trigger flex cursor-pointer self-stretch min-w-0 items-center rounded-sm text-[11px] font-semibold uppercase text-[#f8fbff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80">
+            <span className="theme-maintenance-group-title-trigger flex cursor-pointer self-stretch min-w-0 items-center rounded-sm text-[11px] font-semibold uppercase text-[#f8fbff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80"
+              data-maintenance-connection-source={group.key}
+              onMouseEnter={(event) => setStablingHoverGroup({ key: group.key, source: event.currentTarget })}
+              onMouseLeave={(event) => { if (document.activeElement !== event.currentTarget) setStablingHoverGroup(null); }}
+              onFocus={(event) => setStablingHoverGroup({ key: group.key, source: event.currentTarget })}
+              onBlur={(event) => { if (!event.currentTarget.matches(":hover")) setStablingHoverGroup(null); }}
+            >
               <span className="min-w-0 truncate">
                 {group.label} <span className="text-[#8fa3b2]">({group.items.length})</span>
               </span>
@@ -1533,6 +1542,13 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
 
   return (
     <div data-request-layout="modern" className="theme-maintenance-panel relative overflow-visible bg-[#0b1f33] rounded-xl border border-[#2b4f6b] shadow-md">
+      {connectedRequestGroup && stablingHoverGroup && (
+        <StablingRequestConnections
+          source={stablingHoverGroup.source}
+          trainIds={connectedRequestGroup.items.map((request) => request.trainId)}
+          onDismiss={setStablingHoverGroup}
+        />
+      )}
       {/* Header */}
       <div className="theme-maintenance-header flex items-center justify-between gap-2 rounded-t-xl">
         <div className="flex min-w-0 items-center gap-2">
