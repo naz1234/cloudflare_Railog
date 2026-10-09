@@ -3,6 +3,12 @@ export function normalizeConnectionTrainId(value) {
   return match ? `T${Number(match[1])}` : "";
 }
 
+export function getStablingRequestConnectionTrainIds(trainIds, hoveredTrainId) {
+  if (hoveredTrainId === undefined) return trainIds;
+  const wanted = normalizeConnectionTrainId(hoveredTrainId);
+  return wanted ? trainIds.filter((train) => normalizeConnectionTrainId(train) === wanted) : [];
+}
+
 export function findStablingRequestTargets(workspace, trainIds) {
   const wanted = new Set(trainIds.map(normalizeConnectionTrainId).filter(Boolean));
   if (!workspace || !wanted.size) return [];
