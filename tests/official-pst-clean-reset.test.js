@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { XmlElement as Element, xmlDocument } from "./helpers/spreadsheet-dom-fixture.js";
 
 const source = readFileSync(new URL("../src/components/OfficialEastExcelGenerator.jsx", import.meta.url), "utf8");
-const helpers = vm.runInNewContext(`${source.slice(source.indexOf("const XLSX_MIME"), source.indexOf("export default"))}\n({clearPstTrainPrepRows, disablePstTableBanding, readCellText, writeInlineString, findCell})`);
+const helpers = vm.runInNewContext(`${source.slice(source.indexOf("const XLSX_MIME"), source.indexOf("export default"))}\n({clearPstTrainPrepRows, disablePstTableBanding, verifyPstReset, readCellText, writeInlineString, findCell})`);
 function fixture() {
   const font = new Element("font", {}, [new Element("sz", { val: "12" }), new Element("color", { rgb: "FFFF0000" })]);
   const style = new Element("xf", { fontId: "0", fillId: "0", borderId: "2", numFmtId: "165" }, [new Element("alignment", { horizontal: "center", vertical: "center" })]);
@@ -62,4 +62,31 @@ test("PST table does not reintroduce banded row or column fills", () => {
   assert.equal(style.getAttribute("showRowStripes"), "0");
   assert.equal(style.getAttribute("showColumnStripes"), "0");
   assert.equal(style.getAttribute("name"), "TableStyleLight8");
+});
+
+test("PST export check accepts a clean reset and rejects the uploaded output's stale FLDC behaviour", () => {
+  const { sheet, styles } = fixture();
+  assert.throws(() => helpers.verifyPstReset(sheet, styles), /PST export check failed/);
+  helpers.clearPstTrainPrepRows(sheet, styles);
+  assert.doesNotThrow(() => helpers.verifyPstReset(sheet, styles));
+  helpers.writeInlineString(sheet, "M49", "MARK");
+  assert.throws(() => helpers.verifyPstReset(sheet, styles), /M49.*empty and white/);
+});
+
+test("PST export check rejects yellow or grey body cells even when their contents are blank", () => {
+  const { sheet, styles } = fixture();
+  helpers.clearPstTrainPrepRows(sheet, styles);
+  helpers.findCell(sheet, "C3").setAttribute("s", "0");
+  assert.throws(() => helpers.verifyPstReset(sheet, styles), /C3.*empty and white/);
+});
+
+test("PST export check rejects table striping and runs after ZIP serialization", () => {
+  const { sheet, styles } = fixture();
+  helpers.clearPstTrainPrepRows(sheet, styles);
+  const tableStyle = new Element("tableStyleInfo", { showRowStripes: "1", showColumnStripes: "0" });
+  const table = xmlDocument(new Element("table", {}, [tableStyle]));
+  assert.throws(() => helpers.verifyPstReset(sheet, styles, table), /table striping/);
+  helpers.disablePstTableBanding(table);
+  assert.doesNotThrow(() => helpers.verifyPstReset(sheet, styles, table));
+  assert.match(source, /const outputBytes = zipSync\(archive, \{ level: 6 \}\);\s*verifyExportedPstReset\(outputBytes, pstSheetPath\);\s*return/);
 });
