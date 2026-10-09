@@ -368,7 +368,49 @@ function copyRowCellStyles(sheetDocument, sourceRowNumber, targetRowNumbers, sta
 }
 
 function clearDailyDepotLogRows(sheetDocument) {
-  clearCells(cellsWithinRange(sheetDocument, 9, 39, 1, 9));
+  clearCells(cellsWithinRange(sheetDocument, 10, 39, 1, 9));
+}
+
+function restoreDailyDepotLogHeader(sheetDocument, stylesDocument, archive, strings, isNewOutputDate) {
+  if (readCellText(sheetDocument, "A9", archive, strings).trim() === "OCC Ref. Number") return;
+
+  // Older downloads used the heading row for their first record. Recover that
+  // record when regenerating the same day, without overwriting a populated tail.
+  if (!isNewOutputDate) {
+    if (cellsWithinRange(sheetDocument, 39, 39, 1, 9).some(cellHasValue)) {
+      throw new Error("The log is full. Use the previous day's workbook to restore its column headings safely.");
+    }
+    for (let rowNumber = 38; rowNumber >= 9; rowNumber -= 1) {
+      for (let column = 1; column <= 9; column += 1) {
+        const letter = columnLetters(column);
+        copyCellValue(findCell(sheetDocument, `${letter}${rowNumber}`), findCell(sheetDocument, `${letter}${rowNumber + 1}`));
+      }
+    }
+  }
+
+  const cellXfs = stylesDocument.getElementsByTagNameNS("*", "cellXfs")[0];
+  const fills = stylesDocument.getElementsByTagNameNS("*", "fills")[0];
+  const greenFillId = Array.from(fills.children || fills.childNodes).filter((node) => node.localName === "fill")
+    .findIndex((fill) => fill.getElementsByTagNameNS("*", "fgColor")[0]?.getAttribute("rgb") === "FF00B050");
+  if (greenFillId < 0) throw new Error("The official green heading style was not found in this workbook.");
+  const originalStyles = Array.from(cellXfs.childNodes).filter((node) => node.localName === "xf");
+  const headings = ["OCC Ref. Number", "Time", "Location", "Category", "Summary", "", "", "", "Delay"];
+  clearCells(cellsWithinRange(sheetDocument, 9, 9, 1, 9));
+  headings.forEach((heading, index) => {
+    const reference = `${columnLetters(index + 1)}9`;
+    const cell = findCell(sheetDocument, reference);
+    const style = originalStyles[Number(cell.getAttribute("s") || 0)].cloneNode(true);
+    style.setAttribute("fillId", String(greenFillId));
+    style.setAttribute("applyFill", "1");
+    style.setAttribute("numFmtId", "0");
+    const alignment = style.getElementsByTagNameNS("*", "alignment")[0];
+    alignment?.removeAttribute("indent");
+    cell.setAttribute("s", String(cellXfs.getElementsByTagNameNS("*", "xf").length));
+    cellXfs.appendChild(style);
+    if (heading) writeInlineString(sheetDocument, reference, heading);
+  });
+  cellXfs.setAttribute("count", String(cellXfs.getElementsByTagNameNS("*", "xf").length));
+  setWorksheetRowHeight(sheetDocument, 9, 25.5);
 }
 
 function normalizeDailyDepotLogMerges(sheetDocument) {
@@ -386,7 +428,7 @@ function normalizeDailyDepotLogMerges(sheetDocument) {
 
     const firstRow = Math.min(...rowNumbers);
     const lastRow = Math.max(...rowNumbers);
-    if (firstRow > 39 || lastRow < 9) return;
+    if (firstRow > 39 || lastRow < 10) return;
 
     if (firstRow !== lastRow) removedRowSpanningMergeCount += 1;
     mergeCell.parentNode?.removeChild(mergeCell);
@@ -394,7 +436,7 @@ function normalizeDailyDepotLogMerges(sheetDocument) {
   });
 
   const worksheetNamespace = sheetDocument.documentElement.namespaceURI;
-  for (let rowNumber = 9; rowNumber <= 39; rowNumber += 1) {
+  for (let rowNumber = 10; rowNumber <= 39; rowNumber += 1) {
     const summaryMerge = sheetDocument.createElementNS(worksheetNamespace, "mergeCell");
     summaryMerge.setAttribute("ref", `E${rowNumber}:H${rowNumber}`);
     mergeCells.appendChild(summaryMerge);
@@ -404,11 +446,24 @@ function normalizeDailyDepotLogMerges(sheetDocument) {
   return { removedMergeCount, removedRowSpanningMergeCount };
 }
 
-function normalizeDailyDepotLogRows(sheetDocument) {
+function normalizeDailyDepotLogRows(sheetDocument, archive, strings) {
+  const columns = Array.from(sheetDocument.getElementsByTagNameNS("*", "col"));
+  const columnWidth = (column) => Number(columns.find((node) =>
+    Number(node.getAttribute("min")) <= column && Number(node.getAttribute("max")) >= column,
+  )?.getAttribute("width") || 12);
   Array.from(sheetDocument.getElementsByTagNameNS("*", "row")).forEach((row) => {
     const rowNumber = Number(row.getAttribute("r") || 0);
-    if (rowNumber < 9 || rowNumber > 39) return;
-    row.setAttribute("ht", "39");
+    if (rowNumber < 10 || rowNumber > 39) return;
+    let requiredHeight = 39;
+    [1, 3, 4, 5, 9].forEach((column) => {
+      const width = column === 5 ? [5, 6, 7, 8].reduce((total, part) => total + columnWidth(part), 0) : columnWidth(column);
+      const text = readCellText(sheetDocument, `${columnLetters(column)}${rowNumber}`, archive, strings);
+      const charactersPerLine = Math.max(8, Math.floor(width * 0.8));
+      const lines = text.split(/\r?\n/).reduce((total, line) => total + Math.max(1, Math.ceil(line.length / charactersPerLine)), 0);
+      requiredHeight = Math.max(requiredHeight, lines * 16 + 12);
+    });
+    // Excel's maximum row height is 409.5 points; never shrink the text to fit.
+    row.setAttribute("ht", String(Math.min(409.5, requiredHeight)));
     row.setAttribute("customHeight", "1");
   });
 }
@@ -422,7 +477,7 @@ function removeDailyDepotLogFills(sheetDocument, stylesDocument) {
   );
   const noFillStyleByOriginal = new Map();
 
-  cellsWithinRange(sheetDocument, 9, 39, 1, 9).forEach((cell) => {
+  cellsWithinRange(sheetDocument, 10, 39, 1, 9).forEach((cell) => {
     const originalStyleId = Number(cell.getAttribute("s") || 0);
     const originalStyle = styleElements[originalStyleId];
     const fillId = Number(originalStyle?.getAttribute("fillId") || 0);
@@ -443,6 +498,65 @@ function removeDailyDepotLogFills(sheetDocument, stylesDocument) {
     "count",
     String(Array.from(cellXfs.childNodes).filter((node) => node.nodeType === 1 && node.localName === "xf").length),
   );
+}
+
+function formatDailyDepotLogCells(sheetDocument, stylesDocument) {
+  const namespace = stylesDocument.documentElement.namespaceURI;
+  const cellXfs = stylesDocument.getElementsByTagNameNS("*", "cellXfs")[0];
+  let numFmts = stylesDocument.getElementsByTagNameNS("*", "numFmts")[0];
+  if (!numFmts) {
+    numFmts = stylesDocument.createElementNS(namespace, "numFmts");
+    stylesDocument.documentElement.insertBefore(numFmts, stylesDocument.documentElement.firstChild);
+  }
+  const formats = Array.from(numFmts.getElementsByTagNameNS("*", "numFmt"));
+  let timeFormat = formats.find((format) => format.getAttribute("formatCode") === "hh:mm");
+  if (!timeFormat) {
+    timeFormat = stylesDocument.createElementNS(namespace, "numFmt");
+    timeFormat.setAttribute("numFmtId", String(Math.max(163, ...formats.map((format) => Number(format.getAttribute("numFmtId")))) + 1));
+    timeFormat.setAttribute("formatCode", "hh:mm");
+    numFmts.appendChild(timeFormat);
+    numFmts.setAttribute("count", String(formats.length + 1));
+  }
+  const styles = Array.from(cellXfs.childNodes).filter((node) => node.localName === "xf");
+  const replacements = new Map();
+  cellsWithinRange(sheetDocument, 10, 39, 1, 9).forEach((cell) => {
+    const column = columnNumber(cell.getAttribute("r"));
+    const styleId = Number(cell.getAttribute("s") || 0);
+    const key = `${styleId}:${column === 2 ? "time" : column === 5 ? "summary" : "body"}`;
+    if (!replacements.has(key)) {
+      const style = styles[styleId].cloneNode(true);
+      let alignment = style.getElementsByTagNameNS("*", "alignment")[0];
+      if (!alignment) {
+        alignment = stylesDocument.createElementNS(namespace, "alignment");
+        style.appendChild(alignment);
+      }
+      alignment.setAttribute("wrapText", "1");
+      alignment.removeAttribute("indent");
+      if (column === 5) {
+        alignment.setAttribute("horizontal", "left");
+        alignment.setAttribute("vertical", "top");
+      }
+      style.setAttribute("applyAlignment", "1");
+      if (column === 2) {
+        style.setAttribute("numFmtId", timeFormat.getAttribute("numFmtId"));
+        style.setAttribute("applyNumberFormat", "1");
+      }
+      replacements.set(key, cellXfs.getElementsByTagNameNS("*", "xf").length);
+      cellXfs.appendChild(style);
+    }
+    cell.setAttribute("s", String(replacements.get(key)));
+  });
+  cellXfs.setAttribute("count", String(cellXfs.getElementsByTagNameNS("*", "xf").length));
+}
+
+function resetDailyDepotLogView(sheetDocument) {
+  Array.from(sheetDocument.getElementsByTagNameNS("*", "sheetView")).forEach((view) => {
+    view.setAttribute("topLeftCell", "A1");
+    Array.from(view.getElementsByTagNameNS("*", "selection")).forEach((selection) => {
+      selection.setAttribute("activeCell", "A10");
+      selection.setAttribute("sqref", "A10");
+    });
+  });
 }
 
 function normalizeWhiteFillAndBlackFont(stylesDocument, cells) {
@@ -888,33 +1002,30 @@ function writeFirstDepotRemovalLog(sheetDocument, targetDate, removalLog, depotC
   if (hasRemovalLog) {
     const firstTime = String(entries[0]?.time || "").trim();
     const timeFraction = timeTextToDayFraction(firstTime);
-    clearCells(cellsWithinRange(sheetDocument, 9, 9, 1, 9));
+    clearCells(cellsWithinRange(sheetDocument, 10, 10, 1, 9));
 
-    writeInlineString(sheetDocument, "A9", `${depotConfig.code}-${dateStamp(targetDate)}-01`);
-    if (timeFraction === null) writeInlineString(sheetDocument, "B9", firstTime);
-    else writeNumber(sheetDocument, "B9", timeFraction);
-    writeInlineString(sheetDocument, "C9", depotConfig.label);
-    writeInlineString(sheetDocument, "D9", "Removal");
-    writeInlineString(sheetDocument, "E9", summary);
-
-    setWorksheetRowHeight(sheetDocument, 9, 280);
+    writeInlineString(sheetDocument, "A10", `${depotConfig.code}-${dateStamp(targetDate)}-01`);
+    if (timeFraction === null) writeInlineString(sheetDocument, "B10", firstTime);
+    else writeNumber(sheetDocument, "B10", timeFraction);
+    writeInlineString(sheetDocument, "C10", depotConfig.label);
+    writeInlineString(sheetDocument, "D10", "Removal");
+    writeInlineString(sheetDocument, "E10", summary);
   }
 
   const reservedCategories = depotConfig.key === "east"
     ? EAST_RESERVED_CATEGORIES
     : DEFAULT_RESERVED_CATEGORIES;
-  clearCells(cellsWithinRange(sheetDocument, 10, 13, 1, 9));
+  clearCells(cellsWithinRange(sheetDocument, 11, 14, 1, 9));
   reservedCategories.forEach((category, index) => {
-    const rowNumber = 10 + index;
+    const rowNumber = 11 + index;
     const referenceNumber = String(index + 2).padStart(2, "0");
     writeInlineString(sheetDocument, `A${rowNumber}`, `${depotConfig.code}-${dateStamp(targetDate)}-${referenceNumber}`);
     writeInlineString(sheetDocument, `C${rowNumber}`, depotConfig.label);
     writeInlineString(sheetDocument, `D${rowNumber}`, category);
   });
 
-  const pointsFunctionalRow = 10 + reservedCategories.indexOf("Points Functional Test");
+  const pointsFunctionalRow = 11 + reservedCategories.indexOf("Points Functional Test");
   writeInlineString(sheetDocument, `E${pointsFunctionalRow}`, POINTS_FUNCTIONAL_TEST_SUMMARIES[depotConfig.key]);
-  setWorksheetRowHeight(sheetDocument, pointsFunctionalRow, depotConfig.key === "east" ? 180 : 75);
 
   return hasRemovalLog;
 }
@@ -1045,18 +1156,21 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
 
   writeInlineString(sheetDocument, "G3", officialDateLabel(targetDate));
   writeInlineString(sheetDocument, "I3", timetableForDate(targetDate));
+  restoreDailyDepotLogHeader(sheetDocument, stylesDocument, archive, strings, isNewOutputDate);
   if (isNewOutputDate) clearDailyDepotLogRows(sheetDocument);
   const normalizedDailyMerges = normalizeDailyDepotLogMerges(sheetDocument);
-  normalizeDailyDepotLogRows(sheetDocument);
   removeDailyDepotLogFills(sheetDocument, stylesDocument);
-  copyRowCellStyles(sheetDocument, 10, [11, 12, 13], 1, 9);
+  copyRowCellStyles(sheetDocument, 10, Array.from({ length: 29 }, (_, index) => index + 11), 1, 9);
   const addedDepotRemovalLog = writeFirstDepotRemovalLog(
     sheetDocument,
     targetDate,
     removalLogs?.[depotConfig.key] || null,
     depotConfig,
   );
-  forceBlackFontForCells(sheetDocument, stylesDocument, ["D9", "D10", "D11", "D12", "D13"]);
+  forceBlackFontForCells(sheetDocument, stylesDocument, ["D10", "D11", "D12", "D13", "D14"]);
+  formatDailyDepotLogCells(sheetDocument, stylesDocument);
+  normalizeDailyDepotLogRows(sheetDocument, archive, strings);
+  resetDailyDepotLogView(sheetDocument);
   const pstTrainPrep = normalizePstTrainPrepOutput(
     pstSheetDocument,
     archive,

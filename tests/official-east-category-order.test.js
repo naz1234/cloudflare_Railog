@@ -25,10 +25,10 @@ test("West Depot order stays unchanged and the Points summary follows its catego
   );
   assert.match(
     generatorSource,
-    /const pointsFunctionalRow = 10 \+ reservedCategories\.indexOf\("Points Functional Test"\);/,
+    /const pointsFunctionalRow = 11 \+ reservedCategories\.indexOf\("Points Functional Test"\);/,
   );
   assert.match(generatorSource, /writeInlineString\(sheetDocument, `E\$\{pointsFunctionalRow\}`/);
-  assert.match(generatorSource, /setWorksheetRowHeight\(sheetDocument, pointsFunctionalRow,/);
+  assert.match(generatorSource, /normalizeDailyDepotLogRows\(sheetDocument, archive, strings\);/);
   assert.doesNotMatch(
     generatorSource,
     /writeInlineString\(sheetDocument, "E11", POINTS_FUNCTIONAL_TEST_SUMMARIES/,
