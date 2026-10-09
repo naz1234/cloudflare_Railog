@@ -186,7 +186,7 @@ function Preview() {
       </nav>
     </aside>
     <div className="slate-preview-workspace-scroll" ref={workspaceRef} role="region" aria-label="Local stabling and removal workspace" tabIndex={0}>
-    <div className="slate-preview-workspace">
+    <div className="slate-preview-workspace" data-stabling-workspace>
     <div className="slate-preview-depots">
       {allDepots.map((config) => <StablingSection
         key={`${config.depot}-${revision}`}
