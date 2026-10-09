@@ -11,6 +11,7 @@ import "../copyFeedbackSlate.css";
 import { buildRemovalInfoByTrain, buildOffPeakInfoByTrain } from "../lib/maintenanceRemovalInfo";
 import { sortRequestsByStatusThenTrain } from "../utils/maintenanceRequestSort";
 import { groupRequestGroupsByCategory } from "../lib/requestedActionSummary";
+import { getStablingRequestConnectionTrainIds } from "../lib/stablingRequestConnections";
 
 const MIN_VISIBLE_REQUEST_ROWS = 40;
 
@@ -1367,7 +1368,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
         >
           <ActionTooltip
             asChild
-            message={`${group.label} — ${group.items.length} train request${group.items.length === 1 ? "" : "s"}. Hover to connect its trains in West/East stabling.`}
+            message={`${group.label} — ${group.items.length} train request${group.items.length === 1 ? "" : "s"}.`}
             placement="top"
             align="start"
             sideOffset={6}
@@ -1499,7 +1500,23 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   key={`${section}-${group.key}-${req.id || req._tempId || chipLabel}`}
                   className={`theme-maintenance-train-row theme-maintenance-request-line grid h-[24px] ${expandedGridClass} items-center gap-[2px] overflow-visible px-1.5 leading-none transition-colors duration-150`}
                 >
-                  <span className="truncate pl-1 text-left text-[12px] font-semibold text-[#f8fbff]">{chipLabel}</span>
+                  <ActionTooltip
+                    asChild
+                    message={`${chipLabel} — ${group.label}`}
+                    placement="top"
+                    align="start"
+                    sideOffset={6}
+                    triggerProps={{ tabIndex: 0 }}
+                  >
+                    <span
+                      className="theme-maintenance-train-connection-trigger cursor-pointer truncate rounded-sm pl-1 text-left text-[12px] font-semibold text-[#f8fbff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80"
+                      data-maintenance-connection-train={normalizeTrainCompareKey(req.trainId)}
+                      onMouseEnter={(event) => setStablingHoverGroup({ key: group.key, trainId: req.trainId, source: event.currentTarget })}
+                      onMouseLeave={(event) => { if (document.activeElement !== event.currentTarget) setStablingHoverGroup(null); }}
+                      onFocus={(event) => setStablingHoverGroup({ key: group.key, trainId: req.trainId, source: event.currentTarget })}
+                      onBlur={(event) => { if (!event.currentTarget.matches(":hover")) setStablingHoverGroup(null); }}
+                    >{chipLabel}</span>
+                  </ActionTooltip>
                   <span className="flex min-w-0 justify-end gap-[2px]">
                     {westRemovals?.length > 0 && (
                       <DepotRemovalInfo trainLabel={chipLabel} depot="west" removals={westRemovals} />
@@ -1545,7 +1562,10 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
       {connectedRequestGroup && stablingHoverGroup && (
         <StablingRequestConnections
           source={stablingHoverGroup.source}
-          trainIds={connectedRequestGroup.items.map((request) => request.trainId)}
+          trainIds={getStablingRequestConnectionTrainIds(
+            connectedRequestGroup.items.map((request) => request.trainId),
+            stablingHoverGroup.trainId
+          )}
           onDismiss={setStablingHoverGroup}
         />
       )}

@@ -9,7 +9,7 @@ const trainInput = removalSource.match(/<input\s+ref=\{\(element\) => setTrainRe
 
 test("Removal Summary train numbers match Maintenance semibold weight while preserving duplicate styling", () => {
   assert.ok(trainInput, "the Removal Summary train input exists");
-  assert.match(maintenanceSource, /<span className="[^"]*text-\[12px\] font-semibold[^"]*">\{chipLabel\}<\/span>/);
+  assert.match(maintenanceSource, /<span\s+className="theme-maintenance-train-connection-trigger [^"]*text-\[12px\] font-semibold[^"]*"[\s\S]*?>\{chipLabel\}<\/span>/);
   assert.match(trainInput, /hasDuplicateValue \? "font-normal" : "font-semibold"/);
   assert.doesNotMatch(trainInput, /font-bold/);
 });

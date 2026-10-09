@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
-import { buildStablingConnectionPath, findStablingRequestTargets, getVisibleConnectionRect, intersectConnectionRects, normalizeConnectionTrainId } from "../src/lib/stablingRequestConnections.js";
+import { buildStablingConnectionPath, findStablingRequestTargets, getStablingRequestConnectionTrainIds, getVisibleConnectionRect, intersectConnectionRects, normalizeConnectionTrainId } from "../src/lib/stablingRequestConnections.js";
 
 const overlay = readFileSync(new URL("../src/components/StablingRequestConnections.jsx", import.meta.url), "utf8");
 const maintenance = readFileSync(new URL("../src/components/MaintenancePanel.jsx", import.meta.url), "utf8");
@@ -25,6 +25,19 @@ test("request matching stays in one workspace, includes both depots and keeps du
   assert.deepEqual(findStablingRequestTargets(workspace, ["t03", "3", "T8", "T45"]), cards.slice(0, 3));
   assert.deepEqual(findStablingRequestTargets(workspace, []), []);
   assert.deepEqual(findStablingRequestTargets(null, ["03"]), []);
+});
+
+test("group hover selects every member while individual hover selects only that exact train", () => {
+  const trains = ["03", "T8", "30", "45"];
+  assert.deepEqual(getStablingRequestConnectionTrainIds(trains), trains);
+  assert.deepEqual(getStablingRequestConnectionTrainIds(trains, "T003"), ["03"]);
+  assert.deepEqual(getStablingRequestConnectionTrainIds(trains, "08"), ["T8"]);
+  assert.deepEqual(getStablingRequestConnectionTrainIds(trains, "T30"), ["30"]);
+  assert.deepEqual(getStablingRequestConnectionTrainIds(trains, "T23"), []);
+  for (const invalid of [null, "", "—", "T3 issue"]) {
+    assert.deepEqual(getStablingRequestConnectionTrainIds(trains, invalid), []);
+  }
+  assert.deepEqual(trains, ["03", "T8", "30", "45"]);
 });
 
 test("visible card geometry clips to the viewport and excludes hidden or off-screen trains", () => {
@@ -56,14 +69,14 @@ test("smooth connector paths attach to the nearest card edge on either side", ()
   assert.doesNotMatch(right.path, /NaN|Infinity/);
 });
 
-function createOverlayHarness({ scoped = true } = {}) {
+function createOverlayHarness({ scoped = true, trainKey = "T3,T8,T45", sourceBounds = rect(900, 300, 90, 24) } = {}) {
   const cards = [
     Object.assign(element(rect(400, 100, 100, 80)), { dataset: { stablingTrain: "T3", stablingDepot: "west", stablingRoad: "WD-ST14", stablingBlock: "5" } }),
     Object.assign(element(rect(650, 550, 100, 80)), { dataset: { stablingTrain: "T8", stablingDepot: "east", stablingRoad: "ED-ST02", stablingBlock: "4" } }),
     Object.assign(element(rect(200, 900, 100, 80)), { dataset: { stablingTrain: "T45", stablingDepot: "west", stablingRoad: "WD-ST12", stablingBlock: "1" } }),
   ];
   const workspace = { querySelectorAll: () => cards };
-  const source = Object.assign(element(rect(900, 300, 90, 24)), { isConnected: true, closest: (selector) => { assert.equal(selector, "[data-stabling-workspace]"); return scoped ? workspace : null; } });
+  const source = Object.assign(element(sourceBounds), { isConnected: true, closest: (selector) => { assert.equal(selector, "[data-stabling-workspace]"); return scoped ? workspace : null; } });
   const frames = new Map();
   const events = new Map();
   const observers = [];
@@ -81,7 +94,7 @@ function createOverlayHarness({ scoped = true } = {}) {
     disconnect() { this.disconnected = true; }
   }
   const context = {
-    source, trainKey: "T3,T8,T45", onDismiss: (value) => dismissals.push(value),
+    source, trainKey, onDismiss: (value) => dismissals.push(value),
     findStablingRequestTargets, buildStablingConnectionPath, normalizeConnectionTrainId,
     getVisibleConnectionRect: (el, viewport) => getVisibleConnectionRect(el, viewport, (target) => target.styles),
     getComputedStyle: () => ({ getPropertyValue: () => "#c084fc" }),
@@ -108,6 +121,49 @@ test("overlay connects only visible matching cards and never requires a data mut
   assert.equal(harness.geometry().accent, "#c084fc");
   assert.equal(harness.cards[0].dataset.stablingTrain, "T3");
   assert.doesNotMatch(overlay, /onAdd|onRemove|onCommit|localStorage|base44|fetch\(/);
+});
+
+test("group hover retains a shared subgroup-title origin and omits the instructional tooltip sentence", () => {
+  const harness = createOverlayHarness();
+  assert.ok(harness.geometry().connections.every((entry) => entry.start.x === 897 && entry.start.y === 312));
+  assert.doesNotMatch(maintenance, /Hover to connect/i);
+});
+
+test("individual train hover connects only its matching West or East card from the hovered label", () => {
+  for (const [train, end] of [["T3", { x: 503, y: 140 }], ["T8", { x: 753, y: 590 }]]) {
+    const harness = createOverlayHarness({ trainKey: train, sourceBounds: rect(900, 350, 56, 12) });
+    const connections = harness.geometry().connections;
+    assert.equal(connections.length, 1);
+    assert.equal(connections[0].train, train);
+    assert.deepEqual({ ...connections[0].start }, { x: 897, y: 356 });
+    assert.deepEqual({ ...connections[0].end }, end);
+  }
+  assert.equal(createOverlayHarness({ trainKey: "T23" }).geometry().connections.length, 0);
+  assert.equal(createOverlayHarness({ trainKey: "T45" }).geometry().connections.length, 0);
+});
+
+test("individual train triggers preserve the group key, target one train and support hover plus focus", () => {
+  const start = maintenance.indexOf('className="theme-maintenance-train-connection-trigger');
+  const label = maintenance.slice(start, maintenance.indexOf(">{chipLabel}</span>", start));
+  assert.match(label, /cursor-pointer/);
+  assert.match(label, /data-maintenance-connection-train=\{normalizeTrainCompareKey\(req\.trainId\)\}/);
+  assert.match(maintenance, /message=\{`\$\{chipLabel\} — \$\{group\.label\}`\}/);
+  for (const name of ["onMouseEnter", "onFocus"]) {
+    const expression = label.match(new RegExp(`${name}=\\{(\\(event\\) => setStablingHoverGroup\\(\\{[^\\n]+\\}\\))\\}`))?.[1];
+    assert.ok(expression, `${name} selects the individual train`);
+    let selected;
+    const source = {};
+    const handler = runInNewContext(`(${expression})`, {
+      setStablingHoverGroup: (value) => { selected = value; },
+      group: { key: "inbound" }, req: { trainId: "03" },
+    });
+    handler({ currentTarget: source });
+    assert.equal(selected.key, "inbound");
+    assert.equal(selected.trainId, "03");
+    assert.equal(selected.source, source);
+  }
+  assert.match(label, /onMouseLeave=\{\(event\) => \{ if \(document\.activeElement !== event\.currentTarget\) setStablingHoverGroup\(null\)/);
+  assert.match(label, /onBlur=\{\(event\) => \{ if \(!event\.currentTarget\.matches\(":hover"\)\) setStablingHoverGroup\(null\)/);
 });
 
 test("scroll and resize work are batched per animation frame and follow the new card position", () => {
@@ -155,7 +211,7 @@ test("group titles retain their tooltips and support mouse hover plus keyboard f
   assert.match(maintenance, /onMouseLeave=\{\(event\) => \{ if \(document\.activeElement !== event\.currentTarget\) setStablingHoverGroup\(null\)/);
   assert.match(maintenance, /onFocus=\{\(event\) => setStablingHoverGroup/);
   assert.match(maintenance, /onBlur=\{\(event\) => \{ if \(!event\.currentTarget\.matches\(":hover"\)\) setStablingHoverGroup\(null\)/);
-  assert.match(maintenance, /trainIds=\{connectedRequestGroup\.items\.map\(\(request\) => request\.trainId\)\}/);
+  assert.match(maintenance, /trainIds=\{getStablingRequestConnectionTrainIds\(\s+connectedRequestGroup\.items\.map\(\(request\) => request\.trainId\),\s+stablingHoverGroup\.trainId\s+\)\}/);
   assert.match(maintenance, /regularRequestGroups\.find\(\(group\) => group\.key === stablingHoverGroup\?\.key\)/);
   assert.match(depot, /ref=\{stablingHorizontalScrollRef\}\s+data-stabling-workspace/);
   assert.match(preview, /className="slate-preview-workspace" data-stabling-workspace/);
