@@ -727,8 +727,11 @@ function forceBlackFontForCells(sheetDocument, stylesDocument, references) {
   );
 }
 
-function clearPstTrainPrepRows(sheetDocument) {
-  clearCells(cellsWithinRange(sheetDocument, 3, PST_LAST_DATA_ROW, 1, 11));
+function clearPstTrainPrepRows(sheetDocument, stylesDocument) {
+  // L and M are the FLDC Yes/No and DC-name fields, not template constants.
+  const dataCells = cellsWithinRange(sheetDocument, 3, PST_LAST_DATA_ROW, 1, 13);
+  clearCells(dataCells);
+  normalizeWhiteFillAndBlackFont(stylesDocument, dataCells);
 }
 
 function pstSummaryRow(sheetDocument) {
@@ -830,7 +833,15 @@ function normalizePstTableRange(archive, sheetPath) {
   if (autoFilter?.hasAttribute("ref")) {
     autoFilter.setAttribute("ref", setReferenceLastRow(autoFilter.getAttribute("ref"), PST_LAST_DATA_ROW));
   }
+  disablePstTableBanding(tableDocument);
   archive[tablePath] = strToU8(new XMLSerializer().serializeToString(tableDocument));
+}
+
+function disablePstTableBanding(tableDocument) {
+  const tableStyle = tableDocument.getElementsByTagNameNS("*", "tableStyleInfo")[0];
+  if (!tableStyle) return;
+  tableStyle.setAttribute("showRowStripes", "0");
+  tableStyle.setAttribute("showColumnStripes", "0");
 }
 
 function normalizePstCalcChain(archive, sheetId, sourceRow) {
@@ -1178,7 +1189,7 @@ async function generateOfficialDepotWorkbook({ sourceFile, controllerName, targe
     pstSheetId,
     pstSheetIndex,
   );
-  clearPstTrainPrepRows(pstSheetDocument);
+  clearPstTrainPrepRows(pstSheetDocument, stylesDocument);
   clearAuthorityToProceedForm(authoritySheetDocument, targetDate);
   if (sleepStandbySheet) {
     resetSleepAndStandbyModeRows(
