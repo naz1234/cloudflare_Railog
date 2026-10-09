@@ -101,8 +101,7 @@
   }
 
   function safeReturnPath() {
-    const candidate = new URL(window.location.href).searchParams.get('returnTo')
-      || (window.location.hash.startsWith('#/removal-scan?') ? `/${window.location.hash}` : '');
+    const candidate = new URL(window.location.href).searchParams.get('returnTo');
     if (!candidate || !candidate.startsWith('/')) return '/';
     try {
       const resolved = new URL(candidate, window.location.origin);

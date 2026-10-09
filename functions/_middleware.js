@@ -3,7 +3,6 @@ import {
   authorizeCustomSessionRequest,
   getAuthMode,
 } from './lib/custom-auth.js';
-import { isRemovalScanPublicRequest, withRemovalScanSecurityHeaders } from './lib/removal-scan-access.js';
 
 const responseHeaders = {
   'Cache-Control': 'no-store, no-cache, must-revalidate',
@@ -205,13 +204,20 @@ export function createAuthMiddleware({
       return context.next();
     }
 
-    const mode = resolveMode(context.env);
-    if (['cloudflare_access', 'custom_pin'].includes(mode) && isRemovalScanPublicRequest(context.request)) {
-      if (!isSameOriginMutation(context.request)) return csrfDeniedResponse();
-      // API token syntax is only routing eligibility. The handler validates the
-      // stored hash, expiry and permitted action before revealing session data.
-      return withRemovalScanSecurityHeaders(await context.next());
+    // Retired QR links and cached scanner clients must not reach any handler,
+    // session data, OCR service, or the dashboard's SPA fallback.
+    const pathname = new URL(context.request.url).pathname;
+    if (['/removal-scan', '/removal-scan/', '/removal-scan.html', '/api/removal-scan'].includes(pathname)
+      || pathname.startsWith('/removal-scan-assets/')) {
+      return new Response(context.request.method === 'HEAD' ? null : JSON.stringify({
+        success: false,
+        error: 'QR scanning has been removed. Enter trains and TIDs manually in Removal summary.',
+      }), {
+        status: 410,
+        headers: { ...responseHeaders, 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' },
+      });
     }
+    const mode = resolveMode(context.env);
     if (mode === 'cloudflare_access') {
       return accessMiddleware(context);
     }

@@ -24,8 +24,6 @@ import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator
 import RemovalPdfEditor from "../components/depot/RemovalPdfEditor";
 import EastNineAmRemovalPdfEditor from "../components/depot/EastNineAmRemovalPdfEditor";
 import RemovalSummaryRemark from "../components/depot/RemovalSummaryRemark";
-import RemovalScanButton from "../components/depot/RemovalScan";
-import { applyRemovalImageAssignments, removalScanFingerprint } from "../lib/removalImageAssignments";
 import { SessionPresenceControl } from "../components/ProtectedRoute";
 import { summarizeInsertionTidUsage } from "../lib/insertionTidUsage";
 import {
@@ -7766,7 +7764,6 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
   const trainRemTrainIdRefs = useRef({});
   const trainRemTidRefs = useRef({});
   const trainRemUndoStackRef = useRef([]);
-  const trainRemAppliedScanRef = useRef(null);
   const trainRemSmartDirectionRef = useRef({});
   const trainRemLastFocusedIndexRef = useRef({});
   const trainRemFocusedTrainIdCellRef = useRef(null);
@@ -8072,39 +8069,6 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
     setTrainRemState(nextState);
     scheduleTrainRemSave(nextState);
   }, [scheduleTrainRemSave]);
-
-  const getRemovalScanTarget = () => {
-    const state = trainRemStateRef.current;
-    const timetableKey = JSON.stringify([activeTimetable?.id, activeTimetable?.updated_date, activeTimetable?.parsedData, activeTimetableType]);
-    return {
-      fingerprint: removalScanFingerprint(state, timetableKey),
-      target: {
-        supportsPartial: true,
-        supportsCorrections: true,
-        period: state.selectedPreset?.west || "9am",
-        timetable: getTimetableTypeLabel(activeTimetableType),
-        rows: ["west", "east"].flatMap((depot) => (state.rows?.[depot] || []).map(({ trainId, tid }) => ({ trainId, tid }))),
-      },
-    };
-  };
-
-  const applyRemovalScan = async (assignments, snapshot, scanId, options) => {
-    if (trainRemSavingRef.current || trainRemEditingRef.current) {
-      throw new Error("Finish the current edit and wait for it to save, then retry this update.");
-    }
-    if (trainRemAppliedScanRef.current?.id !== scanId) {
-      if (getRemovalScanTarget().fingerprint !== snapshot.fingerprint) {
-        throw new Error("The timetable or Removal summary changed while scanning. Close this window and open a new QR.");
-      }
-      updateTrainRemState((prev) => applyRemovalImageAssignments(prev, assignments, options));
-      trainRemAppliedScanRef.current = { id: scanId, fingerprint: getRemovalScanTarget().fingerprint };
-    } else if (trainRemAppliedScanRef.current.fingerprint !== getRemovalScanTarget().fingerprint) {
-      throw new Error("Removal summary changed after the scan. Close this window and open a new QR.");
-    }
-    clearTimeout(trainRemAutoSaveTimerRef.current);
-    const saved = await saveTrainRemToDb(trainRemStateRef.current);
-    if (!saved) throw new Error("The scan updated locally but could not save. Check your connection, then retry the update.");
-  };
 
   useEffect(() => {
     if (!trainRemLoaded || !visiblePresetLabels.length) return;
@@ -9372,8 +9336,6 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                   </div>
                 )}
               </div>
-
-              {depot === "west" && <RemovalScanButton getTarget={getRemovalScanTarget} onApply={applyRemovalScan} disabled={!trainRemLoaded} />}
 
               <ActionTooltip
                 message={trainRemUndoCount > 0 ? "Undo last change" : "Nothing to undo"}

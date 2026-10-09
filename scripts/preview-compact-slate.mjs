@@ -4,7 +4,6 @@ import { createServer } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { previewRemovalScan } from "./preview-removal-scan.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const html = `<!doctype html><html lang="en" class="dark" data-app-theme="dark"><head>
@@ -32,10 +31,6 @@ const server = await createServer({
           const transformed = await vite.transformIndexHtml(url.pathname, html);
           response.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
           response.end(transformed);
-          return;
-        }
-        if (url.pathname === "/api/removal-scan") {
-          await previewRemovalScan(request, response);
           return;
         }
         if (url.pathname.startsWith("/api/")) {

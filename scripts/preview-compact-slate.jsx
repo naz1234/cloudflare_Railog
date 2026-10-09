@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { TrainRemPanel, MaintenancePanelShell, StablingSection, TrainMovementExcelSheet, RemovalLogOutputFromTrainRem, RequestedTrainActionSummary, getDuplicates, getWestStablingKeys, getMainStablingLocations, buildStablingMoveState, buildDefaultTrainRemState, buildTrainRemDepotPayload, getTrainRemPresetConfig, collectTrainRemRowsForDepotCopy, collectTrainRemMainlineInServiceRows, buildTrainRemRemovalLog, createTrainMovementExcelRow, buildTrainMovementExcelLivePayload, saveTrainMovementExcelRows, saveTrainMovementExcelLogRows, saveTrainMovementExcelLocalUpdatedAt, saveTrainMovementExcelDirty } from "../src/pages/DepotStabling";
 import OfficialEastExcelGenerator from "../src/components/OfficialEastExcelGenerator";
-import { RemovalScanPage } from "../src/components/depot/RemovalScan";
 import { splitRequestMaintenanceMap } from "../src/lib/requestGroupVisibility";
 import { seedPreviewRecords, seedPreviewMovementRecord } from "./preview-compact-slate-api";
 import "../src/index.css";
@@ -263,4 +262,4 @@ function Preview() {
 }
 const previewRoot = import.meta.hot?.data.root || createRoot(document.getElementById("root"));
 if (import.meta.hot) import.meta.hot.data.root = previewRoot;
-previewRoot.render(window.location.hash.startsWith("#/removal-scan") ? <RemovalScanPage /> : <Preview />);
+previewRoot.render(<Preview />);
