@@ -68,9 +68,10 @@ export default function StablingRequestConnections({ source, trainIds, onDismiss
   }, [source, trainKey, onDismiss]);
 
   if (!geometry.connections.length) return null;
+  // Keep SVG units in CSS pixels, like getBoundingClientRect(). A viewBox based
+  // on innerWidth would scale/offset the overlay when a scrollbar narrows it.
   return createPortal(
     <svg className="stabling-request-connections" aria-hidden="true" focusable="false"
-      viewBox={`0 0 ${geometry.width} ${geometry.height}`}
       style={{ "--connection-accent": geometry.accent }}
     >
       {geometry.connections.map(({ id, train, bounds, start, end, path }) => (
