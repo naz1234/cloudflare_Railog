@@ -53,6 +53,9 @@ import {
   shouldShowRemovalTidStablingRemove,
 } from "../lib/trainRemOffPeakStabling";
 import { buildPSTExcelClipboardText } from "../lib/pstExcelClipboard";
+import { appendPstFldcColumns } from "../lib/pstFldcVerification";
+import { usePstFldcVerification } from "../hooks/usePstFldcVerification";
+import PstFldcChecklist from "../components/PstFldcChecklist";
 import { buildPossessionEntryOutput, getPossessionAccessDetails, normalizePossessionAccessEntry } from "../lib/possessionAccessLog";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40Groups, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, resizeHdwDepotRows, clearHdwRows } from "../lib/trainRemHdw40";
@@ -15057,6 +15060,7 @@ function PSTTabContent
   const [copyingExcelDepot, setCopyingExcelDepot] = useState("");
   const [copiedExcelDepot, setCopiedExcelDepot] = useState("");
   const safeCompletedByNames = completedByNames || { west: "", east: "" };
+  const fldcController = usePstFldcVerification(westData, eastData);
   const safeAPUMismatchTrainIds = normalizeAPUMismatchTrainIds(apuMismatchTrainIds);
   const sortedLogLines = sortPSTLogLinesByTime(logLines);
   const exportLogLines = buildPSTExportLinesFromVisibleState({
@@ -15120,7 +15124,7 @@ function PSTTabContent
     setDownloadingExcelDepot(actionKey);
 
     try {
-      downloadPSTExcelExport(exportLogLines, completedBy, normalizedDepot);
+      downloadPSTExcelExport(exportLogLines, completedBy, normalizedDepot, fldcController.exportVerifications);
     } catch (error) {
       console.error("PST Excel export failed:", error);
       alert("Unable to create Excel export. Please try again.");
@@ -15138,7 +15142,7 @@ function PSTTabContent
     setCopyingExcelDepot(actionKey);
 
     try {
-      const copyRows = buildPSTExportRows(exportLogLines, completedBy, normalizedDepot, false);
+      const copyRows = buildPSTExportRows(exportLogLines, completedBy, normalizedDepot, false, fldcController.exportVerifications);
       const copied = await copyTextToClipboard(buildPSTExcelClipboardText(copyRows));
       if (!copied) throw new Error("Clipboard copy was not available.");
 
@@ -15244,6 +15248,8 @@ function PSTTabContent
           />
         </label>
 
+        <PstFldcChecklist depot={depot} controller={fldcController} />
+
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <button
             onClick={() => handleDownloadExcel(depot)}
@@ -15299,9 +15305,9 @@ function PSTTabContent
             aria-label={`Copy ${depotShortLabel} PST and Train Prep Excel rows 3 to 49`}
           >
             {copiedExcelDepot === depot ? <ClipboardCheck size={15} /> : <Copy size={15} />}
-            {copyingExcelDepot === depot ? "Copying..." : copiedExcelDepot === depot ? "Copied A3:K49" : depotCopyLabel}
+            {copyingExcelDepot === depot ? "Copying..." : copiedExcelDepot === depot ? "Copied A3:M49" : depotCopyLabel}
             <RemovalSummaryTooltip
-              message={`Copy ${depotShortLabel} Excel output rows 3 to 49 for direct paste into A3:K49`}
+              message={`Copy ${depotShortLabel} Excel output rows 3 to 49 for direct paste into A3:M49, including FLDC verification`}
               placement="top"
             />
           </button>
@@ -15320,9 +15326,9 @@ function PSTTabContent
             aria-label="Copy combined WD and ED PST and Train Prep Excel rows 3 to 49"
           >
             {copiedExcelDepot === "combined" ? <ClipboardCheck size={15} /> : <Copy size={15} />}
-            {copyingExcelDepot === "combined" ? "Copying..." : copiedExcelDepot === "combined" ? "Copied A3:K49" : "Combined Copy Excell Output"}
+            {copyingExcelDepot === "combined" ? "Copying..." : copiedExcelDepot === "combined" ? "Copied A3:M49" : "Combined Copy Excell Output"}
             <RemovalSummaryTooltip
-              message="Copy combined WD and ED Excel output rows 3 to 49 for direct paste into A3:K49"
+              message="Copy combined WD and ED Excel output rows 3 to 49 for direct paste into A3:M49, including FLDC verification"
               placement="top"
             />
           </button>
@@ -27742,7 +27748,7 @@ function buildLatestPSTExcelMap(entries = []) {
 }
 
 /** @param {string | PSTCompletedByNames} completedBy */
-function buildPSTExportRows(logLines = [], completedBy = "", depotFilter = "", includeTrailingBlankRow = true) {
+function buildPSTExportRows(logLines = [], completedBy = "", depotFilter = "", includeTrailingBlankRow = true, fldcVerifications = {}) {
   const todayText = formatExcelExportDate(new Date());
   const safeLogLines = Array.isArray(logLines) ? logLines : [];
   const normalizedDepot = depotFilter === "west" || depotFilter === "east" ? depotFilter : "";
@@ -27785,7 +27791,7 @@ function buildPSTExportRows(logLines = [], completedBy = "", depotFilter = "", i
     rows.push(["", "", "", "", "", "", "", "", "", "", ""]);
   }
 
-  return rows;
+  return appendPstFldcColumns(rows, fldcVerifications, normalizedDepot);
 }
 
 function buildPSTFormRows() {
@@ -27811,11 +27817,11 @@ function buildPSTFormRows() {
 }
 
 /** @param {string | PSTCompletedByNames} completedBy */
-function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = "") {
+function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = "", fldcVerifications = {}) {
   const normalizedDepot = depotFilter === "west" || depotFilter === "east" ? depotFilter : "";
-  const combinedRl3Rows = buildPSTExportRows(logLines, completedBy, "", false);
-  const westRl3Rows = buildPSTExportRows(logLines, completedBy, "west", true);
-  const eastRl3Rows = buildPSTExportRows(logLines, completedBy, "east", true);
+  const combinedRl3Rows = buildPSTExportRows(logLines, completedBy, "", false, fldcVerifications);
+  const westRl3Rows = buildPSTExportRows(logLines, completedBy, "west", true, fldcVerifications);
+  const eastRl3Rows = buildPSTExportRows(logLines, completedBy, "east", true, fldcVerifications);
   const formRows = buildPSTFormRows();
 
   const buildRL3RowStyles = (rows) => rows.map((_, index) => {
@@ -27829,8 +27835,8 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = ""
     rows,
     rowStyles: buildRL3RowStyles(rows),
     rowHeights: rows.map((_, index) => index === 0 ? 15.95 : 15),
-    colWidths: [13, 16, 18.28515625, 14, 14, 22, 21.42578125, 24.42578125, 20.85546875, 38, 38],
-    dimension: `A1:K${rows.length}`,
+    colWidths: [13, 16, 18.28515625, 14, 14, 22, 21.42578125, 24.42578125, 20.85546875, 38, 38, 26, 32],
+    dimension: `A1:M${rows.length}`,
     defaultRowHeight: 12.75,
   });
 
@@ -27883,7 +27889,7 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = ""
 
   if (normalizedDepot) {
     const depotSheetName = normalizedDepot === "west" ? "WEST DEPOT" : "EAST DEPOT";
-    const depotRows = buildPSTExportRows(logLines, completedBy, normalizedDepot, false);
+    const depotRows = buildPSTExportRows(logLines, completedBy, normalizedDepot, false, fldcVerifications);
     const depotRl3Xml = buildRL3WorksheetXml(depotRows);
 
     const workbookXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -27971,9 +27977,9 @@ function buildPSTExcelWorkbook(logLines = [], completedBy = "", depotFilter = ""
 }
 
 /** @param {string | PSTCompletedByNames} completedBy */
-function downloadPSTExcelExport(logLines = [], completedBy = "", depotFilter = "") {
+function downloadPSTExcelExport(logLines = [], completedBy = "", depotFilter = "", fldcVerifications = {}) {
   const normalizedDepot = depotFilter === "west" || depotFilter === "east" ? depotFilter : "";
-  const xlsxBytes = buildPSTExcelWorkbook(logLines, completedBy, normalizedDepot);
+  const xlsxBytes = buildPSTExcelWorkbook(logLines, completedBy, normalizedDepot, fldcVerifications);
   const blob = new Blob([xlsxBytes], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });

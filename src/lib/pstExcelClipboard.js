@@ -1,6 +1,6 @@
 export const PST_EXCEL_COPY_FIRST_ROW = 3;
 export const PST_EXCEL_COPY_LAST_ROW = 49;
-export const PST_EXCEL_COPY_COLUMN_COUNT = 11;
+export const PST_EXCEL_COPY_COLUMN_COUNT = 13;
 
 function normalizeClipboardCell(value) {
   return String(value ?? "")
