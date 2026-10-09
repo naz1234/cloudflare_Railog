@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { extractRemovalAssignments, imageVehicleToTrainId } from '../functions/lib/removal-image-parser.js';
-import { applyRemovalImageAssignments, removalScanFingerprint } from '../src/lib/removalImageAssignments.js';
+import { applyRemovalImageAssignments, removalScanFingerprint, summarizeRemovalScan } from '../src/lib/removalImageAssignments.js';
 import { createRemovalScanHandler } from '../functions/api/removal-scan.js';
 import { createAuthMiddleware } from '../functions/_middleware.js';
 import { memoryD1 } from './helpers/memory-d1.js';
 import { photographedPairs, trackingTableResult } from './fixtures/removal-tracking-table.js';
+import { screenPhotoPairs, screenPhotoResult, screenWord } from './fixtures/removal-screen-photo.js';
 
 test('reads all 20 photographed assignments without shifting blank TIDs', () => {
   const result = extractRemovalAssignments(trackingTableResult());
@@ -37,6 +38,76 @@ test('positions OCR words under headers when a screen has no detected table', ()
   }] });
   assert.deepEqual(result.rows.map(({ trainId, tid }) => [trainId, tid]), [['01', '226'], ['34', ''], ['25', '222']]);
   assert.equal(result.uncertain, true);
+});
+
+test('screen photo headers can be one OCR line or split words without reading map labels', () => {
+  for (const joined of [false, true]) {
+    const result = extractRemovalAssignments(screenPhotoResult({ joined }));
+    assert.equal(result.rows.length, screenPhotoPairs.length - 1);
+    assert.equal(result.assignedCount, 23);
+    assert.equal(result.partial, false);
+    for (const [vehicleId, tid] of screenPhotoPairs.filter(([vehicle]) => vehicle !== '999')) {
+      assert.deepEqual(result.rows.find((row) => row.vehicleId === vehicleId), {
+        vehicleId, tid, trainId: String(Number(vehicleId) - 300).padStart(2, '0'),
+      });
+    }
+    assert.ok(result.rows.every((row) => row.vehicleId !== 'GATE'));
+  }
+  const table = extractRemovalAssignments(trackingTableResult([['GATE', ''], ['319', '101']]));
+  assert.deepEqual(table.rows, [{ vehicleId: '319', trainId: '19', tid: '101' }]);
+});
+
+test('a cropped screen table uses aligned numeric columns, preserves blanks, and is explicitly partial', () => {
+  const result = extractRemovalAssignments(screenPhotoResult({ cropped: true }));
+  assert.equal(result.partial, true);
+  assert.equal(result.uncertain, true);
+  assert.equal(result.assignedCount, 23);
+  for (const [vehicleId, tid] of screenPhotoPairs.slice(7).filter(([vehicle]) => vehicle !== '999')) {
+    assert.equal(result.rows.find((row) => row.vehicleId === vehicleId)?.tid, tid);
+  }
+  assert.equal(result.rows.find((row) => row.trainId === '19').tid, '101');
+  assert.equal(result.rows.find((row) => row.trainId === '13').tid, '201');
+  assert.equal(result.rows.find((row) => row.trainId === '02').tid, '302');
+});
+
+test('cropped inference rejects sparse, non-table, ambiguous, malformed and misaligned OCR', () => {
+  const sparse = { pages: [{ words: [screenWord('319', 150, 100), screenWord('101', 340, 100), screenWord('STATION', 540, 100)] }] };
+  assert.throws(() => extractRemovalAssignments(sparse), /columns were not found/);
+  const noLocations = screenPhotoResult({ cropped: true });
+  noLocations.pages[0].words = noLocations.pages[0].words.filter((word) => !/STATION|Unknown/.test(word.content));
+  assert.throws(() => extractRemovalAssignments(noLocations), /columns were not found/);
+  for (const badTid of ['1O1', 'I01', 'TBD']) {
+    const malformed = screenPhotoResult({ cropped: true });
+    malformed.pages[0].words.find((word) => word.content === '101').content = badTid;
+    assert.throws(() => extractRemovalAssignments(malformed), /Could not read/);
+  }
+  const orphan = screenPhotoResult({ cropped: true });
+  const tid = orphan.pages[0].words.find((word) => word.content === '101');
+  tid.polygon = tid.polygon.map((value, index) => index % 2 ? value + 12 : value);
+  assert.throws(() => extractRemovalAssignments(orphan), /do not align/);
+  const ambiguous = screenPhotoResult({ cropped: true });
+  ambiguous.pages[0].words.push(...screenPhotoResult({ cropped: true }).pages[0].words.map((word) => ({
+    ...word, polygon: word.polygon.map((value, index) => index % 2 ? value : value + 1000),
+  })));
+  assert.throws(() => extractRemovalAssignments(ambiguous), /More than one possible/);
+});
+
+test('partial photo updates never clear unseen TIDs or create duplicate train assignments', () => {
+  const state = { rows: {
+    west: [{ tid: '101', trainId: '42', timing: '09:05', remark: 'old' }, { tid: '102', trainId: '09', timing: '09:10', remark: 'keep' }],
+    east: [{ tid: '201', trainId: '13', timing: '09:15' }],
+  } };
+  const rows = [{ trainId: '19', tid: '101' }], options = { partial: true };
+  const next = applyRemovalImageAssignments(state, rows, options);
+  assert.equal(next.rows.west[0].trainId, '19');
+  assert.equal(next.rows.west[0].timing, '09:05');
+  assert.equal(next.rows.west[0].remark, '');
+  assert.equal(next.rows.west[1], state.rows.west[1]);
+  assert.equal(next.rows.east[0], state.rows.east[0]);
+  assert.equal(summarizeRemovalScan([...state.rows.west, ...state.rows.east], rows, options).cleared, 0);
+  const withOutsideTid = applyRemovalImageAssignments(state, [...rows, { trainId: '09', tid: '302' }], options);
+  assert.equal(withOutsideTid.rows.west[1], state.rows.west[1]);
+  assert.throws(() => applyRemovalImageAssignments(state, [{ trainId: '09', tid: '101' }], options), /outside this cropped photo/);
 });
 
 test('replacement preserves timetable rows, times and other periods while clearing stale trains and remarks', () => {
@@ -71,7 +142,7 @@ function setup(readImage = async () => trackingTableResult()) {
     });
     return { status: response.status, ...await response.json() };
   };
-  const create = () => request({ method: 'POST', body: { target: { period: '7pm', timetable: 'Weekday', rows: [{ tid: '226', trainId: '42' }, { tid: '101', trainId: '34' }] } } });
+  const create = (supportsPartial = false) => request({ method: 'POST', body: { target: { supportsPartial, period: '7pm', timetable: 'Weekday', rows: [{ tid: '226', trainId: '42' }, { tid: '101', trainId: '34' }] } } });
   const image = () => { const form = new FormData(); form.append('image', new Blob(['photo'], { type: 'image/png' }), 'screen.png'); return form; };
   return { db, request, create, image, expire: () => { time += 16 * 60 * 1000; } };
 }
@@ -96,6 +167,25 @@ test('paired phone reads, reviews, confirms and computer acknowledges a one-use 
     assert.equal(receipt.extraction, undefined);
     assert.equal((await f.request({ ...phone, method: 'POST', body: f.image() })).status, 410);
     assert.equal((await f.request({ ...phone, method: 'PATCH', body: { action: 'confirm', reviewed: true } })).status, 410);
+  } finally { f.db.close(); }
+});
+
+test('cropped scans require an updated computer and explicit partial-photo review', async () => {
+  const f = setup(async () => screenPhotoResult({ cropped: true }));
+  try {
+    const oldSession = await f.create();
+    const oldRead = await f.request({ id: oldSession.id, method: 'POST', body: f.image() });
+    assert.equal(oldRead.status, 409);
+    assert.match(oldRead.error, /refresh Removal summary/);
+    assert.equal((await f.request({ id: oldSession.id })).extraction, null);
+    const session = await f.create(true);
+    const phone = { id: session.id, token: session.token, email: '' };
+    const read = await f.request({ ...phone, method: 'POST', body: f.image() });
+    assert.equal(read.status, 'review');
+    assert.equal(read.extraction.partial, true);
+    assert.equal((await f.request({ ...phone, method: 'PATCH', body: { action: 'confirm', reviewed: true } })).status, 409);
+    assert.equal((await f.request({ ...phone, method: 'PATCH', body: { action: 'confirm', reviewed: true, partial: true } })).status, 'ready');
+    assert.equal((await f.request({ id: session.id })).extraction.partial, true);
   } finally { f.db.close(); }
 });
 

@@ -8079,6 +8079,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
     return {
       fingerprint: removalScanFingerprint(state, timetableKey),
       target: {
+        supportsPartial: true,
         period: state.selectedPreset?.west || "9am",
         timetable: getTimetableTypeLabel(activeTimetableType),
         rows: ["west", "east"].flatMap((depot) => (state.rows?.[depot] || []).map(({ trainId, tid }) => ({ trainId, tid }))),
@@ -8086,7 +8087,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
     };
   };
 
-  const applyRemovalScan = async (assignments, snapshot, scanId) => {
+  const applyRemovalScan = async (assignments, snapshot, scanId, options) => {
     if (trainRemSavingRef.current || trainRemEditingRef.current) {
       throw new Error("Finish the current edit and wait for it to save, then retry this update.");
     }
@@ -8094,7 +8095,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
       if (getRemovalScanTarget().fingerprint !== snapshot.fingerprint) {
         throw new Error("The timetable or Removal summary changed while scanning. Close this window and open a new QR.");
       }
-      updateTrainRemState((prev) => applyRemovalImageAssignments(prev, assignments));
+      updateTrainRemState((prev) => applyRemovalImageAssignments(prev, assignments, options));
       trainRemAppliedScanRef.current = { id: scanId, fingerprint: getRemovalScanTarget().fingerprint };
     } else if (trainRemAppliedScanRef.current.fingerprint !== getRemovalScanTarget().fingerprint) {
       throw new Error("Removal summary changed after the scan. Close this window and open a new QR.");

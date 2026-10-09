@@ -58,7 +58,7 @@ function validateTarget(value) {
     return { tid, trainId };
   });
   if (!rows.some((row) => row.tid)) fail('This period has no TIDs to match.');
-  return { period: String(value.period || '').slice(0, 32), timetable: String(value.timetable || '').slice(0, 40), rows };
+  return { period: String(value.period || '').slice(0, 32), timetable: String(value.timetable || '').slice(0, 40), rows, supportsPartial: value.supportsPartial === true };
 }
 
 export function createRemovalScanHandler({ readImage = runAzureLayout, now = Date.now } = {}) {
@@ -115,6 +115,7 @@ export function createRemovalScanHandler({ readImage = runAzureLayout, now = Dat
           return json({ success: true, status: 'applied' });
         }
         if (body.action !== 'confirm' || body.reviewed !== true || session.status !== 'review' || !extraction) fail('Review the detected table before updating.', 409);
+        if (extraction.partial && body.partial !== true) fail('Refresh this scanner page and review the cropped-table warning before updating.', 409);
         const tids = new Set(target.rows.map((row) => row.tid));
         if (extraction.assignedCount && !extraction.rows.some((row) => row.tid && tids.has(row.tid))) {
           fail('None of these TIDs match the selected period. Choose the correct timetable on the computer.');
@@ -137,6 +138,7 @@ export function createRemovalScanHandler({ readImage = runAzureLayout, now = Dat
       try {
         const result = await readImage({ env, mediaType, arrayBuffer: await file.arrayBuffer() });
         const parsed = extractRemovalAssignments(result);
+        if (parsed.partial && !target.supportsPartial) fail('For a cropped photo, refresh Removal summary on the computer and open a new QR. Or take a photo including both column headers.', 409);
         const saved = await db.prepare("UPDATE removal_scan_sessions SET status = 'review', extraction_json = ? WHERE id = ? AND status = 'reading' AND expires_at > ?")
           .bind(JSON.stringify(parsed), id, now()).run();
         if (!saved.meta.changes) fail('This scan was closed or expired. Open QR again.', 410);
