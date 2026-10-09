@@ -182,3 +182,17 @@ html[data-app-theme] .theme-stabling-section[data-stabling-design="compact-slate
   height: 32px;
   font-size: 12px;
 }
+
+/* Hide the rail, not overflow: smaller screens can still reach every block. */
+.theme-stabling-section .theme-stabling-table-scroll {
+  scrollbar-width: none;
+}
+
+.theme-stabling-section .theme-stabling-table-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.theme-stabling-section .theme-stabling-table-scroll:focus-visible {
+  outline: 2px solid var(--stabling-focus);
+  outline-offset: 2px;
+}
