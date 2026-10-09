@@ -18072,14 +18072,6 @@ export default function DepotStablingPage() {
     }
   }, [activeTimetable]);
 
-  const handleHeaderHorizontalScroll = useCallback((direction) => {
-    const scrollTarget = stablingHorizontalScrollRef.current || mainContentScrollRef.current;
-    if (!scrollTarget) return;
-
-    const nextLeft = direction === "left" ? 0 : scrollTarget.scrollWidth;
-    scrollTarget.scrollTo({ left: nextLeft, behavior: "smooth" });
-  }, []);
-
   const handleHeaderVerticalScroll = useCallback((direction) => {
     const mainScrollTarget = mainContentScrollRef.current;
     const scrollTarget = mainScrollTarget && mainScrollTarget.scrollHeight > mainScrollTarget.clientHeight + 1
@@ -22096,32 +22088,6 @@ export default function DepotStablingPage() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleHeaderHorizontalScroll("left")}
-              title="Go to far left"
-              aria-label="Go to far left"
-              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#2b4f6b] bg-[#071828] px-3 text-[10px] font-black uppercase tracking-wide text-[#8bd5ff] shadow-[0_0_14px_rgba(79,142,247,0.18)] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-95"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5" />
-                <path d="M12 5l-7 7 7 7" />
-              </svg>
-              Left
-            </button>
-            <button
-              type="button"
-              onClick={() => handleHeaderHorizontalScroll("right")}
-              title="Go to far right"
-              aria-label="Go to far right"
-              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#2b4f6b] bg-[#071828] px-3 text-[10px] font-black uppercase tracking-wide text-[#8bd5ff] shadow-[0_0_14px_rgba(79,142,247,0.18)] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-95"
-            >
-              Right
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14" />
-                <path d="M12 5l7 7-7 7" />
-              </svg>
-            </button>
             <button
               type="button"
               onClick={() => handleHeaderVerticalScroll("up")}

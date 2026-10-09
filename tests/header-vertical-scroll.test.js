@@ -50,7 +50,7 @@ test("vertical controls fall back to documentElement when scrollingElement is un
   assert.doesNotThrow(() => handler(null, null, null)("up"));
 });
 
-test("both new buttons keep the existing header-button style and accessible labels", () => {
+test("only Up and Down remain with the matching style and accessible labels", () => {
   for (const [direction, title] of [["up", "top"], ["down", "bottom"]]) {
     const button = Array.from(source.matchAll(/<button\b[^]*?<\/button>/g), (match) => match[0])
       .find((markup) => markup.includes(`onClick={() => handleHeaderVerticalScroll("${direction}")}`));
@@ -59,6 +59,6 @@ test("both new buttons keep the existing header-button style and accessible labe
     assert.match(button, /rounded-lg border border-\[#2b4f6b\] bg-\[#071828\]/);
     assert.match(button, /shadow-\[0_0_14px_rgba\(79,142,247,0\.18\)\]/);
   }
-  assert.match(source, /onClick=\{\(\) => handleHeaderHorizontalScroll\("left"\)\}/);
-  assert.match(source, /onClick=\{\(\) => handleHeaderHorizontalScroll\("right"\)\}/);
+  assert.doesNotMatch(source, /handleHeaderHorizontalScroll/);
+  assert.doesNotMatch(source, /Go to far (?:left|right)/);
 });
