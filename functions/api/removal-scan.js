@@ -1,5 +1,6 @@
 import { isSameOriginBrowserRequest, mediaTypeForImage, runAzureLayout } from './maintenance-image.js';
 import { extractRemovalAssignments } from '../lib/removal-image-parser.js';
+import { inspectRemovalScanReview } from '../../src/lib/removalScanReview.js';
 import { REMOVAL_SCAN_ID, REMOVAL_SCAN_TOKEN } from '../lib/removal-scan-access.js';
 
 const TTL_MS = 15 * 60 * 1000;
@@ -58,7 +59,7 @@ function validateTarget(value) {
     return { tid, trainId };
   });
   if (!rows.some((row) => row.tid)) fail('This period has no TIDs to match.');
-  return { period: String(value.period || '').slice(0, 32), timetable: String(value.timetable || '').slice(0, 40), rows, supportsPartial: value.supportsPartial === true };
+  return { period: String(value.period || '').slice(0, 32), timetable: String(value.timetable || '').slice(0, 40), rows, supportsPartial: value.supportsPartial === true, supportsCorrections: value.supportsCorrections === true };
 }
 
 export function createRemovalScanHandler({ readImage = runAzureLayout, now = Date.now } = {}) {
@@ -116,13 +117,25 @@ export function createRemovalScanHandler({ readImage = runAzureLayout, now = Dat
         }
         if (body.action !== 'confirm' || body.reviewed !== true || session.status !== 'review' || !extraction) fail('Review the detected table before updating.', 409);
         if (extraction.partial && body.partial !== true) fail('Refresh this scanner page and review the cropped-table warning before updating.', 409);
+        if (target.supportsCorrections && body.rows === undefined) fail('Refresh the scanner page and review the current Vehicle / Tracking ID fields before updating.', 409);
+        let reviewedExtraction = extraction;
+        if (body.rows !== undefined) {
+          if (!target.supportsCorrections || body.reviewId !== extraction.reviewId) fail('The review changed. Refresh the scanner and check the latest photo.', 409);
+          if (!Array.isArray(body.rows) || body.rows.length !== extraction.rows.length
+            || body.rows.some((row) => typeof row?.vehicleId !== 'string' || typeof row?.tid !== 'string' || row.vehicleId.length > 16 || row.tid.length > 16)) fail('Correct each detected row without adding or removing rows.');
+          const review = inspectRemovalScanReview(body.rows);
+          if (!review.valid) fail(review.errors.find(Boolean));
+          reviewedExtraction = { ...extraction, rows: review.rows, assignedCount: review.assignedCount, requiresCorrection: false };
+        }
+        if (reviewedExtraction.requiresCorrection) fail('Correct the highlighted vehicle / Tracking IDs before updating.', 409);
         const tids = new Set(target.rows.map((row) => row.tid));
-        if (extraction.assignedCount && !extraction.rows.some((row) => row.tid && tids.has(row.tid))) {
+        if (reviewedExtraction.assignedCount && !reviewedExtraction.rows.some((row) => row.tid && tids.has(row.tid))) {
           fail('None of these TIDs match the selected period. Choose the correct timetable on the computer.');
         }
-        const changed = await db.prepare("UPDATE removal_scan_sessions SET status = 'ready' WHERE id = ? AND status = 'review' AND expires_at > ?").bind(id, now()).run();
+        const changed = await db.prepare("UPDATE removal_scan_sessions SET status = 'ready', extraction_json = ? WHERE id = ? AND status = 'review' AND expires_at > ? AND extraction_json = ?")
+          .bind(JSON.stringify(reviewedExtraction), id, now(), session.extraction_json).run();
         if (!changed.meta.changes) fail('The scan changed or expired. Open QR again.', 409);
-        return json({ success: true, status: 'ready' });
+        return json({ success: true, status: 'ready', extraction: reviewedExtraction });
       }
       if (!env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || !env.AZURE_DOCUMENT_INTELLIGENCE_KEY) fail('Azure OCR is not configured. Use the same Azure secrets as Maintenance Req. Image.', 503);
       if (!['waiting', 'review', 'error'].includes(session.status)) fail('This scan is already processing or complete.', 409);
@@ -137,7 +150,8 @@ export function createRemovalScanHandler({ readImage = runAzureLayout, now = Dat
       if (!claimed.meta.changes) fail('Another image is already being read. Please wait.', 409);
       try {
         const result = await readImage({ env, mediaType, arrayBuffer: await file.arrayBuffer() });
-        const parsed = extractRemovalAssignments(result);
+        const parsed = extractRemovalAssignments(result, { allowCorrections: target.supportsCorrections });
+        parsed.reviewId = crypto.randomUUID();
         if (parsed.partial && !target.supportsPartial) fail('For a cropped photo, refresh Removal summary on the computer and open a new QR. Or take a photo including both column headers.', 409);
         const saved = await db.prepare("UPDATE removal_scan_sessions SET status = 'review', extraction_json = ? WHERE id = ? AND status = 'reading' AND expires_at > ?")
           .bind(JSON.stringify(parsed), id, now()).run();

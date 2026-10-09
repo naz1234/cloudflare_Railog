@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { Camera, Check, Image, Loader2, QrCode, Upload, X } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { summarizeRemovalScan } from '@/lib/removalImageAssignments';
+import { inspectRemovalScanReview } from '@/lib/removalScanReview';
 import ActionTooltip from '@/components/ActionTooltip';
 import './RemovalScan.css';
 
@@ -60,6 +61,9 @@ export function RemovalScanUploader({ id, token }) {
   const [reviewed, setReviewed] = useState(false);
   const [fileName, setFileName] = useState('');
   const [unavailable, setUnavailable] = useState(false);
+  const [draft, setDraft] = useState(null);
+
+  useEffect(() => { setReviewed(false); }, [session?.extraction?.reviewId]);
 
   useEffect(() => {
     let stopped = false, timer;
@@ -83,7 +87,7 @@ export function RemovalScanUploader({ id, token }) {
     if (!file || busy) return;
     uploadActiveRef.current = true;
     mutationRef.current += 1;
-    setBusy(true); setError(''); setReviewed(false); setFileName(file.name);
+    setBusy(true); setError(''); setReviewed(false); setDraft(null); setFileName(file.name);
     setSession((current) => ({ ...current, status: 'reading', extraction: null }));
     try {
       const form = new FormData();
@@ -103,18 +107,29 @@ export function RemovalScanUploader({ id, token }) {
   };
 
   const confirm = async () => {
+    if (!reviewed || !review.valid) return;
     mutationRef.current += 1;
     uploadActiveRef.current = true;
     setBusy(true); setError('');
     try {
-      const result = await removalScanRequest(id, token, { method: 'PATCH', body: JSON.stringify({ action: 'confirm', reviewed, partial: session?.extraction?.partial === true }) });
+      const result = await removalScanRequest(id, token, { method: 'PATCH', body: JSON.stringify({
+        action: 'confirm', reviewed, partial: extraction?.partial === true,
+        ...(editable ? { reviewId: extraction.reviewId, rows: review.rows.map(({ vehicleId, tid }) => ({ vehicleId, tid })) } : {}),
+      }) });
       setSession((current) => ({ ...current, ...result }));
     } catch (err) { setError(err.message); }
     finally { uploadActiveRef.current = false; setBusy(false); }
   };
 
   const extraction = session?.extraction;
-  const summary = extraction ? summarizeRemovalScan(session.target.rows, extraction.rows, extraction) : null;
+  const editable = session?.target?.supportsCorrections === true;
+  const values = extraction ? draft && draft.reviewId === extraction.reviewId ? draft.rows : extraction.rows : [];
+  const review = inspectRemovalScanReview(values);
+  const summary = extraction && review.valid ? summarizeRemovalScan(session.target.rows, review.rows, extraction) : null;
+  const editRow = (index, field, value) => {
+    setDraft({ reviewId: extraction.reviewId, rows: values.map((row, rowIndex) => rowIndex === index ? { ...row, [field]: value } : row) });
+    setReviewed(false); setError('');
+  };
   const finished = ['applied', 'cancelled', 'ready'].includes(session?.status);
   return <div className="removal-scan-surface removal-scan-uploader">
     {session?.target && <p className="removal-scan-period">{session.target.timetable} · {session.target.period}</p>}
@@ -132,15 +147,27 @@ export function RemovalScanUploader({ id, token }) {
       <div className="removal-scan-review-heading"><h3>Review detected trains</h3><span>{extraction.rows.length} read</span></div>
       {fileName && <p className="removal-scan-filename">{fileName}</p>}
       {extraction.uncertain && <p className="removal-scan-warning">Some text may be unclear. Check every detected number against your photo.</p>}
+      {editable && <p className={review.valid ? 'removal-scan-muted' : 'removal-scan-warning'}>{review.valid ? 'You can edit Vehicle and Tracking ID values below before confirming.' : 'Correct the highlighted numbers against your photo. The scanner does not guess unreadable digits.'}</p>}
       {extraction.partial && <p className="removal-scan-warning">Cropped table: only matching TIDs shown in this photo will update. Assignments outside the photo will stay unchanged.</p>}
       <div className="removal-scan-table"><table><thead><tr><th>Vehicle</th><th>Train</th><th>Tracking ID</th></tr></thead><tbody>
-        {extraction.rows.map((row) => <tr key={row.trainId}><td>{row.vehicleId}</td><td>{row.trainId}</td><td>{row.tid || <span className="removal-scan-muted">No TID</span>}</td></tr>)}
+        {values.map((row, index) => <tr key={index}>
+          <td>{editable ? <>
+            <input className="removal-scan-number" aria-label={`Vehicle ID row ${index + 1}`} aria-invalid={Boolean(review.errors[index])} inputMode="numeric" maxLength={8} value={row.vehicleId} disabled={busy || unavailable} onChange={(event) => editRow(index, 'vehicleId', event.target.value)} />
+            {row.vehicleId !== extraction.rows[index].vehicleId && <span className="removal-scan-original">OCR: {extraction.rows[index].vehicleId}</span>}
+            {review.errors[index] && <span className="removal-scan-row-error">{review.errors[index]}</span>}
+          </> : row.vehicleId}</td>
+          <td>{review.rows[index]?.trainId || '—'}</td>
+          <td>{editable ? <>
+            <input className="removal-scan-number" aria-label={`Tracking ID row ${index + 1}`} aria-invalid={Boolean(review.errors[index])} inputMode="numeric" maxLength={6} placeholder="No TID" value={row.tid} disabled={busy || unavailable} onChange={(event) => editRow(index, 'tid', event.target.value)} />
+            {row.tid !== extraction.rows[index].tid && <span className="removal-scan-original">OCR: {extraction.rows[index].tid || 'No TID'}</span>}
+          </> : row.tid || <span className="removal-scan-muted">No TID</span>}</td>
+        </tr>)}
       </tbody></table></div>
-      <p className="removal-scan-impact"><strong>{summary.matched}</strong> TIDs matched · <strong>{summary.cleared}</strong> existing train assignments will clear.</p>
+      {summary && <p className="removal-scan-impact"><strong>{summary.matched}</strong> TIDs matched · <strong>{summary.cleared}</strong> existing train assignments will clear.</p>}
       <p className="removal-scan-muted">{extraction.partial ? 'TIDs missing from this cropped picture will stay unchanged.' : 'TIDs missing from this picture will have their train numbers cleared in this period.'} Timetable TIDs and times stay in place.</p>
-      {summary.unmatched.length > 0 && <p className="removal-scan-warning">TIDs outside this period: {summary.unmatched.join(', ')}.</p>}
+      {summary?.unmatched.length > 0 && <p className="removal-scan-warning">TIDs outside this period: {summary.unmatched.join(', ')}.</p>}
       <label className="removal-scan-confirm"><input type="checkbox" checked={reviewed} onChange={(event) => setReviewed(event.target.checked)} />{extraction.partial ? 'I checked every detected vehicle and Tracking ID against the photo.' : 'I checked the numbers and included the complete table.'}</label>
-      <button className="removal-scan-primary" type="button" disabled={!reviewed || busy || unavailable} onClick={confirm}><Check size={17} />Update Removal summary</button>
+      <button className="removal-scan-primary" type="button" disabled={!reviewed || !review.valid || busy || unavailable} onClick={confirm}><Check size={17} />Update Removal summary</button>
     </>}
     {session?.status === 'ready' && <p role="status" className="removal-scan-status"><Loader2 className="animate-spin" size={18} />Waiting for the computer to save the update. Keep its QR window open.</p>}
     {session?.status === 'applied' && <p role="status" className="removal-scan-success"><Check size={20} />Removal summary updated and saved. You can close this page.</p>}

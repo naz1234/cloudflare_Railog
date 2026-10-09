@@ -10,6 +10,12 @@ A headerless crop is accepted only when at least three repeated 3xx vehicles, a 
 
 Partial scans require a newly created QR from the updated computer page. Older cached dashboard or phone clients cannot confirm a cropped scan and accidentally apply the old clear-missing behavior. Refresh Removal summary on the computer and generate a new QR after upgrading.
 
+### Correcting an OCR digit
+
+The phone review has editable Vehicle and Tracking ID fields. A misread such as `833 / 104` remains raw, shows an invalid train, and blocks confirmation; it is never silently changed to `333`. The user can type `333`, see train `33`, and review the remaining rows before confirming. Original OCR values remain visible beside edited fields. Editing resets the review checkbox, and polling does not overwrite the local edits for the same photo.
+
+The server independently validates every submitted digit, row count, duplicate train/TID and timetable match. It derives train IDs from Vehicle IDs rather than trusting client-supplied train numbers. Each upload has a unique review ID; confirmation and its atomic D1 update must match the current extraction, so edits to an older photo cannot confirm a replacement image. The new editable review requires a fresh QR created by the updated computer page; older sessions retain strict OCR validation.
+
 ## Access boundary
 
 - Only GET/HEAD for `/removal-scan`, `/removal-scan.html`, `/removal-scan-assets/removal-scan.js` and `/removal-scan-assets/removal-scan.css` are public static requests. No wildcard asset or application-root exemption is used. The standalone build imports no login provider, staff presence or dashboard client.

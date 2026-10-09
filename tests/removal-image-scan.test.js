@@ -7,6 +7,7 @@ import { createAuthMiddleware } from '../functions/_middleware.js';
 import { memoryD1 } from './helpers/memory-d1.js';
 import { photographedPairs, trackingTableResult } from './fixtures/removal-tracking-table.js';
 import { screenPhotoPairs, screenPhotoResult, screenWord } from './fixtures/removal-screen-photo.js';
+import { inspectRemovalScanReview } from '../src/lib/removalScanReview.js';
 
 test('reads all 20 photographed assignments without shifting blank TIDs', () => {
   const result = extractRemovalAssignments(trackingTableResult());
@@ -110,6 +111,33 @@ test('partial photo updates never clear unseen TIDs or create duplicate train as
   assert.throws(() => applyRemovalImageAssignments(state, [{ trainId: '09', tid: '101' }], options), /outside this cropped photo/);
 });
 
+test('833 / 104 remains raw and invalid until the user changes the vehicle to 333', () => {
+  const result = screenPhotoResult({ cropped: true });
+  const word = result.pages[0].words.find((item) => item.content === '327');
+  word.content = '833';
+  // The latest photo does not contain the older 333 / 333 depot row.
+  result.pages[0].words = result.pages[0].words.filter((item) => item.polygon[1] !== 110 + 30 * 25);
+  const parsed = extractRemovalAssignments(result, { allowCorrections: true });
+  const badRow = parsed.rows.find((row) => row.vehicleId === '833');
+  assert.deepEqual(badRow, { vehicleId: '833', trainId: '', tid: '104' });
+  assert.equal(parsed.requiresCorrection, true);
+  assert.equal(parsed.partial, true);
+  const corrected = inspectRemovalScanReview(parsed.rows.map((row) => row === badRow ? { ...row, vehicleId: '333', trainId: '99' } : row));
+  assert.equal(corrected.valid, true);
+  assert.equal(corrected.rows.find((row) => row.vehicleId === '333').trainId, '33');
+  assert.throws(() => extractRemovalAssignments(result), /vehicle 833/);
+});
+
+test('review validates all raw digits and duplicates without trusting a supplied train number', () => {
+  for (const rows of [[], [{ vehicleId: '833', tid: '104' }], [{ vehicleId: '333', tid: 'I04' }],
+    [{ vehicleId: '333', tid: '104' }, { vehicleId: '333', tid: '105' }],
+    [{ vehicleId: '333', tid: '104' }, { vehicleId: '319', tid: '104' }]]) {
+    assert.equal(inspectRemovalScanReview(rows).valid, false);
+  }
+  assert.deepEqual(inspectRemovalScanReview([{ vehicleId: '333', trainId: '99', tid: '104' }, { vehicleId: '319', tid: '' }]).rows,
+    [{ vehicleId: '333', trainId: '33', tid: '104' }, { vehicleId: '319', trainId: '19', tid: '' }]);
+});
+
 test('replacement preserves timetable rows, times and other periods while clearing stale trains and remarks', () => {
   const state = { selectedPreset: { west: '7pm', east: '7pm' }, presetRows: { west: { '9am': ['unchanged'] } }, rows: {
     west: [{ tid: '226', trainId: '42', timing: '19:20', remark: 'Old request' }, { tid: '101', trainId: '34', timing: '19:30', remark: 'Old' }],
@@ -142,7 +170,7 @@ function setup(readImage = async () => trackingTableResult()) {
     });
     return { status: response.status, ...await response.json() };
   };
-  const create = (supportsPartial = false) => request({ method: 'POST', body: { target: { supportsPartial, period: '7pm', timetable: 'Weekday', rows: [{ tid: '226', trainId: '42' }, { tid: '101', trainId: '34' }] } } });
+  const create = (supportsPartial = false, supportsCorrections = false) => request({ method: 'POST', body: { target: { supportsPartial, supportsCorrections, period: '7pm', timetable: 'Weekday', rows: [{ tid: '226', trainId: '42' }, { tid: '101', trainId: '34' }] } } });
   const image = () => { const form = new FormData(); form.append('image', new Blob(['photo'], { type: 'image/png' }), 'screen.png'); return form; };
   return { db, request, create, image, expire: () => { time += 16 * 60 * 1000; } };
 }
@@ -186,6 +214,50 @@ test('cropped scans require an updated computer and explicit partial-photo revie
     assert.equal((await f.request({ ...phone, method: 'PATCH', body: { action: 'confirm', reviewed: true } })).status, 409);
     assert.equal((await f.request({ ...phone, method: 'PATCH', body: { action: 'confirm', reviewed: true, partial: true } })).status, 'ready');
     assert.equal((await f.request({ id: session.id })).extraction.partial, true);
+  } finally { f.db.close(); }
+});
+
+test('the phone must submit valid reviewed corrections before an OCR error can become ready', async () => {
+  const f = setup(async () => trackingTableResult([['319', '101'], ['833', '104']]));
+  try {
+    const oldSession = await f.create(true);
+    assert.equal((await f.request({ id: oldSession.id, method: 'POST', body: f.image() })).status, 422);
+    const session = await f.create(true, true);
+    const phone = { id: session.id, token: session.token, email: '' };
+    const read = await f.request({ ...phone, method: 'POST', body: f.image() });
+    assert.equal(read.status, 'review');
+    assert.equal(read.extraction.requiresCorrection, true);
+    assert.equal(read.extraction.rows[1].vehicleId, '833');
+    const body = { action: 'confirm', reviewed: true, reviewId: read.extraction.reviewId };
+    assert.equal((await f.request({ ...phone, method: 'PATCH', body })).status, 409);
+    assert.equal((await f.request({ ...phone, method: 'PATCH', body: { ...body, rows: read.extraction.rows } })).status, 400);
+    const rows = [{ vehicleId: '319', tid: '101' }, { vehicleId: '333', tid: '104', trainId: '99' }];
+    assert.equal((await f.request({ ...phone, method: 'PATCH', body: { ...body, reviewed: false, rows } })).status, 409);
+    assert.equal((await f.request({ ...phone, method: 'PATCH', body: { ...body, reviewId: 'old-photo', rows } })).status, 409);
+    assert.equal((await f.request({ ...phone, method: 'PATCH', body: { ...body, rows: rows.slice(0, 1) } })).status, 400);
+    assert.equal((await f.request({ ...phone, method: 'PATCH', body: { ...body, rows: [rows[0], rows[0]] } })).status, 400);
+    const confirmed = await f.request({ ...phone, method: 'PATCH', body: { ...body, rows } });
+    assert.equal(confirmed.status, 'ready');
+    assert.equal(confirmed.extraction.requiresCorrection, false);
+    const saved = await f.request({ id: session.id });
+    assert.deepEqual(saved.extraction.rows[1], { vehicleId: '333', trainId: '33', tid: '104' });
+    assert.equal((await f.request({ ...phone, method: 'PATCH', body: { ...body, rows } })).status, 409);
+  } finally { f.db.close(); }
+});
+
+test('edited rows from an earlier photo cannot confirm a replacement upload', async () => {
+  const f = setup(async () => trackingTableResult([['319', '101'], ['833', '104']]));
+  try {
+    const session = await f.create(true, true);
+    const read = await f.request({ id: session.id, method: 'POST', body: f.image() });
+    const newer = await f.request({ id: session.id, method: 'POST', body: f.image() });
+    assert.notEqual(read.extraction.reviewId, newer.extraction.reviewId);
+    const confirm = await f.request({ id: session.id, method: 'PATCH', body: {
+      action: 'confirm', reviewed: true, reviewId: read.extraction.reviewId,
+      rows: [{ vehicleId: '319', tid: '101' }, { vehicleId: '333', tid: '104' }],
+    } });
+    assert.equal(confirm.status, 409);
+    assert.equal((await f.request({ id: session.id })).status, 'review');
   } finally { f.db.close(); }
 });
 
