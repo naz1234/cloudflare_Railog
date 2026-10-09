@@ -8080,6 +8080,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
       fingerprint: removalScanFingerprint(state, timetableKey),
       target: {
         supportsPartial: true,
+        supportsCorrections: true,
         period: state.selectedPreset?.west || "9am",
         timetable: getTimetableTypeLabel(activeTimetableType),
         rows: ["west", "east"].flatMap((depot) => (state.rows?.[depot] || []).map(({ trainId, tid }) => ({ trainId, tid }))),

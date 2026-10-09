@@ -1,16 +1,10 @@
 // Read columns independently: a blank Tracking ID must never shift later rows.
+import { imageVehicleToTrainId, inspectRemovalScanReview } from '../../src/lib/removalScanReview.js';
+export { imageVehicleToTrainId };
 const text = (value) => String(value ?? '').trim().replace(/\s+/g, ' ');
 const heading = (value) => text(value).toUpperCase().replace(/[^A-Z]/g, '');
 const vehicleHeading = (value) => /^(?:VEHICLE|TRAIN)(?:ID|NUMBER|NO)$/.test(heading(value));
 const trackingHeading = (value) => /^(?:TRACKINGID|TID)$/.test(heading(value));
-
-export function imageVehicleToTrainId(value) {
-  const match = text(value).toUpperCase().match(/^(?:T\s*)?(\d{1,3})$/);
-  if (!match) return '';
-  let number = Number(match[1]);
-  if (number >= 301 && number <= 399) number -= 300;
-  return number >= 1 && number <= 99 ? String(number).padStart(2, '0') : '';
-}
 
 function overlaps(a, b) {
   return a.offset < b.offset + b.length && b.offset < a.offset + a.length;
@@ -167,12 +161,25 @@ function croppedRows(result) {
   return { recognized: rows.length > 0, rows, uncertain: true, partial: true };
 }
 
-export function extractRemovalAssignments(result = {}) {
+export function extractRemovalAssignments(result = {}, { allowCorrections = false } = {}) {
   let parsed = tableRows(result);
   if (!parsed.recognized || !parsed.rows.length) parsed = positionedRows(result);
   if (!parsed.recognized || !parsed.rows.length) parsed = croppedRows(result);
   if (!parsed.recognized || !parsed.rows.length) {
     throw new Error('Vehicle ID and Tracking ID columns were not found. Include both headers and the complete table.');
+  }
+  if (allowCorrections) {
+    const seen = new Set();
+    const values = parsed.rows.filter((row) => {
+      if (row.vehicleId === '999' && (!row.tid || /^[-–—]$/.test(row.tid))) return false;
+      const key = JSON.stringify([row.vehicleId, row.tid]);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const review = inspectRemovalScanReview(values);
+    if (!review.rows.length) throw new Error('No valid train table was found.');
+    return { rows: review.rows, uncertain: parsed.uncertain || !review.valid, partial: Boolean(parsed.partial), requiresCorrection: !review.valid, assignedCount: review.assignedCount };
   }
   const rows = [], seenTrains = new Map(), seenTids = new Map();
   for (const row of parsed.rows) {
