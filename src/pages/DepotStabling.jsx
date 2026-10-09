@@ -28794,7 +28794,12 @@ function StablingSection({
         <StablingWashNotice depot="west" message={WEST_DEPOT_WEEKEND_WASH_NOTICE} />
       )}
 
-      <div className="overflow-x-auto rounded-xl">
+      <div
+        className="theme-stabling-table-scroll overflow-x-auto rounded-xl"
+        role="region"
+        aria-label={`${depotLabel} stabling grid`}
+        tabIndex={0}
+      >
         <table className="theme-stabling-table border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 912, maxWidth: 912, width: 912 }}>
           <thead>
             <tr>
