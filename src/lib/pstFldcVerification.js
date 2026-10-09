@@ -18,11 +18,12 @@ function normalizeTrainIds(ids = []) {
   return [...new Set((Array.isArray(ids) ? ids : []).map(normalizePstFldcTrainId).filter(Boolean))].sort();
 }
 
-export function collectPstFldcTrainIds(depot, data = {}) {
-  const prefix = depot === 'west' ? 'WD-' : depot === 'east' ? 'ED-' : '';
-  if (!prefix) return [];
-  return normalizeTrainIds(Object.entries(data).filter(([road]) => road.startsWith(prefix))
-    .flatMap(([, blocks]) => Array.isArray(blocks) ? blocks : []).map((block) => block?.trainId));
+export function collectPstFldcTrainIds(depot, entries = []) {
+  if (!['west', 'east'].includes(depot)) return [];
+  return normalizeTrainIds((Array.isArray(entries) ? entries : [])
+    // The export list includes PST from its first (orange) click as well as confirmed (green) PST.
+    .filter((entry) => entry?.type === 'PST' && entry.depot === depot && String(entry.endTime || '').trim())
+    .map((entry) => entry.trainKey));
 }
 
 export function normalizePstFldcVerification(source = {}) {
@@ -49,7 +50,8 @@ export function isPstFldcVerificationCurrent(source, depot, trainIds, date = get
 
 export function getPstFldcRecordKey(depot, date = getPstFldcDate()) {
   if (!['west', 'east'].includes(depot) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return '';
-  return `pst-fldc-v1:${date}:${depot}`;
+  // Old stabling/fleet attestations do not attest to the active PST export list.
+  return `pst-fldc-v3:${date}:${depot}`;
 }
 
 export function selectPstFldcRecord(records = [], recordKey) {
@@ -76,9 +78,11 @@ export function appendPstFldcColumns(legacyRows, verifications = {}, depotFilter
     if (index === 0) return [...original, ...PST_FLDC_HEADERS];
     if (index === 1) return [...original, 'Yes/No', 'DC Name'];
     const trainId = normalizePstFldcTrainId(original[2]);
+    // Do not verify empty or Train-Prep-only rows, even if an old snapshot contains their ID.
+    const hasPst = Boolean(String(original[5]).trim() && String(original[7]).trim());
     const matches = depots.map((depot) => normalizePstFldcVerification(verifications[depot]))
       .filter((value, position) => value.status === 'Yes' && value.date === date &&
-        value.depot === depots[position] && trainId && value.trainIds.includes(trainId));
+        value.depot === depots[position] && trainId && hasPst && value.trainIds.includes(trainId));
     // Do not silently choose a depot if the same train appears in both snapshots.
     return [...original, matches.length === 1 ? 'Yes' : '', matches.length === 1 ? matches[0].by : ''];
   });

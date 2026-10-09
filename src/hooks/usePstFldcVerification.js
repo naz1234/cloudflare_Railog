@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { base44 } from '../api/base44Client';
 import { collectPstFldcTrainIds, createPstFldcVerification, getPstFldcDate, getPstFldcRecordKey, isPstFldcVerificationCurrent, normalizePstFldcVerification, savePstFldcVerification, selectPstFldcRecord } from '../lib/pstFldcVerification';
 
-const emptyDrafts = () => ({ west: { by: '', verified: false }, east: { by: '', verified: false } });
+const emptyDrafts = () => ({ west: { by: '' }, east: { by: '' } });
 
-export function usePstFldcVerification(westData, eastData) {
+export function usePstFldcVerification(pstEntries = []) {
   const [day, setDay] = useState(getPstFldcDate);
   const [drafts, setDrafts] = useState(emptyDrafts);
   const [verifications, setVerifications] = useState({});
@@ -18,7 +18,7 @@ export function usePstFldcVerification(westData, eastData) {
   const pending = useRef({});
   const refreshRef = useRef(null);
   const entity = base44.entities.PSTTrainPrep;
-  const trainIds = { west: collectPstFldcTrainIds('west', westData), east: collectPstFldcTrainIds('east', eastData) };
+  const trainIds = { west: collectPstFldcTrainIds('west', pstEntries), east: collectPstFldcTrainIds('east', pstEntries) };
 
   useEffect(() => {
     mounted.current = true;
@@ -44,7 +44,7 @@ export function usePstFldcVerification(westData, eastData) {
         setVerifications((current) => ({ ...current, [depot]: value }));
         setLoaded((current) => ({ ...current, [depot]: true }));
         setErrors((current) => ({ ...current, [depot]: '' }));
-        if (!dirty.current[depot]) setDrafts((current) => ({ ...current, [depot]: { by: value?.by || '', verified: value?.status === 'Yes' } }));
+        if (!dirty.current[depot]) setDrafts((current) => ({ ...current, [depot]: { by: value?.by || '' } }));
       } catch {
         if (!cancelled && version === versions.current[depot]) setErrors((current) => ({ ...current, [depot]: 'Unable to load FLDC verification. Retry.' }));
       }
@@ -77,7 +77,7 @@ export function usePstFldcVerification(westData, eastData) {
       pending.current[depot] = null;
       if (confirmed) {
         dirty.current[depot] = false;
-        setDrafts((current) => ({ ...current, [depot]: { by: value.by, verified: true } }));
+        setDrafts((current) => ({ ...current, [depot]: { by: value.by } }));
       }
     } catch {
       if (mounted.current && value.date === getPstFldcDate()) setErrors((current) => ({ ...current, [depot]: 'Unable to save FLDC verification. Retry save.' }));
@@ -94,19 +94,22 @@ export function usePstFldcVerification(westData, eastData) {
     versions.current[depot] += 1;
     setDrafts((current) => ({ ...current, [depot]: next }));
     const previous = verifications[depot];
-    if (previous?.status === 'Yes' && (!next.verified || next.by.trim() !== previous.by)) {
+    if (previous?.status === 'Yes' && next.by.trim() !== previous.by) {
       // A withdrawn/edited confirmation must not reappear after a refresh.
       setVerifications((current) => ({ ...current, [depot]: null }));
       void persist(depot, { depot, date: day, by: '', trainIds: [], status: '' });
     }
   };
 
-  const isConfirmed = (depot) => Boolean(loaded[depot] && !dirty.current[depot] && !errors[depot] && !saving[depot] &&
-    drafts[depot].verified && drafts[depot].by.trim() === verifications[depot]?.by &&
+  const isConfirmed = (depot) => Boolean(loaded[depot] && !dirty.current[depot] && !errors[depot] && !saving[depot] && day === getPstFldcDate() &&
+    drafts[depot].by.trim() === verifications[depot]?.by &&
     isPstFldcVerificationCurrent(verifications[depot], depot, trainIds[depot], day));
 
   const confirm = (depot) => {
-    const value = createPstFldcVerification(depot, trainIds[depot], drafts[depot], day);
+    const today = getPstFldcDate();
+    if (today !== day) { setDay(today); return; }
+    // Clicking this button is the explicit FLDC attestation; a separate checkbox is not required.
+    const value = createPstFldcVerification(depot, trainIds[depot], { by: drafts[depot].by, verified: true }, day);
     if (loaded[depot] && value) void persist(depot, value, true);
   };
 
