@@ -16,11 +16,7 @@ html[data-app-theme='light'] .pst-fldc-checklist {
 .pst-fldc-name { display: flex; flex-direction: column; gap: 5px; font-size: 11px; font-weight: 500; }
 .pst-fldc-name input { height: 34px; width: 100%; border: 1px solid var(--fldc-line); border-radius: 8px; padding: 0 9px; font-size: 12px; background: var(--fldc-input); color: var(--fldc-text); }
 .pst-fldc-name input::placeholder { color: var(--fldc-muted); opacity: .8; }
-.pst-fldc-check { display: flex; gap: 9px; align-items: flex-start; margin: 11px 0; cursor: pointer; }
-.pst-fldc-check input { margin: 2px 0 0; width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--fldc-success); cursor: pointer; }
-.pst-fldc-check strong { display: block; font-size: 12px; font-weight: 600; }
-.pst-fldc-check small { display: block; margin-top: 2px; font-size: 11px; line-height: 1.45; color: var(--fldc-muted); }
-.pst-fldc-confirm { width: 100%; min-height: 33px; display: flex; justify-content: center; align-items: center; gap: 6px; border: 1px solid var(--fldc-accent); border-radius: 8px; background: var(--fldc-accent-bg); color: var(--fldc-accent); font-size: 12px; font-weight: 600; cursor: pointer; }
+.pst-fldc-confirm { width: 100%; min-height: 33px; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 6px; border: 1px solid var(--fldc-accent); border-radius: 8px; background: var(--fldc-accent-bg); color: var(--fldc-accent); font-size: 12px; font-weight: 600; cursor: pointer; }
 .pst-fldc-confirm:disabled { cursor: not-allowed; opacity: .5; }
 .pst-fldc-confirm.is-confirmed { border-color: var(--fldc-success); background: var(--fldc-success-bg); opacity: 1; }
 .pst-fldc-status { margin: 8px 0 0; font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; color: var(--fldc-muted); }
@@ -28,7 +24,7 @@ html[data-app-theme='light'] .pst-fldc-checklist {
 .pst-fldc-error button { border: 1px solid currentColor; border-radius: 6px; padding: 3px 8px; cursor: pointer; }
 .pst-fldc-checklist :is(input, button):focus-visible { outline: 2px solid var(--fldc-accent); outline-offset: 2px; }
 html[data-app-theme] .pst-fldc-checklist :is(h3, span, strong, small, p, input, button) { -webkit-text-fill-color: currentColor !important; }
-html[data-app-theme] .pst-fldc-checklist :is(.pst-fldc-name, .pst-fldc-name input, .pst-fldc-check strong) { color: var(--fldc-text) !important; }
+html[data-app-theme] .pst-fldc-checklist :is(.pst-fldc-name, .pst-fldc-name input) { color: var(--fldc-text) !important; }
 html[data-app-theme] .pst-fldc-checklist :is(.pst-fldc-heading, .pst-fldc-heading svg, .pst-fldc-heading h3, .pst-fldc-heading > span, .pst-fldc-confirm) { color: var(--fldc-accent) !important; }
-html[data-app-theme] .pst-fldc-checklist :is(.pst-fldc-check small, .pst-fldc-status) { color: var(--fldc-muted) !important; }
+html[data-app-theme] .pst-fldc-checklist .pst-fldc-status { color: var(--fldc-muted) !important; }
 html[data-app-theme] .pst-fldc-checklist :is(.pst-fldc-confirm.is-confirmed, .pst-fldc-status.is-confirmed) { color: var(--fldc-success) !important; }

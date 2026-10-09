@@ -15060,7 +15060,6 @@ function PSTTabContent
   const [copyingExcelDepot, setCopyingExcelDepot] = useState("");
   const [copiedExcelDepot, setCopiedExcelDepot] = useState("");
   const safeCompletedByNames = completedByNames || { west: "", east: "" };
-  const fldcController = usePstFldcVerification(westData, eastData);
   const safeAPUMismatchTrainIds = normalizeAPUMismatchTrainIds(apuMismatchTrainIds);
   const sortedLogLines = sortPSTLogLinesByTime(logLines);
   const exportLogLines = buildPSTExportLinesFromVisibleState({
@@ -15070,6 +15069,10 @@ function PSTTabContent
     prepState,
     logLines: sortedLogLines,
   });
+  const fldcController = usePstFldcVerification(exportLogLines.map((entry) => ({
+    ...entry,
+    depot: getPSTDepotFromEntry(entry),
+  })));
 
   const handleCompletedByChange = (depot, value) => {
     onCompletedByChange?.(depot, value);
