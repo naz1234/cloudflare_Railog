@@ -380,6 +380,13 @@ html[data-app-theme="light"] .pst-manual-calculated-time { border-color: #10b981
   }
 }
 
+/* The document canvas is exposed when wide content is scrolled past the shell. */
+html[data-app-theme="dark"],
+html[data-app-theme="dark"] body,
+html[data-app-theme="dark"] #root {
+  background: #071828;
+}
+
 /* L3 DC Template light theme. Dark mode remains the original/default design. */
 html[data-app-theme="light"] {
   color-scheme: light;
