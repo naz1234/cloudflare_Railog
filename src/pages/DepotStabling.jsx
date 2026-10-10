@@ -187,8 +187,27 @@ function isTrainRemPresetMismatchWithTimetable(type = "weekday", presetLabel = "
   return !getValidTrainRemPresetLabelsForTimetableType(type).includes(cleanPreset);
 }
 
+function getTimetableOperationalDate(date = new Date()) {
+  const operationalDate = new Date(date.getTime());
+  // The previous operating day continues until 02:00 on the device clock.
+  if (operationalDate.getHours() < 2) operationalDate.setDate(operationalDate.getDate() - 1);
+  return operationalDate;
+}
+
+function getTimetableOperationalDayKey(date = new Date()) {
+  const operationalDate = getTimetableOperationalDate(date);
+  return `${operationalDate.getFullYear()}-${operationalDate.getMonth() + 1}-${operationalDate.getDate()}`;
+}
+
+function getNextTimetableRolloverDelay(date = new Date()) {
+  const nextRollover = new Date(date.getTime());
+  nextRollover.setHours(2, 0, 0, 0);
+  if (nextRollover.getTime() <= date.getTime()) nextRollover.setDate(nextRollover.getDate() + 1);
+  return nextRollover.getTime() - date.getTime();
+}
+
 function getCurrentDayTimetableType(date = new Date()) {
-  const day = date.getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
+  const day = getTimetableOperationalDate(date).getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
   if (day === 5) return "friday";
   if (day === 6) return "saturday";
   return "weekday";
@@ -198,7 +217,7 @@ function loadActiveTimetableType() {
   try {
     const storedType = normalizeTimetableType(localStorage.getItem(ACTIVE_TIMETABLE_TYPE_KEY) || "");
     // PH is a manual override and must stay selected after page refresh.
-    // Other timetable types follow the current day whenever the page is reopened/refreshed.
+    // Other timetable types follow the operating day, which rolls over at 02:00.
     return storedType === "ph" ? "ph" : getCurrentDayTimetableType();
   } catch {
     return getCurrentDayTimetableType();
@@ -17935,6 +17954,40 @@ export default function DepotStablingPage() {
   const adminNotesCurrentRef = useRef(adminNotes);
 
   const [selectedTimetableType, setSelectedTimetableType] = useState(() => loadActiveTimetableType());
+  const timetableOperationalDayRef = useRef(getTimetableOperationalDayKey());
+
+  // Roll over at 02:00 without requiring a refresh, and catch up after browser sleep.
+  useEffect(() => {
+    let rolloverTimer;
+    const syncTimetableOperationalDay = () => {
+      const now = new Date();
+      const nextDayKey = getTimetableOperationalDayKey(now);
+      if (nextDayKey !== timetableOperationalDayRef.current) {
+        timetableOperationalDayRef.current = nextDayKey;
+        // Keep manual selections during the same operating day; PH is never auto-replaced.
+        if (normalizeTimetableType(selectedTimetableType) !== "ph") {
+          const nextType = getCurrentDayTimetableType(now);
+          setSelectedTimetableType(nextType);
+          saveActiveTimetableType(nextType);
+        }
+      }
+      window.clearTimeout(rolloverTimer);
+      rolloverTimer = window.setTimeout(syncTimetableOperationalDay, getNextTimetableRolloverDelay(now));
+    };
+    const handleTimetableVisibilityChange = () => {
+      if (!document.hidden) syncTimetableOperationalDay();
+    };
+
+    syncTimetableOperationalDay();
+    window.addEventListener("focus", syncTimetableOperationalDay);
+    document.addEventListener("visibilitychange", handleTimetableVisibilityChange);
+    return () => {
+      window.clearTimeout(rolloverTimer);
+      window.removeEventListener("focus", syncTimetableOperationalDay);
+      document.removeEventListener("visibilitychange", handleTimetableVisibilityChange);
+    };
+  }, [selectedTimetableType]);
+
   const [timetableRecords, setTimetableRecords] = useState(() => {
     const records = normalizeStoredTimetableRecords(loadLocalTimetableRecords());
     if (records.length) saveLocalTimetableRecords(records);
