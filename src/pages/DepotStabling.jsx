@@ -4488,7 +4488,21 @@ function buildDistinctRequestGroupColorMap(values = [], options = {}) {
         .map((value) => normalizeRequestGroupColorKey(value))
         .filter((value) => value && (includeGeneric || isSpecificRequestGroup(value)))
     )
-  ).sort((a, b) => hashRequestGroupKey(a) - hashRequestGroupKey(b) || a.localeCompare(b));
+  );
+  const neighbours = new Map(keys.map((key) => [key, new Set()]));
+  for (const group of options.contrastGroups || []) {
+    const groupKeys = [...new Set(group.map(normalizeRequestGroupColorKey))]
+      .filter((key) => neighbours.has(key));
+    for (const key of groupKeys) {
+      for (const neighbour of groupKeys) {
+        if (neighbour !== key) neighbours.get(key).add(neighbour);
+      }
+    }
+  }
+  // Allocate the most connected remarks first so pills sharing a train can
+  // use visibly different hues, rather than two close shades of the same hue.
+  keys.sort((a, b) => neighbours.get(b).size - neighbours.get(a).size
+    || hashRequestGroupKey(a) - hashRequestGroupKey(b) || a.localeCompare(b));
 
   const available = CUSTOM_REQUEST_PALETTE.map((color, index) => ({ color, index }));
   const assigned = {};
@@ -4496,17 +4510,19 @@ function buildDistinctRequestGroupColorMap(values = [], options = {}) {
   const usedColors = ["#fb5b63", "#fb923c", "#d879ff", "#2ee6b7", "#4de3ff"];
 
   keys.forEach((key) => {
-    if (available.length === 0) {
-      assigned[key] = getCustomRequestColor(key);
-      return;
-    }
-
+    // Once every colour is in use, still favour separation on the same train.
+    const candidates = available.length ? available : CUSTOM_REQUEST_PALETTE.map((color, index) => ({ color, index }));
+    const neighbourColors = [...neighbours.get(key)].map((neighbour) => assigned[neighbour]).filter(Boolean);
     const preferredIndex = hashRequestGroupKey(key) % CUSTOM_REQUEST_PALETTE.length;
     let bestPosition = 0;
+    let bestNeighbourDistance = -1;
     let bestDistance = -1;
     let bestTieBreak = Number.POSITIVE_INFINITY;
 
-    available.forEach((candidate, position) => {
+    candidates.forEach((candidate, position) => {
+      const neighbourDistance = neighbourColors.length ? Math.min(
+        ...neighbourColors.map((color) => requestColorDistance(candidate.color, color))
+      ) : 0;
       const minimumDistance = usedColors.reduce(
         (minimum, usedColor) => Math.min(minimum, requestColorDistance(candidate.color, usedColor)),
         Number.POSITIVE_INFINITY
@@ -4518,16 +4534,21 @@ function buildDistinctRequestGroupColorMap(values = [], options = {}) {
       );
 
       if (
-        minimumDistance > bestDistance ||
-        (minimumDistance === bestDistance && circularDistance < bestTieBreak)
+        neighbourDistance > bestNeighbourDistance ||
+        (neighbourDistance === bestNeighbourDistance && (
+          minimumDistance > bestDistance ||
+          (minimumDistance === bestDistance && circularDistance < bestTieBreak)
+        ))
       ) {
         bestPosition = position;
+        bestNeighbourDistance = neighbourDistance;
         bestDistance = minimumDistance;
         bestTieBreak = circularDistance;
       }
     });
 
-    const [{ color }] = available.splice(bestPosition, 1);
+    const { color } = candidates[bestPosition];
+    if (available.length) available.splice(bestPosition, 1);
     assigned[key] = color;
     usedColors.push(color);
   });
@@ -4553,19 +4574,24 @@ function buildMaintenanceMap(requests, mainStablingKeys = new Set()) {
   const workshopTrainKeys = new Set();
   const requestDisplayTypes = (requests || []).map(getTrainRequestGroupDisplayTitle);
   const requestGroupColors = buildDistinctRequestGroupColorMap(requestDisplayTypes);
-  const requestRemarkColors = buildDistinctRequestGroupColorMap(requestDisplayTypes, {
-    includeGeneric: true,
-  });
+  const requestRemarksByTrain = new Map();
 
   (requests || []).forEach((req) => {
     const key = normalizeTrainId(req.trainId);
     if (!key) return;
 
     const requestType = getTrainRequestDisplayType(req);
+    if (!requestRemarksByTrain.has(key)) requestRemarksByTrain.set(key, []);
+    requestRemarksByTrain.get(key).push(getTrainRequestGroupDisplayTitle(req));
 
     if (isWorkshopRequestLabel(requestType)) {
       workshopTrainKeys.add(key);
     }
+  });
+
+  const requestRemarkColors = buildDistinctRequestGroupColorMap(requestDisplayTypes, {
+    includeGeneric: true,
+    contrastGroups: [...requestRemarksByTrain.values()],
   });
 
   (requests || []).forEach((req) => {
