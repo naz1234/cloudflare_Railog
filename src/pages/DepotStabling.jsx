@@ -22108,7 +22108,17 @@ export default function DepotStablingPage() {
   }
 
   return (
-    <div className="app-shell min-h-screen font-inter bg-[#071828]">
+    <div
+      className="app-shell min-h-screen font-inter bg-[#071828]"
+      style={activeTab === "stabling"
+        ? {
+          // The page scrollbar must move the workspace with the header, rather
+          // than revealing space outside a viewport-width main container.
+          // Sidebar + main padding + depot tables + gaps + both side panels.
+          minWidth: (isSidebarCollapsed ? 58 : 200) + 40 + 954 + 12 + 276 + 12 + 314,
+        }
+        : undefined}
+    >
       <header className="app-top-header h-[56px] sticky top-0 z-[200]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", borderBottom: "1px solid #1a3a56" }}>
         <div className="w-full px-4 h-full flex items-center justify-start gap-6">
           <div className="flex items-center gap-4">
