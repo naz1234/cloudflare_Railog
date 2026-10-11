@@ -58,7 +58,22 @@ test("real Sleep output renders consecutive text lines without individual card f
   assert.match(html, /19:23 hrs – T29 confirmed successfully in sleep mode at WD–ST14\./);
   assert.doesNotMatch(html, /data-sleep-log-mode="wake"|Wake-up Mode<\/h4>|rounded-xl|border-indigo|lucide-moon/);
   assert.match(css, /\.sleep-log-line-text \{[^}]*white-space: pre-wrap;[^}]*overflow-wrap: anywhere;/);
-  assert.match(css, /\.sleep-log-line \{[^}]*position: relative;/);
+  assert.match(css, /\.sleep-log-line \{[^}]*display: grid;/);
+});
+
+test("each delete button sits immediately before the timing, not at the panel's far edge", () => {
+  for (const mode of ["sleep", "wake"]) {
+    const html = render({ logs: [sample(mode)] });
+    const row = html.match(/<li class="sleep-log-line">([\s\S]*?)<\/li>/)?.[1];
+    assert.ok(row);
+    assert.ok(row.indexOf("sleep-log-line-delete") < row.indexOf("sleep-log-line-text"));
+    assert.match(row, /<\/button><p class="sleep-log-line-text">19:23 hrs/);
+  }
+  assert.match(css, /\.sleep-log-line \{[^}]*grid-template-columns: 22px minmax\(0, 1fr\);[^}]*column-gap: 4px;/);
+  const deleteRule = css.match(/\.sleep-log-line-delete \{([^}]*)\}/)?.[1];
+  assert.doesNotMatch(deleteRule, /position: absolute|right:|left:/);
+  assert.match(css, /\.sleep-log-line-text \{[^}]*min-width: 0;/);
+  assert.match(source, /onClick=\{\(\) => onDelete\(entry.id\)\} disabled=\{saving\}/);
 });
 
 test("mixed modes retain their headings, chronological lines and remarks, but empty modes stay absent", () => {
