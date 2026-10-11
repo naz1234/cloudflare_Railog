@@ -11885,7 +11885,8 @@ html[data-app-theme="light"] .theme-insertion-page .theme-insertion-reference-de
   min-width: 0;
 }
 
-.theme-insertion-page .theme-insertion-card.has-refresh-control .theme-insertion-train-id {
+.theme-insertion-page .theme-insertion-card.has-refresh-control .theme-insertion-train-id,
+.theme-insertion-page .theme-insertion-card.has-insert-control .theme-insertion-train-id {
   padding-right: 27px !important;
 }
 
