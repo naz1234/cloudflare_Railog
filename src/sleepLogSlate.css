@@ -1,0 +1,173 @@
+/* SLP output follows the existing Removal Log window, without per-entry cards. */
+html[data-app-theme] .theme-sleep-log-window {
+  --sleep-log-body: #071828;
+  --sleep-log-text: #d8e7f7;
+}
+
+html[data-app-theme="light"] .theme-sleep-log-window {
+  --sleep-log-body: #f6f8fb;
+  --sleep-log-text: #0f172a;
+}
+
+.theme-sleep-log-window .sleep-log-depot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.theme-sleep-log-window .theme-sleep-log-output {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--window-line);
+  border-radius: 8px;
+  background: var(--window-panel);
+}
+
+.theme-sleep-log-window .sleep-log-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 6px 12px;
+}
+
+.theme-sleep-log-window :is(.sleep-log-depot-heading, .sleep-log-card-actions) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+}
+
+html[data-app-theme] .theme-sleep-log-window .sleep-log-depot-title {
+  margin: 0;
+  color: var(--window-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.theme-sleep-log-window .sleep-log-depot-dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #c084fc;
+}
+
+.theme-sleep-log-window .sleep-log-depot-dot[data-depot="east"] {
+  background: #22d3ee;
+}
+
+html[data-app-theme] .theme-sleep-log-window .sleep-log-entry-count {
+  color: var(--window-muted) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: 10px;
+}
+
+html[data-app-theme] .theme-sleep-log-window .sleep-log-card-body {
+  min-height: 76px;
+  border-top: 1px solid var(--window-line);
+  padding: 8px 12px;
+  background: var(--sleep-log-body) !important;
+}
+
+html[data-app-theme] .theme-sleep-log-window :is(.sleep-log-text, .sleep-log-mode-title, .sleep-log-line-text) {
+  color: var(--sleep-log-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.theme-sleep-log-window .sleep-log-text-group + .sleep-log-text-group {
+  margin-top: 12px;
+}
+
+.theme-sleep-log-window .sleep-log-mode-title {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.theme-sleep-log-window .sleep-log-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.theme-sleep-log-window .sleep-log-line {
+  position: relative;
+  min-height: 18px;
+  padding-right: 26px;
+}
+
+.theme-sleep-log-window .sleep-log-line-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+html[data-app-theme] .theme-sleep-log-window .sleep-log-line-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 18px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: #fb7185 !important;
+  opacity: 0;
+  cursor: pointer;
+}
+
+html[data-app-theme="light"] .theme-sleep-log-window .sleep-log-line-delete {
+  color: #be123c !important;
+}
+
+html[data-app-theme] .theme-sleep-log-window .sleep-log-line-delete :is(svg, svg *) {
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+.theme-sleep-log-window .sleep-log-line:is(:hover, :focus-within) .sleep-log-line-delete {
+  opacity: 1;
+}
+
+.theme-sleep-log-window .sleep-log-line-delete:focus-visible {
+  outline: 2px solid var(--window-focus);
+  outline-offset: -2px;
+}
+
+.theme-sleep-log-window .sleep-log-line-delete:disabled {
+  cursor: not-allowed;
+}
+
+html[data-app-theme] .theme-sleep-log-window .sleep-log-empty {
+  display: flex;
+  min-height: 56px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--window-muted) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: 10px;
+}
+
+@media (hover: none) {
+  html[data-app-theme] .theme-sleep-log-window .sleep-log-line-delete {
+    width: 26px;
+    height: 26px;
+    opacity: 1;
+  }
+  .theme-sleep-log-window .sleep-log-line { min-height: 26px; }
+}

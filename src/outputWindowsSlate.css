@@ -1,6 +1,6 @@
 /* Output, request and Excel windows share the compact Removal Summary frame.
    Depot colours, request categories and workbook operations stay independent. */
-html[data-app-theme] :is(.theme-removal-log-output, .theme-request-type-summary, .official-depot-excel-generator)[data-window-design="compact-slate"] {
+html[data-app-theme] :is(.theme-removal-log-output, .theme-request-type-summary, .official-depot-excel-generator, .theme-sleep-log-window)[data-window-design="compact-slate"] {
   --window-panel: #0b1f33;
   --window-control: #10263b;
   --window-line: #2b4f6b;
@@ -18,7 +18,7 @@ html[data-app-theme] :is(.theme-removal-log-output, .theme-request-type-summary,
   font-family: Inter, "Segoe UI", sans-serif;
 }
 
-html[data-app-theme="light"] :is(.theme-removal-log-output, .theme-request-type-summary, .official-depot-excel-generator)[data-window-design="compact-slate"] {
+html[data-app-theme="light"] :is(.theme-removal-log-output, .theme-request-type-summary, .official-depot-excel-generator, .theme-sleep-log-window)[data-window-design="compact-slate"] {
   --window-panel: #edf2f7;
   --window-control: #ffffff;
   --window-line: #d7e2ee;
