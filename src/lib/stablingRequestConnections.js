@@ -12,8 +12,15 @@ export function getStablingRequestConnectionTrainIds(trainIds, hoveredTrainId) {
 export function findStablingRequestTargets(workspace, trainIds) {
   const wanted = new Set(trainIds.map(normalizeConnectionTrainId).filter(Boolean));
   if (!workspace || !wanted.size) return [];
-  return [...workspace.querySelectorAll("[data-stabling-train]")]
+  const stablingTargets = [...workspace.querySelectorAll("[data-stabling-train]")]
     .filter((card) => wanted.has(normalizeConnectionTrainId(card.dataset.stablingTrain)));
+  const stabledTrains = new Set(stablingTargets.map((card) => normalizeConnectionTrainId(card.dataset.stablingTrain)));
+  const missingTrains = new Set([...wanted].filter((train) => !stabledTrains.has(train)));
+  if (!missingTrains.size) return stablingTargets;
+  // Fall back only when the train is absent, not when its stabling card is off-screen.
+  const removalTargets = [...workspace.querySelectorAll("[data-removal-train]")]
+    .filter((row) => missingTrains.has(normalizeConnectionTrainId(row.dataset.removalTrain)));
+  return [...stablingTargets, ...removalTargets];
 }
 
 export function intersectConnectionRects(rect, clip) {

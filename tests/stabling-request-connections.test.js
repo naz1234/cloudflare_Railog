@@ -21,10 +21,24 @@ test("connection IDs normalize numeric, padded and T-prefixed trains without par
 
 test("request matching stays in one workspace, includes both depots and keeps duplicate train locations", () => {
   const cards = ["T3", "03", "T8", "T30", ""].map((train) => ({ dataset: { stablingTrain: train } }));
-  const workspace = { querySelectorAll: (selector) => { assert.equal(selector, "[data-stabling-train]"); return cards; } };
+  const workspace = { querySelectorAll: (selector) => {
+    assert.ok(["[data-stabling-train]", "[data-removal-train]"].includes(selector));
+    return selector === "[data-stabling-train]" ? cards : [];
+  } };
   assert.deepEqual(findStablingRequestTargets(workspace, ["t03", "3", "T8", "T45"]), cards.slice(0, 3));
   assert.deepEqual(findStablingRequestTargets(workspace, []), []);
   assert.deepEqual(findStablingRequestTargets(null, ["03"]), []);
+});
+
+test("absent trains fall back to exact Removal Summary matches while stabling retains priority per train", () => {
+  const cards = ["03", "T8"].map((train) => ({ dataset: { stablingTrain: train } }));
+  const rows = ["T03", "023", "T23", "T230", "", "T30"].map((train) => ({ dataset: { removalTrain: train } }));
+  const workspace = { querySelectorAll: (selector) => selector === "[data-stabling-train]" ? cards : rows };
+  assert.deepEqual(findStablingRequestTargets(workspace, ["T3", "T23"]), [cards[0], rows[1], rows[2]]);
+  assert.deepEqual(findStablingRequestTargets(workspace, ["23"]), [rows[1], rows[2]]);
+  assert.deepEqual(findStablingRequestTargets(workspace, ["T8", "T45"]), [cards[1]]);
+  assert.deepEqual(findStablingRequestTargets(workspace, ["T3"]), [cards[0]]);
+  assert.deepEqual(findStablingRequestTargets(workspace, ["T30"]), [rows[5]]);
 });
 
 test("group hover selects every member while individual hover selects only that exact train", () => {
@@ -69,13 +83,17 @@ test("smooth connector paths attach to the nearest card edge on either side", ()
   assert.doesNotMatch(right.path, /NaN|Infinity/);
 });
 
-function createOverlayHarness({ scoped = true, trainKey = "T3,T8,T45", sourceBounds = rect(900, 300, 90, 24) } = {}) {
+function createOverlayHarness({ scoped = true, trainKey = "T3,T8,T45", sourceBounds = rect(900, 300, 90, 24), removalTrains = [] } = {}) {
   const cards = [
     Object.assign(element(rect(400, 100, 100, 80)), { dataset: { stablingTrain: "T3", stablingDepot: "west", stablingRoad: "WD-ST14", stablingBlock: "5" } }),
     Object.assign(element(rect(650, 550, 100, 80)), { dataset: { stablingTrain: "T8", stablingDepot: "east", stablingRoad: "ED-ST02", stablingBlock: "4" } }),
     Object.assign(element(rect(200, 900, 100, 80)), { dataset: { stablingTrain: "T45", stablingDepot: "west", stablingRoad: "WD-ST12", stablingBlock: "1" } }),
   ];
-  const workspace = { querySelectorAll: () => cards };
+  const removalRows = removalTrains.map((train, index) => Object.assign(
+    element(rect(700, 100 + index * 26, 240, 22)),
+    { dataset: { removalTrain: train, removalDepot: index % 2 ? "east" : "west", removalRow: String(index) } },
+  ));
+  const workspace = { querySelectorAll: (selector) => selector === "[data-stabling-train]" ? cards : removalRows };
   const source = Object.assign(element(sourceBounds), { isConnected: true, closest: (selector) => { assert.equal(selector, "[data-stabling-workspace]"); return scoped ? workspace : null; } });
   const frames = new Map();
   const events = new Map();
@@ -109,7 +127,7 @@ function createOverlayHarness({ scoped = true, trainKey = "T3,T8,T45", sourceBou
   const start = overlay.indexOf("  useLayoutEffect(() => {");
   const end = overlay.indexOf("  }, [source, trainKey, onDismiss]);", start) + "  }, [source, trainKey, onDismiss]);".length;
   runInNewContext(overlay.slice(start, end), context);
-  return { source, cards, observers, events, frames, dismissals, geometry: () => geometry, cleanup: () => cleanup?.(),
+  return { source, cards, removalRows, observers, events, frames, dismissals, geometry: () => geometry, cleanup: () => cleanup?.(),
     event: (name, data = {}) => events.get(name)?.(data),
     flush: () => { const pending = [...frames.values()]; frames.clear(); pending.forEach((callback) => callback()); },
   };
@@ -140,6 +158,41 @@ test("individual train hover connects only its matching West or East card from t
   }
   assert.equal(createOverlayHarness({ trainKey: "T23" }).geometry().connections.length, 0);
   assert.equal(createOverlayHarness({ trainKey: "T45" }).geometry().connections.length, 0);
+});
+
+test("a missing train connects to its visible removal rows on the right, not to off-screen stabling fallbacks", () => {
+  const harness = createOverlayHarness({
+    trainKey: "T23,T45",
+    removalTrains: ["23", "T23", "T45", "T230"],
+    sourceBounds: rect(500, 350, 56, 12),
+  });
+  const connections = harness.geometry().connections;
+  assert.deepEqual(Array.from(connections, (entry) => entry.train), ["T23", "T23"]);
+  assert.ok(connections.every((entry) => entry.targetType === "removal"));
+  assert.equal(new Set(connections.map((entry) => entry.id)).size, 2);
+  assert.deepEqual({ ...connections[0].start }, { x: 559, y: 356 });
+  assert.deepEqual({ ...connections[0].end }, { x: 697, y: 111 });
+  harness.removalRows[0].bounds = rect(1200, 100, 240, 22);
+  harness.event("document:scroll");
+  harness.flush();
+  assert.equal(harness.geometry().connections.length, 1);
+});
+
+test("group hover can connect stabling and removal targets together and follows live reassignments", () => {
+  const mixed = createOverlayHarness({ trainKey: "T3,T23", removalTrains: ["T3", "T23"] });
+  assert.deepEqual(Array.from(mixed.geometry().connections, (entry) => [entry.train, entry.targetType]), [["T3", "stabling"], ["T23", "removal"]]);
+  const harness = createOverlayHarness({ trainKey: "T23", removalTrains: ["T23"] });
+  assert.equal(harness.geometry().connections[0].targetType, "removal");
+  harness.cards[0].dataset.stablingTrain = "T23";
+  harness.observers[1].callback();
+  harness.flush();
+  assert.equal(harness.geometry().connections.length, 1);
+  assert.equal(harness.geometry().connections[0].targetType, "stabling");
+  harness.cards[0].dataset.stablingTrain = "T30";
+  harness.removalRows[0].dataset.removalTrain = "T24";
+  harness.observers[1].callback();
+  harness.flush();
+  assert.equal(harness.geometry().connections.length, 0);
 });
 
 test("individual train triggers preserve the group key, target one train and support hover plus focus", () => {
@@ -216,6 +269,10 @@ test("group titles retain their tooltips and support mouse hover plus keyboard f
   assert.match(depot, /ref=\{stablingHorizontalScrollRef\}\s+data-stabling-workspace/);
   assert.match(preview, /className="slate-preview-workspace" data-stabling-workspace/);
   assert.match(depot, /data-stabling-train=\{key \|\| undefined\}/);
+  assert.match(depot, /data-removal-train=\{trainRemRequestKey \|\| undefined\}/);
+  assert.match(depot, /data-removal-depot=\{depot\}/);
+  assert.match(depot, /data-removal-row=\{index\}/);
+  assert.match(overlay, /attributeFilter: \[[^\]]*"data-removal-train"/);
 });
 
 test("decorative connections are portalled, click-through and theme-aware without motion", () => {
