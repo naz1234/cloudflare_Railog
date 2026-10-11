@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { CheckCircle2, FileSpreadsheet, FileText, FileDown, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Redo2, Download, Search, ArrowUp, ArrowDown, Check, Sun, Moon, TrainFront, Clock3, RefreshCw, TriangleAlert } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, FileText, FileDown, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Redo2, Download, Search, ArrowUp, ArrowDown, ArrowRight, Check, Sun, Moon, TrainFront, Clock3, RefreshCw, TriangleAlert } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
@@ -5852,7 +5852,7 @@ function isSweepRemark(value) {
 }
 
 function isManualInsertionActionRemark(value) {
-  return !String(value || "").trim() || isSweepRemark(value) || getEastInsertionKeywordRemarkLabel(value) === "3K1";
+  return isSweepRemark(value) || getEastInsertionKeywordRemarkLabel(value) === "3K1";
 }
 
 function getInsertionRemarkStyle(value) {
@@ -6307,6 +6307,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     isManualInsertionActionRemark(tidRemarkText)
   );
   const isTidDropEligible = Boolean(key && !inserted);
+  const canInsertWithoutTrackingId = Boolean(key && !inserted && !tidRemarkText);
   const insertTrainTooltip = tidRemarkText
     ? "Log this insertion using the entered TID or remark"
     : `Insert ${padTrainId(key)} without a Tracking ID using the current time`;
@@ -6470,7 +6471,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         data-insertion-drop-depot={autoTidDepot}
         data-insertion-drop-road={road}
         data-insertion-drop-bi={bi}
-        className={`theme-stabling-train-card theme-insertion-card is-req-layout ${key ? "has-train" : "is-empty"} ${primaryInsertionRequest ? "has-request" : ""} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted has-refresh-control" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${insertedTrackingReferenceStyle ? "has-tracking-reference" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${isSearchMatch ? "is-search-match" : ""} ${isTidDragActive ? "is-tid-drag-active" : ""} ${isTidDropHovered ? "is-tid-drop-hovered" : ""} relative flex h-full flex-col items-center justify-start gap-1 overflow-hidden rounded-xl text-center transition-all duration-150`}
+        className={`theme-stabling-train-card theme-insertion-card is-req-layout ${key ? "has-train" : "is-empty"} ${primaryInsertionRequest ? "has-request" : ""} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted has-refresh-control" : ""} ${canInsertWithoutTrackingId ? "has-insert-control" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${insertedTrackingReferenceStyle ? "has-tracking-reference" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${isSearchMatch ? "is-search-match" : ""} ${isTidDragActive ? "is-tid-drag-active" : ""} ${isTidDropHovered ? "is-tid-drop-hovered" : ""} relative flex h-full flex-col items-center justify-start gap-1 overflow-hidden rounded-xl text-center transition-all duration-150`}
         style={{
           minHeight: ownInsertionCardMinHeight,
           height: "100%",
@@ -6509,6 +6510,18 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
               aria-label={resetCardTooltip}
             >
               <Undo2 className="h-3 w-3" aria-hidden="true" />
+            </button>
+          </ActionTooltip>
+        )}
+        {canInsertWithoutTrackingId && (
+          <ActionTooltip message={insertTrainTooltip} placement="top" wrapperClassName="theme-insertion-card-refresh-trigger theme-insertion-card-insert-trigger">
+            <button
+              type="button"
+              onClick={handleInsertClick}
+              className="theme-insertion-card-refresh theme-insertion-card-insert text-[10px] font-normal leading-none text-sky-100/90 transition-all hover:text-white focus-visible:text-white"
+              aria-label={insertTrainTooltip}
+            >
+              <ArrowRight className="h-3 w-3" aria-hidden="true" />
             </button>
           </ActionTooltip>
         )}
@@ -6863,7 +6876,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   aria-label={insertTrainTooltip}
                   className={`theme-insertion-insert-button ${hasTidRemark ? "has-input" : ""} h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-all`}
                 >
-                  {tidRemarkText ? "Log Insertion" : "Insert"}
+                  Log Insertion
                 </button>
               </ActionTooltip>
             )}
