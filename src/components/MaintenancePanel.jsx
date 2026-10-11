@@ -1498,7 +1498,12 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               return (
                 <div
                   key={`${section}-${group.key}-${req.id || req._tempId || chipLabel}`}
-                  className={`theme-maintenance-train-row theme-maintenance-request-line grid h-[24px] ${expandedGridClass} items-center gap-[2px] overflow-visible px-1.5 leading-none transition-colors duration-150`}
+                  className={`theme-maintenance-train-row theme-maintenance-request-line grid h-[24px] ${expandedGridClass} cursor-pointer items-center gap-[2px] overflow-visible px-1.5 leading-none transition-colors duration-150`}
+                  data-maintenance-connection-train={normalizeTrainCompareKey(req.trainId)}
+                  onMouseEnter={(event) => setStablingHoverGroup({ key: group.key, trainId: req.trainId, source: event.currentTarget })}
+                  onMouseLeave={(event) => { if (!event.currentTarget.contains(document.activeElement)) setStablingHoverGroup(null); }}
+                  onFocus={(event) => setStablingHoverGroup({ key: group.key, trainId: req.trainId, source: event.currentTarget })}
+                  onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(":hover")) setStablingHoverGroup(null); }}
                 >
                   <ActionTooltip
                     asChild
@@ -1510,11 +1515,6 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                   >
                     <span
                       className="theme-maintenance-train-connection-trigger cursor-pointer truncate rounded-sm pl-1 text-left text-[12px] font-semibold text-[#f8fbff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80"
-                      data-maintenance-connection-train={normalizeTrainCompareKey(req.trainId)}
-                      onMouseEnter={(event) => setStablingHoverGroup({ key: group.key, trainId: req.trainId, source: event.currentTarget })}
-                      onMouseLeave={(event) => { if (document.activeElement !== event.currentTarget) setStablingHoverGroup(null); }}
-                      onFocus={(event) => setStablingHoverGroup({ key: group.key, trainId: req.trainId, source: event.currentTarget })}
-                      onBlur={(event) => { if (!event.currentTarget.matches(":hover")) setStablingHoverGroup(null); }}
                     >{chipLabel}</span>
                   </ActionTooltip>
                   <span className="flex min-w-0 justify-end gap-[2px]">
