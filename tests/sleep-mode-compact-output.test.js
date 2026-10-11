@@ -37,6 +37,17 @@ test("SLP uses one Removal Log-style window with stacked depot outputs", () => {
   assert.doesNotMatch(source.slice(source.indexOf('className="theme-sleep-log-window"')), /xl:grid-cols-2/);
 });
 
+test("SLP starts with depot panels without the top banner while automatic sync stays active", () => {
+  assert.doesNotMatch(source, /SLP — Sleep Mode|Select trains from live stabling, then record|Refresh Sleep log from cloud|const refreshNow/);
+  assert.match(source, /aria-label="Sleep Mode workspace">\s*<div className="grid gap-4 xl:grid-cols-2">/);
+  assert.match(source, /<span className="sr-only" role="status">\{syncStatus\}<\/span>/);
+  assert.match(source, /const SLEEP_MODE_POLL_MS = 5_000;/);
+  assert.match(source, /window\.setInterval\(async \(\) =>/);
+  assert.match(source, /await fetchLatest\(false\)/);
+  assert.match(source, /<DepotSleepPanel depot="west"/);
+  assert.match(source, /<DepotSleepPanel depot="east"/);
+});
+
 test("real Sleep output renders consecutive text lines without individual card frames", () => {
   const html = render({ logs: [sample(), sample("sleep", "19:24")] });
   assert.match(html, /West Depot Sleep \/ Wake-up Log/);
