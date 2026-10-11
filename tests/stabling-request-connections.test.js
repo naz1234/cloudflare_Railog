@@ -195,14 +195,18 @@ test("group hover can connect stabling and removal targets together and follows 
   assert.equal(harness.geometry().connections.length, 0);
 });
 
-test("individual train triggers preserve the group key, target one train and support hover plus focus", () => {
-  const start = maintenance.indexOf('className="theme-maintenance-train-connection-trigger');
-  const label = maintenance.slice(start, maintenance.indexOf(">{chipLabel}</span>", start));
-  assert.match(label, /cursor-pointer/);
-  assert.match(label, /data-maintenance-connection-train=\{normalizeTrainCompareKey\(req\.trainId\)\}/);
+function getTrainRowTrigger() {
+  const start = maintenance.indexOf('className={`theme-maintenance-train-row');
+  return maintenance.slice(start, maintenance.indexOf("<ActionTooltip", start));
+}
+
+test("the entire train row including empty space selects one train on hover or focus", () => {
+  const row = getTrainRowTrigger();
+  assert.match(row, /cursor-pointer/);
+  assert.match(row, /data-maintenance-connection-train=\{normalizeTrainCompareKey\(req\.trainId\)\}/);
   assert.match(maintenance, /message=\{`\$\{chipLabel\} — \$\{group\.label\}`\}/);
   for (const name of ["onMouseEnter", "onFocus"]) {
-    const expression = label.match(new RegExp(`${name}=\\{(\\(event\\) => setStablingHoverGroup\\(\\{[^\\n]+\\}\\))\\}`))?.[1];
+    const expression = row.match(new RegExp(`${name}=\\{(\\(event\\) => setStablingHoverGroup\\(\\{[^\\n]+\\}\\))\\}`))?.[1];
     assert.ok(expression, `${name} selects the individual train`);
     let selected;
     const source = {};
@@ -210,13 +214,59 @@ test("individual train triggers preserve the group key, target one train and sup
       setStablingHoverGroup: (value) => { selected = value; },
       group: { key: "inbound" }, req: { trainId: "03" },
     });
-    handler({ currentTarget: source });
+    handler({ currentTarget: source, target: { role: "empty row area" } });
     assert.equal(selected.key, "inbound");
     assert.equal(selected.trainId, "03");
     assert.equal(selected.source, source);
   }
-  assert.match(label, /onMouseLeave=\{\(event\) => \{ if \(document\.activeElement !== event\.currentTarget\) setStablingHoverGroup\(null\)/);
-  assert.match(label, /onBlur=\{\(event\) => \{ if \(!event\.currentTarget\.matches\(":hover"\)\) setStablingHoverGroup\(null\)/);
+  const labelStart = maintenance.indexOf('className="theme-maintenance-train-connection-trigger');
+  const label = maintenance.slice(labelStart, maintenance.indexOf(">{chipLabel}</span>", labelStart));
+  assert.doesNotMatch(label, /onMouse(?:Enter|Leave)|on(?:Focus|Blur)/, "moving off the label into empty row space cannot dismiss the connection");
+  assert.match(maintenance, /triggerProps=\{\{ tabIndex: 0 \}\}/, "the label remains keyboard accessible");
+});
+
+test("leaving a train row dismisses only when none of its controls retain focus", () => {
+  const expression = getTrainRowTrigger().match(/onMouseLeave=\{(\(event\) => \{[^\n]+\})\}/)?.[1];
+  assert.ok(expression);
+  const focusedControl = {};
+  const outside = {};
+  const taskDocument = { activeElement: focusedControl };
+  const dismissals = [];
+  const handler = runInNewContext(`(${expression})`, {
+    document: taskDocument,
+    setStablingHoverGroup: (value) => dismissals.push(value),
+  });
+  const row = { contains: (element) => element === focusedControl };
+  handler({ currentTarget: row });
+  assert.equal(dismissals.length, 0);
+  taskDocument.activeElement = outside;
+  handler({ currentTarget: row });
+  assert.deepEqual(dismissals, [null]);
+});
+
+test("focus moving within a row keeps connections; leaving a non-hovered row clears them", () => {
+  const expression = getTrainRowTrigger().match(/onBlur=\{(\(event\) => \{[^\n]+\})\}/)?.[1];
+  assert.ok(expression);
+  const nextControl = {};
+  const outside = {};
+  let hovered = false;
+  const dismissals = [];
+  const handler = runInNewContext(`(${expression})`, {
+    setStablingHoverGroup: (value) => dismissals.push(value),
+  });
+  const row = {
+    contains: (element) => element === nextControl,
+    matches: (selector) => selector === ":hover" && hovered,
+  };
+  handler({ currentTarget: row, relatedTarget: nextControl });
+  assert.equal(dismissals.length, 0);
+  hovered = true;
+  handler({ currentTarget: row, relatedTarget: outside });
+  assert.equal(dismissals.length, 0);
+  hovered = false;
+  handler({ currentTarget: row, relatedTarget: outside });
+  handler({ currentTarget: row, relatedTarget: null });
+  assert.deepEqual(dismissals, [null, null]);
 });
 
 test("scroll and resize work are batched per animation frame and follow the new card position", () => {
