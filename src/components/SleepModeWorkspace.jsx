@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  BedDouble,
   Check,
   Clock3,
-  Cloud,
   Copy,
   Download,
   FileText,
@@ -645,18 +643,6 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
     window.setTimeout(() => URL.revokeObjectURL(url), 500);
   }, [logsByDepot]);
 
-  const refreshNow = useCallback(async () => {
-    if (pendingSavesRef.current > 0) return;
-    setSyncStatus("Refreshing live Sleep log...");
-    try {
-      const latest = await fetchLatest(true);
-      if (!latest) setSyncStatus("Live ready \u00b7 no logs yet");
-    } catch (error) {
-      console.error("Sleep Mode refresh failed:", error);
-      setSyncStatus("Cloud unavailable \u00b7 local cache ready");
-    }
-  }, [fetchLatest]);
-
   const handleClearLogs = useCallback(async (depot) => {
     if (!DEPOT_LAYOUTS[depot] || saving || !logsByDepot[depot]?.length) return;
     if (confirmClearDepot !== depot) {
@@ -673,29 +659,7 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
   }, [logs, persistLogs]);
 
   return (
-    <section className="mx-auto w-full max-w-[1500px] space-y-4 pb-10">
-      <header className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)] dark:border-[#315574] dark:bg-[radial-gradient(circle_at_0%_0%,rgba(139,92,246,0.12),transparent_32%),linear-gradient(145deg,#092139,#061827)] dark:shadow-[0_20px_55px_rgba(0,0,0,0.28)]">
-        <div className="flex flex-wrap items-center gap-3 px-5 py-4">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-400/35 dark:bg-violet-400/10 dark:text-violet-200">
-            <BedDouble className="h-5 w-5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-[18px] font-semibold tracking-wide text-slate-900 dark:text-white">SLP — Sleep Mode</h1>
-              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-200">Live</span>
-            </div>
-            <p className="mt-1 text-[11px] text-slate-500 dark:text-[#8fb7d1]">Select trains from live stabling, then record Sleep or Wake-up mode by location.</p>
-          </div>
-          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-medium text-slate-600 dark:border-[#315574] dark:bg-[#071827] dark:text-[#9bc7e4]">
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Cloud className="h-3.5 w-3.5 text-emerald-500" />}
-            {syncStatus}
-          </div>
-          <button type="button" onClick={refreshNow} disabled={!loaded || saving} title="Refresh Sleep log from cloud" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:border-violet-300 hover:text-violet-700 disabled:opacity-40 dark:border-[#315574] dark:text-[#9bc7e4] dark:hover:border-violet-400 dark:hover:text-violet-200">
-            <RefreshCw className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
-
+    <section className="mx-auto w-full max-w-[1500px] space-y-4 pb-10" aria-label="Sleep Mode workspace">
       <div className="grid gap-4 xl:grid-cols-2">
         <DepotSleepPanel depot="west" data={westData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.west} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onTimeChange={(depot, value) => updateLogDraft(depot, { time: value, timeConfirmed: Boolean(normalizeSleepLogTime(value)) })} onRemarkChange={(depot, value) => updateLogDraft(depot, { remark: value })} onUseCurrentTime={(depot) => updateLogDraft(depot, { time: getCurrentTime(), timeConfirmed: true })} onAddLogs={addSelectedLogs} />
         <DepotSleepPanel depot="east" data={eastData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.east} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onTimeChange={(depot, value) => updateLogDraft(depot, { time: value, timeConfirmed: Boolean(normalizeSleepLogTime(value)) })} onRemarkChange={(depot, value) => updateLogDraft(depot, { remark: value })} onUseCurrentTime={(depot) => updateLogDraft(depot, { time: getCurrentTime(), timeConfirmed: true })} onAddLogs={addSelectedLogs} />
@@ -730,6 +694,7 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
           ))}
         </div>
       </section>
+      <span className="sr-only" role="status">{syncStatus}</span>
     </section>
   );
 }
