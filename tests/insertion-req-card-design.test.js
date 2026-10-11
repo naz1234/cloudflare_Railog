@@ -152,10 +152,10 @@ test("INS operational remarks come from requests instead of the Tracking ID refe
   assert.match(insertionSectionSource, /rowTrackingId \? 76/);
 });
 
-test("INS shows Log Insertion only for Sweep and 3K1 manual inputs", () => {
-  assert.match(pageSource, /function isManualInsertionActionRemark\(value\) \{[\s\S]*isSweepRemark\(value\) \|\| getEastInsertionKeywordRemarkLabel\(value\) === "3K1"/);
+test("INS offers Insert for blank Tracking IDs and Log Insertion for Sweep and 3K1", () => {
+  assert.match(pageSource, /function isManualInsertionActionRemark\(value\) \{[\s\S]*!String\(value \|\| ""\)\.trim\(\) \|\| isSweepRemark\(value\) \|\| getEastInsertionKeywordRemarkLabel\(value\) === "3K1"/);
   assert.match(insertionCellSource, /const canLogManualInsertion = Boolean\([\s\S]*!canAutoInsertTid[\s\S]*isManualInsertionActionRemark\(tidRemarkText\)/);
-  assert.match(insertionCellSource, /\{canLogManualInsertion && \([\s\S]*theme-insertion-insert-button[\s\S]*>\s*Log Insertion\s*</);
+  assert.match(insertionCellSource, /\{canLogManualInsertion && \([\s\S]*theme-insertion-insert-button[\s\S]*\{tidRemarkText \? "Log Insertion" : "Insert"\}/);
   assert.match(insertionCellSource, /event\.key === "Enter" && !canAutoInsertTid && tidRemarkText/);
   assert.match(insertionCellSource, /handleInsertClick\(\)/);
   assert.match(insertionSectionSource, /rowHasManualInsertionAction[\s\S]*isManualInsertionActionRemark\(tidInputs\[/);

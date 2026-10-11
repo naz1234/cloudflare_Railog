@@ -33,15 +33,18 @@ function createApi(initialLog = []) {
     setPg2InsertionLog: (log) => { writes.rendered = log; },
     commitInsertionLiveSnapshot: (snapshot) => { writes.live = snapshot; },
     getDepotFromRoad: (road) => road.startsWith("WD") ? "west" : "east",
+    formatTime: () => "08:42",
+    getTidScheduledTime: () => { writes.timetableLookups = (writes.timetableLookups || 0) + 1; return "05:25"; },
   };
   vm.createContext(sandbox);
-  const helpers = ["normalizeTrainId", "padTrainId", "parseHHMM", "addMinutesToHHMM", "getSweepingClearTime", "getSweepingSignal", "cleanMovementCustomTimeInput", "getInsertionLogTimeMinutes", "sortInsertionLogByTime", "cleanInsertionTaName", "getInsertionTaSuffix", "buildNormalInsertionEntryText", "buildSweepingInsertionEntryText"];
+  const helpers = ["normalizeTrainId", "padTrainId", "parseHHMM", "addMinutesToHHMM", "getSweepingClearTime", "getSweepingSignal", "isSweepRemark", "getSweepTrackFromRemark", "cleanMovementCustomTimeInput", "getInsertionLogTimeMinutes", "sortInsertionLogByTime", "cleanInsertionTaName", "getInsertionTaSuffix", "buildNormalInsertionEntryText", "buildSweepingInsertionEntryText"];
   vm.runInContext([
     page.match(/const EAST_ROADS = .*;/)[0],
+    page.match(/const WEST_ROADS = .*;/)[0],
     ...helpers.map(extractFunction),
-    ...["updateInsertionEntryTimeInLog", "updateSweepEntryInLog", "updateInsertionEntryTaNameInLog", "handlePg2InsertionTimeUpdate", "handlePg2SweepUpdate", "handlePg2InsertionTaNameUpdate"].map(callback),
+    ...["applyInsertionTickToLog", "handlePg2InsertionTick", "updateInsertionEntryTimeInLog", "updateSweepEntryInLog", "updateInsertionEntryTaNameInLog", "handlePg2InsertionTimeUpdate", "handlePg2SweepUpdate", "handlePg2InsertionTaNameUpdate"].map(callback),
     output.slice(output.indexOf("function formatSentenceList"), output.indexOf("async function copyText")),
-    "globalThis.api = { updateInsertionEntryTimeInLog, updateSweepEntryInLog, handlePg2InsertionTimeUpdate, handlePg2SweepUpdate, handlePg2InsertionTaNameUpdate, buildNormalInsertionCopyText, buildSweepAnd3K1CopyText };",
+    "globalThis.api = { handlePg2InsertionTick, updateInsertionEntryTimeInLog, updateSweepEntryInLog, handlePg2InsertionTimeUpdate, handlePg2SweepUpdate, handlePg2InsertionTaNameUpdate, buildNormalInsertionCopyText, buildSweepAnd3K1CopyText };",
   ].join("\n"), sandbox);
   return { ...sandbox.api, state, writes };
 }
@@ -51,6 +54,32 @@ const normal = (depot = "west") => ({
   text: `05:25 hrs – T19 (TID 101) inserted from ${depot === "west" ? "WD-ST15" : "ED-ST03"} to mainline track ${depot === "west" ? 1 : 2}. TA Ali onboard.`,
 });
 const sweeping = () => ({ key: "ins-WD-ST13-0", trainKey: "T03", depot: "west", road: "WD-ST13", isSweeping: true, sweepTrack: "TK1", signal: "S101", time: "04:20", clearTime: "04:22", taName: "Zain" });
+
+test("Insert without a Tracking ID records the current time in either depot and remains editable and undoable", () => {
+  for (const [road, depot, track] of [["WD-ST14", "west", 1], ["ED-ST02", "east", 2]]) {
+    const other = normal();
+    const api = createApi([other]);
+    api.handlePg2InsertionTick(road, 1, "T29", "");
+    const entry = api.state.current.find((item) => item.key === `ins-${road}-1`);
+    assert.equal(entry.time, "08:42");
+    assert.equal(entry.tid, null);
+    assert.equal(entry.inputValue, "");
+    assert.equal(entry.remark, "");
+    assert.equal(entry.depot, depot);
+    assert.equal(entry.mainlineTrack, track);
+    assert.equal(entry.text, `08:42 hrs – T29 inserted from ${road} to mainline track ${track}.`);
+    assert.equal(api.writes.timetableLookups || 0, 0);
+    assert.equal(api.writes.rendered, api.state.current);
+    assert.equal(api.writes.live.pg2InsertionLog, api.state.current);
+    assert.equal(JSON.parse(api.writes.stored).find((item) => item.key === entry.key).tid, null);
+
+    api.handlePg2InsertionTimeUpdate(entry.key, "08:50");
+    assert.equal(api.state.current.find((item) => item.key === entry.key).text, entry.text.replace("08:42", "08:50"));
+    api.handlePg2InsertionTick(road, 1, "T29", "");
+    assert.equal(api.state.current.length, 1);
+    assert.equal(api.state.current[0], other);
+  }
+});
 
 test("time input accepts 24-hour formats and rejects invalid or incomplete values without clamping", () => {
   for (const value of ["05:25", "5:25", "0525", "525", " 0525 "]) assert.equal(normalizeInsertionLogTime(value), "05:25");
