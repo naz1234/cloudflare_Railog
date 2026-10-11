@@ -343,8 +343,8 @@ function SleepLogGroup({ mode, entries, saving, onDelete }) {
       <ul className="sleep-log-lines">
         {entries.map((entry) => (
           <li key={entry.id} className="sleep-log-line">
-            <p className="sleep-log-line-text">{entry.text}</p>
             <button type="button" onClick={() => onDelete(entry.id)} disabled={saving} aria-label={`Delete ${entry.text}`} title="Delete log entry" className="sleep-log-line-delete"><Trash2 size={12} /></button>
+            <p className="sleep-log-line-text">{entry.text}</p>
           </li>
         ))}
       </ul>

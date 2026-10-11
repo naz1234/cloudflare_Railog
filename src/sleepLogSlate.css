@@ -101,21 +101,21 @@ html[data-app-theme] .theme-sleep-log-window :is(.sleep-log-text, .sleep-log-mod
 }
 
 .theme-sleep-log-window .sleep-log-line {
-  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  column-gap: 4px;
+  align-items: start;
   min-height: 18px;
-  padding-right: 26px;
 }
 
 .theme-sleep-log-window .sleep-log-line-text {
+  min-width: 0;
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
 html[data-app-theme] .theme-sleep-log-window .sleep-log-line-delete {
-  position: absolute;
-  top: 0;
-  right: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -169,5 +169,8 @@ html[data-app-theme] .theme-sleep-log-window .sleep-log-empty {
     height: 26px;
     opacity: 1;
   }
-  .theme-sleep-log-window .sleep-log-line { min-height: 26px; }
+  .theme-sleep-log-window .sleep-log-line {
+    grid-template-columns: 26px minmax(0, 1fr);
+    min-height: 26px;
+  }
 }
