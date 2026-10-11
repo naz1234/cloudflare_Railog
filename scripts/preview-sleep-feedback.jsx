@@ -5,8 +5,19 @@ import { base44 } from "./preview-compact-slate-api.js";
 import "../src/index.css";
 
 const fixtureLogs = [
-  { id: "fixture-west", time: "19:23", trainIds: ["29"], location: "WD-ST14", mode: "sleep", createdAt: "2026-10-11T19:23:00Z" },
-  { id: "fixture-east", time: "19:25", trainIds: ["18"], location: "ED-ST02", mode: "sleep", createdAt: "2026-10-11T19:25:00Z" },
+  ...[
+    ["18:25", ["23"], "WD-ST15"],
+    ["19:06", ["09"], "WD-ST14"],
+    ["19:22", ["21"], "WD-ST15"],
+    ["20:21", ["30", "26"], "WD-ST15"],
+    ["20:21", ["47"], "WD-ST15"],
+    ["20:49", ["20"], "WD-ST15"],
+    ["21:23", ["16"], "WD-ST15"],
+    ["21:29", ["46", "43"], "WD-ST13"],
+    ["21:29", ["12"], "WD-ST12"],
+  ].map(([time, trainIds, location], index) => ({ id: `fixture-west-${index}`, time, trainIds, location, mode: "sleep", createdAt: `2026-10-11T${time}:00Z` })),
+  { id: "fixture-east-sleep", time: "19:25", trainIds: ["18"], location: "ED-ST02", mode: "sleep", createdAt: "2026-10-11T19:25:00Z" },
+  { id: "fixture-east-wake", time: "22:10", trainIds: ["18"], location: "ED-ST02", mode: "wake", remark: "Ready for service", createdAt: "2026-10-11T22:10:00Z" },
 ];
 
 async function seedFixtures() {
