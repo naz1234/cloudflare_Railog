@@ -14,6 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import "../copyFeedbackSlate.css";
 import { buildSleepModeExcelFileName, createSleepModeExcelBytes } from "@/lib/sleepModeExcel";
 import {
   buildSleepModeGroupedText,
@@ -31,6 +32,47 @@ import {
 const SLEEP_MODE_RECORD_KEY = "sleep-mode-main";
 const SLEEP_MODE_CACHE_KEY = "slpSleepModeCache_v1";
 const SLEEP_MODE_POLL_MS = 5_000;
+
+function useSleepLogActionFeedback() {
+  const [actionStatuses, setActionStatuses] = useState({});
+  const timersRef = useRef(new Map());
+  const attemptsRef = useRef(new Map());
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    const timers = timersRef.current;
+    const attempts = attemptsRef.current;
+    return () => {
+      mountedRef.current = false;
+      timers.forEach(clearTimeout);
+      timers.clear();
+      attempts.clear();
+    };
+  }, []);
+
+  const runActionWithFeedback = useCallback(async (key, action, successStatus) => {
+    const attempt = (attemptsRef.current.get(key) || 0) + 1;
+    attemptsRef.current.set(key, attempt);
+    clearTimeout(timersRef.current.get(key));
+    setActionStatuses((current) => ({ ...current, [key]: "pending" }));
+    let succeeded = false;
+    try {
+      succeeded = await action() !== false;
+    } catch (error) {
+      console.error("Sleep Mode action failed:", error);
+    }
+    if (!mountedRef.current || attemptsRef.current.get(key) !== attempt) return succeeded;
+    setActionStatuses((current) => ({ ...current, [key]: succeeded ? successStatus : "failed" }));
+    timersRef.current.set(key, setTimeout(() => {
+      setActionStatuses((current) => ({ ...current, [key]: "" }));
+      timersRef.current.delete(key);
+    }, 2500));
+    return succeeded;
+  }, []);
+
+  return { actionStatuses, runActionWithFeedback };
+}
 
 const DEPOT_LAYOUTS = {
   west: {
@@ -322,6 +364,8 @@ function SleepLogOutputPanel({
   loaded,
   saving,
   confirmClear,
+  copyStatus = "",
+  clearStatus = "",
   onDownload,
   onCopy,
   onClear,
@@ -333,11 +377,15 @@ function SleepLogOutputPanel({
     ? "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-400/35 dark:bg-violet-400/10 dark:text-violet-200"
     : "border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-400/35 dark:bg-cyan-400/10 dark:text-cyan-200";
   const groupedLogs = useMemo(() => groupSleepModeLogs(logs), [logs]);
+  const copied = copyStatus === "copied";
+  const cleared = clearStatus === "cleared";
+  const copying = copyStatus === "pending";
+  const clearing = clearStatus === "pending";
 
   return (
     <section
       data-sleep-log-depot={depot}
-      className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-[#315574] dark:bg-[#061827]"
+      className="theme-sleep-log-output min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-[#315574] dark:bg-[#061827]"
     >
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-[#21435e] dark:bg-[#09243a]">
         <div>
@@ -353,8 +401,14 @@ function SleepLogOutputPanel({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" onClick={() => onDownload(depot)} disabled={!logs.length} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 text-[9px] font-semibold text-emerald-700 disabled:opacity-40 dark:border-emerald-400/35 dark:bg-emerald-400/10 dark:text-emerald-200"><Download className="h-3.5 w-3.5" /> Download Excel</button>
-          <button type="button" onClick={() => onCopy(depot)} disabled={!logs.length} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-sky-300 bg-sky-50 px-3 text-[9px] font-semibold text-sky-700 disabled:opacity-40 dark:border-sky-400/35 dark:bg-sky-400/10 dark:text-sky-200"><Copy className="h-3.5 w-3.5" /> Copy All</button>
-          <button type="button" onClick={() => onClear(depot)} disabled={!logs.length || saving} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-3 text-[9px] font-semibold text-rose-700 disabled:opacity-40 dark:border-rose-400/35 dark:bg-rose-400/10 dark:text-rose-200"><Trash2 className="h-3.5 w-3.5" /> {confirmClear ? `Confirm ${layout.shortLabel}` : "Clear All"}</button>
+          <button type="button" onClick={() => onCopy(depot)} disabled={!logs.length || copying} data-copy-state={copyStatus || "idle"} aria-busy={copying} className="slate-copy-feedback inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-sky-300 bg-sky-50 px-3 text-[9px] font-semibold text-sky-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-sky-400/35 dark:bg-sky-400/10 dark:text-sky-200">
+            {copying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            <span aria-live="polite">{copying ? "Copying..." : copied ? "Copied" : copyStatus === "failed" ? "Copy failed" : "Copy All"}</span>
+          </button>
+          <button type="button" onClick={() => onClear(depot)} disabled={!logs.length || saving || clearing} data-action-state={clearStatus || "idle"} aria-busy={clearing} className="slate-action-feedback inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-3 text-[9px] font-semibold text-rose-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-rose-400/35 dark:bg-rose-400/10 dark:text-rose-200">
+            {clearing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : cleared ? <Check className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
+            <span aria-live="polite">{clearing ? "Clearing..." : cleared ? "Cleared" : clearStatus === "failed" ? "Sync pending" : confirmClear ? `Confirm ${layout.shortLabel}` : "Clear All"}</span>
+          </button>
         </div>
       </header>
       <div className="min-h-[150px] p-3">
@@ -390,6 +444,7 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
   const [saving, setSaving] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Loading live Sleep log...");
   const [confirmClearDepot, setConfirmClearDepot] = useState("");
+  const { actionStatuses, runActionWithFeedback } = useSleepLogActionFeedback();
 
   const recordIdRef = useRef(null);
   const appliedUpdatedMsRef = useRef(0);
@@ -497,15 +552,18 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
           Date.parse(updatedAt) || Date.now(),
         );
         setSyncStatus(`Live saved ${formatSyncTime(savedRecord?.updatedAt || updatedAt)}`);
+        return true;
       })
       .catch((error) => {
         console.error("Sleep Mode live save failed:", error);
         setSyncStatus("Saved locally \u00b7 cloud retry needed");
+        return false;
       })
       .finally(() => {
         pendingSavesRef.current = Math.max(0, pendingSavesRef.current - 1);
         if (pendingSavesRef.current === 0) setSaving(false);
       });
+    return saveQueueRef.current;
   }, []);
 
   const latestModeByTrain = useMemo(() => {
@@ -579,12 +637,11 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
   const copyLogs = useCallback(async (depot) => {
     const depotLogs = logsByDepot[depot] || [];
     if (!depotLogs.length) return;
-    try {
+    await runActionWithFeedback(`copy-${depot}`, async () => {
       await navigator.clipboard.writeText(buildSleepModeGroupedText(depotLogs));
-    } catch (error) {
-      console.error("Sleep Mode log copy failed:", error);
-    }
-  }, [logsByDepot]);
+      return true;
+    }, "copied");
+  }, [logsByDepot, runActionWithFeedback]);
 
   const downloadExcel = useCallback((depot) => {
     const depotLogs = logsByDepot[depot] || [];
@@ -614,16 +671,16 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
     }
   }, [fetchLatest]);
 
-  const handleClearLogs = useCallback((depot) => {
-    if (!DEPOT_LAYOUTS[depot]) return;
+  const handleClearLogs = useCallback(async (depot) => {
+    if (!DEPOT_LAYOUTS[depot] || saving || !logsByDepot[depot]?.length) return;
     if (confirmClearDepot !== depot) {
       setConfirmClearDepot(depot);
       window.setTimeout(() => setConfirmClearDepot((current) => current === depot ? "" : current), 3_000);
       return;
     }
-    persistLogs(logs.filter((entry) => getSleepModeDepot(entry.location) !== depot));
     setConfirmClearDepot("");
-  }, [confirmClearDepot, logs, persistLogs]);
+    await runActionWithFeedback(`clear-${depot}`, () => persistLogs(logs.filter((entry) => getSleepModeDepot(entry.location) !== depot)), "cleared");
+  }, [confirmClearDepot, logs, logsByDepot, persistLogs, runActionWithFeedback, saving]);
 
   const deleteLog = useCallback((entryId) => {
     persistLogs(logs.filter((entry) => entry.id !== entryId));
@@ -667,6 +724,8 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
             loaded={loaded}
             saving={saving}
             confirmClear={confirmClearDepot === depot}
+            copyStatus={actionStatuses[`copy-${depot}`]}
+            clearStatus={actionStatuses[`clear-${depot}`]}
             onDownload={downloadExcel}
             onCopy={copyLogs}
             onClear={handleClearLogs}

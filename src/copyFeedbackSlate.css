@@ -7,6 +7,7 @@ html[data-app-theme] :is(
   .theme-removal-log-output,
   .theme-request-type-summary,
   .theme-maintenance-panel,
+  .theme-sleep-log-output,
   [role="dialog"]
 ) .slate-copy-feedback[data-copy-state] {
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -22,6 +23,7 @@ html[data-app-theme] :is(
   .theme-removal-log-output,
   .theme-request-type-summary,
   .theme-maintenance-panel,
+  .theme-sleep-log-output,
   [role="dialog"]
 ) .slate-copy-feedback[data-copy-state="copied"]:not(:disabled) {
   background: #13785a !important;
@@ -39,6 +41,7 @@ html[data-app-theme] :is(
   .theme-removal-log-output,
   .theme-request-type-summary,
   .theme-maintenance-panel,
+  .theme-sleep-log-output,
   [role="dialog"]
 ) .slate-copy-feedback[data-copy-state="copied"] > :is(span[aria-live], strong, svg) {
   color: #ffffff !important;
@@ -50,6 +53,40 @@ html[data-app-theme] .slate-copy-feedback[data-copy-state="copied"] svg {
   stroke: currentColor !important;
 }
 
+/* A completed clear remains visible even though its empty log disables the button. */
+html[data-app-theme] .theme-sleep-log-output .slate-action-feedback[data-action-state] {
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transform: none !important;
+}
+
+html[data-app-theme] .theme-sleep-log-output .slate-action-feedback[data-action-state="cleared"] {
+  background: #13785a !important;
+  border-color: #13785a !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: currentColor !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+html[data-app-theme] .theme-sleep-log-output .slate-action-feedback[data-action-state="cleared"] > :is(span[aria-live], svg) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+/* Light mode also sets icon descendants' colour, so keep the checkmark white. */
+html[data-app-theme] .theme-sleep-log-output :is(
+  .slate-copy-feedback[data-copy-state="copied"],
+  .slate-action-feedback[data-action-state="cleared"]
+) svg,
+html[data-app-theme] .theme-sleep-log-output :is(
+  .slate-copy-feedback[data-copy-state="copied"],
+  .slate-action-feedback[data-action-state="cleared"]
+) svg * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html[data-app-theme] :is(
     .theme-stabling-section[data-stabling-design="compact-slate"],
@@ -58,8 +95,10 @@ html[data-app-theme] .slate-copy-feedback[data-copy-state="copied"] svg {
     .theme-removal-log-output,
     .theme-request-type-summary,
     .theme-maintenance-panel,
+    .theme-sleep-log-output,
     [role="dialog"]
-  ) .slate-copy-feedback[data-copy-state] {
+  ) .slate-copy-feedback[data-copy-state],
+  html[data-app-theme] .theme-sleep-log-output .slate-action-feedback[data-action-state] {
     transition-duration: 0s !important;
   }
 }
