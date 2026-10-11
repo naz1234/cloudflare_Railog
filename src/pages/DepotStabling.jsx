@@ -9783,6 +9783,9 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                           data-preset={selectedPreset}
                           data-hdw-group={hdw40Group?.depot}
                           data-tid={cleanTid}
+                          data-removal-train={trainRemRequestKey || undefined}
+                          data-removal-depot={depot}
+                          data-removal-row={index}
                           data-removal-location={rowLocation?.key}
                           data-removal-location-badge={canSortByRemovalColor && activeSortMode === "tid" ? "true" : undefined}
                           style={{

@@ -27,9 +27,13 @@ export default function StablingRequestConnections({ source, trainIds, onDismiss
         }
         const bounds = getVisibleConnectionRect(card, viewport);
         if (!bounds) return [];
+        const isRemovalTarget = card.dataset.removalTrain !== undefined;
         return [{
-          id: [card.dataset.stablingDepot, card.dataset.stablingRoad, card.dataset.stablingBlock].join("-"),
-          train: normalizeConnectionTrainId(card.dataset.stablingTrain),
+          id: isRemovalTarget
+            ? ["removal", card.dataset.removalDepot, card.dataset.removalRow].join("-")
+            : ["stabling", card.dataset.stablingDepot, card.dataset.stablingRoad, card.dataset.stablingBlock].join("-"),
+          train: normalizeConnectionTrainId(isRemovalTarget ? card.dataset.removalTrain : card.dataset.stablingTrain),
+          targetType: isRemovalTarget ? "removal" : "stabling",
           bounds,
           ...buildStablingConnectionPath(origin, bounds),
         }];
@@ -44,7 +48,7 @@ export default function StablingRequestConnections({ source, trainIds, onDismiss
     const dismiss = () => onDismiss(null);
     const onKeyDown = (event) => { if (event.key === "Escape") dismiss(); };
     const mutationObserver = new MutationObserver(scheduleMeasure);
-    mutationObserver.observe(workspace, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-stabling-train", "class", "style"] });
+    mutationObserver.observe(workspace, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-stabling-train", "data-removal-train", "data-removal-depot", "data-removal-row", "class", "style"] });
     resizeObserver.observe(source);
     resizeObserver.observe(workspace);
     document.addEventListener("scroll", scheduleMeasure, true);
@@ -74,11 +78,11 @@ export default function StablingRequestConnections({ source, trainIds, onDismiss
     <svg className="stabling-request-connections" aria-hidden="true" focusable="false"
       style={{ "--connection-accent": geometry.accent }}
     >
-      {geometry.connections.map(({ id, train, bounds, start, end, path }) => (
-        <g key={id} data-stabling-connection-train={train}>
+      {geometry.connections.map(({ id, train, targetType, bounds, start, end, path }) => (
+        <g key={id} data-stabling-connection-train={train} data-request-connection-target={targetType}>
           <path className="stabling-connection-halo" d={path} />
           <path className="stabling-connection-line" d={path} />
-          <rect className="stabling-connection-highlight" x={bounds.left} y={bounds.top} width={bounds.width} height={bounds.height} rx={10} />
+          <rect className="stabling-connection-highlight" x={bounds.left} y={bounds.top} width={bounds.width} height={bounds.height} rx={targetType === "removal" ? 6 : 10} />
           <circle className="stabling-connection-dot" cx={start.x} cy={start.y} r={3} />
           <circle className="stabling-connection-dot" cx={end.x} cy={end.y} r={2.5} />
         </g>
