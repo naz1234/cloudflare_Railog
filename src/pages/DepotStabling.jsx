@@ -5852,7 +5852,7 @@ function isSweepRemark(value) {
 }
 
 function isManualInsertionActionRemark(value) {
-  return isSweepRemark(value) || getEastInsertionKeywordRemarkLabel(value) === "3K1";
+  return !String(value || "").trim() || isSweepRemark(value) || getEastInsertionKeywordRemarkLabel(value) === "3K1";
 }
 
 function getInsertionRemarkStyle(value) {
@@ -6307,7 +6307,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     isManualInsertionActionRemark(tidRemarkText)
   );
   const isTidDropEligible = Boolean(key && !inserted);
-  const insertTrainTooltip = "Log this insertion using the entered TID or remark";
+  const insertTrainTooltip = tidRemarkText
+    ? "Log this insertion using the entered TID or remark"
+    : `Insert ${padTrainId(key)} without a Tracking ID using the current time`;
   const resetCardTooltip = "Reset this card and return to Add TID";
   const undoInsertionTooltip = "Undo this train insertion";
 
@@ -6861,7 +6863,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   aria-label={insertTrainTooltip}
                   className={`theme-insertion-insert-button ${hasTidRemark ? "has-input" : ""} h-7 w-full rounded-lg border px-1 text-[11px] font-semibold transition-all`}
                 >
-                  Log Insertion
+                  {tidRemarkText ? "Log Insertion" : "Insert"}
                 </button>
               </ActionTooltip>
             )}
