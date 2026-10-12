@@ -25,12 +25,21 @@ export function getPossessionAccessDetails(entry = {}) {
   }));
 }
 
-export function normalizePossessionAccessEntry(value = {}) {
+export function getPossessionSecurityDetails(entry = {}, legacyDetails = {}) {
+  // An explicit empty object means this entry's details were cleared. Only old
+  // entries with no securityDetails field may use the first-entry legacy data.
+  const details = Object.hasOwn(entry || {}, "securityDetails") ? entry.securityDetails : legacyDetails;
+  return { phone: text(details?.phone), location: text(details?.location), gateNo: text(details?.gateNo) };
+}
+
+export function normalizePossessionAccessEntry(value = {}, index = 0) {
   const entry = value && typeof value === "object" && !Array.isArray(value) ? value : {};
   const accessDetails = getPossessionAccessDetails(entry);
   return {
     ...DEFAULT_ENTRY,
     ...entry,
+    entryId: text(entry.entryId).trim() || `legacy-access-${index + 1}`,
+    ...(Object.hasOwn(entry, "securityDetails") ? { securityDetails: getPossessionSecurityDetails(entry) } : {}),
     accessDetails,
     // Retain the legacy fields for older saved records/readers.
     accessNo: accessDetails.map((detail) => detail.accessNo).filter((number) => number.trim()).join(" / "),
@@ -38,13 +47,22 @@ export function normalizePossessionAccessEntry(value = {}) {
   };
 }
 
+export function removePossessionAccessEntry(entries, index, legacyDetails = {}) {
+  // Materialize legacy details before renumbering. They must not transfer from
+  // the old first PIC to a different PIC after that first entry is removed.
+  return entries.map((entry, i) => ({
+    ...normalizePossessionAccessEntry(entry, i),
+    securityDetails: getPossessionSecurityDetails(entry, i === 0 ? legacyDetails : {}),
+  })).filter((_, i) => i !== index);
+}
+
 function cleanAccessNumber(raw) {
   return text(raw).replace(/,/g, "").trim().replace(/^(?:Access\s*)?#\s*/i, "");
 }
 
-// Shared details always come from the current first access entry, never the old
+// Shared details always come from the corresponding access entry, never the old
 // separately saved security form. Only its phone/location/gate remain manual.
-export function buildPossessionSecurityMessage(entry, details = {}) {
+export function buildPossessionSecurityMessage(entry, details = getPossessionSecurityDetails(entry)) {
   const f = normalizePossessionAccessEntry(entry);
   const picName = text(f.picName).trim();
   const accessDetails = f.accessDetails.map((detail) => ({

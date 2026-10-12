@@ -20,7 +20,7 @@ const server = await createServer({
       const code = `import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
         import { FileText, Shield, Trash2, X, Plus, Copy, ClipboardCheck, Wind, Zap } from "lucide-react";
         import { base44 } from "/scripts/preview-compact-slate-api.js";
-        import { buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, normalizePossessionAccessEntry } from "/src/lib/possessionAccessLog.js";
+        import { buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "/src/lib/possessionAccessLog.js";
         ${pss}
         export { PossessionTabContent };`;
       return (await transformWithEsbuild(code, "PSSPreview.jsx", { loader: "jsx", jsx: "automatic" })).code;

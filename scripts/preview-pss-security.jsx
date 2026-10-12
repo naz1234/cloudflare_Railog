@@ -8,8 +8,9 @@ const fixtures = {
   west: [{ picName: "Jay Bigcas", picId: "FLOW_1113", issueTime: "13:02", accessAuthTime: "13:02", accessPoint: "GATE 03", scd: "No", accessDetails: [
     { accessNo: "303,004", description: "Replacement of the IRJ - SA09 - DNF-143-ED IRJ & Weld" },
     { accessNo: "303005", description: "GWS, 1 Yearly, Buffer Stops Inspection/Cleaning, Route 15" },
-  ] }],
-  east: [{ picName: "East PIC", picId: "FLOW_2222", accessNo: "40001", description: "East Depot inspection", issueTime: "14:05", scd: "No" }],
+  ] }, { picName: "West Second PIC", picId: "FLOW_3333", accessNo: "303006", description: "West Depot second inspection", issueTime: "14:30", scd: "No", securityDetails: { phone: "0550000002", location: "WEST TRACK 2", gateNo: "06" } }],
+  east: [{ picName: "East PIC", picId: "FLOW_2222", accessNo: "40001", description: "East Depot inspection", issueTime: "14:05", scd: "No" },
+    { picName: "East Second PIC", accessNo: "40002", description: "East Depot second inspection", scd: "No", securityDetails: { phone: "0550000004", location: "EAST TRACK 4", gateNo: "08" } }],
 };
 for (const depot of ["west", "east"]) {
   const suffix = depot === "east" ? "_east" : "";
@@ -32,8 +33,8 @@ function Preview() {
       <button onClick={() => { const next = theme === "dark" ? "light" : "dark"; document.documentElement.dataset.appTheme = next; document.documentElement.classList.toggle("dark", next === "dark"); setTheme(next); }}>Switch to {theme === "dark" ? "light" : "dark"} mode</button>
       <button onClick={async () => {
         const [record] = await base44.entities.PossessionLive.filter({ stateKey: "possession-log-east" });
-        await base44.entities.PossessionLive.update(record.id, { data: [{ ...fixtures.east[0], picName: "Remote East PIC" }], updatedAt: new Date().toISOString() });
-      }}>Simulate East remote update</button>
+        await base44.entities.PossessionLive.update(record.id, { data: record.data.map((entry, i) => i === 1 ? { ...entry, picName: "Remote East Second PIC" } : entry), updatedAt: new Date().toISOString() });
+      }}>Simulate East Entry 2 remote update</button>
     </nav>
     <PossessionTabContent />
   </main>;
