@@ -54,7 +54,7 @@ import { buildPSTExcelClipboardText } from "../lib/pstExcelClipboard";
 import { appendPstFldcColumns } from "../lib/pstFldcVerification";
 import { usePstFldcVerification } from "../hooks/usePstFldcVerification";
 import PstFldcChecklist from "../components/PstFldcChecklist";
-import { buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, normalizePossessionAccessEntry } from "../lib/possessionAccessLog";
+import { buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "../lib/possessionAccessLog";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40Groups, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, resizeHdwDepotRows, clearHdwRows } from "../lib/trainRemHdw40";
 import "../trainRemHdw40.css";
@@ -15538,14 +15538,14 @@ function formatPossessionTimeInput(raw, previousValue = "") {
 
 // ── Dark-themed shared primitives ─────────────────────────────────────────────
 
-function PossessionCopyBtn({ text, disabled, label = "Copy Output" }) {
+function PossessionCopyBtn({ text, disabled, label = "Copy Output", ariaLabel }) {
   const [copied, setCopied] = useState(false);
   const handle = () => {
     if (disabled || !text) return;
     navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <button onClick={handle} disabled={disabled || !text}
+    <button onClick={handle} disabled={disabled || !text} aria-label={ariaLabel}
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#1e3a56] bg-[#0a1e2e] text-[#7eb8e0] hover:bg-[#0f2d4a] hover:border-[#2b4f6b] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
       {copied ? <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
       {copied ? "Copied!" : label}
@@ -15751,7 +15751,7 @@ function usePossessionLiveState(stateKey, state, setState, normalizeState = (val
 const POSSESSION_LOG_KEY = "possessionLog_v2";
 const POSSESSION_ACCESS_ENTRY_THEME_COUNT = 6;
 
-const defaultEntry = () => normalizePossessionAccessEntry();
+const defaultEntry = () => normalizePossessionAccessEntry({ entryId: crypto.randomUUID(), securityDetails: {} });
 
 function generateEntryOutput(f) {
   return buildPossessionEntryOutput(f, fmtPossession24);
@@ -15772,7 +15772,7 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
       <div className="theme-possession-header theme-possession-access-entry-header border-b border-[#1e3a56] px-3 py-2 flex items-center justify-between">
         <span className="theme-possession-access-entry-title text-[11px] font-black text-[#7eb8e0] tracking-widest uppercase">Access Entry {index + 1}</span>
         {canRemove && (
-          <button onClick={onRemove} className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border border-red-800/50 text-red-400 hover:bg-red-950/40 transition-colors">
+          <button onClick={onRemove} aria-label={`Remove Access Entry ${index + 1}`} className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border border-red-800/50 text-red-400 hover:bg-red-950/40 transition-colors">
             <X className="w-3 h-3" /> Remove
           </button>
         )}
@@ -15840,6 +15840,15 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
 
 function PossessionLog({ depot = "west" }) {
   const storageKey = getPossessionStorageKey(POSSESSION_LOG_KEY, depot);
+  const securityStorageKey = getPossessionStorageKey(POSSESSION_SC_KEY, depot);
+  const [legacySecurity, setLegacySecurity] = useState(() => {
+    try { return { ...defaultSC, ...JSON.parse(localStorage.getItem(securityStorageKey) || "{}") }; }
+    catch { return { ...defaultSC }; }
+  });
+  // Read existing first-entry details from local/cloud storage for compatibility.
+  // New/edited security details are saved inside their own access entries below.
+  useEffect(() => { localStorage.setItem(securityStorageKey, JSON.stringify(legacySecurity)); }, [legacySecurity, securityStorageKey]);
+  usePossessionLiveState(getPossessionLiveStateKey("possession-security-message", depot), legacySecurity, setLegacySecurity, (value) => ({ ...defaultSC, ...(value || {}) }));
   const [entries, setEntries] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
@@ -15860,7 +15869,7 @@ function PossessionLog({ depot = "west" }) {
   );
   const updateEntry = (i, val) => setEntries((prev) => prev.map((e, idx) => idx === i ? val : e));
   const addEntry = () => setEntries((prev) => [...prev, defaultEntry()]);
-  const removeEntry = (i) => setEntries((prev) => prev.filter((_, idx) => idx !== i));
+  const removeEntry = (i) => setEntries((prev) => removePossessionAccessEntry(prev, i, legacySecurity));
   const clear = () => { setEntries([defaultEntry()]); localStorage.removeItem(storageKey); };
   const output = entries.map(generateEntryOutput).join("\n\n");
 
@@ -15880,7 +15889,7 @@ function PossessionLog({ depot = "west" }) {
           </button>
         </div>
         <div className="p-4 space-y-3">
-          {entries.map((entry, i) => (<AccessEntryForm key={i} entry={entry} index={i} onChange={(val) => updateEntry(i, val)} onRemove={() => removeEntry(i)} canRemove={entries.length > 1} />))}
+          {entries.map((entry, i) => (<AccessEntryForm key={entry.entryId} entry={entry} index={i} onChange={(val) => updateEntry(i, val)} onRemove={() => removeEntry(i)} canRemove={entries.length > 1} />))}
           <div className="space-y-1">
             <button onClick={addEntry}
               className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-cyan-300/70 bg-cyan-400/10 text-xs font-bold text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.35),inset_0_0_14px_rgba(34,211,238,0.10)] hover:bg-cyan-400/20 hover:border-cyan-200 hover:text-white hover:shadow-[0_0_28px_rgba(34,211,238,0.70),inset_0_0_18px_rgba(34,211,238,0.18)] active:scale-[0.99] transition-all duration-200">
@@ -15910,7 +15919,11 @@ function PossessionLog({ depot = "west" }) {
           )}
         </div>
       </div>
-      <SCSecurityMessage depot={depot} entry={entries[0]} />
+      {entries.map((entry, i) => (
+        <SCSecurityMessage key={entry.entryId} depot={depot} entry={entry} index={i}
+          form={getPossessionSecurityDetails(entry, i === 0 ? legacySecurity : {})}
+          onChange={(securityDetails) => updateEntry(i, { ...entry, securityDetails })} />
+      ))}
       </div>
     </div>
   );
@@ -15918,48 +15931,44 @@ function PossessionLog({ depot = "west" }) {
 
 // ── Section 2: Station Controller Security Message ────────────────────────────
 const POSSESSION_SC_KEY = "scSecurityMessage_v1";
-// Keep legacy saved fields for compatibility; shared output fields now come only from entry.
+// Keep old separately saved first-entry details readable; all new details live with entries.
 const defaultSC = { picName: "", phone: "", accessNo: "", description: "", location: "", gateNo: "" };
 
 function generateSCOutput(entry, details) {
   return buildPossessionSecurityMessage(entry, details);
 }
 
-function SCSecurityMessage({ depot = "west", entry }) {
-  const storageKey = getPossessionStorageKey(POSSESSION_SC_KEY, depot);
-  const [form, setForm] = useState(() => { try { return { ...defaultSC, ...JSON.parse(localStorage.getItem(storageKey) || "{}") }; } catch { return defaultSC; } });
-  useEffect(() => { localStorage.setItem(storageKey, JSON.stringify(form)); }, [form, storageKey]);
-  usePossessionLiveState(getPossessionLiveStateKey("possession-security-message", depot), form, setForm, (value) => ({ ...defaultSC, ...(value || {}) }));
-  const set = (field) => (val) => setForm((p) => ({ ...p, [field]: val }));
-  const clear = () => setForm((previous) => ({ ...previous, phone: "", location: "", gateNo: "" }));
+function SCSecurityMessage({ depot = "west", entry, index, form, onChange }) {
+  const set = (field) => (val) => onChange({ ...form, [field]: val });
+  const clear = () => onChange({ phone: "", location: "", gateNo: "" });
   const output = generateSCOutput(entry, form);
   const hasContent = !!output.trim();
   const depotLabel = getPossessionDepotLabel(depot);
 
   return (
-      <div className={possessionCardCls} data-possession-security-output>
+      <div className={possessionCardCls} data-possession-security-output data-possession-entry-id={entry.entryId} data-possession-entry-number={index + 1}>
         <div className={possessionHeaderCls} style={possessionHeaderStyle}>
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center"><Shield className="w-3.5 h-3.5 text-[#4f8ef7]" /></div>
             <div>
               <h2 className="text-sm font-bold text-white">Station Controller Security Message</h2>
-              <p className="text-[10px] text-[#4a8ab5]">Auto-filled from Access Entry 1</p>
+              <p className="text-[10px] text-[#4a8ab5]">Auto-filled from Access Entry {index + 1}</p>
             </div>
           </div>
-          <PossessionCopyBtn text={output} disabled={!hasContent} label="Copy Security" />
+          <PossessionCopyBtn text={output} disabled={!hasContent} label="Copy Security" ariaLabel={`Copy Security for Access Entry ${index + 1} — ${depotLabel}`} />
         </div>
         <div className="p-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <p className="theme-possession-label text-[10px] font-semibold">Additional security details</p>
-            <button type="button" onClick={clear} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-red-800/50 text-red-400 hover:bg-red-950/40 transition-colors">
+            <button type="button" onClick={clear} aria-label={`Clear security details for Access Entry ${index + 1} — ${depotLabel}`} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-red-800/50 text-red-400 hover:bg-red-950/40 transition-colors">
               <Trash2 className="w-3 h-3" /> Clear Details
             </button>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <POSSESSION_FIELD label="Phone / Mobile"><POSSESSION_INPUT value={form.phone} onChange={set("phone")} ariaLabel={`${depotLabel} security phone`} placeholder="Optional" /></POSSESSION_FIELD>
-            <POSSESSION_FIELD label="Gate Number"><POSSESSION_INPUT value={form.gateNo} onChange={set("gateNo")} ariaLabel={`${depotLabel} security gate`} placeholder="e.g. 4" /></POSSESSION_FIELD>
+            <POSSESSION_FIELD label="Phone / Mobile"><POSSESSION_INPUT value={form.phone} onChange={set("phone")} ariaLabel={`${depotLabel} Access Entry ${index + 1} security phone`} placeholder="Optional" /></POSSESSION_FIELD>
+            <POSSESSION_FIELD label="Gate Number"><POSSESSION_INPUT value={form.gateNo} onChange={set("gateNo")} ariaLabel={`${depotLabel} Access Entry ${index + 1} security gate`} placeholder="e.g. 4" /></POSSESSION_FIELD>
           </div>
-          <POSSESSION_FIELD label="Location"><POSSESSION_INPUT value={form.location} onChange={set("location")} ariaLabel={`${depotLabel} security location`} placeholder={`e.g. ${depotLabel}`} /></POSSESSION_FIELD>
+          <POSSESSION_FIELD label="Location"><POSSESSION_INPUT value={form.location} onChange={set("location")} ariaLabel={`${depotLabel} Access Entry ${index + 1} security location`} placeholder={`e.g. ${depotLabel}`} /></POSSESSION_FIELD>
         </div>
         <div className="border-t border-[#1e3a56] p-4 min-h-[160px]">
           {hasContent ? (
@@ -15967,7 +15976,7 @@ function SCSecurityMessage({ depot = "west", entry }) {
           ) : (
             <div className="h-40 flex flex-col items-center justify-center gap-2 text-center">
               <Shield className="w-6 h-6 text-[#1e3a56]" />
-              <p className="text-[10px] text-[#3a5a7a] font-semibold">Fill in Access Entry 1 to generate the security message</p>
+              <p className="text-[10px] text-[#3a5a7a] font-semibold">Fill in Access Entry {index + 1} to generate the security message</p>
             </div>
           )}
         </div>
