@@ -15800,10 +15800,13 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
               ariaLabel={`Access description ${accessIndex + 1} for entry ${index + 1}`} placeholder="Work description for this access number..." rows={2} /></POSSESSION_FIELD>
           </div>
         ))}
-        <button type="button" onClick={() => setAccessDetails([...accessDetails, { accessNo: "", description: "" }])}
-          className="theme-possession-label flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border border-dashed border-[#2b4f6b] hover:border-[#4f8ef7] transition-colors">
-          <Plus className="w-3 h-3" /> Add Access Number
-        </button>
+        <div className="space-y-1">
+          <button type="button" onClick={() => setAccessDetails([...accessDetails, { accessNo: "", description: "" }])}
+            className="theme-possession-label flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border border-dashed border-[#2b4f6b] hover:border-[#4f8ef7] transition-colors">
+            <Plus className="w-3 h-3" /> Add Access Number
+          </button>
+          <p className="theme-possession-label text-[10px] leading-relaxed">Use this when the same PIC has multiple access numbers.</p>
+        </div>
         <POSSESSION_FIELD label="Issue Time"><POSSESSION_TIME_INPUT value={entry.issueTime || ""} onChange={set("issueTime")} placeholder="e.g. 04:17" /></POSSESSION_FIELD>
         <div className="grid grid-cols-2 gap-3">
           <POSSESSION_FIELD label="Access Point"><POSSESSION_INPUT value={entry.accessPoint || ""} onChange={set("accessPoint")} placeholder="e.g. DOOR B01" /></POSSESSION_FIELD>
