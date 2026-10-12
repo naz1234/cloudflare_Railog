@@ -17,7 +17,7 @@ test("each PSS depot gets a complete workspace", () => {
   assert.match(source, /function PossessionDepotWorkspace\(\{ depot \}\)/);
   assert.match(source, /<PossessionLog depot=\{depot\} \/>/);
   assert.match(source, /<EPAFLog depot=\{depot\} \/>/);
-  assert.match(source, /<SCSecurityMessage depot=\{depot\} \/>/);
+  assert.match(source, /<SCSecurityMessage depot=\{depot\} entry=\{entries\[0\]\} \/>/);
   assert.match(source, /<SweepingLog depot=\{depot\} \/>/);
 });
 

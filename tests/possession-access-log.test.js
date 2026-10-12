@@ -8,7 +8,7 @@ import {
 } from "../src/lib/possessionAccessLog.js";
 
 const source = readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
-const timeSource = source.slice(source.indexOf("function parsePossessionTimeTo24"), source.indexOf("function cleanPossessionAccessNo"));
+const timeSource = source.slice(source.indexOf("function parsePossessionTimeTo24"), source.indexOf("function formatPossessionTimeInput"));
 const formatTime = new Function(`${timeSource}\nreturn fmtPossession24;`)();
 const output = (entry) => buildPossessionEntryOutput(entry, formatTime);
 const firstDescription = "Replacement of the IRJ - SA09 - DNF-143-ED IRJ & Weld";
