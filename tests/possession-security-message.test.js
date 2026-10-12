@@ -86,6 +86,7 @@ for (const depot of ["west", "east"]) {
     const html = renderDepot(depot, [entry, { picName: "Second PIC", accessNo: "777", description: "Second work" }], manual);
     assert.match(html, /data-possession-outputs/);
     assert.match(html, /Add Access Number<\/button><p[^>]*>Use this when the same PIC has multiple access numbers\.<\/p>/);
+    assert.match(html, /Add Another Access<\/button><p[^>]*>Use this for a different PIC name\.<\/p>/);
     assert.match(html, /Possession Log Output/);
     assert.match(html, /Copy Log/);
     assert.match(html, /Copy Security/);
