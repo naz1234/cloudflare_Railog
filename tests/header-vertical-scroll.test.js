@@ -62,3 +62,19 @@ test("only Up and Down remain with the matching style and accessible labels", ()
   assert.doesNotMatch(source, /handleHeaderHorizontalScroll/);
   assert.doesNotMatch(source, /Go to far (?:left|right)/);
 });
+
+test("Up and Down sit immediately beside bookmarks, before the timetable control", () => {
+  const headerStart = source.indexOf('<header className="app-top-header');
+  const header = source.slice(headerStart, source.indexOf("</header>", headerStart));
+  assert.ok(headerStart >= 0);
+  assert.match(header, /<HeaderBookmarkDropdown\b[^]*?\/>\s*<div className="flex shrink-0 items-center gap-2" data-header-scroll-controls>/);
+  const controlsStart = header.indexOf("data-header-scroll-controls");
+  const controlsEnd = header.indexOf("</div>", controlsStart);
+  const controls = header.slice(controlsStart, controlsEnd);
+  assert.ok(header.indexOf("<HeaderBookmarkDropdown") < controlsStart);
+  assert.ok(controlsEnd < header.indexOf("<TimetableHeaderControl"));
+  assert.ok(controls.indexOf('handleHeaderVerticalScroll("up")') < controls.indexOf('handleHeaderVerticalScroll("down")'));
+  assert.equal((header.match(/data-header-scroll-controls/g) || []).length, 1);
+  assert.equal((header.match(/handleHeaderVerticalScroll\(/g) || []).length, 2);
+  assert.doesNotMatch(controls, /ml-auto/);
+});
