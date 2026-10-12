@@ -22165,6 +22165,29 @@ export default function DepotStablingPage() {
               onDelete={handleDeleteBookmark}
             />
 
+            <div className="flex shrink-0 items-center gap-2" data-header-scroll-controls>
+              <button
+                type="button"
+                onClick={() => handleHeaderVerticalScroll("up")}
+                title="Go to top"
+                aria-label="Go to top"
+                className="flex h-8 items-center gap-1.5 rounded-lg border border-[#2b4f6b] bg-[#071828] px-3 text-[10px] font-black uppercase tracking-wide text-[#8bd5ff] shadow-[0_0_14px_rgba(79,142,247,0.18)] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-95"
+              >
+                <ArrowUp aria-hidden="true" className="h-3 w-3" strokeWidth={2.8} />
+                Up
+              </button>
+              <button
+                type="button"
+                onClick={() => handleHeaderVerticalScroll("down")}
+                title="Go to bottom"
+                aria-label="Go to bottom"
+                className="flex h-8 items-center gap-1.5 rounded-lg border border-[#2b4f6b] bg-[#071828] px-3 text-[10px] font-black uppercase tracking-wide text-[#8bd5ff] shadow-[0_0_14px_rgba(79,142,247,0.18)] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-95"
+              >
+                Down
+                <ArrowDown aria-hidden="true" className="h-3 w-3" strokeWidth={2.8} />
+              </button>
+            </div>
+
             <TimetableHeaderControl
               selectedType={selectedTimetableType}
               activeTimetable={activeTimetable}
@@ -22191,28 +22214,6 @@ export default function DepotStablingPage() {
             <SessionPresenceControl />
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleHeaderVerticalScroll("up")}
-              title="Go to top"
-              aria-label="Go to top"
-              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#2b4f6b] bg-[#071828] px-3 text-[10px] font-black uppercase tracking-wide text-[#8bd5ff] shadow-[0_0_14px_rgba(79,142,247,0.18)] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-95"
-            >
-              <ArrowUp aria-hidden="true" className="h-3 w-3" strokeWidth={2.8} />
-              Up
-            </button>
-            <button
-              type="button"
-              onClick={() => handleHeaderVerticalScroll("down")}
-              title="Go to bottom"
-              aria-label="Go to bottom"
-              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#2b4f6b] bg-[#071828] px-3 text-[10px] font-black uppercase tracking-wide text-[#8bd5ff] shadow-[0_0_14px_rgba(79,142,247,0.18)] transition hover:border-[#4f8ef7] hover:bg-[#0f2d4a] hover:text-white active:scale-95"
-            >
-              Down
-              <ArrowDown aria-hidden="true" className="h-3 w-3" strokeWidth={2.8} />
-            </button>
-          </div>
         </div>
       </header>
 
