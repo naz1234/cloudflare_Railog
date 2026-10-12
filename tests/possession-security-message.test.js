@@ -85,6 +85,7 @@ for (const depot of ["west", "east"]) {
   test(`${depot} actual PSS output contains separate log/security copy actions and only first entry's security data`, () => {
     const html = renderDepot(depot, [entry, { picName: "Second PIC", accessNo: "777", description: "Second work" }], manual);
     assert.match(html, /data-possession-outputs/);
+    assert.match(html, /Add Access Number<\/button><p[^>]*>Use this when the same PIC has multiple access numbers\.<\/p>/);
     assert.match(html, /Possession Log Output/);
     assert.match(html, /Copy Log/);
     assert.match(html, /Copy Security/);

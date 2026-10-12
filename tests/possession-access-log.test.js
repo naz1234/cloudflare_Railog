@@ -198,6 +198,7 @@ test("entry form exposes paired fields and add/remove controls without duplicati
   const formSource = source.slice(source.indexOf("function AccessEntryForm("), source.indexOf("function PossessionLog("));
   assert.match(formSource, /accessDetails\.map\(\(detail, accessIndex\)/);
   assert.match(formSource, /Add Access Number/);
+  assert.match(formSource, /Use this when the same PIC has multiple access numbers\./);
   assert.match(formSource, /Remove access number \$\{accessIndex \+ 1\} for entry \$\{index \+ 1\}/);
   assert.match(formSource, /Access description \$\{accessIndex \+ 1\} for entry \$\{index \+ 1\}/);
   assert.match(formSource, /accessDetails\.length > 1/);
