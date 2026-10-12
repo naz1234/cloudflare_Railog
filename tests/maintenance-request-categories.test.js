@@ -8,6 +8,12 @@ test("editable request labels use the same categories as summary sentences", () 
     ["DONT WASH 48HRS", "washing"],
     ["RST PM 02-OCT", "pm"],
     ["RST CM", "cm"],
+    ["MISMATCH", "cm"],
+    ["APU mismatch", "cm"],
+    ["MiSmAtCh", "cm"],
+    ["MISSMATCH", "cm"],
+    ["MIS-MATCH", "cm"],
+    ["MIS MATCH", "cm"],
     ["TLC Req after comm svc", "tlc"],
     ["TFT issue", "tlc"],
     ["ACES Req", "tlc"],
@@ -45,11 +51,27 @@ test("editable request labels use the same categories as summary sentences", () 
     ["SET 25C", "others"],
     ["FIT BUT LEAST PRIORITY", "others"],
     ["Always manned - RST MUSTAFA", "others"],
+    ["MATCH", "others"],
+    ["MISMATCHING", "others"],
+    ["NOTMISMATCH", "others"],
   ];
   cases.forEach(([label, category]) => {
     assert.equal(getRequestedSummaryCategoryKey(label), category);
     assert.equal(getRequestedSummaryCategoryKey(`T10 and T20 — ${label}.`), category);
   });
+});
+
+test("mismatch groups share CM with existing repairs without changing remarks, rows or controls", () => {
+  const cm = { key: "cm", label: "APU MIS - RST CM", items: [{ id: "c1", trainId: "T10" }] };
+  const mismatch = { key: "mismatch", label: "MISMATCH", items: [{ id: "m1", trainId: "T13" }, { id: "m2", trainId: "T27" }], hidden: true };
+  const other = { key: "clean", label: "DEEP CLEAN", items: [{ id: "o1", trainId: "T15" }] };
+  const categories = groupRequestGroupsByCategory([other, mismatch, cm]);
+  assert.deepEqual(categories.map(({ key, requestCount }) => [key, requestCount]), [["cm", 3], ["others", 1]]);
+  assert.deepEqual(categories[0].groups, [mismatch, cm]);
+  assert.equal(categories[0].groups[0], mismatch);
+  assert.equal(categories[0].groups[0].items, mismatch.items);
+  assert.equal(categories[0].groups[0].hidden, true);
+  assert.deepEqual(categories[1].groups, [other]);
 });
 
 test("COMM and COMMS remark groups share the TLC parent without changing their labels or controls", () => {

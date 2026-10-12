@@ -169,7 +169,7 @@ export function getRequestedSummaryCategoryKey(value = "") {
   if (getRequestedSummaryWorkshopMovementDirection(value)) return "workshop";
   if (/\bWASH(?:ING)?\b/.test(normalized)) return "washing";
   if (/\bPM\b/.test(normalized)) return "pm";
-  if (/\bCM\b/.test(normalized) || normalized.includes("CLOSING SR")) return "cm";
+  if (/\b(?:CM|MIS{1,2} ?MATCH)\b/.test(normalized) || normalized.includes("CLOSING SR")) return "cm";
   return "others";
 }
 

@@ -185,6 +185,23 @@ test("empty TLC sections are omitted and other request categories remain separat
   assert.deepEqual(groupSummary([]), []);
 });
 
+test("mismatch remarks also appear under CM in the summary with their text preserved", () => {
+  const groups = groupSummary([
+    { trainId: "T10", requestType: "APU MIS - RST CM" },
+    { trainId: "T13", requestType: "MISMATCH" },
+    { trainId: "T27", requestType: "MISMATCH", groupHidden: true },
+    { trainId: "T29", requestType: "missmatch" },
+    { trainId: "T15", requestType: "DEEP CLEAN" },
+  ]);
+  assert.deepEqual(groups.map(({ key }) => key), ["cm", "others"]);
+  assert.deepEqual(groups.find(({ key }) => key === "cm").lines, [
+    "T10 — requested for APU MIS - RST CM activity; close the SR.",
+    "T13 and T27 — MISMATCH.",
+    "T29 — missmatch.",
+  ]);
+  assert.deepEqual(groups.find(({ key }) => key === "others").lines, ["T15 — undergoing deep cleaning."]);
+});
+
 test("ATC requests have their own section, including trailing ATC labels and inspection dates", () => {
   const groups = groupSummary([
     { trainId: "T46", requestType: "CC RESET PENDING - ATC" },
