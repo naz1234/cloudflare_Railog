@@ -42,6 +42,31 @@ function cleanAccessNumber(raw) {
   return text(raw).replace(/,/g, "").trim().replace(/^(?:Access\s*)?#\s*/i, "");
 }
 
+// Shared details always come from the current first access entry, never the old
+// separately saved security form. Only its phone/location/gate remain manual.
+export function buildPossessionSecurityMessage(entry, details = {}) {
+  const f = normalizePossessionAccessEntry(entry);
+  const picName = text(f.picName).trim();
+  const accessDetails = f.accessDetails.map((detail) => ({
+    accessNo: cleanAccessNumber(detail.accessNo),
+    description: detail.description.trim(),
+  })).filter((detail) => detail.accessNo || detail.description);
+  if (!picName && !accessDetails.length) return "";
+
+  const access = accessDetails.map((detail) => detail.accessNo).filter(Boolean).join(" / ");
+  const activity = accessDetails.length > 1
+    ? accessDetails.map((detail) => `${detail.accessNo ? `Access #${detail.accessNo}` : ""}${detail.accessNo && detail.description ? " – " : ""}${detail.description}`).join("\n")
+    : accessDetails[0]?.description || "";
+  return [
+    `PIC Name: ${picName}`,
+    `Mobile#: ${text(details?.phone).trim()}`,
+    `Access: ${access}`,
+    `Activity:${accessDetails.length > 1 ? "\n" : " "}${activity}`,
+    `Location: ${text(details?.location).trim()}`,
+    `Gate Number: ${text(details?.gateNo).trim()}`,
+  ].join("\n");
+}
+
 function formatAccessReferences(numbers) {
   const references = numbers.map((number) => `#${number}`);
   if (references.length < 3) return `Access ${references.join(" and ")}`;

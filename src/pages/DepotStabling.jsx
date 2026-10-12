@@ -54,7 +54,7 @@ import { buildPSTExcelClipboardText } from "../lib/pstExcelClipboard";
 import { appendPstFldcColumns } from "../lib/pstFldcVerification";
 import { usePstFldcVerification } from "../hooks/usePstFldcVerification";
 import PstFldcChecklist from "../components/PstFldcChecklist";
-import { buildPossessionEntryOutput, getPossessionAccessDetails, normalizePossessionAccessEntry } from "../lib/possessionAccessLog";
+import { buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, normalizePossessionAccessEntry } from "../lib/possessionAccessLog";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40Groups, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, resizeHdwDepotRows, clearHdwRows } from "../lib/trainRemHdw40";
 import "../trainRemHdw40.css";
@@ -15523,7 +15523,6 @@ function parsePossessionTimeTo24(raw) {
 }
 
 function fmtPossession24(raw) { const t = parsePossessionTimeTo24(raw); return t ? `${t} hrs` : ""; }
-function cleanPossessionAccessNo(raw) { return raw.replace(/,/g, ""); }
 
 function formatPossessionTimeInput(raw, previousValue = "") {
   const value = String(raw || "").toUpperCase();
@@ -15539,7 +15538,7 @@ function formatPossessionTimeInput(raw, previousValue = "") {
 
 // ── Dark-themed shared primitives ─────────────────────────────────────────────
 
-function PossessionCopyBtn({ text, disabled }) {
+function PossessionCopyBtn({ text, disabled, label = "Copy Output" }) {
   const [copied, setCopied] = useState(false);
   const handle = () => {
     if (disabled || !text) return;
@@ -15549,7 +15548,7 @@ function PossessionCopyBtn({ text, disabled }) {
     <button onClick={handle} disabled={disabled || !text}
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#1e3a56] bg-[#0a1e2e] text-[#7eb8e0] hover:bg-[#0f2d4a] hover:border-[#2b4f6b] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
       {copied ? <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-      {copied ? "Copied!" : "Copy Output"}
+      {copied ? "Copied!" : label}
     </button>
   );
 }
@@ -15885,13 +15884,14 @@ function PossessionLog({ depot = "west" }) {
           </button>
         </div>
       </div>
+      <div className="min-w-0 space-y-4" data-possession-outputs>
       <div className={possessionCardCls}>
         <div className={possessionHeaderCls} style={possessionHeaderStyle}>
           <div>
-            <h2 className="text-sm font-bold text-white">Generated Output</h2>
+            <h2 className="text-sm font-bold text-white">Possession Log Output</h2>
             <p className="text-[10px] text-[#4a8ab5]">Formatted possession log</p>
           </div>
-          <PossessionCopyBtn text={output} disabled={!output.trim()} />
+          <PossessionCopyBtn text={output} disabled={!output.trim()} label="Copy Log" />
         </div>
         <div className="p-4 min-h-[200px]">
           {output.trim() ? (
@@ -15904,77 +15904,68 @@ function PossessionLog({ depot = "west" }) {
           )}
         </div>
       </div>
+      <SCSecurityMessage depot={depot} entry={entries[0]} />
+      </div>
     </div>
   );
 }
 
 // ── Section 2: Station Controller Security Message ────────────────────────────
 const POSSESSION_SC_KEY = "scSecurityMessage_v1";
+// Keep legacy saved fields for compatibility; shared output fields now come only from entry.
 const defaultSC = { picName: "", phone: "", accessNo: "", description: "", location: "", gateNo: "" };
 
-function generateSCOutput(f) {
-  const access = cleanPossessionAccessNo(f.accessNo);
-  return [`PIC Name: ${f.picName}`, `Mobile#: ${f.phone}`, `Access: ${access}`, `Activity: ${f.description}`, `Location: ${f.location}`, `Gate Number: ${f.gateNo}`].join("\n");
+function generateSCOutput(entry, details) {
+  return buildPossessionSecurityMessage(entry, details);
 }
 
-function SCSecurityMessage({ depot = "west" }) {
+function SCSecurityMessage({ depot = "west", entry }) {
   const storageKey = getPossessionStorageKey(POSSESSION_SC_KEY, depot);
   const [form, setForm] = useState(() => { try { return { ...defaultSC, ...JSON.parse(localStorage.getItem(storageKey) || "{}") }; } catch { return defaultSC; } });
   useEffect(() => { localStorage.setItem(storageKey, JSON.stringify(form)); }, [form, storageKey]);
   usePossessionLiveState(getPossessionLiveStateKey("possession-security-message", depot), form, setForm, (value) => ({ ...defaultSC, ...(value || {}) }));
   const set = (field) => (val) => setForm((p) => ({ ...p, [field]: val }));
-  const clear = () => { setForm(defaultSC); localStorage.removeItem(storageKey); };
-  const output = generateSCOutput(form);
-  const hasContent = Object.values(form).some((v) => v.trim() !== "");
+  const clear = () => setForm((previous) => ({ ...previous, phone: "", location: "", gateNo: "" }));
+  const output = generateSCOutput(entry, form);
+  const hasContent = !!output.trim();
+  const depotLabel = getPossessionDepotLabel(depot);
 
   return (
-    <div className="grid grid-cols-[1fr_1fr] gap-4 items-start">
-      <div className={possessionCardCls}>
+      <div className={possessionCardCls} data-possession-security-output>
         <div className={possessionHeaderCls} style={possessionHeaderStyle}>
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center"><Shield className="w-3.5 h-3.5 text-[#4f8ef7]" /></div>
             <div>
               <h2 className="text-sm font-bold text-white">Station Controller Security Message</h2>
-              <p className="text-[10px] text-[#4a8ab5]">Fill in details to generate message</p>
+              <p className="text-[10px] text-[#4a8ab5]">Auto-filled from Access Entry 1</p>
             </div>
           </div>
-          <button onClick={clear} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-red-800/50 text-red-400 hover:bg-red-950/40 transition-colors">
-            <Trash2 className="w-3 h-3" /> Clear
-          </button>
+          <PossessionCopyBtn text={output} disabled={!hasContent} label="Copy Security" />
         </div>
         <div className="p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <POSSESSION_FIELD label="PIC Name"><POSSESSION_INPUT value={form.picName} onChange={set("picName")} placeholder="e.g. Nawaf and Ridha" /></POSSESSION_FIELD>
-            <POSSESSION_FIELD label="Phone / Mobile"><POSSESSION_INPUT value={form.phone} onChange={set("phone")} placeholder="Optional" /></POSSESSION_FIELD>
+          <div className="flex items-center justify-between gap-2">
+            <p className="theme-possession-label text-[10px] font-semibold">Additional security details</p>
+            <button type="button" onClick={clear} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-red-800/50 text-red-400 hover:bg-red-950/40 transition-colors">
+              <Trash2 className="w-3 h-3" /> Clear Details
+            </button>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <POSSESSION_FIELD label="Access Number"><POSSESSION_INPUT value={form.accessNo} onChange={set("accessNo")} placeholder="e.g. 265,404" /></POSSESSION_FIELD>
-            <POSSESSION_FIELD label="Gate Number"><POSSESSION_INPUT value={form.gateNo} onChange={set("gateNo")} placeholder="e.g. 4" /></POSSESSION_FIELD>
+            <POSSESSION_FIELD label="Phone / Mobile"><POSSESSION_INPUT value={form.phone} onChange={set("phone")} ariaLabel={`${depotLabel} security phone`} placeholder="Optional" /></POSSESSION_FIELD>
+            <POSSESSION_FIELD label="Gate Number"><POSSESSION_INPUT value={form.gateNo} onChange={set("gateNo")} ariaLabel={`${depotLabel} security gate`} placeholder="e.g. 4" /></POSSESSION_FIELD>
           </div>
-          <POSSESSION_FIELD label="Description / Activity"><POSSESSION_TEXTAREA value={form.description} onChange={set("description")} placeholder="e.g. TPE, ATWP01-WD, PM..." rows={3} /></POSSESSION_FIELD>
-          <POSSESSION_FIELD label="Location"><POSSESSION_INPUT value={form.location} onChange={set("location")} placeholder="e.g. West Depot" /></POSSESSION_FIELD>
+          <POSSESSION_FIELD label="Location"><POSSESSION_INPUT value={form.location} onChange={set("location")} ariaLabel={`${depotLabel} security location`} placeholder={`e.g. ${depotLabel}`} /></POSSESSION_FIELD>
         </div>
-      </div>
-      <div className={possessionCardCls}>
-        <div className={possessionHeaderCls} style={possessionHeaderStyle}>
-          <div>
-            <h2 className="text-sm font-bold text-white">Generated Message</h2>
-            <p className="text-[10px] text-[#4a8ab5]">Formatted security message</p>
-          </div>
-          <PossessionCopyBtn text={hasContent ? output : ""} disabled={!hasContent} />
-        </div>
-        <div className="p-4 min-h-[200px]">
+        <div className="border-t border-[#1e3a56] p-4 min-h-[160px]">
           {hasContent ? (
             <pre className="font-mono text-xs text-[#c8d8ea] whitespace-pre-wrap leading-relaxed">{output}</pre>
           ) : (
             <div className="h-40 flex flex-col items-center justify-center gap-2 text-center">
               <Shield className="w-6 h-6 text-[#1e3a56]" />
-              <p className="text-[10px] text-[#3a5a7a] font-semibold">Fill in the form to generate message</p>
+              <p className="text-[10px] text-[#3a5a7a] font-semibold">Fill in Access Entry 1 to generate the security message</p>
             </div>
           )}
         </div>
       </div>
-    </div>
   );
 }
 
@@ -16367,16 +16358,7 @@ function PossessionDepotWorkspace({ depot }) {
       <div className="theme-possession-divider border-t border-[#1e3a56]" />
       <section>
         <div className="flex items-center gap-2 mb-3">
-          <span className="w-5 h-5 rounded-full bg-sky-900/50 border border-sky-700/50 flex items-center justify-center text-[10px] font-black text-sky-300">3</span>
-          <h1 className="text-sm font-black text-white tracking-widest uppercase">Station Controller Security Message</h1>
-          <div className="flex-1 h-px bg-[#1e3a56]" />
-        </div>
-        <SCSecurityMessage depot={depot} />
-      </section>
-      <div className="theme-possession-divider border-t border-[#1e3a56]" />
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <span className="w-5 h-5 rounded-full bg-emerald-900/50 border border-emerald-700/50 flex items-center justify-center text-[10px] font-black text-emerald-300">4</span>
+          <span className="w-5 h-5 rounded-full bg-emerald-900/50 border border-emerald-700/50 flex items-center justify-center text-[10px] font-black text-emerald-300">3</span>
           <h1 className="text-sm font-black text-white tracking-widest uppercase">Sweeping (after Possession)</h1>
           <div className="flex-1 h-px bg-[#1e3a56]" />
         </div>
