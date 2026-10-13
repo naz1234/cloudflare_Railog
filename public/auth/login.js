@@ -42,9 +42,7 @@
   const codeForm = document.getElementById('code-form');
   const codeInput = document.getElementById('access-code');
   const codeButton = document.getElementById('code-button');
-  const loginMethods = document.getElementById('login-methods');
   const emailMethodButton = document.getElementById('email-method-button');
-  const codeMethodButton = document.getElementById('code-method-button');
   const loginProgress = document.getElementById('login-progress');
 
   let expiryDeadline = 0;
@@ -79,10 +77,7 @@
     verifyStage.hidden = stage !== 'verify';
     successStage.hidden = stage !== 'success';
     codeStage.hidden = stage !== 'code';
-    loginMethods.hidden = !codeOnlyEnabled || !['request', 'code'].includes(stage);
     loginProgress.hidden = stage === 'code' || (stage === 'success' && wasCodeOnly);
-    emailMethodButton.setAttribute('aria-pressed', String(stage !== 'code'));
-    codeMethodButton.setAttribute('aria-pressed', String(stage === 'code'));
     formHeading.textContent = stage === 'code' ? 'Sign in with access code'
       : ['Sign in', 'Verify your email', 'Access verified'][currentIndex];
     [requestIndicator, verifyIndicator, successIndicator].forEach((indicator, index) => {
@@ -309,6 +304,21 @@
     });
   }
 
+  function showDirectAccessStage() {
+    // An unadvertised direct link selects this view; server verification is still required.
+    if (!codeOnlyEnabled || window.location.hash !== '#access' || isBusy || loginCompleted
+      || loginCard.dataset.stage === 'code') return;
+    window.clearInterval(timerId);
+    expiryDeadline = 0;
+    resendDeadline = 0;
+    clearChallenge({ clearEmail: true });
+    clearPin();
+    setStage('code');
+    showMessage('');
+    updateCodeButton();
+    codeInput.focus();
+  }
+
   async function initializeTurnstile() {
     try {
       const [{ response, data }, turnstile] = await Promise.all([
@@ -317,7 +327,7 @@
       ]);
       if (!response.ok || !data.siteKey) throw new Error('auth_config_unavailable');
       codeOnlyEnabled = data.codeOnlyEnabled === true;
-      loginMethods.hidden = !codeOnlyEnabled || !['request', 'code'].includes(loginCard.dataset.stage);
+      showDirectAccessStage();
       turnstileWidgetId = turnstile.render('#turnstile-widget', {
         sitekey: data.siteKey,
         theme: 'dark',
@@ -577,10 +587,9 @@
 
   function updateCodeButton() {
     const remaining = remainingSeconds(codeRetryDeadline);
-    codeButton.disabled = isBusy || !codeOnlyEnabled || !turnstileToken
+    codeButton.disabled = isBusy || loginCard.dataset.stage !== 'code' || !codeOnlyEnabled || !turnstileToken
       || !/^\d{6}$/.test(codeInput.value) || remaining > 0;
     emailMethodButton.disabled = isBusy;
-    codeMethodButton.disabled = isBusy;
     if (!isBusy) codeButton.querySelector('span').textContent = remaining > 0
       ? `Try again in ${formatTime(remaining)}` : 'Continue with code';
   }
@@ -589,20 +598,11 @@
     codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, PIN_LENGTH);
     updateCodeButton();
   });
-  codeMethodButton.addEventListener('click', () => {
-    if (isBusy || loginCompleted || !codeOnlyEnabled) return;
-    setStage('code');
-    showMessage('');
-    updateCodeButton();
-    codeInput.focus();
-  });
   emailMethodButton.addEventListener('click', () => {
     if (isBusy || loginCompleted) return;
     codeInput.value = '';
-    setStage('request');
-    showMessage('');
-    updateRequestButton();
-    emailInput.focus();
+    window.history?.replaceState(null, '', window.location.href.split('#')[0]);
+    showRequestStage();
   });
   codeForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -711,6 +711,7 @@
 
   setStage('request');
   restoreChallenge();
+  window.addEventListener('hashchange', showDirectAccessStage);
   initializeTurnstile();
 
   api('/api/auth/session')

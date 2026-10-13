@@ -47,7 +47,7 @@ const allowedEmails = [
   'Member.Two@flow-metro.com',
 ];
 
-test('code-only login issues a real separate session, protects the app, and supports presence and logout', async () => {
+test('code-only login issues a real separate session, stays out of presence, and supports logout', async () => {
   const env = makeEnv({ AUTH_CODE_ONLY_PIN: '123456' });
   const store = createMemoryStore();
   const endpoint = createCodeOnlyEndpoint({ createStore: () => store, now: () => nowMs,
@@ -74,7 +74,18 @@ test('code-only login issues a real separate session, protects the app, and supp
   assert.equal(session.status, 200);
   assert.deepEqual((await session.json()).user, payload.user);
   const presence = await createPresenceEndpoint({ createStore: () => store, now: () => nowMs })(context);
-  assert.deepEqual((await presence.json()).users, [{ name: 'Code-only access' }]);
+  assert.deepEqual((await presence.json()).users, []);
+  const emailHash = await hashAuthEmail({ email: allowedEmails[0], hmacSecret: env.AUTH_HMAC_SECRET });
+  await store.insertSession({ tokenHash: 'email-session', emailHash,
+    createdAt: nowMs / 1000, lastSeenAt: nowMs / 1000,
+    expiresAt: nowMs / 1000 + AUTH_SESSION_TTL_SECONDS });
+  for (const tokenHash of [context.data.authUser.tokenHash, 'email-session']) {
+    const mixedPresence = await createPresenceEndpoint({ createStore: () => store, now: () => nowMs })({
+      ...context, data: { authUser: { tokenHash } },
+    });
+    assert.deepEqual((await mixedPresence.json()).users, [{ name: 'Member.One' }]);
+  }
+  assert.equal(store.sessions.get(context.data.authUser.tokenHash).last_seen_at, nowMs / 1000);
   for (const pin of ['', '654321', 'invalid']) {
     assert.equal((await authorize({ env: { ...env, AUTH_CODE_ONLY_PIN: pin }, request: context.request })).authorized, false);
   }

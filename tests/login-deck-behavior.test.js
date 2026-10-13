@@ -7,14 +7,24 @@ const source = await readFile(new URL('../public/auth/login.js', import.meta.url
 const STORAGE_KEY = 'l3dcLoginChallenge';
 const START = Date.parse('2026-10-05T09:00:00Z');
 
-test('code-only is optional and submits a secret only to the server before a safe redirect', async () => {
-  const disabled = await setup({ challenge: null });
-  assert.equal(disabled.get('login-methods').hidden, true);
-  await disabled.get('code-method-button').fire('click');
-  assert.equal(disabled.get('code-stage').hidden, true);
-  const app = await setup({ challenge: null, codeOnlyEnabled: true });
-  assert.equal(app.get('login-methods').hidden, false);
-  await app.get('code-method-button').fire('click');
+test('normal login stays email-only, including unrelated fragments and disabled direct access', async () => {
+  for (const options of [
+    { codeOnlyEnabled: true },
+    { codeOnlyEnabled: true, hash: '#other' },
+    { codeOnlyEnabled: false, hash: '#access' },
+  ]) {
+    const app = await setup({ challenge: null, ...options });
+    assert.equal(app.get('code-stage').hidden, true);
+    assert.equal(app.get('request-stage').hidden, false);
+    assert.equal(app.get('login-progress').hidden, false);
+    app.get('access-code').value = '123456';
+    await app.get('code-form').fire('submit');
+    assert.equal(app.requests.some(({ path }) => path === '/api/auth/code-only'), false);
+  }
+});
+
+test('direct access submits a secret only to the server before a safe redirect', async () => {
+  const app = await setup({ challenge: null, codeOnlyEnabled: true, hash: '#access' });
   assert.equal(app.get('code-stage').hidden, false);
   assert.equal(app.get('request-stage').hidden, true);
   assert.equal(app.get('login-progress').hidden, true);
@@ -35,12 +45,31 @@ test('code-only is optional and submits a secret only to the server before a saf
   assert.deepEqual(app.navigations, ['/depot?tab=movements#today']);
 });
 
+test('direct access clears a restored email challenge without exposing or submitting its PIN', async () => {
+  const app = await setup({ codeOnlyEnabled: true, hash: '#access' });
+  assert.equal(app.get('login-card').dataset.stage, 'code');
+  assert.equal(app.storage.size, 0);
+  assert.equal([...app.timers.values()].some((timer) => timer.interval), false);
+  await app.advance(301000);
+  assert.equal(app.get('auth-message').textContent, '');
+  await app.get('email-method-button').fire('click');
+  assert.equal(app.get('login-card').dataset.stage, 'request');
+  assert.equal(app.replacements.length, 1);
+  assert.equal(new URL(app.replacements[0]).hash, '');
+});
+
+test('opening the direct fragment on an existing login page selects the code form', async () => {
+  const app = await setup({ challenge: null, codeOnlyEnabled: true });
+  await app.changeHash('#access');
+  assert.equal(app.get('login-card').dataset.stage, 'code');
+  assert.equal(app.get('request-stage').hidden, true);
+});
+
 test('code-only errors reset the security token and a shared-code throttle leaves email login available', async () => {
   for (const status of [401, 429, 503]) {
-    const app = await setup({ challenge: null, codeOnlyEnabled: true,
+    const app = await setup({ challenge: null, codeOnlyEnabled: true, hash: '#access',
       codeOnlyResponse: response({ authenticated: false, retryAfterSeconds: 45 }, status),
     });
-    await app.get('code-method-button').fire('click');
     app.get('access-code').value = '123456';
     await app.get('access-code').fire('input');
     await app.get('code-form').fire('submit');
@@ -116,6 +145,8 @@ async function setup({
   const storage = new Map(challenge ? [[STORAGE_KEY, JSON.stringify(challenge)]] : []);
   const requests = [];
   const navigations = [];
+  const replacements = [];
+  const windowListeners = new Map();
   const elements = new Map();
 
   class Element {
@@ -172,8 +203,8 @@ async function setup({
     'request-button', 'verify-button', 'resend-button', 'restart-button', 'expiry-timer',
     'request-reference', 'auth-message', 'login-email', 'turnstile-shell', 'turnstile-status',
     'pin-inputs',
-    'code-stage', 'code-form', 'access-code', 'code-button', 'login-methods',
-    'email-method-button', 'code-method-button', 'login-progress',
+    'code-stage', 'code-form', 'access-code', 'code-button',
+    'email-method-button', 'login-progress',
   ];
   ids.forEach((id) => elements.set(id, new Element(id)));
   const get = (id) => elements.get(id);
@@ -202,7 +233,9 @@ async function setup({
       querySelectorAll: (selector) => selector === '#pin-inputs input' ? inputs : hints,
     },
     window: {
+      addEventListener: (name, callback) => windowListeners.set(name, callback),
       matchMedia: () => ({ matches: reducedMotion }),
+      history: { replaceState: (state, title, url) => replacements.push(url) },
       location: {
         href: `https://railog.example/login${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}${hash}`,
         hash,
@@ -251,8 +284,13 @@ async function setup({
   await settle();
 
   return {
-    get, inputs, requests, navigations, storage, timers,
+    get, inputs, requests, navigations, replacements, storage, timers,
     get focused() { return focused; },
+    async changeHash(value) {
+      context.window.location.hash = value;
+      windowListeners.get('hashchange')?.();
+      await settle();
+    },
     async paste(value = '123456', index = 0) {
       await inputs[index].fire('paste', { clipboardData: { getData: () => value } });
       await settle();
