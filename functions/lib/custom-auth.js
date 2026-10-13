@@ -114,12 +114,12 @@ export function parseSingleAuthEmail(value) {
   return email;
 }
 
-export function parseAllowedAuthMembers(value, { allowExternal = false } = {}) {
+export function parseAllowedAuthMembers(value, { allowExternal = false, rejectDuplicates = false } = {}) {
   const tokens = String(value || '')
     .split(/[\s,;]+/)
     .map((entry) => entry.trim())
     .filter(Boolean);
-  if (!tokens.length || tokens.length > 100) return [];
+  if (!tokens.length) return [];
 
   const members = [];
   const seen = new Set();
@@ -128,9 +128,12 @@ export function parseAllowedAuthMembers(value, { allowExternal = false } = {}) {
     if (
       !normalizedEmail
       || (!allowExternal && !normalizedEmail.endsWith(`@${AUTH_ALLOWED_EMAIL_DOMAIN}`))
-      || seen.has(normalizedEmail)
     ) {
       return [];
+    }
+    if (seen.has(normalizedEmail)) {
+      if (rejectDuplicates) return [];
+      continue;
     }
     seen.add(normalizedEmail);
     members.push({
@@ -138,6 +141,7 @@ export function parseAllowedAuthMembers(value, { allowExternal = false } = {}) {
       normalizedEmail,
       name: authDisplayName(canonicalEmail),
     });
+    if (members.length > 100) return [];
   }
   return members;
 }
@@ -160,21 +164,27 @@ export function getCustomAuthConfiguration(env = {}) {
   const staffMembers = parseAllowedAuthMembers(env.AUTH_ALLOWED_EMAILS);
   const rawAdditional = String(env.AUTH_ADDITIONAL_ALLOWED_EMAILS || '').trim();
   const additionalMembers = parseAllowedAuthMembers(rawAdditional, { allowExternal: true });
-  const allowedMembers = [...staffMembers, ...additionalMembers];
+  // Keep the first canonical identity, with the staff list taking precedence.
+  const membersByEmail = new Map();
+  for (const member of [...staffMembers, ...additionalMembers]) {
+    if (!membersByEmail.has(member.normalizedEmail)) {
+      membersByEmail.set(member.normalizedEmail, member);
+    }
+  }
+  const allowedMembers = [...membersByEmail.values()];
   const hmacSecret = String(env.AUTH_HMAC_SECRET || '').trim();
   const turnstileSiteKey = String(env.TURNSTILE_SITE_KEY || '').trim();
   const turnstileSecretKey = String(env.TURNSTILE_SECRET_KEY || '').trim();
   const issues = [];
 
   if (!staffMembers.length) {
-    issues.push(`AUTH_ALLOWED_EMAILS must contain unique ${AUTH_ALLOWED_EMAIL_DOMAIN} addresses.`);
+    issues.push(`AUTH_ALLOWED_EMAILS must contain valid ${AUTH_ALLOWED_EMAIL_DOMAIN} addresses, with at most 100 unique addresses.`);
   }
   if (
     (rawAdditional && !additionalMembers.length)
     || allowedMembers.length > 100
-    || new Set(allowedMembers.map((member) => member.normalizedEmail)).size !== allowedMembers.length
   ) {
-    issues.push('AUTH_ADDITIONAL_ALLOWED_EMAILS must contain unique valid addresses, with at most 100 approved addresses across both lists.');
+    issues.push('AUTH_ADDITIONAL_ALLOWED_EMAILS must contain valid addresses, with at most 100 unique approved addresses across both lists.');
   }
   if (hmacSecret.length < 32) {
     issues.push('AUTH_HMAC_SECRET must be an encrypted secret of at least 32 characters.');
@@ -214,7 +224,8 @@ export function getAuthPresenceConfiguration(
     return { hiddenMembers: [], issues: [], valid: true };
   }
 
-  const hiddenMembers = parseAllowedAuthMembers(rawHiddenMembers, { allowExternal: true });
+  // Preserve the separate presence-privacy validation policy.
+  const hiddenMembers = parseAllowedAuthMembers(rawHiddenMembers, { allowExternal: true, rejectDuplicates: true });
   const allowedEmails = new Set(
     (authConfig.allowedMembers || []).map((member) => member.normalizedEmail),
   );
