@@ -96,6 +96,7 @@ const TIMETABLE_TYPES = [
 const ACTIVE_TIMETABLE_TYPE_KEY = "activeTimetableType_v1";
 const LOCAL_TIMETABLE_RECORDS_KEY = "storedTimetableRecords_v1";
 const EAST_INSERTION_TIME_OFFSET_KEY = "eastInsertionTimeOffsetMinutes_v1";
+const WEST_INSERTION_TIME_OFFSET_KEY = "westInsertionTimeOffsetMinutes_v1";
 const TIMETABLE_PARSE_VERSION = 7;
 const APP_THEME_KEY = "l3DcTheme_v1";
 const NINE_AM_HIGHLIGHT_TIDS = new Set(["112", "114", "116", "118", "120", "202", "204", "206", "208", "210"]);
@@ -139,6 +140,19 @@ function loadEastInsertionTimeOffset() {
 
 function saveEastInsertionTimeOffset(value) {
   try { localStorage.setItem(EAST_INSERTION_TIME_OFFSET_KEY, String(normalizeEastInsertionTimeOffset(value))); } catch {}
+}
+
+function normalizeWestInsertionTimeOffset(value) {
+  return Number(value) === 1 ? 1 : 0;
+}
+
+function loadWestInsertionTimeOffset() {
+  try { return normalizeWestInsertionTimeOffset(localStorage.getItem(WEST_INSERTION_TIME_OFFSET_KEY)); }
+  catch { return 0; }
+}
+
+function saveWestInsertionTimeOffset(value) {
+  try { localStorage.setItem(WEST_INSERTION_TIME_OFFSET_KEY, String(normalizeWestInsertionTimeOffset(value))); } catch {}
 }
 
 function normalizeTimetableType(value = "") {
@@ -10113,6 +10127,8 @@ function InsertionTabContent({
   insertionLiveDebug,
   eastInsertionTimeOffsetMinutes = 0,
   onEastInsertionTimeOffsetChange,
+  westInsertionTimeOffsetMinutes = 0,
+  onWestInsertionTimeOffsetChange,
   maintenanceRequests = [],
   onAddMaintenanceRequest,
   onRemoveMaintenanceRequest,
@@ -10265,8 +10281,10 @@ function InsertionTabContent({
   // TID schedule range: earliest first-TID time across both series, latest last-TID time.
   // Series 1xx: 05:25–06:22 | Series 2xx: 05:24–06:21
   // Grey-out in the TID Reference Table only applies while current time is within this window.
-  const TID_SCHEDULE_FIRST = eastInsertionTimeOffsetMinutes === 2 ? "05:25" : "05:24";
-  const TID_SCHEDULE_LAST = eastInsertionTimeOffsetMinutes === 2 ? "06:23" : "06:22";
+  const TID_SCHEDULE_FIRST = eastInsertionTimeOffsetMinutes === 2
+    ? westInsertionTimeOffsetMinutes === 1 ? "05:26" : "05:25"
+    : "05:24";
+  const TID_SCHEDULE_LAST = eastInsertionTimeOffsetMinutes === 2 || westInsertionTimeOffsetMinutes === 1 ? "06:23" : "06:22";
   const withinTIDSchedule = isWithinTIDSchedule(TID_SCHEDULE_FIRST, TID_SCHEDULE_LAST);
   const [tidReferenceScheduleKey, setTidReferenceScheduleKey] = useState(() => normalizeTimetableType(activeTimetableType));
 
@@ -10284,6 +10302,8 @@ function InsertionTabContent({
     duplicateTidKeys: insertionAssistTidUsage.duplicateTidKeys,
     eastTimeOffsetMinutes: eastInsertionTimeOffsetMinutes,
     onEastTimeOffsetChange: onEastInsertionTimeOffsetChange,
+    westTimeOffsetMinutes: westInsertionTimeOffsetMinutes,
+    onWestTimeOffsetChange: onWestInsertionTimeOffsetChange,
     controlledScheduleKey: tidReferenceScheduleKey,
     onScheduleKeyChange: setTidReferenceScheduleKey,
   };
@@ -17716,6 +17736,7 @@ export default function DepotStablingPage() {
   const [pg2TidInputs, setPg2TidInputs] = useState(() => loadInsertionPg2TidInputs());
   const [insertionEditHistoryRevision, setInsertionEditHistoryRevision] = useState(0);
   const [eastInsertionTimeOffsetMinutes, setEastInsertionTimeOffsetMinutes] = useState(() => loadEastInsertionTimeOffset());
+  const [westInsertionTimeOffsetMinutes, setWestInsertionTimeOffsetMinutes] = useState(() => loadWestInsertionTimeOffset());
   const [insertionLiveLoaded, setInsertionLiveLoaded] = useState(false);
   const [insertionLiveSyncing, setInsertionLiveSyncing] = useState(false);
   const [insertionLiveLastSynced, setInsertionLiveLastSynced] = useState(null);
@@ -17746,6 +17767,7 @@ export default function DepotStablingPage() {
   useEffect(() => { saveInsertionPg2Log(pg2InsertionLog); }, [pg2InsertionLog]);
   useEffect(() => { saveInsertionPg2TidInputs(pg2TidInputs); }, [pg2TidInputs]);
   useEffect(() => { saveEastInsertionTimeOffset(eastInsertionTimeOffsetMinutes); }, [eastInsertionTimeOffsetMinutes]);
+  useEffect(() => { saveWestInsertionTimeOffset(westInsertionTimeOffsetMinutes); }, [westInsertionTimeOffsetMinutes]);
 
   const getTabFromPath = (path) => {
     if (path === "/train-washing") return "washing";
@@ -19958,7 +19980,9 @@ export default function DepotStablingPage() {
     const applySelectedTimeOffset = (time, sourceDepot) => (
       sourceDepot === "east"
         ? addMinutesToHHMM(time, normalizeEastInsertionTimeOffset(eastInsertionTimeOffsetMinutes))
-        : time
+        : normalizeWestInsertionTimeOffset(westInsertionTimeOffsetMinutes) === 1
+          ? addMinutesToHHMM(time, 1)
+          : time
     );
     const uploadedSameDepotTime = activeInsertionTimeMaps?.[depotKey]?.[cleanTid];
     const uploadedOppositeDepotTime = activeInsertionTimeMaps?.[oppositeDepotKey]?.[cleanTid];
@@ -20047,7 +20071,7 @@ export default function DepotStablingPage() {
       markInsertionLiveLocalEdit();
       setInsertionLog(sortInsertionLogByTime(nextLog));
     }
-  }, [activeTimetable?.id, selectedTimetableType, eastInsertionTimeOffsetMinutes, insertionLiveLoaded, insertionLog]);
+  }, [activeTimetable?.id, selectedTimetableType, eastInsertionTimeOffsetMinutes, westInsertionTimeOffsetMinutes, insertionLiveLoaded, insertionLog]);
 
   useEffect(() => {
     if (!pg2InsertionLog.length) return;
@@ -20078,7 +20102,7 @@ export default function DepotStablingPage() {
       markInsertionLiveLocalEdit();
       setPg2InsertionLog(sortInsertionLogByTime(nextLog));
     }
-  }, [activeTimetable?.id, selectedTimetableType, eastInsertionTimeOffsetMinutes, insertionLiveLoaded, pg2InsertionLog]);
+  }, [activeTimetable?.id, selectedTimetableType, eastInsertionTimeOffsetMinutes, westInsertionTimeOffsetMinutes, insertionLiveLoaded, pg2InsertionLog]);
 
   const applyInsertionTickToLog = useCallback((prevLog = [], road, bi, trainKey, remark = "", sweepTrack = "") => {
     const cellKey = `${road}-${bi}`;
@@ -22603,6 +22627,8 @@ export default function DepotStablingPage() {
             insertionLiveDebug={insertionLiveDebug}
             eastInsertionTimeOffsetMinutes={eastInsertionTimeOffsetMinutes}
             onEastInsertionTimeOffsetChange={setEastInsertionTimeOffsetMinutes}
+            westInsertionTimeOffsetMinutes={westInsertionTimeOffsetMinutes}
+            onWestInsertionTimeOffsetChange={setWestInsertionTimeOffsetMinutes}
             maintenanceRequests={requests}
             onAddMaintenanceRequest={handleAddRequest}
             onRemoveMaintenanceRequest={handleRemoveRequest}

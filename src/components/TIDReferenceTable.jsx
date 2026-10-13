@@ -371,6 +371,19 @@ function addMinutesToTime(timeStr = "", minutesToAdd = 0) {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
+function applyInsertionTimeOffsets(baseSchedules, westTimeOffsetMinutes = 0, eastTimeOffsetMinutes = 0) {
+  const westOffset = Number(westTimeOffsetMinutes) === 1 ? 1 : 0;
+  const eastOffset = Number(eastTimeOffsetMinutes) === 2 ? 2 : 0;
+  if (!westOffset && !eastOffset) return baseSchedules;
+
+  // Always derive from the original schedule: toggling must not accumulate time.
+  return Object.fromEntries(Object.entries(baseSchedules).map(([key, schedule]) => [key, {
+    ...schedule,
+    ...(westOffset ? { west: (schedule?.west || []).map(row => ({ ...row, time: addMinutesToTime(row.time, westOffset) })) } : {}),
+    ...(eastOffset ? { east: (schedule?.east || []).map(row => ({ ...row, time: addMinutesToTime(row.time, eastOffset) })) } : {}),
+  }]));
+}
+
 const TID_SOUND_ENABLED_KEY = "insertionTidSoundEnabled_v1";
 const TID_SOUND_SETTINGS_KEY = "insertionTidSoundSettings_v2";
 const TID_SOUND_SETTINGS_EVENT = "insertion-tid-sound-settings-change";
@@ -764,6 +777,7 @@ function ScheduleWarningBanner({ selectedLabel, todayLabel, onSwitchToToday }) {
 }
 
 function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedule, isScheduleOverride, onTidDragStart, activeDragKey = "", usedTidKeys = new Set(), duplicateTidKeys = new Set(), timeOffsetMinutes = 0, onTimeOffsetChange }) {
+  const timeOffsetStep = depotType === "east" ? 2 : 1;
   const accent = DEPOT_ACCENTS[depotType];
   const nextIndex = getNextIndex(rows, nowMinutes);
   const activeIndex = getActiveIndex(rows, nowMinutes);
@@ -1072,7 +1086,6 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                   borderBottom: "1px solid rgba(125, 184, 224, 0.16)",
                 }}
               >
-                {depotType === "east" ? (
                   <label
                     style={{
                       display: "inline-flex",
@@ -1081,12 +1094,12 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                       gap: 4,
                       cursor: "pointer",
                     }}
-                    title="Choose the East Depot insertion timing: original timetable time or an additional 2 minutes"
+                    title={`Choose the ${title} insertion timing: original timetable time or an additional ${timeOffsetStep} minute${timeOffsetStep === 1 ? "" : "s"}`}
                   >
                     <TimerIcon size={10} />
                     <select
-                      value={Number(timeOffsetMinutes) === 2 ? 2 : 0}
-                      onChange={(event) => onTimeOffsetChange?.(Number(event.target.value) === 2 ? 2 : 0)}
+                      value={Number(timeOffsetMinutes) === timeOffsetStep ? timeOffsetStep : 0}
+                      onChange={(event) => onTimeOffsetChange?.(Number(event.target.value) === timeOffsetStep ? timeOffsetStep : 0)}
                       onClick={(event) => event.stopPropagation()}
                       style={{
                         border: "none",
@@ -1101,17 +1114,12 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
                         textTransform: "uppercase",
                         cursor: "pointer",
                       }}
-                      aria-label="East Depot insertion time adjustment"
+                      aria-label={`${title} insertion time adjustment`}
                     >
                       <option value={0} style={{ color: "#0f172a", background: "#ffffff" }}>TIME</option>
-                      <option value={2} style={{ color: "#0f172a", background: "#ffffff" }}>TIME +2</option>
+                      <option value={timeOffsetStep} style={{ color: "#0f172a", background: "#ffffff" }}>TIME +{timeOffsetStep}</option>
                     </select>
                   </label>
-                ) : (
-                  <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                    <TimerIcon size={10} /> TIME
-                  </span>
-                )}
               </th>
             </tr>
           </thead>
@@ -1400,7 +1408,7 @@ function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedul
   );
 }
 
-export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday", onTidDragStart, activeDragKey = "", usedTidKeys = [], duplicateTidKeys = [], eastTimeOffsetMinutes = 0, onEastTimeOffsetChange, depotFilter = "", showHeader = true, showHelp = true, controlsOnly = false, controlledScheduleKey = null, onScheduleKeyChange = null, soundAlertsEnabled = true }) {
+export default function TIDReferenceTable({ withinSchedule = true, activeTimetable = null, activeTimetableType = "weekday", onTidDragStart, activeDragKey = "", usedTidKeys = [], duplicateTidKeys = [], eastTimeOffsetMinutes = 0, onEastTimeOffsetChange, westTimeOffsetMinutes = 0, onWestTimeOffsetChange, depotFilter = "", showHeader = true, showHelp = true, controlsOnly = false, controlledScheduleKey = null, onScheduleKeyChange = null, soundAlertsEnabled = true }) {
   const [now, setNow] = useState(new Date());
   const [soundSettings, setSoundSettings] = useState(loadTidSoundSettings);
   const [soundReady, setSoundReady] = useState(false);
@@ -1411,21 +1419,10 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
     () => buildSchedules(activeTimetable, selectedScheduleKey),
     [activeTimetable, selectedScheduleKey]
   );
-  const schedules = useMemo(() => {
-    const offset = Number(eastTimeOffsetMinutes) === 2 ? 2 : 0;
-    if (!offset) return baseSchedules;
-
-    return Object.fromEntries(Object.entries(baseSchedules).map(([key, schedule]) => [
-      key,
-      {
-        ...schedule,
-        east: (schedule?.east || []).map((row) => ({
-          ...row,
-          time: addMinutesToTime(row.time, offset),
-        })),
-      },
-    ]));
-  }, [baseSchedules, eastTimeOffsetMinutes]);
+  const schedules = useMemo(
+    () => applyInsertionTimeOffsets(baseSchedules, westTimeOffsetMinutes, eastTimeOffsetMinutes),
+    [baseSchedules, westTimeOffsetMinutes, eastTimeOffsetMinutes]
+  );
   const [localScheduleKey, setLocalScheduleKey] = useState(() => selectedScheduleKey || getDefaultScheduleKey());
   const normalizedControlledScheduleKey = controlledScheduleKey ? normalizeTimetableTypeKey(controlledScheduleKey) : null;
   const scheduleKey = normalizedControlledScheduleKey || localScheduleKey;
@@ -1549,8 +1546,8 @@ export default function TIDReferenceTable({ withinSchedule = true, activeTimetab
       activeDragKey={activeDragKey}
       usedTidKeys={usedTidKeySet}
       duplicateTidKeys={duplicateTidKeySet}
-      timeOffsetMinutes={depotType === "east" ? eastTimeOffsetMinutes : 0}
-      onTimeOffsetChange={depotType === "east" ? onEastTimeOffsetChange : undefined}
+      timeOffsetMinutes={depotType === "east" ? eastTimeOffsetMinutes : westTimeOffsetMinutes}
+      onTimeOffsetChange={depotType === "east" ? onEastTimeOffsetChange : onWestTimeOffsetChange}
     />
   );
   const referenceHeader = showHeader ? (
