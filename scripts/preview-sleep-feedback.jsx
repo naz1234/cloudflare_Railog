@@ -39,7 +39,7 @@ function Preview() {
           setTheme(next);
         }}>Switch to {theme === "dark" ? "light" : "dark"} mode</button>
       </nav>
-      <SleepModeWorkspace key={fixtureVersion} westData={{ "WD-ST14": [{ trainId: "29" }] }} eastData={{ "ED-ST02": [{ trainId: "18" }] }} />
+      <SleepModeWorkspace key={fixtureVersion} westData={{ "WD-ST15": [{ trainId: "26" }, { trainId: "30" }, { trainId: "23" }], "WD-ST14": [{ trainId: "29" }, { trainId: "09" }] }} eastData={{ "ED-ST02": [{ trainId: "18" }] }} />
     </main>
   );
 }

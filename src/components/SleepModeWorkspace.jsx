@@ -13,12 +13,23 @@ import {
   Trash2,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import "../copyFeedbackSlate.css";
 import "../outputWindowsSlate.css";
 import "../sleepLogSlate.css";
 import { buildSleepModeExcelFileName, createSleepModeExcelBytes } from "@/lib/sleepModeExcel";
 import {
   buildSleepModeGroupedText,
+  clearSleepModeTrainLogs,
   createSleepModeLogEntry,
   formatSleepTimeInput,
   getSleepModeDepot,
@@ -159,10 +170,12 @@ function DepotSleepPanel({
   selectedKeys,
   latestModeByTrain,
   logDraft,
+  loaded,
   saving,
   onToggle,
   onSelectDepot,
   onClearDepot,
+  onClearTrain,
   onTimeChange,
   onRemarkChange,
   onUseCurrentTime,
@@ -232,32 +245,45 @@ function DepotSleepPanel({
                   const isSelected = cell?.trainId && selectedKeys.has(cell.key);
                   const latestMode = cell?.trainId ? latestModeByTrain.get(cell.trainId) : "";
                   return cell?.trainId ? (
-                    <button
-                      key={cell.key}
-                      type="button"
-                      onClick={() => onToggle(cell.key)}
-                      aria-pressed={isSelected}
-                      aria-label={`${isSelected ? "Deselect" : "Select"} T${cell.trainId} at ${road}`}
-                      data-sleep-mode={latestMode || "ready"}
-                      className={`slp-stabling-train-card relative flex min-h-[74px] flex-col items-center justify-center rounded-lg border px-1 py-2 transition active:scale-[0.97] ${
-                        isSelected
-                          ? "border-violet-500 bg-violet-100 text-violet-950 shadow-[0_0_0_2px_rgba(139,92,246,0.16)] dark:border-violet-300 dark:bg-violet-400/20 dark:text-white"
-                          : "border-slate-300 bg-white text-slate-900 hover:border-violet-400 hover:bg-violet-50 dark:border-[#2b5674] dark:bg-[#0a2134] dark:text-white dark:hover:border-violet-400/70 dark:hover:bg-violet-400/10"
-                      }`}
-                    >
-                      {isSelected && <Check className="absolute right-1.5 top-1.5 h-3.5 w-3.5 text-violet-600 dark:text-violet-200" strokeWidth={3} />}
-                      <span className="slp-stabling-train-id font-black">{cell.trainId}</span>
-                      <span data-mode={latestMode || "ready"} className={`slp-stabling-mode-pill mt-1 rounded-full px-2 py-0.5 font-semibold uppercase ${
-                        latestMode === "sleep"
-                          ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-200"
-                          : latestMode === "wake"
-                            ? "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-200"
-                            : "bg-slate-100 text-slate-500 dark:bg-[#102f47] dark:text-[#759ab2]"
-                      }`}
+                    <div key={cell.key} className="relative min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => onToggle(cell.key)}
+                        aria-pressed={isSelected}
+                        aria-label={`${isSelected ? "Deselect" : "Select"} T${cell.trainId} at ${road}`}
+                        data-sleep-mode={latestMode || "ready"}
+                        className={`slp-stabling-train-card relative flex h-full min-h-[74px] w-full flex-col items-center justify-center rounded-lg border px-1 py-2 transition active:scale-[0.97] ${
+                          isSelected
+                            ? "border-violet-500 bg-violet-100 text-violet-950 shadow-[0_0_0_2px_rgba(139,92,246,0.16)] dark:border-violet-300 dark:bg-violet-400/20 dark:text-white"
+                            : "border-slate-300 bg-white text-slate-900 hover:border-violet-400 hover:bg-violet-50 dark:border-[#2b5674] dark:bg-[#0a2134] dark:text-white dark:hover:border-violet-400/70 dark:hover:bg-violet-400/10"
+                        }`}
                       >
-                        {latestMode === "sleep" ? "Sleep" : latestMode === "wake" ? "Wake" : "Ready"}
-                      </span>
-                    </button>
+                        {isSelected && <Check className="absolute right-1.5 top-1.5 h-3.5 w-3.5 text-violet-600 dark:text-violet-200" strokeWidth={3} />}
+                        <span className="slp-stabling-train-id font-black">{cell.trainId}</span>
+                        <span data-mode={latestMode || "ready"} className={`slp-stabling-mode-pill mt-1 rounded-full px-2 py-0.5 font-semibold uppercase ${
+                          latestMode === "sleep"
+                            ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-200"
+                            : latestMode === "wake"
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-200"
+                              : "bg-slate-100 text-slate-500 dark:bg-[#102f47] dark:text-[#759ab2]"
+                        }`}
+                        >
+                          {latestMode === "sleep" ? "Sleep" : latestMode === "wake" ? "Wake" : "Ready"}
+                        </span>
+                      </button>
+                      {latestMode && (
+                        <button
+                          type="button"
+                          onClick={() => onClearTrain(cell.trainId)}
+                          disabled={!loaded || saving}
+                          className="slp-stabling-train-clear"
+                          aria-label={`Clear Sleep/Wake-up logs for T${cell.trainId}`}
+                          title={`Clear T${cell.trainId} logs and reset to Ready`}
+                        >
+                          <Trash2 size={12} aria-hidden="true" />
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <div key={cell.key} className="flex min-h-[74px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-[9px] text-slate-300 dark:border-[#21435e] dark:bg-[#071827] dark:text-[#375a71]">
                       —
@@ -428,6 +454,7 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
   const [saving, setSaving] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Loading live Sleep log...");
   const [confirmClearDepot, setConfirmClearDepot] = useState("");
+  const [trainToClear, setTrainToClear] = useState("");
   const { actionStatuses, runActionWithFeedback } = useSleepLogActionFeedback();
 
   const recordIdRef = useRef(null);
@@ -618,6 +645,16 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
     }));
   }, [logDrafts, logs, persistLogs, selectedCells]);
 
+  const clearTrainLogs = useCallback((trainId) => {
+    const normalizedTrainId = normalizeSleepTrainId(trainId);
+    if (!loaded || saving || pendingSavesRef.current > 0 || !latestModeByTrain.has(normalizedTrainId)) return;
+    if (normalizedTrainId !== trainToClear) return;
+    persistLogs(clearSleepModeTrainLogs(logs, normalizedTrainId));
+    setSelectedKeyList((current) => current.filter((key) => !key.endsWith(`:${normalizedTrainId}`)));
+    setConfirmClearDepot("");
+    setTrainToClear("");
+  }, [latestModeByTrain, loaded, logs, persistLogs, saving, trainToClear]);
+
   const copyLogs = useCallback(async (depot) => {
     const depotLogs = logsByDepot[depot] || [];
     if (!depotLogs.length) return;
@@ -661,8 +698,8 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
   return (
     <section className="mx-auto w-full max-w-[1500px] space-y-4 pb-10" aria-label="Sleep Mode workspace">
       <div className="grid gap-4 xl:grid-cols-2">
-        <DepotSleepPanel depot="west" data={westData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.west} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onTimeChange={(depot, value) => updateLogDraft(depot, { time: value, timeConfirmed: Boolean(normalizeSleepLogTime(value)) })} onRemarkChange={(depot, value) => updateLogDraft(depot, { remark: value })} onUseCurrentTime={(depot) => updateLogDraft(depot, { time: getCurrentTime(), timeConfirmed: true })} onAddLogs={addSelectedLogs} />
-        <DepotSleepPanel depot="east" data={eastData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.east} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onTimeChange={(depot, value) => updateLogDraft(depot, { time: value, timeConfirmed: Boolean(normalizeSleepLogTime(value)) })} onRemarkChange={(depot, value) => updateLogDraft(depot, { remark: value })} onUseCurrentTime={(depot) => updateLogDraft(depot, { time: getCurrentTime(), timeConfirmed: true })} onAddLogs={addSelectedLogs} />
+        <DepotSleepPanel depot="west" data={westData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.west} loaded={loaded} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onClearTrain={setTrainToClear} onTimeChange={(depot, value) => updateLogDraft(depot, { time: value, timeConfirmed: Boolean(normalizeSleepLogTime(value)) })} onRemarkChange={(depot, value) => updateLogDraft(depot, { remark: value })} onUseCurrentTime={(depot) => updateLogDraft(depot, { time: getCurrentTime(), timeConfirmed: true })} onAddLogs={addSelectedLogs} />
+        <DepotSleepPanel depot="east" data={eastData} selectedKeys={selectedKeys} latestModeByTrain={latestModeByTrain} logDraft={logDrafts.east} loaded={loaded} saving={saving} onToggle={toggleSelection} onSelectDepot={selectDepot} onClearDepot={clearDepotSelection} onClearTrain={setTrainToClear} onTimeChange={(depot, value) => updateLogDraft(depot, { time: value, timeConfirmed: Boolean(normalizeSleepLogTime(value)) })} onRemarkChange={(depot, value) => updateLogDraft(depot, { remark: value })} onUseCurrentTime={(depot) => updateLogDraft(depot, { time: getCurrentTime(), timeConfirmed: true })} onAddLogs={addSelectedLogs} />
       </div>
 
       <section className="theme-sleep-log-window" data-window-design="compact-slate" aria-label="Sleep / Wake-up Log Output">
@@ -694,6 +731,23 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
           ))}
         </div>
       </section>
+      <AlertDialog open={Boolean(trainToClear)} onOpenChange={(open) => { if (!open) setTrainToClear(""); }}>
+        <AlertDialogContent className="border-slate-300 bg-white text-slate-900 dark:border-[#315574] dark:bg-[#0a2134] dark:text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear T{trainToClear} logs?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-600 dark:text-[#a9c7da]">
+              Remove all Sleep/Wake-up logs for T{trainToClear} and reset it to Ready.
+              Other trains in grouped entries will be kept. The train will remain in stabling.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={!loaded || saving} onClick={() => clearTrainLogs(trainToClear)} className="bg-rose-600 text-white hover:bg-rose-700">
+              Clear T{trainToClear}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <span className="sr-only" role="status">{syncStatus}</span>
     </section>
   );

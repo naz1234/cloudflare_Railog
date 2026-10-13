@@ -129,6 +129,16 @@ export function groupSleepModeLogs(logs = []) {
   return grouped;
 }
 
+export function clearSleepModeTrainLogs(logs = [], trainId = "") {
+  const normalizedTrainId = normalizeSleepTrainId(trainId);
+  return normalizeSleepModeLogs(logs).flatMap((entry) => {
+    if (!normalizedTrainId || !entry.trainIds.includes(normalizedTrainId)) return [entry];
+    const trainIds = entry.trainIds.filter((id) => id !== normalizedTrainId);
+    // Keep grouped companions, their timing, remarks and identity; only empty rows disappear.
+    return trainIds.length ? [createSleepModeLogEntry({ ...entry, trainIds })] : [];
+  });
+}
+
 export function buildSleepModeGroupedText(logs = []) {
   const grouped = groupSleepModeLogs(logs);
   const formatSection = (title, entries) => entries.length
