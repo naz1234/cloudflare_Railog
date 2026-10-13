@@ -1,0 +1,57 @@
+.pst-excel-format-panel {
+  --pst-format-panel: #081e31;
+  --pst-format-input: #071828;
+  --pst-format-line: #244e75;
+  --pst-format-text: #eff6ff;
+  --pst-format-muted: #a9c4e9;
+  --pst-format-blue: #58a6ff;
+  --pst-format-blue-bg: #0c2b4e;
+  --pst-format-teal: #35d3bd;
+  --pst-format-teal-bg: #083d45;
+  --pst-format-success: #6ee7b7;
+  --pst-format-success-bg: #103c33;
+  width: 100%; min-width: 0; padding: 18px;
+  border: 1px solid var(--pst-format-line); border-radius: 18px;
+  background: linear-gradient(145deg, var(--pst-format-panel), var(--pst-format-input));
+  color: var(--pst-format-text); box-shadow: 0 8px 22px #00000024;
+}
+html[data-app-theme='light'] .pst-excel-format-panel {
+  --pst-format-panel: #f8fafc; --pst-format-input: #fff;
+  --pst-format-line: #b9cde1; --pst-format-text: #102a43; --pst-format-muted: #476381;
+  --pst-format-blue: #2563a8; --pst-format-blue-bg: #e7f0ff;
+  --pst-format-teal: #087b74; --pst-format-teal-bg: #def7f1;
+  --pst-format-success: #047857; --pst-format-success-bg: #dcfce7;
+  box-shadow: 0 8px 22px #102a4310;
+}
+.pst-excel-format-header { display: flex; align-items: flex-start; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--pst-format-line); }
+.pst-excel-format-icon { width: 35px; height: 42px; flex: 0 0 35px; color: var(--pst-format-muted); }
+.pst-excel-format-heading { min-width: 0; }
+.pst-excel-format-heading h2 { margin: 0; color: var(--pst-format-text); font-size: 18px; font-weight: 700; letter-spacing: -.03em; line-height: 1.25; }
+.pst-excel-sync { display: flex; align-items: center; gap: 7px; margin: 6px 0 0; color: var(--pst-format-text); font-size: 11px; line-height: 1.3; }
+.pst-excel-sync-dot { width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; }
+.pst-excel-sync-dot.is-healthy { background: #22d98b; box-shadow: 0 0 8px #22d98b30; }
+.pst-excel-sync-dot.is-warning { background: #f59e0b; }
+.pst-excel-sync-debug { margin: 5px 0 0; color: #fbbf24; font-size: 10px; overflow-wrap: anywhere; }
+html[data-app-theme='light'] .pst-excel-sync-debug { color: #92400e; }
+.pst-excel-completed-section { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 16px 0; }
+.pst-excel-completed-label, .pst-excel-export-group h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--pst-format-muted); }
+.pst-excel-depot-badge { border: 1px solid var(--pst-format-blue); border-radius: 7px; padding: 4px 7px; background: var(--pst-format-blue-bg); color: var(--pst-format-blue); font-size: 10px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+.pst-excel-completed-input { grid-column: 1 / -1; height: 38px; width: 100%; min-width: 0; border: 1px solid var(--pst-format-line); border-radius: 9px; background: var(--pst-format-input); color: var(--pst-format-text); padding: 0 11px; font-size: 13px; font-weight: 600; }
+.pst-excel-completed-input::placeholder { color: var(--pst-format-muted); opacity: .7; }
+.pst-excel-format-panel .pst-fldc-checklist { border: 0; border-top: 1px solid var(--pst-format-line); border-radius: 0; padding: 16px 0; background: transparent; }
+.pst-excel-export-groups { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; border-top: 1px solid var(--pst-format-line); padding-top: 16px; }
+.pst-excel-export-group { display: grid; grid-template-columns: minmax(0,1fr); align-content: start; gap: 8px; min-width: 0; }
+.pst-excel-export-group h3 { margin: 0 0 2px; line-height: 1.3; }
+.pst-excel-export-group.is-combined { border-left: 1px solid var(--pst-format-line); padding-left: 12px; }
+.pst-excel-export-button { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; min-width: 0; min-height: 38px; border: 1px solid var(--pst-format-blue); border-radius: 9px; padding: 8px 6px; background: var(--pst-format-blue-bg); color: var(--pst-format-text); font-size: 11px; font-weight: 600; line-height: 1.2; transition: filter .15s, border-color .15s, background .15s; }
+.pst-excel-export-button svg { flex-shrink: 0; }
+.pst-excel-export-button span { white-space: nowrap; }
+.is-combined .pst-excel-export-button { background: var(--pst-format-teal-bg); border-color: var(--pst-format-teal); }
+.pst-excel-export-button:hover:not(:disabled) { filter: brightness(1.14); }
+html[data-app-theme='light'] .pst-excel-export-button:hover:not(:disabled) { filter: brightness(.96); }
+.pst-excel-export-button:disabled { opacity: .5; cursor: not-allowed; }
+.pst-excel-export-button.is-copied { border-color: var(--pst-format-success); background: var(--pst-format-success-bg); color: var(--pst-format-success); }
+.pst-excel-format-panel :is(input,button):focus-visible { outline: 2px solid var(--pst-format-blue); outline-offset: 3px; }
+html[data-app-theme] .pst-excel-format-panel :is(h2,h3,p,label,span,input,button) { -webkit-text-fill-color: currentColor !important; text-shadow: none; }
+@media (min-width:1024px) { .pst-excel-format-panel { width: 420px; flex-shrink: 0; } }
+@media (max-width:380px) { .pst-excel-format-panel { padding: 14px; } .pst-excel-export-groups { gap: 8px; } .pst-excel-export-group.is-combined { padding-left: 8px; } .pst-excel-export-button { gap: 5px; font-size: 10px; } }

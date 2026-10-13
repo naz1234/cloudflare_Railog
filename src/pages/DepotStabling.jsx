@@ -53,7 +53,7 @@ import {
 import { buildPSTExcelClipboardText } from "../lib/pstExcelClipboard";
 import { appendPstFldcColumns } from "../lib/pstFldcVerification";
 import { usePstFldcVerification } from "../hooks/usePstFldcVerification";
-import PstFldcChecklist from "../components/PstFldcChecklist";
+import PstExcelFormatLogPanel from "../components/PstExcelFormatLogPanel";
 import { buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "../lib/possessionAccessLog";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40Groups, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, resizeHdwDepotRows, clearHdwRows } from "../lib/trainRemHdw40";
@@ -15201,171 +15201,24 @@ function PSTTabContent
       .replace(/^sync issue/i, "Sync issue")
       .trim() || liveStatusText;
   const isLiveHealthy = !/local|issue/i.test(liveStatusText);
-  const liveAccent = isLiveHealthy ? "#22c55e" : "#f59e0b";
 
-  const renderDepotControls = (depot) => {
-    const isWestDepot = depot === "west";
-    const depotLabel = isWestDepot ? "West Depot" : "East Depot";
-    const depotShortLabel = isWestDepot ? "WD" : "ED";
-    const depotExcelLabel = isWestDepot ? "West Excel" : "East Excel";
-    const depotCopyLabel = isWestDepot ? "WD Copy Excell Output" : "ED Copy Excell Output";
-    const inputAccent = isWestDepot ? "#58a6ff" : "#c084fc";
-    const depotExcelStyle = isWestDepot
-      ? {
-          background: "linear-gradient(135deg, rgba(37,99,235,0.18), rgba(30,64,175,0.22))",
-          borderColor: "rgba(88,166,255,0.62)",
-          color: "#bfdbfe",
-          boxShadow: "0 0 18px rgba(59,130,246,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
-        }
-      : {
-          background: "linear-gradient(135deg, rgba(147,51,234,0.18), rgba(88,28,135,0.22))",
-          borderColor: "rgba(192,132,252,0.62)",
-          color: "#e9d5ff",
-          boxShadow: "0 0 18px rgba(168,85,247,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
-        };
-
-    return (
-      <div
-        data-pst-live-status-class={pstLiveStatusClass || ""}
-        className="theme-pst-live-panel flex w-full flex-col gap-4 rounded-2xl border px-5 py-4 lg:w-[420px] lg:shrink-0"
-        style={{
-          background: "linear-gradient(135deg, rgba(7,24,40,0.98) 0%, rgba(8,38,61,0.94) 48%, rgba(6,18,31,0.98) 100%)",
-          borderColor: "rgba(79,142,247,0.28)",
-          boxShadow: "0 18px 34px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.06)",
-        }}
-      >
-        <div className="flex items-center gap-3 border-b border-[#2b4f6b]/70 pb-4">
-          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: `${liveAccent}22` }}>
-            <span className="absolute inline-flex h-9 w-9 animate-ping rounded-full opacity-35" style={{ backgroundColor: liveAccent }} />
-            <span
-              className="relative h-4 w-4 rounded-full border"
-              style={{
-                backgroundColor: liveAccent,
-                borderColor: `${liveAccent}aa`,
-                boxShadow: `0 0 16px ${liveAccent}aa`,
-              }}
-            />
-          </div>
-          <div className="min-w-0">
-            <div className="whitespace-nowrap text-[14px] font-medium uppercase leading-none tracking-wide" style={{ color: liveAccent }}>
-              PST Excel Format Log
-            </div>
-            <div className="mt-1 text-[11px] font-normal text-slate-300">{liveStatusSubtext}</div>
-            {pstLiveDebug && (
-              <div className="mt-1 max-w-[300px] text-[10px] font-semibold leading-tight text-amber-300/85">
-                {pstLiveDebug}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[11px] font-medium uppercase tracking-[0.14em]" style={{ color: inputAccent }}>
-            Completed By — {depotLabel}
-          </span>
-          <input
-            type="text"
-            value={safeCompletedByNames[depot] || ""}
-            onChange={(event) => handleCompletedByChange(depot, event.target.value)}
-            placeholder={`${depotLabel} name`}
-            className="h-10 w-full rounded-xl border px-3 text-[13px] font-semibold outline-none transition-all"
-            style={{
-              background: "linear-gradient(180deg,#071d31,#061827)",
-              borderColor: `${inputAccent}78`,
-              color: "#e2eaf4",
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
-            }}
-          />
-        </label>
-
-        <PstFldcChecklist depot={depot} controller={fldcController} />
-
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <button
-            onClick={() => handleDownloadExcel(depot)}
-            disabled={Boolean(downloadingExcelDepot || copyingExcelDepot)}
-            className={`removal-summary-tooltip-trigger theme-pst-excel-button theme-pst-excel-${depot} relative z-50 flex h-10 w-full items-center justify-center gap-2 overflow-visible rounded-xl border px-4 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50`}
-            style={depotExcelStyle}
-            aria-label={`Download ${depotShortLabel} PST and Train Prep Excel report to paste into the official ELOG`}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            {downloadingExcelDepot === depot ? "Preparing..." : depotExcelLabel}
-            <RemovalSummaryTooltip
-              message={`Download ${depotShortLabel} PST and Train Prep Excel report to paste into the official ELOG`}
-              placement="top"
-            />
-          </button>
-
-          <button
-            onClick={() => handleDownloadExcel("combined")}
-            disabled={Boolean(downloadingExcelDepot || copyingExcelDepot)}
-            className="removal-summary-tooltip-trigger theme-pst-excel-button theme-pst-excel-combined relative z-50 flex h-10 w-full items-center justify-center gap-2 overflow-visible rounded-xl border px-4 text-[12px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
-            style={{
-              background: "linear-gradient(135deg, rgba(20,184,166,0.18), rgba(14,116,144,0.22))",
-              borderColor: "rgba(94,234,212,0.58)",
-              color: "#ccfbf1",
-              boxShadow: "0 0 18px rgba(20,184,166,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
-            }}
-            aria-label="Download combined WD and ED PST and Train Prep Excel report to paste into the official ELOG"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            {downloadingExcelDepot === "combined" ? "Preparing..." : "Combined Excel"}
-            <RemovalSummaryTooltip
-              message="Download combined WD and ED PST and Train Prep Excel report to paste into the official ELOG"
-              placement="top"
-            />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => handleCopyExcelOutput(depot)}
-            disabled={Boolean(downloadingExcelDepot || copyingExcelDepot)}
-            className={`removal-summary-tooltip-trigger theme-pst-excel-button theme-pst-excel-${depot} relative z-50 flex h-10 w-full items-center justify-center gap-2 overflow-visible rounded-xl border px-3 text-[11px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50`}
-            style={depotExcelStyle}
-            aria-label={`Copy ${depotShortLabel} PST and Train Prep Excel rows 3 to 49`}
-          >
-            {copiedExcelDepot === depot ? <ClipboardCheck size={15} /> : <Copy size={15} />}
-            {copyingExcelDepot === depot ? "Copying..." : copiedExcelDepot === depot ? "Copied A3:M49" : depotCopyLabel}
-            <RemovalSummaryTooltip
-              message={`Copy ${depotShortLabel} Excel output rows 3 to 49 for direct paste into A3:M49, including FLDC verification`}
-              placement="top"
-            />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleCopyExcelOutput("combined")}
-            disabled={Boolean(downloadingExcelDepot || copyingExcelDepot)}
-            className="removal-summary-tooltip-trigger theme-pst-excel-button theme-pst-excel-combined relative z-50 flex h-10 w-full items-center justify-center gap-2 overflow-visible rounded-xl border px-3 text-[11px] font-semibold transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
-            style={{
-              background: "linear-gradient(135deg, rgba(20,184,166,0.18), rgba(14,116,144,0.22))",
-              borderColor: "rgba(94,234,212,0.58)",
-              color: "#ccfbf1",
-              boxShadow: "0 0 18px rgba(20,184,166,0.16), inset 0 1px 0 rgba(255,255,255,0.05)",
-            }}
-            aria-label="Copy combined WD and ED PST and Train Prep Excel rows 3 to 49"
-          >
-            {copiedExcelDepot === "combined" ? <ClipboardCheck size={15} /> : <Copy size={15} />}
-            {copyingExcelDepot === "combined" ? "Copying..." : copiedExcelDepot === "combined" ? "Copied A3:M49" : "Combined Copy Excell Output"}
-            <RemovalSummaryTooltip
-              message="Copy combined WD and ED Excel output rows 3 to 49 for direct paste into A3:M49, including FLDC verification"
-              placement="top"
-            />
-          </button>
-        </div>
-      </div>
-    );
-  };
+  const renderDepotControls = (depot) => (
+    <PstExcelFormatLogPanel
+      depot={depot}
+      completedBy={safeCompletedByNames[depot] || ""}
+      onCompletedByChange={handleCompletedByChange}
+      fldcController={fldcController}
+      liveStatus={liveStatusSubtext}
+      liveHealthy={isLiveHealthy}
+      liveStatusClass={pstLiveStatusClass}
+      liveDebug={pstLiveDebug}
+      downloadingDepot={downloadingExcelDepot}
+      copyingDepot={copyingExcelDepot}
+      copiedDepot={copiedExcelDepot}
+      onDownload={handleDownloadExcel}
+      onCopy={handleCopyExcelOutput}
+    />
+  );
 
   return (
     <div className="flex w-fit min-w-0 flex-col items-start gap-7">
