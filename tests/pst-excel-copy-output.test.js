@@ -41,11 +41,14 @@ test("PST Excel clipboard output preserves a 13-column A3:M49 paste shape", () =
 test("PST panel exposes East, West, and Combined clipboard actions", () => {
   const source = readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
 
-  assert.match(source, /ED Copy Excell Output/);
-  assert.match(source, /WD Copy Excell Output/);
-  assert.match(source, /Combined Copy Excell Output/);
+  const panel = readFileSync(new URL("../src/components/PstExcelFormatLogPanel.jsx", import.meta.url), "utf8");
+  assert.match(source, /renderDepotControls\("west"\)/);
+  assert.match(source, /renderDepotControls\("east"\)/);
+  assert.match(source, /onCopy=\{handleCopyExcelOutput\}/);
+  assert.match(panel, /key: 'combined'/);
+  assert.match(panel, /onClick=\{\(\) => onCopy\(group.key\)\}/);
+  assert.match(panel, /Copy Output/);
   assert.match(source, /buildPSTExcelClipboardText\(copyRows\)/);
-  assert.match(source, /handleCopyExcelOutput\("combined"\)/);
-  assert.match(source, /Copied A3:M49/);
+  assert.match(panel, /Copied A3:M49/);
   assert.doesNotMatch(source, /A3:K49/);
 });

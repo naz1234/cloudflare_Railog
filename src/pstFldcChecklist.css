@@ -10,13 +10,19 @@ html[data-app-theme='light'] .pst-fldc-checklist {
   --fldc-text: #0b2443; --fldc-muted: #597797; --fldc-accent: #155bd7;
   --fldc-accent-bg: #e7efff; --fldc-success: #047857; --fldc-success-bg: #dcfce7;
 }
-.pst-fldc-heading { display: flex; align-items: center; gap: 7px; color: var(--fldc-accent); margin-bottom: 10px; }
-.pst-fldc-heading h3 { font-size: 13px; font-weight: 600; margin: 0; }
-.pst-fldc-heading > span { margin-left: auto; font-size: 11px; }
-.pst-fldc-name { display: flex; flex-direction: column; gap: 5px; font-size: 11px; font-weight: 500; }
+.pst-fldc-heading { display: flex; align-items: center; gap: 9px; color: var(--fldc-text); margin-bottom: 12px; }
+.pst-fldc-heading svg { flex-shrink: 0; color: var(--fldc-accent); }
+.pst-fldc-heading h3 { font-size: 15px; font-weight: 700; margin: 0; }
+.pst-fldc-heading > span { margin-left: auto; font-size: 12px; font-weight: 700; white-space: nowrap; border: 1px solid var(--fldc-line); border-radius: 12px; padding: 4px 9px; }
+.pst-fldc-count.is-confirmed { border-color: var(--fldc-success); background: var(--fldc-success-bg); }
+.pst-fldc-progress { height: 6px; border-radius: 99px; background: var(--fldc-line); overflow: hidden; margin-bottom: 13px; }
+.pst-fldc-progress > span { display: block; height: 100%; border-radius: inherit; background: #1dd78b; transition: width .2s; }
+html[data-app-theme='light'] .pst-fldc-progress > span { background: #059669; }
+.pst-fldc-name { display: flex; flex-direction: column; gap: 7px; font-size: 10px; font-weight: 700; }
+.pst-fldc-name > span { text-transform: uppercase; letter-spacing: .08em; }
 .pst-fldc-name input { height: 34px; width: 100%; border: 1px solid var(--fldc-line); border-radius: 8px; padding: 0 9px; font-size: 12px; background: var(--fldc-input); color: var(--fldc-text); }
 .pst-fldc-name input::placeholder { color: var(--fldc-muted); opacity: .8; }
-.pst-fldc-confirm { width: 100%; min-height: 33px; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 6px; border: 1px solid var(--fldc-accent); border-radius: 8px; background: var(--fldc-accent-bg); color: var(--fldc-accent); font-size: 12px; font-weight: 600; cursor: pointer; }
+.pst-fldc-confirm { width: 100%; min-height: 38px; margin-top: 12px; display: flex; justify-content: flex-start; align-items: center; gap: 9px; padding: 8px 11px; border: 1px solid var(--fldc-accent); border-radius: 9px; background: var(--fldc-accent-bg); color: var(--fldc-accent); font-size: 12px; font-weight: 600; cursor: pointer; }
 .pst-fldc-confirm:disabled { cursor: not-allowed; opacity: .5; }
 .pst-fldc-confirm.is-confirmed { border-color: var(--fldc-success); background: var(--fldc-success-bg); opacity: 1; }
 .pst-fldc-status { margin: 8px 0 0; font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; color: var(--fldc-muted); }
@@ -25,6 +31,8 @@ html[data-app-theme='light'] .pst-fldc-checklist {
 .pst-fldc-checklist :is(input, button):focus-visible { outline: 2px solid var(--fldc-accent); outline-offset: 2px; }
 html[data-app-theme] .pst-fldc-checklist :is(h3, span, strong, small, p, input, button) { -webkit-text-fill-color: currentColor !important; }
 html[data-app-theme] .pst-fldc-checklist :is(.pst-fldc-name, .pst-fldc-name input) { color: var(--fldc-text) !important; }
-html[data-app-theme] .pst-fldc-checklist :is(.pst-fldc-heading, .pst-fldc-heading svg, .pst-fldc-heading h3, .pst-fldc-heading > span, .pst-fldc-confirm) { color: var(--fldc-accent) !important; }
+html[data-app-theme] .pst-fldc-checklist :is(.pst-fldc-heading, .pst-fldc-heading h3) { color: var(--fldc-text) !important; }
+html[data-app-theme] .pst-fldc-checklist :is(.pst-fldc-heading svg, .pst-fldc-heading > span, .pst-fldc-confirm) { color: var(--fldc-accent) !important; }
 html[data-app-theme] .pst-fldc-checklist .pst-fldc-status { color: var(--fldc-muted) !important; }
 html[data-app-theme] .pst-fldc-checklist :is(.pst-fldc-confirm.is-confirmed, .pst-fldc-status.is-confirmed) { color: var(--fldc-success) !important; }
+html[data-app-theme] .pst-fldc-checklist .pst-fldc-count.is-confirmed { color: var(--fldc-success) !important; }

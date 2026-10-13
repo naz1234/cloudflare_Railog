@@ -109,7 +109,9 @@ test('all workbook and clipboard entry points carry the same verification snapsh
   assert.match(source, /buildPSTExportRows\(exportLogLines, completedBy, normalizedDepot, false, fldcController.exportVerifications\)/);
   assert.match(source, /dimension: `A1:M\$\{rows.length\}`/);
   assert.match(source, /38, 38, 26, 32\]/);
-  assert.match(source, /<PstFldcChecklist depot=\{depot\} controller=\{fldcController\} \/>/);
+  const panel = readFileSync(new URL('../src/components/PstExcelFormatLogPanel.jsx', import.meta.url), 'utf8');
+  assert.match(source, /fldcController=\{fldcController\}/);
+  assert.match(panel, /<PstFldcChecklist depot=\{depot\} controller=\{fldcController\} \/>/);
   const hook = readFileSync(new URL('../src/hooks/usePstFldcVerification.js', import.meta.url), 'utf8');
   assert.match(hook, /!dirty.current\[depot\]/);
 });
@@ -223,8 +225,9 @@ test('single FLDC confirmation still requires a name, eligible PST trains and a 
     assert.match(renderChecklist(override).match(/<button\b[^>]*>/)?.[0] || '', /disabled/);
   }
   const confirmed = renderChecklist({ isConfirmed: () => true });
-  assert.match(confirmed, /Confirmed all 3 trains via FLDC/);
-  assert.match(confirmed, /Verified by WEST DC/);
+  assert.match(confirmed, /All 3 trains confirmed/);
+  assert.match(confirmed, /value="WEST DC"/);
+  assert.match(confirmed, /Included in Excel columns L–M/);
 });
 
 test('the actual hook confirms via the button without checkbox state and never saves a name alone', () => {
