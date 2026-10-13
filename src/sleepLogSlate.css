@@ -1,3 +1,43 @@
+/* Separate sibling control: clearing a train must not toggle its selection. */
+html[data-app-theme] .slp-stabling-train-clear {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid #fda4af;
+  border-radius: 6px;
+  background: #fff1f2;
+  color: #be123c;
+  cursor: pointer;
+}
+
+html[data-app-theme="dark"] .slp-stabling-train-clear {
+  border-color: #9f4561;
+  background: #251c32;
+  color: #fda4af;
+}
+
+html[data-app-theme] .slp-stabling-train-clear:hover:not(:disabled) {
+  border-color: #fb7185;
+  background: #be123c;
+  color: #fff;
+}
+
+.slp-stabling-train-clear:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.slp-stabling-train-clear:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
 /* SLP output follows the existing Removal Log window, without per-entry cards. */
 html[data-app-theme] .theme-sleep-log-window {
   --sleep-log-body: #071828;
