@@ -38,11 +38,6 @@
   const turnstileStatus = document.getElementById('turnstile-status');
   const pinContainer = document.getElementById('pin-inputs');
   const pinInputs = Array.from(document.querySelectorAll('#pin-inputs input'));
-  const codeStage = document.getElementById('code-stage');
-  const codeForm = document.getElementById('code-form');
-  const codeInput = document.getElementById('access-code');
-  const codeButton = document.getElementById('code-button');
-  const emailMethodButton = document.getElementById('email-method-button');
   const loginProgress = document.getElementById('login-progress');
 
   let expiryDeadline = 0;
@@ -70,16 +65,13 @@
   function setStage(stage) {
     const stages = ['request', 'verify', 'success'];
     const currentIndex = stages.indexOf(stage);
-    const wasCodeOnly = loginCard.dataset.stage === 'code';
     pinContainer.classList.remove('is-verifying', 'is-closing');
     loginCard.dataset.stage = stage;
     requestStage.hidden = stage !== 'request';
     verifyStage.hidden = stage !== 'verify';
     successStage.hidden = stage !== 'success';
-    codeStage.hidden = stage !== 'code';
-    loginProgress.hidden = stage === 'code' || (stage === 'success' && wasCodeOnly);
-    formHeading.textContent = stage === 'code' ? 'Sign in with access code'
-      : ['Sign in', 'Verify your email', 'Access verified'][currentIndex];
+    loginProgress.hidden = false;
+    formHeading.textContent = ['Sign in', 'Verify your email', 'Access verified'][currentIndex];
     [requestIndicator, verifyIndicator, successIndicator].forEach((indicator, index) => {
       indicator.classList.toggle('is-current', index === currentIndex);
       indicator.classList.toggle('is-complete', index < currentIndex);
@@ -128,6 +120,12 @@
   function normalizeLoginEmail(value) {
     const email = String(value || '').trim().toLowerCase();
     return EMAIL_PATTERN.test(email) ? email : '';
+  }
+
+  function readAccessCode() {
+    const value = emailInput.value.trim();
+    // Only the server knows the configured secret; any six digits must be verified there.
+    return codeOnlyEnabled && /^\d{6}$/.test(value) ? value : '';
   }
 
   function maskLoginEmail(value) {
@@ -268,14 +266,15 @@
   }
 
   function updateRequestButton() {
-    updateCodeButton();
-    const requestWaitRemaining = remainingSeconds(resendDeadline);
-    const hasValidEmail = Boolean(normalizeLoginEmail(emailInput.value));
-    requestButton.disabled = isBusy || !turnstileToken || !hasValidEmail || requestWaitRemaining > 0;
+    const usesAccessCode = Boolean(readAccessCode());
+    const requestWaitRemaining = remainingSeconds(usesAccessCode ? codeRetryDeadline : resendDeadline);
+    const hasValidEntry = usesAccessCode || Boolean(normalizeLoginEmail(emailInput.value));
+    emailInput.setAttribute('autocomplete', /^\d+$/.test(emailInput.value.trim()) ? 'off' : 'username');
+    requestButton.disabled = isBusy || !turnstileToken || !hasValidEntry || requestWaitRemaining > 0;
     if (!isBusy) {
       requestButton.querySelector('span').textContent = requestWaitRemaining > 0
         ? `Try again in ${formatTime(requestWaitRemaining)}`
-        : (turnstileToken && hasValidEmail ? 'Send Login Code' : 'Complete Email and Security Check');
+        : (turnstileToken && hasValidEntry ? 'Continue' : 'Complete Email and Security Check');
     }
   }
 
@@ -304,21 +303,6 @@
     });
   }
 
-  function showDirectAccessStage() {
-    // An unadvertised direct link selects this view; server verification is still required.
-    if (!codeOnlyEnabled || window.location.hash !== '#access' || isBusy || loginCompleted
-      || loginCard.dataset.stage === 'code') return;
-    window.clearInterval(timerId);
-    expiryDeadline = 0;
-    resendDeadline = 0;
-    clearChallenge({ clearEmail: true });
-    clearPin();
-    setStage('code');
-    showMessage('');
-    updateCodeButton();
-    codeInput.focus();
-  }
-
   async function initializeTurnstile() {
     try {
       const [{ response, data }, turnstile] = await Promise.all([
@@ -327,7 +311,6 @@
       ]);
       if (!response.ok || !data.siteKey) throw new Error('auth_config_unavailable');
       codeOnlyEnabled = data.codeOnlyEnabled === true;
-      showDirectAccessStage();
       turnstileWidgetId = turnstile.render('#turnstile-widget', {
         sitekey: data.siteKey,
         theme: 'dark',
@@ -585,34 +568,15 @@
     updateRequestButton();
   });
 
-  function updateCodeButton() {
-    const remaining = remainingSeconds(codeRetryDeadline);
-    codeButton.disabled = isBusy || loginCard.dataset.stage !== 'code' || !codeOnlyEnabled || !turnstileToken
-      || !/^\d{6}$/.test(codeInput.value) || remaining > 0;
-    emailMethodButton.disabled = isBusy;
-    if (!isBusy) codeButton.querySelector('span').textContent = remaining > 0
-      ? `Try again in ${formatTime(remaining)}` : 'Continue with code';
-  }
-
-  codeInput.addEventListener('input', () => {
-    codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, PIN_LENGTH);
-    updateCodeButton();
-  });
-  emailMethodButton.addEventListener('click', () => {
-    if (isBusy || loginCompleted) return;
-    codeInput.value = '';
-    window.history?.replaceState(null, '', window.location.href.split('#')[0]);
-    showRequestStage();
-  });
-  codeForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    updateCodeButton();
-    if (codeButton.disabled || loginCompleted) return;
-    const code = codeInput.value;
+  async function signInWithAccessCode() {
+    updateRequestButton();
+    const code = readAccessCode();
+    if (requestButton.disabled || loginCompleted || !code || loginCard.dataset.stage !== 'request') return;
     const submittedToken = turnstileToken;
     isBusy = true;
-    codeInput.disabled = true;
-    setButtonBusy(codeButton, true, 'Verifying code');
+    emailInput.disabled = true;
+    emailInput.value = '';
+    setButtonBusy(requestButton, true, 'Signing in');
     clearTurnstileToken();
     showMessage('');
     try {
@@ -623,49 +587,50 @@
         codeRetryDeadline = Date.now() + retryAfterSeconds(response, data) * 1000;
         window.clearInterval(codeRetryTimer);
         codeRetryTimer = window.setInterval(() => {
-          updateCodeButton();
+          updateRequestButton();
           if (Date.now() >= codeRetryDeadline) window.clearInterval(codeRetryTimer);
         }, 500);
-        showMessage('Too many attempts. Please wait or use email login.');
+        showMessage('Too many attempts. Please wait before trying again.');
         return;
       }
       if (!response.ok || data.authenticated !== true) {
-        showMessage(response.status === 401 ? 'The access code is incorrect.'
+        showMessage(response.status === 401 ? 'Unable to sign in. Check your entry and try again.'
           : response.status === 400 ? 'Please complete the security check and try again.'
-            : 'Code-only login is temporarily unavailable. You can use email login.');
+            : GENERIC_REQUEST_ERROR);
         return;
       }
       loginCompleted = true;
       window.clearInterval(timerId);
       window.clearInterval(codeRetryTimer);
-      codeInput.value = '';
       clearChallenge({ clearEmail: true });
       showSuccessStage(data, '');
+      loginProgress.hidden = true;
       window.setTimeout(() => window.location.replace(safeReturnPath()), SUCCESS_DISPLAY_MS);
     } catch {
       showMessage('Unable to sign in. Check your connection and try again.');
     } finally {
       if (!loginCompleted) {
         isBusy = false;
-        codeInput.disabled = false;
-        codeInput.value = '';
-        setButtonBusy(codeButton, false, 'Verifying code');
+        emailInput.disabled = false;
+        emailInput.value = '';
+        setButtonBusy(requestButton, false, 'Signing in');
         resetTurnstile();
-        updateCodeButton();
-        codeInput.focus();
+        updateRequestButton();
+        emailInput.focus();
       }
     }
-  });
+  }
 
   emailInput.addEventListener('blur', () => {
-    if (emailInput.value && !normalizeLoginEmail(emailInput.value)) {
+    if (emailInput.value && !normalizeLoginEmail(emailInput.value) && !readAccessCode()) {
       emailInput.setAttribute('aria-invalid', 'true');
     }
   });
 
   requestForm.addEventListener('submit', (event) => {
     event.preventDefault();
-    requestCode();
+    if (isBusy || loginCompleted) return;
+    return readAccessCode() ? signInWithAccessCode() : requestCode();
   });
 
   resendButton.addEventListener('click', () => requestCode({ isResend: true }));
@@ -711,7 +676,9 @@
 
   setStage('request');
   restoreChallenge();
-  window.addEventListener('hashchange', showDirectAccessStage);
+  if (window.location.hash === '#access') {
+    window.history?.replaceState(null, '', window.location.href.split('#')[0]);
+  }
   initializeTurnstile();
 
   api('/api/auth/session')

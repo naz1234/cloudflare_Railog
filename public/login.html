@@ -26,19 +26,6 @@
         </ol>
         <section class="auth-panel login-frame" id="login-card" data-stage="request" aria-labelledby="form-heading">
           <div class="card-handle" aria-hidden="true"></div>
-          <section class="auth-stage" id="code-stage" aria-labelledby="code-heading" hidden>
-            <h3 id="code-heading">Sign in with access code</h3>
-            <p class="stage-description">Enter your shared 6-digit access code.</p>
-            <form id="code-form" novalidate>
-              <label class="field-label" for="access-code">ACCESS CODE</label>
-              <div class="email-field">
-                <input id="access-code" name="access-code" type="password" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" aria-describedby="access-code-help" required />
-              </div>
-              <p class="email-help" id="access-code-help">No email or emailed PIN needed.</p>
-              <button class="primary-button" id="code-button" type="submit" disabled><span>Continue with code</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg></button>
-            </form>
-            <button class="text-button" id="email-method-button" type="button">Use email login</button>
-          </section>
           <section class="auth-stage" id="request-stage" aria-labelledby="request-heading">
             <h3 id="request-heading">Sign in to continue</h3>
             <p class="stage-description">Enter your approved FLOW work email.</p>
@@ -49,7 +36,7 @@
                 <input id="login-email" name="email" type="email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="firstname.lastname@flow-metro.com" aria-describedby="email-help" required />
               </div>
               <p class="email-help" id="email-help">Use your work email or another address approved for access.</p>
-              <button class="primary-button" id="request-button" type="submit" disabled><span>Send Login Code</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg></button>
+              <button class="primary-button" id="request-button" type="submit" disabled><span>Continue</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg></button>
             </form>
             <p class="privacy-note">Codes are sent only to approved accounts.</p>
           </section>

@@ -4,12 +4,12 @@ import test from 'node:test';
 
 const readSource = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('normal login has no code-only switch or advertised direct link', async () => {
+test('login has one shared field with no separate code form, switch or link', async () => {
   const html = await readSource('public/login.html');
   assert.doesNotMatch(html, /login-methods|code-method-button|>Code only<|href=["'][^"']*#access/i);
-  assert.match(html, /<section[^>]+id="code-stage"[^>]+hidden>/);
-  const codeStage = html.slice(html.indexOf('id="code-stage"'), html.indexOf('id="request-stage"'));
-  assert.match(codeStage, /id="email-method-button"/);
+  assert.doesNotMatch(html, /code-stage|code-form|access-code|email-method-button|shared 6-digit/i);
+  assert.match(html, /<form id="request-form" novalidate>/);
+  assert.match(html, /id="request-button"[^>]*><span>Continue<\/span>/);
 });
 
 test('custom login uses the L3 DC Template identity and requests an approved email', async () => {
