@@ -264,12 +264,57 @@ test('mailer allows only exact additional recipients and preserves staff deliver
   assert.equal(providerCalls.length, count);
 });
 
-test('mailer fails closed for invalid or duplicate additional recipients', async () => {
+test('mailer fails closed for invalid or over-capacity additional recipients', async () => {
   for (const value of [
-    'not-an-email', 'guest@example.net;GUEST@example.net', requestedRecipient,
+    'not-an-email', 'guest@example.net;not-an-email', 'example.net',
     Array.from({ length: 99 }, (_, index) => `guest${index}@example.net`).join('\n'),
   ]) {
     const { env, fetcher, providerCalls } = createEnv({ AUTH_ADDITIONAL_ALLOWED_EMAILS: value });
+    assert.equal((await handle(createRequest(), env, fetcher)).status, 503);
+    assert.equal(providerCalls.length, 0);
+  }
+});
+
+test('duplicate recipients send exactly once, preserve canonical casing and do not block other approved users', async () => {
+  const overrides = {
+    AUTH_ALLOWED_EMAILS: 'First.User@flow-metro.com;FIRST.USER@FLOW-METRO.COM;Second.User@flow-metro.com;second.user@flow-metro.com',
+    AUTH_ADDITIONAL_ALLOWED_EMAILS: 'first.user@flow-metro.com;Guest.User@example.net;GUEST.USER@example.net',
+  };
+  for (const recipient of ['First.User@flow-metro.com', 'Second.User@flow-metro.com', 'Guest.User@example.net']) {
+    const { env, fetcher, providerCalls } = createEnv(overrides);
+    const response = await handle(createRequest({
+      body: { pin: '012345', recipient: recipient.toLowerCase(), requestRef: 'DEDUP1' },
+    }), env, fetcher);
+    assert.equal(response.status, 200);
+    assert.equal(providerCalls.filter((call) => call.url === sendEndpoint).length, 1);
+    const mime = Buffer.from(JSON.parse(providerCalls[1].init.body).raw, 'base64url').toString('utf8');
+    assert.ok(mime.includes(`To: ${recipient}\r\n`));
+    const rejected = await handle(createRequest({
+      body: { pin: '012345', recipient: 'unlisted@example.net', requestRef: 'DEDUP2' },
+    }), env, fetcher);
+    assert.equal(rejected.status, 400);
+    assert.equal(providerCalls.length, 2);
+  }
+});
+
+test('mailer enforces the unique recipient limit without counting duplicate tokens', async () => {
+  const staff = Array.from({ length: 100 }, (_, index) => `Staff.${index}@flow-metro.com`);
+  for (const [additional, expected] of [[staff.join('\n'), 200], ['extra@example.net', 503]]) {
+    const { env, fetcher, providerCalls } = createEnv({
+      AUTH_ALLOWED_EMAILS: [...staff, ...staff.map((email) => email.toLowerCase())].join(';'),
+      AUTH_ADDITIONAL_ALLOWED_EMAILS: additional,
+    });
+    const response = await handle(createRequest({
+      body: { pin: '012345', recipient: staff[0], requestRef: 'LIMIT1' },
+    }), env, fetcher);
+    assert.equal(response.status, expected);
+    assert.equal(providerCalls.length, expected === 200 ? 2 : 0);
+  }
+  for (const invalid of ['not-an-email', 'outsider@example.net', 'flow-metro.com',
+    [...staff, 'extra@flow-metro.com'].join(';')]) {
+    const { env, fetcher, providerCalls } = createEnv({
+      AUTH_ALLOWED_EMAILS: `${requestedRecipient};${requestedRecipient};${invalid}`,
+    });
     assert.equal((await handle(createRequest(), env, fetcher)).status, 503);
     assert.equal(providerCalls.length, 0);
   }

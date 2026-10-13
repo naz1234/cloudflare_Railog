@@ -457,13 +457,82 @@ test('additional approved addresses are exact, optional, and fail closed on inva
   assert.equal(findAllowedAuthMember(config, 'guest.user@EXAMPLE.NET')?.name, 'Guest.User');
   assert.equal(findAllowedAuthMember(config, 'other@example.net'), null);
   assert.equal(findAllowedAuthMember(config, allowedEmails[0])?.email, allowedEmails[0]);
-  for (const value of ['not-an-email', 'guest@example.net;GUEST@example.net', allowedEmails[0]]) {
+  for (const value of ['not-an-email', 'guest@example.net;not-an-email', 'example.net']) {
     assert.equal(getCustomAuthConfiguration(makeEnv({ AUTH_ADDITIONAL_ALLOWED_EMAILS: value })).valid, false);
   }
   assert.equal(getCustomAuthConfiguration(makeEnv({
     AUTH_ADDITIONAL_ALLOWED_EMAILS: Array.from({ length: 99 }, (_, index) => `guest${index}@example.net`).join('\n'),
   })).valid, false);
   assert.equal(getCustomAuthConfiguration({ ...env, AUTH_ALLOWED_EMAILS: '' }).valid, false);
+});
+
+test('duplicate approved addresses preserve canonical identities and other users across both lists', () => {
+  const env = makeEnv({
+    AUTH_ALLOWED_EMAILS: `${allowedEmails[0]}; ${allowedEmails[0].toUpperCase()}, ${allowedEmails[1]}\n${allowedEmails[1]}`,
+    AUTH_ADDITIONAL_ALLOWED_EMAILS: `Guest.User@example.net\nguest.user@EXAMPLE.NET\n${allowedEmails[0].toLowerCase()}`,
+  });
+  const config = getCustomAuthConfiguration(env);
+  assert.equal(config.valid, true);
+  assert.deepEqual(config.allowedMembers.map((member) => member.email), [...allowedEmails, 'Guest.User@example.net']);
+  assert.equal(findAllowedAuthMember(config, allowedEmails[0].toLowerCase()).name, 'Member.One');
+  assert.equal(findAllowedAuthMember(config, allowedEmails[1]).name, 'Member.Two');
+  assert.equal(findAllowedAuthMember(config, 'guest.user@example.net').name, 'Guest.User');
+  assert.equal(findAllowedAuthMember(config, 'unknown@flow-metro.com'), null);
+  assert.equal(findAllowedAuthMember(config, 'unknown@example.net'), null);
+  assert.deepEqual(parseAllowedAuthMembers(env.AUTH_ALLOWED_EMAILS).map((member) => member.email), allowedEmails);
+});
+
+test('allowlist capacity counts unique addresses and duplicates never hide malformed entries', () => {
+  const staff = Array.from({ length: 100 }, (_, index) => `Staff.${index}@flow-metro.com`);
+  const config = getCustomAuthConfiguration(makeEnv({
+    AUTH_ALLOWED_EMAILS: [...staff, ...staff.map((email) => email.toLowerCase())].join('\n'),
+    AUTH_ADDITIONAL_ALLOWED_EMAILS: staff.join(';'),
+  }));
+  assert.equal(config.valid, true);
+  assert.equal(config.allowedMembers.length, 100);
+  assert.equal(getCustomAuthConfiguration(makeEnv({
+    AUTH_ALLOWED_EMAILS: staff.join('\n'), AUTH_ADDITIONAL_ALLOWED_EMAILS: 'extra@example.net',
+  })).valid, false);
+  for (const invalid of ['not-an-email', 'outsider@example.net', 'flow-metro.com']) {
+    assert.equal(getCustomAuthConfiguration(makeEnv({
+      AUTH_ALLOWED_EMAILS: `${allowedEmails[0]};${allowedEmails[0]};${invalid}`,
+    })).valid, false);
+  }
+  assert.equal(parseAllowedAuthMembers([...staff, 'Extra@flow-metro.com'].join('\n')).length, 0);
+});
+
+test('duplicate lists permit one PIN delivery and session per approved staff or external identity', async () => {
+  const env = makeEnv({
+    AUTH_ALLOWED_EMAILS: [...allowedEmails, ...allowedEmails.map((email) => email.toLowerCase())].join('\n'),
+    AUTH_ADDITIONAL_ALLOWED_EMAILS: `${allowedEmails[0].toLowerCase()};Guest.User@example.net;guest.user@example.net`,
+  });
+  for (const recipient of [...allowedEmails, 'Guest.User@example.net']) {
+    const store = createMemoryStore();
+    const deliveries = [];
+    const requestEndpoint = createRequestCodeEndpoint({
+      createStore: () => store, now: () => nowMs,
+      sendPin: async (delivery) => { deliveries.push(delivery); },
+      verifyTurnstile: async () => ({ success: true }),
+    });
+    const requested = await requestEndpoint(createContext(makeRequest('/api/auth/request-code', {
+      body: { email: recipient.toUpperCase(), turnstileToken: 'valid-token' },
+    }), env));
+    assert.equal(requested.status, 202);
+    assert.equal(deliveries.length, 1);
+    assert.equal(deliveries[0].recipient, recipient);
+    const challenge = await requested.json();
+    const verified = await createVerifyCodeEndpoint({ createStore: () => store, now: () => nowMs + 1000 })(
+      createContext(makeRequest('/api/auth/verify-code', {
+        body: { challengeId: challenge.challengeId, code: deliveries[0].pin },
+      }), env),
+    );
+    assert.equal(verified.status, 200);
+    assert.equal((await verified.json()).user.name, authDisplayName(recipient));
+    assert.equal(store.sessions.size, 1);
+    const cookie = verified.headers.get('Set-Cookie').split(';')[0];
+    const request = makeRequest('/api/auth/session', { method: 'GET', cookie });
+    assert.equal((await authorizeCustomSessionRequest({ request, env, store, now: nowMs + 2000 })).authorized, true);
+  }
 });
 
 test('approved external user completes PIN login and loses access when removed', async () => {

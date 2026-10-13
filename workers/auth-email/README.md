@@ -14,6 +14,6 @@ The runtime fixes the sender and independently checks every Pages-selected recip
 
 Two-field requests and shared-recipient fallbacks are unsupported. Every request must identify an explicitly allowlisted recipient or the Worker fails closed without contacting Gmail.
 
-For individually approved external addresses, set the optional encrypted `AUTH_ADDITIONAL_ALLOWED_EMAILS` secret identically on this Worker and Pages. It adds exact addresses without replacing the staff list. Invalid entries, case-insensitive duplicates within or across the lists, and a combined total above 100 fail closed. Deploy this Worker before enabling the additional addresses in Pages.
+For individually approved external addresses, set the optional encrypted `AUTH_ADDITIONAL_ALLOWED_EMAILS` secret identically on this Worker and Pages. It adds exact addresses without replacing the staff list. Duplicate addresses within or across the lists are ignored case-insensitively and do not send extra emails. The first canonical spelling is retained, with the staff list taking precedence. Invalid entries and a combined total above 100 unique recipients still fail closed. Deploy this Worker before enabling the additional addresses in Pages. Deploy duplicate-handling changes to both this Worker and Pages; a Pages deployment alone does not update this private Worker.
 
 See [the complete staged deployment and cutover guide](../../docs/custom-pin-auth.md).

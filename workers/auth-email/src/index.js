@@ -51,7 +51,7 @@ function parseAllowedEmails(value, { allowExternal = false } = {}) {
 
   const entries = source.split(/[\s,;]+/).filter(Boolean);
   const recipients = new Map();
-  let invalid = entries.length === 0 || entries.length > MAX_ALLOWED_RECIPIENTS;
+  let invalid = entries.length === 0;
 
   for (const entry of entries) {
     const canonical = canonicalEmail(entry);
@@ -59,18 +59,18 @@ function parseAllowedEmails(value, { allowExternal = false } = {}) {
     if (
       !canonical
       || (!allowExternal && !normalized.endsWith(`@${ALLOWED_RECIPIENT_DOMAIN}`))
-      || recipients.has(normalized)
     ) {
       invalid = true;
       continue;
     }
+    if (recipients.has(normalized)) continue;
     recipients.set(normalized, canonical);
   }
 
   return {
     configured: true,
     recipients,
-    valid: !invalid && recipients.size === entries.length,
+    valid: !invalid && recipients.size <= MAX_ALLOWED_RECIPIENTS,
   };
 }
 
@@ -100,9 +100,12 @@ function getConfiguration(env = {}) {
   const allowed = parseAllowedEmails(env.AUTH_ALLOWED_EMAILS);
   const rawAdditional = String(env.AUTH_ADDITIONAL_ALLOWED_EMAILS || '').trim();
   const additional = parseAllowedEmails(rawAdditional, { allowExternal: true });
-  const recipients = new Map([...allowed.recipients, ...additional.recipients]);
+  // Match Pages: first canonical spelling wins, preferring the staff list.
+  const recipients = new Map(allowed.recipients);
+  for (const [normalized, canonical] of additional.recipients) {
+    if (!recipients.has(normalized)) recipients.set(normalized, canonical);
+  }
   const additionalValid = (!rawAdditional || additional.valid)
-    && recipients.size === allowed.recipients.size + additional.recipients.size
     && recipients.size <= MAX_ALLOWED_RECIPIENTS;
   const serviceToken = String(env.AUTH_EMAIL_SERVICE_TOKEN || '').trim();
   const clientId = String(env.AUTH_GMAIL_CLIENT_ID || '').trim();
