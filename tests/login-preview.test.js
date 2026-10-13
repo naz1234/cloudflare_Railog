@@ -66,7 +66,7 @@ test('preview serves actual login assets, injects local-only safety notice and s
 
 test('preview matches auth contracts and consumes demo challenge without issuing a session or cookie', async (t) => {
   const preview = await startPreview(t);
-  assert.deepEqual(await (await preview.get('/api/auth/config')).json(), { siteKey: 'local-preview-only' });
+  assert.deepEqual(await (await preview.get('/api/auth/config')).json(), { siteKey: 'local-preview-only', codeOnlyEnabled: true });
   const session = await preview.get('/api/auth/session');
   assert.equal(session.status, 401);
   assert.deepEqual(await session.json(), {

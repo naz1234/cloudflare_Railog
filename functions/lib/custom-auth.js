@@ -17,6 +17,8 @@ export const AUTH_RATE_LIMITS = Object.freeze({
   requestIpBurst: { action: 'request-ip-burst', limit: 10, windowSeconds: 60 },
   requestIpWindow: { action: 'request-ip-window', limit: 30, windowSeconds: 15 * 60 },
   verifyIpWindow: { action: 'verify-ip-window', limit: 150, windowSeconds: 15 * 60 },
+  codeOnlyIpWindow: { action: 'code-only-ip', limit: 5, windowSeconds: 15 * 60 },
+  codeOnlyGlobalWindow: { action: 'code-only-global', limit: 100, windowSeconds: 60 * 60 },
 });
 
 export const CUSTOM_AUTH_SCHEMA_STATEMENTS = Object.freeze([
@@ -190,6 +192,8 @@ export function getCustomAuthConfiguration(env = {}) {
   return {
     db: env.DB,
     allowedMembers,
+    codeOnlyPin: /^\d{6}$/.test(String(env.AUTH_CODE_ONLY_PIN || ''))
+      ? String(env.AUTH_CODE_ONLY_PIN) : '',
     hmacSecret,
     issues,
     turnstileSecretKey,
@@ -407,6 +411,21 @@ export function hashSessionToken({ hmacSecret, token }) {
 
 export function hashAuthEmail({ email, hmacSecret }) {
   return hmacSha256Hex(hmacSecret, `email:${normalizeAuthEmail(email)}`);
+}
+
+// Keep shared access separate from approved email identities. Rotating or
+// removing the secret invalidates its sessions without affecting email login.
+export async function getCodeOnlyAuthMember(config) {
+  if (!config.codeOnlyPin) return null;
+  return {
+    email: '',
+    name: 'Code-only access',
+    memberHash: await hashPin({
+      challengeId: 'code-only-session-v1',
+      hmacSecret: config.hmacSecret,
+      pin: config.codeOnlyPin,
+    }),
+  };
 }
 
 export async function findAllowedAuthMemberByHash(config, emailHash) {
@@ -681,7 +700,10 @@ export async function authorizeCustomSessionRequest({
       };
     }
 
-    const member = await findAllowedAuthMemberByHash(config, session.email_hash);
+    const sharedMember = await getCodeOnlyAuthMember(config);
+    const member = sharedMember && constantTimeEqual(sharedMember.memberHash, session.email_hash)
+      ? sharedMember
+      : await findAllowedAuthMemberByHash(config, session.email_hash);
     if (!member) {
       return {
         authorized: false,

@@ -7,6 +7,66 @@ const source = await readFile(new URL('../public/auth/login.js', import.meta.url
 const STORAGE_KEY = 'l3dcLoginChallenge';
 const START = Date.parse('2026-10-05T09:00:00Z');
 
+test('code-only is optional and submits a secret only to the server before a safe redirect', async () => {
+  const disabled = await setup({ challenge: null });
+  assert.equal(disabled.get('login-methods').hidden, true);
+  await disabled.get('code-method-button').fire('click');
+  assert.equal(disabled.get('code-stage').hidden, true);
+  const app = await setup({ challenge: null, codeOnlyEnabled: true });
+  assert.equal(app.get('login-methods').hidden, false);
+  await app.get('code-method-button').fire('click');
+  assert.equal(app.get('code-stage').hidden, false);
+  assert.equal(app.get('request-stage').hidden, true);
+  assert.equal(app.get('login-progress').hidden, true);
+  app.get('access-code').value = '12-34 56';
+  await app.get('access-code').fire('input');
+  assert.equal(app.get('access-code').value, '123456');
+  assert.equal(app.get('code-button').disabled, false);
+  await app.get('code-form').fire('submit');
+  const submission = app.requests.find(({ path }) => path === '/api/auth/code-only');
+  assert.deepEqual(JSON.parse(submission.options.body), { code: '123456', turnstileToken: 'fresh-turnstile-token' });
+  assert.equal(app.get('login-card').dataset.stage, 'success');
+  assert.equal(app.get('success-name').textContent, 'Code-only access');
+  assert.equal(app.get('login-progress').hidden, true);
+  assert.equal(app.get('access-code').value, '');
+  assert.equal(app.storage.size, 0);
+  assert.equal(app.requests.some(({ path }) => path === '/api/auth/request-code'), false);
+  await app.advance(2000);
+  assert.deepEqual(app.navigations, ['/depot?tab=movements#today']);
+});
+
+test('code-only errors reset the security token and a shared-code throttle leaves email login available', async () => {
+  for (const status of [401, 429, 503]) {
+    const app = await setup({ challenge: null, codeOnlyEnabled: true,
+      codeOnlyResponse: response({ authenticated: false, retryAfterSeconds: 45 }, status),
+    });
+    await app.get('code-method-button').fire('click');
+    app.get('access-code').value = '123456';
+    await app.get('access-code').fire('input');
+    await app.get('code-form').fire('submit');
+    assert.equal(app.get('login-card').dataset.stage, 'code');
+    assert.equal(app.get('access-code').disabled, false);
+    assert.equal(app.get('access-code').value, '');
+    assert.equal(app.get('email-method-button').disabled, false);
+    assert.equal(app.navigations.length, 0);
+    if (status === 429) {
+      app.get('access-code').value = '123456';
+      await app.get('access-code').fire('input');
+      assert.equal(app.get('code-button').disabled, true);
+      await app.advance(45000);
+      assert.equal(app.get('code-button').disabled, false);
+    }
+    await app.get('email-method-button').fire('click');
+    assert.equal(app.get('code-stage').hidden, true);
+    app.get('login-email').value = 'operator@flow-metro.com';
+    await app.get('login-email').fire('input');
+    assert.equal(app.get('request-button').disabled, false);
+    await app.get('request-form').fire('submit');
+    await settle();
+    assert.equal(app.get('login-card').dataset.stage, 'verify');
+  }
+});
+
 const settle = async () => {
   for (let index = 0; index < 12; index += 1) await Promise.resolve();
 };
@@ -45,6 +105,8 @@ async function setup({
   verifyResponse,
   requestResponse,
   sessionResponse = response({ authenticated: false }, 401),
+  codeOnlyEnabled = false,
+  codeOnlyResponse,
 } = {}) {
   let now = START;
   let timerSequence = 0;
@@ -110,10 +172,12 @@ async function setup({
     'request-button', 'verify-button', 'resend-button', 'restart-button', 'expiry-timer',
     'request-reference', 'auth-message', 'login-email', 'turnstile-shell', 'turnstile-status',
     'pin-inputs',
+    'code-stage', 'code-form', 'access-code', 'code-button', 'login-methods',
+    'email-method-button', 'code-method-button', 'login-progress',
   ];
   ids.forEach((id) => elements.set(id, new Element(id)));
   const get = (id) => elements.get(id);
-  for (const id of ['request-button', 'verify-button', 'request-step-indicator', 'verify-step-indicator', 'success-step-indicator']) {
+  for (const id of ['request-button', 'verify-button', 'code-button', 'request-step-indicator', 'verify-step-indicator', 'success-step-indicator']) {
     get(id).label = new Element();
     get(id).label.textContent = id === 'verify-button' ? 'Verify and continue' : 'Send Login Code';
   }
@@ -166,7 +230,11 @@ async function setup({
     },
     fetch: async (path, options) => {
       requests.push({ path, options });
-      if (path === '/api/auth/config') return response({ siteKey: 'site-key' });
+      if (path === '/api/auth/config') return response({ siteKey: 'site-key', codeOnlyEnabled });
+      if (path === '/api/auth/code-only') return codeOnlyResponse || response({
+        authenticated: true, user: { name: 'Code-only access', email: '' },
+        expiresAt: new Date(START + 36000000).toISOString(),
+      });
       if (path === '/api/auth/session') return sessionResponse;
       if (path === '/api/auth/request-code') return requestResponse || response({
         challengeId: 'new-opaque-challenge', requestRef: 'def456',
