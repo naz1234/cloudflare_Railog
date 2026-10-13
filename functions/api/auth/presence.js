@@ -4,6 +4,7 @@ import {
   authErrorResponse,
   createCustomAuthStore,
   getAuthMode,
+  getCodeOnlyAuthMember,
   getAuthPresenceConfiguration,
   getCustomAuthConfiguration,
   hashAuthEmail,
@@ -72,6 +73,8 @@ export function createPresenceEndpoint({
           member,
         ]),
       ));
+      const sharedMember = await getCodeOnlyAuthMember(config);
+      if (sharedMember) membersByHash.set(sharedMember.memberHash, sharedMember);
       const users = [];
       for (const row of rows) {
         const member = membersByHash.get(row.email_hash);

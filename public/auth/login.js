@@ -38,6 +38,14 @@
   const turnstileStatus = document.getElementById('turnstile-status');
   const pinContainer = document.getElementById('pin-inputs');
   const pinInputs = Array.from(document.querySelectorAll('#pin-inputs input'));
+  const codeStage = document.getElementById('code-stage');
+  const codeForm = document.getElementById('code-form');
+  const codeInput = document.getElementById('access-code');
+  const codeButton = document.getElementById('code-button');
+  const loginMethods = document.getElementById('login-methods');
+  const emailMethodButton = document.getElementById('email-method-button');
+  const codeMethodButton = document.getElementById('code-method-button');
+  const loginProgress = document.getElementById('login-progress');
 
   let expiryDeadline = 0;
   let resendDeadline = 0;
@@ -49,6 +57,9 @@
   let activeChallengeId = '';
   let activeEmail = '';
   let activeEmailHint = '';
+  let codeOnlyEnabled = false;
+  let codeRetryDeadline = 0;
+  let codeRetryTimer = 0;
 
   function prefersReducedMotion() {
     return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
@@ -61,12 +72,19 @@
   function setStage(stage) {
     const stages = ['request', 'verify', 'success'];
     const currentIndex = stages.indexOf(stage);
+    const wasCodeOnly = loginCard.dataset.stage === 'code';
     pinContainer.classList.remove('is-verifying', 'is-closing');
     loginCard.dataset.stage = stage;
     requestStage.hidden = stage !== 'request';
     verifyStage.hidden = stage !== 'verify';
     successStage.hidden = stage !== 'success';
-    formHeading.textContent = ['Sign in', 'Verify your email', 'Access verified'][currentIndex];
+    codeStage.hidden = stage !== 'code';
+    loginMethods.hidden = !codeOnlyEnabled || !['request', 'code'].includes(stage);
+    loginProgress.hidden = stage === 'code' || (stage === 'success' && wasCodeOnly);
+    emailMethodButton.setAttribute('aria-pressed', String(stage !== 'code'));
+    codeMethodButton.setAttribute('aria-pressed', String(stage === 'code'));
+    formHeading.textContent = stage === 'code' ? 'Sign in with access code'
+      : ['Sign in', 'Verify your email', 'Access verified'][currentIndex];
     [requestIndicator, verifyIndicator, successIndicator].forEach((indicator, index) => {
       indicator.classList.toggle('is-current', index === currentIndex);
       indicator.classList.toggle('is-complete', index < currentIndex);
@@ -255,6 +273,7 @@
   }
 
   function updateRequestButton() {
+    updateCodeButton();
     const requestWaitRemaining = remainingSeconds(resendDeadline);
     const hasValidEmail = Boolean(normalizeLoginEmail(emailInput.value));
     requestButton.disabled = isBusy || !turnstileToken || !hasValidEmail || requestWaitRemaining > 0;
@@ -297,6 +316,8 @@
         waitForTurnstile(),
       ]);
       if (!response.ok || !data.siteKey) throw new Error('auth_config_unavailable');
+      codeOnlyEnabled = data.codeOnlyEnabled === true;
+      loginMethods.hidden = !codeOnlyEnabled || !['request', 'code'].includes(loginCard.dataset.stage);
       turnstileWidgetId = turnstile.render('#turnstile-widget', {
         sitekey: data.siteKey,
         theme: 'dark',
@@ -552,6 +573,88 @@
     emailInput.removeAttribute('aria-invalid');
     if (message.textContent === INVALID_EMAIL_ERROR) showMessage('');
     updateRequestButton();
+  });
+
+  function updateCodeButton() {
+    const remaining = remainingSeconds(codeRetryDeadline);
+    codeButton.disabled = isBusy || !codeOnlyEnabled || !turnstileToken
+      || !/^\d{6}$/.test(codeInput.value) || remaining > 0;
+    emailMethodButton.disabled = isBusy;
+    codeMethodButton.disabled = isBusy;
+    if (!isBusy) codeButton.querySelector('span').textContent = remaining > 0
+      ? `Try again in ${formatTime(remaining)}` : 'Continue with code';
+  }
+
+  codeInput.addEventListener('input', () => {
+    codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, PIN_LENGTH);
+    updateCodeButton();
+  });
+  codeMethodButton.addEventListener('click', () => {
+    if (isBusy || loginCompleted || !codeOnlyEnabled) return;
+    setStage('code');
+    showMessage('');
+    updateCodeButton();
+    codeInput.focus();
+  });
+  emailMethodButton.addEventListener('click', () => {
+    if (isBusy || loginCompleted) return;
+    codeInput.value = '';
+    setStage('request');
+    showMessage('');
+    updateRequestButton();
+    emailInput.focus();
+  });
+  codeForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    updateCodeButton();
+    if (codeButton.disabled || loginCompleted) return;
+    const code = codeInput.value;
+    const submittedToken = turnstileToken;
+    isBusy = true;
+    codeInput.disabled = true;
+    setButtonBusy(codeButton, true, 'Verifying code');
+    clearTurnstileToken();
+    showMessage('');
+    try {
+      const { response, data } = await api('/api/auth/code-only', {
+        method: 'POST', body: JSON.stringify({ code, turnstileToken: submittedToken }),
+      });
+      if (response.status === 429) {
+        codeRetryDeadline = Date.now() + retryAfterSeconds(response, data) * 1000;
+        window.clearInterval(codeRetryTimer);
+        codeRetryTimer = window.setInterval(() => {
+          updateCodeButton();
+          if (Date.now() >= codeRetryDeadline) window.clearInterval(codeRetryTimer);
+        }, 500);
+        showMessage('Too many attempts. Please wait or use email login.');
+        return;
+      }
+      if (!response.ok || data.authenticated !== true) {
+        showMessage(response.status === 401 ? 'The access code is incorrect.'
+          : response.status === 400 ? 'Please complete the security check and try again.'
+            : 'Code-only login is temporarily unavailable. You can use email login.');
+        return;
+      }
+      loginCompleted = true;
+      window.clearInterval(timerId);
+      window.clearInterval(codeRetryTimer);
+      codeInput.value = '';
+      clearChallenge({ clearEmail: true });
+      showSuccessStage(data, '');
+      window.setTimeout(() => window.location.replace(safeReturnPath()), SUCCESS_DISPLAY_MS);
+    } catch {
+      showMessage('Unable to sign in. Check your connection and try again.');
+    } finally {
+      if (!loginCompleted) {
+        isBusy = false;
+        codeInput.disabled = false;
+        codeInput.value = '';
+        setButtonBusy(codeButton, false, 'Verifying code');
+        resetTurnstile();
+        updateCodeButton();
+        codeInput.focus();
+      }
+    }
   });
 
   emailInput.addEventListener('blur', () => {

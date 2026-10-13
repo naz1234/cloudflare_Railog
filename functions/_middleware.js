@@ -23,6 +23,7 @@ const customAuthApiMethods = new Map([
   ['/api/auth/config', new Set(['GET'])],
   ['/api/auth/request-code', new Set(['POST'])],
   ['/api/auth/verify-code', new Set(['POST'])],
+  ['/api/auth/code-only', new Set(['POST'])],
   ['/api/auth/session', new Set(['GET'])],
   ['/api/auth/logout', new Set(['POST'])],
 ]);

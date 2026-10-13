@@ -65,7 +65,7 @@ export function createSessionEndpoint({
       return authenticatedResponse(data.accessUser);
     }
 
-    if (data.authUser?.email) return authenticatedResponse(data.authUser);
+    if (data.authUser?.email || data.authUser?.tokenHash) return authenticatedResponse(data.authUser);
 
     const result = await authorizeSession({
       env,

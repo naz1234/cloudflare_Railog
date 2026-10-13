@@ -348,6 +348,10 @@ test('custom mode exposes only the exact login shell and auth endpoints', async 
     new Request('https://railog.example.com/favicon.png'),
     new Request('https://railog.example.com/api/auth/config'),
     new Request('https://railog.example.com/api/auth/session'),
+    new Request('https://railog.example.com/api/auth/code-only', {
+      method: 'POST',
+      headers: { Origin: 'https://railog.example.com' },
+    }),
     new Request('https://railog.example.com/api/auth/request-code', {
       method: 'POST',
       headers: { Origin: 'https://railog.example.com' },

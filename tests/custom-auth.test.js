@@ -16,6 +16,7 @@ import {
   getAuthMode,
   getAuthPresenceConfiguration,
   getCustomAuthConfiguration,
+  getCodeOnlyAuthMember,
   hashAuthEmail,
   hashPin,
   hashSessionToken,
@@ -36,6 +37,8 @@ import { createRequestCodeEndpoint } from '../functions/api/auth/request-code.js
 import { createSessionEndpoint } from '../functions/api/auth/session.js';
 import { createVerifyCodeEndpoint } from '../functions/api/auth/verify-code.js';
 import { createPresenceEndpoint } from '../functions/api/auth/presence.js';
+import { createCodeOnlyEndpoint } from '../functions/api/auth/code-only.js';
+import { createAuthMiddleware } from '../functions/_middleware.js';
 
 const origin = 'https://railog.example.com';
 const nowMs = Date.UTC(2026, 7, 23, 12, 0, 0);
@@ -43,6 +46,137 @@ const allowedEmails = [
   'Member.One@flow-metro.com',
   'Member.Two@flow-metro.com',
 ];
+
+test('code-only login issues a real separate session, protects the app, and supports presence and logout', async () => {
+  const env = makeEnv({ AUTH_CODE_ONLY_PIN: '123456' });
+  const store = createMemoryStore();
+  const endpoint = createCodeOnlyEndpoint({ createStore: () => store, now: () => nowMs,
+    verifyTurnstile: async () => ({ success: true }) });
+  const response = await endpoint(createContext(makeRequest('/api/auth/code-only', {
+    body: { code: '123456', turnstileToken: 'fresh-token' },
+  }), env));
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.deepEqual(payload.user, { email: '', name: 'Code-only access' });
+  assert.equal(Date.parse(payload.expiresAt) - nowMs, AUTH_SESSION_TTL_SECONDS * 1000);
+  const cookie = response.headers.get('set-cookie');
+  assert.match(cookie, /HttpOnly; Secure; SameSite=Strict/);
+  const authorize = (input) => authorizeCustomSessionRequest({ ...input, store, now: nowMs });
+  const result = await authorize({ env, request: makeRequest('/api/auth/session', { method: 'GET', cookie }) });
+  assert.equal(result.authorized, true);
+  assert.equal(result.name, 'Code-only access');
+  assert.equal(result.email, '');
+  assert.doesNotMatch(JSON.stringify([...store.sessions.values()]), /123456|__Host/);
+  const middleware = createAuthMiddleware({ authorizeCustom: authorize });
+  const context = { env, data: {}, request: makeRequest('/api/private', { method: 'GET', cookie }) };
+  context.next = () => createSessionEndpoint()(context);
+  const session = await middleware(context);
+  assert.equal(session.status, 200);
+  assert.deepEqual((await session.json()).user, payload.user);
+  const presence = await createPresenceEndpoint({ createStore: () => store, now: () => nowMs })(context);
+  assert.deepEqual((await presence.json()).users, [{ name: 'Code-only access' }]);
+  for (const pin of ['', '654321', 'invalid']) {
+    assert.equal((await authorize({ env: { ...env, AUTH_CODE_ONLY_PIN: pin }, request: context.request })).authorized, false);
+  }
+  const expired = await authorizeCustomSessionRequest({ env, store,
+    request: context.request, now: nowMs + AUTH_SESSION_TTL_SECONDS * 1000 });
+  assert.equal(expired.authorized, false);
+  const logout = await createLogoutEndpoint({ createStore: () => store, now: () => nowMs })(
+    createContext(makeRequest('/api/auth/logout', { cookie }), env));
+  assert.equal(logout.status, 200);
+  assert.equal((await authorize({ env, request: context.request })).authorized, false);
+});
+
+test('code-only rejects wrong code, malformed input, unverified tokens, wrong methods, origins and disabled configs', async () => {
+  const env = makeEnv({ AUTH_CODE_ONLY_PIN: '123456' });
+  const store = createMemoryStore();
+  let securityCalls = 0;
+  const endpoint = createCodeOnlyEndpoint({ createStore: () => store, now: () => nowMs,
+    verifyTurnstile: async ({ token, hostname }) => {
+      securityCalls += 1;
+      assert.equal(hostname, 'railog.example.com');
+      return { success: token === 'fresh-token', reason: 'invalid' };
+    } });
+  const body = { code: '123456', turnstileToken: 'fresh-token' };
+  for (const [options, environment, expected] of [
+    [{ body: { ...body, code: '654321' } }, env, 401],
+    [{ body: { ...body, turnstileToken: '' } }, env, 400],
+    [{ body: { ...body, email: allowedEmails[0] } }, env, 400],
+    [{ body: { ...body, code: 123456 } }, env, 400],
+    [{ body: { ...body, code: '12345' } }, env, 400],
+    [{ body, requestOrigin: 'https://elsewhere.example' }, env, 403],
+    [{ body, requestOrigin: null }, env, 403],
+    [{ method: 'GET' }, env, 405],
+    [{ body }, { ...env, AUTH_CODE_ONLY_PIN: '' }, 503],
+    [{ body }, { ...env, AUTH_CODE_ONLY_PIN: 'invalid' }, 503],
+    [{ body }, { ...env, AUTH_HMAC_SECRET: '' }, 503],
+    [{ body }, { ...env, AUTH_MODE: 'cloudflare_access' }, 404],
+  ]) {
+    const response = await endpoint(createContext(makeRequest('/api/auth/code-only', options), environment));
+    assert.equal(response.status, expected);
+    assert.equal(response.headers.get('set-cookie'), null);
+  }
+  assert.equal(securityCalls, 2);
+  assert.equal(store.sessions.size, 0);
+});
+
+test('code-only limits every attempt by IP and global policy, independently from email quotas', async () => {
+  const env = makeEnv({ AUTH_CODE_ONLY_PIN: '123456' });
+  const counts = new Map();
+  const store = createMemoryStore({ rateAllowed: (input) => {
+    const key = `${input.action}:${input.keyHash}`;
+    counts.set(key, (counts.get(key) || 0) + 1);
+    return counts.get(key) <= input.limit;
+  } });
+  let calls = 0;
+  const endpoint = createCodeOnlyEndpoint({ createStore: () => store, now: () => nowMs,
+    verifyTurnstile: async () => { calls += 1; return { success: true }; } });
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const response = await endpoint(createContext(makeRequest('/api/auth/code-only', {
+      body: { code: '654321', turnstileToken: 'fresh-token' },
+    }), env));
+    assert.equal(response.status, attempt === 5 ? 429 : 401);
+    if (attempt === 5) assert.equal(response.headers.get('retry-after'), '37');
+  }
+  assert.equal(calls, 5);
+  assert.ok(store.rateCalls.every((input) => input.action.startsWith('code-only-')));
+  const globalStore = createMemoryStore({ rateAllowed: (input) => input.action !== 'code-only-global' });
+  const globalEndpoint = createCodeOnlyEndpoint({ createStore: () => globalStore,
+    verifyTurnstile: async () => { throw Error('must not compare a PIN after global throttle'); } });
+  assert.equal((await globalEndpoint(createContext(makeRequest('/api/auth/code-only', {
+    body: { code: '123456', turnstileToken: 'fresh-token' }, ip: '203.0.113.20',
+  }), env))).status, 429);
+});
+
+test('code-only storage and security service failures fail closed without printing secrets', async () => {
+  for (const failure of ['security', 'database']) {
+    const logs = [];
+    const store = createMemoryStore();
+    if (failure === 'database') store.insertSession = async () => { throw Error('123456'); };
+    const endpoint = createCodeOnlyEndpoint({ createStore: () => store,
+      logger: { error: (value) => logs.push(value) },
+      verifyTurnstile: async () => ({ success: failure !== 'security', reason: 'unavailable' }),
+    });
+    const response = await endpoint(createContext(makeRequest('/api/auth/code-only', {
+      body: { code: '123456', turnstileToken: 'fresh-token' },
+    }), makeEnv({ AUTH_CODE_ONLY_PIN: '123456' })));
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get('set-cookie'), null);
+    assert.doesNotMatch(JSON.stringify(logs), /123456/);
+  }
+});
+
+test('the optional secret exposes only availability, is absent from client files, and cannot act as an email identity', async () => {
+  const env = makeEnv({ AUTH_CODE_ONLY_PIN: '123456' });
+  const response = await createAuthConfigEndpoint()(createContext(makeRequest('/api/auth/config', { method: 'GET' }), env));
+  assert.deepEqual(await response.json(), { siteKey: 'turnstile-site-key', codeOnlyEnabled: true });
+  assert.equal(findAllowedAuthMember(getCustomAuthConfiguration(env), 'Code-only access'), null);
+  const member = await getCodeOnlyAuthMember(getCustomAuthConfiguration(env));
+  assert.match(member.memberHash, /^[a-f0-9]{64}$/);
+  for (const file of ['public/login.html', 'public/auth/login.js', 'public/auth/login.css']) {
+    assert.doesNotMatch(await readFile(new URL(`../${file}`, import.meta.url), 'utf8'), /AUTH_CODE_ONLY_PIN|123456/);
+  }
+});
 
 test('custom login sessions last ten hours', () => {
   assert.equal(AUTH_SESSION_TTL_SECONDS, 10 * 60 * 60);
@@ -567,7 +701,7 @@ test('Turnstile verifier binds token to action, hostname, and remote IP', async 
   assert.deepEqual(configurationError, { success: false, reason: 'configuration_error' });
 });
 
-test('public auth config exposes only the Turnstile site key', async () => {
+test('public auth config exposes the Turnstile site key and code-only availability', async () => {
   const endpoint = createAuthConfigEndpoint({ logger: { error() {} } });
   const response = await endpoint(createContext(makeRequest('/api/auth/config', {
     method: 'GET',
@@ -576,6 +710,7 @@ test('public auth config exposes only the Turnstile site key', async () => {
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), {
     siteKey: 'turnstile-site-key',
+    codeOnlyEnabled: false,
   });
 });
 

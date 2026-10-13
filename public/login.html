@@ -19,13 +19,29 @@
       </header>
       <section class="login-experience" aria-labelledby="form-heading">
         <h2 id="form-heading" class="sr-only">Sign in</h2>
-        <ol class="stepper" aria-label="Login progress">
+        <ol class="stepper" id="login-progress" aria-label="Login progress">
           <li class="is-current" id="request-step-indicator" aria-current="step"><span>01</span><strong>YOUR EMAIL</strong></li>
           <li id="verify-step-indicator"><span>02</span><strong>ENTER PIN</strong></li>
           <li id="success-step-indicator"><span>03</span><strong>VERIFIED</strong></li>
         </ol>
         <section class="auth-panel login-frame" id="login-card" data-stage="request" aria-labelledby="form-heading">
           <div class="card-handle" aria-hidden="true"></div>
+          <div class="login-methods" id="login-methods" role="group" aria-label="Login method" hidden>
+            <button id="email-method-button" type="button" aria-pressed="true">Email login</button>
+            <button id="code-method-button" type="button" aria-pressed="false">Code only</button>
+          </div>
+          <section class="auth-stage" id="code-stage" aria-labelledby="code-heading" hidden>
+            <h3 id="code-heading">Sign in with access code</h3>
+            <p class="stage-description">Enter your shared 6-digit access code.</p>
+            <form id="code-form" novalidate>
+              <label class="field-label" for="access-code">ACCESS CODE</label>
+              <div class="email-field">
+                <input id="access-code" name="access-code" type="password" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" aria-describedby="access-code-help" required />
+              </div>
+              <p class="email-help" id="access-code-help">No email or emailed PIN needed.</p>
+              <button class="primary-button" id="code-button" type="submit" disabled><span>Continue with code</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg></button>
+            </form>
+          </section>
           <section class="auth-stage" id="request-stage" aria-labelledby="request-heading">
             <h3 id="request-heading">Sign in to continue</h3>
             <p class="stage-description">Enter your approved FLOW work email.</p>

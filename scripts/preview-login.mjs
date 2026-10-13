@@ -115,6 +115,7 @@ export function createLoginPreviewServer({ now = Date.now } = {}) {
     const apiMethods = new Map([
       ['/api/auth/config', 'GET'], ['/api/auth/session', 'GET'],
       ['/api/auth/request-code', 'POST'], ['/api/auth/verify-code', 'POST'],
+      ['/api/auth/code-only', 'POST'],
     ]);
     const method = apiMethods.get(url.pathname) || 'GET';
     if (request.method !== method) {
@@ -139,13 +140,24 @@ export function createLoginPreviewServer({ now = Date.now } = {}) {
         const [relativePath, contentType] = assets.get(url.pathname);
         return send(response, 200, await readFile(new URL(relativePath, import.meta.url)), contentType);
       }
-      if (url.pathname === '/api/auth/config') return send(response, 200, { siteKey: 'local-preview-only' });
+      if (url.pathname === '/api/auth/config') return send(response, 200, { siteKey: 'local-preview-only', codeOnlyEnabled: true });
       if (url.pathname === '/api/auth/session') {
         // Deliberately no session or cookies: every /login visit remains testable.
         return error(response, 401, 'UNAUTHENTICATED', 'Authentication required.', { authenticated: false });
       }
 
       const time = now();
+      if (url.pathname === '/api/auth/code-only') {
+        const body = await readJson(request);
+        if (body?.turnstileToken !== DEMO_TOKEN) {
+          return error(response, 400, 'VERIFICATION_REQUIRED', 'Please complete the security check.');
+        }
+        if (body?.code !== DEMO_PIN) return error(response, 401, 'INVALID_CODE', 'The access code is incorrect.');
+        return send(response, 200, {
+          ok: true, authenticated: true, user: { email: '', name: 'Code-only access' },
+          expiresAt: new Date(time + 10 * 60 * 60 * 1000).toISOString(),
+        });
+      }
       for (const [id, challenge] of challenges) if (challenge.expiresAt <= time) challenges.delete(id);
       for (const [email, deadline] of cooldowns) if (deadline <= time) cooldowns.delete(email);
 

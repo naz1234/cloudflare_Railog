@@ -84,6 +84,7 @@ Keep the existing Cloudflare Access variables and secret while testing. Add thes
 | `AUTH_PRESENCE_HIDDEN_EMAILS` | Encrypted secret | Optional approved subset to omit from the online list and count, one address per line |
 | `AUTH_PRESENCE_ADDITIONAL_HIDDEN_EMAILS` | Encrypted secret | Optional additional hidden members, allowing additions without replacing an existing encrypted presence list |
 | `AUTH_HMAC_SECRET` | Encrypted secret | Random secret of at least 32 characters |
+| `AUTH_CODE_ONLY_PIN` | Optional encrypted secret | Exactly six digits; enables the additional code-only login. Never place the value in source, client assets, or plain variables. |
 | `AUTH_EMAIL_SERVICE_TOKEN` | Encrypted secret | Authenticates Pages to the mailer worker |
 | `TURNSTILE_SITE_KEY` | Variable | Public widget key for this environment |
 | `TURNSTILE_SECRET_KEY` | Encrypted secret | Server-side widget secret |
@@ -93,6 +94,12 @@ Configure the same approved addresses in the mailer Worker's encrypted `AUTH_ALL
 After changing bindings, variables, or secrets, redeploy Pages so Functions receive them. Apply every pending D1 migration in order before deploying code that reads identity or presence columns. Missing tables or columns cause authentication to fail closed.
 
 ## 5. Test while Access still protects the site
+
+### Optional code-only login
+
+Set `AUTH_CODE_ONLY_PIN` separately for the intended Pages environments and redeploy. The login page then offers **Email login** and **Code only**. The secret is verified by `/api/auth/code-only`, with a fresh Turnstile token, same-origin POST checks, five attempts per IP per 15-minute window, and 100 attempts globally per hour. These counters are separate from email-login limits. The PIN is never returned by the public config or stored in browser storage or D1.
+
+Successful code-only sign-in creates the same 10-hour HttpOnly session as email login. Its distinct identity is **Code-only access**, including in online presence; it does not impersonate an approved email member. Logout and expiry revoke access normally. Rotating or removing the secret and redeploying invalidates existing shared-code sessions; email sessions remain valid. Without a valid secret, this option is hidden and its endpoint fails closed. No database migration is required.
 
 First test Preview. Keep the Cloudflare Access application at the edge and set Preview `AUTH_MODE=custom_pin`; this intentionally creates two gates during the test.
 
