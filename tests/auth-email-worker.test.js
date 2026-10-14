@@ -275,6 +275,33 @@ test('mailer fails closed for invalid or over-capacity additional recipients', a
   }
 });
 
+test('additional staff is approved alongside existing users with exact matching and staff-only validation', async () => {
+  const overrides = {
+    AUTH_ADDITIONAL_ALLOWED_EMAILS: 'Guest.User@example.net',
+    AUTH_ADDITIONAL_STAFF_EMAILS: 'New.Staff@flow-metro.com;NEW.STAFF@FLOW-METRO.COM;first.user@flow-metro.com',
+  };
+  for (const recipient of ['First.User@flow-metro.com', 'Guest.User@example.net', 'New.Staff@flow-metro.com']) {
+    const { env, fetcher, providerCalls } = createEnv(overrides);
+    const response = await handle(createRequest({ body: { pin: '012345', recipient, requestRef: 'STAFF1' } }), env, fetcher);
+    assert.equal(response.status, 200);
+    assert.equal(providerCalls.length, 2);
+    const mime = Buffer.from(JSON.parse(providerCalls[1].init.body).raw, 'base64url').toString('utf8');
+    assert.ok(mime.includes(`To: ${recipient}\r\n`));
+  }
+  for (const value of ['invalid', 'External.User@example.net', 'New.Staff@flow-metro.com;invalid',
+    Array.from({ length: 99 }, (_, index) => `Staff.${index}@flow-metro.com`).join('\n')]) {
+    const { env, fetcher, providerCalls } = createEnv({ ...overrides, AUTH_ADDITIONAL_STAFF_EMAILS: value });
+    assert.equal((await handle(createRequest(), env, fetcher)).status, 503);
+    assert.equal(providerCalls.length, 0);
+  }
+  for (const value of ['', 'New.Staff@flow-metro.com']) {
+    const { env, fetcher, providerCalls } = createEnv({ ...overrides, AUTH_ADDITIONAL_STAFF_EMAILS: value });
+    const response = await handle(createRequest({ body: { pin: '012345', recipient: 'unapproved@flow-metro.com', requestRef: 'STAFF2' } }), env, fetcher);
+    assert.equal(response.status, 400);
+    assert.equal(providerCalls.length, 0);
+  }
+});
+
 test('duplicate recipients send exactly once, preserve canonical casing and do not block other approved users', async () => {
   const overrides = {
     AUTH_ALLOWED_EMAILS: 'First.User@flow-metro.com;FIRST.USER@FLOW-METRO.COM;Second.User@flow-metro.com;second.user@flow-metro.com',
