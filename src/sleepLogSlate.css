@@ -144,6 +144,54 @@ html[data-app-theme] .theme-sleep-log-window[data-window-design="compact-slate"]
   background: var(--slp-action-hover) !important;
 }
 
+/* Portaled above the depot panel so the guide is not clipped by its border. */
+html[data-app-theme] .slp-excel-paste-guide {
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  width: min(560px, calc(100vw - 24px));
+  max-height: min(480px, var(--radix-tooltip-content-available-height, calc(100vh - 24px)));
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid #4b7398;
+  border-radius: 10px;
+  background: #0d263b;
+  color: #e4effb;
+  -webkit-text-fill-color: currentColor;
+  box-shadow: 0 10px 28px rgb(0 0 0 / .3);
+}
+
+html[data-app-theme="light"] .slp-excel-paste-guide {
+  border-color: #a5b8ce;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 10px 28px rgb(15 23 42 / .18);
+}
+
+.slp-excel-paste-guide-title {
+  flex-shrink: 0;
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.slp-excel-paste-guide-detail {
+  flex-shrink: 0;
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.slp-excel-paste-guide-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #fff;
+}
+
 html[data-app-theme] .theme-sleep-log-window .sleep-log-depot-title {
   margin: 0;
   color: var(--window-text) !important;

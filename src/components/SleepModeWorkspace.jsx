@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import "../copyFeedbackSlate.css";
 import "../outputWindowsSlate.css";
 import "../sleepLogSlate.css";
@@ -419,27 +420,44 @@ function SleepLogOutputPanel({
         </div>
         <div className="sleep-log-card-actions">
           <button type="button" onClick={() => onDownload(depot)} disabled={!logs.length} className="slate-window-action" data-slp-excel-action="download"><Download size={14} /> Download Excel</button>
-          {SLEEP_EXCEL_COPY_SHIFTS.map(({ key, label, range }) => {
-            const status = excelCopyStatuses[`copy-excel-${depot}-${key}`] || "";
-            const pending = status === "pending";
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => onCopyExcel(depot, key)}
-                disabled={!loaded || !logs.length || pending}
-                data-copy-state={status || "idle"}
-                aria-busy={pending}
-                aria-label={`${layout.label}: copy ${label} Shift Excel (${range})`}
-                title={`Paste into ${range}: 47 train rows, Date through Remarks`}
-                className="slate-window-action slate-copy-feedback"
-                data-slp-excel-action={key}
-              >
-                {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : status === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                <span aria-live="polite">{pending ? `Copying ${label}...` : status === "copied" ? `${label} copied` : status === "failed" ? `${label} copy failed` : `Copy ${label} Excel`}</span>
-              </button>
-            );
-          })}
+          <TooltipProvider delayDuration={200}>
+            {SLEEP_EXCEL_COPY_SHIFTS.map(({ key, label, range }) => {
+              const status = excelCopyStatuses[`copy-excel-${depot}-${key}`] || "";
+              const pending = status === "pending";
+              const startCell = range.split(":")[0];
+              return (
+                <Tooltip key={key}>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => onCopyExcel(depot, key)}
+                      disabled={!loaded || !logs.length || pending}
+                      data-copy-state={status || "idle"}
+                      aria-busy={pending}
+                      aria-label={`${layout.label}: copy ${label} Shift Excel (${range})`}
+                      aria-description={`Paste into ${range}: 47 train rows, Date through Remarks`}
+                      className="slate-window-action slate-copy-feedback"
+                      data-slp-excel-action={key}
+                    >
+                      {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : status === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      <span aria-live="polite">{pending ? `Copying ${label}...` : status === "copied" ? `${label} copied` : status === "failed" ? `${label} copy failed` : `Copy ${label} Excel`}</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={8} collisionPadding={12} className="slp-excel-paste-guide">
+                    <p className="slp-excel-paste-guide-title">{label} shift — start pasting at {startCell}</p>
+                    <p className="slp-excel-paste-guide-detail">Fills {range}: Date, Location, Sleep, Wake-up and Remarks. Keep the Train set column unchanged.</p>
+                    <img
+                      src="/guides/sleep-excel-paste-start.png"
+                      alt={`Excel paste guide: select the first Date cell (${startCell}) beside T01, then paste. The rows fill downward automatically.`}
+                      className="slp-excel-paste-guide-image"
+                      width="1672"
+                      height="941"
+                    />
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </TooltipProvider>
           <button type="button" onClick={() => onCopy(depot)} disabled={!logs.length || copying} data-copy-state={copyStatus || "idle"} aria-busy={copying} className="slate-window-action slate-copy-feedback">
             {copying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
             <span aria-live="polite">{copying ? "Copying..." : copied ? "Copied" : copyStatus === "failed" ? "Copy failed" : "Copy All"}</span>

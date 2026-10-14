@@ -5,6 +5,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { FileText, Copy, Loader2, Check, Trash2, Download } from "lucide-react";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { groupSleepModeLogs } from "../src/lib/sleepModeLog.js";
 import { SLEEP_EXCEL_COPY_SHIFTS } from "../src/lib/sleepModeExcel.js";
 
@@ -17,11 +18,12 @@ const compiled = ts.transpileModule(components, {
   compilerOptions: { jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
   fileName: "SleepLogOutput.jsx",
 }).outputText;
-const { SleepLogOutputPanel } = new Function("React", "useMemo", "groupSleepModeLogs", "DEPOT_LAYOUTS", "SLEEP_EXCEL_COPY_SHIFTS", "FileText", "Copy", "Loader2", "Check", "Trash2", "Download", `${compiled}\nreturn { SleepLogOutputPanel };`)(
+const { SleepLogOutputPanel } = new Function("React", "useMemo", "groupSleepModeLogs", "DEPOT_LAYOUTS", "SLEEP_EXCEL_COPY_SHIFTS", "FileText", "Copy", "Loader2", "Check", "Trash2", "Download", "Tooltip", "TooltipContent", "TooltipProvider", "TooltipTrigger", `${compiled}\nreturn { SleepLogOutputPanel };`)(
   React, (callback) => callback(), groupSleepModeLogs,
   { west: { label: "West Depot", shortLabel: "WD" }, east: { label: "East Depot", shortLabel: "ED" } },
   SLEEP_EXCEL_COPY_SHIFTS,
   FileText, Copy, Loader2, Check, Trash2, Download,
+  TooltipPrimitive.Root, TooltipPrimitive.Content, TooltipPrimitive.Provider, TooltipPrimitive.Trigger,
 );
 const sample = (mode = "sleep", time = "19:23") => ({ id: `${mode}-${time}`, time, trainIds: ["29"], location: "WD-ST14", mode, createdAt: `2026-10-11T${time}:00Z` });
 const render = (props = {}) => renderToStaticMarkup(React.createElement(SleepLogOutputPanel, {
