@@ -534,7 +534,7 @@ function formatDailyDepotLogCells(sheetDocument, stylesDocument) {
       alignment.removeAttribute("indent");
       if (column === 5) {
         alignment.setAttribute("horizontal", "left");
-        alignment.setAttribute("vertical", "top");
+        alignment.setAttribute("vertical", "center");
       }
       style.setAttribute("applyAlignment", "1");
       if (column === 2) {
