@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { getSleepModeDepot, buildSleepModeGroupedText } from "../src/lib/sleepModeLog.js";
+import { SLEEP_EXCEL_COPY_SHIFTS, buildSleepModeExcelClipboardText } from "../src/lib/sleepModeExcel.js";
 
 const source = readFileSync(new URL("../src/components/SleepModeWorkspace.jsx", import.meta.url), "utf8");
 const css = readFileSync(new URL("../src/copyFeedbackSlate.css", import.meta.url), "utf8");
@@ -163,4 +164,47 @@ test("both SLP buttons use accessible result labels and Clear remains green when
   assert.match(source, /setSyncStatus\(`Live saved[^\n]+\);\s*return true;/);
   assert.match(source, /setSyncStatus\("Saved locally \\u00b7 cloud retry needed"\);\s*return false;/);
   assert.match(source, /return saveQueueRef.current;/);
+});
+
+function excelCopyHandler({ loaded = true, reject = false } = {}) {
+  const logsByDepot = {
+    west: [{ id: "w", time: "23:30", trainIds: ["01"], location: "WD-ST14", mode: "sleep" }],
+    east: [{ id: "e", time: "07:30", trainIds: ["47"], location: "ED-ST02", mode: "wake" }],
+  };
+  const writes = [];
+  const harness = feedbackHarness();
+  const start = source.indexOf("const copyExcel = useCallback");
+  const expression = source.slice(start, source.indexOf("const handleClearLogs", start));
+  const handler = new Function("useCallback", "loaded", "DEPOT_LAYOUTS", "SLEEP_EXCEL_COPY_SHIFTS", "logsByDepot", "runActionWithFeedback", "navigator", "buildSleepModeExcelClipboardText", `${expression}\nreturn copyExcel;`)(
+    (callback) => callback, loaded, { west: {}, east: {} }, SLEEP_EXCEL_COPY_SHIFTS, logsByDepot,
+    harness.runActionWithFeedback, { clipboard: { writeText: async (text) => { if (reject) throw Error("clipboard denied"); writes.push(text); } } }, buildSleepModeExcelClipboardText,
+  );
+  return { handler, writes, harness, logsByDepot };
+}
+
+test("shift Excel copy uses the selected depot and shift with independent green success feedback", async () => {
+  const { handler, writes, harness, logsByDepot } = excelCopyHandler();
+  await handler("west", "night");
+  await handler("east", "early");
+  assert.deepEqual(writes, [buildSleepModeExcelClipboardText(logsByDepot.west, "night"), buildSleepModeExcelClipboardText(logsByDepot.east, "early")]);
+  assert.deepEqual(harness.statuses, { "copy-excel-west-night": "copied", "copy-excel-east-early": "copied" });
+  await handler("west", "late");
+  assert.equal(writes[2].split("\n").length, 47, "an empty shift can clear stale values while retaining all train positions");
+  assert.equal(harness.statuses["copy-excel-west-night"], "copied");
+});
+
+test("shift Excel copy rejects loading or invalid selections and never confirms clipboard failure", async () => {
+  const notLoaded = excelCopyHandler({ loaded: false });
+  await notLoaded.handler("west", "night");
+  assert.equal(notLoaded.writes.length, 0);
+  const invalid = excelCopyHandler();
+  await invalid.handler("unknown", "night");
+  await invalid.handler("west", "unknown");
+  invalid.logsByDepot.east = [];
+  await invalid.handler("east", "early");
+  assert.equal(invalid.writes.length, 0);
+  const failed = excelCopyHandler({ reject: true });
+  await failed.handler("west", "night");
+  assert.equal(failed.writes.length, 0);
+  assert.equal(failed.harness.statuses["copy-excel-west-night"], "failed");
 });

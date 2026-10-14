@@ -3,6 +3,8 @@ import test from "node:test";
 import * as XLSX from "xlsx";
 import {
   buildSleepModeExcelFileName,
+  buildSleepModeExcelClipboardText,
+  SLEEP_EXCEL_COPY_SHIFTS,
   createSleepModeExcelBytes,
   getSleepExcelShift,
   summarizeSleepLogsForExcel,
@@ -110,4 +112,37 @@ test("SLP Excel filename uses the latest saved log date", () => {
   assert.equal(buildSleepModeExcelFileName(repeatedLogs), "SLP-Sleep-Mode-2026-08-17.xlsx");
   assert.equal(buildSleepModeExcelFileName(repeatedLogs, undefined, "WD"), "SLP-WD-Sleep-Mode-2026-08-17.xlsx");
   assert.equal(buildSleepModeExcelFileName(repeatedLogs, undefined, "East Depot"), "SLP-EAST-DEPOT-Sleep-Mode-2026-08-17.xlsx");
+});
+
+test("each shift copies the exact 47-by-5 Excel range for both depots, preserving blank train positions", () => {
+  assert.deepEqual(SLEEP_EXCEL_COPY_SHIFTS.map(({ range }) => range), ["B4:F50", "H4:L50", "N4:R50"]);
+  for (const location of ["WD-ST14", "ED-ST02"]) {
+    const logs = [
+      ...repeatedLogs.map((entry) => ({ ...entry, location })),
+      { id: "copy-early", time: "07:30", trainIds: ["01"], location, mode: "sleep", remark: "Early check", createdAt: "2026-08-17T07:30:00Z" },
+      { id: "copy-late", time: "23:29", trainIds: ["47"], location, mode: "wake", remark: "Late ready", createdAt: "2026-08-17T23:29:00Z" },
+    ];
+    const original = structuredClone(logs);
+    const sheet = XLSX.read(createSleepModeExcelBytes(logs), { type: "array" }).Sheets["Sleep & Stdby Mode"];
+    for (const { key, range } of SLEEP_EXCEL_COPY_SHIFTS) {
+      const text = buildSleepModeExcelClipboardText(logs, key);
+      const rows = text.split("\n").map((line) => line.split("\t"));
+      assert.equal(rows.length, 47);
+      assert.ok(rows.every((row) => row.length === 5));
+      assert.deepEqual(rows, XLSX.utils.sheet_to_json(sheet, { header: 1, range, defval: "", blankrows: true }));
+      assert.deepEqual(rows[1], ["", "", "", "", ""]);
+      assert.doesNotMatch(text, /Train set|Location|T01|T47/);
+    }
+    assert.deepEqual(logs, original);
+  }
+});
+
+test("Excel copy keeps cell separators out of remarks, retains empty rows and rejects invalid shifts", () => {
+  const logs = [{ id: "remark", time: "23:30", trainIds: ["01"], location: "WD-ST14", mode: "sleep", remark: "first\tnote\r\nnext", createdAt: "2026-10-14T23:30:00Z" }];
+  const rows = buildSleepModeExcelClipboardText(logs, "night").split("\n").map((line) => line.split("\t"));
+  assert.equal(rows.length, 47);
+  assert.ok(rows.every((row) => row.length === 5));
+  assert.equal(rows[0][4], "first note next");
+  assert.ok(buildSleepModeExcelClipboardText([], "late").split("\n").every((row) => row === "\t\t\t\t"));
+  for (const shift of ["", "unknown", "toString", "constructor"]) assert.equal(buildSleepModeExcelClipboardText(logs, shift), "");
 });

@@ -51,6 +51,12 @@ const SHIFT_DEFINITIONS = {
 
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+export const SLEEP_EXCEL_COPY_SHIFTS = [
+  { key: "night", label: "Night", range: "B4:F50" },
+  { key: "early", label: "Early", range: "H4:L50" },
+  { key: "late", label: "Late", range: "N4:R50" },
+];
+
 function parseLogDate(value) {
   const date = value ? new Date(value) : null;
   return date && !Number.isNaN(date.getTime()) ? date : null;
@@ -162,6 +168,17 @@ function buildSleepModeRows(logs = []) {
     rows[row][shift.columns.remark] = entry.remark;
   });
   return rows;
+}
+
+export function buildSleepModeExcelClipboardText(logs = [], shiftKey = "") {
+  if (!SLEEP_EXCEL_COPY_SHIFTS.some(({ key }) => key === shiftKey)) return "";
+  const shift = SHIFT_DEFINITIONS[shiftKey];
+  // Retain all 47 train positions, including blank rows, but omit train IDs and headers.
+  return buildSleepModeRows(logs).slice(3, 50)
+    .map((row) => row.slice(shift.columns.date, shift.columns.remark + 1)
+      .map((value) => String(value ?? "").replace(/[\t\r\n]+/g, " "))
+      .join("\t"))
+    .join("\n");
 }
 
 function escapeXml(value = "") {
