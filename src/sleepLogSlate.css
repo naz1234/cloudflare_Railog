@@ -149,7 +149,7 @@ html[data-app-theme] .slp-excel-paste-guide {
   --slp-guide-background: #0d263b;
   --slp-guide-border: #4b7398;
   z-index: 1000;
-  width: min(300px, calc(100vw - 24px));
+  width: min(420px, calc(100vw - 24px));
   overflow: visible;
   padding: 0;
   border: 1px solid var(--slp-guide-border);
@@ -170,7 +170,7 @@ html[data-app-theme="light"] .slp-excel-paste-guide {
 .slp-excel-paste-guide-body {
   display: flex;
   flex-direction: column;
-  max-height: min(260px, var(--radix-tooltip-content-available-height, calc(100vh - 24px)));
+  max-height: min(340px, var(--radix-tooltip-content-available-height, calc(100vh - 24px)));
   overflow: auto;
   padding: 8px;
   border-radius: inherit;
