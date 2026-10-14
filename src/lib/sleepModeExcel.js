@@ -23,25 +23,27 @@ const SHIFT_DEFINITIONS = {
     headers: [
       "Train set",
       "Date",
+      "Location",
       "SLEEP Mode\nStarted",
       "Wake Up Time",
       "Alarms Observation\nStandby Mode Alarm",
     ],
-    columns: { train: 6, date: 7, sleep: 8, wake: 9, remark: 10 },
+    columns: { train: 6, date: 7, location: 8, sleep: 9, wake: 10, remark: 11 },
     fill: "FFFF00",
     titleFont: "000000",
   },
   late: {
     title: "LATE Shift (Sleep Mode)",
-    startColumn: 11,
+    startColumn: 12,
     headers: [
       "Train set",
       "Date",
+      "Location",
       "SLEEP Mode\nStarted",
       "Wake Up Time",
       "Alarms Observation\nStandby Mode Alarm",
     ],
-    columns: { train: 11, date: 12, sleep: 13, wake: 14, remark: 15 },
+    columns: { train: 12, date: 13, location: 14, sleep: 15, wake: 16, remark: 17 },
     fill: "4472C4",
     titleFont: "FFFFFF",
   },
@@ -139,7 +141,7 @@ export function summarizeSleepLogsForExcel(logs = []) {
 }
 
 function buildSleepModeRows(logs = []) {
-  const rows = Array.from({ length: 50 }, () => Array(16).fill(""));
+  const rows = Array.from({ length: 50 }, () => Array(18).fill(""));
   Object.values(SHIFT_DEFINITIONS).forEach((shift) => {
     rows[1][shift.startColumn] = shift.title;
     shift.headers.forEach((header, index) => { rows[2][shift.startColumn + index] = header; });
@@ -184,23 +186,23 @@ function getColumnName(index) {
 function getCellStyle(row, column) {
   if (row === 1) {
     if (column <= 5) return 1;
-    if (column <= 10) return 3;
+    if (column <= 11) return 3;
     return 5;
   }
   if (row === 2) {
     if (column <= 5) return 2;
-    if (column <= 10) return 4;
+    if (column <= 11) return 4;
     return 6;
   }
-  return [5, 10, 15].includes(column) ? 8 : 7;
+  return [5, 11, 17].includes(column) ? 8 : 7;
 }
 
 function buildWorksheetXml(logs = []) {
   const rows = buildSleepModeRows(logs);
   const columnWidths = [
     12, 17, 13.43, 13.14, 19.57, 68.14,
-    14.43, 15, 10, 10, 48.43,
-    14.43, 15, 10, 10, 50,
+    14.43, 15, 13.43, 10, 10, 48.43,
+    14.43, 15, 13.43, 10, 10, 50,
   ];
   const columnsXml = columnWidths
     .map((width, index) => `<col min="${index + 1}" max="${index + 1}" width="${width}" customWidth="1"/>`)
@@ -218,12 +220,12 @@ function buildWorksheetXml(logs = []) {
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <dimension ref="A2:P50"/>
+  <dimension ref="A2:R50"/>
   <sheetViews><sheetView workbookViewId="0"/></sheetViews>
   <sheetFormatPr defaultRowHeight="15"/>
   <cols>${columnsXml}</cols>
   <sheetData>${rowsXml}</sheetData>
-  <mergeCells count="3"><mergeCell ref="A2:F2"/><mergeCell ref="G2:K2"/><mergeCell ref="L2:P2"/></mergeCells>
+  <mergeCells count="3"><mergeCell ref="A2:F2"/><mergeCell ref="G2:L2"/><mergeCell ref="M2:R2"/></mergeCells>
   <pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>
 </worksheet>`;
 }
