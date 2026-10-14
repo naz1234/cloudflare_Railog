@@ -16,12 +16,34 @@ const repeatedLogs = [
 ];
 
 test("SLP Excel assigns Night, Early, and Late shifts at the correct boundaries", () => {
-  assert.equal(getSleepExcelShift("23:00"), "night");
-  assert.equal(getSleepExcelShift("06:59"), "night");
-  assert.equal(getSleepExcelShift("07:00"), "early");
-  assert.equal(getSleepExcelShift("14:59"), "early");
-  assert.equal(getSleepExcelShift("15:00"), "late");
-  assert.equal(getSleepExcelShift("22:59"), "late");
+  for (const [time, shift] of [
+    ["00:00", "night"], ["07:00", "night"], ["07:29", "night"],
+    ["07:30", "early"], ["15:00", "early"], ["15:29", "early"],
+    ["15:30", "late"], ["23:00", "late"], ["23:29", "late"],
+    ["23:30", "night"], ["23:59", "night"],
+  ]) assert.equal(getSleepExcelShift(time), shift, time);
+  for (const time of ["", "7:30", "24:00", "07:60"]) assert.equal(getSleepExcelShift(time), "");
+});
+
+test("SLP Excel places entries either side of the half-hour cutoffs in the matching shift section", () => {
+  const boundaries = [
+    ["01", "07:29", "D"], ["02", "07:30", "J"],
+    ["03", "15:29", "J"], ["04", "15:30", "P"],
+    ["05", "23:29", "P"], ["06", "23:30", "D"],
+  ];
+  const logs = boundaries.map(([trainId, time]) => ({
+    id: `boundary-${trainId}`, trainIds: [trainId], time, mode: "sleep", location: "WD-ST14",
+    createdAt: `2026-10-14T${time}:00+03:00`,
+  }));
+  const sheet = XLSX.read(createSleepModeExcelBytes(logs), { type: "array" }).Sheets["Sleep & Stdby Mode"];
+  for (const [trainId, time, column] of boundaries) {
+    const row = Number(trainId) + 3;
+    for (const candidate of ["D", "J", "P"]) {
+      assert.equal(sheet[`${candidate}${row}`].v, candidate === column ? `${time} hrs` : "");
+    }
+    const locationColumn = { D: "C", J: "I", P: "O" }[column];
+    assert.equal(sheet[`${locationColumn}${row}`].v, "Stabling 14");
+  }
 });
 
 test("SLP Excel uses the first Sleep and last Wake-up when a train is logged more than once", () => {
