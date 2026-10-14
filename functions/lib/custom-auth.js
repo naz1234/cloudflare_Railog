@@ -164,9 +164,11 @@ export function getCustomAuthConfiguration(env = {}) {
   const staffMembers = parseAllowedAuthMembers(env.AUTH_ALLOWED_EMAILS);
   const rawAdditional = String(env.AUTH_ADDITIONAL_ALLOWED_EMAILS || '').trim();
   const additionalMembers = parseAllowedAuthMembers(rawAdditional, { allowExternal: true });
+  const rawAdditionalStaff = String(env.AUTH_ADDITIONAL_STAFF_EMAILS || '').trim();
+  const additionalStaffMembers = parseAllowedAuthMembers(rawAdditionalStaff);
   // Keep the first canonical identity, with the staff list taking precedence.
   const membersByEmail = new Map();
-  for (const member of [...staffMembers, ...additionalMembers]) {
+  for (const member of [...staffMembers, ...additionalMembers, ...additionalStaffMembers]) {
     if (!membersByEmail.has(member.normalizedEmail)) {
       membersByEmail.set(member.normalizedEmail, member);
     }
@@ -184,7 +186,10 @@ export function getCustomAuthConfiguration(env = {}) {
     (rawAdditional && !additionalMembers.length)
     || allowedMembers.length > 100
   ) {
-    issues.push('AUTH_ADDITIONAL_ALLOWED_EMAILS must contain valid addresses, with at most 100 unique approved addresses across both lists.');
+    issues.push('Approved email lists must contain valid addresses, with at most 100 unique approved addresses across all lists.');
+  }
+  if (rawAdditionalStaff && !additionalStaffMembers.length) {
+    issues.push(`AUTH_ADDITIONAL_STAFF_EMAILS must contain valid ${AUTH_ALLOWED_EMAIL_DOMAIN} addresses.`);
   }
   if (hmacSecret.length < 32) {
     issues.push('AUTH_HMAC_SECRET must be an encrypted secret of at least 32 characters.');

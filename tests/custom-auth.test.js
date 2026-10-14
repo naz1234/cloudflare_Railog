@@ -482,6 +482,25 @@ test('duplicate approved addresses preserve canonical identities and other users
   assert.deepEqual(parseAllowedAuthMembers(env.AUTH_ALLOWED_EMAILS).map((member) => member.email), allowedEmails);
 });
 
+test('additional staff extends existing approvals, deduplicates and validates exact staff addresses', () => {
+  const env = makeEnv({
+    AUTH_ADDITIONAL_ALLOWED_EMAILS: 'Guest.User@example.net',
+    AUTH_ADDITIONAL_STAFF_EMAILS: `New.Staff@flow-metro.com;NEW.STAFF@FLOW-METRO.COM;${allowedEmails[0].toLowerCase()}`,
+  });
+  const config = getCustomAuthConfiguration(env);
+  assert.equal(config.valid, true);
+  assert.deepEqual(config.allowedMembers.map((member) => member.email), [...allowedEmails, 'Guest.User@example.net', 'New.Staff@flow-metro.com']);
+  assert.equal(findAllowedAuthMember(config, 'new.staff@FLOW-METRO.COM').name, 'New.Staff');
+  assert.equal(findAllowedAuthMember(config, 'unapproved@flow-metro.com'), null);
+  assert.equal(findAllowedAuthMember(getCustomAuthConfiguration({ ...env, AUTH_ADDITIONAL_STAFF_EMAILS: '' }), 'new.staff@flow-metro.com'), null);
+  for (const value of ['invalid', 'External.User@example.net', 'New.Staff@flow-metro.com;invalid']) {
+    assert.equal(getCustomAuthConfiguration({ ...env, AUTH_ADDITIONAL_STAFF_EMAILS: value }).valid, false);
+  }
+  const staff = Array.from({ length: 100 }, (_, index) => `Staff.${index}@flow-metro.com`).join('\n');
+  assert.equal(getCustomAuthConfiguration(makeEnv({ AUTH_ALLOWED_EMAILS: staff, AUTH_ADDITIONAL_STAFF_EMAILS: 'staff.0@flow-metro.com' })).valid, true);
+  assert.equal(getCustomAuthConfiguration(makeEnv({ AUTH_ALLOWED_EMAILS: staff, AUTH_ADDITIONAL_STAFF_EMAILS: 'extra@flow-metro.com' })).valid, false);
+});
+
 test('allowlist capacity counts unique addresses and duplicates never hide malformed entries', () => {
   const staff = Array.from({ length: 100 }, (_, index) => `Staff.${index}@flow-metro.com`);
   const config = getCustomAuthConfiguration(makeEnv({

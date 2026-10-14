@@ -4,6 +4,8 @@ The custom login is designed for individually identified L3 DC staff. Each user 
 
 The staff allowlist belongs only in the encrypted `AUTH_ALLOWED_EMAILS` secrets on Pages and the private mailer Worker. Individually approved addresses outside the staff domain can be configured separately in the optional encrypted `AUTH_ADDITIONAL_ALLOWED_EMAILS` secret on both services. Do not commit real approved addresses to source, documentation, examples, fixtures, logs, or a pull-request description.
 
+To add staff without replacing an existing encrypted list, set the optional `AUTH_ADDITIONAL_STAFF_EMAILS` encrypted secret identically on Pages and the private mailer. It accepts exact `flow-metro.com` addresses only and extends the existing lists. Existing canonical identities take precedence over repeated additions, and the combined limit across all three lists remains 100 unique approved addresses. Deploy the supporting code to both services and redeploy Pages after setting its secret. Do not request a live PIN merely to verify an allowlist change.
+
 ### Adding an individually approved external address
 
 Deploy the additional-address support to both Pages and the private mailer, then set the same `AUTH_ADDITIONAL_ALLOWED_EMAILS` encrypted secret on both. Use exact addresses separated by newlines, never domains or wildcards. The existing `AUTH_ALLOWED_EMAILS` secret remains required and continues to accept only staff-domain addresses. Repeated addresses within or across these two lists are ignored case-insensitively. The first spelling wins, with the staff list taking precedence, so existing display names and mail delivery casing stay stable. The combined limit is 100 unique approved addresses; malformed entries or exceeding that limit still fail closed. Redeploy Pages after changing its secret. Unlisted addresses still receive no code, and removing an address from all applicable allowlists invalidates its sessions on subsequent authorization checks. Keep the retained Cloudflare Access list and `OCC_ALLOWED_EMAILS` synchronized separately if the external address must also work during an Access rollback. Presence-hiding and Cloudflare Access rollback-list validation are unchanged by duplicate-tolerant custom login.
@@ -81,6 +83,7 @@ Keep the existing Cloudflare Access variables and secret while testing. Add thes
 | `AUTH_EMAIL_SERVICE` | Service binding | Private `l3-dc-auth-email` worker |
 | `AUTH_MODE` | Variable | Keep `cloudflare_access` until cutover |
 | `AUTH_ALLOWED_EMAILS` | Encrypted secret | Private approved-staff allowlist, one address per line |
+| `AUTH_ADDITIONAL_STAFF_EMAILS` | Optional encrypted secret | Additional exact staff addresses without replacing existing lists; same value on Pages and mailer |
 | `AUTH_PRESENCE_HIDDEN_EMAILS` | Encrypted secret | Optional approved subset to omit from the online list and count, one address per line |
 | `AUTH_PRESENCE_ADDITIONAL_HIDDEN_EMAILS` | Encrypted secret | Optional additional hidden members, allowing additions without replacing an existing encrypted presence list |
 | `AUTH_HMAC_SECRET` | Encrypted secret | Random secret of at least 32 characters |
