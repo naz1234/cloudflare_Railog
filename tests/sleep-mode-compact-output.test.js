@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { FileText, Copy, Loader2, Check, Trash2, Download } from "lucide-react";
 import { groupSleepModeLogs } from "../src/lib/sleepModeLog.js";
+import { SLEEP_EXCEL_COPY_SHIFTS } from "../src/lib/sleepModeExcel.js";
 
 const source = readFileSync(new URL("../src/components/SleepModeWorkspace.jsx", import.meta.url), "utf8");
 const css = readFileSync(new URL("../src/sleepLogSlate.css", import.meta.url), "utf8");
@@ -16,9 +17,10 @@ const compiled = ts.transpileModule(components, {
   compilerOptions: { jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
   fileName: "SleepLogOutput.jsx",
 }).outputText;
-const { SleepLogOutputPanel } = new Function("React", "useMemo", "groupSleepModeLogs", "DEPOT_LAYOUTS", "FileText", "Copy", "Loader2", "Check", "Trash2", "Download", `${compiled}\nreturn { SleepLogOutputPanel };`)(
+const { SleepLogOutputPanel } = new Function("React", "useMemo", "groupSleepModeLogs", "DEPOT_LAYOUTS", "SLEEP_EXCEL_COPY_SHIFTS", "FileText", "Copy", "Loader2", "Check", "Trash2", "Download", `${compiled}\nreturn { SleepLogOutputPanel };`)(
   React, (callback) => callback(), groupSleepModeLogs,
   { west: { label: "West Depot", shortLabel: "WD" }, east: { label: "East Depot", shortLabel: "ED" } },
+  SLEEP_EXCEL_COPY_SHIFTS,
   FileText, Copy, Loader2, Check, Trash2, Download,
 );
 const sample = (mode = "sleep", time = "19:23") => ({ id: `${mode}-${time}`, time, trainIds: ["29"], location: "WD-ST14", mode, createdAt: `2026-10-11T${time}:00Z` });
@@ -111,4 +113,25 @@ test("compact text matches Removal's type scale and both theme surfaces; deletes
   assert.match(css, /:is\(:hover, :focus-within\) \.sleep-log-line-delete \{\s*opacity: 1;/);
   assert.match(css, /@media \(hover: none\)[\s\S]*opacity: 1;/);
   assert.match(css, /\.sleep-log-line-delete:focus-visible \{[^}]*outline:/);
+});
+
+test("both depot outputs expose all three exact Excel ranges with per-shift accessible feedback", () => {
+  for (const depot of ["west", "east"]) {
+    const label = depot === "west" ? "West Depot" : "East Depot";
+    const html = render({ depot, excelCopyStatuses: {
+      [`copy-excel-${depot}-night`]: "copied", [`copy-excel-${depot}-early`]: "pending", [`copy-excel-${depot}-late`]: "failed",
+    } });
+    for (const { label: shift, range } of SLEEP_EXCEL_COPY_SHIFTS) {
+      assert.ok(html.includes(`aria-label="${label}: copy ${shift} Shift Excel (${range})"`));
+      assert.ok(html.includes(`Paste into ${range}: 47 train rows, Date through Remarks`));
+    }
+    assert.match(html, /aria-live="polite">Night copied<\/span>/);
+    assert.match(html, /disabled="" data-copy-state="pending" aria-busy="true"/);
+    assert.match(html, /aria-live="polite">Copying Early\.\.\.<\/span>/);
+    assert.match(html, /aria-live="polite">Late copy failed<\/span>/);
+    for (const state of [{ loaded: false }, { logs: [] }]) {
+      const empty = render({ depot, ...state });
+      assert.equal((empty.match(/disabled="" data-copy-state="idle" aria-busy="false" aria-label="[^"]+Shift Excel/g) || []).length, 3);
+    }
+  }
 });

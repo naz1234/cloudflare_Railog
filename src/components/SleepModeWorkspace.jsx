@@ -26,7 +26,12 @@ import {
 import "../copyFeedbackSlate.css";
 import "../outputWindowsSlate.css";
 import "../sleepLogSlate.css";
-import { buildSleepModeExcelFileName, createSleepModeExcelBytes } from "@/lib/sleepModeExcel";
+import {
+  SLEEP_EXCEL_COPY_SHIFTS,
+  buildSleepModeExcelClipboardText,
+  buildSleepModeExcelFileName,
+  createSleepModeExcelBytes,
+} from "@/lib/sleepModeExcel";
 import {
   buildSleepModeGroupedText,
   clearSleepModeTrainLogs,
@@ -385,9 +390,11 @@ function SleepLogOutputPanel({
   saving,
   confirmClear,
   copyStatus = "",
+  excelCopyStatuses = {},
   clearStatus = "",
   onDownload,
   onCopy,
+  onCopyExcel,
   onClear,
   onDelete,
 }) {
@@ -412,6 +419,26 @@ function SleepLogOutputPanel({
         </div>
         <div className="sleep-log-card-actions">
           <button type="button" onClick={() => onDownload(depot)} disabled={!logs.length} className="slate-window-action"><Download size={14} /> Download Excel</button>
+          {SLEEP_EXCEL_COPY_SHIFTS.map(({ key, label, range }) => {
+            const status = excelCopyStatuses[`copy-excel-${depot}-${key}`] || "";
+            const pending = status === "pending";
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => onCopyExcel(depot, key)}
+                disabled={!loaded || !logs.length || pending}
+                data-copy-state={status || "idle"}
+                aria-busy={pending}
+                aria-label={`${layout.label}: copy ${label} Shift Excel (${range})`}
+                title={`Paste into ${range}: 47 train rows, Date through Remarks`}
+                className="slate-window-action slate-copy-feedback"
+              >
+                {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : status === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                <span aria-live="polite">{pending ? `Copying ${label}...` : status === "copied" ? `${label} copied` : status === "failed" ? `${label} copy failed` : `Copy ${label} Excel`}</span>
+              </button>
+            );
+          })}
           <button type="button" onClick={() => onCopy(depot)} disabled={!logs.length || copying} data-copy-state={copyStatus || "idle"} aria-busy={copying} className="slate-window-action slate-copy-feedback">
             {copying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
             <span aria-live="polite">{copying ? "Copying..." : copied ? "Copied" : copyStatus === "failed" ? "Copy failed" : "Copy All"}</span>
@@ -680,6 +707,16 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
     window.setTimeout(() => URL.revokeObjectURL(url), 500);
   }, [logsByDepot]);
 
+  const copyExcel = useCallback(async (depot, shiftKey) => {
+    if (!loaded || !DEPOT_LAYOUTS[depot] || !SLEEP_EXCEL_COPY_SHIFTS.some(({ key }) => key === shiftKey)) return;
+    const depotLogs = logsByDepot[depot] || [];
+    if (!depotLogs.length) return;
+    await runActionWithFeedback(`copy-excel-${depot}-${shiftKey}`, async () => {
+      await navigator.clipboard.writeText(buildSleepModeExcelClipboardText(depotLogs, shiftKey));
+      return true;
+    }, "copied");
+  }, [loaded, logsByDepot, runActionWithFeedback]);
+
   const handleClearLogs = useCallback(async (depot) => {
     if (!DEPOT_LAYOUTS[depot] || saving || !logsByDepot[depot]?.length) return;
     if (confirmClearDepot !== depot) {
@@ -722,9 +759,11 @@ export default function SleepModeWorkspace({ westData = {}, eastData = {} }) {
               saving={saving}
               confirmClear={confirmClearDepot === depot}
               copyStatus={actionStatuses[`copy-${depot}`]}
+              excelCopyStatuses={actionStatuses}
               clearStatus={actionStatuses[`clear-${depot}`]}
               onDownload={downloadExcel}
               onCopy={copyLogs}
+              onCopyExcel={copyExcel}
               onClear={handleClearLogs}
               onDelete={deleteLog}
             />

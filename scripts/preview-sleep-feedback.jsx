@@ -5,6 +5,10 @@ import { base44 } from "./preview-compact-slate-api.js";
 import "../src/index.css";
 
 const fixtureLogs = [
+  { id: "fixture-west-night", time: "23:30", trainIds: ["23"], location: "WD-ST15", mode: "sleep", createdAt: "2026-10-11T23:30:00Z" },
+  { id: "fixture-west-early", time: "07:30", trainIds: ["09"], location: "WD-ST14", mode: "wake", createdAt: "2026-10-11T07:30:00Z" },
+  { id: "fixture-east-night", time: "23:30", trainIds: ["18"], location: "ED-ST02", mode: "sleep", createdAt: "2026-10-11T23:30:00Z" },
+  { id: "fixture-east-early", time: "07:30", trainIds: ["18"], location: "ED-ST02", mode: "wake", createdAt: "2026-10-11T07:30:00Z" },
   ...[
     ["18:25", ["23"], "WD-ST15"],
     ["19:06", ["09"], "WD-ST14"],
