@@ -80,6 +80,70 @@ html[data-app-theme="light"] .theme-sleep-log-window {
   gap: 6px;
 }
 
+/* Distinguish the Excel actions without changing their shared copied feedback. */
+.theme-sleep-log-window [data-slp-excel-action="night"] {
+  --slp-action-background: #4c2b78;
+  --slp-action-hover: #5e3690;
+  --slp-action-border: #9974da;
+  --slp-action-text: #ede9fe;
+}
+
+.theme-sleep-log-window [data-slp-excel-action="early"] {
+  --slp-action-background: #714909;
+  --slp-action-hover: #895a0c;
+  --slp-action-border: #d6a139;
+  --slp-action-text: #fff3ce;
+}
+
+.theme-sleep-log-window [data-slp-excel-action="late"] {
+  --slp-action-background: #143f77;
+  --slp-action-hover: #1c5092;
+  --slp-action-border: #74a9ed;
+  --slp-action-text: #dbeafe;
+}
+
+.theme-sleep-log-window [data-slp-excel-action="download"] {
+  --slp-action-background: #09595b;
+  --slp-action-hover: #0c6d70;
+  --slp-action-border: #55b6ad;
+  --slp-action-text: #ccfbf1;
+}
+
+html[data-app-theme="light"] .theme-sleep-log-window [data-slp-excel-action="night"] {
+  --slp-action-background: #f1e9ff;
+  --slp-action-hover: #e5d6ff;
+  --slp-action-border: #a78bfa;
+  --slp-action-text: #5b21b6;
+}
+
+html[data-app-theme="light"] .theme-sleep-log-window [data-slp-excel-action="early"] {
+  --slp-action-background: #fff1ca;
+  --slp-action-hover: #ffe6a1;
+  --slp-action-text: #854d0e;
+}
+
+html[data-app-theme="light"] .theme-sleep-log-window [data-slp-excel-action="late"] {
+  --slp-action-background: #e0efff;
+  --slp-action-hover: #cce3ff;
+  --slp-action-text: #1d4ed8;
+}
+
+html[data-app-theme="light"] .theme-sleep-log-window [data-slp-excel-action="download"] {
+  --slp-action-background: #dbf6f2;
+  --slp-action-hover: #bcece5;
+  --slp-action-text: #0f766e;
+}
+
+html[data-app-theme] .theme-sleep-log-window[data-window-design="compact-slate"] .slate-window-action[data-slp-excel-action]:not([data-copy-state="copied"]) {
+  border-color: var(--slp-action-border) !important;
+  background: var(--slp-action-background) !important;
+  color: var(--slp-action-text) !important;
+}
+
+html[data-app-theme] .theme-sleep-log-window[data-window-design="compact-slate"] .slate-window-action[data-slp-excel-action]:hover:not(:disabled):not([data-copy-state="copied"]) {
+  background: var(--slp-action-hover) !important;
+}
+
 html[data-app-theme] .theme-sleep-log-window .sleep-log-depot-title {
   margin: 0;
   color: var(--window-text) !important;
