@@ -418,7 +418,7 @@ function SleepLogOutputPanel({
           <span className="sleep-log-entry-count">{logs.length} entr{logs.length === 1 ? "y" : "ies"}</span>
         </div>
         <div className="sleep-log-card-actions">
-          <button type="button" onClick={() => onDownload(depot)} disabled={!logs.length} className="slate-window-action"><Download size={14} /> Download Excel</button>
+          <button type="button" onClick={() => onDownload(depot)} disabled={!logs.length} className="slate-window-action" data-slp-excel-action="download"><Download size={14} /> Download Excel</button>
           {SLEEP_EXCEL_COPY_SHIFTS.map(({ key, label, range }) => {
             const status = excelCopyStatuses[`copy-excel-${depot}-${key}`] || "";
             const pending = status === "pending";
@@ -433,6 +433,7 @@ function SleepLogOutputPanel({
                 aria-label={`${layout.label}: copy ${label} Shift Excel (${range})`}
                 title={`Paste into ${range}: 47 train rows, Date through Remarks`}
                 className="slate-window-action slate-copy-feedback"
+                data-slp-excel-action={key}
               >
                 {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : status === "copied" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                 <span aria-live="polite">{pending ? `Copying ${label}...` : status === "copied" ? `${label} copied` : status === "failed" ? `${label} copy failed` : `Copy ${label} Excel`}</span>
