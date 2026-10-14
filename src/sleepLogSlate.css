@@ -146,39 +146,53 @@ html[data-app-theme] .theme-sleep-log-window[data-window-design="compact-slate"]
 
 /* Portaled above the depot panel so the guide is not clipped by its border. */
 html[data-app-theme] .slp-excel-paste-guide {
+  --slp-guide-background: #0d263b;
+  --slp-guide-border: #4b7398;
   z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  width: min(560px, calc(100vw - 24px));
-  max-height: min(480px, var(--radix-tooltip-content-available-height, calc(100vh - 24px)));
-  overflow: auto;
-  padding: 10px;
-  border: 1px solid #4b7398;
-  border-radius: 10px;
-  background: #0d263b;
+  width: min(300px, calc(100vw - 24px));
+  overflow: visible;
+  padding: 0;
+  border: 1px solid var(--slp-guide-border);
+  border-radius: 16px;
+  background: var(--slp-guide-background);
   color: #e4effb;
   -webkit-text-fill-color: currentColor;
-  box-shadow: 0 10px 28px rgb(0 0 0 / .3);
+  box-shadow: 0 6px 18px rgb(0 0 0 / .25);
 }
 
 html[data-app-theme="light"] .slp-excel-paste-guide {
-  border-color: #a5b8ce;
-  background: #fff;
+  --slp-guide-background: #fff;
+  --slp-guide-border: #a5b8ce;
   color: #0f172a;
-  box-shadow: 0 10px 28px rgb(15 23 42 / .18);
+  box-shadow: 0 6px 18px rgb(15 23 42 / .16);
+}
+
+.slp-excel-paste-guide-body {
+  display: flex;
+  flex-direction: column;
+  max-height: min(260px, var(--radix-tooltip-content-available-height, calc(100vh - 24px)));
+  overflow: auto;
+  padding: 8px;
+  border-radius: inherit;
+}
+
+html[data-app-theme] .slp-excel-paste-guide-arrow {
+  fill: var(--slp-guide-background);
+  stroke: var(--slp-guide-border);
+  stroke-width: 1;
 }
 
 .slp-excel-paste-guide-title {
   flex-shrink: 0;
   margin: 0 0 4px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .slp-excel-paste-guide-detail {
   flex-shrink: 0;
-  margin: 0 0 8px;
-  font-size: 11px;
+  margin: 0 0 6px;
+  font-size: 10px;
   line-height: 1.4;
 }
 
@@ -188,7 +202,7 @@ html[data-app-theme="light"] .slp-excel-paste-guide {
   height: auto;
   min-height: 0;
   object-fit: contain;
-  border-radius: 6px;
+  border-radius: 9px;
   background: #fff;
 }
 

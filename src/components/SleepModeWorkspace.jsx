@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipArrow, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import "../copyFeedbackSlate.css";
 import "../outputWindowsSlate.css";
 import "../sleepLogSlate.css";
@@ -443,16 +443,19 @@ function SleepLogOutputPanel({
                       <span aria-live="polite">{pending ? `Copying ${label}...` : status === "copied" ? `${label} copied` : status === "failed" ? `${label} copy failed` : `Copy ${label} Excel`}</span>
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="top" sideOffset={8} collisionPadding={12} className="slp-excel-paste-guide">
-                    <p className="slp-excel-paste-guide-title">{label} shift — start pasting at {startCell}</p>
-                    <p className="slp-excel-paste-guide-detail">Fills {range}: Date, Location, Sleep, Wake-up and Remarks. Keep the Train set column unchanged.</p>
-                    <img
-                      src="/guides/sleep-excel-paste-start.png"
-                      alt={`Excel paste guide: select the first Date cell (${startCell}) beside T01, then paste. The rows fill downward automatically.`}
-                      className="slp-excel-paste-guide-image"
-                      width="1672"
-                      height="941"
-                    />
+                  <TooltipContent side="top" sideOffset={5} collisionPadding={12} className="slp-excel-paste-guide">
+                    <div className="slp-excel-paste-guide-body">
+                      <p className="slp-excel-paste-guide-title">{label} shift · Paste at {startCell}</p>
+                      <p className="slp-excel-paste-guide-detail">{range} · Keep the Train set column unchanged.</p>
+                      <img
+                        src="/guides/sleep-excel-paste-start.png"
+                        alt={`Excel paste guide: select the first Date cell (${startCell}) beside T01, then paste. The rows fill downward automatically.`}
+                        className="slp-excel-paste-guide-image"
+                        width="1672"
+                        height="941"
+                      />
+                    </div>
+                    <TooltipArrow width={14} height={7} className="slp-excel-paste-guide-arrow" />
                   </TooltipContent>
                 </Tooltip>
               );
