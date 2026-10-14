@@ -18,12 +18,13 @@ const compiled = ts.transpileModule(components, {
   compilerOptions: { jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
   fileName: "SleepLogOutput.jsx",
 }).outputText;
-const { SleepLogOutputPanel } = new Function("React", "useMemo", "groupSleepModeLogs", "DEPOT_LAYOUTS", "SLEEP_EXCEL_COPY_SHIFTS", "FileText", "Copy", "Loader2", "Check", "Trash2", "Download", "Tooltip", "TooltipContent", "TooltipProvider", "TooltipTrigger", `${compiled}\nreturn { SleepLogOutputPanel };`)(
+const { SleepLogOutputPanel } = new Function("React", "useMemo", "groupSleepModeLogs", "DEPOT_LAYOUTS", "SLEEP_EXCEL_COPY_SHIFTS", "FileText", "Copy", "Loader2", "Check", "Trash2", "Download", "Tooltip", "TooltipContent", "TooltipProvider", "TooltipTrigger", "TooltipArrow", `${compiled}\nreturn { SleepLogOutputPanel };`)(
   React, (callback) => callback(), groupSleepModeLogs,
   { west: { label: "West Depot", shortLabel: "WD" }, east: { label: "East Depot", shortLabel: "ED" } },
   SLEEP_EXCEL_COPY_SHIFTS,
   FileText, Copy, Loader2, Check, Trash2, Download,
   TooltipPrimitive.Root, TooltipPrimitive.Content, TooltipPrimitive.Provider, TooltipPrimitive.Trigger,
+  TooltipPrimitive.Arrow,
 );
 const sample = (mode = "sleep", time = "19:23") => ({ id: `${mode}-${time}`, time, trainIds: ["29"], location: "WD-ST14", mode, createdAt: `2026-10-11T${time}:00Z` });
 const render = (props = {}) => renderToStaticMarkup(React.createElement(SleepLogOutputPanel, {
