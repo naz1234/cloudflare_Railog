@@ -331,7 +331,7 @@ test('combined middleware preserves Cloudflare Access as the default mode', asyn
   assert.equal(customCalls, 0);
 });
 
-test('custom mode exposes only the exact login shell and auth endpoints', async () => {
+test('custom mode exposes only the exact login shell, app icons and auth endpoints', async () => {
   let authorizeCalls = 0;
   const middleware = createAuthMiddleware({
     authorizeCustom: async () => {
@@ -346,6 +346,10 @@ test('custom mode exposes only the exact login shell and auth endpoints', async 
     new Request('https://railog.example.com/auth/login.css'),
     new Request('https://railog.example.com/auth/login.js'),
     new Request('https://railog.example.com/favicon.png'),
+    ...['/favicon.ico', '/apple-touch-icon.png?v=2', '/manifest.json', '/train-icon-192.png', '/train-icon-512.png']
+      .flatMap((path) => ['GET', 'HEAD'].map((method) => (
+        new Request(`https://railog.example.com${path}`, { method })
+      ))),
     new Request('https://railog.example.com/api/auth/config'),
     new Request('https://railog.example.com/api/auth/session'),
     new Request('https://railog.example.com/api/auth/code-only', {
@@ -382,6 +386,9 @@ test('custom mode exposes only the exact login shell and auth endpoints', async 
     '/auth/%6cogin.js',
     '/login.html/extra',
     '/api/auth/internal',
+    '/apple-touch-icon.png/extra',
+    '/manifest.json/extra',
+    '/train-icon-512.png/extra',
   ]) {
     const privateResponse = await middleware({
       data: {},
@@ -392,7 +399,7 @@ test('custom mode exposes only the exact login shell and auth endpoints', async 
 
     assert.equal(privateResponse.status, 401);
   }
-  assert.equal(authorizeCalls, 5);
+  assert.equal(authorizeCalls, 8);
 
   const wrongMethodResponse = await middleware({
     data: {},
@@ -401,7 +408,26 @@ test('custom mode exposes only the exact login shell and auth endpoints', async 
     request: new Request('https://railog.example.com/api/auth/request-code'),
   });
   assert.equal(wrongMethodResponse.status, 401);
-  assert.equal(authorizeCalls, 6);
+  assert.equal(authorizeCalls, 9);
+});
+
+test('public icon and manifest paths do not allow unauthenticated writes', async () => {
+  const middleware = createAuthMiddleware({
+    authorizeCustom: async () => ({ authorized: false, reason: 'missing_session', status: 401 }),
+  });
+  for (const path of ['/apple-touch-icon.png', '/manifest.json', '/train-icon-192.png', '/train-icon-512.png']) {
+    for (const method of ['POST', 'PUT', 'DELETE']) {
+      const response = await middleware({
+        data: {},
+        env: { AUTH_MODE: 'custom_pin' },
+        next: async () => { throw new Error('Unauthenticated writes must not reach static handlers'); },
+        request: new Request(`https://railog.example.com${path}`, {
+          method, headers: { Origin: 'https://railog.example.com' },
+        }),
+      });
+      assert.equal(response.status, 401, `${method} ${path}`);
+    }
+  }
 });
 
 test('custom mode serves the canonical extensionless login without checking a session', async () => {
