@@ -16,7 +16,13 @@ const customAuthStaticPaths = new Set([
   '/login.html',
   '/auth/login.css',
   '/auth/login.js',
+  // Home Screen icon discovery can happen without the browser's session cookie.
+  '/favicon.ico',
   '/favicon.png',
+  '/apple-touch-icon.png',
+  '/manifest.json',
+  '/train-icon-192.png',
+  '/train-icon-512.png',
 ]);
 
 const customAuthApiMethods = new Map([
