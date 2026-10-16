@@ -14,10 +14,17 @@
   #root .app-shell[data-active-page] .req-mobile-depot-switch button { min-height: 34px; font-size: 12px; gap: 7px; }
   #root .app-shell[data-active-page] .req-mobile-page-menu { top: 51px; padding: 6px; }
   #root .app-shell[data-active-page] .req-mobile-page-menu a { min-height: 42px; font-size: 11px; }
-  #root .app-shell[data-active-page] .req-mobile-bottom-nav { padding: 4px 6px calc(5px + env(safe-area-inset-bottom,0px)); }
-  #root .app-shell[data-active-page] .req-mobile-bottom-nav button { min-height: 44px; font-size: 11px; gap: 3px; }
+  #root .app-shell[data-active-page] .req-mobile-bottom-nav {
+    left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom,0px));
+    width: auto; max-width: 480px; margin-inline: auto; padding: 6px;
+    border: 1px solid var(--req-mobile-line); border-radius: 20px;
+    background: color-mix(in srgb, var(--req-mobile-panel) 94%, transparent);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    box-shadow: 0 10px 30px #0004, 0 2px 8px #0002;
+  }
+  #root .app-shell[data-active-page] .req-mobile-bottom-nav button { min-height: 44px; font-size: 11px; gap: 3px; border-radius: 14px; }
   #root .app-shell[data-active-page] .req-mobile-bottom-nav svg { width: 18px; height: 18px; }
-  #root .app-shell[data-active-page] > .flex > main > div { padding: 8px 10px calc(74px + env(safe-area-inset-bottom,0px)); }
+  #root .app-shell[data-active-page] > .flex > main > div { padding: 8px 10px calc(96px + env(safe-area-inset-bottom,0px)); }
 
   /* Road lists share smaller number boxes, row gaps and road headings. */
   html[data-app-theme] #root .app-shell[data-active-page] :is(.theme-stabling-grid-cell,.theme-pst-grid-cell,.theme-insertion-grid-cell,.mobile-sleep-cell) { grid-template-columns: 32px minmax(0,1fr); }
