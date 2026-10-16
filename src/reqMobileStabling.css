@@ -1,0 +1,30 @@
+/* Selected Option B: road list. No rules apply to laptop or other pages. */
+@media (max-width: 767px) {
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .req-mobile-road-nav,
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .req-mobile-road-heading { display: none; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-table tr[data-mobile-road-active] { display: flex; flex-direction: column; gap: 0; margin-bottom: 16px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-road-label {
+    display: flex; order: -1; align-items: center; justify-content: space-between;
+    width: 100% !important; min-width: 0 !important; min-height: 42px; padding: 10px 3px;
+    border: 0 !important; border-bottom: 1px solid var(--req-mobile-line) !important; border-radius: 0 !important;
+    background: transparent !important; color: var(--req-mobile-text) !important; text-align: left; font-size: 13px; letter-spacing: .03em;
+  }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-road-label::after { content: "7 blocks"; color: var(--req-mobile-muted); font-size: 10px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-grid-cell { display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center; border-bottom: 1px solid color-mix(in srgb, var(--req-mobile-line), transparent 50%) !important; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-grid-cell::before { padding: 0 2px; font-size: 9px; line-height: 1.6; letter-spacing: .01em; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-train-card {
+    display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; gap: 4px 10px;
+    min-height: 70px !important; height: auto !important; padding: 9px 2px !important;
+    background: transparent !important; border: 0 !important; border-radius: 0; box-shadow: none !important;
+  }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-train-card.is-search-match { background: color-mix(in srgb, var(--req-mobile-active), transparent 35%) !important; border-radius: 10px; outline: 2px solid #e5b851; outline-offset: -2px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-train-id { width: 46px; height: 44px; min-height: 44px; padding: 0; border: 1px solid var(--req-mobile-line); border-radius: 11px; background: var(--req-mobile-control); font-size: 21px !important; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-train-card > div[aria-hidden="true"] { display: none; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-train-card > div.flex.w-full { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 5px; padding: 0; min-height: 0 !important; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-train-card > div.flex.w-full > * { width: auto !important; max-width: 100%; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-remark { width: auto; max-width: 100%; padding: 4px 7px; border-radius: 6px; font-size: 10px; text-align: left; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-train-card > span.block { min-height: 0 !important; text-align: left; padding-left: 2px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-train-card:not(.has-request):not(.is-empty) > span.block { font-size: 0; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-train-card:not(.has-request):not(.is-empty) > span.block::after { content: "No visible remarks"; font-size: 11px; color: var(--req-mobile-muted); }
+  html[data-app-theme] .app-shell[data-active-page="stabling"] .theme-stabling-train-card.is-empty::after { grid-column: 2; grid-row: 1; padding: 0 0 0 2px; }
+}

@@ -1,0 +1,85 @@
+/* Action groups fit the phone width; existing desktop controls are untouched. */
+@media (max-width: 767px) {
+  #root .app-shell[data-active-page] main button {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
+  #root .app-shell[data-active-page] main button > svg { flex-shrink: 0; }
+  #root .app-shell[data-active-page] main :is(div,footer):has(> button + button) { min-width: 0; max-width: 100%; flex-wrap: wrap; }
+
+  /* PST: edit history and the three clear actions each get their own group. */
+  #root .app-shell .mobile-section-header { display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
+  #root .app-shell .mobile-section-heading { width: 100%; min-width: 0; flex-wrap: nowrap !important; align-items: center; }
+  #root .app-shell .mobile-section-heading .theme-pst-title { min-width: 0; white-space: normal; font-size: 14px; line-height: 1.45; letter-spacing: .04em; }
+  #root .app-shell .mobile-section-actions { display: grid; grid-template-columns: minmax(0,1fr); width: 100%; min-width: 0; gap: 12px; }
+  #root .app-shell .mobile-clear-actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; width: 100%; min-width: 0; }
+  #root .app-shell .mobile-clear-actions > button:last-child { grid-column: 1/-1; }
+  #root .app-shell .mobile-clear-actions > span { min-width: 0; width: 100%; }
+
+  /* Shared PST and Insertion edit controls; tooltip wrappers can also shrink. */
+  #root .app-shell .theme-insertion-editable-controls { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); width: 100%; min-width: 0; gap: 8px; }
+  #root .app-shell .theme-insertion-editable-controls > * { min-width: 0; max-width: 100%; }
+  #root .app-shell .theme-insertion-editable-label { grid-column: 1/-1; width: fit-content; height: auto; min-height: 30px; padding: 6px 10px; }
+  #root .app-shell .theme-insertion-editable-controls > span:last-child { grid-column: 1/-1; }
+  #root .app-shell .mobile-insertion-heading,
+  #root .app-shell .mobile-insertion-heading-main { width: 100%; min-width: 0; }
+  #root .app-shell .mobile-insertion-heading-main { display: grid; grid-template-columns: 40px minmax(0,1fr); gap: 12px; }
+  #root .app-shell .mobile-insertion-heading .theme-insertion-title { min-width: 0; white-space: normal; overflow: visible; font-size: 16px; line-height: 1.4; }
+  #root .app-shell .mobile-insertion-heading-controls { grid-column: 1/-1; width: 100%; min-width: 0; }
+  #root .app-shell .theme-insertion-search-actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; width: 100% !important; min-width: 0; }
+  #root .app-shell .theme-insertion-search-actions > span { min-width: 0; width: 100%; }
+  #root .app-shell .theme-insertion-search-actions > span:last-child { grid-column: 1/-1; }
+
+  /* Log and export toolbars share a readable, two-column phone layout. */
+  #root .app-shell :is(.pst-clean-actions,.insertion-clean-actions,.sleep-log-card-actions,.slate-movement-actions) {
+    display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; width: 100%; min-width: 0; margin-left: 0;
+  }
+  #root .app-shell :is(.pst-clean-actions,.insertion-clean-actions) > :last-child { grid-column: 1/-1; }
+  #root .app-shell .sleep-log-card-actions > [data-slp-excel-action="download"] { grid-column: 1/-1; }
+  #root .app-shell :is(.pst-clean-actions,.insertion-clean-actions,.sleep-log-card-actions,.slate-movement-actions) > * { min-width: 0; max-width: 100%; }
+  #root .app-shell :is(.pst-clean-card-header,.insertion-clean-card-header,.pst-clean-title-row,.pst-clean-heading-line,.insertion-clean-title-row,.slate-window-header,.theme-removal-log-card-header,.theme-movement-log-card-header) {
+    flex-wrap: wrap; gap: 10px; min-width: 0; max-width: 100%;
+  }
+  #root .app-shell :is(.pst-clean-card-header,.insertion-clean-card-header,.theme-removal-log-card-header,.theme-movement-log-card-header) { flex-direction: column; align-items: stretch; }
+  #root .app-shell :is(.slate-window-heading,.slate-window-meta,.pst-clean-title-copy,.pst-clean-card-title-wrap,.insertion-clean-card-title-wrap) { min-width: 0; max-width: 100%; }
+  #root .app-shell .slate-window-meta { flex-wrap: wrap; }
+  #root .app-shell :is(.theme-removal-log-card-header,.theme-movement-log-card-header) > div:has(button) { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+  #root .app-shell :is(.theme-removal-log-card-header,.theme-movement-log-card-header) :is(button,span:has(> button)) { flex: 1 1 120px; }
+  #root .app-shell .pst-excel-export-groups { display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; }
+  #root .app-shell .pst-excel-export-group { min-width: 0; }
+  #root .app-shell .pst-excel-export-group.is-combined { border-left: 0; padding-left: 0; border-top: 1px solid var(--pst-format-line); padding-top: 12px; }
+  #root .app-shell .pst-excel-export-button span { min-width: 0; white-space: normal; }
+  #root .app-shell .official-generate-button { width: 100%; justify-content: center; }
+
+  /* MOV, WSH, PSS, ROS and SLP headers allow their actions onto another row. */
+  #root .app-shell :is(.theme-tp1-movement-header,.theme-tp1-movement-log-header,.theme-washing-header,.theme-possession-header,.theme-roster-staff-schedule-header > div,.mobile-sleep-depot > header) {
+    flex-wrap: wrap; gap: 12px; min-width: 0; max-width: 100%;
+  }
+  #root .app-shell :is(.theme-tp1-movement-header,.theme-tp1-movement-log-header,.theme-washing-header,.theme-possession-header,.mobile-sleep-depot > header) > div { min-width: 0; max-width: 100%; }
+  #root .app-shell :is(.theme-tp1-movement-header,.theme-tp1-movement-log-header,.theme-washing-header,.mobile-sleep-depot > header) > div:has(> button) {
+    display: flex; flex-wrap: wrap; gap: 8px; width: 100%;
+  }
+  #root .app-shell :is(.theme-tp1-movement-log-header,.theme-washing-header,.mobile-sleep-depot > header) > div:has(> button) > button { flex: 1 1 100px; }
+  #root .app-shell .theme-possession-header > div:first-child { flex: 1 1 160px; }
+  #root .app-shell .theme-possession-header > button { flex: 1 1 110px; justify-content: center; }
+  #root .app-shell .theme-washing-header > div:first-child > div:first-child { flex-shrink: 0; }
+  #root .app-shell .theme-roster-compare-controls > div:first-child { flex-wrap: wrap; }
+  #root .app-shell .theme-roster-upload-panel button { width: 100%; justify-content: center; }
+  #root .app-shell [data-sleep-entry-controls] > div > button { flex: 1 1 120px; justify-content: center; }
+
+  /* Labelled actions grow with their text, including confirmation/feedback. */
+  #root .app-shell :is(.mobile-section-actions,.theme-insertion-editable-controls,.theme-insertion-search-actions,.pst-clean-actions,.insertion-clean-actions,.sleep-log-card-actions,.slate-movement-actions) button,
+  #root .app-shell :is(.theme-tp1-movement-header,.theme-tp1-movement-log-header,.theme-tp1-movement-preview,.theme-washing-header,.theme-possession-header) button,
+  #root .app-shell :is(.pst-excel-export-button,.pst-fldc-confirm,.official-generate-button,.theme-roster-copy-schedule,.theme-roster-reset-schedule,.theme-roster-add-compare),
+  #root .app-shell .mobile-sleep-depot > header button {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: auto !important; min-height: 44px !important; min-width: 0; max-width: 100%;
+    padding: 10px 12px !important; font-size: 12px !important; line-height: 1.35; letter-spacing: .015em;
+    white-space: normal !important; text-align: center;
+  }
+  #root .app-shell :is(.mobile-section-actions,.theme-insertion-editable-controls,.theme-insertion-search-actions,.pst-clean-actions,.insertion-clean-actions,.sleep-log-card-actions,.slate-movement-actions) button { width: 100%; }
+  #root .app-shell :is(.mobile-section-actions,.pst-clean-actions,.insertion-clean-actions,.sleep-log-card-actions) button > span { min-width: 0; white-space: normal; }
+}

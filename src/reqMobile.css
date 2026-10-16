@@ -1,0 +1,119 @@
+/* New controls have no desktop footprint. All layout overrides are phone-only. */
+.req-mobile-only { display: none; }
+
+@media (max-width: 767px) {
+  .app-shell[data-active-page="stabling"] {
+    --req-mobile-panel: #0b1f33;
+    --req-mobile-control: #102b43;
+    --req-mobile-line: #284b66;
+    --req-mobile-text: #e6f1fb;
+    --req-mobile-muted: #8aaec5;
+    --req-mobile-active: #194c74;
+    min-width: 0 !important;
+    width: 100%;
+  }
+  html[data-app-theme="light"] .app-shell[data-active-page="stabling"] {
+    --req-mobile-panel: #ffffff;
+    --req-mobile-control: #f0f5fa;
+    --req-mobile-line: #c9d8e6;
+    --req-mobile-text: #142e45;
+    --req-mobile-muted: #587087;
+    --req-mobile-active: #d8eafa;
+  }
+  .app-shell[data-active-page="stabling"] .app-sidebar,
+  .app-shell[data-active-page="stabling"][data-mobile-req-tools="closed"] > .app-top-header { display: none; }
+  .app-shell[data-active-page="stabling"] > .app-top-header { height: auto; position: static; }
+  .app-shell[data-active-page="stabling"] > .app-top-header > div { padding: 12px; flex-direction: column; gap: 10px; }
+  .app-shell[data-active-page="stabling"] > .app-top-header > div > div { flex-wrap: wrap; width: 100%; gap: 8px; }
+  .app-shell[data-active-page="stabling"] > .app-top-header > div > div:first-child > div:first-child { display: none; }
+  .app-shell[data-active-page="stabling"] > .app-top-header * { max-width: 100%; }
+  .app-shell[data-active-page="stabling"] main { width: 100%; overflow: visible; }
+  .app-shell[data-active-page="stabling"] main > div { padding: 8px 12px calc(90px + env(safe-area-inset-bottom, 0px)); }
+  .app-shell[data-active-page="stabling"] .theme-stabling-workspace { display: block; overflow: visible; }
+  .app-shell[data-active-page="stabling"] [data-req-main-panels] { width: 100%; gap: 14px; }
+  .app-shell[data-active-page="stabling"] [data-req-main-panels] > * { width: 100% !important; min-width: 0 !important; max-width: 100% !important; }
+  .app-shell[data-active-page="stabling"] [data-req-main-panels] > :not(.theme-stabling-section) { overflow-x: auto; }
+  .app-shell[data-active-page="stabling"] .theme-stabling-side-panels { position: static; display: block; width: 100%; }
+  .app-shell[data-active-page="stabling"] .maintenance-panel-shell,
+  .app-shell[data-active-page="stabling"] .theme-train-rem-panel { width: 100% !important; min-width: 0 !important; max-width: 100%; }
+  .app-shell[data-active-page="stabling"]:is([data-mobile-req-panel="stabling"], [data-mobile-req-panel="logs"]) .theme-stabling-side-panels,
+  .app-shell[data-active-page="stabling"]:is([data-mobile-req-panel="requests"], [data-mobile-req-panel="removal"]) [data-req-main-panels],
+  .app-shell[data-active-page="stabling"][data-mobile-req-panel="requests"] .theme-train-rem-panel,
+  .app-shell[data-active-page="stabling"][data-mobile-req-panel="removal"] .maintenance-panel-shell,
+  .app-shell[data-active-page="stabling"][data-mobile-req-panel="stabling"] [data-req-main-panels] > :not(.theme-stabling-section),
+  .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .theme-stabling-section,
+  .app-shell[data-active-page="stabling"][data-mobile-req-depot="west"] .theme-stabling-section[data-stabling-depot="east"],
+  .app-shell[data-active-page="stabling"][data-mobile-req-depot="east"] .theme-stabling-section[data-stabling-depot="west"] { display: none; }
+
+  .app-shell[data-active-page="stabling"] .req-mobile-header {
+    display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px 40px; align-items: center; gap: 5px;
+    position: sticky; top: 0; z-index: 240; min-height: 68px; padding: 8px 10px;
+    background: var(--req-mobile-panel); border-bottom: 1px solid var(--req-mobile-line); color: var(--req-mobile-text);
+  }
+  .req-mobile-brand { display: flex; align-items: center; gap: 9px; padding-left: 4px; }
+  .req-mobile-brand > svg { color: #71c8f5; flex: 0 0 auto; }
+  .req-mobile-brand div { display: flex; flex-direction: column; gap: 3px; }
+  .req-mobile-brand strong { font-size: 16px; font-weight: 750; line-height: 1.1; }
+  .req-mobile-brand span { font-size: 11px; color: var(--req-mobile-muted); }
+  .req-mobile-icon-button { display: grid; place-items: center; width: 40px; height: 44px; border: 0; border-radius: 12px; color: var(--req-mobile-text); background: transparent; }
+  .req-mobile-icon-button:is(:hover, .is-active) { background: var(--req-mobile-control); }
+  .req-mobile-page-menu { position: absolute; top: 62px; left: 10px; right: 10px; padding: 8px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; background: var(--req-mobile-panel); border: 1px solid var(--req-mobile-line); border-radius: 16px; box-shadow: 0 16px 40px #0005; }
+  .req-mobile-page-menu a { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 8px; border-radius: 10px; font-size: 12px; color: var(--req-mobile-text); }
+  .req-mobile-page-menu a[aria-current="page"] { background: var(--req-mobile-active); }
+  .req-mobile-page-menu a > span { width: 32px; color: var(--req-mobile-muted); font-size: 10px; font-weight: 700; }
+  .app-shell[data-active-page="stabling"] .req-mobile-depot-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; margin: 12px 12px 0; padding: 5px; background: var(--req-mobile-panel); border: 1px solid var(--req-mobile-line); border-radius: 15px; }
+  .req-mobile-depot-switch button { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 42px; border-radius: 10px; background: transparent; color: var(--req-mobile-muted); font-size: 13px; font-weight: 650; }
+  .req-mobile-depot-switch button[aria-pressed="true"] { background: var(--req-mobile-active); color: var(--req-mobile-text); }
+  .req-mobile-depot-switch strong { min-width: 23px; padding: 3px 5px; border-radius: 6px; background: #7cc7ff18; font-size: 11px; }
+  .app-shell[data-active-page="stabling"] .req-mobile-bottom-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; position: fixed; inset: auto 0 0; z-index: 245; padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px)); background: var(--req-mobile-panel); border-top: 1px solid var(--req-mobile-line); box-shadow: 0 -8px 28px #0002; }
+  .req-mobile-bottom-nav button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 52px; border-radius: 11px; color: var(--req-mobile-muted); background: transparent; font-size: 11px; font-weight: 550; }
+  .req-mobile-bottom-nav button[aria-pressed="true"] { color: var(--req-mobile-text); background: var(--req-mobile-active); }
+
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel] .theme-stabling-section { padding: 0 12px 14px; border-radius: 20px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel] .theme-stabling-header { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 8px; padding: 14px 0 12px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel] .theme-stabling-title { font-size: 15px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel] .theme-stabling-subtitle { font-size: 10px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel] .theme-stabling-count { grid-column: 3; grid-row: 1; margin-left: 0; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel] .theme-stabling-count > strong { font-size: 23px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel] .theme-stabling-action-row { grid-column: 1 / -1; grid-row: 2; width: 100%; margin: 3px 0 0; gap: 7px; }
+  .app-shell[data-active-page="stabling"] .theme-stabling-action-row > * { flex: 1 1 0; min-width: 0; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel] .theme-stabling-action { justify-content: center; width: 100%; height: 42px; min-height: 42px !important; padding: 0 7px; font-size: 11px; }
+  .app-shell[data-active-page="stabling"] .theme-stabling-section > .mb-3 { width: 100% !important; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel] .theme-stabling-search { min-height: 44px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel] .theme-stabling-search-input { min-width: 0; height: 42px; font-size: 16px; }
+  .app-shell[data-active-page="stabling"] .req-mobile-road-nav { display: flex; gap: 5px; padding: 4px; margin: 2px 0 12px; background: var(--req-mobile-control); border-radius: 12px; }
+  .req-mobile-road-nav button { display: flex; flex: 1; align-items: center; justify-content: center; gap: 5px; min-height: 40px; border-radius: 9px; background: transparent; color: var(--req-mobile-muted); font-size: 11px; font-weight: 650; }
+  .req-mobile-road-nav button[aria-pressed="true"] { background: var(--req-mobile-panel); color: var(--req-mobile-text); box-shadow: 0 2px 5px #0002; }
+  .req-mobile-road-nav button span { font-size: 10px; color: var(--req-mobile-muted); }
+  .app-shell[data-active-page="stabling"] .req-mobile-road-heading { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 11px; }
+  .req-mobile-road-heading strong { font-size: 12px; letter-spacing: .02em; color: var(--req-mobile-text); }
+  .req-mobile-road-heading span { font-size: 10px; color: var(--req-mobile-muted); }
+  .app-shell[data-active-page="stabling"] .theme-stabling-table-scroll { overflow: visible; border-radius: 0; }
+  .app-shell[data-active-page="stabling"] .theme-stabling-table { display: block; width: 100% !important; min-width: 0 !important; max-width: 100% !important; }
+  .app-shell[data-active-page="stabling"] .theme-stabling-table thead,
+  .app-shell[data-active-page="stabling"] .theme-stabling-table tr[data-mobile-road-active="false"],
+  .app-shell[data-active-page="stabling"] .theme-stabling-road-label { display: none; }
+  .app-shell[data-active-page="stabling"] .theme-stabling-table tbody { display: block; }
+  .app-shell[data-active-page="stabling"] .theme-stabling-table tr[data-mobile-road-active="true"] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; }
+  .app-shell[data-active-page="stabling"] .theme-stabling-grid-cell { display: flex; flex-direction: column; padding: 0; border: 0 !important; border-radius: 0 !important; background: transparent !important; min-width: 0; }
+  .app-shell[data-active-page="stabling"] .theme-stabling-grid-cell::before { content: attr(data-mobile-block-label); display: block; padding: 0 2px 6px; color: var(--req-mobile-muted); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; }
+  .app-shell[data-active-page="stabling"] .theme-stabling-train-card { flex: 1; height: auto !important; min-height: 140px !important; padding: 10px 8px !important; border-radius: 14px; }
+  .app-shell[data-active-page="stabling"] .theme-stabling-train-id { min-height: 32px; font-size: 23px !important; }
+  .app-shell[data-active-page="stabling"] .theme-stabling-remark { white-space: normal; text-overflow: clip; overflow: visible; font-size: 11px; line-height: 1.25; padding: 4px 6px; }
+  .app-shell[data-active-page="stabling"] .theme-stabling-train-card.is-empty::after { content: "Empty block"; padding-top: 12px; font-size: 11px; color: var(--req-mobile-muted); }
+  .app-shell[data-active-page="stabling"] :is(.theme-maintenance-panel, .theme-train-rem-panel) input { font-size: 16px !important; }
+  .app-shell[data-active-page="stabling"] .theme-maintenance-panel :is(input, select) { min-height: 42px; }
+  .app-shell[data-active-page="stabling"] .maintenance-upload-shortcut,
+  .app-shell[data-active-page="stabling"] .theme-maintenance-form > button { min-height: 42px; }
+  .app-shell[data-active-page="stabling"] .theme-maintenance-category-heading { min-height: 40px; font-size: 12px; }
+  .app-shell[data-active-page="stabling"] .theme-maintenance-request-bar { min-height: 42px; grid-template-columns: minmax(0, 1fr) 32px 32px 32px; gap: 2px; }
+  .app-shell[data-active-page="stabling"] .theme-maintenance-group-title-trigger > span { white-space: normal; line-height: 1.3; }
+  .app-shell[data-active-page="stabling"] .theme-maintenance-request-line { min-height: 42px; height: auto; grid-template-columns: 56px minmax(0, 1fr) 32px; }
+  .app-shell[data-active-page="stabling"] .theme-maintenance-request-line:has(> :nth-child(4)) { grid-template-columns: 56px minmax(0, 1fr) 32px 32px; }
+  .app-shell[data-active-page="stabling"] .theme-maintenance-train-connection-trigger { font-size: 14px; padding-block: 12px; }
+  .app-shell[data-active-page="stabling"] :is(.theme-maintenance-request-bar, .theme-maintenance-request-line) button { min-width: 32px; min-height: 36px; }
+  .app-shell[data-active-page="stabling"] .theme-train-rem-row-card[data-preset][data-tid] { height: 42px !important; }
+  .app-shell[data-active-page="stabling"] .theme-train-rem-row-card input { height: 40px; }
+  .app-shell[data-active-page="stabling"] .theme-train-rem-preset .removal-summary-tooltip-bubble { max-width: 190px; }
+  .app-shell[data-active-page="stabling"] .theme-train-rem-preset:nth-child(n+3) > span:has(> .removal-summary-tooltip-bubble) { left: auto; right: 0; }
+}

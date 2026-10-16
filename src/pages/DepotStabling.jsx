@@ -21,6 +21,13 @@ import ChecklistWorkspace from "../components/ChecklistWorkspace";
 import AboutWorkspace from "../components/AboutWorkspace";
 import SleepModeWorkspace from "../components/SleepModeWorkspace";
 import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator";
+import ReqMobileNavigation from "../components/ReqMobileNavigation";
+import "../reqMobile.css";
+import "../reqMobileStabling.css";
+import "../reqMobileLogs.css";
+import "../mobileWorkspaces.css";
+import "../mobileActions.css";
+import "../mobileDensity.css";
 import RemovalPdfEditor from "../components/depot/RemovalPdfEditor";
 import EastNineAmRemovalPdfEditor from "../components/depot/EastNineAmRemovalPdfEditor";
 import RemovalSummaryRemark from "../components/depot/RemovalSummaryRemark";
@@ -5295,15 +5302,15 @@ function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoSt
 
   return (
     <section onKeyDown={handleGridArrowNavigation} className={`theme-stabling-section theme-pst-section ${sectionDepotLabel === "East Depot" ? "is-east" : "is-west"} bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4`} style={{ width: "fit-content", maxWidth: "fit-content" }}>
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <div className="flex min-w-0 items-center gap-3">
+      <div className="mobile-section-header flex items-center justify-between gap-3 mb-4">
+        <div className="mobile-section-heading flex min-w-0 items-center gap-3">
           <div className="theme-pst-title-icon w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
           </div>
           <h2 className="theme-pst-title text-base leading-none font-black text-white tracking-widest uppercase whitespace-nowrap">{title}</h2>
         </div>
 
-        <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-2">
+        <div className="mobile-section-actions flex flex-shrink-0 flex-wrap items-center justify-end gap-2">
           <InsertionEditableHeaderControls
             depotCode={sectionDepotLabel === "West Depot" ? "WD" : "ED"}
             workLabel="PST / Train Prep"
@@ -5316,7 +5323,7 @@ function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoSt
             tooltipPlacement={headerTooltipPlacement}
           />
           {hasClearControls && (
-            <div className="flex flex-shrink-0 items-center gap-2">
+            <div className="mobile-clear-actions flex flex-shrink-0 items-center gap-2">
             {onClearPST && (
               <span className="removal-summary-tooltip-trigger relative z-50 inline-flex overflow-visible">
                 <button
@@ -6044,8 +6051,8 @@ const INSERTION_ACTION_BUTTON_DANGER = {
 
 function InsertionSectionTitle({ title, leftAction = null, action = null }) {
   return (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-      <div className="flex min-w-0 flex-wrap items-center justify-start gap-3">
+    <div className="mobile-insertion-heading mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mobile-insertion-heading-main flex min-w-0 flex-wrap items-center justify-start gap-3">
         <div
           className="theme-insertion-title-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border"
           style={{
@@ -6062,7 +6069,7 @@ function InsertionSectionTitle({ title, leftAction = null, action = null }) {
         <h2 className="theme-insertion-title truncate text-[21px] font-black uppercase leading-none tracking-wide text-white">
           {title}
         </h2>
-        {leftAction && <div className="flex flex-wrap items-center justify-start gap-2">{leftAction}</div>}
+        {leftAction && <div className="mobile-insertion-heading-controls flex flex-wrap items-center justify-start gap-2">{leftAction}</div>}
       </div>
       {action && <div className="flex flex-wrap items-center justify-end gap-2">{action}</div>}
     </div>
@@ -10389,7 +10396,7 @@ function InsertionTabContent({
         style={{ gridTemplateColumns: "max-content 276px" }}
       >
         <div className="min-w-0 space-y-6">
-        <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
+        <div data-mobile-depot="west" className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
           <div className="self-start space-y-3">
             <TIDReferenceTable
               {...tidReferenceCommonProps}
@@ -10440,7 +10447,7 @@ function InsertionTabContent({
           </div>
         </div>
 
-        <div className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
+        <div data-mobile-depot="east" className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
           <div className="self-start space-y-3">
             <TIDReferenceTable
               {...tidReferenceCommonProps}
@@ -11177,6 +11184,8 @@ function resolveTrainMovementSwappingAutoFill({
 
 function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTimetable = null, activeTimetableType = "weekday", stabledTrainLocations = {} }) {
   const [rows, setRows] = useState(() => loadTrainMovementExcelRows());
+  const [mobileMovementRowId, setMobileMovementRowId] = useState("");
+  const mobileActiveRowId = rows.some((row) => row.id === mobileMovementRowId) ? mobileMovementRowId : rows[0]?.id;
   const [logRows, setLogRows] = useState(() => loadTrainMovementExcelLogRows());
   const [trainSearch, setTrainSearch] = useState("");
   const [initialLiveDirty] = useState(() => loadTrainMovementExcelDirty());
@@ -11623,10 +11632,12 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
 
   const addRow = () => {
     markTrainMovementExcelLocalEdit();
+    const newRowId = createTrainMovementExcelRow().id;
     setRows((prev) => {
       const lastRow = prev[prev.length - 1] || {};
-      return [...prev, createTrainMovementExcelRow({ operation: lastRow.operation || "swapping", depot: lastRow.depot || "west" })];
+      return [...prev, createTrainMovementExcelRow({ id: newRowId, operation: lastRow.operation || "swapping", depot: lastRow.depot || "west" })];
     });
+    setMobileMovementRowId(newRowId);
   };
 
   const clearRows = () => {
@@ -11719,13 +11730,13 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
   const cellClass = "border border-[#173653] bg-[#061827] align-middle";
 
   return (
-    <section data-movement-design="compact-slate" className="theme-movement-sheet w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_12px_26px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.05)]">
+    <section data-movement-design="compact-slate" className="theme-movement-sheet w-full overflow-hidden rounded-xl border border-[#2b4f6b] bg-[#071e33] shadow-[0_12px_26px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.05)]" data-req-log-section="movement">
       <div className="theme-movement-sheet-header flex flex-wrap items-center justify-between gap-2 border-b border-[#1a3a56] px-3 py-2.5" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)" }}>
         <div className="slate-movement-heading">
           <span className="slate-movement-title-icon" aria-hidden="true"><FileSpreadsheet size={15} /></span>
           <div className="min-w-0">
             <h2 className="slate-movement-title">Train Swapping / Insertion / Removal Log</h2>
-            <p className="slate-movement-subtitle">Compact spreadsheet format above Removal Log Output</p>
+            <p className="slate-movement-subtitle"><span className="req-desktop-movement-subtitle">Compact spreadsheet format above Removal Log Output</span><span className="req-mobile-only req-mobile-movement-subtitle">Choose an entry to record a train movement.</span></p>
           </div>
         </div>
         <div className="slate-movement-actions">
@@ -11820,8 +11831,14 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
         />
       </div>
 
+      <label className="req-mobile-only req-mobile-entry-picker">
+        <span>Movement entry</span>
+        <select aria-label="Choose movement entry" value={mobileActiveRowId || ""} onChange={(event) => setMobileMovementRowId(event.target.value)}>
+          {rows.map((row, index) => <option key={row.id} value={row.id}>Entry {index + 1} · {formatMovementExcelOperation(row.operation)}{row.trainId ? ` · T${row.trainId}` : ""}</option>)}
+        </select>
+      </label>
       <div
-        className="overflow-x-auto p-3"
+        className="req-mobile-movement-table-wrap overflow-x-auto p-3"
         onFocusCapture={() => { trainMovementExcelInputFocusedRef.current = true; }}
         onBlurCapture={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) {
@@ -11844,7 +11861,7 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
+            {rows.map((row, rowIndex) => {
               const validation = getMovementExcelValidation(row);
               const status = validation.status;
               const statusTooltip = status === "Added"
@@ -11859,32 +11876,32 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
               const isReasonEditing = editingSwapCell === reasonEditKey;
 
               return (
-                <tr key={row.id} className="group text-[12px] text-[#eaf4ff]">
+                <tr key={row.id} data-mobile-movement-active={row.id === mobileActiveRowId ? "true" : "false"} data-movement-entry={rowIndex + 1} className="group text-[12px] text-[#eaf4ff]">
                   <td className="theme-movement-delete-cell border border-[#173653] bg-[#082136] px-1 text-center" style={{ boxShadow: `inset 3px 0 0 ${operationAccent}` }}>
                     <button type="button" onClick={() => removeExcelInputRow(row.id)} className="theme-movement-delete-button inline-flex h-6 w-6 items-center justify-center rounded-md border border-red-500/30 bg-red-950/20 text-red-200 transition-all hover:border-red-400 hover:text-white" title="Remove row">
                       <Trash2 size={11} />
                     </button>
                   </td>
-                  <td className={cellClass}>
+                  <td data-mobile-field="Type" className={cellClass}>
                     <TrainMovementTypeSelect
                       value={row.operation}
                       onValueChange={(operation) => updateRow(row.id, "operation", operation)}
                       onOpenChange={(open) => { trainMovementExcelTypeMenuOpenRef.current = open; }}
                     />
                   </td>
-                  <td className={cellClass}>
-                    <select value={row.depot} onChange={(e) => updateRow(row.id, "depot", e.target.value)} className={tableSelectClass}>
+                  <td data-mobile-field="Depot" className={cellClass}>
+                    <select aria-label="Movement depot" value={row.depot} onChange={(e) => updateRow(row.id, "depot", e.target.value)} className={tableSelectClass}>
                       <option value="west">West</option>
                       <option value="east">East</option>
                     </select>
                   </td>
-                  <td className={cellClass}>
+                  <td data-mobile-field="Train" className={cellClass}>
                     <div className="flex items-center px-2">
                       <span className="text-[12px] font-bold text-[#58a6ff]">T</span>
-                      <input value={row.trainId} onChange={(e) => updateRow(row.id, "trainId", e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="25" aria-invalid={validation.issues.some((issue) => issue.field === "train")} className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[12px] font-medium text-white outline-none placeholder:text-[#45677f]" />
+                      <input aria-label="Movement train ID" inputMode="numeric" value={row.trainId} onChange={(e) => updateRow(row.id, "trainId", e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="25" aria-invalid={validation.issues.some((issue) => issue.field === "train")} className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[12px] font-medium text-white outline-none placeholder:text-[#45677f]" />
                     </div>
                   </td>
-                  <td className={cellClass}>
+                  <td data-mobile-field="TID" className={cellClass}>
                     {isSwapping ? (
                       <div className="flex min-w-0 items-center gap-0.5 pr-1">
                         <input
@@ -11917,10 +11934,10 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
                         </ActionTooltip>
                       </div>
                     ) : (
-                      <input value={row.tid} onChange={(e) => updateRow(row.id, "tid", e.target.value.replace(/\D/g, "").slice(0, 3))} placeholder="111" aria-invalid={validation.issues.some((issue) => issue.field === "tid")} className={tableInputClass} />
+                      <input aria-label="Movement TID" inputMode="numeric" value={row.tid} onChange={(e) => updateRow(row.id, "tid", e.target.value.replace(/\D/g, "").slice(0, 3))} placeholder="111" aria-invalid={validation.issues.some((issue) => issue.field === "tid")} className={tableInputClass} />
                     )}
                   </td>
-                  <td className={cellClass}>
+                  <td data-mobile-field="Reason / Remark" className={cellClass}>
                     {isSwapping ? (
                       <div className="flex min-w-0 items-center gap-0.5 pr-1">
                         <input
@@ -11953,10 +11970,10 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
                         </ActionTooltip>
                       </div>
                     ) : (
-                      <input value={row.reason} onChange={(e) => updateRow(row.id, "reason", e.target.value)} placeholder="Remark" aria-invalid={validation.issues.some((issue) => issue.field === "reason")} className={tableInputClass} />
+                      <input aria-label="Movement remark" value={row.reason} onChange={(e) => updateRow(row.id, "reason", e.target.value)} placeholder="Remark" aria-invalid={validation.issues.some((issue) => issue.field === "reason")} className={tableInputClass} />
                     )}
                   </td>
-                  <td className={row.operation !== "swapping" ? "theme-movement-na-cell border border-[#173653] bg-[#334155] align-middle" : cellClass}>
+                  <td data-mobile-field="Replaced by" className={row.operation !== "swapping" ? "theme-movement-na-cell border border-[#173653] bg-[#334155] align-middle" : cellClass}>
                     {row.operation !== "swapping" ? (
                       <div className="theme-movement-na flex h-7 items-center justify-center rounded-sm bg-[#475569] text-[10px] font-black uppercase tracking-[0.12em] text-[#cbd5e1] opacity-80">
                         N/A
@@ -11964,11 +11981,11 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
                     ) : (
                       <div className="flex items-center px-2">
                         <span className="text-[12px] font-bold text-[#58a6ff]">T</span>
-                        <input value={row.replacedBy} onChange={(e) => updateRow(row.id, "replacedBy", e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="30" aria-invalid={validation.issues.some((issue) => issue.field === "replacedBy")} className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[12px] font-medium text-white outline-none placeholder:text-[#45677f]" />
+                        <input value={row.replacedBy} onChange={(e) => updateRow(row.id, "replacedBy", e.target.value.replace(/\D/g, "").slice(0, 2))} aria-label="Replacement train ID" inputMode="numeric" placeholder="30" aria-invalid={validation.issues.some((issue) => issue.field === "replacedBy")} className="h-7 min-w-0 flex-1 bg-transparent pl-1 text-[12px] font-medium text-white outline-none placeholder:text-[#45677f]" />
                       </div>
                     )}
                   </td>
-                  <td className={cellClass}>
+                  <td data-mobile-field="Time" className={cellClass}>
                     <div className="flex min-w-0 items-center gap-0.5 px-0.5">
                       <input
                         value={row.time}
@@ -11990,7 +12007,7 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
                       </ActionTooltip>
                     </div>
                   </td>
-                  <td className="theme-movement-status-cell border border-[#173653] bg-[#061827] px-1.5 text-center">
+                  <td data-mobile-field="Status" className="theme-movement-status-cell border border-[#173653] bg-[#061827] px-1.5 text-center">
                     <ActionTooltip
                       message={statusTooltip}
                       placement="top"
@@ -15241,8 +15258,8 @@ function PSTTabContent
   );
 
   return (
-    <div className="flex w-fit min-w-0 flex-col items-start gap-7">
-      <div className="grid w-fit grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[max-content_420px] lg:items-start">
+    <div className="mobile-pst-workspace flex w-fit min-w-0 flex-col items-start gap-7">
+      <div data-mobile-depot="west" className="grid w-fit grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[max-content_420px] lg:items-start">
         <div className="flex min-w-0 flex-col gap-3">
           <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" onRefreshStabling={() => onRefreshPSTStabling?.("west")} onUndoStabling={() => onUndoPSTStabling?.("west")} onRedoStabling={() => onRedoPSTStabling?.("west")} canUndoStabling={westCanUndoPSTStabling} canRedoStabling={westCanRedoPSTStabling} isStablingDirty={westPSTStablingDirty} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearStablingTrains={() => onClearPSTStablingTrains?.("west")} stablingEditable onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
           <PSTManualEntry depot="west" logLines={sortedLogLines} onAddEntry={onAddManualLog} onRemoveEntry={onRemoveManualLog} />
@@ -15343,7 +15360,7 @@ function PSTTabContent
         </div>
       </div>
 
-      <div className="grid w-fit grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[max-content_420px] lg:items-start">
+      <div data-mobile-depot="east" className="grid w-fit grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[max-content_420px] lg:items-start">
         <div className="flex min-w-0 flex-col gap-3">
           <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" onRefreshStabling={() => onRefreshPSTStabling?.("east")} onUndoStabling={() => onUndoPSTStabling?.("east")} onRedoStabling={() => onRedoPSTStabling?.("east")} canUndoStabling={eastCanUndoPSTStabling} canRedoStabling={eastCanRedoPSTStabling} isStablingDirty={eastPSTStablingDirty} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearStablingTrains={() => onClearPSTStablingTrains?.("east")} stablingEditable onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
           <PSTManualEntry depot="east" logLines={sortedLogLines} onAddEntry={onAddManualLog} onRemoveEntry={onRemoveManualLog} />
@@ -17687,6 +17704,11 @@ function AlarmContent({ search = "" }) {
 
 export default function DepotStablingPage() {
   const [appTheme, setAppTheme] = useState(() => loadAppTheme());
+  const [mobileReqPanel, setMobileReqPanel] = useState("stabling");
+  const [mobileWorkspaceViews, setMobileWorkspaceViews] = useState({ movement: "automatic", pst: "trains", insertion: "trains", washing: "import", possession: "access", roster: "roster", sleep: "trains" });
+  const [mobileReqLogSection, setMobileReqLogSection] = useState("removal");
+  const [mobileReqDepot, setMobileReqDepot] = useState("west");
+  const [mobileReqToolsOpen, setMobileReqToolsOpen] = useState(false);
   const [westData, setWestData] = useState(() => loadLocalStablingState().westData);
   const [eastData, setEastData] = useState(() => loadLocalStablingState().eastData);
   const [requests, setRequests] = useState([]);
@@ -22002,6 +22024,12 @@ export default function DepotStablingPage() {
   return (
     <div
       className="app-shell min-h-screen font-inter bg-[#071828]"
+      data-active-page={activeTab}
+      data-mobile-workspace-view={mobileWorkspaceViews[activeTab]}
+      data-mobile-req-panel={mobileReqPanel}
+      data-mobile-req-log-section={mobileReqLogSection}
+      data-mobile-req-depot={mobileReqDepot}
+      data-mobile-req-tools={mobileReqToolsOpen ? "open" : "closed"}
       style={activeTab === "stabling"
         ? {
           // The page scrollbar must move the workspace with the header, rather
@@ -22011,6 +22039,22 @@ export default function DepotStablingPage() {
         }
         : undefined}
     >
+      {["stabling", "movement", "pst", "insertion", "washing", "possession", "roster", "sleep"].includes(activeTab) && <ReqMobileNavigation
+        activePage={activeTab}
+        workspaceView={mobileWorkspaceViews[activeTab]}
+        onWorkspaceViewChange={(view) => { setMobileWorkspaceViews((current) => ({ ...current, [activeTab]: view })); window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }}
+        panel={mobileReqPanel}
+        onPanelChange={(panel) => { setMobileReqPanel(panel); window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }}
+        depot={mobileReqDepot}
+        onDepotChange={setMobileReqDepot}
+        logSection={mobileReqLogSection}
+        onLogSectionChange={(section) => { setMobileReqLogSection(section); window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }}
+        depotCounts={{ west: collectStablingTrainIds(westData, WEST_ROADS).length, east: collectStablingTrainIds(eastData, EAST_ROADS).length }}
+        theme={appTheme}
+        onToggleTheme={() => setAppTheme((current) => current === "dark" ? "light" : "dark")}
+        toolsOpen={mobileReqToolsOpen}
+        onToggleTools={() => setMobileReqToolsOpen((current) => !current)}
+      />}
       <header className="app-top-header h-[56px] sticky top-0 z-[200]" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", borderBottom: "1px solid #1a3a56" }}>
         <div className="w-full px-4 h-full flex items-center justify-start gap-6">
           <div className="flex items-center gap-4">
@@ -22457,7 +22501,7 @@ export default function DepotStablingPage() {
     style={{ gridTemplateColumns: "954px auto" }}
   >
     {/* LEFT CONTENT - left aligned stabling tables */}
-    <div className="min-w-0 flex flex-col items-start gap-5">
+    <div className="min-w-0 flex flex-col items-start gap-5" data-req-main-panels>
       <StablingSection
         depot="west"
         activeTimetableType={selectedTimetableType}
@@ -25227,7 +25271,7 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
     : rows;
   const summaryLines = buildRequestedActionSummaryLines(summaryRows);
   const summaryGroups = groupRequestedActionSummaryLines(summaryLines);
-  if (!summaryGroups.length) return null;
+  if (!summaryGroups.length) return <div className="req-mobile-only req-mobile-empty-summary" data-req-log-section="summary" role="status">No train requests to summarize yet.</div>;
 
   const summaryText = summaryGroups
     .map((group) => [
@@ -25241,7 +25285,7 @@ function RequestedTrainActionSummary({ rows = [], requests = [] }) {
   };
 
   return (
-    <div data-window-design="compact-slate" className="theme-request-type-summary w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[12px] leading-snug text-[#eaf4ff]">
+    <div data-window-design="compact-slate" className="theme-request-type-summary w-full rounded-xl border border-[#2b4f6b] bg-[#071828]/80 px-3 py-2 text-[12px] leading-snug text-[#eaf4ff]" data-req-log-section="summary">
       <div className="slate-window-header">
         <div className="slate-window-heading">
           <span className="slate-window-title-icon" aria-hidden="true"><FileText size={15} /></span>
@@ -27208,6 +27252,7 @@ function RemovalLogOutputFromTrainRem({ trainRemState, maintenanceMap = {}, requ
   return (
     <section
       data-window-design="compact-slate"
+      data-req-log-section="removal"
       className="theme-removal-log-output w-full rounded-xl border border-[#2b4f6b] bg-[#0b1f33] shadow-md px-3 py-3"
       style={{
         background: "linear-gradient(135deg,rgba(12,46,74,0.58) 0%,rgba(7,24,40,0.98) 100%)",
@@ -28514,8 +28559,14 @@ function StablingSection({
 }) {
   const [sectionSearch, setSectionSearch] = useState("");
   const [washNoticeDate, setWashNoticeDate] = useState(() => new Date());
+  const [mobileRoad, setMobileRoad] = useState(roads[0]);
   const searchQuery = sectionSearch.trim().toUpperCase().replace(/\s+/g, "");
   const normalizedSearch = searchQuery ? normalizeTrainId(searchQuery) : "";
+  useEffect(() => {
+    if (!normalizedSearch) return;
+    const matchingRoad = roads.find((road) => (data[road] || []).some((block) => normalizeTrainId(block?.trainId || "") === normalizedSearch));
+    if (matchingRoad) setMobileRoad(matchingRoad);
+  }, [normalizedSearch, data, roads]);
   const { copyStatuses, copyWithFeedback } = useClipboardCopyFeedback();
   const copiedStabling = copyStatuses.default === "copied";
   const [downloadingPdf, setDownloadingPdf] = useState(false);
@@ -28617,7 +28668,7 @@ function StablingSection({
   const notFound = searched && !found;
 
   return (
-    <section data-stabling-design="compact-slate" className="theme-stabling-section bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: 954, maxWidth: 954 }}>
+    <section data-stabling-design="compact-slate" data-stabling-depot={depot} className="theme-stabling-section bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4" style={{ width: 954, maxWidth: 954 }}>
       <SectionTitle
         title={`${depotLabel} stabling`}
         subtitle={`Train locations in ${depotLabel}`}
@@ -28741,6 +28792,10 @@ function StablingSection({
         <StablingWashNotice depot="west" message={WEST_DEPOT_WEEKEND_WASH_NOTICE} />
       )}
 
+      <div className="req-mobile-only req-mobile-road-nav" role="group" aria-label={`${depotLabel} stabling roads`}>
+        {roads.map((road) => <button key={road} type="button" aria-pressed={mobileRoad === road} onClick={() => setMobileRoad(road)}>{road.replace(/^[A-Z]+-/, "")}<span>{(data[road] || []).filter((block) => String(block?.trainId || "").trim()).length}</span></button>)}
+      </div>
+      <div className="req-mobile-only req-mobile-road-heading"><strong>{mobileRoad}</strong><span>Tap a train number to edit</span></div>
       <div
         className="theme-stabling-table-scroll overflow-x-auto rounded-xl"
         role="region"
@@ -28804,6 +28859,7 @@ function StablingSection({
                 isFirst={ri === 0}
                 isLast={ri === roads.length - 1}
                 searchHighlight={normalizedSearch}
+                mobileActive={mobileRoad === road}
               />
             ))}
           </tbody>
@@ -28889,6 +28945,7 @@ function RoadRow({
   isFirst,
   isLast,
   searchHighlight = "",
+  mobileActive = true,
 }) {
   const rowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
 
@@ -28916,7 +28973,7 @@ function RoadRow({
   const rowCardMinHeight = Math.max(76, 56 + rowRemarkSlotHeight);
 
   return (
-    <tr>
+    <tr data-mobile-road-active={mobileActive ? "true" : "false"}>
       {labelSide === "left" && labelCell}
 
       {blockIndices.map((bi, i) => {
@@ -28975,6 +29032,7 @@ function RoadRow({
           <td
             key={bi}
             className="theme-stabling-grid-cell p-1.5 align-middle"
+            data-mobile-block-label={`Block ${bi + 1}`}
             style={{
               backgroundColor: "#071828",
               borderLeft: "1px solid #1a3a56",
@@ -29016,6 +29074,8 @@ function RoadRow({
                   onCellKeyDown(e, depot, roadIndex, i, totalRows, blockIndices.length);
                 }}
                 placeholder="—"
+                inputMode="numeric"
+                aria-label={`${depot === "west" ? "West" : "East"} Depot ${label} Block ${bi + 1} train ID`}
                 className="theme-stabling-train-id w-full text-center font-black outline-none bg-transparent leading-none"
                 style={{ fontSize: key ? 17 : 13, color: key ? trainColor : "#2a4a64", letterSpacing: key ? "0.05em" : undefined }}
               />
