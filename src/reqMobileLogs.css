@@ -1,0 +1,56 @@
+/* Log layout is isolated to the REQ phone view; export content is untouched. */
+@media (max-width: 767px) {
+  .app-shell[data-active-page="stabling"] .req-mobile-log-nav { display: grid; grid-template-columns: 1.2fr 1fr .9fr .7fr; gap: 4px; margin: 12px 12px 0; padding: 4px; border: 1px solid var(--req-mobile-line); border-radius: 13px; background: var(--req-mobile-panel); }
+  .req-mobile-log-nav button { min-height: 42px; padding: 4px; border-radius: 9px; color: var(--req-mobile-muted); font-size: 11px; font-weight: 600; }
+  .req-mobile-log-nav button[aria-pressed="true"] { background: var(--req-mobile-active); color: var(--req-mobile-text); }
+  .app-shell[data-active-page="stabling"] .req-desktop-movement-subtitle { display: none; }
+  .app-shell[data-active-page="stabling"] .req-mobile-movement-subtitle { display: inline; }
+  .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"][data-mobile-req-log-section="removal"] [data-req-log-section]:not([data-req-log-section="removal"]),
+  .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"][data-mobile-req-log-section="movement"] [data-req-log-section]:not([data-req-log-section="movement"]),
+  .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"][data-mobile-req-log-section="summary"] [data-req-log-section]:not([data-req-log-section="summary"]),
+  .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"][data-mobile-req-log-section="excel"] [data-req-log-section]:not([data-req-log-section="excel"]) { display: none; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] [data-req-log-section] { overflow: visible; border-radius: 18px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] :is(.slate-window-title, .slate-movement-title) { font-size: 15px; line-height: 1.35; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] :is(.slate-window-subtitle, .slate-movement-subtitle) { font-size: 11px; line-height: 1.5; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] :is(.theme-removal-log-card-header, .theme-movement-log-card-header) { display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 12px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] :is(.theme-removal-log-card-header, .theme-movement-log-card-header) .truncate { white-space: normal; font-size: 11px; line-height: 1.5; letter-spacing: .04em; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] :is(.theme-removal-log-action, .theme-movement-log-copy, .slate-window-action) { min-height: 42px; padding: 0 12px; font-size: 12px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] :is(.theme-removal-log-card-body, .theme-movement-log-card-body) { padding: 12px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] pre { min-width: 0; max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.8; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .theme-movement-sheet-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 14px 12px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .slate-movement-heading { grid-column: 1; min-width: 0; width: auto; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .slate-movement-count { grid-column: 2; grid-row: 1; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .slate-movement-actions { grid-column: 1 / -1; grid-row: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; width: 100%; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .slate-movement-actions > button { min-height: 42px !important; height: auto; padding: 8px 5px; font-size: 11px; justify-content: center; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .req-mobile-entry-picker { display: grid; gap: 7px; padding: 14px 12px 0; color: var(--req-mobile-muted); font-size: 11px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .req-mobile-entry-picker select { min-height: 44px; width: 100%; padding: 8px; border: 1px solid var(--req-mobile-line); border-radius: 10px; background: var(--req-mobile-control); color: var(--req-mobile-text); font-size: 16px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .req-mobile-movement-table-wrap { overflow: visible; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .theme-movement-sheet-table { display: block; width: 100%; min-width: 0; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .theme-movement-sheet-table thead,
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] tr[data-mobile-movement-active="false"] { display: none; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .theme-movement-sheet-table tbody { display: block; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] tr[data-mobile-movement-active="true"] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; padding: 12px; border: 1px solid var(--req-mobile-line); border-radius: 14px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] tr[data-movement-entry]::before { content: "Entry " attr(data-movement-entry); align-self: center; font-size: 13px; font-weight: 700; color: var(--req-mobile-text); }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .theme-movement-sheet-table tbody td { display: block; position: static; min-width: 0; height: auto; overflow: visible; padding: 0; border: 0 !important; background: transparent !important; box-shadow: none !important; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] td[data-mobile-field]::before { display: block; position: static; content: attr(data-mobile-field); height: auto; width: auto; padding-bottom: 6px; transform: none; animation: none; background: none; color: var(--req-mobile-muted) !important; text-align: left; text-shadow: none; font-weight: 500; font-size: 10px; line-height: 1.3; text-transform: uppercase; letter-spacing: .04em; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .theme-movement-delete-cell { justify-self: end; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] td[data-mobile-field="Reason / Remark"],
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .theme-movement-status-cell { grid-column: 1 / -1; text-align: left; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] td[data-mobile-field] > div { padding-inline: 0; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] :is(.theme-movement-sheet-table input, .theme-movement-sheet-table select, .theme-movement-type-trigger) { min-height: 44px; height: 44px; min-width: 0; width: 100%; border: 1px solid var(--req-mobile-line); border-radius: 8px; padding-inline: 7px; background: var(--req-mobile-control); font-size: 16px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] :is(.theme-movement-delete-button, .theme-movement-swap-edit, .theme-movement-time-refresh) { min-width: 36px; min-height: 40px; border-radius: 9px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .theme-movement-type-trigger { background: var(--req-mobile-control) !important; border: 1px solid var(--req-mobile-line); border-radius: 8px; padding-left: 28px !important; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .theme-movement-type-trigger::before { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); content: "⇄"; color: var(--movement-type-accent); text-shadow: 0 0 7px var(--movement-type-accent); animation: movement-type-swap 2.8s ease-in-out infinite; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .theme-movement-type-trigger[data-movement-type="insertion"]::before { content: "→"; animation-name: movement-type-enter; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .theme-movement-type-trigger[data-movement-type="removal"]::before { content: "←"; animation-name: movement-type-exit; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .theme-movement-log-output { padding: 0 12px 12px; border: 0; box-shadow: none !important; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .theme-request-type-summary p { font-size: 13px; line-height: 1.75; overflow-wrap: anywhere; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .official-depot-excel-generator :is(input, select) { min-height: 44px; font-size: 16px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .official-depot-excel-generator button { min-height: 44px; }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .official-depot-excel-generator .slate-window-body > .grid { grid-template-columns: minmax(0, 1fr); }
+  html[data-app-theme] .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .official-panel { min-width: 0; }
+  .app-shell[data-active-page="stabling"][data-mobile-req-panel="logs"] .req-mobile-empty-summary { display: block; padding: 28px 16px; border: 1px solid var(--req-mobile-line); border-radius: 16px; background: var(--req-mobile-panel); color: var(--req-mobile-muted); font-size: 13px; text-align: center; }
+}
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .app-shell[data-active-page="stabling"] .theme-movement-type-trigger::before { animation: none; }
+}

@@ -1,0 +1,81 @@
+/* Compact spacing shared by every phone workspace. */
+@media (max-width: 767px) {
+  #root .app-shell[data-active-page] {
+    --mobile-control-height: 36px;
+    --mobile-row-height: 56px;
+  }
+  #root .app-shell[data-active-page] .req-mobile-header { min-height: 56px; padding: 5px 8px; gap: 3px; }
+  #root .app-shell[data-active-page] .req-mobile-brand { gap: 7px; }
+  #root .app-shell[data-active-page] .req-mobile-brand > svg { width: 22px; height: 22px; }
+  #root .app-shell[data-active-page] .req-mobile-brand strong { font-size: 14px; }
+  #root .app-shell[data-active-page] .req-mobile-brand span { font-size: 10px; }
+  #root .app-shell[data-active-page] .req-mobile-icon-button { width: 36px; height: 38px; }
+  #root .app-shell[data-active-page] .req-mobile-depot-switch { margin: 8px 10px 0; padding: 4px; border-radius: 12px; }
+  #root .app-shell[data-active-page] .req-mobile-depot-switch button { min-height: 34px; font-size: 12px; gap: 7px; }
+  #root .app-shell[data-active-page] .req-mobile-page-menu { top: 51px; padding: 6px; }
+  #root .app-shell[data-active-page] .req-mobile-page-menu a { min-height: 42px; font-size: 11px; }
+  #root .app-shell[data-active-page] .req-mobile-bottom-nav { padding: 4px 6px calc(5px + env(safe-area-inset-bottom,0px)); }
+  #root .app-shell[data-active-page] .req-mobile-bottom-nav button { min-height: 44px; font-size: 11px; gap: 3px; }
+  #root .app-shell[data-active-page] .req-mobile-bottom-nav svg { width: 18px; height: 18px; }
+  #root .app-shell[data-active-page] > .flex > main > div { padding: 8px 10px calc(74px + env(safe-area-inset-bottom,0px)); }
+
+  /* Road lists share smaller number boxes, row gaps and road headings. */
+  html[data-app-theme] #root .app-shell[data-active-page] :is(.theme-stabling-grid-cell,.theme-pst-grid-cell,.theme-insertion-grid-cell,.mobile-sleep-cell) { grid-template-columns: 32px minmax(0,1fr); }
+  html[data-app-theme] #root .app-shell[data-active-page] :is(.theme-stabling-train-card,.theme-pst-card,.theme-insertion-card,.slp-stabling-train-card) {
+    grid-template-columns: 38px minmax(0,1fr); gap: 3px 8px;
+    min-height: var(--mobile-row-height) !important; padding: 6px 2px !important;
+  }
+  html[data-app-theme] #root .app-shell[data-active-page] :is(.theme-stabling-train-id,.theme-pst-train-number,.theme-insertion-train-id,.slp-stabling-train-id,.mobile-sleep-empty-number),
+  html[data-app-theme] #root .app-shell[data-active-page="insertion"] .theme-insertion-card.is-expired > div:first-child {
+    width: 36px !important; height: 36px !important; min-height: 36px !important;
+    border-radius: 9px !important; font-size: 17px !important;
+  }
+  html[data-app-theme] #root .app-shell[data-active-page] :is(.theme-stabling-road-label,.theme-insertion-road-label,.slp-stabling-road-label) { min-height: 34px; padding: 7px 2px; font-size: 12px; }
+  #root .app-shell[data-active-page] :is(.theme-stabling-table,.theme-insertion-table) tr { margin-bottom: 10px; }
+  #root .app-shell[data-active-page] .slp-stabling-road-label { margin-top: 10px; }
+  #root .app-shell[data-active-page] .mobile-sleep-empty { grid-template-columns: 32px 38px minmax(0,1fr); min-height: var(--mobile-row-height); }
+  html[data-app-theme] #root .app-shell[data-active-page] .slp-stabling-train-card { padding-right: 34px !important; }
+  html[data-app-theme] #root .app-shell[data-active-page] .theme-insertion-card:is(.has-insert-control,.has-refresh-control) { padding-right: 30px !important; }
+  #root .app-shell[data-active-page] .theme-insertion-card-refresh-trigger { top: 6px; }
+  #root .app-shell[data-active-page] .theme-insertion-card .theme-insertion-empty-action { width: 36px; height: 36px; }
+  #root .app-shell[data-active-page] :is(.theme-stabling-remark,.theme-pst-request-remark) { padding: 3px 6px; font-size: 10px; line-height: 1.2; }
+  #root .app-shell[data-active-page] :is(.theme-stabling-train-card > span.block,.theme-insertion-card-header > span.block)::after { font-size: 10px; }
+  #root .app-shell[data-active-page] .slp-stabling-mode-pill { font-size: 9px; padding: 3px 6px; }
+
+  /* Tracking ID remains a compact field beside the train, not a large tile. */
+  #root .app-shell[data-active-page="insertion"] .theme-insertion-tracking-footer {
+    width: 100%; max-width: 160px; height: auto !important; min-height: 32px !important;
+    margin-top: 0; border-radius: 7px; align-self: flex-start;
+  }
+  #root .app-shell[data-active-page="insertion"] .theme-insertion-tracking-footer input.theme-insertion-tid-input {
+    height: 30px !important; min-height: 30px !important; padding-block: 0; font-size: 16px !important;
+  }
+  #root .app-shell[data-active-page="insertion"] .theme-insertion-tracking-footer input::placeholder { font-size: 12px; font-weight: 500; }
+  #root .app-shell[data-active-page="insertion"] .theme-insertion-tracking-footer > strong { font-size: 12px; }
+  #root .app-shell[data-active-page="insertion"] .theme-insertion-insert-button { min-height: 32px; padding: 5px 8px; font-size: 11px; }
+
+  /* Use less space for headers, form cards and log/export actions. */
+  html[data-app-theme] #root .app-shell[data-active-page] :is(.theme-stabling-section,.theme-pst-section,.theme-insertion-section) { padding: 10px; }
+  #root .app-shell[data-active-page] :is(.theme-tp1-flow-step,.theme-washing-panel form,.theme-washing-manual-form,.pst-excel-format-panel) { padding: 10px; }
+  #root .app-shell[data-active-page] :is(.theme-washing-header,.theme-possession-header,.mobile-sleep-depot > header,.slate-window-header) { padding: 10px; gap: 8px; }
+  #root .app-shell[data-active-page] :is(.mobile-section-header,.mobile-section-actions,.mobile-clear-actions,.theme-insertion-editable-controls,.theme-insertion-search-actions,.pst-clean-actions,.insertion-clean-actions,.sleep-log-card-actions,.slate-movement-actions,.pst-excel-export-groups) { gap: 6px; }
+  #root .app-shell[data-active-page] .mobile-section-header { margin-bottom: 10px; }
+  #root .app-shell[data-active-page] .theme-insertion-editable-label { min-height: 26px; padding: 4px 8px; font-size: 10px; }
+  #root .app-shell[data-active-page] :is(.mobile-section-heading .theme-pst-title,.mobile-insertion-heading .theme-insertion-title,.slate-window-title,.pst-clean-title,.insertion-clean-title) { font-size: 13px; line-height: 1.35; }
+  #root .app-shell[data-active-page] .mobile-insertion-heading-main { grid-template-columns: 32px minmax(0,1fr); gap: 8px; }
+  #root .app-shell[data-active-page] .theme-insertion-title-icon { width: 32px; height: 32px; }
+  #root .app-shell[data-active-page] main :is(input:not([type="checkbox"]):not([type="file"]),select,textarea) { min-height: var(--mobile-control-height); }
+  #root .app-shell[data-active-page] :is(.mobile-section-actions,.theme-insertion-editable-controls,.theme-insertion-search-actions,.pst-clean-actions,.insertion-clean-actions,.sleep-log-card-actions,.slate-movement-actions) button,
+  #root .app-shell[data-active-page] :is(.theme-tp1-movement-header,.theme-tp1-movement-log-header,.theme-tp1-movement-preview,.theme-washing-header,.theme-possession-header) button,
+  #root .app-shell[data-active-page] :is(.pst-excel-export-button,.pst-fldc-confirm,.official-generate-button,.theme-roster-copy-schedule,.theme-roster-reset-schedule,.theme-roster-add-compare,.theme-stabling-action,.theme-removal-log-action,.theme-movement-log-copy),
+  #root .app-shell[data-active-page] .mobile-sleep-depot > header button {
+    min-height: var(--mobile-control-height) !important; padding: 7px 9px !important; font-size: 11px !important; gap: 5px;
+  }
+  #root .app-shell[data-active-page] .theme-stabling-action { height: auto; }
+  #root .app-shell[data-active-page] .theme-stabling-search { min-height: var(--mobile-control-height); padding-block: 4px; }
+  #root .app-shell[data-active-page] .theme-stabling-search-input { height: 32px; min-height: 32px; }
+  #root .app-shell[data-active-page] :is(.theme-maintenance-request-bar,.theme-maintenance-request-line) { min-height: 36px; }
+  #root .app-shell[data-active-page] .theme-maintenance-category-heading { min-height: 34px; }
+  #root .app-shell[data-active-page] .req-mobile-log-nav button { min-height: 34px; }
+  #root .app-shell[data-active-page] main :is(pre,.sleep-log-line-text) { font-size: 11px !important; line-height: 1.55 !important; }
+}

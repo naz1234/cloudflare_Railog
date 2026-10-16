@@ -1350,7 +1350,7 @@ export default function OfficialDepotExcelGenerator({ eastRemovalLog = null, wes
   };
 
   return (
-    <section data-window-design="compact-slate" className="official-depot-excel-generator w-full rounded-xl border px-3 py-3">
+    <section data-window-design="compact-slate" className="official-depot-excel-generator w-full rounded-xl border px-3 py-3" data-req-log-section="excel">
       <style>{`
         .official-depot-excel-generator {
           --official-bg-start: #062b32;

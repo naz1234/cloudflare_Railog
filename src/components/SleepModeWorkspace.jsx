@@ -195,7 +195,7 @@ function DepotSleepPanel({
   const canSubmitLog = Boolean(normalizeSleepLogTime(logDraft?.time)) && Boolean(logDraft?.timeConfirmed);
 
   return (
-    <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-[#28506d] dark:bg-[#061827]">
+    <section data-mobile-depot={depot} className="mobile-sleep-depot min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-[#28506d] dark:bg-[#061827]">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-[#21435e] dark:bg-[#09243a]">
         <div>
           <div className="flex items-center gap-2">
@@ -251,7 +251,7 @@ function DepotSleepPanel({
                   const isSelected = cell?.trainId && selectedKeys.has(cell.key);
                   const latestMode = cell?.trainId ? latestModeByTrain.get(cell.trainId) : "";
                   return cell?.trainId ? (
-                    <div key={cell.key} className="relative min-w-0">
+                    <div key={cell.key} data-mobile-block={`Block ${cell.blockIndex + 1}`} className="mobile-sleep-cell relative min-w-0">
                       <button
                         type="button"
                         onClick={() => onToggle(cell.key)}
@@ -291,8 +291,9 @@ function DepotSleepPanel({
                       )}
                     </div>
                   ) : (
-                    <div key={cell.key} className="flex min-h-[74px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-[9px] text-slate-300 dark:border-[#21435e] dark:bg-[#071827] dark:text-[#375a71]">
-                      —
+                    <div key={cell.key} data-mobile-block={`Block ${cell.blockIndex + 1}`} className="mobile-sleep-empty flex min-h-[74px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-[9px] text-slate-300 dark:border-[#21435e] dark:bg-[#071827] dark:text-[#375a71]">
+                      <span className="mobile-sleep-empty-number">—</span>
+                      <span className="req-mobile-only mobile-sleep-empty-label">Empty block</span>
                     </div>
                   );
                 }),

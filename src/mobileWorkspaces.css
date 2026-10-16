@@ -1,0 +1,274 @@
+/* Phone layouts only. Desktop tables and their controls keep their original styles. */
+@media (max-width: 767px) {
+  .app-shell[data-mobile-workspace-view] {
+    --req-mobile-panel: #0b1f33;
+    --req-mobile-control: #102b43;
+    --req-mobile-line: #284b66;
+    --req-mobile-text: #e6f1fb;
+    --req-mobile-muted: #8aaec5;
+    --req-mobile-active: #194c74;
+    min-width: 0 !important; width: 100%;
+  }
+  html[data-app-theme="light"] .app-shell[data-mobile-workspace-view] {
+    --req-mobile-panel: #fff; --req-mobile-control: #f0f5fa;
+    --req-mobile-line: #c9d8e6; --req-mobile-text: #142e45;
+    --req-mobile-muted: #587087; --req-mobile-active: #d8eafa;
+  }
+  .app-shell[data-mobile-workspace-view] .app-sidebar,
+  .app-shell[data-mobile-workspace-view][data-mobile-req-tools="closed"] > .app-top-header { display: none; }
+  .app-shell[data-mobile-workspace-view] > .app-top-header { height: auto; position: static; }
+  .app-shell[data-mobile-workspace-view] > .app-top-header > div { padding: 12px; flex-direction: column; gap: 10px; }
+  .app-shell[data-mobile-workspace-view] > .app-top-header > div > div { width: 100%; flex-wrap: wrap; gap: 8px; }
+  .app-shell[data-mobile-workspace-view] > .app-top-header > div > div:first-child > div:first-child { display: none; }
+  .app-shell[data-mobile-workspace-view] > .app-top-header * { max-width: 100%; }
+  .app-shell[data-mobile-workspace-view] > .flex > main { width: 100%; min-width: 0; overflow: visible; }
+  .app-shell[data-mobile-workspace-view] > .flex > main > div { padding: 12px 12px calc(90px + env(safe-area-inset-bottom, 0px)); }
+  .app-shell[data-mobile-workspace-view] .req-mobile-header {
+    display: grid; grid-template-columns: 40px minmax(0,1fr) 40px 40px; align-items: center; gap: 5px;
+    position: sticky; top: 0; z-index: 240; min-height: 68px; padding: 8px 10px;
+    background: var(--req-mobile-panel); border-bottom: 1px solid var(--req-mobile-line); color: var(--req-mobile-text);
+  }
+  .app-shell[data-mobile-workspace-view] .req-mobile-depot-switch { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 5px; margin: 12px 12px 0; padding: 5px; border: 1px solid var(--req-mobile-line); border-radius: 15px; background: var(--req-mobile-panel); }
+  .app-shell[data-mobile-workspace-view] .mobile-workspace-nav { display: grid; gap: 4px; position: fixed; inset: auto 0 0; z-index: 245; padding: 6px 8px calc(8px + env(safe-area-inset-bottom,0px)); background: var(--req-mobile-panel); border-top: 1px solid var(--req-mobile-line); box-shadow: 0 -8px 28px #0002; }
+  .app-shell[data-mobile-workspace-view] .mobile-workspace-nav button { min-height: 48px; font-size: 12px; }
+  .app-shell[data-mobile-workspace-view] main :is(input:not([type="checkbox"]):not([type="file"]),select,textarea) { font-size: 16px !important; min-height: 44px; min-width: 0; max-width: 100%; }
+  .app-shell[data-mobile-workspace-view] main button { min-height: 36px; }
+  .app-shell[data-mobile-workspace-view] main :is(pre,.sleep-log-line-text) { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px !important; line-height: 1.7 !important; }
+  .app-shell[data-mobile-workspace-view][data-mobile-req-depot="west"] [data-mobile-depot="east"],
+  .app-shell[data-mobile-workspace-view][data-mobile-req-depot="east"] [data-mobile-depot="west"] { display: none; }
+
+  /* MOV: one workflow per view; steps stack in their numbered order. */
+  .app-shell[data-active-page="movement"] .theme-train-movement-page { display: block; }
+  .app-shell[data-active-page="movement"][data-mobile-workspace-view="automatic"] [data-movement-mode="manual"],
+  .app-shell[data-active-page="movement"][data-mobile-workspace-view="manual"] [data-movement-mode="automatic"],
+  .app-shell[data-active-page="movement"][data-mobile-workspace-view="checker"] [data-movement-mode],
+  .app-shell[data-active-page="movement"]:not([data-mobile-workspace-view="checker"]) .theme-train-movement-page > .col-span-full { display: none; }
+  .app-shell[data-active-page="movement"] .theme-tp1-movement-body { grid-template-columns: minmax(0,1fr) !important; }
+  .app-shell[data-active-page="movement"] .theme-tp1-movement-flow { min-width: 0; }
+  .app-shell[data-active-page="movement"] .theme-tp1-movement-flow .grid { grid-template-columns: minmax(0,1fr) !important; gap: 10px; }
+  .app-shell[data-active-page="movement"] .theme-tp1-flow-step { padding: 12px; order: 0; }
+  .app-shell[data-active-page="movement"] .theme-tp1-flow-step button { min-height: 44px; }
+  .app-shell[data-active-page="movement"] .theme-tp1-flow-connector { display: none; }
+  .app-shell[data-active-page="movement"] .theme-tp1-movement-preview-text { max-height: none; }
+  .app-shell[data-active-page="movement"] .theme-tp1-inline-field { height: auto; min-height: 44px; }
+
+  /* PST / INS: the same road-list rows as REQ, with each workflow's controls. */
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.mobile-pst-workspace,.mobile-pst-workspace > div,.theme-insertion-page,.theme-insertion-page > .grid,.theme-insertion-page [data-mobile-depot]) { width: 100% !important; min-width: 0 !important; max-width: 100%; grid-template-columns: minmax(0,1fr) !important; }
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.theme-pst-section,.theme-insertion-section) { width: 100% !important; max-width: 100% !important; padding: 12px; }
+  .app-shell[data-active-page="pst"] .theme-pst-section > div:first-child { flex-direction: column; align-items: stretch; }
+  .app-shell[data-active-page="pst"] .theme-pst-title { white-space: normal; font-size: 14px; line-height: 1.4; }
+  .app-shell[data-active-page="pst"] .theme-pst-section > div:first-child > div { flex-wrap: wrap; justify-content: flex-start; }
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.theme-stabling-table,.theme-insertion-table) { display: block; width: 100% !important; min-width: 0 !important; max-width: 100% !important; }
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.theme-stabling-table,.theme-insertion-table) thead { display: none; }
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.theme-stabling-table,.theme-insertion-table) tbody { display: block; }
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.theme-stabling-table,.theme-insertion-table) tr { display: flex; flex-direction: column; gap: 0; margin-bottom: 16px; counter-reset: mobileBlock 0; }
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) [data-mobile-depot="west"] :is(.theme-stabling-table,.theme-insertion-table) tr { counter-reset: mobileBlock 8; }
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.theme-stabling-road-label,.theme-insertion-road-label) { display: flex; order: -1; align-items: center; justify-content: space-between; width: 100% !important; min-width: 0 !important; min-height: 42px; padding: 10px 3px; border: 0 !important; border-bottom: 1px solid var(--req-mobile-line) !important; border-radius: 0 !important; background: transparent !important; color: var(--req-mobile-text) !important; font-size: 13px; letter-spacing: .03em; text-align: left; }
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.theme-stabling-road-label,.theme-insertion-road-label)::after { content: "7 blocks"; color: var(--req-mobile-muted); font-size: 10px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.theme-pst-grid-cell,.theme-insertion-grid-cell) { display: grid; grid-template-columns: 38px minmax(0,1fr); align-items: center; min-width: 0; padding: 0; border: 0 !important; border-bottom: 1px solid color-mix(in srgb, var(--req-mobile-line), transparent 50%) !important; background: transparent !important; height: auto !important; counter-increment: mobileBlock; }
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) [data-mobile-depot="west"] :is(.theme-pst-grid-cell,.theme-insertion-grid-cell) { counter-increment: mobileBlock -1; }
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.theme-pst-grid-cell,.theme-insertion-grid-cell)::before { content: "Block " counter(mobileBlock); color: var(--req-mobile-muted); font-size: 9px; line-height: 1.6; letter-spacing: .01em; padding: 0 2px; }
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.theme-pst-card,.theme-insertion-card) { display: grid; grid-template-columns: 48px minmax(0,1fr); align-items: center; gap: 5px 10px; height: auto !important; min-height: 70px !important; padding: 9px 2px !important; background: transparent !important; border: 0 !important; border-radius: 0; box-shadow: none !important; }
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.theme-pst-card,.theme-insertion-card) button { min-height: 32px; }
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) .theme-stabling-remark { white-space: normal; font-size: 11px; padding: 4px; }
+  .app-shell[data-active-page="pst"] .mobile-pst-workspace > div > div { min-width: 0; width: 100%; }
+  .app-shell[data-active-page="pst"][data-mobile-workspace-view="trains"] .mobile-pst-workspace > div > div:first-child > :not(.theme-pst-section),
+  .app-shell[data-active-page="pst"]:not([data-mobile-workspace-view="excel"]) .mobile-pst-workspace > div > div:last-child,
+  .app-shell[data-active-page="pst"][data-mobile-workspace-view="logs"] .theme-pst-section,
+  .app-shell[data-active-page="pst"][data-mobile-workspace-view="excel"] .mobile-pst-workspace > div > div:first-child { display: none; }
+  .app-shell[data-active-page="pst"] .pst-log-shell { width: 100% !important; min-width: 0 !important; }
+  .app-shell[data-active-page="pst"] .pst-log-shell :is(header,.pst-plain-button-row) { flex-wrap: wrap; }
+  .app-shell[data-active-page="pst"] .maintenance-panel-shell { width: 100% !important; min-width: 0 !important; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-page > .grid > .sticky { position: static; width: 100%; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-page .maintenance-panel-shell { width: 100% !important; min-width: 0 !important; }
+  .app-shell[data-active-page="insertion"]:not([data-mobile-workspace-view="requests"]) .theme-insertion-page > .grid > .sticky,
+  .app-shell[data-active-page="insertion"][data-mobile-workspace-view="requests"] .theme-insertion-page > .grid > div:first-child,
+  .app-shell[data-active-page="insertion"]:not([data-mobile-workspace-view="timetable"]) [data-mobile-depot] > div:first-child,
+  .app-shell[data-active-page="insertion"][data-mobile-workspace-view="timetable"] [data-mobile-depot] > div:last-child,
+  .app-shell[data-active-page="insertion"][data-mobile-workspace-view="logs"] .theme-insertion-section,
+  .app-shell[data-active-page="insertion"][data-mobile-workspace-view="trains"] [data-mobile-depot] > div:last-child > div { display: none; }
+  .app-shell[data-active-page="insertion"] :is(.theme-insertion-search-actions,.theme-insertion-section > div) { max-width: 100%; width: 100% !important; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-search-actions { flex-wrap: wrap; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-stabling-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .app-shell[data-active-page="insertion"] .theme-insertion-stabling-summary-stat { padding: 10px 4px; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card :is(.theme-insertion-card-refresh,.theme-insertion-card-insert) { min-height: 28px; min-width: 28px; }
+
+  /* Washing: import, manual entry and the report each get a full screen. */
+  .app-shell[data-active-page="washing"] .theme-washing-workspace { display: block; }
+  .app-shell[data-active-page="washing"][data-mobile-workspace-view="report"] .theme-train-washing-page,
+  .app-shell[data-active-page="washing"]:not([data-mobile-workspace-view="report"]) .theme-washing-workspace > div:last-child,
+  .app-shell[data-active-page="washing"][data-mobile-workspace-view="manual"] .theme-train-washing-page > div:first-child,
+  .app-shell[data-active-page="washing"][data-mobile-workspace-view="import"] .theme-train-washing-page > div:nth-child(2) { display: none; }
+  .app-shell[data-active-page="washing"] .theme-washing-panel { margin: 0; }
+  .app-shell[data-active-page="washing"] .theme-washing-header { flex-wrap: wrap; padding: 16px 12px; }
+  .app-shell[data-active-page="washing"] .theme-washing-panel form { padding: 12px; }
+  .app-shell[data-active-page="washing"] .theme-washing-manual-form { padding: 12px; }
+  .app-shell[data-active-page="washing"] .theme-washing-manual-form > div > div { min-width: 0; }
+  .app-shell[data-active-page="washing"] .theme-washing-time-control { height: auto; min-height: 44px; flex-wrap: wrap; }
+  .app-shell[data-active-page="washing"] .theme-washing-upload-zone { margin: 12px; padding: 26px 12px; text-align: center; }
+  .app-shell[data-active-page="washing"] .theme-washing-log-row { align-items: flex-start; padding: 10px; }
+
+  /* PSS: fields above their own log/security output, with large touch inputs. */
+  .app-shell[data-active-page="possession"] main > div > div { padding: 0; }
+  .app-shell[data-active-page="possession"] .theme-possession-depot-workspace .grid { grid-template-columns: minmax(0,1fr); }
+  .app-shell[data-active-page="possession"] .theme-possession-depot-workspace :is(.p-5,.p-4) { padding: 12px; }
+  .app-shell[data-active-page="possession"] .theme-possession-depot-workspace :is(.px-5,.px-4) { padding-inline: 12px; }
+  .app-shell[data-active-page="possession"] .theme-possession-divider { display: none; }
+  .app-shell[data-active-page="possession"] .theme-possession-depot-workspace > section { margin-top: 16px; }
+  .app-shell[data-active-page="possession"][data-mobile-workspace-view="access"] .theme-possession-depot-workspace > section:not(:nth-of-type(1)),
+  .app-shell[data-active-page="possession"][data-mobile-workspace-view="epaf"] .theme-possession-depot-workspace > section:not(:nth-of-type(2)),
+  .app-shell[data-active-page="possession"][data-mobile-workspace-view="sweeping"] .theme-possession-depot-workspace > section:not(:nth-of-type(3)) { display: none; }
+
+  /* ROS: controller roles become a vertical list, schedules fit the phone. */
+  .app-shell[data-active-page="roster"] main > div > div { padding-inline: 0; }
+  .app-shell[data-active-page="roster"] .theme-roster-page > .grid { grid-template-columns: minmax(0,1fr) !important; }
+  .app-shell[data-active-page="roster"] .theme-roster-shift-grid { grid-template-columns: repeat(2,minmax(0,1fr)); min-width: 0; }
+  .app-shell[data-active-page="roster"] .theme-roster-horizontal-shift-cell { grid-column: 1/-1; min-height: 72px; flex-direction: row; gap: 16px; }
+  .app-shell[data-active-page="roster"] .theme-roster-horizontal-role-cell { border-bottom: 1px solid var(--req-mobile-line); padding: 14px 8px; }
+  .app-shell[data-active-page="roster"] .theme-roster-staff-results-row { flex-direction: column; }
+  .app-shell[data-active-page="roster"] .theme-roster-staff-result-column { min-width: 0; flex: auto; }
+  .app-shell[data-active-page="roster"] .theme-roster-staff-schedule { width: 100%; min-width: 0; }
+  .app-shell[data-active-page="roster"] .theme-roster-schedule-list > div { flex-wrap: wrap; }
+  .app-shell[data-active-page="roster"][data-mobile-workspace-view="schedule"] .theme-roster-shell,
+  .app-shell[data-active-page="roster"][data-mobile-workspace-view="roster"] .theme-roster-page > .grid > div:last-child { display: none; }
+
+  /* SLP: the same road list, with selectable rows and individual clear controls. */
+  .app-shell[data-active-page="sleep"][data-mobile-workspace-view="logs"] [aria-label="Sleep Mode workspace"] > .grid,
+  .app-shell[data-active-page="sleep"][data-mobile-workspace-view="trains"] .theme-sleep-log-window { display: none; }
+  .app-shell[data-active-page="sleep"] .mobile-sleep-depot > .overflow-x-auto > div { min-width: 0; }
+  .app-shell[data-active-page="sleep"] .mobile-sleep-depot > .overflow-x-auto > div > .grid { grid-template-columns: minmax(0,1fr); gap: 0; }
+  .app-shell[data-active-page="sleep"] .slp-stabling-block-label,
+  .app-shell[data-active-page="sleep"] .mobile-sleep-depot > .overflow-x-auto > div > .grid > div:first-child { display: none; }
+  .app-shell[data-active-page="sleep"] .slp-stabling-road-label { grid-column: 1/-1; min-height: 42px; margin-top: 16px; padding: 10px 3px; justify-content: space-between; font-size: 13px; letter-spacing: .03em; border: 0; border-bottom: 1px solid var(--req-mobile-line); border-radius: 0; background: transparent; color: var(--req-mobile-text); }
+  .app-shell[data-active-page="sleep"] .slp-stabling-road-label::after { content: "7 blocks"; color: var(--req-mobile-muted); font-size: 10px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+  .app-shell[data-active-page="sleep"] .mobile-sleep-cell { display: grid; grid-template-columns: 38px minmax(0,1fr); align-items: center; border-bottom: 1px solid color-mix(in srgb, var(--req-mobile-line), transparent 50%); }
+  .app-shell[data-active-page="sleep"] .mobile-sleep-cell::before,
+  .app-shell[data-active-page="sleep"] .mobile-sleep-empty::before { content: attr(data-mobile-block); color: var(--req-mobile-muted); display: block; font-size: 9px; line-height: 1.6; letter-spacing: .01em; padding: 0 2px; }
+  .app-shell[data-active-page="sleep"] .mobile-sleep-empty { display: grid; grid-template-columns: 38px 48px minmax(0,1fr); gap: 0; min-height: 70px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--req-mobile-line), transparent 50%); border-radius: 0; background: transparent; }
+  .app-shell[data-active-page="sleep"] .slp-stabling-train-card { display: grid; grid-template-columns: 48px minmax(0,1fr); justify-content: start; align-items: center; gap: 10px; height: auto; min-height: 70px; padding: 9px 36px 9px 2px; background: transparent !important; border: 0; border-radius: 0; box-shadow: none; text-align: left; }
+  .app-shell[data-active-page="sleep"] .slp-stabling-mode-pill { width: fit-content; margin: 0; padding: 4px 7px; border-radius: 6px; font-size: 10px; }
+  .app-shell[data-active-page="sleep"] [data-sleep-entry-controls] button { min-height: 44px; }
+  .app-shell[data-active-page="sleep"] .sleep-log-card-header { flex-direction: column; align-items: stretch; gap: 12px; }
+  .app-shell[data-active-page="sleep"] .sleep-log-card-actions { flex-wrap: wrap; gap: 8px; }
+  .app-shell[data-active-page="sleep"] .sleep-log-card-actions button { min-height: 42px; font-size: 11px; }
+  .app-shell[data-active-page="sleep"] .sleep-log-depot-heading { flex-wrap: wrap; }
+  .app-shell[data-active-page="sleep"] .sleep-log-depot-title { white-space: normal; font-size: 12px; }
+  .app-shell[data-active-page="sleep"][data-mobile-req-depot="west"] [data-sleep-log-depot="east"],
+  .app-shell[data-active-page="sleep"][data-mobile-req-depot="east"] [data-sleep-log-depot="west"] { display: none; }
+  .app-shell[data-active-page="sleep"] main > div > div { padding-inline: 0; }
+  .app-shell[data-active-page="insertion"] :is(.theme-insertion-reference,.theme-insertion-reference-controls-only) { width: 100% !important; min-width: 0; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-reference-row-cell { height: 44px; font-size: 13px !important; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-reference-time-value { font-size: 13px; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-reference-train-id { font-size: 14px !important; }
+  .app-shell[data-active-page="insertion"] [data-mobile-depot] > div:last-child > div { width: 100% !important; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-road-label > div { flex-direction: row; justify-content: space-between; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-table-wrap { overflow: visible; border: 0; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-title { font-size: 17px; }
+  .app-shell[data-active-page="possession"] .theme-possession-depot-workspace :is(h1,h2) { overflow-wrap: anywhere; }
+  .app-shell[data-active-page="possession"] .theme-possession-depot-workspace :is(.flex.justify-between,.flex.justify-end) { flex-wrap: wrap; }
+  .app-shell[data-active-page="pst"] .theme-pst-card :is(.theme-pst-train-number,input) { width: 100%; }
+  .app-shell[data-active-page="pst"] .theme-pst-card .flex { flex-wrap: wrap; }
+  .app-shell[data-active-page="roster"] :is(.theme-roster-leave-row,.theme-roster-staff-result-head > div) { grid-template-columns: minmax(0,1fr); flex-wrap: wrap; }
+  .app-shell[data-mobile-workspace-view] main [role="status"] { overflow-wrap: anywhere; }
+  .app-shell[data-active-page="sleep"] [data-sleep-entry-controls] :is(div,span).rounded-xl { height: auto; min-height: 78px; padding-block: 10px; }
+  .app-shell[data-active-page="pst"] :is(.pst-manual-header,.pst-manual-actions,.pst-clean-heading-line,.pst-clean-actions) { flex-wrap: wrap; gap: 8px; }
+  .app-shell[data-active-page="pst"] .pst-manual-header { align-items: flex-start; }
+  .app-shell[data-active-page="pst"] .pst-manual-heading h3 { font-size: 13px; white-space: normal; }
+  .app-shell[data-active-page="pst"] .pst-manual-table-wrap { overflow: visible; padding: 10px; }
+  .app-shell[data-active-page="pst"] .pst-manual-table { display: block; width: 100%; min-width: 0; }
+  .app-shell[data-active-page="pst"] .pst-manual-table thead { display: none; }
+  .app-shell[data-active-page="pst"] .pst-manual-table tbody { display: grid; gap: 16px; }
+  .app-shell[data-active-page="pst"] .pst-manual-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; padding: 12px; border: 1px solid var(--req-mobile-line); border-radius: 12px; background: var(--req-mobile-panel); }
+  .app-shell[data-active-page="pst"] .pst-manual-row td { display: flex; flex-direction: column; gap: 6px; border: 0; width: auto; height: auto; min-width: 0; padding: 0; font-size: 13px; }
+  .app-shell[data-active-page="pst"] .pst-manual-row td:first-child { grid-column: 1/-1; align-items: flex-end; }
+  .app-shell[data-active-page="pst"] .pst-manual-row td:nth-child(7) { grid-column: 1/-1; }
+  .app-shell[data-active-page="pst"] .pst-manual-row td::before { color: var(--req-mobile-muted); font-size: 11px; }
+  .app-shell[data-active-page="pst"] .pst-manual-row td:nth-child(2)::before { content: "Type"; }
+  .app-shell[data-active-page="pst"] .pst-manual-row td:nth-child(3)::before { content: "Train"; }
+  .app-shell[data-active-page="pst"] .pst-manual-row td:nth-child(4)::before { content: "Location"; }
+  .app-shell[data-active-page="pst"] .pst-manual-row td:nth-child(5)::before { content: "Start time"; }
+  .app-shell[data-active-page="pst"] .pst-manual-row td:nth-child(6)::before { content: "Completion time"; }
+  .app-shell[data-active-page="pst"] .pst-manual-row td:nth-child(7)::before { content: "Alarm / Completed by"; }
+  .app-shell[data-active-page="pst"] .pst-manual-row td:nth-child(8)::before { content: "Status"; }
+  .app-shell[data-active-page="pst"] .pst-manual-row :is(input,select) { width: 100%; padding: 8px; }
+  .app-shell[data-active-page="pst"] :is(.pst-clean-title,.pst-clean-card-title) { white-space: normal; line-height: 1.4; }
+  .app-shell[data-active-page="pst"] .pst-excel-format-panel { padding: 14px; }
+  .app-shell[data-active-page="pst"] .pst-excel-export-groups { gap: 8px; }
+  .app-shell[data-active-page="insertion"] :is(.insertion-clean-title,.insertion-clean-card-title) { white-space: normal; line-height: 1.4; }
+  .app-shell[data-active-page="insertion"] .insertion-clean-pre { font-size: 12px !important; line-height: 1.7 !important; }
+  .app-shell[data-active-page="insertion"] .insertion-clean-actions { flex-wrap: wrap; gap: 8px; }
+  .app-shell[data-active-page="washing"] .theme-wash-docx-export { padding: 12px; min-width: 0; }
+  .app-shell[data-active-page="washing"] .theme-wash-docx-export table { min-width: 0; width: 100%; display: block; }
+  .app-shell[data-active-page="washing"] .theme-wash-docx-export thead { display: none; }
+  .app-shell[data-active-page="washing"] .theme-wash-docx-export tbody { display: grid; gap: 12px; padding: 10px; }
+  .app-shell[data-active-page="washing"] .theme-wash-docx-export tr { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); padding: 10px; border: 1px solid var(--req-mobile-line); border-radius: 12px; }
+  .app-shell[data-active-page="washing"] .theme-wash-docx-export td { display: flex; flex-direction: column; gap: 5px; min-width: 0; white-space: normal; overflow-wrap: anywhere; text-align: left; padding: 8px; }
+  .app-shell[data-active-page="washing"] .theme-wash-docx-export td::before { color: var(--req-mobile-muted); font-size: 10px; }
+  .app-shell[data-active-page="washing"] .theme-wash-docx-export td:nth-child(1)::before { content: "Train"; }
+  .app-shell[data-active-page="washing"] .theme-wash-docx-export td:nth-child(2)::before { content: "Description"; }
+  .app-shell[data-active-page="washing"] .theme-wash-docx-export td:nth-child(3)::before { content: "HVAC"; }
+  .app-shell[data-active-page="washing"] .theme-wash-docx-export td:nth-child(4)::before { content: "Next wash"; }
+  .app-shell[data-active-page="washing"] .theme-wash-docx-export td:nth-child(5)::before { content: "Location"; }
+  .app-shell[data-active-page="washing"] .theme-wash-docx-export td:nth-child(6)::before { content: "Last wash"; }
+
+  /* Shared road-list train number treatment matches Train Request Option B. */
+  html[data-app-theme] .app-shell:is([data-active-page="pst"],[data-active-page="insertion"],[data-active-page="sleep"]) :is(.theme-pst-train-number,.theme-insertion-train-id,.slp-stabling-train-id,.mobile-sleep-empty-number) {
+    display: grid; place-items: center; width: 46px !important; height: 44px !important; min-height: 44px !important;
+    padding: 0 !important; border: 1px solid var(--req-mobile-line) !important; border-radius: 11px !important;
+    background: var(--req-mobile-control) !important; font-size: 21px !important; line-height: 1; text-align: center;
+  }
+  .app-shell[data-active-page="pst"] .theme-pst-card > :not(.theme-pst-train-number) { grid-column: 2; }
+  .app-shell[data-active-page="pst"] .theme-pst-card > .theme-pst-train-number { grid-column: 1; grid-row: 1 / span 3; align-self: center; }
+  .app-shell[data-active-page="pst"] .theme-pst-card > .absolute { display: none; }
+  .app-shell[data-active-page="pst"] .theme-pst-card > .flex.flex-col.mt-1 { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; margin-top: 0; }
+  .app-shell[data-active-page="pst"] .theme-pst-action-button { grid-column: 1; grid-row: 1; }
+  .app-shell[data-active-page="pst"] .theme-pst-prep-button { grid-column: 2; grid-row: 1; }
+  .app-shell[data-active-page="pst"] :is(.theme-pst-ta-input,.theme-pst-prep-panel) { grid-column: 1/-1; grid-row: 2; }
+  .app-shell[data-active-page="pst"] .theme-pst-request-remarks { flex-direction: row; flex-wrap: wrap; justify-content: flex-start; gap: 5px; padding: 0; }
+  .app-shell[data-active-page="pst"] .theme-pst-request-remark { width: auto; max-width: 100%; padding: 4px 7px; border-radius: 6px; font-size: 10px; text-align: left; white-space: normal; }
+  .app-shell[data-active-page="pst"] .theme-pst-time-panel { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; }
+  .app-shell[data-active-page="pst"] .theme-pst-time-panel > div { flex: 1; width: auto; min-width: 80px; flex-wrap: nowrap; justify-content: flex-start; }
+  .app-shell[data-active-page="pst"] .theme-pst-card .theme-pst-time-input { width: 70px; }
+  .app-shell[data-active-page="pst"] .theme-pst-time-value { font-size: 12px; }
+  .app-shell[data-active-page="pst"] .theme-pst-card.is-empty::after { content: "Empty block"; grid-column: 2; grid-row: 1; color: var(--req-mobile-muted); font-size: 11px; text-align: left; }
+  .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.theme-pst-card,.theme-insertion-card).is-search-match { background: color-mix(in srgb, var(--req-mobile-active), transparent 35%) !important; border-radius: 10px; outline: 2px solid #e5b851; outline-offset: -2px; }
+
+  .app-shell[data-active-page="insertion"] .theme-insertion-card { overflow: visible; text-align: left; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card-header { display: contents; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card-header > *,
+  .app-shell[data-active-page="insertion"] .theme-insertion-card > div:not(.theme-insertion-card-header) { grid-column: 2; min-width: 0; margin-top: 0; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card-header > .theme-insertion-train-id { grid-column: 1; grid-row: 1 / span 2; align-self: center; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card-header > div[aria-hidden="true"] { display: none; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card-request-list { flex-direction: row; flex-wrap: wrap !important; justify-content: flex-start; align-items: center; min-height: 0 !important; padding: 0; gap: 5px; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card-request-list > * { width: auto !important; max-width: 100%; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card .theme-stabling-remark { width: auto; max-width: 100%; padding: 4px 7px; border-radius: 6px; font-size: 10px; text-align: left; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card-header > span.block { min-height: 0 !important; font-size: 0; text-align: left; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card-header > span.block::after { content: "No visible remarks"; color: var(--req-mobile-muted); font-size: 11px; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-tracking-footer { height: auto !important; min-height: 36px; width: 100%; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card.has-insert-control,
+  .app-shell[data-active-page="insertion"] .theme-insertion-card.has-refresh-control { padding-right: 34px !important; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card-refresh-trigger { top: 10px; right: 0; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card .theme-insertion-empty-action { grid-column: 1; grid-row: 1; width: 46px; height: 44px; border: 1px solid var(--req-mobile-line); border-radius: 11px; background: var(--req-mobile-control); }
+  .app-shell[data-active-page="insertion"] .theme-insertion-empty-action > span:last-child { display: none; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-empty-action-icon { border: 0; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card.is-empty::after { content: "Empty block"; display: block; position: static; width: auto; opacity: 1; grid-column: 2; grid-row: 1; color: var(--req-mobile-muted); font-size: 11px; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card.is-expired > div:first-child { grid-column: 1; grid-row: 1 / span 2; display: grid; place-items: center; width: 46px; height: 44px; border: 1px solid var(--req-mobile-line); border-radius: 11px; background: var(--req-mobile-control); font-size: 21px !important; }
+  .app-shell[data-active-page="insertion"] .theme-insertion-card.is-expired > :not(div:first-child) { grid-column: 2; }
+
+  .app-shell[data-active-page="sleep"] .mobile-sleep-empty-number { margin-left: 2px; }
+  .app-shell[data-active-page="sleep"] .mobile-sleep-empty-label { display: block; padding-left: 12px; color: var(--req-mobile-muted); font-size: 11px; }
+  .app-shell[data-active-page="sleep"] .slp-stabling-train-card[aria-pressed="true"] { background: color-mix(in srgb, var(--req-mobile-active), transparent 35%) !important; outline: 2px solid #a78bfa; outline-offset: -2px; border-radius: 10px; }
+  .app-shell[data-active-page="sleep"] .slp-stabling-train-card > svg { top: 8px; right: 8px; }
+  .app-shell[data-active-page="sleep"] .slp-stabling-train-clear { top: 50%; bottom: auto; left: auto; right: 2px; transform: translateY(-50%); width: 30px; height: 32px; min-height: 32px; }
+
+  /* Beat desktop status-card theme layers only inside the mobile app root.
+     Status remains visible in each row's coloured remarks and controls. */
+  html[data-app-theme] #root .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.theme-pst-card,.theme-insertion-card) {
+    background: transparent !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important;
+  }
+  html[data-app-theme] #root .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.theme-pst-card,.theme-insertion-card).is-search-match { background: color-mix(in srgb, var(--req-mobile-active), transparent 35%) !important; }
+  html[data-app-theme] #root .app-shell:is([data-active-page="pst"],[data-active-page="insertion"]) :is(.theme-pst-grid-cell,.theme-insertion-grid-cell) { background: transparent !important; border: 0 !important; border-bottom: 1px solid color-mix(in srgb, var(--req-mobile-line), transparent 50%) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="insertion"] .theme-insertion-card-header > .absolute { top: auto; bottom: 0; left: 14px; }
+  html[data-app-theme] #root .app-shell[data-active-page="insertion"] .theme-insertion-card.is-empty::after { display: block; opacity: 1; }
+  html[data-app-theme] #root .app-shell[data-active-page="sleep"] .slp-stabling-train-card { box-shadow: none; }
+}
