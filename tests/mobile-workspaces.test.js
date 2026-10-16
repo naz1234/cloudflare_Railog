@@ -51,6 +51,75 @@ test("PST, Insertion and Sleep use the same road-list geometry as Train Request"
   }
 });
 
+function pstPhoneDeclarations(suffix) {
+  const stylesheet = postcss.parse(readFileSync(new URL("../src/mobileDensity.css", import.meta.url), "utf8"));
+  let result;
+  stylesheet.walkRules((rule) => {
+    if (!rule.selector.includes('[data-active-page="pst"]') || !rule.selector.endsWith(suffix)) return;
+    assert.equal(rule.parent.params, "(max-width: 767px)");
+    assert.ok(rule.selector.includes("#root"));
+    result = Object.fromEntries(rule.nodes.filter(node => node.type === "decl").map(({ prop, value }) => [prop, value]));
+  });
+  assert.ok(result, `Missing PST-only phone rule: ${suffix}`);
+  return result;
+}
+
+test("PST phone cards put block, train and PST status together in a compact header", () => {
+  const cell = pstPhoneDeclarations(" .theme-pst-grid-cell");
+  assert.equal(cell.display, "block");
+  assert.equal(pstPhoneDeclarations(" .theme-pst-grid-cell::before").display, "none");
+  const card = pstPhoneDeclarations(" .theme-pst-card");
+  assert.equal(card["grid-template-columns"], "36px minmax(0,1fr) 100px");
+  assert.equal(card["min-width"], "0");
+  assert.equal(card.background, "var(--req-mobile-panel)");
+  assert.equal(card["border-left"], "3px solid var(--pst-mobile-accent)");
+  const label = pstPhoneDeclarations(" .theme-pst-card > .theme-pst-mobile-block");
+  assert.equal(label["grid-column"], "2");
+  assert.equal(label["grid-row"], "1");
+  assert.equal(label["white-space"], "nowrap");
+  assert.equal(pstPhoneDeclarations(" .theme-pst-action-button")["grid-row"], "1");
+  assert.equal(pstPhoneDeclarations(" .theme-pst-card.is-pst-done")["--pst-mobile-accent"], "#34b98c");
+  assert.equal(pstPhoneDeclarations(" .theme-pst-card.is-pst-confirming")["--pst-mobile-accent"], "#e5ac45");
+  assert.equal(pstPhoneDeclarations(" .theme-pst-card.is-prep-done")["--pst-mobile-accent"], "#60a5fa");
+});
+
+test("PST phone time fields use a simple inline row with TA beside the Prep action", () => {
+  const timePanel = pstPhoneDeclarations(" .theme-pst-time-panel");
+  assert.equal(timePanel["grid-column"], "1 / -1");
+  assert.equal(timePanel.background, "transparent");
+  assert.equal(timePanel.border, "0");
+  const timeGroup = pstPhoneDeclarations(" .theme-pst-time-panel > div");
+  assert.equal(timeGroup.flex, "1 1 0");
+  assert.equal(timeGroup["min-width"], "0");
+  const timeInput = pstPhoneDeclarations(" .theme-pst-card .theme-pst-time-input");
+  assert.equal(timeInput.width, "68px");
+  assert.equal(timeInput["min-height"], "36px");
+  assert.equal(pstPhoneDeclarations(" .theme-pst-card > .theme-pst-controls").display, "contents");
+  const ta = pstPhoneDeclarations(" .theme-pst-ta-input");
+  const prep = pstPhoneDeclarations(" .theme-pst-prep-button");
+  const completion = pstPhoneDeclarations(" .theme-pst-prep-panel");
+  assert.equal(ta["grid-column"], "1 / span 2");
+  assert.equal(prep["grid-column"], "3");
+  assert.equal(ta["grid-row"], prep["grid-row"]);
+  assert.equal(completion["grid-row"], prep["grid-row"]);
+  assert.equal(completion["grid-column"], ta["grid-column"]);
+  const idle = pstPhoneDeclarations(":is(.theme-pst-action-button,.theme-pst-prep-button).is-idle");
+  assert.equal(idle.color, "var(--req-mobile-text)");
+  const placeholder = pstPhoneDeclarations(" .theme-pst-ta-input::placeholder");
+  assert.equal(placeholder.color, "var(--req-mobile-muted)");
+  assert.equal(placeholder.opacity, "1");
+});
+
+test("PST phone clear tooltips are anchored inward so hidden bubbles do not widen the page", () => {
+  const first = pstPhoneDeclarations(" .mobile-clear-actions > .removal-summary-tooltip-trigger > span");
+  assert.equal(first.left, "0");
+  assert.equal(first.transform, "none");
+  assert.equal(first["max-width"], "min(280px,calc(100vw - 40px))");
+  const second = pstPhoneDeclarations(" .mobile-clear-actions > .removal-summary-tooltip-trigger:nth-child(2) > span");
+  assert.equal(second.left, "auto");
+  assert.equal(second.right, "0");
+});
+
 const require = createRequire(import.meta.url);
 const componentModule = { exports: {} };
 const source = readFileSync(new URL("../src/components/ReqMobileNavigation.jsx", import.meta.url), "utf8");

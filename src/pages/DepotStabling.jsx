@@ -5097,7 +5097,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
     "aria-keyshortcuts": "ArrowLeft ArrowRight ArrowUp ArrowDown",
   });
   return (
-    <td className="theme-pst-grid-cell p-1.5 align-top" style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: pstRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
+    <td className="theme-pst-grid-cell p-1.5 align-top" data-mobile-block-label={`Block ${bi + 1}`} style={{ backgroundColor: "#071828", borderLeft: "1px solid #1a3a56", borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: pstRowLine, borderBottomRightRadius: isWestBottomRightCorner ? 12 : undefined, borderBottomLeftRadius: isEastBottomLeftCorner ? 12 : undefined }}>
       <div className={`theme-pst-card ${isSearchMatch ? "is-search-match" : ""} relative flex flex-col items-center justify-start gap-1 rounded-xl ${!key ? "is-empty" : isPstDone ? "is-pst-done" : isPstConfirming ? "is-pst-confirming" : isPrepDone ? "is-prep-done" : "is-normal"}`} style={{ minHeight: isPrepDone ? 156 : (isPstDone || isPstConfirming) ? 128 : pstEstimateTime ? 102 : 90, padding: "7px 5px", background: pstCardBg, border: pstCardBorder, boxShadow: key ? "0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)" : undefined }}>
         {key && (
           <div className="absolute top-1 right-1.5 opacity-20 pointer-events-none">
@@ -5116,6 +5116,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
             onBlur={() => setIsTrainIdEditing(false)}
             onChange={(e) => onEditableTrainIdChange?.(road, bi, e.target.value)}
             placeholder="Train ID"
+            aria-label={`${road} Block ${bi + 1} train ID`}
             className="theme-pst-train-number h-7 w-full border-0 border-b bg-transparent px-1 text-center text-[15px] font-black uppercase leading-none outline-none placeholder:text-[10px] placeholder:text-[#47637a]"
             style={{
               borderBottomColor: key ? "#1e4d72" : "#1a3a56",
@@ -5129,6 +5130,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
             {displayVal || "—"}
           </div>
         )}
+        <span className="theme-pst-mobile-block req-mobile-only">{`Block ${bi + 1}`}</span>
         {pstRemarkItems.length > 0 && (
           <div className="theme-pst-request-remarks flex w-full flex-col items-center gap-0.5 px-0.5">
             {pstRemarkItems.map(({ label, labelKey, style }) => (
@@ -5178,7 +5180,7 @@ function PSTCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLastBlock
           </div>
         )}
         {key && (
-          <div className="flex flex-col gap-1 w-full mt-1">
+          <div className="theme-pst-controls flex flex-col gap-1 w-full mt-1">
             <button type="button" onClick={() => onPSTTick(road, bi, key)} className={`theme-pst-action-button ${isPstDone ? "is-done" : isPstConfirming ? "is-confirming" : "is-idle"} w-full text-[9px] font-bold rounded-lg px-1 py-0.5 border transition-all leading-tight ${isPstDone ? "bg-emerald-900/60 border-emerald-600 text-emerald-300" : isPstConfirming ? "bg-amber-900/60 border-amber-600 text-amber-300" : "bg-[#0a1e2e] border-[#1e4060] text-[#5a7a9a] hover:border-blue-500 hover:text-blue-300"}`}>
               {isPstDone ? "✓ PST" : isPstConfirming ? "⏳PST" : "PST"}
             </button>
@@ -5387,7 +5389,7 @@ function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoSt
             type="text"
             value={trainSearch}
             onChange={(event) => onTrainSearchChange?.(event.target.value)}
-            placeholder="Search train ID across both PST / Train Prep depots…"
+            placeholder="Search train ID…"
             aria-label={`${sectionDepotLabel} PST / Train Prep: search train ID across both depots`}
             className="theme-stabling-search-input min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none placeholder:font-normal"
             style={{
