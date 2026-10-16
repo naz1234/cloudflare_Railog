@@ -21,6 +21,16 @@
 
   /* Road lists share smaller number boxes, row gaps and road headings. */
   html[data-app-theme] #root .app-shell[data-active-page] :is(.theme-stabling-grid-cell,.theme-pst-grid-cell,.theme-insertion-grid-cell,.mobile-sleep-cell) { grid-template-columns: 32px minmax(0,1fr); }
+  /* Keep the complete BLOCK label clear of the number box in both depot lists. */
+  html[data-app-theme] #root .app-shell[data-active-page="stabling"] .theme-stabling-grid-cell {
+    grid-template-columns: minmax(44px,max-content) minmax(0,1fr); column-gap: 8px;
+  }
+  #root .app-shell[data-active-page="stabling"] .theme-stabling-grid-cell::before { white-space: nowrap; }
+  html[data-app-theme] #root .app-shell[data-active-page="stabling"] .theme-stabling-train-card { min-width: 0; }
+  #root .app-shell[data-active-page="stabling"] .theme-stabling-train-card > div.flex.w-full { min-width: 0; }
+  #root .app-shell[data-active-page="stabling"] :is(.theme-stabling-train-card > span.block,.theme-stabling-remark) {
+    min-width: 0; white-space: normal; overflow-wrap: anywhere;
+  }
   html[data-app-theme] #root .app-shell[data-active-page] :is(.theme-stabling-train-card,.theme-pst-card,.theme-insertion-card,.slp-stabling-train-card) {
     grid-template-columns: 38px minmax(0,1fr); gap: 3px 8px;
     min-height: var(--mobile-row-height) !important; padding: 6px 2px !important;
