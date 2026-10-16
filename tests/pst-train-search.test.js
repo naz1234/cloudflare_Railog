@@ -95,7 +95,7 @@ test("PST log-only trains do not appear as current train locations", () => {
 });
 
 test("PST search is above the grid with an accessible label, clear button, and result status", () => {
-  assert.match(section, /placeholder="Search train ID across both PST \/ Train Prep depots…"/);
+  assert.match(section, /placeholder="Search train ID…"/);
   assert.match(section, /aria-label=\{`\$\{sectionDepotLabel\} PST \/ Train Prep: search train ID across both depots`\}/);
   assert.match(section, /aria-label=\{`Clear \$\{sectionDepotLabel\} PST \/ Train Prep train search`\}/);
   assert.match(section, /role="status" aria-live="polite"/);
@@ -180,4 +180,19 @@ test("rendered PST empty and not-found searches have no highlighted cards", () =
   assert.match(missing, /T99 not found in either PST \/ Train Prep depot/);
   assert.match(missing, /title="Clear search"/);
   assert.doesNotMatch(missing, /is-search-match/);
+});
+
+test("PST cells expose actual block labels and accessible editable train IDs", () => {
+  const html = renderSection("", { stablingEditable: true });
+  assert.deepEqual([...html.matchAll(/data-mobile-block-label="([^"]+)"/g)].map(match => match[1]), ["Block 3", "Block 2", "Block 1"]);
+  assert.match(html, /aria-label="WD-ST1 Block 1 train ID"/);
+  assert.match(html, /aria-label="WD-ST1 Block 2 train ID"/);
+  assert.match(html, /theme-pst-controls flex flex-col/);
+  assert.deepEqual([...html.matchAll(/class="theme-pst-mobile-block req-mobile-only">([^<]+)</g)].map(match => match[1]), ["Block 3", "Block 2", "Block 1"]);
+});
+
+test("PST search uses a phone-sized hint while retaining its full cross-depot accessible label", () => {
+  const html = renderSection("");
+  assert.match(html, /placeholder="Search train ID…"/);
+  assert.match(html, /aria-label="West Depot PST \/ Train Prep: search train ID across both depots"/);
 });
