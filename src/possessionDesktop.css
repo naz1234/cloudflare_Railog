@@ -4,17 +4,34 @@
     --pss-review-panel: var(--pss-depot-card, #0b1f33);
     --pss-review-control: #102b43; --pss-review-line: #294e68;
     --pss-review-text: #e6f1fb; --pss-review-muted: #8aaec5;
+    --pss-header-accent: #08d9ef; --pss-header-tab-text: #85b6e6;
+    --pss-header-surface: linear-gradient(115deg, #062535, #0c223a);
+    --pss-header-active: linear-gradient(115deg, #06475b, #07344b);
+    --pss-header-active-text: #f0fbff; --pss-header-glow: #00d9ff26;
   }
   html[data-app-theme="light"] #root .app-shell[data-active-page="possession"] {
     --pss-review-panel: #fff; --pss-review-control: #f0f5fa;
     --pss-review-line: #c9d8e6; --pss-review-text: #142e45; --pss-review-muted: #587087;
+    --pss-header-accent: #0891b2; --pss-header-tab-text: #4c7094;
+    --pss-header-surface: linear-gradient(115deg, #f3fbff, #e7f1fa);
+    --pss-header-active: linear-gradient(115deg, #d0f6fb, #e6f6ff);
+    --pss-header-active-text: #123e58; --pss-header-glow: #0891b21a;
   }
   #root .app-shell[data-active-page="possession"] .pss-tab-workspace { width: 100%; max-width: 1120px; margin-inline: auto; }
   #root .app-shell[data-active-page="possession"] .pss-tab-workspace > :not([hidden]) ~ :not([hidden]) { margin-top: 12px; }
-  #root .app-shell[data-active-page="possession"] [aria-label="PSS sections"] { gap: 5px; padding: 4px; }
-  #root .app-shell[data-active-page="possession"] [aria-label="PSS sections"] button { min-height: 32px; padding: 6px 10px; font-size: 11px; letter-spacing: .06em; }
+  #root .app-shell[data-active-page="possession"] [aria-label="PSS sections"] { gap: 0; padding: 5px; border-color: color-mix(in srgb, var(--pss-header-accent) 45%, var(--pss-review-line)); border-radius: 15px; background: var(--pss-header-surface); box-shadow: inset 0 1px 0 #70d8ff14, 0 3px 16px var(--pss-header-glow); }
+  #root .app-shell[data-active-page="possession"] [aria-label="PSS sections"] button { position: relative; display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 40px; padding: 7px 12px; border-color: transparent; border-radius: 11px; background: transparent; color: var(--pss-header-tab-text); box-shadow: none; font-size: 12px; letter-spacing: .07em; }
+  #root .app-shell[data-active-page="possession"] [aria-label="PSS sections"] button + button { border-left-color: color-mix(in srgb, var(--pss-review-line), transparent 50%); }
+  #root .app-shell[data-active-page="possession"] [aria-label="PSS sections"] button[aria-selected="true"] { border-color: var(--pss-header-accent); color: var(--pss-header-active-text); background: var(--pss-header-active); box-shadow: inset 0 0 12px var(--pss-header-glow), 0 0 12px var(--pss-header-glow); }
+  #root .app-shell[data-active-page="possession"] [aria-label="PSS sections"] button[aria-selected="true"]::after { content: ""; position: absolute; right: 34%; bottom: -1px; left: 34%; height: 3px; border-radius: 4px 4px 0 0; background: var(--pss-header-accent); box-shadow: 0 0 9px var(--pss-header-glow); }
+  #root .app-shell[data-active-page="possession"] .pss-depot-tab-icon { display: block; width: 21px; height: 21px; flex: 0 0 auto; }
+  #root .app-shell[data-active-page="possession"] [aria-selected="true"] .pss-depot-tab-icon { color: var(--pss-header-accent); }
   #root .app-shell[data-active-page="possession"] .theme-possession-depot-workspace > section > .flex { margin-bottom: 8px; }
   #root .app-shell[data-active-page="possession"] .theme-possession-depot-workspace > section > .flex h1 { font-size: 12px; letter-spacing: .06em; }
+  #root .app-shell[data-active-page="possession"] .theme-possession-depot-workspace .pss-section-title { gap: 10px; margin-bottom: 12px; }
+  #root .app-shell[data-active-page="possession"] .theme-possession-depot-workspace .pss-section-title > span { width: 26px; height: 26px; border-color: #8561ee; color: #eee9ff; background: linear-gradient(135deg, #44217d, #151d56); box-shadow: inset 0 0 10px #8b5cf633; font-size: 13px; }
+  #root .app-shell[data-active-page="possession"] .theme-possession-depot-workspace .pss-section-title h1 { color: var(--pss-review-text); font-size: 15px; line-height: 1.3; letter-spacing: .035em; }
+  #root .app-shell[data-active-page="possession"] .pss-section-title > div { background: linear-gradient(90deg, #5495c6, transparent); }
   #root .app-shell[data-active-page="possession"] .theme-possession-depot-workspace.space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 16px; }
   #root .app-shell[data-active-page="possession"] .pss-epaf-depot-picker { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--pss-review-line); border-radius: 10px; background: var(--pss-review-panel); }
   #root .app-shell[data-active-page="possession"] .pss-epaf-depot-picker h2 { color: var(--pss-review-text); font-size: 14px; font-weight: 700; }
@@ -24,31 +41,39 @@
   #root .app-shell[data-active-page="possession"] .pss-epaf-depot-picker select { width: 100%; min-height: 30px; padding: 5px 8px; border: 1px solid var(--pss-review-line); border-radius: 8px; color: var(--pss-review-text); background: var(--pss-review-control); font-size: 12px; }
   #root .app-shell[data-active-page="possession"] :is(.pss-access-workspace,.pss-epaf-workspace,.pss-sweeping-workspace) { gap: 10px; }
   #root .app-shell[data-active-page="possession"] .pss-access-workspace { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
-  #root .app-shell[data-active-page="possession"] .pss-dashboard { display: grid; grid-column: 1/-1; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin: 0; }
-  #root .app-shell[data-active-page="possession"] .pss-dashboard > div { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; min-width: 0; padding: 10px 12px; border: 1px solid var(--pss-review-line); border-top: 3px solid var(--pss-stat-accent); border-radius: 10px; background: var(--pss-review-panel); }
-  #root .app-shell[data-active-page="possession"] .pss-dashboard dt { color: var(--pss-review-text); font-size: 12px; font-weight: 650; }
+  #root .app-shell[data-active-page="possession"] .pss-dashboard { display: grid; grid-column: 1/-1; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin: 0; }
+  #root .app-shell[data-active-page="possession"] .pss-dashboard > div { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 2px 10px; min-width: 0; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--pss-stat-accent) 70%, var(--pss-review-line)); border-radius: 12px; background: linear-gradient(115deg, color-mix(in srgb, var(--pss-stat-accent) 9%, var(--pss-review-panel)), var(--pss-review-panel)); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--pss-stat-accent) 25%, transparent), 0 0 13px color-mix(in srgb, var(--pss-stat-accent) 9%, transparent); }
+  #root .app-shell[data-active-page="possession"] .pss-dashboard dt { position: relative; min-width: 0; padding-left: 44px; color: var(--pss-review-text); font-size: 12px; font-weight: 700; }
+  #root .app-shell[data-active-page="possession"] .pss-stat-icon { position: absolute; top: 0; left: 0; display: block; width: 34px; height: 34px; padding: 8px; border: 1px solid color-mix(in srgb, var(--pss-stat-accent) 45%, transparent); border-radius: 9px; color: var(--pss-stat-accent); background: color-mix(in srgb, var(--pss-stat-accent) 14%, var(--pss-review-panel)); }
   #root .app-shell[data-active-page="possession"] .pss-dashboard dd { grid-column: 2; grid-row: 1/span 2; margin: 0; color: var(--pss-stat-accent); font-size: 24px; font-weight: 750; line-height: 1.2; font-variant-numeric: tabular-nums; }
-  #root .app-shell[data-active-page="possession"] .pss-dashboard span { color: var(--pss-review-muted); font-size: 11px; }
+  #root .app-shell[data-active-page="possession"] .pss-dashboard span { padding-left: 44px; color: var(--pss-review-muted); font-size: 11px; }
   #root .app-shell[data-active-page="possession"] .pss-dashboard .is-issued { --pss-stat-accent: #f5b951; }
   #root .app-shell[data-active-page="possession"] .pss-dashboard .is-pics { --pss-stat-accent: #71baff; }
   #root .app-shell[data-active-page="possession"] .pss-dashboard .is-handback { --pss-stat-accent: #52d5a5; }
+  #root .app-shell[data-active-page="possession"] .pss-dashboard .is-waiting-handback { --pss-stat-accent: #c39bff; }
   html[data-app-theme="light"] #root .app-shell[data-active-page="possession"] .pss-dashboard .is-issued { --pss-stat-accent: #9a5a08; }
   html[data-app-theme="light"] #root .app-shell[data-active-page="possession"] .pss-dashboard .is-pics { --pss-stat-accent: #2468b2; }
   html[data-app-theme="light"] #root .app-shell[data-active-page="possession"] .pss-dashboard .is-handback { --pss-stat-accent: #137956; }
+  html[data-app-theme="light"] #root .app-shell[data-active-page="possession"] .pss-dashboard .is-waiting-handback { --pss-stat-accent: #7544ad; }
 
-  #root .app-shell[data-active-page="possession"] .pss-access-controls { display: grid; grid-column: 1/-1; grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: end; gap: 8px 12px; min-width: 0; padding: 10px 12px; border: 1px solid var(--pss-review-line); border-radius: 10px; background: var(--pss-review-panel); }
+  #root .app-shell[data-active-page="possession"] .pss-access-controls { display: grid; grid-column: 1/-1; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); align-items: end; gap: 10px 12px; min-width: 0; padding: 12px; border: 1px solid color-mix(in srgb, #4a9bd2 60%, var(--pss-review-line)); border-radius: 12px; background: var(--pss-header-surface); box-shadow: inset 0 1px 0 #80c7ff12; }
   #root .app-shell[data-active-page="possession"] .pss-access-controls-heading { display: flex; grid-column: 1/-1; align-items: center; justify-content: space-between; gap: 12px; }
+  #root .app-shell[data-active-page="possession"] .pss-access-controls-heading > div { display: grid; grid-template-columns: 24px minmax(0,1fr); align-items: center; column-gap: 9px; }
+  #root .app-shell[data-active-page="possession"] .pss-controls-icon { display: block; grid-column: 1; grid-row: 1/span 2; width: 22px; height: 22px; color: #8bbded; }
+  #root .app-shell[data-active-page="possession"] .pss-access-controls-heading :is(strong,p) { grid-column: 2; }
   #root .app-shell[data-active-page="possession"] .pss-access-controls-heading strong { color: var(--pss-review-text); font-size: 13px; font-weight: 700; }
   #root .app-shell[data-active-page="possession"] .pss-access-controls-heading p { margin-top: 3px; color: var(--pss-review-muted); font-size: 11px; }
-  #root .app-shell[data-active-page="possession"] .pss-access-controls-heading > span { padding: 3px 7px; border: 1px solid var(--pss-review-line); border-radius: 7px; background: var(--pss-review-control); color: var(--pss-review-text); font-size: 11px; }
+  #root .app-shell[data-active-page="possession"] .pss-access-controls-heading > span { padding: 5px 9px; border: 1px solid #3775a0; border-radius: 9px; background: var(--pss-review-control); color: var(--pss-review-text); font-size: 11px; font-weight: 650; }
   #root .app-shell[data-active-page="possession"] .pss-entry-picker-row { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 8px; min-width: 0; }
   #root .app-shell[data-active-page="possession"] .pss-entry-picker-row label { min-width: 0; }
   #root .app-shell[data-active-page="possession"] .pss-entry-picker-row label > span { display: block; margin-bottom: 3px; color: var(--pss-review-muted); font-size: 10px; }
-  #root .app-shell[data-active-page="possession"] .pss-entry-picker-row select { width: 100%; min-width: 0; height: 32px; padding: 5px 8px; border: 1px solid var(--pss-review-line); border-radius: 8px; background: var(--pss-review-control); color: var(--pss-review-text); font-size: 12px; }
-  #root .app-shell[data-active-page="possession"] .pss-entry-picker-row > button { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 32px; padding: 5px 9px; border: 1px solid var(--pss-depot-accent); border-radius: 8px; background: var(--pss-review-control); color: var(--pss-review-text); font-size: 11px; font-weight: 650; }
-  #root .app-shell[data-active-page="possession"] .pss-desktop-view-switch { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 3px; padding: 3px; border: 1px solid var(--pss-review-line); border-radius: 8px; background: var(--pss-review-control); }
-  #root .app-shell[data-active-page="possession"] .pss-desktop-view-switch button { min-height: 26px; padding: 4px 7px; border: 1px solid transparent; border-radius: 6px; color: var(--pss-review-muted); font-size: 11px; font-weight: 600; }
-  #root .app-shell[data-active-page="possession"] .pss-desktop-view-switch button[aria-pressed="true"] { border-color: var(--pss-depot-accent); color: var(--pss-review-text); background: var(--pss-review-panel); }
+  #root .app-shell[data-active-page="possession"] .pss-entry-picker-row select { width: 100%; min-width: 0; height: 32px; padding: 5px 8px; border: 1px solid var(--pss-header-accent); border-radius: 8px; background: var(--pss-review-control); color: var(--pss-review-text); font-size: 12px; }
+  #root .app-shell[data-active-page="possession"] .pss-entry-picker-row > button { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 32px; padding: 5px 9px; border: 1px solid var(--pss-header-accent); border-radius: 8px; background: var(--pss-header-surface); color: var(--pss-review-text); font-size: 11px; font-weight: 650; }
+  #root .app-shell[data-active-page="possession"] .pss-entry-picker-row > button svg { color: var(--pss-header-accent); }
+  #root .app-shell[data-active-page="possession"] .pss-desktop-view-switch { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 5px; padding: 0; border: 0; background: transparent; }
+  #root .app-shell[data-active-page="possession"] .pss-desktop-view-switch button { display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; min-height: 32px; padding: 5px 7px; border: 1px solid var(--pss-review-line); border-radius: 8px; color: var(--pss-review-text); background: var(--pss-review-control); font-size: 11px; font-weight: 600; }
+  #root .app-shell[data-active-page="possession"] .pss-desktop-view-switch button svg { flex: 0 0 auto; }
+  #root .app-shell[data-active-page="possession"] .pss-desktop-view-switch button[aria-pressed="true"] { border-color: #7eeaff; color: #fff; background: linear-gradient(135deg, #0876b9, #0064ce); box-shadow: inset 0 1px 0 #d6ffff80, 0 0 12px #00baff35; }
   #root .app-shell[data-active-page="possession"] .pss-access-view-switch,
   #root .app-shell[data-active-page="possession"] .pss-add-pic-footer,
   #root .app-shell[data-active-page="possession"] .pss-access-workspace [data-mobile-entry-active="false"],
@@ -78,5 +103,5 @@
   #root .app-shell[data-active-page="possession"] [data-possession-outputs] pre { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
   html[data-app-theme] #root .app-shell[data-active-page="possession"] .pss-copy-action[data-copy-state="copied"] { border-color: #34d399 !important; background: #145943 !important; color: #d1fae5 !important; }
   #root .app-shell[data-active-page="possession"] .pss-mobile-empty { padding: 16px 8px; color: var(--pss-review-muted); font-size: 12px; line-height: 1.5; text-align: center; }
-  #root .app-shell[data-active-page="possession"] :is(.pss-entry-picker-row,.pss-desktop-view-switch) :is(button,select):focus-visible { outline: 2px solid var(--pss-depot-accent); outline-offset: 3px; }
+  #root .app-shell[data-active-page="possession"] :is([aria-label="PSS sections"],.pss-entry-picker-row,.pss-desktop-view-switch) :is(button,select):focus-visible { outline: 2px solid var(--pss-header-accent); outline-offset: 3px; }
 }
