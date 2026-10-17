@@ -4,21 +4,34 @@ import fs from "node:fs";
 
 const source = fs.readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
 
-test("PSS exposes accessible West and East depot tabs", () => {
-  assert.match(source, /role="tablist" aria-label="PSS depot"/);
+test("PSS exposes accessible West, East and dedicated EPAF tabs", () => {
+  assert.match(source, /role="tablist" aria-label="PSS sections"/);
   assert.match(source, /const depots = \["west", "east"\]/);
+  assert.match(source, /\[\.\.\.depots, "epaf"\]\.map/);
   assert.match(source, /role="tab"/);
   assert.match(source, /aria-selected=\{selected\}/);
   assert.match(source, /role="tabpanel"/);
   assert.match(source, /hidden=\{activeDepot !== depot\}/);
+  assert.match(source, /id="possession-epaf-panel" role="tabpanel" aria-labelledby="possession-epaf-tab" hidden=\{activeDepot !== "epaf"\}/);
 });
 
-test("each PSS depot gets a complete workspace", () => {
-  assert.match(source, /function PossessionDepotWorkspace\(\{ depot \}\)/);
-  assert.match(source, /<PossessionLog depot=\{depot\} \/>/);
-  assert.match(source, /<EPAFLog depot=\{depot\} \/>/);
+test("depot workspaces contain Access and Sweeping without EPAF or the workspace banner", () => {
+  const workspace = source.slice(source.indexOf("function PossessionDepotWorkspace("), source.indexOf("function PossessionEpafWorkspace("));
+  assert.match(workspace, /<PossessionLog depot=\{depot\} \/>/);
+  assert.match(workspace, /<SweepingLog depot=\{depot\} \/>/);
+  assert.match(workspace, /data-possession-section="access"/);
+  assert.match(workspace, /data-possession-section="sweeping"/);
+  assert.doesNotMatch(workspace, /EPAFLog|Active PSS workspace|theme-possession-depot-banner/);
   assert.match(source, /<SCSecurityMessage key=\{entry\.entryId\} depot=\{depot\} entry=\{entry\} index=\{i\}/);
-  assert.match(source, /<SweepingLog depot=\{depot\} \/>/);
+});
+
+test("dedicated EPAF tab keeps both depot forms mounted and separately selected", () => {
+  const workspace = source.slice(source.indexOf("function PossessionEpafWorkspace("), source.indexOf("function PossessionTabContent("));
+  assert.match(workspace, /aria-label="EPAF depot"/);
+  assert.match(workspace, /\["west", "east"\]\.map/);
+  assert.match(workspace, /hidden=\{epaFDepot !== depot\}/);
+  assert.match(workspace, /<EPAFLog depot=\{depot\} \/>/);
+  assert.match(workspace, /data-possession-depot=\{depot\}/);
 });
 
 test("East PSS storage and live sync are isolated while West keeps legacy keys", () => {

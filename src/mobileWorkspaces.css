@@ -115,9 +115,8 @@
   .app-shell[data-active-page="possession"] .theme-possession-depot-workspace :is(.px-5,.px-4) { padding-inline: 12px; }
   .app-shell[data-active-page="possession"] .theme-possession-divider { display: none; }
   .app-shell[data-active-page="possession"] .theme-possession-depot-workspace > section { margin-top: 16px; }
-  .app-shell[data-active-page="possession"][data-mobile-workspace-view="access"] .theme-possession-depot-workspace > section:not(:nth-of-type(1)),
-  .app-shell[data-active-page="possession"][data-mobile-workspace-view="epaf"] .theme-possession-depot-workspace > section:not(:nth-of-type(2)),
-  .app-shell[data-active-page="possession"][data-mobile-workspace-view="sweeping"] .theme-possession-depot-workspace > section:not(:nth-of-type(3)) { display: none; }
+  .app-shell[data-active-page="possession"][data-mobile-workspace-view="access"] [data-possession-section="sweeping"],
+  .app-shell[data-active-page="possession"][data-mobile-workspace-view="sweeping"] [data-possession-section="access"] { display: none; }
 
   /* ROS: controller roles become a vertical list, schedules fit the phone. */
   .app-shell[data-active-page="roster"] main > div > div { padding-inline: 0; }

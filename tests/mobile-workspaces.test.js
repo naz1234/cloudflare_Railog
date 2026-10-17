@@ -9,7 +9,7 @@ import * as icons from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 test("other mobile workspaces cannot change any laptop styles", () => {
-  const css = ["mobileWorkspaces.css", "mobileActions.css", "mobileDensity.css"]
+  const css = ["mobileWorkspaces.css", "mobileActions.css", "mobileDensity.css", "possessionMobile.css"]
     .map((file) => readFileSync(new URL(`../src/${file}`, import.meta.url), "utf8"))
     .join("\n");
   const stylesheet = postcss.parse(css);
@@ -20,6 +20,19 @@ test("other mobile workspaces cannot change any laptop styles", () => {
     assert.equal(rule.parent.name, "media");
     assert.equal(rule.parent.params, "(max-width: 767px)");
     rule.selectors.forEach((selector) => assert.ok(selector.includes(".app-shell"), selector));
+  });
+  assert.ok(count > 0);
+});
+
+test("the PSS desktop preview cannot alter mobile or other desktop workspaces", () => {
+  const css = readFileSync(new URL("../src/possessionDesktop.css", import.meta.url), "utf8");
+  const stylesheet = postcss.parse(css);
+  let count = 0;
+  stylesheet.walkRules((rule) => {
+    count++;
+    assert.equal(rule.parent.name, "media");
+    assert.equal(rule.parent.params, "(min-width: 768px)");
+    rule.selectors.forEach((selector) => assert.ok(selector.includes('.app-shell[data-active-page="possession"]'), selector));
   });
   assert.ok(count > 0);
 });
@@ -132,7 +145,7 @@ for (const [page, title, activeView, expectedTabs] of [
   ["pst", "Train Preparation", "trains", ["Trains", "Logs", "Excel / Remarks"]],
   ["insertion", "Insertion", "trains", ["Trains", "Timetable", "Logs", "Requests"]],
   ["washing", "Washing", "import", ["Excel import", "Manual wash", "Report"]],
-  ["possession", "Possession", "access", ["Access", "EPAF", "Sweeping"]],
+  ["possession", "Possession", "access", ["Access", "Sweeping"]],
   ["roster", "Roster", "roster", ["Daily roster", "Staff schedule"]],
   ["sleep", "Sleep Mode", "trains", ["Select trains", "Logs / Excel"]],
 ]) {

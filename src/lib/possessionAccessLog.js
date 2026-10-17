@@ -60,6 +60,39 @@ function cleanAccessNumber(raw) {
   return text(raw).replace(/,/g, "").trim().replace(/^(?:Access\s*)?#\s*/i, "");
 }
 
+export function buildPossessionDashboard(entries = [], validTime = (value) => /^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(text(value).trim())) {
+  const pics = new Set();
+  const issued = new Map();
+  const namedIds = new Map();
+  const records = (Array.isArray(entries) ? entries : []).filter((entry) => entry && typeof entry === "object").map((entry) => ({
+    entry,
+    picId: text(entry.picId).trim().replace(/\s+/g, "").toUpperCase(),
+    picName: text(entry.picName).trim().replace(/\s+/g, " ").toUpperCase(),
+  }));
+  for (const { picId, picName } of records) {
+    if (!picId || !picName) continue;
+    if (!namedIds.has(picName)) namedIds.set(picName, new Set());
+    namedIds.get(picName).add(picId);
+  }
+  for (const { entry, picId, picName } of records) {
+    const knownIds = namedIds.get(picName);
+    const identity = picId || (knownIds?.size === 1 ? [...knownIds][0] : "");
+    if (identity || picName) pics.add(identity ? `id:${identity}` : `name:${picName}`);
+    if (!validTime(entry.issueTime)) continue;
+    const handedBack = Boolean(validTime(entry.handbackTime));
+    for (const detail of getPossessionAccessDetails(entry)) {
+      for (const number of getPossessionAccessDetails({ accessNo: detail.accessNo })) {
+        const key = cleanAccessNumber(number.accessNo).replace(/\s+/g, "").toUpperCase();
+        if (!key) continue;
+        // A repeated permit is counted once, and stays open while any issued
+        // record for that number still has no valid handback time.
+        issued.set(key, (issued.get(key) ?? true) && handedBack);
+      }
+    }
+  }
+  return { issued: issued.size, pics: pics.size, handedBack: [...issued.values()].filter(Boolean).length };
+}
+
 // Shared details always come from the corresponding access entry, never the old
 // separately saved security form. Only its phone/location/gate remain manual.
 export function buildPossessionSecurityMessage(entry, details = getPossessionSecurityDetails(entry)) {

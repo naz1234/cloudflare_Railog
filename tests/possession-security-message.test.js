@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import * as icons from "lucide-react";
 import ts from "typescript";
 import {
-  buildPossessionEntryOutput, buildPossessionSecurityMessage,
+  buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage,
   getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry,
 } from "../src/lib/possessionAccessLog.js";
 
@@ -71,12 +71,12 @@ function renderDepot(depot, entries, savedSecurity) {
     [`possessionLog_v2${suffix}`]: JSON.stringify(entries),
     [`scSecurityMessage_v1${suffix}`]: JSON.stringify(savedSecurity),
   };
-  const { PossessionLog } = new Function("React", "icons", "localStorage", "base44", "buildPossessionEntryOutput", "buildPossessionSecurityMessage", "getPossessionAccessDetails", "getPossessionSecurityDetails", "normalizePossessionAccessEntry", "removePossessionAccessEntry", `
+  const { PossessionLog } = new Function("React", "icons", "localStorage", "base44", "buildPossessionDashboard", "buildPossessionEntryOutput", "buildPossessionSecurityMessage", "getPossessionAccessDetails", "getPossessionSecurityDetails", "normalizePossessionAccessEntry", "removePossessionAccessEntry", `
     const { useState, useEffect, useRef, useMemo, useCallback } = React;
     const { FileText, Shield, Trash2, X, Plus, Copy, ClipboardCheck, Wind, Zap } = icons;
     ${compiled}
     return { PossessionLog };
-  `)(React, icons, { getItem: (key) => stored[key] || null }, {}, buildPossessionEntryOutput,
+  `)(React, icons, { getItem: (key) => stored[key] || null }, {}, buildPossessionDashboard, buildPossessionEntryOutput,
     buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry);
   return renderToStaticMarkup(React.createElement(PossessionLog, { depot }));
 }
