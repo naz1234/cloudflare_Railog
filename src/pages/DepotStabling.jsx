@@ -15,6 +15,8 @@ import PSTManualEntry from "../components/depot/PSTManualEntry";
 import InsertionLogOutput from "../components/depot/InsertionLogOutput";
 import MaspoTrainMovementChecker from "../components/depot/MaspoTrainMovementChecker";
 import TrainMovementTypeSelect from "../components/depot/TrainMovementTypeSelect";
+import PossessionEntryPicker from "../components/depot/PossessionEntryPicker";
+import PossessionAccessSearch from "../components/depot/PossessionAccessSearch";
 import OvertimeTracker from "../components/OvertimeTracker";
 import RosterWorkspace from "../components/RosterWorkspace";
 import ChecklistWorkspace from "../components/ChecklistWorkspace";
@@ -15788,6 +15790,11 @@ function PossessionLog({ depot = "west" }) {
   const mobileEntryIndex = entries.indexOf(mobileEntry);
   const mobileEntryOutput = mobileEntry ? generateEntryOutput(mobileEntry) : "";
   const dashboard = buildPossessionDashboard(entries, parsePossessionTimeTo24);
+  const entryOptions = entries.map((entry, index) => ({
+    value: entry.entryId,
+    label: `Entry ${index + 1} · ${entry.picName?.trim() || "New PIC"}`,
+    waiting: Boolean(buildPossessionDashboard([entry], parsePossessionTimeTo24).waitingForHandback),
+  }));
 
   return (
     <div className="pss-access-workspace grid grid-cols-[1fr_1fr] gap-4 items-start" data-mobile-access-view={mobileAccessView}>
@@ -15800,11 +15807,12 @@ function PossessionLog({ depot = "west" }) {
       <div className="req-mobile-only pss-access-controls">
         <div className="pss-access-controls-heading"><div><FileText className="req-mobile-only pss-controls-icon" aria-hidden="true" /><strong>Access entries</strong><p>One PIC, their permits and both outputs.</p></div><span>{entries.length} entr{entries.length === 1 ? "y" : "ies"}</span></div>
         <div className="pss-entry-picker-row">
-          <label><span>Working on</span><select aria-label={`${getPossessionDepotLabel(depot)} select PIC access entry`} value={mobileEntry?.entryId || ""}
-            onChange={(event) => { setMobileEntryId(event.target.value); setMobileAccessView("details"); }}>
-            {entries.map((entry, index) => <option key={entry.entryId} value={entry.entryId}>Entry {index + 1} · {entry.picName?.trim() || "New PIC"}</option>)}
-          </select></label>
+          <PossessionEntryPicker options={entryOptions} value={mobileEntry?.entryId || ""}
+            ariaLabel={`${getPossessionDepotLabel(depot)} select PIC access entry`}
+            onValueChange={(entryId) => { setMobileEntryId(entryId); setMobileAccessView("details"); }} />
           <button type="button" onClick={addEntry}><Plus size={14} aria-hidden="true" /> New PIC</button>
+          <PossessionAccessSearch entries={entries} options={entryOptions} depotLabel={getPossessionDepotLabel(depot)}
+            onValueChange={(entryId) => { setMobileEntryId(entryId); setMobileAccessView("details"); }} />
         </div>
         <nav className="pss-access-view-switch" aria-label={`${getPossessionDepotLabel(depot)} access entry views`}>
           {[["details", "Details"], ["entry", "Entry log"], ["security", "Security"], ["all", "All logs"]].map(([key, label]) => (

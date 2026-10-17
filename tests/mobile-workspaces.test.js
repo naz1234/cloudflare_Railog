@@ -60,9 +60,49 @@ test("PSS desktop uses compact geometry without scaling or clipping form content
   assert.equal(valueFor(" textarea.theme-possession-input", "resize"), "vertical");
   assert.equal(valueFor(" [data-possession-outputs] pre", "white-space"), "pre-wrap");
   stylesheet.walkDecls((declaration) => {
+    // Floating options may scroll and the selected name may ellipsize. Forms
+    // and output logs must still grow naturally without clipping or scaling.
+    const selector = declaration.parent.selector || "";
+    if ([" .pss-entry-popup", " .pss-entry-options", " .pss-entry-picker-value", " .pss-access-search-popup", " .pss-access-search-results"].some((ending) => selector.endsWith(ending))) return;
     assert.ok(!["zoom", "transform", "max-height"].includes(declaration.prop), declaration.toString());
     assert.ok(!["overflow", "overflow-y"].includes(declaration.prop) || declaration.value !== "hidden", declaration.toString());
   });
+});
+
+test("PSS neon picker keeps native mobile input and Radix keyboard selection", () => {
+  const picker = readFileSync(new URL("../src/components/depot/PossessionEntryPicker.jsx", import.meta.url), "utf8");
+  const css = postcss.parse(readFileSync(new URL("../src/possessionDesktop.css", import.meta.url), "utf8"));
+  assert.match(picker, /from "@radix-ui\/react-select"/);
+  assert.match(picker, /className="req-mobile-only pss-desktop-entry-picker"/);
+  assert.match(picker, /className="pss-native-entry-picker" htmlFor=\{nativeId\}/);
+  assert.match(picker, /<select id=\{nativeId\} aria-label=\{ariaLabel\}/);
+  assert.match(picker, /<Select\.Portal container=\{portalContainer\}/);
+  assert.match(picker, /window\.matchMedia\("\(min-width: 768px\)"\)/);
+  assert.match(picker, /if \(!desktop\.matches\) setOpen\(false\)/);
+  assert.match(picker, /<Select\.Root[\s\S]*?onValueChange=\{\(nextValue\) => \{ onValueChange\(nextValue\); setOpen\(false\); \}\}/);
+  assert.match(picker, /<HandbackStatusPill waiting=\{selected\?\.waiting\}/);
+  assert.match(picker, /<HandbackStatusPill waiting=\{option\.waiting\}/);
+  assert.match(picker, /aria-describedby=\{selected\?\.waiting \? selectedStatusId : undefined\}/);
+  let desktopNativeHidden = false;
+  let neonGlow = false;
+  css.walkRules((rule) => {
+    if (rule.selector.endsWith(" .pss-native-entry-picker")) rule.walkDecls("display", (decl) => { desktopNativeHidden = decl.value === "none"; });
+    if (rule.selector.endsWith(" .pss-handback-pill")) rule.walkDecls("box-shadow", () => { neonGlow = true; });
+  });
+  assert.equal(desktopNativeHidden, true);
+  assert.equal(neonGlow, true);
+});
+
+test("PSS access search is desktop-only, focuses its input and opens the selected PIC form", () => {
+  const search = readFileSync(new URL("../src/components/depot/PossessionAccessSearch.jsx", import.meta.url), "utf8");
+  const source = readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
+  assert.match(search, /className="req-mobile-only pss-access-search"/);
+  assert.match(search, /className="req-mobile-only pss-access-search-popup"/);
+  assert.match(search, /<Popover\.Portal container=\{portalContainer\}/);
+  assert.match(search, /inputRef\.current\?\.focus\(\)/);
+  assert.match(search, /if \(results\.length === 1\) choose\(results\[0\]\.entryId\)/);
+  assert.match(search, /onValueChange\(entryId\); setOpen\(false\); setQuery\(""\)/);
+  assert.match(source, /<PossessionAccessSearch entries=\{entries\} options=\{entryOptions\} depotLabel=\{getPossessionDepotLabel\(depot\)\}[\s\S]*?onValueChange=\{\(entryId\) => \{ setMobileEntryId\(entryId\); setMobileAccessView\("details"\); \}\}/);
 });
 
 test("PSS reference header decorations are desktop-only and reuse the existing controls", () => {

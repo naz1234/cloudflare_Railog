@@ -60,6 +60,18 @@ function cleanAccessNumber(raw) {
   return text(raw).replace(/,/g, "").trim().replace(/^(?:Access\s*)?#\s*/i, "");
 }
 
+export function searchPossessionAccessEntries(entries = [], query = "") {
+  const needle = cleanAccessNumber(query).replace(/\s+/g, "").toUpperCase();
+  if (!needle || !Array.isArray(entries)) return [];
+  return entries.flatMap((entry, index) => {
+    const numbers = getPossessionAccessDetails(entry).flatMap((detail) => getPossessionAccessDetails({ accessNo: detail.accessNo }))
+      .map((detail) => cleanAccessNumber(detail.accessNo).replace(/\s+/g, "").toUpperCase())
+      .filter((number) => number && number.includes(needle));
+    const accessNumbers = [...new Set(numbers)];
+    return accessNumbers.length ? [{ entryId: text(entry?.entryId).trim() || `legacy-access-${index + 1}`, index, accessNumbers }] : [];
+  });
+}
+
 export function buildPossessionDashboard(entries = [], validTime = (value) => /^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(text(value).trim())) {
   const pics = new Set();
   const waitingForHandback = new Set();
