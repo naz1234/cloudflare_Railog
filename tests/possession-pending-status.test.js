@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getPossessionEntryPendingStatus } from "../src/lib/possessionAccessLog.js";
+import { buildPossessionDashboard, getPossessionEntryPendingStatus } from "../src/lib/possessionAccessLog.js";
 
 const issued = { picName: "Jay", picId: "FLOW_1113", accessNo: "303004 / 303005", issueTime: "13:00", scd: "Yes" };
 
 test("SCD-required access waits for application, then handback, then clears", () => {
+  assert.equal(getPossessionEntryPendingStatus({ ...issued, issueTime: "" }), "issue");
   assert.equal(getPossessionEntryPendingStatus(issued), "scd");
   assert.equal(getPossessionEntryPendingStatus({ ...issued, scdApplyTime: "13:05" }), "handback");
   assert.equal(getPossessionEntryPendingStatus({ ...issued, scdApplyTime: "13:05", handbackTime: "14:00" }), "");
@@ -17,10 +18,21 @@ test("No-SCD entries skip the application status and valid handback clears eithe
   assert.equal(getPossessionEntryPendingStatus({ ...issued, scd: "No", handbackTime: "14:00" }), "");
 });
 
-test("drafts and unissued or anonymous access do not show a pending status", () => {
-  for (const entry of [null, {}, { ...issued, issueTime: "" }, { ...issued, issueTime: "25:00" }, { ...issued, accessNo: "" }, { ...issued, picName: "", picId: "" }]) {
+test("blank entries, missing permit numbers and anonymous access do not show a pending status", () => {
+  for (const entry of [null, {}, { ...issued, accessNo: "" }, { ...issued, accessNo: "#" }, { ...issued, picName: "", picId: "" }]) {
     assert.equal(getPossessionEntryPendingStatus(entry), "");
   }
+});
+
+test("PICs with access numbers but no valid issue time wait for issue without inflating issued totals", () => {
+  const unissued = { ...issued, issueTime: "" };
+  assert.equal(getPossessionEntryPendingStatus(unissued), "issue");
+  assert.equal(getPossessionEntryPendingStatus({ ...unissued, issueTime: "25:00" }), "issue");
+  assert.equal(getPossessionEntryPendingStatus({ ...unissued, scd: "No" }), "issue");
+  assert.equal(getPossessionEntryPendingStatus({ ...unissued, scdApplyTime: "13:05" }), "issue");
+  assert.equal(getPossessionEntryPendingStatus({ ...unissued, handbackTime: "14:00" }), "");
+  assert.equal(buildPossessionDashboard([unissued]).issued, 0);
+  assert.equal(buildPossessionDashboard([unissued]).waitingForHandback, 0);
 });
 
 test("invalid SCD application times remain pending, but recorded removal does not regress to application", () => {

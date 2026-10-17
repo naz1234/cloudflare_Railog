@@ -111,7 +111,7 @@ for (const depot of ["west", "east"]) {
     assert.match(html, new RegExp(`aria-label="Search ${depot === "west" ? "West" : "East"} Depot access number"`));
   });
 
-  test(`${depot} PIC dropdown marks only issued access still waiting for handback`, () => {
+  test(`${depot} PIC dropdown distinguishes issue and handback waiting statuses`, () => {
     const entries = [
       { picName: "Pending PIC", accessNo: "1 / 2", issueTime: "1:00 PM", scd: "No" },
       { picName: "Returned PIC", accessNo: "3", issueTime: "13:00", handbackTime: "14:00" },
@@ -124,21 +124,23 @@ for (const depot of ["west", "east"]) {
     assert.deepEqual(options(entries), [
       "Entry 1 · Pending PIC — Waiting for handback",
       "Entry 2 · Returned PIC",
-      "Entry 3 · Draft PIC",
+      "Entry 3 · Draft PIC — Waiting for issue",
     ]);
     const returned = [{ ...entries[0], handbackTime: "14:00" }, ...entries.slice(1)];
-    assert.deepEqual(options(returned), ["Entry 1 · Pending PIC", "Entry 2 · Returned PIC", "Entry 3 · Draft PIC"]);
+    assert.deepEqual(options(returned), ["Entry 1 · Pending PIC", "Entry 2 · Returned PIC", "Entry 3 · Draft PIC — Waiting for issue"]);
     assert.equal(entries[0].handbackTime, undefined);
   });
 
-  test(`${depot} desktop selection progresses from amber SCD to violet handback, then clears`, () => {
+  test(`${depot} desktop selection progresses from cyan issue to amber SCD and violet handback, then clears`, () => {
     const pending = { picName: "Pending PIC", accessNo: "1", issueTime: "13:00" };
     const trigger = (records) => renderDepot(depot, records, manual).split('class="pss-entry-picker-trigger"')[1].split("</button>")[0];
+    assert.match(trigger([{ ...pending, issueTime: "" }]), /data-status="issue"[\s\S]*Waiting for issue/);
     assert.match(trigger([pending]), /data-status="scd"[\s\S]*Waiting for SCD applied/);
     assert.match(trigger([{ ...pending, scdApplyTime: "13:05" }]), /data-status="handback"[\s\S]*Waiting for handback/);
     assert.match(trigger([{ ...pending, scd: "No" }]), /data-status="handback"[\s\S]*Waiting for handback/);
     assert.doesNotMatch(trigger([{ ...pending, handbackTime: "14:00" }]), /pss-handback-pill/);
-    assert.doesNotMatch(trigger([{ picName: "Draft PIC", accessNo: "1" }]), /pss-handback-pill/);
+    assert.match(trigger([{ picName: "Draft PIC", accessNo: "1" }]), /data-status="issue"[\s\S]*Waiting for issue/);
+    assert.doesNotMatch(trigger([{ picName: "Draft PIC" }]), /pss-handback-pill/);
   });
 
   test(`${depot} desktop dashboard shows PICs waiting for handback`, () => {
@@ -194,6 +196,8 @@ test("access search results show matching numbers and neon status, then choose t
   assert.equal((html.match(/pss-handback-pill/g) || []).length, 1);
   const scdHtml = renderToStaticMarkup(React.createElement(PossessionAccessSearchResults, { ...props, results: [{ ...props.results[0], waitingForScd: true }] }));
   assert.match(scdHtml, /data-status="scd"[\s\S]*Waiting for SCD applied/);
+  const issueHtml = renderToStaticMarkup(React.createElement(PossessionAccessSearchResults, { ...props, results: [{ ...props.results[0], waitingForIssue: true }] }));
+  assert.match(issueHtml, /data-status="issue"[\s\S]*Waiting for issue/);
   const buttons = [];
   const visit = (node) => {
     if (!React.isValidElement(node)) return;
