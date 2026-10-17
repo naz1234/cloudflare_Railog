@@ -91,6 +91,10 @@
   #root .app-shell[data-active-page="possession"] [data-status="scd"] .pss-handback-dot { background: #ffe5a4; box-shadow: 0 0 5px #ffd166; }
   html[data-app-theme="light"] #root .app-shell[data-active-page="possession"] .pss-handback-pill[data-status="scd"] { border-color: #c6851d; background: #fff0c7; color: #7a4b00; box-shadow: 0 0 6px #c6851d22; }
   html[data-app-theme="light"] #root .app-shell[data-active-page="possession"] [data-status="scd"] .pss-handback-dot { background: #b9770e; box-shadow: 0 0 4px #c6851d55; }
+  #root .app-shell[data-active-page="possession"] .pss-handback-pill[data-status="issue"] { border-color: #71d9ff; background: #123e5a; color: #d9f6ff; box-shadow: inset 0 0 7px #71d9ff24, 0 0 8px #26bcff40; }
+  #root .app-shell[data-active-page="possession"] [data-status="issue"] .pss-handback-dot { background: #87e7ff; box-shadow: 0 0 5px #71d9ff; }
+  html[data-app-theme="light"] #root .app-shell[data-active-page="possession"] .pss-handback-pill[data-status="issue"] { border-color: #1689b5; background: #def7ff; color: #07506e; box-shadow: 0 0 6px #1689b522; }
+  html[data-app-theme="light"] #root .app-shell[data-active-page="possession"] [data-status="issue"] .pss-handback-dot { background: #1689b5; box-shadow: 0 0 4px #1689b555; }
   #root .app-shell[data-active-page="possession"] .pss-access-search { display: block; }
   #root .app-shell[data-active-page="possession"] .pss-access-search-toggle { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 32px; padding: 5px 8px; border: 1px solid var(--pss-header-accent); border-radius: 8px; background: var(--pss-header-surface); color: var(--pss-review-text); font-size: 11px; font-weight: 650; white-space: nowrap; }
   #root .app-shell[data-active-page="possession"] .pss-access-search-toggle svg { color: var(--pss-header-accent); }

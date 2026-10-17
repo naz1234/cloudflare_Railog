@@ -112,8 +112,13 @@ export function buildPossessionDashboard(entries = [], validTime = hasValidClock
 }
 
 export function getPossessionEntryPendingStatus(entry, validTime = hasValidClockTime) {
-  if (!buildPossessionDashboard([entry], validTime).waitingForHandback) return "";
   const normalized = normalizePossessionAccessEntry(entry);
+  if (!text(normalized.picName).trim() && !text(normalized.picId).trim()) return "";
+  const hasAccessNumber = getPossessionAccessDetails(normalized).some((detail) =>
+    getPossessionAccessDetails({ accessNo: detail.accessNo }).some((number) => cleanAccessNumber(number.accessNo).replace(/\s+/g, ""))
+  );
+  if (!hasAccessNumber || validTime(normalized.handbackTime)) return "";
+  if (!validTime(normalized.issueTime)) return "issue";
   // A recorded removal already puts the entry past SCD application, even when
   // an older record has no application time. Do not label it as awaiting SCD.
   if (normalized.scd !== "No" && !validTime(normalized.scdApplyTime) && !validTime(normalized.scdRemTime)) return "scd";

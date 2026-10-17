@@ -13,7 +13,7 @@ export function PossessionAccessSearchResults({ query, results, onChoose }) {
         {results.map((result) => <li key={result.entryId}>
           <button type="button" onClick={() => onChoose(result.entryId)}>
             <span><strong>{result.label}</strong><small>{result.accessNumbers.map((number) => `Access #${number}`).join(" · ")}</small></span>
-            <HandbackStatusPill waiting={result.waiting} waitingForScd={result.waitingForScd} />
+            <HandbackStatusPill waiting={result.waiting} waitingForScd={result.waitingForScd} waitingForIssue={result.waitingForIssue} />
           </button>
         </li>)}
       </ul>}

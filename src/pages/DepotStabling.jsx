@@ -15797,6 +15797,7 @@ function PossessionLog({ depot = "west" }) {
       label: `Entry ${index + 1} · ${entry.picName?.trim() || "New PIC"}`,
       waiting: Boolean(pendingStatus),
       waitingForScd: pendingStatus === "scd",
+      waitingForIssue: pendingStatus === "issue",
     };
   });
 

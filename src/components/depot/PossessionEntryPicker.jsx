@@ -2,11 +2,11 @@ import { useEffect, useId, useRef, useState } from "react";
 import * as Select from "@radix-ui/react-select";
 import { Check, ChevronDown } from "lucide-react";
 
-const waitingLabel = (waitingForScd) => waitingForScd ? "Waiting for SCD applied" : "Waiting for handback";
+const waitingLabel = (waitingForScd, waitingForIssue) => waitingForIssue ? "Waiting for issue" : waitingForScd ? "Waiting for SCD applied" : "Waiting for handback";
 
-export function HandbackStatusPill({ waiting, waitingForScd = false, id }) {
+export function HandbackStatusPill({ waiting, waitingForScd = false, waitingForIssue = false, id }) {
   if (!waiting) return null;
-  return <span id={id} className="pss-handback-pill" data-status={waitingForScd ? "scd" : "handback"}><span className="pss-handback-dot" aria-hidden="true" />{waitingLabel(waitingForScd)}</span>;
+  return <span id={id} className="pss-handback-pill" data-status={waitingForIssue ? "issue" : waitingForScd ? "scd" : "handback"}><span className="pss-handback-dot" aria-hidden="true" />{waitingLabel(waitingForScd, waitingForIssue)}</span>;
 }
 
 export default function PossessionEntryPicker({ options = [], value = "", onValueChange, ariaLabel }) {
@@ -31,7 +31,7 @@ export default function PossessionEntryPicker({ options = [], value = "", onValu
       <label className="pss-native-entry-picker" htmlFor={nativeId}>
         <span>Working on</span>
         <select id={nativeId} aria-label={ariaLabel} value={selected?.value || ""} onChange={(event) => onValueChange(event.target.value)}>
-          {options.map((option) => <option key={option.value} value={option.value}>{option.label}{option.waiting ? ` — ${waitingLabel(option.waitingForScd)}` : ""}</option>)}
+          {options.map((option) => <option key={option.value} value={option.value}>{option.label}{option.waiting ? ` — ${waitingLabel(option.waitingForScd, option.waitingForIssue)}` : ""}</option>)}
         </select>
       </label>
       <div ref={hostRef} className="req-mobile-only pss-desktop-entry-picker">
@@ -39,7 +39,7 @@ export default function PossessionEntryPicker({ options = [], value = "", onValu
         <Select.Root value={selected?.value || ""} open={open} onOpenChange={setOpen} onValueChange={(nextValue) => { onValueChange(nextValue); setOpen(false); }}>
           <Select.Trigger className="pss-entry-picker-trigger" aria-label={ariaLabel} aria-describedby={selected?.waiting ? selectedStatusId : undefined} disabled={!selected} title={selected?.label}>
             <Select.Value className="pss-entry-picker-value">{selected?.label || "New PIC"}</Select.Value>
-            <HandbackStatusPill waiting={selected?.waiting} waitingForScd={selected?.waitingForScd} id={selectedStatusId} />
+            <HandbackStatusPill waiting={selected?.waiting} waitingForScd={selected?.waitingForScd} waitingForIssue={selected?.waitingForIssue} id={selectedStatusId} />
             <Select.Icon asChild><ChevronDown size={14} aria-hidden="true" /></Select.Icon>
           </Select.Trigger>
           <Select.Portal container={portalContainer}>
@@ -48,7 +48,7 @@ export default function PossessionEntryPicker({ options = [], value = "", onValu
                 {options.map((option, index) => (
                   <Select.Item key={option.value} value={option.value} textValue={option.label} className="pss-entry-option" aria-describedby={option.waiting ? `${nativeId}-option-${index}-status` : undefined}>
                     <Select.ItemText className="pss-entry-option-text">{option.label}</Select.ItemText>
-                    <HandbackStatusPill waiting={option.waiting} waitingForScd={option.waitingForScd} id={`${nativeId}-option-${index}-status`} />
+                    <HandbackStatusPill waiting={option.waiting} waitingForScd={option.waitingForScd} waitingForIssue={option.waitingForIssue} id={`${nativeId}-option-${index}-status`} />
                     <Select.ItemIndicator className="pss-entry-option-check"><Check size={14} aria-hidden="true" /></Select.ItemIndicator>
                   </Select.Item>
                 ))}
