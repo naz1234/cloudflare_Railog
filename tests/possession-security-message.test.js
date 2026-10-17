@@ -8,7 +8,7 @@ import * as icons from "lucide-react";
 import ts from "typescript";
 import {
   buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage,
-  getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry,
+  getPossessionAccessDetails, getPossessionEntryPendingStatus, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry,
   searchPossessionAccessEntries,
 } from "../src/lib/possessionAccessLog.js";
 
@@ -94,13 +94,13 @@ function renderDepot(depot, entries, savedSecurity) {
     [`possessionLog_v2${suffix}`]: JSON.stringify(entries),
     [`scSecurityMessage_v1${suffix}`]: JSON.stringify(savedSecurity),
   };
-  const { PossessionLog } = new Function("React", "icons", "PossessionEntryPicker", "PossessionAccessSearch", "localStorage", "base44", "buildPossessionCombinedOutput", "buildPossessionDashboard", "buildPossessionEntryOutput", "buildPossessionSecurityMessage", "getPossessionAccessDetails", "getPossessionSecurityDetails", "normalizePossessionAccessEntry", "removePossessionAccessEntry", `
+  const { PossessionLog } = new Function("React", "icons", "PossessionEntryPicker", "PossessionAccessSearch", "localStorage", "base44", "buildPossessionCombinedOutput", "buildPossessionDashboard", "buildPossessionEntryOutput", "buildPossessionSecurityMessage", "getPossessionAccessDetails", "getPossessionEntryPendingStatus", "getPossessionSecurityDetails", "normalizePossessionAccessEntry", "removePossessionAccessEntry", `
     const { useState, useEffect, useRef, useMemo, useCallback } = React;
     const { FileText, Shield, Trash2, X, Plus, Copy, ClipboardCheck, Wind, Zap, UsersRound, Undo2, BarChart3, Clock3 } = icons;
     ${compiled}
     return { PossessionLog };
   `)(React, icons, PossessionEntryPicker, PossessionAccessSearch, { getItem: (key) => stored[key] || null }, {}, buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput,
-    buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry);
+    buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionEntryPendingStatus, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry);
   return renderToStaticMarkup(React.createElement(PossessionLog, { depot }));
 }
 
@@ -113,7 +113,7 @@ for (const depot of ["west", "east"]) {
 
   test(`${depot} PIC dropdown marks only issued access still waiting for handback`, () => {
     const entries = [
-      { picName: "Pending PIC", accessNo: "1 / 2", issueTime: "1:00 PM" },
+      { picName: "Pending PIC", accessNo: "1 / 2", issueTime: "1:00 PM", scd: "No" },
       { picName: "Returned PIC", accessNo: "3", issueTime: "13:00", handbackTime: "14:00" },
       { picName: "Draft PIC", accessNo: "4" },
     ];
@@ -131,10 +131,12 @@ for (const depot of ["west", "east"]) {
     assert.equal(entries[0].handbackTime, undefined);
   });
 
-  test(`${depot} desktop selection shows the neon waiting pill until handback`, () => {
+  test(`${depot} desktop selection progresses from amber SCD to violet handback, then clears`, () => {
     const pending = { picName: "Pending PIC", accessNo: "1", issueTime: "13:00" };
     const trigger = (records) => renderDepot(depot, records, manual).split('class="pss-entry-picker-trigger"')[1].split("</button>")[0];
-    assert.match(trigger([pending]), /pss-handback-pill[\s\S]*Waiting for handback/);
+    assert.match(trigger([pending]), /data-status="scd"[\s\S]*Waiting for SCD applied/);
+    assert.match(trigger([{ ...pending, scdApplyTime: "13:05" }]), /data-status="handback"[\s\S]*Waiting for handback/);
+    assert.match(trigger([{ ...pending, scd: "No" }]), /data-status="handback"[\s\S]*Waiting for handback/);
     assert.doesNotMatch(trigger([{ ...pending, handbackTime: "14:00" }]), /pss-handback-pill/);
     assert.doesNotMatch(trigger([{ picName: "Draft PIC", accessNo: "1" }]), /pss-handback-pill/);
   });
@@ -190,6 +192,8 @@ test("access search results show matching numbers and neon status, then choose t
   assert.match(html, /2 matching entries/);
   assert.match(html, /Access #303004 · Access #303005/);
   assert.equal((html.match(/pss-handback-pill/g) || []).length, 1);
+  const scdHtml = renderToStaticMarkup(React.createElement(PossessionAccessSearchResults, { ...props, results: [{ ...props.results[0], waitingForScd: true }] }));
+  assert.match(scdHtml, /data-status="scd"[\s\S]*Waiting for SCD applied/);
   const buttons = [];
   const visit = (node) => {
     if (!React.isValidElement(node)) return;

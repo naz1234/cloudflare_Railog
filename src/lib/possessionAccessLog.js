@@ -1,4 +1,5 @@
 const text = (value) => String(value ?? "");
+const hasValidClockTime = (value) => /^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(text(value).trim());
 
 const DEFAULT_ENTRY = {
   picName: "", picId: "", description: "", accessNo: "", issueTime: "",
@@ -72,7 +73,7 @@ export function searchPossessionAccessEntries(entries = [], query = "") {
   });
 }
 
-export function buildPossessionDashboard(entries = [], validTime = (value) => /^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(text(value).trim())) {
+export function buildPossessionDashboard(entries = [], validTime = hasValidClockTime) {
   const pics = new Set();
   const waitingForHandback = new Set();
   const issued = new Map();
@@ -108,6 +109,15 @@ export function buildPossessionDashboard(entries = [], validTime = (value) => /^
     if (picKey && hasIssuedAccess && !handedBack) waitingForHandback.add(picKey);
   }
   return { issued: issued.size, pics: pics.size, handedBack: [...issued.values()].filter(Boolean).length, waitingForHandback: waitingForHandback.size };
+}
+
+export function getPossessionEntryPendingStatus(entry, validTime = hasValidClockTime) {
+  if (!buildPossessionDashboard([entry], validTime).waitingForHandback) return "";
+  const normalized = normalizePossessionAccessEntry(entry);
+  // A recorded removal already puts the entry past SCD application, even when
+  // an older record has no application time. Do not label it as awaiting SCD.
+  if (normalized.scd !== "No" && !validTime(normalized.scdApplyTime) && !validTime(normalized.scdRemTime)) return "scd";
+  return "handback";
 }
 
 // Shared details always come from the corresponding access entry, never the old
