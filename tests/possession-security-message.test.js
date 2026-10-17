@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import * as icons from "lucide-react";
@@ -8,6 +9,7 @@ import ts from "typescript";
 import {
   buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage,
   getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry,
+  searchPossessionAccessEntries,
 } from "../src/lib/possessionAccessLog.js";
 
 const entry = { picName: "Jay Bigcas", accessDetails: [{ accessNo: "303,004", description: "Buffer stops inspection" }] };
@@ -64,6 +66,27 @@ const compiled = ts.transpileModule(pssSource, {
   compilerOptions: { jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
   fileName: "PSSWorkspace.jsx",
 }).outputText;
+const pickerModule = { exports: {} };
+const pickerCompiled = ts.transpileModule(readFileSync(new URL("../src/components/depot/PossessionEntryPicker.jsx", import.meta.url), "utf8"), {
+  compilerOptions: { jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
+  fileName: "PossessionEntryPicker.jsx",
+}).outputText;
+const pickerRequire = createRequire(import.meta.url);
+new Function("require", "module", "exports", pickerCompiled)((name) => name === "lucide-react" ? icons : pickerRequire(name), pickerModule, pickerModule.exports);
+const PossessionEntryPicker = pickerModule.exports.default;
+const accessSearchModule = { exports: {} };
+const accessSearchCompiled = ts.transpileModule(readFileSync(new URL("../src/components/depot/PossessionAccessSearch.jsx", import.meta.url), "utf8"), {
+  compilerOptions: { jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
+  fileName: "PossessionAccessSearch.jsx",
+}).outputText;
+new Function("require", "module", "exports", accessSearchCompiled)((name) => {
+  if (name === "lucide-react") return icons;
+  if (name === "../../lib/possessionAccessLog") return { searchPossessionAccessEntries };
+  if (name === "./PossessionEntryPicker") return pickerModule.exports;
+  return pickerRequire(name);
+}, accessSearchModule, accessSearchModule.exports);
+const PossessionAccessSearch = accessSearchModule.exports.default;
+const { PossessionAccessSearchResults } = accessSearchModule.exports;
 
 function renderDepot(depot, entries, savedSecurity) {
   const suffix = depot === "east" ? "_east" : "";
@@ -71,17 +94,51 @@ function renderDepot(depot, entries, savedSecurity) {
     [`possessionLog_v2${suffix}`]: JSON.stringify(entries),
     [`scSecurityMessage_v1${suffix}`]: JSON.stringify(savedSecurity),
   };
-  const { PossessionLog } = new Function("React", "icons", "localStorage", "base44", "buildPossessionCombinedOutput", "buildPossessionDashboard", "buildPossessionEntryOutput", "buildPossessionSecurityMessage", "getPossessionAccessDetails", "getPossessionSecurityDetails", "normalizePossessionAccessEntry", "removePossessionAccessEntry", `
+  const { PossessionLog } = new Function("React", "icons", "PossessionEntryPicker", "PossessionAccessSearch", "localStorage", "base44", "buildPossessionCombinedOutput", "buildPossessionDashboard", "buildPossessionEntryOutput", "buildPossessionSecurityMessage", "getPossessionAccessDetails", "getPossessionSecurityDetails", "normalizePossessionAccessEntry", "removePossessionAccessEntry", `
     const { useState, useEffect, useRef, useMemo, useCallback } = React;
     const { FileText, Shield, Trash2, X, Plus, Copy, ClipboardCheck, Wind, Zap, UsersRound, Undo2, BarChart3, Clock3 } = icons;
     ${compiled}
     return { PossessionLog };
-  `)(React, icons, { getItem: (key) => stored[key] || null }, {}, buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput,
+  `)(React, icons, PossessionEntryPicker, PossessionAccessSearch, { getItem: (key) => stored[key] || null }, {}, buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput,
     buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry);
   return renderToStaticMarkup(React.createElement(PossessionLog, { depot }));
 }
 
 for (const depot of ["west", "east"]) {
+  test(`${depot} PSS provides its own access number search button`, () => {
+    const html = renderDepot(depot, [entry], manual);
+    assert.match(html, /class="req-mobile-only pss-access-search"/);
+    assert.match(html, new RegExp(`aria-label="Search ${depot === "west" ? "West" : "East"} Depot access number"`));
+  });
+
+  test(`${depot} PIC dropdown marks only issued access still waiting for handback`, () => {
+    const entries = [
+      { picName: "Pending PIC", accessNo: "1 / 2", issueTime: "1:00 PM" },
+      { picName: "Returned PIC", accessNo: "3", issueTime: "13:00", handbackTime: "14:00" },
+      { picName: "Draft PIC", accessNo: "4" },
+    ];
+    const options = (records) => {
+      const nativePicker = renderDepot(depot, records, manual).match(/<label class="pss-native-entry-picker"[\s\S]*?<\/label>/)[0];
+      return [...nativePicker.matchAll(/<option\b[^>]*>([^<]*)<\/option>/g)].map((match) => match[1]);
+    };
+    assert.deepEqual(options(entries), [
+      "Entry 1 · Pending PIC — Waiting for handback",
+      "Entry 2 · Returned PIC",
+      "Entry 3 · Draft PIC",
+    ]);
+    const returned = [{ ...entries[0], handbackTime: "14:00" }, ...entries.slice(1)];
+    assert.deepEqual(options(returned), ["Entry 1 · Pending PIC", "Entry 2 · Returned PIC", "Entry 3 · Draft PIC"]);
+    assert.equal(entries[0].handbackTime, undefined);
+  });
+
+  test(`${depot} desktop selection shows the neon waiting pill until handback`, () => {
+    const pending = { picName: "Pending PIC", accessNo: "1", issueTime: "13:00" };
+    const trigger = (records) => renderDepot(depot, records, manual).split('class="pss-entry-picker-trigger"')[1].split("</button>")[0];
+    assert.match(trigger([pending]), /pss-handback-pill[\s\S]*Waiting for handback/);
+    assert.doesNotMatch(trigger([{ ...pending, handbackTime: "14:00" }]), /pss-handback-pill/);
+    assert.doesNotMatch(trigger([{ picName: "Draft PIC", accessNo: "1" }]), /pss-handback-pill/);
+  });
+
   test(`${depot} desktop dashboard shows PICs waiting for handback`, () => {
     const html = renderDepot(depot, [
       { picName: "Waiting PIC", accessNo: "1 / 2", issueTime: "13:00" },
@@ -122,6 +179,28 @@ for (const depot of ["west", "east"]) {
     for (let i = 0; i < 2; i++) assert.match(security[i], new RegExp(`Copy Security for Access Entry ${i + 1}`));
   });
 }
+
+test("access search results show matching numbers and neon status, then choose the correct entry", () => {
+  const chosen = [];
+  const props = { query: "303", results: [
+    { entryId: "first-pic", label: "Entry 1 · Jay", accessNumbers: ["303004", "303005"], waiting: true },
+    { entryId: "second-pic", label: "Entry 2 · Sam", accessNumbers: ["303006"], waiting: false },
+  ], onChoose: (entryId) => chosen.push(entryId) };
+  const html = renderToStaticMarkup(React.createElement(PossessionAccessSearchResults, props));
+  assert.match(html, /2 matching entries/);
+  assert.match(html, /Access #303004 · Access #303005/);
+  assert.equal((html.match(/pss-handback-pill/g) || []).length, 1);
+  const buttons = [];
+  const visit = (node) => {
+    if (!React.isValidElement(node)) return;
+    if (node.type === "button") buttons.push(node);
+    React.Children.forEach(node.props.children, visit);
+  };
+  visit(PossessionAccessSearchResults(props));
+  buttons[1].props.onClick();
+  assert.deepEqual(chosen, ["second-pic"]);
+  assert.match(renderToStaticMarkup(React.createElement(PossessionAccessSearchResults, { ...props, results: [] })), /No matching access number in this depot/);
+});
 
 test("both depot renderers keep independent saved phone, gate and location", () => {
   const west = renderDepot("west", [entry], manual);
