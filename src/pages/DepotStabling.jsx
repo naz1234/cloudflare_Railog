@@ -28,6 +28,8 @@ import "../reqMobileLogs.css";
 import "../mobileWorkspaces.css";
 import "../mobileActions.css";
 import "../mobileDensity.css";
+import "../possessionMobile.css";
+import "../possessionDesktop.css";
 import RemovalPdfEditor from "../components/depot/RemovalPdfEditor";
 import EastNineAmRemovalPdfEditor from "../components/depot/EastNineAmRemovalPdfEditor";
 import RemovalSummaryRemark from "../components/depot/RemovalSummaryRemark";
@@ -61,7 +63,7 @@ import { buildPSTExcelClipboardText } from "../lib/pstExcelClipboard";
 import { appendPstFldcColumns } from "../lib/pstFldcVerification";
 import { usePstFldcVerification } from "../hooks/usePstFldcVerification";
 import PstExcelFormatLogPanel from "../components/PstExcelFormatLogPanel";
-import { buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "../lib/possessionAccessLog";
+import { buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "../lib/possessionAccessLog";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40Groups, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, resizeHdwDepotRows, clearHdwRows } from "../lib/trainRemHdw40";
 import "../trainRemHdw40.css";
@@ -15431,16 +15433,23 @@ function formatPossessionTimeInput(raw, previousValue = "") {
 // ── Dark-themed shared primitives ─────────────────────────────────────────────
 
 function PossessionCopyBtn({ text, disabled, label = "Copy Output", ariaLabel }) {
-  const [copied, setCopied] = useState(false);
-  const handle = () => {
-    if (disabled || !text) return;
-    navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000);
+  const [copyState, setCopyState] = useState("idle");
+  const handle = async () => {
+    if (disabled || !text || copyState === "pending") return;
+    setCopyState("pending");
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyState("copied");
+    } catch {
+      setCopyState("failed");
+    }
+    setTimeout(() => setCopyState("idle"), 2000);
   };
   return (
-    <button onClick={handle} disabled={disabled || !text} aria-label={ariaLabel}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#1e3a56] bg-[#0a1e2e] text-[#7eb8e0] hover:bg-[#0f2d4a] hover:border-[#2b4f6b] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-      {copied ? <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-      {copied ? "Copied!" : label}
+    <button onClick={handle} disabled={disabled || !text || copyState === "pending"} aria-label={ariaLabel} data-copy-state={copyState} aria-busy={copyState === "pending"}
+      className="pss-copy-action flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#1e3a56] bg-[#0a1e2e] text-[#7eb8e0] hover:bg-[#0f2d4a] hover:border-[#2b4f6b] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+      {copyState === "copied" ? <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+      <span aria-live="polite">{copyState === "pending" ? "Copying…" : copyState === "copied" ? "Copied!" : copyState === "failed" ? "Copy failed" : label}</span>
     </button>
   );
 }
@@ -15649,7 +15658,7 @@ function generateEntryOutput(f) {
   return buildPossessionEntryOutput(f, fmtPossession24);
 }
 
-function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
+function AccessEntryForm({ entry, index, onChange, onRemove, canRemove, mobileActive = true }) {
   const set = (field) => (val) => onChange({ ...entry, [field]: val });
   const accessDetails = getPossessionAccessDetails(entry);
   const setAccessDetails = (details) => onChange(normalizePossessionAccessEntry({ ...entry, accessDetails: details }));
@@ -15660,6 +15669,7 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
     <div
       className="theme-possession-access-entry rounded-xl border border-[#1e3a56] overflow-hidden bg-[#071828]"
       data-entry-theme={index % POSSESSION_ACCESS_ENTRY_THEME_COUNT}
+      data-mobile-entry-active={mobileActive ? "true" : "false"}
     >
       <div className="theme-possession-header theme-possession-access-entry-header border-b border-[#1e3a56] px-3 py-2 flex items-center justify-between">
         <span className="theme-possession-access-entry-title text-[11px] font-black text-[#7eb8e0] tracking-widest uppercase">Access Entry {index + 1}</span>
@@ -15670,12 +15680,14 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
         )}
       </div>
       <div className="p-3 space-y-3">
+        <div className="req-mobile-only pss-step-label"><span>01</span> Person in charge</div>
         <div className="grid grid-cols-2 gap-3">
-          <POSSESSION_FIELD label="PIC Name"><POSSESSION_INPUT value={entry.picName} onChange={set("picName")} placeholder="Full name" /></POSSESSION_FIELD>
-          <POSSESSION_FIELD label="PIC ID"><POSSESSION_INPUT value={entry.picId} onChange={set("picId")} placeholder="e.g. FLOW_8545" /></POSSESSION_FIELD>
+          <POSSESSION_FIELD label="PIC Name"><POSSESSION_INPUT value={entry.picName} onChange={set("picName")} ariaLabel={`PIC name for Access Entry ${index + 1}`} placeholder="Full name" /></POSSESSION_FIELD>
+          <POSSESSION_FIELD label="PIC ID"><POSSESSION_INPUT value={entry.picId} onChange={set("picId")} ariaLabel={`PIC ID for Access Entry ${index + 1}`} placeholder="e.g. FLOW_8545" /></POSSESSION_FIELD>
         </div>
+        <div className="req-mobile-only pss-step-label"><span>02</span> Access numbers &amp; work</div>
         {accessDetails.map((detail, accessIndex) => (
-          <div key={accessIndex} className={`space-y-2 ${accessIndex > 0 ? "border-t border-[#1e3a56] pt-3" : ""}`}>
+          <div key={accessIndex} className={`pss-access-detail space-y-2 ${accessIndex > 0 ? "border-t border-[#1e3a56] pt-3" : ""}`}>
             <div className="flex items-center justify-between gap-2">
               <span className="theme-possession-label text-[10px] font-bold tracking-widest uppercase">Access Number {accessIndex + 1}</span>
               {accessDetails.length > 1 && (
@@ -15692,23 +15704,24 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
               ariaLabel={`Access description ${accessIndex + 1} for entry ${index + 1}`} placeholder="Work description for this access number..." rows={2} /></POSSESSION_FIELD>
           </div>
         ))}
-        <div className="space-y-1">
+        <div className="pss-add-access-number space-y-1">
           <button type="button" onClick={() => setAccessDetails([...accessDetails, { accessNo: "", description: "" }])}
             className="theme-possession-label flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border border-dashed border-[#2b4f6b] hover:border-[#4f8ef7] transition-colors">
             <Plus className="w-3 h-3" /> Add Access Number
           </button>
           <p className="theme-possession-label text-[10px] leading-relaxed">Use this when the same PIC has multiple access numbers.</p>
         </div>
+        <div className="req-mobile-only pss-step-label"><span>03</span> Access timing &amp; SCD</div>
         <POSSESSION_FIELD label="Issue Time"><POSSESSION_TIME_INPUT value={entry.issueTime || ""} onChange={set("issueTime")} placeholder="e.g. 04:17" /></POSSESSION_FIELD>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="pss-short-fields grid grid-cols-2 gap-3">
           <POSSESSION_FIELD label="Access Point"><POSSESSION_INPUT value={entry.accessPoint || ""} onChange={set("accessPoint")} placeholder="e.g. DOOR B01" /></POSSESSION_FIELD>
           <POSSESSION_FIELD label="Access Authorized Time"><POSSESSION_TIME_INPUT value={entry.accessAuthTime || ""} onChange={set("accessAuthTime")} placeholder="e.g. 18:10" /></POSSESSION_FIELD>
         </div>
-        <div>
+        <div className="pss-scd-choice">
           <label className="block text-[10px] font-semibold text-[#4a8ab5] tracking-widest uppercase mb-1">SCD?</label>
           <div className="flex gap-1.5">
             {["Yes", "No"].map((opt) => (
-              <button key={opt} type="button" onClick={() => set("scd")(opt)}
+              <button key={opt} type="button" onClick={() => set("scd")(opt)} aria-pressed={entry.scd === opt}
                 className={`px-4 py-1.5 rounded-lg text-xs font-semibold border transition-all ${entry.scd === opt ? "bg-[#0f2d4a] text-[#c8d8ea] border-[#4f8ef7]" : "bg-[#071828] text-[#4a8ab5] border-[#1e3a56] hover:border-[#2b4f6b] hover:text-[#c8d8ea]"}`}>
                 {opt}
               </button>
@@ -15718,7 +15731,7 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
         {entry.scd === "Yes" && (
           <div className="space-y-3 rounded-xl border border-amber-800/40 bg-amber-950/20 p-3">
             <POSSESSION_FIELD label="SCD Location"><POSSESSION_INPUT value={entry.scdLoc} onChange={set("scdLoc")} placeholder="e.g. Building A" /></POSSESSION_FIELD>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="pss-short-fields grid grid-cols-2 gap-3">
               <POSSESSION_FIELD label="SCD Apply Time"><POSSESSION_TIME_INPUT value={entry.scdApplyTime} onChange={set("scdApplyTime")} placeholder="e.g. 04:17" /></POSSESSION_FIELD>
               <POSSESSION_FIELD label="SCD Remove Time"><POSSESSION_TIME_INPUT value={entry.scdRemTime} onChange={set("scdRemTime")} placeholder="e.g. 02:10" /></POSSESSION_FIELD>
             </div>
@@ -15731,6 +15744,8 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove }) {
 }
 
 function PossessionLog({ depot = "west" }) {
+  const [mobileEntryId, setMobileEntryId] = useState("");
+  const [mobileAccessView, setMobileAccessView] = useState("details");
   const storageKey = getPossessionStorageKey(POSSESSION_LOG_KEY, depot);
   const securityStorageKey = getPossessionStorageKey(POSSESSION_SC_KEY, depot);
   const [legacySecurity, setLegacySecurity] = useState(() => {
@@ -15760,14 +15775,48 @@ function PossessionLog({ depot = "west" }) {
       : [defaultEntry()]
   );
   const updateEntry = (i, val) => setEntries((prev) => prev.map((e, idx) => idx === i ? val : e));
-  const addEntry = () => setEntries((prev) => [...prev, defaultEntry()]);
+  const addEntry = () => {
+    const nextEntry = defaultEntry();
+    setEntries((prev) => [...prev, nextEntry]);
+    setMobileEntryId(nextEntry.entryId);
+    setMobileAccessView("details");
+  };
   const removeEntry = (i) => setEntries((prev) => removePossessionAccessEntry(prev, i, legacySecurity));
   const clear = () => { setEntries([defaultEntry()]); localStorage.removeItem(storageKey); };
   const output = entries.map(generateEntryOutput).join("\n\n");
+  const mobileEntry = entries.find((entry) => entry.entryId === mobileEntryId) || entries[0];
+  const mobileEntryIndex = entries.indexOf(mobileEntry);
+  const mobileEntryOutput = mobileEntry ? generateEntryOutput(mobileEntry) : "";
+  const dashboard = buildPossessionDashboard(entries, parsePossessionTimeTo24);
 
   return (
-    <div className="grid grid-cols-[1fr_1fr] gap-4 items-start">
-      <div className={possessionCardCls}>
+    <div className="pss-access-workspace grid grid-cols-[1fr_1fr] gap-4 items-start" data-mobile-access-view={mobileAccessView}>
+      <dl className="req-mobile-only pss-dashboard" aria-label={`${getPossessionDepotLabel(depot)} access dashboard`}>
+        <div className="is-issued"><dt>Access issued</dt><dd>{dashboard.issued}</dd><span>access numbers</span></div>
+        <div className="is-pics"><dt>PICs</dt><dd>{dashboard.pics}</dd><span>people in charge</span></div>
+        <div className="is-handback"><dt>Handed back</dt><dd>{dashboard.handedBack}</dd><span>access numbers</span></div>
+      </dl>
+      <div className="req-mobile-only pss-access-controls">
+        <div className="pss-access-controls-heading"><div><strong>Access entries</strong><p>One PIC, their permits and both outputs.</p></div><span>{entries.length} entr{entries.length === 1 ? "y" : "ies"}</span></div>
+        <div className="pss-entry-picker-row">
+          <label><span>Working on</span><select aria-label={`${getPossessionDepotLabel(depot)} select PIC access entry`} value={mobileEntry?.entryId || ""}
+            onChange={(event) => { setMobileEntryId(event.target.value); setMobileAccessView("details"); }}>
+            {entries.map((entry, index) => <option key={entry.entryId} value={entry.entryId}>Entry {index + 1} · {entry.picName?.trim() || "New PIC"}</option>)}
+          </select></label>
+          <button type="button" onClick={addEntry}><Plus size={14} aria-hidden="true" /> New PIC</button>
+        </div>
+        <nav className="pss-access-view-switch" aria-label={`${getPossessionDepotLabel(depot)} access entry views`}>
+          {[["details", "Details"], ["entry", "Entry log"], ["security", "Security"], ["all", "All logs"]].map(([key, label]) => (
+            <button key={key} type="button" data-pss-view={key} aria-pressed={mobileAccessView === key} onClick={() => setMobileAccessView(key)}>{label}</button>
+          ))}
+        </nav>
+        <nav className="req-mobile-only pss-desktop-view-switch" aria-label={`${getPossessionDepotLabel(depot)} access outputs`}>
+          {[["entry", "Entry log"], ["security", "Security"], ["all", "All logs"]].map(([key, label]) => (
+            <button key={key} type="button" aria-pressed={(mobileAccessView === "details" ? "entry" : mobileAccessView) === key} onClick={() => setMobileAccessView(key)}>{label}</button>
+          ))}
+        </nav>
+      </div>
+      <div className={`${possessionCardCls} pss-access-form-panel`}>
         <div className={possessionHeaderCls} style={possessionHeaderStyle}>
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center"><FileText className="w-3.5 h-3.5 text-[#4f8ef7]" /></div>
@@ -15781,8 +15830,8 @@ function PossessionLog({ depot = "west" }) {
           </button>
         </div>
         <div className="p-4 space-y-3">
-          {entries.map((entry, i) => (<AccessEntryForm key={entry.entryId} entry={entry} index={i} onChange={(val) => updateEntry(i, val)} onRemove={() => removeEntry(i)} canRemove={entries.length > 1} />))}
-          <div className="space-y-1">
+          {entries.map((entry, i) => (<AccessEntryForm key={entry.entryId} entry={entry} index={i} mobileActive={entry.entryId === mobileEntry?.entryId} onChange={(val) => updateEntry(i, val)} onRemove={() => removeEntry(i)} canRemove={entries.length > 1} />))}
+          <div className="pss-add-pic-footer space-y-1">
             <button onClick={addEntry}
               className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-cyan-300/70 bg-cyan-400/10 text-xs font-bold text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.35),inset_0_0_14px_rgba(34,211,238,0.10)] hover:bg-cyan-400/20 hover:border-cyan-200 hover:text-white hover:shadow-[0_0_28px_rgba(34,211,238,0.70),inset_0_0_18px_rgba(34,211,238,0.18)] active:scale-[0.99] transition-all duration-200">
               <Plus className="w-3.5 h-3.5 drop-shadow-[0_0_8px_rgba(34,211,238,0.90)]" /> Add Another Access
@@ -15792,13 +15841,21 @@ function PossessionLog({ depot = "west" }) {
         </div>
       </div>
       <div className="min-w-0 space-y-4" data-possession-outputs>
-      <div className={possessionCardCls}>
+      <div className={`req-mobile-only pss-entry-log-output ${possessionCardCls}`}>
+        <div className={possessionHeaderCls} style={possessionHeaderStyle}>
+          <div><h2 className="text-sm font-bold text-white">Access Entry {mobileEntryIndex + 1} log</h2><p className="text-[10px] text-[#4a8ab5]">{mobileEntry?.picName?.trim() || "Add PIC details to begin"}</p></div>
+          <PossessionCopyBtn text={mobileEntryOutput} disabled={!mobileEntryOutput.trim()} label="Copy Entry" ariaLabel={`Copy log for Access Entry ${mobileEntryIndex + 1} — ${getPossessionDepotLabel(depot)}`} />
+        </div>
+        <div className="p-4">{mobileEntryOutput.trim() ? <pre className="font-mono text-xs text-[#c8d8ea] whitespace-pre-wrap leading-relaxed">{mobileEntryOutput}</pre> : <p className="pss-mobile-empty">Fill in this PIC's access details to generate the log.</p>}</div>
+      </div>
+      <div className={`${possessionCardCls} pss-all-log-output`}>
         <div className={possessionHeaderCls} style={possessionHeaderStyle}>
           <div>
             <h2 className="text-sm font-bold text-white">Possession Log Output</h2>
             <p className="text-[10px] text-[#4a8ab5]">Formatted possession log</p>
           </div>
           <PossessionCopyBtn text={output} disabled={!output.trim()} label="Copy Log" />
+          <span className="req-mobile-only pss-clear-all-inline"><button type="button" onClick={clear} aria-label={`Clear all ${getPossessionDepotLabel(depot)} access entries`}><Trash2 size={13} aria-hidden="true" /> Clear all entries</button></span>
         </div>
         <div className="p-4 min-h-[200px]">
           {output.trim() ? (
@@ -15813,6 +15870,7 @@ function PossessionLog({ depot = "west" }) {
       </div>
       {entries.map((entry, i) => (
         <SCSecurityMessage key={entry.entryId} depot={depot} entry={entry} index={i}
+          mobileActive={entry.entryId === mobileEntry?.entryId}
           form={getPossessionSecurityDetails(entry, i === 0 ? legacySecurity : {})}
           onChange={(securityDetails) => updateEntry(i, { ...entry, securityDetails })} />
       ))}
@@ -15830,7 +15888,7 @@ function generateSCOutput(entry, details) {
   return buildPossessionSecurityMessage(entry, details);
 }
 
-function SCSecurityMessage({ depot = "west", entry, index, form, onChange }) {
+function SCSecurityMessage({ depot = "west", entry, index, form, onChange, mobileActive = true }) {
   const set = (field) => (val) => onChange({ ...form, [field]: val });
   const clear = () => onChange({ phone: "", location: "", gateNo: "" });
   const output = generateSCOutput(entry, form);
@@ -15838,7 +15896,7 @@ function SCSecurityMessage({ depot = "west", entry, index, form, onChange }) {
   const depotLabel = getPossessionDepotLabel(depot);
 
   return (
-      <div className={possessionCardCls} data-possession-security-output data-possession-entry-id={entry.entryId} data-possession-entry-number={index + 1}>
+      <div className={possessionCardCls} data-possession-security-output data-possession-entry-id={entry.entryId} data-possession-entry-number={index + 1} data-mobile-entry-active={mobileActive ? "true" : "false"}>
         <div className={possessionHeaderCls} style={possessionHeaderStyle}>
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center"><Shield className="w-3.5 h-3.5 text-[#4f8ef7]" /></div>
@@ -15856,7 +15914,7 @@ function SCSecurityMessage({ depot = "west", entry, index, form, onChange }) {
               <Trash2 className="w-3 h-3" /> Clear Details
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="pss-short-fields grid grid-cols-2 gap-3">
             <POSSESSION_FIELD label="Phone / Mobile"><POSSESSION_INPUT value={form.phone} onChange={set("phone")} ariaLabel={`${depotLabel} Access Entry ${index + 1} security phone`} placeholder="Optional" /></POSSESSION_FIELD>
             <POSSESSION_FIELD label="Gate Number"><POSSESSION_INPUT value={form.gateNo} onChange={set("gateNo")} ariaLabel={`${depotLabel} Access Entry ${index + 1} security gate`} placeholder="e.g. 4" /></POSSESSION_FIELD>
           </div>
@@ -15962,6 +16020,7 @@ function generateEPAFOutput(f) {
 }
 
 function EPAFLog({ depot = "west" }) {
+  const [mobileView, setMobileView] = useState("form");
   const storageKey = getPossessionStorageKey(POSSESSION_EPAF_KEY, depot);
   const depotLabel = getPossessionDepotLabel(depot);
   const [form, setForm] = useState(() => {
@@ -15978,8 +16037,12 @@ function EPAFLog({ depot = "west" }) {
   const hasContent = output.trim() !== "";
 
   return (
-    <div className="grid grid-cols-[1fr_1fr] gap-4 items-start">
-      <div className={possessionCardCls}>
+    <div className="pss-epaf-workspace grid grid-cols-[1fr_1fr] gap-4 items-start" data-mobile-pss-panel={mobileView}>
+      <nav className="req-mobile-only pss-workflow-switch" aria-label={`${depotLabel} EPAF views`}>
+        <button type="button" aria-pressed={mobileView === "form"} onClick={() => setMobileView("form")}>EPAF details</button>
+        <button type="button" aria-pressed={mobileView === "output"} onClick={() => setMobileView("output")}>Generated log</button>
+      </nav>
+      <div className={possessionCardCls} data-pss-panel="form">
         <div className={possessionHeaderCls} style={possessionHeaderStyle}>
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center"><FileText className="w-3.5 h-3.5 text-[#4f8ef7]" /></div>
@@ -16051,7 +16114,7 @@ function EPAFLog({ depot = "west" }) {
         </div>
       </div>
 
-      <div className={possessionCardCls}>
+      <div className={possessionCardCls} data-pss-panel="output">
         <div className={possessionHeaderCls} style={possessionHeaderStyle}>
           <div>
             <h2 className="text-sm font-bold text-white">Generated EPAF Output</h2>
@@ -16098,6 +16161,7 @@ function generateSweepOutput(f) {
 }
 
 function SweepingLog({ depot = "west" }) {
+  const [mobileView, setMobileView] = useState("form");
   const storageKey = getPossessionStorageKey(POSSESSION_SWEEP_KEY, depot);
   const entriesStorageKey = getPossessionStorageKey(POSSESSION_SWEEP_ENTRIES_KEY, depot);
   const [form, setForm] = useState(() => { try { return { ...defaultSweep, ...JSON.parse(localStorage.getItem(storageKey) || "{}") }; } catch { return defaultSweep; } });
@@ -16140,14 +16204,19 @@ function SweepingLog({ depot = "west" }) {
     if (!hasOutput) return;
     setLogEntries((prev) => [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, text: output }]);
     setAdded(true);
+    setMobileView("output");
     setTimeout(() => setAdded(false), 1400);
   };
 
   const removeLogEntry = (id) => setLogEntries((prev) => prev.filter((entry) => entry.id !== id));
 
   return (
-    <div className="grid grid-cols-[1fr_1fr] gap-4 items-start">
-      <div className={possessionCardCls}>
+    <div className="pss-sweeping-workspace grid grid-cols-[1fr_1fr] gap-4 items-start" data-mobile-pss-panel={mobileView}>
+      <nav className="req-mobile-only pss-workflow-switch" aria-label={`${getPossessionDepotLabel(depot)} sweeping views`}>
+        <button type="button" aria-pressed={mobileView === "form"} onClick={() => setMobileView("form")}>Sweeping details</button>
+        <button type="button" aria-pressed={mobileView === "output"} onClick={() => setMobileView("output")}>Log · {logEntries.length}</button>
+      </nav>
+      <div className={possessionCardCls} data-pss-panel="form">
         <div className={possessionHeaderCls} style={possessionHeaderStyle}>
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-[#10263b] border border-[#2b4f6b] flex items-center justify-center"><Wind className="w-3.5 h-3.5 text-[#4f8ef7]" /></div>
@@ -16192,7 +16261,7 @@ function SweepingLog({ depot = "west" }) {
           </button>
         </div>
       </div>
-      <div className={possessionCardCls}>
+      <div className={possessionCardCls} data-pss-panel="output">
         <div className={possessionHeaderCls} style={possessionHeaderStyle}>
           <div>
             <h2 className="text-sm font-bold text-white">Sweeping Log</h2>
@@ -16238,14 +16307,9 @@ function SweepingLog({ depot = "west" }) {
 }
 
 function PossessionDepotWorkspace({ depot }) {
-  const depotLabel = getPossessionDepotLabel(depot);
   return (
     <div className="theme-possession-depot-workspace space-y-6" data-possession-depot={normalizePossessionDepot(depot)}>
-      <div className="theme-possession-depot-banner rounded-xl border border-[#2b4f6b] bg-[#081a2b] px-4 py-3">
-        <p className="theme-possession-label text-[10px] font-black uppercase tracking-[0.18em] text-[#4a8ab5]">Active PSS workspace</p>
-        <h2 className="theme-possession-depot-title mt-0.5 text-base font-black text-white">{depotLabel}</h2>
-      </div>
-      <section>
+      <section data-possession-section="access">
         <div className="flex items-center gap-2 mb-3">
           <span className="w-5 h-5 rounded-full bg-violet-900/50 border border-violet-700/50 flex items-center justify-center text-[10px] font-black text-violet-300">1</span>
           <h1 className="text-sm font-black text-white tracking-widest uppercase">Possession Log</h1>
@@ -16254,18 +16318,9 @@ function PossessionDepotWorkspace({ depot }) {
         <PossessionLog depot={depot} />
       </section>
       <div className="theme-possession-divider border-t border-[#1e3a56]" />
-      <section>
+      <section data-possession-section="sweeping">
         <div className="flex items-center gap-2 mb-3">
-          <span className="w-5 h-5 rounded-full bg-amber-900/50 border border-amber-700/50 flex items-center justify-center text-[10px] font-black text-amber-300">2</span>
-          <h1 className="text-sm font-black text-white tracking-widest uppercase">EPAF</h1>
-          <div className="flex-1 h-px bg-[#1e3a56]" />
-        </div>
-        <EPAFLog depot={depot} />
-      </section>
-      <div className="theme-possession-divider border-t border-[#1e3a56]" />
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <span className="w-5 h-5 rounded-full bg-emerald-900/50 border border-emerald-700/50 flex items-center justify-center text-[10px] font-black text-emerald-300">3</span>
+          <span className="w-5 h-5 rounded-full bg-emerald-900/50 border border-emerald-700/50 flex items-center justify-center text-[10px] font-black text-emerald-300">2</span>
           <h1 className="text-sm font-black text-white tracking-widest uppercase">Sweeping (after Possession)</h1>
           <div className="flex-1 h-px bg-[#1e3a56]" />
         </div>
@@ -16275,16 +16330,37 @@ function PossessionDepotWorkspace({ depot }) {
   );
 }
 
+function PossessionEpafWorkspace() {
+  const [epaFDepot, setEpafDepot] = useState("west");
+  return (
+    <div className="pss-dedicated-epaf space-y-4">
+      <div className="pss-epaf-depot-picker">
+        <div><h2>EPAF</h2><p>Select the depot for this authority form.</p></div>
+        <label><span>EPAF depot</span><select aria-label="EPAF depot" value={epaFDepot} onChange={(event) => setEpafDepot(event.target.value)}>
+          <option value="west">West Depot</option><option value="east">East Depot</option>
+        </select></label>
+      </div>
+      {["west", "east"].map((depot) => (
+        <div key={depot} hidden={epaFDepot !== depot}>
+          <div className="theme-possession-depot-workspace" data-possession-depot={depot}>
+            <EPAFLog depot={depot} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function PossessionTabContent() {
   const [activeDepot, setActiveDepot] = useState("west");
   const depots = ["west", "east"];
 
   return (
-    <div className="space-y-4">
-      <div role="tablist" aria-label="PSS depot" className="grid grid-cols-2 gap-2 rounded-xl border border-[#2b4f6b] bg-[#071828] p-1.5">
-        {depots.map((depot) => {
+    <div className="pss-tab-workspace space-y-4" data-active-pss-tab={activeDepot}>
+      <div role="tablist" aria-label="PSS sections" className="grid grid-cols-3 gap-2 rounded-xl border border-[#2b4f6b] bg-[#071828] p-1.5">
+        {[...depots, "epaf"].map((depot) => {
           const selected = activeDepot === depot;
-          const label = getPossessionDepotLabel(depot);
+          const label = depot === "epaf" ? "EPAF" : getPossessionDepotLabel(depot);
           return (
             <button
               key={depot}
@@ -16295,7 +16371,9 @@ function PossessionTabContent() {
               aria-controls={`possession-${depot}-panel`}
               onClick={() => setActiveDepot(depot)}
               className={`rounded-lg border px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all ${selected
-                ? depot === "east"
+                ? depot === "epaf"
+                  ? "border-amber-400/70 bg-amber-500/15 text-amber-100 shadow-[0_0_18px_rgba(245,158,11,0.12)]"
+                  : depot === "east"
                   ? "border-violet-400/70 bg-violet-500/20 text-violet-100 shadow-[0_0_18px_rgba(139,92,246,0.18)]"
                   : "border-cyan-400/70 bg-cyan-500/15 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.16)]"
                 : "border-transparent bg-[#0b1f33] text-[#5d94bd] hover:border-[#2b4f6b] hover:text-white"}`}
@@ -16317,6 +16395,9 @@ function PossessionTabContent() {
           <PossessionDepotWorkspace depot={depot} />
         </div>
       ))}
+      <div id="possession-epaf-panel" role="tabpanel" aria-labelledby="possession-epaf-tab" hidden={activeDepot !== "epaf"}>
+        <PossessionEpafWorkspace />
+      </div>
     </div>
   );
 }

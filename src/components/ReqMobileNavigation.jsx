@@ -19,7 +19,7 @@ const workspaceSections = {
   pst: [["trains", "Trains"], ["logs", "Logs"], ["excel", "Excel / Remarks"]],
   insertion: [["trains", "Trains"], ["timetable", "Timetable"], ["logs", "Logs"], ["requests", "Requests"]],
   washing: [["import", "Excel import"], ["manual", "Manual wash"], ["report", "Report"]],
-  possession: [["access", "Access"], ["epaf", "EPAF"], ["sweeping", "Sweeping"]],
+  possession: [["access", "Access"], ["sweeping", "Sweeping"]],
   roster: [["roster", "Daily roster"], ["schedule", "Staff schedule"]],
   sleep: [["trains", "Select trains"], ["logs", "Logs / Excel"]],
 };
