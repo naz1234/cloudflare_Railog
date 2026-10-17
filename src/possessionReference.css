@@ -1,0 +1,105 @@
+/* Approved reference skin: desktop dark mode only. Mobile and light mode
+   retain their existing layouts and palettes; no form/output logic changes. */
+@media (min-width: 768px) {
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] {
+    --pss-reference-canvas: #051c2b;
+    --pss-reference-text: #eef6ff;
+    --pss-reference-muted: #a4cbee;
+    --pss-reference-cyan: #00d9f5;
+    --pss-reference-teal: #00e5c1;
+    --pss-reference-violet: #b55dff;
+    --pss-review-control: #082637;
+    --pss-review-line: #386b8e;
+    --pss-review-text: var(--pss-reference-text);
+    --pss-review-muted: var(--pss-reference-muted);
+    --pss-header-accent: var(--pss-reference-cyan);
+    --pss-header-surface: linear-gradient(110deg, #062d3e, #081e32);
+    --pss-header-active: linear-gradient(110deg, #06465a, #073047);
+  }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .theme-possession-depot-workspace:has(> [data-possession-section="access"]) { padding: 0; border: 0; background: transparent; box-shadow: none; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-tab-workspace > :not([hidden]) ~ :not([hidden]) { margin-top: 16px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] [aria-label="PSS sections"] { padding: 0; border-radius: 12px; background: linear-gradient(110deg, #082a3a, #071c2e); box-shadow: inset 0 1px 0 #85bfff12; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] [aria-label="PSS sections"] button { min-height: 44px; border-radius: 11px; font-size: 14px; letter-spacing: .015em; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] [aria-label="PSS sections"] button[aria-selected="true"] { background: linear-gradient(110deg, #074356, #063044); box-shadow: inset 0 0 14px #00d9f51a, 0 2px 0 #00d9f5, 0 3px 12px #00d9f52b; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] [aria-label="PSS sections"] button[aria-selected="true"]::after { display: none; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-depot-tab-icon { width: 23px; height: 23px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .theme-possession-depot-workspace .pss-section-title { gap: 16px; margin-bottom: 10px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-section-title > :is(span,div) { display: none; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-reference-section-icon { display: block; width: 40px; height: 40px; padding: 9px; border: 1px solid #3a759c; border-radius: 10px; color: #a4d8ff; background: linear-gradient(135deg, #123b54, #0b2337); box-shadow: inset 0 0 8px #47caff12; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .theme-possession-depot-workspace .pss-section-title h1 { font-size: 21px; font-weight: 750; letter-spacing: .015em; }
+
+  /* Four flat, colour-coded counters, matching the reference rather than
+     changing palette by depot or by the selected PIC. */
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-workspace { gap: 14px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-dashboard { gap: 13px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-dashboard > div { min-height: 68px; padding: 12px; border-color: var(--pss-stat-accent); border-radius: 10px; background: linear-gradient(110deg, color-mix(in srgb, var(--pss-stat-accent) 8%, var(--pss-reference-canvas)), var(--pss-reference-canvas)); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--pss-stat-accent) 18%, transparent); }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-dashboard dt { padding-left: 56px; font-size: 13px; line-height: 1.35; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-dashboard span { padding-left: 56px; font-size: 11px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-stat-icon { top: -2px; width: 42px; height: 42px; padding: 10px; border-radius: 11px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-dashboard dd { font-size: 28px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-dashboard .is-issued { --pss-stat-accent: #ffbd22; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-dashboard .is-pics { --pss-stat-accent: #26baff; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-dashboard .is-handback { --pss-stat-accent: #12dcb4; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-dashboard .is-waiting-handback { --pss-stat-accent: #bb7aff; }
+
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-controls { grid-template-columns: minmax(0,1.3fr) minmax(0,1fr); gap: 10px 12px; padding: 14px; border-color: var(--pss-reference-teal); border-radius: 12px; background: linear-gradient(110deg, #073943, #062b3b); box-shadow: inset 0 0 12px #00e5c113, 0 0 10px #00e5c112; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-controls-heading > div { grid-template-columns: 30px minmax(0,1fr); column-gap: 12px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-controls-icon { width: 27px; height: 27px; color: #a4d8ff; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-controls-heading strong { font-size: 15px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-controls-heading p { font-size: 12px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-controls-heading > span { padding: 7px 10px; background: #10364b; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-entry-picker-label { margin-bottom: 5px; font-size: 11px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] :is(.pss-entry-picker-trigger,.pss-entry-picker-row > button,.pss-access-search-toggle,.pss-desktop-view-switch button) { min-height: 36px; border-radius: 8px; font-size: 12px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-entry-picker-trigger { border-color: #4a86ab; background: linear-gradient(180deg, #0a3043, #071f31); }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-desktop-view-switch { gap: 8px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-desktop-view-switch button { background: linear-gradient(180deg, #10364c, #09283b); }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-desktop-view-switch button[aria-pressed="true"] { border-color: #00e0ff; background: linear-gradient(135deg, #00a5f0, #007ce7); box-shadow: inset 0 1px 0 #a9f5ff55, 0 0 9px #00baff30; }
+
+  /* The selected form is one cyan frame, not a card inside another card. */
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-form-panel { border: 0 !important; background: transparent !important; box-shadow: none; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-form-panel > .theme-possession-header { display: none; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-form-panel > .p-4 { padding: 0; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .theme-possession-access-entry { border-color: var(--pss-reference-cyan) !important; border-radius: 12px; background: linear-gradient(125deg, #062b3d, #062638) !important; box-shadow: inset 0 0 12px #00d9f512, 0 0 8px #00d9f514 !important; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .theme-possession-access-entry .theme-possession-access-entry-header { min-height: 50px; padding: 9px 14px; border-color: #22546e !important; background: linear-gradient(110deg, #0b3a50, #082c41) !important; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .theme-possession-access-entry .theme-possession-access-entry-title { display: flex; align-items: center; gap: 14px; color: var(--pss-reference-text) !important; font-size: 15px; font-weight: 700; letter-spacing: 0; text-transform: none; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-reference-entry-icon { display: block; width: 34px; height: 34px; padding: 8px; border: 1px solid #377da4; border-radius: 9px; color: #a4d8ff; background: #103e58; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .theme-possession-access-entry > .p-3 { padding: 14px; gap: 12px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-form-panel .theme-possession-label { color: #57e4f8 !important; font-size: 10px; letter-spacing: .015em; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-form-panel .theme-possession-input { border-color: #467d9c; background: linear-gradient(180deg, #08293a, #061d2d); color: var(--pss-reference-text); }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-form-panel input.theme-possession-input { min-height: 32px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-form-panel .theme-possession-input:focus { border-color: var(--pss-reference-cyan) !important; --tw-ring-color: var(--pss-reference-cyan) !important; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-detail { grid-template-columns: minmax(105px,.85fr) minmax(0,2fr); align-items: start; gap: 5px 14px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-detail > .pss-access-number-heading { grid-column: 1; grid-row: 1; flex-wrap: wrap; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-number-field { grid-column: 1; grid-row: 2; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-number-field > label { display: none; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-description-field { grid-column: 2; grid-row: 1/span 2; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-description-field textarea { min-height: 76px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-add-access-number > button { min-height: 34px; padding: 7px 12px; border-color: var(--pss-reference-cyan); background: #073246; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-add-access-number > p { margin-top: 7px; color: var(--pss-reference-muted) !important; font-size: 11px; }
+
+  /* Purple is reserved for outputs in both depots, while status pills keep
+     their issue/SCD/handback colours and copy confirmation stays green. */
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] [data-possession-outputs] > .theme-possession-card { border-color: var(--pss-reference-violet) !important; border-radius: 12px; background: linear-gradient(130deg, #1a2446, #242447) !important; box-shadow: inset 0 0 12px #b55dff18, 0 0 8px #b55dff18; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] [data-possession-outputs] .theme-possession-header { min-height: 50px; padding: 10px 12px; border: 0; background: transparent !important; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-entry-log-output { min-height: 300px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-entry-log-output > .theme-possession-header > div { display: grid; grid-template-columns: 32px minmax(0,1fr); align-items: center; column-gap: 10px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-reference-output-icon { display: block; grid-column: 1; grid-row: 1/span 2; width: 30px; height: 30px; padding: 6px; border: 1px solid var(--pss-reference-cyan); border-radius: 8px; color: #b4dcff; background: #152d4d; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-entry-log-output .theme-possession-header :is(h2,p) { grid-column: 2; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] [data-possession-outputs] .theme-possession-header h2 { font-size: 15px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] [data-possession-outputs] .theme-possession-header p { color: #b4d4ff; font-size: 11px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] [data-possession-outputs] > .theme-possession-card > .p-4 { padding: 4px 12px 14px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] [data-possession-outputs] pre { min-height: 170px; margin: 0; padding: 12px; border: 1px solid #7250b0; border-radius: 9px; color: #eef2ff; background: #101b35; font-size: 11px; line-height: 1.7; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] [data-possession-outputs] .pss-copy-action { border-color: #456b99; background: #17324b; color: #6ce2ff; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-clear-all-inline button { display: flex; align-items: center; gap: 5px; padding: 5px 8px; border: 1px solid #ab465d; border-radius: 7px; color: #ff9daf; background: #441e3440; font-size: 11px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-workspace button:disabled { cursor: not-allowed; opacity: .45; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-workspace :is(button,input,textarea):focus-visible { outline: 2px solid var(--pss-reference-cyan); outline-offset: 3px; }
+}
+
+/* Keep the same desktop design usable on narrow laptops without shrinking
+   text, clipping the action buttons, or applying any rules to phones. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-dashboard { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-controls { grid-template-columns: minmax(0,1fr); }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-workspace { grid-template-columns: minmax(0,1fr); }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] [data-possession-outputs] { position: static; }
+}

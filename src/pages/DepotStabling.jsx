@@ -32,6 +32,7 @@ import "../mobileActions.css";
 import "../mobileDensity.css";
 import "../possessionMobile.css";
 import "../possessionDesktop.css";
+import "../possessionReference.css";
 import RemovalPdfEditor from "../components/depot/RemovalPdfEditor";
 import EastNineAmRemovalPdfEditor from "../components/depot/EastNineAmRemovalPdfEditor";
 import RemovalSummaryRemark from "../components/depot/RemovalSummaryRemark";
@@ -15456,8 +15457,8 @@ function PossessionCopyBtn({ text, disabled, label = "Copy Output", ariaLabel })
   );
 }
 
-const POSSESSION_FIELD = ({ label, children }) => (
-  <div>
+const POSSESSION_FIELD = ({ label, children, className }) => (
+  <div className={className}>
     <label className="theme-possession-label block text-[10px] font-semibold text-[#4a8ab5] tracking-widest uppercase mb-1">{label}</label>
     {children}
   </div>
@@ -15674,7 +15675,7 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove, mobileAc
       data-mobile-entry-active={mobileActive ? "true" : "false"}
     >
       <div className="theme-possession-header theme-possession-access-entry-header border-b border-[#1e3a56] px-3 py-2 flex items-center justify-between">
-        <span className="theme-possession-access-entry-title text-[11px] font-black text-[#7eb8e0] tracking-widest uppercase">Access Entry {index + 1}</span>
+        <span className="theme-possession-access-entry-title text-[11px] font-black text-[#7eb8e0] tracking-widest uppercase"><FileText className="req-mobile-only pss-reference-entry-icon" aria-hidden="true" />Access Entry {index + 1}</span>
         {canRemove && (
           <button onClick={onRemove} aria-label={`Remove Access Entry ${index + 1}`} className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border border-red-800/50 text-red-400 hover:bg-red-950/40 transition-colors">
             <X className="w-3 h-3" /> Remove
@@ -15690,7 +15691,7 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove, mobileAc
         <div className="req-mobile-only pss-step-label"><span>02</span> Access numbers &amp; work</div>
         {accessDetails.map((detail, accessIndex) => (
           <div key={accessIndex} className={`pss-access-detail space-y-2 ${accessIndex > 0 ? "border-t border-[#1e3a56] pt-3" : ""}`}>
-            <div className="flex items-center justify-between gap-2">
+            <div className="pss-access-number-heading flex items-center justify-between gap-2">
               <span className="theme-possession-label text-[10px] font-bold tracking-widest uppercase">Access Number {accessIndex + 1}</span>
               {accessDetails.length > 1 && (
                 <button type="button" aria-label={`Remove access number ${accessIndex + 1} for entry ${index + 1}`}
@@ -15700,9 +15701,9 @@ function AccessEntryForm({ entry, index, onChange, onRemove, canRemove, mobileAc
                 </button>
               )}
             </div>
-            <POSSESSION_FIELD label="Access No."><POSSESSION_INPUT value={detail.accessNo} onChange={setAccessDetail(accessIndex, "accessNo")}
+            <POSSESSION_FIELD label="Access No." className="pss-access-number-field"><POSSESSION_INPUT value={detail.accessNo} onChange={setAccessDetail(accessIndex, "accessNo")}
               ariaLabel={`Access number ${accessIndex + 1} for entry ${index + 1}`} placeholder="e.g. 303004" /></POSSESSION_FIELD>
-            <POSSESSION_FIELD label="Description"><POSSESSION_TEXTAREA value={detail.description} onChange={setAccessDetail(accessIndex, "description")}
+            <POSSESSION_FIELD label="Description" className="pss-access-description-field"><POSSESSION_TEXTAREA value={detail.description} onChange={setAccessDetail(accessIndex, "description")}
               ariaLabel={`Access description ${accessIndex + 1} for entry ${index + 1}`} placeholder="Work description for this access number..." rows={2} /></POSSESSION_FIELD>
           </div>
         ))}
@@ -15857,7 +15858,7 @@ function PossessionLog({ depot = "west" }) {
       <div className="min-w-0 space-y-4" data-possession-outputs>
       <div className={`req-mobile-only pss-entry-log-output ${possessionCardCls}`}>
         <div className={possessionHeaderCls} style={possessionHeaderStyle}>
-          <div><h2 className="text-sm font-bold text-white">Access Entry {mobileEntryIndex + 1} log</h2><p className="text-[10px] text-[#4a8ab5]">{mobileEntry?.picName?.trim() || "Add PIC details to begin"}</p></div>
+          <div><FileText className="req-mobile-only pss-reference-output-icon" aria-hidden="true" /><h2 className="text-sm font-bold text-white">Access Entry {mobileEntryIndex + 1} log</h2><p className="text-[10px] text-[#4a8ab5]">{mobileEntry?.picName?.trim() || "Add PIC details to begin"}</p></div>
           <PossessionCopyBtn text={mobileEntryOutput} disabled={!mobileEntryOutput.trim()} label="Copy Entry" ariaLabel={`Copy log for Access Entry ${mobileEntryIndex + 1} — ${getPossessionDepotLabel(depot)}`} />
         </div>
         <div className="p-4">{mobileEntryOutput.trim() ? <pre className="font-mono text-xs text-[#c8d8ea] whitespace-pre-wrap leading-relaxed">{mobileEntryOutput}</pre> : <p className="pss-mobile-empty">Fill in this PIC's access details to generate the log.</p>}</div>
@@ -16326,6 +16327,7 @@ function PossessionDepotWorkspace({ depot }) {
       <section data-possession-section="access">
         <div className="pss-section-title flex items-center gap-2 mb-3">
           <span className="w-5 h-5 rounded-full bg-violet-900/50 border border-violet-700/50 flex items-center justify-center text-[10px] font-black text-violet-300">1</span>
+          <FileText className="req-mobile-only pss-reference-section-icon" aria-hidden="true" />
           <h1 className="text-sm font-black text-white tracking-widest uppercase">Possession Log</h1>
           <div className="flex-1 h-px bg-[#1e3a56]" />
         </div>

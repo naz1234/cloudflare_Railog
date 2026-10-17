@@ -105,6 +105,18 @@ function renderDepot(depot, entries, savedSecurity) {
 }
 
 for (const depot of ["west", "east"]) {
+  test(`${depot} reference design keeps labelled access fields, entry copy and clear actions`, () => {
+    const html = renderDepot(depot, [entry], manual);
+    assert.match(html, /class="pss-access-number-field"/);
+    assert.match(html, /aria-label="Access number 1 for entry 1"/);
+    assert.match(html, /class="pss-access-description-field"/);
+    assert.match(html, /aria-label="Access description 1 for entry 1"/);
+    assert.match(html, /pss-reference-entry-icon/);
+    assert.match(html, /pss-reference-output-icon/);
+    assert.match(html, new RegExp(`aria-label="Copy log for Access Entry 1 — ${depot === "west" ? "West" : "East"} Depot"`));
+    assert.match(html, new RegExp(`aria-label="Clear all ${depot === "west" ? "West" : "East"} Depot access entries"`));
+  });
+
   test(`${depot} PSS provides its own access number search button`, () => {
     const html = renderDepot(depot, [entry], manual);
     assert.match(html, /class="req-mobile-only pss-access-search"/);
