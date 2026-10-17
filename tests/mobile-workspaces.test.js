@@ -37,6 +37,33 @@ test("the PSS desktop preview cannot alter mobile or other desktop workspaces", 
   assert.ok(count > 0);
 });
 
+test("PSS desktop uses compact geometry without scaling or clipping form content", () => {
+  const stylesheet = postcss.parse(readFileSync(new URL("../src/possessionDesktop.css", import.meta.url), "utf8"));
+  const valueFor = (ending, property) => {
+    let value;
+    stylesheet.walkRules((rule) => {
+      if (!rule.selector.endsWith(ending)) return;
+      rule.walkDecls(property, (declaration) => { value = declaration.value; });
+    });
+    assert.notEqual(value, undefined, `${ending}: ${property}`);
+    return value;
+  };
+  assert.equal(valueFor(" .pss-tab-workspace", "max-width"), "1120px");
+  assert.equal(valueFor(" .pss-tab-workspace", "margin-inline"), "auto");
+  assert.equal(valueFor(" .pss-dashboard > div", "padding"), "10px 12px");
+  assert.equal(valueFor(" .pss-dashboard dd", "font-size"), "24px");
+  assert.equal(valueFor(" .pss-entry-picker-row select", "height"), "32px");
+  assert.equal(valueFor(" input.theme-possession-input", "min-height"), "30px");
+  assert.equal(valueFor(" .pss-access-detail", "grid-template-columns"), "minmax(88px,.85fr) minmax(0,2fr)");
+  assert.equal(valueFor(" .pss-access-detail > .flex", "grid-column"), "1/-1");
+  assert.equal(valueFor(" textarea.theme-possession-input", "resize"), "vertical");
+  assert.equal(valueFor(" [data-possession-outputs] pre", "white-space"), "pre-wrap");
+  stylesheet.walkDecls((declaration) => {
+    assert.ok(!["zoom", "transform", "max-height"].includes(declaration.prop), declaration.toString());
+    assert.ok(!["overflow", "overflow-y"].includes(declaration.prop) || declaration.value !== "hidden", declaration.toString());
+  });
+});
+
 test("PST, Insertion and Sleep use the same road-list geometry as Train Request", () => {
   const request = postcss.parse(readFileSync(new URL("../src/reqMobileStabling.css", import.meta.url), "utf8"));
   const workspaces = postcss.parse(readFileSync(new URL("../src/mobileWorkspaces.css", import.meta.url), "utf8"));
