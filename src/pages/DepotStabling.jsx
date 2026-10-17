@@ -65,7 +65,7 @@ import { buildPSTExcelClipboardText } from "../lib/pstExcelClipboard";
 import { appendPstFldcColumns } from "../lib/pstFldcVerification";
 import { usePstFldcVerification } from "../hooks/usePstFldcVerification";
 import PstExcelFormatLogPanel from "../components/PstExcelFormatLogPanel";
-import { buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "../lib/possessionAccessLog";
+import { buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionEntryPendingStatus, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "../lib/possessionAccessLog";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40Groups, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, resizeHdwDepotRows, clearHdwRows } from "../lib/trainRemHdw40";
 import "../trainRemHdw40.css";
@@ -15790,11 +15790,15 @@ function PossessionLog({ depot = "west" }) {
   const mobileEntryIndex = entries.indexOf(mobileEntry);
   const mobileEntryOutput = mobileEntry ? generateEntryOutput(mobileEntry) : "";
   const dashboard = buildPossessionDashboard(entries, parsePossessionTimeTo24);
-  const entryOptions = entries.map((entry, index) => ({
-    value: entry.entryId,
-    label: `Entry ${index + 1} · ${entry.picName?.trim() || "New PIC"}`,
-    waiting: Boolean(buildPossessionDashboard([entry], parsePossessionTimeTo24).waitingForHandback),
-  }));
+  const entryOptions = entries.map((entry, index) => {
+    const pendingStatus = getPossessionEntryPendingStatus(entry, parsePossessionTimeTo24);
+    return {
+      value: entry.entryId,
+      label: `Entry ${index + 1} · ${entry.picName?.trim() || "New PIC"}`,
+      waiting: Boolean(pendingStatus),
+      waitingForScd: pendingStatus === "scd",
+    };
+  });
 
   return (
     <div className="pss-access-workspace grid grid-cols-[1fr_1fr] gap-4 items-start" data-mobile-access-view={mobileAccessView}>
