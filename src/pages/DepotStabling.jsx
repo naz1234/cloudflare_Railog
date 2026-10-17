@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, us
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { CheckCircle2, FileSpreadsheet, FileText, FileDown, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Redo2, Download, Search, ArrowUp, ArrowDown, ArrowRight, Check, Sun, Moon, TrainFront, Clock3, RefreshCw, TriangleAlert } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, FileText, FileDown, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Redo2, Download, Search, ArrowUp, ArrowDown, ArrowRight, Check, Sun, Moon, TrainFront, Clock3, RefreshCw, TriangleAlert, UsersRound, Layers, BarChart3 } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import OdoReading from "../components/OdoReading";
@@ -63,7 +63,7 @@ import { buildPSTExcelClipboardText } from "../lib/pstExcelClipboard";
 import { appendPstFldcColumns } from "../lib/pstFldcVerification";
 import { usePstFldcVerification } from "../hooks/usePstFldcVerification";
 import PstExcelFormatLogPanel from "../components/PstExcelFormatLogPanel";
-import { buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "../lib/possessionAccessLog";
+import { buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "../lib/possessionAccessLog";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40Groups, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, resizeHdwDepotRows, clearHdwRows } from "../lib/trainRemHdw40";
 import "../trainRemHdw40.css";
@@ -15783,7 +15783,7 @@ function PossessionLog({ depot = "west" }) {
   };
   const removeEntry = (i) => setEntries((prev) => removePossessionAccessEntry(prev, i, legacySecurity));
   const clear = () => { setEntries([defaultEntry()]); localStorage.removeItem(storageKey); };
-  const output = entries.map(generateEntryOutput).join("\n\n");
+  const output = buildPossessionCombinedOutput(entries, fmtPossession24);
   const mobileEntry = entries.find((entry) => entry.entryId === mobileEntryId) || entries[0];
   const mobileEntryIndex = entries.indexOf(mobileEntry);
   const mobileEntryOutput = mobileEntry ? generateEntryOutput(mobileEntry) : "";
@@ -15792,12 +15792,13 @@ function PossessionLog({ depot = "west" }) {
   return (
     <div className="pss-access-workspace grid grid-cols-[1fr_1fr] gap-4 items-start" data-mobile-access-view={mobileAccessView}>
       <dl className="req-mobile-only pss-dashboard" aria-label={`${getPossessionDepotLabel(depot)} access dashboard`}>
-        <div className="is-issued"><dt>Access issued</dt><dd>{dashboard.issued}</dd><span>access numbers</span></div>
-        <div className="is-pics"><dt>PICs</dt><dd>{dashboard.pics}</dd><span>people in charge</span></div>
-        <div className="is-handback"><dt>Handed back</dt><dd>{dashboard.handedBack}</dd><span>access numbers</span></div>
+        <div className="is-issued"><dt><FileText className="req-mobile-only pss-stat-icon" aria-hidden="true" />Access issued</dt><dd>{dashboard.issued}</dd><span>access numbers</span></div>
+        <div className="is-pics"><dt><UsersRound className="req-mobile-only pss-stat-icon" aria-hidden="true" />PICs</dt><dd>{dashboard.pics}</dd><span>people in charge</span></div>
+        <div className="is-handback"><dt><Undo2 className="req-mobile-only pss-stat-icon" aria-hidden="true" />Handed back</dt><dd>{dashboard.handedBack}</dd><span>access numbers</span></div>
+        <div className="req-mobile-only is-waiting-handback"><dt><Clock3 className="req-mobile-only pss-stat-icon" aria-hidden="true" />PICs waiting</dt><dd>{dashboard.waitingForHandback}</dd><span>for handback</span></div>
       </dl>
       <div className="req-mobile-only pss-access-controls">
-        <div className="pss-access-controls-heading"><div><strong>Access entries</strong><p>One PIC, their permits and both outputs.</p></div><span>{entries.length} entr{entries.length === 1 ? "y" : "ies"}</span></div>
+        <div className="pss-access-controls-heading"><div><FileText className="req-mobile-only pss-controls-icon" aria-hidden="true" /><strong>Access entries</strong><p>One PIC, their permits and both outputs.</p></div><span>{entries.length} entr{entries.length === 1 ? "y" : "ies"}</span></div>
         <div className="pss-entry-picker-row">
           <label><span>Working on</span><select aria-label={`${getPossessionDepotLabel(depot)} select PIC access entry`} value={mobileEntry?.entryId || ""}
             onChange={(event) => { setMobileEntryId(event.target.value); setMobileAccessView("details"); }}>
@@ -15811,8 +15812,8 @@ function PossessionLog({ depot = "west" }) {
           ))}
         </nav>
         <nav className="req-mobile-only pss-desktop-view-switch" aria-label={`${getPossessionDepotLabel(depot)} access outputs`}>
-          {[["entry", "Entry log"], ["security", "Security"], ["all", "All logs"]].map(([key, label]) => (
-            <button key={key} type="button" aria-pressed={(mobileAccessView === "details" ? "entry" : mobileAccessView) === key} onClick={() => setMobileAccessView(key)}>{label}</button>
+          {[["entry", "Entry log", FileText], ["security", "Security", Shield], ["all", "All logs", BarChart3]].map(([key, label, ViewIcon]) => (
+            <button key={key} type="button" aria-pressed={(mobileAccessView === "details" ? "entry" : mobileAccessView) === key} onClick={() => setMobileAccessView(key)}><ViewIcon size={15} aria-hidden="true" />{label}</button>
           ))}
         </nav>
       </div>
@@ -16310,7 +16311,7 @@ function PossessionDepotWorkspace({ depot }) {
   return (
     <div className="theme-possession-depot-workspace space-y-6" data-possession-depot={normalizePossessionDepot(depot)}>
       <section data-possession-section="access">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="pss-section-title flex items-center gap-2 mb-3">
           <span className="w-5 h-5 rounded-full bg-violet-900/50 border border-violet-700/50 flex items-center justify-center text-[10px] font-black text-violet-300">1</span>
           <h1 className="text-sm font-black text-white tracking-widest uppercase">Possession Log</h1>
           <div className="flex-1 h-px bg-[#1e3a56]" />
@@ -16361,6 +16362,7 @@ function PossessionTabContent() {
         {[...depots, "epaf"].map((depot) => {
           const selected = activeDepot === depot;
           const label = depot === "epaf" ? "EPAF" : getPossessionDepotLabel(depot);
+          const TabIcon = depot === "epaf" ? Layers : TrainFront;
           return (
             <button
               key={depot}
@@ -16378,6 +16380,7 @@ function PossessionTabContent() {
                   : "border-cyan-400/70 bg-cyan-500/15 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.16)]"
                 : "border-transparent bg-[#0b1f33] text-[#5d94bd] hover:border-[#2b4f6b] hover:text-white"}`}
             >
+              <TabIcon className="req-mobile-only pss-depot-tab-icon" aria-hidden="true" />
               {label}
             </button>
           );

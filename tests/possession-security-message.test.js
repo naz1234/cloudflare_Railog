@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import * as icons from "lucide-react";
 import ts from "typescript";
 import {
-  buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage,
+  buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage,
   getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry,
 } from "../src/lib/possessionAccessLog.js";
 
@@ -71,17 +71,35 @@ function renderDepot(depot, entries, savedSecurity) {
     [`possessionLog_v2${suffix}`]: JSON.stringify(entries),
     [`scSecurityMessage_v1${suffix}`]: JSON.stringify(savedSecurity),
   };
-  const { PossessionLog } = new Function("React", "icons", "localStorage", "base44", "buildPossessionDashboard", "buildPossessionEntryOutput", "buildPossessionSecurityMessage", "getPossessionAccessDetails", "getPossessionSecurityDetails", "normalizePossessionAccessEntry", "removePossessionAccessEntry", `
+  const { PossessionLog } = new Function("React", "icons", "localStorage", "base44", "buildPossessionCombinedOutput", "buildPossessionDashboard", "buildPossessionEntryOutput", "buildPossessionSecurityMessage", "getPossessionAccessDetails", "getPossessionSecurityDetails", "normalizePossessionAccessEntry", "removePossessionAccessEntry", `
     const { useState, useEffect, useRef, useMemo, useCallback } = React;
-    const { FileText, Shield, Trash2, X, Plus, Copy, ClipboardCheck, Wind, Zap } = icons;
+    const { FileText, Shield, Trash2, X, Plus, Copy, ClipboardCheck, Wind, Zap, UsersRound, Undo2, BarChart3, Clock3 } = icons;
     ${compiled}
     return { PossessionLog };
-  `)(React, icons, { getItem: (key) => stored[key] || null }, {}, buildPossessionDashboard, buildPossessionEntryOutput,
+  `)(React, icons, { getItem: (key) => stored[key] || null }, {}, buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput,
     buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry);
   return renderToStaticMarkup(React.createElement(PossessionLog, { depot }));
 }
 
 for (const depot of ["west", "east"]) {
+  test(`${depot} desktop dashboard shows PICs waiting for handback`, () => {
+    const html = renderDepot(depot, [
+      { picName: "Waiting PIC", accessNo: "1 / 2", issueTime: "13:00" },
+      { picName: "Returned PIC", accessNo: "3", issueTime: "13:00", handbackTime: "14:00" },
+      { picName: "Draft PIC", accessNo: "4" },
+    ], manual);
+    assert.match(html, /class="req-mobile-only is-waiting-handback"[\s\S]*?PICs waiting<\/dt><dd>1<\/dd><span>for handback<\/span>/);
+  });
+
+  test(`${depot} combined output separates PICs but keeps entry and security outputs unchanged`, () => {
+    const html = renderDepot(depot, [entry, {}, { picName: "Second PIC", accessNo: "777", description: "Second work" }], manual);
+    const combined = html.split('pss-all-log-output')[1].split("</pre>")[0];
+    assert.match(combined, /PIC - Jay Bigcas[\s\S]*?─{36}[\s\S]*?PIC - Second PIC/);
+    assert.equal((combined.match(/─{36}/g) || []).length, 1);
+    assert.doesNotMatch(html.split('pss-entry-log-output')[1].split("</pre>")[0], /─{36}/);
+    assert.doesNotMatch(html.split("data-possession-security-output").slice(1).join(""), /─{36}/);
+  });
+
   test(`${depot} actual PSS output gives every access entry its own security data and Copy button`, () => {
     const html = renderDepot(depot, [entry, { picName: "Second PIC", accessNo: "777", description: "Second work" }], manual);
     assert.match(html, /data-possession-outputs/);

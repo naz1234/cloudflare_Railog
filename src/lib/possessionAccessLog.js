@@ -62,6 +62,7 @@ function cleanAccessNumber(raw) {
 
 export function buildPossessionDashboard(entries = [], validTime = (value) => /^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(text(value).trim())) {
   const pics = new Set();
+  const waitingForHandback = new Set();
   const issued = new Map();
   const namedIds = new Map();
   const records = (Array.isArray(entries) ? entries : []).filter((entry) => entry && typeof entry === "object").map((entry) => ({
@@ -77,20 +78,24 @@ export function buildPossessionDashboard(entries = [], validTime = (value) => /^
   for (const { entry, picId, picName } of records) {
     const knownIds = namedIds.get(picName);
     const identity = picId || (knownIds?.size === 1 ? [...knownIds][0] : "");
-    if (identity || picName) pics.add(identity ? `id:${identity}` : `name:${picName}`);
+    const picKey = identity ? `id:${identity}` : picName ? `name:${picName}` : "";
+    if (picKey) pics.add(picKey);
     if (!validTime(entry.issueTime)) continue;
     const handedBack = Boolean(validTime(entry.handbackTime));
+    let hasIssuedAccess = false;
     for (const detail of getPossessionAccessDetails(entry)) {
       for (const number of getPossessionAccessDetails({ accessNo: detail.accessNo })) {
         const key = cleanAccessNumber(number.accessNo).replace(/\s+/g, "").toUpperCase();
         if (!key) continue;
+        hasIssuedAccess = true;
         // A repeated permit is counted once, and stays open while any issued
         // record for that number still has no valid handback time.
         issued.set(key, (issued.get(key) ?? true) && handedBack);
       }
     }
+    if (picKey && hasIssuedAccess && !handedBack) waitingForHandback.add(picKey);
   }
-  return { issued: issued.size, pics: pics.size, handedBack: [...issued.values()].filter(Boolean).length };
+  return { issued: issued.size, pics: pics.size, handedBack: [...issued.values()].filter(Boolean).length, waitingForHandback: waitingForHandback.size };
 }
 
 // Shared details always come from the corresponding access entry, never the old
@@ -169,4 +174,11 @@ export function buildPossessionEntryOutput(entry, formatTime) {
   // Stable ascending 24-hour order; equal-time events retain their original order.
   events.sort((left, right) => getTimedLineMinutes(left) - getTimedLineMinutes(right));
   return [header.join("\n"), events.join("\n")].filter(Boolean).join("\n\n");
+}
+
+export function buildPossessionCombinedOutput(entries = [], formatTime) {
+  return (Array.isArray(entries) ? entries : [])
+    .map((entry) => buildPossessionEntryOutput(entry, formatTime))
+    .filter((output) => output.trim())
+    .join(`\n\n${"─".repeat(36)}\n\n`);
 }

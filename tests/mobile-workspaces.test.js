@@ -51,6 +51,7 @@ test("PSS desktop uses compact geometry without scaling or clipping form content
   assert.equal(valueFor(" .pss-tab-workspace", "max-width"), "1120px");
   assert.equal(valueFor(" .pss-tab-workspace", "margin-inline"), "auto");
   assert.equal(valueFor(" .pss-dashboard > div", "padding"), "10px 12px");
+  assert.equal(valueFor(" .pss-dashboard", "grid-template-columns"), "repeat(4,minmax(0,1fr))");
   assert.equal(valueFor(" .pss-dashboard dd", "font-size"), "24px");
   assert.equal(valueFor(" .pss-entry-picker-row select", "height"), "32px");
   assert.equal(valueFor(" input.theme-possession-input", "min-height"), "30px");
@@ -62,6 +63,26 @@ test("PSS desktop uses compact geometry without scaling or clipping form content
     assert.ok(!["zoom", "transform", "max-height"].includes(declaration.prop), declaration.toString());
     assert.ok(!["overflow", "overflow-y"].includes(declaration.prop) || declaration.value !== "hidden", declaration.toString());
   });
+});
+
+test("PSS reference header decorations are desktop-only and reuse the existing controls", () => {
+  const source = readFileSync(new URL("../src/pages/DepotStabling.jsx", import.meta.url), "utf8");
+  const baseCss = postcss.parse(readFileSync(new URL("../src/reqMobile.css", import.meta.url), "utf8"));
+  let hiddenByDefault = false;
+  baseCss.walkRules((rule) => {
+    if (rule.selector !== ".req-mobile-only" || rule.parent.type !== "root") return;
+    rule.walkDecls("display", (declaration) => { hiddenByDefault = declaration.value === "none"; });
+  });
+  assert.equal(hiddenByDefault, true);
+  for (const icon of ["pss-stat-icon", "pss-controls-icon", "pss-depot-tab-icon"]) {
+    const instances = [...source.matchAll(new RegExp(`className="([^"]*\\b${icon}\\b[^"]*)"`, "g"))];
+    assert.ok(instances.length > 0, icon);
+    instances.forEach((instance) => assert.ok(instance[1].split(/\s+/).includes("req-mobile-only"), icon));
+  }
+  assert.match(source, /className="req-mobile-only pss-desktop-view-switch"/);
+  assert.match(source, /className="req-mobile-only is-waiting-handback"/);
+  assert.match(source, /const TabIcon = depot === "epaf" \? Layers : TrainFront/);
+  assert.match(source, /\["entry", "Entry log", FileText\], \["security", "Security", Shield\], \["all", "All logs", BarChart3\]/);
 });
 
 test("PST, Insertion and Sleep use the same road-list geometry as Train Request", () => {

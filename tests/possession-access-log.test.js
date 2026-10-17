@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  buildPossessionCombinedOutput,
   buildPossessionEntryOutput,
   getPossessionAccessDetails,
   normalizePossessionAccessEntry,
@@ -14,6 +15,38 @@ const output = (entry) => buildPossessionEntryOutput(entry, formatTime);
 const firstDescription = "Replacement of the IRJ - SA09 - DNF-143-ED IRJ & Weld";
 const secondDescription = "GWS, 1 Yearly, Buffer Stops Inspection/Cleaning, Route 15";
 const shared = { picName: "Jay Bigcas", picId: "FLOW_1113", accessPoint: "GATE 03", accessAuthTime: "13:02", issueTime: "13:02" };
+
+test("combined logs put one visible divider between PICs, including copied output", () => {
+  const entries = [
+    { ...shared, accessNo: "303004", description: firstDescription },
+    { picName: "Second PIC", accessNo: "303005", issueTime: "14:00" },
+    { picName: "Third PIC", accessNo: "303006", issueTime: "15:00" },
+  ];
+  const separator = `\n\n${"─".repeat(36)}\n\n`;
+  assert.equal(buildPossessionCombinedOutput(entries, formatTime), entries.map(output).join(separator));
+  assert.equal((buildPossessionCombinedOutput(entries, formatTime).match(/^─{36}$/gm) || []).length, 2);
+  assert.match(source, /const output = buildPossessionCombinedOutput\(entries, fmtPossession24\)/);
+  assert.match(source, /<PossessionCopyBtn text=\{output\} disabled=\{!output\.trim\(\)\} label="Copy Log"/);
+});
+
+test("blank entries do not create empty sections or extra leading and trailing dividers", () => {
+  const filled = { ...shared, accessNo: "303004" };
+  assert.equal(buildPossessionCombinedOutput([{}, filled, {}, null], formatTime), output(filled));
+  assert.equal(buildPossessionCombinedOutput([{}, null], formatTime), "");
+  assert.equal(buildPossessionCombinedOutput([], formatTime), "");
+  assert.equal(buildPossessionCombinedOutput(null, formatTime), "");
+});
+
+test("multiple access numbers for one PIC stay together without an internal divider", () => {
+  const entry = { ...shared, accessDetails: [
+    { accessNo: "303004", description: firstDescription },
+    { accessNo: "303005", description: secondDescription },
+  ], issueTime: "13:02", accessAuthTime: "13:01" };
+  const result = buildPossessionCombinedOutput([entry], formatTime);
+  assert.equal(result, output(entry));
+  assert.doesNotMatch(result, /─{36}/);
+  assert.match(result, /13:01 hrs[\s\S]*13:02 hrs/);
+});
 
 test("single access uses the requested PIC, numbered description and issued format", () => {
   assert.equal(output({ ...shared, accessNo: "30300", description: firstDescription }), [
