@@ -88,12 +88,26 @@ test("workshop movement direction accepts common G-C and C-G spellings", () => {
 
 test("request summary UI uses the revised headings and concise sentence templates", () => {
   assert.match(depotStablingSource, /Request Summary by Type/);
-  assert.match(depotStablingSource, /title: "Other Remarks"/);
+  assert.match(depotStablingSource, /title: "IMPORTANT"/);
   assert.match(depotStablingSource, /title: "Workshop Movement"/);
   assert.doesNotMatch(depotStablingSource, /title: "Workshop (?:In|Out) Movement"/);
   assert.match(depotStablingSource, /formatRequestedSummaryEntryCount\(group\.lines\.length\)/);
   assert.doesNotMatch(depotStablingSource, /Request Type Summary/);
   assert.doesNotMatch(depotStablingSource, /requested for inbound movement G to C/);
+});
+
+test("IMPORTANT renames the summary heading without changing its remark grouping or contents", () => {
+  const requests = [
+    { trainId: "T43", requestType: "DEEP CLEAN" },
+    { trainId: "T34", requestType: "DEEP CLEAN" },
+    { trainId: "T04", requestType: "FIT but LEAST PRIORITY" },
+    { trainId: "T36", requestType: "SET 25C" },
+    { trainId: "T42", requestType: "SWEEP ONLY" },
+  ];
+  const groups = groupSummary(requests);
+  assert.deepEqual(groups.map(({ key, title }) => ({ key, title })), [{ key: "others", title: "IMPORTANT" }]);
+  assert.equal(groups[0].lines.length, 4);
+  assert.deepEqual(groups[0].lines, summarize(requests));
 });
 
 test("washing sentences distinguish dates, relative timing and work with RST", () => {
@@ -146,7 +160,7 @@ test("TLC, TFT and ACES requests share the TLC Req summary section", () => {
     { trainId: "T43", requestType: "WASH 1-Oct" },
     { trainId: "T41", requestType: "G-C PENDING AM" },
   ]);
-  assert.deepEqual(groups.map(({ title }) => title), ["Washing", "TLC Req", "Workshop Movement", "Other Remarks"]);
+  assert.deepEqual(groups.map(({ title }) => title), ["Washing", "TLC Req", "Workshop Movement", "IMPORTANT"]);
   assert.deepEqual(groups.find(({ key }) => key === "tlc").lines, [
     "T15 and T36 — requested for TLC Req after comm svc.",
     "T14 — requested for TLC CCTV.",
@@ -166,7 +180,7 @@ test("COMM and COMMS requests appear under TLC Req with their original remark te
     { trainId: "T03", requestType: "Comms req" },
     { trainId: "T07", requestType: "COMMAND req" },
   ]);
-  assert.deepEqual(groups.map(({ title }) => title), ["TLC Req", "Other Remarks"]);
+  assert.deepEqual(groups.map(({ title }) => title), ["TLC Req", "IMPORTANT"]);
   assert.deepEqual(groups.find(({ key }) => key === "tlc").lines, [
     "T03 and T06 — Comms req.",
     "T04 — comm req.",
@@ -212,7 +226,7 @@ test("ATC requests have their own section, including trailing ATC labels and ins
     { trainId: "T15", requestType: "TLC Req after comm svc" },
     { trainId: "T36", requestType: "SET 25C" },
   ]);
-  assert.deepEqual(groups.map(({ title }) => title), ["TLC Req", "ATC Req", "Other Remarks"]);
+  assert.deepEqual(groups.map(({ title }) => title), ["TLC Req", "ATC Req", "IMPORTANT"]);
   assert.deepEqual(groups.find(({ key }) => key === "atc").lines, [
     "T46 and T31 — CC RESET PENDING - ATC.",
     "T20 — ATC testing.",
@@ -231,7 +245,7 @@ test("standalone CC remarks appear under ATC Req without matching longer unrelat
     { trainId: "T07", requestType: "PCC technical failure" },
     { trainId: "T08", requestType: "CCTV failure" },
   ]);
-  assert.deepEqual(groups.map(({ title }) => title), ["ATC Req", "Other Remarks"]);
+  assert.deepEqual(groups.map(({ title }) => title), ["ATC Req", "IMPORTANT"]);
   assert.deepEqual(groups.find(({ key }) => key === "atc").lines, [
     "T03 and T05 — CC technical failure.",
     "T04 — CC functional failure.",
