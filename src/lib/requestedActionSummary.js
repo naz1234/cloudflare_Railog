@@ -157,7 +157,7 @@ export const REQUEST_CATEGORY_DEFINITIONS = [
   { key: "cm", title: "CM", accent: "#22d3ee", accentRgb: "34, 211, 238" },
   { key: "atc", title: "ATC Req", accent: "#fbbf24", accentRgb: "251, 191, 36" },
   { key: "tlc", title: "TLC Req", accent: "#f472b6", accentRgb: "244, 114, 182" },
-  { key: "others", title: "Other Remarks", accent: "#94a3b8", accentRgb: "148, 163, 184" },
+  { key: "others", title: "IMPORTANT", accent: "#94a3b8", accentRgb: "148, 163, 184" },
   { key: "washing", title: "Washing", accent: "#34d399", accentRgb: "52, 211, 153" },
 ];
 
