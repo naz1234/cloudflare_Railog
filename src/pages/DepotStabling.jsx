@@ -12187,6 +12187,22 @@ function isCompleteMovementTimeInput(value) {
   return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
 }
 
+function applyTp1MovementFieldChange(form, mode, field, value) {
+  const next = { ...form, [field]: value, movementType: mode };
+  if (field !== "trAtTp1" || !["automatic", "manual"].includes(mode)) return next;
+
+  const targetField = mode === "automatic" ? "trLocalized" : "toManual";
+  const previousDefault = isCompleteMovementTimeInput(form.trAtTp1)
+    ? addMinutesToHHMM(form.trAtTp1, 10)
+    : "";
+  // Follow TP1 arrival edits only while the next timing is blank or suggested.
+  // Once the user enters a different time, keep their manual override.
+  if (!form[targetField] || form[targetField] === previousDefault) {
+    next[targetField] = isCompleteMovementTimeInput(value) ? addMinutesToHHMM(value, 10) : "";
+  }
+  return next;
+}
+
 const TP1_MAINT_REPORT_CONFIRMERS = ["Siraj", "Rayan"];
 
 function normalizeTp1MaintReportConfirmer(value = "") {
@@ -12651,11 +12667,7 @@ function TrainMovementContent() {
       return {
         ...prev,
         movementType: normalizedMode,
-        [normalizedMode]: {
-          ...currentModeForm,
-          [field]: value,
-          movementType: normalizedMode,
-        },
+        [normalizedMode]: applyTp1MovementFieldChange(currentModeForm, normalizedMode, field, value),
       };
     });
   };
@@ -13099,14 +13111,14 @@ function TrainMovementContent() {
     const shunterNameForLog = formatTp1ShunterNameForLog(shunterName) || shunterName;
     const trAtTp1 = form.trAtTp1 || (preview ? "18:20" : "");
     const shunterAuth = trAtTp1 ? addMinutesToHHMM(trAtTp1, 1) : "";
-    const trLocalized = form.trLocalized || (preview ? "18:28" : "");
+    const trLocalized = form.trLocalized || (preview && trAtTp1 ? addMinutesToHHMM(trAtTp1, 10) : "");
     const trainPrepCompletedTime = form.trainPrepCompletedTime || "";
     const pstPerformedTime = form.pstPerformedTime || "";
     const pstCompletedTime = pstPerformedTime ? addMinutesToHHMM(pstPerformedTime, 6) : "";
     const selectedAutomaticStablingRoad = formatTp1RoadForLog(form.automaticStablingRoad);
     const stablingRoad = selectedAutomaticStablingRoad || findTp1TrainStablingRoad(train || displayTrain) || "Automatic Area";
     const fromTp1 = form.fromTp1 || (preview ? "18:30" : "");
-    const toManual = form.toManual || (preview ? "18:35" : "");
+    const toManual = form.toManual || (preview && trAtTp1 ? addMinutesToHHMM(trAtTp1, 10) : "");
     const nextWashSuffix = getTp1NextWashSuffix(form);
     const cmmsNumber = String(form.cmmsNumber || "").replace(/[^0-9A-Za-z/-]/g, "").trim();
     const l3ReportUpdatedBy = normalizeTp1MaintReportConfirmer(form.l3ReportUpdatedBy);
@@ -14146,13 +14158,18 @@ function TrainMovementContent() {
     const renderTp1TimeInput = (field, disabled = false) => {
       const fieldKey = getTp1FlowInputKey(field, movementType);
       const fieldValue = modeForm[field] || "";
+      const helpId = isAutomatic && field === "trLocalized"
+        ? "tp1-automatic-localized-help"
+        : !isAutomatic && field === "toManual" ? "tp1-manual-arrival-help" : undefined;
       return (
+        <>
         <div className={`${timeInputBoxClass} ${disabled ? "cursor-not-allowed opacity-35" : ""}`}>
           <input
             type="text"
             inputMode="numeric"
             maxLength={5}
             value={fieldValue}
+            aria-describedby={helpId}
             onFocus={() => focusFlowInput(fieldKey)}
             onKeyDown={(e) => {
               const value = String(modeForm[field] || "");
@@ -14180,6 +14197,8 @@ function TrainMovementContent() {
           />
           <span className="shrink-0 text-[11px] font-semibold text-[#9bb3ca]">hrs</span>
         </div>
+        {helpId && <p id={helpId} className="mt-1 text-[10px] font-medium leading-relaxed text-[#9bb3ca]">Auto-adds 10 min after arrival at TP1. You can edit any timing.</p>}
+        </>
       );
     };
 
