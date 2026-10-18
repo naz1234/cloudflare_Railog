@@ -131,12 +131,30 @@ test("category grouping preserves every row, group control data and within-group
   assert.equal(categories.reduce((sum, { requestCount }) => sum + requestCount, 0), 8);
 });
 
+test("IMPORTANT renames the maintenance parent while preserving its sub-groups, requests and styling", () => {
+  const cleanItems = [{ id: "clean-1", trainId: "T43" }, { id: "clean-2", trainId: "T34" }];
+  const clean = { key: "clean", label: "DEEP CLEAN", items: cleanItems, hidden: true };
+  const sweep = { key: "sweep", label: "SWEEP ONLY", items: [{ id: "sweep-1", trainId: "T42" }] };
+  const categories = groupRequestGroupsByCategory([clean, sweep]);
+  assert.equal(categories.length, 1);
+  const parent = categories[0];
+  assert.equal(parent.key, "others");
+  assert.equal(parent.title, "IMPORTANT");
+  assert.equal(parent.requestCount, 3);
+  assert.equal(parent.accent, "#94a3b8");
+  assert.equal(parent.accentRgb, "148, 163, 184");
+  assert.equal(parent.groups[0], clean);
+  assert.equal(parent.groups[0].items, cleanItems);
+  assert.equal(parent.groups[0].hidden, true);
+  assert.equal(parent.groups[1], sweep);
+});
+
 test("empty categories are omitted and populated categories use operational priority order", () => {
   assert.deepEqual(groupRequestGroupsByCategory(), []);
   assert.deepEqual(groupRequestGroupsByCategory([null, { label: "WASH", items: [] }]), []);
   const labels = ["SET 25C", "G-C", "ATC", "TLC", "RST CM", "RST PM", "WASH"];
   const categories = groupRequestGroupsByCategory(labels.map((label) => ({ label, items: [{}] })));
-  assert.deepEqual(categories.map(({ title }) => title), ["Workshop Movement", "PM", "CM", "ATC Req", "TLC Req", "Other Remarks", "Washing"]);
+  assert.deepEqual(categories.map(({ title }) => title), ["Workshop Movement", "PM", "CM", "ATC Req", "TLC Req", "IMPORTANT", "Washing"]);
 });
 
 test("workshop remains first and washing last regardless of input order or missing categories", () => {
