@@ -12,6 +12,7 @@ export function buildTp1ManualCmmsHandoverLine({
   time = "",
   cmmsNumber = "",
   srNumber = "",
+  includeCompletion = true,
   l3ReportUpdatedToMaintenance = false,
   confirmedBy = "",
 } = {}) {
@@ -21,7 +22,7 @@ export function buildTp1ManualCmmsHandoverLine({
   if (!safeTime || !safeCmmsNumber) return "";
 
   const srSuffix = safeSrNumber ? ` with SR #${safeSrNumber}` : "";
-  const baseLine = `${safeTime} hrs \u2013 CMMS handover completed. Handover #${safeCmmsNumber}${srSuffix}.`;
+  const baseLine = includeCompletion ? `${safeTime} hrs \u2013 CMMS handover completed. Handover #${safeCmmsNumber}${srSuffix}.` : "";
   if (!l3ReportUpdatedToMaintenance) return baseLine;
 
   const safeConfirmedBy = formatTp1HandoverConfirmedBy(confirmedBy);
@@ -29,5 +30,5 @@ export function buildTp1ManualCmmsHandoverLine({
     ? `As per ${safeConfirmedBy}, the L3 report has already been updated to maintenance, so no need to update the HO section.`
     : "The L3 report has already been updated to maintenance, so no need to update the HO section.";
 
-  return `${baseLine} ${reportUpdate}`;
+  return `${baseLine || `${safeTime} hrs \u2013`} ${reportUpdate}`;
 }
