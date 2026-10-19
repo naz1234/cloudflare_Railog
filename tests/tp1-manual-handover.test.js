@@ -58,6 +58,13 @@ test("confirmed-by names are normalized for the generated sentence", () => {
   assert.equal(formatTp1HandoverConfirmedBy("  mohd SIRAJ  "), "Mohd Siraj");
 });
 
+test("reference-only mode does not claim handover completion but preserves a selected report note", () => {
+  assert.equal(buildTp1ManualCmmsHandoverLine({ time: "12:33", cmmsNumber: "2232", includeCompletion: false }), "");
+  assert.equal(buildTp1ManualCmmsHandoverLine({ time: "12:33", cmmsNumber: "2232", includeCompletion: false,
+    l3ReportUpdatedToMaintenance: true, confirmedBy: "Siraj" }),
+  "12:33 hrs – As per Siraj, the L3 report has already been updated to maintenance, so no need to update the HO section.");
+});
+
 test("the Manual Area flow combines maintenance confirmation into one dropdown step", () => {
   assert.match(depotStablingSource, /label: "If No need update"/);
   assert.match(depotStablingSource, /const TP1_MAINT_REPORT_CONFIRMERS = \["Siraj", "Rayan"\];/);

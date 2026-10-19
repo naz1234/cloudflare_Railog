@@ -10637,7 +10637,7 @@ function getTp1EntrySortMinutes(entry = {}) {
   if (preferredMinutes !== null) return preferredMinutes;
 
   const text = String(entry?.text || "");
-  const firstLogTime = text.match(/(\d{1,2}:\d{2})\s*hrs/i)?.[1] || text.match(/(\d{1,2}:\d{2})/)?.[1];
+  const firstLogTime = text.match(/^\s*(\d{1,2}:\d{2})\s*hrs\s*[\u2013-]/im)?.[1] || text.match(/^\s*(\d{1,2}:\d{2})\b/m)?.[1];
   const firstLogMinutes = excelTimeToMinutes(firstLogTime);
   return firstLogMinutes !== null ? firstLogMinutes : 99999;
 }
@@ -10667,7 +10667,7 @@ function sortTp1MovementTextLinesByTime(text = "") {
   const lines = String(text || "").split(/\r?\n/).filter((line) => line.trim());
   const titleLines = lines.filter((line) => getTp1TimedLineMinutes(line) === 99999);
   const timedLines = lines.filter((line) => getTp1TimedLineMinutes(line) !== 99999);
-  return [...titleLines, ...sortTp1TimedLogLines(timedLines)].join("\n");
+  return [titleLines.join("\n"), sortTp1TimedLogLines(timedLines).join("\n")].filter(Boolean).join("\n\n");
 }
 
 
@@ -13082,16 +13082,16 @@ function TrainMovementContent() {
     showCopyFeedback(`movement-entry-${entry.id}`, "copied");
   };
 
-  const getTp1NextWashSuffix = (form = tp1Form) => {
+  const getTp1NextWashLine = (form = tp1Form) => {
     const nextWashRaw = String(
       form.nextWashText || (form.nextWashDate && form.nextWashTime ? `${form.nextWashDate} ${form.nextWashTime}` : "")
     ).trim();
     if (!nextWashRaw) return "";
 
     const nextWash = formatTp1NextWashForLog(nextWashRaw);
-    if (!nextWash) return ` ── Next wash: ${nextWashRaw}.`;
+    if (!nextWash) return `Next wash: ${nextWashRaw.replace(/[.]+$/, "")}.`;
 
-    return ` ── Next wash: ${nextWash.dateText} at ${nextWash.timeText}.`;
+    return `Next wash: ${nextWash.dateText} at ${nextWash.timeText} hrs.`;
   };
 
   const getTp1MovementType = (form = tp1Form) => {
@@ -13119,12 +13119,19 @@ function TrainMovementContent() {
     const stablingRoad = selectedAutomaticStablingRoad || findTp1TrainStablingRoad(train || displayTrain) || "Automatic Area";
     const fromTp1 = form.fromTp1 || (preview ? "18:30" : "");
     const toManual = form.toManual || (preview && trAtTp1 ? addMinutesToHHMM(trAtTp1, 10) : "");
-    const nextWashSuffix = getTp1NextWashSuffix(form);
+    const nextWashLine = getTp1NextWashLine(form);
     const cmmsNumber = String(form.cmmsNumber || "").replace(/[^0-9A-Za-z/-]/g, "").trim();
     const l3ReportUpdatedBy = normalizeTp1MaintReportConfirmer(form.l3ReportUpdatedBy);
+    const titleLines = [`${displayTrain} – ${planStatus} movement to ${movementType === "automatic" ? "Automatic" : "Manual"} Area.`];
+    if (nextWashLine) titleLines.push(nextWashLine);
+    if (cmmsNumber) {
+      const manualSrNumber = movementType === "manual" && planStatus.toLowerCase() === "unplanned"
+        ? String(form.srNumber || "").replace(/[^0-9A-Za-z/-]/g, "").trim()
+        : "";
+      titleLines.push(`CMMS HO for handover: #${cmmsNumber}${manualSrNumber ? ` with SR #${manualSrNumber}` : ""}.`);
+    }
 
     if (movementType === "automatic") {
-      const titleLine = `${displayTrain}: ${planStatus} movement to Automatic Area.${nextWashSuffix}`;
       const timedLines = [];
 
       if (trAtTp1) {
@@ -13145,29 +13152,25 @@ function TrainMovementContent() {
         timedLines.push(`${pstPerformedTime} hrs – ${displayTrain} PST completed at ${stablingRoad} from ${pstPerformedTime} to ${pstCompletedTime} hrs. No alarm reported.`);
       }
 
-      if (cmmsNumber) {
-        timedLines.push(`${pstCompletedTime || pstPerformedTime || trLocalized} hrs – CMMS Hand Back Completed. Handover #${cmmsNumber}.`);
-      }
-
-      return [titleLine, ...sortTp1TimedLogLines(timedLines)].join("\n");
+      return [...titleLines, ...(timedLines.length ? ["", ...sortTp1TimedLogLines(timedLines)] : [])].join("\n");
     }
 
     const manualCmmsHandoverLine = buildTp1ManualCmmsHandoverLine({
       time: toManual,
+      includeCompletion: false,
       cmmsNumber,
       l3ReportUpdatedToMaintenance: Boolean(l3ReportUpdatedBy),
       confirmedBy: l3ReportUpdatedBy,
     });
 
-    return [
-      `${displayTrain}: ${planStatus} movement to Manual Area.${nextWashSuffix}`,
-      ...sortTp1TimedLogLines([
-        ...(trAtTp1 ? [`${trAtTp1} hrs – ${displayTrain} arrived at TP1.`] : []),
-        ...(shunterAuth ? [`${shunterAuth} hrs – ${displayTrain} was authorized to prepare the train.${shunterNameForLog ? ` Shunter ${shunterNameForLog} onboard.` : ""}`] : []),
-        ...(fromTp1 ? [`${fromTp1} hrs – ${displayTrain} departed from TP1${toManual ? ` and arrived at the Manual Area at ${toManual} hrs` : ""}.`] : []),
-        ...(manualCmmsHandoverLine ? [manualCmmsHandoverLine] : []),
-      ]),
-    ].join("\n");
+    const manualTimedLines = [
+      ...(trAtTp1 ? [`${trAtTp1} hrs – ${displayTrain} arrived at TP1${shunterNameForLog ? ` with Shunter ${shunterNameForLog} onboard` : ""}.`] : []),
+      ...(shunterAuth ? [`${shunterAuth} hrs – ${displayTrain} was authorized to prepare the train.`] : []),
+      ...(fromTp1 ? [`${fromTp1} hrs – ${displayTrain} departed from TP1.`] : []),
+      ...(toManual ? [`${toManual} hrs – ${displayTrain} arrived at the Manual Area.`] : []),
+      ...(manualCmmsHandoverLine ? [manualCmmsHandoverLine] : []),
+    ];
+    return [...titleLines, ...(manualTimedLines.length ? ["", ...sortTp1TimedLogLines(manualTimedLines)] : [])].join("\n");
   };
 
   const addTp1MovementLog = (requestedMovementType = "") => {
