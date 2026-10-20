@@ -15,6 +15,7 @@ import PSTManualEntry from "../components/depot/PSTManualEntry";
 import InsertionLogOutput from "../components/depot/InsertionLogOutput";
 import MaspoTrainMovementChecker from "../components/depot/MaspoTrainMovementChecker";
 import TrainMovementTypeSelect from "../components/depot/TrainMovementTypeSelect";
+import MovementOutputDisclosure from "../components/depot/MovementOutputDisclosure";
 import PossessionEntryPicker from "../components/depot/PossessionEntryPicker";
 import PossessionAccessSearch from "../components/depot/PossessionAccessSearch";
 import OvertimeTracker from "../components/OvertimeTracker";
@@ -12040,12 +12041,14 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
 
       <section
         aria-label="Train swapping, insertion and removal output logs"
+        data-hover-output="true"
         className="theme-movement-log-output mt-3 w-full rounded-xl border border-[#2b4f6b] bg-[#0b1f33] px-3 py-3 shadow-md"
         style={{
           background: "linear-gradient(135deg,rgba(12,46,74,0.58) 0%,rgba(7,24,40,0.98) 100%)",
           boxShadow: "0 16px 32px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.04)",
         }}
       >
+        <MovementOutputDisclosure westCount={westMovementLogRows.length} eastCount={eastMovementLogRows.length}>
         <div className="space-y-2">
           {[
             {
@@ -12120,6 +12123,7 @@ function TrainMovementExcelSheet({ requests = [], trainRemState = {}, activeTime
             );
           })}
         </div>
+        </MovementOutputDisclosure>
       </section>
     </section>
   );

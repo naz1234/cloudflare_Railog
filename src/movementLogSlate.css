@@ -456,3 +456,57 @@ html[data-app-theme] .theme-movement-sheet[data-movement-design="compact-slate"]
     margin-left: 38px;
   }
 }
+/* Only the generated movement output collapses; the editor and removal logs stay visible. */
+html[data-app-theme] #root .theme-movement-sheet[data-movement-design="compact-slate"] .theme-movement-log-output[data-hover-output] {
+  padding: 0 !important;
+}
+
+html[data-app-theme] #root .theme-movement-sheet[data-movement-design="compact-slate"] .movement-output-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent !important;
+  color: var(--movement-muted) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+html[data-app-theme] #root .theme-movement-sheet[data-movement-design="compact-slate"] .movement-output-toggle:hover {
+  background: var(--movement-hover) !important;
+}
+
+html[data-app-theme] #root .theme-movement-sheet[data-movement-design="compact-slate"] .movement-output-toggle:focus-visible {
+  outline: 2px solid var(--movement-focus);
+  outline-offset: -3px;
+}
+
+html[data-app-theme] #root .theme-movement-sheet[data-movement-design="compact-slate"] .movement-output-toggle-title {
+  min-width: 0;
+  color: var(--movement-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+html[data-app-theme] #root .theme-movement-sheet[data-movement-design="compact-slate"] .movement-output-counts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 12px;
+  min-width: 0;
+  margin-left: auto;
+  font-size: 10px;
+}
+
+html[data-app-theme] #root .theme-movement-sheet[data-movement-design="compact-slate"] .movement-output-counts > span { white-space: nowrap; }
+html[data-app-theme] #root .theme-movement-sheet[data-movement-design="compact-slate"] .movement-output-counts strong { margin-left: 3px; color: var(--movement-text); }
+html[data-app-theme] #root .theme-movement-sheet[data-movement-design="compact-slate"] .movement-output-toggle > svg { flex-shrink: 0; }
+html[data-app-theme] #root .theme-movement-sheet[data-movement-design="compact-slate"] .movement-output-chevron.is-open { transform: rotate(180deg); }
+html[data-app-theme] #root .theme-movement-sheet[data-movement-design="compact-slate"] .movement-output-content { padding: 12px; border-top: 1px solid var(--movement-line); }
+html[data-app-theme] #root .theme-movement-sheet[data-movement-design="compact-slate"] .movement-output-content[hidden] { display: none !important; }
