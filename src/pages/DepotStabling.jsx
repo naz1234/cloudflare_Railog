@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, useId } from "react";
+import { Fragment, useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -86,10 +86,6 @@ import {
   getRequestedSummaryCategoryKey,
   normalizeRequestedSummaryDates,
 } from "../lib/requestedActionSummary";
-import {
-  WEST_DEPOT_WEEKEND_WASH_NOTICE,
-  shouldShowWestDepotWeekendWashNotice,
-} from "../lib/eastDepotWashNotice";
 
 const DEFAULT_BOOKMARK_LINKS = [
   { title: "Outlook", url: "https://outlook.office.com", sortOrder: 0 },
@@ -22627,7 +22623,6 @@ export default function DepotStablingPage() {
     <div className="min-w-0 flex flex-col items-start gap-5" data-req-main-panels>
       <StablingSection
         depot="west"
-        activeTimetableType={selectedTimetableType}
         title="WEST DEPOT STABLING"
         blockLabels={["BLOCK 7", "BLOCK 6", "BLOCK 5", "BLOCK 4", "BLOCK 3", "BLOCK 2", "BLOCK 1"]}
         blockIndices={[6, 5, 4, 3, 2, 1, 0]}
@@ -22652,7 +22647,6 @@ export default function DepotStablingPage() {
 
       <StablingSection
         depot="east"
-        activeTimetableType={selectedTimetableType}
         title="EAST DEPOT STABLING"
         blockLabels={["BLOCK 1", "BLOCK 2", "BLOCK 3", "BLOCK 4", "BLOCK 5", "BLOCK 6", "BLOCK 7"]}
         blockIndices={[0, 1, 2, 3, 4, 5, 6]}
@@ -28593,74 +28587,8 @@ async function downloadInsertionPicturePng({ title, blockLabels, blockIndices, r
   downloadBlob(blob, `${safeName}-insertion-print.png`);
 }
 
-const WASH_NOTICE_AUTO_COLLAPSE_MS = 3000;
-
-function StablingWashNotice({ depot, message }) {
-  const isEast = depot === "east";
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const noticeBodyId = useId();
-  const HeaderTag = isEast ? "div" : "button";
-  const [headingLine = "", ...remainingLines] = String(message || "").split("\n");
-  const headingSeparatorIndex = headingLine.indexOf(":");
-  const heading = headingSeparatorIndex >= 0 ? headingLine.slice(0, headingSeparatorIndex + 1) : headingLine;
-  const headingBody = headingSeparatorIndex >= 0 ? headingLine.slice(headingSeparatorIndex + 1).trim() : "";
-  const bodyLines = headingBody ? [headingBody, ...remainingLines] : remainingLines;
-
-  useEffect(() => {
-    if (isEast || isCollapsed) return undefined;
-
-    const timer = window.setTimeout(() => {
-      setIsCollapsed(true);
-    }, WASH_NOTICE_AUTO_COLLAPSE_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [isEast, isCollapsed]);
-
-  return (
-    <div
-      role="status"
-      className={`theme-stabling-wash-notice mb-3 w-[912px] overflow-hidden rounded-xl border shadow-[0_0_20px_rgba(0,0,0,0.12)] ${isEast
-        ? "theme-east-depot-wash-notice border-amber-400/65 bg-amber-500/10 text-amber-100"
-        : "theme-west-depot-weekend-wash-notice border-cyan-400/65 bg-cyan-500/10 text-cyan-100"}`}
-    >
-      <HeaderTag
-        type={isEast ? undefined : "button"}
-        onClick={isEast ? undefined : () => setIsCollapsed((collapsed) => !collapsed)}
-        aria-expanded={isEast ? undefined : !isCollapsed}
-        aria-controls={isEast ? undefined : noticeBodyId}
-        aria-label={isEast ? undefined : `${isCollapsed ? "Show" : "Hide"} West Depot notice`}
-        title={isEast ? undefined : isCollapsed ? "Show West Depot notice for 3 seconds" : "Hide West Depot notice now"}
-        className={`theme-stabling-wash-notice-header flex w-full items-center gap-2.5 border-current/20 px-4 py-2 text-left ${isCollapsed ? "" : "border-b"} ${isEast ? "" : "cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-current"}`}
-      >
-        <span className={`theme-stabling-wash-notice-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${isEast
-          ? "border-amber-300/50 bg-amber-400/10 text-amber-300"
-          : "border-cyan-300/50 bg-cyan-400/10 text-cyan-200"}`}>
-          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-        </span>
-        <strong className="theme-stabling-wash-notice-title text-xs font-black tracking-wide">{heading}</strong>
-        {!isEast && <ChevronDown className={`ml-auto h-4 w-4 shrink-0 transition-transform ${isCollapsed ? "" : "rotate-180"}`} aria-hidden="true" />}
-      </HeaderTag>
-      <div id={noticeBodyId} hidden={isCollapsed} className="theme-stabling-wash-notice-body min-w-0 px-4 py-3 text-xs font-semibold leading-relaxed">
-        {bodyLines.map((line, index) => {
-          const separatorIndex = line.indexOf(":");
-          const label = separatorIndex >= 0 ? line.slice(0, separatorIndex + 1) : "";
-          const body = separatorIndex >= 0 ? line.slice(separatorIndex + 1) : line;
-
-          return (
-            <p key={`${index}-${line}`} className={index > 0 ? "mt-1" : undefined}>
-              {label && <strong className="font-black">{label}</strong>}
-              {body}
-            </p>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function StablingSection({
   depot,
-  activeTimetableType = "weekday",
   title,
   blockLabels,
   blockIndices,
@@ -28681,7 +28609,6 @@ function StablingSection({
   allDepots = [],
 }) {
   const [sectionSearch, setSectionSearch] = useState("");
-  const [washNoticeDate, setWashNoticeDate] = useState(() => new Date());
   const [mobileRoad, setMobileRoad] = useState(roads[0]);
   const searchQuery = sectionSearch.trim().toUpperCase().replace(/\s+/g, "");
   const normalizedSearch = searchQuery ? normalizeTrainId(searchQuery) : "";
@@ -28728,18 +28655,6 @@ function StablingSection({
   }).join("\n");
   const copyStablingTooltipText = `Copy text :\n${stablingCopyText}`;
   const downloadPdfTooltipText = `Download ${depotLabel} stabling PDF with colour-coded remark pills`;
-  const showWestDepotWeekendWashNotice = shouldShowWestDepotWeekendWashNotice({
-    depot,
-    timetableType: normalizeTimetableType(activeTimetableType),
-    date: washNoticeDate,
-  });
-
-  useEffect(() => {
-    const refreshNoticeTime = () => setWashNoticeDate(new Date());
-    refreshNoticeTime();
-    const interval = window.setInterval(refreshNoticeTime, 30000);
-    return () => window.clearInterval(interval);
-  }, [depot]);
 
   const handleDownloadPdf = async () => {
     if (downloadingPdf) return;
@@ -28910,10 +28825,6 @@ function StablingSection({
           </div>
         )}
       </div>
-
-      {showWestDepotWeekendWashNotice && (
-        <StablingWashNotice depot="west" message={WEST_DEPOT_WEEKEND_WASH_NOTICE} />
-      )}
 
       <div className="req-mobile-only req-mobile-road-nav" role="group" aria-label={`${depotLabel} stabling roads`}>
         {roads.map((road) => <button key={road} type="button" aria-pressed={mobileRoad === road} onClick={() => setMobileRoad(road)}>{road.replace(/^[A-Z]+-/, "")}<span>{(data[road] || []).filter((block) => String(block?.trainId || "").trim()).length}</span></button>)}
