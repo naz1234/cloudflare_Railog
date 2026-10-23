@@ -105,6 +105,15 @@ function renderDepot(depot, entries, savedSecurity) {
 }
 
 for (const depot of ["west", "east"]) {
+  test(`${depot} Access entries toolbar exposes a clear-all-PICs action beside its count`, () => {
+    const html = renderDepot(depot, [entry, { picName: "Second PIC", accessNo: "303005" }], manual);
+    const heading = html.split('class="pss-access-controls-heading"')[1].split('class="pss-entry-picker-row"')[0];
+    assert.match(heading, /class="pss-access-controls-actions"/);
+    assert.match(heading, /class="pss-access-entry-count">2 entries<\/span>/);
+    assert.match(heading, new RegExp(`class="pss-clear-all-pics" aria-label="Clear all PICs — ${depot === "west" ? "West" : "East"} Depot"`));
+    assert.match(heading, /> Clear all PICs<\/button>/);
+  });
+
   test(`${depot} reference design keeps labelled access fields, entry copy and clear actions`, () => {
     const html = renderDepot(depot, [entry], manual);
     assert.match(html, /class="pss-access-number-field"/);

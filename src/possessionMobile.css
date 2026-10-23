@@ -29,10 +29,14 @@
 
   /* A selected PIC owns their form, entry log and security message. */
   #root .app-shell[data-active-page="possession"] .pss-access-controls { display: block; min-width: 0; padding: 12px; border: 1px solid var(--req-mobile-line); border-radius: 14px; background: var(--req-mobile-panel); }
-  #root .app-shell[data-active-page="possession"] .pss-access-controls-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  #root .app-shell[data-active-page="possession"] .pss-access-controls-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
   #root .app-shell[data-active-page="possession"] .pss-access-controls-heading strong { color: var(--req-mobile-text); font-size: 14px; font-weight: 700; }
   #root .app-shell[data-active-page="possession"] .pss-access-controls-heading p { margin-top: 3px; color: var(--req-mobile-muted); font-size: 10px; line-height: 1.5; }
-  #root .app-shell[data-active-page="possession"] .pss-access-controls-heading > span { flex-shrink: 0; padding: 5px 8px; border-radius: 7px; background: var(--req-mobile-control); color: var(--pss-depot-accent); font-size: 10px; font-weight: 600; }
+  #root .app-shell[data-active-page="possession"] .pss-access-entry-count { flex-shrink: 0; padding: 5px 8px; border-radius: 7px; background: var(--req-mobile-control); color: var(--pss-depot-accent); font-size: 10px; font-weight: 600; }
+  #root .app-shell[data-active-page="possession"] .pss-access-controls-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; width: 100%; }
+  #root .app-shell[data-active-page="possession"] .pss-clear-all-pics { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 7px 10px; border: 1px solid #a34c63; border-radius: 8px; background: #441e3440; color: #ffb4c5; font-size: 11px; font-weight: 650; white-space: nowrap; }
+  #root .app-shell[data-active-page="possession"] .pss-clear-all-pics:focus-visible { outline: 2px solid var(--pss-depot-accent); outline-offset: 3px; }
+  html[data-app-theme="light"] #root .app-shell[data-active-page="possession"] .pss-clear-all-pics { background: #fff1f2; border-color: #cc6a80; color: #9f1239; }
   #root .app-shell[data-active-page="possession"] .pss-entry-picker-row { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 8px; }
   #root .app-shell[data-active-page="possession"] .pss-entry-picker-row label { min-width: 0; }
   #root .app-shell[data-active-page="possession"] .pss-entry-picker-row label > span { display: block; margin-bottom: 5px; color: var(--req-mobile-muted); font-size: 10px; }
