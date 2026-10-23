@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#162629"><meta name="description" content="Explore Riyadh Metro Line 3 with a full-screen track diagram, large asset numbers, station navigation and demo trains."><title>Line 3 · Track Explorer</title><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><script src="data.js" defer></script><script src="assets-data.js" defer></script><script src="app.js" defer></script></head>
+<body class="diagram-view">
+<svg class="icon-defs" aria-hidden="true"><defs>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="i-fit" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5M8 8h8v8H8z"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24"><path d="M3 8h18M3 16h18m3-8-7 8M7 5v6m10 2v6"/><circle cx="4" cy="8" r="2"/><circle cx="20" cy="16" r="2"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8z"/></symbol><symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14m8-14v14"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="m5 5 14 14M5 19 19 5"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14A8 8 0 0 1 10 4a8 8 0 1 0 10 10Z"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 3 6 6.5 1-4.7 4.5 1.1 6.5-5.9-3-5.9 3 1.1-6.5L2.5 10 9 9z"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+<symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 11a8 8 0 1 1 2 7M4 4v7h7"/></symbol><symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5h5v-5"/></symbol><symbol id="i-layout" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16m8-16v16"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-11v1"/></symbol>
+</defs></svg>
+<header class="app-header">
+  <button id="menuBtn" class="icon-btn mobile-menu" title="Open stations" aria-label="Open stations"><svg><use href="#i-menu"/></svg></button>
+  <a class="brand" href="#"><span class="brand-mark">3</span><span>LINE 3 <b>TRACK EXPLORER</b></span></a>
+  <div class="header-divider"></div><div class="network-name">RIYADH METRO <span>Jeddah Road ↔ Khashm Al An</span></div>
+  <div class="header-right"><span id="modeBadge" class="mode-badge"><i></i>SCHEMATIC</span><time id="clock"></time><button id="themeBtn" class="icon-btn" title="Switch theme" aria-label="Switch theme"><svg><use href="#i-moon"/></svg></button><button id="helpBtn" class="icon-btn" title="How to use" aria-label="How to use"><svg><use href="#i-info"/></svg></button></div>
+</header>
+<div class="workspace">
+<aside class="station-sidebar" id="stationSidebar">
+  <div class="sidebar-heading"><div><span class="eyebrow">LINE OVERVIEW</span><h1>Stations <span>22</span></h1></div><button id="closeStations" class="icon-btn close-stations" aria-label="Close stations" title="Close stations"><svg><use href="#i-close"/></svg></button></div>
+  <label class="search-box"><svg><use href="#i-search"/></svg><input id="stationSearch" placeholder="Station, track or signal…" autocomplete="off" aria-label="Search stations and assets"><kbd>/</kbd></label>
+  <div class="station-filter"><button class="active" id="allFilter">All stations</button><button id="savedFilter"><svg><use href="#i-star"/></svg> Saved <span id="savedCount">0</span></button></div>
+  <nav id="stationList" aria-label="Line 3 stations"></nav>
+  <div class="sidebar-footer"><span class="reference-dot"></span><div>Line 3 · Main line<small>22 stations · Interactive diagram</small></div></div>
+</aside>
+<main class="main-panel">
+  <div class="view-bar"><button id="stationsBtn" class="icon-btn diagram-stations" title="Stations and asset search" aria-label="Stations and asset search"><svg><use href="#i-menu"/></svg></button><div class="compact-station"><small id="compactCode">LINE 3 · 3A1</small><strong id="compactName">Jeddah Road</strong></div><div class="zoom-controls"><button id="zoomOut" title="Zoom out" aria-label="Zoom out"><svg><use href="#i-minus"/></svg></button><span id="zoomValue">100%</span><button id="zoomIn" title="Zoom in" aria-label="Zoom in"><svg><use href="#i-plus"/></svg></button><i></i><button id="focusBtn" title="Focus selected station" aria-label="Focus selected station"><svg><use href="#i-target"/></svg></button><button id="fitBtn" title="Fit entire line" aria-label="Fit entire line"><svg><use href="#i-fit"/></svg></button></div><button id="fullScreenBtn" class="icon-btn screen-btn" title="Full screen" aria-label="Full screen" aria-pressed="false"><svg><use href="#i-expand"/></svg></button><button id="diagramViewBtn" class="icon-btn screen-btn" title="Open workspace" aria-label="Open workspace" aria-pressed="true"><svg><use href="#i-layout"/></svg></button><button id="demoBtn" class="demo-btn" aria-label="Run demo"><svg><use href="#i-play"/></svg><span>Run demo</span></button></div>
+  <div class="diagram-heading"><div><div class="eyebrow" id="viewEyebrow">INTERACTIVE SCHEMATIC</div><h2 id="viewTitle">Line 3 · Main line</h2></div><div class="heading-tools"><button id="labelsBtn" class="text-btn active" aria-pressed="true" aria-label="Toggle diagram labels" title="Toggle diagram labels">Aa <span>Labels</span></button></div></div>
+  <section class="diagram-stage" id="stage" aria-label="Interactive Line 3 track diagram">
+    <div class="stage-top"><span id="stageContext">WESTERN SECTION <b>→ KHASHM AL AN</b></span><span class="stage-model" id="stageModel">SCHEMATIC MODEL</span></div>
+    <svg id="trackSvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pan and zoom track diagram. Select a station, track, signal or point." tabindex="0"><g id="scene"></g></svg>
+    <div class="stage-bottom"><span id="canvasHint"><svg><use href="#i-target"/></svg>Drag to pan · Scroll to zoom · Click to inspect</span></div>
+  </section>
+  <div class="line-navigator"><div class="navigator-label"><span>ENTIRE LINE</span><small id="navigatorStation">01 / 22</small></div><svg id="minimap" viewBox="0 0 1100 65" aria-label="Select a station on the line overview"></svg></div>
+  <div class="legend-bar"><div><span class="legend-item"><i class="track-key"></i>Track</span><span class="legend-item"><i class="signal-key"></i>Signal</span><span class="legend-item"><i class="point-key"></i>Point</span><span class="legend-item"><i class="platform-key"></i>Platform</span></div><button id="resetDemo" class="text-btn" hidden><svg><use href="#i-reset"/></svg>Reset demo</button><span id="modelNote">Schematic geometry · Interactive model</span></div>
+  <div class="activity-strip"><span class="activity-dot"></span><p id="activityText">Diagram ready. Select a station to explore its track layout.</p><span id="activityTime">LOCAL WORKSPACE</span></div>
+</main>
+<aside class="inspector" id="inspector"><div class="inspector-label">STATION INSPECTOR<button class="icon-btn" id="closeInspector" title="Close details" aria-label="Close details"><svg><use href="#i-close"/></svg></button></div><div id="inspectorContent"></div></aside>
+</div>
+<dialog id="helpDialog" class="help-dialog"><div class="dialog-heading"><h2>A closer look at Line 3.</h2><button class="icon-btn" data-close="helpDialog" aria-label="Close help"><svg><use href="#i-close"/></svg></button></div><p>Explore the 22 station areas of Riyadh Metro Line 3. Search a station, zoom into its tracks, or select a signal or point to inspect it. Track, signal and point IDs are transcribed from your ATS photos. Geometry and symbol spacing are simplified; unclear IDs are left unnumbered.</p><p>The diagram opens in an expanded view with larger numbers. Use <strong>Full screen</strong> to fill your device screen where supported, or <strong>Open workspace</strong> for the station panels. Use + / − to read a smaller area in more detail.</p><div class="help-row"><kbd>Drag</kbd><span>Move along the line</span></div><div class="help-row"><kbd>Scroll / + −</kbd><span>Zoom around your cursor</span></div><div class="help-row"><kbd>← →</kbd><span>Previous / next station</span></div><div class="help-row"><kbd>F</kbd><span>Fit the entire line</span></div><div class="help-row"><kbd>/</kbd><span>Search a station</span></div><p><strong>Demo mode</strong> adds illustrative moving trains and lets you change signal and point displays. It is independent of the real railway and does not represent operational routing or interlocking.</p><p>Saved stations and station notes stay in this browser. Export them from the inspector to keep a copy.</p></dialog>
+<div id="toast" class="toast" role="status"></div>
+</body></html>
