@@ -6,7 +6,7 @@ The existing protected-page unlock controls whether the ATS page renders the dia
 
 The diagram includes 22 station areas, 291 track IDs, 139 signal IDs and 29 point numbers transcribed from the supplied ATS photographs. It retains leading zeroes, A/B suffixes, MV signals, the Sultanah centre track and Jarir CS-1 siding. Unreadable labels remain unnumbered. Photographs and uploads are not bundled.
 
-Numbers use large, contrasting labels. The diagram opens in an expanded view with station search, pan/zoom, a station navigator, a full-screen button, station notes and an optional illustrative demo. The iframe allows full screen; **Open diagram** opens the same local diagram in its own tab. Browser support determines whether device full screen is available.
+Numbers use large, contrasting labels. The diagram fills the ATS workspace below Railog's navigation, without a section banner or surrounding padding. It opens in an expanded view with station search, pan/zoom, a station navigator, a full-screen button, station notes and an optional illustrative demo. The iframe allows full screen. Browser support determines whether device full screen is available.
 
 Geometry and asset spacing are schematic. The display has no live ATS connection, train control, routing or interlocking. It does not update train-removal or other operational records. Notes and saved stations use browser-local storage under `line3-workspace-v1`; they are not uploaded to Railog.
 
