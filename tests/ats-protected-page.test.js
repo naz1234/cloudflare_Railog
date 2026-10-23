@@ -63,17 +63,15 @@ test("direct ATS access remains locked and does not render its workspace before 
   assert.equal(requestedUnlock, true);
 });
 
-test("unlocked ATS embeds the local diagram with fullscreen support and a standalone link", () => {
+test("unlocked ATS embeds the local diagram without a banner and retains fullscreen support", () => {
   const html = renderToStaticMarkup(React.createElement(ATSWorkspace, { unlocked: true }));
-  assert.match(html, /id="ats-heading"/);
-  assert.match(html, /ATS · Track Explorer/);
-  assert.match(html, /No live ATS connection or train controls are configured\./);
+  assert.match(html, /aria-label="ATS track explorer"/);
   assert.equal((html.match(/<iframe\b/g) || []).length, 1);
   assert.match(html, /src="\/ats\/line3\/index\.html"/);
   assert.match(html, /title="Line 3 interactive ATS track diagram"/);
   assert.match(html, /allow="fullscreen"/);
   assert.match(html, /allowfullscreen=""/i);
-  assert.match(html, /href="\/ats\/line3\/index\.html" target="_blank" rel="noopener noreferrer"/);
+  assert.doesNotMatch(html, /<header|Open diagram|Protected pages unlocked|ATS · Track Explorer/);
   assert.doesNotMatch(html, /ready for ATS features|Unlock protected pages|chatgpt\.site/);
   assert.doesNotMatch(workspaceSource, /fetch\(|base44|useEffect|WebSocket/);
 });

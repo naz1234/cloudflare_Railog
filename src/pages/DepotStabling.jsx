@@ -22632,7 +22632,7 @@ export default function DepotStablingPage() {
         {/* Wide insertion columns must scroll with the document, not clip to
             the narrower main viewport after a phone orientation change. */}
         <main ref={mainContentScrollRef} className={`flex-1 min-w-0 ${activeTab === "insertion" ? "overflow-visible" : "overflow-auto"}`}>
-        <div className={`max-w-[1700px] mx-auto px-5 ${activeTab === "roster" ? "pt-1 pb-5" : "py-5"}`}> 
+        <div className={activeTab === "ats" ? "w-full" : `max-w-[1700px] mx-auto px-5 ${activeTab === "roster" ? "pt-1 pb-5" : "py-5"}`}>
 
   {activeTab === "stabling" && (
   <div
@@ -23228,7 +23228,7 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "ats" && (
-          <div className="w-full px-2 pb-10 pt-3">
+          <div className="w-full">
             <ATSWorkspace
               unlocked={areProtectedShortcutsUnlocked}
               onUnlock={() => {
