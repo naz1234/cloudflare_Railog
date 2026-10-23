@@ -22,6 +22,7 @@ import OvertimeTracker from "../components/OvertimeTracker";
 import RosterWorkspace from "../components/RosterWorkspace";
 import ChecklistWorkspace from "../components/ChecklistWorkspace";
 import AboutWorkspace from "../components/AboutWorkspace";
+import ATSWorkspace from "../components/ATSWorkspace";
 import SleepModeWorkspace from "../components/SleepModeWorkspace";
 import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator";
 import ReqMobileNavigation from "../components/ReqMobileNavigation";
@@ -1909,7 +1910,7 @@ const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
 const OVT_SESSION_KEY = "ovtOvertimeUnlocked_v1";
 const ODO_SESSION_KEY = "odoReadingUnlocked_v1";
 const PROTECTED_SHORTCUTS_SESSION_KEY = "protectedShortcutsUnlocked_v1";
-const PROTECTED_SHORTCUT_KEYS = new Set(["odo", "alarm", "overtime", "checklist", "admin", "about"]);
+const PROTECTED_SHORTCUT_KEYS = new Set(["odo", "alarm", "overtime", "checklist", "admin", "about", "ats"]);
 const ADM_LOGIN_ID = "admin";
 const ADM_LOGIN_PASSWORD = "921016";
 const ADMIN_NOTES_STORAGE_KEY = "admModernNotes_v1";
@@ -15807,7 +15808,16 @@ function PossessionLog({ depot = "west" }) {
     setMobileAccessView("details");
   };
   const removeEntry = (i) => setEntries((prev) => removePossessionAccessEntry(prev, i, legacySecurity));
-  const clear = () => { setEntries([defaultEntry()]); localStorage.removeItem(storageKey); };
+  const clear = () => {
+    if (!window.confirm(`Clear all PICs, access details and generated logs for ${getPossessionDepotLabel(depot)}? This cannot be undone.`)) return;
+    const nextEntry = defaultEntry();
+    setEntries([nextEntry]);
+    setLegacySecurity({ ...defaultSC });
+    setMobileEntryId(nextEntry.entryId);
+    setMobileAccessView("details");
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem(securityStorageKey);
+  };
   const output = buildPossessionCombinedOutput(entries, fmtPossession24);
   const mobileEntry = entries.find((entry) => entry.entryId === mobileEntryId) || entries[0];
   const mobileEntryIndex = entries.indexOf(mobileEntry);
@@ -15833,7 +15843,13 @@ function PossessionLog({ depot = "west" }) {
         <div className="req-mobile-only is-waiting-handback"><dt><Clock3 className="req-mobile-only pss-stat-icon" aria-hidden="true" />PICs waiting</dt><dd>{dashboard.waitingForHandback}</dd><span>for handback</span></div>
       </dl>
       <div className="req-mobile-only pss-access-controls">
-        <div className="pss-access-controls-heading"><div><FileText className="req-mobile-only pss-controls-icon" aria-hidden="true" /><strong>Access entries</strong><p>One PIC, their permits and both outputs.</p></div><span>{entries.length} entr{entries.length === 1 ? "y" : "ies"}</span></div>
+        <div className="pss-access-controls-heading">
+          <div><FileText className="req-mobile-only pss-controls-icon" aria-hidden="true" /><strong>Access entries</strong><p>One PIC, their permits and both outputs.</p></div>
+          <div className="pss-access-controls-actions">
+            <span className="pss-access-entry-count">{entries.length} entr{entries.length === 1 ? "y" : "ies"}</span>
+            <button type="button" className="pss-clear-all-pics" onClick={clear} aria-label={`Clear all PICs — ${getPossessionDepotLabel(depot)}`}><Trash2 size={13} aria-hidden="true" /> Clear all PICs</button>
+          </div>
+        </div>
         <div className="pss-entry-picker-row">
           <PossessionEntryPicker options={entryOptions} value={mobileEntry?.entryId || ""}
             ariaLabel={`${getPossessionDepotLabel(depot)} select PIC access entry`}
@@ -17927,6 +17943,7 @@ export default function DepotStablingPage() {
     if (path === "/sleep" || path === "/slp") return "sleep";
     if (path === "/checklist" || path === "/chk") return "checklist";
     if (path === "/admin" || path === "/adm") return "admin";
+    if (path === "/ats") return "ats";
     if (path === "/about" || path === "/abt") return "about";
     return "stabling";
   };
@@ -22440,6 +22457,7 @@ export default function DepotStablingPage() {
                 </svg>
               ),
             },
+            { key: "ats", label: "ATS", code: "ATS", to: "/ats" },
             { key: "about", label: "About", code: "ABT", to: "/about" },
           ]
             .filter(({ key }) => !PROTECTED_SHORTCUT_KEYS.has(key) || areProtectedShortcutsUnlocked)
@@ -23206,6 +23224,19 @@ export default function DepotStablingPage() {
                 </section>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === "ats" && (
+          <div className="w-full px-2 pb-10 pt-3">
+            <ATSWorkspace
+              unlocked={areProtectedShortcutsUnlocked}
+              onUnlock={() => {
+                setProtectedShortcutCredentials({ id: "", password: "" });
+                setProtectedShortcutError("");
+                setIsProtectedShortcutLoginOpen(true);
+              }}
+            />
           </div>
         )}
 

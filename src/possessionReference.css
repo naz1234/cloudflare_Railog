@@ -43,11 +43,11 @@
   html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-dashboard .is-waiting-handback { --pss-stat-accent: #bb7aff; }
 
   html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-controls { grid-template-columns: minmax(0,1.3fr) minmax(0,1fr); gap: 10px 12px; padding: 14px; border-color: var(--pss-reference-teal); border-radius: 12px; background: linear-gradient(110deg, #073943, #062b3b); box-shadow: inset 0 0 12px #00e5c113, 0 0 10px #00e5c112; }
-  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-controls-heading > div { grid-template-columns: 30px minmax(0,1fr); column-gap: 12px; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-controls-heading > div:first-child { grid-template-columns: 30px minmax(0,1fr); column-gap: 12px; }
   html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-controls-icon { width: 27px; height: 27px; color: #a4d8ff; }
   html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-controls-heading strong { font-size: 15px; }
   html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-controls-heading p { font-size: 12px; }
-  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-controls-heading > span { padding: 7px 10px; background: #10364b; }
+  html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-access-entry-count { padding: 7px 10px; background: #10364b; }
   html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-entry-picker-label { margin-bottom: 5px; font-size: 11px; }
   html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] :is(.pss-entry-picker-trigger,.pss-entry-picker-row > button,.pss-access-search-toggle,.pss-desktop-view-switch button) { min-height: 36px; border-radius: 8px; font-size: 12px; }
   html[data-app-theme="dark"] #root .app-shell[data-active-page="possession"] .pss-entry-picker-trigger { border-color: #4a86ab; background: linear-gradient(180deg, #0a3043, #071f31); }
