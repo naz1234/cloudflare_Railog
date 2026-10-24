@@ -95,7 +95,6 @@
       else el('text',{x:s.x,y:124,'text-anchor':'middle',class:'station-title'},g,s.name);
       el('text',{x:s.x,y:long?162:154,'text-anchor':'middle',class:'station-arabic'},g,s.arabic);
       el('text',{x:s.x,y:long?188:181,'text-anchor':'middle',class:'station-code'},g,`[ ${s.code} ]`);
-      el('text',{x:s.x,y:long?211:207,'text-anchor':'middle',class:'status-text'},g,'GTS     IXL     AU     CC     VA');
       const island=s.type==='island'||s.type==='pocket';
       platform(g,s.x,island?370:246,assets[i].platformUpper);
       platform(g,s.x,island?478:624,assets[i].platformLower);
