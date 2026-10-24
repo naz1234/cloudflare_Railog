@@ -45,6 +45,7 @@ body.diagram-view .station-text strong{font-size:13px}body.diagram-view .station
 @media(max-width:540px){body.diagram-view .view-bar{flex-wrap:wrap;gap:6px;padding:6px 10px}body.diagram-view .compact-station{flex-basis:calc(100% - 65px);margin-right:0;min-width:0}body.diagram-view .view-bar>.zoom-controls{margin-right:auto}body.diagram-view .compact-station strong{font-size:14px}body.diagram-view .view-bar>.demo-btn span{display:inline}body.diagram-view .line-navigator{padding:3px 10px;gap:6px}}
 
 .compact-station small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track-svg{user-select:none;-webkit-user-select:none}
 
 .layout-options{display:flex;align-items:center;gap:2px;padding:3px;border:1px solid var(--line);border-radius:6px;background:var(--panel);flex-shrink:0}
 .layout-options>span{font-size:10px;color:var(--muted);padding:0 5px}
