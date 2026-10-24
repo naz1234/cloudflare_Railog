@@ -8,9 +8,9 @@ body{color:var(--ink)}body.dark{--bg:#152326;--panel:#1b2a2e;--ink:#d7e1db;--mut
 .view-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600}.view-label svg{width:16px;height:16px}.view-label span{font:9px Consolas,monospace;border-left:1px solid var(--line);padding-left:10px;margin-left:4px;color:var(--muted);font-weight:400}
 
 /* ATS identifiers remain readable in both themes. */
-.track-svg .track-id{font:700 28px Consolas,monospace;fill:#936b00;paint-order:stroke;stroke:var(--canvas);stroke-width:4px;stroke-linejoin:round}
-.track-svg .signal-id{font:600 24px Consolas,monospace;fill:#354c51;paint-order:stroke;stroke:var(--canvas);stroke-width:4px}
-.track-svg .point-id{font:700 28px Consolas,monospace;fill:#237b35;paint-order:stroke;stroke:var(--canvas);stroke-width:4px}
+.track-svg .track-id{font:700 20px Consolas,monospace;fill:#936b00;paint-order:stroke;stroke:var(--canvas);stroke-width:3px;stroke-linejoin:round}
+.track-svg .signal-id{font:600 18px Consolas,monospace;fill:#354c51;paint-order:stroke;stroke:var(--canvas);stroke-width:3px}
+.track-svg .point-id{font:700 20px Consolas,monospace;fill:#237b35;paint-order:stroke;stroke:var(--canvas);stroke-width:3px}
 .track-svg .platform-label{font:16px Consolas,monospace;fill:var(--canvas-text)}
 .track-svg .unresolved-label{font:10px Consolas,monospace;fill:#83978c}
 .track-svg .siding-name{font:14px Consolas,monospace;fill:var(--canvas-text)}
