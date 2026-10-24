@@ -81,10 +81,9 @@
     el('text',{x,y:y+(def.labelDy??(upper?39:-28)),'text-anchor':'middle',class:'track-id asset-label'},g,id);
     el('title',{},g,`Track ${id} · ${stations[i].name} · ${def.location}`);
   }
-  function platform(parent,x,y,label) {
+  function platform(parent,x,y) {
     el('path',{d:`M ${x-62} ${y-8} V ${y+8} H ${x+62} V ${y-8}`,class:'platform'},parent);
     el('path',{d:`M ${x-58} ${y-14} H ${x+58}`,class:'rail-muted','stroke-dasharray':'11 5'},parent);
-    el('text',{x,y:y+29,'text-anchor':'middle',class:'platform-label'},parent,label);
   }
   function drawStations() {
     stations.forEach((s,i)=>{
@@ -96,8 +95,8 @@
       el('text',{x:s.x,y:long?162:154,'text-anchor':'middle',class:'station-arabic'},g,s.arabic);
       el('text',{x:s.x,y:long?188:181,'text-anchor':'middle',class:'station-code'},g,`[ ${s.code} ]`);
       const island=s.type==='island'||s.type==='pocket';
-      platform(g,s.x,island?370:246,assets[i].platformUpper);
-      platform(g,s.x,island?478:624,assets[i].platformLower);
+      platform(g,s.x,island?370:246);
+      platform(g,s.x,island?478:624);
     });
     signalDefs=[];
     stations.forEach((s,i)=>{
