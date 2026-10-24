@@ -26,14 +26,59 @@ test('stacked panels show consecutive ranges with matching vertical scale', () =
   }
 });
 
-test('zoom keeps the asset under the pointer in any stacked panel', () => {
+test('single-panel zoom keeps the asset under the pointer', () => {
   const camera = { x: 1000, y: 50, w: 4000, h: 875 };
-  for (let row = 0; row < 3; row++) {
+  for (const x of [.1, .5, .9]) {
     for (const factor of [.65, 1.28]) {
-      const x = row + .3, y = .7;
+      const y = .7;
       const zoomed = layout.zoomCamera(camera, factor, x, y);
       assert.ok(Math.abs(camera.x + x * camera.w - zoomed.x - x * zoomed.w) < 1e-8);
       assert.ok(Math.abs(camera.y + y * camera.h - zoomed.y - y * zoomed.h) < 1e-8);
+    }
+  }
+});
+
+test('stacked layouts ignore vertical drags while retaining horizontal panning', () => {
+  const camera = { x: 1000, y: 55, w: 4000, h: 660 };
+  for (const rows of [2, 3]) {
+    for (const dx of [0, -120, 120]) {
+      for (const dy of [-150, 150]) {
+        const panned = layout.panCamera(camera, dx, dy, { ...dimensions, rows });
+        assert.equal(panned.y, camera.y);
+        assert.equal(panned.x, camera.x - dx / dimensions.width * camera.w);
+        assert.equal(panned.w, camera.w);
+        assert.equal(panned.h, camera.h);
+      }
+    }
+  }
+  const free = layout.panCamera(camera, 120, 150, { ...dimensions, rows: 1 });
+  assert.notEqual(free.x, camera.x);
+  assert.notEqual(free.y, camera.y);
+});
+
+test('stacked wheel and pinch zoom preserve vertical centering in every panel', () => {
+  const camera = { x: 1000, y: 55, w: 4000, h: 660 };
+  for (const rows of [2, 3]) {
+    for (let row = 0; row < rows; row++) {
+      for (const y of [0, .3, 1]) {
+        for (const factor of [.65, 1.28]) {
+          const x = row + .3;
+          const zoomed = layout.zoomCamera(camera, factor, x, y, rows);
+          assert.ok(Math.abs(zoomed.y + zoomed.h / 2 - camera.y - camera.h / 2) < 1e-8);
+          assert.ok(Math.abs(zoomed.x + x * zoomed.w - camera.x - x * camera.w) < 1e-8);
+        }
+      }
+    }
+  }
+});
+
+test('stacked zoom limits do not shift the vertical center', () => {
+  for (const rows of [2, 3]) {
+    for (const w of [100, 1e6]) {
+      const h = w * dimensions.height / dimensions.width;
+      const camera = { x: 0, y: 385 - h / 2, w, h };
+      const constrained = layout.constrainCamera(camera, { ...dimensions, rows });
+      assert.ok(Math.abs(constrained.y + constrained.h / 2 - 385) < 1e-8);
     }
   }
 });

@@ -237,7 +237,7 @@
     const desiredW=Math.max(w+100,(h+100)*aspect),desiredH=desiredW/aspect;
     camera={x:(WORLD_W-desiredW*layoutRows)/2,y:(h-desiredH)/2,w:desiredW,h:desiredH};applyCamera();
   }
-  function zoom(factor,cx=layoutRows/2,cy=.5) {camera=layout.zoomCamera(camera,factor,cx,cy);applyCamera();}
+  function zoom(factor,cx=layoutRows/2,cy=.5) {camera=layout.zoomCamera(camera,factor,cx,cy,layoutRows);applyCamera();}
   function drawMinimap() {
     const map=$('minimap');map.replaceChildren();
     el('path',{d:'M 22 28 H 1078',stroke:'#c6d3c7','stroke-width':3},map);
@@ -330,11 +330,11 @@
   });
   stage.addEventListener('pointermove',e=>{
     if(!pointers.has(e.pointerId)||!gesture)return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(pointers.size===2&&gesture.pinch){const p=[...pointers.values()],distance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);camera=layout.zoomCamera(gesture.cam,gesture.pinch/Math.max(10,distance),gesture.cx,gesture.cy);applyCamera();return;}
+    if(pointers.size===2&&gesture.pinch){const p=[...pointers.values()],distance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);camera=layout.zoomCamera(gesture.cam,gesture.pinch/Math.max(10,distance),gesture.cx,gesture.cy,layoutRows);applyCamera();return;}
     if(pointers.size!==1||gesture.pinch)return;
     const dx=e.clientX-gesture.x,dy=e.clientY-gesture.y;
     if(Math.abs(dx)+Math.abs(dy)>4){moved=true;gesture.view.classList.add('dragging');}
-    if(moved){camera.x=gesture.cam.x-dx/gesture.view.clientWidth*gesture.cam.w;camera.y=gesture.cam.y-dy/gesture.view.clientHeight*gesture.cam.h;applyCamera();}
+    if(moved){camera=layout.panCamera(gesture.cam,dx,dy,{width:gesture.view.clientWidth,height:gesture.view.clientHeight,rows:layoutRows});applyCamera();}
   });
   function endPointer(e) {
     if(!pointers.has(e.pointerId))return;
