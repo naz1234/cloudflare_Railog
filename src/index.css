@@ -11618,45 +11618,19 @@ html[data-app-theme="light"] .theme-maspo-download-guide-close:hover {
   border-color: #e58b98 !important;
 }
 
-/* Train Request visibility: standalone eye icons using the awaiting-train glow rhythm. */
-@keyframes request-group-eye-awaiting-glow {
-  0%, 48%, 100% {
-    transform: scale(1);
-    filter: brightness(1) drop-shadow(0 0 0 var(--request-group-eye-glow));
-  }
-  62% {
-    transform: scale(1.14);
-    filter: brightness(1.3) drop-shadow(0 0 5px var(--request-group-eye-glow));
-  }
-  78% {
-    transform: scale(1.03);
-    filter: brightness(1.1) drop-shadow(0 0 2px var(--request-group-eye-glow));
-  }
-}
-
+/* Train Request visibility: static eye icons without glow or pulsing. */
 .theme-maintenance-panel .request-group-eye-status {
-  transform-origin: center;
-  animation: request-group-eye-awaiting-glow 1.2s ease-in-out infinite;
-  will-change: transform, filter;
+  animation: none;
+  transform: none;
+  filter: none;
 }
 
 .theme-maintenance-panel .request-group-eye-status.is-visible {
-  --request-group-eye-glow: rgba(34, 197, 94, 0.95);
   color: #22c55e !important;
 }
 
 .theme-maintenance-panel .request-group-eye-status.is-hidden {
-  --request-group-eye-glow: rgba(251, 113, 133, 0.95);
   color: #fb7185 !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .theme-maintenance-panel .request-group-eye-status {
-    animation: none;
-    transform: none;
-    filter: drop-shadow(0 0 3px var(--request-group-eye-glow));
-    will-change: auto;
-  }
 }
 
 /* Insertion TID reference redesign: keep the denser command-board layout readable in light mode. */
@@ -12991,6 +12965,34 @@ html[data-app-theme="light"] .theme-removal-info-tooltip .theme-removal-info-tid
 html[data-app-theme="light"] .theme-removal-info-arrow {
   fill: #ffffff;
   filter: drop-shadow(0 1px 0 #0284c7);
+}
+
+.theme-removal-info-trigger[data-depot="west"] {
+  color: #4ade80;
+}
+
+.theme-removal-info-trigger[data-depot="west"]:hover {
+  color: #bbf7d0;
+}
+
+.theme-removal-info-trigger[data-depot="west"]:focus-visible {
+  outline-color: #4ade80;
+}
+
+html[data-app-theme="light"] .theme-removal-info-trigger[data-depot="west"],
+html[data-app-theme="light"] .theme-removal-info-trigger[data-depot="west"] svg,
+html[data-app-theme="light"] .theme-removal-info-trigger[data-depot="west"] svg * {
+  color: #15803d !important;
+}
+
+html[data-app-theme="light"] .theme-removal-info-trigger[data-depot="west"]:hover,
+html[data-app-theme="light"] .theme-removal-info-trigger[data-depot="west"]:hover svg,
+html[data-app-theme="light"] .theme-removal-info-trigger[data-depot="west"]:hover svg * {
+  color: #166534 !important;
+}
+
+html[data-app-theme="light"] .theme-removal-info-trigger[data-depot="west"]:focus-visible {
+  outline-color: #15803d;
 }
 
 .theme-removal-info-trigger[data-depot="east"] {

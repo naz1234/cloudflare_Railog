@@ -183,10 +183,11 @@ function StillNotAtStablingIcon({ message = "Still not in WD" }) {
     </span>
   );
 }
-function AlreadyStatusIcon({ message, reason }) {
+function AlreadyStatusIcon({ message, reason, depot = "west" }) {
   if (!message) return null;
 
   const isWorkshop = reason === "WORKSHOP";
+  const isEastDepot = reason === "STABLING" && depot === "east";
 
   return (
     <span
@@ -195,9 +196,12 @@ function AlreadyStatusIcon({ message, reason }) {
       aria-label={message}
     >
       <span
+        data-stabling-depot={reason === "STABLING" ? depot : undefined}
         className={`inline-flex h-[15px] w-[15px] items-center justify-center rounded-full border ${
           isWorkshop
             ? "border-[#fbbf24] bg-[#fbbf24] shadow-[0_0_6px_rgba(251,191,36,0.46)]"
+            : isEastDepot
+            ? "border-red-300/80 bg-[#ef4444] shadow-[0_0_6px_rgba(239,68,68,0.42)]"
             : "border-emerald-300/80 bg-[#58c96b] shadow-[0_0_6px_rgba(88,201,107,0.42)]"
         }`}
       >
@@ -923,10 +927,12 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
     const key = normalizeTrainCompareKey(req.trainId || "");
     if (!key) return { reason: "", locationText: "" };
 
-    if (stabledTrainKeys.has(key)) {
+    const locations = stabledTrainLocationMap.get(key) || [];
+    if (stabledTrainKeys.has(key) || locations.length > 0) {
       return {
         reason: "STABLING",
-        locationText: (stabledTrainLocationMap.get(key) || []).join(" / "),
+        locationText: locations.join(" / "),
+        depot: /^East Depot\b/i.test(locations[0] || "") ? "east" : "west",
       };
     }
 
@@ -1529,7 +1535,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                     )}
                   </span>
                   {showAlreadyStatusIcon ? (
-                    <AlreadyStatusIcon message={statusMessage} reason={crossOutInfo.reason} />
+                    <AlreadyStatusIcon message={statusMessage} reason={crossOutInfo.reason} depot={crossOutInfo.depot} />
                   ) : showStillNotAtStablingIcon ? (
                     <StillNotAtStablingIcon />
                   ) : null}
@@ -1796,7 +1802,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                           {displayLabel}
                         </span>
                         {crossedOut ? (
-                          <AlreadyStatusIcon message={getAlreadyStatusMessage(crossOutInfo) || crossOutMessage} reason={crossOutInfo.reason} />
+                          <AlreadyStatusIcon message={getAlreadyStatusMessage(crossOutInfo) || crossOutMessage} reason={crossOutInfo.reason} depot={crossOutInfo.depot} />
                         ) : null}
                         <DeleteRequestButton
                           label={req.trainId}

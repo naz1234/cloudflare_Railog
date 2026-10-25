@@ -107,7 +107,7 @@ test("both depot info icons use a pointing-hand cursor and omit the source foote
   assert.doesNotMatch(css, /theme-removal-info-source/);
 });
 
-test("East uses red in both themes without changing West cyan or the close tooltip offset", () => {
+test("East uses red in both themes and preserves the close tooltip offset", () => {
   assert.match(css, /\.theme-removal-info-trigger\[data-depot="east"\] \{\s*color: #f87171;/);
   assert.match(css, /html\[data-app-theme="light"\] \.theme-removal-info-trigger\[data-depot="east"\] svg \* \{\s*color: #b91c1c !important;/);
   assert.match(css, /\.theme-removal-info-tooltip\[data-depot="east"\] \{\s*border-color: #f87171;/);
