@@ -70,7 +70,7 @@ import { usePstFldcVerification } from "../hooks/usePstFldcVerification";
 import PstExcelFormatLogPanel from "../components/PstExcelFormatLogPanel";
 import { buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionEntryPendingStatus, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "../lib/possessionAccessLog";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
-import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40Groups, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, resizeHdwDepotRows, clearHdwRows } from "../lib/trainRemHdw40";
+import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, getHdwCurrentTime, clearHdwRows } from "../lib/trainRemHdw40";
 import "../trainRemHdw40.css";
 import "../stablingSlate.css";
 import "../movementLogSlate.css";
@@ -2614,7 +2614,7 @@ function isTrainRemCombinedEastExtraRowIndex(depot = "west", label = "9am", rowI
 
 function getTrainRemCombinedManualRowDepot(depot = "west", label = "9am", rowIndex = -1, activeTimetable = null, rows = []) {
   if (depot === "west" && label === HDW40_PRESET_LABEL) {
-    return getHdw40RowGroup(rowIndex, rows)?.depot === "east" ? "east" : "west";
+    return getHdw40RowGroup(rowIndex, rows)?.depot || "";
   }
   return isTrainRemCombinedEastExtraRowIndex(depot, label, rowIndex, activeTimetable) ? "east" : depot;
 }
@@ -2934,7 +2934,7 @@ function clearTrainRemSummaryState(state = {}) {
 }
 
 function getTrainRemLocationGroupIndex(depot, selectedPreset, row, sourceIndex = -1, activeTimetable = null) {
-  if (selectedPreset === HDW40_PRESET_LABEL) return { west: 0, east: 1, mainline: 2 }[row?.hdwDepot];
+  if (selectedPreset === HDW40_PRESET_LABEL) return { west: 0, east: 1 }[row?.hdwDepot];
   if (!isTrainRemCombinedReferencePreset(depot, selectedPreset)) return depot === "east" ? 1 : 0;
   const layout = TRAIN_REM_EXTENDED_COMBINED_PRESET_LABELS.has(selectedPreset)
     ? getTrainRemCombinedExtendedLayout(selectedPreset, activeTimetable)
@@ -3424,8 +3424,7 @@ function collectTrainRemReferenceInServiceTrainIds(trainRemState = {}, activeTim
 function collectTrainRemMainlineInServiceRows(trainRemState = {}, activeTimetable = null) {
   const selectedPreset = trainRemState?.selectedPreset?.west || "9am";
   if (selectedPreset === HDW40_PRESET_LABEL) {
-    return getHdw40GroupRows(trainRemState?.rows?.west, "mainline")
-      .filter((row) => normalizeTrainId(row.trainId));
+    return [];
   }
   const getScheduledTids = (depot) => {
     const config = getTrainRemPresetConfig(depot, selectedPreset, activeTimetable);
@@ -8620,26 +8619,6 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
     });
   };
 
-  const handleResizeHdwDepot = (depot, delta) => {
-    const current = trainRemStateRef.current;
-    if (current?.selectedPreset?.west !== HDW40_PRESET_LABEL) return;
-    const rows = normalizeHdw40Rows(current.rows?.west);
-    const group = getHdw40Groups(rows).find((item) => item.depot === depot);
-    if (!group || (delta < 0 && group.count === 0)) return;
-    const lastRow = rows[group.start + group.count - 1];
-    if (delta < 0 && hasTrainRemRowContent(lastRow) && !window.confirm(
-      `Remove the last ${group.label} row${lastRow.trainId ? ` (Train ${lastRow.trainId})` : ""}? Its entry will be removed. You can restore it with Undo.`
-    )) return;
-
-    updateTrainRemState((prev) => {
-      // Do not remove a different entry if live sync changed the list while the
-      // confirmation was open. The controls can be used again on the new list.
-      if (prev.selectedPreset?.west !== HDW40_PRESET_LABEL
-        || JSON.stringify(normalizeHdw40Rows(prev.rows?.west)) !== JSON.stringify(rows)) return prev;
-      return { ...prev, rows: { ...prev.rows, west: resizeHdwDepotRows(rows, depot, delta) } };
-    });
-  };
-
   const requestTrainRemClear = (groupKey) => {
     if (!["all", "west", "east", "offpeak"].includes(groupKey)) return;
     if (trainRemClearTarget !== groupKey) {
@@ -9349,14 +9328,8 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
       });
     }
     const duplicateCounts = getTrainRemDuplicateCounts();
-    const hdwGroups = isHdw40 ? getHdw40Groups(rows) : [];
     const indexedRowEntries = displayRowEntries.map((entry, displayIndex) => ({ ...entry, displayIndex }));
-    const tableEntries = isHdw40
-      ? hdwGroups.flatMap((group) => [
-          { hdwHeader: group },
-          ...indexedRowEntries.slice(group.start, group.start + group.count),
-        ])
-      : indexedRowEntries;
+    const tableEntries = indexedRowEntries;
     const duplicateTidCounts = getTrainRemTidDuplicateCounts();
     const pdfActive = Boolean(trainRemPdfStatus?.[depot]);
     const pdfMenuOpen = trainRemPdfMenuDepot === depot;
@@ -9469,7 +9442,9 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
               </ActionTooltip>
 
               {depot === "west" && <ActionTooltip
-                message={trainRemClearConfirm
+                message={isHdw40 ? (trainRemClearConfirm
+                  ? "Click again to clear all HDW train entries. Other periods, Maintenance and stabling stay unchanged. Undo restores cleared entries."
+                  : "Clear all HDW train entries. Other periods, Maintenance and stabling stay unchanged. Click again to confirm.") : trainRemClearConfirm
                   ? "Click again to clear all West Depot, East Depot and Off Peak entries in the selected period. Other periods, Maintenance and stabling stay unchanged. Escape or 5 seconds cancels; Undo restores cleared entries."
                   : "Clear all West Depot, East Depot and Off Peak entries in the selected period. Other periods, Maintenance and stabling stay unchanged. Click once to show Confirm?, then again to clear."}
                 placement="top"
@@ -9574,9 +9549,11 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                 </div>
               )}
               {isHdw40 && depot === "west" && (
-                <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className="text-[9px] text-[#7eb8e0]">{rows.length} train rows · manual time · choose depot</span>
                   {renderDepotCopyButton("west")}
                   {renderDepotCopyButton("east")}
+                  {rows.length > 40 && <span role="status" className="text-[9px] text-amber-300">Extra saved entries retained to avoid deleting data. Clear unused entries to return to 40 rows.</span>}
                 </div>
               )}
             </div>
@@ -9588,36 +9565,15 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
           <table data-removal-headway={isHdw40 ? "true" : undefined} className="theme-train-rem-table w-full border-separate border-spacing-0 table-fixed text-[12px]">
             <thead>
               <tr>
-                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: isHdw40 ? "16%" : "14%" }}>Train</th>
+                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "14%" }}>Train</th>
                 {!isHdw40 && <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "11%" }}>TID</th>}
-                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: isHdw40 ? "24%" : "18%" }}>Time</th>
-                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: isHdw40 ? "60%" : "57%" }}>Remark</th>
+                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: isHdw40 ? "29%" : "18%" }}>Time</th>
+                {isHdw40 && <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: "20%" }}>Depot</th>}
+                <th className="theme-train-rem-table-header h-5 px-1 text-center text-[9.5px] font-normal uppercase tracking-widest text-[#4a8ab5] bg-[#071828] border-b border-[#1a3a56]" style={{ width: isHdw40 ? "37%" : "57%" }}>Remark</th>
               </tr>
             </thead>
             <tbody>
-              {tableEntries.map(({ row, sourceIndex: index, displayIndex, hdwHeader }) => {
-                if (hdwHeader) {
-                  return (
-                    <tr key={`hdw-heading-${hdwHeader.depot}`}>
-                      <th colSpan={3} data-removal-location={hdwHeader.depot === "mainline" ? "offpeak" : hdwHeader.depot} className="theme-train-rem-table-header slate-removal-group-header px-2 pb-1 pt-2 text-left text-[9px] font-semibold text-[#7eb8e0]">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="slate-removal-group-title flex-1">{hdwHeader.label}{renderRemovalGroupClearButton(hdwHeader.depot === "mainline" ? "offpeak" : hdwHeader.depot)}<span className="slate-removal-group-count">{hdwHeader.count} rows</span></span>
-                          {hdwHeader.depot !== "mainline" && (
-                            <span className="inline-flex items-center gap-1">
-                              <ActionTooltip message={`Add a ${hdwHeader.label} row`} placement="top" align="end">
-                                <button type="button" aria-label={`Add ${hdwHeader.label} row`} onClick={() => handleResizeHdwDepot(hdwHeader.depot, 1)} className="theme-hdw-row-control inline-flex h-5 w-5 items-center justify-center rounded border border-[#2b4f6b] text-sm hover:bg-[#173a59]">+</button>
-                              </ActionTooltip>
-                              <ActionTooltip message={`Remove the last ${hdwHeader.label} row`} placement="top" align="end">
-                                <button type="button" aria-label={`Remove last ${hdwHeader.label} row`} disabled={hdwHeader.count === 0} onClick={() => handleResizeHdwDepot(hdwHeader.depot, -1)} className="theme-hdw-row-control inline-flex h-5 w-5 items-center justify-center rounded border border-[#2b4f6b] text-sm hover:bg-[#173a59] disabled:cursor-not-allowed disabled:opacity-35">−</button>
-                              </ActionTooltip>
-                            </span>
-                          )}
-                        </div>
-                      </th>
-                    </tr>
-                  );
-                }
-                const hdw40Group = isHdw40 ? hdwGroups.find((group) => index >= group.start && index < group.start + group.count) : null;
+              {tableEntries.map(({ row, sourceIndex: index, displayIndex }) => {
                 const previousVisibleRowIndex = displayIndex > 0
                   ? displayRowEntries[displayIndex - 1].sourceIndex
                   : null;
@@ -9639,7 +9595,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                 const rowLocationIndex = canSortByRemovalColor
                   ? getRemovalColorSortGroup(row, index)
                   : isHdw40
-                    ? { west: 0, east: 1, mainline: 2 }[getHdw40RowGroup(index, rows)?.depot]
+                    ? { west: 0, east: 1 }[row.hdwDepot]
                     : depot === "east" ? 1 : 0;
                 const rowLocation = removalLocationGroups[rowLocationIndex];
                 const currentLocationGroup = activeSortMode === "color" ? rowLocationIndex : null;
@@ -9825,11 +9781,11 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                       </tr>
                     )}
                     <tr>
-                      <td colSpan={isHdw40 ? 3 : 4} className="theme-train-rem-table-cell bg-[#071828] px-1 py-[1px]">
+                      <td colSpan={4} className="theme-train-rem-table-cell bg-[#071828] px-1 py-[1px]">
                         <div
                           className={`theme-train-rem-row-card relative grid h-[22px] items-center overflow-hidden rounded-md border transition-[border-color,background,box-shadow] duration-150 ${hasDuplicateValue ? "is-duplicate" : ""} ${isNineAmReferenceTid ? "is-9am-exact-tid-row" : ""} ${isNineAmSpecialTid ? "is-9am-special-tid-row" : ""} ${isNineAmOtherTid ? "is-9am-other-tid-row" : ""} ${isOtherPresetThemedRow ? "is-other-preset-themed-row" : ""} ${isExtendedEastPresetRow ? "is-combined-east-preset-row" : ""}`}
                           data-preset={selectedPreset}
-                          data-hdw-group={hdw40Group?.depot}
+                          data-hdw-group={isHdw40 ? row.hdwDepot || "unassigned" : undefined}
                           data-tid={cleanTid}
                           data-removal-train={trainRemRequestKey || undefined}
                           data-removal-depot={depot}
@@ -9837,7 +9793,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                           data-removal-location={rowLocation?.key}
                           data-removal-location-badge={canSortByRemovalColor && activeSortMode === "tid" ? "true" : undefined}
                           style={{
-                            gridTemplateColumns: isHdw40 ? "16% 24% 60%" : "14% 11% 18% 57%",
+                            gridTemplateColumns: isHdw40 ? "14% 29% 20% 37%" : "14% 11% 18% 57%",
                             background: rowCardVisual.background,
                             borderColor: rowCardVisual.borderColor,
                             boxShadow: rowCardVisual.boxShadow,
@@ -9861,7 +9817,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                             }}
                             onBlur={() => handleTrainRemTrainIdBlur(depot, index)}
                             placeholder="ID"
-                            aria-label={isHdw40 ? `${hdw40Group.label} row ${index - hdw40Group.start + 1} Train ID` : undefined}
+                            aria-label={isHdw40 ? `HDW row ${index + 1} Train ID` : undefined}
                             title={referenceOnly ? rowStatusTitle : isDuplicateTrainId ? "Duplicate Train ID detected" : ""}
                             className={`h-full min-w-0 border-0 bg-transparent px-1 text-center text-[11px] outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${hasDuplicateValue ? "font-normal" : "font-semibold"} ${referenceOnly ? "cursor-default" : ""}`}
                             style={{ color: trainIdTextColor }}
@@ -9905,10 +9861,40 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                             }}
                           />}
 
-                          <input
+                          {isHdw40 ? <>
+                            <div className="theme-hdw-time-cell flex h-full min-w-0 items-center">
+                              <input
+                                value={row.timing}
+                                data-removal-field="time"
+                                aria-label={`HDW row ${index + 1} removal time`}
+                                onFocus={handleTrainRemOtherFieldFocus}
+                                onChange={(event) => updateTrainRemCell(depot, index, "timing", cleanMovementCustomTimeInput(event.target.value))}
+                                onBlur={(event) => {
+                                  updateTrainRemCell(depot, index, "timing", normalizeMovementCustomTimeInput(event.target.value));
+                                  handleTrainRemEditEnd();
+                                }}
+                                placeholder="--:--" inputMode="numeric"
+                                className="h-full min-w-0 flex-1 border-0 bg-transparent px-0.5 text-center text-[11px] outline-none placeholder:text-[#36536c] focus:bg-white/[0.04]"
+                                style={{ color: timingTextColor }}
+                              />
+                              <button type="button" className="theme-hdw-current-time inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border border-[#2b4f6b] text-[#7dd3fc] hover:bg-[#173a59]"
+                                aria-label={`Set HDW row ${index + 1} removal time to current time`} title="Use current time (Riyadh); you can still edit it"
+                                onClick={() => {
+                                  handleTrainRemEditStart();
+                                  updateTrainRemCell(depot, index, "timing", getHdwCurrentTime());
+                                  handleTrainRemEditEnd();
+                                }}><RefreshCw size={10} aria-hidden="true" /></button>
+                            </div>
+                            <select value={row.hdwDepot} data-removal-field="depot" aria-label={`HDW row ${index + 1} removal depot`}
+                              onFocus={handleTrainRemOtherFieldFocus} onBlur={handleTrainRemEditEnd}
+                              onChange={(event) => updateTrainRemCell(depot, index, "hdwDepot", event.target.value)}
+                              className="theme-hdw-depot-select h-full min-w-0 cursor-pointer border-0 bg-transparent px-0.5 text-center text-[9px] outline-none"
+                              title="Choose the removal destination depot">
+                              <option value="">Depot</option><option value="west">West</option><option value="east">East</option>
+                            </select>
+                          </> : <input
                             value={displayTimingValue}
                             data-removal-field="time"
-                            aria-label={isHdw40 ? `${hdw40Group.label} row ${index - hdw40Group.start + 1} manual time` : undefined}
                             onFocus={handleTrainRemOtherFieldFocus}
                             onChange={(e) => {
                               if (!referenceOnly) {
@@ -9927,7 +9913,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                             title={referenceOnly ? rowStatusTitle : ""}
                             className={`h-full min-w-0 border-0 bg-transparent px-1 text-center text-[11px] font-normal outline-none placeholder:text-[#36536c] focus:bg-white/[0.04] ${referenceOnly ? "cursor-default" : ""}`}
                             style={{ color: timingTextColor }}
-                          />
+                          />}
 
                           {(requestRemark || referenceOnly) && String(remarkValue || "").trim() ? (
                             <RemovalSummaryRemark
@@ -23561,6 +23547,7 @@ function getTrainRemRowForTrain(trainRemState = {}, trainKey = "", activeTimetab
     const matchIndex = rows.findIndex((row) => normalizeTrainId(row.trainId) === key);
     if (matchIndex >= 0) {
       const match = rows[matchIndex];
+      if (selectedPreset === HDW40_PRESET_LABEL && !["west", "east"].includes(match.hdwDepot)) return null;
       const tid = (match.tid || "").toString().trim();
       const isCombinedReferencePreset = isTrainRemCombinedReferencePreset(depot, selectedPreset);
       const westReferenceScheduleMatch = isCombinedReferencePreset
@@ -23570,7 +23557,7 @@ function getTrainRemRowForTrain(trainRemState = {}, trainKey = "", activeTimetab
         ? getTrainRemScheduleMatch(activeTimetable, "east", selectedPreset, tid)
         : null;
       const derivedScheduleMatch = westReferenceScheduleMatch || eastReferenceScheduleMatch;
-      const isReferenceOnly = (selectedPreset === HDW40_PRESET_LABEL && getHdw40RowGroup(matchIndex, rows)?.depot === "mainline") || isTrainRemReferenceOnlyIndex(
+      const isReferenceOnly = isTrainRemReferenceOnlyIndex(
         depot,
         selectedPreset,
         matchIndex,

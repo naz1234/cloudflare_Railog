@@ -9,6 +9,7 @@ import {
   ClipboardCopy,
   ClipboardList,
   Copy,
+  Cloud,
   Filter,
   Gauge,
   MoreVertical,
@@ -18,9 +19,10 @@ import {
   Upload,
 } from "lucide-react";
 import { formatOdoWorkshopTrainText, parseOdoWorkshopTrainText } from "../lib/odoWorkshopTrains";
+import useOdoReadingSync from "../hooks/useOdoReadingSync";
+import { ODO_TRAINSETS, validateCmmsReport } from "../../shared/odo-reading.js";
 
-const TRAINSETS = Array.from({ length: 47 }, (_, i) => `TS${String(i + 1).padStart(2, "0")}`);
-const ODO_STORAGE_KEY = "odoReadingState_v1";
+const TRAINSETS = ODO_TRAINSETS;
 const CMMS_ROW_Y_TOLERANCE = 2.5;
 const CMMS_DATE_PATTERN = /([A-Z][a-z]{2}\s+\d{1,2},\s+\d{4},\s+\d{1,2}:\d{2}\s+(?:AM|PM))/g;
 const CMMS_MONTHS = {
@@ -169,28 +171,6 @@ function getNow() {
   return { time, dateStr: `${day} ${month} ${year}` };
 }
 
-function createEmptyMileageMap() {
-  return Object.fromEntries(TRAINSETS.map((ts) => [ts, ""]));
-}
-
-function createEmptyWorkshopMap() {
-  return Object.fromEntries(TRAINSETS.map((ts) => [ts, false]));
-}
-
-function loadState() {
-  try {
-    const raw = localStorage.getItem(ODO_STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-function mergeWithTrainsets(savedMap, fallbackValue) {
-  return Object.fromEntries(TRAINSETS.map((ts) => [ts, savedMap?.[ts] ?? fallbackValue]));
-}
-
 function filterTrainsets(trainsets, searchTerm, filterMode, mileages, workshops) {
   const q = searchTerm.trim().toLowerCase();
 
@@ -270,11 +250,10 @@ function SectionTitle({ icon: Icon, title, subtitle }) {
 }
 
 export default function OdoReading() {
-  const saved = loadState();
-  const [mileages, setMileages] = useState(() => mergeWithTrainsets(saved?.mileages, ""));
-  const [workshops, setWorkshops] = useState(() => mergeWithTrainsets(saved?.workshops, false));
+  const shared = useOdoReadingSync();
+  const { state: { mileages, workshops, cmmsReport }, setMileages, setWorkshops, setCmmsReport } = shared;
   const [workshopTrainText, setWorkshopTrainText] = useState(() =>
-    formatOdoWorkshopTrainText(mergeWithTrainsets(saved?.workshops, false))
+    formatOdoWorkshopTrainText(workshops)
   );
   const [now, setNow] = useState(getNow());
   const [copied, setCopied] = useState(false);
@@ -282,12 +261,12 @@ export default function OdoReading() {
   const [outputSearch, setOutputSearch] = useState("");
   const [inputFilter, setInputFilter] = useState("all");
   const [outputFilter, setOutputFilter] = useState("all");
-  const [cmmsReport, setCmmsReport] = useState(null);
   const [cmmsError, setCmmsError] = useState("");
   const [cmmsReading, setCmmsReading] = useState(false);
   const [cmmsCopied, setCmmsCopied] = useState(false);
   const inputRefs = useRef([]);
   const cmmsFileInputRef = useRef(null);
+  const workshopDraftDirtyRef = useRef(false);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(getNow()), 10000);
@@ -295,10 +274,8 @@ export default function OdoReading() {
   }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(ODO_STORAGE_KEY, JSON.stringify({ mileages, workshops }));
-    } catch {}
-  }, [mileages, workshops]);
+    if (!workshopDraftDirtyRef.current) setWorkshopTrainText(formatOdoWorkshopTrainText(workshops));
+  }, [workshops]);
 
   const findNextEditableRow = (currentIndex, direction, nextMileages = mileages) => {
     let next = currentIndex + direction;
@@ -356,13 +333,15 @@ export default function OdoReading() {
     const selectedTrainsets = new Set(parseOdoWorkshopTrainText(workshopTrainText, TRAINSETS.length));
     const nextWorkshops = Object.fromEntries(TRAINSETS.map((ts) => [ts, selectedTrainsets.has(ts)]));
 
+    workshopDraftDirtyRef.current = false;
     setWorkshops(nextWorkshops);
     setWorkshopTrainText(formatOdoWorkshopTrainText(nextWorkshops));
   };
 
   const handleClearAll = () => {
-    setMileages(createEmptyMileageMap());
-    setWorkshops(createEmptyWorkshopMap());
+    if (!window.confirm("Clear ODO mileages and the workshop list on all laptops? The CMMS output will be kept.")) return;
+    shared.clearReadings();
+    workshopDraftDirtyRef.current = false;
     setWorkshopTrainText("");
   };
 
@@ -436,10 +415,10 @@ export default function OdoReading() {
       if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
         throw new Error("Please upload the CMMS handover report in PDF format.");
       }
-      setCmmsReport(await parseCmmsHandoverPdf(file));
+      setCmmsReport(validateCmmsReport(await parseCmmsHandoverPdf(file)));
     } catch (error) {
       console.error("CMMS handover PDF import failed:", error);
-      setCmmsReport(null);
+      // A failed replacement must not erase the previously shared CMMS output.
       setCmmsError(error.message || "Unable to read this CMMS handover PDF.");
     } finally {
       setCmmsReading(false);
@@ -456,6 +435,17 @@ export default function OdoReading() {
 
   return (
     <div className="w-full min-w-0 text-slate-100">
+      <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px]" role="status" aria-live="polite">
+        <Cloud className={`h-3.5 w-3.5 ${shared.phase === "synced" ? "text-emerald-300" : "text-amber-200"}`} aria-hidden="true" />
+        <span className={shared.phase === "synced" ? "text-emerald-200" : "text-amber-100"}>
+          {shared.phase === "loading" ? "Loading shared ODO data…"
+            : shared.phase === "synced" ? "Shared ODO is up to date · syncs across laptops"
+              : shared.phase === "saving" || shared.phase === "pending" ? "Saving ODO changes online…"
+                : shared.backupAvailable ? "Not synced — browser backup kept. Retrying automatically."
+                  : "Not synced — keep this page open until saving succeeds."}
+        </span>
+        {shared.phase === "offline" && <button type="button" onClick={() => void shared.retry()} className="rounded border border-amber-300/40 px-2 py-1 text-amber-100 hover:bg-amber-500/10" title={shared.error}>Retry sync</button>}
+      </div>
       <div className="grid w-fit max-w-full grid-cols-[minmax(400px,500px)_minmax(350px,460px)_minmax(340px,420px)] items-start gap-1.5 overflow-x-auto">
         {/* LEFT: ODO INPUT */}
         <section className="min-w-0 rounded-2xl border border-slate-700/80 bg-[#061423]/95 p-2 shadow-2xl shadow-black/30 md:p-3">
@@ -488,7 +478,7 @@ export default function OdoReading() {
                   type="text"
                   inputMode="text"
                   value={workshopTrainText}
-                  onChange={(event) => setWorkshopTrainText(event.target.value)}
+                  onChange={(event) => { workshopDraftDirtyRef.current = true; setWorkshopTrainText(event.target.value); }}
                   onKeyDown={(event) => {
                     if (event.key !== "Enter") return;
                     event.preventDefault();

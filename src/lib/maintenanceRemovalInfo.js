@@ -29,7 +29,8 @@ export function buildRemovalInfoByTrain(rows = []) {
 export const buildWestRemovalInfoByTrain = buildRemovalInfoByTrain;
 
 // Rows must come from the active off-peak/mainline list, not from a guess based
-// on missing depot assignments. HDW off-peak rows legitimately have no TID.
+// on missing depot assignments. HDW has no Off-Peak group; its rows are manual
+// removals only after the user chooses West or East Depot.
 export function buildOffPeakInfoByTrain(rows = []) {
   const byTrain = new Map();
   for (const row of Array.isArray(rows) ? rows : []) {
