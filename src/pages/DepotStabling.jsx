@@ -9550,7 +9550,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
               )}
               {isHdw40 && depot === "west" && (
                 <div className="flex flex-wrap items-center gap-1">
-                  <span className="text-[9px] text-[#7eb8e0]" role="status" title="40 trains minus unique trains with a removal time and West or East selected">Total {getHdwRunningInMlCount(rows)} running in ML</span>
+                  <span className="text-[10px] text-[#7eb8e0]" role="status" title="40 trains minus unique trains with a removal time and West or East selected">Total {getHdwRunningInMlCount(rows)} running in ML</span>
                   {renderDepotCopyButton("west")}
                   {renderDepotCopyButton("east")}
                   {rows.length > 40 && <span role="status" className="text-[9px] text-amber-300">Extra saved entries retained to avoid deleting data. Clear unused entries to return to 40 rows.</span>}
