@@ -70,7 +70,7 @@ import { usePstFldcVerification } from "../hooks/usePstFldcVerification";
 import PstExcelFormatLogPanel from "../components/PstExcelFormatLogPanel";
 import { buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionEntryPendingStatus, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "../lib/possessionAccessLog";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
-import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, getHdwCurrentTime, clearHdwRows } from "../lib/trainRemHdw40";
+import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, getHdwCurrentTime, getHdwRunningInMlCount, clearHdwRows } from "../lib/trainRemHdw40";
 import "../trainRemHdw40.css";
 import "../stablingSlate.css";
 import "../movementLogSlate.css";
@@ -9550,7 +9550,7 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
               )}
               {isHdw40 && depot === "west" && (
                 <div className="flex flex-wrap items-center gap-1">
-                  <span className="text-[9px] text-[#7eb8e0]">{rows.length} train rows · manual time · choose depot</span>
+                  <span className="text-[9px] text-[#7eb8e0]" role="status" title="40 trains minus unique trains with a removal time and West or East selected">Total {getHdwRunningInMlCount(rows)} running in ML</span>
                   {renderDepotCopyButton("west")}
                   {renderDepotCopyButton("east")}
                   {rows.length > 40 && <span role="status" className="text-[9px] text-amber-300">Extra saved entries retained to avoid deleting data. Clear unused entries to return to 40 rows.</span>}
@@ -9885,13 +9885,19 @@ function TrainRemPanel({ maintenanceMap = {}, hiddenMaintenanceMap = {}, onTrain
                                   handleTrainRemEditEnd();
                                 }}><RefreshCw size={10} aria-hidden="true" /></button>
                             </div>
-                            <select value={row.hdwDepot} data-removal-field="depot" aria-label={`HDW row ${index + 1} removal depot`}
-                              onFocus={handleTrainRemOtherFieldFocus} onBlur={handleTrainRemEditEnd}
-                              onChange={(event) => updateTrainRemCell(depot, index, "hdwDepot", event.target.value)}
-                              className="theme-hdw-depot-select h-full min-w-0 cursor-pointer border-0 bg-transparent px-0.5 text-center text-[9px] outline-none"
-                              title="Choose the removal destination depot">
-                              <option value="">Depot</option><option value="west">West</option><option value="east">East</option>
-                            </select>
+                            <div className="theme-hdw-depot-control" data-depot={row.hdwDepot || "unassigned"}>
+                              <span className="theme-hdw-depot-badge" aria-hidden="true">
+                                {row.hdwDepot === "west" ? "WD" : row.hdwDepot === "east" ? "ED" : "—"}
+                              </span>
+                              <svg className="theme-hdw-depot-chevron" width="8" height="8" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m3 4.5 3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                              <select value={row.hdwDepot} data-removal-field="depot" aria-label={`HDW row ${index + 1} removal depot`}
+                                onFocus={handleTrainRemOtherFieldFocus} onBlur={handleTrainRemEditEnd}
+                                onChange={(event) => updateTrainRemCell(depot, index, "hdwDepot", event.target.value)}
+                                className="theme-hdw-depot-select"
+                                title={row.hdwDepot === "west" ? "West" : row.hdwDepot === "east" ? "East" : "Choose West or East"}>
+                                <option value="" disabled hidden>—</option><option value="west">West</option><option value="east">East</option>
+                              </select>
+                            </div>
                           </> : <input
                             value={displayTimingValue}
                             data-removal-field="time"

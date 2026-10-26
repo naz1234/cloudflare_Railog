@@ -41,6 +41,18 @@ export function clearHdwRows(rows = []) {
   return normalizeHdw40Rows(normalizeHdw40Rows(rows).map((row) => ({ trainId: "", tid: "", timing: "", remark: "", hdwDepot: row.hdwDepot })));
 }
 
+export function getHdwRunningInMlCount(rows = []) {
+  const removedTrains = new Set();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    if (!row || !DEPOTS.some((item) => item.depot === row.hdwDepot)) continue;
+    if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(row.timing || "").trim())) continue;
+    const trainMatch = String(row.trainId || "").trim().match(/^T?0*(\d{1,2})$/i);
+    const trainNumber = trainMatch ? Number(trainMatch[1]) : 0;
+    if (trainNumber >= 1 && trainNumber <= 47) removedTrains.add(trainNumber);
+  }
+  return Math.max(0, HDW40_ROW_COUNT - removedTrains.size);
+}
+
 export function getHdwCurrentTime(date = new Date()) {
   return new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Riyadh", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(date);
 }
