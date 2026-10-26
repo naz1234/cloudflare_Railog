@@ -1,10 +1,10 @@
-/* Match the compact 7pm palette without relying on hidden/fake TIDs. */
-.theme-hdw-row-control:focus-visible {
+/* HDW stays one manual list; depot colors describe each row, not fixed groups. */
+.theme-train-rem-panel :is(.theme-hdw-current-time, .theme-hdw-depot-select):focus-visible {
   outline: 2px solid #38bdf8;
   outline-offset: 1px;
 }
 
-html[data-app-theme="light"] .theme-hdw-row-control {
+html[data-app-theme="light"] .theme-train-rem-panel .theme-hdw-current-time {
   color: #075985;
   background: #e0f2fe;
   border-color: #7dd3fc;
@@ -23,10 +23,10 @@ html[data-app-theme="light"] .theme-hdw-row-control {
   border-color: rgba(167,139,250,.78) !important;
 }
 
-.theme-train-rem-panel .theme-train-rem-row-card[data-hdw-group="mainline"]:not(.is-duplicate) {
-  --hdw-accent: #f59e0b;
-  background: linear-gradient(90deg, rgba(180,120,35,.22), rgba(180,120,35,.06)) !important;
-  border-color: rgba(183,121,31,.78) !important;
+.theme-train-rem-panel .theme-train-rem-row-card[data-hdw-group="unassigned"]:not(.is-duplicate) {
+  --hdw-accent: #64748b;
+  background: linear-gradient(90deg, rgba(71,85,105,.2), rgba(30,41,59,.06)) !important;
+  border-color: rgba(100,116,139,.5) !important;
 }
 
 html[data-app-theme="light"] .theme-train-rem-panel .theme-train-rem-row-card[data-hdw-group]:not(.is-duplicate) {
@@ -39,7 +39,16 @@ html[data-app-theme="light"] .theme-train-rem-panel .theme-train-rem-row-card[da
   border-color: #8b5cf6 !important;
 }
 
-html[data-app-theme="light"] .theme-train-rem-panel .theme-train-rem-row-card[data-hdw-group="mainline"]:not(.is-duplicate) {
-  background: linear-gradient(90deg, #fff7ed, #fef3c7) !important;
-  border-color: #d97706 !important;
+html[data-app-theme="light"] .theme-train-rem-panel .theme-train-rem-row-card[data-hdw-group="unassigned"]:not(.is-duplicate) {
+  background: linear-gradient(90deg, #f8fafc, #f1f5f9) !important;
+  border-color: #94a3b8 !important;
+}
+
+.theme-train-rem-panel .theme-hdw-depot-select { color: var(--slate-text, #c5d8ea); }
+.theme-train-rem-panel .theme-hdw-depot-select option { color: #e2e8f0; background: #0b1f33; }
+html[data-app-theme="light"] .theme-train-rem-panel .theme-hdw-depot-select option { color: #23334b; background: #fff; }
+
+@media (max-width: 767px) {
+  .theme-train-rem-panel .theme-hdw-current-time { width: 22px; height: 24px; }
+  .theme-train-rem-panel .theme-hdw-depot-select { font-size: 11px; }
 }

@@ -34,13 +34,13 @@ test("blank, invalid and zero train IDs do not receive off-peak icons", () => {
   ]).size, 0);
 });
 
-test("HDW off-peak trains appear without fabricating a TID or including HDW depot rows", () => {
+test("HDW no longer supplies an Off-Peak group or fabricates TIDs for unassigned rows", () => {
   const rows = getHdw40GroupRows([
     { trainId: "06", tid: "216", hdwDepot: "west" },
     { trainId: "19", tid: "218", hdwDepot: "east" },
     { trainId: "T12", tid: "", hdwDepot: "mainline" },
   ], "mainline");
-  assert.deepEqual([...buildOffPeakInfoByTrain(rows)], [["12", [{ tid: "" }]]]);
+  assert.deepEqual([...buildOffPeakInfoByTrain(rows)], []);
   assert.deepEqual(buildOffPeakInfoByTrain([{ trainId: "25", tid: "invalid" }]).get("25"), [{ tid: "" }]);
 });
 

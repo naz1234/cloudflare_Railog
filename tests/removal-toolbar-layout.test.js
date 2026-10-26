@@ -86,7 +86,7 @@ test('Removal Summary has one icon-only clear that shows Confirm? on the same bu
   assert.match(css, /\.theme-train-rem-clear\[data-confirming="true"\] \{ width: 58px; min-width: 58px;/);
 });
 
-test('all three group headers share inline confirmation and bubble tooltips in scheduled and HDW layouts', () => {
+test('scheduled group headers retain inline confirmation while HDW has no group headers', () => {
   const start = source.indexOf('const renderRemovalGroupClearButton =');
   const button = source.slice(start, source.indexOf('const handleTrainRemPdfDownload =', start));
   assert.match(button, /<ActionTooltip asChild/);
@@ -100,7 +100,7 @@ test('all three group headers share inline confirmation and bubble tooltips in s
   assert.match(button, /Escape or 5 seconds cancels; Undo restores cleared entries/);
   assert.match(button, /<Trash2 size=\{12\} aria-hidden="true" \/>/);
   assert.doesNotMatch(button, /title=|>\s*Clear All\s*<|<Check\b|aria-haspopup|aria-expanded/);
-  assert.match(source, /renderRemovalGroupClearButton\(hdwHeader\.depot === "mainline" \? "offpeak" : hdwHeader\.depot\)/);
+  assert.doesNotMatch(source, /hdwHeader/);
   assert.match(source, /renderRemovalGroupClearButton\(rowLocation\.key\)/);
   assert.match(css, /button\.theme-train-rem-group-clear \{[^}]*background: transparent !important;/);
   assert.match(css, /button\.theme-train-rem-group-clear\[data-confirming="true"\] \{[^}]*width: 54px;[^}]*text-transform: none;/);
