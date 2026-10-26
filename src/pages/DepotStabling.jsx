@@ -6448,7 +6448,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   };
   const insRowLine = isLast ? "1px solid #1a3a56" : "2px solid #1a3a56";
   const ownInsertionCardMinHeightBase = inserted?.isSweeping
-    ? 158
+    ? 182
     : isEast3K1InsertionCard
       ? 142
       : insertedTid
@@ -6763,6 +6763,17 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                         title="Edit Sweep end time"
                       />
                     </div>
+                    <input
+                      type="text"
+                      value={inserted.taName || ""}
+                      maxLength={40}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      onChange={(e) => onSweepUpdate?.(inserted.key, { taName: cleanInsertionTaName(e.target.value) })}
+                      placeholder="TA name"
+                      aria-label={`TA name for sweeping ${padTrainId(key)}`}
+                      className="theme-insertion-sweep-ta-input mt-1 h-5 w-full min-w-0 rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 text-center text-[10px] font-normal text-white outline-none placeholder:text-purple-200/70 focus:border-purple-200"
+                    />
                   </div>
                 </div>
               </div>
@@ -6846,6 +6857,17 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                       title="Edit Sweep end time"
                     />
                   </div>
+                  <input
+                    type="text"
+                    value={inserted.taName || ""}
+                    maxLength={40}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    onChange={(e) => onSweepUpdate?.(inserted.key, { taName: cleanInsertionTaName(e.target.value) })}
+                    placeholder="TA name"
+                    aria-label={`TA name for sweeping ${padTrainId(key)}`}
+                    className="theme-insertion-sweep-ta-input mt-1 h-5 w-full min-w-0 rounded-md border border-purple-300/40 bg-[#071828]/70 px-1 text-center text-[10px] font-normal text-white outline-none placeholder:text-purple-200/70 focus:border-purple-200"
+                  />
                 </div>
               </div>
             </div>
@@ -7693,7 +7715,7 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
                   isManualInsertionActionRemark(tidInputs[`${road}-${blockIndex}`] || "")
                 );
                 const baseHeight = rowEntry?.isSweeping
-                  ? 184
+                  ? 208
                   : rowEntry
                     ? (rowTrackingId ? 76 : rowHasPlainRemark ? 126 : 116)
                     : rowHasManualInsertionAction
@@ -20504,16 +20526,17 @@ export default function DepotStablingPage() {
       const clearTime = cleanMovementCustomTimeInput(clearTimeSource || "");
       const signal = getSweepingSignal(entry.road, sweepTrack);
       const paddedTrainKey = padTrainId(normalizeTrainId(entry.trainKey));
+      const taName = cleanInsertionTaName(changes.taName ?? entry.taName ?? "");
       const text = buildSweepingInsertionEntryText({
         time,
         trainKey: paddedTrainKey,
         road: entry.road,
         signal,
         clearTime,
-        taName: entry.taName,
+        taName,
       });
 
-      return { ...entry, ...changes, sweepTrack, time, clearTime, signal, text, remark: "SW", isSweeping: true };
+      return { ...entry, ...changes, sweepTrack, time, clearTime, signal, taName, text, remark: "SW", isSweeping: true };
     }));
   }, []);
 

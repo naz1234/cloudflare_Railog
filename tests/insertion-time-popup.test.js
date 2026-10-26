@@ -146,6 +146,33 @@ test("normal and Sweep handlers persist the same timing to storage, rendered sta
   }
 });
 
+test("Sweep card TA edits update both depot logs, copy output and saved state without changing timing", () => {
+  for (const [road, depot, label] of [["WD-ST13", "west", "West"], ["ED-ST02", "east", "East"]]) {
+    const entry = { ...sweeping(), key: `ins-${road}-0`, road, depot };
+    const other = { ...normal(), key: "other" };
+    const api = createApi([entry, other]);
+    api.handlePg2SweepUpdate(entry.key, { taName: "Siti Ahmad" });
+    const saved = JSON.parse(api.writes.stored).find((item) => item.key === entry.key);
+    assert.equal(saved.taName, "Siti Ahmad");
+    assert.equal(saved.time, entry.time);
+    assert.equal(saved.clearTime, entry.clearTime);
+    assert.equal(saved.sweepTrack, entry.sweepTrack);
+    assert.match(saved.text, /TA Siti Ahmad onboard\.$/);
+    assert.match(api.buildSweepAnd3K1CopyText(depot === "west" ? [saved] : [], depot === "east" ? [saved] : [], label), /TA Siti Ahmad onboard\.$/);
+    assert.equal(api.state.current.find((item) => item.key === "other"), other);
+    assert.equal(api.writes.live.pg2InsertionLog, api.writes.rendered);
+
+    api.handlePg2SweepUpdate(entry.key, { taName: "" });
+    const cleared = JSON.parse(api.writes.stored).find((item) => item.key === entry.key);
+    assert.equal(cleared.taName, "");
+    assert.doesNotMatch(cleared.text, /\bTA\b/);
+    assert.equal(cleared.clearTime, entry.clearTime);
+
+    api.handlePg2SweepUpdate(entry.key, { taName: "A".repeat(50) });
+    assert.equal(api.state.current.find((item) => item.key === entry.key).taName.length, 40);
+  }
+});
+
 test("TA names normalize whitespace and are removed from the sentence only once for the editable chip", () => {
   assert.equal(normalizeInsertionTaName("  Ali   bin\n Ahmad  "), "Ali bin Ahmad");
   assert.equal(normalizeInsertionTaName(" \t "), "");
