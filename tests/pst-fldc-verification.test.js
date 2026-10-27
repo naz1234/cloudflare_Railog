@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { Check, ShieldCheck } from 'lucide-react';
+import { Check, Copy, ShieldCheck, Trash2 } from 'lucide-react';
 import ts from 'typescript';
-import { appendPstFldcColumns, collectPstFldcTrainIds, createPstFldcVerification, getPstFldcDate, getPstFldcRecordKey, isPstFldcVerificationCurrent, normalizePstFldcVerification, savePstFldcVerification, selectPstFldcRecord } from '../src/lib/pstFldcVerification.js';
+import { appendPstFldcColumns, buildPstFldcChecklistLog, collectPstFldcTrainIds, createPstFldcVerification, getPstFldcDate, getPstFldcRecordKey, isPstFldcVerificationCurrent, normalizePstFldcVerification, savePstFldcVerification, selectPstFldcRecord } from '../src/lib/pstFldcVerification.js';
 import { buildPSTExcelClipboardText } from '../src/lib/pstExcelClipboard.js';
 
 const date = '2026-10-09';
@@ -194,60 +194,73 @@ const checklistSource = readFileSync(new URL('../src/components/PstFldcChecklist
 const checklistRenderSource = ts.transpileModule(checklistSource.replace(/^import .*;\r?\n/gm, '').replace('export default function', 'function'), {
   compilerOptions: { jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022 },
 }).outputText;
-const Checklist = new Function('React', 'Check', 'ShieldCheck', `${checklistRenderSource}\nreturn PstFldcChecklist;`)(React, Check, ShieldCheck);
+const Checklist = new Function('React', 'useState', 'useEffect', 'Check', 'Copy', 'ShieldCheck', 'Trash2', 'buildPstFldcChecklistLog', `${checklistRenderSource}\nreturn PstFldcChecklist;`)(React, React.useState, React.useEffect, Check, Copy, ShieldCheck, Trash2, buildPstFldcChecklistLog);
 
 function renderChecklist(overrides = {}) {
   const controller = {
     drafts: { west: { by: 'WEST DC' }, east: { by: 'EAST DC' } },
     trainIds: { west: ['01', '02', '03'], east: ['47'] },
     loaded: { west: true, east: true }, saving: {}, errors: {},
-    isConfirmed: () => false, confirm: () => {}, updateDraft: () => {}, retry: () => {},
+    isConfirmed: () => false, toggleTrain: () => {}, clear: () => {}, getSelectedTrainIds: () => [], exportVerifications: {}, updateDraft: () => {}, retry: () => {},
     ...overrides,
   };
   return renderToStaticMarkup(React.createElement(Checklist, { depot: 'west', controller }));
 }
 
-test('FLDC renders a single enabled confirmation button without a checkbox', () => {
+test('FLDC offers individual train ticks and Copy Log/Clear instead of bulk confirmation', () => {
   const html = renderChecklist();
-  assert.doesNotMatch(html, /type="checkbox"|pst-fldc-check"/);
-  assert.match(html, /Confirm all 3 trains via FLDC/);
-  assert.doesNotMatch(html.match(/<button\b[^>]*>/)?.[0] || '', /disabled/);
+  assert.match(html, /FLDC Checker/);
+  assert.equal((html.match(/role="checkbox"/g) || []).length, 3);
+  assert.equal((html.match(/aria-checked="false"/g) || []).length, 3);
+  assert.match(html, /0 selected/);
+  assert.match(html, /Copy Log/);
+  assert.match(html, />Clear<\/button>/);
+  assert.doesNotMatch(html, /Confirm all|pst-fldc-confirm/);
 });
 
-test('single FLDC confirmation still requires a name, eligible PST trains and a loaded, idle record', () => {
+test('individual ticks require a name and a loaded, idle, error-free record', () => {
   for (const override of [
     { drafts: { west: { by: ' ' } } },
-    { trainIds: { west: [] } },
     { loaded: { west: false } },
     { saving: { west: 'confirm' } },
-    { isConfirmed: () => true },
+    { errors: { west: 'Unable to save' } },
   ]) {
-    assert.match(renderChecklist(override).match(/<button\b[^>]*>/)?.[0] || '', /disabled/);
+    const ticks = renderChecklist(override).match(/<button\b[^>]*role="checkbox"[^>]*>/g) || [];
+    assert.equal(ticks.length, 3);
+    assert.ok(ticks.every((tick) => /disabled/.test(tick)));
   }
-  const confirmed = renderChecklist({ isConfirmed: () => true });
-  assert.match(confirmed, /All 3 trains confirmed/);
-  assert.match(confirmed, /value="WEST DC"/);
-  assert.match(confirmed, /Included in Excel columns L–M/);
+  const partial = createPstFldcVerification('west', ['02'], { by: 'WEST DC', verified: true }, date);
+  const html = renderChecklist({ getSelectedTrainIds: () => ['02'], exportVerifications: { west: partial } });
+  assert.equal((html.match(/aria-checked="true"/g) || []).length, 1);
+  assert.match(html, /1 selected/);
+  assert.match(html, /T02 — PST verified via FLDC/);
+  assert.doesNotMatch(html, /T01 — PST verified|T03 — PST verified/);
+  assert.match(html, /Only saved ticks are included in Excel columns L–M/);
 });
 
-test('the actual hook confirms via the button without checkbox state and never saves a name alone', () => {
-  const hook = readFileSync(new URL('../src/hooks/usePstFldcVerification.js', import.meta.url), 'utf8');
-  const confirmSource = hook.slice(hook.indexOf('  const confirm ='), hook.indexOf('  const retry ='));
-  const saved = [];
-  const makeConfirm = (by, loaded = true) => new Function('getPstFldcDate', 'day', 'setDay', 'createPstFldcVerification', 'trainIds', 'drafts', 'loaded', 'persist', `${confirmSource}\nreturn confirm;`)(
-    () => date, date, () => {}, createPstFldcVerification,
-    { west: ['01', '02', '03'] }, { west: { by } }, { west: loaded },
-    (depot, value, confirmed) => saved.push({ depot, value, confirmed }),
-  );
-  assert.equal(saved.length, 0);
-  makeConfirm('WEST DC')('west');
-  assert.equal(saved.length, 1);
-  assert.equal(saved[0].confirmed, true);
-  assert.equal(saved[0].value.status, 'Yes');
-  assert.equal(saved[0].value.by, 'WEST DC');
-  assert.deepEqual(saved[0].value.trainIds, ['01', '02', '03']);
-  makeConfirm(' ')('west');
-  makeConfirm('WEST DC', false)('west');
-  assert.equal(saved.length, 1);
-  assert.doesNotMatch(hook, /drafts\[depot\]\.verified|next\.verified/);
+test('individual train, Clear and Copy Log controls use only their own depot and saved log', async () => {
+  for (const depot of ['west', 'east']) {
+    const calls = [];
+    const copied = [];
+    const PlainChecklist = new Function('React', 'useState', 'useEffect', 'Check', 'Copy', 'ShieldCheck', 'Trash2', 'buildPstFldcChecklistLog', 'navigator', `${checklistRenderSource}\nreturn PstFldcChecklist;`)(
+      React, () => ['', () => {}], () => {}, Check, Copy, ShieldCheck, Trash2, buildPstFldcChecklistLog,
+      { clipboard: { writeText: async value => copied.push(value) } },
+    );
+    const controller = {
+      drafts: { west: { by: 'WEST DEMO' }, east: { by: 'EAST DEMO' } },
+      trainIds: { west: ['01', '02'], east: ['47'] }, loaded: { west: true, east: true }, saving: {}, errors: {},
+      exportVerifications: { west, east }, getSelectedTrainIds: key => key === 'west' ? ['01', '02'] : ['47'], isConfirmed: () => true,
+      toggleTrain: (...args) => calls.push(['tick', ...args]), clear: key => calls.push(['clear', key]), updateDraft() {}, retry() {},
+    };
+    const tree = PlainChecklist({ depot, controller });
+    const nodes = [];
+    const walk = node => { if (!React.isValidElement(node)) return; nodes.push(node); React.Children.toArray(node.props.children).forEach(walk); };
+    walk(tree);
+    nodes.find(node => node.props.role === 'checkbox').props.onClick();
+    nodes.find(node => node.props.className === 'pst-fldc-clear').props.onClick();
+    await nodes.find(node => node.type === 'button' && node.props.className.startsWith('pst-fldc-copy')).props.onClick();
+    assert.deepEqual(calls, [['tick', depot, depot === 'west' ? '01' : '47'], ['clear', depot]]);
+    assert.deepEqual(copied, [buildPstFldcChecklistLog(controller.exportVerifications[depot])]);
+    assert.doesNotMatch(copied[0], depot === 'west' ? /EAST DEMO|T47/ : /WEST DEMO|T01/);
+  }
 });

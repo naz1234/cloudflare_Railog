@@ -5,6 +5,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import * as icons from 'lucide-react';
 import ts from 'typescript';
+import { buildPstFldcChecklistLog } from '../src/lib/pstFldcVerification.js';
 
 const source = readFileSync(new URL('../src/components/PstExcelFormatLogPanel.jsx', import.meta.url), 'utf8');
 const checklistSource = readFileSync(new URL('../src/components/PstFldcChecklist.jsx', import.meta.url), 'utf8');
@@ -14,7 +15,7 @@ function compile(code) {
     compilerOptions: { jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022 },
   }).outputText;
 }
-const Checklist = new Function('React', 'Check', 'ShieldCheck', `${compile(checklistSource)}\nreturn PstFldcChecklist;`)(React, icons.Check, icons.ShieldCheck);
+const Checklist = new Function('React', 'useState', 'useEffect', 'Check', 'Copy', 'ShieldCheck', 'Trash2', 'buildPstFldcChecklistLog', `${compile(checklistSource)}\nreturn PstFldcChecklist;`)(React, React.useState, React.useEffect, icons.Check, icons.Copy, icons.ShieldCheck, icons.Trash2, buildPstFldcChecklistLog);
 const Panel = new Function('React', 'ClipboardCheck', 'Copy', 'Download', 'FileSpreadsheet', 'PstFldcChecklist', `${compile(source)}\nreturn PstExcelFormatLogPanel;`)(React, icons.ClipboardCheck, icons.Copy, icons.Download, icons.FileSpreadsheet, Checklist);
 function props(depot, overrides = {}) {
   return {
@@ -23,7 +24,7 @@ function props(depot, overrides = {}) {
       drafts: { west: { by: 'WEST FLDC DC' }, east: { by: 'EAST FLDC DC' } },
       trainIds: { west: ['01', '02', '03'], east: ['46', '47'] },
       loaded: { west: true, east: true }, saving: {}, errors: {},
-      isConfirmed: () => true, updateDraft() {}, confirm() {}, retry() {},
+      isConfirmed: () => true, getSelectedTrainIds: key => key === 'west' ? ['01', '02', '03'] : ['46', '47'], exportVerifications: {}, updateDraft() {}, toggleTrain() {}, clear() {}, retry() {},
     },
     liveStatus: 'Synced 04:29', liveHealthy: true,
     downloadingDepot: '', copyingDepot: '', copiedDepot: '', onDownload() {}, onCopy() {},
@@ -83,15 +84,16 @@ test('copy confirmation stays scoped to the copied action and uses the existing 
     assert.match(html, /pst-excel-export-button is-copied/);
   }
 });
-test('FLDC progress only fills after actual confirmation, for each depot independently', () => {
+test('FLDC ticks display each depot selection independently without bulk confirmation', () => {
   const defaults = props('west').fldcController;
   for (const [depot, count] of [['west', 3], ['east', 2]]) {
     for (const confirmed of [false, true]) {
-      const html = render(depot, { fldcController: { ...defaults, isConfirmed: () => confirmed } });
-      assert.match(html, new RegExp(`aria-valuenow="${confirmed ? 100 : 0}"`));
-      assert.match(html, new RegExp(`aria-valuetext="${confirmed ? count : 0} of ${count} trains confirmed"`));
-      assert.match(html, new RegExp(confirmed ? `All ${count} trains confirmed` : `Confirm all ${count} trains via FLDC`));
-      if (!confirmed) assert.match(html, /Columns L–M stay blank until confirmed/);
+      const html = render(depot, { fldcController: { ...defaults, isConfirmed: () => confirmed, getSelectedTrainIds: key => confirmed ? defaults.trainIds[key] : [] } });
+      assert.equal((html.match(/role="checkbox"/g) || []).length, count);
+      assert.equal((html.match(/aria-checked="true"/g) || []).length, confirmed ? count : 0);
+      assert.match(html, new RegExp(`${confirmed ? count : 0} selected`));
+      assert.doesNotMatch(html, /Confirm all/);
+      assert.match(html, /Only saved ticks are included in Excel columns L–M/);
     }
   }
 });
