@@ -54,6 +54,22 @@ export function getPstFldcRecordKey(depot, date = getPstFldcDate()) {
   return `pst-fldc-v3:${date}:${depot}`;
 }
 
+// Individual checks never automatically extend to newly added PST trains.
+export function getActivePstFldcVerification(source, depot, trainIds, date = getPstFldcDate()) {
+  const value = normalizePstFldcVerification(source);
+  if (value.status !== 'Yes' || value.depot !== depot || value.date !== date) return null;
+  const available = new Set(normalizeTrainIds(trainIds));
+  const selected = value.trainIds.filter((id) => available.has(id));
+  return selected.length ? { ...value, trainIds: selected } : null;
+}
+
+export function buildPstFldcChecklistLog(source) {
+  const value = normalizePstFldcVerification(source);
+  if (value.status !== 'Yes') return '';
+  const label = value.depot === 'west' ? 'West Depot' : 'East Depot';
+  return `${label} — FLDC Verification (${value.date})\nVerified via FLDC by: ${value.by}\n\n${value.trainIds.map((id) => `T${id} — PST verified via FLDC.`).join('\n')}`;
+}
+
 export function selectPstFldcRecord(records = [], recordKey) {
   return [...(Array.isArray(records) ? records : [])].filter((row) => row?.recordKey === recordKey)
     .sort((a, b) => {
