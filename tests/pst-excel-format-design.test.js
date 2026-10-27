@@ -104,3 +104,15 @@ test('the approved frame uses integrated verification, two columns and matching 
   assert.match(css, /--pst-format-text: #102a43/);
   assert.match(css, /--pst-format-teal: #087b74/);
 });
+
+test('PST and FLDC headers and name fields are compact while export buttons retain their size', () => {
+  const fldcCss = readFileSync(new URL('../src/pstFldcChecklist.css', import.meta.url), 'utf8');
+  assert.match(css, /\.pst-excel-format-icon \{ width: 20px; height: 22px; flex: 0 0 20px;/);
+  assert.match(css, /\.pst-excel-format-header \{[^}]*gap: 7px; padding-bottom: 8px;/);
+  assert.match(css, /\.pst-excel-completed-section \{[^}]*gap: 6px; padding: 10px 0;/);
+  assert.match(css, /\.pst-excel-completed-input \{[^}]*height: 28px;[^}]*padding: 0 8px; font-size: 11px;/);
+  assert.match(css, /\.pst-excel-export-button \{[^}]*min-height: 38px;/);
+  assert.match(fldcCss, /\.pst-fldc-heading > svg \{ width: 18px; height: 18px; \}/);
+  assert.match(fldcCss, /\.pst-fldc-heading \{[^}]*gap: 6px;[^}]*margin-bottom: 8px;/);
+  assert.match(fldcCss, /\.pst-fldc-name input \{ height: 28px;[^}]*padding: 0 8px; font-size: 11px;/);
+});
