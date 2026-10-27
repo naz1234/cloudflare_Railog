@@ -1496,6 +1496,7 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
               const crossOutMessage = getCrossOutMessage(req, crossOutInfo);
               const statusMessage = getAlreadyStatusMessage(crossOutInfo) || crossOutMessage;
               const showAlreadyStatusIcon = Boolean(crossOutInfo.reason && statusMessage);
+              const showTrainInformation = !(showAlreadyStatusIcon && crossOutInfo.reason === "STABLING" && crossOutInfo.depot === "west");
               const showStillNotAtStablingIcon = section === "pending" && !showStatus && !showAlreadyStatusIcon;
               const expandedGridClass = showAlreadyStatusIcon || showStillNotAtStablingIcon
                 ? "grid-cols-[56px_minmax(0,1fr)_16px_16px]"
@@ -1524,13 +1525,13 @@ export default function MaintenancePanel({ requests, onAdd, onRemove, onClearAll
                     >{chipLabel}</span>
                   </ActionTooltip>
                   <span className="flex min-w-0 justify-end gap-[2px]">
-                    {westRemovals?.length > 0 && (
+                    {showTrainInformation && westRemovals?.length > 0 && (
                       <DepotRemovalInfo trainLabel={chipLabel} depot="west" removals={westRemovals} />
                     )}
-                    {eastRemovals?.length > 0 && (
+                    {showTrainInformation && eastRemovals?.length > 0 && (
                       <DepotRemovalInfo trainLabel={chipLabel} depot="east" removals={eastRemovals} />
                     )}
-                    {offPeakReferences?.length > 0 && (
+                    {showTrainInformation && offPeakReferences?.length > 0 && (
                       <OffPeakTrainInfo trainLabel={chipLabel} references={offPeakReferences} />
                     )}
                   </span>

@@ -57,6 +57,28 @@ test("info disappears or changes when the current Removal Summary rows change", 
   ]);
 });
 
+test("West stabling with a confirmed tick hides information even when removal rows still exist", () => {
+  const declaration = panel.match(/const showTrainInformation = [^\r\n]+;/)?.[0];
+  assert.ok(declaration, "the info visibility follows the existing stabling tick");
+  const showInformation = new Function("showAlreadyStatusIcon", "crossOutInfo", `${declaration}\nreturn showTrainInformation;`);
+  const westRemovalRows = [{ trainId: "15", tid: "105", timing: "07:15" }];
+  const eastRemovalRows = [{ trainId: "15", tid: "205", timing: "07:20" }];
+  assert.equal(buildRemovalInfoByTrain(westRemovalRows).get("15").length, 1);
+  assert.equal(buildRemovalInfoByTrain(eastRemovalRows).get("15").length, 1);
+  assert.equal(showInformation(true, { reason: "STABLING", depot: "west" }), false);
+  assert.equal(showInformation(false, { reason: "", locationText: "" }), true, "info returns when the train leaves West stabling");
+  assert.equal(showInformation(true, { reason: "STABLING", depot: "east" }), true, "East's red tick is unchanged");
+  assert.equal(showInformation(true, { reason: "WORKSHOP", depot: "west" }), true, "a workshop tick is not West stabling");
+  assert.equal(showInformation(false, { reason: "STABLING", depot: "west" }), true, "a missing status tick does not hide information");
+
+  const row = panel.slice(panel.indexOf("const chipLabel = getRequestChipTrainLabel(req);"), panel.indexOf("const renderRequestGroupCards"));
+  for (const references of ["westRemovals", "eastRemovals", "offPeakReferences"]) {
+    assert.ok(row.includes(`{showTrainInformation && ${references}?.length > 0 && (`), `${references} respects the confirmed West tick`);
+  }
+  assert.match(row, /<AlreadyStatusIcon message=\{statusMessage\} reason=\{crossOutInfo\.reason\} depot=\{crossOutInfo\.depot\}/);
+  assert.match(row, /<DeleteRequestButton/);
+});
+
 test("only the main Train Request sidebar receives separately filtered active West and East removal data", () => {
   assert.match(page, /trainRemCheckState, "west", activeTimetable, \{ includeScheduleTiming: true \}/);
   assert.match(page, /trainRemCheckState, "east", activeTimetable, \{ includeScheduleTiming: true \}/);
