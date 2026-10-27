@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { buildPstFldcChecklistLog } from "../../lib/pstFldcVerification";
 
 const PST_LOG_STYLE_STORAGE_KEY = "pstLogOutputStyle_v1";
 const ELOG_1 = "elog1";
@@ -342,6 +343,7 @@ function ClearIcon() {
 const PST_ACTION_TOOLTIP_ACCENTS = {
   pst: "#34d399",
   prep: "#60a5fa",
+  fldc: "#22d3ee",
   clear: "#f87171",
   elog: "#22d3ee",
 };
@@ -465,7 +467,7 @@ function SectionTextBlock({ title, text, emptyText, variant = "pst" }) {
   );
 }
 
-function DepotLogCard({ depotLabel, lines = [], onClearDepot, logStyle = ELOG_1 }) {
+function DepotLogCard({ depotLabel, lines = [], onClearDepot, logStyle = ELOG_1, fldcController = null }) {
   const pstLines = lines.filter(isPSTEntry);
   const prepLines = lines.filter(isPrepEntry);
   const pstText = logStyle === ELOG_2
@@ -473,6 +475,15 @@ function DepotLogCard({ depotLabel, lines = [], onClearDepot, logStyle = ELOG_1 
     : getPSTSectionText(pstLines, depotLabel);
   const prepText = getPrepSectionText(prepLines, depotLabel);
   const hasEntries = lines.length > 0;
+  const depotKey = depotLabel.toLowerCase();
+  const fldcBusy = Boolean(fldcController?.saving?.[depotKey]);
+  const fldcError = fldcController?.errors?.[depotKey];
+  const fldcVerification = fldcController?.exportVerifications?.[depotKey];
+  const fldcText = !fldcBusy && !fldcError && fldcVerification?.depot === depotKey
+    ? buildPstFldcChecklistLog(fldcVerification) : "";
+  const fldcEmptyText = fldcBusy ? "Saving FLDC verification…" : fldcError
+    ? "FLDC verification not saved. Retry in the FLDC checker."
+    : "Tick trains in the FLDC checker to generate this log.";
   const dotColor = depotLabel.toLowerCase() === "west" ? "#d946ef" : "#22d3ee";
   const cardClassName = logStyle === ELOG_2 ? "pst-clean-card pst-elog2-card" : "pst-clean-card";
   const headerClassName = logStyle === ELOG_2
@@ -496,15 +507,17 @@ function DepotLogCard({ depotLabel, lines = [], onClearDepot, logStyle = ELOG_1 
         <div className="pst-clean-actions">
           <CopyButton text={pstText} label="Copy PST" disabled={!pstLines.length} variant="pst" tooltip={`Copy ${depotLabel} Depot PST log`} />
           <CopyButton text={prepText} label="Copy Train Prep" disabled={!prepLines.length} variant="prep" tooltip={`Copy ${depotLabel} Depot Train Prep log`} />
+          {fldcController && <CopyButton text={fldcText} label="Copy FLDC" disabled={!fldcText} variant="fldc" tooltip={`Copy ${depotLabel} Depot FLDC verification log`} />}
           <ClearDepotButton depotLabel={depotLabel} disabled={!hasEntries} onClear={onClearDepot} />
         </div>
       </div>
 
       <div className="pst-clean-card-body">
-        {hasEntries ? (
+        {hasEntries || fldcController ? (
           <>
             <SectionTextBlock title="PST" text={pstText} emptyText="No PST entries." variant="pst" />
             <SectionTextBlock title="Train Prep" text={prepText} emptyText="No Train Prep entries." variant="prep" />
+            {fldcController && <SectionTextBlock title="FLDC Verification" text={fldcText} emptyText={fldcEmptyText} variant="fldc" />}
           </>
         ) : (
           <div className="pst-clean-empty-card">
@@ -537,7 +550,7 @@ function ELogStyleButton({ active, children, onClick, tooltip }) {
   );
 }
 
-export default function PSTLogOutput({ logLines, onClearDepot, depot = "" }) {
+export default function PSTLogOutput({ logLines, onClearDepot, depot = "", fldcController = null }) {
   const safeLogLines = Array.isArray(logLines) ? logLines : [];
   const westLines = safeLogLines.filter((line) => line.depot === "west");
   const eastLines = safeLogLines.filter((line) => line.depot === "east");
@@ -866,6 +879,12 @@ export default function PSTLogOutput({ logLines, onClearDepot, depot = "" }) {
           box-shadow: 0 0 10px rgba(239,68,68,0.12);
         }
 
+        .pst-clean-action-fldc {
+          border-color: rgba(34,211,238,0.65);
+          background: rgba(8,80,96,0.55);
+          color: #a5f3fc;
+        }
+
         .pst-clean-action-clear:hover:not(:disabled) {
           border-color: rgba(252,165,165,0.94);
           background: rgba(153,27,27,0.88);
@@ -915,6 +934,25 @@ export default function PSTLogOutput({ logLines, onClearDepot, depot = "" }) {
           border-color: rgba(96,165,250,0.30);
           background: linear-gradient(135deg, rgba(30,64,175,0.36) 0%, rgba(6,19,33,0.96) 100%);
           box-shadow: inset 3px 0 0 rgba(96,165,250,0.60);
+        }
+
+        .pst-clean-section-fldc {
+          border-color: rgba(34,211,238,0.30);
+          background: linear-gradient(135deg, rgba(8,80,96,0.35), rgba(6,19,33,0.96));
+          box-shadow: inset 3px 0 0 rgba(34,211,238,0.60);
+        }
+
+        .pst-clean-section-fldc .pst-clean-section-title { color: #67e8f9; }
+        html[data-app-theme="light"] .pst-clean-section-fldc {
+          background: #ecfeff !important;
+          border-color: #a5f3fc !important;
+          box-shadow: inset 3px 0 0 #0891b2 !important;
+        }
+        html[data-app-theme="light"] .pst-clean-section-fldc .pst-clean-section-title { color: #155e75 !important; }
+        html[data-app-theme="light"] .pst-clean-action-fldc:not(.pst-clean-action-copied) {
+          color: #155e75 !important;
+          border-color: #67e8f9 !important;
+          background: #ecfeff !important;
         }
 
         .pst-clean-section-pst .pst-clean-section-title {
@@ -1006,6 +1044,7 @@ export default function PSTLogOutput({ logLines, onClearDepot, depot = "" }) {
             lines={westLines}
             onClearDepot={() => onClearDepot?.("west")}
             logStyle={logStyle}
+            fldcController={fldcController}
           />
         )}
         {(!depot || depot === "east") && (
@@ -1014,6 +1053,7 @@ export default function PSTLogOutput({ logLines, onClearDepot, depot = "" }) {
             lines={eastLines}
             onClearDepot={() => onClearDepot?.("east")}
             logStyle={logStyle}
+            fldcController={fldcController}
           />
         )}
       </div>

@@ -207,13 +207,14 @@ function renderChecklist(overrides = {}) {
   return renderToStaticMarkup(React.createElement(Checklist, { depot: 'west', controller }));
 }
 
-test('FLDC offers individual train ticks and Copy Log/Clear instead of bulk confirmation', () => {
+test('FLDC keeps individual ticks and Clear while its generated log is moved to the output panel', () => {
   const html = renderChecklist();
   assert.match(html, /FLDC Checker/);
   assert.equal((html.match(/role="checkbox"/g) || []).length, 3);
   assert.equal((html.match(/aria-checked="false"/g) || []).length, 3);
   assert.match(html, /0 selected/);
-  assert.match(html, /Copy Log/);
+  assert.doesNotMatch(html, /Copy Log|pst-fldc-generated|<pre/);
+  assert.match(html, /PST \/ Train Prep Log Output/);
   assert.match(html, />Clear<\/button>/);
   assert.doesNotMatch(html, /Confirm all|pst-fldc-confirm/);
 });
@@ -233,18 +234,16 @@ test('individual ticks require a name and a loaded, idle, error-free record', ()
   const html = renderChecklist({ getSelectedTrainIds: () => ['02'], exportVerifications: { west: partial } });
   assert.equal((html.match(/aria-checked="true"/g) || []).length, 1);
   assert.match(html, /1 selected/);
-  assert.match(html, /T02 — PST verified via FLDC/);
-  assert.doesNotMatch(html, /T01 — PST verified|T03 — PST verified/);
+  assert.doesNotMatch(html, /PST verified via FLDC/);
   assert.match(html, /Only saved ticks are included in Excel columns L–M/);
 });
 
-test('individual train, Clear and Copy Log controls use only their own depot and saved log', async () => {
+test('individual train and Clear controls still use only their own depot after moving the log', () => {
   for (const depot of ['west', 'east']) {
     const calls = [];
-    const copied = [];
     const PlainChecklist = new Function('React', 'useState', 'useEffect', 'Check', 'Copy', 'ShieldCheck', 'Trash2', 'buildPstFldcChecklistLog', 'navigator', `${checklistRenderSource}\nreturn PstFldcChecklist;`)(
       React, () => ['', () => {}], () => {}, Check, Copy, ShieldCheck, Trash2, buildPstFldcChecklistLog,
-      { clipboard: { writeText: async value => copied.push(value) } },
+      {},
     );
     const controller = {
       drafts: { west: { by: 'WEST DEMO' }, east: { by: 'EAST DEMO' } },
@@ -258,9 +257,7 @@ test('individual train, Clear and Copy Log controls use only their own depot and
     walk(tree);
     nodes.find(node => node.props.role === 'checkbox').props.onClick();
     nodes.find(node => node.props.className === 'pst-fldc-clear').props.onClick();
-    await nodes.find(node => node.type === 'button' && node.props.className.startsWith('pst-fldc-copy')).props.onClick();
     assert.deepEqual(calls, [['tick', depot, depot === 'west' ? '01' : '47'], ['clear', depot]]);
-    assert.deepEqual(copied, [buildPstFldcChecklistLog(controller.exportVerifications[depot])]);
-    assert.doesNotMatch(copied[0], depot === 'west' ? /EAST DEMO|T47/ : /WEST DEMO|T01/);
+    assert.ok(!nodes.some(node => node.type === 'pre'));
   }
 });

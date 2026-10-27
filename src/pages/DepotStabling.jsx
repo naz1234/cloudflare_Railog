@@ -15374,7 +15374,7 @@ function PSTTabContent
               border-radius: 999px;
             }
           `}</style>
-            <PSTLogOutput depot="west" logLines={sortedLogLines} onClearDepot={onClearDepotLog} />
+            <PSTLogOutput depot="west" logLines={sortedLogLines} onClearDepot={onClearDepotLog} fldcController={fldcController} />
           </div>
         </div>
         <div className="flex w-full flex-col gap-3 lg:w-[420px]">
@@ -15409,7 +15409,7 @@ function PSTTabContent
           <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" onRefreshStabling={() => onRefreshPSTStabling?.("east")} onUndoStabling={() => onUndoPSTStabling?.("east")} onRedoStabling={() => onRedoPSTStabling?.("east")} canUndoStabling={eastCanUndoPSTStabling} canRedoStabling={eastCanRedoPSTStabling} isStablingDirty={eastPSTStablingDirty} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearStablingTrains={() => onClearPSTStablingTrains?.("east")} stablingEditable onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
           <PSTManualEntry depot="east" logLines={sortedLogLines} onAddEntry={onAddManualLog} onRemoveEntry={onRemoveManualLog} />
           <div className="pst-train-prep-log-font-bump w-full overflow-visible">
-            <PSTLogOutput depot="east" logLines={sortedLogLines} onClearDepot={onClearDepotLog} />
+            <PSTLogOutput depot="east" logLines={sortedLogLines} onClearDepot={onClearDepotLog} fldcController={fldcController} />
           </div>
         </div>
         <div className="flex w-full flex-col gap-3 lg:w-[420px]">
