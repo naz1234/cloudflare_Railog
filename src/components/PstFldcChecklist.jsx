@@ -1,11 +1,13 @@
 import React from 'react';
 import { Check, ShieldCheck, Trash2 } from 'lucide-react';
+import { groupPstFldcTrainsByStabling } from '../lib/pstFldcVerification';
 import '../pstFldcChecklist.css';
 
-export default function PstFldcChecklist({ depot, controller }) {
+export default function PstFldcChecklist({ depot, controller, stablingData = {} }) {
   const label = depot === 'west' ? 'West Depot' : 'East Depot';
   const draft = controller.drafts[depot];
   const trainIds = controller.trainIds[depot];
+  const trainGroups = groupPstFldcTrainsByStabling(depot, trainIds, stablingData);
   const selected = new Set(controller.getSelectedTrainIds(depot));
   const count = trainIds.length;
   const confirmed = controller.isConfirmed(depot);
@@ -20,12 +22,17 @@ export default function PstFldcChecklist({ depot, controller }) {
     <label className="pst-fldc-name"><span>Verified via FLDC by</span>
       <input type="text" value={draft.by} disabled={inputLocked} required aria-label={label + ' FLDC verifier name'} placeholder="Enter DC name / second DC name" onChange={(event) => controller.updateDraft(depot, { by: event.target.value })} />
     </label>
-    <div className="pst-fldc-trains" role="group" aria-label={label + ' PST trains to verify'}>
-      {trainIds.map((id) => <button key={id} type="button" role="checkbox" aria-checked={selected.has(id)}
-        aria-label={'Verify T' + id + ' via FLDC at ' + label} disabled={!canTick}
-        className={'pst-fldc-train ' + (selected.has(id) ? 'is-selected' : '')} onClick={() => controller.toggleTrain(depot, id)}>
-        <span className="pst-fldc-train-check" aria-hidden="true">{selected.has(id) && <Check size={9} />}</span>T{id}
-      </button>)}
+    <div className="pst-fldc-road-list" role="group" aria-label={label + ' PST trains to verify'}>
+      {trainGroups.map(group => <div className="pst-fldc-road-group" key={group.road} data-stabling-road={group.road}>
+        <div className="pst-fldc-road-label">{group.label}</div>
+        <div className="pst-fldc-trains" role="group" aria-label={label + ' ' + group.label}>
+          {group.trainIds.map((id) => <button key={id} type="button" role="checkbox" aria-checked={selected.has(id)}
+            aria-label={'Verify T' + id + ' via FLDC at ' + label} disabled={!canTick}
+            className={'pst-fldc-train ' + (selected.has(id) ? 'is-selected' : '')} onClick={() => controller.toggleTrain(depot, id)}>
+            <span className="pst-fldc-train-check" aria-hidden="true">{selected.has(id) && <Check size={9} />}</span>T{id}
+          </button>)}
+        </div>
+      </div>)}
     </div>
     {!count && <p className="pst-fldc-status">No started or completed PST records in this depot to verify.</p>}
     <div className="pst-fldc-selection-actions">

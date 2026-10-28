@@ -5,7 +5,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import * as icons from 'lucide-react';
 import ts from 'typescript';
-import { buildPstFldcChecklistLog } from '../src/lib/pstFldcVerification.js';
+import { buildPstFldcChecklistLog, groupPstFldcTrainsByStabling } from '../src/lib/pstFldcVerification.js';
 
 const source = readFileSync(new URL('../src/components/PstExcelFormatLogPanel.jsx', import.meta.url), 'utf8');
 const checklistSource = readFileSync(new URL('../src/components/PstFldcChecklist.jsx', import.meta.url), 'utf8');
@@ -15,7 +15,7 @@ function compile(code) {
     compilerOptions: { jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022 },
   }).outputText;
 }
-const Checklist = new Function('React', 'useState', 'useEffect', 'Check', 'Copy', 'ShieldCheck', 'Trash2', 'buildPstFldcChecklistLog', `${compile(checklistSource)}\nreturn PstFldcChecklist;`)(React, React.useState, React.useEffect, icons.Check, icons.Copy, icons.ShieldCheck, icons.Trash2, buildPstFldcChecklistLog);
+const Checklist = new Function('React', 'useState', 'useEffect', 'Check', 'Copy', 'ShieldCheck', 'Trash2', 'buildPstFldcChecklistLog', 'groupPstFldcTrainsByStabling', `${compile(checklistSource)}\nreturn PstFldcChecklist;`)(React, React.useState, React.useEffect, icons.Check, icons.Copy, icons.ShieldCheck, icons.Trash2, buildPstFldcChecklistLog, groupPstFldcTrainsByStabling);
 const Panel = new Function('React', 'ClipboardCheck', 'Copy', 'Download', 'FileSpreadsheet', 'PstFldcChecklist', `${compile(source)}\nreturn PstExcelFormatLogPanel;`)(React, icons.ClipboardCheck, icons.Copy, icons.Download, icons.FileSpreadsheet, Checklist);
 function props(depot, overrides = {}) {
   return {
