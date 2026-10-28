@@ -26,6 +26,30 @@ export function collectPstFldcTrainIds(depot, entries = []) {
     .map((entry) => entry.trainKey));
 }
 
+export function groupPstFldcTrainsByStabling(depot, trainIds = [], stablingData = {}) {
+  const eligible = normalizeTrainIds(trainIds);
+  const remaining = new Set(eligible);
+  const roads = depot === 'west' ? ['WD-ST15', 'WD-ST14', 'WD-ST13', 'WD-ST12']
+    : depot === 'east' ? ['ED-ST02', 'ED-ST03'] : [];
+  const groups = [];
+  for (const road of roads) {
+    const blocks = Array.isArray(stablingData?.[road]) ? stablingData[road] : [];
+    // Match the displayed block order: West 7→1, East 1→7.
+    const displayedBlocks = depot === 'west' ? [...blocks].reverse() : blocks;
+    const ids = [];
+    for (const block of displayedBlocks) {
+      const id = normalizePstFldcTrainId(block?.trainId ?? (typeof block === 'object' ? '' : block));
+      if (!remaining.has(id)) continue;
+      ids.push(id);
+      remaining.delete(id);
+    }
+    if (ids.length) groups.push({ road, label: 'STB ' + Number(road.match(/\d+$/)[0]), trainIds: ids });
+  }
+  // Manual PST entries remain available even without a current stabling match.
+  if (remaining.size) groups.push({ road: 'unassigned', label: 'Other PST trains', trainIds: eligible.filter(id => remaining.has(id)) });
+  return groups;
+}
+
 export function normalizePstFldcVerification(source = {}) {
   const depot = ['west', 'east'].includes(source?.depot) ? source.depot : '';
   const date = /^\d{4}-\d{2}-\d{2}$/.test(source?.date || '') ? source.date : '';

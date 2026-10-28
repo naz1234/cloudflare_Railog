@@ -5,7 +5,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Check, Copy, ShieldCheck, Trash2 } from 'lucide-react';
 import ts from 'typescript';
-import { appendPstFldcColumns, buildPstFldcChecklistLog, collectPstFldcTrainIds, createPstFldcVerification, getPstFldcDate, getPstFldcRecordKey, isPstFldcVerificationCurrent, normalizePstFldcVerification, savePstFldcVerification, selectPstFldcRecord } from '../src/lib/pstFldcVerification.js';
+import { appendPstFldcColumns, buildPstFldcChecklistLog, collectPstFldcTrainIds, createPstFldcVerification, getPstFldcDate, getPstFldcRecordKey, groupPstFldcTrainsByStabling, isPstFldcVerificationCurrent, normalizePstFldcVerification, savePstFldcVerification, selectPstFldcRecord } from '../src/lib/pstFldcVerification.js';
 import { buildPSTExcelClipboardText } from '../src/lib/pstExcelClipboard.js';
 
 const date = '2026-10-09';
@@ -111,7 +111,7 @@ test('all workbook and clipboard entry points carry the same verification snapsh
   assert.match(source, /38, 38, 26, 32\]/);
   const panel = readFileSync(new URL('../src/components/PstExcelFormatLogPanel.jsx', import.meta.url), 'utf8');
   assert.match(source, /fldcController=\{fldcController\}/);
-  assert.match(panel, /<PstFldcChecklist depot=\{depot\} controller=\{fldcController\} \/>/);
+  assert.match(panel, /<PstFldcChecklist depot=\{depot\} controller=\{fldcController\} stablingData=\{stablingData\} \/>/);
   const hook = readFileSync(new URL('../src/hooks/usePstFldcVerification.js', import.meta.url), 'utf8');
   assert.match(hook, /!dirty.current\[depot\]/);
 });
@@ -194,7 +194,7 @@ const checklistSource = readFileSync(new URL('../src/components/PstFldcChecklist
 const checklistRenderSource = ts.transpileModule(checklistSource.replace(/^import .*;\r?\n/gm, '').replace('export default function', 'function'), {
   compilerOptions: { jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022 },
 }).outputText;
-const Checklist = new Function('React', 'useState', 'useEffect', 'Check', 'Copy', 'ShieldCheck', 'Trash2', 'buildPstFldcChecklistLog', `${checklistRenderSource}\nreturn PstFldcChecklist;`)(React, React.useState, React.useEffect, Check, Copy, ShieldCheck, Trash2, buildPstFldcChecklistLog);
+const Checklist = new Function('React', 'useState', 'useEffect', 'Check', 'Copy', 'ShieldCheck', 'Trash2', 'buildPstFldcChecklistLog', 'groupPstFldcTrainsByStabling', `${checklistRenderSource}\nreturn PstFldcChecklist;`)(React, React.useState, React.useEffect, Check, Copy, ShieldCheck, Trash2, buildPstFldcChecklistLog, groupPstFldcTrainsByStabling);
 
 function renderChecklist(overrides = {}) {
   const controller = {
@@ -241,9 +241,9 @@ test('individual ticks require a name and a loaded, idle, error-free record', ()
 test('individual, select-all and Clear controls use only their own depot after moving the log', () => {
   for (const depot of ['west', 'east']) {
     const calls = [];
-    const PlainChecklist = new Function('React', 'useState', 'useEffect', 'Check', 'Copy', 'ShieldCheck', 'Trash2', 'buildPstFldcChecklistLog', 'navigator', `${checklistRenderSource}\nreturn PstFldcChecklist;`)(
+    const PlainChecklist = new Function('React', 'useState', 'useEffect', 'Check', 'Copy', 'ShieldCheck', 'Trash2', 'buildPstFldcChecklistLog', 'navigator', 'groupPstFldcTrainsByStabling', `${checklistRenderSource}\nreturn PstFldcChecklist;`)(
       React, () => ['', () => {}], () => {}, Check, Copy, ShieldCheck, Trash2, buildPstFldcChecklistLog,
-      {},
+      {}, groupPstFldcTrainsByStabling,
     );
     const controller = {
       drafts: { west: { by: 'WEST DEMO' }, east: { by: 'EAST DEMO' } },

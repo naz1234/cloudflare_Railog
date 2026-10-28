@@ -15289,6 +15289,7 @@ function PSTTabContent
       completedBy={safeCompletedByNames[depot] || ""}
       onCompletedByChange={handleCompletedByChange}
       fldcController={fldcController}
+      stablingData={depot === "west" ? westData : eastData}
       liveStatus={liveStatusSubtext}
       liveHealthy={isLiveHealthy}
       liveStatusClass={pstLiveStatusClass}

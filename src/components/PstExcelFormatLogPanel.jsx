@@ -4,7 +4,7 @@ import PstFldcChecklist from './PstFldcChecklist';
 import '../pstExcelFormatLog.css';
 
 export default function PstExcelFormatLogPanel({
-  depot, completedBy, onCompletedByChange, fldcController,
+  depot, completedBy, onCompletedByChange, fldcController, stablingData = {},
   liveStatus, liveHealthy, liveStatusClass, liveDebug,
   downloadingDepot, copyingDepot, copiedDepot, onDownload, onCopy,
 }) {
@@ -36,7 +36,7 @@ export default function PstExcelFormatLogPanel({
           aria-label={`${depotLabel} PST completed by name`} placeholder={`${depotLabel} name`} />
       </div>
 
-      <PstFldcChecklist depot={depot} controller={fldcController} />
+      <PstFldcChecklist depot={depot} controller={fldcController} stablingData={stablingData} />
 
       <footer className="pst-excel-export-groups" aria-label={`${depotLabel} Excel actions`}>
         {groups.map((group) => (
