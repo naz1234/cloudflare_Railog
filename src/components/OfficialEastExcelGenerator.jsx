@@ -803,9 +803,11 @@ function movePstSummaryToLastRow(sheetDocument, sourceRow) {
   const sourceRowNode = Array.from(sheetDocument.getElementsByTagNameNS("*", "row")).find(
     (row) => Number(row.getAttribute("r") || 0) === sourceRow,
   );
-  if (!sheetData || !sourceRowNode) throw new Error("The PST & Train Prep summary formula row could not be read.");
+  if (!sheetData || (sourceRow && !sourceRowNode)) {
+    throw new Error("The PST & Train Prep worksheet rows could not be read.");
+  }
 
-  if (sourceRow !== PST_LAST_OUTPUT_ROW) {
+  if (sourceRow && sourceRow !== PST_LAST_OUTPUT_ROW) {
     const summaryClone = sourceRowNode.cloneNode(true);
     summaryClone.setAttribute("r", String(PST_LAST_OUTPUT_ROW));
     Array.from(summaryClone.getElementsByTagNameNS("*", "c")).forEach((cell) => {
@@ -886,7 +888,7 @@ function disablePstTableBanding(tableDocument) {
 }
 
 function normalizePstCalcChain(archive, sheetId, sourceRow) {
-  if (!archive[CALC_CHAIN_PATH] || !sheetId || sourceRow === PST_LAST_OUTPUT_ROW) return;
+  if (!archive[CALC_CHAIN_PATH] || !sheetId || !sourceRow || sourceRow === PST_LAST_OUTPUT_ROW) return;
   const calcChain = parseXml(strFromU8(archive[CALC_CHAIN_PATH]), "Excel calculation chain");
   let activeSheetId = 0;
   Array.from(calcChain.getElementsByTagNameNS("*", "c")).forEach((cell) => {
@@ -913,12 +915,13 @@ function normalizePstPrintArea(archive, sheetIndex) {
 
 function normalizePstTrainPrepOutput(sheetDocument, archive, sheetPath, sheetId, sheetIndex) {
   const sourceRow = pstSummaryRow(sheetDocument);
-  if (!sourceRow) throw new Error("The PST & Train Prep summary formula row was not found.");
+  // Some official templates have only the 47 train rows, with no summary formula.
+  // Preserve that layout instead of requiring or inventing a summary formula.
   movePstSummaryToLastRow(sheetDocument, sourceRow);
   normalizePstTableRange(archive, sheetPath);
   normalizePstCalcChain(archive, sheetId, sourceRow);
   normalizePstPrintArea(archive, sheetIndex);
-  return { sourceRow, summaryRow: PST_LAST_OUTPUT_ROW };
+  return { sourceRow, summaryRow: sourceRow ? PST_LAST_OUTPUT_ROW : null };
 }
 
 function excelSerialForDate(date) {
