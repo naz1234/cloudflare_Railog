@@ -69,6 +69,7 @@ import { appendPstFldcColumns } from "../lib/pstFldcVerification";
 import { usePstFldcVerification } from "../hooks/usePstFldcVerification";
 import PstExcelFormatLogPanel from "../components/PstExcelFormatLogPanel";
 import "../apuMismatchChecklist.css";
+import "../pstDepotDivider.css";
 import { buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionEntryPendingStatus, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "../lib/possessionAccessLog";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, getHdwCurrentTime, getHdwRunningInMlCount, clearHdwRows } from "../lib/trainRemHdw40";
@@ -15430,6 +15431,10 @@ function PSTTabContent
             addButtonLabel="Add Remark"
           />
         </div>
+      </div>
+
+      <div className="pst-depot-divider" role="separator" aria-orientation="horizontal" aria-label="West and East Depot section divider">
+        <span>EAST DEPOT</span>
       </div>
 
       <div data-mobile-depot="east" className="grid w-full min-w-0 grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[954px_minmax(420px,1fr)] lg:items-start">

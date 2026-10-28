@@ -5,6 +5,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import * as icons from 'lucide-react';
 import ts from 'typescript';
+import postcss from 'postcss';
 import { buildPstFldcChecklistLog, groupPstFldcTrainsByStabling } from '../src/lib/pstFldcVerification.js';
 
 const source = readFileSync(new URL('../src/components/PstExcelFormatLogPanel.jsx', import.meta.url), 'utf8');
@@ -115,4 +116,37 @@ test('PST and FLDC headers and name fields are compact while export buttons reta
   assert.match(fldcCss, /\.pst-fldc-heading > svg \{ width: 18px; height: 18px; \}/);
   assert.match(fldcCss, /\.pst-fldc-heading \{[^}]*gap: 6px;[^}]*margin-bottom: 8px;/);
   assert.match(fldcCss, /\.pst-fldc-name input \{ height: 28px;[^}]*padding: 0 8px; font-size: 11px;/);
+});
+
+test('larger desktop text stays separate from phone typography and keeps compact geometry', () => {
+  const fldcCss = readFileSync(new URL('../src/pstFldcChecklist.css', import.meta.url), 'utf8');
+  const expected = new Map([
+    ['.pst-excel-format-heading h2', '17px'], ['.pst-excel-sync', '12px'],
+    ['.pst-excel-completed-label', '12px'], ['.pst-excel-completed-input', '13px'],
+    ['.pst-fldc-heading h3', '15px'], ['.pst-fldc-heading p', '12px'],
+    ['.pst-fldc-name', '12px'], ['.pst-fldc-name input', '13px'],
+    ['.pst-fldc-road-label', '11px'], ['.pst-fldc-status', '12px'],
+  ]);
+  const found = new Set();
+  postcss.parse(css + '\n' + fldcCss).walkRules(rule => {
+    if (rule.parent.type !== 'atrule' || !/^\(min-width:\s*768px\)$/.test(rule.parent.params)) return;
+    for (const selector of rule.selectors) {
+      if (!expected.has(selector)) continue;
+      const fontSize = rule.nodes.find(node => node.type === 'decl' && node.prop === 'font-size');
+      assert.equal(fontSize?.value, expected.get(selector), selector);
+      assert.ok(rule.nodes.every(node => node.type !== 'decl' || node.prop === 'font-size'), 'readability changes must not enlarge fields or icons');
+      found.add(selector);
+    }
+  });
+  assert.deepEqual([...found].sort(), [...expected.keys()].sort());
+  // Equal-specificity base rules declared later must not undo desktop sizes.
+  const desktopFonts = new Map();
+  postcss.parse(css + '\n' + fldcCss).walkRules(rule => {
+    if (rule.parent.type === 'atrule' && !/^\(min-width:\s*(768|1024)px\)$/.test(rule.parent.params)) return;
+    for (const selector of rule.selectors) {
+      if (!expected.has(selector)) continue;
+      rule.walkDecls('font-size', declaration => desktopFonts.set(selector, declaration.value));
+    }
+  });
+  for (const [selector, size] of expected) assert.equal(desktopFonts.get(selector), size, `final desktop font for ${selector}`);
 });

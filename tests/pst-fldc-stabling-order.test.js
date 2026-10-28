@@ -86,7 +86,7 @@ test('the actual PST stabling data is passed through the Excel panel into the ch
 test('both FLDC depot roads keep all seven train buttons together on desktop without changing phone columns', () => {
   const css = readFileSync(new URL('../src/pstFldcChecklist.css', import.meta.url), 'utf8');
   const panelCss = readFileSync(new URL('../src/pstExcelFormatLog.css', import.meta.url), 'utf8');
-  assert.match(css, /@media \(min-width: 768px\) \{ \.pst-fldc-trains \{ grid-template-columns: repeat\(7, minmax\(0, 1fr\)\)/);
+  assert.match(css, /@media \(min-width: 768px\) \{\s+\.pst-fldc-trains \{ grid-template-columns: repeat\(7, minmax\(0, 1fr\)\)/);
   assert.match(css, /\.pst-fldc-trains \{ display: grid; grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/);
   assert.match(css, /@media \(max-width: 360px\)[^\n]+repeat\(4, minmax\(0, 1fr\)\)/);
   assert.match(css, /\.pst-fldc-train \{[^}]+font-size: 12px; font-weight: 700/);
