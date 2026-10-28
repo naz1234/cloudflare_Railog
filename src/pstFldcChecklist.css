@@ -36,8 +36,6 @@ html[data-app-theme='light'] .pst-fldc-checklist {
 .pst-fldc-clear { display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px; border: 1px solid #f8717155; border-radius: 6px; background: transparent; color: #f87171; font-size: 9px; cursor: pointer; }
 .pst-fldc-clear:disabled { opacity: .4; cursor: not-allowed; }
 html[data-app-theme='light'] .pst-fldc-clear { color: #b91c1c; }
-/* Match APU: keep every stabling block on one desktop row. */
-@media (min-width: 768px) { .pst-fldc-trains { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
 @media (max-width: 767px) { .pst-fldc-train { min-height: 32px; } }
 @media (max-width: 360px) { .pst-fldc-trains { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .pst-fldc-progress { height: 6px; border-radius: 99px; background: var(--fldc-line); overflow: hidden; margin-bottom: 13px; }
@@ -61,3 +59,15 @@ html[data-app-theme] .pst-fldc-checklist :is(.pst-fldc-heading svg, .pst-fldc-he
 html[data-app-theme] .pst-fldc-checklist .pst-fldc-status { color: var(--fldc-muted) !important; }
 html[data-app-theme] .pst-fldc-checklist :is(.pst-fldc-confirm.is-confirmed, .pst-fldc-status.is-confirmed) { color: var(--fldc-success) !important; }
 html[data-app-theme] .pst-fldc-checklist .pst-fldc-count.is-confirmed { color: var(--fldc-success) !important; }
+/* Match APU's single desktop row and improve readability, after base styles. */
+@media (min-width: 768px) {
+  .pst-fldc-trains { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .pst-fldc-heading h3 { font-size: 15px; }
+  .pst-fldc-heading p { font-size: 12px; }
+  .pst-fldc-heading > span { font-size: 11px; }
+  .pst-fldc-road-label { font-size: 11px; }
+  .pst-fldc-name { font-size: 12px; }
+  .pst-fldc-name input { font-size: 13px; }
+  .pst-fldc-select-all, .pst-fldc-clear { font-size: 11px; }
+  .pst-fldc-status { font-size: 12px; }
+}

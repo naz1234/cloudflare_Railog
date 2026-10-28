@@ -53,5 +53,14 @@ html[data-app-theme='light'] .pst-excel-export-button:hover:not(:disabled) { fil
 .pst-excel-export-button.is-copied { border-color: var(--pst-format-success); background: var(--pst-format-success-bg); color: var(--pst-format-success); }
 .pst-excel-format-panel :is(input,button):focus-visible { outline: 2px solid var(--pst-format-blue); outline-offset: 3px; }
 html[data-app-theme] .pst-excel-format-panel :is(h2,h3,p,label,span,input,button) { -webkit-text-fill-color: currentColor !important; text-shadow: none; }
+/* Improve desktop readability without enlarging the compact fields or icons. */
+@media (min-width:768px) {
+  .pst-excel-format-heading h2 { font-size: 17px; }
+  .pst-excel-sync { font-size: 12px; }
+  .pst-excel-completed-label, .pst-excel-export-group h3 { font-size: 12px; }
+  .pst-excel-depot-badge { font-size: 11px; }
+  .pst-excel-completed-input { font-size: 13px; }
+  .pst-excel-export-button { font-size: 12px; }
+}
 @media (min-width:1024px) { .pst-excel-format-panel { width: 100%; flex-shrink: 0; } }
 @media (max-width:380px) { .pst-excel-format-panel { padding: 14px; } .pst-excel-export-groups { gap: 8px; } .pst-excel-export-group.is-combined { padding-left: 8px; } .pst-excel-export-button { gap: 5px; font-size: 10px; } }

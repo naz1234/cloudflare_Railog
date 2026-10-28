@@ -1,0 +1,31 @@
+/* The phone workspace shows one depot at a time, so it needs no divider. */
+.pst-depot-divider { display: none; }
+
+@media (min-width: 768px) {
+  .mobile-pst-workspace > .pst-depot-divider {
+    --pst-divider-line: rgba(251,146,60,0.92);
+    --pst-divider-label: #fff7ed;
+    --pst-divider-surface: linear-gradient(135deg, rgba(249,115,22,0.42), rgba(220,38,38,0.34));
+    --pst-divider-glow: rgba(249,115,22,0.38);
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; min-height: 24px; margin-block: -12px;
+  }
+  .pst-depot-divider::before,
+  .pst-depot-divider::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--pst-divider-line));
+  }
+  .pst-depot-divider::after { transform: scaleX(-1); }
+  .pst-depot-divider > span {
+    flex-shrink: 0; border: 1px solid var(--pst-divider-line); border-radius: 6px;
+    padding: 4px 12px; color: var(--pst-divider-label); background: var(--pst-divider-surface);
+    box-shadow: 0 0 16px var(--pst-divider-glow), inset 0 1px 0 rgba(255,255,255,0.12);
+    font-size: 10px; font-weight: 700; line-height: 14px; letter-spacing: .16em;
+  }
+  html[data-app-theme='light'] .mobile-pst-workspace > .pst-depot-divider {
+    --pst-divider-line: #f97316;
+    --pst-divider-label: #9a3412;
+    --pst-divider-surface: linear-gradient(135deg, #ffedd5, #fee2e2);
+    --pst-divider-glow: rgba(249,115,22,0.30);
+  }
+}
