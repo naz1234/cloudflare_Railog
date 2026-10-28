@@ -68,6 +68,7 @@ import { buildPSTExcelClipboardText } from "../lib/pstExcelClipboard";
 import { appendPstFldcColumns } from "../lib/pstFldcVerification";
 import { usePstFldcVerification } from "../hooks/usePstFldcVerification";
 import PstExcelFormatLogPanel from "../components/PstExcelFormatLogPanel";
+import "../apuMismatchChecklist.css";
 import { buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionEntryPendingStatus, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "../lib/possessionAccessLog";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, getHdwCurrentTime, getHdwRunningInMlCount, clearHdwRows } from "../lib/trainRemHdw40";
@@ -5305,8 +5306,8 @@ function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoSt
   const headerTooltipPlacement = sectionDepotLabel === "West Depot" ? "bottom" : "top";
 
   return (
-    <section onKeyDown={handleGridArrowNavigation} className={`theme-stabling-section theme-pst-section ${sectionDepotLabel === "East Depot" ? "is-east" : "is-west"} bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4`} style={{ width: "fit-content", maxWidth: "fit-content" }}>
-      <div className="mobile-section-header flex items-center justify-between gap-3 mb-4">
+    <section onKeyDown={handleGridArrowNavigation} className={`theme-stabling-section theme-pst-section ${sectionDepotLabel === "East Depot" ? "is-east" : "is-west"} bg-[#0b1f33] border border-[#2b4f6b] rounded-2xl shadow-md px-5 py-4`} style={{ width: "100%", maxWidth: "100%", minWidth: 0 }}>
+      <div className="mobile-section-header flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="mobile-section-heading flex min-w-0 items-center gap-3">
           <div className="theme-pst-title-icon w-8 h-8 rounded-full bg-[#10263b] border border-[#2b4f6b] shadow-sm flex items-center justify-center flex-shrink-0">
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
@@ -5431,14 +5432,14 @@ function PSTStablingSection({ title, onRefreshStabling, onUndoStabling, onRedoSt
         )}
       </div>
       <div className="overflow-x-auto rounded-xl">
-        <table className="theme-stabling-table border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 912, maxWidth: 912, width: 912 }}>
+        <table className="theme-stabling-table border-separate border-spacing-0 table-fixed text-xs" style={{ minWidth: 910, width: "100%" }}>
           <thead>
             <tr>
               {labelSide === "left" && <th className="w-[72px]" style={{ background: "transparent", border: "none" }} />}
               {blockLabels.map((label, i) => {
                 const isLastBlock = i === blockLabels.length - 1;
                 return (
-                  <th key={label} className="theme-stabling-block-header h-8 text-center text-[9px] font-black tracking-widest uppercase" style={{ width: 120, minWidth: 120, maxWidth: 120, background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", color: "#4a8ab5", borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined, borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: "2px solid #1a3a56", borderTopLeftRadius: labelSide === "left" && i === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && isLastBlock ? 12 : undefined }}>
+                  <th key={label} className="theme-stabling-block-header h-8 text-center text-[9px] font-black tracking-widest uppercase" style={{ background: "linear-gradient(180deg,#0c2e4a 0%,#071e33 100%)", color: "#4a8ab5", borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined, borderRight: labelSide === "left" && isLastBlock ? "1px solid #1a3a56" : undefined, borderBottom: "2px solid #1a3a56", borderTopLeftRadius: labelSide === "left" && i === 0 ? 12 : undefined, borderTopRightRadius: labelSide === "right" && isLastBlock ? 12 : undefined }}>
                     {label}
                   </th>
                 );
@@ -14999,6 +15000,23 @@ function buildAPUMismatchChecklistLog(trainIds = []) {
     .join("\n\n");
 }
 
+function groupAPUMismatchTrainsByStabling(depot, data = {}) {
+  const roads = depot === "east" ? EAST_ROADS : WEST_ROADS;
+  const seen = new Set();
+  return roads.map((road) => {
+    const blocks = Array.isArray(data?.[road]) ? data[road] : [];
+    // Match the visible stabling blocks without changing the saved arrays.
+    const displayedBlocks = depot === "east" ? blocks : [...blocks].reverse();
+    const trainIds = collectStablingTrainIds({ [road]: displayedBlocks }, [road])
+      .filter((trainId) => {
+        if (seen.has(trainId)) return false;
+        seen.add(trainId);
+        return true;
+      });
+    return { road, label: `STB ${Number(road.match(/\d+$/)[0])}`, trainIds };
+  }).filter((group) => group.trainIds.length > 0);
+}
+
 function APUMismatchChecklist({
   depot = "west",
   data = {},
@@ -15009,11 +15027,11 @@ function APUMismatchChecklist({
   const isWestDepot = depot === "west";
   const depotShortLabel = isWestDepot ? "WD" : "ED";
   const accent = isWestDepot ? "#38bdf8" : "#c084fc";
-  const roads = isWestDepot ? WEST_ROADS : EAST_ROADS;
   const savedSelectedTrainIds = normalizeAPUMismatchTrainIds({
     [depot]: selectedTrainIds,
   })[depot];
-  const availableTrainIds = collectStablingTrainIds(data, roads)
+  const trainGroups = groupAPUMismatchTrainsByStabling(depot, data);
+  const availableTrainIds = trainGroups.flatMap((group) => group.trainIds)
     .sort((left, right) => left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" }));
   const availableTrainIdSet = new Set(availableTrainIds);
   const normalizedSelectedTrainIds = savedSelectedTrainIds
@@ -15047,7 +15065,7 @@ function APUMismatchChecklist({
 
   return (
     <section
-      className="theme-apu-mismatch-panel w-full overflow-hidden rounded-2xl border lg:w-[420px]"
+      className="theme-apu-mismatch-panel w-full min-w-0 overflow-hidden rounded-2xl border"
       data-depot={depot}
       style={{
         background: "linear-gradient(145deg, rgba(7,24,40,0.98), rgba(6,31,50,0.96))",
@@ -15080,33 +15098,42 @@ function APUMismatchChecklist({
 
       <div className="grid gap-3 p-4">
         {availableTrainIds.length > 0 ? (
-          <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5">
-            {availableTrainIds.map((trainId) => {
-              const isSelected = selectedTrainIdSet.has(trainId);
-              return (
-                <button
-                  key={`${depot}-apu-mismatch-${trainId}`}
-                  type="button"
-                  onClick={() => toggleTrain(trainId)}
-                  aria-pressed={isSelected}
-                  className={`theme-apu-mismatch-train ${isSelected ? "is-selected" : ""} flex h-8 items-center justify-center gap-1 rounded-lg border text-[11px] font-semibold transition-all hover:-translate-y-0.5`}
-                  style={{
-                    backgroundColor: isSelected ? `${accent}2a` : "rgba(8,31,50,0.92)",
-                    borderColor: isSelected ? `${accent}cc` : "rgba(64,111,145,0.58)",
-                    color: isSelected ? "#ffffff" : "#b8cce0",
-                    boxShadow: isSelected ? `0 0 12px ${accent}28, inset 0 1px 0 rgba(255,255,255,0.08)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
-                  }}
-                >
-                  <span
-                    className="flex h-3.5 w-3.5 items-center justify-center rounded-full border"
-                    style={{ borderColor: isSelected ? accent : "#496b84", backgroundColor: isSelected ? accent : "transparent" }}
-                  >
-                    {isSelected && <Check size={10} strokeWidth={3} />}
-                  </span>
-                  {trainId}
-                </button>
-              );
-            })}
+          <div className="theme-apu-mismatch-road-list" role="group" aria-label={`${depotShortLabel} APU mismatch trains by stabling road`}>
+            {trainGroups.map((group) => (
+              <div className="theme-apu-mismatch-road-group" key={group.road} data-stabling-road={group.road}>
+                <div className="theme-apu-mismatch-road-label">{group.label}</div>
+                <div className="theme-apu-mismatch-trains" role="group" aria-label={`${depotShortLabel} ${group.label}`}>
+                  {group.trainIds.map((trainId) => {
+                    const isSelected = selectedTrainIdSet.has(trainId);
+                    return (
+                      <button
+                        key={`${depot}-apu-mismatch-${trainId}`}
+                        type="button"
+                        onClick={() => toggleTrain(trainId)}
+                        aria-pressed={isSelected}
+                        aria-label={`Toggle ${trainId} APU mismatch at ${depotShortLabel} ${group.label}`}
+                        className={`theme-apu-mismatch-train ${isSelected ? "is-selected" : ""} transition-colors`}
+                        style={{
+                          backgroundColor: isSelected ? `${accent}2a` : "#071828",
+                          borderColor: isSelected ? `${accent}cc` : "#2b4f6b",
+                          color: isSelected ? "#ffffff" : "#e1ecf5",
+                          boxShadow: isSelected ? `0 0 12px ${accent}28, inset 0 1px 0 rgba(255,255,255,0.08)` : "inset 0 1px 0 rgba(255,255,255,0.03)",
+                        }}
+                      >
+                        <span
+                          className="theme-apu-mismatch-train-check"
+                          aria-hidden="true"
+                          style={{ borderColor: isSelected ? accent : "#496b84", backgroundColor: isSelected ? accent : "transparent" }}
+                        >
+                          {isSelected && <Check size={9} strokeWidth={3} />}
+                        </span>
+                        {trainId.replace(/^T/, "")}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="theme-apu-mismatch-empty rounded-xl border border-dashed border-[#31516b] px-3 py-4 text-center text-[11px] font-medium text-slate-400">
@@ -15303,8 +15330,8 @@ function PSTTabContent
   );
 
   return (
-    <div className="mobile-pst-workspace flex w-fit min-w-0 flex-col items-start gap-7">
-      <div data-mobile-depot="west" className="grid w-fit grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[max-content_420px] lg:items-start">
+    <div className="mobile-pst-workspace flex w-full min-w-0 flex-col items-start gap-7">
+      <div data-mobile-depot="west" className="grid w-full min-w-0 grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[954px_minmax(420px,1fr)] lg:items-start">
         <div className="flex min-w-0 flex-col gap-3">
           <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" onRefreshStabling={() => onRefreshPSTStabling?.("west")} onUndoStabling={() => onUndoPSTStabling?.("west")} onRedoStabling={() => onRedoPSTStabling?.("west")} canUndoStabling={westCanUndoPSTStabling} canRedoStabling={westCanRedoPSTStabling} isStablingDirty={westPSTStablingDirty} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearStablingTrains={() => onClearPSTStablingTrains?.("west")} stablingEditable onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
           <PSTManualEntry depot="west" logLines={sortedLogLines} onAddEntry={onAddManualLog} onRemoveEntry={onRemoveManualLog} />
@@ -15378,7 +15405,7 @@ function PSTTabContent
             <PSTLogOutput depot="west" logLines={sortedLogLines} onClearDepot={onClearDepotLog} fldcController={fldcController} />
           </div>
         </div>
-        <div className="flex w-full flex-col gap-3 lg:w-[420px]">
+        <div className="flex w-full min-w-0 flex-col gap-3">
           {renderDepotControls("west")}
           <APUMismatchChecklist
             depot="west"
@@ -15405,7 +15432,7 @@ function PSTTabContent
         </div>
       </div>
 
-      <div data-mobile-depot="east" className="grid w-fit grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[max-content_420px] lg:items-start">
+      <div data-mobile-depot="east" className="grid w-full min-w-0 grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[954px_minmax(420px,1fr)] lg:items-start">
         <div className="flex min-w-0 flex-col gap-3">
           <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" onRefreshStabling={() => onRefreshPSTStabling?.("east")} onUndoStabling={() => onUndoPSTStabling?.("east")} onRedoStabling={() => onRedoPSTStabling?.("east")} canUndoStabling={eastCanUndoPSTStabling} canRedoStabling={eastCanRedoPSTStabling} isStablingDirty={eastPSTStablingDirty} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearStablingTrains={() => onClearPSTStablingTrains?.("east")} stablingEditable onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
           <PSTManualEntry depot="east" logLines={sortedLogLines} onAddEntry={onAddManualLog} onRemoveEntry={onRemoveManualLog} />
@@ -15413,7 +15440,7 @@ function PSTTabContent
             <PSTLogOutput depot="east" logLines={sortedLogLines} onClearDepot={onClearDepotLog} fldcController={fldcController} />
           </div>
         </div>
-        <div className="flex w-full flex-col gap-3 lg:w-[420px]">
+        <div className="flex w-full min-w-0 flex-col gap-3">
           {renderDepotControls("east")}
           <APUMismatchChecklist
             depot="east"

@@ -1,10 +1,22 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { base44 } from "../scripts/preview-compact-slate-api.js";
 
 const preview = readFileSync(new URL("../scripts/preview-compact-slate.jsx", import.meta.url), "utf8");
 const server = readFileSync(new URL("../scripts/preview-compact-slate.mjs", import.meta.url), "utf8");
 const css = readFileSync(new URL("../scripts/preview-compact-slate.css", import.meta.url), "utf8");
+
+test("local preview clients stay stable across renders without mixing entity records", async () => {
+  const first = base44.entities.PSTTrainPrep;
+  assert.equal(first, base44.entities.PSTTrainPrep);
+  assert.notEqual(first, base44.entities.DepotStabling);
+  const row = await first.create({ recordKey: "preview-stable-client", value: "sample" });
+  await base44.entities.PSTTrainPrep.update(row.id, { value: "updated sample" });
+  assert.equal((await first.filter({ recordKey: "preview-stable-client" }))[0].value, "updated sample");
+  assert.deepEqual(await base44.entities.DepotStabling.filter({ recordKey: "preview-stable-client" }), []);
+  await first.delete(row.id);
+});
 
 test("local preview reuses production stabling sections with the live road and block orientations", () => {
   assert.match(server, /export \{[^}]*StablingSection/);

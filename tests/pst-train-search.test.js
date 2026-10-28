@@ -196,3 +196,61 @@ test("PST search uses a phone-sized hint while retaining its full cross-depot ac
   assert.match(html, /placeholder="Search train ID…"/);
   assert.match(html, /aria-label="West Depot PST \/ Train Prep: search train ID across both depots"/);
 });
+
+test("both PST grids fill the panel instead of leaving space after the last block", () => {
+  for (const depot of ["west", "east"]) {
+    const isWest = depot === "west";
+    const blockIndices = isWest ? [6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6];
+    const road = isWest ? "WD-ST15" : "ED-ST02";
+    const html = renderSection("", {
+      title: `${isWest ? "WEST" : "EAST"} DEPOT — PST / TRAIN PREP`,
+      blockIndices,
+      blockLabels: blockIndices.map((index) => `BLOCK ${index + 1}`),
+      roads: [road],
+      data: { [road]: Array.from({ length: 7 }, (_, index) => ({ trainId: `T${index + 1}` })) },
+      labelSide: isWest ? "left" : "right",
+    });
+    const table = html.match(/<table\b[^>]+>/)?.[0];
+    assert.ok(table);
+    // Leave a two-pixel rounding allowance inside the 954px frame at browser
+    // zoom levels that round its content box just below 912px.
+    assert.match(table, /style="min-width:910px;width:100%"/);
+    assert.doesNotMatch(table, /max-width:912px|(?:^|;)width:912px/);
+
+    const headers = [...html.matchAll(/<th\b[^>]*class="theme-stabling-block-header[^>]+>/g)];
+    assert.equal(headers.length, 7);
+    for (const [header] of headers) {
+      // Fixed table layout shares the remaining width equally once the road
+      // column is reserved. Percentage column calculations can feed back into
+      // max-content ancestors and expand each train card beyond the viewport.
+      assert.doesNotMatch(header, /(?:^|[;"-])width:|calc\(/);
+    }
+    assert.match(html, /<th class="w-\[72px\]"/);
+    assert.match(html, /<section\b[^>]*style="width:100%;max-width:100%;min-width:0"/);
+    assert.match(html, /mobile-section-header flex flex-wrap/);
+    assert.doesNotMatch(section, /width: "fit-content"|maxWidth: "fit-content"/);
+    assert.deepEqual(
+      [...html.matchAll(/data-mobile-block-label="([^"]+)"/g)].map((match) => match[1]),
+      blockIndices.map((index) => `Block ${index + 1}`),
+    );
+  }
+});
+
+test("PST desktop columns have a bounded parent instead of a max-content sizing loop", () => {
+  assert.match(tab, /mobile-pst-workspace flex w-full min-w-0/);
+  const depotGrids = tab.match(/<div data-mobile-depot="(?:west|east)"[^>]+>/g) || [];
+  assert.equal(depotGrids.length, 2);
+  for (const grid of depotGrids) {
+    assert.match(grid, /grid w-full min-w-0/);
+    assert.match(grid, /lg:grid-cols-\[954px_minmax\(420px,1fr\)\]/);
+    assert.doesNotMatch(grid, /w-fit|max-content/);
+  }
+});
+
+test("PST full-width grids retain the phone road-list overrides", () => {
+  const mobileCss = readFileSync(new URL("../src/mobileWorkspaces.css", import.meta.url), "utf8");
+  assert.match(mobileCss, /@media \(max-width: 767px\)/);
+  assert.match(mobileCss, /:is\(\.theme-stabling-table,\.theme-insertion-table\) \{ display: block; width: 100% !important; min-width: 0 !important; max-width: 100% !important;/);
+  assert.match(mobileCss, /:is\(\.theme-stabling-table,\.theme-insertion-table\) thead \{ display: none; \}/);
+  assert.match(mobileCss, /:is\(\.theme-stabling-table,\.theme-insertion-table\) tr \{ display: flex; flex-direction: column;/);
+});

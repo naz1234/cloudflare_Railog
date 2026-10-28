@@ -68,6 +68,7 @@ test('the rendered checklist shows road headings and keeps ticks and bulk action
   assert.equal((html.match(/aria-checked="true"/g) || []).length, 2);
   const ticks = nodes(tree).filter(node => node.props.role === 'checkbox');
   assert.match(ticks[0].props['aria-label'], /T47/);
+  assert.equal(ticks[0].props.children[1], '47', 'only the displayed number loses its T prefix');
   ticks[0].props.onClick();
   nodes(tree).find(node => node.type === 'button' && node.props.className.startsWith('pst-fldc-select-all')).props.onClick();
   assert.deepEqual(calls, [['tick', 'west', '47'], ['all', 'west']]);
@@ -80,4 +81,28 @@ test('the actual PST stabling data is passed through the Excel panel into the ch
   const panel = readFileSync(new URL('../src/components/PstExcelFormatLogPanel.jsx', import.meta.url), 'utf8');
   assert.match(page, /stablingData=\{depot === "west" \? westData : eastData\}/);
   assert.match(panel, /<PstFldcChecklist[^>]+stablingData=\{stablingData\}/);
+});
+
+test('both FLDC depot roads keep all seven train buttons together on desktop without changing phone columns', () => {
+  const css = readFileSync(new URL('../src/pstFldcChecklist.css', import.meta.url), 'utf8');
+  const panelCss = readFileSync(new URL('../src/pstExcelFormatLog.css', import.meta.url), 'utf8');
+  assert.match(css, /@media \(min-width: 768px\) \{ \.pst-fldc-trains \{ grid-template-columns: repeat\(7, minmax\(0, 1fr\)\)/);
+  assert.match(css, /\.pst-fldc-trains \{ display: grid; grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/);
+  assert.match(css, /@media \(max-width: 360px\)[^\n]+repeat\(4, minmax\(0, 1fr\)\)/);
+  assert.match(css, /\.pst-fldc-train \{[^}]+font-size: 12px; font-weight: 700/);
+  assert.match(panelCss, /@media \(min-width:1024px\) \{ \.pst-excel-format-panel \{ width: 100%;/);
+  assert.doesNotMatch(panelCss, /\.pst-excel-format-panel \{[^}]*width: 420px/);
+
+  const ids = ['01','02','03','04','05','06','07'];
+  for (const depot of ['west', 'east']) {
+    const road = depot === 'west' ? 'WD-ST15' : 'ED-ST02';
+    const value = props(depot, { [road]: blocks(...ids) });
+    value.controller.trainIds = { west: ids, east: ids };
+    const tree = Checklist(value);
+    const groups = nodes(tree).filter(node => node.props.className === 'pst-fldc-trains');
+    assert.equal(groups.length, 1);
+    const buttons = nodes(groups[0]).filter(node => node.props.role === 'checkbox');
+    assert.equal(buttons.length, 7);
+    assert.deepEqual(buttons.map(button => button.props.children[1]), depot === 'west' ? [...ids].reverse() : ids);
+  }
 });
