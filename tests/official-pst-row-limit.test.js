@@ -13,7 +13,7 @@ test("PST & Train Prep output ends at row 50 with the summary formula preserved"
   assert.match(generatorSource, /function pstSummaryRow\(/);
   assert.match(generatorSource, /const summaryClone = sourceRowNode\.cloneNode\(true\)/);
   assert.match(generatorSource, /formula\.setAttribute\("ref", replaceReferenceRow/);
-  assert.match(generatorSource, /summaryRow: PST_LAST_OUTPUT_ROW/);
+  assert.match(generatorSource, /summaryRow: sourceRow \? PST_LAST_OUTPUT_ROW : null/);
 });
 
 test("PST row normalization keeps dependent workbook ranges aligned", () => {
