@@ -211,3 +211,63 @@ test('editing only verifier whitespace does not revoke existing saved ticks', as
   assert.equal(h.writes.length, 0);
   h.stop();
 });
+
+for (const depot of ['west', 'east']) {
+  test(`${depot} select all confirms its current list in one save and still permits individual unticking`, async () => {
+    const input = entries(['01', '02', '03'], ['46', '47']);
+    const h = harness([verification('west', ['01'], 'WEST DC'), verification('east', ['47'], 'EAST DC')], input);
+    await h.settle();
+    const expected = depot === 'west' ? ['01', '02', '03'] : ['46', '47'];
+    const other = depot === 'west' ? 'east' : 'west';
+    const previousOther = h.view().exportVerifications[other];
+    h.view().confirmAll(depot); await h.settle();
+    assert.equal(h.writes.length, 1, 'one save, not one request per train');
+    assert.deepEqual(h.view().getSelectedTrainIds(depot), expected);
+    assert.equal(h.view().isConfirmed(depot), true);
+    assert.deepEqual(h.view().exportVerifications[other], previousOther);
+    assert.equal(h.writes[0].scopeDepot, depot);
+    h.view().confirmAll(depot); await h.settle();
+    assert.equal(h.writes.length, 1, 'already confirmed does not write again');
+    h.view().toggleTrain(depot, expected[0]); await h.settle();
+    assert.deepEqual(h.view().exportVerifications[depot].trainIds, expected.slice(1));
+    h.view().clear(depot); await h.settle();
+    assert.equal(h.view().exportVerifications[depot], null);
+    h.stop();
+  });
+}
+
+test('select all requires a verifier and eligible loaded data, and blocks duplicate clicks during saving', async () => {
+  const h = harness();
+  h.view().confirmAll('west'); await h.settle();
+  assert.equal(h.writes.length, 0);
+  h.view().confirmAll('west'); await h.settle();
+  assert.equal(h.writes.length, 0, 'name required');
+  h.view().updateDraft('west', { by: 'DC' }); await h.settle();
+  h.setEntries(entries([], ['47'])); await h.settle();
+  h.view().confirmAll('west'); await h.settle();
+  assert.equal(h.writes.length, 0, 'no eligible trains');
+  h.setEntries(entries()); await h.settle();
+  let release;
+  h.gate(new Promise(resolve => { release = resolve; }));
+  h.view().confirmAll('west'); h.view().confirmAll('west'); await h.settle();
+  assert.equal(h.view().exportVerifications.west, null, 'not exported until saved');
+  release(); await h.settle();
+  assert.equal(h.writes.length, 1);
+  assert.deepEqual(h.view().exportVerifications.west.trainIds, ['01', '02']);
+  h.stop();
+});
+
+test('failed bulk confirmation retries only the clicked list without selecting newly added trains', async () => {
+  const h = harness(); await h.settle();
+  h.view().updateDraft('west', { by: 'DC' }); await h.settle();
+  h.fail(true); h.view().confirmAll('west'); await h.settle();
+  assert.match(h.view().errors.west, /Unable to save/);
+  assert.equal(h.view().exportVerifications.west, null);
+  h.setEntries(entries(['01', '02', '03'])); await h.settle();
+  h.view().confirmAll('west'); await h.settle();
+  assert.equal(h.writes.length, 0, 'an error must be retried rather than replaced silently');
+  h.fail(false); h.view().retry('west'); await h.settle();
+  assert.deepEqual(h.view().exportVerifications.west.trainIds, ['01', '02']);
+  assert.equal(h.view().isConfirmed('west'), false);
+  h.stop();
+});

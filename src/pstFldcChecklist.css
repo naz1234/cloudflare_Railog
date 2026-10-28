@@ -25,7 +25,10 @@ html[data-app-theme='light'] .pst-fldc-checklist {
 .pst-fldc-train:disabled { opacity: .55; cursor: not-allowed; }
 .pst-fldc-train-check { display: inline-flex; align-items: center; justify-content: center; width: 11px; height: 11px; flex-shrink: 0; border: 1px solid var(--fldc-muted); border-radius: 50%; }
 .is-selected .pst-fldc-train-check { border-color: var(--fldc-success); }
-.pst-fldc-selection-actions { display: flex; justify-content: flex-end; margin-top: 6px; }
+.pst-fldc-selection-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; margin-top: 6px; }
+.pst-fldc-select-all { display: inline-flex; align-items: center; gap: 4px; padding: 4px 7px; border: 1px solid var(--fldc-accent); border-radius: 6px; background: var(--fldc-accent-bg); color: var(--fldc-accent); font-size: 9px; cursor: pointer; }
+.pst-fldc-select-all:disabled { opacity: .4; cursor: not-allowed; }
+.pst-fldc-select-all.is-confirmed { border-color: var(--fldc-success); background: var(--fldc-success-bg); color: var(--fldc-success); opacity: 1; }
 .pst-fldc-clear { display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px; border: 1px solid #f8717155; border-radius: 6px; background: transparent; color: #f87171; font-size: 9px; cursor: pointer; }
 .pst-fldc-clear:disabled { opacity: .4; cursor: not-allowed; }
 html[data-app-theme='light'] .pst-fldc-clear { color: #b91c1c; }

@@ -201,7 +201,7 @@ function renderChecklist(overrides = {}) {
     drafts: { west: { by: 'WEST DC' }, east: { by: 'EAST DC' } },
     trainIds: { west: ['01', '02', '03'], east: ['47'] },
     loaded: { west: true, east: true }, saving: {}, errors: {},
-    isConfirmed: () => false, toggleTrain: () => {}, clear: () => {}, getSelectedTrainIds: () => [], exportVerifications: {}, updateDraft: () => {}, retry: () => {},
+    isConfirmed: () => false, toggleTrain: () => {}, confirmAll: () => {}, clear: () => {}, getSelectedTrainIds: () => [], exportVerifications: {}, updateDraft: () => {}, retry: () => {},
     ...overrides,
   };
   return renderToStaticMarkup(React.createElement(Checklist, { depot: 'west', controller }));
@@ -238,7 +238,7 @@ test('individual ticks require a name and a loaded, idle, error-free record', ()
   assert.match(html, /Only saved ticks are included in Excel columns L–M/);
 });
 
-test('individual train and Clear controls still use only their own depot after moving the log', () => {
+test('individual, select-all and Clear controls use only their own depot after moving the log', () => {
   for (const depot of ['west', 'east']) {
     const calls = [];
     const PlainChecklist = new Function('React', 'useState', 'useEffect', 'Check', 'Copy', 'ShieldCheck', 'Trash2', 'buildPstFldcChecklistLog', 'navigator', `${checklistRenderSource}\nreturn PstFldcChecklist;`)(
@@ -249,15 +249,31 @@ test('individual train and Clear controls still use only their own depot after m
       drafts: { west: { by: 'WEST DEMO' }, east: { by: 'EAST DEMO' } },
       trainIds: { west: ['01', '02'], east: ['47'] }, loaded: { west: true, east: true }, saving: {}, errors: {},
       exportVerifications: { west, east }, getSelectedTrainIds: key => key === 'west' ? ['01', '02'] : ['47'], isConfirmed: () => true,
-      toggleTrain: (...args) => calls.push(['tick', ...args]), clear: key => calls.push(['clear', key]), updateDraft() {}, retry() {},
+      toggleTrain: (...args) => calls.push(['tick', ...args]), confirmAll: key => calls.push(['all', key]), clear: key => calls.push(['clear', key]), updateDraft() {}, retry() {},
     };
     const tree = PlainChecklist({ depot, controller });
     const nodes = [];
     const walk = node => { if (!React.isValidElement(node)) return; nodes.push(node); React.Children.toArray(node.props.children).forEach(walk); };
     walk(tree);
     nodes.find(node => node.props.role === 'checkbox').props.onClick();
+    nodes.find(node => node.type === 'button' && node.props.className.startsWith('pst-fldc-select-all')).props.onClick();
     nodes.find(node => node.props.className === 'pst-fldc-clear').props.onClick();
-    assert.deepEqual(calls, [['tick', depot, depot === 'west' ? '01' : '47'], ['clear', depot]]);
+    assert.deepEqual(calls, [['tick', depot, depot === 'west' ? '01' : '47'], ['all', depot], ['clear', depot]]);
     assert.ok(!nodes.some(node => node.type === 'pre'));
   }
+});
+
+test('select-all confirmation is enabled only with a verifier and eligible, loaded, idle, error-free trains', () => {
+  const button = override => renderChecklist(override).match(/<button\b[^>]*class="pst-fldc-select-all [^>]*>/)?.[0] || '';
+  assert.doesNotMatch(button({}), /disabled/);
+  assert.match(renderChecklist(), /Select all \/ Confirm/);
+  for (const override of [
+    { drafts: { west: { by: ' ' } } },
+    { loaded: { west: false } },
+    { saving: { west: 'confirm' } },
+    { errors: { west: 'Unable to save' } },
+    { trainIds: { west: [] } },
+    { isConfirmed: () => true },
+  ]) assert.match(button(override), /disabled/);
+  assert.match(renderChecklist({ isConfirmed: () => true }), /All confirmed/);
 });

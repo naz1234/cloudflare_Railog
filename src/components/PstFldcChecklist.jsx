@@ -29,6 +29,12 @@ export default function PstFldcChecklist({ depot, controller }) {
     </div>
     {!count && <p className="pst-fldc-status">No started or completed PST records in this depot to verify.</p>}
     <div className="pst-fldc-selection-actions">
+      <button type="button" className={'pst-fldc-select-all ' + (confirmed ? 'is-confirmed' : '')}
+        aria-label={'Select and confirm all ' + count + ' ' + label + ' PST trains via FLDC'}
+        title={'Confirm that all ' + count + ' current ' + label + ' PST trains have been verified via FLDC'}
+        onClick={() => controller.confirmAll(depot)} disabled={!canTick || !count || confirmed}>
+        <Check size={11} aria-hidden="true" />{confirmed ? 'All confirmed' : 'Select all / Confirm'}
+      </button>
       <button type="button" className="pst-fldc-clear" aria-label={'Clear ' + label + ' FLDC selection'} onClick={() => controller.clear(depot)} disabled={!ready || Boolean(busy) || !selected.size}><Trash2 size={11} aria-hidden="true" />Clear</button>
     </div>
     {error ? <div role="alert" className="pst-fldc-error">{error}<button type="button" disabled={Boolean(busy)} onClick={() => controller.retry(depot)}>Retry</button></div>
