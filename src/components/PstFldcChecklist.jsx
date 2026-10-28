@@ -29,7 +29,7 @@ export default function PstFldcChecklist({ depot, controller, stablingData = {} 
           {group.trainIds.map((id) => <button key={id} type="button" role="checkbox" aria-checked={selected.has(id)}
             aria-label={'Verify T' + id + ' via FLDC at ' + label} disabled={!canTick}
             className={'pst-fldc-train ' + (selected.has(id) ? 'is-selected' : '')} onClick={() => controller.toggleTrain(depot, id)}>
-            <span className="pst-fldc-train-check" aria-hidden="true">{selected.has(id) && <Check size={9} />}</span>T{id}
+            <span className="pst-fldc-train-check" aria-hidden="true">{selected.has(id) && <Check size={9} />}</span>{id}
           </button>)}
         </div>
       </div>)}

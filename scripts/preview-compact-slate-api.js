@@ -1,7 +1,11 @@
 // In-memory fixtures only. This module replaces the API client in the local preview.
 const records = new Map();
+const clients = new Map();
 const copy = (value) => structuredClone(value);
 function entity(name) {
+  // Production entity clients are stable. Recreating them on each render
+  // repeatedly restarts hooks whose effects depend on an entity client.
+  if (clients.has(name)) return clients.get(name);
   const rows = () => records.get(name) || [];
   const client = {
     list: async () => copy(rows()),
@@ -19,6 +23,7 @@ function entity(name) {
     delete: async (id) => { records.set(name, rows().filter((row) => row.id !== id)); },
     bulkCreate: async (items) => Promise.all(items.map((item) => client.create(item))),
   };
+  clients.set(name, client);
   return client;
 }
 export function seedPreviewRecords(rows) { records.set("TrainRem", copy(rows)); }

@@ -23,7 +23,7 @@ html[data-app-theme='light'] .pst-fldc-checklist {
 .pst-fldc-road-group .pst-fldc-trains { margin: 5px 0 0; }
 .pst-fldc-road-label { display: flex; align-items: center; gap: 6px; color: var(--fldc-accent); font-size: 9px; font-weight: 700; letter-spacing: .04em; }
 .pst-fldc-road-label::after { content: ''; flex: 1; border-top: 1px solid var(--fldc-line); }
-.pst-fldc-train { display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; min-height: 27px; padding: 4px 2px; border: 1px solid var(--fldc-line); border-radius: 8px; background: var(--fldc-surface); color: var(--fldc-text); font-size: 10px; font-weight: 600; cursor: pointer; }
+.pst-fldc-train { display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; min-height: 27px; padding: 4px 2px; border: 1px solid var(--fldc-line); border-radius: 8px; background: var(--fldc-surface); color: var(--fldc-text); font-size: 12px; font-weight: 700; cursor: pointer; }
 .pst-fldc-train:hover:not(:disabled) { border-color: var(--fldc-accent); }
 .pst-fldc-train.is-selected { border-color: var(--fldc-success); background: var(--fldc-success-bg); color: var(--fldc-success); }
 .pst-fldc-train:disabled { opacity: .55; cursor: not-allowed; }
@@ -36,6 +36,8 @@ html[data-app-theme='light'] .pst-fldc-checklist {
 .pst-fldc-clear { display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px; border: 1px solid #f8717155; border-radius: 6px; background: transparent; color: #f87171; font-size: 9px; cursor: pointer; }
 .pst-fldc-clear:disabled { opacity: .4; cursor: not-allowed; }
 html[data-app-theme='light'] .pst-fldc-clear { color: #b91c1c; }
+/* Match APU: keep every stabling block on one desktop row. */
+@media (min-width: 768px) { .pst-fldc-trains { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
 @media (max-width: 767px) { .pst-fldc-train { min-height: 32px; } }
 @media (max-width: 360px) { .pst-fldc-trains { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .pst-fldc-progress { height: 6px; border-radius: 99px; background: var(--fldc-line); overflow: hidden; margin-bottom: 13px; }
