@@ -138,6 +138,17 @@ export function usePstFldcVerification(pstEntries = []) {
     void persist(depot, value);
   };
 
+  const confirmAll = (depot) => {
+    if (getPstFldcDate() !== day) { setDay(getPstFldcDate()); return; }
+    if (!['west', 'east'].includes(depot) || !loaded[depot] || busy.current[depot] || errors[depot] || !drafts[depot]?.by.trim() || !trainIds[depot]?.length) return;
+    if (!dirty.current[depot] && getSelectedTrainIds(depot).length === trainIds[depot].length) return;
+    // One explicit action attests only to the current eligible list, in one save.
+    const value = createPstFldcVerification(depot, trainIds[depot], { by: drafts[depot].by, verified: true }, day);
+    if (!value) return;
+    value.trainIds.forEach((id) => withdrawnTrainIds.current[depot].delete(id));
+    void persist(depot, value);
+  };
+
   const clear = (depot) => {
     if (getPstFldcDate() !== day) { setDay(getPstFldcDate()); return; }
     if (!loaded[depot] || busy.current[depot]) return;
@@ -184,5 +195,5 @@ export function usePstFldcVerification(pstEntries = []) {
   ]));
   const isConfirmed = (depot) => Boolean(exportVerifications[depot] && exportVerifications[depot].trainIds.length === trainIds[depot].length);
 
-  return { drafts, trainIds, loaded, saving, errors, updateDraft, toggleTrain, clear, retry, isConfirmed, getSelectedTrainIds, exportVerifications };
+  return { drafts, trainIds, loaded, saving, errors, updateDraft, toggleTrain, confirmAll, clear, retry, isConfirmed, getSelectedTrainIds, exportVerifications };
 }
