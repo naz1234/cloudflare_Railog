@@ -69,3 +69,18 @@ test('the divider matches Sync from Main orange colors and glow without adding i
   assert.match(css, /--pst-divider-label: #9a3412/);
   assert.doesNotMatch(css, /animation:|@keyframes/);
 });
+
+test('PST lines keep an explicit visible stroke at reduced zoom without changing insertion thickness', () => {
+  const parsed = postcss.parse(css);
+  const desktop = parsed.nodes.find(node => node.type === 'atrule' && node.params === '(min-width: 768px)');
+  const strokes = desktop.nodes.find(node => node.type === 'rule' && node.selector.includes('.mobile-pst-workspace > .pst-depot-divider::before'));
+  assert.ok(strokes);
+  assert.ok(strokes.selector.includes('.mobile-pst-workspace > .pst-depot-divider::after'));
+  assert.ok(!strokes.selector.includes('.insertion-depot-workspace'));
+  const declarations = Object.fromEntries(strokes.nodes.filter(node => node.type === 'decl').map(node => [node.prop, node.value]));
+  assert.equal(declarations.display, 'block');
+  assert.equal(declarations.flex, '1 0 0');
+  assert.equal(declarations.height, '2px');
+  assert.equal(declarations['min-height'], '2px');
+  assert.equal(declarations.background, undefined, 'reuse the same shared orange gradient');
+});
