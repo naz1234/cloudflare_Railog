@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import * as XLSX from 'xlsx';
 import { createWsh2LocalRuntime } from './wsh2-local-runtime.mjs';
 
-const runtime = await createWsh2LocalRuntime();
+const codeOnly = process.argv.includes('--code-only');
+const runtime = await createWsh2LocalRuntime({ codeOnly });
 const origin = 'http://local.test';
 function makeFile(time = '13:00') {
   const workbook = XLSX.utils.book_new();
@@ -24,8 +25,15 @@ try {
   const laptopA = (await call()).data.rows;
   const laptopB = (await call()).data.rows;
   assert.equal(laptopA.length, 2);
+  const actor = codeOnly ? `member:${'a'.repeat(64)}` : 'local-preview@example.invalid';
+  assert.ok(laptopA.every((row) => row.updatedBy === actor));
+  const db = await runtime.getD1Database('DB');
+  const audit = await db.prepare('SELECT uploaded_by FROM wsh2_uploads WHERE id = ?').bind(imported.data.uploadId).first();
+  assert.equal(audit.uploaded_by, actor);
   const changed = await call('PATCH', { id: laptopA[0].id, revision: laptopA[0].revision, changes: { completed: true, depot: 'east', hvac: 'ON', washType: 'Partial' } });
   assert.equal(changed.status, 200); assert.equal(changed.data.row.completed, true);
+  assert.equal(changed.data.row.updatedBy, actor);
+  if (codeOnly) assert.ok(!JSON.stringify(changed.data).includes('b'.repeat(64)), 'Do not expose the session token hash');
   const conflict = await call('PATCH', { id: laptopB[0].id, revision: laptopB[0].revision, changes: { completed: false } });
   assert.equal(conflict.status, 409); assert.equal(conflict.data.row.completed, true);
   const second = await call('PATCH', { id: laptopB[1].id, revision: laptopB[1].revision, changes: { location: 'WEST' } });
@@ -51,5 +59,5 @@ try {
   assert.equal(race.filter((result) => result.data.alreadyImported).length, 1);
   const bucket = await runtime.getR2Bucket('WSH2_FILES');
   assert.equal((await bucket.list()).objects.length, 3);
-  console.log('PASS: local D1/R2 upload, cross-client sync, revision conflicts, independent row edits, re-import preservation, changed times, original download, uncheck, rejected invalid import, concurrent duplicate import and orphan cleanup.');
+  console.log(`PASS (${codeOnly ? 'code-only session' : 'email session'}): local D1/R2 upload, audit identity, cross-client sync, revision conflicts, independent row edits, re-import preservation, changed times, original download, uncheck, rejected invalid import, concurrent duplicate import and orphan cleanup.`);
 } finally { await runtime.dispose(); }

@@ -25,7 +25,6 @@ const ENTITY_NAMES = [
   'OvertimeRecord',
   'OvertimeMonthlyNote',
   'OvertimeAllowanceCheck',
-  'ChecklistRecord',
   'SleepModeLog',
 ];
 

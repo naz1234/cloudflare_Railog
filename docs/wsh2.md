@@ -10,6 +10,7 @@ WSH2 is grouped with the existing protected pages, after ODO. It uses their shar
 - `WSH2_FILES` (private R2 bucket) retains original uploaded workbooks. Downloads require the same app login as the checklist.
 - All computers use the same two bindings. The page refreshes every five seconds while visible, and on focus or reconnection. No checklist state is held exclusively in browser storage.
 - Edits are revision-checked. A stale client receives HTTP 409 and the current row, rather than overwriting another computer's changes.
+- Email, Cloudflare Access and code-only sign-ins use the existing verified middleware session. Code-only sessions have no email, so their upload/edit audit fields use the member identity hash, never the session token or token hash. Anonymous and expired sessions remain blocked.
 - Repeated files are identified by SHA-256. Re-importing a changed report updates source scheduling details by train/date without resetting completion, location, HVAC, wash type or depot. Conflicting times for one train/date inside a workbook are rejected.
 - Dates remain depot wall-clock values, independent of the laptop timezone. Both 1900 and 1904 Excel date systems are supported.
 

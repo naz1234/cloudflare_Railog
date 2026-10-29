@@ -26,7 +26,7 @@ test("ATS remains in the protected group alongside WSH2, using the existing hidd
   const protectedKeys = source.match(/const PROTECTED_SHORTCUT_KEYS = new Set\(\[([^\]]+)\]\)/)?.[1];
   assert.ok(protectedKeys);
   const keys = [...protectedKeys.matchAll(/"([^\"]+)"/g)].map((match) => match[1]);
-  assert.equal(new Set(keys).size, 8);
+  assert.deepEqual(keys, ["odo", "wsh2", "alarm", "overtime", "admin", "ats"]);
   assert.ok(keys.includes("ats"));
   assert.match(source, /\{ key: "ats", label: "ATS", code: "ATS", to: "\/ats" \}/);
   const filterExpression = source.match(/\.filter\(\(\{ key \}\) => (!PROTECTED_SHORTCUT_KEYS\.has\(key\) \|\| areProtectedShortcutsUnlocked)\)/)?.[1];
@@ -34,7 +34,7 @@ test("ATS remains in the protected group alongside WSH2, using the existing hidd
   const filter = new Function("PROTECTED_SHORTCUT_KEYS", "areProtectedShortcutsUnlocked", `return ({ key }) => ${filterExpression};`);
   const navigation = [{ key: "stabling" }, ...keys.map((key) => ({ key }))];
   assert.deepEqual(navigation.filter(filter(new Set(keys), false)).map(({ key }) => key), ["stabling"]);
-  assert.equal(navigation.filter(filter(new Set(keys), true)).length, 9);
+  assert.equal(navigation.filter(filter(new Set(keys), true)).length, 7);
 });
 
 test("ATS has an authenticated route and resolves to its own tab", () => {
@@ -45,8 +45,8 @@ test("ATS has an authenticated route and resolves to its own tab", () => {
   const context = vm.createContext({});
   vm.runInContext(`${source.slice(start, end)}\nthis.getTab = getTabFromPath;`, context);
   assert.equal(context.getTab("/ats"), "ats");
-  assert.equal(context.getTab("/checklist"), "checklist");
-  assert.equal(context.getTab("/about"), "about");
+  assert.equal(context.getTab("/wsh2"), "wsh2");
+  assert.equal(context.getTab("/odo-reading"), "odo");
 });
 
 test("direct ATS access remains locked and does not render its workspace before unlocking", () => {
