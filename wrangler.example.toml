@@ -32,6 +32,12 @@ binding = "DB"
 database_name = "raillog-db"
 database_id = "PUT_YOUR_D1_DATABASE_ID_HERE"
 
+# WSH2 retains original wash workbooks in a private R2 bucket.
+# Apply migrations/0004_wsh2.sql to DB before enabling the WSH2 page.
+[[r2_buckets]]
+binding = "WSH2_FILES"
+bucket_name = "raillog-wsh2-files"
+
 # The private mailer has no public route; Pages calls it through this binding.
 [[services]]
 binding = "AUTH_EMAIL_SERVICE"

@@ -10,10 +10,10 @@ const sections = [
 const pages = [
   ["depot-stabling", "REQ", "Train Request"], ["train-movement", "MOV", "Train Movement"],
   ["pst-train-prep", "PST", "Train Preparation"], ["insertion", "INS", "Insertion"],
-  ["train-washing", "WSH", "Washing"], ["possession", "PSS", "Possession"],
+  ["train-washing", "WSH", "Washing"], ["wsh2", "WSH2", "Wash Checklist"], ["possession", "PSS", "Possession"],
   ["roster", "ROS", "Roster"], ["sleep", "SLP", "Sleep Mode"],
 ];
-const pageKeys = ["stabling", "movement", "pst", "insertion", "washing", "possession", "roster", "sleep"];
+const pageKeys = ["stabling", "movement", "pst", "insertion", "washing", "wsh2", "possession", "roster", "sleep"];
 const workspaceSections = {
   movement: [["automatic", "Automatic"], ["manual", "Manual"], ["checker", "Checker"]],
   pst: [["trains", "Trains"], ["logs", "Logs"], ["excel", "Excel / Remarks"]],
@@ -24,7 +24,7 @@ const workspaceSections = {
   sleep: [["trains", "Select trains"], ["logs", "Logs / Excel"]],
 };
 
-export default function ReqMobileNavigation({ activePage = "stabling", workspaceView, onWorkspaceViewChange, panel, onPanelChange, depot, onDepotChange, depotCounts, logSection, onLogSectionChange, theme, onToggleTheme, toolsOpen, onToggleTools }) {
+export default function ReqMobileNavigation({ activePage = "stabling", protectedPagesUnlocked = false, workspaceView, onWorkspaceViewChange, panel, onPanelChange, depot, onDepotChange, depotCounts, logSection, onLogSectionChange, theme, onToggleTheme, toolsOpen, onToggleTools }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const currentPage = pages[pageKeys.indexOf(activePage)] || pages[0];
   const isRequest = activePage === "stabling";
@@ -40,7 +40,7 @@ export default function ReqMobileNavigation({ activePage = "stabling", workspace
       </button>
       <button type="button" className={`req-mobile-icon-button ${toolsOpen ? "is-active" : ""}`} aria-label="Timetable and bookmarks" aria-expanded={toolsOpen} onClick={onToggleTools}><Settings2 size={19} /></button>
       {menuOpen && <nav className="req-mobile-page-menu" aria-label="Application pages">
-        {pages.map(([path, code, label]) => <a key={path} href={`#/${path}`} aria-current={path === currentPage[0] ? "page" : undefined} onClick={() => { setMenuOpen(false); window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }}><span>{code}</span>{label}</a>)}
+        {pages.filter(([path]) => path !== "wsh2" || protectedPagesUnlocked).map(([path, code, label]) => <a key={path} href={`#/${path}`} aria-current={path === currentPage[0] ? "page" : undefined} onClick={() => { setMenuOpen(false); window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }}><span>{code}</span>{label}</a>)}
       </nav>}
     </header>
     {((isRequest && panel === "stabling") || ["pst", "insertion", "sleep"].includes(activePage)) && <div className="req-mobile-only req-mobile-depot-switch" role="group" aria-label="Choose stabling depot">
@@ -52,7 +52,7 @@ export default function ReqMobileNavigation({ activePage = "stabling", workspace
     {isRequest && <nav className="req-mobile-only req-mobile-bottom-nav" aria-label="Train Request sections">
       {sections.map(({ key, label, icon: Icon }) => <button key={key} type="button" aria-pressed={panel === key} onClick={() => onPanelChange(key)}><Icon size={20} aria-hidden="true" /><span>{label}</span></button>)}
     </nav>}
-    {!isRequest && <nav className="req-mobile-only req-mobile-bottom-nav mobile-workspace-nav" aria-label={`${currentPage[2]} sections`} style={{ gridTemplateColumns: `repeat(${pageSections.length}, minmax(0, 1fr))` }}>
+    {!isRequest && pageSections.length > 0 && <nav className="req-mobile-only req-mobile-bottom-nav mobile-workspace-nav" aria-label={`${currentPage[2]} sections`} style={{ gridTemplateColumns: `repeat(${pageSections.length}, minmax(0, 1fr))` }}>
       {pageSections.map(([key, label]) => <button type="button" key={key} aria-pressed={workspaceView === key} onClick={() => onWorkspaceViewChange(key)}><span>{label}</span></button>)}
     </nav>}
   </>;
