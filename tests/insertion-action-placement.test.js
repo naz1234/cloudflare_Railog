@@ -12,15 +12,15 @@ const insertionSection = depotStablingSource.slice(
   depotStablingSource.indexOf("function InsertionTabContent"),
 );
 
-test("Insertion places the three depot actions between the summary and train search", () => {
+test("Insertion retains the mobile DOM order of remark note, depot actions and train search", () => {
   const titleIndex = insertionSection.indexOf("<InsertionSectionTitle");
-  const summaryIndex = insertionSection.indexOf('className="theme-insertion-stabling-summary');
+  const noteIndex = insertionSection.indexOf('className="insertion-tracking-remark-note');
   const actionsIndex = insertionSection.indexOf('className="theme-insertion-search-actions');
   const searchIndex = insertionSection.indexOf("theme-stabling-search theme-insertion-search");
 
   assert.ok(titleIndex >= 0);
-  assert.ok(summaryIndex > titleIndex);
-  assert.ok(actionsIndex > summaryIndex);
+  assert.ok(noteIndex > titleIndex);
+  assert.ok(actionsIndex > noteIndex);
   assert.ok(searchIndex > actionsIndex);
 });
 
@@ -30,7 +30,7 @@ test("Insertion action row keeps all existing controls and handlers", () => {
   const actionRow = insertionSection.slice(actionsIndex, searchIndex);
   const titleBlock = insertionSection.slice(
     insertionSection.indexOf("<InsertionSectionTitle"),
-    insertionSection.indexOf('className="theme-insertion-stabling-summary'),
+    insertionSection.indexOf('className="insertion-tracking-remark-note'),
   );
 
   assert.match(actionRow, /style=\{\{ width: 880 \}\}/);

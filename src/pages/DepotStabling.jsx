@@ -71,6 +71,8 @@ import PstExcelFormatLogPanel from "../components/PstExcelFormatLogPanel";
 import "../apuMismatchChecklist.css";
 import "../pstDepotDivider.css";
 import "../insertionMaintenanceSticky.css";
+import "../insertionReqHeader.css";
+import "../insertionReferenceSlate.css";
 import { buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionEntryPendingStatus, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "../lib/possessionAccessLog";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, getHdwCurrentTime, getHdwRunningInMlCount, clearHdwRows } from "../lib/trainRemHdw40";
@@ -5868,19 +5870,20 @@ function getTimetableInsertionRemarkMap(activeTimetable = null, depot = "west") 
 }
 
 function getSweepTrackFromRemark(value) {
-  const key = (value || "").toString().trim().toUpperCase();
+  const key = (value || "").toString().trim().toUpperCase().replace(/\s+/g, " ");
+  if (key === "SW ATWP") return "ATWP";
   if (key === "SW2") return "TK2";
   if (key === "SW1") return "TK1";
   return "";
 }
 
-function isSweepRemark(value) {
-  const key = (value || "").toString().trim().toUpperCase();
-  return key === "SW" || key === "SW1" || key === "SW2" || key === "SWEEP" || key === "SWEEPING";
+function isSweepRemark(value, depot = "") {
+  const key = (value || "").toString().trim().toUpperCase().replace(/\s+/g, " ");
+  return key === "SW" || key === "SW1" || key === "SW2" || key === "SWEEP" || key === "SWEEPING" || (depot === "east" && key === "SW ATWP");
 }
 
-function isManualInsertionActionRemark(value) {
-  return isSweepRemark(value) || getEastInsertionKeywordRemarkLabel(value) === "3K1";
+function isManualInsertionActionRemark(value, depot = "") {
+  return isSweepRemark(value, depot) || getEastInsertionKeywordRemarkLabel(value) === "3K1";
 }
 
 function getInsertionRemarkStyle(value) {
@@ -5937,6 +5940,7 @@ function isWithinTIDSchedule(firstTidTime, lastTidTime) {
 
 function getSweepingSignal(road, sweepTrack) {
   const track = (sweepTrack || "").toString().trim().toUpperCase();
+  if (EAST_ROADS.includes(road) && track === "ATWP") return "ATWP ED";
   if (EAST_ROADS.includes(road)) return track === "TK2" ? "S2208" : "S2207";
   return track === "TK2" ? "S102" : "S101";
 }
@@ -5966,7 +5970,8 @@ function buildNormalInsertionEntryText(options = {}) {
 
 function buildSweepingInsertionEntryText(options = {}) {
   const { time = "", trainKey = "", road = "", signal = "", clearTime = "", taName = "" } = options;
-  return `${time} hrs – ${trainKey} sweeping started from ${road} to signal ${signal} at 45 kph. Track confirmed clear at ${clearTime} hrs.${getInsertionTaSuffix(taName)}`;
+  const destination = signal === "ATWP ED" ? signal : `signal ${signal}`;
+  return `${time} hrs – ${trainKey} sweeping started from ${road} to ${destination} at 45 kph. Track confirmed clear at ${clearTime} hrs.${getInsertionTaSuffix(taName)}`;
 }
 
 function getActiveInsertionEntryForCell(insertionLog = [], road, bi, trainKey = "") {
@@ -6056,7 +6061,8 @@ const INSERTION_ACTION_BUTTON_DANGER = {
   color: "#ffe9ec",
 };
 
-function InsertionSectionTitle({ title, leftAction = null, action = null }) {
+function InsertionSectionTitle({ title, leftAction = null, action = null, count = null }) {
+  const depotLabel = /east/i.test(title) ? "East Depot" : "West Depot";
   return (
     <div className="mobile-insertion-heading mb-4 flex flex-wrap items-center justify-between gap-3">
       <div className="mobile-insertion-heading-main flex min-w-0 flex-wrap items-center justify-start gap-3">
@@ -6073,12 +6079,21 @@ function InsertionSectionTitle({ title, leftAction = null, action = null }) {
             <polyline points="9 22 9 12 15 12 15 22" />
           </svg>
         </div>
-        <h2 className="theme-insertion-title truncate text-[21px] font-black uppercase leading-none tracking-wide text-white">
-          {title}
-        </h2>
+        <div className="insertion-heading-copy min-w-0">
+          <h2 className="theme-insertion-title truncate text-[21px] font-black uppercase leading-none tracking-wide text-white">
+            <span className="insertion-heading-original">{title}</span>
+            <span className="insertion-heading-req">{depotLabel} stabling</span>
+          </h2>
+          <p className="insertion-heading-subtitle">Train locations in {depotLabel}</p>
+        </div>
         {leftAction && <div className="mobile-insertion-heading-controls flex flex-wrap items-center justify-start gap-2">{leftAction}</div>}
       </div>
       {action && <div className="flex flex-wrap items-center justify-end gap-2">{action}</div>}
+      {Number.isFinite(count) && (
+        <span className="insertion-heading-count" aria-label={`${count} trains in ${depotLabel} insertion`}>
+          <span>TRN</span><strong>{count}</strong>
+        </span>
+      )}
     </div>
   );
 }
@@ -6205,6 +6220,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   const cellKey = `${road}-${bi}`;
   const inserted = getActiveInsertionEntryForCell(insertionLog, road, bi, key);
   const tidRemarkText = (tidInput || "").toString().trim().toUpperCase();
+  const hasCustomTrackingText = Boolean(tidRemarkText && tidRemarkText.replace(/\s+/g, " ") !== "TRACKING ID");
   const hasTidRemark = key && !inserted && tidRemarkText !== "";
   const autoTidMatch = tidRemarkText.match(/^(?:TID[:\s-]*)?T?(\d{3})$/i);
   const autoTid = autoTidMatch ? parseInt(autoTidMatch[1], 10) : null;
@@ -6332,7 +6348,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     key &&
     !inserted &&
     !canAutoInsertTid &&
-    isManualInsertionActionRemark(tidRemarkText)
+    isManualInsertionActionRemark(tidRemarkText, autoTidDepot)
   );
   const isTidDropEligible = Boolean(key && !inserted);
   const canInsertWithoutTrackingId = Boolean(key && !inserted && !tidRemarkText);
@@ -6365,8 +6381,8 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
   }, [tidDropRequest, isTidDropEligible, onTidChange, onInsertionTick, road, bi, key, onTidDropApplied]);
 
   const handleInsertClick = () => {
-    // SW / SW1 / SW2 mean Sweep. SW1 selects Track 01 and SW2 selects Track 02.
-    const sweepTrack = getSweepTrackFromRemark(tidRemarkText) || (isSweepRemark(tidRemarkText) ? "TK1" : "");
+    // SW ATWP selects the washing plant in East Depot only.
+    const sweepTrack = getSweepTrackFromRemark(tidRemarkText) || (isSweepRemark(tidRemarkText, autoTidDepot) ? "TK1" : "");
     setSuppressAutoInsert(false);
     onInsertionTick(road, bi, key, tidInput, sweepTrack);
   };
@@ -6382,7 +6398,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
       : String(
           inserted?.inputValue ??
           (inserted?.isSweeping
-            ? (inserted?.sweepTrack === "TK2" ? "SW2" : "SW")
+            ? (inserted?.sweepTrack === "ATWP" ? "SW ATWP" : inserted?.sweepTrack === "TK2" ? "SW2" : "SW")
             : insertedTid ?? inserted?.remark ?? "")
         );
 
@@ -6707,7 +6723,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                   title="Sweep details"
                   aria-label="Sweep details"
                 >
-                  <div className="mb-0.5 text-center text-[10px] font-normal leading-tight text-white">Sweep</div>
+                  <div className="mb-0.5 text-center text-[10px] font-normal leading-tight text-white">{inserted.sweepTrack === "ATWP" ? "SW ATWP" : "Sweep"}</div>
                   <div className="flex w-full flex-col gap-0.5">
                     <select
                       value={inserted.sweepTrack || "TK1"}
@@ -6720,6 +6736,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
                     >
                       <option value="TK1" style={{ backgroundColor: "#071828", color: "#ffffff" }}>Track 01</option>
                       <option value="TK2" style={{ backgroundColor: "#071828", color: "#ffffff" }}>Track 02</option>
+                      <option value="ATWP" style={{ backgroundColor: "#071828", color: "#ffffff" }}>ATWP ED</option>
                     </select>
 
                     <div className="mt-1 grid w-full grid-cols-[32px_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5">
@@ -6885,6 +6902,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
             {!inserted && (
               <label
                 className="theme-insertion-tracking-footer is-editing"
+                data-has-custom-value={hasCustomTrackingText || undefined}
                 style={insTidInputStyle}
                 title="Enter Tracking ID"
               >
@@ -7426,25 +7444,10 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
     blockIndices.forEach((bi) => {
       const trainKey = normalizeTrainId(data[road]?.[bi]?.trainId || "");
       if (!trainKey) return;
-
       summary.trains += 1;
-      const entry = getActiveInsertionEntryForCell(insertionLog, road, bi, trainKey);
-      if (!entry) return;
-
-      summary.completed += 1;
-      const entryTid = Number(String(entry.tid ?? "").replace(/\D/g, ""));
-      const entryDepot = WEST_ROADS.includes(road) ? "west" : "east";
-      const isScheduledTid = Boolean(
-        entryTid &&
-        typeof getTidScheduledTime === "function" &&
-        getTidScheduledTime(entryTid, entryDepot, { allowFallback: false })
-      );
-      if (isScheduledTid) summary.tidAssigned += 1;
     });
     return summary;
-  }, { trains: 0, completed: 0, tidAssigned: 0 });
-  const insertionSummaryEmpty = Math.max(0, (roads.length * blockIndices.length) - insertionSummary.trains);
-  const insertionSummaryPending = Math.max(0, insertionSummary.trains - insertionSummary.completed);
+  }, { trains: 0 });
   const handleClearAllTid = () => {
     roads.forEach((road) => {
       blockIndices.forEach((bi) => {
@@ -7462,6 +7465,7 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
   return (
     <section
       className="theme-insertion-section rounded-2xl border px-4 py-4"
+      data-insertion-design="req-header"
       data-depot={sectionDepot}
       data-weekend-timetable={isWeekendActive ? "true" : "false"}
       style={{
@@ -7474,6 +7478,7 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
     >
       <InsertionSectionTitle
         title={title}
+        count={insertionSummary.trains}
         leftAction={
           <InsertionEditableHeaderControls
             depotCode={depotCode}
@@ -7487,40 +7492,12 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
           />
         }
       />
-      <div
-        className="theme-insertion-stabling-summary mb-3 grid grid-cols-4 overflow-hidden rounded-xl border"
-        role="group"
-        aria-label={`${insertionSummary.trains} trains, ${insertionSummary.tidAssigned} TIDs assigned, ${insertionSummaryPending} pending, ${insertionSummaryEmpty} empty slots`}
-      >
-        <div className="theme-insertion-stabling-summary-stat is-trains flex items-center justify-center gap-2.5 px-3 py-2.5">
-          <TrainFront className="theme-insertion-stabling-summary-icon h-5 w-5" aria-hidden="true" />
-          <div className="text-left leading-none">
-            <div className="theme-insertion-stabling-summary-value text-[18px] font-black tabular-nums">{insertionSummary.trains}</div>
-            <div className="theme-insertion-stabling-summary-label mt-1 text-[9px] font-bold uppercase tracking-[0.11em]">Trains</div>
-          </div>
-        </div>
-        <div className="theme-insertion-stabling-summary-stat is-assigned flex items-center justify-center gap-2.5 border-l px-3 py-2.5">
-          <ClipboardCheck className="theme-insertion-stabling-summary-icon h-5 w-5" aria-hidden="true" />
-          <div className="text-left leading-none">
-            <div className="theme-insertion-stabling-summary-value text-[18px] font-black tabular-nums">{insertionSummary.tidAssigned}</div>
-            <div className="theme-insertion-stabling-summary-label mt-1 text-[9px] font-bold uppercase tracking-[0.11em]">TID assigned</div>
-          </div>
-        </div>
-        <div className="theme-insertion-stabling-summary-stat is-pending flex items-center justify-center gap-2.5 border-l px-3 py-2.5">
-          <Clock3 className="theme-insertion-stabling-summary-icon h-5 w-5" aria-hidden="true" />
-          <div className="text-left leading-none">
-            <div className="theme-insertion-stabling-summary-value text-[18px] font-black tabular-nums">{insertionSummaryPending}</div>
-            <div className="theme-insertion-stabling-summary-label mt-1 text-[9px] font-bold uppercase tracking-[0.11em]">Pending</div>
-          </div>
-        </div>
-        <div className="theme-insertion-stabling-summary-stat is-empty flex items-center justify-center gap-2.5 border-l px-3 py-2.5">
-          <Plus className="theme-insertion-stabling-summary-icon h-5 w-5" aria-hidden="true" />
-          <div className="text-left leading-none">
-            <div className="theme-insertion-stabling-summary-value text-[18px] font-black tabular-nums">{insertionSummaryEmpty}</div>
-            <div className="theme-insertion-stabling-summary-label mt-1 text-[9px] font-bold uppercase tracking-[0.11em]">Empty</div>
-          </div>
-        </div>
-      </div>
+      <p className="insertion-tracking-remark-note" role="note">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7h.01" />
+        </svg>
+        <span>Tracking ID also accepts remarks: <strong>SW</strong>, <strong>3K1</strong>{sectionDepot === "east" && <>, <strong>SW ATWP</strong></>} or other text.</span>
+      </p>
       <div
         className="theme-insertion-search-actions mb-2 flex items-center justify-end gap-2"
         style={{ width: 880 }}
@@ -7718,7 +7695,7 @@ function InsertionStablingSection({ title, onRefreshStabling, onUndoStabling, on
                 const rowHasManualInsertionAction = Boolean(
                   rowTrainKey &&
                   !rowEntry &&
-                  isManualInsertionActionRemark(tidInputs[`${road}-${blockIndex}`] || "")
+                  isManualInsertionActionRemark(tidInputs[`${road}-${blockIndex}`] || "", sectionDepot)
                 );
                 const baseHeight = rowEntry?.isSweeping
                   ? 208
@@ -10425,7 +10402,7 @@ function InsertionTabContent({
         style={{ gridTemplateColumns: "max-content 276px" }}
       >
         <div className="insertion-depot-workspace flex min-w-0 flex-col gap-6">
-        <div data-mobile-depot="west" className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
+        <div data-mobile-depot="west" className="grid gap-5 md:gap-2 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
           <div className="self-start space-y-3">
             <TIDReferenceTable
               {...tidReferenceCommonProps}
@@ -10480,7 +10457,7 @@ function InsertionTabContent({
           <span>EAST DEPOT</span>
         </div>
 
-        <div data-mobile-depot="east" className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
+        <div data-mobile-depot="east" className="grid gap-5 md:gap-2 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
           <div className="self-start space-y-3">
             <TIDReferenceTable
               {...tidReferenceCommonProps}
@@ -20331,13 +20308,15 @@ export default function DepotStablingPage() {
   const applyInsertionTickToLog = useCallback((prevLog = [], road, bi, trainKey, remark = "", sweepTrack = "") => {
     const cellKey = `${road}-${bi}`;
     const logKey = `ins-${cellKey}`;
+    const depot = WEST_ROADS.includes(road) ? "west" : "east";
+    // Do not interpret the East-only shortcut as a normal West insertion.
+    if (getSweepTrackFromRemark(remark) === "ATWP" && !EAST_ROADS.includes(road)) return prevLog || [];
     const existing = (prevLog || []).find((l) => l.key === logKey);
     const existingMatchesCurrentTrain = existing && normalizeTrainId(existing.trainKey || "") === normalizeTrainId(trainKey || "");
     if (existingMatchesCurrentTrain) {
       return (prevLog || []).filter((l) => l.key !== logKey);
     }
 
-    const depot = WEST_ROADS.includes(road) ? "west" : "east";
     const mainlineTrack = depot === "west" ? 1 : 2;
     const paddedTrainKey = padTrainId(normalizeTrainId(trainKey));
     if (!paddedTrainKey) return prevLog || [];
@@ -20357,11 +20336,13 @@ export default function DepotStablingPage() {
       : tidStr || "";
     const time = scheduledTime || formatTime(new Date());
 
-    // SW / SW1 / SW2 mean Sweep. SW1 defaults to Track 01 and SW2 to Track 02.
-    if (isSweepRemark(normalizedRemark)) {
+    // SW ATWP is an East-only destination; ordinary sweeping keeps Track 01/02.
+    if (isSweepRemark(normalizedRemark, depot)) {
       const remarkSweepTrack = getSweepTrackFromRemark(normalizedRemark);
       const requestedSweepTrack = (sweepTrack || remarkSweepTrack || "TK1").toString().trim().toUpperCase();
-      const normalizedSweepTrack = ["TK1", "TK2"].includes(requestedSweepTrack) ? requestedSweepTrack : "TK1";
+      const normalizedSweepTrack = depot === "east" && requestedSweepTrack === "ATWP"
+        ? "ATWP"
+        : ["TK1", "TK2"].includes(requestedSweepTrack) ? requestedSweepTrack : "TK1";
 
       const signal = getSweepingSignal(road, normalizedSweepTrack);
       const clearTime = getSweepingClearTime(time);
@@ -20378,7 +20359,7 @@ export default function DepotStablingPage() {
           trainKey: paddedTrainKey,
           tid: null,
           mainlineTrack,
-          remark: "SW",
+          remark: normalizedSweepTrack === "ATWP" ? "SW ATWP" : "SW",
           inputValue: tidStr || (normalizedSweepTrack === "TK2" ? "SW2" : "SW"),
           sweepTrack: normalizedSweepTrack,
           signal,
@@ -20553,7 +20534,9 @@ export default function DepotStablingPage() {
       if (!entry?.isSweeping || entry.key !== entryKey) return entry;
 
       const nextTrackRaw = (changes.sweepTrack ?? entry.sweepTrack ?? "TK1").toString().trim().toUpperCase();
-      const sweepTrack = ["TK1", "TK2"].includes(nextTrackRaw) ? nextTrackRaw : "TK1";
+      const sweepTrack = EAST_ROADS.includes(entry.road) && nextTrackRaw === "ATWP"
+        ? "ATWP"
+        : ["TK1", "TK2"].includes(nextTrackRaw) ? nextTrackRaw : "TK1";
       const hasStartChange = Object.prototype.hasOwnProperty.call(changes, "time");
       const hasEndChange = Object.prototype.hasOwnProperty.call(changes, "clearTime");
       const time = cleanMovementCustomTimeInput(changes.time ?? entry.time ?? formatTime(new Date()));
@@ -20576,7 +20559,11 @@ export default function DepotStablingPage() {
         taName,
       });
 
-      return { ...entry, ...changes, sweepTrack, time, clearTime, signal, taName, text, remark: "SW", isSweeping: true };
+      const remark = sweepTrack === "ATWP" ? "SW ATWP" : "SW";
+      const inputValue = Object.prototype.hasOwnProperty.call(changes, "sweepTrack")
+        ? (sweepTrack === "ATWP" ? "SW ATWP" : sweepTrack === "TK2" ? "SW2" : "SW")
+        : entry.inputValue;
+      return { ...entry, ...changes, sweepTrack, time, clearTime, signal, taName, text, remark, inputValue, isSweeping: true };
     }));
   }, []);
 

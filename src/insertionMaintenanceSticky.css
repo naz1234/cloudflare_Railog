@@ -1,23 +1,12 @@
-/* A tall request list must fit the viewport for sticky positioning to follow
-   both depot sections. Phone Requests view keeps its normal page scrolling. */
+/* Insertion Maintenance follows the main page, with the entire request list
+   in normal flow. Phone Requests view keeps its existing layout and scrolling. */
 @media (min-width: 768px) {
   .theme-insertion-page > .grid > .insertion-maintenance-sidebar {
-    position: sticky;
-    top: 64px; /* 56px app header plus an 8px gap. */
+    position: static;
+    top: auto;
     align-self: start;
     min-height: 0;
-    max-height: calc(100vh - 72px);
-    max-height: calc(100dvh - 72px);
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    scrollbar-width: thin;
-    scrollbar-color: #426785 transparent;
-    border-radius: 12px;
-    scroll-padding-block: 8px;
+    max-height: none;
+    overflow: visible;
   }
-
-  .insertion-maintenance-sidebar::-webkit-scrollbar { width: 6px; }
-  .insertion-maintenance-sidebar::-webkit-scrollbar-thumb { background: #426785; border-radius: 999px; }
-  .insertion-maintenance-sidebar::-webkit-scrollbar-track { background: transparent; }
 }

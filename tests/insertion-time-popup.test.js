@@ -22,7 +22,7 @@ function callback(name) {
   assert.ok(start >= 0, `Missing callback ${name}`);
   return page.slice(start, page.indexOf(");", page.indexOf("  }, [", start)) + 2);
 }
-function createApi(initialLog = []) {
+function createApi(initialLog = [], currentTime = "08:42") {
   const state = { current: initialLog };
   const writes = {};
   const sandbox = {
@@ -33,7 +33,7 @@ function createApi(initialLog = []) {
     setPg2InsertionLog: (log) => { writes.rendered = log; },
     commitInsertionLiveSnapshot: (snapshot) => { writes.live = snapshot; },
     getDepotFromRoad: (road) => road.startsWith("WD") ? "west" : "east",
-    formatTime: () => "08:42",
+    formatTime: () => currentTime,
     getTidScheduledTime: () => { writes.timetableLookups = (writes.timetableLookups || 0) + 1; return "05:25"; },
   };
   vm.createContext(sandbox);
@@ -54,6 +54,116 @@ const normal = (depot = "west") => ({
   text: `05:25 hrs – T19 (TID 101) inserted from ${depot === "west" ? "WD-ST15" : "ED-ST03"} to mainline track ${depot === "west" ? 1 : 2}. TA Ali onboard.`,
 });
 const sweeping = () => ({ key: "ins-WD-ST13-0", trainKey: "T03", depot: "west", road: "WD-ST13", isSweeping: true, sweepTrack: "TK1", signal: "S101", time: "04:20", clearTime: "04:22", taName: "Zain" });
+
+test("East SW ATWP creates the requested sweeping destination and exact output, ignoring case and extra spaces", () => {
+  for (const input of ["sw atwp", "SW ATWP", "  sw   atwp  "]) {
+    const api = createApi([], "04:35");
+    api.handlePg2InsertionTick("ED-ST03", 0, "17", input);
+    const [entry] = api.state.current;
+    assert.equal(entry.sweepTrack, "ATWP");
+    assert.equal(entry.signal, "ATWP ED");
+    assert.equal(entry.depot, "east");
+    assert.equal(entry.isSweeping, true);
+    assert.equal(entry.remark, "SW ATWP");
+    assert.equal(entry.clearTime, "04:37");
+    const line = "04:35 hrs – T17 sweeping started from ED-ST03 to ATWP ED at 45 kph. Track confirmed clear at 04:37 hrs.";
+    assert.equal(entry.text, line);
+    assert.equal(api.buildSweepAnd3K1CopyText([entry], [], "East"), `Automatic Train Washing Plant Sweeping :\n${line}`);
+    assert.equal(JSON.parse(api.writes.stored)[0].sweepTrack, "ATWP");
+    assert.equal(api.writes.live.pg2InsertionLog[0].signal, "ATWP ED");
+  }
+});
+
+test("saved ATWP output drops signal in both display and copy without changing ordinary sweeping", () => {
+  const api = createApi([], "04:35");
+  api.handlePg2InsertionTick("ED-ST02", 0, "06", "SW ATWP");
+  const [entry] = api.state.current;
+  const legacy = { ...entry, text: entry.text.replace("to ATWP ED", "to signal ATWP ED") };
+  const originalText = legacy.text;
+  assert.equal(api.buildSweepAnd3K1CopyText([legacy], [], "East"), "Automatic Train Washing Plant Sweeping :\n04:35 hrs – T06 sweeping started from ED-ST02 to ATWP ED at 45 kph. Track confirmed clear at 04:37 hrs.");
+  assert.equal(legacy.text, originalText);
+  assert.match(output, /lines=\{atwpLines\}[^\n]+formatLine=\{getAtwpSweepingEntryText\}/);
+  const ordinary = { ...sweeping(), text: "04:20 hrs – T03 sweeping started from WD-ST13 to signal S101 at 45 kph. Track confirmed clear at 04:22 hrs." };
+  assert.match(api.buildSweepAnd3K1CopyText([ordinary], [], "West"), /to signal S101 at 45 kph/);
+});
+
+test("SW ATWP is unavailable in West and never creates a normal or sweeping entry there", () => {
+  const original = normal();
+  const api = createApi([original], "04:35");
+  api.handlePg2InsertionTick("WD-ST13", 1, "17", "sw atwp", "ATWP");
+  assert.equal(api.state.current.length, 1);
+  assert.equal(api.state.current[0], original);
+});
+
+test("ATWP times, TA name and undo remain editable and retain the East destination", () => {
+  const api = createApi([], "23:59");
+  api.handlePg2InsertionTick("ED-ST02", 0, "21", "sw atwp");
+  const key = api.state.current[0].key;
+  assert.equal(api.state.current[0].clearTime, "00:01");
+  api.handlePg2SweepUpdate(key, { time: "04:35" });
+  assert.equal(api.state.current[0].clearTime, "04:37");
+  api.handlePg2SweepUpdate(key, { clearTime: "04:40" });
+  api.handlePg2InsertionTaNameUpdate(key, "Ali");
+  const entry = api.state.current[0];
+  assert.equal(entry.sweepTrack, "ATWP");
+  assert.equal(entry.signal, "ATWP ED");
+  assert.match(entry.text, /from ED-ST02 to ATWP ED at 45 kph\. Track confirmed clear at 04:40 hrs\. TA Ali onboard\.$/);
+  assert.match(api.buildSweepAnd3K1CopyText([entry], [], "East"), /^Automatic Train Washing Plant Sweeping :\n04:35/);
+  api.handlePg2InsertionTick("ED-ST02", 0, "21", entry.inputValue);
+  assert.equal(api.state.current.length, 0);
+});
+
+test("East sweeping destination can switch between track and ATWP without stale signal or remark metadata", () => {
+  const api = createApi([], "04:35");
+  api.handlePg2InsertionTick("ED-ST03", 0, "17", "SW");
+  const key = api.state.current[0].key;
+  api.handlePg2SweepUpdate(key, { sweepTrack: "ATWP" });
+  assert.equal(api.state.current[0].signal, "ATWP ED");
+  assert.equal(api.state.current[0].inputValue, "SW ATWP");
+  api.handlePg2SweepUpdate(key, { sweepTrack: "TK2" });
+  assert.equal(api.state.current[0].signal, "S2208");
+  assert.equal(api.state.current[0].remark, "SW");
+  assert.equal(api.state.current[0].inputValue, "SW2");
+  assert.doesNotMatch(api.buildSweepAnd3K1CopyText(api.state.current, [], "East"), /Automatic Train Washing Plant/);
+  const west = createApi([sweeping()]);
+  west.handlePg2SweepUpdate(sweeping().key, { sweepTrack: "ATWP" });
+  assert.equal(west.state.current[0].signal, "S101");
+  assert.equal(west.state.current[0].sweepTrack, "TK1");
+});
+
+test("ordinary SW, SW1 and SW2 keep their original signals for both depots", () => {
+  for (const [road, signals] of [["WD-ST13", ["S101", "S101", "S102"]], ["ED-ST03", ["S2207", "S2207", "S2208"]]]) {
+    ["SW", "SW1", "SW2"].forEach((input, i) => {
+      const api = createApi([], "04:35");
+      api.handlePg2InsertionTick(road, 0, "17", input);
+      assert.equal(api.state.current[0].signal, signals[i]);
+      assert.equal(api.state.current[0].clearTime, "04:37");
+    });
+  }
+});
+
+test("mixed East special logs separate ordinary sweeping, ATWP sweeping and 3K1 without duplicate rows", () => {
+  const api = createApi([], "04:35");
+  api.handlePg2InsertionTick("ED-ST03", 0, "17", "sw atwp");
+  const atwp = api.state.current[0];
+  const track = { ...sweeping(), depot: "east", road: "ED-ST02", signal: "S2207" };
+  const threeK1 = { ...normal("east"), trainKey: "T32", tid: null, remark: "3K1" };
+  const text = api.buildSweepAnd3K1CopyText([track, atwp], [threeK1], "East");
+  assert.match(text, /^Sweeping train T03 from East Depot to S2207:/);
+  assert.match(text, /\n\nAutomatic Train Washing Plant Sweeping :\n04:35 hrs – T17/);
+  assert.match(text, /\n\nInsertion from East Depot for 3K1 Insertion:/);
+  assert.equal(text.split(atwp.text).length - 1, 1);
+});
+
+test("ATWP choice and shortcut help are exposed only in the East sweeping card", () => {
+  const start = page.indexOf('{key && inserted?.isSweeping && (');
+  const section = page.slice(start, page.indexOf('{key && (', start));
+  const atwpIndex = section.indexOf('<option value="ATWP"');
+  const westIndex = section.indexOf(') : (');
+  assert.ok(atwpIndex >= 0 && atwpIndex < westIndex);
+  assert.equal(section.match(/<option value="ATWP"/g)?.length, 1);
+  assert.match(page, /isManualInsertionActionRemark\(tidRemarkText, autoTidDepot\)/);
+});
 
 test("Insert without a Tracking ID records the current time in either depot and remains editable and undoable", () => {
   for (const [road, depot, track] of [["WD-ST14", "west", 1], ["ED-ST02", "east", 2]]) {

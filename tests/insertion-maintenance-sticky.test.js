@@ -9,7 +9,7 @@ const mobile = readFileSync(new URL('../src/mobileWorkspaces.css', import.meta.u
 const start = page.indexOf('function InsertionTabContent');
 const insertion = page.slice(start, page.indexOf('// ── Train Movement Internal Page', start));
 
-test('Insertion uses a viewport-bounded sticky Maintenance sidebar without clipping fixed-width contents', () => {
+test('Insertion Maintenance uses the main page scroll without a viewport height limit or nested scrollbar', () => {
   assert.match(page, /import "\.\.\/insertionMaintenanceSticky\.css"/);
   assert.match(insertion, /className="insertion-maintenance-sidebar sticky top-1 self-start"/);
   assert.match(insertion, /<MaintenancePanelShell\s+fullWidth\s+requests=\{maintenanceRequests\}/);
@@ -17,14 +17,16 @@ test('Insertion uses a viewport-bounded sticky Maintenance sidebar without clipp
   const rule = root.nodes.find(node => node.type === 'atrule').nodes.find(node => node.type === 'rule');
   assert.equal(rule.selector, '.theme-insertion-page > .grid > .insertion-maintenance-sidebar');
   const values = prop => rule.nodes.filter(node => node.prop === prop).map(node => node.value);
-  assert.deepEqual(values('position'), ['sticky']);
-  assert.deepEqual(values('top'), ['64px']);
-  assert.deepEqual(values('max-height'), ['calc(100vh - 72px)', 'calc(100dvh - 72px)']);
-  assert.deepEqual(values('overflow-y'), ['auto']);
-  assert.deepEqual(values('overscroll-behavior-y'), ['contain']);
+  assert.deepEqual(values('position'), ['static']);
+  assert.deepEqual(values('top'), ['auto']);
+  assert.deepEqual(values('max-height'), ['none']);
+  assert.deepEqual(values('overflow'), ['visible']);
+  assert.deepEqual(values('overflow-y'), []);
+  assert.deepEqual(values('overscroll-behavior-y'), []);
+  assert.doesNotMatch(css, /scrollbar|100(?:d)?vh|position:\s*sticky/);
 });
 
-test('sticky bounds apply in both desktop themes and leave the mobile Requests view unchanged', () => {
+test('main-page scrolling applies in both desktop themes and preserves the mobile Requests view selector', () => {
   const root = postcss.parse(css);
   root.walkRules(rule => {
     assert.equal(rule.parent.type, 'atrule');
@@ -35,4 +37,6 @@ test('sticky bounds apply in both desktop themes and leave the mobile Requests v
   assert.doesNotMatch(css, /data-app-theme|position:\s*fixed|transform:|!important/);
   assert.match(mobile, /@media \(max-width: 767px\)/);
   assert.match(mobile, /\.theme-insertion-page > \.grid > \.sticky \{ position: static; width: 100%; \}/);
+  // The legacy class is still used by mobile navigation to show/hide Requests.
+  assert.match(mobile, /:not\(\[data-mobile-workspace-view="requests"\]\) \.theme-insertion-page > \.grid > \.sticky/);
 });

@@ -18,6 +18,12 @@ function isSweepingLine(line = {}) {
   return Boolean(line?.isSweeping);
 }
 
+function isAtwpSweepingLine(line = {}) {
+  return isSweepingLine(line) && line.depot === "east" && (
+    line.sweepTrack === "ATWP" || (!line.sweepTrack && line.signal === "ATWP ED")
+  );
+}
+
 function is3K1InsertionLine(line = {}) {
   if (isSweepingLine(line)) return false;
   const value = String(line?.remark || line?.inputValue || "")
@@ -61,6 +67,16 @@ function buildSweepingCopyText(lines, depotLabel) {
   return [header, "", ...lines.map((line) => line.text)].join("\n");
 }
 
+function getAtwpSweepingEntryText(line = {}) {
+  // Keep previously saved ATWP entries consistent without changing their data.
+  return String(line.text || "").replace(/\bto signal ATWP ED\b/g, "to ATWP ED");
+}
+
+function buildAtwpSweepingCopyText(lines) {
+  if (lines.length === 0) return "";
+  return ["Automatic Train Washing Plant Sweeping :", ...lines.map(getAtwpSweepingEntryText)].join("\n");
+}
+
 function getEntryTime(line = {}) {
   const savedTime = String(line?.time || "").trim();
   if (savedTime) return savedTime;
@@ -96,8 +112,11 @@ function build3K1InsertionCopyText(lines, depotLabel) {
 }
 
 function buildSweepAnd3K1CopyText(sweepingLines, threeK1Lines, depotLabel) {
+  const atwpLines = sweepingLines.filter(isAtwpSweepingLine);
+  const trackSweepingLines = sweepingLines.filter((line) => !isAtwpSweepingLine(line));
   return [
-    buildSweepingCopyText(sweepingLines, depotLabel),
+    buildSweepingCopyText(trackSweepingLines, depotLabel),
+    buildAtwpSweepingCopyText(atwpLines),
     build3K1InsertionCopyText(threeK1Lines, depotLabel),
   ].filter(Boolean).join("\n\n");
 }
@@ -236,7 +255,8 @@ function ClearDepotButton({ depotCode, disabled, onClear }) {
 
 function LogEntryGroup({ text, lines, onTimeUpdate, onSweepUpdate, onTaNameUpdate, formatLine = (line) => line.text }) {
   if (!text) return null;
-  const header = text.slice(0, text.indexOf("\n\n"));
+  const headerBreak = text.indexOf("\n\n");
+  const header = text.slice(0, headerBreak >= 0 ? headerBreak : text.indexOf("\n"));
   return (
     <div className="insertion-clean-entry-group">
       <div className="insertion-clean-pre">{header}</div>
@@ -270,6 +290,8 @@ function SectionTextBlock({ title, text, emptyText, tone = "insertion", children
 
 function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot, onTimeUpdate, onSweepUpdate, onTaNameUpdate }) {
   const sweepingLines = lines.filter(isSweepingLine);
+  const atwpLines = sweepingLines.filter(isAtwpSweepingLine);
+  const trackSweepingLines = sweepingLines.filter((line) => !isAtwpSweepingLine(line));
   const threeK1Lines = lines.filter(is3K1InsertionLine);
   const normalLines = lines.filter((line) => !isSweepingLine(line) && !is3K1InsertionLine(line));
   const normalText = buildNormalInsertionCopyText(normalLines, depotLabel);
@@ -323,7 +345,8 @@ function DepotLogCard({ depotLabel, lines = [], depot, onClearDepot, onTimeUpdat
               <LogEntryGroup text={normalText} lines={normalLines} onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} onTaNameUpdate={onTaNameUpdate} />
             </SectionTextBlock>
             <SectionTextBlock title="Sweep + 3K1" text={sweepAnd3K1Text} emptyText="No Sweep or 3K1 entries." tone="special">
-              <LogEntryGroup text={buildSweepingCopyText(sweepingLines, depotLabel)} lines={sweepingLines} onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} onTaNameUpdate={onTaNameUpdate} />
+              <LogEntryGroup text={buildSweepingCopyText(trackSweepingLines, depotLabel)} lines={trackSweepingLines} onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} onTaNameUpdate={onTaNameUpdate} />
+              <LogEntryGroup text={buildAtwpSweepingCopyText(atwpLines)} lines={atwpLines} onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} onTaNameUpdate={onTaNameUpdate} formatLine={getAtwpSweepingEntryText} />
               <LogEntryGroup text={build3K1InsertionCopyText(threeK1Lines, depotLabel)} lines={threeK1Lines} onTimeUpdate={onTimeUpdate} onSweepUpdate={onSweepUpdate} onTaNameUpdate={onTaNameUpdate} formatLine={(line) => get3K1InsertionEntryText(line, depotLabel)} />
             </SectionTextBlock>
           </>
