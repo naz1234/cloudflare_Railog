@@ -17,14 +17,14 @@ function table(group) {
   const body = Array.from({ length: Math.max(18, Math.min(19, group.rows.length + 1)) }, (_, i) => {
     const row = group.rows[i];
     const depot = row?.depot === 'west' ? 'WD' : row?.depot === 'east' ? 'ED' : '';
-    const values = row ? [group.offset + i + 1, row.trainNumber, formatWashTime(row.nextWash), row.location, row.completed ? 'DONE' : '', row.hvac, [row.washType, depot].filter(Boolean).join(' / ')] : [group.offset + i + 1, '', '', '', '', '', ''];
+    const values = row ? [group.offset + i + 1, row.trainNumber, formatWashTime(row.nextWash), row.location, row.completed ? 'DONE' : '', row.hvac === 'ON' ? 'ON' : '', [row.washType, depot].filter(Boolean).join(' / ')] : [group.offset + i + 1, '', '', '', '', '', ''];
     return `<w:tr><w:trPr><w:cantSplit/><w:trHeight w:val="270" w:hRule="atLeast"/></w:trPr>${values.map((value, index) => cell(value, widths[index])).join('')}</w:tr>`;
   }).join('');
   return `<w:tbl><w:tblPr><w:tblW w:w="10466" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${borders}</w:tblBorders><w:tblCellMar><w:top w:w="25" w:type="dxa"/><w:bottom w:w="25" w:type="dxa"/><w:left w:w="55" w:type="dxa"/><w:right w:w="55" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${widths.map((width) => `<w:gridCol w:w="${width}"/>`).join('')}</w:tblGrid>${heading}${columnRow}${body}</w:tbl>`;
 }
 
 export function buildWsh2Docx(rows, { depotLabel = 'West and East Depot', dcMark = '' } = {}) {
-  if (!rows.length) throw new Error('Choose at least one wash date to print.');
+  if (!rows.length) throw new Error('Upload at least one wash entry to print.');
   const sections = groupWashRows(rows).flatMap((group) => {
     const result = [];
     for (let i = 0; i < group.rows.length; i += 19) result.push({ date: group.date, rows: group.rows.slice(i, i + 19), offset: i, continued: i > 0 });
