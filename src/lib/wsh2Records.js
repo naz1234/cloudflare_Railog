@@ -2,6 +2,7 @@
 export const WSH2_MAX_FILE_BYTES = 5 * 1024 * 1024;
 export const WSH2_MAX_ROWS = 500;
 export const WSH2_FIELDS = ['location', 'completed', 'hvac', 'washType', 'depot'];
+export const WSH2_LOCATIONS = ['OPE', 'MAINT'];
 
 export function washRecordId(trainNumber, date) {
   return `${date}_${trainNumber}`;
@@ -33,9 +34,9 @@ export function validateWashChanges(changes) {
   const keys = Object.keys(changes);
   if (!keys.length || keys.some((key) => !WSH2_FIELDS.includes(key))) throw new Error('Only checklist fields can be updated.');
   if ('completed' in changes && typeof changes.completed !== 'boolean') throw new Error('Completed must be true or false.');
-  if ('location' in changes && (typeof changes.location !== 'string' || changes.location.length > 40)) throw new Error('Location must be 40 characters or fewer.');
-  for (const [key, values] of Object.entries({ hvac: ['', 'ON', 'OFF'], washType: ['', 'Partial', 'Full'], depot: ['', 'west', 'east'] })) {
+  if ('location' in changes && (typeof changes.location !== 'string' || !WSH2_LOCATIONS.includes(changes.location.trim().toUpperCase()))) throw new Error('Choose OPE or MAINT for Location.');
+  for (const [key, values] of Object.entries({ hvac: ['', 'ON'], washType: ['', 'Partial', 'Full'], depot: ['', 'west', 'east'] })) {
     if (key in changes && !values.includes(changes[key])) throw new Error(`Invalid ${key} option.`);
   }
-  return { ...changes, ...('location' in changes ? { location: changes.location.trim() } : {}) };
+  return { ...changes, ...('location' in changes ? { location: changes.location.trim().toUpperCase() } : {}) };
 }

@@ -5,7 +5,7 @@ const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Cont
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers });
 const rowColumns = `id, train_number AS trainNumber, next_wash AS nextWash, scheduled_date AS date,
   source_location AS sourceLocation, last_wash AS lastWash, location, completed, hvac, wash_type AS washType,
-  depot, revision, completed_at AS completedAt, updated_at AS updatedAt, updated_by AS updatedBy`;
+  depot, source_upload_id AS sourceUploadId, revision, completed_at AS completedAt, updated_at AS updatedAt, updated_by AS updatedBy`;
 const hydrate = (row) => row ? { ...row, completed: Boolean(row.completed) } : null;
 const readRow = async (db, id) => hydrate(await db.prepare(`SELECT ${rowColumns} FROM wsh2_washes WHERE id = ?`).bind(id).first());
 
@@ -38,7 +38,7 @@ export async function onRequest({ request, env, data }) {
       ? `member:${session.memberHash}` : '');
   if (!actor) return json({ error: 'Sign in to access WSH2.' }, 401);
   if (!env.DB || !env.WSH2_FILES) return json({ error: 'WSH2 needs the DB (D1) and WSH2_FILES (R2) bindings.' }, 503);
-  if (!['GET', 'POST', 'PATCH'].includes(request.method)) return json({ error: 'Method not allowed.' }, 405);
+  if (!['GET', 'POST', 'PATCH', 'DELETE'].includes(request.method)) return json({ error: 'Method not allowed.' }, 405);
   const url = new URL(request.url);
   if (request.method !== 'GET' && request.headers.get('Origin') !== url.origin) return json({ error: 'Cross-site requests are not allowed.' }, 403);
 
@@ -58,10 +58,32 @@ export async function onRequest({ request, env, data }) {
       }
       const [rows, uploads] = await env.DB.batch([
         env.DB.prepare(`SELECT ${rowColumns} FROM wsh2_washes ORDER BY next_wash, train_number LIMIT 10001`),
-        env.DB.prepare('SELECT id, file_name AS fileName, row_count AS rowCount, date_from AS dateFrom, date_to AS dateTo, uploaded_at AS uploadedAt FROM wsh2_uploads ORDER BY uploaded_at DESC LIMIT 100'),
+        env.DB.prepare(`SELECT id, file_name AS fileName, row_count AS rowCount, date_from AS dateFrom, date_to AS dateTo, uploaded_at AS uploadedAt,
+          (SELECT COUNT(*) FROM wsh2_washes WHERE source_upload_id = wsh2_uploads.id) AS currentRowCount
+          FROM wsh2_uploads ORDER BY uploaded_at DESC, id`),
       ]);
       if (rows.results.length > 10000) return json({ error: 'WSH2 has reached its 10,000-row display limit. Contact the administrator to archive older schedules.' }, 409);
       return json({ rows: rows.results.map(hydrate), uploads: uploads.results, serverTime: new Date().toISOString() });
+    }
+
+    if (request.method === 'DELETE') {
+      let body;
+      try { body = JSON.parse(new TextDecoder().decode(await boundedBody(request, 1024))); } catch { return json({ error: 'Invalid delete request.' }, 400); }
+      if (!body || typeof body.uploadId !== 'string' || !/^[a-f0-9-]{36}$/i.test(body.uploadId) || body.confirm !== true) {
+        return json({ error: 'Choose an uploaded Excel file and confirm its deletion.' }, 400);
+      }
+      const upload = await env.DB.prepare('SELECT object_key FROM wsh2_uploads WHERE id = ?').bind(body.uploadId).first();
+      // Idempotent retry if another laptop already deleted this upload.
+      if (!upload) return json({ deleted: true, uploadId: body.uploadId, removedRows: 0 });
+      // Delete the private original first. If R2 fails, all D1 data stays intact.
+      // If the D1 transaction fails, the upload record stays available for retry;
+      // deleting an already-missing R2 object is safe. Never accept an object key from the client.
+      await env.WSH2_FILES.delete(upload.object_key);
+      const results = await env.DB.batch([
+        env.DB.prepare('DELETE FROM wsh2_washes WHERE source_upload_id = ?').bind(body.uploadId),
+        env.DB.prepare('DELETE FROM wsh2_uploads WHERE id = ?').bind(body.uploadId),
+      ]);
+      return json({ deleted: true, uploadId: body.uploadId, removedRows: results[0].meta.changes });
     }
 
     if (request.method === 'PATCH') {

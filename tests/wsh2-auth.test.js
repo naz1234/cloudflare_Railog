@@ -93,9 +93,12 @@ test('WSH2 does not trust forged identity headers, a missing cookie or an unreco
   assert.equal(f.reads(), 0);
 });
 
-test('a verified code-only session still cannot submit a cross-site wash update', async () => {
+test('a verified code-only session still cannot submit a cross-site wash update or deletion', async () => {
   const f = await fixture();
-  const { response } = await f.call({ method: 'PATCH', headers: { Origin: 'https://attacker.example' } });
-  assert.equal(response.status, 403);
+  for (const method of ['PATCH', 'DELETE']) {
+    const { response } = await f.call({ method, headers: { Origin: 'https://attacker.example' } });
+    assert.equal(response.status, 403);
+    assert.equal((await f.call({ method, cookie: '', headers: { Origin: origin } })).response.status, 401);
+  }
   assert.equal(f.reads(), 0);
 });
