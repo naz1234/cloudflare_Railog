@@ -83,14 +83,35 @@ test("Insertion reuses shared stabling locations for request status", () => {
   assert.match(insertionComponent, /stabledTrainLocations=\{stabledTrainLocations\}/);
 });
 
-test("Insertion hides the CMMS Excel and Train Request image import tools only", () => {
+test("Insertion enables the same CMMS Excel and Train Request image import tools as Train Request", () => {
   assert.match(maintenancePanelSource, /showImportTools = true/);
   assert.match(
     maintenancePanelSource,
     /\{showImportTools && \([\s\S]*data-testid="cmms-wash-review-card"[\s\S]*<MaintenanceImageSummary requests=\{requests\} onAdd=\{onAdd\}[^>]*\/>[\s\S]*\)\}/,
   );
-  assert.match(insertionComponent, /showImportTools=\{false\}/);
+  assert.doesNotMatch(insertionComponent, /showImportTools=\{false\}/);
   assert.doesNotMatch(stablingTabRender, /showImportTools=\{false\}/);
+});
+
+test("Insertion receives the same live removal and off-peak references as Train Request", () => {
+  for (const [prop, value] of [["westRemovalRows", "westRemovalInfoRows"], ["eastRemovalRows", "eastRemovalInfoRows"], ["offPeakRows", "offPeakInfoRows"]]) {
+    assert.ok(stablingTabRender.includes(`${prop}={${value}}`));
+    assert.ok(insertionTabRender.includes(`${prop}={${value}}`));
+    assert.ok(insertionComponent.includes(`${prop} = []`));
+    assert.ok(insertionComponent.includes(`${prop}={${prop}}`));
+  }
+});
+
+test("Insertion request hover and keyboard focus can connect to cards in either depot", () => {
+  const cell = depotStablingSource.slice(depotStablingSource.indexOf("function InsertionCell"), depotStablingSource.indexOf("function InsertionStablingSection"));
+  assert.match(insertionComponent, /<div data-stabling-workspace className="theme-insertion-page/);
+  assert.match(cell, /data-stabling-train=\{key \|\| undefined\}/);
+  assert.match(cell, /data-stabling-depot=\{autoTidDepot\}/);
+  assert.match(cell, /data-stabling-road=\{road\}/);
+  assert.match(cell, /data-stabling-block=\{bi\}/);
+  // Keep the existing tracking-ID drop hooks on the same card.
+  assert.match(cell, /data-insertion-drop-target="true"/);
+  assert.match(cell, /data-insertion-drop-depot=\{autoTidDepot\}/);
 });
 
 test("Insertion keeps Maintenance directly beside the actual depot content width", () => {

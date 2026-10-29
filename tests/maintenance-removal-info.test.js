@@ -79,12 +79,12 @@ test("West stabling with a confirmed tick hides information even when removal ro
   assert.match(row, /<DeleteRequestButton/);
 });
 
-test("only the main Train Request sidebar receives separately filtered active West and East removal data", () => {
+test("Train Request and Insertion sidebars receive the same separately filtered active West and East removal data", () => {
   assert.match(page, /trainRemCheckState, "west", activeTimetable, \{ includeScheduleTiming: true \}/);
   assert.match(page, /trainRemCheckState, "east", activeTimetable, \{ includeScheduleTiming: true \}/);
   assert.match(page, /\[trainRemCheckState, activeTimetable\],/);
-  assert.equal((page.match(/westRemovalRows=\{westRemovalInfoRows\}/g) || []).length, 1);
-  assert.equal((page.match(/eastRemovalRows=\{eastRemovalInfoRows\}/g) || []).length, 1);
+  assert.equal((page.match(/westRemovalRows=\{westRemovalInfoRows\}/g) || []).length, 2);
+  assert.equal((page.match(/eastRemovalRows=\{eastRemovalInfoRows\}/g) || []).length, 2);
   assert.match(panel, /westRemovalRows = \[\]/);
   assert.match(panel, /eastRemovalRows = \[\]/);
   assert.match(panel, /buildRemovalInfoByTrain\(westRemovalRows\)/);

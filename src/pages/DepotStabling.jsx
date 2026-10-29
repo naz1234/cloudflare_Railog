@@ -70,6 +70,7 @@ import { usePstFldcVerification } from "../hooks/usePstFldcVerification";
 import PstExcelFormatLogPanel from "../components/PstExcelFormatLogPanel";
 import "../apuMismatchChecklist.css";
 import "../pstDepotDivider.css";
+import "../insertionMaintenanceSticky.css";
 import { buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionEntryPendingStatus, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "../lib/possessionAccessLog";
 import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, getHdwCurrentTime, getHdwRunningInMlCount, clearHdwRows } from "../lib/trainRemHdw40";
@@ -6498,6 +6499,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         data-insertion-drop-depot={autoTidDepot}
         data-insertion-drop-road={road}
         data-insertion-drop-bi={bi}
+        data-stabling-train={key || undefined}
+        data-stabling-depot={autoTidDepot}
+        data-stabling-road={road}
+        data-stabling-block={bi}
         className={`theme-stabling-train-card theme-insertion-card is-req-layout ${key ? "has-train" : "is-empty"} ${primaryInsertionRequest ? "has-request" : ""} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted has-refresh-control" : ""} ${canInsertWithoutTrackingId ? "has-insert-control" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${insertedTrackingReferenceStyle ? "has-tracking-reference" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${isSearchMatch ? "is-search-match" : ""} ${isTidDragActive ? "is-tid-drag-active" : ""} ${isTidDropHovered ? "is-tid-drop-hovered" : ""} relative flex h-full flex-col items-center justify-start gap-1 overflow-hidden rounded-xl text-center transition-all duration-150`}
         style={{
           minHeight: ownInsertionCardMinHeight,
@@ -10165,6 +10170,9 @@ function InsertionTabContent({
   onDeleteMaintenanceRequestGroup,
   stabledTrainIds = [],
   stabledTrainLocations = {},
+  westRemovalRows = [],
+  eastRemovalRows = [],
+  offPeakRows = [],
 }) {
   const [tidDragState, setTidDragState] = useState(null);
   const [tidDragPoint, setTidDragPoint] = useState({ x: 0, y: 0 });
@@ -10353,7 +10361,7 @@ function InsertionTabContent({
   ];
 
   return (
-    <div className="theme-insertion-page flex flex-col gap-5">
+    <div data-stabling-workspace className="theme-insertion-page flex flex-col gap-5">
       <style>{`
         @keyframes insertionTidDragLift {
           from { opacity: 0; transform: translateY(5px) scale(0.94) rotate(-1deg); }
@@ -10416,7 +10424,7 @@ function InsertionTabContent({
         className="grid min-w-0 items-start gap-2"
         style={{ gridTemplateColumns: "max-content 276px" }}
       >
-        <div className="min-w-0 space-y-6">
+        <div className="insertion-depot-workspace flex min-w-0 flex-col gap-6">
         <div data-mobile-depot="west" className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
           <div className="self-start space-y-3">
             <TIDReferenceTable
@@ -10466,6 +10474,10 @@ function InsertionTabContent({
               />
             </div>
           </div>
+        </div>
+
+        <div className="pst-depot-divider" role="separator" aria-orientation="horizontal" aria-label="West and East Depot section divider">
+          <span>EAST DEPOT</span>
         </div>
 
         <div data-mobile-depot="east" className="grid gap-5 items-start" style={{ gridTemplateColumns: "auto minmax(0, 1fr)" }}>
@@ -10521,17 +10533,20 @@ function InsertionTabContent({
         </div>
         </div>
 
-        <div className="sticky top-1 self-start">
+        <div className="insertion-maintenance-sidebar sticky top-1 self-start">
           <MaintenancePanelShell
+            fullWidth
             requests={maintenanceRequests}
             onAdd={onAddMaintenanceRequest}
             onRemove={onRemoveMaintenanceRequest}
             onRenameGroup={onRenameMaintenanceRequestGroup}
             onToggleGroupHidden={onToggleMaintenanceRequestGroupHidden}
             onDeleteGroup={onDeleteMaintenanceRequestGroup}
-            showImportTools={false}
             stabledTrainIds={stabledTrainIds}
             stabledTrainLocations={stabledTrainLocations}
+            westRemovalRows={westRemovalRows}
+            eastRemovalRows={eastRemovalRows}
+            offPeakRows={offPeakRows}
           />
         </div>
       </div>
@@ -22869,6 +22884,9 @@ export default function DepotStablingPage() {
             onDeleteMaintenanceRequestGroup={handleDeleteRequestGroup}
             stabledTrainIds={Array.from(westStablingKeys)}
             stabledTrainLocations={getMainStablingLocations(westData, eastData)}
+            westRemovalRows={westRemovalInfoRows}
+            eastRemovalRows={eastRemovalInfoRows}
+            offPeakRows={offPeakInfoRows}
           />
         )}
 
