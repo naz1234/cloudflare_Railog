@@ -17,6 +17,13 @@
     background: linear-gradient(90deg, transparent, var(--pst-divider-line));
   }
   .pst-depot-divider::after { transform: scaleX(-1); }
+  /* Keep PST strokes visible when browser zoom rounds a 1px line below a
+     physical pixel. Insertion retains its existing divider thickness. */
+  .mobile-pst-workspace > .pst-depot-divider::before,
+  .mobile-pst-workspace > .pst-depot-divider::after {
+    display: block; flex: 1 0 0;
+    height: 2px; min-height: 2px;
+  }
   .pst-depot-divider > span {
     flex-shrink: 0; border: 1px solid var(--pst-divider-line); border-radius: 6px;
     padding: 4px 12px; color: var(--pst-divider-label); background: var(--pst-divider-surface);
