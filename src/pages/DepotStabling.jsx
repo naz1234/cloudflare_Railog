@@ -5,6 +5,8 @@ import { base44 } from "@/api/base44Client";
 import { CheckCircle2, FileSpreadsheet, FileText, FileDown, Loader2, Upload, X, Bookmark, ChevronDown, ChevronRight, ExternalLink, Pencil, Plus, Trash2, Copy, ClipboardCheck, Shield, Wind, Undo2, Redo2, Download, Search, ArrowUp, ArrowDown, ArrowRight, Check, Sun, Moon, TrainFront, Clock3, RefreshCw, TriangleAlert, UsersRound, Layers, BarChart3 } from "lucide-react";
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
+import Wsh2Workspace from "../components/Wsh2Workspace";
+import Wsh2ProtectedPage from "../components/Wsh2ProtectedPage";
 import OdoReading from "../components/OdoReading";
 import TIDReferenceTable, { getTidReferenceRemark } from "../components/TIDReferenceTable";
 import ActionTooltip from "../components/ActionTooltip";
@@ -1915,7 +1917,7 @@ const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
 const OVT_SESSION_KEY = "ovtOvertimeUnlocked_v1";
 const ODO_SESSION_KEY = "odoReadingUnlocked_v1";
 const PROTECTED_SHORTCUTS_SESSION_KEY = "protectedShortcutsUnlocked_v1";
-const PROTECTED_SHORTCUT_KEYS = new Set(["odo", "alarm", "overtime", "checklist", "admin", "about", "ats"]);
+const PROTECTED_SHORTCUT_KEYS = new Set(["odo", "wsh2", "alarm", "overtime", "checklist", "admin", "about", "ats"]);
 const ADM_LOGIN_ID = "admin";
 const ADM_LOGIN_PASSWORD = "921016";
 const ADMIN_NOTES_STORAGE_KEY = "admModernNotes_v1";
@@ -17970,6 +17972,7 @@ export default function DepotStablingPage() {
   useEffect(() => { saveWestInsertionTimeOffset(westInsertionTimeOffsetMinutes); }, [westInsertionTimeOffsetMinutes]);
 
   const getTabFromPath = (path) => {
+    if (path === "/wsh2") return "wsh2";
     if (path === "/train-washing") return "washing";
     if (path === "/train-movement") return "movement";
     if (path === "/pst-train-prep") return "pst";
@@ -22215,7 +22218,7 @@ export default function DepotStablingPage() {
     <div
       className="app-shell min-h-screen font-inter bg-[#071828]"
       data-active-page={activeTab}
-      data-mobile-workspace-view={mobileWorkspaceViews[activeTab]}
+      data-mobile-workspace-view={activeTab === "wsh2" ? "checklist" : mobileWorkspaceViews[activeTab]}
       data-mobile-req-panel={mobileReqPanel}
       data-mobile-req-log-section={mobileReqLogSection}
       data-mobile-req-depot={mobileReqDepot}
@@ -22229,8 +22232,9 @@ export default function DepotStablingPage() {
         }
         : undefined}
     >
-      {["stabling", "movement", "pst", "insertion", "washing", "possession", "roster", "sleep"].includes(activeTab) && <ReqMobileNavigation
+      {["stabling", "movement", "pst", "insertion", "washing", "wsh2", "possession", "roster", "sleep"].includes(activeTab) && <ReqMobileNavigation
         activePage={activeTab}
+        protectedPagesUnlocked={areProtectedShortcutsUnlocked}
         workspaceView={mobileWorkspaceViews[activeTab]}
         onWorkspaceViewChange={(view) => { setMobileWorkspaceViews((current) => ({ ...current, [activeTab]: view })); window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }}
         panel={mobileReqPanel}
@@ -22455,6 +22459,9 @@ export default function DepotStablingPage() {
                   <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                 </svg>
               ),
+            },
+            {
+              key: "wsh2", label: "Wash Checklist", code: "WSH2", to: "/wsh2",
             },
             {
               key: "alarm",
@@ -22875,6 +22882,12 @@ export default function DepotStablingPage() {
             eastRemovalRows={eastRemovalInfoRows}
             offPeakRows={offPeakInfoRows}
           />
+        )}
+
+        {activeTab === "wsh2" && (
+          <Wsh2ProtectedPage unlocked={areProtectedShortcutsUnlocked} onUnlock={handleProtectedShortcutToggle}>
+            <Wsh2Workspace />
+          </Wsh2ProtectedPage>
         )}
 
         {activeTab === "washing" && (

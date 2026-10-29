@@ -26,6 +26,7 @@ const AuthenticatedApp = () => {
         <Route path="/pst-train-prep" element={<DepotStabling />} />
         <Route path="/insertion" element={<DepotStabling />} />
         <Route path="/train-washing" element={<DepotStabling />} />
+        <Route path="/wsh2" element={<DepotStabling />} />
         <Route path="/odo-reading" element={<DepotStabling />} />
         <Route path="/possession" element={<DepotStabling />} />
         <Route path="/alarm" element={<DepotStabling />} />
