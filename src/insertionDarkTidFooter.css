@@ -75,6 +75,22 @@ html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-foot
   -webkit-text-fill-color: #bae6fd !important;
 }
 
+/* Custom entries use a purple pill; the default Tracking ID prompt stays cyan. */
+html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-editing[data-has-custom-value="true"] {
+  background: #4c1d95 !important;
+  border-color: #a78bfa !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-editing[data-has-custom-value="true"]:focus-within {
+  border-color: #c4b5fd !important;
+  box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.18) !important;
+}
+
+html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer.is-editing[data-has-custom-value="true"] input.theme-insertion-tid-input {
+  color: #fde68a !important;
+  -webkit-text-fill-color: #fde68a !important;
+}
+
 html[data-app-theme="dark"] .theme-insertion-page .theme-insertion-tracking-footer input.theme-insertion-tid-input::placeholder {
   color: #bae6fd !important;
   -webkit-text-fill-color: #bae6fd !important;

@@ -1,0 +1,154 @@
+/* Match the desktop REQ slate panels without changing mobile or timetable states. */
+@media (min-width: 768px) {
+  html[data-app-theme] .theme-insertion-page {
+    --insertion-reference-panel: #0b1f33;
+    --insertion-reference-control: #10263b;
+    --insertion-reference-line: #2b4f6b;
+    --insertion-reference-text: #e1ecf5;
+    --insertion-reference-muted: #7dabc6;
+    --insertion-reference-active: #1b3c5c;
+    --insertion-reference-focus: #8bb5f6;
+    --insertion-reference-warning: #fde68a;
+    --insertion-reference-warning-bg: #49340f;
+  }
+  html[data-app-theme="light"] .theme-insertion-page {
+    --insertion-reference-panel: #edf2f7;
+    --insertion-reference-control: #ffffff;
+    --insertion-reference-line: #d7e2ee;
+    --insertion-reference-text: #0b2443;
+    --insertion-reference-muted: #4e7198;
+    --insertion-reference-active: #dbe8f7;
+    --insertion-reference-focus: #396cba;
+    --insertion-reference-warning: #854d0e;
+    --insertion-reference-warning-bg: #fef3c7;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference,
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-depot,
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard {
+    background: var(--insertion-reference-panel) !important;
+    border: 1px solid var(--insertion-reference-line) !important;
+    border-radius: 16px !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard {
+    padding: 10px;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard::before,
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard::after,
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__schedule-tab.is-active::after {
+    content: none;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__top {
+    min-height: 38px;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__clock-orb {
+    width: 30px; height: 30px; flex-basis: 30px; border-radius: 9px;
+    color: var(--insertion-reference-muted);
+    background: var(--insertion-reference-control);
+    border: 1px solid var(--insertion-reference-line);
+    box-shadow: none;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__clock-ring {
+    display: none;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__clock-orb svg {
+    filter: none;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__kicker,
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__date {
+    color: var(--insertion-reference-muted) !important; font-size: 9px; letter-spacing: 0; text-shadow: none;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__day {
+    color: var(--insertion-reference-text) !important; font-size: 14px; letter-spacing: 0; text-shadow: none;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__divider {
+    background: var(--insertion-reference-line); box-shadow: none;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__time {
+    color: var(--insertion-reference-text) !important; font-size: 22px; font-weight: 650;
+    letter-spacing: -.03em; text-shadow: none;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__sound-button {
+    min-height: 28px; padding: 3px 5px; gap: 4px; border-radius: 8px;
+    font-size: 10px !important; font-weight: 500; letter-spacing: 0; text-transform: none;
+    border-color: var(--insertion-reference-line) !important;
+    color: var(--insertion-reference-muted) !important;
+    background: var(--insertion-reference-control) !important;
+    box-shadow: none !important; transform: none;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__sound-button.is-enabled {
+    color: var(--insertion-reference-warning) !important; background: var(--insertion-reference-warning-bg) !important;
+    border-color: #b58128 !important; box-shadow: none !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__schedule {
+    border: 1px solid var(--insertion-reference-line) !important;
+    background: var(--insertion-reference-control) !important; box-shadow: none !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__schedule-tab {
+    min-height: 28px; font-size: 10px; font-weight: 500; letter-spacing: 0; text-transform: none;
+    color: var(--insertion-reference-muted) !important; background: transparent !important; text-shadow: none;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__schedule-tab.is-active {
+    color: var(--insertion-reference-text) !important; background: var(--insertion-reference-active) !important;
+    border-color: var(--insertion-reference-line) !important; box-shadow: none !important; text-shadow: none;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__schedule-tab.is-warning {
+    color: var(--insertion-reference-warning) !important; background: var(--insertion-reference-warning-bg) !important;
+    border-color: #b58128 !important; box-shadow: none !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__sound-button:focus-visible,
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-controls-only .insertion-dashboard__schedule-tab:focus-visible {
+    outline: 2px solid var(--insertion-reference-focus); outline-offset: -2px;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-depot .theme-insertion-reference-depot-header,
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-depot .theme-insertion-reference-table-header {
+    background: var(--insertion-reference-control) !important;
+    border-color: var(--insertion-reference-line) !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-depot .theme-insertion-reference-depot-header {
+    padding: 10px !important; gap: 6px !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-depot .theme-insertion-reference-depot-icon {
+    width: 28px !important; height: 28px !important; border-radius: 8px !important;
+    color: var(--insertion-reference-muted) !important;
+    background: var(--insertion-reference-panel) !important;
+    border-color: var(--insertion-reference-line) !important; box-shadow: none !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-depot .theme-insertion-reference-depot-title {
+    color: var(--insertion-reference-text) !important;
+    font-size: 13px !important; font-weight: 700 !important; line-height: 1.2 !important;
+    letter-spacing: 0 !important; text-transform: none !important; text-shadow: none !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-depot .theme-insertion-reference-depot-subtitle {
+    font-size: 9px !important; letter-spacing: 0 !important; text-shadow: none !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-depot .theme-insertion-reference-depot-chip:not(.is-override) {
+    color: var(--insertion-reference-muted) !important;
+    background: var(--insertion-reference-panel) !important;
+    border-color: var(--insertion-reference-line) !important;
+    font-size: 8.5px !important; letter-spacing: 0 !important; padding: 3px 6px !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-depot .theme-insertion-reference-summary {
+    padding: 8px !important; border-radius: 10px !important;
+    background: var(--insertion-reference-control) !important;
+    border-color: var(--insertion-reference-line) !important; box-shadow: none !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-depot .theme-insertion-reference-stat-value {
+    font-size: 16px !important; line-height: 18px !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-depot .theme-insertion-reference-stat-label {
+    font-size: 10px !important; letter-spacing: 0 !important; text-transform: none !important;
+    color: var(--insertion-reference-muted) !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-depot .theme-insertion-reference-progress {
+    height: 3px !important; background: var(--insertion-reference-line) !important; box-shadow: none !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-depot .theme-insertion-reference-progress-assigned {
+    box-shadow: none !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-reference-help {
+    font-size: 10px !important; color: var(--insertion-reference-muted) !important;
+    background: var(--insertion-reference-control) !important; border-color: var(--insertion-reference-line) !important;
+  }
+}

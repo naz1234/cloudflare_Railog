@@ -122,6 +122,15 @@ test("Insertion keeps Maintenance directly beside the actual depot content width
   assert.doesNotMatch(insertionComponent, /gridTemplateColumns: "minmax\(1230px, 1fr\) 276px"/);
 });
 
+test("both Insertion depot timetable gaps match the Maintenance gap on desktop without changing mobile spacing", () => {
+  for (const depot of ["west", "east"]) {
+    const classes = insertionComponent.match(new RegExp(`data-mobile-depot="${depot}" className="([^"]+)"`))?.[1].split(/\s+/);
+    assert.ok(classes?.includes("gap-5"), "preserve the existing phone gap");
+    assert.ok(classes?.includes("md:gap-2"), "match the outer gap-2 from 768px upward");
+  }
+  assert.match(insertionComponent, /className="grid min-w-0 items-start gap-2"/);
+});
+
 test("light mode matches dark-mode wrapper spacing without an outer surface", () => {
   const pageRule = lightModeFixStyles.match(
     /html\[data-app-theme="light"\] \.theme-insertion-page \{([^}]+)\}/,

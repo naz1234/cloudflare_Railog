@@ -153,14 +153,14 @@ test("INS operational remarks come from requests instead of the Tracking ID refe
 });
 
 test("INS puts a blank-TID Insert icon beside the train number and keeps Log Insertion for Sweep and 3K1", () => {
-  assert.match(pageSource, /function isManualInsertionActionRemark\(value\) \{\s*return isSweepRemark\(value\) \|\| getEastInsertionKeywordRemarkLabel\(value\) === "3K1"/);
+  assert.match(pageSource, /function isManualInsertionActionRemark\(value, depot = ""\) \{\s*return isSweepRemark\(value, depot\) \|\| getEastInsertionKeywordRemarkLabel\(value\) === "3K1"/);
   assert.match(insertionCellSource, /const canInsertWithoutTrackingId = Boolean\(key && !inserted && !tidRemarkText\)/);
   const insertIconIndex = insertionCellSource.indexOf('wrapperClassName="theme-insertion-card-refresh-trigger theme-insertion-card-insert-trigger"');
   const cardHeaderIndex = insertionCellSource.indexOf('className="theme-insertion-card-header');
   assert.ok(insertIconIndex >= 0 && insertIconIndex < cardHeaderIndex);
   assert.match(insertionCellSource, /\{canInsertWithoutTrackingId && \([\s\S]*onClick=\{handleInsertClick\}[\s\S]*<ArrowRight className="h-3 w-3" aria-hidden="true"/);
   assert.match(stylesheetSource, /\.theme-insertion-card\.has-insert-control \.theme-insertion-train-id \{\s*padding-right: 27px !important/);
-  assert.match(insertionCellSource, /const canLogManualInsertion = Boolean\([\s\S]*!canAutoInsertTid[\s\S]*isManualInsertionActionRemark\(tidRemarkText\)/);
+  assert.match(insertionCellSource, /const canLogManualInsertion = Boolean\([\s\S]*!canAutoInsertTid[\s\S]*isManualInsertionActionRemark\(tidRemarkText, autoTidDepot\)/);
   assert.match(insertionCellSource, /\{canLogManualInsertion && \([\s\S]*theme-insertion-insert-button[\s\S]*>\s*Log Insertion\s*</);
   assert.doesNotMatch(insertionCellSource, /\{tidRemarkText \? "Log Insertion" : "Insert"\}/);
   assert.match(insertionCellSource, /event\.key === "Enter" && !canAutoInsertTid && tidRemarkText/);
