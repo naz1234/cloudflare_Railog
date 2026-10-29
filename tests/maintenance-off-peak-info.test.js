@@ -62,9 +62,9 @@ test("off-peak icon follows current rows and clears when assignments or presets 
   assert.deepEqual([...buildOffPeakInfoByTrain([{ trainId: "32", tid: "238" }]).keys()], ["32"]);
 });
 
-test("main Train Request uses the existing active mainline selector, not missing stabling status", () => {
+test("Train Request and Insertion use the existing active mainline selector, not missing stabling status", () => {
   assert.match(page, /const offPeakInfoRows = useMemo\(\s*\(\) => collectTrainRemMainlineInServiceRows\(trainRemCheckState, activeTimetable\),\s*\[trainRemCheckState, activeTimetable\]/);
-  assert.equal((page.match(/offPeakRows=\{offPeakInfoRows\}/g) || []).length, 1);
+  assert.equal((page.match(/offPeakRows=\{offPeakInfoRows\}/g) || []).length, 2);
   assert.match(panel, /offPeakRows = \[\]/);
   assert.match(panel, /buildOffPeakInfoByTrain\(offPeakRows\)/);
   assert.match(panel, /offPeakInfoByTrain\.get\(normalizeTrainCompareKey\(req\.trainId\)\)/);
