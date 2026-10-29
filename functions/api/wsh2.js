@@ -29,8 +29,14 @@ async function boundedBody(request, maxBytes) {
 }
 
 export async function onRequest({ request, env, data }) {
-  const email = data?.authUser?.email || data?.accessUser?.email;
-  if (!email) return json({ error: 'Sign in to access WSH2.' }, 401);
+  // Only the root middleware supplies these verified identities. Code-only
+  // sessions intentionally have no email; audit their member identity instead.
+  // Never store a session token/token hash or accept identity from request input.
+  const session = data?.authUser;
+  const actor = session?.email || data?.accessUser?.email
+    || (/^[a-f0-9]{64}$/.test(session?.tokenHash || '') && /^[a-f0-9]{64}$/.test(session?.memberHash || '')
+      ? `member:${session.memberHash}` : '');
+  if (!actor) return json({ error: 'Sign in to access WSH2.' }, 401);
   if (!env.DB || !env.WSH2_FILES) return json({ error: 'WSH2 needs the DB (D1) and WSH2_FILES (R2) bindings.' }, 503);
   if (!['GET', 'POST', 'PATCH'].includes(request.method)) return json({ error: 'Method not allowed.' }, 405);
   const url = new URL(request.url);
@@ -70,7 +76,7 @@ export async function onRequest({ request, env, data }) {
       const values = keys.map((key) => key === 'completed' ? Number(changes[key]) : changes[key]);
       const now = new Date().toISOString();
       if ('completed' in changes) { sets.push('completed_at = ?'); values.push(changes.completed ? now : null); }
-      const result = await env.DB.prepare(`UPDATE wsh2_washes SET ${sets.join(', ')}, revision = revision + 1, updated_at = ?, updated_by = ? WHERE id = ? AND revision = ?`).bind(...values, now, email, body.id, body.revision).run();
+      const result = await env.DB.prepare(`UPDATE wsh2_washes SET ${sets.join(', ')}, revision = revision + 1, updated_at = ?, updated_by = ? WHERE id = ? AND revision = ?`).bind(...values, now, actor, body.id, body.revision).run();
       const row = await readRow(env.DB, body.id);
       if (!row) return json({ error: 'Wash entry not found. Refresh the schedule.' }, 404);
       if (!result.meta.changes) return json({ error: 'Another computer changed this train. The latest values are shown. Please check and try again.', row }, 409);
@@ -99,14 +105,14 @@ export async function onRequest({ request, env, data }) {
     try {
       await env.DB.batch([
         env.DB.prepare('INSERT INTO wsh2_uploads (id, sha256, file_name, object_key, row_count, date_from, date_to, uploaded_at, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-          .bind(id, sha256, filename, objectKey, parsed.rows.length, parsed.rows[0].date, parsed.rows.at(-1).date, now, email),
+          .bind(id, sha256, filename, objectKey, parsed.rows.length, parsed.rows[0].date, parsed.rows.at(-1).date, now, actor),
         ...parsed.rows.map((row) => env.DB.prepare(`INSERT INTO wsh2_washes
           (id, train_number, next_wash, scheduled_date, source_location, last_wash, source_upload_id, location, updated_at, updated_by)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(id) DO UPDATE SET next_wash = excluded.next_wash, source_location = excluded.source_location,
           last_wash = excluded.last_wash, source_upload_id = excluded.source_upload_id,
           revision = wsh2_washes.revision + 1, updated_at = excluded.updated_at, updated_by = excluded.updated_by`)
-          .bind(row.id, row.trainNumber, row.nextWash, row.date, row.sourceLocation, row.lastWash, id, row.sourceLocation, now, email)),
+          .bind(row.id, row.trainNumber, row.nextWash, row.date, row.sourceLocation, row.lastWash, id, row.sourceLocation, now, actor)),
       ]);
     } catch (error) {
       await env.WSH2_FILES.delete(objectKey).catch(() => {});
