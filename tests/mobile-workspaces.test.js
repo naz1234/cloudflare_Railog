@@ -240,6 +240,7 @@ for (const [page, title, activeView, expectedTabs] of [
   test(`${title} exposes its own phone navigation without REQ-only controls`, () => {
     const markup = renderToStaticMarkup(React.createElement(Navigation, {
       activePage: page, workspaceView: activeView, panel: "stabling", depot: "west",
+      protectedPagesUnlocked: page === "washing",
       depotCounts: { west: 24, east: 14 }, theme: "dark",
     }));
     assert.ok(markup.includes(`${title} sections`));

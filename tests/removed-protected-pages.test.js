@@ -22,7 +22,7 @@ test('retired ABT and CHK URLs resolve to the existing not-found route, not a wo
 test('the six remaining protected pages keep their shared lock and menu behavior', () => {
   const keys = [...page.match(/const PROTECTED_SHORTCUT_KEYS = new Set\(\[([^\]]+)\]\)/)[1].matchAll(/"([^"]+)"/g)]
     .map((match) => match[1]);
-  assert.deepEqual(keys, ['odo', 'wsh2', 'alarm', 'overtime', 'admin', 'ats']);
+  assert.deepEqual(keys, ['odo', 'washing', 'alarm', 'overtime', 'admin', 'ats']);
   for (const source of [page, mobile]) {
     assert.doesNotMatch(source, /key: "(?:about|checklist)"|code: "(?:ABT|CHK)"|AboutWorkspace|ChecklistWorkspace/);
   }
@@ -58,7 +58,7 @@ test('removing CHK does not remove PST/FLDC, APU or WSH2 checklist functionality
   assert.ok(existsSync(new URL('../src/apuMismatchChecklist.css', import.meta.url)));
   assert.match(app, /path="\/wsh2"/);
   assert.match(app, /path="\/pst-train-prep"/);
-  assert.match(page, /<Wsh2ProtectedPage unlocked=\{areProtectedShortcutsUnlocked\}/);
+  assert.match(page, /<WashingProtectedPage unlocked=\{areProtectedShortcutsUnlocked\}/);
   assert.match(page, /<Wsh2Workspace \/>/);
   assert.match(read('src/components/PstExcelFormatLogPanel.jsx'), /<PstFldcChecklist\b/);
   assert.ok(existsSync(new URL('../functions/api/wsh2.js', import.meta.url)));
