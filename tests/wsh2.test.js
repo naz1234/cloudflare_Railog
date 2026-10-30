@@ -85,7 +85,8 @@ test('WSH2 Word export matches paper columns and preserves every row in continua
   assert.match(xml, /AWP WASH CHECKLIST/);
   assert.doesNotMatch(xml, /WSH2 WASH CHECKLIST/);
   assert.match(xml, /F4C542/);
-  for (const header of ['Train Number', 'Next Wash', 'Location', 'DONE', 'HVAC', 'PARTIAL \/ FULL', 'WD or ED', 'DC MARK']) assert.match(xml, new RegExp(header));
+  for (const header of ['Train Number', 'Next Wash', 'Location', 'DONE', 'HVAC', 'PARTIAL \/ FULL', 'WD or ED']) assert.match(xml, new RegExp(header));
+  assert.doesNotMatch(xml, /DC MARK/);
   assert.match(xml, /Partial \/ ED/); assert.match(xml, /WD &amp; &lt;test&gt;/);
   assert.equal((xml.match(/L3-MV-/g) || []).length, 41);
   assert.equal((xml.match(/w:type="page"/g) || []).length, 1);

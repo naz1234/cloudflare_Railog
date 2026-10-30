@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Download, Droplets, FileSpreadsheet, Loader2, Printer, RefreshCw, Trash2, Upload } from 'lucide-react';
-import { formatWashDate, formatWashTime, groupWashRows, WSH2_LOCATIONS, WSH2_MAX_FILE_BYTES } from '../lib/wsh2Records.js';
+import { BarChart3, Check, Clock3, Download, Droplets, FileSpreadsheet, Loader2, Printer, RefreshCw, Trash2, Upload } from 'lucide-react';
+import { formatWashDate, formatWashTime, groupWashRows, selectWashPrintRows, summarizeWashRows, WSH2_LOCATIONS, WSH2_MAX_FILE_BYTES } from '../lib/wsh2Records.js';
+import Wsh2PrintDialog from './Wsh2PrintDialog.jsx';
 import '../wsh2.css';
 
 const API = `${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/wsh2`;
@@ -52,10 +53,11 @@ export default function Wsh2Workspace() {
   const [uploads, setUploads] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(null);
-  const [dcMark, setDcMark] = useState('');
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [printing, setPrinting] = useState(false);
+  const [printOpen, setPrintOpen] = useState(false);
+  const [printError, setPrintError] = useState('');
   const [pending, setPending] = useState(new Set());
   const [error, setError] = useState('');
   const [loadError, setLoadError] = useState('');
@@ -158,34 +160,53 @@ export default function Wsh2Workspace() {
   }
 
   const groups = useMemo(() => groupWashRows(rows), [rows]);
-  const doneCount = rows.filter((row) => row.completed).length;
+  const { completed: doneCount, remaining: remainingCount, progress: progressPercent } = summarizeWashRows(rows);
   const filesBusy = uploading || Boolean(deleting) || pending.size > 0;
 
-  async function printWord() {
-    setPrinting(true); setError('');
+  async function printWord(selectedIds) {
+    if (printing || filesBusy || syncFailed) return;
+    setPrinting(true); setPrintError('');
     try {
       const { buildWsh2Docx } = await import('../lib/wsh2Docx.js');
-      const bytes = buildWsh2Docx(rows, { dcMark, depotLabel: 'West and East Depot' });
+      if (fileMutation.current || pendingRef.current.size) throw new Error('Wait for shared updates to finish before printing.');
+      const selected = selectWashPrintRows(rowsRef.current, uploads, selectedIds);
+      const printGroups = groupWashRows(selected.rows);
+      const bytes = buildWsh2Docx(selected.rows, { depotLabel: 'West and East Depot', singlePage: true });
       const url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
-      const link = document.createElement('a'); link.href = url; link.download = `AWP-${groups[0].date}-to-${groups.at(-1).date}.docx`; link.click();
+      const link = document.createElement('a'); link.href = url; link.download = `AWP-${printGroups[0].date}-to-${printGroups.at(-1).date}.docx`; link.click();
       setTimeout(() => URL.revokeObjectURL(url), 60000);
-      setNotice('Word checklist downloaded. Open it in Word and print. It includes the dates and rows currently shown.');
-    } catch (failure) { setError(failure.message); } finally { setPrinting(false); }
+      setPrintOpen(false);
+      setNotice(`One-page Word checklist downloaded for ${selectedIds.length} selected Excel file${selectedIds.length === 1 ? '' : 's'}. Open it in Word and print.`);
+    } catch (failure) { setPrintError(failure.message); } finally { setPrinting(false); }
   }
 
   return <section className="wsh2-workspace" aria-label="AWP wash checklist">
-    <header className="wsh2-heading"><div className="wsh2-heading-title"><span className="wsh2-icon"><Droplets size={24} /></span><div><div className="wsh2-eyebrow">AWP</div><h1>Wash checklist</h1><p>Daily train washes, shared across depots.</p></div></div>
+    <header className="wsh2-heading">
+      <div className="wsh2-heading-title"><span className="wsh2-icon"><Droplets size={24} /></span><div><div className="wsh2-eyebrow">AWP</div><h1>Wash checklist</h1><p>Daily train washes, shared across depots.</p></div></div>
+      <div className="wsh2-header-stats" role="group" aria-label="Wash progress">
+        <div className="wsh2-stat is-complete">
+          <span className="wsh2-stat-icon" aria-hidden="true"><Check size={20} strokeWidth={3} /></span>
+          <div className="wsh2-stat-values"><strong>{doneCount}<span> / {rows.length}</span></strong><span>washes completed</span></div>
+        </div>
+        <div className="wsh2-stat is-progress">
+          <span className="wsh2-stat-icon" aria-hidden="true"><BarChart3 size={20} strokeWidth={3} /></span>
+          <div className="wsh2-stat-values"><strong>{progressPercent.toFixed(1)}%</strong><span>progress</span></div>
+        </div>
+        <div className="wsh2-stat is-remaining">
+          <span className="wsh2-stat-icon" aria-hidden="true"><Clock3 size={20} /></span>
+          <div className="wsh2-stat-values"><strong>{remainingCount}</strong><span>remaining</span></div>
+        </div>
+      </div>
       <div className="wsh2-actions"><input ref={fileInput} type="file" multiple accept=".xlsx" className="wsh2-file-input" aria-label="Upload wash Excel files" disabled={filesBusy} onChange={(event) => uploadFiles([...event.target.files])} />
         <button type="button" className="wsh2-primary" disabled={filesBusy} onClick={() => fileInput.current?.click()}>{uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}{uploading ? 'Importing…' : 'Upload Excel'}</button>
-        <button type="button" onClick={printWord} disabled={!rows.length || printing || filesBusy || syncFailed}>{printing ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}Print / Word</button>
+        <button type="button" onClick={() => { setPrintError(''); setPrintOpen(true); }} disabled={!rows.length || printing || filesBusy || syncFailed}>{printing ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}Print / Word</button>
         <button type="button" aria-label="Refresh shared wash checklist" title="Refresh shared wash checklist" onClick={refresh}><RefreshCw size={16} /></button>
       </div>
     </header>
-    <div className="wsh2-toolbar">
-      <div className="wsh2-count"><strong>{doneCount}<span> / {rows.length}</span></strong><span>washes completed</span></div>
-    </div>
+    {printOpen && <Wsh2PrintDialog rows={rows} uploads={uploads} busy={printing} blocked={filesBusy || syncFailed} error={printError} onClose={() => setPrintOpen(false)} onPrint={printWord} />}
     {(error || loadError) && <div role="alert" className="wsh2-message is-error">{error || loadError}<button type="button" onClick={() => { setError(''); setLoadError(''); refresh(); }}>Refresh</button></div>}
     {notice && <div role="status" className="wsh2-message">{notice}<button type="button" aria-label="Dismiss notice" onClick={() => setNotice('')}>×</button></div>}
+    <div className="wsh2-content-grid">
     <section className="wsh2-sources" aria-label="Uploaded Excel files"><header><h2><FileSpreadsheet size={16} />Uploaded Excel files <span>{uploads.length}</span></h2><p>All uploaded dates are shown below, shared by West and East.</p></header>
       {uploads.length ? <ul>{uploads.map((upload) => <li key={upload.id}><div className="wsh2-source-info"><strong>{upload.fileName}</strong><span>{formatWashDate(upload.dateFrom)}{upload.dateFrom !== upload.dateTo ? ` – ${formatWashDate(upload.dateTo)}` : ''} · {upload.currentRowCount === upload.rowCount ? `${upload.rowCount} trains` : `${upload.rowCount} imported · ${upload.currentRowCount} current rows`}</span>
         {confirmDelete === upload.id && <p className="wsh2-delete-warning" role="status">Delete this file and its {upload.currentRowCount} current rows, including completion ticks, for everyone? This cannot be undone. Other uploads are kept.</p>}</div>
@@ -194,12 +215,15 @@ export default function Wsh2Workspace() {
           {confirmDelete === upload.id && <button type="button" disabled={Boolean(deleting)} aria-label={`Cancel deleting ${upload.fileName}`} onClick={() => setConfirmDelete(null)}>Cancel</button>}</div>
       </li>)}</ul> : <p className="wsh2-no-sources">{loading ? 'Loading files…' : 'No Excel files uploaded yet.'}</p>}
     </section>
+    <div className="wsh2-checklist-panel">
     {loading ? <div className="wsh2-empty"><Loader2 size={25} className="animate-spin" /><p>Loading shared wash schedule…</p></div> : !rows.length ? <div className="wsh2-empty"><FileSpreadsheet size={34} /><h2>Upload your wash Excel files</h2><p>Import one or more reports with Train Number and Next Wash columns.<br />Uploading again preserves completed washes.</p></div> : <div className="wsh2-paper">
       {groups.map((group) => <section className="wsh2-date-group" key={group.date} aria-label={`Wash schedule ${formatWashDate(group.date)}`}><header><h2>{formatWashDate(group.date)}</h2><span>{group.rows.filter((row) => row.completed).length} of {group.rows.length} done</span></header>
-        <div className="wsh2-table-scroll" tabIndex={0} role="region" aria-label={`Wash table ${formatWashDate(group.date)}`}><table><colgroup><col style={{ width: '4%' }} /><col style={{ width: '16%' }} /><col style={{ width: '20%' }} /><col style={{ width: '12%' }} /><col style={{ width: '10%' }} /><col style={{ width: '9%' }} /><col style={{ width: '29%' }} /></colgroup><thead><tr><th scope="col">#</th><th scope="col">Train Number</th><th scope="col">Next Wash</th><th scope="col">Location</th><th scope="col">DONE</th><th scope="col">HVAC ON<span>Confirm after wash</span></th><th scope="col">PARTIAL / FULL <span>WD or ED</span></th></tr></thead><tbody>
+        <div className="wsh2-table-scroll" tabIndex={0} role="region" aria-label={`Wash table ${formatWashDate(group.date)}`}><table><colgroup><col style={{ width: '4%' }} /><col style={{ width: '12%' }} /><col style={{ width: '16%' }} /><col style={{ width: '14%' }} /><col style={{ width: '11%' }} /><col style={{ width: '11%' }} /><col style={{ width: '32%' }} /></colgroup><thead><tr><th scope="col">#</th><th scope="col">Train Number</th><th scope="col">Next Wash</th><th scope="col">Location</th><th scope="col">DONE</th><th scope="col">HVAC ON<span>Confirm after wash</span></th><th scope="col">PARTIAL / FULL <span>WD or ED</span></th></tr></thead><tbody>
           {group.rows.map((row, index) => <WashRow key={row.id} row={row} index={index} pending={pending.has(row.id) || uploading || Boolean(deleting)} onChange={(changes) => changeRow(row.id, changes)} />)}
         </tbody></table></div></section>)}
-      <footer className="wsh2-paper-footer"><span>Print / Word exports these {rows.length} rows in the paper layout.</span><label>DC MARK<input maxLength={60} placeholder="Name for print (optional)" value={dcMark} onChange={(event) => setDcMark(event.target.value)} /></label></footer>
+      <footer className="wsh2-paper-footer">Print / Word: choose up to two uploaded Excel files for a one-page checklist.</footer>
     </div>}
+    </div>
+    </div>
   </section>;
 }
