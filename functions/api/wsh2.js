@@ -36,8 +36,8 @@ export async function onRequest({ request, env, data }) {
   const actor = session?.email || data?.accessUser?.email
     || (/^[a-f0-9]{64}$/.test(session?.tokenHash || '') && /^[a-f0-9]{64}$/.test(session?.memberHash || '')
       ? `member:${session.memberHash}` : '');
-  if (!actor) return json({ error: 'Sign in to access WSH2.' }, 401);
-  if (!env.DB || !env.WSH2_FILES) return json({ error: 'WSH2 needs the DB (D1) and WSH2_FILES (R2) bindings.' }, 503);
+  if (!actor) return json({ error: 'Sign in to access AWP.' }, 401);
+  if (!env.DB || !env.WSH2_FILES) return json({ error: 'AWP needs the DB (D1) and WSH2_FILES (R2) bindings.' }, 503);
   if (!['GET', 'POST', 'PATCH', 'DELETE'].includes(request.method)) return json({ error: 'Method not allowed.' }, 405);
   const url = new URL(request.url);
   if (request.method !== 'GET' && request.headers.get('Origin') !== url.origin) return json({ error: 'Cross-site requests are not allowed.' }, 403);
@@ -62,7 +62,7 @@ export async function onRequest({ request, env, data }) {
           (SELECT COUNT(*) FROM wsh2_washes WHERE source_upload_id = wsh2_uploads.id) AS currentRowCount
           FROM wsh2_uploads ORDER BY uploaded_at DESC, id`),
       ]);
-      if (rows.results.length > 10000) return json({ error: 'WSH2 has reached its 10,000-row display limit. Contact the administrator to archive older schedules.' }, 409);
+      if (rows.results.length > 10000) return json({ error: 'AWP has reached its 10,000-row display limit. Contact the administrator to archive older schedules.' }, 409);
       return json({ rows: rows.results.map(hydrate), uploads: uploads.results, serverTime: new Date().toISOString() });
     }
 
@@ -146,6 +146,6 @@ export async function onRequest({ request, env, data }) {
     return json({ uploadId: id, rowCount: parsed.rows.length, duplicates: parsed.duplicates }, 201);
   } catch (error) {
     console.error('WSH2 storage request failed:', error);
-    return json({ error: 'WSH2 could not save or load from shared storage. Check the D1 migration and R2 binding, then retry.' }, 503);
+    return json({ error: 'AWP could not save or load from shared storage. Check the D1 migration and R2 binding, then retry.' }, 503);
   }
 }

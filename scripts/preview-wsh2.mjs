@@ -6,7 +6,7 @@ import { createWsh2LocalRuntime, root } from './wsh2-local-runtime.mjs';
 
 const runtime = await createWsh2LocalRuntime({ persist: true });
 const origin = 'http://127.0.0.1:4199';
-const html = `<!doctype html><html lang="en" class="dark" data-app-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>WSH2 local preview</title></head><body><div id="root"></div><script type="module" src="/scripts/preview-wsh2.jsx"></script></body></html>`;
+const html = `<!doctype html><html lang="en" class="dark" data-app-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>AWP local preview</title></head><body><div id="root"></div><script type="module" src="/scripts/preview-wsh2.jsx"></script></body></html>`;
 const server = await createServer({
   root, configFile: false, resolve: { alias: { '@': path.join(root, 'src') } },
   optimizeDeps: { entries: ['scripts/preview-wsh2.jsx'] },

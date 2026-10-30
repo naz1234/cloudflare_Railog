@@ -10,7 +10,7 @@ async function request(options = {}) {
   try {
     const response = await fetch(API, { cache: 'no-store', credentials: 'same-origin', signal: controller.signal, ...options });
     const data = await response.json();
-    if (!response.ok) throw Object.assign(new Error(data.error || 'WSH2 request failed.'), { data, status: response.status });
+    if (!response.ok) throw Object.assign(new Error(data.error || 'AWP request failed.'), { data, status: response.status });
     return data;
   } catch (error) {
     if (error.name === 'AbortError') throw new Error('Shared storage took too long to respond. Refresh before retrying.');
@@ -167,14 +167,14 @@ export default function Wsh2Workspace() {
       const { buildWsh2Docx } = await import('../lib/wsh2Docx.js');
       const bytes = buildWsh2Docx(rows, { dcMark, depotLabel: 'West and East Depot' });
       const url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
-      const link = document.createElement('a'); link.href = url; link.download = `WSH2-${groups[0].date}-to-${groups.at(-1).date}.docx`; link.click();
+      const link = document.createElement('a'); link.href = url; link.download = `AWP-${groups[0].date}-to-${groups.at(-1).date}.docx`; link.click();
       setTimeout(() => URL.revokeObjectURL(url), 60000);
       setNotice('Word checklist downloaded. Open it in Word and print. It includes the dates and rows currently shown.');
     } catch (failure) { setError(failure.message); } finally { setPrinting(false); }
   }
 
-  return <section className="wsh2-workspace" aria-label="WSH2 wash checklist">
-    <header className="wsh2-heading"><div className="wsh2-heading-title"><span className="wsh2-icon"><Droplets size={24} /></span><div><div className="wsh2-eyebrow">WSH2</div><h1>Wash checklist</h1><p>Daily train washes, shared across depots.</p></div></div>
+  return <section className="wsh2-workspace" aria-label="AWP wash checklist">
+    <header className="wsh2-heading"><div className="wsh2-heading-title"><span className="wsh2-icon"><Droplets size={24} /></span><div><div className="wsh2-eyebrow">AWP</div><h1>Wash checklist</h1><p>Daily train washes, shared across depots.</p></div></div>
       <div className="wsh2-actions"><input ref={fileInput} type="file" multiple accept=".xlsx" className="wsh2-file-input" aria-label="Upload wash Excel files" disabled={filesBusy} onChange={(event) => uploadFiles([...event.target.files])} />
         <button type="button" className="wsh2-primary" disabled={filesBusy} onClick={() => fileInput.current?.click()}>{uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}{uploading ? 'Importing…' : 'Upload Excel'}</button>
         <button type="button" onClick={printWord} disabled={!rows.length || printing || filesBusy || syncFailed}>{printing ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}Print / Word</button>
