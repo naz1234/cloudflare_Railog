@@ -242,7 +242,8 @@ test("PST desktop columns have a bounded parent instead of a max-content sizing 
   assert.equal(depotGrids.length, 2);
   for (const grid of depotGrids) {
     assert.match(grid, /grid w-full min-w-0/);
-    assert.match(grid, /lg:grid-cols-\[954px_minmax\(420px,1fr\)\]/);
+    assert.match(grid, /pst-depot-layout/);
+    assert.match(grid, /grid-cols-1 gap-3/);
     assert.doesNotMatch(grid, /w-fit|max-content/);
   }
 });
