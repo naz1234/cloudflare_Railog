@@ -10,6 +10,8 @@
     --insertion-reference-focus: #8bb5f6;
     --insertion-reference-warning: #fde68a;
     --insertion-reference-warning-bg: #49340f;
+    --insertion-sync-warning: #f5bf68;
+    --insertion-sync-warning-bg: #382c1c;
   }
   html[data-app-theme="light"] .theme-insertion-page {
     --insertion-reference-panel: #edf2f7;
@@ -21,6 +23,35 @@
     --insertion-reference-focus: #396cba;
     --insertion-reference-warning: #854d0e;
     --insertion-reference-warning-bg: #fef3c7;
+    --insertion-sync-warning: #91580c;
+    --insertion-sync-warning-bg: #fff3d8;
+  }
+  /* Use the same quiet, rectangular Sync action as the PST toolbar. */
+  html[data-app-theme] .theme-insertion-page .theme-insertion-section .theme-insertion-editable-controls .theme-insertion-refresh-button {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: 32px; min-height: 32px; padding: 0 10px; white-space: nowrap;
+    border: 1px solid var(--insertion-reference-line) !important;
+    border-radius: 8px !important;
+    background: var(--insertion-reference-control) !important;
+    color: var(--insertion-reference-text) !important;
+    font-size: 12px; font-weight: 500; line-height: 1.2;
+    letter-spacing: 0; text-transform: none;
+    box-shadow: none !important; filter: none !important;
+    transform: none !important; animation: none !important; will-change: auto;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-section .theme-insertion-editable-controls .theme-insertion-refresh-button.is-dirty {
+    color: var(--insertion-sync-warning) !important;
+    background: var(--insertion-sync-warning-bg) !important;
+    border-color: var(--insertion-sync-warning) !important;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-section .theme-insertion-editable-controls .theme-insertion-refresh-icon {
+    color: inherit !important; filter: none !important; animation: none !important; will-change: auto;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-section .theme-insertion-refresh-button:hover:not(:disabled) {
+    outline: 1px solid currentColor; outline-offset: 1px; cursor: pointer;
+  }
+  html[data-app-theme] .theme-insertion-page .theme-insertion-section .theme-insertion-refresh-button:focus-visible {
+    outline: 2px solid var(--insertion-reference-focus); outline-offset: 2px;
   }
   html[data-app-theme] .theme-insertion-page .theme-insertion-reference,
   html[data-app-theme] .theme-insertion-page .theme-insertion-reference-depot,

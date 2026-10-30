@@ -53,8 +53,8 @@
     --pst-slate-shadow: 0 14px 36px rgb(35 51 75 / 5%);
   }
 
-  /* Radix renders this bubble under body, outside the PST panel and its tokens. */
-  html[data-app-theme] .pst-sync-tooltip {
+  /* Shared PST / INS Sync bubble: Radix renders it under body, outside panel tokens. */
+  html[data-app-theme] .stabling-sync-tooltip {
     --pst-tooltip-bg: #10263b;
     --pst-tooltip-line: #2b4f6b;
     --pst-tooltip-text: #e1ecf5;
@@ -71,7 +71,7 @@
     line-height: 1.5;
     box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
   }
-  html[data-app-theme="light"] .pst-sync-tooltip {
+  html[data-app-theme="light"] .stabling-sync-tooltip {
     --pst-tooltip-bg: #ffffff;
     --pst-tooltip-line: #cbd9e8;
     --pst-tooltip-text: #0b2443;
@@ -79,11 +79,11 @@
     --pst-tooltip-warning: #91580c;
     box-shadow: 0 8px 24px rgb(35 51 75 / 12%);
   }
-  html[data-app-theme] .pst-sync-tooltip * { color: inherit !important; -webkit-text-fill-color: currentColor !important; }
-  html[data-app-theme] .pst-sync-tooltip .stabling-sync-tooltip-title { color: var(--pst-tooltip-text) !important; font-size: 12px; font-weight: 600; }
-  html[data-app-theme] .pst-sync-tooltip .stabling-sync-tooltip-description { color: var(--pst-tooltip-muted) !important; margin-top: 3px; }
-  html[data-app-theme] .pst-sync-tooltip .stabling-sync-tooltip-warning { color: var(--pst-tooltip-warning) !important; background: transparent !important; border: 0 !important; border-top: 1px solid var(--pst-tooltip-line) !important; border-radius: 0; margin-top: 8px; padding: 8px 0 0; gap: 7px; font-weight: 400; }
-  html[data-app-theme] .pst-sync-tooltip .action-tooltip-arrow { fill: var(--pst-tooltip-bg) !important; filter: none !important; }
+  html[data-app-theme] .stabling-sync-tooltip * { color: inherit !important; -webkit-text-fill-color: currentColor !important; }
+  html[data-app-theme] .stabling-sync-tooltip .stabling-sync-tooltip-title { color: var(--pst-tooltip-text) !important; font-size: 12px; font-weight: 600; }
+  html[data-app-theme] .stabling-sync-tooltip .stabling-sync-tooltip-description { color: var(--pst-tooltip-muted) !important; margin-top: 3px; }
+  html[data-app-theme] .stabling-sync-tooltip .stabling-sync-tooltip-warning { color: var(--pst-tooltip-warning) !important; background: transparent !important; border: 0 !important; border-top: 1px solid var(--pst-tooltip-line) !important; border-radius: 0; margin-top: 8px; padding: 8px 0 0; gap: 7px; font-weight: 400; }
+  html[data-app-theme] .stabling-sync-tooltip .action-tooltip-arrow { fill: var(--pst-tooltip-bg) !important; filter: none !important; }
 
   /* Bound the support column instead of stretching its controls across the screen.
      Stack based on available workspace width, including the app's sidebar/padding. */

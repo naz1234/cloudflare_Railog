@@ -13,7 +13,7 @@ const declarationsFor = ending => {
   return values;
 };
 
-test('PST slate is desktop-only and cannot affect REQ, PSS or mobile cards', () => {
+test('PST slate is desktop-only, with a shared Sync tooltip but no unrelated panel overrides', () => {
   let count = 0;
   skin.walkRules(rule => {
     count++;
@@ -21,7 +21,7 @@ test('PST slate is desktop-only and cannot affect REQ, PSS or mobile cards', () 
     while (boundary && boundary.name !== 'media') boundary = boundary.parent;
     assert.equal(boundary?.params, '(min-width: 768px)');
     for (const selector of rule.selectors) {
-      assert.match(selector, /^html\[data-app-theme(?:="light")?\] (?:#root \.app-shell\[data-active-page="pst"\]|\.pst-sync-tooltip(?:\s|$))/);
+      assert.match(selector, /^html\[data-app-theme(?:="light")?\] (?:#root \.app-shell\[data-active-page="pst"\]|\.stabling-sync-tooltip(?:\s|$))/);
     }
   });
   assert.ok(count > 40);
@@ -111,16 +111,16 @@ test('PST Sync popup styles its portal and arrow for both themes without hiding 
   assert.match(tooltip, /contentClassName = ""/);
   assert.match(tooltip, /\$\{contentClassName\}/);
   assert.match(tooltip, /action-tooltip-arrow/);
-  assert.match(source, /contentClassName=\{workLabel === "PST \/ Train Prep" \? "pst-sync-tooltip" : ""\}/);
+  assert.match(source, /contentClassName="stabling-sync-tooltip"/);
   assert.match(source, /stabling-sync-tooltip-warning[\s\S]*?\{syncTooltip.warning\}/);
   for (const [theme, background] of [['', '#10263b'], ['="light"', '#ffffff']]) {
-    assert.equal(declarationsFor(`html[data-app-theme${theme}] .pst-sync-tooltip`)['--pst-tooltip-bg'], background);
+    assert.equal(declarationsFor(`html[data-app-theme${theme}] .stabling-sync-tooltip`)['--pst-tooltip-bg'], background);
   }
-  const warning = declarationsFor(' .pst-sync-tooltip .stabling-sync-tooltip-warning');
+  const warning = declarationsFor(' .stabling-sync-tooltip .stabling-sync-tooltip-warning');
   assert.equal(warning.background, 'transparent');
   assert.equal(warning.color, 'var(--pst-tooltip-warning)');
   assert.equal(warning['border-top'], '1px solid var(--pst-tooltip-line)');
-  assert.equal(declarationsFor(' .pst-sync-tooltip .action-tooltip-arrow').fill, 'var(--pst-tooltip-bg)');
+  assert.equal(declarationsFor(' .stabling-sync-tooltip .action-tooltip-arrow').fill, 'var(--pst-tooltip-bg)');
 });
 
 test('depot, Excel, APU, manual and log windows share rounded slate frames', () => {

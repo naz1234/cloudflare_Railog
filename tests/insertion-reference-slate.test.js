@@ -57,3 +57,31 @@ test("reference restyling does not override train rows, status pills, time offse
   root.walkRules((rule) => assert.doesNotMatch(rule.selector, /reference-row|reference-time-value|reference-service-pill|reference-used-icon|reference-next-badge|reference-train-id|reference-time-offset/));
   root.walkDecls((decl) => assert.ok(!["pointer-events", "visibility", "overflow"].includes(decl.prop)));
 });
+
+test("INS Sync matches PST size and theme colours, without button or icon glow", () => {
+  const pst = postcss.parse(readFileSync(new URL('../src/pstSlate.css', import.meta.url), 'utf8'));
+  for (const theme of ['', '="light"']) {
+    const insPalette = declarations(`html[data-app-theme${theme}] .theme-insertion-page`);
+    let pstPalette;
+    pst.walkRules(rule => {
+      if (rule.selector !== `html[data-app-theme${theme}] #root .app-shell[data-active-page="pst"]`) return;
+      pstPalette = Object.fromEntries(rule.nodes.filter(node => node.type === 'decl').map(node => [node.prop, node.value]));
+    });
+    for (const token of ['control', 'line', 'text', 'focus']) {
+      assert.equal(insPalette[`--insertion-reference-${token}`], pstPalette[`--pst-slate-${token}`]);
+    }
+    assert.equal(insPalette['--insertion-sync-warning'], pstPalette['--pst-slate-warning']);
+    assert.equal(insPalette['--insertion-sync-warning-bg'], pstPalette['--pst-slate-warning-bg']);
+  }
+  const controlScope = `${scope} .theme-insertion-section .theme-insertion-editable-controls`;
+  const button = declarations(`${controlScope} .theme-insertion-refresh-button`);
+  assert.equal(button.height, '32px');
+  assert.equal(button['border-radius'], '8px');
+  assert.equal(button['font-size'], '12px');
+  for (const property of ['box-shadow', 'filter', 'transform', 'animation']) assert.equal(button[property], 'none');
+  const icon = declarations(`${controlScope} .theme-insertion-refresh-icon`);
+  assert.equal(icon.animation, 'none');
+  assert.equal(icon.filter, 'none');
+  assert.equal(icon.color, 'inherit');
+  assert.equal(declarations(`${controlScope} .theme-insertion-refresh-button.is-dirty`).background, 'var(--insertion-sync-warning-bg)');
+});

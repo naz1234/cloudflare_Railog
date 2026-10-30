@@ -6162,7 +6162,7 @@ function InsertionEditableHeaderControls({
           </span>
         }
         placement={tooltipPlacement}
-        contentClassName={workLabel === "PST / Train Prep" ? "pst-sync-tooltip" : ""}
+        contentClassName="stabling-sync-tooltip"
         contentStyle={{ maxWidth: "min(280px, calc(100vw - 20px))", overflowWrap: "anywhere" }}
         triggerProps={!isDirty ? { tabIndex: 0, role: "group", "aria-label": syncTooltip.accessibleLabel } : {}}
       >
