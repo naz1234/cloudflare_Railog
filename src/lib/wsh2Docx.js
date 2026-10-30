@@ -1,5 +1,5 @@
 import { strToU8, zipSync } from 'fflate';
-import { formatWashDate, formatWashTime, groupWashRows } from './wsh2Records.js';
+import { formatWashDate, formatWashTime, getWashPrintSections, WSH2_PRINT_MAX_SECTIONS } from './wsh2Records.js';
 
 const widths = [390, 1780, 2340, 1010, 850, 800, 3296];
 const xml = (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
@@ -23,20 +23,16 @@ function table(group) {
   return `<w:tbl><w:tblPr><w:tblW w:w="10466" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${borders}</w:tblBorders><w:tblCellMar><w:top w:w="25" w:type="dxa"/><w:bottom w:w="25" w:type="dxa"/><w:left w:w="55" w:type="dxa"/><w:right w:w="55" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${widths.map((width) => `<w:gridCol w:w="${width}"/>`).join('')}</w:tblGrid>${heading}${columnRow}${body}</w:tbl>`;
 }
 
-export function buildWsh2Docx(rows, { depotLabel = 'West and East Depot', dcMark = '' } = {}) {
+export function buildWsh2Docx(rows, { depotLabel = 'West and East Depot', singlePage = false } = {}) {
   if (!rows.length) throw new Error('Upload at least one wash entry to print.');
-  const sections = groupWashRows(rows).flatMap((group) => {
-    const result = [];
-    for (let i = 0; i < group.rows.length; i += 19) result.push({ date: group.date, rows: group.rows.slice(i, i + 19), offset: i, continued: i > 0 });
-    return result;
-  });
+  const sections = getWashPrintSections(rows);
+  if (singlePage && sections.length > WSH2_PRINT_MAX_SECTIONS) throw new Error('The selected schedule needs more than one page. Choose fewer Excel files.');
   let body = '';
   for (let i = 0; i < sections.length; i += 2) {
     if (i) body += '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
     body += paragraph(`AWP WASH CHECKLIST   ${depotLabel.toUpperCase()}`, { bold: true, size: 22, after: 160 });
     body += table(sections[i]);
     if (sections[i + 1]) body += paragraph('', { size: 4, after: 70 }) + table(sections[i + 1]);
-    body += paragraph(`DC MARK${dcMark.trim() ? `: ${dcMark.trim()}` : ': __________________'}`, { bold: true, align: 'right', after: 0 });
   }
   const document = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="0" w:footer="0"/></w:sectPr></w:body></w:document>`;
   return zipSync({

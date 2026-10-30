@@ -4,6 +4,12 @@ AWP is the display name of the wash checklist previously labelled WSH2. Its rout
 
 AWP does not require the extra protected-page unlock. It is available in desktop and mobile navigation after the normal authorized application login; its API and source downloads still require that login. The original WSH page now uses the shared protected-page unlock popup and browser-tab session. Its controls and reports do not mount until unlocked, and desktop/mobile menus hide WSH while locked. Relocking protected pages returns an active WSH view to Train Request, but leaves AWP accessible. This changes the existing UI lock, not server-side login or data permissions.
 
+On desktop, the wash checklist is in the left panel and Uploaded Excel files is in the right panel. Below the 1,100-pixel breakpoint, the panels stack with files first, keeping the existing phone order. Wide wash tables scroll inside their own panel rather than stretching the page. File download, confirmed deletion, completion, upload and print behavior are unchanged.
+
+Desktop checklist rows use compact padding and 24-pixel controls without reducing text size. Phones retain 42-pixel touch controls.
+
+The AWP title, three compact Design C pills (completed washes, percentage progress and remaining washes) and Upload / Print / Refresh actions share one header card. Totals follow the current shared rows, including zero uploads and fully completed schedules. On narrower screens, the pills and actions wrap inside that same card instead of creating a separate completion strip.
+
 ## Shared storage
 
 - `DB` (D1) stores each train/date wash entry, completion state, HVAC, Partial/Full, depot, revision and the user/time of the latest update.
@@ -42,7 +48,7 @@ The standalone verification script uses fresh temporary D1/R2 resources and disp
 
 Upload one or more `.xlsx` reports with `Train Number` and `Next Wash` headers. Optional `Train Location` and `Last Wash` columns are retained. Original location is the starting value of the editable Location column. File limit: 5 MB compressed, 32 MB expanded, 500 entries. Invalid rows reject the entire individual workbook with its sheet/row location; successfully uploaded other files remain imported.
 
-The uploaded-file list is always visible above the checklist. All uploaded dates and both depots are shown together, without date-range, status or depot filters. Dates are read from the Excel files. Ticking a train only changes completion: depot, HVAC and Partial/Full are not inferred. Each row's depot can still be recorded directly to indicate where its wash was done.
+The uploaded-file list is always visible beside the checklist on desktop and above it on smaller screens. All uploaded dates and both depots are shown together, without date-range, status or depot filters. Dates are read from the Excel files. Ticking a train only changes completion: depot, HVAC and Partial/Full are not inferred. Each row's depot can still be recorded directly to indicate where its wash was done.
 
 Location is an OPE/MAINT dropdown. Source locations outside those choices are retained as a disabled placeholder until the user explicitly chooses one; existing data is not silently reclassified. HVAC is a separate checkbox confirming ON after washing, never automatically set by completing a wash. Checking saves `ON`; unchecking clears the confirmation to blank, not OFF. New OFF updates are rejected. Legacy OFF data is treated as unconfirmed in the UI and prints blank; confirmed rows print ON. The storage/timestamp badge is hidden, but polling and error reporting stay active.
 
@@ -50,4 +56,6 @@ Each uploaded file has an original-download link and a two-step Delete / Confirm
 
 Deletion requires a verified session, same-origin request, upload ID and explicit confirmation. The server resolves the R2 key from D1. R2 is deleted first, then rows and upload metadata are deleted in one D1 batch. An R2 failure leaves D1 untouched; if D1 fails after R2 succeeds, the upload stays listed for a safe retry (its original may temporarily be unavailable). Already-deleted uploads are safe to retry. No new migration is needed for deletion.
 
-Print / Word downloads a genuine A4 `.docx`, with two date sections per page, yellow date labels, the paper's seven columns, blank writing rows and DC MARK. It includes all current rows from both depots and their saved completion values. For dates with more than 19 trains, continuation sections include every train. The optional DC MARK input is print-only, not a shared checklist field.
+Print / Word opens a file picker before downloading. Choose one or two uploaded Excel files; a third selection is disabled until another is deselected. Only current checklist rows belonging to the selected source uploads are exported, including saved ticks and wash details from both depots. A replaced upload with no current rows is disabled. Polling updates are reflected in the picker, and the selection is validated again at download time.
+
+The genuine A4 `.docx` keeps the paper's yellow date labels, seven columns and blank writing rows. The page supports up to two tables of 19 trains. If a selected schedule would need more tables, download is blocked with a clear message; rows are never silently dropped or pushed onto an additional page. The optional DC MARK name input and printed name/signature line remain removed. This selection does not delete uploads or change shared checklist data.
