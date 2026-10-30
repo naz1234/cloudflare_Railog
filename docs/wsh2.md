@@ -1,8 +1,8 @@
 # WSH2 wash checklist
 
-The existing WSH page is unchanged. The new authenticated route is `/#/wsh2`.
+The wash checklist route is `/#/wsh2`. It occupies the normal washing shortcut position between INS and PSS. The original WSH workspace remains at `/#/train-washing`, in the protected group after ODO.
 
-WSH2 is grouped with the existing protected pages, after ODO. It uses their shared unlock popup and browser-tab session. Direct navigation shows a lock screen, and the checklist is not mounted or polled until unlocked. The mobile menu hides WSH2 while locked. Relocking protected pages returns an active WSH2 view to Train Request. This is the same UI lock as the other protected pages; server-side data access still requires the application's authorized login, not a separate WSH2 role.
+WSH2 does not require the extra protected-page unlock. It is available in desktop and mobile navigation after the normal authorized application login; its API and source downloads still require that login. The original WSH page now uses the shared protected-page unlock popup and browser-tab session. Its controls and reports do not mount until unlocked, and desktop/mobile menus hide WSH while locked. Relocking protected pages returns an active WSH view to Train Request, but leaves WSH2 accessible. This changes the existing UI lock, not server-side login or data permissions.
 
 ## Shared storage
 

@@ -6,7 +6,7 @@ import { CheckCircle2, FileSpreadsheet, FileText, FileDown, Loader2, Upload, X, 
 import MaintenancePanel from "../components/MaintenancePanel";
 import TrainWashing from "../components/TrainWashing";
 import Wsh2Workspace from "../components/Wsh2Workspace";
-import Wsh2ProtectedPage from "../components/Wsh2ProtectedPage";
+import WashingProtectedPage from "../components/WashingProtectedPage";
 import OdoReading from "../components/OdoReading";
 import TIDReferenceTable, { getTidReferenceRemark } from "../components/TIDReferenceTable";
 import ActionTooltip from "../components/ActionTooltip";
@@ -1915,7 +1915,7 @@ const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
 const OVT_SESSION_KEY = "ovtOvertimeUnlocked_v1";
 const ODO_SESSION_KEY = "odoReadingUnlocked_v1";
 const PROTECTED_SHORTCUTS_SESSION_KEY = "protectedShortcutsUnlocked_v1";
-const PROTECTED_SHORTCUT_KEYS = new Set(["odo", "wsh2", "alarm", "overtime", "admin", "ats"]);
+const PROTECTED_SHORTCUT_KEYS = new Set(["odo", "washing", "alarm", "overtime", "admin", "ats"]);
 const ADM_LOGIN_ID = "admin";
 const ADM_LOGIN_PASSWORD = "921016";
 const ADMIN_NOTES_STORAGE_KEY = "admModernNotes_v1";
@@ -22400,10 +22400,10 @@ export default function DepotStablingPage() {
               ),
             },
             {
-              key: "washing",
-              label: "Train Washing",
-              code: "WSH",
-              to: "/train-washing",
+              key: "wsh2",
+              label: "Wash Checklist",
+              code: "WSH2",
+              to: "/wsh2",
               icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
@@ -22457,7 +22457,7 @@ export default function DepotStablingPage() {
               ),
             },
             {
-              key: "wsh2", label: "Wash Checklist", code: "WSH2", to: "/wsh2",
+              key: "washing", label: "Train Washing", code: "WSH", to: "/train-washing",
             },
             {
               key: "alarm",
@@ -22867,18 +22867,18 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "wsh2" && (
-          <Wsh2ProtectedPage unlocked={areProtectedShortcutsUnlocked} onUnlock={handleProtectedShortcutToggle}>
-            <Wsh2Workspace />
-          </Wsh2ProtectedPage>
+          <Wsh2Workspace />
         )}
 
         {activeTab === "washing" && (
-          <div className="theme-washing-workspace grid w-full items-start gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.85fr)]">
-            <TrainWashing />
-            <div className="min-w-0">
-              <TrainWashingDocxExport />
+          <WashingProtectedPage unlocked={areProtectedShortcutsUnlocked} onUnlock={handleProtectedShortcutToggle}>
+            <div className="theme-washing-workspace grid w-full items-start gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.85fr)]">
+              <TrainWashing />
+              <div className="min-w-0">
+                <TrainWashingDocxExport />
+              </div>
             </div>
-          </div>
+          </WashingProtectedPage>
         )}
 
         {activeTab === "odo" && (

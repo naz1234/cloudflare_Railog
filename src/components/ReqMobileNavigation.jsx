@@ -10,10 +10,11 @@ const sections = [
 const pages = [
   ["depot-stabling", "REQ", "Train Request"], ["train-movement", "MOV", "Train Movement"],
   ["pst-train-prep", "PST", "Train Preparation"], ["insertion", "INS", "Insertion"],
-  ["train-washing", "WSH", "Washing"], ["wsh2", "WSH2", "Wash Checklist"], ["possession", "PSS", "Possession"],
+  ["wsh2", "WSH2", "Wash Checklist"], ["possession", "PSS", "Possession"],
   ["roster", "ROS", "Roster"], ["sleep", "SLP", "Sleep Mode"],
+  ["train-washing", "WSH", "Washing"],
 ];
-const pageKeys = ["stabling", "movement", "pst", "insertion", "washing", "wsh2", "possession", "roster", "sleep"];
+const pageKeys = ["stabling", "movement", "pst", "insertion", "wsh2", "possession", "roster", "sleep", "washing"];
 const workspaceSections = {
   movement: [["automatic", "Automatic"], ["manual", "Manual"], ["checker", "Checker"]],
   pst: [["trains", "Trains"], ["logs", "Logs"], ["excel", "Excel / Remarks"]],
@@ -28,7 +29,7 @@ export default function ReqMobileNavigation({ activePage = "stabling", protected
   const [menuOpen, setMenuOpen] = useState(false);
   const currentPage = pages[pageKeys.indexOf(activePage)] || pages[0];
   const isRequest = activePage === "stabling";
-  const pageSections = workspaceSections[activePage] || [];
+  const pageSections = activePage === "washing" && !protectedPagesUnlocked ? [] : workspaceSections[activePage] || [];
   return <>
     <header className="req-mobile-only req-mobile-header" onKeyDown={(event) => { if (event.key === "Escape") setMenuOpen(false); }}>
       <button type="button" className="req-mobile-icon-button" aria-label="Open page menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>
@@ -40,7 +41,7 @@ export default function ReqMobileNavigation({ activePage = "stabling", protected
       </button>
       <button type="button" className={`req-mobile-icon-button ${toolsOpen ? "is-active" : ""}`} aria-label="Timetable and bookmarks" aria-expanded={toolsOpen} onClick={onToggleTools}><Settings2 size={19} /></button>
       {menuOpen && <nav className="req-mobile-page-menu" aria-label="Application pages">
-        {pages.filter(([path]) => path !== "wsh2" || protectedPagesUnlocked).map(([path, code, label]) => <a key={path} href={`#/${path}`} aria-current={path === currentPage[0] ? "page" : undefined} onClick={() => { setMenuOpen(false); window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }}><span>{code}</span>{label}</a>)}
+        {pages.filter(([path]) => path !== "train-washing" || protectedPagesUnlocked).map(([path, code, label]) => <a key={path} href={`#/${path}`} aria-current={path === currentPage[0] ? "page" : undefined} onClick={() => { setMenuOpen(false); window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }}><span>{code}</span>{label}</a>)}
       </nav>}
     </header>
     {((isRequest && panel === "stabling") || ["pst", "insertion", "sleep"].includes(activePage)) && <div className="req-mobile-only req-mobile-depot-switch" role="group" aria-label="Choose stabling depot">

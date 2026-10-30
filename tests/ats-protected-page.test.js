@@ -22,11 +22,11 @@ const atsRequire = createRequire(import.meta.url);
 new Function("require", "module", "exports", compiled)((name) => name === "lucide-react" ? icons : atsRequire(name), workspaceModule, workspaceModule.exports);
 const ATSWorkspace = workspaceModule.exports.default;
 
-test("ATS remains in the protected group alongside WSH2, using the existing hidden-navigation filter", () => {
+test("ATS remains in the protected group alongside WSH, using the existing hidden-navigation filter", () => {
   const protectedKeys = source.match(/const PROTECTED_SHORTCUT_KEYS = new Set\(\[([^\]]+)\]\)/)?.[1];
   assert.ok(protectedKeys);
   const keys = [...protectedKeys.matchAll(/"([^\"]+)"/g)].map((match) => match[1]);
-  assert.deepEqual(keys, ["odo", "wsh2", "alarm", "overtime", "admin", "ats"]);
+  assert.deepEqual(keys, ["odo", "washing", "alarm", "overtime", "admin", "ats"]);
   assert.ok(keys.includes("ats"));
   assert.match(source, /\{ key: "ats", label: "ATS", code: "ATS", to: "\/ats" \}/);
   const filterExpression = source.match(/\.filter\(\(\{ key \}\) => (!PROTECTED_SHORTCUT_KEYS\.has\(key\) \|\| areProtectedShortcutsUnlocked)\)/)?.[1];
