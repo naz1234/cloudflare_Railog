@@ -1,0 +1,212 @@
+/* PST desktop windows use REQ's Compact Slate theme. Keep the train grid,
+   mobile cards, operational states, FLDC ticks and export behaviour intact. */
+@media (min-width: 768px) {
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] {
+    --pst-slate-panel: #0b1f33;
+    --pst-slate-control: #10263b;
+    --pst-slate-line: #2b4f6b;
+    --pst-slate-text: #e1ecf5;
+    --pst-slate-muted: #7dabc6;
+    --pst-slate-row: #071828;
+    --pst-slate-hover: #102c44;
+    --pst-slate-focus: #8bb5f6;
+    --pst-slate-active: #17364a;
+    --pst-slate-active-text: #67d7f0;
+    --pst-slate-danger: #f09a9f;
+    --pst-slate-warning: #f5bf68;
+    --pst-slate-warning-bg: #382c1c;
+    --pst-slate-clear-pst: #85dfbb;
+    --pst-slate-clear-pst-bg: #12392f;
+    --pst-slate-clear-pst-line: #2e6c57;
+    --pst-slate-clear-prep: #a9c9f5;
+    --pst-slate-clear-prep-bg: #142f4b;
+    --pst-slate-clear-prep-line: #355f8d;
+    --pst-slate-clear-all: #f2adb8;
+    --pst-slate-clear-all-bg: #352332;
+    --pst-slate-clear-all-line: #7d465b;
+    --pst-slate-shadow: 0 14px 36px rgb(0 0 0 / 9%);
+    font-family: Inter, "Segoe UI", sans-serif;
+  }
+  html[data-app-theme="light"] #root .app-shell[data-active-page="pst"] {
+    --pst-slate-panel: #edf2f7;
+    --pst-slate-control: #ffffff;
+    --pst-slate-line: #d7e2ee;
+    --pst-slate-text: #0b2443;
+    --pst-slate-muted: #4e7198;
+    --pst-slate-row: #f7f9fc;
+    --pst-slate-hover: #e1ebf8;
+    --pst-slate-focus: #396cba;
+    --pst-slate-active: #e7effd;
+    --pst-slate-active-text: #155bd7;
+    --pst-slate-danger: #b83349;
+    --pst-slate-warning: #91580c;
+    --pst-slate-warning-bg: #fff3d8;
+    --pst-slate-clear-pst: #166244;
+    --pst-slate-clear-pst-bg: #effbf5;
+    --pst-slate-clear-pst-line: #acd7c1;
+    --pst-slate-clear-prep: #2b5791;
+    --pst-slate-clear-prep-bg: #eff5ff;
+    --pst-slate-clear-prep-line: #b9cff0;
+    --pst-slate-clear-all: #a72d46;
+    --pst-slate-clear-all-bg: #fff1f3;
+    --pst-slate-clear-all-line: #e6b6c1;
+    --pst-slate-shadow: 0 14px 36px rgb(35 51 75 / 5%);
+  }
+
+  /* Radix renders this bubble under body, outside the PST panel and its tokens. */
+  html[data-app-theme] .pst-sync-tooltip {
+    --pst-tooltip-bg: #10263b;
+    --pst-tooltip-line: #2b4f6b;
+    --pst-tooltip-text: #e1ecf5;
+    --pst-tooltip-muted: #a3bed1;
+    --pst-tooltip-warning: #f5bf68;
+    padding: 10px 12px;
+    border: 1px solid var(--pst-tooltip-line) !important;
+    border-radius: 10px;
+    background: var(--pst-tooltip-bg) !important;
+    color: var(--pst-tooltip-text) !important;
+    font-family: Inter, "Segoe UI", sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.5;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
+  }
+  html[data-app-theme="light"] .pst-sync-tooltip {
+    --pst-tooltip-bg: #ffffff;
+    --pst-tooltip-line: #cbd9e8;
+    --pst-tooltip-text: #0b2443;
+    --pst-tooltip-muted: #4e7198;
+    --pst-tooltip-warning: #91580c;
+    box-shadow: 0 8px 24px rgb(35 51 75 / 12%);
+  }
+  html[data-app-theme] .pst-sync-tooltip * { color: inherit !important; -webkit-text-fill-color: currentColor !important; }
+  html[data-app-theme] .pst-sync-tooltip .stabling-sync-tooltip-title { color: var(--pst-tooltip-text) !important; font-size: 12px; font-weight: 600; }
+  html[data-app-theme] .pst-sync-tooltip .stabling-sync-tooltip-description { color: var(--pst-tooltip-muted) !important; margin-top: 3px; }
+  html[data-app-theme] .pst-sync-tooltip .stabling-sync-tooltip-warning { color: var(--pst-tooltip-warning) !important; background: transparent !important; border: 0 !important; border-top: 1px solid var(--pst-tooltip-line) !important; border-radius: 0; margin-top: 8px; padding: 8px 0 0; gap: 7px; font-weight: 400; }
+  html[data-app-theme] .pst-sync-tooltip .action-tooltip-arrow { fill: var(--pst-tooltip-bg) !important; filter: none !important; }
+
+  /* Bound the support column instead of stretching its controls across the screen.
+     Stack based on available workspace width, including the app's sidebar/padding. */
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .mobile-pst-workspace {
+    container: pst-workspace / inline-size;
+    max-width: 1526px;
+    gap: 12px;
+  }
+  /* The shared divider's negative margins cancel this compact workspace's gap.
+     Give the depot boundary 24px of clearance on each side (12px gap + 12px margin). */
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .mobile-pst-workspace > .pst-depot-divider {
+    margin-block: 12px;
+  }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-depot-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-support-panels {
+    max-width: 560px;
+    gap: 12px;
+  }
+  @container pst-workspace (min-width: 1386px) {
+    html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-depot-layout {
+      grid-template-columns: 954px minmax(420px, 560px);
+    }
+  }
+
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.theme-pst-section,.pst-excel-format-panel,.theme-apu-mismatch-panel,.pst-clean-shell,.pst-manual-shell) {
+    border: 1px solid var(--pst-slate-line) !important;
+    border-radius: 28px !important;
+    background: var(--pst-slate-panel) !important;
+    box-shadow: var(--pst-slate-shadow) !important;
+    color: var(--pst-slate-text) !important;
+    font-family: Inter, "Segoe UI", sans-serif;
+  }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-section { padding: 0 20px 16px; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-section > .mobile-section-header { flex-direction: column; align-items: stretch; min-height: 0; padding: 16px 0 0; margin-bottom: 12px; gap: 10px; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-section .mobile-section-heading { gap: 8px; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.theme-pst-title,.pst-excel-format-heading h2,.theme-apu-mismatch-header h3,.pst-clean-title,.pst-manual-heading h3) { margin: 0; color: var(--pst-slate-text) !important; -webkit-text-fill-color: currentColor !important; font-size: 16px; font-weight: 700; letter-spacing: -.035em; line-height: 1.3; text-transform: none; text-shadow: none; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.theme-pst-title-icon,.pst-clean-title-icon,.pst-manual-icon,.theme-apu-mismatch-header > div > span) { width: 30px; height: 30px; flex: 0 0 30px; border: 1px solid var(--pst-slate-line) !important; border-radius: 9px; color: var(--pst-slate-muted) !important; background: var(--pst-slate-control) !important; box-shadow: none !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.theme-pst-title-icon,.pst-clean-title-icon,.pst-manual-icon,.theme-apu-mismatch-header > div > span) :is(svg,svg *) { color: var(--pst-slate-muted) !important; stroke: currentColor !important; stroke-width: 1.5; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.theme-pst-title-icon,.pst-clean-title-icon) svg { width: 15px; height: 15px; }
+
+  /* Separate the non-interactive label from consistently sized action buttons. */
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-section .mobile-section-actions { width: 100%; min-width: 0; justify-content: space-between; gap: 8px 12px; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-section .theme-insertion-editable-controls { gap: 6px; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-section .mobile-clear-actions { flex-wrap: wrap; gap: 6px; margin-left: auto; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-section .mobile-section-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; min-height: 32px; padding: 0 10px; white-space: nowrap; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-section :is(.theme-insertion-history-button,.theme-insertion-refresh-button,.theme-pst-clear-button:where(:not(.is-confirming))) { border: 1px solid var(--pst-slate-line) !important; border-radius: 8px; background: var(--pst-slate-control) !important; color: var(--pst-slate-text) !important; font-size: 12px; font-weight: 500; letter-spacing: 0; line-height: 1.2; text-transform: none; box-shadow: none !important; filter: none !important; transform: none !important; animation: none !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-section .theme-insertion-editable-label { height: auto; min-height: 32px; padding: 0 6px 0 0; border: 0 !important; border-radius: 0; background: transparent !important; color: var(--pst-slate-muted) !important; box-shadow: none !important; font-size: 11px; font-weight: 400; cursor: default; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-section .theme-insertion-refresh-button.is-dirty { color: var(--pst-slate-warning) !important; border-color: var(--pst-slate-warning) !important; background: var(--pst-slate-warning-bg) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-section .theme-insertion-refresh-icon { color: inherit !important; animation: none !important; filter: none !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-clear-button.is-pst:not(.is-confirming) { color: var(--pst-slate-clear-pst) !important; background: var(--pst-slate-clear-pst-bg) !important; border-color: var(--pst-slate-clear-pst-line) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-clear-button.is-prep:not(.is-confirming) { color: var(--pst-slate-clear-prep) !important; background: var(--pst-slate-clear-prep-bg) !important; border-color: var(--pst-slate-clear-prep-line) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-clear-button.is-trains:not(.is-confirming) { color: var(--pst-slate-clear-all) !important; background: var(--pst-slate-clear-all-bg) !important; border-color: var(--pst-slate-clear-all-line) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-clear-button.is-confirming { border: 1px solid #ee829a !important; border-radius: 8px; background: #b4233f !important; color: #ffffff !important; -webkit-text-fill-color: currentColor !important; font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; box-shadow: none !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-section .mobile-section-actions button:where(:not(:disabled)):hover { outline: 1px solid currentColor; outline-offset: 1px; cursor: pointer; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-search { background: var(--pst-slate-control) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-search.is-empty { border: 1px solid var(--pst-slate-line) !important; box-shadow: none !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-search.is-empty :is(input,svg) { color: var(--pst-slate-muted) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-search input::placeholder { color: var(--pst-slate-muted) !important; opacity: 1; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-card { box-shadow: none !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-pst-card.is-empty { background: var(--pst-slate-row) !important; border-color: var(--pst-slate-line) !important; }
+
+  /* Excel and FLDC retain one integrated panel with the same neutral base. */
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-excel-format-panel {
+    --pst-format-panel: var(--pst-slate-panel); --pst-format-input: var(--pst-slate-row);
+    --pst-format-line: var(--pst-slate-line); --pst-format-text: var(--pst-slate-text);
+    --pst-format-muted: var(--pst-slate-muted);
+    padding: 0 14px 12px;
+  }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-excel-format-header { min-height: 60px; gap: 8px; padding: 10px 0; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-excel-completed-section { gap: 4px; padding: 8px 0; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-excel-export-groups { gap: 10px; padding-top: 10px; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-excel-export-group { gap: 6px; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-excel-export-group.is-combined { padding-left: 10px; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-excel-format-icon { width: 30px; height: 30px; flex: 0 0 30px; padding: 7px; border: 1px solid var(--pst-slate-line); border-radius: 9px; background: var(--pst-slate-control); color: var(--pst-slate-muted) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-excel-format-icon * { color: inherit !important; stroke: currentColor; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.pst-excel-sync,.pst-clean-subtitle,.pst-manual-heading p,.theme-apu-mismatch-header p,.theme-apu-mismatch-placeholder) { color: var(--pst-slate-muted) !important; font-size: 11px; font-weight: 400; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.pst-excel-completed-label,.pst-excel-export-group h3,.pst-fldc-name > span) { color: var(--pst-slate-muted) !important; font-size: 10px; font-weight: 500; letter-spacing: .05em; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-excel-depot-badge { border-color: var(--pst-slate-line); border-radius: 8px; background: var(--pst-slate-control); color: var(--pst-slate-muted) !important; font-weight: 500; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-fldc-checklist {
+    --fldc-surface: var(--pst-slate-row); --fldc-input: var(--pst-slate-row);
+    --fldc-line: var(--pst-slate-line); --fldc-text: var(--pst-slate-text);
+    --fldc-muted: var(--pst-slate-muted); --fldc-accent: var(--pst-slate-active-text);
+    --fldc-accent-bg: var(--pst-slate-active);
+    background: transparent !important; border-color: var(--pst-slate-line) !important;
+    padding: 8px 0;
+  }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-fldc-road-list { gap: 7px; margin: 10px 0; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.pst-excel-completed-input,.pst-fldc-name input) { min-height: 32px; border: 1px solid var(--pst-slate-line) !important; border-radius: 10px; background: var(--pst-slate-row) !important; color: var(--pst-slate-text) !important; font-size: 12px; font-weight: 400; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-fldc-heading h3 { font-size: 14px; letter-spacing: -.02em; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.pst-fldc-road-label,.theme-apu-mismatch-road-label) { color: var(--pst-slate-muted) !important; font-size: 11px; font-weight: 600; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.pst-fldc-road-label,.theme-apu-mismatch-road-label)::after { border-color: var(--pst-slate-line); }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-fldc-train:not(.is-selected) { background: var(--pst-slate-row) !important; border-color: var(--pst-slate-line) !important; color: var(--pst-slate-text) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-fldc-train.is-selected { background: var(--fldc-success-bg) !important; border-color: var(--fldc-success) !important; color: var(--fldc-success) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.pst-excel-export-button:where(:not(.is-copied)),.pst-fldc-select-all:where(:not(.is-confirmed))) { min-height: 30px; border: 1px solid var(--pst-slate-line) !important; border-radius: 8px; background: var(--pst-slate-control) !important; color: var(--pst-slate-text) !important; box-shadow: none; filter: none !important; font-size: 12px; font-weight: 400; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.pst-excel-export-button:where(:not(.is-copied)),.pst-fldc-select-all:where(:not(.is-confirmed))):hover:not(:disabled) { background: var(--pst-slate-hover) !important; cursor: pointer; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-excel-export-button.is-copied { background: var(--pst-format-success-bg) !important; border-color: var(--pst-format-success) !important; color: var(--pst-format-success) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-fldc-select-all.is-confirmed { background: var(--fldc-success-bg) !important; border-color: var(--fldc-success) !important; color: var(--fldc-success) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.pst-excel-export-button,.pst-fldc-select-all) :is(span,svg) { color: inherit !important; -webkit-text-fill-color: currentColor !important; }
+
+  /* APU selection colours still distinguish selected alarms from idle trains. */
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-apu-mismatch-header { min-height: 60px; padding: 10px 14px; border-color: var(--pst-slate-line) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-apu-mismatch-panel > .grid { gap: 10px; padding: 12px 14px; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-apu-mismatch-road-list { gap: 7px; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-apu-mismatch-header h3 { white-space: normal; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-apu-mismatch-count { padding: 4px 8px; border: 0; border-left: 1px solid var(--pst-slate-line) !important; border-radius: 0; background: transparent !important; color: var(--pst-slate-muted) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .theme-apu-mismatch-train:not(.is-selected) { background: var(--pst-slate-row) !important; border-color: var(--pst-slate-line) !important; color: var(--pst-slate-text) !important; box-shadow: none !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.theme-apu-mismatch-output,.pst-clean-card) { border: 1px solid var(--pst-slate-line) !important; border-radius: 14px; background: var(--pst-slate-row) !important; box-shadow: none !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.theme-apu-mismatch-output-header,.pst-clean-card-header,.pst-clean-card-body) { border-color: var(--pst-slate-line) !important; background: transparent !important; box-shadow: none !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.theme-apu-mismatch-log,.pst-clean-pre,.pst-clean-card-title) { color: var(--pst-slate-text) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.theme-apu-mismatch-copy,.theme-apu-mismatch-clear) { min-height: 30px; border-color: var(--pst-slate-line) !important; border-radius: 8px; background: var(--pst-slate-control) !important; color: var(--pst-slate-text) !important; font-size: 12px; font-weight: 400; transform: none !important; box-shadow: none !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.theme-apu-mismatch-clear,.pst-fldc-clear) { color: var(--pst-slate-danger) !important; }
+
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.pst-clean-shell,.pst-manual-shell) { padding: 0 16px 16px; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.pst-clean-title-row,.pst-manual-header) { min-height: 70px; padding: 12px 0; margin-bottom: 12px; border-bottom: 1px solid var(--pst-slate-line); background: transparent !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.pst-manual-add-row,.pst-manual-clear:where(:not(.is-confirming))) { min-height: 30px; padding: 6px 10px; border: 1px solid var(--pst-slate-line) !important; border-radius: 8px; background: var(--pst-slate-control) !important; color: var(--pst-slate-text) !important; font-size: 12px; font-weight: 400; box-shadow: none !important; animation: none !important; filter: none !important; transform: none !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-manual-clear:not(.is-confirming) { color: var(--pst-slate-danger) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-manual-table th { background: var(--pst-slate-control) !important; color: var(--pst-slate-muted) !important; border-color: var(--pst-slate-line) !important; font-weight: 500; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-manual-table td { background: var(--pst-slate-row) !important; border-color: var(--pst-slate-line) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-clean-action:where(:not(.pst-clean-action-copied):not(.pst-clean-action-danger)) { min-height: 30px; border: 1px solid var(--pst-slate-line) !important; border-radius: 8px; background: var(--pst-slate-control) !important; color: var(--pst-slate-text) !important; font-size: 12px; font-weight: 400; box-shadow: none !important; transform: none !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-elog-style-picker { border-color: var(--pst-slate-line); background: var(--pst-slate-control) !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] .pst-elog-style-button-active { border-color: var(--pst-slate-line) !important; background: var(--pst-slate-active) !important; color: var(--pst-slate-active-text) !important; box-shadow: none !important; }
+  html[data-app-theme] #root .app-shell[data-active-page="pst"] :is(.theme-pst-section,.pst-excel-format-panel,.theme-apu-mismatch-panel,.pst-clean-shell,.pst-manual-shell) :is(input,button,select):focus-visible { outline: 2px solid var(--pst-slate-focus); outline-offset: 2px; }
+}

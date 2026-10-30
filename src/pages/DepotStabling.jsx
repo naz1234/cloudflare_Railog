@@ -35,6 +35,7 @@ import "../mobileDensity.css";
 import "../possessionMobile.css";
 import "../possessionDesktop.css";
 import "../possessionReference.css";
+import "../pstSlate.css";
 import RemovalPdfEditor from "../components/depot/RemovalPdfEditor";
 import EastNineAmRemovalPdfEditor from "../components/depot/EastNineAmRemovalPdfEditor";
 import RemovalSummaryRemark from "../components/depot/RemovalSummaryRemark";
@@ -6150,10 +6151,10 @@ function InsertionEditableHeaderControls({
       <ActionTooltip
         message={
           <span className="block text-[11px] leading-snug">
-            <span className="block font-bold">{syncTooltip.title}</span>
-            <span className="mt-1 block font-normal">{syncTooltip.description}</span>
+            <span className="stabling-sync-tooltip-title block font-bold">{syncTooltip.title}</span>
+            <span className="stabling-sync-tooltip-description mt-1 block font-normal">{syncTooltip.description}</span>
             {syncTooltip.warning && (
-              <span className="mt-1.5 flex items-start gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 font-medium text-amber-950">
+              <span className="stabling-sync-tooltip-warning mt-1.5 flex items-start gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 font-medium text-amber-950">
                 <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
                 <span>{syncTooltip.warning}</span>
               </span>
@@ -6161,6 +6162,7 @@ function InsertionEditableHeaderControls({
           </span>
         }
         placement={tooltipPlacement}
+        contentClassName={workLabel === "PST / Train Prep" ? "pst-sync-tooltip" : ""}
         contentStyle={{ maxWidth: "min(280px, calc(100vw - 20px))", overflowWrap: "anywhere" }}
         triggerProps={!isDirty ? { tabIndex: 0, role: "group", "aria-label": syncTooltip.accessibleLabel } : {}}
       >
@@ -15324,7 +15326,7 @@ function PSTTabContent
 
   return (
     <div className="mobile-pst-workspace flex w-full min-w-0 flex-col items-start gap-7">
-      <div data-mobile-depot="west" className="grid w-full min-w-0 grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[954px_minmax(420px,1fr)] lg:items-start">
+      <div data-mobile-depot="west" className="pst-depot-layout grid w-full min-w-0 grid-cols-1 gap-3 items-start">
         <div className="flex min-w-0 flex-col gap-3">
           <PSTStablingSection title="WEST DEPOT — PST / TRAIN PREP" onRefreshStabling={() => onRefreshPSTStabling?.("west")} onUndoStabling={() => onUndoPSTStabling?.("west")} onRedoStabling={() => onRedoPSTStabling?.("west")} canUndoStabling={westCanUndoPSTStabling} canRedoStabling={westCanRedoPSTStabling} isStablingDirty={westPSTStablingDirty} blockLabels={["BLOCK 7","BLOCK 6","BLOCK 5","BLOCK 4","BLOCK 3","BLOCK 2","BLOCK 1"]} blockIndices={[6,5,4,3,2,1,0]} roads={WEST_ROADS} data={westData} labelSide="left" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("west")} onClearPrep={() => onClearDepotPrepOnly?.("west")} onClearStablingTrains={() => onClearPSTStablingTrains?.("west")} stablingEditable onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("west", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
           <PSTManualEntry depot="west" logLines={sortedLogLines} onAddEntry={onAddManualLog} onRemoveEntry={onRemoveManualLog} />
@@ -15398,7 +15400,7 @@ function PSTTabContent
             <PSTLogOutput depot="west" logLines={sortedLogLines} onClearDepot={onClearDepotLog} fldcController={fldcController} />
           </div>
         </div>
-        <div className="flex w-full min-w-0 flex-col gap-3">
+        <div className="pst-support-panels flex w-full min-w-0 flex-col gap-3">
           {renderDepotControls("west")}
           <APUMismatchChecklist
             depot="west"
@@ -15429,7 +15431,7 @@ function PSTTabContent
         <span>EAST DEPOT</span>
       </div>
 
-      <div data-mobile-depot="east" className="grid w-full min-w-0 grid-cols-1 gap-x-5 gap-y-3 lg:grid-cols-[954px_minmax(420px,1fr)] lg:items-start">
+      <div data-mobile-depot="east" className="pst-depot-layout grid w-full min-w-0 grid-cols-1 gap-3 items-start">
         <div className="flex min-w-0 flex-col gap-3">
           <PSTStablingSection title="EAST DEPOT — PST / TRAIN PREP" onRefreshStabling={() => onRefreshPSTStabling?.("east")} onUndoStabling={() => onUndoPSTStabling?.("east")} onRedoStabling={() => onRedoPSTStabling?.("east")} canUndoStabling={eastCanUndoPSTStabling} canRedoStabling={eastCanRedoPSTStabling} isStablingDirty={eastPSTStablingDirty} blockLabels={["BLOCK 1","BLOCK 2","BLOCK 3","BLOCK 4","BLOCK 5","BLOCK 6","BLOCK 7"]} blockIndices={[0,1,2,3,4,5,6]} roads={EAST_ROADS} data={eastData} labelSide="right" maintenanceMap={maintenanceMap} pstState={pstState} prepState={prepState} onPSTTick={onPSTTick} onPSTStartTimeChange={onPSTStartTimeChange} onPrepTick={onPrepTick} onPrepCompletionTimeChange={onPrepCompletionTimeChange} taNameState={taNameState} onTaNameChange={onTaNameChange} onClearPST={() => onClearDepotPSTOnly?.("east")} onClearPrep={() => onClearDepotPrepOnly?.("east")} onClearStablingTrains={() => onClearPSTStablingTrains?.("east")} stablingEditable onEditableTrainIdChange={(road, bi, value) => onEditablePSTTrainIdChange?.("east", road, bi, value)} trainSearch={trainSearch} onTrainSearchChange={setTrainSearch} trainSearchResults={trainSearchResults} />
           <PSTManualEntry depot="east" logLines={sortedLogLines} onAddEntry={onAddManualLog} onRemoveEntry={onRemoveManualLog} />
@@ -15437,7 +15439,7 @@ function PSTTabContent
             <PSTLogOutput depot="east" logLines={sortedLogLines} onClearDepot={onClearDepotLog} fldcController={fldcController} />
           </div>
         </div>
-        <div className="flex w-full min-w-0 flex-col gap-3">
+        <div className="pst-support-panels flex w-full min-w-0 flex-col gap-3">
           {renderDepotControls("east")}
           <APUMismatchChecklist
             depot="east"

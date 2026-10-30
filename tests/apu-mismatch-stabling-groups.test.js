@@ -132,5 +132,6 @@ test('APU roads fit all seven blocks on one desktop line, while stabling gives s
     assert.equal(trainButtons(groups[0]).length, 7);
     assert.doesNotMatch(nodes(tree)[0].props.className, /lg:w-\[420px\]/);
   }
-  assert.equal((source.match(/lg:grid-cols-\[954px_minmax\(420px,1fr\)\]/g) || []).length, 2);
+  assert.equal((source.match(/className="pst-depot-layout /g) || []).length, 2);
+  assert.equal((source.match(/className="pst-support-panels /g) || []).length, 2);
 });

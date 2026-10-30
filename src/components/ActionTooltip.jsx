@@ -6,6 +6,7 @@ export default function ActionTooltip({
   align = "center",
   sideOffset = 7,
   wrapperClassName = "",
+  contentClassName = "",
   contentStyle = null,
   triggerProps = {},
   asChild = false,
@@ -41,14 +42,14 @@ export default function ActionTooltip({
             sideOffset={sideOffset}
             collisionPadding={10}
             role="tooltip"
-            className="z-[10000] max-w-[280px] rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left text-[11px] font-semibold leading-snug text-slate-900 shadow-xl will-change-[transform,opacity] data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-[state=instant-open]:animate-in data-[state=instant-open]:fade-in-0 data-[state=instant-open]:zoom-in-95"
+            className={`z-[10000] max-w-[280px] rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left text-[11px] font-semibold leading-snug text-slate-900 shadow-xl will-change-[transform,opacity] data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-[state=instant-open]:animate-in data-[state=instant-open]:fade-in-0 data-[state=instant-open]:zoom-in-95 ${contentClassName}`.trim()}
             style={{ animationDuration: "150ms", ...(contentStyle || {}) }}
           >
             {message}
             <TooltipPrimitive.Arrow
               width={10}
               height={5}
-              className="fill-white"
+              className="action-tooltip-arrow fill-white"
               style={{ filter: "drop-shadow(0 1px 0 rgb(226 232 240))" }}
             />
           </TooltipPrimitive.Content>
