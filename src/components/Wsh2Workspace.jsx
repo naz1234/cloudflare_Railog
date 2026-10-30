@@ -180,9 +180,9 @@ export default function Wsh2Workspace() {
     } catch (failure) { setPrintError(failure.message); } finally { setPrinting(false); }
   }
 
-  return <section className="wsh2-workspace" aria-label="AWP wash checklist">
+  return <section className="wsh2-workspace" aria-label="Automatic Washing Plant wash checklist">
     <header className="wsh2-heading">
-      <div className="wsh2-heading-title"><span className="wsh2-icon"><Droplets size={24} /></span><div><div className="wsh2-eyebrow">AWP</div><h1>Wash checklist</h1><p>Daily train washes, shared across depots.</p></div></div>
+      <div className="wsh2-heading-title"><span className="wsh2-icon"><Droplets size={24} /></span><div><div className="wsh2-eyebrow">Automatic Washing Plant</div><h1>Wash checklist</h1><p>Daily train washes, shared across depots.</p></div></div>
       <div className="wsh2-header-stats" role="group" aria-label="Wash progress">
         <div className="wsh2-stat is-complete">
           <span className="wsh2-stat-icon" aria-hidden="true"><Check size={20} strokeWidth={3} /></span>

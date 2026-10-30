@@ -18,9 +18,11 @@ const server = await createServer({
     async load(id) {
       if (id !== virtualId) return;
       const code = `import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-        import { FileText, Shield, Trash2, X, Plus, Copy, ClipboardCheck, Wind, Zap } from "lucide-react";
+        import { FileText, Shield, Trash2, X, Plus, Copy, ClipboardCheck, Wind, Zap, UsersRound, Undo2, Clock3, BarChart3, Layers, TrainFront } from "lucide-react";
+        import PossessionEntryPicker from "/src/components/depot/PossessionEntryPicker.jsx";
+        import PossessionAccessSearch from "/src/components/depot/PossessionAccessSearch.jsx";
         import { base44 } from "/scripts/preview-compact-slate-api.js";
-        import { buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "/src/lib/possessionAccessLog.js";
+        import { buildPossessionCombinedOutput, buildPossessionDashboard, buildPossessionEntryOutput, buildPossessionSecurityMessage, getPossessionAccessDetails, getPossessionEntryPendingStatus, getPossessionSecurityDetails, normalizePossessionAccessEntry, removePossessionAccessEntry } from "/src/lib/possessionAccessLog.js";
         ${pss}
         export { PossessionTabContent };`;
       return (await transformWithEsbuild(code, "PSSPreview.jsx", { loader: "jsx", jsx: "automatic" })).code;

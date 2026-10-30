@@ -3,6 +3,13 @@ import { createRoot } from "react-dom/client";
 import { PossessionTabContent } from "virtual:pss-security.jsx";
 import { base44 } from "./preview-compact-slate-api.js";
 import "../src/index.css";
+import "../src/reqMobile.css";
+import "../src/mobileWorkspaces.css";
+import "../src/mobileActions.css";
+import "../src/mobileDensity.css";
+import "../src/possessionMobile.css";
+import "../src/possessionDesktop.css";
+import "../src/possessionReference.css";
 
 const fixtures = {
   west: [{ picName: "Jay Bigcas", picId: "FLOW_1113", issueTime: "13:02", accessAuthTime: "13:02", accessPoint: "GATE 03", scd: "No", accessDetails: [
@@ -36,7 +43,7 @@ function Preview() {
         await base44.entities.PossessionLive.update(record.id, { data: record.data.map((entry, i) => i === 1 ? { ...entry, picName: "Remote East Second PIC" } : entry), updatedAt: new Date().toISOString() });
       }}>Simulate East Entry 2 remote update</button>
     </nav>
-    <PossessionTabContent />
+    <div className="app-shell" data-active-page="possession"><PossessionTabContent /></div>
   </main>;
 }
 createRoot(document.getElementById("root")).render(<Preview />);

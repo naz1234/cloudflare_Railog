@@ -115,8 +115,8 @@ test('AWP replaces the visible WSH2 brand without changing routes, storage or pa
   const ui = readFileSync(new URL('../src/components/Wsh2Workspace.jsx', import.meta.url), 'utf8');
   const mobile = readFileSync(new URL('../src/components/ReqMobileNavigation.jsx', import.meta.url), 'utf8');
   const page = readFileSync(new URL('../src/pages/DepotStabling.jsx', import.meta.url), 'utf8');
-  assert.match(ui, /aria-label="AWP wash checklist"/);
-  assert.match(ui, /className="wsh2-eyebrow">AWP</);
+  assert.match(ui, /aria-label="Automatic Washing Plant wash checklist"/);
+  assert.match(ui, /className="wsh2-eyebrow">Automatic Washing Plant</);
   assert.match(ui, /link.download = `AWP-/);
   assert.doesNotMatch(ui, /aria-label="WSH2|>WSH2</);
   assert.match(mobile, /\["wsh2", "AWP", "Wash Checklist"\]/);
