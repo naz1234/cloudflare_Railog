@@ -73,7 +73,7 @@ test('WSH2 occupies the former normal washing position and retains the normal we
   assert.doesNotMatch(source, /Wsh2ProtectedPage/);
   const first = source.indexOf('key: "insertion",');
   const last = source.indexOf('key: "possession",', first);
-  assert.match(source.slice(first, last), /key: "wsh2",\s*label: "Wash Checklist",\s*code: "WSH2",\s*to: "\/wsh2"/);
+  assert.match(source.slice(first, last), /key: "wsh2",\s*label: "Wash Checklist",\s*code: "AWP",\s*to: "\/wsh2"/);
   const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
   const authenticatedRoutes = app.slice(app.indexOf('<Route element={<ProtectedRoute />}>'), app.indexOf('{/* Add your page Route elements here */}'));
   for (const path of ['/wsh2', '/train-washing']) assert.ok(authenticatedRoutes.includes(`path="${path}"`));

@@ -10,7 +10,7 @@ const sections = [
 const pages = [
   ["depot-stabling", "REQ", "Train Request"], ["train-movement", "MOV", "Train Movement"],
   ["pst-train-prep", "PST", "Train Preparation"], ["insertion", "INS", "Insertion"],
-  ["wsh2", "WSH2", "Wash Checklist"], ["possession", "PSS", "Possession"],
+  ["wsh2", "AWP", "Wash Checklist"], ["possession", "PSS", "Possession"],
   ["roster", "ROS", "Roster"], ["sleep", "SLP", "Sleep Mode"],
   ["train-washing", "WSH", "Washing"],
 ];

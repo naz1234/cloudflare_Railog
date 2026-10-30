@@ -82,6 +82,8 @@ test('WSH2 Word export matches paper columns and preserves every row in continua
   const rows = Array.from({ length: 41 }, (_, i) => ({ id: String(i), trainNumber: `L3-MV-${301 + i}`, date: '2026-10-31', nextWash: '2026-10-31T13:00', location: 'WD & <test>', completed: i === 0, hvac: i === 0 ? 'ON' : '', washType: i === 0 ? 'Partial' : '', depot: i === 0 ? 'east' : '' }));
   const zip = unzipSync(buildWsh2Docx(rows));
   const xml = strFromU8(zip['word/document.xml']);
+  assert.match(xml, /AWP WASH CHECKLIST/);
+  assert.doesNotMatch(xml, /WSH2 WASH CHECKLIST/);
   assert.match(xml, /F4C542/);
   for (const header of ['Train Number', 'Next Wash', 'Location', 'DONE', 'HVAC', 'PARTIAL \/ FULL', 'WD or ED', 'DC MARK']) assert.match(xml, new RegExp(header));
   assert.match(xml, /Partial \/ ED/); assert.match(xml, /WD &amp; &lt;test&gt;/);
@@ -105,5 +107,21 @@ test('WSH2 is a separate route and navigation item without removing existing WSH
   const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
   const page = readFileSync(new URL('../src/pages/DepotStabling.jsx', import.meta.url), 'utf8');
   assert.match(app, /path="\/wsh2"/); assert.match(app, /path="\/train-washing"/);
-  assert.match(page, /code: "WSH2"/); assert.match(page, /<Wsh2Workspace \/>/); assert.match(page, /<TrainWashing \/>/);
+  assert.match(page, /code: "AWP"/); assert.match(page, /<Wsh2Workspace \/>/); assert.match(page, /<TrainWashing \/>/);
+});
+
+test('AWP replaces the visible WSH2 brand without changing routes, storage or page access', () => {
+  const ui = readFileSync(new URL('../src/components/Wsh2Workspace.jsx', import.meta.url), 'utf8');
+  const mobile = readFileSync(new URL('../src/components/ReqMobileNavigation.jsx', import.meta.url), 'utf8');
+  const page = readFileSync(new URL('../src/pages/DepotStabling.jsx', import.meta.url), 'utf8');
+  assert.match(ui, /aria-label="AWP wash checklist"/);
+  assert.match(ui, /className="wsh2-eyebrow">AWP</);
+  assert.match(ui, /link.download = `AWP-/);
+  assert.doesNotMatch(ui, /aria-label="WSH2|>WSH2</);
+  assert.match(mobile, /\["wsh2", "AWP", "Wash Checklist"\]/);
+  assert.match(ui, /\/api\/wsh2/);
+  const protectedKeys = page.match(/const PROTECTED_SHORTCUT_KEYS = new Set\(\[([^\]]+)\]\)/)[1];
+  assert.doesNotMatch(protectedKeys, /"wsh2"/);
+  assert.match(protectedKeys, /"washing"/);
+  assert.match(page, /activeTab === "wsh2" && \(\s*<Wsh2Workspace \/>/);
 });

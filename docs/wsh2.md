@@ -1,8 +1,8 @@
-# WSH2 wash checklist
+# AWP wash checklist
 
-The wash checklist route is `/#/wsh2`. It occupies the normal washing shortcut position between INS and PSS. The original WSH workspace remains at `/#/train-washing`, in the protected group after ODO.
+AWP is the display name of the wash checklist previously labelled WSH2. Its route remains `/#/wsh2` for existing bookmarks, with the same internal API, D1 tables and R2 binding. It occupies the normal washing shortcut position between INS and PSS. The original WSH workspace remains at `/#/train-washing`, in the protected group after ODO.
 
-WSH2 does not require the extra protected-page unlock. It is available in desktop and mobile navigation after the normal authorized application login; its API and source downloads still require that login. The original WSH page now uses the shared protected-page unlock popup and browser-tab session. Its controls and reports do not mount until unlocked, and desktop/mobile menus hide WSH while locked. Relocking protected pages returns an active WSH view to Train Request, but leaves WSH2 accessible. This changes the existing UI lock, not server-side login or data permissions.
+AWP does not require the extra protected-page unlock. It is available in desktop and mobile navigation after the normal authorized application login; its API and source downloads still require that login. The original WSH page now uses the shared protected-page unlock popup and browser-tab session. Its controls and reports do not mount until unlocked, and desktop/mobile menus hide WSH while locked. Relocking protected pages returns an active WSH view to Train Request, but leaves AWP accessible. This changes the existing UI lock, not server-side login or data permissions.
 
 ## Shared storage
 

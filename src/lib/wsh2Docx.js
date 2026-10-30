@@ -33,7 +33,7 @@ export function buildWsh2Docx(rows, { depotLabel = 'West and East Depot', dcMark
   let body = '';
   for (let i = 0; i < sections.length; i += 2) {
     if (i) body += '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
-    body += paragraph(`WSH2 WASH CHECKLIST   ${depotLabel.toUpperCase()}`, { bold: true, size: 22, after: 160 });
+    body += paragraph(`AWP WASH CHECKLIST   ${depotLabel.toUpperCase()}`, { bold: true, size: 22, after: 160 });
     body += table(sections[i]);
     if (sections[i + 1]) body += paragraph('', { size: 4, after: 70 }) + table(sections[i + 1]);
     body += paragraph(`DC MARK${dcMark.trim() ? `: ${dcMark.trim()}` : ': __________________'}`, { bold: true, align: 'right', after: 0 });
