@@ -141,16 +141,16 @@ function loadAppTheme() {
 
 function normalizeEastInsertionTimeOffset(value) {
   const numericValue = Number(value);
-  // Migrate the previous +3-minute preference to the new +2-minute rule.
-  return numericValue === 0 ? 0 : 2;
+  // Migrate previous +2/+3-minute preferences to the +1-minute rule.
+  return numericValue === 0 ? 0 : 1;
 }
 
 function loadEastInsertionTimeOffset() {
   try {
     const stored = localStorage.getItem(EAST_INSERTION_TIME_OFFSET_KEY);
-    return stored === null ? 2 : normalizeEastInsertionTimeOffset(stored);
+    return stored === null ? 1 : normalizeEastInsertionTimeOffset(stored);
   } catch {
-    return 2;
+    return 1;
   }
 }
 
@@ -10296,10 +10296,8 @@ function InsertionTabContent({
   // TID schedule range: earliest first-TID time across both series, latest last-TID time.
   // Series 1xx: 05:25–06:22 | Series 2xx: 05:24–06:21
   // Grey-out in the TID Reference Table only applies while current time is within this window.
-  const TID_SCHEDULE_FIRST = eastInsertionTimeOffsetMinutes === 2
-    ? westInsertionTimeOffsetMinutes === 1 ? "05:26" : "05:25"
-    : "05:24";
-  const TID_SCHEDULE_LAST = eastInsertionTimeOffsetMinutes === 2 || westInsertionTimeOffsetMinutes === 1 ? "06:23" : "06:22";
+  const TID_SCHEDULE_FIRST = eastInsertionTimeOffsetMinutes === 1 ? "05:25" : "05:24";
+  const TID_SCHEDULE_LAST = westInsertionTimeOffsetMinutes === 1 ? "06:23" : "06:22";
   const withinTIDSchedule = isWithinTIDSchedule(TID_SCHEDULE_FIRST, TID_SCHEDULE_LAST);
   const [tidReferenceScheduleKey, setTidReferenceScheduleKey] = useState(() => normalizeTimetableType(activeTimetableType));
 
