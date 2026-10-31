@@ -26,7 +26,7 @@ test("ATS remains in the protected group alongside WSH, using the existing hidde
   const protectedKeys = source.match(/const PROTECTED_SHORTCUT_KEYS = new Set\(\[([^\]]+)\]\)/)?.[1];
   assert.ok(protectedKeys);
   const keys = [...protectedKeys.matchAll(/"([^\"]+)"/g)].map((match) => match[1]);
-  assert.deepEqual(keys, ["odo", "washing", "alarm", "overtime", "admin", "ats"]);
+  assert.deepEqual(keys, ["odo", "washing", "roster", "alarm", "overtime", "admin", "ats"]);
   assert.ok(keys.includes("ats"));
   assert.match(source, /\{ key: "ats", label: "ATS", code: "ATS", to: "\/ats" \}/);
   const filterExpression = source.match(/\.filter\(\(\{ key \}\) => (!PROTECTED_SHORTCUT_KEYS\.has\(key\) \|\| areProtectedShortcutsUnlocked)\)/)?.[1];
@@ -34,7 +34,7 @@ test("ATS remains in the protected group alongside WSH, using the existing hidde
   const filter = new Function("PROTECTED_SHORTCUT_KEYS", "areProtectedShortcutsUnlocked", `return ({ key }) => ${filterExpression};`);
   const navigation = [{ key: "stabling" }, ...keys.map((key) => ({ key }))];
   assert.deepEqual(navigation.filter(filter(new Set(keys), false)).map(({ key }) => key), ["stabling"]);
-  assert.equal(navigation.filter(filter(new Set(keys), true)).length, 7);
+  assert.equal(navigation.filter(filter(new Set(keys), true)).length, 8);
 });
 
 test("ATS has an authenticated route and resolves to its own tab", () => {
