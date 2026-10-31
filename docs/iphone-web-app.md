@@ -29,6 +29,19 @@ Physical iPhone verification is required: desktop responsive emulation cannot
 verify iOS Home Screen installation behavior. External links can still open a
 browser, and launching a normal browser bookmark does not enable standalone mode.
 
+## Home indicator clearance
+
+The app viewport uses `viewport-fit=cover` so WebKit can expose the edge insets.
+Phone navigation adds the bottom safe-area inset below its buttons, and the
+scrollable content reserves the same inset so the last row can clear the menu.
+The phone header, page menu and side edges also respect the notch safe area.
+These layout rules remain inside the existing 767px phone breakpoint; the
+login viewport and laptop navigation are unchanged. The white home indicator
+is controlled by iOS and is not removed or hidden by this fix.
+
+Check both light and dark themes on the physical iPhone, including launch,
+scrolling to the final row, closing the keyboard and rotating back to portrait.
+
 References:
 - [Apple: Configuring Web Applications](https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariWebContent/ConfiguringWebApplications/ConfiguringWebApplications.html)
 - [CSP manifest-src](https://www.w3.org/TR/CSP3/#directive-manifest-src)
