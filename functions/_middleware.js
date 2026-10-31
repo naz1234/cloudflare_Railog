@@ -66,6 +66,8 @@ function withLoginSecurityHeaders(response) {
       "frame-ancestors 'none'",
       'frame-src https://challenges.cloudflare.com',
       "img-src 'self' data:",
+      // Otherwise default-src 'none' blocks Home Screen app discovery at login.
+      "manifest-src 'self'",
       "script-src 'self' https://challenges.cloudflare.com",
       "style-src 'self'",
     ].join('; '),
