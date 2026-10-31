@@ -12,8 +12,12 @@ for (const path of ['index.html', 'public/login.html']) {
     assert.match(head, /<meta name="apple-mobile-web-app-capable" content="yes"\s*\/>/);
     assert.match(head, /<meta name="mobile-web-app-capable" content="yes"\s*\/>/);
     assert.match(head, /<meta name="apple-mobile-web-app-title" content="L3 Depot Controller Template"\s*\/>/);
-    // Do not change viewport geometry or hide the website's own navigation.
-    assert.match(head, /<meta name="viewport" content="width=device-width, initial-scale=1\.0"\s*\/>/);
+    // Only the app opts into edge-to-edge drawing; its phone CSS protects all
+    // four safe areas. The login page keeps the browser-managed viewport.
+    const viewport = head.match(/<meta name="viewport" content="([^"]+)"/)[1];
+    assert.equal(viewport, path === 'index.html'
+      ? 'width=device-width, initial-scale=1.0, viewport-fit=cover'
+      : 'width=device-width, initial-scale=1.0');
   });
 }
 

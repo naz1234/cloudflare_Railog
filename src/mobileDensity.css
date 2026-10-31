@@ -3,8 +3,13 @@
   #root .app-shell[data-active-page] {
     --mobile-control-height: 36px;
     --mobile-row-height: 56px;
+    --mobile-safe-top: env(safe-area-inset-top, 0px);
+    --mobile-safe-right: env(safe-area-inset-right, 0px);
+    --mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --mobile-safe-left: env(safe-area-inset-left, 0px);
+    padding-inline: var(--mobile-safe-left) var(--mobile-safe-right);
   }
-  #root .app-shell[data-active-page] .req-mobile-header { min-height: 56px; padding: 5px 8px; gap: 3px; }
+  #root .app-shell[data-active-page] .req-mobile-header { min-height: calc(56px + var(--mobile-safe-top)); padding: calc(5px + var(--mobile-safe-top)) 8px 5px; gap: 3px; }
   #root .app-shell[data-active-page] .req-mobile-brand { gap: 7px; }
   #root .app-shell[data-active-page] .req-mobile-brand > svg { width: 22px; height: 22px; }
   #root .app-shell[data-active-page] .req-mobile-brand strong { font-size: 14px; }
@@ -12,12 +17,14 @@
   #root .app-shell[data-active-page] .req-mobile-icon-button { width: 36px; height: 38px; }
   #root .app-shell[data-active-page] .req-mobile-depot-switch { margin: 8px 10px 0; padding: 4px; border-radius: 12px; }
   #root .app-shell[data-active-page] .req-mobile-depot-switch button { min-height: 34px; font-size: 12px; gap: 7px; }
-  #root .app-shell[data-active-page] .req-mobile-page-menu { top: 51px; padding: 6px; }
+  #root .app-shell[data-active-page] .req-mobile-page-menu { top: calc(51px + var(--mobile-safe-top)); padding: 6px; }
   #root .app-shell[data-active-page] .req-mobile-page-menu a { min-height: 42px; font-size: 11px; }
-  #root .app-shell[data-active-page] .req-mobile-bottom-nav { padding: 4px 6px calc(5px + env(safe-area-inset-bottom,0px)); }
+  /* The full-width background reaches the edge, but controls stay above the
+     iPhone home indicator. Use the same inset for the final scrollable row. */
+  #root .app-shell[data-active-page] .req-mobile-bottom-nav { padding: 4px calc(6px + var(--mobile-safe-right)) calc(8px + var(--mobile-safe-bottom)) calc(6px + var(--mobile-safe-left)); }
   #root .app-shell[data-active-page] .req-mobile-bottom-nav button { min-height: 44px; font-size: 11px; gap: 3px; }
   #root .app-shell[data-active-page] .req-mobile-bottom-nav svg { width: 18px; height: 18px; }
-  #root .app-shell[data-active-page] > .flex > main > div { padding: 8px 10px calc(74px + env(safe-area-inset-bottom,0px)); }
+  #root .app-shell[data-active-page] > .flex > main > div { padding: 8px 10px calc(74px + var(--mobile-safe-bottom)); }
 
   /* Road lists share smaller number boxes, row gaps and road headings. */
   html[data-app-theme] #root .app-shell[data-active-page] :is(.theme-stabling-grid-cell,.theme-pst-grid-cell,.theme-insertion-grid-cell,.mobile-sleep-cell) { grid-template-columns: 32px minmax(0,1fr); }
