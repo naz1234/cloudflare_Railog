@@ -53,8 +53,9 @@ test('mobile navigation shows WSH2 normally and hides original WSH until unlocke
   const mobile = readFileSync(new URL('../src/components/ReqMobileNavigation.jsx', import.meta.url), 'utf8');
   assert.match(source, /protectedPagesUnlocked=\{areProtectedShortcutsUnlocked\}/);
   assert.match(mobile, /protectedPagesUnlocked = false/);
-  const expression = mobile.match(/pages\.filter\(\(\[path\]\) => ([^)]+)\)/)[1];
-  const visible = new Function('path', 'protectedPagesUnlocked', `return ${expression}`);
+  const expression = mobile.match(/pages\.filter\(\(\[path\]\) => (.*?)\)\.map/)[1];
+  const protectedPaths = new Set(JSON.parse(mobile.match(/const PROTECTED_PAGE_PATHS = new Set\((\[[^\]]+\])\)/)[1]));
+  const visible = new Function('PROTECTED_PAGE_PATHS', 'path', 'protectedPagesUnlocked', `return ${expression}`).bind(null, protectedPaths);
   assert.equal(visible('wsh2', false), true);
   assert.equal(visible('wsh2', true), true);
   assert.equal(visible('train-washing', false), false);
@@ -63,7 +64,7 @@ test('mobile navigation shows WSH2 normally and hides original WSH until unlocke
   const pageKeys = new Function(`return ${mobile.match(/const pageKeys = (\[[^\]]+\]);/)[1]}`)();
   assert.equal(pages.length, pageKeys.length);
   assert.deepEqual(pages.slice(3, 6).map(([path]) => path), ['insertion', 'wsh2', 'possession']);
-  assert.equal(pages.at(-1)[0], 'train-washing');
+  assert.deepEqual(pages.slice(-2).map(([path]) => path), ['train-washing', 'roster']);
   assert.equal(pages[pageKeys.indexOf('washing')][0], 'train-washing');
   assert.equal(pages[pageKeys.indexOf('wsh2')][0], 'wsh2');
 });

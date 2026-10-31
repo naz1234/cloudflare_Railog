@@ -19,10 +19,10 @@ test('retired ABT and CHK URLs resolve to the existing not-found route, not a wo
   }
 });
 
-test('the six remaining protected pages keep their shared lock and menu behavior', () => {
+test('the seven protected pages keep their shared lock and menu behavior', () => {
   const keys = [...page.match(/const PROTECTED_SHORTCUT_KEYS = new Set\(\[([^\]]+)\]\)/)[1].matchAll(/"([^"]+)"/g)]
     .map((match) => match[1]);
-  assert.deepEqual(keys, ['odo', 'washing', 'alarm', 'overtime', 'admin', 'ats']);
+  assert.deepEqual(keys, ['odo', 'washing', 'roster', 'alarm', 'overtime', 'admin', 'ats']);
   for (const source of [page, mobile]) {
     assert.doesNotMatch(source, /key: "(?:about|checklist)"|code: "(?:ABT|CHK)"|AboutWorkspace|ChecklistWorkspace/);
   }

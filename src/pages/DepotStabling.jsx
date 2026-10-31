@@ -22,6 +22,7 @@ import PossessionEntryPicker from "../components/depot/PossessionEntryPicker";
 import PossessionAccessSearch from "../components/depot/PossessionAccessSearch";
 import OvertimeTracker from "../components/OvertimeTracker";
 import RosterWorkspace from "../components/RosterWorkspace";
+import RosterProtectedPage from "../components/RosterProtectedPage";
 import ATSWorkspace from "../components/ATSWorkspace";
 import SleepModeWorkspace from "../components/SleepModeWorkspace";
 import OfficialEastExcelGenerator from "../components/OfficialEastExcelGenerator";
@@ -1916,7 +1917,7 @@ const ALM_SESSION_KEY = "almAlarmUnlocked_v1";
 const OVT_SESSION_KEY = "ovtOvertimeUnlocked_v1";
 const ODO_SESSION_KEY = "odoReadingUnlocked_v1";
 const PROTECTED_SHORTCUTS_SESSION_KEY = "protectedShortcutsUnlocked_v1";
-const PROTECTED_SHORTCUT_KEYS = new Set(["odo", "washing", "alarm", "overtime", "admin", "ats"]);
+const PROTECTED_SHORTCUT_KEYS = new Set(["odo", "washing", "roster", "alarm", "overtime", "admin", "ats"]);
 const ADM_LOGIN_ID = "admin";
 const ADM_LOGIN_PASSWORD = "921016";
 const ADMIN_NOTES_STORAGE_KEY = "admModernNotes_v1";
@@ -22422,19 +22423,6 @@ export default function DepotStablingPage() {
               ),
             },
             {
-              key: "roster",
-              label: "Roster",
-              code: "ROS",
-              to: "/roster",
-              icon: (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="17" rx="2"/>
-                  <path d="M8 2v4M16 2v4M3 9h18"/>
-                  <path d="M8 13h3M13 13h3M8 17h3M13 17h3"/>
-                </svg>
-              ),
-            },
-            {
               key: "sleep",
               label: "Sleep Mode",
               code: "SLP",
@@ -22458,6 +22446,19 @@ export default function DepotStablingPage() {
             },
             {
               key: "washing", label: "Train Washing", code: "WSH", to: "/train-washing",
+            },
+            {
+              key: "roster",
+              label: "Roster",
+              code: "ROS",
+              to: "/roster",
+              icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="17" rx="2"/>
+                  <path d="M8 2v4M16 2v4M3 9h18"/>
+                  <path d="M8 13h3M13 13h3M8 17h3M13 17h3"/>
+                </svg>
+              ),
             },
             {
               key: "alarm",
@@ -23226,11 +23227,13 @@ export default function DepotStablingPage() {
         )}
 
         {activeTab === "roster" && (
-          <div className="w-full px-2 pb-10 pt-0">
-            <div className="mx-auto w-full max-w-[1680px]">
-              <RosterWorkspace />
+          <RosterProtectedPage unlocked={areProtectedShortcutsUnlocked} onUnlock={handleProtectedShortcutToggle}>
+            <div className="w-full px-2 pb-10 pt-0">
+              <div className="mx-auto w-full max-w-[1680px]">
+                <RosterWorkspace />
+              </div>
             </div>
-          </div>
+          </RosterProtectedPage>
         )}
 
         {activeTab === "sleep" && (
