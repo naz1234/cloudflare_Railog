@@ -373,7 +373,7 @@ function addMinutesToTime(timeStr = "", minutesToAdd = 0) {
 
 function applyInsertionTimeOffsets(baseSchedules, westTimeOffsetMinutes = 0, eastTimeOffsetMinutes = 0) {
   const westOffset = Number(westTimeOffsetMinutes) === 1 ? 1 : 0;
-  const eastOffset = Number(eastTimeOffsetMinutes) === 2 ? 2 : 0;
+  const eastOffset = Number(eastTimeOffsetMinutes) === 1 ? 1 : 0;
   if (!westOffset && !eastOffset) return baseSchedules;
 
   // Always derive from the original schedule: toggling must not accumulate time.
@@ -777,7 +777,7 @@ function ScheduleWarningBanner({ selectedLabel, todayLabel, onSwitchToToday }) {
 }
 
 function DepotCard({ depotType, title, dayLabel, rows, nowMinutes, withinSchedule, isScheduleOverride, onTidDragStart, activeDragKey = "", usedTidKeys = new Set(), duplicateTidKeys = new Set(), timeOffsetMinutes = 0, onTimeOffsetChange }) {
-  const timeOffsetStep = depotType === "east" ? 2 : 1;
+  const timeOffsetStep = 1;
   const accent = DEPOT_ACCENTS[depotType];
   const nextIndex = getNextIndex(rows, nowMinutes);
   const activeIndex = getActiveIndex(rows, nowMinutes);
