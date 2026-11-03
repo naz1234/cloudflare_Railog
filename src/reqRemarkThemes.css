@@ -1,13 +1,16 @@
-/* Approved REQ card colours only. Light mode, remark pills, INS/PST cards,
-   duplicate alerts, flashing validation and search highlights stay unchanged. */
-html[data-app-theme="dark"] #root .app-shell[data-active-page="stabling"] .theme-stabling-section .theme-stabling-train-card.has-train.has-remark-theme:not(.is-duplicate):not(.is-flashing):not(.is-search-match) {
+/* Shared approved REQ and INS card colours. Light mode, remark/TID pills and
+   PST stay unchanged. Existing duplicate, search, elapsed and drag/drop
+   treatments retain priority over the optional remark surface. */
+html[data-app-theme="dark"] #root .app-shell[data-active-page="stabling"] .theme-stabling-section .theme-stabling-train-card.has-train.has-remark-theme:not(.is-duplicate):not(.is-flashing):not(.is-search-match),
+html[data-app-theme="dark"] #root .app-shell[data-active-page="insertion"] .theme-insertion-page .theme-insertion-card.is-req-layout.has-train.has-remark-theme:not(.is-duplicate):not(.is-search-match):not(.is-expired):not(.is-tid-drag-active):not(.is-tid-drop-hovered) {
   background: var(--req-remark-background) !important;
   border: 1.5px solid var(--req-remark-border) !important;
   border-radius: 12px;
   box-shadow: var(--req-remark-shadow) !important;
 }
 
-html[data-app-theme="dark"] #root .app-shell[data-active-page="stabling"] .theme-stabling-section .theme-stabling-train-card.has-train.is-unfit {
+html[data-app-theme="dark"] #root .app-shell[data-active-page="stabling"] .theme-stabling-section .theme-stabling-train-card.has-train.is-unfit,
+html[data-app-theme="dark"] #root .app-shell[data-active-page="insertion"] .theme-insertion-page .theme-insertion-card.is-req-layout.has-train.is-unfit {
   --req-remark-background: linear-gradient(135deg, #2d0a0a, #1a0505);
   --req-remark-border: #7a5324;
   --req-remark-shadow:
@@ -17,7 +20,8 @@ html[data-app-theme="dark"] #root .app-shell[data-active-page="stabling"] .theme
   --req-remark-divider: rgba(248, 113, 113, 0.72);
 }
 
-html[data-app-theme="dark"] #root .app-shell[data-active-page="stabling"] .theme-stabling-section .theme-stabling-train-card.has-train.is-least-priority {
+html[data-app-theme="dark"] #root .app-shell[data-active-page="stabling"] .theme-stabling-section .theme-stabling-train-card.has-train.is-least-priority,
+html[data-app-theme="dark"] #root .app-shell[data-active-page="insertion"] .theme-insertion-page .theme-insertion-card.is-req-layout.has-train.is-least-priority {
   --req-remark-background: linear-gradient(135deg, #24132f, #160c20);
   --req-remark-border: #a78bfa;
   --req-remark-shadow:
@@ -27,7 +31,8 @@ html[data-app-theme="dark"] #root .app-shell[data-active-page="stabling"] .theme
   --req-remark-divider: rgba(167, 139, 250, 0.72);
 }
 
-html[data-app-theme="dark"] #root .app-shell[data-active-page="stabling"] .theme-stabling-section .theme-stabling-train-card.has-train.is-deep-clean {
+html[data-app-theme="dark"] #root .app-shell[data-active-page="stabling"] .theme-stabling-section .theme-stabling-train-card.has-train.is-deep-clean,
+html[data-app-theme="dark"] #root .app-shell[data-active-page="insertion"] .theme-insertion-page .theme-insertion-card.is-req-layout.has-train.is-deep-clean {
   --req-remark-background: linear-gradient(135deg, #073438, #061e25);
   --req-remark-border: #2dd4bf;
   --req-remark-shadow:
@@ -37,6 +42,7 @@ html[data-app-theme="dark"] #root .app-shell[data-active-page="stabling"] .theme
   --req-remark-divider: rgba(45, 212, 191, 0.72);
 }
 
-html[data-app-theme="dark"] #root .app-shell[data-active-page="stabling"] .theme-stabling-section .theme-stabling-train-card.has-train.has-remark-theme:not(.is-duplicate):not(.is-flashing):not(.is-search-match) > .theme-stabling-card-divider {
+html[data-app-theme="dark"] #root .app-shell[data-active-page="stabling"] .theme-stabling-section .theme-stabling-train-card.has-train.has-remark-theme:not(.is-duplicate):not(.is-flashing):not(.is-search-match) > .theme-stabling-card-divider,
+html[data-app-theme="dark"] #root .app-shell[data-active-page="insertion"] .theme-insertion-page .theme-insertion-card.is-req-layout.has-train.has-remark-theme:not(.is-duplicate):not(.is-search-match):not(.is-expired):not(.is-tid-drag-active):not(.is-tid-drop-hovered) > .theme-insertion-card-header > .theme-insertion-card-divider {
   background: var(--req-remark-divider) !important;
 }
