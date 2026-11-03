@@ -81,8 +81,9 @@ test('AWP keeps uploaded files and all date tables in separate panels, without f
   assert.ok(source.indexOf('aria-label="Uploaded Excel files"') < source.indexOf('className="wsh2-paper"'));
   assert.match(source, /className="wsh2-content-grid"/);
   assert.match(source, /className="wsh2-checklist-panel"/);
-  assert.match(source, /onChange\(\{ completed: !row.completed \}\)/);
-  assert.match(source, /aria-label=\{`Depot for/);
+  assert.match(source, /onChange\(row.completed \? \{ completed: false \} : \{ completed: true, hvac: 'ON' \}\)/);
+  assert.match(source, /<Wsh2WashDetailsInput row=\{row\} pending=\{pending\} onChange=\{onChange\}/);
+  assert.doesNotMatch(source, /aria-label=\{`Depot for|aria-label=\{`Wash type for/);
   assert.match(source, /Confirm\?/);
   assert.match(source, /Cancel deleting/);
   assert.match(source, /confirmDelete !== upload.id/);

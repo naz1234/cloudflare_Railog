@@ -40,6 +40,21 @@ html[data-app-theme="light"] .wsh2-workspace :is(select, input) { color-scheme: 
 .wsh2-message.is-error { color: #ef9a9f; border: 1px solid #9a4d5c; }
 html[data-app-theme="light"] .wsh2-message.is-error { color: #a32037; }
 .wsh2-content-grid { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "sources" "checklist"; align-items: start; gap: 16px; margin-top: 14px; }
+.wsh2-side-panels { grid-area: sources; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.wsh2-batch-panel { min-width: 0; padding: 14px 16px; border: 1px solid var(--wsh-line); border-radius: 10px; background: var(--wsh-bg); }
+.wsh2-batch-panel h2 { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; margin: 0; }
+.wsh2-batch-panel header p { font-size: 11px; color: var(--wsh-muted); margin: 6px 0 12px; }
+.wsh2-batch-panel form { display: flex; flex-direction: column; gap: 11px; }
+.wsh2-batch-panel :is(select, textarea) { box-sizing: border-box; width: 100%; min-width: 0; }
+.wsh2-workspace .wsh2-batch-panel textarea { resize: vertical; min-height: 68px; padding: 8px 9px; border: 1px solid var(--wsh-line); border-radius: 7px; background: var(--wsh-control); color: var(--wsh-text); font: inherit; font-size: 12px; line-height: 1.5; }
+.wsh2-batch-panel textarea::placeholder { color: var(--wsh-muted); opacity: 1; }
+.wsh2-batch-panel :is(.wsh2-batch-help,.wsh2-batch-error,.wsh2-batch-success) { margin: 0; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.wsh2-batch-help { color: var(--wsh-muted); }
+.wsh2-batch-error { color: #ef9a9f; }
+.wsh2-batch-success { color: var(--wsh-good); }
+html[data-app-theme="light"] .wsh2-batch-error { color: #a32037; }
+.wsh2-workspace .wsh2-batch-panel :is(select, textarea):disabled { opacity: .55; cursor: not-allowed; }
+.wsh2-workspace .wsh2-batch-panel :is(select, textarea):focus-visible { outline: 2px solid var(--wsh-accent); outline-offset: 2px; }
 .wsh2-checklist-panel { grid-area: checklist; min-width: 0; }
 .wsh2-paper { padding: 18px; border: 1px solid var(--wsh-line); border-radius: 14px; background: var(--wsh-bg); }
 .wsh2-date-group + .wsh2-date-group { margin-top: 24px; }
@@ -63,7 +78,7 @@ html[data-app-theme="light"] .wsh2-message.is-error { color: #a32037; }
 .wsh2-time { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .wsh2-workspace td :is(input, select) { width: 100%; background: transparent; font-size: 11px; padding: 5px 6px; }
 .wsh2-workspace td select option { background: var(--wsh-control); }
-.wsh2-wash-options { display: grid; grid-template-columns: 1fr 1.15fr; gap: 6px; }
+.wsh2-workspace td .wsh2-wash-details { width: 100%; text-align: left; }
 .wsh2-tick { display: inline-flex; align-items: center; gap: 5px; padding: 6px 8px; min-height: 30px; border: 1px solid var(--wsh-line); border-radius: 6px; color: var(--wsh-muted); background: var(--wsh-control); font-size: 11px !important; }
 .wsh2-empty-tick { width: 13px; height: 13px; border: 1px solid var(--wsh-muted); border-radius: 3px; }
 .wsh2-tick.is-done { color: var(--wsh-good); border-color: color-mix(in srgb, var(--wsh-good), transparent 55%); background: color-mix(in srgb, var(--wsh-good) 9%, var(--wsh-surface)); }
@@ -124,6 +139,7 @@ html[data-app-theme="light"] .wsh2-delete-warning { color: #a32037; }
   .wsh2-actions { grid-column: 1 / -1; justify-content: flex-end; }
 }
 @media (max-width: 767px) {
+  .wsh2-workspace .wsh2-batch-panel :is(select, textarea) { font-size: 16px; min-height: 42px; }
   .wsh2-heading { grid-template-columns: minmax(0, 1fr); padding: 12px; }
   .wsh2-heading-title { gap: 9px; }
   .wsh2-heading h1 { font-size: 18px; }

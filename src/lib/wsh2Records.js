@@ -1,7 +1,8 @@
 // Wash times are depot wall-clock times. Never convert them through the browser timezone.
 export const WSH2_MAX_FILE_BYTES = 5 * 1024 * 1024;
 export const WSH2_MAX_ROWS = 500;
-export const WSH2_FIELDS = ['location', 'completed', 'hvac', 'washType', 'depot'];
+export const WSH2_FIELDS = ['location', 'completed', 'hvac', 'washType', 'depot', 'washDetails'];
+export const WSH2_MAX_DETAILS_LENGTH = 120;
 export const WSH2_LOCATIONS = ['OPE', 'MAINT'];
 export const WSH2_PRINT_MAX_FILES = 2;
 export const WSH2_PRINT_ROWS_PER_SECTION = 19;
@@ -11,6 +12,12 @@ export function summarizeWashRows(rows) {
   const total = rows.length;
   const completed = rows.filter((row) => row.completed).length;
   return { total, completed, remaining: total - completed, progress: total ? Math.round(completed / total * 1000) / 10 : 0 };
+}
+
+export function getWashDetailsText(row = {}) {
+  if (typeof row.washDetails === 'string' && row.washDetails) return row.washDetails;
+  const depot = row.depot === 'west' ? 'WD' : row.depot === 'east' ? 'ED' : '';
+  return [row.washType, depot].filter(Boolean).join(' / ');
 }
 
 export function washRecordId(trainNumber, date) {
@@ -73,5 +80,15 @@ export function validateWashChanges(changes) {
   for (const [key, values] of Object.entries({ hvac: ['', 'ON'], washType: ['', 'Partial', 'Full'], depot: ['', 'west', 'east'] })) {
     if (key in changes && !values.includes(changes[key])) throw new Error(`Invalid ${key} option.`);
   }
-  return { ...changes, ...('location' in changes ? { location: changes.location.trim().toUpperCase() } : {}) };
+  if ('washDetails' in changes && (typeof changes.washDetails !== 'string' || changes.washDetails.length > WSH2_MAX_DETAILS_LENGTH || /[\u0000-\u001f\u007f]/.test(changes.washDetails))) {
+    throw new Error(`Wash details must be a single line of up to ${WSH2_MAX_DETAILS_LENGTH} characters.`);
+  }
+  // Keep existing dropdown clients compatible, but use one source of truth
+  // after an explicit edit. Clearing the text must not resurrect legacy values.
+  const details = 'washDetails' in changes
+    ? { washDetails: changes.washDetails.trim(), washType: '', depot: '' }
+    : 'washType' in changes || 'depot' in changes ? { washDetails: '' } : {};
+  // Save completion and HVAC in the same revision-checked update, including
+  // requests from older tabs. Type and depot are never inferred from Done.
+  return { ...changes, ...details, ...(changes.completed === true ? { hvac: 'ON' } : {}), ...('location' in changes ? { location: changes.location.trim().toUpperCase() } : {}) };
 }

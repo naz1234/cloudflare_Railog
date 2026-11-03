@@ -1,10 +1,11 @@
 import { parseWsh2Workbook } from '../../src/lib/wsh2Workbook.js';
 import { validateWashChanges, WSH2_MAX_FILE_BYTES } from '../../src/lib/wsh2Records.js';
+import { buildWashBatchUpdate, validateWashBatchRequest } from '../../src/lib/wsh2BatchCompletion.js';
 
 const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' };
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers });
 const rowColumns = `id, train_number AS trainNumber, next_wash AS nextWash, scheduled_date AS date,
-  source_location AS sourceLocation, last_wash AS lastWash, location, completed, hvac, wash_type AS washType,
+  source_location AS sourceLocation, last_wash AS lastWash, location, completed, hvac, wash_type AS washType, wash_details AS washDetails,
   depot, source_upload_id AS sourceUploadId, revision, completed_at AS completedAt, updated_at AS updatedAt, updated_by AS updatedBy`;
 const hydrate = (row) => row ? { ...row, completed: Boolean(row.completed) } : null;
 const readRow = async (db, id) => hydrate(await db.prepare(`SELECT ${rowColumns} FROM wsh2_washes WHERE id = ?`).bind(id).first());
@@ -88,11 +89,25 @@ export async function onRequest({ request, env, data }) {
 
     if (request.method === 'PATCH') {
       let body;
-      try { body = JSON.parse(new TextDecoder().decode(await boundedBody(request, 4096))); } catch { return json({ error: 'Invalid update request.' }, 400); }
+      try { body = JSON.parse(new TextDecoder().decode(await boundedBody(request, 16384))); } catch { return json({ error: 'Invalid update request.' }, 400); }
+      if (body?.action === 'completeBatch') {
+        let batch;
+        try { batch = validateWashBatchRequest(body); } catch (error) { return json({ error: error.message }, 400); }
+        const upload = await env.DB.prepare('SELECT id FROM wsh2_uploads WHERE id = ?').bind(batch.uploadId).first();
+        if (!upload) return json({ error: 'The selected Excel file is no longer available. Refresh and choose again.' }, 404);
+        const { sql, values } = buildWashBatchUpdate(batch, new Date().toISOString(), actor);
+        const result = await env.DB.prepare(sql).bind(...values).run();
+        const current = await env.DB.prepare(`SELECT ${rowColumns} FROM wsh2_washes WHERE id IN (${batch.rows.map(() => '?').join(', ')}) ORDER BY next_wash, train_number`).bind(...batch.rows.map(row => row.id)).all();
+        const rows = current.results.map(hydrate);
+        if (!result.meta.changes) return json({ error: 'Another computer changed a selected train or Excel file. Nothing was updated. Review the latest entries and submit again.', rows }, 409);
+        if (result.meta.changes !== batch.rows.length) throw new Error('Unexpected batch update count.');
+        return json({ rows, updatedCount: result.meta.changes });
+      }
+      if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ error: 'Invalid update request.' }, 400);
       if (typeof body.id !== 'string' || body.id.length > 80 || !Number.isSafeInteger(body.revision) || body.revision < 1) return json({ error: 'A wash row and its current revision are required.' }, 400);
       let changes;
       try { changes = validateWashChanges(body.changes); } catch (error) { return json({ error: error.message }, 400); }
-      const fields = { location: 'location', completed: 'completed', hvac: 'hvac', washType: 'wash_type', depot: 'depot' };
+      const fields = { location: 'location', completed: 'completed', hvac: 'hvac', washType: 'wash_type', depot: 'depot', washDetails: 'wash_details' };
       const keys = Object.keys(changes);
       const sets = keys.map((key) => `${fields[key]} = ?`);
       const values = keys.map((key) => key === 'completed' ? Number(changes[key]) : changes[key]);
