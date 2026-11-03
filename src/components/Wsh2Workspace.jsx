@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BarChart3, Check, Clock3, Download, Droplets, FileSpreadsheet, Loader2, Printer, RefreshCw, Trash2, Upload } from 'lucide-react';
 import { formatWashDate, formatWashTime, groupWashRows, selectWashPrintRows, summarizeWashRows, WSH2_LOCATIONS, WSH2_MAX_FILE_BYTES } from '../lib/wsh2Records.js';
 import Wsh2PrintDialog from './Wsh2PrintDialog.jsx';
+import Wsh2WashDetailsInput from './Wsh2WashDetailsInput.jsx';
+import Wsh2BatchCompletion from './Wsh2BatchCompletion.jsx';
+import { buildWashBatchPlan } from '../lib/wsh2BatchCompletion.js';
 import '../wsh2.css';
 
 const API = `${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/wsh2`;
@@ -31,8 +34,9 @@ function WashRow({ row, index, pending, onChange }) {
     </select></td>
     <td className="wsh2-done-cell"><button type="button" role="checkbox" aria-checked={row.completed} disabled={pending}
       aria-label={`Wash completed for ${row.trainNumber} on ${row.date}`}
+      title={row.completed ? 'Untick wash completion' : 'Mark wash done and set HVAC ON'}
       className={`wsh2-tick ${row.completed ? 'is-done' : ''}`}
-      onClick={() => onChange({ completed: !row.completed })}>
+      onClick={() => onChange(row.completed ? { completed: false } : { completed: true, hvac: 'ON' })}>
       {pending ? <Loader2 size={15} className="animate-spin" /> : row.completed ? <Check size={16} strokeWidth={3} /> : <span className="wsh2-empty-tick" />}
       <span>{row.completed ? 'Done' : 'Tick'}</span>
     </button></td>
@@ -43,8 +47,7 @@ function WashRow({ row, index, pending, onChange }) {
       {pending ? <Loader2 size={15} className="animate-spin" /> : row.hvac === 'ON' ? <Check size={16} strokeWidth={3} /> : <span className="wsh2-empty-tick" />}
       <span>{row.hvac === 'ON' ? 'ON' : 'Tick'}</span>
     </button></td>
-    <td><div className="wsh2-wash-options"><select aria-label={`Wash type for ${row.trainNumber} on ${row.date}`} disabled={pending} value={row.washType} onChange={(event) => onChange({ washType: event.target.value })}><option value="">Select type</option><option>Partial</option><option>Full</option></select>
-      <select aria-label={`Depot for ${row.trainNumber} on ${row.date}`} disabled={pending} value={row.depot} onChange={(event) => onChange({ depot: event.target.value })}><option value="">Select depot</option><option value="west">West Depot</option><option value="east">East Depot</option></select></div></td>
+    <td><Wsh2WashDetailsInput row={row} pending={pending} onChange={onChange} /></td>
   </tr>;
 }
 
@@ -53,6 +56,7 @@ export default function Wsh2Workspace() {
   const [uploads, setUploads] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [batching, setBatching] = useState(false);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [printing, setPrinting] = useState(false);
@@ -105,14 +109,14 @@ export default function Wsh2Workspace() {
     return () => clearTimeout(timer);
   }, [confirmDelete, deleting]);
 
-  async function changeRow(id, changes) {
+  async function changeRow(id, changes, expectedRevision) {
     if (fileMutation.current || pendingRef.current.has(id)) return;
     const row = rowsRef.current.find((item) => item.id === id);
     if (!row) return;
     pendingRef.current.add(id); setPending(new Set(pendingRef.current)); epoch.current++;
     setError('');
     try {
-      const data = await request({ method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, revision: row.revision, changes }) });
+      const data = await request({ method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, revision: expectedRevision ?? row.revision, changes }) });
       replaceRows(rowsRef.current.map((item) => item.id === id ? data.row : item));
       setSyncFailed(false);
       return data.row;
@@ -161,7 +165,26 @@ export default function Wsh2Workspace() {
 
   const groups = useMemo(() => groupWashRows(rows), [rows]);
   const { completed: doneCount, remaining: remainingCount, progress: progressPercent } = summarizeWashRows(rows);
-  const filesBusy = uploading || Boolean(deleting) || pending.size > 0;
+  const filesBusy = uploading || Boolean(deleting) || batching || pending.size > 0;
+
+  async function completeBatch({ uploadId, date, input }) {
+    if (fileMutation.current || pendingRef.current.size) throw new Error('Wait for shared updates to finish before submitting.');
+    const plan = buildWashBatchPlan(rowsRef.current, uploads, uploadId, date, input);
+    fileMutation.current = true; epoch.current++;
+    setBatching(true); setConfirmDelete(null); setError('');
+    try {
+      const result = await request({ method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(plan) });
+      const updated = new Map(result.rows.map(row => [row.id, row]));
+      replaceRows(rowsRef.current.map(row => updated.get(row.id) || row));
+      setSyncFailed(false);
+      return result;
+    } catch (failure) {
+      if (failure.status !== 409 && failure.status !== 404) setSyncFailed(true);
+      throw failure;
+    } finally {
+      epoch.current++; fileMutation.current = false; setBatching(false); await refresh();
+    }
+  }
 
   async function printWord(selectedIds) {
     if (printing || filesBusy || syncFailed) return;
@@ -207,6 +230,7 @@ export default function Wsh2Workspace() {
     {(error || loadError) && <div role="alert" className="wsh2-message is-error">{error || loadError}<button type="button" onClick={() => { setError(''); setLoadError(''); refresh(); }}>Refresh</button></div>}
     {notice && <div role="status" className="wsh2-message">{notice}<button type="button" aria-label="Dismiss notice" onClick={() => setNotice('')}>×</button></div>}
     <div className="wsh2-content-grid">
+    <div className="wsh2-side-panels">
     <section className="wsh2-sources" aria-label="Uploaded Excel files"><header><h2><FileSpreadsheet size={16} />Uploaded Excel files <span>{uploads.length}</span></h2><p>All uploaded dates are shown below, shared by West and East.</p></header>
       {uploads.length ? <ul>{uploads.map((upload) => <li key={upload.id}><div className="wsh2-source-info"><strong>{upload.fileName}</strong><span>{formatWashDate(upload.dateFrom)}{upload.dateFrom !== upload.dateTo ? ` – ${formatWashDate(upload.dateTo)}` : ''} · {upload.currentRowCount === upload.rowCount ? `${upload.rowCount} trains` : `${upload.rowCount} imported · ${upload.currentRowCount} current rows`}</span>
         {confirmDelete === upload.id && <p className="wsh2-delete-warning" role="status">Delete this file and its {upload.currentRowCount} current rows, including completion ticks, for everyone? This cannot be undone. Other uploads are kept.</p>}</div>
@@ -215,13 +239,15 @@ export default function Wsh2Workspace() {
           {confirmDelete === upload.id && <button type="button" disabled={Boolean(deleting)} aria-label={`Cancel deleting ${upload.fileName}`} onClick={() => setConfirmDelete(null)}>Cancel</button>}</div>
       </li>)}</ul> : <p className="wsh2-no-sources">{loading ? 'Loading files…' : 'No Excel files uploaded yet.'}</p>}
     </section>
+    <Wsh2BatchCompletion rows={rows} uploads={uploads} busy={filesBusy} blocked={loading || syncFailed} onSubmit={completeBatch} />
+    </div>
     <div className="wsh2-checklist-panel">
     {loading ? <div className="wsh2-empty"><Loader2 size={25} className="animate-spin" /><p>Loading shared wash schedule…</p></div> : !rows.length ? <div className="wsh2-empty"><FileSpreadsheet size={34} /><h2>Upload your wash Excel files</h2><p>Import one or more reports with Train Number and Next Wash columns.<br />Uploading again preserves completed washes.</p></div> : <div className="wsh2-paper">
       {groups.map((group) => <section className="wsh2-date-group" key={group.date} aria-label={`Wash schedule ${formatWashDate(group.date)}`}><header><h2>{formatWashDate(group.date)}</h2><span>{group.rows.filter((row) => row.completed).length} of {group.rows.length} done</span></header>
-        <div className="wsh2-table-scroll" tabIndex={0} role="region" aria-label={`Wash table ${formatWashDate(group.date)}`}><table><colgroup><col style={{ width: '4%' }} /><col style={{ width: '12%' }} /><col style={{ width: '16%' }} /><col style={{ width: '14%' }} /><col style={{ width: '11%' }} /><col style={{ width: '11%' }} /><col style={{ width: '32%' }} /></colgroup><thead><tr><th scope="col">#</th><th scope="col">Train Number</th><th scope="col">Next Wash</th><th scope="col">Location</th><th scope="col">DONE</th><th scope="col">HVAC ON<span>Confirm after wash</span></th><th scope="col">PARTIAL / FULL <span>WD or ED</span></th></tr></thead><tbody>
-          {group.rows.map((row, index) => <WashRow key={row.id} row={row} index={index} pending={pending.has(row.id) || uploading || Boolean(deleting)} onChange={(changes) => changeRow(row.id, changes)} />)}
+        <div className="wsh2-table-scroll" tabIndex={0} role="region" aria-label={`Wash table ${formatWashDate(group.date)}`}><table><colgroup><col style={{ width: '4%' }} /><col style={{ width: '12%' }} /><col style={{ width: '16%' }} /><col style={{ width: '14%' }} /><col style={{ width: '11%' }} /><col style={{ width: '11%' }} /><col style={{ width: '32%' }} /></colgroup><thead><tr><th scope="col">#</th><th scope="col">Train Number</th><th scope="col">Next Wash</th><th scope="col">Location</th><th scope="col">DONE</th><th scope="col">HVAC ON<span>Auto ON with Done</span></th><th scope="col">PARTIAL / FULL <span>WD or ED</span></th></tr></thead><tbody>
+          {group.rows.map((row, index) => <WashRow key={row.id} row={row} index={index} pending={pending.has(row.id) || uploading || Boolean(deleting) || batching} onChange={(changes, revision) => changeRow(row.id, changes, revision)} />)}
         </tbody></table></div></section>)}
-      <footer className="wsh2-paper-footer">Print / Word: choose up to two uploaded Excel files for a one-page checklist.</footer>
+      <footer className="wsh2-paper-footer">Wash details: type manually, then press Enter or click outside to save. Print / Word: choose up to two uploaded Excel files for a one-page checklist.</footer>
     </div>}
     </div>
     </div>

@@ -56,22 +56,23 @@ test('WSH2 rejects row overflow rather than importing a truncated workbook', () 
 });
 
 test('WSH2 allows only bounded checklist fields', () => {
-  assert.deepEqual(validateWashChanges({ location: ' maint ', completed: true, hvac: 'ON', washType: 'Partial', depot: 'west' }), { location: 'MAINT', completed: true, hvac: 'ON', washType: 'Partial', depot: 'west' });
+  assert.deepEqual(validateWashChanges({ location: ' maint ', completed: true, hvac: 'ON', washType: 'Partial', depot: 'west' }), { location: 'MAINT', completed: true, hvac: 'ON', washType: 'Partial', depot: 'west', washDetails: '' });
   assert.deepEqual(validateWashChanges({ location: 'OPE', hvac: '' }), { location: 'OPE', hvac: '' });
   for (const changes of [{}, { completed: 'true' }, { revision: 999 }, { location: 'x'.repeat(41) }, { location: 'WEST' }, { location: '' }, { location: null }, { depot: 'north' }, { hvac: 'yes' }, { hvac: 'OFF' }, { washType: 'unknown' }]) assert.throws(() => validateWashChanges(changes));
 });
 
-test('WSH2 uses a location dropdown and explicit HVAC ON confirmation without an OFF choice', () => {
+test('WSH2 uses a location dropdown and auto HVAC ON with Done, with a manual HVAC toggle and no OFF choice', () => {
   const ui = readFileSync(new URL('../src/components/Wsh2Workspace.jsx', import.meta.url), 'utf8');
   assert.match(ui, /<select aria-label=\{`Location for/);
   assert.match(ui, /WSH2_LOCATIONS.map/);
   assert.match(ui, /role="checkbox" aria-checked=\{row.hvac === 'ON'\}/);
   assert.match(ui, /hvac: row.hvac === 'ON' \? '' : 'ON'/);
   assert.doesNotMatch(ui, /<option>OFF<\/option>|function LocationInput/);
-  assert.deepEqual(validateWashChanges({ completed: true }), { completed: true }, 'Wash completion never auto-confirms HVAC');
+  assert.deepEqual(validateWashChanges({ completed: true }), { completed: true, hvac: 'ON' }, 'Wash completion also sets HVAC ON');
+  assert.deepEqual(validateWashChanges({ hvac: '' }), { hvac: '' }, 'HVAC remains manually editable after completion');
 });
 
-test('WSH2 print includes only explicitly confirmed HVAC ON, treating legacy OFF as unconfirmed', () => {
+test('WSH2 print includes stored HVAC ON, treating blank and legacy OFF as unconfirmed', () => {
   const rows = ['', 'ON', 'OFF'].map((hvac, i) => ({ trainNumber: `L3-MV-${301 + i}`, date: '2026-10-31', nextWash: '2026-10-31T13:00', location: 'OPE', completed: true, hvac }));
   const xml = strFromU8(unzipSync(buildWsh2Docx(rows))['word/document.xml']);
   assert.equal((xml.match(/>ON<\/w:t>/g) || []).length, 1);

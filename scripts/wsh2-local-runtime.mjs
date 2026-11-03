@@ -22,5 +22,10 @@ export async function createWsh2LocalRuntime({ persist = false, codeOnly = false
   const db = await runtime.getD1Database('DB');
   const migration = await fs.readFile(path.join(root, 'migrations/0004_wsh2.sql'), 'utf8');
   await db.batch(migration.split(';').map((sql) => sql.trim()).filter(Boolean).map((sql) => db.prepare(sql)));
+  const columns = await db.prepare('PRAGMA table_info(wsh2_washes)').all();
+  if (!columns.results.some((column) => column.name === 'wash_details')) {
+    const detailsMigration = await fs.readFile(path.join(root, 'migrations/0005_wsh2_wash_details.sql'), 'utf8');
+    await db.batch(detailsMigration.split(';').map((sql) => sql.trim()).filter(Boolean).map((sql) => db.prepare(sql)));
+  }
   return runtime;
 }

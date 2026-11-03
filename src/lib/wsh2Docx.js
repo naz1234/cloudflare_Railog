@@ -1,5 +1,5 @@
 import { strToU8, zipSync } from 'fflate';
-import { formatWashDate, formatWashTime, getWashPrintSections, WSH2_PRINT_MAX_SECTIONS } from './wsh2Records.js';
+import { formatWashDate, formatWashTime, getWashDetailsText, getWashPrintSections, WSH2_PRINT_MAX_SECTIONS } from './wsh2Records.js';
 
 const widths = [390, 1780, 2340, 1010, 850, 800, 3296];
 const xml = (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
@@ -16,8 +16,7 @@ function table(group) {
   const columnRow = `<w:tr><w:trPr><w:tblHeader/><w:cantSplit/></w:trPr>${headers.map((value, i) => cell(value, widths[i], { bold: true, size: 19 })).join('')}</w:tr>`;
   const body = Array.from({ length: Math.max(18, Math.min(19, group.rows.length + 1)) }, (_, i) => {
     const row = group.rows[i];
-    const depot = row?.depot === 'west' ? 'WD' : row?.depot === 'east' ? 'ED' : '';
-    const values = row ? [group.offset + i + 1, row.trainNumber, formatWashTime(row.nextWash), row.location, row.completed ? 'DONE' : '', row.hvac === 'ON' ? 'ON' : '', [row.washType, depot].filter(Boolean).join(' / ')] : [group.offset + i + 1, '', '', '', '', '', ''];
+    const values = row ? [group.offset + i + 1, row.trainNumber, formatWashTime(row.nextWash), row.location, row.completed ? 'DONE' : '', row.hvac === 'ON' ? 'ON' : '', getWashDetailsText(row)] : [group.offset + i + 1, '', '', '', '', '', ''];
     return `<w:tr><w:trPr><w:cantSplit/><w:trHeight w:val="270" w:hRule="atLeast"/></w:trPr>${values.map((value, index) => cell(value, widths[index])).join('')}</w:tr>`;
   }).join('');
   return `<w:tbl><w:tblPr><w:tblW w:w="10466" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${borders}</w:tblBorders><w:tblCellMar><w:top w:w="25" w:type="dxa"/><w:bottom w:w="25" w:type="dxa"/><w:left w:w="55" w:type="dxa"/><w:right w:w="55" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${widths.map((width) => `<w:gridCol w:w="${width}"/>`).join('')}</w:tblGrid>${heading}${columnRow}${body}</w:tbl>`;

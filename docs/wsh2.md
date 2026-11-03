@@ -12,19 +12,19 @@ The AWP title, three compact Design C pills (completed washes, percentage progre
 
 ## Shared storage
 
-- `DB` (D1) stores each train/date wash entry, completion state, HVAC, Partial/Full, depot, revision and the user/time of the latest update.
+- `DB` (D1) stores each train/date wash entry, completion state, HVAC, manually typed wash details, revision and the user/time of the latest update. Older Partial/Full and depot fields are retained for compatibility.
 - `WSH2_FILES` (private R2 bucket) retains original uploaded workbooks. Downloads require the same app login as the checklist.
 - All computers use the same two bindings. The page refreshes every five seconds while visible, and on focus or reconnection. No checklist state is held exclusively in browser storage.
 - Edits are revision-checked. A stale client receives HTTP 409 and the current row, rather than overwriting another computer's changes.
 - Email, Cloudflare Access and code-only sign-ins use the existing verified middleware session. Code-only sessions have no email, so their upload/edit audit fields use the member identity hash, never the session token or token hash. Anonymous and expired sessions remain blocked.
-- Repeated files are identified by SHA-256. Re-importing a changed report updates source scheduling details by train/date without resetting completion, location, HVAC, wash type or depot. Conflicting times for one train/date inside a workbook are rejected.
+- Repeated files are identified by SHA-256. Re-importing a changed report updates source scheduling details by train/date without resetting completion, location, HVAC or manual wash details. Conflicting times for one train/date inside a workbook are rejected.
 - Dates remain depot wall-clock values, independent of the laptop timezone. Both 1900 and 1904 Excel date systems are supported.
 
 ## Before production deployment
 
 Do not change production during local review.
 
-1. Apply `migrations/0004_wsh2.sql` to the existing D1 database.
+1. Apply `migrations/0004_wsh2.sql` and then `migrations/0005_wsh2_wash_details.sql` to the existing D1 database. For an existing AWP database, only the new 0005 migration is needed. It adds `wash_details` without clearing older records. Apply it before deploying the updated API, including in preview environments being tested.
 2. Create a private R2 bucket and bind it as `WSH2_FILES` on the Pages project (and each preview environment that should support WSH2). Do not enable a public bucket URL. Reuse the same bucket and D1 database for all users of that environment.
 3. Deploy the application and Functions together using the normal PR workflow.
 4. Verify upload, reload, download and cross-computer edits with two signed-in users. Existing authentication and same-origin mutation protections remain required.
@@ -48,9 +48,17 @@ The standalone verification script uses fresh temporary D1/R2 resources and disp
 
 Upload one or more `.xlsx` reports with `Train Number` and `Next Wash` headers. Optional `Train Location` and `Last Wash` columns are retained. Original location is the starting value of the editable Location column. File limit: 5 MB compressed, 32 MB expanded, 500 entries. Invalid rows reject the entire individual workbook with its sheet/row location; successfully uploaded other files remain imported.
 
-The uploaded-file list is always visible beside the checklist on desktop and above it on smaller screens. All uploaded dates and both depots are shown together, without date-range, status or depot filters. Dates are read from the Excel files. Ticking a train only changes completion: depot, HVAC and Partial/Full are not inferred. Each row's depot can still be recorded directly to indicate where its wash was done.
+The uploaded-file list is always visible beside the checklist on desktop and above it on smaller screens. All uploaded dates and both depots are shown together, without date-range, status or depot filters. Dates are read from the Excel files. Ticking Done saves completion and HVAC ON atomically. It does not fill in wash details. Unticking Done does not clear separately recorded HVAC or wash details, and older completed rows are not retroactively altered.
 
-Location is an OPE/MAINT dropdown. Source locations outside those choices are retained as a disabled placeholder until the user explicitly chooses one; existing data is not silently reclassified. HVAC is a separate checkbox confirming ON after washing, never automatically set by completing a wash. Checking saves `ON`; unchecking clears the confirmation to blank, not OFF. New OFF updates are rejected. Legacy OFF data is treated as unconfirmed in the UI and prints blank; confirmed rows print ON. The storage/timestamp badge is hidden, but polling and error reporting stay active.
+Location is an OPE/MAINT dropdown. Source locations outside those choices are retained as a disabled placeholder until the user explicitly chooses one; existing data is not silently reclassified. HVAC automatically records ON when Done is ticked and can still be edited independently afterward. Unchecking HVAC clears it to blank, not OFF. New OFF updates are rejected. Legacy OFF data is treated as unconfirmed in the UI and prints blank; ON rows print ON. This records checklist information, not a command to train hardware. The storage/timestamp badge is hidden, but polling and error reporting stay active.
+
+The `PARTIAL / FULL — WD or ED` column is one empty text box for manual typing, not two dropdowns. New rows have no default text. Enter up to 120 characters, for example `Partial / WD` or `Full / ED`; press Enter or click outside to save. The revision captured when editing started protects against conflicting changes from another computer. Existing saved dropdown choices display as their combined text, such as `Partial / ED`, until edited; clearing the text explicitly clears that older combination too. Manual details are preserved on reupload and printed verbatim with XML escaping in Word exports.
+
+### Batch completed-wash entry
+
+Below Uploaded Excel files, select one uploaded file/date, enter train numbers such as `01 02 03 04 05`, then select Submit completed wash. One-digit numbers are normalized, repeated numbers count once, and spaces, line breaks, commas or semicolons are accepted. Numbers must be 01–47. Files covering multiple dates have a separate option for each date; superseded uploads with no current rows are not selectable.
+
+Every requested train must exist in that file/date before anything is submitted. The shared API then checks all row revisions and source ownership together in one atomic SQL update: either every selected train is marked Done with HVAC ON, or none are changed. A conflict asks the user to review refreshed entries before retrying. This preserves locations, manual wash details and the original completion timestamp of already-completed rows. Only the selected file/date is affected. Polling distributes the saved updates to other computers; no extra migration is required for batch entry beyond the manual-details migration above.
 
 Each uploaded file has an original-download link and a two-step Delete / Confirm? action with Cancel. The confirmation expires after 15 seconds. Confirming permanently removes the original workbook from R2 and the rows currently sourced from that upload (including their completion details) from D1 for every computer. Rows subsequently supplied by another upload are kept; deleting a newer upload does not restore superseded older versions. Imported and current row counts make this distinction visible. Download the original first if needed; re-uploading a deleted file recreates its rows without deleted completion details.
 
