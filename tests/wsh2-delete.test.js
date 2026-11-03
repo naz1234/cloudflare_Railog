@@ -114,11 +114,12 @@ test('AWP compacts desktop rows without shrinking text or phone touch controls',
   assert.match(phone, /\.wsh2-tick \{ min-height: 42px;/);
 });
 
-test('AWP narrows Train Number and Next Wash columns while preserving full values and table width', () => {
+test('AWP keeps Train Number and Next Wash compact and narrows manual details without changing total table width', () => {
   const source = fs.readFileSync(new URL('../src/components/Wsh2Workspace.jsx', import.meta.url), 'utf8');
   const columns = source.match(/<colgroup>([\s\S]*?)<\/colgroup>/)[1];
   const widths = [...columns.matchAll(/width: '(\d+)%'/g)].map((match) => Number(match[1]));
-  assert.deepEqual(widths, [4, 12, 16, 14, 11, 11, 32]);
+  assert.deepEqual(widths, [4, 12, 16, 14, 14, 14, 26]);
+  assert.ok(widths.at(-1) < 32, 'manual details is narrower than the previous 32% column');
   assert.equal(widths.reduce((sum, width) => sum + width, 0), 100);
   assert.match(source, /className="wsh2-train">\{row.trainNumber\}/);
   assert.match(source, /className="wsh2-time">\{formatWashTime\(row.nextWash\)\}/);
