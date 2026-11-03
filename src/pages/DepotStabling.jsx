@@ -6319,6 +6319,10 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
     });
   });
   const insertionStatusRemarkList = Array.from(insertionStatusRemarkMap.values());
+  const insertionRemarkTheme = key
+    ? getStablingRemarkTheme(insertionStatusRemarkList.map(({ label }) => label))
+    : "";
+  const insertionRemarkThemeClass = insertionRemarkTheme ? `has-remark-theme is-${insertionRemarkTheme}` : "";
   const displayedInsertionStatusRemarks = insertionStatusRemarkList.length > 3
     ? insertionStatusRemarkList.slice(0, 2)
     : insertionStatusRemarkList.slice(0, 3);
@@ -6433,8 +6437,9 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
 
   const displayVal = formatTrainNumberOnly(val);
 
-  // Maintenance/request remarks already show their own coloured pill.
-  // Keep the stabling card border/background neutral so the pill is the only request colour.
+  // Keep the neutral fallback for ordinary cards. Dark-mode UNFIT, least-priority
+  // and deep-clean surfaces share the REQ palette through scoped CSS; duplicate,
+  // search and drag/drop states keep their existing visual priority.
   const insCardBg = expired
     ? "#07131e"
     : isDuplicateInsertedTid
@@ -6524,7 +6529,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
         data-stabling-depot={autoTidDepot}
         data-stabling-road={road}
         data-stabling-block={bi}
-        className={`theme-stabling-train-card theme-insertion-card is-req-layout ${key ? "has-train" : "is-empty"} ${primaryInsertionRequest ? "has-request" : ""} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted has-refresh-control" : ""} ${canInsertWithoutTrackingId ? "has-insert-control" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${insertedTrackingReferenceStyle ? "has-tracking-reference" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${isSearchMatch ? "is-search-match" : ""} ${isTidDragActive ? "is-tid-drag-active" : ""} ${isTidDropHovered ? "is-tid-drop-hovered" : ""} relative flex h-full flex-col items-center justify-start gap-1 overflow-hidden rounded-xl text-center transition-all duration-150`}
+        className={`theme-stabling-train-card theme-insertion-card is-req-layout ${key ? "has-train" : "is-empty"} ${primaryInsertionRequest ? "has-request" : ""} ${insertionRemarkThemeClass} ${hasTidRemark ? "has-input" : ""} ${inserted ? "is-inserted has-refresh-control" : ""} ${canInsertWithoutTrackingId ? "has-insert-control" : ""} ${inserted?.isSweeping ? "is-sweeping" : ""} ${isInsertionDone ? "is-complete" : ""} ${insertedTrackingReferenceStyle ? "has-tracking-reference" : ""} ${isDuplicateInsertedTid ? "is-duplicate" : ""} ${isSearchMatch ? "is-search-match" : ""} ${isTidDragActive ? "is-tid-drag-active" : ""} ${isTidDropHovered ? "is-tid-drop-hovered" : ""} relative flex h-full flex-col items-center justify-start gap-1 overflow-hidden rounded-xl text-center transition-all duration-150`}
         style={{
           minHeight: ownInsertionCardMinHeight,
           height: "100%",
@@ -6638,6 +6643,7 @@ function InsertionCell({ block, bi, road, labelSide, isLast, isFirstBlock, isLas
           )}
           {key && (
             <div
+              className="theme-insertion-card-divider"
               aria-hidden="true"
               style={{
                 width: "calc(100% - 16px)",

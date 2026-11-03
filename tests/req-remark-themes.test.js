@@ -101,12 +101,14 @@ test('duplicate, flashing and search markers remain available alongside UNFIT', 
   assert.match(renderRow('east', items, { searchHighlight: 'T45' }), /is-unfit[^"\n]*is-search-match/);
 });
 
-test('all approved palettes are scoped to dark REQ cards and yield to existing alerts', () => {
+test('all approved palettes are shared by dark REQ/INS cards and yield to existing alerts', () => {
   const rules = [];
   css.walkRules(rule => { rules.push(rule); });
   assert.equal(rules.length, 5);
   for (const rule of rules) {
-    assert.ok(rule.selector.startsWith('html[data-app-theme="dark"] #root .app-shell[data-active-page="stabling"] .theme-stabling-section '));
+    assert.equal(rule.selectors.length, 2);
+    assert.ok(rule.selectors[0].startsWith('html[data-app-theme="dark"] #root .app-shell[data-active-page="stabling"] .theme-stabling-section '));
+    assert.ok(rule.selectors[1].startsWith('html[data-app-theme="dark"] #root .app-shell[data-active-page="insertion"] .theme-insertion-page '));
   }
   for (const rule of [rules[0], rules[4]]) {
     for (const flag of ['is-duplicate', 'is-flashing', 'is-search-match']) assert.ok(rule.selector.includes(`:not(.${flag})`));
@@ -132,5 +134,5 @@ test('all approved palettes are scoped to dark REQ cards and yield to existing a
   }
   assert.ok(rules[0].nodes.filter(({ prop }) => ['background', 'border', 'box-shadow'].includes(prop)).every(({ important }) => important));
   assert.match(page, /import "\.\.\/reqRemarkThemes\.css";/);
-  assert.equal((page.match(/getStablingRemarkTheme\(maintList\)/g) || []).length, 1, 'Only the REQ RoadRow opts into these states');
+  assert.equal((rowSource.match(/getStablingRemarkTheme\(maintList\)/g) || []).length, 1, 'REQ RoadRow keeps its existing detector');
 });
