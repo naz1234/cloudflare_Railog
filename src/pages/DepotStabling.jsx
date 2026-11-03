@@ -80,6 +80,8 @@ import { getPSTRemarkAccent } from "../lib/pstRemarkColors";
 import { HDW40_PRESET_LABEL, HDW_DISPLAY_LABEL, HDW_TOOLTIP, getHdw40RowGroup, normalizeHdw40Rows, getHdw40GroupRows, getHdwCurrentTime, getHdwRunningInMlCount, clearHdwRows } from "../lib/trainRemHdw40";
 import "../trainRemHdw40.css";
 import "../stablingSlate.css";
+import "../reqRemarkThemes.css";
+import { getStablingRemarkTheme } from "../lib/reqStablingRemarkTheme";
 import "../movementLogSlate.css";
 import "../copyFeedbackSlate.css";
 import "../outputWindowsSlate.css";
@@ -29052,6 +29054,8 @@ function RoadRow({
         const val = blocks[bi]?.trainId || "";
         const key = normalizeTrainId(val);
         const maintList = key ? maintenanceMap[key] || [] : [];
+        const remarkTheme = getStablingRemarkTheme(maintList);
+        const remarkThemeClass = remarkTheme ? `has-remark-theme is-${remarkTheme}` : "";
         const primaryMaint = getPrimaryStablingRequest(maintList);
         const primaryVisual = primaryMaint ? getStablingRequestVisual(primaryMaint) : null;
         const isDup = key && duplicates.has(key);
@@ -29119,7 +29123,7 @@ function RoadRow({
               data-stabling-depot={depot}
               data-stabling-road={label}
               data-stabling-block={bi}
-              className={`theme-stabling-train-card relative flex flex-col items-center justify-start gap-1 overflow-hidden rounded-xl transition-all duration-150 ${primaryMaint ? "has-request" : ""} ${isDup ? "is-duplicate" : ""} ${isFlashing ? "is-flashing" : ""} ${isSearchMatch ? "is-search-match" : ""} ${key ? "has-train" : "is-empty"}`}
+              className={`theme-stabling-train-card relative flex flex-col items-center justify-start gap-1 overflow-hidden rounded-xl transition-all duration-150 ${primaryMaint ? "has-request" : ""} ${remarkThemeClass} ${isDup ? "is-duplicate" : ""} ${isFlashing ? "is-flashing" : ""} ${isSearchMatch ? "is-search-match" : ""} ${key ? "has-train" : "is-empty"}`}
               style={{
                 minHeight: rowCardMinHeight,
                 height: "100%",
@@ -29155,6 +29159,7 @@ function RoadRow({
               {key && (
                 <div
                   aria-hidden="true"
+                  className="theme-stabling-card-divider"
                   style={{
                     width: "calc(100% - 16px)",
                     height: 1,

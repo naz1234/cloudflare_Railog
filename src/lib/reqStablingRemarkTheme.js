@@ -1,0 +1,14 @@
+// Visual treatment only: inspect every displayed remark without changing
+// request order, pill colours, train status or export contents.
+export function getStablingRemarkTheme(items = []) {
+  const labels = (Array.isArray(items) ? items : []).map((item) => {
+    const label = typeof item === 'string'
+      ? item
+      : item?.badgeText || item?.displayType || item?.typeKey || '';
+    return String(label).toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+  });
+  if (labels.some(label => /\bUNFIT\b/.test(label))) return 'unfit';
+  if (labels.some(label => /\bLEAST PRIORITY\b/.test(label))) return 'least-priority';
+  if (labels.some(label => /\b(?:DEEP CLEAN(?:ING)?|DEEPCLEAN)\b/.test(label))) return 'deep-clean';
+  return '';
+}
