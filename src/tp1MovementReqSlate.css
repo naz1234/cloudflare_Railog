@@ -53,8 +53,11 @@ html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-
 html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-next-wash-content>div>input,
 html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step>div>div>.theme-tp1-inline-field { height:32px; min-height:32px; width:100%; padding:0 10px; border:1px solid var(--mov-line)!important; border-radius:8px; background:var(--mov-field)!important; box-shadow:none!important; color:var(--mov-text)!important; font-size:12px; font-weight:500; }
 html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step .theme-tp1-inline-field-control { font-size:12px!important; font-weight:500!important; color:var(--mov-text)!important; -webkit-text-fill-color:currentColor!important; box-shadow:none!important; }
-html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step :is(input,select) { outline-offset:2px; }
-html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step :is(input,select):focus-visible { outline:2px solid #5794bc; }
+/* Highlight the existing field edge only, never a second box around its input. */
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step :is(input,select):focus-visible { outline:none!important; outline-offset:0; }
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-inline-field:focus-within,
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step> :is(input,select):focus-visible,
+html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-next-wash-content>div>input:focus-visible { border-color:#5794bc!important; }
 html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-inline-field-control::placeholder { color:var(--mov-muted)!important; }
 html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-flow-step p { margin-top:4px; font-size:9px; font-weight:400; color:var(--mov-muted)!important; line-height:1.45; }
 html[data-app-theme] #root .theme-train-movement-page[data-movement-design="req-slate"] .theme-tp1-next-wash-content { padding-top:0; margin-top:0; border:0; gap:8px; align-items:center; }
