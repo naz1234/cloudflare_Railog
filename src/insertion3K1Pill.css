@@ -1,0 +1,16 @@
+/* The shared 3K1 palette is set inline. Keep this override confined to the
+   two-line 3K1 detail pill, without changing its geometry or time input. */
+html[data-app-theme] #root .theme-insertion-page .theme-insertion-3k1-pill {
+  color: #f3d08a !important;
+  box-shadow: none !important;
+}
+
+html[data-app-theme] #root .theme-insertion-page .theme-insertion-3k1-pill :is(div, span, input) {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+html[data-app-theme] #root .theme-insertion-page .theme-insertion-3k1-pill:hover {
+  background: #49361a !important;
+  border-color: #a37f37 !important;
+}
