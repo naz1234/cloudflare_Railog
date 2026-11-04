@@ -72,10 +72,26 @@ test("phone controls preserve 16px inputs, touch targets, keyboard focus and vie
   assert.match(css, /height: 44px; min-height: 44px;/);
   assert.match(css, /font-size: 16px !important;/);
   assert.match(css, /min-height: 36px;/);
-  assert.match(css, /:focus-visible \{ outline:2px solid #5794bc;/);
+  assert.match(css, /:focus-visible \{ outline:none!important; outline-offset:0;/);
+  assert.match(css, /:focus-within,[\s\S]*:focus-visible \{ border-color:#5794bc!important;/);
   assert.match(css, /@media \(min-width: 1000px\)/);
   const hidden = [];
   tree.walkDecls("display", (node) => { if (node.value === "none") hidden.push(node.parent.selector); });
   assert.equal(hidden.length, 1);
   assert.ok(hidden[0].endsWith(".theme-tp1-flow-connector"));
+});
+
+test("selecting a MOV field highlights its existing edge without an inner outline or layout change", () => {
+  const inner = rule(".theme-tp1-flow-step :is(input,select):focus-visible");
+  assert.equal(inner.outline, "none");
+  assert.equal(inner["outline-offset"], "0");
+  let outer;
+  tree.walkRules((node) => {
+    if (node.selector.includes(".theme-tp1-inline-field:focus-within")) outer = node;
+  });
+  assert.ok(outer);
+  assert.ok(outer.selectors.some((selector) => selector.includes(".theme-tp1-flow-step> :is(input,select):focus-visible")));
+  assert.ok(outer.selectors.some((selector) => selector.includes(".theme-tp1-next-wash-content>div>input:focus-visible")));
+  assert.deepEqual(outer.nodes.filter((node) => node.type === "decl").map(({ prop, value, important }) => [prop, value, important]), [["border-color", "#5794bc", true]]);
+  assert.doesNotMatch(outer.selector, /button|textarea|maspo/);
 });
